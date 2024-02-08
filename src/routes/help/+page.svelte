@@ -2,6 +2,6 @@
   import Content from '$lib/content.svelte';
 </script>
 
-<Content title="Home">
-  <p>Sample page data for the home page.</p>
+<Content title="Help">
+  <p>Sample page data for the help page.</p>
 </Content>

@@ -8,8 +8,8 @@ changelog:
         - breaking-change
     - title: Features
       labels:
-        - feature 
-    - title: Enhancements 
+        - feature
+    - title: Enhancements
       labels:
         - enhancement
     - title: Bug Fixes
