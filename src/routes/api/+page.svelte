@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Content from '$lib/content.svelte';
+  import Content from '$lib/content.svelte';
 </script>
 
 <Content title="API">
-	<p>Sample page data for the api page.</p>
+  <p>Sample page data for the api page.</p>
 </Content>

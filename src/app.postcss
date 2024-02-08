@@ -5,52 +5,52 @@
 
 html,
 body {
-	@apply h-full overflow-hidden;
+  @apply h-full overflow-hidden;
 }
 
 /* vintage theme */
 @font-face {
-	font-family: 'Abril Fatface';
-	src: url('/fonts/AbrilFatface.ttf');
-	font-display: swap;
+  font-family: 'Abril Fatface';
+  src: url('/fonts/AbrilFatface.ttf');
+  font-display: swap;
 }
 
 section.main-content {
-	width: 60%; /* The width is 60%, by default */
-	margin: 20px auto 0;
+  width: 60%; /* The width is 60%, by default */
+  margin: 20px auto 0;
 }
 
 /* Use a media query to add a breakpoint at 800px: */
 @media screen and (max-width: 800px) {
-	section.main-content {
-		width: 100%; /* The width is 100%, when the viewport is 800px or smaller */
-	}
+  section.main-content {
+    width: 100%; /* The width is 100%, when the viewport is 800px or smaller */
+  }
 }
 
 nav#page-navigation {
-	display: flex;
-	flex-flow: row wrap;
-	align-items: stretch;
-	justify-content: flex-end;
-	margin-left: 10px;
+  display: flex;
+  flex-flow: row wrap;
+  align-items: stretch;
+  justify-content: flex-end;
+  margin-left: 10px;
 }
 nav#page-navigation a {
-	font-size: 1.2em;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	text-align: center;
-	padding: 5px 5px;
-	height: 80px;
-	width: 150px;
+  font-size: 1.2em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 5px 5px;
+  height: 80px;
+  width: 150px;
 }
 nav#page-navigation a[aria-current='page'] {
-	/* @apply bg-primary-500; */
-	background-color: rgba(var(--color-primary-900));
-	color: rgba(var(--color-primary-50));
+  /* @apply bg-primary-500; */
+  background-color: rgba(var(--color-primary-900));
+  color: rgba(var(--color-primary-50));
 }
 nav#page-navigation a:hover {
-	/* @apply bg-secondary-500; */
-	background-color: rgba(var(--color-secondary-500));
-	color: rgba(var(--color-surface-900));
+  /* @apply bg-secondary-500; */
+  background-color: rgba(var(--color-secondary-500));
+  color: rgba(var(--color-surface-900));
 }

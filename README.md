@@ -54,11 +54,13 @@ npm run test
 ## Linting
 
 Test if there are linting errors that need to be fixed:
+
 ```bash
 npm run lint
 ```
 
 Format code using Prettier:
+
 ```bash
 npm run format
 ```

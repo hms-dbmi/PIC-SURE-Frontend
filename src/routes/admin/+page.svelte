@@ -1,7 +1,7 @@
 <script>
-	import Content from '$lib/content.svelte';
+  import Content from '$lib/content.svelte';
 </script>
 
 <Content title="Admin">
-	<p>Sample page data for the admin page.</p>
+  <p>Sample page data for the admin page.</p>
 </Content>
