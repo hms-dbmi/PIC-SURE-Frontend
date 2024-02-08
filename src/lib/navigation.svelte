@@ -22,7 +22,7 @@
 
 <AppBar padding="p-0">
   <svelte:fragment slot="lead">
-    <img alt="PIC-Sure logo" src={logo} class="mx-1" />
+    <img id="nav-logo" alt="PIC-Sure logo" src={logo} class="mx-1" />
   </svelte:fragment>
   <svelte:fragment slot="trail">
     <nav id="page-navigation">
