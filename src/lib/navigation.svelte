@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { AppBar } from '@skeletonlabs/skeleton';
-  import logo from '$lib/assets/logo.png';
+  import logo from '$lib/assets/app-logo.png';
 
   const routes = [
     { path: '/', id: 'home', text: 'Home' },
