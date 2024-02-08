@@ -8,8 +8,7 @@ const routes = [
   { path: '/dataset', id: 'nav-link-dataset', headerText: 'Dataset Management' },
   { path: '/help', id: 'nav-link-help', headerText: 'Help' },
   { path: '/admin', id: 'nav-link-admin', headerText: 'Admin' },
-  { path: '/admin/super', id: 'nav-link-admin-super', headerText: 'Super Admin' },
-  { path: '/#', id: 'nav-link-logout', headerText: 'Home' }
+  { path: '/admin/super', id: 'nav-link-admin-super', headerText: 'Super Admin' }
 ];
 
 test.describe('Navigation', () => {
@@ -19,6 +18,22 @@ test.describe('Navigation', () => {
       const navItem = page.locator('#' + route.id);
       await navItem.click();
       await expect(page.locator('.main-content>h1')).toHaveText(route.headerText);
+    });
+    test(`${route.path} navigation bar has correct active element`, async ({ page }) => {
+      await page.goto(route.path);
+
+      // Check that this element is active
+      const navItem = page.locator('#' + route.id);
+      await expect(navItem).toHaveAttribute('aria-current', 'page');
+
+      // Check that other elements aren't active
+      const inactive = routes
+        .filter((altRoute) => altRoute.path !== route.path)
+        .map((altRoute) => {
+          const navItem = page.locator('#' + altRoute.id);
+          return expect(navItem).not.toHaveAttribute('aria-current');
+        });
+      await Promise.all(inactive);
     });
   });
 });
