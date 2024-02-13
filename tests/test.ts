@@ -6,7 +6,7 @@ const routes = [
   { path: '/users', id: 'nav-link-users', headerText: 'Users' },
   { path: '/api', id: 'nav-link-api', headerText: 'API' },
   { path: '/dataset', id: 'nav-link-dataset', headerText: 'Dataset Management' },
-  { path: '/help', id: 'nav-link-help', headerText: 'Help' },
+  { path: '/help', id: 'nav-link-help', headerText: 'Knowledge Hub' },
   { path: '/admin', id: 'nav-link-admin', headerText: 'Admin' },
   { path: '/admin/super', id: 'nav-link-admin-super', headerText: 'Super Admin' }
 ];

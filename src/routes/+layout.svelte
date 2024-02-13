@@ -13,6 +13,7 @@
   <svelte:fragment slot="header">
     <Navigation />
   </svelte:fragment>
+  <hr class="!border-t-2" />
   <!-- (sidebarLeft) -->
   <!-- (sidebarRight) -->
   <!-- (pageHeader) -->
