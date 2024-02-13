@@ -1,6 +1,6 @@
 <script lang="ts">
   export let title = 'Unknown page title';
-  export let subtitle: string;
+  export let subtitle = '';
 </script>
 
 <section class="main-content">
