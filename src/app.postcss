@@ -8,13 +8,6 @@ body {
   @apply h-full overflow-hidden;
 }
 
-/* vintage theme */
-@font-face {
-  font-family: 'Abril Fatface';
-  src: url('/fonts/AbrilFatface.ttf');
-  font-display: swap;
-}
-
 section.main-content {
   width: 60%; /* The width is 60%, by default */
   margin: 20px auto 0;
@@ -49,12 +42,10 @@ nav#page-navigation a {
   width: 150px;
 }
 nav#page-navigation a[aria-current='page'] {
-  /* @apply bg-primary-500; */
-  background-color: rgba(var(--color-primary-900));
-  color: rgba(var(--color-primary-50));
+  background-color: rgba(var(--color-primary-500));
+  color: rgb(var(--theme-font-color-base));
 }
 nav#page-navigation a:hover {
-  /* @apply bg-secondary-500; */
   background-color: rgba(var(--color-secondary-500));
-  color: rgba(var(--color-surface-900));
+  color: rgb(var(--theme-font-color-base));
 }
