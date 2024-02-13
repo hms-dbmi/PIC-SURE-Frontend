@@ -19,12 +19,6 @@ export default {
     typography,
     skeleton({
       themes: {
-        // preset: [
-        //   {
-        //     name: 'vintage',
-        //     enhancements: true
-        //   }
-        // ]
         custom: [picSureTheme]
       }
     })
