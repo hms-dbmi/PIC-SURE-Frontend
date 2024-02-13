@@ -3,6 +3,7 @@ import type { Config } from 'tailwindcss';
 import forms from '@tailwindcss/forms';
 import typography from '@tailwindcss/typography';
 import { skeleton } from '@skeletonlabs/tw-plugin';
+import { picSureTheme } from './pic-sure-theme';
 
 export default {
   darkMode: 'class',
@@ -18,12 +19,7 @@ export default {
     typography,
     skeleton({
       themes: {
-        preset: [
-          {
-            name: 'vintage',
-            enhancements: true
-          }
-        ]
+        custom: [picSureTheme]
       }
     })
   ]
