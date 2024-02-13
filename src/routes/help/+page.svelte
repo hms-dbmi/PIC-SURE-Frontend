@@ -6,7 +6,7 @@
 <Content title="Knowledge Hub" subtitle="Self-service learning resources">
   <div class="block-buttons">
     {#each branding.help.links as link}
-      <a href={link.url} data-testid={'link:' + link.title} target="_blank" tabindex="0">
+      <a href={link.url} target="_blank" tabindex="0">
         <i class={link.icon} />
         <div class="subtitle">{link.title}</div>
         <div>{link.description}</div>
