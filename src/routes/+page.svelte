@@ -1,7 +1,7 @@
 <script lang="ts">
   import { branding } from '$lib/configuration';
   import { ProgressRadial } from '@skeletonlabs/skeleton';
-  import type { Value } from '$lib/models/value';
+  import type { Value } from '$lib/models/Value';
   import * as api from '$lib/api';
   import { goto } from '$app/navigation';
 
@@ -105,24 +105,6 @@
     width: 100%;
     padding: 2rem;
     text-align: center;
-  }
-
-  #landing input[type='search'] {
-    width: 100%;
-    box-sizing: border-box;
-    margin-right: 0.5rem;
-    @apply input;
-  }
-
-  #landing .stats {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
-    align-items: center;
-    width: 70%;
-    margin: 2rem 0;
-    padding: 2rem;
-    @apply card variant-filled-primary;
   }
 
   #landing #search-section p {

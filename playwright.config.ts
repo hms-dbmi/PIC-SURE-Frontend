@@ -8,6 +8,9 @@ const config: PlaywrightTestConfig = {
   testDir: 'tests',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
   reporter: [['list'], ['html']],
+  use: {
+    permissions: ['clipboard-read', 'clipboard-write'],
+  },
 };
 
 export default config;

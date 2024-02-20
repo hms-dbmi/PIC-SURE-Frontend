@@ -13,10 +13,10 @@ test.describe('navigation', () => {
       path: '/dataset',
       id: 'nav-link-dataset',
       headerText: 'Dataset Management',
-      mock: { path: '*/**/picsure/dataset/named', data: mockData }
+      mock: { path: '*/**/picsure/dataset/named', data: mockData },
     },
     { path: '/help', id: 'nav-link-help', headerText: 'Knowledge Hub' },
-    { path: '/admin', id: 'nav-link-admin', headerText: 'Admin' }
+    { path: '/admin', id: 'nav-link-admin', headerText: 'Admin' },
   ];
 
   routes.forEach((route) => {

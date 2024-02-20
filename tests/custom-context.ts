@@ -7,5 +7,5 @@ export const test = base.extend({
     });
 
     use(context);
-  }
+  },
 });

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/stores';
-  import DataSetStore from '$lib/store/dataset';
+  import DataSetStore from '$lib/stores/dataset';
 
   export let data = { cell: '', row: { archived: false } };
   let toggleButton: HTMLButtonElement;

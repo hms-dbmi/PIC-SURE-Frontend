@@ -1,6 +1,6 @@
 import { get, writable, derived, type Readable, type Writable } from 'svelte/store';
 
-import { mapDataset, type DataSet } from '$lib/model/dataset';
+import { mapDataset, type DataSet } from '$lib/models/Dataset';
 import * as api from '$lib/api';
 
 const datasets: Writable<DataSet[]> = writable([]);
@@ -23,7 +23,7 @@ async function toggleArchived(uuid: string) {
     queryId: dataset?.queryId,
     name: dataset?.name,
     metadata: dataset?.metadata,
-    archived: !dataset?.archived
+    archived: !dataset?.archived,
   };
   const res = await api.put(`picsure/dataset/named/${uuid}`, request);
   store[datasetIndex] = mapDataset(res);
@@ -47,5 +47,5 @@ export default {
   archived,
   loadDatasets,
   toggleArchived,
-  getDataset
+  getDataset,
 };

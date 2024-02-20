@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Content from '$lib/component/content.svelte';
+  import Content from '$lib/components/Content.svelte';
 </script>
 
 <Content title="Explorer/Query Builder">
