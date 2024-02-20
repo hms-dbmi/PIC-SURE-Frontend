@@ -1,4 +1,19 @@
 export const branding = {
+  applicationName: 'PIC‑SURE',
+  apiPage: {
+    cards: [
+      {
+        header: 'What is the PIC‑SURE API?',
+        body: 'The PIC-SURE Application Programming Interface allows you to search, query, and export data using Python or R. \n\nClick this card to read more about the PIC-SURE API.',
+        link: 'https://pic-sure.org/about',
+      },
+      {
+        header: 'PIC‑SURE API Examples',
+        body: 'Get started using the PIC‑SURE API with real example code and analyses from simple queries to complex real-world use cases. \n\nClick this card to check out the PIC-SURE API example code.',
+        link: 'https://pic-sure.org/about',
+      },
+    ],
+  },
   landing: {
     searchPlaceholder: 'Search terms or variables of interest…',
     description:
@@ -49,26 +64,32 @@ export const branding = {
         title: 'User Guide',
         description: 'Complete user manual for seamless navigation and utilization.',
         icon: 'fa-solid fa-book fa-4x',
-        url: '/help/dummy?title=' + encodeURI('User Guide')
+        url: '/help/dummy?title=' + encodeURI('User Guide'),
       },
       {
         title: 'Video Library',
         description: "Example 'how-to' video demonstrations.",
         icon: 'fa-solid fa-tv fa-4x',
-        url: '/help/dummy?title=' + encodeURI('Video Library')
+        url: '/help/dummy?title=' + encodeURI('Video Library'),
       },
       {
         title: 'Request Assistance',
         description: 'Need help? Submit a service desk ticket, we are here to help!',
         icon: 'fa-solid fa-hands-holding-circle fa-4x',
-        url: '/help/dummy?title=' + encodeURI('Request Assistance')
+        url: '/help/dummy?title=' + encodeURI('Request Assistance'),
       },
       {
         title: 'PIC-Sure Website',
         description: 'Check out the PIC-Sure website for information.',
         icon: 'fa-solid fa-circle-info fa-4x',
-        url: '/help/dummy?title=' + encodeURI('PIC-Sure Website')
-      }
-    ]
-  }
+        url: '/help/dummy?title=' + encodeURI('PIC-Sure Website'),
+      },
+    ],
+  },
+};
+
+export const domain = {
+  name: 'pic-sure.org',
+  url: 'https://nhanes-dev.hms.harvard.edu',
+  supportEmail: '',
 };

@@ -6,9 +6,9 @@ export const datasets = [
     name: 'active demo',
     archived: false,
     query: {
-      uuid: '6104ee94-1b0c-44cb-bed2-08c95d1d63ee'
+      uuid: '6104ee94-1b0c-44cb-bed2-08c95d1d63ee',
     },
-    metadata: {}
+    metadata: {},
   },
   {
     // Archived
@@ -17,8 +17,8 @@ export const datasets = [
     name: 'inactive demo',
     archived: true,
     query: {
-      uuid: '853c2c35-f665-462e-8775-aa07121ae3dc'
+      uuid: '853c2c35-f665-462e-8775-aa07121ae3dc',
     },
-    metadata: {}
-  }
+    metadata: {},
+  },
 ];

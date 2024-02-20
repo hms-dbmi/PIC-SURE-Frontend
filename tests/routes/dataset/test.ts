@@ -6,7 +6,7 @@ test.describe('dataset', () => {
   test('Shows active datasets table', async ({ page }) => {
     // Given
     await page.route('*/**/picsure/dataset/named', async (route: Route) =>
-      route.fulfill({ json: mockData })
+      route.fulfill({ json: mockData }),
     );
     await page.goto('/dataset');
 
@@ -17,7 +17,7 @@ test.describe('dataset', () => {
   test('Should not show archived datasets table on page load', async ({ page }) => {
     // Given
     await page.route('*/**/picsure/dataset/named', (route: Route) =>
-      route.fulfill({ json: mockData })
+      route.fulfill({ json: mockData }),
     );
     await page.goto('/dataset');
 
@@ -28,7 +28,7 @@ test.describe('dataset', () => {
   test('Shows archived datasets on archive toggle button press', async ({ page }) => {
     // Given
     await page.route('*/**/picsure/dataset/named', (route: Route) =>
-      route.fulfill({ json: mockData })
+      route.fulfill({ json: mockData }),
     );
     await page.goto('/dataset');
 
@@ -43,15 +43,15 @@ test.describe('dataset', () => {
   test('Archive button press moves item to archived', async ({ page }) => {
     // Given
     await page.route('*/**/picsure/dataset/named', (route: Route) =>
-      route.fulfill({ json: mockData })
+      route.fulfill({ json: mockData }),
     );
     await page.route(`*/**/picsure/dataset/named/${mockData[0].uuid}`, (route: Route) =>
       route.fulfill({
         json: {
           ...mockData[0],
-          archived: true
-        }
-      })
+          archived: true,
+        },
+      }),
     );
     await page.goto('/dataset');
 
@@ -68,15 +68,15 @@ test.describe('dataset', () => {
   test('Restore button press moves item to active', async ({ page }) => {
     // Given
     await page.route('*/**/picsure/dataset/named', (route: Route) =>
-      route.fulfill({ json: mockData })
+      route.fulfill({ json: mockData }),
     );
     await page.route(`*/**/picsure/dataset/named/${mockData[1].uuid}`, (route: Route) =>
       route.fulfill({
         json: {
           ...mockData[1],
-          archived: false
-        }
-      })
+          archived: false,
+        },
+      }),
     );
     await page.goto('/dataset');
     const toggleButton = page.getByTestId('dataset-toggle-archive');
@@ -93,7 +93,7 @@ test.describe('dataset', () => {
   test('View button should route to view page', async ({ page }) => {
     // Given
     await page.route('*/**/picsure/dataset/named', (route: Route) =>
-      route.fulfill({ json: mockData })
+      route.fulfill({ json: mockData }),
     );
     await page.goto('/dataset');
 
@@ -118,7 +118,7 @@ test.describe('dataset/[uuid]', () => {
   test('Dataset values present on page', async ({ page }) => {
     // Given
     await page.route(`*/**/picsure/dataset/named/${mockData[0].uuid}`, (route: Route) =>
-      route.fulfill({ json: mockData[0] })
+      route.fulfill({ json: mockData[0] }),
     );
     await page.goto(`/dataset/${mockData[0].uuid}`);
 
@@ -131,7 +131,7 @@ test.describe('dataset/[uuid]', () => {
   test('Error message on api error', async ({ page }) => {
     // Given
     await page.route(`*/**/picsure/dataset/named/${mockData[0].uuid}`, (route: Route) =>
-      route.abort('accessdenied')
+      route.abort('accessdenied'),
     );
     await page.goto(`/dataset/${mockData[0].uuid}`);
 

@@ -31,7 +31,7 @@ export function mapDataset(data: any) {
     query = jsonQuery?.query;
     if (jsonQuery?.commonAreaUUID) {
       federated = {
-        commonId: jsonQuery?.commonAreaUUID
+        commonId: jsonQuery?.commonAreaUUID,
       };
     }
   } catch (_) {
@@ -46,7 +46,7 @@ export function mapDataset(data: any) {
     query,
     federated,
     queryId: data.query.uuid,
-    startTime: secondsToDate(data.query.startTime)
+    startTime: secondsToDate(data.query.startTime),
   };
   return dataset;
 }

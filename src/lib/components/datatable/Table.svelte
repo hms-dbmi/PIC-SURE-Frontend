@@ -1,12 +1,12 @@
 <script lang="ts">
   import { DataHandler } from '@vincjo/datatables';
 
-  import ThSort from './accessories/sort.svelte';
-  import ThFilter from './accessories/filter.svelte';
-  import Search from './accessories/search.svelte';
-  import RowsPerPage from './accessories/rows.svelte';
-  import RowCount from './accessories/count.svelte';
-  import Pagination from './accessories/pagination.svelte';
+  import ThSort from './accessories/Sort.svelte';
+  import ThFilter from './accessories/Filter.svelte';
+  import Search from './accessories/Search.svelte';
+  import RowsPerPage from './accessories/Rows.svelte';
+  import RowCount from './accessories/Count.svelte';
+  import Pagination from './accessories/Pagination.svelte';
   import type { Indexable } from '$lib/types';
 
   interface Column {

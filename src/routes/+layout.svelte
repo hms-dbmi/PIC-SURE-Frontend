@@ -5,15 +5,15 @@
     Modal,
     Toast,
     getModalStore,
-    type ModalSettings
+    type ModalSettings,
   } from '@skeletonlabs/skeleton';
-  import Navigation from '$lib/component/navigation.svelte';
+  import Navigation from '$lib/components/Navigation.svelte';
   import '@fortawesome/fontawesome-free/css/all.min.css';
   import '../app.postcss';
   import { onMount } from 'svelte';
   initializeStores();
   let modalProps: Record<string, unknown> = {
-    buttonPositive: 'variant-filled-primary'
+    buttonPositive: 'variant-filled-primary',
   };
   const modalStore = getModalStore();
   onMount(() => {
@@ -38,7 +38,7 @@
         // Returns the updated response value
         response: (r: string) => {
           sessionStorage.setItem('token', r);
-        }
+        },
       };
       modalStore.trigger(modal);
     }

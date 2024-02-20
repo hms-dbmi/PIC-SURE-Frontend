@@ -2,10 +2,10 @@
   import { ProgressBar } from '@skeletonlabs/skeleton';
 
   import { page } from '$app/stores';
-  import type { DataSet } from '$lib/model/dataset';
-  import DataSetStore from '$lib/store/dataset';
-  import Content from '$lib/component/content.svelte';
-  import ErrorAlert from '$lib/component/error-alert.svelte';
+  import type { DataSet } from '$lib/models/Dataset';
+  import DataSetStore from '$lib/stores/dataset';
+  import Content from '$lib/components/Content.svelte';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 
   const { getDataset } = DataSetStore;
 

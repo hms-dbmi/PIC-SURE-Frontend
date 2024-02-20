@@ -1,24 +1,23 @@
 <script lang="ts">
   import { ProgressBar } from '@skeletonlabs/skeleton';
-
   import type { Indexable } from '$lib/types';
-  import DataSetStore from '$lib/store/dataset';
-  import ErrorAlert from '$lib/component/error-alert.svelte';
-  import Content from '$lib/component/content.svelte';
-  import Datatable from '$lib/component/datatable/table.svelte';
-  import CopyButton from '$lib/component/dataset/cell/copy-button.svelte';
-  import Actions from '$lib/component/dataset/cell/actions.svelte';
+  import DataSetStore from '$lib/stores/dataset';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import Content from '$lib/components/Content.svelte';
+  import Datatable from '$lib/components/datatable/Table.svelte';
+  import CopyButton from '$lib/components/dataset/cell/CopyButtonCell.svelte';
+  import Actions from '$lib/components/dataset/cell/Actions.svelte';
 
   const columns = [
     { dataElement: 'name', label: 'Dataset ID Name' },
     { dataElement: 'startTime', label: 'Created' },
     { dataElement: 'queryId', label: 'Query ID' },
-    { dataElement: 'uuid', label: 'Actions' }
+    { dataElement: 'uuid', label: 'Actions' },
   ];
 
   const cellOverides: Indexable = {
     queryId: CopyButton,
-    uuid: Actions
+    uuid: Actions,
   };
 
   let { active, archived, loadDatasets } = DataSetStore;
