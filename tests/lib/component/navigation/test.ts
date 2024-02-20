@@ -6,7 +6,6 @@ import { datasets as mockData } from '../../../mock-data';
 
 test.describe('navigation', () => {
   const routes = [
-    { path: '/', id: 'nav-link-home', headerText: 'Home' },
     { path: '/explorer', id: 'nav-link-explorer', headerText: 'Explorer/Query Builder' },
     { path: '/users', id: 'nav-link-users', headerText: 'Users' },
     { path: '/api', id: 'nav-link-api', headerText: 'API' },
@@ -42,6 +41,18 @@ test.describe('navigation', () => {
         });
       await Promise.all(inactive);
     });
+  });
+  test('Clicking the logo navigates to the landing page', async ({ page }) => {
+    // Given
+    await page.goto('/help');
+
+    // When
+    const logo = page.locator('#nav-logo');
+    await logo.click();
+
+    // Then
+    await expect(page).toHaveURL('/');
+    await expect(page.locator('#search-box')).toBeVisible();
   });
   test('Print page hides navigation links', async ({ page }) => {
     // Given

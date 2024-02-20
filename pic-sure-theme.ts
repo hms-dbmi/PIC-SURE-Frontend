@@ -96,6 +96,6 @@ export const picSureTheme: CustomThemeConfig = {
     '--color-surface-600': '167 167 167', // #a7a7a7
     '--color-surface-700': '140 140 140', // #8c8c8c
     '--color-surface-800': '112 112 112', // #707070
-    '--color-surface-900': '91 91 91' // #5b5b5b
-  }
+    '--color-surface-900': '91 91 91', // #5b5b5b
+  },
 };
