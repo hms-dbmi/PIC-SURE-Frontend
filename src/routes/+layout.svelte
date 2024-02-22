@@ -7,7 +7,7 @@
     getModalStore,
     type ModalSettings
   } from '@skeletonlabs/skeleton';
-  import Navigation from '$lib/navigation.svelte';
+  import Navigation from '$lib/component/navigation.svelte';
   import '@fortawesome/fontawesome-free/css/all.min.css';
   import '../app.postcss';
   import { onMount } from 'svelte';
