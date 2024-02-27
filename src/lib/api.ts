@@ -4,7 +4,7 @@ async function send({
   method,
   path,
   token,
-  data,
+  data
 }: {
   method: string;
   path: string;
@@ -13,7 +13,7 @@ async function send({
 }) {
   const opts: { method: string; headers: { [key: string]: string }; body?: string } = {
     method,
-    headers: {},
+    headers: {}
   };
 
   if (data) {
