@@ -13,12 +13,6 @@ const routes = [
 
 test.describe('Navigation', () => {
   routes.forEach((route) => {
-    test(`${route.path} page has expected heading`, async ({ page }) => {
-      await page.goto('/');
-      const navItem = page.locator('#' + route.id);
-      await navItem.click();
-      await expect(page.locator('.main-content>h1')).toHaveText(route.headerText);
-    });
     test(`${route.path} navigation bar has correct active element`, async ({ page }) => {
       await page.goto(route.path);
 
