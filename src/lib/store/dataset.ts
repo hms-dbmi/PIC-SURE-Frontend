@@ -15,7 +15,7 @@ async function loadDatasets() {
 async function toggleArchived(uuid: string) {
   const store: DataSet[] = get(datasets);
   const datasetIndex: number = store.findIndex((ds) => ds.uuid === uuid);
-  if (datasetIndex == -1) {
+  if (datasetIndex === -1) {
     return Promise.reject('Could not find dataset in store.');
   }
   const dataset: DataSet = store[datasetIndex];
