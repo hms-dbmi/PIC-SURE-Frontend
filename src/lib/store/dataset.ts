@@ -32,7 +32,7 @@ async function toggleArchived(uuid: string) {
 
 async function getDataset(uuid: string) {
   const store: DataSet[] = get(datasets);
-  const datasetIndex: number = store.findIndex((ds) => ds.uuid == uuid);
+  const datasetIndex: number = store.findIndex((ds) => ds.uuid === uuid);
   if (datasetIndex > -1) {
     return store[datasetIndex];
   }
