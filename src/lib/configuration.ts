@@ -1,5 +1,4 @@
 export const branding = {
-  baseUrl: 'https://nhanes-dev.hms.harvard.edu/',
   help: {
     links: [
       {
