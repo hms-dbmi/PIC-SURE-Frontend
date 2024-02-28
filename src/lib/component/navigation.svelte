@@ -11,7 +11,6 @@
     { path: '/dataset', text: 'Dataset Management' },
     { path: '/help', text: 'Help' },
     { path: '/admin', text: 'Admin' },
-    { path: '/admin/super', text: 'Super Admin' },
     { path: '/#', id: 'logout', text: 'Logout' }
   ];
 
@@ -30,8 +29,10 @@
         <a
           id={getId(route)}
           href={route.path}
-          aria-current={$page.url.pathname === route.path ? 'page' : undefined}>{route.text}</a
+          aria-current={$page.url.pathname === route.path ? 'page' : undefined}
         >
+          {route.text}
+        </a>
       {/each}
     </nav>
   </svelte:fragment>
