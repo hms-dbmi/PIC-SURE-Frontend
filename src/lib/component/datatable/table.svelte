@@ -37,26 +37,17 @@
   {/if}
   <table class="table table-hover table-compact w-full table-auto align-middle">
     <thead>
-      {#if sort}
-        <tr>
-          {#each columns as column}
+      <tr>
+        {#each columns as column}
+          {#if sort}
             <ThSort {handler} orderBy={column.dataElement}>{column.label}</ThSort>
-          {/each}
-        </tr>
-      {:else}
-        <tr>
-          {#each columns as column}
-            <th>{column.label}</th>
-          {/each}
-        </tr>
-      {/if}
-      {#if filter}
-        <tr>
-          {#each columns as column}
+          {:else if filter}
             <ThFilter {handler} filterBy={column.dataElement} />
-          {/each}
-        </tr>
-      {/if}
+          {:else}
+            <th>{column.label}</th>
+          {/if}
+        {/each}
+      </tr>
     </thead>
     <tbody>
       {#if $rows.length > 0}
