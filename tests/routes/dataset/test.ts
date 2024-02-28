@@ -10,10 +10,6 @@ test.describe('dataset', () => {
     );
     await page.goto('/dataset');
 
-    const responsePromise = page.waitForResponse((resp) =>
-      resp.url().includes('picsure/dataset/named')
-    );
-    await responsePromise;
 
     // Then
     await expect(page.getByText('Active Datasets', { exact: true })).toBeVisible();
