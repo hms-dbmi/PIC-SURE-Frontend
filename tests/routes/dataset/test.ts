@@ -10,7 +10,6 @@ test.describe('dataset', () => {
     );
     await page.goto('/dataset');
 
-
     // Then
     await expect(page.getByText('Active Datasets', { exact: true })).toBeVisible();
     await expect(page.getByText(mockData[0].query.uuid, { exact: true })).toBeVisible();

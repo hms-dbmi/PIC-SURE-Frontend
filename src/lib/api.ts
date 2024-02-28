@@ -4,20 +4,13 @@ import { browser } from '$app/environment';
 // TODO: fix any types
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-let token = '';
-if (browser) {
-  token = sessionStorage.getItem('token') || '';
-}
-
 async function send({
   method,
   path,
-  token,
   data
 }: {
   method: string;
   path: string;
-  token: string;
   data?: any; //TODO: Change this
 }) {
   const opts: { method: string; headers: { [key: string]: string }; body?: string } = {
@@ -30,12 +23,11 @@ async function send({
     opts.body = JSON.stringify(data);
   }
 
-  if (sessionStorage.token) {
-    token = sessionStorage.token;
-  }
-
-  if (token) {
-    opts.headers['Authorization'] = `Token ${token}`;
+  if (browser) {
+    const token = sessionStorage.getItem('token');
+    if (token) {
+      opts.headers['Authorization'] = `Token ${token}`;
+    }
   }
 
   console.debug('fetching', `${window.location.origin}/${path}`, opts);
@@ -54,17 +46,17 @@ async function send({
 }
 
 export function get(path: string) {
-  return send({ method: 'GET', path, token });
+  return send({ method: 'GET', path });
 }
 
 export function del(path: string) {
-  return send({ method: 'DELETE', path, token });
+  return send({ method: 'DELETE', path });
 }
 
 export function post(path: string, data: any) {
-  return send({ method: 'POST', path, token, data });
+  return send({ method: 'POST', path, data });
 }
 
 export function put(path: string, data: any) {
-  return send({ method: 'PUT', path, token, data });
+  return send({ method: 'PUT', path, data });
 }
