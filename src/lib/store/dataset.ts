@@ -19,13 +19,13 @@ async function toggleArchived(uuid: string) {
     return Promise.reject('Could not find dataset in store.');
   }
   const dataset: DataSet = store[datasetIndex];
-  const query = {
+  const request = {
     queryId: dataset?.queryId,
     name: dataset?.name,
     metadata: dataset?.metadata,
     archived: !dataset?.archived
   };
-  const res = await api.put(`picsure/dataset/named/${uuid}`, query);
+  const res = await api.put(`picsure/dataset/named/${uuid}`, request);
   store[datasetIndex] = mapDataset(res);
   datasets.set(store);
 }
