@@ -1,3 +1,5 @@
+import type { User } from '$lib/models/User';
+
 export const datasets = [
   {
     // Active
@@ -22,6 +24,17 @@ export const datasets = [
     metadata: {},
   },
 ];
+
+export const user: User = {
+  uuid: '1234',
+  email: 'test@pic-sure.org',
+  privileges: ['user'],
+  roles: ['user'],
+  // expired token
+  token:
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjoxNjEyMTY0OTgyLCJpYXQiOjE2MDk1NzI5ODJ9.wzXW7OBk0crFFGD2j9avij-sfWpcIvruSj55j2-oXxo',
+  acceptedTOS: true,
+};
 
 export const searchResultPath = '*/**/picsure/search/bf638674-053b-46c4-96a1-4cd6c8395248';
 export const searchResults = {

@@ -4,6 +4,7 @@ import {
   datasets as mockDatasets,
   searchResults as mockSearchResults,
   searchResultPath,
+  user as mockUser,
 } from '../../../mock-data';
 
 // TODO: This should probably be moved to a component test, not an e2e/integration test.
@@ -16,7 +17,11 @@ test.describe('navigation', () => {
       mock: { path: searchResultPath, data: mockSearchResults },
     },
     { path: '/users', id: 'nav-link-users' },
-    { path: '/api', id: 'nav-link-api' },
+    {
+      path: '/api',
+      id: 'nav-link-api',
+      mock: { path: '*/**/psama/user/me?hasToken', data: mockUser },
+    },
     {
       path: '/dataset',
       id: 'nav-link-dataset',
