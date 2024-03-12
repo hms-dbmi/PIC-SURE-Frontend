@@ -31,7 +31,12 @@ const tagsMock = [
 ];
 
 async function search(search: string) {
-  if (!search) return;
+  if (!search) {
+    tags.set([]);
+    searchResults.set([]);
+    searchTerm.set('');
+    return;
+  }
   const response = await api.post(searchUrl, { query: search });
   tags.set(tagsMock.map(mapTags));
   searchResults.set(Object.values(response.results.phenotypes).map(mapSearchResults));

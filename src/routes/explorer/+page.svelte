@@ -11,8 +11,8 @@
   import FilterStore from '$lib/stores/Search';
   let { tags, searchTerm, searchResults, search } = FilterStore;
 
-  let searchParam = $page.url.searchParams.get('search') || '';
-  let searchInput = $searchTerm || searchParam;
+  let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
+  let searchPromise: Promise<void> = search(searchInput);
 
   const columns = [
     { dataElement: 'name', label: 'Variable Name', sort: true },
@@ -25,13 +25,13 @@
   };
 
   function updateSearch() {
-    goto(searchInput ? `/explorer?search=${searchInput}` : '/explorer');
-    searchParam = searchInput;
+    goto(searchInput ? `/explorer?search=${searchInput}` : '/explorer', { replaceState: true });
+    searchPromise = search(searchInput);
   }
 </script>
 
 <Content full>
-  {#await search(searchParam)}
+  {#await searchPromise}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />
   {:then}
@@ -81,7 +81,10 @@
               type="button"
               class="btn variant-ghost-error hover:variant-filled-error"
               aria-label="You are on the reset button"
-              on:click={() => (searchInput = '')}
+              on:click={() => {
+                searchInput = '';
+                updateSearch();
+              }}
             >
               Reset
             </button>
