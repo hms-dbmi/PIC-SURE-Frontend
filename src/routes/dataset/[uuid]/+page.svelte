@@ -3,7 +3,7 @@
 
   import { page } from '$app/stores';
   import type { DataSet } from '$lib/models/Dataset';
-  import DataSetStore from '$lib/stores/dataset';
+  import DataSetStore from '$lib/stores/Dataset';
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 

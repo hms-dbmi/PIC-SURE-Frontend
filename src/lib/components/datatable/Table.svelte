@@ -12,12 +12,13 @@
   interface Column {
     dataElement: string;
     label: string;
+    class?: string;
+    sort?: boolean;
+    filter?: boolean;
   }
 
   // Parameters
-  export let filter = false;
   export let search = false;
-  export let sort = false;
   export let defaultRowsPerPage = 5;
   export let columns: Column[] = [];
   export let cellOverides: Indexable = {};
@@ -39,12 +40,18 @@
     <thead>
       <tr>
         {#each columns as column}
-          {#if sort}
-            <ThSort {handler} orderBy={column.dataElement}>{column.label}</ThSort>
-          {:else if filter}
-            <ThFilter {handler} filterBy={column.dataElement} />
+          {#if column.sort}
+            <ThSort {handler} class={`bg-primary-300 ${column.class}`} orderBy={column.dataElement}
+              >{column.label}</ThSort
+            >
+          {:else if column.filter}
+            <ThFilter
+              {handler}
+              class={`bg-primary-300 ${column.class}`}
+              filterBy={column.dataElement}
+            />
           {:else}
-            <th>{column.label}</th>
+            <th class={`bg-primary-300 ${column.class}`}>{column.label}</th>
           {/if}
         {/each}
       </tr>

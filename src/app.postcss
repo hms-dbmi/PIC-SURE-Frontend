@@ -13,6 +13,11 @@ section.main-content {
   margin: 2rem auto 0;
 }
 
+section.main-content.w-full {
+  width: calc(100% - 3rem);
+  margin: 2rem 1.5rem;
+}
+
 /* Use a media query to add a breakpoint at 800px: */
 @media screen and (max-width: 1366px) {
   section.main-content {
@@ -206,6 +211,13 @@ nav#page-navigation a:active {
 
 .table.align-middle tbody td {
   vertical-align: middle;
+}
+
+.accordion-item {
+  border-top: solid 1px rgb(var(--color-surface-400));
+}
+.accordion {
+  border-bottom: solid 1px rgb(var(--color-surface-400));
 }
 
 #user-token span.badge.expired {
