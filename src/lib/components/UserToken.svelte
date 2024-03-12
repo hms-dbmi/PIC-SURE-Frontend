@@ -17,11 +17,9 @@
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
-  let rows = 1;
   let account = '';
   let placeHolderToken =
     '•••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
-  let textarea: HTMLTextAreaElement;
   let revealed = false;
   let refreshButtonDisabled = false;
   let refreshButtonText = 'Refresh';
@@ -74,16 +72,10 @@
   }
 
   async function getUser(): Promise<User> {
-    return await api
-      .get('/psama/user/me?hasToken')
-      .then((response: User) => {
-        user = response;
-        return response;
-      })
-      .catch((error) => {
-        console.error('Error getting user:\n', error);
-        throw error;
-      });
+    return await api.get('/psama/user/me?hasToken').then((response: User) => {
+      user = response;
+      return response;
+    });
   }
 
   async function refreshToken() {
@@ -91,10 +83,6 @@
       .get('/psama/user/me/refresh_long_term_token')
       .then((response: LongTermTokenResponse) => {
         return response.userLongTermToken;
-      })
-      .catch((error) => {
-        console.error(error);
-        return;
       });
     if (!newLongTermToken) {
       refreshButtonText = 'Error';
@@ -109,18 +97,10 @@
     user.token = newLongTermToken;
     refreshButtonText = 'Refreshed!';
     refreshButtonDisabled = true;
-    rows = updateRows();
   }
 
   function revealToken() {
     revealed = !revealed;
-    rows = updateRows();
-  }
-
-  function updateRows() {
-    if (!revealed || !user.token) return 1;
-    let fontSizeInPt = +window.getComputedStyle(textarea).fontSize.split('px')[0] * 0.75;
-    return Math.ceil((user.token.length * (fontSizeInPt - 1)) / textarea.clientWidth);
   }
 </script>
 
@@ -134,8 +114,7 @@
         <label for="account">Account:</label>
         <span id="account" class="w-full">{account}</span>
         <label for="token">Token:</label>
-        <textarea id="token" bind:value={displayedToken} bind:this={textarea} {rows} disabled
-        ></textarea>
+        <div id="token">{displayedToken}</div>
         <label for="expires">Expires:</label>
         <div>
           <span id="expires" class="w-1/3 mr-2"
@@ -189,11 +168,6 @@
   #user-token-container #user-token section {
     min-width: 50rem;
     grid-template-columns: min-content auto;
-  }
-  #user-token-container #user-token section textarea {
-    max-width: 48rem;
-    word-wrap: break-word;
-    height: fit-content;
   }
   #user-token-container #user-token section label {
     text-align: right;

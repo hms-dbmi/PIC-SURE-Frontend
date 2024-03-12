@@ -1,24 +1,15 @@
 import { expect, type Route } from '@playwright/test';
 import { test } from '../../custom-context';
 import { branding } from '../../../src/lib/configuration';
-import type { User } from '$lib/models/User';
+import { user as mockUser } from '../../../tests/mock-data';
 
-const mockExpiredToken =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjoxNjEyMTY0OTgyLCJpYXQiOjE2MDk1NzI5ODJ9.wzXW7OBk0crFFGD2j9avij-sfWpcIvruSj55j2-oXxo';
-const mockUser: User = {
-  uuid: '1234',
-  email: 'test@pic-sure.org',
-  privileges: ['user'],
-  roles: ['user'],
-  token: mockExpiredToken,
-  acceptedTOS: true,
-};
 const placeHolderDots =
   '•••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
 
 test.describe('API page', () => {
   test('Has expected error message', async ({ page }) => {
     // Given
+    await page.route('*/**/psama/user/me?hasToken', (route: Route) => route.abort('accessdenied'));
     await page.goto('/api');
     // When
     const errorAlert = page.locator('[data-testid=error-alert]');
@@ -28,6 +19,9 @@ test.describe('API page', () => {
   branding.apiPage.cards.forEach((card) => {
     test(`Has expect card, ${card.header} from branding`, async ({ page }) => {
       // Given
+      await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
+        route.fulfill({ json: mockUser }),
+      );
       await page.goto('/api');
       // When
       const cardTitle = page.getByText(card.header);
@@ -88,7 +82,7 @@ test.describe('API page', () => {
     const userToken = page.locator('#token');
     // Then
     await expect(userToken).toBeVisible();
-    expect(await userToken.inputValue()).toBe(placeHolderDots);
+    expect(await userToken.innerText()).toBe(placeHolderDots);
   });
   test('Buttons are displayed', async ({ page }) => {
     // Given
@@ -138,7 +132,7 @@ test.describe('API page', () => {
     const userToken = page.locator('#token');
     // Then
     await expect(userToken).toBeVisible();
-    expect(await userToken.inputValue()).toBe(mockUser.token);
+    expect(await userToken.innerText()).toBe(mockUser.token);
   });
   test('Reveal button text changes when clicked', async ({ page }) => {
     // Given
@@ -163,7 +157,7 @@ test.describe('API page', () => {
     const userToken = page.locator('#token');
     await refreshButton.click();
     // Then
-    expect(await userToken.inputValue()).not.toBe(mockUser.token);
+    expect(await userToken.innerText()).not.toBe(mockUser.token);
   });
   test('Refresh button changes expiration, updates button text, disables button', async ({
     page,
@@ -190,8 +184,8 @@ test.describe('API page', () => {
     // Then
     await expect(refreshButton).toHaveText('Refreshed!');
     await expect(refreshButton).toBeDisabled();
-    expect(await userToken.inputValue()).not.toBe(placeHolderDots);
-    expect(await userToken.inputValue()).toBe('new longterm token');
+    expect(await userToken.innerText()).not.toBe(placeHolderDots);
+    expect(await userToken.innerText()).toBe('new longterm token');
     expect(await expires.innerText()).not.toContain('Mon Feb 01 2021');
   });
   test('Canceling confirm modal does nothing to user', async ({ page }) => {
@@ -214,7 +208,7 @@ test.describe('API page', () => {
     // Then
     await expect(refreshButton).toHaveText('Refresh');
     await expect(refreshButton).not.toBeDisabled();
-    expect(await userToken.inputValue()).toBe(placeHolderDots);
+    expect(await userToken.innerText()).toBe(placeHolderDots);
     expect(await expires.innerText()).toContain('Mon Feb 01 2021');
   });
 });
