@@ -29,13 +29,9 @@
     if (!sessionStorage.getItem('token')) {
       const modal: ModalSettings = {
         type: 'prompt',
-        // Data
         title: 'Enter Long Term Token',
         body: 'Provide your long term token below.',
-        // Populates the input value and attributes
-        value: 'Token here...',
-        valueAttr: { type: 'text', required: true },
-        // Returns the updated response value
+        valueAttr: { type: 'text', required: true, placeholder: 'Enter token here...' },
         response: (r: string) => {
           sessionStorage.setItem('token', r);
         },
