@@ -1,9 +1,0 @@
-<script lang="ts">
-  import Content from '$lib/components/Content.svelte';
-  import { page } from '$app/stores';
-  export const title = $page.url.searchParams.get('title') || 'Dummy';
-</script>
-
-<Content {title}>
-  <p>Some help page content.</p>
-</Content>
