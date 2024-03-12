@@ -1,11 +1,15 @@
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
+
+  let clazz = '';
+  export { clazz as class };
   export let handler: DataHandler;
   export let filterBy: string;
+
   let value: string;
 </script>
 
-<th>
+<th class={clazz}>
   <input
     class="input text-sm w-full"
     type="text"

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ProgressBar } from '@skeletonlabs/skeleton';
   import type { Indexable } from '$lib/types';
-  import DataSetStore from '$lib/stores/dataset';
+  import DataSetStore from '$lib/stores/Dataset';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';

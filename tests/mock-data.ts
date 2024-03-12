@@ -22,3 +22,21 @@ export const datasets = [
     metadata: {},
   },
 ];
+
+export const searchResultPath = '*/**/picsure/search/bf638674-053b-46c4-96a1-4cd6c8395248';
+export const searchResults = {
+  results: {
+    phenotypes: {
+      '\\some\\test\\lab1\\': {
+        name: '\\some\\test\\lab1\\',
+        categorical: true,
+        patientCount: 9499,
+      },
+      '\\some\\test\\lab2\\': {
+        name: '\\some\\test\\lab2\\',
+        categorical: true,
+        patientCount: 8971,
+      },
+    },
+  },
+};

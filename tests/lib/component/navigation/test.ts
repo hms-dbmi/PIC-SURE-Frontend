@@ -1,25 +1,30 @@
 import { expect, type Route } from '@playwright/test';
 import { test } from '../../../custom-context';
-import { datasets as mockData } from '../../../mock-data';
+import {
+  datasets as mockDatasets,
+  searchResults as mockSearchResults,
+  searchResultPath,
+} from '../../../mock-data';
 
 // TODO: This should probably be moved to a component test, not an e2e/integration test.
 
 test.describe('navigation', () => {
-  const routes = [
-    { path: '/explorer', id: 'nav-link-explorer', headerText: 'Explorer/Query Builder' },
-    { path: '/users', id: 'nav-link-users', headerText: 'Users' },
-    { path: '/api', id: 'nav-link-api', headerText: 'API' },
+  [
+    {
+      path: '/explorer',
+      id: 'nav-link-explorer',
+      mock: { path: searchResultPath, data: mockSearchResults },
+    },
+    { path: '/users', id: 'nav-link-users' },
+    { path: '/api', id: 'nav-link-api' },
     {
       path: '/dataset',
       id: 'nav-link-dataset',
-      headerText: 'Dataset Management',
-      mock: { path: '*/**/picsure/dataset/named', data: mockData },
+      mock: { path: '*/**/picsure/dataset/named', data: mockDatasets },
     },
-    { path: '/help', id: 'nav-link-help', headerText: 'Knowledge Hub' },
-    { path: '/admin', id: 'nav-link-admin', headerText: 'Admin' },
-  ];
-
-  routes.forEach((route) => {
+    { path: '/help', id: 'nav-link-help' },
+    { path: '/admin', id: 'nav-link-admin' },
+  ].forEach((route, index, routes) => {
     test(`Path ${route.path} navigation bar has correct active element`, async ({ page }) => {
       // Given
       if (route.mock) {
@@ -32,7 +37,7 @@ test.describe('navigation', () => {
       const navItem = page.locator('#' + route.id);
       await expect(navItem).toHaveAttribute('aria-current', 'page');
 
-      // Check that other elements aren't active
+      // Check that other routes elements aren't active
       const inactive = routes
         .filter((altRoute) => altRoute.path !== route.path)
         .map((altRoute) => {
