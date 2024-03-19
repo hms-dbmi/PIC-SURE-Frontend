@@ -6,30 +6,25 @@
     getToastStore,
     ProgressRadial,
   } from '@skeletonlabs/skeleton';
-  import * as api from '$lib/api';
-  import type { User } from '../models/User';
   import CopyButton from './CopyButton.svelte';
   import ErrorAlert from './ErrorAlert.svelte';
+  import { user, getUser, refreshToken as refresh } from '$lib/stores/User';
 
-  type LongTermTokenResponse = {
-    userLongTermToken: string;
-  };
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
   let account = '';
   let placeHolderToken =
-    '•••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
+    '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
   let revealed = false;
   let refreshButtonDisabled = false;
   let refreshButtonText = 'Refresh';
-  let user: User;
 
-  $: displayedToken = revealed ? user?.token : placeHolderToken;
+  $: displayedToken = revealed ? $user?.token : placeHolderToken;
   $: revealButtonText = revealed ? 'Hide' : 'Reveal';
-  $: expires = user && user.token ? extractExperationDate(user.token) : 0;
+  $: expires = $user && $user.token ? extractExperationDate($user.token) : 0;
   $: badge = expires && checkIfExpired();
-  $: account = user?.email || 'There was an error retrieving your account.';
+  $: account = $user?.email || 'There was an error retrieving your account.';
 
   function checkIfExpired() {
     if (!expires || expires === 0) {
@@ -71,32 +66,20 @@
     }
   }
 
-  async function getUser(): Promise<User> {
-    return await api.get('/psama/user/me?hasToken').then((response: User) => {
-      user = response;
-      return response;
-    });
-  }
-
   async function refreshToken() {
-    const newLongTermToken = await api
-      .get('/psama/user/me/refresh_long_term_token')
-      .then((response: LongTermTokenResponse) => {
-        return response.userLongTermToken;
-      });
-    if (!newLongTermToken) {
-      refreshButtonText = 'Error';
+    const refreshSuccess = await refresh();
+    if (refreshSuccess) {
+      refreshButtonText = 'Refreshed!';
+      refreshButtonDisabled = true;
+    } else {
       const refreshErrorToast: ToastSettings = {
         message:
           'An error occured while refreshing your token. Please try again later. If this problem persists, please contact an administrator.',
         background: 'variant-filled-error',
       };
       toastStore.trigger(refreshErrorToast);
-      return;
+      refreshButtonText = 'Error';
     }
-    user.token = newLongTermToken;
-    refreshButtonText = 'Refreshed!';
-    refreshButtonDisabled = true;
   }
 
   function revealToken() {
@@ -130,7 +113,7 @@
       <footer class="card-footer">
         <CopyButton
           buttonText="Copy"
-          itemToCopy={user.token || ''}
+          itemToCopy={$user.token || ''}
           classes={['variant-ringed-primary']}
         />
         <button

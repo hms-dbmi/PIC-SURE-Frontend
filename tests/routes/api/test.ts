@@ -4,7 +4,7 @@ import { branding } from '../../../src/lib/configuration';
 import { user as mockUser } from '../../../tests/mock-data';
 
 const placeHolderDots =
-  '•••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
+  '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
 
 test.describe('API page', () => {
   test('Has expected error message', async ({ page }) => {

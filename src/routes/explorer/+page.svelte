@@ -36,7 +36,7 @@
     <ProgressBar animIndeterminate="anim-progress-bar" />
   {:then}
     <div class="grid grid-cols-4 gap-6">
-      <div id="search-filters">
+      <div id="search-tags">
         {#if $tags.length > 0}
           <Accordion autocollapse>
             {#each $tags as tagType, index}
@@ -71,6 +71,7 @@
               type="button"
               class="btn variant-ghost-primary hover:variant-filled-primary"
               aria-label="You are on the search button"
+              disabled={!searchInput}
               on:click={updateSearch}
             >
               Search
@@ -81,6 +82,7 @@
               type="button"
               class="btn variant-ghost-error hover:variant-filled-error"
               aria-label="You are on the reset button"
+              disabled={!searchInput}
               on:click={() => {
                 searchInput = '';
                 updateSearch();

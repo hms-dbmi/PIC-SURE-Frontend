@@ -8,6 +8,10 @@ body {
   @apply h-full overflow-hidden;
 }
 
+body {
+  padding: 0 1em;
+}
+
 section.main-content {
   width: 70%; /* The width is 60%, by default */
   margin: 2rem auto 0;
@@ -117,31 +121,53 @@ ul.primary-list li::marker {
   max-height: 80px;
 }
 
+header .app-bar {
+  border-bottom: solid rgb(var(--color-surface-400)) 2px;
+}
+
+.key-focus {
+  border: 2px solid rgb(var(--color-surface-500)) !important;
+}
+
 nav#page-navigation {
   display: flex;
   flex-flow: row wrap;
   align-items: stretch;
   justify-content: flex-end;
-  margin-left: 10px;
+  border: 2px solid rgb(var(--color-surface-50));
+  padding: 0 0.6em;
+  margin: 0 -0.6em 0;
+  @apply rounded-container-token;
 }
-nav#page-navigation a {
+nav#page-navigation ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+nav#page-navigation li {
+  float: left;
+}
+
+nav#page-navigation li a {
   font-size: 1.2em;
   display: flex;
-  justify-content: center;
-  align-items: center;
   text-align: center;
-  padding: 5px 5px;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  margin: 0.6em 0.2em;
   height: 80px;
-  width: 150px;
+  width: 130px;
+  @apply rounded-container-token;
 }
 nav#page-navigation a[aria-current='page'] {
-  background-color: rgba(var(--color-primary-500));
-  color: rgb(var(--theme-font-color-base));
+  @apply variant-filled-secondary;
 }
 nav#page-navigation a:hover,
 nav#page-navigation a:active {
-  background-color: rgba(var(--color-secondary-500));
-  color: rgb(var(--theme-font-color-base));
+  @apply variant-filled-primary;
 }
 
 #landing input[type='search'] {
@@ -164,49 +190,6 @@ nav#page-navigation a:active {
 
 .subtitle {
   font-size: 2rem;
-}
-
-.block-buttons {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: space-evenly;
-  margin: 2rem 0;
-}
-
-.block-buttons .subtitle {
-  margin: 0.75rem;
-  font-size: 1.25rem;
-  line-height: 1.75rem;
-  color: rgb(var(--color-tertiary-900));
-  margin: 1rem 0.25rem;
-}
-
-.block-buttons a {
-  color: rgb(var(--text-secondary-500));
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  text-align: center;
-  width: 13rem;
-  min-height: 15rem;
-  padding: 1rem 0.5rem;
-  margin: 0.3rem;
-  @apply card variant-ringed-secondary;
-}
-
-.block-buttons a:hover,
-.block-buttons a:active {
-  background-color: rgb(var(--color-primary-500));
-}
-
-.loader .fa-solid {
-  display: none;
-}
-
-.loader:disabled i.fa-solid,
-.loader[disabled] i.fa-solid {
-  display: inline;
 }
 
 .table.align-middle tbody td {
