@@ -1,5 +1,3 @@
-import type { User } from '$lib/models/User';
-
 export const datasets = [
   {
     // Active
@@ -25,7 +23,7 @@ export const datasets = [
   },
 ];
 
-export const user: User = {
+export const user = {
   uuid: '1234',
   email: 'test@pic-sure.org',
   privileges: ['user'],

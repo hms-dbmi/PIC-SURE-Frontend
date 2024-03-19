@@ -4,21 +4,7 @@ import { browser } from '$app/environment';
 import * as api from '$lib/api';
 import type { User } from '../models/User';
 
-export const user: Writable<User> = writable(decodeSavedToken());
-
-function decodeSavedToken() {
-  if (browser) {
-    try {
-      const token = sessionStorage.getItem('token') || '';
-      const { exp, email } = JSON.parse(atob(token.split('.')[1]));
-      return { exp, email, token };
-    } catch (e) {
-      return {};
-    }
-  } else {
-    return {};
-  }
-}
+export const user: Writable<User> = writable({});
 
 export async function getUser(force?: boolean) {
   if (force || !get(user)?.privileges) {
@@ -38,6 +24,13 @@ export async function refreshToken() {
   }
   user.set({ ...get(user), token: newLongTermToken });
   return true;
+}
+
+export function login(token: string) {
+  if (browser && token) {
+    sessionStorage.setItem('token', token);
+    getUser(true);
+  }
 }
 
 export async function logout() {

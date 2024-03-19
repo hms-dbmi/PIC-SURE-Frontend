@@ -1,7 +1,11 @@
-import { test as base } from '@playwright/test';
+import { test as base, type Route } from '@playwright/test';
+import { user as mockUser } from './mock-data';
 
 export const test = base.extend({
   context: async ({ context }, use) => {
+    await context.route('*/**/psama/user/me?hasToken', (route: Route) =>
+      route.fulfill({ json: mockUser }),
+    );
     await context.addInitScript(() => {
       sessionStorage.setItem(
         'token',

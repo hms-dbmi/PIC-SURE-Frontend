@@ -17,11 +17,7 @@ test.describe('navigation', () => {
       id: 'nav-link-explorer',
       mock: { path: searchResultPath, data: mockSearchResults },
     },
-    {
-      path: '/api',
-      id: 'nav-link-api',
-      mock: { path: '*/**/psama/user/me?hasToken', data: mockUser },
-    },
+    { path: '/api', id: 'nav-link-api' },
     {
       path: '/dataset',
       id: 'nav-link-dataset',
@@ -181,5 +177,23 @@ test.describe('navigation', () => {
       // Then
       await expect(page.locator('#' + routes[2].id)).toBeFocused();
     });
+  });
+  test('Logout button should reflect correct user initial', async ({ page }) => {
+    // Given
+    await page.goto('/');
+
+    // Then
+    await expect(page.locator('#user-session-btn')).toContainText(
+      `${mockUser.email[0].toUpperCase()} Loggout`,
+    );
+  });
+  test('Login button should not have user initial', async ({ page }) => {
+    // Given
+    await page.goto('/');
+    const logoutButton = page.locator('#user-session-btn');
+    await logoutButton.click();
+
+    // Then
+    await expect(page.locator('#user-session-btn')).toContainText('Login');
   });
 });

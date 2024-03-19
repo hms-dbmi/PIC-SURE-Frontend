@@ -1,11 +1,13 @@
 <script lang="ts">
-  import { AppBar } from '@skeletonlabs/skeleton';
+  import { AppBar, type ModalSettings, getModalStore } from '@skeletonlabs/skeleton';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import logo from '$lib/assets/app-logo.png';
-  import { user, logout } from '$lib/stores/User';
+  import { user, logout, login } from '$lib/stores/User';
   import { KeyboardNavigation } from '$lib/utilities/KeyNavigation';
+
+  const modalStore = getModalStore();
 
   const routes = [
     { path: '/users', text: 'Users' },
@@ -45,6 +47,17 @@
     logout();
     goto('/');
   }
+
+  function handleLogin() {
+    const modal: ModalSettings = {
+      type: 'prompt',
+      title: 'Enter Long Term Token',
+      body: 'Provide your long term token below.',
+      valueAttr: { type: 'text', required: true, placeholder: 'Enter token here...' },
+      response: (r: string) => login(r),
+    };
+    modalStore.trigger(modal);
+  }
 </script>
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50">
@@ -76,11 +89,15 @@
       </ul>
     </nav>
     <div>
-      <button title={$user.email ? 'Logout user ' + $user.email : 'Login'} on:click={handleLogout}>
+      <button
+        id="user-session-btn"
+        title={$user.email ? 'Logout user ' + $user.email : 'Login'}
+        on:click={$user.privileges ? handleLogout : handleLogin}
+      >
         <span
           class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ringed-surface hover:variant-ghost-secondary w-16 rounded-full text-2xl"
         >
-          {#if $user.email}
+          {#if $user.privileges && $user.email}
             {$user.email[0].toUpperCase()}
             <span class="sr-only">Loggout user {$user.email}</span>
           {:else}
