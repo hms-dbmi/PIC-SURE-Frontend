@@ -51,6 +51,10 @@ export const branding = {
       },
     ],
   },
+  explorePage: {
+    totalPatientsText: 'Filtered Results',
+    queryErrorText: 'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
+  },
   landing: {
     searchPlaceholder: 'Search terms or variables of interest…',
     description:
@@ -125,8 +129,6 @@ export const branding = {
   },
 };
 
-export const domain = {
-  name: 'pic-sure.org',
-  url: 'https://nhanes-dev.hms.harvard.edu',
-  supportEmail: '',
+export const resources = {
+  hpds: 'bf638674-053b-46c4-96a1-4cd6c8395248',
 };

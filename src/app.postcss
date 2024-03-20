@@ -63,6 +63,10 @@ section.main-content.w-full {
   }
 }
 
+#sidebar-right {
+  border-left: 2px solid rgba(var(--color-surface-500));
+}
+
 h1 {
   @apply h1 my-1;
 }
@@ -290,4 +294,11 @@ nav#page-navigation li .nav-dropdown a:focus {
   word-wrap: break-word;
   padding: 0.5em;
   border-radius: var(--theme-rounded-container);
+}
+
+.btn-lg-sq {
+  max-width: 6rem;
+  height: 6rem;
+  margin-bottom: 1rem;
+  @apply rounded-container-token;
 }

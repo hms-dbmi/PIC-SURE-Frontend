@@ -104,7 +104,6 @@
         <CopyButton
           buttonText="Copy"
           itemToCopy={$user.token || ''}
-          classes={['variant-ringed-primary']}
         />
         <button
           id="refresh-button"

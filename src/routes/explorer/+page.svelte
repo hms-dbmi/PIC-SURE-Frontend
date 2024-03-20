@@ -8,8 +8,8 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
 
-  import FilterStore from '$lib/stores/Search';
-  let { tags, searchTerm, searchResults, search } = FilterStore;
+  import SearchStore from '$lib/stores/Search';
+  let { tags, searchTerm, searchResults, search } = SearchStore;
 
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
   let searchPromise: Promise<void> = search(searchInput);
