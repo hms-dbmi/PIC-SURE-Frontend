@@ -6,6 +6,11 @@ const filters: Writable<Filter[]> = writable([]);
 
 function addFilter(filter: Filter) {
   const currentFilters = get(filters);
+  currentFilters.forEach((f) => {
+    if (f.variableName === filter.variableName) {
+      currentFilters.splice(currentFilters.indexOf(f), 1);
+    }
+  });
   filters.set([...currentFilters, filter]);
   return filter;
 }
@@ -13,14 +18,6 @@ function addFilter(filter: Filter) {
 function removeFilter(uuid: string) {
   const currentFilters = get(filters);
   filters.set(currentFilters.filter((f) => f.uuid !== uuid));
-}
-
-function updateFilter(filter: Filter) {
-  const currentFilters = get(filters);
-  const index = currentFilters.findIndex((f) => f.uuid === filter.uuid);
-  currentFilters[index] = filter;
-  filters.set(currentFilters);
-  return filter;
 }
 
 function clearFilters() {
@@ -40,7 +37,6 @@ export default {
   filters,
   addFilter,
   removeFilter,
-  updateFilter,
   clearFilters,
   setFilters,
   getFilter,

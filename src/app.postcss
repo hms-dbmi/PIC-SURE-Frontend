@@ -8,7 +8,6 @@ body {
   @apply h-full overflow-hidden;
 }
 
-#shell-header,
 section.main-content {
   padding: 0 1em;
 }
@@ -29,6 +28,10 @@ section.main-content.w-full {
     width: calc(100% - 4rem); /* The width is 100%, when the viewport is 800px or smaller */
     margin: 2rem;
   }
+}
+
+input[type='checkbox'] {
+  @apply checkbox;
 }
 
 @media print {
@@ -245,7 +248,6 @@ nav#page-navigation li .nav-dropdown a:focus {
 #landing input[type='search'] {
   width: 100%;
   box-sizing: border-box;
-  margin-right: 0.5rem;
   @apply input;
 }
 

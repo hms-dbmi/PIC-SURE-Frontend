@@ -7,6 +7,7 @@
   import Datatable from '$lib/components/datatable/Table.svelte';
   import CopyButton from '$lib/components/dataset/cell/CopyButtonCell.svelte';
   import Actions from '$lib/components/dataset/cell/Actions.svelte';
+  import { branding } from '$lib/configuration';
 
   const columns = [
     { dataElement: 'name', label: 'Dataset ID Name' },
@@ -24,6 +25,10 @@
 
   let displayArchived = false;
 </script>
+
+<svelte:head>
+  <title>{branding.applicationName} | Datasets</title>
+</svelte:head>
 
 <Content title="Dataset Management">
   {#await loadDatasets()}

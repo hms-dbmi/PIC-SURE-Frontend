@@ -2,13 +2,8 @@
   import type { SvelteComponent } from 'svelte';
   import { Step, Stepper, getModalStore } from '@skeletonlabs/skeleton';
 
-  export let parent: SvelteComponent;
-
   const modalStore = getModalStore();
-
-  function close() {
-    modalStore.close();
-  }
+  
   const cBase = 'card p-4 w-modal shadow-xl space-y-4';
   const cHeader = 'text-2xl font-bold';
 </script>

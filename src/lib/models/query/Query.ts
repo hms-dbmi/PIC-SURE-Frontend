@@ -1,7 +1,7 @@
 type ExpectedResultType = 'COUNT' | 'CROSS_COUNT' | 'DATAFRAME';
 
 interface QueryInterface {
-  categoryFilters: Object;
+  categoryFilters: Object; //TODO: define type
   numericFilters: Object;
   requiredFields: Object[];
   anyRecordOf: Object[];
@@ -43,5 +43,24 @@ export class Query implements QueryInterface {
     };
     this.variantInfoFilters = [variantInfoFilter];
     this.expectedResultType = 'COUNT';
+  }
+
+  addCategoryFilter(key: string, value: string[]) {
+    (this.categoryFilters as { [key: string]: any })[key] = value;
+  }
+
+  addNumericFilter(key: string, min: string, max: string) {
+    (this.numericFilters as { [key: string]: any })[key] = {
+      min: min.toString(),
+      max: max.toString(),
+    };
+  }
+
+  addRequiredField(field: string) {
+    this.requiredFields.push(field);
+  }
+
+  addAnyRecordOf(field: string) {
+    this.anyRecordOf.push(field);
   }
 }

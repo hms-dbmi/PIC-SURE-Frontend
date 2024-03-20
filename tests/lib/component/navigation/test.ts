@@ -59,7 +59,7 @@ test.describe('navigation', () => {
 
     // Then
     await expect(page).toHaveURL('/');
-    await expect(page.locator('#search-box')).toBeVisible();
+    await expect(page.locator('#landing')).toBeVisible();
   });
   test('Print page hides navigation links', async ({ page }) => {
     // Given

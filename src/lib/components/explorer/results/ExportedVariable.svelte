@@ -16,7 +16,12 @@
   transition:fade={{ duration: 300 }}
 >
   <span>{variable.variableName}</span>
-  <button type="button" title="Remove Export" class="bg-initial text-black-500 hover:text-primary-600" on:click={remove}>
+  <button
+    type="button"
+    title="Remove Export"
+    class="bg-initial text-black-500 hover:text-primary-600"
+    on:click={remove}
+  >
     <i class="fa-solid fa-times-circle"></i>
   </button>
 </div>

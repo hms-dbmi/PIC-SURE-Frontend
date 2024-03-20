@@ -1,17 +1,28 @@
-<script lang='ts'>
-  import { branding, resources } from '$lib/configuration';
-  import { slide } from 'svelte/transition';
-  import FilterComponent from './FilterComponent.svelte';
+<script lang="ts">
+  import { branding, resources, features } from '$lib/configuration';
+  import { slide, scale } from 'svelte/transition';
+  import FilterComponent from './AddedFilter.svelte';
   import { Query } from '$lib/models/query/Query';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import ExportedVariable from './ExportedVariable.svelte';
   import FilterStore from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
+  import { derived } from 'svelte/store';
   import * as api from '$lib/api';
-  import { ProgressRadial, getModalStore,type ModalSettings, type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
-  
+  import {
+    ProgressRadial,
+    getModalStore,
+    type ModalSettings,
+    type ToastSettings,
+    getToastStore,
+  } from '@skeletonlabs/skeleton';
+  import { elasticInOut } from 'svelte/easing';
+
   const { filters } = FilterStore;
   const { exports } = ExportStore;
+
+  const modalStore = getModalStore();
+  const toastStore = getToastStore();
 
   let totalPatients = 0;
 
@@ -19,22 +30,21 @@
     type: 'component',
     title: 'Export Data',
     component: 'stepper',
-    modalClasses: '',
     response: (r: string) => {
       console.log(r);
     },
   };
-  const modalStore = getModalStore();
-  const toastStore = getToastStore();
 
-  async function query() {
-    let query = new Query();
+  let triggerRefreshCount = getCount();
+
+  async function getCount(query: Query = new Query()) {
     let request: QueryRequestInterface = {
       query: query,
       resourceUUID: resources.hpds,
     };
     try {
       totalPatients = await api.post('picsure/query/sync', request);
+      return totalPatients;
     } catch (error) {
       const toast: ToastSettings = {
         message: branding.explorePage.queryErrorText,
@@ -45,25 +55,62 @@
     }
   }
 
-  $: exportHidden= ($exports.length === 0 && $filters.length === 0) || totalPatients === 0;
+  //TODO: Need to re evaluate this once we have a better data model
+  let derivedQuery = derived(filters, ($filters) => {
+    let newQuery = new Query();
+    $filters.forEach((filter) => {
+      if (filter.filterType === 'categorical') {
+        if (filter.displayType === 'restrict') {
+          newQuery.addCategoryFilter(filter.id, filter.categoryValues);
+        } else {
+          newQuery.addRequiredField(filter.id);
+        }
+      } else if (filter.filterType === 'numeric') {
+        newQuery.addNumericFilter(filter.id, filter.min || '', filter.max || '');
+      }
+    });
+    return newQuery;
+  });
+
+  filters.subscribe(() => {
+    let query = $derivedQuery;
+    triggerRefreshCount = getCount(query);
+  });
+
+  $: showExportButton =
+    features.explorer.allowExport &&
+    ($filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0)) &&
+    totalPatients !== 0;
 </script>
 
-<section id="results-panel" class="flex flex-col items-center pt-8 pr-10 w-full" transition:slide={{ axis: 'x' }}>
-  <button
-    id="export-data-button"
-    type="button"
-    class="btn variant-filled-primary {exportHidden ? 'invisible' : ''}"
-    on:click={() => modalStore.trigger(modal)}
-  >
-    Export Data
-  </button>
+<section
+  id="results-panel"
+  class="flex flex-col items-center pt-8 pr-10 section-width"
+  transition:slide={{ axis: 'x' }}
+>
+  <!-- <h3>Results Panel</h3> -->
+  <div class="h-11">
+    {#if showExportButton}
+      <button
+        id="export-data-button"
+        type="button"
+        class="btn variant-filled-primary"
+        on:click={() => modalStore.trigger(modal)}
+        transition:scale={{ easing: elasticInOut }}
+      >
+        Export Data
+      </button>
+    {/if}
+  </div>
   <div class="flex flex-col items-center mt-6">
-    {#await query()}
+    {#await triggerRefreshCount}
       <ProgressRadial width="w-6" />
     {:then}
-      <h2 id="result-count">{totalPatients}</h2>
+      <span id="result-count">{totalPatients}</span>
+    {:catch}
+      <span id="result-count">N/A</span>
     {/await}
-    <h5 class="text-center">{branding.explorePage.totalPatientsText}</h5>
+    <h4 class="text-center">{branding.explorePage.totalPatientsText}</h4>
   </div>
   <div class="flex flex-col items-center mt-8">
     <h5 class="underline">Added to Export</h5>
@@ -76,7 +123,7 @@
           <hr class="!border-t-2" />
         </header>
         <section>
-          {#each $filters as filter (filter.uuid)}
+          {#each $filters as filter}
             <FilterComponent {filter} />
           {/each}
         </section>
@@ -84,8 +131,8 @@
     {/if}
     {#if $exports.length !== 0}
       <div class="px-4 py-1 w-80">
-        <header class="text-primary-500 text-left">
-          <strong>Exports added</strong>
+        <header class="text-primary-500 font-extrabold text-left" data-testid="export-header">
+          Exports added
           <hr class="!border-t-2" />
         </header>
         <section>
@@ -99,10 +146,18 @@
   <div class="flex flex-col items-center mt-8">
     <h5 class="text-center underline">Explore Chort</h5>
     <div class="flex flex-wrap items-center justify-evenly w-9/12">
-      <button type="button" class="btn btn-lg-sq variant-ringed-surface">
+      <button
+        type="button"
+        class="btn btn-lg-sq variant-ringed-surface"
+        aria-label="Visualizations"
+      >
         <i class="fa-solid fa-chart-pie"></i>
       </button>
-      <button type="button" class="btn btn-lg-sq variant-ringed-surface">
+      <button
+        type="button"
+        class="btn btn-lg-sq variant-ringed-surface"
+        aria-label="Vairant Explorer"
+      >
         <i class="fa-solid fa-dna"></i>
       </button>
     </div>
@@ -110,11 +165,17 @@
 </section>
 
 <style>
+  #result-count {
+    font-size: 2.5rem;
+  }
   .btn-lg-sq {
     flex: 50%;
   }
   .btn-lg-sq i {
     font-size: 2.5rem;
     color: rgba(var(--color-primary-500));
+  }
+  .section-width {
+    width: 20rem;
   }
 </style>

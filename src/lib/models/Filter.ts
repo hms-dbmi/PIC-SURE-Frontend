@@ -13,10 +13,11 @@ type DisplayType =
 
 export interface FilterInterface {
   uuid: string;
+  id: string;
   filterType: FilterType;
   displayType: DisplayType;
   searchResult?: SearchResult;
-  variableName?: string;
+  variableName: string;
   description?: string;
   isHarmonized?: boolean;
   topmed?: boolean;
@@ -24,14 +25,14 @@ export interface FilterInterface {
 }
 
 export interface CategoricalFilterInterface extends FilterInterface {
-  filterType: 'categorical';
-  values: string[];
+  filterType: 'categorical' | 'required';
+  categoryValues: string[];
 }
 
 export interface NumericFilterInterface extends FilterInterface {
   filterType: 'numeric';
-  min: number | undefined;
-  max: number | undefined;
+  min?: string | undefined;
+  max?: string | undefined;
 }
 
 export interface GenomicFilterInterface extends FilterInterface {
@@ -42,22 +43,52 @@ export interface GenomicFilterInterface extends FilterInterface {
   Variant_frequency_as_text?: string[];
 }
 
-export function createCategoocialFilter(searchResult: SearchResult, values?: string[]) {
-  let filter: Filter = {
+export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
+  const filter: Filter = {
     uuid: uuid(),
+    id: searchResult.id,
     filterType: 'categorical',
     displayType: values && values?.length > 0 ? 'restrict' : 'anyRecordOf',
     searchResult: searchResult,
-    values: values || [],
+    categoryValues: values || [],
     variableName: searchResult.name,
     description: searchResult.description,
   };
   return filter;
 }
 
-export function createNumericFilter(searchResult: SearchResult, min?: number, max?: number) {
-  let filter: Filter = {
+export function createRequiredFilter(searchResult: SearchResult) {
+  const filter: Filter = {
     uuid: uuid(),
+    id: searchResult.id,
+    filterType: 'categorical',
+    displayType: 'any',
+    searchResult: searchResult,
+    variableName: searchResult.name,
+    description: searchResult.description,
+    categoryValues: [],
+  };
+  return filter;
+}
+
+export function createAnyRecordOfFilter(searchResult: SearchResult, values?: string[]) {
+  const filter: Filter = {
+    uuid: uuid(),
+    id: searchResult.id,
+    filterType: 'categorical',
+    displayType: 'anyRecordOf',
+    searchResult: searchResult,
+    categoryValues: values || [],
+    variableName: searchResult.name,
+    description: searchResult.description,
+  };
+  return filter;
+}
+
+export function createNumericFilter(searchResult: SearchResult, min?: string, max?: string) {
+  const filter: Filter = {
+    uuid: uuid(),
+    id: searchResult.id,
     filterType: 'numeric',
     displayType:
       min !== undefined && max !== undefined
@@ -81,8 +112,9 @@ export function createGenomicFilter(
   Variant_consequence_calculated?: string[],
   Variant_frequency_as_text?: string[],
 ) {
-  let filter: Filter = {
+  const filter: Filter = {
     uuid: uuid(),
+    id: 'genomic',
     filterType: 'genomic',
     displayType: 'genomic',
     variableName: 'Genomic Filter',

@@ -6,6 +6,9 @@ const exports: Writable<Export[]> = writable([]);
 
 function addExport(exportedField: Export) {
   const currentExports = get(exports);
+  if (currentExports.some((e: Export) => e.variableId === exportedField.variableId)) {
+    return;
+  }
   exports.set([...currentExports, exportedField]);
   return exportedField;
 }
