@@ -53,8 +53,7 @@ export const branding = {
   },
   explorePage: {
     totalPatientsText: 'Filtered Results',
-    queryErrorText:
-      'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
+    queryErrorText: 'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
   },
   landing: {
     searchPlaceholder: 'Search terms or variables of interest…',

@@ -34,7 +34,6 @@
   onMount(() => {
     document.body.classList.add('started');
   });
-
   $: classesSidebar = $page.url.pathname.includes('/explorer') ? '' : 'hidden';
 </script>
 

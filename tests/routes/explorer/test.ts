@@ -3,6 +3,10 @@ import { test } from '../../custom-context';
 import { searchResults as mockData, searchResultPath } from '../../mock-data';
 import { mapSearchResults, type SearchResult } from '../../../src/lib/models/Search';
 import { createCategoricalFilter, createNumericFilter } from '../../../src/lib/models/Filter';
+import { branding } from '../../../src/lib/configuration';
+
+const firstId = 'tag-dataset-nhanes';
+const secondId = 'tag-dataset-1000_genomes';
 
 test.describe('explorer', () => {
   test('Has datatable, filters, and searchbar', async ({ page }) => {
@@ -1096,6 +1100,108 @@ test.describe('explorer', () => {
       await expect(infoSection).not.toContainText(firstValueString);
     });
   });
+
+  //Results
+  test('Result panel bar and button shows', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.goto('/explorer?search=somedata');
+
+    // Then
+    await expect(page.locator('#side-panel-bar')).toBeVisible();
+    await expect(page.locator('#results-panel-toggle')).toBeVisible();
+  });
+  test('Result toggle button opens and closes the results panel', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.goto('/explorer?search=somedata');
+
+    //When
+    await page.locator('#results-panel-toggle').click();
+
+    // Then
+    await expect(page.locator('#results-panel')).toBeVisible();
+
+    //When
+    await page.locator('#results-panel-toggle').click();
+
+    // Then
+    await expect(page.locator('#results-panel')).not.toBeVisible();
+  });
+  test('Result panel shows 0 results on an error', async ({ page }) => {
+    // Given
+    await page.goto('/explorer?search=somedata');
+    await page.locator('#results-panel-toggle').click();
+
+    // Then
+    await expect(page.locator('#result-count')).toBeVisible();
+    await expect(page.locator('#result-count')).toHaveText('0');
+  });
+  test('Toast shows on query error', async ({ page }) => {
+    // Given
+    await page.goto('/explorer?search=somedata');
+    await page.locator('#results-panel-toggle').click();
+
+    // Then
+    let toast = page.getByTestId('toast');
+    await expect(toast).toBeVisible();
+    expect(toast.getByText(branding.explorePage.queryErrorText)).toBeVisible();
+  });
+  test('Result panel shows the correct number of results', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route('*/**/picsure/query/sync', async (route: Route) => route.fulfill({ body: '9999' }));
+    await page.goto('/explorer?search=somedata');
+    await page.locator('#results-panel-toggle').click();
+
+    // Then
+    await expect(page.locator('#result-count')).toBeVisible();
+    await expect(page.locator('#result-count')).not.toHaveText('0');
+  });
+  test('Result panel shows no filters added when there are no filters', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route('*/**/picsure/query/sync', async (route: Route) => route.fulfill({ body: '9999' }));
+    await page.goto('/explorer?search=somedata');
+    await page.locator('#results-panel-toggle').click();
+
+    // Then
+    await expect(page.getByText('No filters added')).toBeVisible();
+  });
+  test('Export button hidden when no filters or exports are added', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route('*/**/picsure/query/sync', async (route: Route) => route.fulfill({ body: '9999' }));
+    await page.goto('/explorer?search=somedata');
+    await page.locator('#results-panel-toggle').click();
+
+    // Then
+    await expect(page.getByText('No filters added')).toBeVisible();
+    await expect(page.locator('#export-data-button')).not.toBeVisible();
+  });
+  test('Export button hidden when count is 0', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route('*/**/picsure/query/sync', async (route: Route) => route.fulfill({ body: '0' }));
+    await page.goto('/explorer?search=somedata');
+    await page.locator('#results-panel-toggle').click();
+
+    // add filters
+
+    // Then
+    await expect(page.locator('#export-data-button')).not.toBeVisible();
+  });
+  // test('Export button shows when filters are added', async ({ page }) => {
+  //   // Given
+  //   await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+  //   await page.route('*/**/picsure/query/sync', async (route: Route) => route.fulfill({ body: '9999' }));
+  //   await page.goto('/explorer?search=somedata');
+  //   await page.locator('#results-panel-toggle').click();
+    
+  //   // Then
+  //   await expect(page.getByText('No filters added')).not.toBeVisible();
+  //   await expect(page.locator('#export-data-button')).toBeVisible();
+  // });
 });
 
 const getOption = async (page: any, optionIndex = 0) => {
