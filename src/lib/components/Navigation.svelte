@@ -70,7 +70,7 @@
     <nav
       id="page-navigation"
       bind:this={navContainer}
-      on:focusin={() => navigation.navFocus(true)}
+      on:focus={() => navigation.navFocus(true)}
       on:focusout={() => navigation.navFocus(false)}
     >
       <ul>
