@@ -17,19 +17,18 @@ export async function refreshToken() {
   const newLongTermToken = await api
     .get('psama/user/me/refresh_long_term_token')
     .then((response: { userLongTermToken: string }) => {
+      if (!response.userLongTermToken) {
+        throw new Error('No user token was returned.');
+      }
       return response.userLongTermToken;
     });
-  if (!newLongTermToken) {
-    return false;
-  }
   user.set({ ...get(user), token: newLongTermToken });
-  return true;
 }
 
-export function login(token: string) {
+export async function login(token: string) {
   if (browser && token) {
     sessionStorage.setItem('token', token);
-    getUser(true);
+    await getUser(true);
   }
 }
 

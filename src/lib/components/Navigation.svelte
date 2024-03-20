@@ -1,13 +1,14 @@
 <script lang="ts">
-  import { AppBar, type ModalSettings, getModalStore } from '@skeletonlabs/skeleton';
+  import { AppBar, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import logo from '$lib/assets/app-logo.png';
-  import { user, logout, login } from '$lib/stores/User';
+  import { user, logout, login, getUser } from '$lib/stores/User';
   import { KeyboardNavigation } from '$lib/utilities/KeyNavigation';
 
   const modalStore = getModalStore();
+  const toastStore = getToastStore();
 
   const routes = [
     { path: '/users', text: 'Users' },
@@ -37,6 +38,17 @@
         Enter: () => navLinks[index].click(),
       }),
     });
+
+    if (sessionStorage.getItem('token')) {
+      getUser().catch((e) => {
+        console.error(e);
+        toastStore.trigger({
+          message:
+            'An error occured while validating your token. Please try again later. If this problem persists, please contact an administrator.',
+          background: 'variant-filled-error',
+        });
+      });
+    }
   });
 
   function getId({ path, id }: { path: string; id?: string; text: string }) {
@@ -48,15 +60,25 @@
     goto('/');
   }
 
+  async function loginUser(resp: string) {
+    await login(resp).catch((e) => {
+      console.log(e);
+      toastStore.trigger({
+        message:
+          'An error occured while validating your token. Please try again later. If this problem persists, please contact an administrator.',
+        background: 'variant-filled-error',
+      });
+    });
+  }
+
   function handleLogin() {
-    const modal: ModalSettings = {
+    modalStore.trigger({
       type: 'prompt',
       title: 'Enter Long Term Token',
       body: 'Provide your long term token below.',
       valueAttr: { type: 'text', required: true, placeholder: 'Enter token here...' },
-      response: (r: string) => login(r),
-    };
-    modalStore.trigger(modal);
+      response: (resp: string) => resp && loginUser(resp),
+    });
   }
 </script>
 

@@ -1,11 +1,5 @@
 <script lang="ts">
-  import {
-    type ToastSettings,
-    type ModalSettings,
-    getModalStore,
-    getToastStore,
-    ProgressRadial,
-  } from '@skeletonlabs/skeleton';
+  import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
   import CopyButton from './CopyButton.svelte';
   import ErrorAlert from './ErrorAlert.svelte';
   import { user, getUser, refreshToken as refresh } from '$lib/stores/User';
@@ -41,13 +35,12 @@
   }
 
   function confirmRefreshToken() {
-    const modal: ModalSettings = {
+    modalStore.trigger({
       type: 'confirm',
       title: 'Please Confirm',
       body: 'Are you sure you wish to invalidate your old token and create a new one?',
       response: (r: boolean) => r && refreshToken(),
-    };
-    modalStore.trigger(modal);
+    });
   }
 
   function extractExperationDate(token: string) {
@@ -56,30 +49,27 @@
       return JSON.parse(atob(token.split('.')[1])).exp * 1000;
     } catch (error) {
       console.error(error);
-      const extractExperationDateErrorToast: ToastSettings = {
+      toastStore.trigger({
         message:
           'An error occured while parsing your token. Please try again later. If this problem persists, please contact an administrator.',
         background: 'variant-filled-error',
-      };
-      toastStore.trigger(extractExperationDateErrorToast);
+      });
       return 0; //TODO: Handle errors
     }
   }
 
   async function refreshToken() {
-    const refreshSuccess = await refresh();
-    if (refreshSuccess) {
-      refreshButtonText = 'Refreshed!';
-      refreshButtonDisabled = true;
-    } else {
-      const refreshErrorToast: ToastSettings = {
+    await refresh().catch((e) => {
+      console.log(e);
+      toastStore.trigger({
         message:
           'An error occured while refreshing your token. Please try again later. If this problem persists, please contact an administrator.',
         background: 'variant-filled-error',
-      };
-      toastStore.trigger(refreshErrorToast);
+      });
       refreshButtonText = 'Error';
-    }
+    });
+    refreshButtonText = 'Refreshed!';
+    refreshButtonDisabled = true;
   }
 
   function revealToken() {
