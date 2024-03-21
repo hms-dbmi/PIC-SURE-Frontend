@@ -29,11 +29,9 @@ async function send({
     }
   }
 
-  console.debug('fetching', `${window.location.origin}/${path}`, opts);
   const res = await fetch(`${window.location.origin}/${path}`, opts);
   if (res.ok || res.status === 422) {
     const text = await res.text();
-    console.log('text', text);
     try {
       return JSON.parse(text);
     } catch (e) {

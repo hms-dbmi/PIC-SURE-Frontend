@@ -24,7 +24,7 @@
     data-testid={`dataset-action-restore-${data.cell}`}
     type="button"
     class="btn bg-secondary-500 text-on-secondary-token loader"
-    on:click={toggleArchive}><i class="fa-solid fa-circle-notch fa-spin mr-1" /> Restore</button
+    on:click={toggleArchive}>Restore</button
   >
 {:else}
   <a
@@ -37,6 +37,6 @@
     data-testid={`dataset-action-archive-${data.cell}`}
     type="button"
     class="btn bg-secondary-500 text-on-secondary-token loader"
-    on:click={toggleArchive}><i class="fa-solid fa-circle-notch fa-spin mr-1" /> Archive</button
+    on:click={toggleArchive}>Archive</button
   >
 {/if}

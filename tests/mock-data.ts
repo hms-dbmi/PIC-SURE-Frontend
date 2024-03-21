@@ -1,5 +1,3 @@
-import type { User } from '$lib/models/User';
-
 export const datasets = [
   {
     // Active
@@ -25,14 +23,14 @@ export const datasets = [
   },
 ];
 
-export const user: User = {
+export const user = {
   uuid: '1234',
   email: 'test@pic-sure.org',
   privileges: ['user'],
   roles: ['user'],
   // expired token
   token:
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjoxNjEyMTY0OTgyLCJpYXQiOjE2MDk1NzI5ODJ9.wzXW7OBk0crFFGD2j9avij-sfWpcIvruSj55j2-oXxo',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6MTYxMjE2NDk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.kzaW-ZkhCPlTgdGQQAz_CA1ZB80PpZ5aiRa2lj46hbw',
   acceptedTOS: true,
 };
 

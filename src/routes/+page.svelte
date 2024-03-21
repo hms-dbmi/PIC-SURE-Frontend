@@ -110,7 +110,6 @@
   #landing #search-section p {
     max-width: 50rem;
     margin: 1rem 0;
-    color: grey;
   }
 
   #landing section#search-section {

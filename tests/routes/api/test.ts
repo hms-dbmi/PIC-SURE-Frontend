@@ -4,7 +4,7 @@ import { branding } from '../../../src/lib/configuration';
 import { user as mockUser } from '../../../tests/mock-data';
 
 const placeHolderDots =
-  '•••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
+  '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
 
 test.describe('API page', () => {
   test('Has expected error message', async ({ page }) => {
@@ -19,9 +19,6 @@ test.describe('API page', () => {
   branding.apiPage.cards.forEach((card) => {
     test(`Has expect card, ${card.header} from branding`, async ({ page }) => {
       // Given
-      await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
-        route.fulfill({ json: mockUser }),
-      );
       await page.goto('/api');
       // When
       const cardTitle = page.getByText(card.header);
@@ -33,9 +30,6 @@ test.describe('API page', () => {
   });
   test('Has expected content', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
-      route.fulfill({ json: mockUser }),
-    );
     await page.goto('/api');
 
     // When
@@ -46,9 +40,6 @@ test.describe('API page', () => {
   });
   test('Has expected badge and expiration', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
-      route.fulfill({ json: mockUser }),
-    );
     await page.goto('/api');
     // When
     const expires = page.locator('#expires');
@@ -62,9 +53,6 @@ test.describe('API page', () => {
   });
   test(`User account matches expected email of ${mockUser.email}`, async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
-      route.fulfill({ json: mockUser }),
-    );
     await page.goto('/api');
     // When
     const userEmail = page.locator('#account');
@@ -74,9 +62,6 @@ test.describe('API page', () => {
   });
   test('Token is hidden by default', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
-      route.fulfill({ json: mockUser }),
-    );
     await page.goto('/api');
     // When
     const userToken = page.locator('#token');
@@ -86,9 +71,6 @@ test.describe('API page', () => {
   });
   test('Buttons are displayed', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
-      route.fulfill({ json: mockUser }),
-    );
     await page.goto('/api');
     // When
     const copyButton = page.getByTestId('copy-button');
@@ -101,9 +83,6 @@ test.describe('API page', () => {
   });
   test('Copy button copies token to clipboard', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
-      route.fulfill({ json: mockUser }),
-    );
     await page.goto('/api');
 
     // When
@@ -122,9 +101,6 @@ test.describe('API page', () => {
   });
   test('Token is visible when reveal button is clicked', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
-      route.fulfill({ json: mockUser }),
-    );
     await page.goto('/api');
     // When
     const revealButton = page.locator('#reveal-button');
@@ -136,9 +112,6 @@ test.describe('API page', () => {
   });
   test('Reveal button text changes when clicked', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
-      route.fulfill({ json: mockUser }),
-    );
     await page.goto('/api');
     // When
     const revealButton = page.locator('#reveal-button');
@@ -148,9 +121,6 @@ test.describe('API page', () => {
   });
   test('Refresh button changes token', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
-      route.fulfill({ json: mockUser }),
-    );
     await page.goto('/api');
     // When
     const refreshButton = page.locator('#refresh-button');
@@ -163,9 +133,6 @@ test.describe('API page', () => {
     page,
   }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
-      route.fulfill({ json: mockUser }),
-    );
     await page.route('*/**/psama/user/me/refresh_long_term_token', (route: Route) =>
       route.fulfill({ json: { userLongTermToken: 'new longterm token' } }),
     );
@@ -190,9 +157,6 @@ test.describe('API page', () => {
   });
   test('Canceling confirm modal does nothing to user', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) =>
-      route.fulfill({ json: mockUser }),
-    );
     await page.route('*/**/psama/user/me/refresh_long_term_token', (route: Route) =>
       route.fulfill({ json: { userLongTermToken: 'new longterm token' } }),
     );

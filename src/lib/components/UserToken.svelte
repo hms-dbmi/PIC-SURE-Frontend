@@ -1,35 +1,24 @@
 <script lang="ts">
-  import {
-    type ToastSettings,
-    type ModalSettings,
-    getModalStore,
-    getToastStore,
-    ProgressRadial,
-  } from '@skeletonlabs/skeleton';
-  import * as api from '$lib/api';
-  import type { User } from '../models/User';
+  import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
   import CopyButton from './CopyButton.svelte';
   import ErrorAlert from './ErrorAlert.svelte';
+  import { user, getUser, refreshToken as refresh } from '$lib/stores/User';
 
-  type LongTermTokenResponse = {
-    userLongTermToken: string;
-  };
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
   let account = '';
   let placeHolderToken =
-    '•••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
+    '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
   let revealed = false;
   let refreshButtonDisabled = false;
   let refreshButtonText = 'Refresh';
-  let user: User;
 
-  $: displayedToken = revealed ? user?.token : placeHolderToken;
+  $: displayedToken = revealed ? $user?.token : placeHolderToken;
   $: revealButtonText = revealed ? 'Hide' : 'Reveal';
-  $: expires = user && user.token ? extractExperationDate(user.token) : 0;
+  $: expires = $user && $user.token ? extractExperationDate($user.token) : 0;
   $: badge = expires && checkIfExpired();
-  $: account = user?.email || 'There was an error retrieving your account.';
+  $: account = $user?.email || 'There was an error retrieving your account.';
 
   function checkIfExpired() {
     if (!expires || expires === 0) {
@@ -46,13 +35,12 @@
   }
 
   function confirmRefreshToken() {
-    const modal: ModalSettings = {
+    modalStore.trigger({
       type: 'confirm',
       title: 'Please Confirm',
       body: 'Are you sure you wish to invalidate your old token and create a new one?',
       response: (r: boolean) => r && refreshToken(),
-    };
-    modalStore.trigger(modal);
+    });
   }
 
   function extractExperationDate(token: string) {
@@ -61,40 +49,25 @@
       return JSON.parse(atob(token.split('.')[1])).exp * 1000;
     } catch (error) {
       console.error(error);
-      const extractExperationDateErrorToast: ToastSettings = {
+      toastStore.trigger({
         message:
           'An error occured while parsing your token. Please try again later. If this problem persists, please contact an administrator.',
         background: 'variant-filled-error',
-      };
-      toastStore.trigger(extractExperationDateErrorToast);
+      });
       return 0; //TODO: Handle errors
     }
   }
 
-  async function getUser(): Promise<User> {
-    return await api.get('/psama/user/me?hasToken').then((response: User) => {
-      user = response;
-      return response;
-    });
-  }
-
   async function refreshToken() {
-    const newLongTermToken = await api
-      .get('/psama/user/me/refresh_long_term_token')
-      .then((response: LongTermTokenResponse) => {
-        return response.userLongTermToken;
-      });
-    if (!newLongTermToken) {
-      refreshButtonText = 'Error';
-      const refreshErrorToast: ToastSettings = {
+    await refresh().catch((e) => {
+      console.log(e);
+      toastStore.trigger({
         message:
           'An error occured while refreshing your token. Please try again later. If this problem persists, please contact an administrator.',
         background: 'variant-filled-error',
-      };
-      toastStore.trigger(refreshErrorToast);
-      return;
-    }
-    user.token = newLongTermToken;
+      });
+      refreshButtonText = 'Error';
+    });
     refreshButtonText = 'Refreshed!';
     refreshButtonDisabled = true;
   }
@@ -105,7 +78,7 @@
 </script>
 
 <div id="user-token-container">
-  {#await getUser()}
+  {#await getUser(true)}
     <ProgressRadial width="w-10" value={undefined} />
   {:then}
     <div id="user-token" class="card variant-filled-sureface">
@@ -130,7 +103,7 @@
       <footer class="card-footer">
         <CopyButton
           buttonText="Copy"
-          itemToCopy={user.token || ''}
+          itemToCopy={$user.token || ''}
           classes={['variant-ringed-primary']}
         />
         <button
