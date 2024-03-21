@@ -89,10 +89,7 @@
     </a>
   </svelte:fragment>
   <svelte:fragment slot="trail">
-    <nav
-      id="page-navigation"
-      bind:this={navContainer}
-    >
+    <nav id="page-navigation" bind:this={navContainer}>
       <ul>
         {#each routes as route, index}
           <li>
@@ -101,6 +98,7 @@
               id={getId(route)}
               href={route.path}
               bind:this={navLinks[index]}
+              on:keydown={(e) => navigation.handleKeydown(e, index)}
               aria-current={$page.url.pathname === route.path ? 'page' : undefined}>{route.text}</a
             >
           </li>

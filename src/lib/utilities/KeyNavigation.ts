@@ -22,12 +22,12 @@ export class KeyboardNavigation {
 
     this.parentContainer.addEventListener('focusin', (e) => this.navFocus(e));
     this.parentContainer.addEventListener('focusout', (e) => this.navFocus(e));
-    this.keys.elements.forEach((element, index) => {
-      element.addEventListener('mousedown', (e) => e.preventDefault())
-
+    this.keys.elements.forEach((element) => {
       // Prevent focus on parent element when clicked. By default, mousedown event fires a focus event,
       // which also fires parent focus events-- click event on links are still processed as normal.
-      element.addEventListener('keydown', (e) => this.handleKeydown(e, index))
+      element.addEventListener('mousedown', (e) => e.preventDefault());
+
+      // element.addEventListener('keydown', (e) => this.handleKeydown(e, index));
     });
   }
 
