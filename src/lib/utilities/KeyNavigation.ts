@@ -1,6 +1,6 @@
 export type NavigationKeys = {
   scope: string[];
-  getElement(index: number): HTMLElement;
+  elements: HTMLElement[];
   focusKeys: (index: number) => {
     [key: string]: HTMLElement;
   };
@@ -19,19 +19,32 @@ export class KeyboardNavigation {
     this.keys = keys;
     this.scopedKeys = [...keys.charFocusKeys, ...keys.scope];
     this.parentContainer = container;
+
+    this.parentContainer.addEventListener('focusin', (e) => this.navFocus(e));
+    this.parentContainer.addEventListener('focusout', (e) => this.navFocus(e));
+    this.keys.elements.forEach((element, index) => {
+      element.addEventListener('mousedown', (e) => e.preventDefault())
+
+      // Prevent focus on parent element when clicked. By default, mousedown event fires a focus event,
+      // which also fires parent focus events-- click event on links are still processed as normal.
+      element.addEventListener('keydown', (e) => this.handleKeydown(e, index))
+    });
   }
 
-  navFocus(shouldFocus: boolean) {
-    if (shouldFocus) {
+  getElement(index: number) {
+    return this.keys.elements[index];
+  }
+
+  navFocus(event: FocusEvent) {
+    if (event.type === 'focusin') {
       this.parentContainer.classList.add('key-focus');
-    } else {
+    } else if (event.type === 'focusout') {
       this.parentContainer.classList.remove('key-focus');
     }
   }
 
   updateNavItemFocus(element: HTMLElement) {
     element.focus();
-    this.navFocus(true);
   }
 
   characterElement(char: string, index: number) {
@@ -56,7 +69,7 @@ export class KeyboardNavigation {
     e.preventDefault();
 
     if (this.keys.charFocusKeys.includes(e.key)) {
-      const charElement = this.keys.getElement(this.characterElement(e.key, index));
+      const charElement = this.getElement(this.characterElement(e.key, index));
       this.updateNavItemFocus(charElement);
     }
 
