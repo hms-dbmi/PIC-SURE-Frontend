@@ -38,7 +38,7 @@
   onMount(() => {
     navigation = new KeyboardNavigation(container, {
       scope: ['+', '-', ' ', 'Enter', 'ArrowLeft', 'ArrowRight'],
-      getElement: (index: number) => checkboxes[index],
+      elements: checkboxes,
       focusKeys: (index: number) => ({
         ArrowLeft: checkboxes[(index + checkboxes.length - 1) % checkboxes.length],
         ArrowRight: checkboxes[(index + 1) % checkboxes.length],
@@ -60,8 +60,6 @@
   class="flex checkboxes"
   data-testid={`tag-${elementId}`}
   bind:this={container}
-  on:focusin={() => navigation.navFocus(true)}
-  on:focusout={() => navigation.navFocus(false)}
   aria-label={`${tag} ${type}${
     state !== TagCheckbox.Default ? ' is ' + state + 'ed' : ''
   }. Press plus key to include only search results having this tag. Press the minus key to exclude all search results having this tag.`}

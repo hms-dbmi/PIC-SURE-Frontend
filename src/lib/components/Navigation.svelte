@@ -25,7 +25,7 @@
   onMount(() => {
     navigation = new KeyboardNavigation(navContainer, {
       scope: [' ', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'],
-      getElement: (index: number) => navLinks[index],
+      elements: navLinks,
       focusKeys: (index: number) => ({
         ArrowLeft: navLinks[(index + navLinks.length - 1) % navLinks.length],
         ArrowRight: navLinks[(index + 1) % navLinks.length],
@@ -89,12 +89,7 @@
     </a>
   </svelte:fragment>
   <svelte:fragment slot="trail">
-    <nav
-      id="page-navigation"
-      bind:this={navContainer}
-      on:focusin={() => navigation.navFocus(true)}
-      on:focusout={() => navigation.navFocus(false)}
-    >
+    <nav id="page-navigation" bind:this={navContainer}>
       <ul>
         {#each routes as route, index}
           <li>
