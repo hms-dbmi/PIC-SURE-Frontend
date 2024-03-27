@@ -8,7 +8,7 @@ export const user: Writable<User> = writable({});
 
 export async function getUser(force?: boolean) {
   if (force || !get(user)?.privileges) {
-    const res = await api.get('psama/user/me?hasToken').then((res) => res);
+    const res = await api.get('psama/user/me?hasToken');
     user.set(res);
   }
 }

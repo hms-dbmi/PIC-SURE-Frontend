@@ -19,6 +19,7 @@
 
   // Parameters
   export let search = false;
+  export let title = '';
   export let defaultRowsPerPage = 5;
   export let columns: Column[] = [];
   export let cellOverides: Indexable = {};
@@ -31,9 +32,18 @@
 </script>
 
 <div class="overflow-x-auto space-y-4">
-  {#if search}
+  {#if title || search}
     <header class="flex justify-between gap-4">
-      <Search {handler} />
+      {#if title}
+        <div class="flex-auto">
+          <h2>{title}</h2>
+        </div>
+      {/if}
+      {#if search}
+        <div class="flex-none">
+          <Search {handler} />
+        </div>
+      {/if}
     </header>
   {/if}
   <table class="table table-hover table-compact w-full table-auto align-middle">
