@@ -11,7 +11,7 @@ import {
 
 test.describe('navigation', () => {
   const routes = [
-    { path: '/users', id: 'nav-link-users' },
+    { path: '/user', id: 'nav-link-user' },
     {
       path: '/explorer',
       id: 'nav-link-explorer',
