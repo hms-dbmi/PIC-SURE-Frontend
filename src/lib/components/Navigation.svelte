@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { AppBar, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+  import {
+    AppBar,
+    getModalStore,
+    getToastStore,
+    popup,
+    type PopupSettings,
+  } from '@skeletonlabs/skeleton';
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
@@ -62,13 +68,13 @@
 
   async function loginUser(resp: string) {
     await login(resp).catch((e) => {
-        console.log(e);
-        toastStore.trigger({
-          message:
-            'An error occured while validating your token. Please try again later. If this problem persists, please contact an administrator.',
-          background: 'variant-filled-error',
-        });
+      console.log(e);
+      toastStore.trigger({
+        message:
+          'An error occured while validating your token. Please try again later. If this problem persists, please contact an administrator.',
+        background: 'variant-filled-error',
       });
+    });
   }
 
   function handleLogin() {
@@ -80,6 +86,12 @@
       response: (resp: string) => resp && loginUser(resp),
     });
   }
+
+  const logoutClick: PopupSettings = {
+    event: 'click',
+    target: 'logoutClick',
+    placement: 'bottom',
+  };
 </script>
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50">
@@ -105,24 +117,40 @@
         {/each}
       </ul>
     </nav>
-    <div>
-      <button
-        id="user-session-btn"
-        title={$user.email ? 'Logout user ' + $user.email : 'Login'}
-        on:click={$user.privileges ? handleLogout : handleLogin}
-      >
-        <span
-          class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ringed-surface hover:variant-ghost-secondary w-16 rounded-full text-2xl"
-        >
-          {#if $user.privileges && $user.email}
+    <div id="user-session-avatar">
+      {#if $user.privileges && $user.email}
+        <!-- Logout -->
+        <button id="user-session-popout" use:popup={logoutClick}>
+          <span
+            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ghost-primary hover:variant-ghost-secondary w-16 rounded-full text-2xl"
+          >
             {$user.email[0].toUpperCase()}
-            <span class="sr-only">Loggout user {$user.email}</span>
-          {:else}
+            <span class="sr-only">Logout user {$user.email}</span>
+          </span>
+        </button>
+        <div
+          class="card p-6 variant-surface border-surface-100-800-token text-center"
+          data-popup="logoutClick"
+        >
+          <p class="pb-6">{$user.email}</p>
+          <button
+            id="user-logout-btn"
+            class="btn variant-ringed-primary"
+            title="Logout"
+            on:click={handleLogout}>Logout</button
+          >
+        </div>
+      {:else}
+        <!-- Login -->
+        <button id="user-login-btn" title="Login" on:click={handleLogin}>
+          <span
+            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ringed-surface hover:variant-ghost-secondary w-16 rounded-full text-2xl"
+          >
             <i class="fa-solid fa-user fa-lg"></i>
             <span class="sr-only">Login</span>
-          {/if}
-        </span>
-      </button>
+          </span>
+        </button>
+      {/if}
     </div>
   </svelte:fragment>
 </AppBar>
