@@ -178,22 +178,27 @@ test.describe('navigation', () => {
       await expect(page.locator('#' + routes[2].id)).toBeFocused();
     });
   });
-  test('Logout button should reflect correct user initial', async ({ page }) => {
+  test('Session avatar should reflect correct user initial after login', async ({ page }) => {
     // Given
     await page.goto('/');
 
     // Then
-    await expect(page.locator('#user-session-btn')).toContainText(
-      `${mockUser.email[0].toUpperCase()} Loggout`,
+    await expect(page.locator('#user-session-avatar')).toContainText(
+      `${mockUser.email[0].toUpperCase()} Logout`,
     );
   });
-  test('Login button should not have user initial', async ({ page }) => {
+  test('Session avatar should not have user initial after logout', async ({ page }) => {
     // Given
     await page.goto('/');
-    const logoutButton = page.locator('#user-session-btn');
+
+    // When
+    const popoutButton = page.locator('#user-session-popout');
+    await popoutButton.click();
+
+    const logoutButton = page.locator('#user-logout-btn');
     await logoutButton.click();
 
     // Then
-    await expect(page.locator('#user-session-btn')).toContainText('Login');
+    await expect(page.locator('#user-session-avatar')).toContainText('Login');
   });
 });

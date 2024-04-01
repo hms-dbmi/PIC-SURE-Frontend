@@ -47,7 +47,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@floating-ui/dom": "1.5.3",
+    "@floating-ui/dom": "^1.5.3",
     "@fortawesome/fontawesome-free": "^6.5.1",
     "@vincjo/datatables": "^1.14.5",
     "dotenv": "^16.3.1",
