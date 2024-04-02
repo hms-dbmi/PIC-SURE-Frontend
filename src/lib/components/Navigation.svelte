@@ -62,13 +62,13 @@
 
   async function loginUser(resp: string) {
     await login(resp).catch((e) => {
-        console.log(e);
-        toastStore.trigger({
-          message:
-            'An error occured while validating your token. Please try again later. If this problem persists, please contact an administrator.',
-          background: 'variant-filled-error',
-        });
+      console.log(e);
+      toastStore.trigger({
+        message:
+          'An error occured while validating your token. Please try again later. If this problem persists, please contact an administrator.',
+        background: 'variant-filled-error',
       });
+    });
   }
 
   function handleLogin() {

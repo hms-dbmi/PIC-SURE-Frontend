@@ -9,7 +9,11 @@
   </section>
   <section id="info-cards" class="w-full flex flex-wrap flex-row justify-between mt-6">
     {#each branding.apiPage.cards as card}
-      <a href={card.link} target="_blank" class="pic-sure-info-card basis-2/4">
+      <a
+        href={card.link}
+        target={card.link.startsWith('http') ? '_blank' : '_self'}
+        class="pic-sure-info-card basis-2/4"
+      >
         <div class="card card-hover">
           <header class="card-header flex flex-col items-center">
             <h4 class="my-1" data-testid={card.header}>{card.header}</h4>
