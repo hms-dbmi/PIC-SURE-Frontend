@@ -5,7 +5,7 @@ export const branding = {
       {
         header: 'What is the PIC‑SURE API?',
         body: 'The PIC-SURE Application Programming Interface allows you to search, query, and export data using Python or R. \n\nClick this card to read more about the PIC-SURE API.',
-        link: 'https://pic-sure.org/about',
+        link: '/api/help',
       },
       {
         header: 'PIC‑SURE API Examples',
