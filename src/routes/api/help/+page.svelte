@@ -99,7 +99,7 @@
     </div>
   </div>
 
-  <div class="text-right mt-2 mb-6">
+  <div class="text-right my-6">
     <a class="btn btn-lg variant-ringed-primary" href="/api/start">
       Get started using the PIC-Sure API <i class="fa-solid fa-angles-right ml-1 text-primary-500"
       ></i>
