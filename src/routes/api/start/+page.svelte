@@ -4,8 +4,9 @@
 
 <Content>
   <div class="mb-8 text-center">
-    <a class="btn btn-sm variant-ringed-primary float-left mr-2" href="/api/help">
-      <i class="fa-solid fa-angles-left mr-1 text-primary-500"></i>Back
+    <a class="float-left mr-2 text-primary-500" href="/api/help">
+      <i class="btn btn-sm variant-ringed-primary fa-solid fa-angles-left mr-3 text-primary-500"
+      ></i>Back
     </a>
     <h1>Get Started</h1>
   </div>
