@@ -5,6 +5,7 @@
   import '@fortawesome/fontawesome-free/css/all.min.css';
   import '../app.postcss';
   import Navigation from '$lib/components/Navigation.svelte';
+  import Footer from '$lib/components/Footer.svelte';
 
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
@@ -24,5 +25,7 @@
     <Navigation />
   </svelte:fragment>
   <slot />
-  <svelte:fragment slot="footer"></svelte:fragment>
+  <svelte:fragment slot="pageFooter">
+    <Footer />
+  </svelte:fragment>
 </AppShell>

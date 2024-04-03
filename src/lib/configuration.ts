@@ -1,5 +1,42 @@
 export const branding = {
   applicationName: 'PIC‑SURE',
+  sitemap: [
+    {
+      category: 'Explore PIC-Sure',
+      links: [
+        { title: 'User Guide', url: 'https://pic-sure.gitbook.io/pic-sure', newTab: true },
+        { title: 'Data Dashboard', url: '#' },
+      ],
+    },
+    {
+      category: 'About',
+      links: [
+        { title: 'Some link', url: '#' },
+        { title: 'Wow, another link', url: '#' },
+        { title: "You're probably crazy but, it's another link", url: '#' },
+        { title: "Yep, you're crazy", url: '#' },
+      ],
+    },
+  ],
+  footer: {
+    addSitemap: true,
+    links: [
+      {
+        title: 'Terms of Service',
+        url: '#',
+      },
+      {
+        title: 'Privacy Policy',
+        url: 'https://pic-sure.gitbook.io/pic-sure/privacy-policy',
+        newTab: true,
+      },
+      {
+        title: 'Contact Us',
+        url: 'https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5',
+        newTab: true,
+      },
+    ],
+  },
   apiPage: {
     cards: [
       {
