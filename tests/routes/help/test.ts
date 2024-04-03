@@ -5,7 +5,8 @@ test.describe('Help page', () => {
   branding.help.links.forEach(({ title }) => {
     test(`Has expected link to ${title}`, async ({ page }) => {
       await page.goto('/help');
-      await expect(page.getByText(title, { exact: true })).toBeVisible();
+
+      await expect(page.locator('.main-content').getByText(title, { exact: true })).toBeVisible();
     });
   });
 });
