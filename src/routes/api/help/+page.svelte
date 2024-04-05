@@ -113,13 +113,11 @@
   }
   h2 {
     font-size: 1.75em;
+    margin: 0 0 0.5em;
   }
   p {
     display: block;
     margin: 1em;
-  }
-  h2 {
-    margin: 0 0 0.5em;
   }
   .img-placeholder {
     width: 80%;
