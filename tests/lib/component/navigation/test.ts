@@ -11,6 +11,7 @@ import {
 
 test.describe('navigation', () => {
   const routes = [
+    { path: '/admin/super', id: 'nav-link-admin-super' },
     { path: '/user', id: 'nav-link-user' },
     {
       path: '/explorer',
@@ -175,7 +176,7 @@ test.describe('navigation', () => {
       await page.keyboard.press('a');
 
       // Then
-      await expect(page.locator('#' + routes[2].id)).toBeFocused();
+      await expect(page.locator('#' + routes[3].id)).toBeFocused();
     });
   });
   test('Session avatar should reflect correct user initial after login', async ({ page }) => {

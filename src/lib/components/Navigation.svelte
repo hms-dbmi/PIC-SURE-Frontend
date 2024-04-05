@@ -17,6 +17,7 @@
   const toastStore = getToastStore();
 
   const routes = [
+    { path: '/admin/super', text: 'Super Admin' },
     { path: '/user', text: 'User Management' },
     { path: '/explorer', text: 'Explorer' },
     { path: '/api', text: 'API' },
