@@ -1,5 +1,5 @@
 # Step 1: Build the app with node
-FROM node:20.9.0-alpine3.18 AS builder
+FROM node:21.7.2-alpine3.18 AS builder
 WORKDIR /app
 COPY package*.json .
 RUN npm ci
