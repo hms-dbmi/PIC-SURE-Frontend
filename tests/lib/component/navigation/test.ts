@@ -72,111 +72,31 @@ test.describe('navigation', () => {
     await expect(page.locator('#page-navigation')).not.toBeVisible();
   });
   test.describe('Keyboard navigation', () => {
-    test('Gives visual indicator of focus to parent container', async ({ page }) => {
+    test('Pressing Enter on a dropdown item opens dropdown', async ({ page }) => {
       // Given
       await page.goto('/');
-      const logoLink = page.getByTestId('logo-home-link');
-      await logoLink.focus();
+      const dropdown = page.locator('#page-navigation .has-dropdown').first();
 
       // When
-      await page.keyboard.press('Tab');
-
-      // Then
-      await expect(page.locator('#page-navigation')).toHaveClass(/key-focus/);
-    });
-    test('Can move between links with right arrow', async ({ page }) => {
-      // Given
-      await page.goto('/');
-      const logoLink = page.getByTestId('logo-home-link');
-      await logoLink.focus();
-      await page.keyboard.press('Tab');
-
-      // When
-      await page.keyboard.press('ArrowRight');
-      await page.keyboard.press('ArrowRight');
-
-      await expect(page.locator('#' + routes[2].id)).toBeFocused();
-    });
-    test('Can move between links with left arrow', async ({ page }) => {
-      // Given
-      await page.goto('/');
-      const logoLink = page.getByTestId('logo-home-link');
-      await logoLink.focus();
-      await page.keyboard.press('Tab');
-
-      // When
-      await page.keyboard.press('ArrowLeft');
-      await page.keyboard.press('ArrowLeft');
-
-      // Then
-      await expect(page.locator('#' + routes[routes.length - 2].id)).toBeFocused();
-    });
-    test('Can move to last link with End key', async ({ page }) => {
-      // Given
-      await page.goto('/');
-      const logoLink = page.getByTestId('logo-home-link');
-      await logoLink.focus();
-      await page.keyboard.press('Tab');
-
-      // When
-      await page.keyboard.press('End');
-
-      await expect(page.locator('#' + routes[routes.length - 1].id)).toBeFocused();
-    });
-    test('Can move to first link with Home key', async ({ page }) => {
-      // Given
-      await page.goto('/');
-      const logoLink = page.getByTestId('logo-home-link');
-      await logoLink.focus();
-      await page.keyboard.press('Tab');
-
-      // When
-      await page.keyboard.press('ArrowLeft');
-      await expect(page.locator('#' + routes[routes.length - 1].id)).toBeFocused();
-      await page.keyboard.press('Home');
-
-      await expect(page.locator('#' + routes[0].id)).toBeFocused();
-    });
-    test('Can select link with Space key', async ({ page }) => {
-      // Given
-      await page.goto('/');
-      const logoLink = page.getByTestId('logo-home-link');
-      await logoLink.focus();
-      await page.keyboard.press('Tab');
-
-      // When
-      await page.keyboard.press(' ');
-
-      // Then
-      await expect(page).toHaveURL(routes[0].path);
-    });
-    test('Can select link with Enter key', async ({ page }) => {
-      // Given
-      await page.goto('/');
-      const logoLink = page.getByTestId('logo-home-link');
-      await logoLink.focus();
-      await page.keyboard.press('Tab');
-
-      // When
+      await dropdown.locator('a').first().focus();
       await page.keyboard.press('Enter');
 
       // Then
-      await expect(page).toHaveURL(routes[0].path);
+      await expect(dropdown.locator('.nav-dropdown')).toBeVisible();
     });
-    test('Pressing first char of link text should move focus directly to link', async ({
-      page,
-    }) => {
+    test('Can navigate to dropdown child', async ({ page }) => {
       // Given
       await page.goto('/');
-      const logoLink = page.getByTestId('logo-home-link');
-      await logoLink.focus();
-      await page.keyboard.press('Tab');
+      const dropdown = page.locator('#page-navigation .has-dropdown').first();
+      await dropdown.locator('a').first().focus();
+      await page.keyboard.press('Enter');
 
       // When
-      await page.keyboard.press('a');
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Enter');
 
       // Then
-      await expect(page.locator('#' + routes[3].id)).toBeFocused();
+      await expect(page).not.toHaveURL('/');
     });
   });
   test('Session avatar should reflect correct user initial after login', async ({ page }) => {

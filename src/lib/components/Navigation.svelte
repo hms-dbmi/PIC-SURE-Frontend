@@ -11,41 +11,28 @@
   import { goto } from '$app/navigation';
   import logo from '$lib/assets/app-logo.png';
   import { user, logout, login, getUser } from '$lib/stores/User';
-  import { KeyboardNavigation } from '$lib/utilities/KeyNavigation';
 
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
   const routes = [
-    { path: '/admin/super', text: 'Super Admin' },
+    {
+      path: '/admin',
+      text: 'Configuration',
+      children: [
+        { path: '/admin/authorization', text: 'Authorization' },
+        { path: '/admin/authentication', text: 'Authentication' },
+      ],
+    },
     { path: '/user', text: 'User Management' },
     { path: '/explorer', text: 'Explorer' },
     { path: '/api', text: 'API' },
     { path: '/dataset', text: 'Dataset Management' },
     { path: '/help', text: 'Help' },
   ];
-
-  let navigation: KeyboardNavigation;
-  let navContainer: HTMLElement;
-  const navLinks: HTMLAnchorElement[] = [];
+  $: dropdownPath = '';
 
   onMount(() => {
-    navigation = new KeyboardNavigation(navContainer, {
-      scope: [' ', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'],
-      elements: navLinks,
-      focusKeys: (index: number) => ({
-        ArrowLeft: navLinks[(index + navLinks.length - 1) % navLinks.length],
-        ArrowRight: navLinks[(index + 1) % navLinks.length],
-        Home: navLinks[0],
-        End: navLinks[navLinks.length - 1],
-      }),
-      charFocusKeys: routes.map((route) => route.text[0].toLowerCase()),
-      actionKeys: (index: number) => ({
-        ' ': () => navLinks[index].click(),
-        Enter: () => navLinks[index].click(),
-      }),
-    });
-
     if (sessionStorage.getItem('token')) {
       getUser().catch((e) => {
         console.error(e);
@@ -58,9 +45,19 @@
     }
   });
 
+  function setDropdown(path: string) {
+    dropdownPath = path;
+  }
+
   function getId({ path, id }: { path: string; id?: string; text: string }) {
     return `nav-link` + (id ? `-` + id : path.replaceAll('/', '-'));
   }
+
+  const logoutClick: PopupSettings = {
+    event: 'click',
+    target: 'logoutClick',
+    placement: 'bottom',
+  };
 
   function handleLogout() {
     logout();
@@ -87,12 +84,6 @@
       response: (resp: string) => resp && loginUser(resp),
     });
   }
-
-  const logoutClick: PopupSettings = {
-    event: 'click',
-    target: 'logoutClick',
-    placement: 'bottom',
-  };
 </script>
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50">
@@ -101,23 +92,52 @@
       <img id="nav-logo" alt="PIC-Sure logo" src={logo} class="mx-1" />
     </a>
   </svelte:fragment>
-  <svelte:fragment slot="trail">
-    <nav id="page-navigation" bind:this={navContainer}>
-      <ul>
-        {#each routes as route, index}
-          <li>
+  <nav id="page-navigation">
+    <ul>
+      {#each routes as route}
+        {#if route.children && route.children.length > 0}
+          <li
+            class={`has-dropdown ${dropdownPath === route.path ? 'open' : ''}`}
+            on:mouseenter={() => setDropdown(route.path)}
+            on:mouseleave={() => setDropdown('')}
+            on:focus={() => setDropdown(route.path)}
+            on:blur={() => setDropdown('')}
+          >
             <a
-              tabindex={index === 0 ? 0 : -1}
+              class="nav-link"
               id={getId(route)}
               href={route.path}
-              bind:this={navLinks[index]}
-              on:keydown={(e) => navigation.handleKeydown(e, index)}
+              on:click={(e) => e.preventDefault()}
+              on:keydown={(e) => e.key === 'Enter' && setDropdown(dropdownPath ? '' : route.path)}
+              aria-expanded={dropdownPath === route.path}
+              aria-current={$page.url.pathname === route.path ? 'page' : undefined}>{route.text}</a
+            >
+            <ul
+              class="nav-dropdown"
+              style:visibility={dropdownPath === route.path ? 'visible' : 'hidden'}
+            >
+              {#each route.children as child}
+                <li>
+                  <a href={child.path}>{child.text}</a>
+                </li>
+              {/each}
+            </ul>
+          </li>
+        {:else}
+          <li>
+            <a
+              class="nav-link"
+              id={getId(route)}
+              href={route.path}
+              on:focus={() => setDropdown('')}
               aria-current={$page.url.pathname === route.path ? 'page' : undefined}>{route.text}</a
             >
           </li>
-        {/each}
-      </ul>
-    </nav>
+        {/if}
+      {/each}
+    </ul>
+  </nav>
+  <svelte:fragment slot="trail">
     <div id="user-session-avatar">
       {#if $user.privileges && $user.email}
         <!-- Logout -->
