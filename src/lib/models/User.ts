@@ -1,4 +1,4 @@
-import type { Role } from './Role';
+import { mapRole, type Role } from './Role';
 import type { Connection } from './Connection';
 
 export interface User {
@@ -15,3 +15,13 @@ export interface ExtendedUser extends User {
   active: boolean;
   roles: Role[];
 }
+
+// TODO: Replace metadata nad query types
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export function mapUser(data: any) {
+  return {
+    ...data,
+    roles: data.roles.map(mapRole),
+  };
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */

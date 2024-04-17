@@ -7,12 +7,16 @@ const _application = {
     uuid: 'a1234',
     name: 'PICSURE',
     description: 'PIC-SURE multiple data access API',
+    token: 'picsure-token',
+    url: '/picsureui',
     enable: true,
   },
   jupyter: {
     uuid: 'a2345',
     name: 'JupyterHub',
     description: 'JupyterHub authentication via PSAMA',
+    token: 'jupyterhub-token',
+    url: '/jupyterhub',
     enable: true,
   },
 };
@@ -23,12 +27,14 @@ const _privileges = {
     name: 'SUPER_ADMIN',
     description: 'PIC-SURE Auth super admin for managing roles/privileges/application/connections',
     queryScope: '[]',
+    application: undefined,
   },
   admin: {
     uuid: 'p2345',
     name: 'ADMIN',
     description: 'PIC-SURE Auth admin for managing users.',
     queryScope: '[]',
+    application: undefined,
   },
   anyQuery: {
     uuid: 'p3456',
@@ -45,6 +51,13 @@ const _privileges = {
     application: _application.jupyter,
   },
 };
+
+export const privileges = Object.values(_privileges);
+
+export const applications = [
+  { ..._application.picsure, privileges: [_privileges.anyQuery] },
+  { ..._application.jupyter, privileges: [_privileges.jupyter] },
+];
 
 const _roles = {
   topAdmin: {
