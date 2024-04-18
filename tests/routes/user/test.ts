@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { test } from '../../custom-context';
-import { users as mockUsers } from '../../../src/lib/stores/mock/Users';
+import { users as mockUsers } from '../../../src/lib/stores/mock/data';
 
 // TODO: Add api specific tests when api data is implemented
 test.describe('users', () => {

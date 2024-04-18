@@ -1,16 +1,17 @@
-export interface Role {
+export interface Privilege {
   uuid: string;
   name: string;
   description: string;
-  privileges: string[];
+  queryScope: string;
+  application: string;
 }
 
 // TODO: Replace any type
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export function mapRole(data: any) {
+export function mapPrivilege(data: any) {
   return {
     ...data,
-    privileges: data.privileges.map((p: any) => p.uuid) || [],
+    application: data.application?.uuid || '',
   };
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
