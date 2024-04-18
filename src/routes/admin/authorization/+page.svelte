@@ -2,6 +2,6 @@
   import Content from '$lib/components/Content.svelte';
 </script>
 
-<Content title="Super Admin">
-  <p>Sample page data for the super admin page.</p>
+<Content title="Authorization">
+  <p>Sample page data for the authorization page.</p>
 </Content>

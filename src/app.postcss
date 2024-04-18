@@ -170,40 +170,72 @@ nav#page-navigation {
   flex-flow: row wrap;
   align-items: stretch;
   justify-content: flex-end;
-  border: 2px solid rgb(var(--color-surface-50));
   padding: 0 0.6em;
   margin: 0 -0.6em 0;
-  @apply rounded-container-token;
 }
+
 nav#page-navigation ul {
   list-style-type: none;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
 }
 
 nav#page-navigation li {
   float: left;
+  margin: 0.6em 0.2em;
 }
 
-nav#page-navigation li a {
+nav#page-navigation li a.nav-link {
   font-size: 1.2em;
   display: flex;
   text-align: center;
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  margin: 0.6em 0.2em;
   height: 80px;
   width: 130px;
   @apply rounded-container-token;
 }
-nav#page-navigation a[aria-current='page'] {
+
+nav#page-navigation a.nav-link[aria-current='page'] {
   @apply variant-filled-secondary;
 }
-nav#page-navigation a:hover,
-nav#page-navigation a:active {
+
+nav#page-navigation a.nav-link:hover,
+nav#page-navigation a.nav-link:active,
+nav#page-navigation a.nav-link:focus,
+nav#page-navigation li.open a.nav-link {
   @apply variant-filled-primary;
+}
+
+nav#page-navigation li .nav-dropdown {
+  position: absolute;
+  top: calc(0.6em + 80px);
+  padding-bottom: var(--theme-rounded-container);
+  width: 130px;
+  @apply rounded-container-token bg-primary-300-600-token;
+}
+nav#page-navigation li .nav-dropdown li {
+  display: block;
+  width: 100%;
+  margin: 0;
+}
+
+nav#page-navigation li.open > .nav-dropdown {
+  border-radius: 0 0 var(--theme-rounded-container) var(--theme-rounded-container);
+}
+
+nav#page-navigation li.open a.nav-link {
+  border-radius: var(--theme-rounded-container) var(--theme-rounded-container) 0 0;
+}
+
+nav#page-navigation li .nav-dropdown a {
+  text-decoration: underline;
+  display: block;
+  text-align: center;
+  padding: 0.2em;
+}
+nav#page-navigation li .nav-dropdown a:hover,
+nav#page-navigation li .nav-dropdown a:focus {
+  @apply bg-secondary-300-600-token text-on-secondary-token;
 }
 
 #landing input[type='search'] {

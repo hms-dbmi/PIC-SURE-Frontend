@@ -39,6 +39,7 @@
     navigation = new KeyboardNavigation(container, {
       scope: ['+', '-', ' ', 'Enter', 'ArrowLeft', 'ArrowRight'],
       elements: checkboxes,
+      getElement: (index: number) => checkboxes[index],
       focusKeys: (index: number) => ({
         ArrowLeft: checkboxes[(index + checkboxes.length - 1) % checkboxes.length],
         ArrowRight: checkboxes[(index + 1) % checkboxes.length],
