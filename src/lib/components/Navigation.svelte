@@ -110,7 +110,9 @@
               on:click={(e) => e.preventDefault()}
               on:keydown={(e) => e.key === 'Enter' && setDropdown(dropdownPath ? '' : route.path)}
               aria-expanded={dropdownPath === route.path}
-              aria-current={$page.url.pathname === route.path ? 'page' : undefined}>{route.text}</a
+              aria-current={route.children.map((c) => c.path).includes($page.url.pathname)
+                ? 'page'
+                : undefined}>{route.text}</a
             >
             <ul
               class="nav-dropdown"

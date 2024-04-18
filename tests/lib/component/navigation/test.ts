@@ -11,7 +11,7 @@ import {
 
 test.describe('navigation', () => {
   const routes = [
-    { path: '/admin/super', id: 'nav-link-admin-super' },
+    { path: '/admin/authorization', id: 'nav-link-admin' },
     { path: '/user', id: 'nav-link-user' },
     {
       path: '/explorer',
