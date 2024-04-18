@@ -18,8 +18,8 @@
           }
           const value = await api.get(stat.valueSrc); //TODO: create endpoints
           return { value, title: stat.title } as Value;
-        } catch (e) {
-          console.error(e);
+        } catch (error) {
+          console.error(error);
           return { value: 'N/A', title: stat.title };
         }
       }),

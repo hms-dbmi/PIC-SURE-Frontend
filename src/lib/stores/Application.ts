@@ -1,24 +1,25 @@
 import { get, derived, writable, type Writable } from 'svelte/store';
 import { type Application } from '$lib/models/Applications';
 
-import { applications as mockApps } from './mock/data';
+import * as api from '$lib/api';
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
 const APP_URL = 'psama/application';
-/* eslint-enable @typescript-eslint/no-unused-vars */
 
+const loaded = writable(false);
 const applications: Writable<Application[]> = writable([]);
 const applicationList = derived(applications, ($a) => $a.map((a) => [a.name, a.uuid]));
 
-// TODO: Add api integration
 async function loadApplications() {
-  applications.set(mockApps);
+  if (get(loaded)) return;
+
+  const res = await api.get(APP_URL);
+  applications.set(res);
+  loaded.set(true);
 }
 
 function getApplication(uuid: string) {
   const store: Application[] = get(applications);
-  const appIndex: number = store.findIndex((a) => a.uuid === uuid);
-  return store[appIndex];
+  return store.find((a) => a.uuid === uuid);
 }
 
 export default {

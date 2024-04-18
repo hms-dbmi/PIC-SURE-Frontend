@@ -120,7 +120,9 @@
             >
               {#each route.children as child}
                 <li>
-                  <a href={child.path}>{child.text}</a>
+                  <a href={child.path} on:keydown={(e) => e.key === 'Enter' && setDropdown('')}
+                    >{child.text}</a
+                  >
                 </li>
               {/each}
             </ul>

@@ -1,11 +1,6 @@
-import { expect, type Route } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { test } from '../../../custom-context';
-import {
-  datasets as mockDatasets,
-  searchResults as mockSearchResults,
-  searchResultPath,
-  user as mockUser,
-} from '../../../mock-data';
+import { user as mockUser } from '../../../mock-data';
 
 // TODO: This should probably be moved to a component test, not an e2e/integration test.
 
@@ -13,25 +8,14 @@ test.describe('navigation', () => {
   const routes = [
     { path: '/admin/authorization', id: 'nav-link-admin' },
     { path: '/user', id: 'nav-link-user' },
-    {
-      path: '/explorer',
-      id: 'nav-link-explorer',
-      mock: { path: searchResultPath, data: mockSearchResults },
-    },
+    { path: '/explorer', id: 'nav-link-explorer' },
     { path: '/api', id: 'nav-link-api' },
-    {
-      path: '/dataset',
-      id: 'nav-link-dataset',
-      mock: { path: '*/**/picsure/dataset/named', data: mockDatasets },
-    },
+    { path: '/dataset', id: 'nav-link-dataset' },
     { path: '/help', id: 'nav-link-help' },
   ];
   routes.forEach((route, _index, routes) => {
     test(`Path ${route.path} navigation bar has correct active element`, async ({ page }) => {
       // Given
-      if (route.mock) {
-        await page.route(route.mock.path, (r: Route) => r.fulfill({ json: route.mock.data }));
-      }
       await page.goto(route.path);
 
       // Then

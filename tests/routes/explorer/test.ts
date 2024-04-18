@@ -1,5 +1,5 @@
 import { expect, type Route } from '@playwright/test';
-import { test } from '../../custom-context';
+import { test, mockApiFail } from '../../custom-context';
 import { searchResults as mockData, searchResultPath } from '../../mock-data';
 import { mapSearchResults, type SearchResult } from '../../../src/lib/models/Search';
 import { createCategoricalFilter, createNumericFilter } from '../../../src/lib/models/Filter';
@@ -21,7 +21,7 @@ test.describe('explorer', () => {
   });
   test('Error message on api error', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, (route: Route) => route.abort('accessdenied'));
+    await mockApiFail(page, searchResultPath, 'accessdenied');
     await page.goto('/explorer?search=somedata');
 
     // Then

@@ -1,11 +1,36 @@
-import { test as base, type Route } from '@playwright/test';
+import { test as base, type Route, type BrowserContext, type Page } from '@playwright/test';
 import { user as mockUser } from './mock-data';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function mockApiSuccess(context: BrowserContext | Page, path: string, json: any) {
+  return context.route(path, async (route: Route) => route.fulfill({ json }));
+}
+
+export function mockApiFail(
+  context: BrowserContext | Page,
+  path: string,
+  message:
+    | 'aborted'
+    | 'accessdenied'
+    | 'addressunreachable'
+    | 'blockedbyclient'
+    | 'blockedbyresponse'
+    | 'connectionaborted'
+    | 'connectionclosed'
+    | 'connectionfailed'
+    | 'connectionrefused'
+    | 'connectionreset'
+    | 'internetdisconnected'
+    | 'namenotresolved'
+    | 'timedout'
+    | 'failed',
+) {
+  return context.route(path, (route: Route) => route.abort(message));
+}
 
 export const test = base.extend({
   context: async ({ context }, use) => {
-    await context.route('*/**/psama/user/me?hasToken', (route: Route) =>
-      route.fulfill({ json: mockUser }),
-    );
+    await mockApiSuccess(context, '*/**/psama/user/me?hasToken', mockUser);
     await context.addInitScript(() => {
       sessionStorage.setItem(
         'token',

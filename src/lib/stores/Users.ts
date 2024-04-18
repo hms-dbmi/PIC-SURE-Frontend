@@ -1,25 +1,29 @@
-import { writable, type Writable } from 'svelte/store';
+import { get, writable, type Writable } from 'svelte/store';
+import { mapExtendedUser, type ExtendedUser } from '../models/User';
 
-import { users as mockUsers, connections as mockConns } from './mock/data';
-import { mapUser, type ExtendedUser } from '../models/User';
-import type { Connection } from '../models/Connection';
+import * as api from '$lib/api';
 
-// TODO: Break connections and roles out into different store files when working on super-admin page.
+const USER_URL = 'psama/user';
+
+const loaded = writable(false);
 export const users: Writable<ExtendedUser[]> = writable([]);
-export const connections: Writable<Connection[]> = writable([]);
 
-// TODO: Add api integration
-export async function getUsers() {
-  users.set(mockUsers.map(mapUser));
+export async function loadUsers() {
+  if (get(loaded)) return;
+
+  const res = await api.get(USER_URL);
+  users.set(res.map(mapExtendedUser));
+  loaded.set(true);
 }
 
-export async function getConnections() {
-  connections.set(mockConns);
+async function getUser(uuid: string) {
+  const store = get(users);
+  return store.find((u) => u.uuid === uuid);
 }
 
 export default {
+  subscribe: users.subscribe,
   users,
-  connections,
-  getUsers,
-  getConnections,
+  loadUsers,
+  getUser,
 };

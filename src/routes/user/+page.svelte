@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { derived, type Readable } from 'svelte/store';
-
+  import { derived, readable, type Readable } from 'svelte/store';
   import { ProgressBar } from '@skeletonlabs/skeleton';
+
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
@@ -9,7 +9,11 @@
   import Status from '$lib/components/user/cell/Status.svelte';
 
   import UsersStore from '$lib/stores/Users';
-  let { users, connections, getUsers, getConnections } = UsersStore;
+  import RolesStore from '$lib/stores/Roles';
+  import ConnectionStore from '$lib/stores/Connections';
+  let { users, loadUsers } = UsersStore;
+  let { connections, loadConnections } = ConnectionStore;
+  let { roles, loadRoles } = RolesStore;
 
   interface UserRow {
     uuid: string;
@@ -23,25 +27,7 @@
     users: UserRow[];
   }
 
-  const usersByConnection: Readable<Connection[]> = derived([users, connections], ([$u, $c]) => {
-    return $c.map((connection) => ({
-      label: connection.label,
-      users: $u
-        .filter((user) => connection.id === user.connection.id)
-        .map(
-          (row): UserRow => ({
-            uuid: row.uuid || '',
-            email: row.email || '',
-            roles: row.roles
-              .map((role: { name: string }) => role.name)
-              .sort()
-              .join(', '),
-            status: row.active ? 'Active' : 'Inactive',
-          }),
-        )
-        .sort((uA, uB) => uA.status.localeCompare(uB.status)),
-    }));
-  });
+  let usersByConnection: Readable<Connection[]> = readable([]);
 
   const columns = [
     { dataElement: 'email', label: 'Username', sort: true },
@@ -54,10 +40,38 @@
     status: Status,
     uuid: Actions,
   };
+
+  async function load() {
+    await loadConnections();
+    await loadRoles();
+    await loadUsers();
+    usersByConnection = derived([users, connections, roles], ([$u, $c, $r]) => {
+      return $c.map((connection) => ({
+        label: connection.label,
+        users: $u
+          .filter((user) => connection.uuid === user.connection)
+          .map(
+            (row): UserRow => ({
+              uuid: row.uuid,
+              email: row.email || 'uuid:' + row.uuid,
+              roles:
+                row.roles.length === 0
+                  ? 'none'
+                  : row.roles
+                      .map((role: string) => $r.find((r) => r.uuid === role)?.name)
+                      .sort()
+                      .join(', '),
+              status: row.active ? 'Active' : 'Inactive',
+            }),
+          )
+          .sort((uA, uB) => uA.status.localeCompare(uB.status)),
+      }));
+    });
+  }
 </script>
 
 <Content title="User Management">
-  {#await Promise.all([getConnections(), getUsers()])}
+  {#await load()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />
   {:then}

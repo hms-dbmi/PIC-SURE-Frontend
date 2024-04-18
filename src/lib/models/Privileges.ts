@@ -1,8 +1,8 @@
 export interface Privilege {
-  uuid: string;
+  uuid?: string;
   name: string;
   description: string;
-  queryScope: string;
+  queryScope?: string;
   application: string;
 }
 
