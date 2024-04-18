@@ -50,36 +50,3 @@ export const searchResults = {
     },
   },
 };
-
-export const privileges = [
-  {
-    uuid: 'p-abcd',
-    name: 'PRIV_ONE',
-    description: 'a privliege',
-    queryScope: '[]',
-    application: {
-      uuid: 'a-abcd',
-      name: 'ApplicationA',
-      description: 'Enabled application',
-      enable: true,
-    },
-  },
-  {
-    uuid: 'p-bcde',
-    name: 'PRIV_TWO',
-    description: 'privilege without application',
-    queryScope: '[]',
-  },
-  {
-    uuid: 'p-cdef',
-    name: 'PRIV_THREE',
-    description: 'a privilege',
-    queryScope: '[]',
-    application: {
-      uuid: 'p-cdef',
-      name: 'ApplicationB',
-      description: 'Disabled application',
-      enable: false,
-    },
-  },
-];

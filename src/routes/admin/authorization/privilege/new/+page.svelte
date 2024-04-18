@@ -4,20 +4,13 @@
   import PrivilegeForm from '$lib/components/admin/authorization/PrivilegeForm.svelte';
 
   import Content from '$lib/components/Content.svelte';
-  import PrivilegesStore from '$lib/stores/Privileges';
   import ApplicationStore from '$lib/stores/Application';
 
-  const { loadPrivileges } = PrivilegesStore;
   const { applicationList, loadApplications } = ApplicationStore;
-
-  async function load() {
-    await loadPrivileges();
-    await loadApplications();
-  }
 </script>
 
 <Content title="New Privilege">
-  {#await load()}
+  {#await loadApplications()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />
   {:then}
