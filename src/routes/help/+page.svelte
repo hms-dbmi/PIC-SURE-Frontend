@@ -3,6 +3,9 @@
   import { branding } from '$lib/configuration';
 </script>
 
+<svelte:head>
+  <title>{branding.applicationName} | Help</title>
+</svelte:head>
 <Content title="Knowledge Hub" subtitle="Self-service learning resources">
   <section
     id="info-cards"

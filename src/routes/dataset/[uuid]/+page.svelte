@@ -6,6 +6,7 @@
   import DataSetStore from '$lib/stores/Dataset';
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import { branding } from '$lib/configuration';
 
   const { getDataset } = DataSetStore;
 
@@ -15,6 +16,10 @@
     dataset = await getDataset($page.params.uuid);
   }
 </script>
+
+<svelte:head>
+  <title>{branding.applicationName} | Dataset</title>
+</svelte:head>
 
 <Content title="View Dataset">
   {#await loadDataset()}

@@ -4,6 +4,7 @@
   import type { Value } from '$lib/models/Value';
   import * as api from '$lib/api';
   import { goto } from '$app/navigation';
+  import Searchbox from '$lib/components/Searchbox.svelte';
 
   let values: Value[];
   let searchTerm = '';
@@ -30,30 +31,13 @@
   }
 </script>
 
+<svelte:head>
+  <title>{branding.applicationName}</title>
+</svelte:head>
+
 <div id="landing" class="landing">
   <section id="search-section" class="flex flex-col text-center items-center search-section">
-    <div class="flex w-full">
-      <input
-        id="search-box"
-        type="search"
-        autocomplete="off"
-        class="search-box"
-        aria-label="Type search terms here, use enter or the search button to submit search"
-        title="Type search terms here, use enter or the search button to submit search"
-        placeholder={branding.landing.searchPlaceholder || 'Search...'}
-        bind:value={searchTerm}
-        on:keydown={(e) => e.key === 'Enter' && search()}
-        required
-      />
-      <button
-        id="search-button"
-        class="btn variant-filled-primary search-button"
-        aria-label="Search"
-        title="Search"
-        disabled={!searchTerm}
-        on:click={search}>Search</button
-      >
-    </div>
+    <Searchbox placeholder={branding.landing.searchPlaceholder} bind:searchTerm {search} />
     <p>
       {branding.landing.description ||
         'PIC-SURE can be used to search phenotypic variables and genomic variants, apply filters, build cohorts, and export participant-level data.'}

@@ -8,8 +8,15 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
 
-  import FilterStore from '$lib/stores/Search';
-  let { tags, searchTerm, searchResults, search } = FilterStore;
+  import SearchStore from '$lib/stores/Search';
+  import { activeRow, activeComponent, expandableComponents } from '$lib/stores/ExpandableRow';
+  import AddFilterComponent from '$lib/components/explorer/AddFilter.svelte';
+  import ResultInfoComponent from '$lib/components/explorer/ResultInfoComponent.svelte';
+  import HierarchyComponent from '$lib/components/explorer/HierarchyComponent.svelte';
+  import type { SvelteComponent } from 'svelte';
+  import { branding } from '$lib/configuration';
+  import Searchbox from '$lib/components/Searchbox.svelte';
+  let { tags, searchTerm, searchResults, search } = SearchStore;
 
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
   let searchPromise: Promise<void> = search(searchInput);
@@ -24,12 +31,34 @@
     id: Actions,
   };
 
+  // TODO: Bug? Why not typeof SvelteComponent?
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const expandableComponentRegistry: Record<string, new (...args: any[]) => SvelteComponent> = {
+    filter: AddFilterComponent,
+    info: ResultInfoComponent,
+    hierarchy: HierarchyComponent,
+  };
+
+  let rowClickHandler = (index: number) => {
+    if ($activeRow === index) {
+      activeRow.set(-1);
+      return;
+    }
+    activeRow.set(index);
+    activeComponent.set($expandableComponents['info']);
+  };
+
+  expandableComponents.set(expandableComponentRegistry);
+
   function updateSearch() {
     goto(searchInput ? `/explorer?search=${searchInput}` : '/explorer', { replaceState: true });
     searchPromise = search(searchInput);
   }
 </script>
 
+<svelte:head>
+  <title>{branding.applicationName} | Explorer</title>
+</svelte:head>
 <Content full>
   {#await searchPromise}
     <h3 class="text-left">Loading</h3>
@@ -55,27 +84,9 @@
         {/if}
       </div>
       <div class="col-span-3">
-        <div id="search-bar" class="flex gap-4 mb-6">
+        <div id="search-bar" class="flex gap-2 mb-6">
           <div class="flex-auto">
-            <input
-              class="input"
-              type="text"
-              placeholder="search..."
-              aria-label="Type search terms here, use enter or the search button to submit search"
-              bind:value={searchInput}
-              on:keydown={(e) => e.key === 'Enter' && updateSearch()}
-            />
-          </div>
-          <div class="flex-none">
-            <button
-              type="button"
-              class="btn variant-ghost-primary hover:variant-filled-primary"
-              aria-label="You are on the search button"
-              disabled={!searchInput}
-              on:click={updateSearch}
-            >
-              Search
-            </button>
+            <Searchbox bind:searchTerm={searchInput} search={updateSearch} />
           </div>
           <div class="flex-none">
             <button
@@ -92,7 +103,7 @@
             </button>
           </div>
         </div>
-        <Datatable data={$searchResults} {columns} {cellOverides} />
+        <Datatable data={$searchResults} {columns} {cellOverides} {rowClickHandler} />
       </div>
     </div>
   {:catch}

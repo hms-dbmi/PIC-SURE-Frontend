@@ -21,6 +21,10 @@ export type SearchResult = Indexable & {
   id: string;
   name: string;
   description: string;
+  isCategorical: boolean;
+  categoryValues?: string[];
+  min?: number;
+  max?: number;
 };
 
 export function mapTags(typeData: { title: string; tags: string[] }): SearchTagType {
@@ -41,5 +45,9 @@ export function mapSearchResults(data: any): SearchResult {
     id: data.name,
     name: segments[segments.length - 1],
     description: `categorical: ${data.categorical}, patients: ${data.patientCount}`,
+    isCategorical: data.categorical,
+    categoryValues: data.categoryValues || undefined,
+    min: data.min >= 0 ? data.min : undefined || undefined, //Fix TypeScript interpreting 0 as false
+    max: data.max >= 0 ? data.max : undefined || undefined, //Fix TypeScript interpreting 0 as false
   };
 }

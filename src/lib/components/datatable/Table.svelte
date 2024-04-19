@@ -8,14 +8,8 @@
   import RowCount from './accessories/Count.svelte';
   import Pagination from './accessories/Pagination.svelte';
   import type { Indexable } from '$lib/types';
-
-  interface Column {
-    dataElement: string;
-    label: string;
-    class?: string;
-    sort?: boolean;
-    filter?: boolean;
-  }
+  import type { Column } from '$lib/models/Tables';
+  import ExpandableRow from '$lib/components/datatable/Row.svelte';
 
   // Parameters
   export let search = false;
@@ -23,9 +17,10 @@
   export let defaultRowsPerPage = 5;
   export let columns: Column[] = [];
   export let cellOverides: Indexable = {};
+  export let rowClickHandler: (index: number) => void = () => {};
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  export let data: any = [];
+  export let data: any = []; //TODO: Fix this type
 
   $: handler = new DataHandler(data, { rowsPerPage: defaultRowsPerPage });
   $: rows = handler.getRows();
@@ -51,9 +46,9 @@
       <tr>
         {#each columns as column}
           {#if column.sort}
-            <ThSort {handler} class={`bg-primary-300 ${column.class}`} orderBy={column.dataElement}
-              >{column.label}</ThSort
-            >
+            <ThSort {handler} class={`bg-primary-300 ${column.class}`} orderBy={column.dataElement}>
+              {column.label}
+            </ThSort>
           {:else if column.filter}
             <ThFilter
               {handler}
@@ -68,21 +63,8 @@
     </thead>
     <tbody>
       {#if $rows.length > 0}
-        {#each $rows as row}
-          <tr>
-            {#each columns as column}
-              <td>
-                {#if cellOverides[column.dataElement]}
-                  <svelte:component
-                    this={cellOverides[column.dataElement]}
-                    data={{ row, cell: row[column.dataElement] }}
-                  />
-                {:else}
-                  {row[column.dataElement]}
-                {/if}
-              </td>
-            {/each}
-          </tr>
+        {#each $rows as row, i}
+          <ExpandableRow {cellOverides} {columns} index={i} {row} {rowClickHandler} />
         {/each}
       {:else}
         <tr><td colspan={columns.length}>No entries found.</td></tr>
@@ -97,3 +79,10 @@
     </div>
   </footer>
 </div>
+
+<style>
+  .pic-sure-table-compact tbody td:not(.expandable-component) {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+</style>

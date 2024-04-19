@@ -101,11 +101,7 @@
         </div>
       </section>
       <footer class="card-footer">
-        <CopyButton
-          buttonText="Copy"
-          itemToCopy={$user.token || ''}
-          classes={['variant-ringed-primary']}
-        />
+        <CopyButton buttonText="Copy" itemToCopy={$user.token || ''} />
         <button
           id="refresh-button"
           class="btn variant-ringed-primary"

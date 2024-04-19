@@ -26,6 +26,7 @@
     "@tailwindcss/forms": "0.5.7",
     "@tailwindcss/typography": "0.5.10",
     "@types/node": "20.10.5",
+    "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "autoprefixer": "10.4.19",
@@ -51,6 +52,7 @@
     "@fortawesome/fontawesome-free": "^6.5.1",
     "@vincjo/datatables": "^1.14.5",
     "dotenv": "^16.4.5",
-    "svelte-eslint-parser": "^0.34.1"
+    "svelte-eslint-parser": "^0.34.1",
+    "uuid": "^9.0.1"
   }
 }

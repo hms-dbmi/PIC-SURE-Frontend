@@ -3,6 +3,9 @@
   import { branding } from '$lib/configuration';
 </script>
 
+<svelte:head>
+  <title>{branding.applicationName} | API</title>
+</svelte:head>
 <div id="api-page">
   <section>
     <UserToken />
