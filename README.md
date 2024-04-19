@@ -57,7 +57,7 @@ Before sumbitting please test if there are linting errors that need to be fixed:
 ```bash
 npm run format
 ```
-1. Then run eslint:
+2. Then run eslint:
 ```bash
 npm run lint
 ```
