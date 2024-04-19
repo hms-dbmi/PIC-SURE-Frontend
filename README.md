@@ -8,9 +8,9 @@ Welcome to the PIC-SURE frontend project, a web-based graphical user interface f
 
 The PIC-SURE Frontend is designed to provide an intuitive, easy-to-use interface for researchers, enabling them to explore and analyze large-scale biomedical datasets without requiring extensive programming knowledge.
 
-If you are interested in running your own PIC-SURE Platform please checkout our [All-In-One Project](https://github.com/hms-dbmi/pic-sure-all-in-one)
+If you are interested in running your own PIC-SURE Platform please check out our [All-In-One Project](https://github.com/hms-dbmi/pic-sure-all-in-one).
 
-If you are looking for some guidance using PIC-SURE, checkout our [User Guide](https://pic-sure.gitbook.io/pic-sure)
+If you are looking for some guidance using PIC-SURE, checkout our [User Guide](https://pic-sure.gitbook.io/pic-sure).
 
 ## Contributing & Developing
 
@@ -78,7 +78,7 @@ Also, please refer to our [Code of Conduct](https://github.com/hms-dbmi/pic-sure
 
 ## Configuration
 
-Some PIC-SURE features are configurable. We provide a feature flag file [here](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/configuration.ts)
+Some PIC-SURE features are configurable. We provide a feature flag file [here](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/configuration.ts).
 This system is under active development and subject to change.
 
 ## Support
