@@ -8,16 +8,12 @@ import {
   TagCheckbox,
 } from '$lib/models/Search';
 import * as api from '$lib/api';
-import type { SvelteComponent } from 'svelte';
 
 const searchUrl = 'picsure/search/bf638674-053b-46c4-96a1-4cd6c8395248';
 
 const tags: Writable<SearchTagType[]> = writable([]);
 const searchTerm: Writable<string> = writable('');
 const searchResults: Writable<SearchResult[]> = writable([]);
-const activeRow: Writable<number> = writable(-1);
-const expandableComponents: Writable<Record<string, typeof SvelteComponent>> = writable({});
-const activeComponent: Writable<typeof SvelteComponent> = writable();
 
 const tagsMock = [
   {
@@ -59,9 +55,6 @@ function updateTag(type: string, tag: string, newState: TagCheckbox) {
 
 export default {
   subscribe: tags.subscribe,
-  expandableComponents,
-  activeComponent,
-  activeRow,
   tags,
   searchTerm,
   searchResults,

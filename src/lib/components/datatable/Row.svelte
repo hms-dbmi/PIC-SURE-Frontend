@@ -1,8 +1,7 @@
 <script lang="ts">
   import type { Column } from '$lib/models/Tables';
   import type { Indexable } from '$lib/types';
-  import Search from '$lib/stores/Search';
-  let { activeRow, expandableComponents, activeComponent } = Search;
+  import { activeRow, expandableComponents, activeComponent } from '$lib/stores/ExpandableRow';
 
   export let cellOverides: Indexable = {};
   export let columns: Column[] = [];

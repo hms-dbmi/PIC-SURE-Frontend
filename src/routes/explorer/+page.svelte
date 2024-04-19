@@ -9,21 +9,14 @@
   import { goto } from '$app/navigation';
 
   import SearchStore from '$lib/stores/Search';
+  import { activeRow, activeComponent, expandableComponents } from '$lib/stores/ExpandableRow';
   import AddFilterComponent from '$lib/components/explorer/AddFilter.svelte';
   import ResultInfoComponent from '$lib/components/explorer/ResultInfoComponent.svelte';
   import HierarchyComponent from '$lib/components/explorer/HierarchyComponent.svelte';
   import type { SvelteComponent } from 'svelte';
   import { branding } from '$lib/configuration';
   import Searchbox from '$lib/components/Searchbox.svelte';
-  let {
-    tags,
-    searchTerm,
-    searchResults,
-    search,
-    expandableComponents,
-    activeRow,
-    activeComponent,
-  } = SearchStore;
+  let { tags, searchTerm, searchResults, search } = SearchStore;
 
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
   let searchPromise: Promise<void> = search(searchInput);

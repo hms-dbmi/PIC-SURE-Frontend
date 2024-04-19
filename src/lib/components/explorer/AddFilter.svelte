@@ -2,10 +2,9 @@
   import type { SearchResult } from '$lib/models/Search';
   import OptionsSelectionList from '../OptionsSelectionList.svelte';
   import FilterStore from '$lib/stores/Filter';
-  import SearchStore from '$lib/stores/Search';
+  import { activeRow } from '$lib/stores/ExpandableRow';
   import { getModalStore } from '@skeletonlabs/skeleton';
   let { addFilter } = FilterStore;
-  let { activeRow } = SearchStore;
   import { onMount } from 'svelte';
   import type { Filter } from '$lib/models/Filter';
   import {

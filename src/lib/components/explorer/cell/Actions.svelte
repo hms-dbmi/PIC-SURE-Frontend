@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
-  import Search from '$lib/stores/Search';
-  let { activeRow, expandableComponents, activeComponent } = Search;
+  import { activeRow, expandableComponents, activeComponent } from '$lib/stores/ExpandableRow';
   import type { Export } from '$lib/models/Export';
   import ExportStore from '$lib/stores/Export';
   let { exports, addExport, removeExport } = ExportStore;
