@@ -37,9 +37,21 @@
 
   let triggerRefreshCount = getCount();
 
-  async function getCount(query: Query = new Query()) {
+  async function getCount() {
+    let newQuery = new Query();
+    $filters.forEach((filter) => {
+      if (filter.filterType === 'categorical') {
+        if (filter.displayType === 'restrict') {
+          newQuery.addCategoryFilter(filter.id, filter.categoryValues);
+        } else {
+          newQuery.addRequiredField(filter.id);
+        }
+      } else if (filter.filterType === 'numeric') {
+        newQuery.addNumericFilter(filter.id, filter.min || '', filter.max || '');
+      }
+    });
     let request: QueryRequestInterface = {
-      query: query,
+      query: newQuery,
       resourceUUID: resources.hpds,
     };
     try {
@@ -55,26 +67,8 @@
     }
   }
 
-  //TODO: Need to re evaluate this once we have a better data model
-  let derivedQuery = derived(filters, ($filters) => {
-    let newQuery = new Query();
-    $filters.forEach((filter) => {
-      if (filter.filterType === 'categorical') {
-        if (filter.displayType === 'restrict') {
-          newQuery.addCategoryFilter(filter.id, filter.categoryValues);
-        } else {
-          newQuery.addRequiredField(filter.id);
-        }
-      } else if (filter.filterType === 'numeric') {
-        newQuery.addNumericFilter(filter.id, filter.min || '', filter.max || '');
-      }
-    });
-    return newQuery;
-  });
-
   filters.subscribe(() => {
-    let query = $derivedQuery;
-    triggerRefreshCount = getCount(query);
+    triggerRefreshCount = getCount();
   });
 
   $: showExportButton =
