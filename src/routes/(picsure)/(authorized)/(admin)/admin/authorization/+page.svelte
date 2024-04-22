@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ProgressBar } from '@skeletonlabs/skeleton';
 
+  import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
@@ -44,6 +45,9 @@
     await loadApplications();
   }
 </script>
+<svelte:head>
+  <title>{branding.applicationName} | Authorization</title>
+</svelte:head>
 
 <Content title="Authorization">
   {#await load()}

@@ -1,11 +1,13 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { ProgressBar } from '@skeletonlabs/skeleton';
+
+  import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
-  import type { Role } from '$lib/models/Role';
-  import type { Privilege } from '$lib/models/Privileges';
 
+  import type { Role } from '$lib/models/Role';
+  import type { Privilege } from '$lib/models/Privilege';
   import RolesStore from '$lib/stores/Roles';
   import PrivilegesStore from '$lib/stores/Privileges';
   const { loadRoles, getRole } = RolesStore;
@@ -21,6 +23,9 @@
     privileges = await Promise.all(role.privileges.map(getPrivilege));
   }
 </script>
+<svelte:head>
+  <title>{branding.applicationName} | Role Summary</title>
+</svelte:head>
 
 <Content title="Role Summary">
   {#await load()}

@@ -143,7 +143,7 @@ export const routes: Route[] = [
       { path: '/admin/authentication', text: 'Authentication', privilege: PicsurePrivileges.SUPER },
     ],
   },
-  { path: '/admin/users', text: 'User Management', privilege: PicsurePrivileges.ADMIN },
+  { path: '/users', text: 'User Management', privilege: PicsurePrivileges.ADMIN },
   { path: '/explorer', text: 'Explorer' },
   { path: '/api', text: 'API', privilege: PicsurePrivileges.QUERY },
   { path: '/dataset', text: 'Dataset Management', privilege: PicsurePrivileges.QUERY },

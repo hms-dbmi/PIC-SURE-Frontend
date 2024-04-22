@@ -4,22 +4,29 @@
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
-  import PrivilegeForm from '$lib/components/admin/authorization/PrivilegeForm.svelte';
+  import UserForm from '$lib/components/user/UserForm.svelte';
 
-  import ApplicationStore from '$lib/stores/Application';
-  const { applicationList, loadApplications } = ApplicationStore;
+  import RoleStore from '$lib/stores/Roles';
+  import ConnectionsStore from '$lib/stores/Connections';
+  const { roleList, loadRoles } = RoleStore;
+  const { connections, loadConnections } = ConnectionsStore;
+
+  async function load(){
+    await loadConnections();
+    await loadRoles();
+  }
 </script>
 <svelte:head>
-  <title>{branding.applicationName} | New Privilege</title>
+  <title>{branding.applicationName} | New User</title>
 </svelte:head>
 
-<Content title="New Privilege">
-  {#await loadApplications()}
+<Content title="New User">
+  {#await load()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />
   {:then}
-    <section id="privilege-new">
-      <PrivilegeForm applicationList={$applicationList} />
+    <section id="user-new">
+      <UserForm connections={$connections} roleList={$roleList} />
     </section>
   {:catch}
     <ErrorAlert title="API Error">
@@ -27,3 +34,4 @@
     </ErrorAlert>
   {/await}
 </Content>
+  

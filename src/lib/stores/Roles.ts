@@ -1,4 +1,4 @@
-import { get, writable, type Writable } from 'svelte/store';
+import { get, derived, writable, type Writable } from 'svelte/store';
 import { type Role, mapRole } from '$lib/models/Role';
 
 import * as api from '$lib/api';
@@ -7,6 +7,7 @@ const ROLE_PATH = 'psama/role';
 
 const loaded = writable(false);
 const roles: Writable<Role[]> = writable([]);
+const roleList = derived(roles, ($r) => $r.map((r) => [r.name, r.uuid || '']), []);
 
 async function loadRoles() {
   if (get(loaded)) return;
@@ -74,6 +75,7 @@ async function deleteRole(uuid: string) {
 export default {
   subscribe: roles.subscribe,
   roles,
+  roleList,
   loadRoles,
   getRole,
   addRole,
