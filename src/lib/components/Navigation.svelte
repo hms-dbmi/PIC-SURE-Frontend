@@ -1,49 +1,37 @@
 <script lang="ts">
-  import {
-    AppBar,
-    getModalStore,
-    getToastStore,
-    popup,
-    type PopupSettings,
-  } from '@skeletonlabs/skeleton';
-  import { onMount } from 'svelte';
+  import { AppBar, getToastStore, popup, type PopupSettings } from '@skeletonlabs/skeleton';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import logo from '$lib/assets/app-logo.png';
-  import { user, logout, login, getUser } from '$lib/stores/User';
+  import { user, logout } from '$lib/stores/User';
+  import { PicsurePrivileges } from '$lib/models/Privilege';
+  import { routes } from '$lib/configuration';
 
-  const modalStore = getModalStore();
   const toastStore = getToastStore();
 
-  const routes = [
-    {
-      path: '/admin',
-      text: 'Configuration',
-      children: [
-        { path: '/admin/authorization', text: 'Authorization' },
-        { path: '/admin/authentication', text: 'Authentication' },
-      ],
-    },
-    { path: '/user', text: 'User Management' },
-    { path: '/explorer', text: 'Explorer' },
-    { path: '/api', text: 'API' },
-    { path: '/dataset', text: 'Dataset Management' },
-    { path: '/help', text: 'Help' },
-  ];
-  $: dropdownPath = '';
+  let allowedRoutes = routes.filter((route) => !route.privilege);
 
-  onMount(() => {
-    if (sessionStorage.getItem('token')) {
-      getUser().catch((e) => {
-        console.error(e);
-        toastStore.trigger({
-          message:
-            'An error occured while validating your token. Please try again later. If this problem persists, please contact an administrator.',
-          background: 'variant-filled-error',
-        });
-      });
+  function getUsersRoutes() {
+    if (!$user || !$user.privileges) {
+      allowedRoutes = routes.filter((route) => !route.privilege);
+      return allowedRoutes;
     }
-  });
+    if ($user && $user.privileges && $user.privileges.includes(PicsurePrivileges.SUPER)) {
+      allowedRoutes = routes;
+      return allowedRoutes;
+    }
+    Object.values(PicsurePrivileges).forEach((privilege) => {
+      if ($user?.privileges?.includes(privilege)) {
+        allowedRoutes = [
+          ...allowedRoutes,
+          ...routes.filter(
+            (route) => route.privilege === privilege && !allowedRoutes.includes(route),
+          ),
+        ];
+      }
+    });
+    return allowedRoutes;
+  }
 
   function setDropdown(path: string) {
     dropdownPath = path;
@@ -64,26 +52,12 @@
     goto('/');
   }
 
-  async function loginUser(resp: string) {
-    await login(resp).catch((e) => {
-      console.log(e);
-      toastStore.trigger({
-        message:
-          'An error occured while validating your token. Please try again later. If this problem persists, please contact an administrator.',
-        background: 'variant-filled-error',
-      });
-    });
+  function handleLogin() {
+    goto(`/login?redirectTo=${$page.url.pathname}`);
   }
 
-  function handleLogin() {
-    modalStore.trigger({
-      type: 'prompt',
-      title: 'Enter Long Term Token',
-      body: 'Provide your long term token below.',
-      valueAttr: { type: 'text', required: true, placeholder: 'Enter token here...' },
-      response: (resp: string) => resp && loginUser(resp),
-    });
-  }
+  $: dropdownPath = '';
+  $: accessableRoutes = $user && getUsersRoutes();
 </script>
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50">
@@ -94,7 +68,7 @@
   </svelte:fragment>
   <nav id="page-navigation">
     <ul>
-      {#each routes as route}
+      {#each accessableRoutes as route}
         {#if route.children && route.children.length > 0}
           <li
             class={`has-dropdown ${dropdownPath === route.path ? 'open' : ''}`}

@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess } from '../../custom-context';
 import { branding } from '../../../src/lib/configuration';
-import { user as mockUser, roles as mockRoles } from '../../../tests/mock-data';
+import { picsureUser, roles as mockRoles } from '../../../tests/mock-data';
 
 const placeHolderDots =
   '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
@@ -54,14 +54,14 @@ test.describe('API page', () => {
     expect(await badge.innerText()).toBe('EXPIRED');
     expect(await expires.innerText()).toContain('Mon Feb 01 2021');
   });
-  test(`User account matches expected email of ${mockUser.email}`, async ({ page }) => {
+  test(`User account matches expected email of ${picsureUser.email}`, async ({ page }) => {
     // Given
     await page.goto('/api');
     // When
     const userEmail = page.locator('#account');
     // Then
     await expect(userEmail).toBeVisible();
-    expect(await userEmail.innerText()).toBe(mockUser.email);
+    expect(await userEmail.innerText()).toBe(picsureUser.email);
   });
   test('Token is hidden by default', async ({ page }) => {
     // Given
@@ -111,7 +111,7 @@ test.describe('API page', () => {
     const userToken = page.locator('#token');
     // Then
     await expect(userToken).toBeVisible();
-    expect(await userToken.innerText()).toBe(mockUser.token);
+    expect(await userToken.innerText()).toBe(picsureUser.token);
   });
   test('Reveal button text changes when clicked', async ({ page }) => {
     // Given
@@ -130,7 +130,7 @@ test.describe('API page', () => {
     const userToken = page.locator('#token');
     await refreshButton.click();
     // Then
-    expect(await userToken.innerText()).not.toBe(mockUser.token);
+    expect(await userToken.innerText()).not.toBe(picsureUser.token);
   });
   test('Refresh button changes expiration, updates button text, disables button', async ({
     page,

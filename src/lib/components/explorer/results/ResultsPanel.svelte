@@ -7,7 +7,6 @@
   import ExportedVariable from './ExportedVariable.svelte';
   import FilterStore from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
-  import { derived } from 'svelte/store';
   import * as api from '$lib/api';
   import {
     ProgressRadial,
@@ -138,7 +137,7 @@
     {/if}
   </div>
   <div class="flex flex-col items-center mt-8">
-    <h5 class="text-center underline">Explore Chort</h5>
+    <h5 class="text-center underline">Explore Cohort</h5>
     <div class="flex flex-wrap items-center justify-evenly w-9/12">
       <button
         type="button"

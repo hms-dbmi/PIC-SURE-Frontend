@@ -11,21 +11,21 @@ test.describe('users', () => {
   });
   test('Has Add user button', async ({ page }) => {
     // Given
-    await page.goto('/user');
+    await page.goto('/admin/users');
 
     // Then
     await expect(page.locator('#add-used-btn')).toBeVisible();
   });
   test('Displays multiple IDP tables', async ({ page }) => {
     // Given
-    await page.goto('/user');
+    await page.goto('/admin/users');
 
     // Then
     await expect(page.locator('#add-used-btn')).toBeVisible();
   });
   test('Correct user goes to the right idp table', async ({ page }) => {
     // Given
-    await page.goto('/user');
+    await page.goto('/admin/users');
 
     // Then
     await Promise.all(
