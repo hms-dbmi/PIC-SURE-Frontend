@@ -129,3 +129,157 @@ export const searchResults = {
     },
   },
 };
+
+const _application = {
+  app1: {
+    uuid: 'a1234',
+    name: 'APP One',
+    description: 'App one desc',
+    token: 'app1-token',
+    url: '/app1',
+    enable: true,
+  },
+  app2: {
+    uuid: 'a2345',
+    name: 'APP Two',
+    description: 'App two desc',
+    token: 'app2-token',
+    url: '/app2',
+    enable: true,
+  },
+};
+
+const _privileges = {
+  pr1: {
+    uuid: 'p1234',
+    name: 'super_admin',
+    description: 'super admins',
+    queryScope: '[]',
+    application: undefined,
+  },
+  pr2: {
+    uuid: 'p2345',
+    name: 'admin',
+    description: 'admins',
+    queryScope: '[]',
+    application: undefined,
+  },
+  pr3: {
+    uuid: 'p3456',
+    name: 'any',
+    description: 'any priv',
+    queryScope: '[]',
+    application: _application.app1,
+  },
+  pr4: {
+    uuid: 'p4567',
+    name: 'user',
+    description: 'a user priv',
+    queryScope: '[]',
+    application: _application.app2,
+  },
+};
+
+export const privileges = Object.values(_privileges);
+
+export const applications = [
+  { ..._application.app1, privileges: [_privileges.pr3] },
+  { ..._application.app2, privileges: [_privileges.pr4] },
+];
+
+const _roles = {
+  r1: {
+    uuid: 'r1234',
+    name: 'Top Admin',
+    description: 'top admin role',
+    privileges: [_privileges.pr1, _privileges.pr2],
+  },
+  r2: {
+    uuid: 'r2345',
+    name: 'User',
+    description: 'Normal user',
+    privileges: [_privileges.pr3],
+  },
+  r3: {
+    uuid: 'r3456',
+    name: 'Random role',
+    description: 'Some random role',
+    privileges: [_privileges.pr4],
+  },
+  r4: {
+    uuid: 'r4567',
+    name: 'Admin',
+    description: 'Admin role',
+    privileges: [_privileges.pr2],
+  },
+};
+export const roles = Object.values(_roles);
+
+const _connections = {
+  c1234: {
+    uuid: 'c1234',
+    label: 'Some IDP',
+    id: 'some-idp',
+    subPrefix: 'some-idp|',
+    requiredFields: '[{"label":"Email", "id":"email"}]',
+  },
+  c2345: {
+    uuid: 'c1234',
+    label: 'Another IDP',
+    id: 'another-idp',
+    subPrefix: 'another-idp|',
+    requiredFields: '[{"label":"Email", "id":"email"}]',
+  },
+};
+export const connections = Object.values(_connections);
+
+export const users = [
+  {
+    uuid: 'abcd',
+    subject: _connections.c1234.subPrefix + 'abcd',
+    roles: [_roles.r1, _roles.r2, _roles.r4],
+    email: 'abcd@test.com',
+    connection: _connections.c1234,
+    active: true,
+  },
+  {
+    uuid: 'bcde',
+    subject: _connections.c1234.subPrefix + 'bcde',
+    roles: [_roles.r1, _roles.r2, _roles.r4],
+    email: 'bcde@test.com',
+    connection: _connections.c1234,
+    active: true,
+  },
+  {
+    uuid: 'cdef',
+    roles: [_roles.r2, _roles.r4],
+    email: 'cdef@test.com',
+    connection: _connections.c1234,
+    generalMetadata: '{"email":"cdef@test.com"}',
+    active: false,
+  },
+  {
+    uuid: 'defg',
+    roles: [_roles.r2],
+    email: 'defg@test.com',
+    connection: _connections.c2345,
+    generalMetadata: '{"email":"defg@test.com"}',
+    active: true,
+  },
+  {
+    uuid: 'efgh',
+    roles: [_roles.r2],
+    email: 'efgh@test.com',
+    connection: _connections.c1234,
+    generalMetadata: '{"email":"efgh@test.com"}',
+    active: false,
+  },
+  {
+    uuid: 'fghi',
+    subject: 'google-oauth2|fghi',
+    roles: [_roles.r2],
+    email: 'fghi@test.com',
+    connection: _connections.c1234,
+    active: true,
+  },
+];

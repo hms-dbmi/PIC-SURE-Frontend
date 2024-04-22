@@ -1,15 +1,18 @@
-import { expect, type Route } from '@playwright/test';
-import { test } from '../../custom-context';
+import { expect } from '@playwright/test';
+import { test, mockApiFail, mockApiSuccess } from '../../custom-context';
 import { branding } from '../../../src/lib/configuration';
-import { user as mockUser } from '../../../tests/mock-data';
+import { user as mockUser, roles as mockRoles } from '../../../tests/mock-data';
 
 const placeHolderDots =
   '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
 
 test.describe('API page', () => {
+  test.beforeEach(async ({ context }) => {
+    await mockApiSuccess(context, '*/**/psama/role', mockRoles);
+  });
   test('Has expected error message', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) => route.abort('accessdenied'));
+    await mockApiFail(page, '*/**/psama/user/me?hasToken', 'accessdenied');
     await page.goto('/api');
     // When
     const errorAlert = page.locator('[data-testid=error-alert]');
@@ -133,9 +136,9 @@ test.describe('API page', () => {
     page,
   }) => {
     // Given
-    await page.route('*/**/psama/user/me/refresh_long_term_token', (route: Route) =>
-      route.fulfill({ json: { userLongTermToken: 'new longterm token' } }),
-    );
+    await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
+      userLongTermToken: 'new longterm token',
+    });
     await page.goto('/api');
     // When
     const userToken = page.locator('#token');
@@ -157,9 +160,9 @@ test.describe('API page', () => {
   });
   test('Canceling confirm modal does nothing to user', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me/refresh_long_term_token', (route: Route) =>
-      route.fulfill({ json: { userLongTermToken: 'new longterm token' } }),
-    );
+    await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
+      userLongTermToken: 'new longterm token',
+    });
     await page.goto('/api');
     // When
     const userToken = page.locator('#token');

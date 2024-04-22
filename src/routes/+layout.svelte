@@ -28,6 +28,7 @@
   };
   let modalProps: Record<string, unknown> = {
     buttonPositive: 'variant-filled-primary',
+    buttonNeutral: 'variant-ghost-primary',
     components: modalComponentRegistry,
   };
 
@@ -38,7 +39,7 @@
   $: classesSidebar = $page.url.pathname.includes('/explorer') ? '' : 'hidden';
 </script>
 
-<Toast />
+<Toast position="t" />
 <Modal {...modalProps} />
 <AppShell>
   <svelte:fragment slot="header">
