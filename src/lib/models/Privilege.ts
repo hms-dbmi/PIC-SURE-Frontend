@@ -6,6 +6,13 @@ export interface Privilege {
   application: string;
 }
 
+// PIC-SURE Privileges are used for authorization of functionalty rather than data access
+export enum PicsurePrivileges {
+  QUERY = 'PIC_SURE_ANY_QUERY',
+  ADMIN = 'ADMIN',
+  SUPER = 'SUPER_ADMIN',
+}
+
 // TODO: Replace any type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function mapPrivilege(data: any) {

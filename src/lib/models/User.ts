@@ -1,6 +1,7 @@
 export interface User {
   uuid: string;
   email?: string;
+  userId?: string;
   privileges?: string[];
   token?: string;
   acceptedTOS?: boolean;

@@ -1,5 +1,5 @@
 import { get, derived, writable, type Writable } from 'svelte/store';
-import { type Privilege, mapPrivilege } from '$lib/models/Privileges';
+import { type Privilege, mapPrivilege } from '$lib/models/Privilege';
 
 import * as api from '$lib/api';
 

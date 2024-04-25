@@ -54,10 +54,13 @@ npm run playwright
 Before sumbitting please test if there are linting errors that need to be fixed:
 
 1. Format code using Prettier:
+
 ```bash
 npm run format
 ```
+
 2. Then run eslint:
+
 ```bash
 npm run lint
 ```
@@ -75,7 +78,6 @@ npm run build
 First, please refer to the [CONTRIBUTING](https://github.com/hms-dbmi/pic-sure-all-in-one/blob/master/CONTRIBUTING.md) file for guidelines on how to contribute, submit issues, and propose improvements.
 Also, please refer to our [Code of Conduct](https://github.com/hms-dbmi/pic-sure-hpds/blob/master/CODE_OF_CONDUCT.md).
 
-
 ## Configuration
 
 Some PIC-SURE features are configurable. We provide a feature flag file [here](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/configuration.ts).
@@ -86,5 +88,3 @@ This system is under active development and subject to change.
 If you are looking for some guidance using PIC-SURE, checkout our [User Guide](https://pic-sure.gitbook.io/pic-sure).
 
 Or feel free to start a [discussion](https://github.com/hms-dbmi/PIC-SURE-Frontend/discussions) or reach out via email to: [avillach_lab_developers@googlegroups.com](mailto:avillach_lab_developers@googlegroups.com)
-
-

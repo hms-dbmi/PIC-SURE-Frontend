@@ -7,7 +7,7 @@ import type { User } from '../models/User';
 export const user: Writable<User> = writable({});
 
 export async function getUser(force?: boolean) {
-  if (force || !get(user)?.privileges) {
+  if (force || !get(user)?.privileges || !get(user)?.token) {
     const res = await api.get('psama/user/me?hasToken');
     user.set(res);
   }

@@ -1,3 +1,13 @@
+import type { User } from '../src/lib/models/User';
+import { PicsurePrivileges } from '../src/lib/models/Privilege';
+
+export const mockToken =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6MTYxMjE2NDk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.kzaW-ZkhCPlTgdGQQAz_CA1ZB80PpZ5aiRa2lj46hbw';
+export const mockLoginResponse =
+  '/login/loading?redirectTo=/#access_token=' +
+  mockToken +
+  '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G';
+
 export const datasets = [
   {
     // Active
@@ -23,13 +33,30 @@ export const datasets = [
   },
 ];
 
-export const user = {
+export const picsureUser: User = {
   uuid: '1234',
   email: 'test@pic-sure.org',
-  privileges: ['user'],
+  privileges: [PicsurePrivileges.QUERY],
   // expired token
-  token:
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6MTYxMjE2NDk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.kzaW-ZkhCPlTgdGQQAz_CA1ZB80PpZ5aiRa2lj46hbw',
+  token: mockToken,
+  acceptedTOS: true,
+};
+
+export const picsureAdmin: User = {
+  uuid: '1234',
+  email: 'admin@pic-sure.org',
+  privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.ADMIN],
+  // expired token
+  token: mockToken,
+  acceptedTOS: true,
+};
+
+export const topAdmin: User = {
+  uuid: '1234',
+  email: 'admin@pic-sure.org',
+  privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.SUPER],
+  // expired token
+  token: mockToken,
   acceptedTOS: true,
 };
 
