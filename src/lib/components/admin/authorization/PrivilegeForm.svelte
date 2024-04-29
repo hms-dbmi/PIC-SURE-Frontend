@@ -5,7 +5,7 @@
 
   import { textInput } from '$lib/utilities/Validation';
 
-  import type { Privilege } from '$lib/models/Privileges';
+  import type { Privilege } from '$lib/models/Privilege';
   import PrivilegesStore from '$lib/stores/Privileges';
   const { addPrivilege, updatePrivilege } = PrivilegesStore;
 

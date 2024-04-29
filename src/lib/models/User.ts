@@ -1,5 +1,5 @@
 export interface User {
-  uuid: string;
+  uuid?: string;
   email?: string;
   userId?: string;
   privileges?: string[];
@@ -10,6 +10,7 @@ export interface User {
 export interface ExtendedUser extends User {
   subject?: string;
   connection: string;
+  generalMetadata: string;
   active: boolean;
   roles: string[];
 }

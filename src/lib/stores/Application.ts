@@ -7,7 +7,7 @@ const APP_URL = 'psama/application';
 
 const loaded = writable(false);
 const applications: Writable<Application[]> = writable([]);
-const applicationList = derived(applications, ($a) => $a.map((a) => [a.name, a.uuid]));
+const applicationList = derived(applications, ($a) => $a.map((a) => [a.name, a.uuid]), []);
 
 async function loadApplications() {
   if (get(loaded)) return;

@@ -9,10 +9,11 @@
   export let data = { cell: '', row: { name: '' } };
 
   function deleteModal() {
+    const name = data.row.name;
     modalStore.trigger({
       type: 'confirm',
       title: 'Delete Role?',
-      body: `Are you sure you want to delete role '${data.row.name}'?`,
+      body: `Are you sure you want to delete role '${name}'?`,
       buttonTextConfirm: 'Yes',
       buttonTextCancel: 'No',
       response: async (confirm: boolean) => {
@@ -21,13 +22,13 @@
         try {
           await deleteRole(data.cell);
           toastStore.trigger({
-            message: `Successfully deleted role '${data.row.name}'`,
+            message: `Successfully deleted role '${name}'`,
             background: 'variant-filled-success',
           });
         } catch (error) {
           console.error(error);
           toastStore.trigger({
-            message: `An error occured while deleting role '${data.row.name}'`,
+            message: `An error occured while deleting role '${name}'`,
             background: 'variant-filled-error',
           });
         }

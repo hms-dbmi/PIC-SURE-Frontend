@@ -18,7 +18,13 @@ export async function loadConnections() {
 
 async function getConnection(uuid: string) {
   const store = get(connections);
-  return store.find((c) => c.uuid === uuid);
+  const connection = store.find((r) => r.uuid === uuid);
+  if (connection) {
+    return connection;
+  }
+
+  const res = await api.get(`${CONN_URL}/${uuid}`);
+  return res;
 }
 
 export default {

@@ -1,13 +1,11 @@
 <script lang="ts">
-  import { AppBar, getToastStore, popup, type PopupSettings } from '@skeletonlabs/skeleton';
+  import { AppBar, popup, type PopupSettings } from '@skeletonlabs/skeleton';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import logo from '$lib/assets/app-logo.png';
   import { user, logout } from '$lib/stores/User';
   import { PicsurePrivileges } from '$lib/models/Privilege';
   import { routes } from '$lib/configuration';
-
-  const toastStore = getToastStore();
 
   let allowedRoutes = routes.filter((route) => !route.privilege);
 

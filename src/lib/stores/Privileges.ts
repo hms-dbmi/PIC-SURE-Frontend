@@ -7,7 +7,7 @@ const PRIV_PATH = 'psama/privilege';
 
 const loaded = writable(false);
 const privileges: Writable<Privilege[]> = writable([]);
-const privilegeList = derived(privileges, ($p) => $p.map((p) => [p.name, p.uuid]));
+const privilegeList = derived(privileges, ($p) => $p.map((p) => [p.name, p.uuid || '']), []);
 
 async function loadPrivileges() {
   if (get(loaded)) return;

@@ -2,11 +2,12 @@
   import { derived, readable, type Readable } from 'svelte/store';
   import { ProgressBar } from '@skeletonlabs/skeleton';
 
+  import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
-  import Actions from '$lib/components/user/cell/Actions.svelte';
-  import Status from '$lib/components/user/cell/Status.svelte';
+  import Actions from '$lib/components/admin/user/cell/Actions.svelte';
+  import Status from '$lib/components/admin/user/cell/Status.svelte';
 
   import UsersStore from '$lib/stores/Users';
   import RolesStore from '$lib/stores/Roles';
@@ -52,7 +53,7 @@
           .filter((user) => connection.uuid === user.connection)
           .map(
             (row): UserRow => ({
-              uuid: row.uuid,
+              uuid: row.uuid || '',
               email: row.email || 'uuid:' + row.uuid,
               roles:
                 row.roles.length === 0
@@ -70,6 +71,9 @@
   }
 </script>
 
+<svelte:head>
+  <title>{branding.applicationName} | User Management</title>
+</svelte:head>
 <Content title="User Management">
   {#await load()}
     <h3 class="text-left">Loading</h3>
@@ -77,13 +81,13 @@
   {:then}
     <div class="flex gap-4 mb-6">
       <div class="flex-auto">
-        <button
-          id="add-used-btn"
+        <a
+          data-testid="add-user-btn"
           class="btn variant-ghost-primary hover:variant-filled-primary"
-          aria-label="You are on the Add User button"
+          href="/admin/users/new"
         >
           &plus; Add User
-        </button>
+        </a>
       </div>
     </div>
     {#each $usersByConnection as connection}

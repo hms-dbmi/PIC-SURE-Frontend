@@ -1,13 +1,18 @@
 <script lang="ts">
   import { ProgressBar } from '@skeletonlabs/skeleton';
+
+  import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import Content from '$lib/components/Content.svelte';
   import PrivilegeForm from '$lib/components/admin/authorization/PrivilegeForm.svelte';
 
-  import Content from '$lib/components/Content.svelte';
   import ApplicationStore from '$lib/stores/Application';
-
   const { applicationList, loadApplications } = ApplicationStore;
 </script>
+
+<svelte:head>
+  <title>{branding.applicationName} | New Privilege</title>
+</svelte:head>
 
 <Content title="New Privilege">
   {#await loadApplications()}

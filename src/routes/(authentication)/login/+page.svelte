@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
-  import { loginConfiguration } from '$lib/configuration'; 
+  import { loginConfiguration } from '$lib/configuration';
   import auth0 from 'auth0-js';
   let redirectUrl = '/';
   const redirectTo = $page.url.searchParams.get('redirectTo');

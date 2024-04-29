@@ -1,26 +1,34 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { ProgressBar } from '@skeletonlabs/skeleton';
+
+  import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
 
   import PrivilegesStore from '$lib/stores/Privileges';
   import ApplicationStore from '$lib/stores/Application';
-  import type { Privilege } from '$lib/models/Privileges';
+  import type { Privilege } from '$lib/models/Privilege';
   import type { Application } from '$lib/models/Applications';
 
   const { loadPrivileges, getPrivilege } = PrivilegesStore;
   const { getApplication } = ApplicationStore;
 
   let privilege: Privilege;
-  let application: Application | string;
+  let application: Application | string = '';
 
   async function load() {
     await loadPrivileges();
     privilege = await getPrivilege($page.params.uuid);
-    application = privilege.application ? await getApplication(privilege.application) : '';
+    if (privilege.application) {
+      application = (await getApplication(privilege.application)) || '';
+    }
   }
 </script>
+
+<svelte:head>
+  <title>{branding.applicationName} | Privilege Summary</title>
+</svelte:head>
 
 <Content title="Privilege Summary">
   {#await load()}
