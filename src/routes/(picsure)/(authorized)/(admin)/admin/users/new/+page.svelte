@@ -4,18 +4,19 @@
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
-  import UserForm from '$lib/components/user/UserForm.svelte';
+  import UserForm from '$lib/components/admin/user/UserForm.svelte';
 
   import RoleStore from '$lib/stores/Roles';
   import ConnectionsStore from '$lib/stores/Connections';
   const { roleList, loadRoles } = RoleStore;
   const { connections, loadConnections } = ConnectionsStore;
 
-  async function load(){
+  async function load() {
     await loadConnections();
     await loadRoles();
   }
 </script>
+
 <svelte:head>
   <title>{branding.applicationName} | New User</title>
 </svelte:head>
@@ -34,4 +35,3 @@
     </ErrorAlert>
   {/await}
 </Content>
-  

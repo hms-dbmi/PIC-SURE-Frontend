@@ -20,11 +20,12 @@
   async function load() {
     await loadPrivileges();
     privilege = await getPrivilege($page.params.uuid);
-    if(privilege.application){
-      application = await getApplication(privilege.application) || '';
+    if (privilege.application) {
+      application = (await getApplication(privilege.application)) || '';
     }
   }
 </script>
+
 <svelte:head>
   <title>{branding.applicationName} | Privilege Summary</title>
 </svelte:head>

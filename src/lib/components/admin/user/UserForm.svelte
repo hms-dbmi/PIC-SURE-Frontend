@@ -32,14 +32,16 @@
       email,
       connection: await getConnection(connection),
       active,
-      roles: await Promise.all(roles
-        .filter((role) => role.checked)
-        .map((role) => getRole(role.uuid)
-          .then(role => ({
-            ...role,
-            privileges: role.privileges.map((uuid: string) => getPrivilege(uuid))
-          })))
-      )
+      roles: await Promise.all(
+        roles
+          .filter((role) => role.checked)
+          .map((role) =>
+            getRole(role.uuid).then((role) => ({
+              ...role,
+              privileges: role.privileges.map((uuid: string) => getPrivilege(uuid)),
+            })),
+          ),
+      ),
     };
     try {
       if (user) {
@@ -51,7 +53,7 @@
         message: `Successfully saved ${newUser ? 'new user' : 'user'} '${email}'`,
         background: 'variant-filled-success',
       });
-      goto('/users');
+      goto('/admin/users');
     } catch (error) {
       console.error(error);
       toastStore.trigger({
@@ -70,14 +72,7 @@
 
   <label class="label required">
     <span>Email:</span>
-    <input
-      type="email"
-      bind:value={email}
-      class="input"
-      required
-      minlength="1"
-      maxlength="255"
-    />
+    <input type="email" bind:value={email} class="input" required minlength="1" maxlength="255" />
   </label>
 
   <label class="label required">
@@ -85,7 +80,9 @@
     <select class="select" bind:value={connection} required>
       <option selected={!user || !user.connection} disabled value>none</option>
       {#each connections as connection}
-        <option value={connection.uuid} selected={user && user.connection === connection.uuid}>{connection.label}</option>
+        <option value={connection.uuid} selected={user && user.connection === connection.uuid}
+          >{connection.label}</option
+        >
       {/each}
     </select>
   </label>
@@ -103,7 +100,7 @@
   <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
     Save
   </button>
-  <a href="/users" class="btn variant-ghost-secondary hover:variant-filled-secondary">
+  <a href="/admin/users" class="btn variant-ghost-secondary hover:variant-filled-secondary">
     Cancel
   </a>
 </form>

@@ -29,7 +29,7 @@ async function getUser(uuid: string) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function addUser(user: any) {
-  const res = await api.post(USER_URL, [ user ]);
+  const res = await api.post(USER_URL, [user]);
   const newRole = mapExtendedUser(res.content[0]);
 
   const store: ExtendedUser[] = get(users);
@@ -39,7 +39,7 @@ async function addUser(user: any) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function updateUser(user: any) {
-  const res = await api.put(USER_URL, [ user ]);
+  const res = await api.put(USER_URL, [user]);
   const newUser = mapExtendedUser(res.content[0]);
 
   const store: ExtendedUser[] = get(users);

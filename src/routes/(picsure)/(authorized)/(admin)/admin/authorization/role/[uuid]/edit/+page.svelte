@@ -21,6 +21,7 @@
     await loadPrivileges();
   }
 </script>
+
 <svelte:head>
   <title>{branding.applicationName} | Edit Role</title>
 </svelte:head>

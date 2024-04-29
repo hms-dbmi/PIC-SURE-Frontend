@@ -22,6 +22,7 @@
     await loadApplications();
   }
 </script>
+
 <svelte:head>
   <title>{branding.applicationName} | Edit Privilege</title>
 </svelte:head>

@@ -45,6 +45,7 @@
     await loadApplications();
   }
 </script>
+
 <svelte:head>
   <title>{branding.applicationName} | Authorization</title>
 </svelte:head>

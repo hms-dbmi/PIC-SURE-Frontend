@@ -251,7 +251,7 @@ const _connections = {
     requiredFields: '[{"label":"Email", "id":"email"}]',
   },
   c2345: {
-    uuid: 'c1234',
+    uuid: 'c2345',
     label: 'Another IDP',
     id: 'another-idp',
     subPrefix: 'another-idp|',

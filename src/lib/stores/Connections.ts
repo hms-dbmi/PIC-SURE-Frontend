@@ -1,4 +1,4 @@
-import { get, derived, writable, type Writable } from 'svelte/store';
+import { get, writable, type Writable } from 'svelte/store';
 import type { Connection } from '$lib/models/Connection';
 
 import * as api from '$lib/api';

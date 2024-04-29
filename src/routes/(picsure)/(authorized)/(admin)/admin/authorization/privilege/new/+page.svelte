@@ -9,6 +9,7 @@
   import ApplicationStore from '$lib/stores/Application';
   const { applicationList, loadApplications } = ApplicationStore;
 </script>
+
 <svelte:head>
   <title>{branding.applicationName} | New Privilege</title>
 </svelte:head>

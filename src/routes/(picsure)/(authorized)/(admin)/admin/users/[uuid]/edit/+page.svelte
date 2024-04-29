@@ -1,11 +1,11 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { ProgressBar } from '@skeletonlabs/skeleton';
-  
+
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
-  import UserForm from '$lib/components/user/UserForm.svelte';
+  import UserForm from '$lib/components/admin/user/UserForm.svelte';
 
   import type { ExtendedUser } from '$lib/models/User';
   import UsersStore from '$lib/stores/Users';
@@ -24,6 +24,7 @@
     await loadConnections();
   }
 </script>
+
 <svelte:head>
   <title>{branding.applicationName} | Edit User</title>
 </svelte:head>

@@ -14,7 +14,7 @@
 
   export let data = { cell: '', row: { status: '', email: '' } };
 
-  async function userActivation(activate: boolean){
+  async function userActivation(activate: boolean) {
     const user = await getUser(data.cell);
 
     modalStore.trigger({
@@ -29,13 +29,14 @@
           ...user,
           active: activate,
           connection: await getConnection(user.connection),
-          roles: await Promise.all(user.roles
-            .map((uuid: string) => getRole(uuid)
-              .then(role => ({
+          roles: await Promise.all(
+            user.roles.map((uuid: string) =>
+              getRole(uuid).then((role) => ({
                 ...role,
-                privileges: role.privileges.map((uuid: string) => getPrivilege(uuid))
-              })))
-          )
+                privileges: role.privileges.map((uuid: string) => getPrivilege(uuid)),
+              })),
+            ),
+          ),
         };
         try {
           await updateUser(newUser);
@@ -46,7 +47,9 @@
         } catch (error) {
           console.error(error);
           toastStore.trigger({
-            message: `An error occured while ${activate ? 'activating' : 'deactivating'} user '${user.email}'`,
+            message: `An error occured while ${activate ? 'activating' : 'deactivating'} user '${
+              user.email
+            }'`,
             background: 'variant-filled-error',
           });
         }
@@ -57,7 +60,7 @@
 
 <a
   data-testid={`user-view-btn-${data.cell}`}
-  href={`/users/${data.cell}`}
+  href={`/admin/users/${data.cell}`}
   class="text-secondary-600 hover:text-primary-600"
 >
   <i class="fa-solid fa-circle-info fa-xl"></i>
@@ -67,12 +70,12 @@
 {#if data.row.status === 'Active'}
   <a
     data-testid={`user-edit-btn-${data.cell}`}
-    href={`/users/${data.cell}/edit`}
+    href={`/admin/users/${data.cell}/edit`}
     class="text-secondary-600 hover:text-primary-600"
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
     <span class="sr-only">Edit</span>
-</a>
+  </a>
   <button
     data-testid={`user-deactivate-btn-${data.cell}`}
     type="button"

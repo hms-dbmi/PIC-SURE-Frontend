@@ -9,6 +9,7 @@
   import PrivilegesStore from '$lib/stores/Privileges';
   const { privilegeList, loadPrivileges } = PrivilegesStore;
 </script>
+
 <svelte:head>
   <title>{branding.applicationName} | New Role</title>
 </svelte:head>

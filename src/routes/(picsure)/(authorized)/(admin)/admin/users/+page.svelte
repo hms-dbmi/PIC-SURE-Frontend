@@ -6,8 +6,8 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
-  import Actions from '$lib/components/user/cell/Actions.svelte';
-  import Status from '$lib/components/user/cell/Status.svelte';
+  import Actions from '$lib/components/admin/user/cell/Actions.svelte';
+  import Status from '$lib/components/admin/user/cell/Status.svelte';
 
   import UsersStore from '$lib/stores/Users';
   import RolesStore from '$lib/stores/Roles';
@@ -70,6 +70,7 @@
     });
   }
 </script>
+
 <svelte:head>
   <title>{branding.applicationName} | User Management</title>
 </svelte:head>
@@ -81,9 +82,9 @@
     <div class="flex gap-4 mb-6">
       <div class="flex-auto">
         <a
-          data-testid="add-user"
+          data-testid="add-user-btn"
           class="btn variant-ghost-primary hover:variant-filled-primary"
-          href="/users/new"
+          href="/admin/users/new"
         >
           &plus; Add User
         </a>

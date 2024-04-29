@@ -23,6 +23,7 @@
     privileges = await Promise.all(role.privileges.map(getPrivilege));
   }
 </script>
+
 <svelte:head>
   <title>{branding.applicationName} | Role Summary</title>
 </svelte:head>
