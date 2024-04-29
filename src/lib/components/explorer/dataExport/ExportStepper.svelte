@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { SvelteComponent } from 'svelte';
   import { Step, Stepper, getModalStore } from '@skeletonlabs/skeleton';
 
   const modalStore = getModalStore();
