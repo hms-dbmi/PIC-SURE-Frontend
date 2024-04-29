@@ -28,9 +28,13 @@
   }));
 
   async function saveUser() {
+    const generalMetadata = JSON.parse(user?.generalMetadata || '{"email":""}');
+    generalMetadata.email = email;
+
     let newUser = {
       email,
       connection: await getConnection(connection),
+      generalMetadata: JSON.stringify(generalMetadata),
       active,
       roles: await Promise.all(
         roles
