@@ -1,10 +1,11 @@
+import type { Indexable } from '$lib/types';
 type ExpectedResultType = 'COUNT' | 'CROSS_COUNT' | 'DATAFRAME';
 
 interface QueryInterface {
-  categoryFilters: Object; //TODO: define type
-  numericFilters: Object;
-  requiredFields: Object[];
-  anyRecordOf: Object[];
+  categoryFilters: object; //TODO: define type
+  numericFilters: object;
+  requiredFields: string[];
+  anyRecordOf: string[];
   variantInfoFilters: VariantInfoFilters[];
   expectedResultType: ExpectedResultType;
 }
@@ -25,10 +26,10 @@ interface VariantInfoFilters {
 }
 
 export class Query implements QueryInterface {
-  categoryFilters: Object;
-  numericFilters: Object;
-  requiredFields: Object[];
-  anyRecordOf: Object[];
+  categoryFilters: object;
+  numericFilters: object;
+  requiredFields: string[];
+  anyRecordOf: string[];
   variantInfoFilters: VariantInfoFilters[];
   expectedResultType: ExpectedResultType;
 
@@ -37,7 +38,7 @@ export class Query implements QueryInterface {
     this.numericFilters = {};
     this.requiredFields = [];
     this.anyRecordOf = [];
-    let variantInfoFilter = {
+    const variantInfoFilter = {
       categoryVariantInfoFilters: {},
       numericVariantInfoFilters: {},
     };
@@ -46,11 +47,11 @@ export class Query implements QueryInterface {
   }
 
   addCategoryFilter(key: string, value: string[]) {
-    (this.categoryFilters as { [key: string]: any })[key] = value;
+    (this.categoryFilters as Indexable)[key] = value;
   }
 
   addNumericFilter(key: string, min: string, max: string) {
-    (this.numericFilters as { [key: string]: any })[key] = {
+    (this.numericFilters as Indexable)[key] = {
       min: min.toString(),
       max: max.toString(),
     };
