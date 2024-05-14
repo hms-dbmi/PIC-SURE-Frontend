@@ -50,7 +50,7 @@ export const branding = {
       {
         header: 'PIC‑SURE API Examples',
         body: 'Get started using the PIC‑SURE API with real example code and analyses from simple queries to complex real-world use cases. \n\nClick this card to check out the PIC-SURE API example code.',
-        link: 'https://pic-sure.org/about',
+        link: '/api/start',
       },
     ],
   },
