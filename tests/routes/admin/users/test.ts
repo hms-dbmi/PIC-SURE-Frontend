@@ -1,6 +1,10 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess, mockApiFail } from '../../custom-context';
-import { users as mockUsers, connections as mockConns, roles as mockRoles } from '../../mock-data';
+import { test, mockApiSuccess, mockApiFail } from '../../../custom-context';
+import {
+  users as mockUsers,
+  connections as mockConns,
+  roles as mockRoles,
+} from '../../../mock-data';
 
 const validationText = {
   invalidEmail: "Please include an '@' in the email address.",
