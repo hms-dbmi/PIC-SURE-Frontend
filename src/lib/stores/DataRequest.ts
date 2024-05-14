@@ -29,7 +29,6 @@ export const queryId = {
   ..._queryId,
   set: (value: string) => {
     if (valid.uuid.test(value)) {
-      console.log('form updated with valid uuid of', value);
       _queryId.set(value);
     }
   },
@@ -39,7 +38,6 @@ export const approved = {
   ..._approved,
   set: (value: string) => {
     if (valid.date.test(value)) {
-      console.log('form updated with valid approval date of', value);
       _approved.set(value);
     }
   },
@@ -92,8 +90,6 @@ function updateStatus(response: any) {
 }
 
 export async function refreshStatus() {
-  console.log('refresh status');
-
   const query = get(queryId);
   await api
     .get(`${STATUS_URL}/${query}`)
@@ -121,7 +117,6 @@ export async function sendData() {
       .then(status.set)
       .catch(setError(`Error sending ${type} data request`));
 
-  console.log('send data request');
   if (type.phenotypic && stat?.phenotypic === UploadStatus.Unsent) {
     await req('Phenotypic');
   }
@@ -133,7 +128,6 @@ export async function sendData() {
 export async function loadSites() {
   if (get(sites)) return;
 
-  console.log('load sites');
   await api
     .get(SITES_URL)
     .then(throwOnErrorValue)
@@ -145,24 +139,21 @@ export async function loadSites() {
 }
 
 export function loadSubscriptions() {
-  console.log('load queryId subscription');
   unsubscribers.push(
     _queryId.subscribe(async (query) => {
       if (!query) return;
 
-      console.log('requesting status');
       await api
         .get(`${STATUS_URL}/${query}`)
         .then(throwOnErrorValue)
         .then(updateStatus)
-        .then(async () => {
-          console.log('requesting metadata');
-          await api
+        .then(() =>
+          api
             .get(`${QUERY_URL}/${query}/metadata`)
             .then(throwOnErrorValue)
             .then(metadata.set)
-            .catch(setError(`Metadata for ${query} could not be found.`, true));
-        })
+            .catch(setError(`Metadata for ${query} could not be found.`, true)),
+        )
         .catch(
           setError(
             "We couldn't find any matching results. Please check to ensure the value you have entered is correct or " +
@@ -173,12 +164,10 @@ export function loadSubscriptions() {
     }),
   );
 
-  console.log('load approved subscription');
   unsubscribers.push(
     _approved.subscribe(async (approval) => {
       if (!approval) return;
 
-      console.log('requesting status on approval change');
       const query = get(queryId);
       await api
         .get(`${STATUS_URL}/${query}/approve?` + new URLSearchParams({ date: approval }))
@@ -187,31 +176,17 @@ export function loadSubscriptions() {
         .catch(setError(`Status for ${query} was not found.`));
     }),
   );
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const log = (msg: string) => (sub: any) => console.log(msg, sub);
-  unsubscribers.push(
-    _queryId.subscribe(log('new query id')),
-    _approved.subscribe(log('new approved date')),
-    error.subscribe(log('new error')),
-    sites.subscribe(log('new sites list')),
-    metadata.subscribe(log('new metadata')),
-    status.subscribe(log('new status')),
-    dataType.subscribe(log('new type')),
-    selectedSite.subscribe(log('new selected site')),
-  );
 }
 
 export function unloadSubscribers() {
-  console.log('unload subscriptions');
   unsubscribers.forEach((unsub) => unsub());
   unsubscribers = [];
 }
 
 export function reset() {
-  console.log('reset form values and responses');
   _queryId.set('');
   _approved.set('');
+  queryError.set(false);
   dataType.set({ genomic: false, phenotypic: false });
   metadata.set(null);
   status.set(null);
