@@ -20,7 +20,6 @@ export let unsubscribers: Unsubscriber[] = [];
 // Form fields
 export const selectedSite: Writable<string> = writable('');
 export const dataType: Writable<DataType> = writable({ genomic: false, phenotypic: false });
-export const queryError: Writable<boolean> = writable(false);
 const _queryId: Writable<string> = writable('');
 const _approved: Writable<string> = writable('');
 
@@ -45,6 +44,7 @@ export const approved = {
 
 // Response objects
 export const error: Writable<string> = writable('');
+export const queryError: Writable<boolean> = writable(false);
 export const sites: Writable<Sites> = writable(null);
 export const metadata: Writable<Metadata> = writable(null);
 export const status: Writable<Status> = writable(null);
@@ -109,7 +109,7 @@ export async function sendData() {
 
   const req = (type: 'Genomic' | 'Phenotypic') =>
     api
-      .post(`${UPLOAD_URL}/${site}?dataType=${type}`, {
+      .post(`${UPLOAD_URL}/${site}?` + new URLSearchParams({ dataType: type }), {
         ...meta.resultMetadata.queryJson.query,
         picSureId: query,
       })
@@ -166,7 +166,8 @@ export function loadSubscriptions() {
 
   unsubscribers.push(
     _approved.subscribe(async (approval) => {
-      if (!approval) return;
+      const prevApproved = get(approved);
+      if (!approval || !!prevApproved) return;
 
       const query = get(queryId);
       await api

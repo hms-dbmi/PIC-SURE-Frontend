@@ -39,7 +39,10 @@
   } from '$lib/stores/DataRequest';
 
   // Steps
-  $: search = { show: false, active: $queryError || (!$queryId && !$approved) };
+  $: search = {
+    show: true,
+    active: $queryError || (!$queryId && !$approved),
+  };
   $: review = {
     show: !$queryError && !!$queryId,
     active: !$queryError && !!$queryId && !$approved,
@@ -219,7 +222,7 @@
           {/each}
         </select>
       </GridCell>
-      <GridCell title="Select & Send Data">
+      <GridCell title="Select &amp; Send Data">
         <svelte:fragment slot="help">
           <button data-testid="data-type-modal-btn" on:click={dataTypeModal}>
             <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>

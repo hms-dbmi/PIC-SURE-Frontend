@@ -83,10 +83,12 @@ test.describe('data requests', () => {
     });
   });
   test.describe('step 2', () => {
-    test('Should load step 2 when valid uuid provided', async ({ page }) => {
-      // Given
+    test.beforeEach(async ({ page }) => {
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
       await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
+    });
+    test('Should load step 2 when valid uuid provided', async ({ page }) => {
+      // Given
       await page.goto('/admin/requests');
 
       // When
@@ -97,8 +99,6 @@ test.describe('data requests', () => {
     });
     test('Should be active step', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
 
@@ -107,11 +107,6 @@ test.describe('data requests', () => {
     });
     test('Should show data request summary modal', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, {
-        ...mockStatus,
-        approved: dummyDate,
-      });
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
 
@@ -125,23 +120,31 @@ test.describe('data requests', () => {
     });
   });
   test.describe('step 3', () => {
-    test('Should load step 3 when approval date is provided', async ({ page }) => {
-      // Given
+    test.beforeEach(async ({ page }) => {
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
       await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
+      await mockApiSuccess(
+        page,
+        `*/**/picsure/proxy/uploader/status/${dummyUuid}/approve?date=${dummyDate}`,
+        {
+          ...mockStatus,
+          approved: dummyDate,
+        },
+      );
+    });
+    test('Should load step 3 when approval date is provided', async ({ page }) => {
+      // Given
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
 
       // When
-      await page.getByLabel('Date approved').fill('2024-01-01');
+      await page.getByLabel('Date approved').fill(dummyDate);
 
       // Then
       await expect(page.getByTestId('v-stepper-step-3')).toBeVisible();
     });
     test('Should be active step', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
 
@@ -153,8 +156,6 @@ test.describe('data requests', () => {
     });
     test('Should show Data Storage Location info modal', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -171,8 +172,6 @@ test.describe('data requests', () => {
     });
     test('Should pre-select home site in options', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -185,8 +184,6 @@ test.describe('data requests', () => {
     });
     test('Should show data types modal', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -201,8 +198,6 @@ test.describe('data requests', () => {
     });
     test('Should not allow send data button click if no data type selected', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -212,8 +207,6 @@ test.describe('data requests', () => {
     });
     test('Should allow send data button on geno or pheno data selection', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -224,8 +217,6 @@ test.describe('data requests', () => {
     });
     test('Should ask user to confirm on send data button press', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -241,8 +232,6 @@ test.describe('data requests', () => {
     });
     test('Should show default status Unsent', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -252,7 +241,6 @@ test.describe('data requests', () => {
     });
     test('Should update values on status refresh', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
       await mockApiSuccess(
         page,
         `*/**/picsure/proxy/uploader/upload/${encodeURIComponent(
@@ -263,7 +251,6 @@ test.describe('data requests', () => {
           phenotypic: 'Querying',
         },
       );
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -285,8 +272,6 @@ test.describe('data requests', () => {
       page,
     }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await mockApiSuccess(
         page,
         `*/**/picsure/proxy/uploader/upload/${encodeURIComponent(
@@ -313,8 +298,6 @@ test.describe('data requests', () => {
     });
     test('Should not ask user to confirm on send data button when remembered', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await mockApiSuccess(
         page,
         `*/**/picsure/proxy/uploader/upload/${encodeURIComponent(
@@ -355,8 +338,6 @@ test.describe('data requests', () => {
       page,
     }) => {
       // Given
-      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
       await mockApiSuccess(
         page,
         `*/**/picsure/proxy/uploader/upload/${encodeURIComponent(
