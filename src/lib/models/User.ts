@@ -1,10 +1,15 @@
 export interface User {
-  uuid?: string;
-  email?: string;
-  userId?: string;
-  privileges?: string[];
-  token?: string;
+  // Data from psama/authentication route
   acceptedTOS?: boolean;
+  email?: string;
+  expirationDate?: string;
+  token?: string;
+  userId?: string;
+
+  // Additional data from psama/user/me?hasToken
+  uuid?: string;
+  privileges?: string[];
+  apiToken?: string; // as token
 }
 
 export interface ExtendedUser extends User {

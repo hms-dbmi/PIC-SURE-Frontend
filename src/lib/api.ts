@@ -1,17 +1,25 @@
 import { error, type NumericRange } from '@sveltejs/kit';
-import { browser } from '$app/environment';
+import { get as getStore } from 'svelte/store';
+import { user as userStore, expired, logout } from '$lib/stores/User';
 
 // TODO: fix any types
 /* eslint-disable @typescript-eslint/no-explicit-any */
-async function send({
+export async function send({
   method,
   path,
   data,
+  token,
 }: {
   method: string;
   path: string;
   data?: any; //TODO: Change this
+  token?: string
 }) {
+  if(expired()) {
+    logout();
+    throw Promise.reject('User session has expired. Please login again.');
+  }
+
   const opts: { method: string; headers: { [key: string]: string }; body?: string } = {
     method,
     headers: {},
@@ -22,11 +30,11 @@ async function send({
     opts.body = JSON.stringify(data);
   }
 
-  if (browser) {
-    const token = sessionStorage.getItem('token');
-    if (token) {
-      opts.headers['Authorization'] = `Token ${token}`;
-    }
+  const user = getStore(userStore);
+  if(token){
+    opts.headers['Authorization'] = `Token ${token}`;
+  } else if (user?.token) {
+    opts.headers['Authorization'] = `Token ${user.token}`;
   }
 
   const res = await fetch(`${window.location.origin}/${path}`, opts);
@@ -42,7 +50,7 @@ async function send({
   throw error(res.status as NumericRange<400, 599>, await res.text());
 }
 
-export function get(path: string) {
+export function get(path: string,) {
   return send({ method: 'GET', path });
 }
 

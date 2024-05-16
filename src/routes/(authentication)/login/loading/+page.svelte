@@ -5,7 +5,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { login } from '$lib/stores/User';
-  import type { User } from '$lib/models/User';
+  import { type User } from '$lib/models/User';
   //parse the query string
   let failed = false;
   onMount(async () => {
@@ -34,7 +34,7 @@
         });
         const newUser: User = res;
         if (newUser?.token) {
-          login(newUser.token);
+          login(newUser);
         } else {
           failed = true;
           return;

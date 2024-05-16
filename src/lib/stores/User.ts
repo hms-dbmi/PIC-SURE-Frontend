@@ -7,7 +7,19 @@ import type { User } from '$lib/models/User';
 import { PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, features } from '$lib/configuration';
 
-export const user: Writable<User> = writable({});
+function initFromSession(){
+  if(!browser) return {};
+  const sessionUser = JSON.parse(sessionStorage.getItem("userStore") || "{}");
+
+  if(sessionUser?.expirationDate < new Date().toISOString()){
+    sessionStorage.setItem('userStore', '{}');
+    return {};
+  } else {
+    return sessionUser;
+  }
+}
+
+export const user: Writable<User> = writable(initFromSession());
 export const userRoutes: Readable<Route[]> = derived(user, ($user) => {
   const userPrivileges: string[] = $user?.privileges || [];
 
@@ -39,13 +51,9 @@ export const userRoutes: Readable<Route[]> = derived(user, ($user) => {
   }
   return allowedRoutes(featured);
 });
-
-export async function getUser(force?: boolean) {
-  if (force || !get(user)?.privileges || !get(user)?.token) {
-    const res = await api.get('psama/user/me?hasToken');
-    user.set(res);
-  }
-}
+console.log('user store init');
+user.subscribe(userData => { browser && sessionStorage.setItem("userStore", JSON.stringify(userData)); });
+user.subscribe(userData => { console.log('user value change', userData); });
 
 export async function refreshToken() {
   const newLongTermToken = await api
@@ -59,16 +67,26 @@ export async function refreshToken() {
   user.set({ ...get(user), token: newLongTermToken });
 }
 
-export async function login(token: string) {
-  if (browser && token) {
-    sessionStorage.setItem('token', token);
-    await getUser(true);
-  }
+export async function login(authUser: User) {
+  const psamaUser = await api.send({ method: 'GET', path: 'psama/user/me?hasToken', token: authUser.token });
+  user.set({
+    ...authUser,
+    uuid: psamaUser.uuid,
+    privileges: psamaUser.privileges,
+    apiToken: psamaUser.token,
+  });
 }
 
 export async function logout() {
   if (browser) {
-    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('userStore');
   }
   user.set({});
+}
+
+export function expired(){
+  const userData = get(user);
+  if(!userData.expirationDate) return false;
+
+  return userData?.expirationDate < new Date().toISOString();
 }
