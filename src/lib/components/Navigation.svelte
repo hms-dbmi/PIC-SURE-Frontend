@@ -3,33 +3,7 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import logo from '$lib/assets/app-logo.png';
-  import { user, logout } from '$lib/stores/User';
-  import { PicsurePrivileges } from '$lib/models/Privilege';
-  import { routes } from '$lib/configuration';
-
-  let allowedRoutes = routes.filter((route) => !route.privilege);
-
-  function getUsersRoutes() {
-    if (!$user || !$user.privileges) {
-      allowedRoutes = routes.filter((route) => !route.privilege);
-      return allowedRoutes;
-    }
-    if ($user && $user.privileges && $user.privileges.includes(PicsurePrivileges.SUPER)) {
-      allowedRoutes = routes;
-      return allowedRoutes;
-    }
-    Object.values(PicsurePrivileges).forEach((privilege) => {
-      if ($user?.privileges?.includes(privilege)) {
-        allowedRoutes = [
-          ...allowedRoutes,
-          ...routes.filter(
-            (route) => route.privilege === privilege && !allowedRoutes.includes(route),
-          ),
-        ];
-      }
-    });
-    return allowedRoutes;
-  }
+  import { user, userRoutes, logout } from '$lib/stores/User';
 
   function setDropdown(path: string) {
     dropdownPath = path;
@@ -55,7 +29,6 @@
   }
 
   $: dropdownPath = '';
-  $: accessableRoutes = $user && getUsersRoutes();
 </script>
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50">
@@ -66,7 +39,7 @@
   </svelte:fragment>
   <nav id="page-navigation">
     <ul>
-      {#each accessableRoutes as route}
+      {#each $userRoutes as route}
         {#if route.children && route.children.length > 0}
           <li
             class={`has-dropdown ${dropdownPath === route.path ? 'open' : ''}`}

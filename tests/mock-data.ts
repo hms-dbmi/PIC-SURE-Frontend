@@ -43,24 +43,6 @@ export const picsureUser: User = {
   acceptedTOS: true,
 };
 
-export const picsureAdmin: User = {
-  uuid: '1234',
-  email: 'admin@pic-sure.org',
-  privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.ADMIN],
-  // expired token
-  token: mockToken,
-  acceptedTOS: true,
-};
-
-export const topAdmin: User = {
-  uuid: '1234',
-  email: 'admin@pic-sure.org',
-  privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.SUPER],
-  // expired token
-  token: mockToken,
-  acceptedTOS: true,
-};
-
 export const searchResultPath = `*/**/picsure/search/${resources.hpds}`;
 export const searchResults = {
   results: {
