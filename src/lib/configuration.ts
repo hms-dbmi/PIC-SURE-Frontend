@@ -1,5 +1,6 @@
 import { PicsurePrivileges } from './models/Privilege';
 import type { Route } from './models/Route';
+import type { Indexable } from './types';
 
 export const branding = {
   applicationName: 'PIC‑SURE',
@@ -144,18 +145,25 @@ export const routes: Route[] = [
     ],
   },
   { path: '/admin/users', text: 'User Management', privilege: PicsurePrivileges.ADMIN },
-  { path: '/admin/requests', text: 'Data Requests', privilege: PicsurePrivileges.DATA_ADMIN },
+  {
+    path: '/admin/requests',
+    text: 'Data Requests',
+    feature: 'dataRequests',
+    privilege: PicsurePrivileges.DATA_ADMIN,
+  },
   { path: '/explorer', text: 'Explorer' },
   { path: '/api', text: 'API', privilege: PicsurePrivileges.QUERY },
   { path: '/dataset', text: 'Dataset Management', privilege: PicsurePrivileges.QUERY },
   { path: '/help', text: 'Help' },
 ];
 
-export const features = {
+export const features: Indexable = {
   explorer: {
     allowExport: true,
     exportsEnableExport: true,
   },
+  // Env Feature Flags
+  dataRequests: true,
 };
 
 export const resources = {
