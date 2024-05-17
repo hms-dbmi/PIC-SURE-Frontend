@@ -1,19 +1,37 @@
 <script lang="ts">
-  import { getModalStore } from '@skeletonlabs/skeleton';
+  import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
+  const toastStore = getToastStore();
+
+  import PrivilegesStore from '$lib/stores/Privileges';
+  const { deletePrivilege } = PrivilegesStore;
 
   export let data = { cell: '', row: { name: '' } };
 
   function deleteModal() {
+    const name = data.row.name;
     modalStore.trigger({
       type: 'confirm',
       title: 'Delete Privilege?',
-      body: `Are you sure you want to delete privilege '${data.row.name}'?`,
+      body: `Are you sure you want to delete privilege '${name}'?`,
       buttonTextConfirm: 'Yes',
       buttonTextCancel: 'No',
-      response: (confirm: boolean) => {
+      response: async (confirm: boolean) => {
         if (!confirm) return;
-        // TODO: add delete logic using data.cell
+
+        try {
+          await deletePrivilege(data.cell);
+          toastStore.trigger({
+            message: `Successfully deleted privilege '${name}'`,
+            background: 'variant-filled-success',
+          });
+        } catch (error) {
+          console.error(error);
+          toastStore.trigger({
+            message: `An error occured while deleting privilege '${name}'`,
+            background: 'variant-filled-error',
+          });
+        }
       },
     });
   }

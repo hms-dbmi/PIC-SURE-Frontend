@@ -304,3 +304,13 @@ nav#page-navigation li .nav-dropdown a:focus {
   margin-bottom: 1rem;
   @apply rounded-container-token;
 }
+
+.label.required span:after {
+  content: ' *';
+  display: inline;
+  @apply text-error-500-400-token;
+}
+
+.label.required input:invalid {
+  @apply text-error-500-400-token;
+}

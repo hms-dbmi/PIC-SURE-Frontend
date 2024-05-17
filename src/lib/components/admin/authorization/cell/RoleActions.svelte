@@ -1,19 +1,37 @@
 <script lang="ts">
-  import { getModalStore } from '@skeletonlabs/skeleton';
+  import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
+  const toastStore = getToastStore();
+
+  import RolesStore from '$lib/stores/Roles';
+  const { deleteRole } = RolesStore;
 
   export let data = { cell: '', row: { name: '' } };
 
   function deleteModal() {
+    const name = data.row.name;
     modalStore.trigger({
       type: 'confirm',
       title: 'Delete Role?',
-      body: `Are you sure you want to delete role '${data.row.name}'?`,
+      body: `Are you sure you want to delete role '${name}'?`,
       buttonTextConfirm: 'Yes',
       buttonTextCancel: 'No',
-      response: (confirm: boolean) => {
+      response: async (confirm: boolean) => {
         if (!confirm) return;
-        // TODO: add delete logic using data.cell
+
+        try {
+          await deleteRole(data.cell);
+          toastStore.trigger({
+            message: `Successfully deleted role '${name}'`,
+            background: 'variant-filled-success',
+          });
+        } catch (error) {
+          console.error(error);
+          toastStore.trigger({
+            message: `An error occured while deleting role '${name}'`,
+            background: 'variant-filled-error',
+          });
+        }
       },
     });
   }

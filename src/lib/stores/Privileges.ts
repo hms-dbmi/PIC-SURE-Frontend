@@ -1,24 +1,75 @@
 import { get, derived, writable, type Writable } from 'svelte/store';
-import { type Privilege, mapPrivilege } from '$lib/models/Privileges';
+import { type Privilege, mapPrivilege } from '$lib/models/Privilege';
 
-import { privileges as mockPrivileges } from './mock/data';
+import * as api from '$lib/api';
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
 const PRIV_PATH = 'psama/privilege';
-/* eslint-enable @typescript-eslint/no-unused-vars */
 
+const loaded = writable(false);
 const privileges: Writable<Privilege[]> = writable([]);
-const privilegeList = derived(privileges, ($p) => $p.map((p) => [p.name, p.uuid]));
+const privilegeList = derived(privileges, ($p) => $p.map((p) => [p.name, p.uuid || '']), []);
 
-// TODO: Add api integration
 async function loadPrivileges() {
-  privileges.set(mockPrivileges.map(mapPrivilege));
+  if (get(loaded)) return;
+
+  const res = await api.get(PRIV_PATH);
+  privileges.set(res.map(mapPrivilege));
+  loaded.set(true);
 }
 
 async function getPrivilege(uuid: string) {
   const store: Privilege[] = get(privileges);
+  const privilege = store.find((p) => p.uuid === uuid);
+  if (privilege) {
+    return privilege;
+  }
+
+  const res = await api.get(`${PRIV_PATH}/${uuid}`);
+  return mapPrivilege(res);
+}
+
+async function addPrivilege(privilege: Privilege) {
+  const res = await api.post(PRIV_PATH, [
+    {
+      ...privilege,
+      application: { uuid: privilege.application },
+    },
+  ]);
+  const newPriv = mapPrivilege(res.content[0]);
+
+  const store: Privilege[] = get(privileges);
+  store.push(newPriv);
+  privileges.set(store);
+}
+
+async function updatePrivilege(privilege: Privilege) {
+  const res = await api.put(PRIV_PATH, [
+    {
+      ...privilege,
+      application: { uuid: privilege.application },
+    },
+  ]);
+  const newPriv = mapPrivilege(res.content[0]);
+
+  const store: Privilege[] = get(privileges);
+  const privIndex: number = store.findIndex((p) => p.uuid === newPriv.uuid);
+  if (privIndex === -1) {
+    store.push(newPriv);
+  } else {
+    store[privIndex] = newPriv;
+  }
+  privileges.set(store);
+}
+
+async function deletePrivilege(uuid: string) {
+  await api.del(`${PRIV_PATH}/${uuid}`);
+
+  const store: Privilege[] = get(privileges);
   const privIndex: number = store.findIndex((p) => p.uuid === uuid);
-  return store[privIndex];
+  if (privIndex > -1) {
+    store.splice(privIndex, 1);
+    privileges.set(store);
+  }
 }
 
 export default {
@@ -27,4 +78,7 @@ export default {
   privilegeList,
   loadPrivileges,
   getPrivilege,
+  addPrivilege,
+  updatePrivilege,
+  deletePrivilege,
 };

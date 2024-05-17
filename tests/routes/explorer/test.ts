@@ -1,9 +1,8 @@
 import { expect, type Route } from '@playwright/test';
-import { test } from '../../custom-context';
+import { test, mockApiFail } from '../../custom-context';
 import { searchResults as mockData, searchResultPath } from '../../mock-data';
 import { mapSearchResults, type SearchResult } from '../../../src/lib/models/Search';
 import { createCategoricalFilter, createNumericFilter } from '../../../src/lib/models/Filter';
-import { branding } from '../../../src/lib/configuration';
 
 const firstId = 'tag-dataset-nhanes';
 const secondId = 'tag-dataset-1000_genomes';
@@ -21,7 +20,7 @@ test.describe('explorer', () => {
   });
   test('Error message on api error', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, (route: Route) => route.abort('accessdenied'));
+    await mockApiFail(page, searchResultPath, 'accessdenied');
     await page.goto('/explorer?search=somedata');
 
     // Then
@@ -1215,6 +1214,7 @@ test.describe('explorer', () => {
   });
 });
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const getOption = async (page: any, optionIndex = 0) => {
   const component = page.getByTestId('optional-selection-list');
   const optionContainer = component.locator('#options-container');
@@ -1223,6 +1223,7 @@ const getOption = async (page: any, optionIndex = 0) => {
   return options[optionIndex];
 };
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const clickNthFilterIcon = async (page: any, rowIndex = 0) => {
   await expect(page.locator('tbody')).toBeVisible();
   const tableBody = page.locator('tbody');
