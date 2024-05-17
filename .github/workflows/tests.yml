@@ -18,6 +18,8 @@ jobs:
         run: npx playwright install --with-deps
       - name: Run Playwright tests
         run: npm test
+      - name: Run linting tests
+        run: npm run lint
       - uses: actions/upload-artifact@v4
         if: always()
         with:

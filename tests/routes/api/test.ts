@@ -1,15 +1,18 @@
-import { expect, type Route } from '@playwright/test';
-import { test } from '../../custom-context';
+import { expect } from '@playwright/test';
+import { test, mockApiFail, mockApiSuccess } from '../../custom-context';
 import { branding } from '../../../src/lib/configuration';
-import { user as mockUser } from '../../../tests/mock-data';
+import { picsureUser, roles as mockRoles } from '../../../tests/mock-data';
 
 const placeHolderDots =
   '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
 
 test.describe('API page', () => {
+  test.beforeEach(async ({ context }) => {
+    await mockApiSuccess(context, '*/**/psama/role', mockRoles);
+  });
   test('Has expected error message', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me?hasToken', (route: Route) => route.abort('accessdenied'));
+    await mockApiFail(page, '*/**/psama/user/me?hasToken', 'accessdenied');
     await page.goto('/api');
     // When
     const errorAlert = page.locator('[data-testid=error-alert]');
@@ -51,14 +54,14 @@ test.describe('API page', () => {
     expect(await badge.innerText()).toBe('EXPIRED');
     expect(await expires.innerText()).toContain('Mon Feb 01 2021');
   });
-  test(`User account matches expected email of ${mockUser.email}`, async ({ page }) => {
+  test(`User account matches expected email of ${picsureUser.email}`, async ({ page }) => {
     // Given
     await page.goto('/api');
     // When
     const userEmail = page.locator('#account');
     // Then
     await expect(userEmail).toBeVisible();
-    expect(await userEmail.innerText()).toBe(mockUser.email);
+    expect(await userEmail.innerText()).toBe(picsureUser.email);
   });
   test('Token is hidden by default', async ({ page }) => {
     // Given
@@ -108,7 +111,7 @@ test.describe('API page', () => {
     const userToken = page.locator('#token');
     // Then
     await expect(userToken).toBeVisible();
-    expect(await userToken.innerText()).toBe(mockUser.token);
+    expect(await userToken.innerText()).toBe(picsureUser.token);
   });
   test('Reveal button text changes when clicked', async ({ page }) => {
     // Given
@@ -127,15 +130,15 @@ test.describe('API page', () => {
     const userToken = page.locator('#token');
     await refreshButton.click();
     // Then
-    expect(await userToken.innerText()).not.toBe(mockUser.token);
+    expect(await userToken.innerText()).not.toBe(picsureUser.token);
   });
   test('Refresh button changes expiration, updates button text, disables button', async ({
     page,
   }) => {
     // Given
-    await page.route('*/**/psama/user/me/refresh_long_term_token', (route: Route) =>
-      route.fulfill({ json: { userLongTermToken: 'new longterm token' } }),
-    );
+    await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
+      userLongTermToken: 'new longterm token',
+    });
     await page.goto('/api');
     // When
     const userToken = page.locator('#token');
@@ -157,9 +160,9 @@ test.describe('API page', () => {
   });
   test('Canceling confirm modal does nothing to user', async ({ page }) => {
     // Given
-    await page.route('*/**/psama/user/me/refresh_long_term_token', (route: Route) =>
-      route.fulfill({ json: { userLongTermToken: 'new longterm token' } }),
-    );
+    await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
+      userLongTermToken: 'new longterm token',
+    });
     await page.goto('/api');
     // When
     const userToken = page.locator('#token');

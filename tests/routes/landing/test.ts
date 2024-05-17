@@ -1,5 +1,5 @@
-import { expect, type Route } from '@playwright/test';
-import { test } from '../../custom-context';
+import { expect } from '@playwright/test';
+import { test, mockApiSuccess } from '../../custom-context';
 import { branding } from '../../../src/lib/configuration';
 import {
   searchResults as mockSearchResults,
@@ -10,9 +10,7 @@ import {
 test.describe('Landing page', () => {
   test('Has expected search to go to explorer', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) =>
-      route.fulfill({ json: mockSearchResults }),
-    );
+    await mockApiSuccess(page, searchResultPath, mockSearchResults);
     await page.goto('/');
     // When
     await page.fill('input', 'test');
@@ -22,9 +20,7 @@ test.describe('Landing page', () => {
   });
   test('Has expected search to go to explorer with spaces', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) =>
-      route.fulfill({ json: mockSearchResults }),
-    );
+    await mockApiSuccess(page, searchResultPath, mockSearchResults);
     await page.goto('/');
     // When
     await page.fill('input', 'test with spaces');
@@ -67,9 +63,7 @@ test.describe('Landing page', () => {
     });
     test(`Card "${description}"'s click leads to ${url}`, async ({ page }) => {
       // Given
-      await page.route('*/**/picsure/dataset/named', async (route: Route) =>
-        route.fulfill({ json: mockDatasets }),
-      );
+      await mockApiSuccess(page, '*/**/picsure/dataset/named', mockDatasets);
       await page.goto('/');
 
       // When

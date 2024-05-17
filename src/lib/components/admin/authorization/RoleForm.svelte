@@ -1,52 +1,97 @@
 <script lang="ts">
-  import type { Role } from '$lib/models/Role';
+  import { goto } from '$app/navigation';
+  import { getToastStore } from '@skeletonlabs/skeleton';
+  const toastStore = getToastStore();
+
+  import { textInput } from '$lib/utilities/Validation';
+
+  import { type Role } from '$lib/models/Role';
+  import RolesStore from '$lib/stores/Roles';
+  const { addRole, updateRole } = RolesStore;
 
   export let role: Role | undefined = undefined;
   export let privilegeList: string[][];
-  export let onSave = () => {};
 
-  let name;
-  let description;
-  let privileges: HTMLElement[] = [];
+  let name = role ? role.name : '';
+  let description = role ? role.description : '';
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let privileges = privilegeList.map(([_name, uuid]) => ({
+    uuid,
+    checked: role ? role.privileges.includes(uuid) : false,
+  }));
+
+  async function saveRole() {
+    let newRole: Role = {
+      name,
+      description,
+      privileges: privileges.filter((priv) => priv.checked).map((priv) => priv.uuid),
+    };
+    try {
+      if (role) {
+        newRole = { ...newRole, uuid: role.uuid };
+        await updateRole(newRole);
+      } else {
+        await addRole(newRole);
+      }
+      toastStore.trigger({
+        message: `Successfully saved ${newRole ? 'new role' : 'role'} '${name}'`,
+        background: 'variant-filled-success',
+      });
+      goto('/admin/authorization');
+    } catch (error) {
+      console.error(error);
+      toastStore.trigger({
+        message: `An error occured while saving ${newRole ? 'new role' : 'role'} '${name}'`,
+        background: 'variant-filled-error',
+      });
+    }
+  }
 </script>
 
-<label class="label">
-  <span>Name:</span>
-  <input type="text" bind:this={name} value={role ? role.name : ''} class="input" />
-</label>
+<form on:submit|preventDefault={saveRole}>
+  <label class="label required">
+    <span>Name:</span>
+    <input
+      type="text"
+      bind:value={name}
+      class="input"
+      required
+      pattern={textInput}
+      minlength="1"
+      maxlength="255"
+    />
+  </label>
 
-<label class="label">
-  <span>Description:</span>
-  <input type="text" bind:this={description} value={role ? role.description : ''} class="input" />
-</label>
+  <label class="label required">
+    <span>Description:</span>
+    <input
+      type="text"
+      bind:value={description}
+      class="input"
+      required
+      pattern={textInput}
+      minlength="1"
+      maxlength="255"
+    />
+  </label>
 
-<fieldset data-testid="privilege-checkboxes">
-  <legend>Privileges:</legend>
-  {#each privilegeList as [name, uuid], index}
-    <label class="flex items-center space-x-2">
-      <input
-        class="checkbox"
-        type="checkbox"
-        bind:this={privileges[index]}
-        value={uuid}
-        checked={role && role.privileges.includes(uuid)}
-      />
-      <p>{name}</p>
-    </label>
-  {/each}
-</fieldset>
+  <fieldset data-testid="privilege-checkboxes">
+    <legend>Privileges:</legend>
+    {#each privilegeList as [name], index}
+      <label class="flex items-center space-x-2">
+        <input class="checkbox" type="checkbox" bind:checked={privileges[index].checked} />
+        <p>{name}</p>
+      </label>
+    {/each}
+  </fieldset>
 
-<button
-  type="submit"
-  class="btn variant-ghost-primary hover:variant-filled-primary"
-  aria-label="You are on the save button"
-  on:click={onSave}
->
-  Save
-</button>
-<a href="/admin/authorization" class="btn variant-ghost-secondary hover:variant-filled-secondary">
-  Cancel
-</a>
+  <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
+    Save
+  </button>
+  <a href="/admin/authorization" class="btn variant-ghost-secondary hover:variant-filled-secondary">
+    Cancel
+  </a>
+</form>
 
 <style>
   label,
