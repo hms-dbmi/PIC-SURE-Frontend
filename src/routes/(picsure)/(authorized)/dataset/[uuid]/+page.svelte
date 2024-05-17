@@ -2,11 +2,14 @@
   import { ProgressBar } from '@skeletonlabs/skeleton';
 
   import { page } from '$app/stores';
+
   import type { DataSet } from '$lib/models/Dataset';
   import DataSetStore from '$lib/stores/Dataset';
+  import { branding } from '$lib/configuration';
+
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import { branding } from '$lib/configuration';
+  import QuerySummary from '$lib/components/QuerySummary.svelte';
 
   const { getDataset } = DataSetStore;
 
@@ -39,20 +42,7 @@
         </tr>
       </table>
     </section>
-    <section id="detail-filters-container" class="m-3">
-      <h2 class="text-left my-1">Filters Applied</h2>
-      <ul data-testid="dataset-summary-filters" class="primary-list">
-        <li>query.categoryFilters: {JSON.stringify(dataset.query?.categoryFilters)}</li>
-        <li>query.numericFilters: {JSON.stringify(dataset.query?.numericFilters)}</li>
-        <li>query.variantInfoFilters: {JSON.stringify(dataset.query?.variantInfoFilters)}</li>
-      </ul>
-    </section>
-    <section id="detail-variables-container" class="m-3">
-      <h2 class="text-left my-1">Additional Variables Included in Dataset</h2>
-      <ul data-testid="dataset-summary-variables" class="primary-list">
-        <li>query.fields: {JSON.stringify(dataset.query?.fields)}</li>
-      </ul>
-    </section>
+    <QuerySummary query={dataset.query} />
   {:catch}
     <ErrorAlert title="API Error">
       <p>An error occured while retrieving dataset {$page.params.uuid}.</p>

@@ -1,5 +1,6 @@
 import type { User } from '../src/lib/models/User';
 import { PicsurePrivileges } from '../src/lib/models/Privilege';
+import { resources } from '../src/lib/configuration';
 
 export const mockToken =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6MTYxMjE2NDk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.kzaW-ZkhCPlTgdGQQAz_CA1ZB80PpZ5aiRa2lj46hbw';
@@ -60,7 +61,7 @@ export const topAdmin: User = {
   acceptedTOS: true,
 };
 
-export const searchResultPath = '*/**/picsure/search/bf638674-053b-46c4-96a1-4cd6c8395248';
+export const searchResultPath = `*/**/picsure/search/${resources.hpds}`;
 export const searchResults = {
   results: {
     phenotypes: {
@@ -310,3 +311,36 @@ export const users = [
     active: true,
   },
 ];
+
+export const sites = { sites: ['site A', 'site B'], homeSite: 'site A', homeDisplay: 'Site A' };
+export const status = {
+  genomic: 'Unsent',
+  phenotypic: 'Unsent',
+  queryId: '1234',
+  approved: '',
+  site: '',
+};
+
+export const metadata = {
+  status: 'AVAILABLE',
+  picsureResultId: '1234',
+  resultMetadata: {
+    queryResultMetadata: '{"picsureQueryId":"p1234"}',
+    queryJson: {
+      query: {
+        categoryFilters: {},
+        numericFilters: {},
+        requiredFields: [],
+        anyRecordOf: [],
+        variantInfoFilters: [
+          {
+            categoryVariantInfoFilters: {},
+            numericVariantInfoFilters: {},
+          },
+        ],
+        expectedResultType: 'DATAFRAME',
+      },
+      resourceUUID: 'r1234',
+    },
+  },
+};
