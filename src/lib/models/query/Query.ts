@@ -57,6 +57,18 @@ export class Query implements QueryInterface {
     };
   }
 
+  addCategoryVariantInfoFilters(filter: {
+    Gene_with_variant?: string[];
+    Variant_consequence_calculated?: string[];
+    Variant_frequency_as_text?: string[];
+  }) {
+    this.variantInfoFilters[0].categoryVariantInfoFilters = {
+      Gene_with_variant: filter.Gene_with_variant,
+      Variant_consequence_calculated: filter.Variant_consequence_calculated,
+      Variant_frequency_as_text: filter.Variant_frequency_as_text,
+    };
+  }
+
   addRequiredField(field: string) {
     this.requiredFields.push(field);
   }

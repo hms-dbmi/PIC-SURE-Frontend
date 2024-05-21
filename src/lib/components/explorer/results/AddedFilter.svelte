@@ -49,7 +49,13 @@
           return filter.description;
       }
     } else if (filter.filterType === 'genomic') {
-      return filter.description;
+      const anyOr = (key: string, arr: string[] | undefined) =>
+        arr && arr.length > 0 ? `${key}: ${arr.join(', ')}` : `${key}: any`;
+      return [
+        anyOr('Gene with variant', filter.Gene_with_variant),
+        anyOr('Variant frequency', filter.Variant_frequency_as_text),
+        anyOr('Consequence Group by severity', filter.Variant_consequence_calculated),
+      ].join('; ');
     }
   };
 
@@ -83,14 +89,16 @@
       {filter.variableName}
     </div>
     <div class="actions">
-      <button
-        type="button"
-        title="Edit Filter"
-        class="bg-initial text-black-500 hover:text-primary-600"
-        on:click={editFilter}
-      >
-        <i class="fa-solid fa-pen-to-square"></i>
-      </button>
+      {#if filter.filterType !== 'genomic'}
+        <button
+          type="button"
+          title="Edit Filter"
+          class="bg-initial text-black-500 hover:text-primary-600"
+          on:click={editFilter}
+        >
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+      {/if}
       <button
         type="button"
         title="Remove Filter"

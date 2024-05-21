@@ -17,7 +17,6 @@
     (data.index !== undefined || data.index !== null) && activeRow.set(data.index);
   }
   function insertInfoContent() {
-    console.log('insertInfoContent');
     updateActiveRow('info');
     activeComponent.set($expandableComponents['info']);
   }

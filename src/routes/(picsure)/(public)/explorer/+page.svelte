@@ -1,20 +1,22 @@
 <script lang="ts">
+  import type { SvelteComponent } from 'svelte';
   import { Accordion, AccordionItem, ProgressBar } from '@skeletonlabs/skeleton';
+
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
+
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
   import Content from '$lib/components/Content.svelte';
   import Checkbox from '$lib/components/explorer/Checkbox.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import { page } from '$app/stores';
-  import { goto } from '$app/navigation';
-
-  import SearchStore from '$lib/stores/Search';
-  import { activeRow, activeComponent, expandableComponents } from '$lib/stores/ExpandableRow';
   import AddFilterComponent from '$lib/components/explorer/AddFilter.svelte';
   import ResultInfoComponent from '$lib/components/explorer/ResultInfoComponent.svelte';
   import HierarchyComponent from '$lib/components/explorer/HierarchyComponent.svelte';
-  import type { SvelteComponent } from 'svelte';
-  import { branding } from '$lib/configuration';
+
+  import { branding, features } from '$lib/configuration';
+  import SearchStore from '$lib/stores/Search';
+  import { activeRow, activeComponent, expandableComponents } from '$lib/stores/ExpandableRow';
   import Searchbox from '$lib/components/Searchbox.svelte';
   let { tags, searchTerm, searchResults, search } = SearchStore;
 
@@ -89,6 +91,12 @@
             <Searchbox bind:searchTerm={searchInput} search={updateSearch} />
           </div>
           <div class="flex-none">
+            {#if features.genomicFilter}
+              <a
+                class="btn variant-ghost-primary hover:variant-filled-primary"
+                href="/explorer/genome-filter">Genomic Filtering</a
+              >
+            {/if}
             <button
               type="button"
               class="btn variant-ghost-error hover:variant-filled-error"

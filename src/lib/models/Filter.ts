@@ -107,21 +107,20 @@ export function createNumericFilter(searchResult: SearchResult, min?: string, ma
   return filter;
 }
 
-export function createGenomicFilter(
-  Gene_with_variant?: string[],
-  Variant_consequence_calculated?: string[],
-  Variant_frequency_as_text?: string[],
-) {
+export function createGenomicFilter(filters: {
+  Gene_with_variant?: string[];
+  Variant_consequence_calculated?: string[];
+  Variant_frequency_as_text?: string[];
+}) {
   const filter: Filter = {
     uuid: uuid(),
     id: 'genomic',
     filterType: 'genomic',
     displayType: 'genomic',
     variableName: 'Genomic Filter',
-    description: 'Filter for genomic data',
-    Gene_with_variant: Gene_with_variant,
-    Variant_consequence_calculated: Variant_consequence_calculated,
-    Variant_frequency_as_text: Variant_frequency_as_text,
+    Gene_with_variant: filters.Gene_with_variant,
+    Variant_consequence_calculated: filters.Variant_consequence_calculated,
+    Variant_frequency_as_text: filters.Variant_frequency_as_text,
   };
   return filter;
 }

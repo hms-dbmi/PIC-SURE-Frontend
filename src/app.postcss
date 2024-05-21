@@ -310,12 +310,22 @@ nav#page-navigation li .nav-dropdown a:focus {
   @apply rounded-container-token;
 }
 
+.btn-xs {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
 .label.required span:after {
   content: ' *';
   display: inline;
   @apply text-error-500-400-token;
 }
 
+input.required:invalid,
 .label.required input:invalid {
   @apply text-error-500-400-token;
 }

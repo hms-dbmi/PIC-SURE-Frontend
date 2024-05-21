@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CopyButton from '$lib/components/CopyButton.svelte';
+  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
 
   export let data = { cell: '', row: {} };
   let buttonText = 'Copy';
