@@ -1,31 +1,33 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
-  import { loginConfiguration } from '$lib/configuration';
-  import auth0 from 'auth0-js';
-  let redirectUrl = '/';
-  const redirectTo = $page.url.searchParams.get('redirectTo');
-  if (browser) {
-    redirectUrl = `${window.location.protocol}//${window.location.hostname}${
-      window.location.port ? ':' + window.location.port : ''
-    }/login/loading?redirectTo=${redirectTo ?? '/'}`;
-  }
-  const webAuth = new auth0.WebAuth({
-    domain: 'avillachlab.auth0.com',
-    clientID: loginConfiguration.clientId,
-    redirectUri: redirectUrl,
-    responseType: 'token',
+    import type { AuthData, AuthProviderConstructor } from '$lib/models/AuthProvider';
+    import type AuthProvider from '$lib/models/AuthProvider';
+  import { onMount } from 'svelte';
+  import LoginButton from '$lib/components/LoginButton.svelte';
+  
+  const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
+  let logins: AuthProvider[] = [];
+  onMount(async () => {
+    logins = await Promise.all(
+    $page.data?.providers?.map(async (login: AuthData) => {
+      const providerModule = await import(`../../../lib/auth/${login.name}.ts`);
+      const ProviderClass = providerModule.default as AuthProviderConstructor;
+      const providerInstance = new ProviderClass() as AuthProvider;
+      Object.assign(providerInstance, login);
+      return providerInstance; // Return the providerInstance for the new array
+    }) || []
+  );
   });
-  function login() {
-    webAuth.authorize({
-      responseType: 'token',
-      connection: 'google-oauth2',
-    });
-  }
 </script>
 
-<section class="flex justify-center items-center w-full h-full">
-  <button id="login-button" on:click={login} class="btn variant-filled-primary">Log In</button>
+<section id="logins" class="flex flex-col justify-center items-center w-full h-full">
+  {#if $page.data?.providers}
+    {#each logins as provider}
+      <LoginButton buttonText={provider.description || provider.name} loginFunction={provider.login} redirectTo={redirectTo}/>
+    {/each}
+  {/if}
+  <!-- <button id="login-button" on:click={login} class="btn variant-filled-primary">Log In</button> -->
 </section>
 
 <style>
