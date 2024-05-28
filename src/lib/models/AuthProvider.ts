@@ -6,9 +6,6 @@ export interface AuthData extends Indexable {
   type: string;
   icon?: string;
   enabled: boolean;
-  loginurl?: string;
-  logouturl?: string;
-  callbackurl?: string;
 }
 
 interface AuthFuncs extends AuthData {
