@@ -1,37 +1,28 @@
-import type { AuthData } from "$lib/models/AuthProvider";
+import type { AuthData } from '$lib/models/AuthProvider';
+import AuthProvider from '$lib/models/AuthProvider';
 
-export interface FenceData extends AuthData {
-  uri?: string;
-  clientid?: string;
+interface FenceData extends AuthData {
+  uri: string;
+  clientid: string;
 }
 
-export default class Fence implements FenceData {
-  
-  name?: string | undefined;
-  description?: string | undefined = "Log in with eRA Commons";
-  icon?: string | undefined;
-  enabled: boolean = false;
-  loginurl?: string | undefined;
-  logouturl?: string | undefined;
-  callbackurl?: string | undefined;
+class Fence extends AuthProvider implements FenceData {
+  uri: string;
+  clientid: string;
 
-  getConfig = (): FenceData => {
-    return {
-      name: this.name,
-      description: this.description,
-      icon: this.icon,
-      enabled: this.enabled,
-      loginurl: this.loginurl,
-      logouturl: this.logouturl,
-      callbackurl: this.callbackurl,
-    };
+  constructor(data: FenceData) {
+    super(data);
+    this.uri = data.uri;
+    this.clientid = data.clientid;
   }
 
-  login(redirectTo: string): Promise<any> {
-    throw new Error("Method not implemented.");
-  }
-  logout(): Promise<void> {
-    throw new Error("Method not implemented.");
-  }
-
+  login = async (redirectTo: string): Promise<void> => {
+    throw new Error('Method not implemented.');
+  };
+  logout = async (): Promise<void> => {
+    throw new Error('Method not implemented.');
+  };
 }
+
+export default Fence;
+export type { FenceData as AuthType };

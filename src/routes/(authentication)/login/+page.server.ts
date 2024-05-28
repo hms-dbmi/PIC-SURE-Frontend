@@ -1,5 +1,5 @@
-import { getAllProviders } from "$lib/login-registry";
-import type { AuthData } from "$lib/models/AuthProvider";
+import { getAllProviders } from '$lib/login-registry';
+import type { AuthData } from '$lib/models/AuthProvider';
 
 function serializeMap(map: Map<any, any>) {
   return Array.from(map.entries()).map(([key, value]) => [
