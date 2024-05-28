@@ -19,7 +19,6 @@ class Auth0 extends AuthProvider implements Auth0Data {
   }
 
   login = async (redirectTo: string): Promise<void> => {
-    console.log('login');
     let redirectUrl = '/';
     if (browser) {
       redirectUrl = `${window.location.protocol}//${window.location.hostname}${
