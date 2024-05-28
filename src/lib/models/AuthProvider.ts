@@ -12,7 +12,7 @@ export interface AuthData extends Indexable {
 }
 
 interface AuthFuncs extends AuthData {
-  login(redirectTo: string): Promise<any>;
+  login(redirectTo: string): Promise<void>;
   logout(): Promise<void>;
 }
 export default class AuthProvider implements AuthFuncs {
