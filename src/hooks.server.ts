@@ -1,4 +1,4 @@
-import { registerProvider } from './lib/login-registry';
+import { registerProviderData } from './lib/login-registry';
 import type { AuthData } from './lib/models/AuthProvider';
 
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
@@ -24,7 +24,7 @@ async function registerEnabledProviders(enabledProviders: string[], viteProvider
       authProviderConfigInterface.enabled = true;
       authProviderConfigInterface.name = uppercaseProviderName;
       console.log('authProviderConfigInterface:', authProviderConfigInterface);
-      registerProvider(authProviderConfigInterface);
+      registerProviderData(authProviderConfigInterface);
     } catch (error) {
       console.error(`Error registering auth provider "${uppercaseProviderName}":`, error);
     }

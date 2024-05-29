@@ -2,34 +2,23 @@
   import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import LoginButton from '$lib/components/LoginButton.svelte';
+  import { ProgressRadial } from '@skeletonlabs/skeleton';
 
   const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
   let logins: any[] = [];
   onMount(async () => {
-    console.log('Providers:', $page.data?.providers);
-    logins = await Promise.all(
-      $page.data?.providers?.map(async (login: any) => {
-        console.log('Loading provider:', login);
-        const providerModule = await import(`../../../lib/auth/${login.type}.ts`);
-        const ProviderClass = providerModule.default;
-        const providerInstance = new ProviderClass(login);
-        return providerInstance; // Return the providerInstance for the new array
-      }) || [],
-    );
+    logins = $page.data?.providers || [];
   });
 </script>
 
 <section id="logins" class="flex flex-col justify-center items-center w-full h-full">
-  {#if $page.data?.providers}
+  {#await $page.data?.providers}
+    <ProgressRadial width="w-10" value={undefined} />
+  {:then}
     {#each logins as provider}
-      <LoginButton
-        buttonText={provider.description || provider.name}
-        loginFunction={provider.login}
-        {redirectTo}
-      />
+      <LoginButton buttonText={provider.description || provider.name} {provider} {redirectTo} />
     {/each}
-  {/if}
-  <!-- <button id="login-button" on:click={login} class="btn variant-filled-primary">Log In</button> -->
+  {/await}
 </section>
 
 <style>
