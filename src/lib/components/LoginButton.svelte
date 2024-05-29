@@ -1,12 +1,25 @@
 <script lang="ts">
+  import { createInstance } from '$lib/login-registry';
+  import type { AuthData } from '$lib/models/AuthProvider';
+
   export let buttonText = 'Log In';
   export let redirectTo = '/';
-  export let loginFunction: (redirectTo: string) => Promise<void>;
+  export let provider: AuthData;
   let clazz = 'btn variant-filled-primary m-1';
   export { clazz as class };
   let testId = `login-button-${buttonText}`;
+
+  let login = async (redirectTo: string, providerType: string) => {
+    let instance = await createInstance(provider);
+    instance.login(redirectTo, providerType);
+  };
 </script>
 
-<button type="button" data-testid={testId} class={clazz} on:click={() => loginFunction(redirectTo)}>
+<button
+  type="button"
+  data-testid={testId}
+  class={clazz}
+  on:click={() => login(redirectTo, provider.type)}
+>
   {buttonText}
 </button>

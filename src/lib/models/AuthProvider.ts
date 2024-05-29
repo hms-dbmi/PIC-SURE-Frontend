@@ -8,11 +8,7 @@ export interface AuthData extends Indexable {
   enabled: boolean;
 }
 
-interface AuthFuncs extends AuthData {
-  login(redirectTo: string): Promise<void>;
-  logout(): Promise<void>;
-}
-export default class AuthProvider implements AuthFuncs {
+export default class AuthProvider implements AuthData {
   name: string;
   description: string;
   type: string;
@@ -28,12 +24,12 @@ export default class AuthProvider implements AuthFuncs {
     this.type = data.type;
     this.icon = data.icon;
     this.enabled = data.enabled;
-    this.loginurl = data.loginurl;
-    this.logouturl = data.logouturl;
-    this.callbackurl = data.callbackurl;
   }
 
-  login = async (redirectTo: string): Promise<void> => {
+  authenticate = async (redirectTo: string, hashParts: string[]): Promise<boolean> => {
+    throw new Error('Method not implemented.');
+  };
+  login = async (redirectTo: string, type: string): Promise<void> => {
     throw new Error('Method not implemented.');
   };
   logout = async (): Promise<void> => {
