@@ -6,19 +6,22 @@
 </script>
 
 {#if text}
-  <i
-    class="fa-solid fa-circle-question fa-sm text-tertiary-700-200-token"
-    use:popup={{
-      event: 'click',
-      target: id,
-      placement: 'left',
-    }}
-  ></i>
-  <div
-    class="rounded p-4 max-w-md shadow-2xl variant-filled-surface text-on-primary"
-    data-popup={id}
-  >
-    {text}
-    <div class="arrow variant-filled-surface" />
+  <div data-testid={id}>
+    <i
+      class="fa-solid fa-circle-question fa-sm text-tertiary-700-200-token"
+      use:popup={{
+        event: 'click',
+        target: id,
+        placement: 'left',
+      }}
+    ></i>
+    <div
+      data-testid="{id}-content"
+      class="rounded p-4 max-w-md shadow-2xl variant-filled-surface text-on-primary"
+      data-popup={id}
+    >
+      {text}
+      <div class="arrow variant-filled-surface" />
+    </div>
   </div>
 {/if}

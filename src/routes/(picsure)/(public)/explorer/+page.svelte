@@ -93,6 +93,7 @@
           <div class="flex-none">
             {#if features.genomicFilter}
               <a
+                data-testid="genomic-filter-btn"
                 class="btn variant-ghost-primary hover:variant-filled-primary"
                 href="/explorer/genome-filter">Genomic Filtering</a
               >

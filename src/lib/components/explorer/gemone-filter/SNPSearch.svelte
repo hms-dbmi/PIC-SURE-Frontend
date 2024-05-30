@@ -86,6 +86,7 @@
         type="search"
         class="input"
         placeholder="chromosome (chr#), position, reference allele, variant allele"
+        data-testid="snp-search-box"
         on:input={removeInvalid}
         bind:this={searchElement}
       />
@@ -94,6 +95,7 @@
         aria-label="Search"
         title="Search"
         type="submit"
+        data-testid="snp-search-btn"
         on:click={submitSNP}
       >
         <i class="fa-solid fa-plus border border-primary-500-400-token rounded-full p-1 mr-3"></i> Add
@@ -120,7 +122,7 @@
         <input class="checkbox" type="checkbox" checked disabled />
         {search}
       </label>
-      <select class="select w-96" required bind:value={constraints}>
+      <select class="select w-96" data-testid="snp-constraint" required bind:value={constraints}>
         <option selected disabled value>Select Genotype</option>
         <option value="0/1">Heterozygous</option>
         <option value="1/1">Homozygous</option>

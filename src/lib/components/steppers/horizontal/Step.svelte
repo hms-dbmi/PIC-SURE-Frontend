@@ -25,7 +25,7 @@
 </script>
 
 {#if stepIndex === $state.current}
-  <div class="step space-y-4" data-testid="step">
+  <div class="step space-y-4" data-testid="step-{stepIndex + 1}">
     <header class="step-header text-2xl font-bold">
       <slot name="header">{title || 'Step ' + (stepIndex + 1)}</slot>
     </header>
@@ -47,6 +47,7 @@
         {/if}
         {#if stepIndex < $state.total - 1}
           <AngleButton
+            name="next"
             angle="right"
             variant="filled"
             disabled={locked}
@@ -54,10 +55,12 @@
           >
         {:else}
           <AngleButton
+            name={buttonCompleteLabel || 'complete'}
             angle="right"
             variant="filled"
             disabled={locked}
-            on:click={() => onComplete(stepIndex)}>{buttonCompleteLabel || 'Complete'}</AngleButton
+            on:click={() => onComplete(stepIndex, locked)}
+            >{buttonCompleteLabel || 'Complete'}</AngleButton
           >
         {/if}
       </div>
