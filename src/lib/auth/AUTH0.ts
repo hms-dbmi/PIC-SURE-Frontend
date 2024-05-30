@@ -22,9 +22,8 @@ class Auth0 extends AuthProvider implements Auth0Data {
   }
 
   authenticate = async (redirectTo: string, hashParts: string[]): Promise<boolean> => {
-    let failed = false;
     if (!hashParts || hashParts.length === 0) {
-      return failed;
+      return true;
     }
     const auth0ResponseMap: Map<string, string> = hashParts.reduce((map, part) => {
       const [key, value] = part.split('=');
