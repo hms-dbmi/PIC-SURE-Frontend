@@ -1,7 +1,7 @@
 import type { SearchResult } from './Search';
 import { v4 as uuid } from 'uuid';
 
-type FilterType = 'categorical' | 'numeric' | 'required' | 'datatable' | 'genomic' | 'auto';
+type FilterType = 'categorical' | 'numeric' | 'required' | 'datatable' | 'genomic' | 'snp' | 'auto';
 type DisplayType =
   | 'any'
   | 'anyRecordOf'
@@ -25,7 +25,7 @@ export interface FilterInterface {
 }
 
 export interface CategoricalFilterInterface extends FilterInterface {
-  filterType: 'categorical' | 'required';
+  filterType: 'categorical' | 'required' | 'snp';
   categoryValues: string[];
 }
 
@@ -41,6 +41,10 @@ export interface GenomicFilterInterface extends FilterInterface {
   Gene_with_variant?: string[];
   Variant_consequence_calculated?: string[];
   Variant_frequency_as_text?: string[];
+}
+
+export interface SnpFilterInterface extends CategoricalFilterInterface {
+  filterType: 'snp';
 }
 
 export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
@@ -125,4 +129,23 @@ export function createGenomicFilter(filters: {
   return filter;
 }
 
-export type Filter = CategoricalFilterInterface | NumericFilterInterface | GenomicFilterInterface;
+export function createSnpFilter(id: string, name: string, values: string[]) {
+  const filter: Filter = createCategoricalFilter(
+    {
+      id,
+      name,
+      description: '',
+      isCategorical: true,
+      categoryValues: values,
+    },
+    values,
+  );
+  filter.filterType = 'snp';
+  return filter;
+}
+
+export type Filter =
+  | CategoricalFilterInterface
+  | NumericFilterInterface
+  | GenomicFilterInterface
+  | SnpFilterInterface;

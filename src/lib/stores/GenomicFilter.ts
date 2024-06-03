@@ -3,7 +3,7 @@ import { derived, get, writable, type Readable, type Writable } from 'svelte/sto
 import * as api from '$lib/api';
 import { resources } from '$lib/configuration';
 import { Option, Genotype } from '$lib/models/GemoneFilter';
-import { createGenomicFilter, createCategoricalFilter } from '$lib/models/Filter';
+import { createGenomicFilter, createSnpFilter } from '$lib/models/Filter';
 import variantData from '$lib/components/explorer/gemone-filter/variant-data.json';
 
 const severityKeys = variantData.map((sev) => sev.key);
@@ -30,16 +30,7 @@ function generateFilter(option: Option) {
       Variant_frequency_as_text: freq.length > 0 ? freq : undefined,
     });
   } else {
-    filter = createCategoricalFilter(
-      {
-        id: get(snpSearch),
-        name: get(snpSearch),
-        description: '',
-        isCategorical: true,
-        categoryValues: get(snpConstraint).split(','),
-      },
-      get(snpConstraint).split(','),
-    );
+    filter = createSnpFilter(get(snpSearch), get(snpSearch), get(snpConstraint).split(','));
   }
   return filter;
 }

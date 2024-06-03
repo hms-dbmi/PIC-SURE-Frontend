@@ -1,9 +1,11 @@
 <script lang="ts">
-  import type { Filter } from '$lib/models/Filter';
-  import { fade, scale, slide } from 'svelte/transition';
-  import FilterStore from '$lib/stores/Filter';
   import { elasticInOut } from 'svelte/easing';
+  import { fade, scale, slide } from 'svelte/transition';
   import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+
+  import type { Filter } from '$lib/models/Filter';
+  import { GenotypeMap } from '$lib/models/GemoneFilter';
+  import FilterStore from '$lib/stores/Filter';
   import AddFilter from '$lib/components/explorer/AddFilter.svelte';
   let { removeFilter } = FilterStore;
   const modalStore = getModalStore();
@@ -58,6 +60,9 @@
       ]
         .filter((x) => x)
         .join('; ');
+    } else if (filter.filterType === 'snp') {
+      const index = filter.categoryValues.join(',');
+      return GenotypeMap[index] || 'Unknown';
     }
   };
 

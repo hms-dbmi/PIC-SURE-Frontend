@@ -1,3 +1,5 @@
+import type { Indexable } from '$lib/types';
+
 export enum Option {
   Name,
   SNP,
@@ -10,7 +12,7 @@ export enum Genotype {
   Neither = '0/0',
 }
 
-export const GenotypeMap = {
+export const GenotypeMap: Indexable = {
   '0/1': 'Heterozygous',
   '1/1': 'Homozygous',
   '1/1,0/1': 'Heterozygous or Homozygous',
