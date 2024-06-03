@@ -6,14 +6,16 @@
   import { resources } from '$lib/configuration';
   import OptionsSelectionList from '$lib/components/OptionsSelectionList2.svelte';
 
+  import GeneFilterStore from '$lib/stores/GenomicFilter';
+  let { selectedGenes } = GeneFilterStore;
+
   const toastStore = getToastStore();
 
   let allGenes: string[] = [];
-  export let selectedGenes: string[] = [];
   $: unselectedGenes =
-    selectedGenes.length === 0
+    $selectedGenes.length === 0
       ? allGenes
-      : allGenes.filter((gene) => !selectedGenes.includes(gene));
+      : allGenes.filter((gene) => !$selectedGenes.includes(gene));
 
   let lastFilter = '';
   let pageSize = 50;
@@ -68,7 +70,7 @@
   <OptionsSelectionList
     showSelectAll={false}
     bind:unselectedOptions={unselectedGenes}
-    bind:selectedOptions={selectedGenes}
+    bind:selectedOptions={$selectedGenes}
     bind:allOptions={allGenes}
     bind:currentlyLoading={loading}
     on:scroll={(event) => getGeneValues(event.detail.search)}

@@ -1,12 +1,13 @@
 <script lang="ts">
-  export let selectedFrequency: string[] = [];
+  import GeneFilterStore from '$lib/stores/GenomicFilter';
+  let { selectedFrequency } = GeneFilterStore;
 </script>
 
 <label>
-  <input bind:group={selectedFrequency} id="Rare" type="checkbox" value="Rare" />
+  <input bind:group={$selectedFrequency} id="Rare" type="checkbox" value="Rare" />
   Rare
 </label>
 <label>
-  <input bind:group={selectedFrequency} id="Common" type="checkbox" value="Common" />
+  <input bind:group={$selectedFrequency} id="Common" type="checkbox" value="Common" />
   Common
 </label>

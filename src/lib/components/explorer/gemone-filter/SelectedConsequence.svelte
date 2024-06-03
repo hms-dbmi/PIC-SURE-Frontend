@@ -2,7 +2,8 @@
   import { TreeView, TreeViewItem } from '@skeletonlabs/skeleton';
   import variantData from '$lib/components/explorer/gemone-filter/variant-data.json';
 
-  export let selectedConsequence: string[] = [];
+  import GeneFilterStore from '$lib/stores/GenomicFilter';
+  let { selectedConsequence } = GeneFilterStore;
 
   let severityChildren: TreeViewItem[][] = variantData.map(() => []);
 </script>
@@ -11,7 +12,7 @@
   <TreeView selection multiple open padding="py-0 px-0" spacing="space-y-0">
     {#each variantData as severity, sIndex}
       <TreeViewItem
-        bind:group={selectedConsequence}
+        bind:group={$selectedConsequence}
         name="severity"
         value={severity.key}
         children={severityChildren[sIndex]}
@@ -21,7 +22,7 @@
           {#each severity.children as child, cIndex}
             <TreeViewItem
               bind:this={severityChildren[sIndex][cIndex]}
-              bind:group={selectedConsequence}
+              bind:group={$selectedConsequence}
               name={severity.key}
               value={child}
             >

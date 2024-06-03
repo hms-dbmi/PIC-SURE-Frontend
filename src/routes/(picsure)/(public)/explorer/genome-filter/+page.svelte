@@ -19,50 +19,26 @@
 
   import { VariantKeys } from '$lib/models/InfoColumns';
   import { Option } from '$lib/models/GemoneFilter';
-  import { createGenomicFilter, createCategoricalFilter } from '$lib/models/Filter';
+  import GeneFilterStore from '$lib/stores/GenomicFilter';
   import FilterStore from '$lib/stores/Filter';
   import InfoColumns from '$lib/stores/InfoColumns';
+  let {
+    selectedGenes,
+    selectedFrequency,
+    selectedConsequence,
+    snpSearch,
+    snpConstraint,
+    generateFilter,
+    clearGeneFilters,
+  } = GeneFilterStore;
   let { addFilter } = FilterStore;
   let { error: infoColumnError, loadInfoColumns, getInfoColumn } = InfoColumns;
 
-  import variantData from '$lib/components/explorer/gemone-filter/variant-data.json';
-
   let selectedOption: Option = Option.Name;
-  let selectedGenes: string[] = [];
-  let selectedFrequency: string[] = [];
-  let selectedConsequence: string[] = [];
-  let severityKeys = variantData.map((sev) => sev.key);
-  $: consequences = selectedConsequence.filter((cons) => !severityKeys.includes(cons));
-  let snpSearch: string = '';
-  let snpConstraint: string = '';
 
   function onComplete() {
-    let filter;
-    if (selectedOption === Option.Name) {
-      filter = createGenomicFilter({
-        Gene_with_variant: selectedGenes.length > 0 ? selectedGenes : undefined,
-        Variant_consequence_calculated: consequences.length > 0 ? consequences : undefined,
-        Variant_frequency_as_text: selectedFrequency.length > 0 ? selectedFrequency : undefined,
-      });
-    } else {
-      filter = createCategoricalFilter(
-        {
-          id: snpSearch,
-          name: snpSearch,
-          description: '',
-          isCategorical: true,
-          categoryValues: snpConstraint.split(','),
-        },
-        snpConstraint.split(','),
-      );
-    }
+    const filter = generateFilter(selectedOption);
     addFilter(filter);
-  }
-
-  function clearVariantFilters() {
-    selectedGenes = [];
-    selectedFrequency = [];
-    selectedConsequence = [];
   }
 
   onMount(async () => {
@@ -77,10 +53,10 @@
 
   $: canComplete =
     (selectedOption === Option.Name &&
-      (selectedGenes.length > 0 ||
-        selectedFrequency.length > 0 ||
-        selectedConsequence.length > 0)) ||
-    (selectedOption === Option.SNP && snpSearch !== '' && snpConstraint !== '');
+      ($selectedGenes.length > 0 ||
+        $selectedFrequency.length > 0 ||
+        $selectedConsequence.length > 0)) ||
+    (selectedOption === Option.SNP && $snpSearch !== '' && $snpConstraint !== '');
 </script>
 
 <svelte:head>
@@ -113,13 +89,13 @@
               <span class="text-error-500-400-token mr-2">Required</span>
               <HelpInfoPopup id="gene-help-popup" text={getInfoColumn(VariantKeys.gene)} />
             </svelte:fragment>
-            <SelectGenes bind:selectedGenes />
+            <SelectGenes />
           </Panel>
           <Panel title="Select variant frequency" class="w-1/3">
             <svelte:fragment slot="help">
               <HelpInfoPopup id="freq-help-popup" text={getInfoColumn(VariantKeys.frequency)} />
             </svelte:fragment>
-            <SelectFrequency bind:selectedFrequency />
+            <SelectFrequency />
           </Panel>
         </div>
         <div class="flex gap-3">
@@ -134,19 +110,19 @@
                 />
               {/if}
             </svelte:fragment>
-            <SelectedConsequence bind:selectedConsequence />
+            <SelectedConsequence />
           </Panel>
           <Panel title="Selected Genomic Filters" class="w-1/2">
             <svelte:fragment slot="help">
-              <button class="btn btn-xs variant-ringed-surface" on:click={clearVariantFilters}
+              <button class="btn btn-xs variant-ringed-surface" on:click={clearGeneFilters}
                 >Clear</button
               >
             </svelte:fragment>
-            <FilterSummary genes={selectedGenes} frequency={selectedFrequency} {consequences} />
+            <FilterSummary />
           </Panel>
         </div>
       {:else}
-        <SnpSearch bind:search={snpSearch} bind:constraints={snpConstraint} />
+        <SnpSearch />
       {/if}
     </Step>
   </Stepper>

@@ -1,32 +1,11 @@
 <script lang="ts">
-  import { resources } from '$lib/configuration';
-  import * as api from '$lib/api';
+  import { Genotype } from '$lib/models/GemoneFilter';
+  import GeneFilterStore from '$lib/stores/GenomicFilter';
+  let { snpSearch, snpConstraint, clearSnpFilters, setSnpWithCounts } = GeneFilterStore;
 
   const validSnp = /\w+,\d+,(A|T|C|G)+, ?(A|T|C|G)+/;
 
-  async function hasCounts(search: string) {
-    // Search for results with Heterozygous or Homozygous variants. If there are none, then we know that this
-    // snp isn't set anywhere and the user doesn't need to include or exclude it.
-    const requestBody = {
-      resourceUUID: resources.hpds,
-      query: {
-        categoryFilters: { [search]: ['1/1', '0/1'] },
-        numericFilters: {},
-        requiredFields: [],
-        anyRecordOf: [],
-        variantInfoFilters: [{ categoryVariantInfoFilters: {}, numericVariantInfoFilters: {} }],
-        expectedResultType: 'COUNT',
-      },
-    };
-    const response = await api.post('/picsure/query/sync', requestBody);
-    return response > 0;
-  }
-
-  export let search: string = '';
-  export let constraints: string = '';
-
   let noResults: boolean = false;
-
   let searchElement: HTMLInputElement;
 
   function setInvalid() {
@@ -51,17 +30,7 @@
     }
 
     removeInvalid();
-    const hasResults = await hasCounts(searchValue);
-    if (hasResults) {
-      search = searchValue;
-    } else {
-      noResults = true;
-    }
-  }
-
-  function clear() {
-    search = '';
-    constraints = '';
+    noResults = (await setSnpWithCounts(searchValue)) <= 0;
   }
 </script>
 
@@ -75,7 +44,7 @@
   >.
 </p>
 <div class="border rounded border-surface-500-400-token p-3">
-  {#if !search}
+  {#if !$snpSearch}
     <p class="text-center">
       Enter the following variant information separated by a comma in the space below:
     </p>
@@ -115,19 +84,19 @@
   {:else}
     <p class="text-center">
       Select the genotype of interest for the specified variant.
-      <button class="btn btn-xs variant-ringed-surface" on:click={clear}>Clear</button>
+      <button class="btn btn-xs variant-ringed-surface" on:click={clearSnpFilters}>Clear</button>
     </p>
     <div class="flex gap-2 items-center justify-center my-6">
       <label class="mr-4">
         <input class="checkbox" type="checkbox" checked disabled />
-        {search}
+        {$snpSearch}
       </label>
-      <select class="select w-96" data-testid="snp-constraint" required bind:value={constraints}>
+      <select class="select w-96" data-testid="snp-constraint" required bind:value={$snpConstraint}>
         <option selected disabled value>Select Genotype</option>
-        <option value="0/1">Heterozygous</option>
-        <option value="1/1">Homozygous</option>
-        <option value="1/1,0/1">Heterozygous or homozygous</option>
-        <option value="0/0">Exclude variant</option>
+        <option value={Genotype.Heterozygous}>Heterozygous</option>
+        <option value={Genotype.Homozygous}>Homozygous</option>
+        <option value={Genotype.HeterozygousOrHomozygous}>Heterozygous or homozygous</option>
+        <option value={Genotype.Neither}>Exclude variant</option>
       </select>
     </div>
   {/if}

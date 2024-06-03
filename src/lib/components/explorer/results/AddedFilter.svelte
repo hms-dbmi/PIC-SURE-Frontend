@@ -49,13 +49,15 @@
           return filter.description;
       }
     } else if (filter.filterType === 'genomic') {
-      const anyOr = (key: string, arr: string[] | undefined) =>
-        arr && arr.length > 0 ? `${key}: ${arr.join(', ')}` : `${key}: any`;
+      const orJoin = (key: string, arr: string[] | undefined) =>
+        arr && arr.length > 0 ? `${key}: ${arr.join(', ')}` : undefined;
       return [
-        anyOr('Gene with variant', filter.Gene_with_variant),
-        anyOr('Variant frequency', filter.Variant_frequency_as_text),
-        anyOr('Consequence Group by severity', filter.Variant_consequence_calculated),
-      ].join('; ');
+        orJoin('Gene with variant', filter.Gene_with_variant),
+        orJoin('Variant frequency', filter.Variant_frequency_as_text),
+        orJoin('Consequence Group by severity', filter.Variant_consequence_calculated),
+      ]
+        .filter((x) => x)
+        .join('; ');
     }
   };
 
