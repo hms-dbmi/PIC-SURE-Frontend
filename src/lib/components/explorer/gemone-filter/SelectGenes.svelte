@@ -4,7 +4,7 @@
 
   import * as api from '$lib/api';
   import { resources } from '$lib/configuration';
-  import OptionsSelectionList from '$lib/components/OptionsSelectionList2.svelte';
+  import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
 
   import GeneFilterStore from '$lib/stores/GenomicFilter';
   let { selectedGenes } = GeneFilterStore;
@@ -27,9 +27,10 @@
   async function getGeneValues(search: string = '') {
     const newSearch = lastFilter !== search;
 
-    if (!newSearch && currentPage >= totalPages) return [];
+    if (!newSearch && currentPage >= totalPages) return;
 
-    return await api
+    loading = true;
+    await api
       .get(
         `picsure/search/${resources.hpds}/values/?` +
           new URLSearchParams({
@@ -59,6 +60,7 @@
           background: 'variant-filled-error',
         });
       });
+    loading = false;
   }
 
   onMount(async () => {
@@ -71,7 +73,6 @@
     showSelectAll={false}
     bind:unselectedOptions={unselectedGenes}
     bind:selectedOptions={$selectedGenes}
-    bind:allOptions={allGenes}
     bind:currentlyLoading={loading}
     on:scroll={(event) => getGeneValues(event.detail.search)}
   />

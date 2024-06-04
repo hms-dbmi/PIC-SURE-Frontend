@@ -96,16 +96,14 @@
       {filter.variableName}
     </div>
     <div class="actions">
-      {#if filter.filterType !== 'genomic'}
-        <button
-          type="button"
-          title="Edit Filter"
-          class="bg-initial text-black-500 hover:text-primary-600"
-          on:click={editFilter}
-        >
-          <i class="fa-solid fa-pen-to-square"></i>
-        </button>
-      {/if}
+      <button
+        type="button"
+        title="Edit Filter"
+        class="bg-initial text-black-500 hover:text-primary-600"
+        on:click={editFilter}
+      >
+        <i class="fa-solid fa-pen-to-square"></i>
+      </button>
       <button
         type="button"
         title="Remove Filter"
