@@ -1,7 +1,8 @@
 import type { Indexable } from '$lib/types';
 
 export enum Option {
-  Name,
+  None,
+  Genomic,
   SNP,
 }
 

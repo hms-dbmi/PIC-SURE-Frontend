@@ -3,6 +3,7 @@
   import { fade } from 'svelte/transition';
   import { type Writable, writable } from 'svelte/store';
 
+  export let startStep: number = 0;
   export let buttonCompleteLabel = '';
   setContext('buttonCompleteLabel', buttonCompleteLabel);
 
@@ -10,7 +11,7 @@
     current: number;
     total: number;
   }
-  const state: Writable<StepperState> = writable({ current: 0, total: 0 });
+  const state: Writable<StepperState> = writable({ current: startStep, total: 0 });
   setContext('state', state);
 
   type StepperEvent = {
