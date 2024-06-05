@@ -112,6 +112,7 @@
         on:click={editFilter}
       >
         <i class="fa-solid fa-pen-to-square"></i>
+        <span class="sr-only">Edit Filter</span>
       </button>
       <button
         type="button"
@@ -120,6 +121,7 @@
         on:click={deleteFilter}
       >
         <i class="fa-solid fa-times-circle"></i>
+        <span class="sr-only">Remove Filter</span>
       </button>
       <button
         type="button"
@@ -128,6 +130,7 @@
         on:click={toggleCardBody}
       >
         <i class="fa-solid {carot}"></i>
+        <span class="sr-only">See details</span>
       </button>
     </div>
   </header>
