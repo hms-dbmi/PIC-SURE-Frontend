@@ -1,4 +1,4 @@
-import { getAllProviderData } from '$lib/login-registry';
+import { getAllProviderData } from '$lib/AuthProviderRegistry';
 
 export const load = async () => {
   const providers = getAllProviderData();
