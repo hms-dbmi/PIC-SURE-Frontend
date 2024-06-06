@@ -59,8 +59,6 @@ export const branding = {
     totalPatientsText: 'Filtered Results',
     queryErrorText:
       'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
-    frequencyDescription:
-      'The variant allele frequency in gnomAD exomes of combined population as discrete text categories. Possible values: Rare (variant frequency less than 1%), Common (variant frequency greater than or equal to 1%).',
   },
   landing: {
     searchPlaceholder: 'Search terms or variables of interest…',
