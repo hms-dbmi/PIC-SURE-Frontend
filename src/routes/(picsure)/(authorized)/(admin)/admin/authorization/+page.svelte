@@ -1,6 +1,9 @@
 <script lang="ts">
   import { ProgressBar } from '@skeletonlabs/skeleton';
 
+  import { goto } from '$app/navigation';
+
+  import type { Indexable } from '$lib/types';
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
@@ -12,7 +15,6 @@
   import PrivilegesStore from '$lib/stores/Privileges';
   import RolesStore from '$lib/stores/Roles';
   import ApplicationStore from '$lib/stores/Application';
-
   const { roles, loadRoles } = RolesStore;
   const { privileges, loadPrivileges } = PrivilegesStore;
   const { loadApplications } = ApplicationStore;
@@ -44,6 +46,13 @@
     await loadPrivileges();
     await loadApplications();
   }
+
+  const rowClickHandler = (path: string) => (_index: number, row?: Indexable) => {
+    const uuid = row?.uuid;
+    goto(`/admin/authorization/${path}/${uuid}`);
+  };
+  const roleRowCLick = rowClickHandler('role');
+  const privilegeRowClick = rowClickHandler('privilege');
 </script>
 
 <svelte:head>
@@ -73,6 +82,7 @@
         columns={roleTable.columns}
         cellOverides={roleTable.overrides}
         defaultRowsPerPage={10}
+        rowClickHandler={roleRowCLick}
       />
     </div>
     <div id="authorization-privilege-table" class="mb-10">
@@ -93,6 +103,7 @@
         columns={privilegesTable.columns}
         cellOverides={privilegesTable.overrides}
         defaultRowsPerPage={10}
+        rowClickHandler={privilegeRowClick}
       />
     </div>
   {:catch}

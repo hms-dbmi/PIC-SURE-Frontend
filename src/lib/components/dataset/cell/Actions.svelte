@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
+
   import DataSetStore from '$lib/stores/Dataset';
 
   export let data = { cell: '', row: { archived: false } };
@@ -24,19 +25,21 @@
     data-testid={`dataset-action-restore-${data.cell}`}
     type="button"
     class="btn bg-secondary-500 text-on-secondary-token loader"
-    on:click={toggleArchive}>Restore</button
+    on:click|stopPropagation={toggleArchive}>Restore</button
   >
 {:else}
-  <a
+  <button
     data-testid={`dataset-action-view-${data.cell}`}
-    href={`${$page.url.pathname}/${data.cell}`}
-    class="btn bg-primary-500 text-on-primary-token">View</a
+    type="button"
+    title="View"
+    class="btn bg-primary-500 text-on-primary-token"
+    on:click|stopPropagation={() => goto(`/dataset/${data.cell}`)}>View</button
   >
   <button
     bind:this={toggleButton}
     data-testid={`dataset-action-archive-${data.cell}`}
     type="button"
     class="btn bg-secondary-500 text-on-secondary-token loader"
-    on:click={toggleArchive}>Archive</button
+    on:click|stopPropagation={toggleArchive}>Archive</button
   >
 {/if}

@@ -1,5 +1,8 @@
 <script lang="ts">
   import { ProgressBar } from '@skeletonlabs/skeleton';
+
+  import { goto } from '$app/navigation';
+
   import type { Indexable } from '$lib/types';
   import DataSetStore from '$lib/stores/Dataset';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -24,6 +27,11 @@
   let { active, archived, loadDatasets } = DataSetStore;
 
   let displayArchived = false;
+
+  const rowClickHandler = (_index: number, row?: Indexable) => {
+    const uuid = row?.uuid;
+    goto(`/dataset/${uuid}`);
+  };
 </script>
 
 <svelte:head>
@@ -36,7 +44,7 @@
     <ProgressBar animIndeterminate="anim-progress-bar" />
   {:then}
     <h3 class="text-left">Active Datasets</h3>
-    <Datatable data={$active} {columns} {cellOverides} />
+    <Datatable data={$active} {columns} {cellOverides} {rowClickHandler} />
     {#if displayArchived}
       <h3 class="text-left mt-5">Archived Datasets</h3>
       <Datatable data={$archived} {columns} {cellOverides} />

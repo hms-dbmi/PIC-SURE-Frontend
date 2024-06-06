@@ -31,7 +31,7 @@
   <button
     data-testid={testid}
     type="button"
-    class="btn text-{color}-500 font-bold {clazz}"
+    class="text-{color}-500 font-bold {clazz}"
     on:click={onClick}
     {disabled}
   >

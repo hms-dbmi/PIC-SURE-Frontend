@@ -23,7 +23,7 @@
   type="button"
   data-testid="copy-button"
   class={clazz}
-  on:click={updateCopyButtonText}
+  on:click|stopPropagation={updateCopyButtonText}
   use:clipboard={itemToCopy}
 >
   {buttonText}

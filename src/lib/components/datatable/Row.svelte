@@ -7,15 +7,19 @@
   export let columns: Column[] = [];
   export let index: number = -2;
   export let row: Indexable = {};
-  export let rowClickHandler: (index: number) => void;
+  export let rowClickHandler: (index: number, row?: Indexable) => void;
 
-  function onClick(index: number) {
+  function onClick(index: number, row: Indexable) {
     if (index === undefined || index === null || index < 0) return;
-    rowClickHandler && rowClickHandler(index);
+    rowClickHandler && rowClickHandler(index, row);
   }
 </script>
 
-<tr id={index.toString()} on:click|stopPropagation={() => onClick(index)} class="cursor-pointer">
+<tr
+  id={index.toString()}
+  on:click|stopPropagation={() => onClick(index, row)}
+  class="cursor-pointer"
+>
   {#each columns as column}
     <td>
       {#if cellOverides[column.dataElement]}
