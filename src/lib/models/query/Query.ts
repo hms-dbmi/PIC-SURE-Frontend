@@ -69,6 +69,8 @@ export class Query implements QueryInterface {
     };
   }
 
+  addSnpFilter = this.addCategoryFilter;
+
   addRequiredField(field: string) {
     this.requiredFields.push(field);
   }

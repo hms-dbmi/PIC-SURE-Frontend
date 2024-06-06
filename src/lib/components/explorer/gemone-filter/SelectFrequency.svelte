@@ -11,3 +11,7 @@
   <input bind:group={$selectedFrequency} id="Common" type="checkbox" value="Common" />
   Common
 </label>
+<label>
+  <input bind:group={$selectedFrequency} id="Novel" type="checkbox" value="Novel" />
+  Novel
+</label>
