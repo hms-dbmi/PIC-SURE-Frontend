@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createInstance } from '$lib/login-registry';
+  import { createInstance } from '$lib/AuthProviderRegistry';
   import type { AuthData } from '$lib/models/AuthProvider';
 
   export let buttonText = 'Log In';
@@ -7,7 +7,7 @@
   export let provider: AuthData;
   let clazz = 'btn variant-filled-primary m-1';
   export { clazz as class };
-  let testId = `login-button-${buttonText}`;
+  let testId = `login-button-${provider.name?.toLowerCase()}`;
 
   let login = async (redirectTo: string, providerType: string) => {
     let instance = await createInstance(provider);

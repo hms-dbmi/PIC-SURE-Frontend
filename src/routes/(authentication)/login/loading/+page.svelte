@@ -4,13 +4,15 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import type AuthProvider from '$lib/models/AuthProvider';
-  import { createInstance } from '$lib/login-registry';
+  import { createInstance } from '$lib/AuthProviderRegistry';
 
   let failed = false;
   //todo errors
   onMount(async () => {
     let redirectTo = $page.url.searchParams.get('redirectTo');
+    console.log(redirectTo);
     let providerType = $page.url.searchParams.get('provider');
+    console.log(providerType);
     if (!providerType) {
       failed = true;
       return failed;
