@@ -26,9 +26,11 @@ export default class AuthProvider implements AuthData {
     this.enabled = data.enabled;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   authenticate = async (redirectTo: string, hashParts: string[]): Promise<boolean> => {
     throw new Error('Method not implemented.');
   };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   login = async (redirectTo: string, type: string): Promise<void> => {
     throw new Error('Method not implemented.');
   };

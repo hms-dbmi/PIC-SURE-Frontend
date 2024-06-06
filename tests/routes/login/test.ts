@@ -3,7 +3,6 @@ import { unauthedTest } from '../../custom-context';
 
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
-
 unauthedTest.describe('Login page', () => {
   const enabledProviders = Object.keys(process.env)
     .filter((key) => key.startsWith(PROVIDER_PREFIX) && process.env[key] === 'true')
@@ -29,44 +28,51 @@ unauthedTest.describe('Login page', () => {
     await page.goto('/login');
     // When
     for (const providerName of enabledProviders) {
-      let buttonText = providerName.toLowerCase();
-      let testId = `login-button-${buttonText}`
+      const testId = `login-button-${providerName.toLowerCase()}`;
       const loginButton = page.getByTestId(testId);
       await expect(loginButton).toBeVisible();
     }
     // Then
   });
   for (const providerName of enabledProviders) {
-    unauthedTest(`Clicking the ${providerName} login button opens the idp login page`, async ({ page }) => {
-      // Given
-      await page.goto('/login');
-      // When
-      let buttonText = providerName.toLowerCase();
-      let testId = `login-button-${buttonText}`
-      const loginButton = page.getByTestId(testId);
-      await loginButton.click();
-      // Then
-      switch (providerName) {
-        case 'AUTH0':
-          await expect(page).toHaveURL(/avillachlab.auth0.com/);
-          break;
-        case 'RAS':
-          let rasUrl = process.env.VITE_AUTH_PROVIDER_MODULE_RAS_URI;
-          if (!rasUrl) {
-            throw new Error('RAS_URL not set in .env');
+    unauthedTest(
+      `Clicking the ${providerName} login button opens the idp login page`,
+      async ({ page }) => {
+        // Given
+        await page.goto('/login');
+        // When
+        const testId = `login-button-${providerName.toLowerCase()}`;
+        const loginButton = page.getByTestId(testId);
+        await loginButton.click();
+        // Then
+        switch (providerName) {
+          case 'AUTH0': {
+            await expect(page).toHaveURL(/avillachlab.auth0.com/);
+            break;
           }
-          let rasUrlRegex = RegExp('^'+rasUrl);
-          await expect(page).toHaveURL(rasUrlRegex);
-          break;
-        case 'FENCE':
-          let fenceUrl = process.env.VITE_AUTH_PROVIDER_MODULE_FENCE_URI;
-          if (!fenceUrl) {
-            throw new Error('FENCE_URL not set in .env');
+          case 'RAS': {
+            const rasUrl = process.env.VITE_AUTH_PROVIDER_MODULE_RAS_URI;
+            if (!rasUrl) {
+              throw new Error('RAS_URL not set in .env');
+            }
+            const rasUrlRegex = RegExp('^' + rasUrl);
+            await expect(page).toHaveURL(rasUrlRegex);
+            break;
           }
-          let fenceUrlRegex = RegExp('^'+fenceUrl);
-          await expect(page).toHaveURL(fenceUrlRegex);
-          break;
-      }
-    });
+          case 'FENCE': {
+            const fenceUrl = process.env.VITE_AUTH_PROVIDER_MODULE_FENCE_URI;
+            if (!fenceUrl) {
+              throw new Error('FENCE_URL not set in .env');
+            }
+            const fenceUrlRegex = RegExp('^' + fenceUrl);
+            await expect(page).toHaveURL(fenceUrlRegex);
+            break;
+          }
+          default: {
+            throw new Error('Unknown provider');
+          }
+        }
+      },
+    );
   }
 });

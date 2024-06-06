@@ -1,6 +1,5 @@
 <script lang="ts">
   import { page } from '$app/stores';
-  import { onMount } from 'svelte';
   import LoginButton from '$lib/components/LoginButton.svelte';
   import { ProgressRadial } from '@skeletonlabs/skeleton';
 
@@ -13,10 +12,12 @@
   {:then providers}
     {#if providers.length === 0}
       <p>
-        No authentication providers are registed. Please add them to your configuration. Click <a class="anchor"
+        No authentication providers are registed. Please add them to your configuration. Click <a
+          class="anchor"
           href="https://pic-sure.gitbook.io/pic-sure-developer-guide/configuring-pic-sure"
-          target="_blank">Here</a>
-          to learn how.
+          target="_blank">Here</a
+        >
+        to learn how.
       </p>
     {:else}
       {#each providers as provider}
