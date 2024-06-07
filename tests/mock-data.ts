@@ -326,3 +326,46 @@ export const metadata = {
     },
   },
 };
+
+export const infoColumnDescriptions = {
+  Variant_consequence_calculated: 'The calculated consequence of a variant.',
+  Gene_with_variant: 'The official symbol for a gene affected by a variant.',
+  Variant_severity: 'The severity for the calculated consequence of a variant on a gene.',
+  Variant_frequency_as_text: 'The variant allele frequency in gnomAD.',
+};
+
+export const infoColumns = [
+  {
+    key: 'Variant_consequence_calculated',
+    description: 'Description="' + infoColumnDescriptions.Variant_consequence_calculated + '"',
+  },
+  {
+    key: 'Gene_with_variant',
+    description: 'Description="' + infoColumnDescriptions.Gene_with_variant + '"',
+  },
+  {
+    key: 'Variant_severity',
+    description: 'Description="' + infoColumnDescriptions.Variant_severity + '"',
+  },
+  {
+    key: 'Variant_frequency_as_text',
+    description: 'Description="' + infoColumnDescriptions.Variant_frequency_as_text + '"',
+  },
+];
+
+export const geneValues = {
+  results: [
+    '5_8S_rRNA',
+    '5S_rRNA',
+    '7SK',
+    'A1BG',
+    'A1CF',
+    'A2M',
+    'A2ML1',
+    'A2ML1-AS1',
+    'A2MP1',
+    'A3GALT2',
+  ],
+  page: 1,
+  total: 20,
+};

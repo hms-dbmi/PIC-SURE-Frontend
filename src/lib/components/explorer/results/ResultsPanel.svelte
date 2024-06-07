@@ -47,6 +47,14 @@
         }
       } else if (filter.filterType === 'numeric') {
         newQuery.addNumericFilter(filter.id, filter.min || '', filter.max || '');
+      } else if (filter.filterType === 'genomic') {
+        newQuery.addCategoryVariantInfoFilters({
+          Gene_with_variant: filter.Gene_with_variant,
+          Variant_consequence_calculated: filter.Variant_consequence_calculated,
+          Variant_frequency_as_text: filter.Variant_frequency_as_text,
+        });
+      } else if (filter.filterType === 'snp') {
+        newQuery.addSnpFilter(filter.id, filter.categoryValues);
       }
     });
     let request: QueryRequestInterface = {

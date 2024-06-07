@@ -1,9 +1,11 @@
 <script lang="ts">
-  import type { Filter } from '$lib/models/Filter';
-  import { fade, scale, slide } from 'svelte/transition';
-  import FilterStore from '$lib/stores/Filter';
   import { elasticInOut } from 'svelte/easing';
+  import { fade, scale, slide } from 'svelte/transition';
   import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+
+  import type { Filter } from '$lib/models/Filter';
+  import { GenotypeMap } from '$lib/models/GemoneFilter';
+  import FilterStore from '$lib/stores/Filter';
   import AddFilter from '$lib/components/explorer/AddFilter.svelte';
   let { removeFilter } = FilterStore;
   const modalStore = getModalStore();
@@ -49,7 +51,18 @@
           return filter.description;
       }
     } else if (filter.filterType === 'genomic') {
-      return filter.description;
+      const orJoin = (key: string, arr: string[] | undefined) =>
+        arr && arr.length > 0 ? `${key}: ${arr.join(', ')}` : undefined;
+      return [
+        orJoin('Gene with variant', filter.Gene_with_variant),
+        orJoin('Variant frequency', filter.Variant_frequency_as_text),
+        orJoin('Consequence Group by severity', filter.Variant_consequence_calculated),
+      ]
+        .filter((x) => x)
+        .join('; ');
+    } else if (filter.filterType === 'snp') {
+      const index = filter.categoryValues.join(',');
+      return GenotypeMap[index] || 'Unknown';
     }
   };
 

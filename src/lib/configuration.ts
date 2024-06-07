@@ -164,6 +164,7 @@ export const features: Indexable = {
   },
   // Env Feature Flags
   dataRequests: true,
+  genomicFilter: true,
 };
 
 export const resources = {

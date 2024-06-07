@@ -1,14 +1,12 @@
 <script lang="ts">
   import Content from '$lib/components/Content.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
+  import AngleButton from '$lib/components/buttons/AngleButton.svelte';
 </script>
 
 <Content>
   <div class="mb-8 text-center">
-    <a class="float-left mr-2 text-primary-500" href="/api">
-      <i class="btn btn-sm variant-ringed-primary fa-solid fa-angles-left mr-3 text-primary-500"
-      ></i>Back
-    </a>
+    <AngleButton class="float-left" href="/api">Back</AngleButton>
     <h1>Get Started with the PIC-SURE API</h1>
   </div>
 

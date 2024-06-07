@@ -9,7 +9,7 @@
   import { branding } from '$lib/configuration';
   import { uuidInput } from '$lib/utilities/Validation';
   import Content from '$lib/components/Content.svelte';
-  import VStepper from '$lib/components/VerticalStepper.svelte';
+  import Step from '$lib/components/steppers/vertical/Step.svelte';
   import Grid from '$lib/components/request/Grid.svelte';
   import GridCell from '$lib/components/request/GridCell.svelte';
 
@@ -163,7 +163,7 @@
 </svelte:head>
 
 <Content title="Data Requests">
-  <VStepper step={1} title="Search for Dataset Request ID" inline={true} active={search.active}>
+  <Step step={1} title="Search for Dataset Request ID" inline={true} active={search.active}>
     <label class="inline label required">
       <span class="sr-only">Dataset Id:</span>
       <input
@@ -174,8 +174,8 @@
         disabled={!search.active}
       />
     </label>
-  </VStepper>
-  <VStepper step={2} title="Review Dataset Request" show={review.show} active={review.active}>
+  </Step>
+  <Step step={2} title="Review Dataset Request" show={review.show} active={review.active}>
     <Grid columns={2}>
       <GridCell title="View Dataset Information">
         <div>
@@ -202,8 +202,8 @@
         </label>
       </GridCell>
     </Grid>
-  </VStepper>
-  <VStepper step={3} title="Share Patient-Level Data" show={share.show} active={share.active}>
+  </Step>
+  <Step step={3} title="Share Patient-Level Data" show={share.show} active={share.active}>
     <Grid columns={3}>
       <GridCell title="Data Storage Location">
         <svelte:fragment slot="help">
@@ -285,7 +285,7 @@
         </div>
       </GridCell>
     </Grid>
-  </VStepper>
+  </Step>
   {#if review.show || share.show}
     <button
       type="button"

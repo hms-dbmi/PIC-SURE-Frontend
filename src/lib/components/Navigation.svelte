@@ -31,7 +31,7 @@
   $: dropdownPath = '';
 </script>
 
-<AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50">
+<AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-900-token">
   <svelte:fragment slot="lead">
     <a href="/" aria-current="page" data-testid="logo-home-link">
       <img id="nav-logo" alt="PIC-Sure logo" src={logo} class="mx-1" />

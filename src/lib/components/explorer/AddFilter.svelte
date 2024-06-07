@@ -3,7 +3,7 @@
   import OptionsSelectionList from '../OptionsSelectionList.svelte';
   import FilterStore from '$lib/stores/Filter';
   import { activeRow } from '$lib/stores/ExpandableRow';
-  import { getModalStore } from '@skeletonlabs/skeleton';
+  import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   let { addFilter } = FilterStore;
   import { onMount } from 'svelte';
   import type { Filter } from '$lib/models/Filter';
@@ -14,16 +14,17 @@
   } from '$lib/models/Filter';
 
   const modalStore = getModalStore();
+  const toastStore = getToastStore();
 
   export let data: SearchResult = {} as SearchResult;
 
-  let allOptions: string[] = [];
   let max: string;
   let min: string;
   let pageSize = 20;
-  let options: string[] = [];
+  let unselectedOptions: string[] = [];
   let selectedOptions: string[] = [];
   let startLoacation = 20;
+  let loading = false;
 
   onMount(async () => {
     if ($modalStore[0]?.meta.existingFilter) {
@@ -40,20 +41,18 @@
         }
         data.isCategorical = true;
         data.categoryValues = existingFilter?.searchResult?.categoryValues || [];
-        options =
+        unselectedOptions =
           data?.categoryValues?.filter((value) => {
             return !selectedOptions.find((selected) => selected === value);
           }) || [];
-        allOptions = data?.categoryValues || [];
       } else if (existingFilter.filterType === 'numeric') {
         min = existingFilter.min || '';
         max = existingFilter.max || '';
       }
     } else if (data.isCategorical) {
-      options = data?.categoryValues || [];
-      allOptions = options;
-      if (options.length >= 50) {
-        options = options.slice(0, pageSize);
+      unselectedOptions = data?.categoryValues || [];
+      if (unselectedOptions.length >= 50) {
+        unselectedOptions = unselectedOptions.slice(0, pageSize);
       }
     } else {
       min = data.min !== undefined && data.min >= 0 ? data.min.toString() : '';
@@ -85,29 +84,40 @@
     }
   }
 
-  function getNextValues(searchTerm: string) {
+  function getNextValues(search: string = '') {
     const totalOptions = data?.categoryValues?.length || 0;
-    if (totalOptions === 0) return Promise.resolve([]);
+    if (totalOptions === 0) return;
 
-    let end = startLoacation + pageSize;
-    if (end > totalOptions) {
-      end = totalOptions;
-    }
-
-    return new Promise<string[]>((resolve) => {
+    loading = true;
+    try {
       let nextOptions: string[] = [];
-      if (searchTerm) {
-        let searchResults = data?.categoryValues?.filter((value) => {
-          return value.toLowerCase().includes(searchTerm.toLowerCase());
-        });
-        nextOptions = searchResults?.slice(startLoacation, end) || [];
+      let end = startLoacation + pageSize;
+      if (end > totalOptions) {
+        end = totalOptions;
+      }
+
+      if (search) {
+        nextOptions =
+          data?.categoryValues
+            ?.filter((value) => value.toLowerCase().includes(search.toLowerCase()))
+            .slice(startLoacation, end) || [];
         startLoacation = end;
       } else {
         nextOptions = data?.categoryValues?.slice(startLoacation, end) || [];
         startLoacation = end;
       }
-      resolve(nextOptions);
-    });
+
+      if (nextOptions && Array.isArray(nextOptions) && nextOptions.length > 0) {
+        unselectedOptions = [...unselectedOptions, ...nextOptions];
+      }
+    } catch (error) {
+      console.error(error);
+      toastStore.trigger({
+        message: 'An error occured while loading more options. Please try again later.',
+        background: 'variant-filled-error',
+      });
+    }
+    loading = false;
   }
 
   $: valuesSelected = selectedOptions.map((option) => option);
@@ -116,7 +126,12 @@
 <div class="flex justify-between" data-testid="filter-component">
   {#if data.isCategorical}
     <div data-testid="categoical-filter" class="w-full">
-      <OptionsSelectionList {options} {allOptions} bind:selectedOptions loadMore={getNextValues} />
+      <OptionsSelectionList
+        bind:unselectedOptions
+        bind:selectedOptions
+        bind:currentlyLoading={loading}
+        on:scroll={(event) => getNextValues(event.detail.search)}
+      />
     </div>
   {:else}
     <div class="flex flex-col" data-testid="numerical-filter">
