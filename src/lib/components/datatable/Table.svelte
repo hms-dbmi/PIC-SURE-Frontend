@@ -17,7 +17,7 @@
   export let defaultRowsPerPage = 5;
   export let columns: Column[] = [];
   export let cellOverides: Indexable = {};
-  export let rowClickHandler: (index: number) => void = () => {};
+  export let rowClickHandler: (index: number, row?: Indexable) => void = () => {};
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export let data: any = []; //TODO: Fix this type

@@ -21,7 +21,7 @@
   <title>{branding.applicationName} | New User</title>
 </svelte:head>
 
-<Content title="New User">
+<Content title="New User" backUrl="/admin/users" backTitle="Back to Users">
   {#await load()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />

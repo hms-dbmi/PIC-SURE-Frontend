@@ -24,7 +24,7 @@
   <title>{branding.applicationName} | Dataset</title>
 </svelte:head>
 
-<Content title="View Dataset">
+<Content title="View Dataset" backUrl="/dataset" backTitle="Back to Datasets">
   {#await loadDataset()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />

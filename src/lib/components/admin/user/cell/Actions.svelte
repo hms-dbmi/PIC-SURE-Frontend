@@ -3,6 +3,8 @@
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
+  import { goto } from '$app/navigation';
+
   import UsersStore from '$lib/stores/Users';
   import ConnectionStore from '$lib/stores/Connections';
   import RoleStore from '$lib/stores/Roles';
@@ -58,30 +60,34 @@
   }
 </script>
 
-<a
+<button
   data-testid={`user-view-btn-${data.cell}`}
-  href={`/admin/users/${data.cell}`}
+  type="button"
+  title="View"
   class="text-secondary-600 hover:text-primary-600"
+  on:click|stopPropagation={() => goto(`/admin/users/${data.cell}`)}
 >
   <i class="fa-solid fa-circle-info fa-xl"></i>
   <span class="sr-only">View User</span>
-</a>
+</button>
 
 {#if data.row.status === 'Active'}
-  <a
+  <button
     data-testid={`user-edit-btn-${data.cell}`}
-    href={`/admin/users/${data.cell}/edit`}
+    type="button"
+    title="Edit"
     class="text-secondary-600 hover:text-primary-600"
+    on:click|stopPropagation={() => goto(`/admin/users/${data.cell}/edit`)}
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
     <span class="sr-only">Edit</span>
-  </a>
+  </button>
   <button
     data-testid={`user-deactivate-btn-${data.cell}`}
     type="button"
     title="Deactivate user"
     class="bg-initial text-secondary-600 hover:text-primary-600"
-    on:click={() => userActivation(false)}
+    on:click|stopPropagation={() => userActivation(false)}
   >
     <i class="fa-solid fa-circle-xmark fa-xl"></i>
     <span class="sr-only">Deactivate user</span>
@@ -92,7 +98,7 @@
     type="button"
     title="Reactivate user"
     class="bg-initial text-secondary-600 hover:text-primary-600"
-    on:click={() => userActivation(true)}
+    on:click|stopPropagation={() => userActivation(true)}
   >
     <i class="fa-solid fa-circle-check fa-xl"></i>
     <span class="sr-only">Reactivate user</span>

@@ -158,6 +158,20 @@ test.describe('users', () => {
     await page.waitForURL(`**/admin/users/${mockUsers[0].uuid}`);
     await expect(page.url()).toContain(`/admin/users/${mockUsers[0].uuid}`);
   });
+  test('Clicking row takes user to view priviledge form', async ({ page }) => {
+    // Given
+    await page.goto('/admin/users');
+
+    // When
+    await page
+      .locator(`#user-table-${mockConns[0].label.replaceAll(' ', '_')} table tbody tr`)
+      .first()
+      .click();
+
+    // Then
+    await page.waitForURL(`**/admin/users/${mockUsers[0].uuid}`);
+    await expect(page.url()).toContain(`/admin/users/${mockUsers[0].uuid}`);
+  });
   test('Edit row icon takes user to edit privilege form', async ({ page }) => {
     // Given
     await page.goto('/admin/users');

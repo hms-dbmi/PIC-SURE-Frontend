@@ -10,7 +10,6 @@
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
-  import AngleButton from '$lib/components/buttons/AngleButton.svelte';
   import Panel from '$lib/components/explorer/Panel.svelte';
   import FilterType from '$lib/components/explorer/gemone-filter/FilterType.svelte';
   import SelectGenes from '$lib/components/explorer/gemone-filter/SelectGenes.svelte';
@@ -67,8 +66,7 @@
   <title>{branding.applicationName} | Gemonic Filter</title>
 </svelte:head>
 
-<Content>
-  <AngleButton href="/explorer">Back to Cohort builder</AngleButton>
+<Content backUrl="/explorer" backTitle="Back to Cohort builder">
   <h2 class="text-center mb-4">Genomic Filtering</h2>
   <Stepper
     buttonCompleteLabel="Apply Filter"
