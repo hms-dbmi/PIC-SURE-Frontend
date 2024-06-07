@@ -2,6 +2,7 @@
 FROM node:21.7.3-alpine3.18 AS builder
 WORKDIR /app
 COPY package*.json .
+COPY .env .
 RUN npm ci
 COPY . .
 RUN npm run build

@@ -13,7 +13,7 @@ export function registerProviderData(providerModule: AuthData) {
   const existingProviders = providerDataRegistry.find(
     (provider) => provider.name === providerModule.name,
   );
-  console.log('Existing Providers:', existingProviders);
+
   if (existingProviders && existingProviders.length > 0) {
     existingProviders.forEach((provider: AuthData) => {
       if (
