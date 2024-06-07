@@ -192,18 +192,19 @@ nav#page-navigation ul {
 
 nav#page-navigation li {
   float: left;
-  margin: 0.6em 0.2em;
+  margin: 0.4rem 0.2rem;
 }
 
 nav#page-navigation li a.nav-link {
-  font-size: 1.2em;
+  font-size: 1rem;
+  line-height: 1rem;
   display: flex;
   text-align: center;
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  height: 80px;
-  width: 130px;
+  height: 2.75rem;
+  width: 8rem;
   @apply rounded-container-token;
 }
 
@@ -220,10 +221,12 @@ nav#page-navigation li.open a.nav-link {
 
 nav#page-navigation li .nav-dropdown {
   position: absolute;
-  top: calc(0.6em + 80px);
   padding-bottom: var(--theme-rounded-container);
-  width: 130px;
+  width: 8rem;
   @apply rounded-container-token bg-primary-300-600-token;
+
+  /* link top padding (from nav#page-navigation li: 0.4rem) + link height (from nav#page-navigation li a.nav-link: 2.75rem) */
+  top: 3.15rem;
 }
 nav#page-navigation li .nav-dropdown li {
   display: block;

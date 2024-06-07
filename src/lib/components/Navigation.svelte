@@ -92,7 +92,7 @@
         <!-- Logout -->
         <button id="user-session-popout" use:popup={logoutClick}>
           <span
-            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ghost-primary hover:variant-ghost-secondary w-16 rounded-full text-2xl"
+            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ghost-primary hover:variant-ghost-secondary w-12 rounded-full text-2xl"
           >
             {$user.email[0].toUpperCase()}
             <span class="sr-only">Logout user {$user.email}</span>
@@ -114,7 +114,7 @@
         <!-- Login -->
         <button id="user-login-btn" title="Login" on:click={handleLogin}>
           <span
-            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ringed-surface hover:variant-ghost-secondary w-16 rounded-full text-2xl"
+            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ringed-surface hover:variant-ghost-secondary w-12 rounded-full text-2xl"
           >
             <i class="fa-solid fa-user fa-lg"></i>
             <span class="sr-only">Login</span>
