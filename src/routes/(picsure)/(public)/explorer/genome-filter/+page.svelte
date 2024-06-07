@@ -4,6 +4,8 @@
   import { getToastStore } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
 
+  import { goto } from '$app/navigation';
+
   import Content from '$lib/components/Content.svelte';
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
@@ -23,6 +25,7 @@
   import FilterStore from '$lib/stores/Filter';
   import InfoColumns from '$lib/stores/InfoColumns';
   let {
+    selectedOption,
     selectedGenes,
     selectedFrequency,
     selectedConsequence,
@@ -30,15 +33,16 @@
     snpConstraint,
     generateFilter,
     clearGeneFilters,
+    clearFilters,
   } = GeneFilterStore;
   let { addFilter } = FilterStore;
   let { error: infoColumnError, loadInfoColumns, getInfoColumn } = InfoColumns;
 
-  let selectedOption: Option = Option.Name;
-
   function onComplete() {
-    const filter = generateFilter(selectedOption);
+    const filter = generateFilter();
     addFilter(filter);
+    clearFilters();
+    goto('/explorer');
   }
 
   onMount(async () => {
@@ -52,11 +56,11 @@
   });
 
   $: canComplete =
-    (selectedOption === Option.Name &&
+    ($selectedOption === Option.Genomic &&
       ($selectedGenes.length > 0 ||
         $selectedFrequency.length > 0 ||
         $selectedConsequence.length > 0)) ||
-    (selectedOption === Option.SNP && $snpSearch !== '' && $snpConstraint !== '');
+    ($selectedOption === Option.SNP && $snpSearch !== '' && $snpConstraint !== '');
 </script>
 
 <svelte:head>
@@ -68,21 +72,19 @@
   <h2 class="text-center mb-4">Genomic Filtering</h2>
   <Stepper
     buttonCompleteLabel="Apply Filter"
+    startStep={$selectedOption === Option.None ? 0 : 1}
     on:complete={onComplete}
     bind:canComplete
     class="mx-5 p-4 border rounded-md border-surface-500-400-token"
   >
-    <Step title="Select Filter Type">
-      <FilterType
-        bind:selectedOption
-        on:update={(event) => (selectedOption = event.detail.option)}
-      />
+    <Step title="Select Filter Type" locked={$selectedOption === Option.None}>
+      <FilterType on:update={(event) => selectedOption.set(event.detail.option)} />
     </Step>
     <Step
-      title={selectedOption === Option.Name ? 'Gene with Variant' : 'Specific SNP'}
+      title={$selectedOption === Option.Genomic ? 'Gene with Variant' : 'Specific SNP'}
       locked={!canComplete}
     >
-      {#if selectedOption === Option.Name}
+      {#if $selectedOption === Option.Genomic}
         <div class="flex gap-3">
           <Panel title="Select genes of interest" class="w-2/3">
             <svelte:fragment slot="help">

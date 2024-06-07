@@ -322,6 +322,29 @@ test.describe('genomic filter', () => {
       // Then
       await expect(page.getByTestId('added-filter-Genomic Filter')).toBeVisible();
     });
+    test('Clicking edit filter button in results panel returns to genomic filter with correct values', async ({
+      page,
+    }) => {
+      // Given
+      await page.goto('/explorer/genome-filter');
+      await page.getByTestId('gene-variant-option').click();
+      await page.getByTestId('next-btn').click();
+      await page.getByTestId('select-variant-frequency').getByLabel('Rare').click();
+      await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
+      await page.getByTestId('apply-filter-btn').click();
+
+      // When
+      await page.waitForURL('**/explorer');
+      await page
+        .getByTestId('added-filter-Genomic Filter')
+        .getByRole('button', { name: 'Edit Filter' })
+        .click();
+
+      // Then
+      await expect(
+        page.getByTestId('step-2').getByTestId('select-variant-frequency').getByLabel('Rare'),
+      ).toBeChecked();
+    });
   });
   test.describe('SNP filter', () => {
     const validSnp = 'chr17,35269878,GT,A';
@@ -422,6 +445,31 @@ test.describe('genomic filter', () => {
 
       // Then
       await expect(page.getByTestId(`added-filter-${validSnp}`)).toBeVisible();
+    });
+    test('Clicking edit filter button in results panel returns to snp filter with correct values', async ({
+      page,
+    }) => {
+      // Given
+      await page.goto('/explorer/genome-filter');
+      await page.getByTestId('snp-option').click();
+      await page.getByTestId('next-btn').click();
+      await mockApiSuccess(page, '*/**/picsure/query/sync', 12);
+      await page.getByTestId('snp-search-box').fill(validSnp);
+      await page.getByTestId('snp-search-btn').click();
+      await page.getByTestId('snp-constraint').selectOption({ label: 'Heterozygous' });
+      await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
+      await page.getByTestId('apply-filter-btn').click();
+
+      // When
+      await page.waitForURL('**/explorer');
+      await page
+        .getByTestId(`added-filter-${validSnp}`)
+        .getByRole('button', { name: 'Edit Filter' })
+        .click();
+
+      // Then
+      await expect(page.getByTestId('step-2').getByText(validSnp)).toBeVisible();
+      await expect(page.getByTestId('step-2').getByTestId('snp-constraint')).toHaveValue('0/1');
     });
   });
 });
