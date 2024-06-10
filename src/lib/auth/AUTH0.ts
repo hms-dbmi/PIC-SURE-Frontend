@@ -21,6 +21,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
     this.connection = data.connection;
   }
 
+  //TODO: create real return types
   authenticate = async (redirectTo: string, hashParts: string[]): Promise<boolean> => {
     if (!hashParts || hashParts.length === 0) {
       return true;
