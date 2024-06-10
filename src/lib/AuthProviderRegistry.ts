@@ -7,14 +7,16 @@ export function registerProviderData(providerModule: AuthData) {
   if (!providerModule.name) {
     throw new Error('Provider name is required');
   }
+
   if (!providerModule.enabled) {
     throw new Error('Provider must be enabled');
   }
+
   const existingProviders = providerDataRegistry.find(
     (provider) => provider.name === providerModule.name,
   );
 
-  if (existingProviders && existingProviders.length > 0) {
+  if (existingProviders) {
     existingProviders.forEach((provider: AuthData) => {
       if (
         provider.connection &&

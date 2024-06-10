@@ -23,6 +23,7 @@ class Fence extends AuthProvider implements FenceData {
     this.idp = data.idp;
   }
 
+  //TODO: create real return types
   authenticate = async (redirectTo: string, hashParts: string[]): Promise<boolean> => {
     const responseMap: Map<string, string> = hashParts.reduce((map, part) => {
       const [key, value] = part.split('=');

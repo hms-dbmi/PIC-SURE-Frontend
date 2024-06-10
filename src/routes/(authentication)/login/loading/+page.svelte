@@ -7,7 +7,6 @@
   import { createInstance } from '$lib/AuthProviderRegistry';
 
   let failed = false;
-  //todo errors
   onMount(async () => {
     let redirectTo = $page.url.searchParams.get('redirectTo');
     console.log(redirectTo);
@@ -15,20 +14,21 @@
     console.log(providerType);
     if (!providerType) {
       failed = true;
-      return failed;
     }
     redirectTo = !redirectTo ? '/' : redirectTo;
+    // Retrives the providers from the server's AuthProviderRegistry created via hooks.server.ts
     const provider = $page.data?.providers.find((p: AuthProvider) => p.type === providerType);
     if (!provider) {
       failed = true;
-      return failed;
     }
     const providerInstance = await createInstance(provider);
     const hashParts = window.location.hash.split('&');
     failed = await providerInstance.authenticate(redirectTo, hashParts);
     if (!failed) {
       goto(redirectTo);
-      return failed;
+    }
+    if (failed) {
+      goto('/login/error');
     }
   });
 </script>
