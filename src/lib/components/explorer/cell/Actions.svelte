@@ -9,7 +9,6 @@
     variableName: data.row.name,
     variableId: data.row.id,
   };
-  // const tableName = 'ExplorerTable';
   function updateActiveRow(component: string) {
     return () => {
       setActiveRow({
