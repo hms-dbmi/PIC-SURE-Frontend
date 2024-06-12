@@ -12,12 +12,13 @@
   import ExpandableRow from '$lib/components/datatable/Row.svelte';
 
   // Parameters
+  export let tableName: string;
   export let search = false;
   export let title = '';
   export let defaultRowsPerPage = 5;
   export let columns: Column[] = [];
   export let cellOverides: Indexable = {};
-  export let rowClickHandler: (index: number, row?: Indexable) => void = () => {};
+  export let rowClickHandler: (row: Indexable) => void = () => {};
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export let data: any = []; //TODO: Fix this type
@@ -64,7 +65,7 @@
     <tbody>
       {#if $rows.length > 0}
         {#each $rows as row, i}
-          <ExpandableRow {cellOverides} {columns} index={i} {row} {rowClickHandler} />
+          <ExpandableRow {tableName} {cellOverides} {columns} index={i} {row} {rowClickHandler} />
         {/each}
       {:else}
         <tr><td colspan={columns.length}>No entries found.</td></tr>

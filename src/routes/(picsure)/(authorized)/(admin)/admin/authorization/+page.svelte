@@ -47,7 +47,7 @@
     await loadApplications();
   }
 
-  const rowClickHandler = (path: string) => (_index: number, row?: Indexable) => {
+  const rowClickHandler = (path: string) => (row: Indexable) => {
     const uuid = row?.uuid;
     goto(`/admin/authorization/${path}/${uuid}`);
   };
@@ -78,6 +78,7 @@
         </div>
       </div>
       <Datatable
+        tableName="Roles"
         data={$roles}
         columns={roleTable.columns}
         cellOverides={roleTable.overrides}
@@ -99,6 +100,7 @@
         </div>
       </div>
       <Datatable
+        tableName="Privileges"
         data={$privileges}
         columns={privilegesTable.columns}
         cellOverides={privilegesTable.overrides}

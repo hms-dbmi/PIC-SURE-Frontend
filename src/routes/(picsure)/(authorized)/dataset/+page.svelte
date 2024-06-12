@@ -28,7 +28,7 @@
 
   let displayArchived = false;
 
-  const rowClickHandler = (_index: number, row?: Indexable) => {
+  const rowClickHandler = (row: Indexable) => {
     const uuid = row?.uuid;
     goto(`/dataset/${uuid}`);
   };
@@ -44,10 +44,16 @@
     <ProgressBar animIndeterminate="anim-progress-bar" />
   {:then}
     <h3 class="text-left">Active Datasets</h3>
-    <Datatable data={$active} {columns} {cellOverides} {rowClickHandler} />
+    <Datatable
+      tableName="ActiveDatasets"
+      data={$active}
+      {columns}
+      {cellOverides}
+      {rowClickHandler}
+    />
     {#if displayArchived}
       <h3 class="text-left mt-5">Archived Datasets</h3>
-      <Datatable data={$archived} {columns} {cellOverides} />
+      <Datatable tableName="ArchivedDatasets" data={$archived} {columns} {cellOverides} />
     {/if}
     <button
       data-testid="dataset-toggle-archive"

@@ -73,7 +73,7 @@
     });
   }
 
-  const rowClickHandler = (_index: number, row?: Indexable) => {
+  const rowClickHandler = (row: Indexable) => {
     const uuid = row?.uuid;
     goto(`/admin/users/${uuid}`);
   };
@@ -101,6 +101,7 @@
     {#each $usersByConnection as connection}
       <div id={`user-table-${connection.label.replaceAll(' ', '_')}`} class="mb-10">
         <Datatable
+          tableName="Users"
           data={connection.users}
           {columns}
           {cellOverides}

@@ -78,7 +78,7 @@
   }
 
   function finish() {
-    $activeRow = -1;
+    $activeRow = '';
     if ($modalStore[0]) {
       modalStore.close();
     }
