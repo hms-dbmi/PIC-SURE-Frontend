@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
-  import { activeRow, expandableComponents, activeComponent } from '$lib/stores/ExpandableRow';
+  import { activeTable, expandableComponents, setActiveRow } from '$lib/stores/ExpandableRow';
   import type { Export } from '$lib/models/Export';
   import ExportStore from '$lib/stores/Export';
   let { exports, addExport, removeExport } = ExportStore;
@@ -10,24 +10,19 @@
     variableId: data.row.id,
   };
   function updateActiveRow(component: string) {
-    if ($activeRow === data.index && $activeComponent === $expandableComponents[component]) {
-      activeRow.set(-1);
-      return;
-    }
-    (data.index !== undefined || data.index !== null) && activeRow.set(data.index);
+    return () => {
+      setActiveRow({
+        row: data.row.id,
+        component: $expandableComponents[component],
+        table: $activeTable,
+      });
+    };
   }
-  function insertInfoContent() {
-    updateActiveRow('info');
-    activeComponent.set($expandableComponents['info']);
-  }
-  function insertFilterContent() {
-    updateActiveRow('filter');
-    activeComponent.set($expandableComponents['filter']);
-  }
-  function insertHierarchyContent() {
-    updateActiveRow('hierarchy');
-    activeComponent.set($expandableComponents['hierarchy']);
-  }
+
+  const insertInfoContent = updateActiveRow('info');
+  const insertFilterContent = updateActiveRow('filter');
+  const insertHierarchyContent = updateActiveRow('hierarchy');
+
   function insertExportContent() {
     if ($exports.includes(exported)) {
       removeExport(exported.variableId);
