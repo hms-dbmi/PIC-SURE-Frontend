@@ -1,11 +1,10 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
   import { activeTable, expandableComponents, setActiveRow } from '$lib/stores/ExpandableRow';
-  import type { Export } from '$lib/models/Export';
   import ExportStore from '$lib/stores/Export';
   let { exports, addExport, removeExport } = ExportStore;
   export let data = {} as SearchResult;
-  let exported: Export = {
+  $: exported = {
     variableName: data.row.name,
     variableId: data.row.id,
   };
