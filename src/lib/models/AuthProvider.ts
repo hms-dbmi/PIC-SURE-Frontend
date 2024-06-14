@@ -5,7 +5,9 @@ export interface AuthData extends Indexable {
   description: string;
   type: string;
   icon?: string;
+  helpText?: string;
   enabled: boolean;
+  alt: boolean;
 }
 
 export default class AuthProvider implements AuthData {
@@ -17,6 +19,7 @@ export default class AuthProvider implements AuthData {
   loginurl?: string | undefined;
   logouturl?: string | undefined;
   callbackurl?: string | undefined;
+  alt: boolean;
 
   constructor(data: AuthData) {
     this.name = data.name;
@@ -24,6 +27,7 @@ export default class AuthProvider implements AuthData {
     this.type = data.type;
     this.icon = data.icon;
     this.enabled = data.enabled;
+    this.alt = data.alt || false;
   }
 
   protected getRedirectURI(redirectTo = '/', type: string): string {

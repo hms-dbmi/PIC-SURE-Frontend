@@ -2,8 +2,8 @@
   import { AppBar, popup, type PopupSettings } from '@skeletonlabs/skeleton';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import logo from '$lib/assets/app-logo.png';
   import { user, userRoutes, logout } from '$lib/stores/User';
+  import Logo from './Logo.svelte';
 
   function setDropdown(path: string) {
     dropdownPath = path;
@@ -34,7 +34,7 @@
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-900-token">
   <svelte:fragment slot="lead">
     <a href="/" aria-current="page" data-testid="logo-home-link">
-      <img id="nav-logo" alt="PIC-Sure logo" src={logo} class="mx-1" />
+      <Logo class="mx-1" />
     </a>
   </svelte:fragment>
   <nav id="page-navigation">
@@ -116,7 +116,7 @@
           <span
             class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ringed-surface hover:variant-ghost-secondary w-12 rounded-full text-2xl"
           >
-            <i class="fa-solid fa-user fa-lg"></i>
+            <i class="fa-solid fa-user"></i>
             <span class="sr-only">Login</span>
           </span>
         </button>

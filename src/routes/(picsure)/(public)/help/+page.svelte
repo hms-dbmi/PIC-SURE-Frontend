@@ -9,41 +9,20 @@
 <Content title="Knowledge Hub" subtitle="Self-service learning resources">
   <section
     id="info-cards"
-    class="block-buttons w-full flex flex-wrap flex-row justify-between mt-6"
+    class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-8"
   >
     {#each branding.help.links as link}
-      <a href={link.url} target="_blank" tabindex="0" class="card card-hover">
-        <i class={link.icon} />
-        <div class="subtitle">{link.title}</div>
-        <div>{link.description}</div>
+      <a href={link.url} target="_blank" tabindex="0" class="btn variant-soft-primary flex flex-col h-full rounded-lg p-4">
+        <i style="display:inline-block;" class={link.icon} />
+        <div class="m-1">{link.title}</div>
+        <div class="pic-text-wrap w-full m-2">{link.description}</div>
       </a>
     {/each}
   </section>
 </Content>
 
 <style>
-  .block-buttons {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .block-buttons a {
-    display: flex;
-    flex-direction: column;
-    text-decoration: none;
-    display: flex;
-    text-align: center;
-    width: 12rem;
-    max-width: 25rem;
-    min-height: 15rem;
-    padding: 1rem 0.5rem;
-    margin: 0.6rem;
-  }
-  .block-buttons .subtitle {
-    margin: 0.75rem;
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-    color: rgb(var(--color-tertiary-900));
-    margin: 1rem 0.25rem;
+  .pic-text-wrap {
+    text-wrap: wrap;
   }
 </style>

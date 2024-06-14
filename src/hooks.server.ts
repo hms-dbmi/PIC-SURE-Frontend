@@ -9,8 +9,8 @@ const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 // AuthProvider instances for each psrovider when required during login/logout.
 const enabledProviders = Object.keys(import.meta.env)
   .filter((key) => key.startsWith(PROVIDER_PREFIX) && import.meta.env[key] === 'true')
-  .map((key) => key.replace(PROVIDER_PREFIX, '').toUpperCase());
-console.log('enabledProviders:', enabledProviders);
+  .map((key) => key.replace(PROVIDER_PREFIX, '').toUpperCase())
+  .filter((key) => !key.includes('_'));
 
 async function registerEnabledProviders(enabledProviders: string[], viteProviderPrefix: string) {
   for (const providerName of enabledProviders) {
@@ -23,7 +23,13 @@ async function registerEnabledProviders(enabledProviders: string[], viteProvider
         .filter((key) => key.startsWith(providerConfigPrefix))
         .map((key) => {
           const configKey = key.replace(providerConfigPrefix, '')?.toLowerCase();
-          authProviderConfigInterface[configKey] = import.meta.env[key];
+          const value =
+            import.meta.env[key] === 'true'
+              ? true
+              : import.meta.env[key] === 'false'
+                ? false
+                : import.meta.env[key];
+          authProviderConfigInterface[configKey] = value;
         });
       authProviderConfigInterface.enabled = true;
       authProviderConfigInterface.name = uppercaseProviderName;

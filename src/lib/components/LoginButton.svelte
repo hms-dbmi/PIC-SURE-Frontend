@@ -5,6 +5,7 @@
   export let buttonText = 'Log In';
   export let redirectTo = '/';
   export let provider: AuthData;
+  export let helpText: string;
   let testId = `login-button-${provider.name?.toLowerCase()}`;
 
   let login = async (redirectTo: string, providerType: string) => {
@@ -21,3 +22,15 @@
 >
   {buttonText}
 </button>
+
+{#if helpText && !provider.alt}
+  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+  <div class="help-text">{@html helpText}</div>
+{/if}
+
+<style>
+  .help-text {
+    font-size: 0.8rem;
+    color: var(--color-gray-500);
+  }
+</style>
