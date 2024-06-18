@@ -6,7 +6,7 @@
   export let redirectTo = '/';
   export let provider: AuthData;
   export let helpText: string;
-  let testId = `login-button-${provider.name?.toLowerCase()}`;
+  $: testId = `login-button-${provider.name?.toLowerCase()}`;
 
   let login = async (redirectTo: string, providerType: string) => {
     let instance = await createInstance(provider);

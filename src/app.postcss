@@ -223,14 +223,14 @@ nav#page-navigation li a.nav-link {
 }
 
 nav#page-navigation a.nav-link[aria-current='page'] {
-  @apply variant-filled-secondary;
+  @apply variant-filled-primary;
 }
 
 nav#page-navigation a.nav-link:hover,
 nav#page-navigation a.nav-link:active,
 nav#page-navigation a.nav-link:focus,
 nav#page-navigation li.open a.nav-link {
-  @apply variant-filled-primary;
+  @apply variant-filled-secondary;
 }
 
 nav#page-navigation li .nav-dropdown {
@@ -257,11 +257,11 @@ nav#page-navigation li.open a.nav-link {
 }
 
 nav#page-navigation li .nav-dropdown a {
-  text-decoration: underline;
   display: block;
   text-align: center;
   padding: 0.2em;
 }
+
 nav#page-navigation li .nav-dropdown a:hover,
 nav#page-navigation li .nav-dropdown a:focus {
   @apply bg-secondary-300-600-token text-on-secondary-token;

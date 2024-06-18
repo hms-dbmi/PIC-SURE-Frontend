@@ -4,7 +4,6 @@
   import { ProgressRadial } from '@skeletonlabs/skeleton';
   import Logo from '$lib/components/Logo.svelte';
   import type { AuthData } from '$lib/models/AuthProvider';
-  import { onMount } from 'svelte';
   import { branding } from '$lib/configuration';
 
   const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
@@ -14,23 +13,21 @@
   const description =
     branding.login?.description ||
     'Where searching for, filtering on, and exporting data is made simple.';
+  const openPicsureLinkText = branding.login.openPicsureLinkText || 'Explore without Login';
   $: selectedProvider = selected
     ? ($page.data?.providers?.find((provider: AuthData) => provider.name === selected) as AuthData)
     : undefined;
-  onMount(() => {
-    console.log(selectedProvider);
-  });
 </script>
 
 <section id="logins" class="flex flex-col items-center h-screen text-center">
   <div id="title-box" class="flex flex-col items-center text-center">
-    <h1 class="mb-8">{title}</h1>
-    <p class="max-w-16">{description}</p>
+    <h1 data-testid="login-title" class="mb-8 text-primary-500-400-token">{title}</h1>
+    <p data-testid="login-description" class="max-w-16">{description}</p>
   </div>
   {#await $page.data?.providers}
     <ProgressRadial width="w-10" value={undefined} />
   {:then providers}
-    <div id="login-box" class="card p-6 w-max">
+    <div id="login-box" class="card !bg-transparent p-6 w-max">
       <header class="card-header flex flex-col items-center">
         <Logo class="w-80 h-20" />
         {#if branding.login.showSiteName}
@@ -83,7 +80,8 @@
         {#if branding.login.openPicsureLink}
           <a
             href={branding.login.openPicsureLink}
-            class="btn variant-ghost-primary m-1 mt-2 text-sm">Go to Open Access</a
+            class="btn variant-outline-primary text-primary-500 m-1 mt-2 text-sm"
+            >{openPicsureLinkText}</a
           >
         {/if}
         <div id="alt-logins" class="flex flex-col items-center mt-8">

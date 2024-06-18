@@ -19,11 +19,11 @@
     </div>
   </div>
 {/if}
-<div id="main-footer" class="flex">
+<footer id="main-footer" class="flex">
   <LightSwitch />
   <ul>
     {#each branding.footer.links as link}
       <li><a target={link.newTab ? '_blank' : '_self'} href={link.url}>{link.title}</a></li>
     {/each}
   </ul>
-</div>
+</footer>

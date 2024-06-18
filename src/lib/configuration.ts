@@ -1,8 +1,9 @@
 import { PicsurePrivileges } from './models/Privilege';
 import type { Route } from './models/Route';
+import type { Indexable } from './types';
 
 export const branding = {
-  applicationName: 'PIC‑SURE Demo',
+  applicationName: 'PIC‑SURE',
   sitemap: [
     {
       category: 'Explore PIC‑SURE',
@@ -107,7 +108,8 @@ export const branding = {
     title: undefined,
     description: undefined,
     showSiteName: false,
-    openPicsureLink: undefined,
+    openPicsureLink: '/',
+    openPicsureLinkText: 'Explore without Login',
   },
   help: {
     links: [
@@ -156,7 +158,7 @@ export const routes: Route[] = [
   { path: '/help', text: 'Help' },
 ];
 
-export const features = {
+export const features: Indexable = {
   explorer: {
     allowExport: true,
     exportsEnableExport: true,

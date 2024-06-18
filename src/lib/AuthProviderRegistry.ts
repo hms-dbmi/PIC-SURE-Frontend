@@ -24,7 +24,7 @@ export function registerProviderData(providerModule: AuthData) {
   ) {
     throw new Error(`Provider "${providerModule.name}" is already registered`);
   }
-
+  console.log('Registering new provider:  \n', providerModule);
   providerDataRegistry.push(providerModule);
 }
 

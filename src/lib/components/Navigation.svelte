@@ -3,6 +3,7 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { user, userRoutes, logout } from '$lib/stores/User';
+  import type { Route } from '$lib/models/Route';
   import Logo from './Logo.svelte';
 
   function setDropdown(path: string) {
@@ -27,6 +28,18 @@
   function handleLogin() {
     goto(`/login?redirectTo=${$page.url.pathname}`);
   }
+
+  $: currentPage = (route: Route) => {
+    if (route.children) {
+      for (const child of route.children) {
+        if ($page.url.pathname.includes(child.path)) {
+          return 'page';
+        }
+      }
+      return undefined;
+    }
+    return $page.url.pathname.includes(route.path) ? 'page' : undefined;
+  };
 
   $: dropdownPath = '';
 </script>
@@ -55,9 +68,7 @@
               on:click={(e) => e.preventDefault()}
               on:keydown={(e) => e.key === 'Enter' && setDropdown(dropdownPath ? '' : route.path)}
               aria-expanded={dropdownPath === route.path}
-              aria-current={route.children.map((c) => c.path).includes($page.url.pathname)
-                ? 'page'
-                : undefined}>{route.text}</a
+              aria-current={currentPage(route)}>{route.text}</a
             >
             <ul
               class="nav-dropdown"
@@ -65,8 +76,10 @@
             >
               {#each route.children as child}
                 <li>
-                  <a href={child.path} on:keydown={(e) => e.key === 'Enter' && setDropdown('')}
-                    >{child.text}</a
+                  <a
+                    class="no-underline"
+                    href={child.path}
+                    on:keydown={(e) => e.key === 'Enter' && setDropdown('')}>{child.text}</a
                   >
                 </li>
               {/each}
@@ -79,8 +92,9 @@
               id={getId(route)}
               href={route.path}
               on:focus={() => setDropdown('')}
-              aria-current={$page.url.pathname === route.path ? 'page' : undefined}>{route.text}</a
-            >
+              aria-current={currentPage(route)}
+              >{route.text}
+            </a>
           </li>
         {/if}
       {/each}

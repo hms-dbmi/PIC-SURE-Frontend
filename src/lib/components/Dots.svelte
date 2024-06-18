@@ -1,7 +1,9 @@
 <script lang="ts">
   let clazz = '';
   export { clazz as class };
-  const finalClass = `dots-colors ${clazz}`;
+  const dotsColorsClass = import.meta.env.VITE_DOTS_COLORS_CLASS?.toString()?.toLowerCase();
+  const useFiveColors = dotsColorsClass === 'five-dots-colors';
+  const finalClass = `${useFiveColors ? dotsColorsClass : 'dots-colors'} ${clazz}`;
 </script>
 
 <svg
@@ -177,7 +179,7 @@
     <circle
       id="white-circle"
       stroke="var(--stroke-circle)"
-      fill="var(--tertiary-circle)"
+      fill={useFiveColors ? 'var(--secondary-circle)' : 'var(--tertiary-circle)'}
       cx="16"
       cy="261"
       r="15.5"
@@ -185,7 +187,7 @@
     <circle
       id="white-circle"
       stroke="var(--stroke-circle)"
-      fill="var(--tertiary-circle)"
+      fill={useFiveColors ? 'var(--primary-circle)' : 'var(--tertiary-circle)'}
       cx="109"
       cy="109"
       r="15.5"
@@ -193,7 +195,7 @@
     <circle
       id="secondary-circle"
       stroke="var(--stroke-circle)"
-      fill="var(--secondary-circle)"
+      fill={useFiveColors ? 'var(--error-circle)' : 'var(--secondary-circle)'}
       cx="46"
       cy="94"
       r="15.5"
@@ -201,7 +203,7 @@
     <circle
       id="secondary-circle"
       stroke="var(--stroke-circle)"
-      fill="var(--secondary-circle)"
+      fill={useFiveColors ? 'var(--primary-circle)' : 'var(--secondary-circle)'}
       cx="285"
       cy="95"
       r="15.5"
@@ -209,7 +211,7 @@
     <circle
       id="secondary-circle"
       stroke="var(--stroke-circle)"
-      fill="var(--secondary-circle)"
+      fill={useFiveColors ? 'var(--error-circle)' : 'var(--secondary-circle)'}
       cx="141"
       cy="230"
       r="15.5"
@@ -217,7 +219,7 @@
     <circle
       id="secondary-circle"
       stroke="var(--stroke-circle)"
-      fill="var(--secondary-circle)"
+      fill={useFiveColors ? 'var(--secondary-circle)' : 'var(--secondary-circle)'}
       cx="151"
       cy="16"
       r="15.5"
@@ -225,7 +227,7 @@
     <circle
       id="primary-circle"
       stroke="var(--stroke-circle)"
-      fill="var(--primary-circle)"
+      fill={useFiveColors ? 'var(--success-circle)' : 'var(--primary-circle)'}
       cx="55"
       cy="190"
       r="15.5"
@@ -233,7 +235,7 @@
     <circle
       id="primary-circle"
       stroke="var(--stroke-circle)"
-      fill="var(--primary-circle)"
+      fill={useFiveColors ? 'var(--tertiary-circle)' : 'var(--primary-circle)'}
       cx="65"
       cy="357"
       r="15.5"
@@ -241,7 +243,7 @@
     <circle
       id="primary-circle"
       stroke="var(--stroke-circle)"
-      fill="var(--primary-circle)"
+      fill={useFiveColors ? 'var(--tertiary-circle)' : 'var(--primary-circle)'}
       cx="157"
       cy="125"
       r="15.5"
@@ -249,7 +251,7 @@
     <circle
       id="primary-circle"
       stroke="var(--stroke-circle)"
-      fill="var(--primary-circle)"
+      fill={useFiveColors ? 'var(--success-circle)' : 'var(--primary-circle)'}
       cx="92"
       cy="44"
       r="15.5"
@@ -257,7 +259,7 @@
     <circle
       id="primary-circle"
       stroke="var(--stroke-circle)"
-      fill="var(--primary-circle)"
+      fill={useFiveColors ? 'var(--success-circle)' : 'var(--primary-circle)'}
       cx="386"
       cy="23"
       r="15.5"
@@ -267,9 +269,18 @@
 
 <style>
   .dots-colors {
+    --tertiary-circle: rgb(var(--color-surface-700));
+    --secondary-circle: rgb(var(--color-secondary-500));
+    --primary-circle: rgb(var(--color-primary-500));
+    --stroke-circle: rgb(var(--color-surface-200));
+  }
+
+  .five-dots-colors {
     --tertiary-circle: rgb(var(--color-tertiary-500));
     --secondary-circle: rgb(var(--color-secondary-500));
     --primary-circle: rgb(var(--color-primary-500));
+    --success-circle: rgb(var(--color-success-500));
+    --error-circle: rgb(var(--color-error-500));
     --stroke-circle: rgb(var(--color-surface-200));
   }
 </style>

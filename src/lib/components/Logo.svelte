@@ -1,16 +1,17 @@
 <script lang="ts">
   let clazz = '';
   export { clazz as class };
-  const finalClass = `colors max-h-16 ${clazz}`;
+  const finalClass = `colors max-h-20 ${clazz}`;
   //read setting from .env
   const useLogoImg = import.meta.env.VITE_LOGO;
 </script>
 
 <!-- TODO: Add real SVG Code here -->
 {#if useLogoImg}
-  <img src={useLogoImg} alt="logo" class={finalClass} />
+  <img src={useLogoImg} data-testid="nav-logo" alt="logo" class={finalClass} />
 {:else}
   <svg
+    data-testid="nav-logo"
     class={finalClass}
     width="275px"
     height="50px"
