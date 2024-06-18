@@ -5,9 +5,9 @@
   let searchInput: string = '';
   export let unselectedOptions: string[] = [];
   export let selectedOptions: string[] = [];
-  // export let allOptions: string[] = unselectedOptions;
   export let currentlyLoading: boolean = false;
 
+  export let showClearAll: boolean = true;
   export let showSelectAll: boolean = true;
 
   let unselectedOptionsContainer: HTMLElement;
@@ -123,13 +123,15 @@
   </div>
   <div class="flex flex-1 flex-col h-full p-3 m-1 card">
     <header class="flex justify-between pb-1">
-      <h5>Selected:</h5>
-      <button
-        id="clear"
-        class="btn variant-ringed-surface hover:variant-filled-primary ml-2"
-        on:click={clearSelectedOptions}
-        disabled={selectedOptions.length === 0}>Clear</button
-      >
+      <span>Selected:</span>
+      {#if showClearAll}
+        <button
+          id="clear"
+          class="btn variant-ringed-surface hover:variant-filled-primary ml-2"
+          on:click={clearSelectedOptions}
+          disabled={selectedOptions.length === 0}>Clear</button
+        >
+      {/if}
     </header>
     <section class="card-body">
       <div

@@ -141,6 +141,7 @@ export function createSnpFilter(id: string, name: string, values: string[]) {
     values,
   );
   filter.filterType = 'snp';
+  filter.variableName = 'Variant Filter';
   return filter;
 }
 

@@ -71,7 +71,7 @@
         .join('; ');
     } else if (filter.filterType === 'snp') {
       const index = filter.categoryValues.join(',');
-      return GenotypeMap[index] || 'Unknown';
+      return `Variant SNP: ${filter.id} ${GenotypeMap[index]}` || 'Unknown';
     }
   };
 

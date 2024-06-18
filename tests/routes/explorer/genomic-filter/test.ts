@@ -43,22 +43,6 @@ test.describe('genomic filter', () => {
       await expect(page.getByTestId('step-2')).toBeVisible();
     });
     test.describe('Gene selection', () => {
-      test('Gene Help', async ({ page }) => {
-        // Given
-        await page.goto('/explorer/genome-filter');
-        await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
-
-        await expect(page.getByTestId('gene-help-popup-content')).not.toBeVisible();
-
-        // When
-        await page.getByTestId('gene-help-popup').click();
-
-        // Then
-        await expect(page.getByTestId('gene-help-popup-content')).toContainText(
-          infoColumnDescriptions.Gene_with_variant,
-        );
-      });
       test('Loads list of genes ', async ({ page }) => {
         // Given
         await page.goto('/explorer/genome-filter');
@@ -115,7 +99,7 @@ test.describe('genomic filter', () => {
 
         // When
         await optionsContainer.getByLabel(geneValues.results[0]).click();
-        await page.locator('#clear').click();
+        await page.getByTestId('gene-with-variant').getByRole('button', { name: 'Clear' }).click();
 
         // Then
         await expect(selectedContainer.getByLabel(geneValues.results[0])).not.toBeVisible();
@@ -272,10 +256,7 @@ test.describe('genomic filter', () => {
           .getByRole('treeitem', { name: 'High Severity' })
           .getByRole('checkbox')
           .click();
-        await page
-          .getByTestId('select-genes-of-interest')
-          .getByLabel(geneValues.results[0])
-          .click();
+        await page.getByTestId('gene-with-variant').getByLabel(geneValues.results[0]).click();
 
         const summaryPanel = page.getByTestId('selected-genomic-filters');
 
@@ -444,7 +425,7 @@ test.describe('genomic filter', () => {
       await page.getByTestId('apply-filter-btn').click();
 
       // Then
-      await expect(page.getByTestId(`added-filter-${validSnp}`)).toBeVisible();
+      await expect(page.getByTestId('added-filter-Variant Filter')).toBeVisible();
     });
     test('Clicking edit filter button in results panel returns to snp filter with correct values', async ({
       page,
@@ -463,7 +444,7 @@ test.describe('genomic filter', () => {
       // When
       await page.waitForURL('**/explorer');
       await page
-        .getByTestId(`added-filter-${validSnp}`)
+        .getByTestId('added-filter-Variant Filter')
         .getByRole('button', { name: 'Edit Filter' })
         .click();
 

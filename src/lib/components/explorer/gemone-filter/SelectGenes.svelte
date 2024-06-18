@@ -71,6 +71,7 @@
 <div class="flex gap-4">
   <OptionsSelectionList
     showSelectAll={false}
+    showClearAll={false}
     bind:unselectedOptions={unselectedGenes}
     bind:selectedOptions={$selectedGenes}
     bind:currentlyLoading={loading}
