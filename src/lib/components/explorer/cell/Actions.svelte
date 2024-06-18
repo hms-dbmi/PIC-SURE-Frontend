@@ -1,13 +1,14 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
   import { activeTable, expandableComponents, setActiveRow } from '$lib/stores/ExpandableRow';
+  import type { Export } from '$lib/models/Export';
   import ExportStore from '$lib/stores/Export';
   let { exports, addExport, removeExport } = ExportStore;
   export let data = {} as SearchResult;
-  $: exported = {
+  $: exportItem = {
     variableName: data.row.name,
     variableId: data.row.id,
-  };
+  } as Export;
   function updateActiveRow(component: string) {
     return () => {
       setActiveRow({
@@ -23,12 +24,14 @@
   const insertHierarchyContent = updateActiveRow('hierarchy');
 
   function insertExportContent() {
-    if ($exports.includes(exported)) {
-      removeExport(exported.variableId);
+    if ($exports.includes(exportItem)) {
+      removeExport(exportItem.variableId);
     } else {
-      addExport(exported);
+      addExport(exportItem);
     }
   }
+
+  $: isExported = $exports.map((exp) => exp.variableName).includes(exportItem.variableName);
 </script>
 
 <button
@@ -64,7 +67,7 @@
   class="bg-initial text-black-600 hover:text-primary-600"
   on:click|stopPropagation={insertExportContent}
 >
-  {#if $exports.includes(exported)}
+  {#if isExported}
     <i class="fa-regular fa-square-check fa-xl"></i>
   {:else}
     <i class="fa-solid fa-right-from-bracket fa-xl"></i>
