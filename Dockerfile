@@ -29,6 +29,7 @@ RUN sed -i '/^#LoadModule socache_shmcb_module modules\/mod_socache_shmcb.so/s/^
 RUN mkdir -p /usr/local/apache2/logs/ssl_mutex
 
 WORKDIR /app
+RUN mkdir -p logs
 COPY --from=builder /app/build build/
 COPY --from=builder /app/node_modules node_modules/
 COPY package.json .
