@@ -1,5 +1,11 @@
 import type { Indexable } from '$lib/types';
-type ExpectedResultType = 'COUNT' | 'CROSS_COUNT' | 'DATAFRAME';
+type ExpectedResultType =
+  | 'COUNT'
+  | 'CROSS_COUNT'
+  | 'DATAFRAME'
+  | 'AGGREGATE_VCF_EXCERPT'
+  | 'VCF_EXCERPT'
+  | 'VARIANT_COUNT_FOR_QUERY';
 
 interface QueryInterface {
   categoryFilters: object; //TODO: define type

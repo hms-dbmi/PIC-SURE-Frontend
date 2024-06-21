@@ -1,5 +1,6 @@
 import { PicsurePrivileges } from './models/Privilege';
 import type { Route } from './models/Route';
+import { ExportType } from './models/Variant';
 import type { Indexable } from './types';
 
 export const branding = {
@@ -160,13 +161,22 @@ export const routes: Route[] = [
 
 export const features: Indexable = {
   explorer: {
-    allowExport: true,
-    exportsEnableExport: true,
+    allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
+    exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
+    variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
   },
-  dataRequests: true,
-  genomicFilter: true,
+  dataRequests: import.meta.env?.VITE_DATA_REQUESTS === 'true',
+  genomicFilter: import.meta.env?.VITE_GENOMIC_FILTER === 'true',
+};
+
+export const settings: Indexable = {
+  variantExplorer: {
+    type: (import.meta.env?.VITE_VARIANT_EXPLORER_TYPE || ExportType.Aggregate) as ExportType,
+    maxCount: parseInt(import.meta.env?.VITE_VARIANT_EXPLORER_MAX_COUNT || 10000),
+    excludeColumns: JSON.parse(import.meta.env?.VITE_VARIANT_EXPLORER_EXCLUDE_COLUMNS || '[]'),
+  },
 };
 
 export const resources = {
-  hpds: 'bf638674-053b-46c4-96a1-4cd6c8395248',
+  hpds: import.meta.env?.VITE_RESOURCE_HPDS || '',
 };
