@@ -155,7 +155,7 @@ test.describe('Navigation', () => {
     await page.goto('/help');
 
     // When
-    const logo = page.locator('#nav-logo');
+    const logo = page.getByTestId('nav-logo');
     await logo.click();
 
     // Then

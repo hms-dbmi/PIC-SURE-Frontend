@@ -12,21 +12,19 @@ export function registerProviderData(providerModule: AuthData) {
     throw new Error('Provider must be enabled');
   }
 
-  const existingProviders = providerDataRegistry.find(
+  const existingProvider = providerDataRegistry.find(
     (provider) => provider.name === providerModule.name,
   );
-
-  if (existingProviders) {
-    existingProviders.forEach((provider: AuthData) => {
-      if (
-        provider.connection &&
-        providerModule.connection &&
-        provider.connection === providerModule.connection
-      ) {
-        throw new Error(`Provider "${providerModule.name}" is already registered`);
-      }
-    });
+  // TODO: Check other properties for conflicts
+  if (
+    existingProvider &&
+    existingProvider.connection &&
+    providerModule.connection &&
+    existingProvider.connection === providerModule.connection
+  ) {
+    throw new Error(`Provider "${providerModule.name}" is already registered`);
   }
+  console.log('Registering new provider:  \n', providerModule);
   providerDataRegistry.push(providerModule);
 }
 

@@ -7,7 +7,28 @@ import type { User } from '$lib/models/User';
 import { PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, features } from '$lib/configuration';
 
-export const user: Writable<User> = writable({});
+function restoreUserSession() {
+  if (browser && localStorage.getItem('user')) {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      console.log('Restored user from local storage:  ', user);
+      return user;
+    } catch (error) {
+      console.error('Error reading user from local storage:  ' + error);
+      return {};
+    }
+  }
+  return {};
+}
+
+export const user: Writable<User> = writable(restoreUserSession());
+
+user.subscribe((value) => {
+  if (browser) {
+    localStorage.setItem('user', JSON.stringify(value));
+  }
+});
+
 export const userRoutes: Readable<Route[]> = derived(user, ($user) => {
   const userPrivileges: string[] = $user?.privileges || [];
 

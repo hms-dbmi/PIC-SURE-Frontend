@@ -1,11 +1,12 @@
 import { PicsurePrivileges } from './models/Privilege';
 import type { Route } from './models/Route';
+import type { Indexable } from './types';
 
 export const branding = {
   applicationName: 'PIC‑SURE',
   sitemap: [
     {
-      category: 'Explore PIC-Sure',
+      category: 'Explore PIC‑SURE',
       links: [
         { title: 'User Guide', url: 'https://pic-sure.gitbook.io/pic-sure', newTab: true },
         { title: 'Data Dashboard', url: '#' },
@@ -103,6 +104,13 @@ export const branding = {
       },
     ],
   },
+  login: {
+    title: undefined,
+    description: undefined,
+    showSiteName: false,
+    openPicsureLink: '/',
+    openPicsureLinkText: 'Explore without Login',
+  },
   help: {
     links: [
       {
@@ -150,7 +158,7 @@ export const routes: Route[] = [
   { path: '/help', text: 'Help' },
 ];
 
-export const features = {
+export const features: Indexable = {
   explorer: {
     allowExport: true,
     exportsEnableExport: true,
