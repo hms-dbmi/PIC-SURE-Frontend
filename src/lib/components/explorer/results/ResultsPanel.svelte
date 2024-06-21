@@ -17,6 +17,7 @@
     getToastStore,
   } from '@skeletonlabs/skeleton';
   import { elasticInOut } from 'svelte/easing';
+    import { goto } from '$app/navigation';
 
   const { filters, hasGenomicFilter, getQueryRequest, clearFilters } = FilterStore;
   const { exports, clearExports } = ExportStore;
@@ -26,14 +27,14 @@
 
   let totalPatients = 0;
 
-  const modal: ModalSettings = {
-    type: 'component',
-    title: 'Export Data',
-    component: 'stepper',
-    response: (r: string) => {
-      console.log(r);
-    },
-  };
+  // const modal: ModalSettings = {
+  //   type: 'component',
+  //   title: 'Export Data',
+  //   component: 'stepper',
+  //   response: (r: string) => {
+  //     console.log(r);
+  //   },
+  // };
 
   let triggerRefreshCount = getCount();
 
@@ -89,7 +90,7 @@
         id="export-data-button"
         type="button"
         class="btn variant-filled-primary"
-        on:click={() => modalStore.trigger(modal)}
+        on:click={() => goto('/export')}
         transition:scale={{ easing: elasticInOut }}
       >
         Export Data
