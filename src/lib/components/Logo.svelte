@@ -8,7 +8,7 @@
 {#if useLogoImg}
   <img src={useLogoImg} data-testid="nav-logo" alt="logo" class={finalClass} />
 {:else}
-  <svg class={finalClass} version="1.1" viewBox="0 0 1010 180" xmlns="http://www.w3.org/2000/svg">
+  <svg data-testid="nav-logo" class={finalClass} version="1.1" viewBox="0 0 1010 180" xmlns="http://www.w3.org/2000/svg">
     <g id="text" transform="translate(-46,-10)">
       <path id="text-P" fill="var(--secondary)" d="m 333.95234,162.40533 q 0,11.16 -4.14,18.9 -4.14,7.56 -11.16,12.24 -7.02,4.68 -16.2,6.84 -9.18,2.16 -19.08,2.16 h -15.3 v 48.06 h -30.78 v -127.44 h 46.8 q 10.44,0 19.44,2.16 9.18,1.98 15.84,6.66 6.84,4.5 10.62,12.06 3.96,7.38 3.96,18.36 z m -30.78,0.18 q 0,-4.5 -1.8,-7.38 -1.8,-2.88 -4.86,-4.5 -3.06,-1.62 -7.02,-2.16 -3.78,-0.54 -7.92,-0.54 h -13.5 v 30.06 h 12.96 q 4.32,0 8.28,-0.72 3.96,-0.72 7.02,-2.52 3.24,-1.8 5.04,-4.68 1.8,-3.06 1.8,-7.56 z" transform="translate(18.792623,-84.228461)" />
       <path id="text-I" fill="var(--secondary)" d="M 367.11586,166.0274 V 38.587405 h 30.96 V 166.0274 Z" />
