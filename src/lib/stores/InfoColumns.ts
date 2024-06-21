@@ -37,7 +37,12 @@ export async function loadInfoColumns() {
 }
 
 export function getInfoColumn(name: string) {
+  if (!get(loaded)) return;
   const columns = get(infoColumns);
+  if (!columns[name]) {
+    console.error('Invalid infoColumn selected.');
+    return '';
+  }
   return columns[name].description;
 }
 

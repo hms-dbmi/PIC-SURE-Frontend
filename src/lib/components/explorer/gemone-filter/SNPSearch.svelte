@@ -34,13 +34,14 @@
   }
 </script>
 
-<p>
+<p class="text-center mb-0">
   Use the variant information obtained from
-  <a href="https://www.ncbi.nlm.nih.gov/snp/" target="_blank">dbSNP</a> to search for a specific
-  SNP. For instructions on how to find the variant information click
+  <a href="https://www.ncbi.nlm.nih.gov/snp/" target="_blank" class="anchor font-bold">dbSNP</a> to
+  search for a specific SNP. <br /> For instructions on how to find the variant information click
   <a
     href="https://pic-sure.gitbook.io/genomic-information-commons/user-journey/1.-explore-data-and-create-a-cohort/variant-search-rsids"
-    target="_blank">here</a
+    target="_blank"
+    class="anchor font-bold">here</a
   >.
 </p>
 <div class="border rounded border-surface-500-400-token p-3">
@@ -53,7 +54,7 @@
     <div class="flex gap-2 justify-center my-6">
       <input
         type="search"
-        class="input"
+        class="input w-1/2"
         placeholder="chromosome (chr#), position, reference allele, variant allele"
         data-testid="snp-search-box"
         on:input={removeInvalid}

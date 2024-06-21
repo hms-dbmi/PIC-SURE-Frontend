@@ -45,7 +45,7 @@
 <div class="stepper space-y-4 {$$props.class ?? ''}" data-testid="stepper">
   {#if $state.total}
     <header
-      class="stepper-header flex items-center border-t mt-[15px] border-surface-400-500-token gap-4"
+      class="stepper-header flex items-center border-t mt-[15px] mb-7 border-surface-400-500-token gap-4"
       in:fade={{ duration: 100 }}
       out:fade={{ duration: 100 }}
     >
@@ -54,8 +54,10 @@
           class="stepper-header-step -mt-[15px] transition-all duration-300"
           class:flex-1={isActive(step)}
         >
-          <span class="badge {isActive(step) ? 'variant-filled-primary' : 'variant-filled-surface'}"
-            >{isActive(step) ? `Step ${step + 1}` : step + 1}</span
+          <span
+            class="badge text-sm {isActive(step)
+              ? 'variant-filled-primary'
+              : 'variant-filled-surface'}">{isActive(step) ? `Step ${step + 1}` : step + 1}</span
           >
         </div>
       {/each}

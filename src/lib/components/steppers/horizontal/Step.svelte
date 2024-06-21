@@ -26,9 +26,11 @@
 
 {#if stepIndex === $state.current}
   <div class="step space-y-4" data-testid="step-{stepIndex + 1}">
-    <header class="step-header text-2xl font-bold">
-      <slot name="header">{title || 'Step ' + (stepIndex + 1)}</slot>
-    </header>
+    {#if title}
+      <header class="step-header text-2xl font-bold">
+        <slot name="header">{title}</slot>
+      </header>
+    {/if}
     <div class="step-content space-y-4 px-2">
       <slot>(Step {stepIndex + 1} Content)</slot>
     </div>
@@ -38,12 +40,14 @@
         in:fade={{ duration: 100 }}
         out:fade={{ duration: 100 }}
       >
-        {#if stepIndex === 0 && $$slots.navigation}
+        {#if $$slots.navigation}
           <div class="step-navigation-slot">
             <slot name="navigation" />
           </div>
-        {:else}
+        {:else if stepIndex !== 0}
           <AngleButton on:click={() => onBack()} disabled={$state.current === 0}>Back</AngleButton>
+        {:else}
+          <div></div>
         {/if}
         {#if stepIndex < $state.total - 1}
           <AngleButton
