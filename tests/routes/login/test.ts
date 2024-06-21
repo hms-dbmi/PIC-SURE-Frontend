@@ -13,7 +13,7 @@ unauthedTest.describe('Login page', () => {
     .filter((key) => !key.includes('_'));
   const altProviders: string[] = [];
   enabledProviders.forEach((providerName) => {
-    let test = Object.keys(process.env)
+    const test = Object.keys(process.env)
       .filter(
         (key) =>
           key.startsWith(`${PROVIDER_PREFIX}${providerName}_ALT`) && process.env[key] === 'true',
