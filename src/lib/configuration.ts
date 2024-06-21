@@ -6,7 +6,7 @@ export const branding = {
   applicationName: 'PIC‑SURE',
   sitemap: [
     {
-      category: 'Explore PIC-Sure',
+      category: 'Explore PIC‑SURE',
       links: [
         { title: 'User Guide', url: 'https://pic-sure.gitbook.io/pic-sure', newTab: true },
         { title: 'Data Dashboard', url: '#' },
@@ -51,7 +51,7 @@ export const branding = {
       {
         header: 'PIC‑SURE API Examples',
         body: 'Get started using the PIC‑SURE API with real example code and analyses from simple queries to complex real-world use cases. \n\nClick this card to check out the PIC-SURE API example code.',
-        link: '/api/start',
+        link: 'https://pic-sure.org/about',
       },
     ],
   },
@@ -104,6 +104,13 @@ export const branding = {
       },
     ],
   },
+  login: {
+    title: undefined,
+    description: undefined,
+    showSiteName: false,
+    openPicsureLink: '/',
+    openPicsureLinkText: 'Explore without Login',
+  },
   help: {
     links: [
       {
@@ -145,12 +152,6 @@ export const routes: Route[] = [
     ],
   },
   { path: '/admin/users', text: 'User Management', privilege: PicsurePrivileges.ADMIN },
-  {
-    path: '/admin/requests',
-    text: 'Data Requests',
-    feature: 'dataRequests',
-    privilege: PicsurePrivileges.DATA_ADMIN,
-  },
   { path: '/explorer', text: 'Explorer' },
   { path: '/api', text: 'API', privilege: PicsurePrivileges.QUERY },
   { path: '/dataset', text: 'Dataset Management', privilege: PicsurePrivileges.QUERY },
@@ -162,15 +163,10 @@ export const features: Indexable = {
     allowExport: true,
     exportsEnableExport: true,
   },
-  // Env Feature Flags
   dataRequests: true,
   genomicFilter: true,
 };
 
 export const resources = {
   hpds: 'bf638674-053b-46c4-96a1-4cd6c8395248',
-};
-
-export const loginConfiguration = {
-  clientId: 'dFvo72bRvFWuUIgaR1hLKjz4I0o8fDcK',
 };

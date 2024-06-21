@@ -1,51 +1,28 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { ProgressRadial } from '@skeletonlabs/skeleton';
-  import * as api from '$lib/api';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { login } from '$lib/stores/User';
-  import type { User } from '$lib/models/User';
-  //parse the query string
+  import type AuthProvider from '$lib/models/AuthProvider';
+  import { createInstance } from '$lib/AuthProviderRegistry';
+
   let failed = false;
   onMount(async () => {
     let redirectTo = $page.url.searchParams.get('redirectTo');
+    let providerType = $page.url.searchParams.get('provider');
+    if (!providerType) {
+      failed = true;
+    }
     redirectTo = !redirectTo ? '/' : redirectTo;
-    const hashParts = $page.url.hash.split('&');
-    if (!hashParts || hashParts.length === 0) {
-      failed = true;
-      return;
-    }
-    const auth0ResponseMap: Map<string, string> = hashParts.reduce((map, part) => {
-      const [key, value] = part.split('=');
-      map.set(key, value);
-      return map;
-    }, new Map<string, string>());
-    const token = auth0ResponseMap.get('#access_token');
-    const redirectURI = `${window.location.protocol}//${window.location.hostname}${
-      window.location.port ? ':' + window.location.port : ''
-    }${redirectTo}`;
-    if (token) {
-      try {
-        //TODO: handle errors
-        const res = await api.post('psama/authentication', {
-          access_token: token,
-          redirectURI: redirectURI,
-        });
-        const newUser: User = res;
-        if (newUser?.token) {
-          login(newUser.token);
-        } else {
-          failed = true;
-          return;
-        }
-        goto(redirectTo);
-      } catch (error) {
-        failed = true;
-      }
-    } else {
+    // Retrives the providers from the server's AuthProviderRegistry created via hooks.server.ts
+    const provider = $page.data?.providers.find((p: AuthProvider) => p.type === providerType);
+    if (!provider) {
       failed = true;
     }
+    const providerInstance = await createInstance(provider);
+    const hashParts = window.location.hash.split('&');
+    failed = await providerInstance.authenticate(redirectTo, hashParts);
+    goto(failed ? '/login/error' : redirectTo);
   });
 </script>
 

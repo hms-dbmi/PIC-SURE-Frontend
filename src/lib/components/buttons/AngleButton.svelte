@@ -22,7 +22,13 @@
 </script>
 
 {#if href}
-  <a data-testid={testid} class="text-{color}-500 text-lg {clazz}" {href}>
+  <a
+    data-testid={testid}
+    aria-disabled={disabled}
+    class="text-{color}-500 &[aria-disabled=“true”]:opacity-75 text-lg {clazz}"
+    rel={disabled ? 'nofollow' : ''}
+    {href}
+  >
     {#if angle === 'left'}<i class="{iconStyle} fa-solid fa-angles-left mr-1"></i>{/if}
     <slot />
     {#if angle === 'right'}<i class="{iconStyle} fa-solid fa-angles-right ml-1"></i>{/if}
@@ -31,7 +37,7 @@
   <button
     data-testid={testid}
     type="button"
-    class="text-{color}-500 text-lg {clazz}"
+    class="text-{color}-500 text-lg disabled:opacity-75 {clazz}"
     on:click={onClick}
     {disabled}
   >
