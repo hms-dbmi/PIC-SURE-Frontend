@@ -14,7 +14,7 @@
   import { onMount } from 'svelte';
   import SidePanel from '$lib/components/explorer/results/SidePanel.svelte';
   import { page } from '$app/stores';
-  import ExportStepper from '$lib/components/explorer/dataExport/ExportStepper.svelte';
+  import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import ModalWrapper from '$lib/components/ModalWrapper.svelte';
 
