@@ -29,7 +29,7 @@
   {:then providers}
     <div id="login-box" class="card !bg-transparent p-6 w-max">
       <header class="card-header flex flex-col items-center">
-        <Logo class="w-80 h-20" />
+        <Logo class="" />
         {#if branding.login.showSiteName}
           <div>{siteName}</div>
         {/if}
