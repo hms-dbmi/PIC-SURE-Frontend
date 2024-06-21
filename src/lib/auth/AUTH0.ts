@@ -26,11 +26,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
     if (!hashParts || hashParts.length === 0) {
       return true;
     }
-    const auth0ResponseMap: Map<string, string> = hashParts.reduce((map, part) => {
-      const [key, value] = part.split('=');
-      map.set(key, value);
-      return map;
-    }, new Map<string, string>());
+    const auth0ResponseMap: Map<string, string> = this.getResponseMap(hashParts);
     const token = auth0ResponseMap.get('#access_token');
     if (browser && token) {
       const redirectURI = this.getRedirectURI(redirectTo, this.type);
