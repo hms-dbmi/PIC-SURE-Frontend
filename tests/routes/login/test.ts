@@ -6,22 +6,19 @@ const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
 //TODO: Tests for login dropdown
 
+
 unauthedTest.describe('Login page', () => {
   const enabledProviders = Object.keys(process.env)
-    .filter((key) => key.startsWith(PROVIDER_PREFIX) && process.env[key] === 'true')
-    .map((key) => key.replace(PROVIDER_PREFIX, '').toUpperCase())
-    .filter((key) => !key.includes('_'));
-  const altProviders: string[] = [];
-  enabledProviders.forEach((providerName) => {
-    if (
-      Object.keys(process.env).filter(
-        (key) =>
-          key.startsWith(`${PROVIDER_PREFIX}${providerName}_ALT`) && process.env[key] === 'true',
-      )
-    ) {
-      altProviders.push(providerName);
-    }
-  });
+      .filter((key) => key.startsWith(PROVIDER_PREFIX) && process.env[key] === 'true')
+      .map((key) => key.replace(PROVIDER_PREFIX, '').toUpperCase())
+      .filter((key) => !key.includes('_'));
+    const altProviders: string[] = [];
+    enabledProviders.forEach((providerName) => {
+      let test = Object.keys(process.env).filter((key) => key.startsWith(`${PROVIDER_PREFIX}${providerName}_ALT`) && process.env[key] === 'true').map((key) => key.replace(`${PROVIDER_PREFIX}_ALT`, '').toUpperCase());
+      if (test.length > 0) {
+        altProviders.push(providerName);
+      }
+    });
   unauthedTest('No navigation bar before login', async ({ page }) => {
     // Given
     await page.goto('/login');
@@ -98,11 +95,11 @@ unauthedTest.describe('Login page', () => {
     // Then
     if (altProviders.length > 0) {
       await expect(altLoginsContainer).toBeVisible();
-      altProviders.forEach(async (providerName) => {
+      for (const providerName of altProviders) {
         const testId = `login-button-${providerName.toLowerCase()}`;
-        const loginButton = page.getByTestId(testId);
+        const loginButton = altLoginsContainer.getByTestId(testId);
         await expect(loginButton).toBeVisible();
-      });
+      };
     }
   });
   for (const providerName of enabledProviders) {
