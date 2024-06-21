@@ -9,9 +9,7 @@
   let failed = false;
   onMount(async () => {
     let redirectTo = $page.url.searchParams.get('redirectTo');
-    console.log(redirectTo);
     let providerType = $page.url.searchParams.get('provider');
-    console.log(providerType);
     if (!providerType) {
       failed = true;
     }
@@ -24,12 +22,7 @@
     const providerInstance = await createInstance(provider);
     const hashParts = window.location.hash.split('&');
     failed = await providerInstance.authenticate(redirectTo, hashParts);
-    if (!failed) {
-      goto(redirectTo);
-    }
-    if (failed) {
-      goto('/login/error');
-    }
+    goto(failed ? '/login/error' : redirectTo);
   });
 </script>
 

@@ -22,8 +22,8 @@ async function registerEnabledProviders(enabledProviders: string[], viteProvider
       Object.keys(import.meta.env)
         .filter((key) => key.startsWith(providerConfigPrefix))
         .map((key) => {
-          const configKey = key.replace(providerConfigPrefix, '').toLowerCase();
-          authProviderConfigInterface[configKey?.toLocaleLowerCase()] = import.meta.env[key];
+          const configKey = key.replace(providerConfigPrefix, '')?.toLowerCase();
+          authProviderConfigInterface[configKey] = import.meta.env[key];
         });
       authProviderConfigInterface.enabled = true;
       authProviderConfigInterface.name = uppercaseProviderName;

@@ -1,7 +1,7 @@
 import type { AuthData } from '$lib/models/AuthProvider';
 import AuthProvider from '$lib/models/AuthProvider';
 import { browser } from '$app/environment';
-import { login } from '$lib/stores/User';
+import { login as UserLogin } from '$lib/stores/User';
 import type { User } from '$lib/models/User';
 import * as api from '$lib/api';
 import auth0 from 'auth0-js';
@@ -22,7 +22,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
   }
 
   //TODO: create real return types
-  authenticate = async (redirectTo: string, hashParts: string[]): Promise<boolean> => {
+  authenticate = async (redirectTo = '/', hashParts: string[]): Promise<boolean> => {
     if (!hashParts || hashParts.length === 0) {
       return true;
     }
@@ -33,22 +33,20 @@ class Auth0 extends AuthProvider implements Auth0Data {
     }, new Map<string, string>());
     const token = auth0ResponseMap.get('#access_token');
     if (browser && token) {
-      const redirectURI = `${window.location.protocol}//${window.location.hostname}${
-        window.location.port ? ':' + window.location.port : ''
-      }${redirectTo}`;
+      const redirectURI = this.getRedirectURI(redirectTo, this.type);
       try {
-        const res = await api.post('psama/authentication', {
+        const newUser: User = await api.post('psama/authentication', {
           access_token: token,
           redirectURI: redirectURI,
         });
-        const newUser: User = res;
         if (newUser?.token) {
-          login(newUser.token);
+          UserLogin(newUser.token);
           return false;
         } else {
           return true;
         }
       } catch (error) {
+        console.error('Login Error: ', error);
         return true;
       }
     }
@@ -58,11 +56,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
   login = async (redirectTo: string, type: string): Promise<void> => {
     let redirectUrl = '/';
     if (browser) {
-      redirectUrl = encodeURI(
-        `${window.location.protocol}//${window.location.hostname}${
-          window.location.port ? ':' + window.location.port : ''
-        }/login/loading?provider=${type}&redirectTo=${redirectTo ?? '/'}`,
-      );
+      redirectUrl = this.getRedirectURI(redirectTo, type);
     }
     const webAuth = new auth0.WebAuth({
       domain: 'avillachlab.auth0.com',
