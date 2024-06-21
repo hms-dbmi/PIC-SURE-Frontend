@@ -26,6 +26,23 @@ export default class AuthProvider implements AuthData {
     this.enabled = data.enabled;
   }
 
+  protected getRedirectURI(redirectTo = '/', type: string): string {
+    if (!type) throw new Error('Provider type is required');
+    return encodeURI(
+      `${window.location.protocol}//${window.location.hostname}${
+        window.location.port ? ':' + window.location.port : ''
+      }/login/loading?provider=${type}&redirectTo=${redirectTo ?? '/'}`,
+    );
+  }
+
+  protected getResponseMap(hashParts: string[] = []): Map<string, string> {
+    return hashParts.reduce((map, part) => {
+      const [key, value] = part.split('=');
+      map.set(key, value);
+      return map;
+    }, new Map<string, string>());
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   authenticate = async (redirectTo: string, hashParts: string[]): Promise<boolean> => {
     throw new Error('Method not implemented.');

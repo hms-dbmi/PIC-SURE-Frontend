@@ -5,8 +5,6 @@
   export let buttonText = 'Log In';
   export let redirectTo = '/';
   export let provider: AuthData;
-  let clazz = 'btn variant-filled-primary m-1';
-  export { clazz as class };
   let testId = `login-button-${provider.name?.toLowerCase()}`;
 
   let login = async (redirectTo: string, providerType: string) => {
@@ -18,7 +16,7 @@
 <button
   type="button"
   data-testid={testId}
-  class={clazz}
+  class={$$props.class ?? 'btn variant-filled-primary m-1'}
   on:click={() => login(redirectTo, provider.type)}
 >
   {buttonText}
