@@ -1,10 +1,11 @@
 import type { User } from '../src/lib/models/User';
 import { PicsurePrivileges } from '../src/lib/models/Privilege';
+import { resources } from '../src/lib/configuration';
 
 export const mockToken =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6MTYxMjE2NDk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.kzaW-ZkhCPlTgdGQQAz_CA1ZB80PpZ5aiRa2lj46hbw';
 export const mockLoginResponse =
-  '/login/loading?redirectTo=/#access_token=' +
+  '/login/loading?redirectTo=/&provider=AUTH0#access_token=' +
   mockToken +
   '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G';
 
@@ -42,25 +43,7 @@ export const picsureUser: User = {
   acceptedTOS: true,
 };
 
-export const picsureAdmin: User = {
-  uuid: '1234',
-  email: 'admin@pic-sure.org',
-  privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.ADMIN],
-  // expired token
-  token: mockToken,
-  acceptedTOS: true,
-};
-
-export const topAdmin: User = {
-  uuid: '1234',
-  email: 'admin@pic-sure.org',
-  privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.SUPER],
-  // expired token
-  token: mockToken,
-  acceptedTOS: true,
-};
-
-export const searchResultPath = '*/**/picsure/search/bf638674-053b-46c4-96a1-4cd6c8395248';
+export const searchResultPath = `*/**/picsure/search/${resources.hpds}`;
 export const searchResults = {
   results: {
     phenotypes: {
@@ -310,3 +293,79 @@ export const users = [
     active: true,
   },
 ];
+
+export const sites = { sites: ['site A', 'site B'], homeSite: 'site A', homeDisplay: 'Site A' };
+export const status = {
+  genomic: 'Unsent',
+  phenotypic: 'Unsent',
+  queryId: '1234',
+  approved: '',
+  site: '',
+};
+
+export const metadata = {
+  status: 'AVAILABLE',
+  picsureResultId: '1234',
+  resultMetadata: {
+    queryResultMetadata: '{"picsureQueryId":"p1234"}',
+    queryJson: {
+      query: {
+        categoryFilters: {},
+        numericFilters: {},
+        requiredFields: [],
+        anyRecordOf: [],
+        variantInfoFilters: [
+          {
+            categoryVariantInfoFilters: {},
+            numericVariantInfoFilters: {},
+          },
+        ],
+        expectedResultType: 'DATAFRAME',
+      },
+      resourceUUID: 'r1234',
+    },
+  },
+};
+
+export const infoColumnDescriptions = {
+  Variant_consequence_calculated: 'The calculated consequence of a variant.',
+  Gene_with_variant: 'The official symbol for a gene affected by a variant.',
+  Variant_severity: 'The severity for the calculated consequence of a variant on a gene.',
+  Variant_frequency_as_text: 'The variant allele frequency in gnomAD.',
+};
+
+export const infoColumns = [
+  {
+    key: 'Variant_consequence_calculated',
+    description: 'Description="' + infoColumnDescriptions.Variant_consequence_calculated + '"',
+  },
+  {
+    key: 'Gene_with_variant',
+    description: 'Description="' + infoColumnDescriptions.Gene_with_variant + '"',
+  },
+  {
+    key: 'Variant_severity',
+    description: 'Description="' + infoColumnDescriptions.Variant_severity + '"',
+  },
+  {
+    key: 'Variant_frequency_as_text',
+    description: 'Description="' + infoColumnDescriptions.Variant_frequency_as_text + '"',
+  },
+];
+
+export const geneValues = {
+  results: [
+    '5_8S_rRNA',
+    '5S_rRNA',
+    '7SK',
+    'A1BG',
+    'A1CF',
+    'A2M',
+    'A2ML1',
+    'A2ML1-AS1',
+    'A2MP1',
+    'A3GALT2',
+  ],
+  page: 1,
+  total: 20,
+};

@@ -1,7 +1,7 @@
 import type { SearchResult } from './Search';
-import { v4 as uuid } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
-type FilterType = 'categorical' | 'numeric' | 'required' | 'datatable' | 'genomic' | 'auto';
+type FilterType = 'categorical' | 'numeric' | 'required' | 'datatable' | 'genomic' | 'snp' | 'auto';
 type DisplayType =
   | 'any'
   | 'anyRecordOf'
@@ -25,7 +25,7 @@ export interface FilterInterface {
 }
 
 export interface CategoricalFilterInterface extends FilterInterface {
-  filterType: 'categorical' | 'required';
+  filterType: 'categorical' | 'required' | 'snp';
   categoryValues: string[];
 }
 
@@ -43,9 +43,13 @@ export interface GenomicFilterInterface extends FilterInterface {
   Variant_frequency_as_text?: string[];
 }
 
+export interface SnpFilterInterface extends CategoricalFilterInterface {
+  filterType: 'snp';
+}
+
 export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
   const filter: Filter = {
-    uuid: uuid(),
+    uuid: uuidv4(),
     id: searchResult.id,
     filterType: 'categorical',
     displayType: values && values?.length > 0 ? 'restrict' : 'anyRecordOf',
@@ -59,7 +63,7 @@ export function createCategoricalFilter(searchResult: SearchResult, values?: str
 
 export function createRequiredFilter(searchResult: SearchResult) {
   const filter: Filter = {
-    uuid: uuid(),
+    uuid: uuidv4(),
     id: searchResult.id,
     filterType: 'categorical',
     displayType: 'any',
@@ -73,7 +77,7 @@ export function createRequiredFilter(searchResult: SearchResult) {
 
 export function createAnyRecordOfFilter(searchResult: SearchResult, values?: string[]) {
   const filter: Filter = {
-    uuid: uuid(),
+    uuid: uuidv4(),
     id: searchResult.id,
     filterType: 'categorical',
     displayType: 'anyRecordOf',
@@ -87,7 +91,7 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, values?: str
 
 export function createNumericFilter(searchResult: SearchResult, min?: string, max?: string) {
   const filter: Filter = {
-    uuid: uuid(),
+    uuid: uuidv4(),
     id: searchResult.id,
     filterType: 'numeric',
     displayType:
@@ -107,23 +111,42 @@ export function createNumericFilter(searchResult: SearchResult, min?: string, ma
   return filter;
 }
 
-export function createGenomicFilter(
-  Gene_with_variant?: string[],
-  Variant_consequence_calculated?: string[],
-  Variant_frequency_as_text?: string[],
-) {
+export function createGenomicFilter(filters: {
+  Gene_with_variant?: string[];
+  Variant_consequence_calculated?: string[];
+  Variant_frequency_as_text?: string[];
+}) {
   const filter: Filter = {
-    uuid: uuid(),
+    uuid: uuidv4(),
     id: 'genomic',
     filterType: 'genomic',
     displayType: 'genomic',
     variableName: 'Genomic Filter',
-    description: 'Filter for genomic data',
-    Gene_with_variant: Gene_with_variant,
-    Variant_consequence_calculated: Variant_consequence_calculated,
-    Variant_frequency_as_text: Variant_frequency_as_text,
+    Gene_with_variant: filters.Gene_with_variant,
+    Variant_consequence_calculated: filters.Variant_consequence_calculated,
+    Variant_frequency_as_text: filters.Variant_frequency_as_text,
   };
   return filter;
 }
 
-export type Filter = CategoricalFilterInterface | NumericFilterInterface | GenomicFilterInterface;
+export function createSnpFilter(id: string, name: string, values: string[]) {
+  const filter: Filter = createCategoricalFilter(
+    {
+      id,
+      name,
+      description: '',
+      isCategorical: true,
+      categoryValues: values,
+    },
+    values,
+  );
+  filter.filterType = 'snp';
+  filter.variableName = 'Variant Filter';
+  return filter;
+}
+
+export type Filter =
+  | CategoricalFilterInterface
+  | NumericFilterInterface
+  | GenomicFilterInterface
+  | SnpFilterInterface;

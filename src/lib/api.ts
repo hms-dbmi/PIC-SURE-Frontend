@@ -7,10 +7,12 @@ async function send({
   method,
   path,
   data,
+  headers,
 }: {
   method: string;
   path: string;
   data?: any; //TODO: Change this
+  headers?: any;
 }) {
   const opts: { method: string; headers: { [key: string]: string }; body?: string } = {
     method,
@@ -20,6 +22,10 @@ async function send({
   if (data) {
     opts.headers['Content-Type'] = 'application/json';
     opts.body = JSON.stringify(data);
+  }
+
+  if (headers) {
+    opts.headers = { ...opts.headers, ...headers };
   }
 
   if (browser) {
@@ -42,18 +48,18 @@ async function send({
   throw error(res.status as NumericRange<400, 599>, await res.text());
 }
 
-export function get(path: string) {
-  return send({ method: 'GET', path });
+export function get(path: string, headers?: any) {
+  return send({ method: 'GET', path, headers });
 }
 
-export function del(path: string) {
-  return send({ method: 'DELETE', path });
+export function del(path: string, headers?: any) {
+  return send({ method: 'DELETE', path, headers });
 }
 
-export function post(path: string, data: any) {
-  return send({ method: 'POST', path, data });
+export function post(path: string, data: any, headers?: any) {
+  return send({ method: 'POST', path, data, headers });
 }
 
-export function put(path: string, data: any) {
-  return send({ method: 'PUT', path, data });
+export function put(path: string, data: any, headers?: any) {
+  return send({ method: 'PUT', path, data, headers });
 }

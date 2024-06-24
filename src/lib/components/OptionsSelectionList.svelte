@@ -1,98 +1,74 @@
 <script lang="ts">
-  import { quintOut } from 'svelte/easing';
-  import { crossfade } from 'svelte/transition';
-  import { flip } from 'svelte/animate';
-  import { ProgressRadial, getToastStore } from '@skeletonlabs/skeleton';
-
-  const toastStore = getToastStore();
-
-  const [send, receive] = crossfade({
-    fallback(node) {
-      const style = getComputedStyle(node);
-      const transform = style.transform === 'none' ? '' : style.transform;
-
-      return {
-        easing: quintOut,
-        css: (t) => `
-					transform: ${transform} scale(${t});
-					opacity: ${t}
-				`,
-      };
-    },
-  });
-  export let options: string[] = [];
-  export let allOptions: string[] = options;
-  export let selectedOptions: string[] = [];
-  export let showSelectAll: boolean = true;
-  export let loadMore: (searchTerm: string) => Promise<string[]>;
+  import { createEventDispatcher } from 'svelte';
+  import { ProgressRadial } from '@skeletonlabs/skeleton';
 
   let searchInput: string = '';
+  export let unselectedOptions: string[] = [];
+  export let selectedOptions: string[] = [];
+  export let currentlyLoading: boolean = false;
+
+  export let showClearAll: boolean = true;
+  export let showSelectAll: boolean = true;
+
+  let unselectedOptionsContainer: HTMLElement;
+  let selectedOptionsContainer: HTMLElement;
   let selectedOptionEndLocation = 20;
-  let optionsContainer: HTMLElement;
-  let selelectedOptionsContainer: HTMLElement;
-  let currentlyLoading = false;
-  let hasLoadedAll = false;
 
-  async function handleScroll() {
-    if (!optionsContainer) return;
-    if (loadMore === undefined) return;
-    if (shouldLoadMore(optionsContainer)) {
-      currentlyLoading = true;
-      try {
-        let nextOptions = await loadMore(searchInput);
-        if (nextOptions && Array.isArray(nextOptions) && nextOptions.length > 0) {
-          options = [...options, ...nextOptions];
-        }
-        currentlyLoading = false;
-        if (!nextOptions || nextOptions.length === 0) {
-          hasLoadedAll = true;
-        }
-      } catch (error) {
-        console.error(error);
-        toastStore.trigger({
-          message: 'An error occured while loading more options. Please try again later.',
-          background: 'variant-filled-error',
-        });
-        currentlyLoading = false;
-      }
-    }
-  }
-
-  function onSelect(option: string) {
-    options = options.filter((o) => o !== option);
-    selectedOptions = [...selectedOptions, option];
-    if (elementHasScrollbar(optionsContainer)) {
-      handleScroll();
-    }
-  }
-
-  function onUnselect(option: string) {
-    selectedOptions = selectedOptions.filter((o) => o !== option);
-    options = [option, ...options];
-  }
-
-  function elementHasScrollbar(element: HTMLElement) {
-    return element.scrollHeight > element.clientHeight;
-  }
-
-  function loadMoreSelectedOptions() {
-    if (!selelectedOptionsContainer) return;
-    if (shouldLoadMore(selelectedOptionsContainer)) {
-      selectedOptionEndLocation = selectedOptionEndLocation + 20;
-    }
-  }
+  const dispatch = createEventDispatcher<{ scroll: { search: string } }>();
 
   function shouldLoadMore(element: HTMLElement) {
     const scrollTop = element.scrollTop;
     const containerHeight = element.clientHeight;
     const contentHeight = element.scrollHeight;
     const scrollBuffer = 30;
+    const hasLoadedAll = !unselectedOptions || unselectedOptions.length === 0;
     return !hasLoadedAll && contentHeight - (scrollTop + containerHeight) <= scrollBuffer;
   }
 
-  $: filteredOptions = options?.filter((option) =>
-    option.toLowerCase().includes(searchInput.toLowerCase()),
-  );
+  function handleScroll() {
+    if (!unselectedOptionsContainer) return;
+    if (!currentlyLoading && shouldLoadMore(unselectedOptionsContainer)) {
+      dispatch('scroll', { search: searchInput });
+    }
+  }
+
+  function onSearch() {
+    dispatch('scroll', { search: searchInput });
+    unselectedOptionsContainer.scrollTop = 0;
+  }
+
+  function onSelect(option: string) {
+    unselectedOptions = unselectedOptions.filter((o) => o !== option);
+    selectedOptions = [...selectedOptions, option].sort();
+  }
+
+  function onUnselect(option: string) {
+    selectedOptions = selectedOptions.filter((o) => o !== option);
+    unselectedOptions = [option, ...unselectedOptions];
+  }
+
+  function clearSelectedOptions() {
+    unselectedOptions = [...unselectedOptions, ...selectedOptions].sort();
+    selectedOptions = [];
+    selectedOptionEndLocation = 20;
+  }
+
+  function selectAllOptions() {
+    selectedOptions = unselectedOptions;
+    unselectedOptions = [];
+    selectedOptionEndLocation = 20;
+  }
+
+  function loadMoreSelectedOptions() {
+    if (!selectedOptionsContainer) return;
+    if (shouldLoadMore(selectedOptionsContainer)) {
+      selectedOptionEndLocation = selectedOptionEndLocation + 20;
+    }
+  }
+
+  function getID(option: string) {
+    return option.replaceAll(' ', '-').toLowerCase();
+  }
 
   $: displayedSelectedOptions = selectedOptions.slice(0, selectedOptionEndLocation);
 </script>
@@ -105,35 +81,29 @@
         type="search"
         name="search"
         bind:value={searchInput}
+        on:input={onSearch}
         placeholder="Search..."
       />
       {#if showSelectAll}
         <button
           id="select-all"
           class="btn variant-ringed-surface hover:variant-filled-primary ml-2"
-          on:click={() => {
-            selectedOptions = allOptions;
-            selectedOptionEndLocation = 20;
-            options = [];
-          }}>Select All</button
+          on:click={selectAllOptions}>Select All</button
         >
       {/if}
     </header>
     <section class="card-body">
       <div
         id="options-container"
-        bind:this={optionsContainer}
+        bind:this={unselectedOptionsContainer}
         class="overflow-scroll scrollbar-color h-25vh"
-        on:scroll={() => handleScroll()}
+        on:scroll={handleScroll}
       >
-        {#each filteredOptions as option (option)}
+        {#each unselectedOptions as option}
           <label
-            id="option-{option}"
+            id="option-{getID(option)}"
             class="p-1 m-1 cursor-pointer hover:variant-soft-surface hover:rounded-md"
-            in:receive={{ key: option }}
-            out:send={{ key: option }}
             role="listitem"
-            animate:flip
           >
             <input
               type="checkbox"
@@ -153,33 +123,27 @@
   </div>
   <div class="flex flex-1 flex-col h-full p-3 m-1 card">
     <header class="flex justify-between pb-1">
-      <h5>Selected:</h5>
-      <button
-        id="clear"
-        class="btn variant-ringed-surface hover:variant-filled-primary ml-2"
-        on:click={() => {
-          selectedOptionEndLocation = 20;
-          displayedSelectedOptions.forEach((option) => onUnselect(option));
-          selectedOptions = [];
-        }}
-        disabled={selectedOptions.length === 0}>Clear</button
-      >
+      <span>Selected:</span>
+      {#if showClearAll}
+        <button
+          id="clear"
+          class="btn variant-ringed-surface hover:variant-filled-primary ml-2"
+          on:click={clearSelectedOptions}
+          disabled={selectedOptions.length === 0}>Clear</button
+        >
+      {/if}
     </header>
     <section class="card-body">
-      <!-- on:scroll={() => selectedOptionsScolling} -->
       <div
         id="selected-options-container"
-        bind:this={selelectedOptionsContainer}
+        bind:this={selectedOptionsContainer}
         class="overflow-scroll scrollbar-color h-25vh"
-        on:scroll={() => loadMoreSelectedOptions()}
+        on:scroll={loadMoreSelectedOptions}
       >
         {#each displayedSelectedOptions as option (option)}
           <label
-            id="option-{option}"
+            id="option-{getID(option)}"
             class="p-1 m-1 hover:variant-soft-surface hover:rounded-md cursor-pointer"
-            in:receive={{ key: option }}
-            out:send={{ key: option }}
-            animate:flip
             role="listitem"
           >
             <input

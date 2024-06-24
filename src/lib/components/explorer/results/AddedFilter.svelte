@@ -1,11 +1,17 @@
 <script lang="ts">
-  import type { Filter } from '$lib/models/Filter';
-  import { fade, scale, slide } from 'svelte/transition';
-  import FilterStore from '$lib/stores/Filter';
   import { elasticInOut } from 'svelte/easing';
+  import { fade, scale, slide } from 'svelte/transition';
   import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+
+  import { goto } from '$app/navigation';
+
+  import type { Filter } from '$lib/models/Filter';
+  import { GenotypeMap } from '$lib/models/GemoneFilter';
+  import FilterStore from '$lib/stores/Filter';
+  import GeneFilterStore from '$lib/stores/GenomicFilter';
   import AddFilter from '$lib/components/explorer/AddFilter.svelte';
   let { removeFilter } = FilterStore;
+  let { populateFromFilter } = GeneFilterStore;
   const modalStore = getModalStore();
 
   export let filter: Filter;
@@ -13,17 +19,22 @@
   let carot = 'fa-caret-up';
 
   function editFilter() {
-    const modal: ModalSettings = {
-      type: 'component',
-      title: 'Edit Filter',
-      component: 'modalWrapper',
-      modalClasses: 'bg-surface-100-800-token p-4 block',
-      meta: { existingFilter: filter, component: AddFilter },
-      response: (r: string) => {
-        console.log(r);
-      },
-    };
-    modalStore.trigger(modal);
+    if (filter.filterType === 'genomic' || filter.filterType === 'snp') {
+      populateFromFilter(filter);
+      goto('/explorer/genome-filter');
+    } else {
+      const modal: ModalSettings = {
+        type: 'component',
+        title: 'Edit Filter',
+        component: 'modalWrapper',
+        modalClasses: 'bg-surface-100-800-token p-4 block',
+        meta: { existingFilter: filter, component: AddFilter },
+        response: (r: string) => {
+          console.log(r);
+        },
+      };
+      modalStore.trigger(modal);
+    }
   }
 
   // TODO: Clean up once dictionary is more clear
@@ -49,7 +60,18 @@
           return filter.description;
       }
     } else if (filter.filterType === 'genomic') {
-      return filter.description;
+      const orJoin = (key: string, arr: string[] | undefined) =>
+        arr && arr.length > 0 ? `${key}: ${arr.join(', ')}` : undefined;
+      return [
+        orJoin('Gene with variant', filter.Gene_with_variant),
+        orJoin('Variant frequency', filter.Variant_frequency_as_text),
+        orJoin('Consequence Group by severity', filter.Variant_consequence_calculated),
+      ]
+        .filter((x) => x)
+        .join('; ');
+    } else if (filter.filterType === 'snp') {
+      const index = filter.categoryValues.join(',');
+      return `Variant SNP: ${filter.id} ${GenotypeMap[index]}` || 'Unknown';
     }
   };
 
@@ -90,6 +112,7 @@
         on:click={editFilter}
       >
         <i class="fa-solid fa-pen-to-square"></i>
+        <span class="sr-only">Edit Filter</span>
       </button>
       <button
         type="button"
@@ -98,6 +121,7 @@
         on:click={deleteFilter}
       >
         <i class="fa-solid fa-times-circle"></i>
+        <span class="sr-only">Remove Filter</span>
       </button>
       <button
         type="button"
@@ -106,6 +130,7 @@
         on:click={toggleCardBody}
       >
         <i class="fa-solid {carot}"></i>
+        <span class="sr-only">See details</span>
       </button>
     </div>
   </header>

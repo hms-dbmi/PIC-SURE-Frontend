@@ -1,21 +1,24 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { Accordion, AccordionItem, ProgressBar } from '@skeletonlabs/skeleton';
+
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
+
+  import { branding, features } from '$lib/configuration';
+
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
   import Content from '$lib/components/Content.svelte';
   import Checkbox from '$lib/components/explorer/Checkbox.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import { page } from '$app/stores';
-  import { goto } from '$app/navigation';
-
-  import SearchStore from '$lib/stores/Search';
-  import { activeRow, activeComponent, expandableComponents } from '$lib/stores/ExpandableRow';
   import AddFilterComponent from '$lib/components/explorer/AddFilter.svelte';
   import ResultInfoComponent from '$lib/components/explorer/ResultInfoComponent.svelte';
   import HierarchyComponent from '$lib/components/explorer/HierarchyComponent.svelte';
-  import type { SvelteComponent } from 'svelte';
-  import { branding } from '$lib/configuration';
   import Searchbox from '$lib/components/Searchbox.svelte';
+
+  import SearchStore from '$lib/stores/Search';
+  import { setComponentRegistry } from '$lib/stores/ExpandableRow';
   let { tags, searchTerm, searchResults, search } = SearchStore;
 
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
@@ -31,24 +34,22 @@
     id: Actions,
   };
 
-  // TODO: Bug? Why not typeof SvelteComponent?
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const expandableComponentRegistry: Record<string, new (...args: any[]) => SvelteComponent> = {
-    filter: AddFilterComponent,
-    info: ResultInfoComponent,
-    hierarchy: HierarchyComponent,
-  };
+  const tableName = 'ExplorerTable';
+  onMount(() => {
+    setComponentRegistry(
+      {
+        filter: AddFilterComponent,
+        info: ResultInfoComponent,
+        hierarchy: HierarchyComponent,
+      },
+      'info',
+      tableName,
+    );
 
-  let rowClickHandler = (index: number) => {
-    if ($activeRow === index) {
-      activeRow.set(-1);
-      return;
-    }
-    activeRow.set(index);
-    activeComponent.set($expandableComponents['info']);
-  };
-
-  expandableComponents.set(expandableComponentRegistry);
+    return () => {
+      setComponentRegistry({});
+    };
+  });
 
   function updateSearch() {
     goto(searchInput ? `/explorer?search=${searchInput}` : '/explorer', { replaceState: true });
@@ -89,6 +90,13 @@
             <Searchbox bind:searchTerm={searchInput} search={updateSearch} />
           </div>
           <div class="flex-none">
+            {#if features.genomicFilter}
+              <a
+                data-testid="genomic-filter-btn"
+                class="btn variant-ghost-primary hover:variant-filled-primary"
+                href="/explorer/genome-filter">Genomic Filtering</a
+              >
+            {/if}
             <button
               type="button"
               class="btn variant-ghost-error hover:variant-filled-error"
@@ -103,7 +111,7 @@
             </button>
           </div>
         </div>
-        <Datatable data={$searchResults} {columns} {cellOverides} {rowClickHandler} />
+        <Datatable {tableName} data={$searchResults} {columns} {cellOverides} />
       </div>
     </div>
   {:catch}

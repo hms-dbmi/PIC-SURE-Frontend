@@ -26,7 +26,7 @@
   <title>{branding.applicationName} | Edit Role</title>
 </svelte:head>
 
-<Content title="Edit Role">
+<Content title="Edit Role" backUrl="/admin/authorization" backTitle="Back to Authorization">
   {#await load()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />

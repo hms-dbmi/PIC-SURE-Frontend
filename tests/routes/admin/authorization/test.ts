@@ -172,6 +172,17 @@ test.describe('admin authorization page', () => {
       await page.waitForURL(`**/admin/authorization/role/${mockRoles[0].uuid}`);
       await expect(page.url()).toContain(`/admin/authorization/role/${mockRoles[0].uuid}`);
     });
+    test('Clicking row takes user to view role form', async ({ page }) => {
+      // Given
+      await page.goto('/admin/authorization');
+
+      // When
+      await page.locator('#authorization-role-table table tbody tr').first().click();
+
+      // Then
+      await page.waitForURL(`**/admin/authorization/role/${mockRoles[0].uuid}`);
+      await expect(page.url()).toContain(`/admin/authorization/role/${mockRoles[0].uuid}`);
+    });
     test('Edit row icon takes user to edit role form', async ({ page }) => {
       // Given
       await page.goto('/admin/authorization');
@@ -393,6 +404,19 @@ test.describe('admin authorization page', () => {
 
       // When
       await page.getByTestId(`privilege-view-btn-${mockPrivileges[0].uuid}`).click();
+
+      // Then
+      await page.waitForURL(`**/admin/authorization/privilege/${mockPrivileges[0].uuid}`);
+      await expect(page.url()).toContain(
+        `/admin/authorization/privilege/${mockPrivileges[0].uuid}`,
+      );
+    });
+    test('Clicking row takes user to view priviledge form', async ({ page }) => {
+      // Given
+      await page.goto('/admin/authorization');
+
+      // When
+      await page.locator('#authorization-privilege-table table tbody tr').first().click();
 
       // Then
       await page.waitForURL(`**/admin/authorization/privilege/${mockPrivileges[0].uuid}`);

@@ -2,34 +2,9 @@
   import { AppBar, popup, type PopupSettings } from '@skeletonlabs/skeleton';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import logo from '$lib/assets/app-logo.png';
-  import { user, logout } from '$lib/stores/User';
-  import { PicsurePrivileges } from '$lib/models/Privilege';
-  import { routes } from '$lib/configuration';
-
-  let allowedRoutes = routes.filter((route) => !route.privilege);
-
-  function getUsersRoutes() {
-    if (!$user || !$user.privileges) {
-      allowedRoutes = routes.filter((route) => !route.privilege);
-      return allowedRoutes;
-    }
-    if ($user && $user.privileges && $user.privileges.includes(PicsurePrivileges.SUPER)) {
-      allowedRoutes = routes;
-      return allowedRoutes;
-    }
-    Object.values(PicsurePrivileges).forEach((privilege) => {
-      if ($user?.privileges?.includes(privilege)) {
-        allowedRoutes = [
-          ...allowedRoutes,
-          ...routes.filter(
-            (route) => route.privilege === privilege && !allowedRoutes.includes(route),
-          ),
-        ];
-      }
-    });
-    return allowedRoutes;
-  }
+  import { user, userRoutes, logout } from '$lib/stores/User';
+  import type { Route } from '$lib/models/Route';
+  import Logo from './Logo.svelte';
 
   function setDropdown(path: string) {
     dropdownPath = path;
@@ -54,19 +29,30 @@
     goto(`/login?redirectTo=${$page.url.pathname}`);
   }
 
+  $: currentPage = (route: Route) => {
+    if (route.children) {
+      for (const child of route.children) {
+        if ($page.url.pathname.includes(child.path)) {
+          return 'page';
+        }
+      }
+      return undefined;
+    }
+    return $page.url.pathname.includes(route.path) ? 'page' : undefined;
+  };
+
   $: dropdownPath = '';
-  $: accessableRoutes = $user && getUsersRoutes();
 </script>
 
-<AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50">
+<AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-900-token">
   <svelte:fragment slot="lead">
     <a href="/" aria-current="page" data-testid="logo-home-link">
-      <img id="nav-logo" alt="PIC-Sure logo" src={logo} class="mx-1" />
+      <Logo class="mx-1" />
     </a>
   </svelte:fragment>
   <nav id="page-navigation">
     <ul>
-      {#each accessableRoutes as route}
+      {#each $userRoutes as route}
         {#if route.children && route.children.length > 0}
           <li
             class={`has-dropdown ${dropdownPath === route.path ? 'open' : ''}`}
@@ -82,9 +68,7 @@
               on:click={(e) => e.preventDefault()}
               on:keydown={(e) => e.key === 'Enter' && setDropdown(dropdownPath ? '' : route.path)}
               aria-expanded={dropdownPath === route.path}
-              aria-current={route.children.map((c) => c.path).includes($page.url.pathname)
-                ? 'page'
-                : undefined}>{route.text}</a
+              aria-current={currentPage(route)}>{route.text}</a
             >
             <ul
               class="nav-dropdown"
@@ -92,8 +76,10 @@
             >
               {#each route.children as child}
                 <li>
-                  <a href={child.path} on:keydown={(e) => e.key === 'Enter' && setDropdown('')}
-                    >{child.text}</a
+                  <a
+                    class="no-underline"
+                    href={child.path}
+                    on:keydown={(e) => e.key === 'Enter' && setDropdown('')}>{child.text}</a
                   >
                 </li>
               {/each}
@@ -106,8 +92,9 @@
               id={getId(route)}
               href={route.path}
               on:focus={() => setDropdown('')}
-              aria-current={$page.url.pathname === route.path ? 'page' : undefined}>{route.text}</a
-            >
+              aria-current={currentPage(route)}
+              >{route.text}
+            </a>
           </li>
         {/if}
       {/each}
@@ -119,7 +106,7 @@
         <!-- Logout -->
         <button id="user-session-popout" use:popup={logoutClick}>
           <span
-            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ghost-primary hover:variant-ghost-secondary w-16 rounded-full text-2xl"
+            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ghost-primary hover:variant-ghost-secondary w-12 rounded-full text-2xl"
           >
             {$user.email[0].toUpperCase()}
             <span class="sr-only">Logout user {$user.email}</span>
@@ -141,9 +128,9 @@
         <!-- Login -->
         <button id="user-login-btn" title="Login" on:click={handleLogin}>
           <span
-            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ringed-surface hover:variant-ghost-secondary w-16 rounded-full text-2xl"
+            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ringed-surface hover:variant-ghost-secondary w-12 rounded-full text-2xl"
           >
-            <i class="fa-solid fa-user fa-lg"></i>
+            <i class="fa-solid fa-user"></i>
             <span class="sr-only">Login</span>
           </span>
         </button>
