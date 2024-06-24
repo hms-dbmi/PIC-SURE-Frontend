@@ -9,7 +9,9 @@ import {
 } from '$lib/models/Search';
 import * as api from '$lib/api';
 
-const searchUrl = 'picsure/search/bf638674-053b-46c4-96a1-4cd6c8395248';
+import { resources } from '$lib/configuration';
+
+const searchUrl = `picsure/search/${resources.hpds}`;
 
 const tags: Writable<SearchTagType[]> = writable([]);
 const searchTerm: Writable<string> = writable('');

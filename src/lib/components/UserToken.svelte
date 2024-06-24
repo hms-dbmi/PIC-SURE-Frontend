@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
-  import CopyButton from './CopyButton.svelte';
-  import ErrorAlert from './ErrorAlert.svelte';
+  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { user, getUser, refreshToken as refresh } from '$lib/stores/User';
 
   const modalStore = getModalStore();

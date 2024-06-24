@@ -1,8 +1,11 @@
 <script lang="ts">
+  import { LightSwitch } from '@skeletonlabs/skeleton';
+
   import { branding } from '$lib/configuration';
+  export let showSitemap = branding.footer.addSitemap;
 </script>
 
-{#if branding.footer.addSitemap && branding.sitemap.length > 0}
+{#if showSitemap && branding.sitemap.length > 0}
   <div id="sitemap-footer">
     <div class="flex flex-wrap place-content-center">
       {#each branding.sitemap as section}
@@ -16,10 +19,11 @@
     </div>
   </div>
 {/if}
-<div id="main-footer" class="flex">
+<footer id="main-footer" class="flex">
+  <LightSwitch />
   <ul>
     {#each branding.footer.links as link}
       <li><a target={link.newTab ? '_blank' : '_self'} href={link.url}>{link.title}</a></li>
     {/each}
   </ul>
-</div>
+</footer>

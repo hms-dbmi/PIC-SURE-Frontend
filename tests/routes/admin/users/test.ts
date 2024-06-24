@@ -1,6 +1,10 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess, mockApiFail } from '../../custom-context';
-import { users as mockUsers, connections as mockConns, roles as mockRoles } from '../../mock-data';
+import { test, mockApiSuccess, mockApiFail } from '../../../custom-context';
+import {
+  users as mockUsers,
+  connections as mockConns,
+  roles as mockRoles,
+} from '../../../mock-data';
 
 const validationText = {
   invalidEmail: "Please include an '@' in the email address.",
@@ -149,6 +153,20 @@ test.describe('users', () => {
 
     // When
     await page.getByTestId(`user-view-btn-${mockUsers[0].uuid}`).click();
+
+    // Then
+    await page.waitForURL(`**/admin/users/${mockUsers[0].uuid}`);
+    await expect(page.url()).toContain(`/admin/users/${mockUsers[0].uuid}`);
+  });
+  test('Clicking row takes user to view priviledge form', async ({ page }) => {
+    // Given
+    await page.goto('/admin/users');
+
+    // When
+    await page
+      .locator(`#user-table-${mockConns[0].label.replaceAll(' ', '_')} table tbody tr`)
+      .first()
+      .click();
 
     // Then
     await page.waitForURL(`**/admin/users/${mockUsers[0].uuid}`);

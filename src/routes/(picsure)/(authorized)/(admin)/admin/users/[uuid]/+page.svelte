@@ -32,7 +32,7 @@
   <title>{branding.applicationName} | User Summary</title>
 </svelte:head>
 
-<Content title="User Summary">
+<Content title="User Summary" backUrl="/admin/users" backTitle="Back to Users">
   {#await load()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />

@@ -1,41 +1,37 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
-  import { activeRow, expandableComponents, activeComponent } from '$lib/stores/ExpandableRow';
+  import { activeTable, expandableComponents, setActiveRow } from '$lib/stores/ExpandableRow';
   import type { Export } from '$lib/models/Export';
   import ExportStore from '$lib/stores/Export';
   let { exports, addExport, removeExport } = ExportStore;
   export let data = {} as SearchResult;
-  let exported: Export = {
+  $: exportItem = {
     variableName: data.row.name,
     variableId: data.row.id,
-  };
+  } as Export;
   function updateActiveRow(component: string) {
-    if ($activeRow === data.index && $activeComponent === $expandableComponents[component]) {
-      activeRow.set(-1);
-      return;
-    }
-    (data.index !== undefined || data.index !== null) && activeRow.set(data.index);
+    return () => {
+      setActiveRow({
+        row: data.row.id,
+        component: $expandableComponents[component],
+        table: $activeTable,
+      });
+    };
   }
-  function insertInfoContent() {
-    console.log('insertInfoContent');
-    updateActiveRow('info');
-    activeComponent.set($expandableComponents['info']);
-  }
-  function insertFilterContent() {
-    updateActiveRow('filter');
-    activeComponent.set($expandableComponents['filter']);
-  }
-  function insertHierarchyContent() {
-    updateActiveRow('hierarchy');
-    activeComponent.set($expandableComponents['hierarchy']);
-  }
+
+  const insertInfoContent = updateActiveRow('info');
+  const insertFilterContent = updateActiveRow('filter');
+  const insertHierarchyContent = updateActiveRow('hierarchy');
+
   function insertExportContent() {
-    if ($exports.includes(exported)) {
-      removeExport(exported.variableId);
+    if ($exports.includes(exportItem)) {
+      removeExport(exportItem.variableId);
     } else {
-      addExport(exported);
+      addExport(exportItem);
     }
   }
+
+  $: isExported = $exports.map((exp) => exp.variableName).includes(exportItem.variableName);
 </script>
 
 <button
@@ -71,7 +67,7 @@
   class="bg-initial text-black-600 hover:text-primary-600"
   on:click|stopPropagation={insertExportContent}
 >
-  {#if $exports.includes(exported)}
+  {#if isExported}
     <i class="fa-regular fa-square-check fa-xl"></i>
   {:else}
     <i class="fa-solid fa-right-from-bracket fa-xl"></i>

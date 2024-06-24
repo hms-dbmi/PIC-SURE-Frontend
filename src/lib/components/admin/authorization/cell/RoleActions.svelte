@@ -3,6 +3,8 @@
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
+  import { goto } from '$app/navigation';
+
   import RolesStore from '$lib/stores/Roles';
   const { deleteRole } = RolesStore;
 
@@ -37,28 +39,32 @@
   }
 </script>
 
-<a
+<button
   data-testid={`role-view-btn-${data.cell}`}
-  href={`/admin/authorization/role/${data.cell}`}
+  type="button"
+  title="View"
   class="text-secondary-600 hover:text-primary-600"
+  on:click|stopPropagation={() => goto(`/admin/authorization/role/${data.cell}`)}
 >
   <i class="fa-solid fa-circle-info fa-xl"></i>
   <span class="sr-only">View Role</span>
-</a>
-<a
+</button>
+<button
   data-testid={`role-edit-btn-${data.cell}`}
-  href={`/admin/authorization/role/${data.cell}/edit`}
+  type="button"
+  title="Edit"
   class="text-secondary-600 hover:text-primary-600"
+  on:click|stopPropagation={() => goto(`/admin/authorization/role/${data.cell}/edit`)}
 >
   <i class="fa-solid fa-pen-to-square fa-xl"></i>
   <span class="sr-only">Edit</span>
-</a>
+</button>
 <button
   data-testid={`role-delete-btn-${data.cell}`}
   type="button"
   title="Delete"
   class="bg-initial text-secondary-600 hover:text-primary-600"
-  on:click={deleteModal}
+  on:click|stopPropagation={deleteModal}
 >
   <i class="fa-solid fa-trash fa-xl"></i>
   <span class="sr-only">Delete</span>

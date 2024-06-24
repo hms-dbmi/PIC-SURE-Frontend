@@ -2,6 +2,9 @@
   import { derived, readable, type Readable } from 'svelte/store';
   import { ProgressBar } from '@skeletonlabs/skeleton';
 
+  import { goto } from '$app/navigation';
+
+  import type { Indexable } from '$lib/types';
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
@@ -32,7 +35,7 @@
 
   const columns = [
     { dataElement: 'email', label: 'Username', sort: true },
-    { dataElement: 'roles', label: 'Role(s)', sort: true },
+    { dataElement: 'roles', label: 'Role(s)', sort: true, class: '!normal-case' },
     { dataElement: 'status', label: 'Status', sort: true },
     { dataElement: 'uuid', label: 'Actions', sort: false },
   ];
@@ -69,6 +72,11 @@
       }));
     });
   }
+
+  const rowClickHandler = (row: Indexable) => {
+    const uuid = row?.uuid;
+    goto(`/admin/users/${uuid}`);
+  };
 </script>
 
 <svelte:head>
@@ -93,12 +101,14 @@
     {#each $usersByConnection as connection}
       <div id={`user-table-${connection.label.replaceAll(' ', '_')}`} class="mb-10">
         <Datatable
+          tableName="Users"
           data={connection.users}
           {columns}
           {cellOverides}
           search={true}
           defaultRowsPerPage={10}
           title={connection.label}
+          {rowClickHandler}
         />
       </div>
     {/each}

@@ -10,6 +10,7 @@ export interface Privilege {
 export enum PicsurePrivileges {
   QUERY = 'PIC_SURE_ANY_QUERY',
   ADMIN = 'ADMIN',
+  DATA_ADMIN = 'DATA_ADMIN',
   SUPER = 'SUPER_ADMIN',
 }
 

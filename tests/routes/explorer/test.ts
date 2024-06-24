@@ -762,23 +762,22 @@ test.describe('explorer', () => {
         route.fulfill({ body: '9999' }),
       );
       await page.goto('/explorer?search=somedata');
+      await clickNthFilterIcon(page);
+      const component = page.getByTestId('optional-selection-list');
+      const optionContainer = component.locator('#options-container');
+      const selectedOptionContainer = component.locator('#selected-options-container');
+      const option =
+        '#option-' + getId(mockData.results.phenotypes['\\some\\test\\lab1\\'].categoryValues[0]);
 
       // When
-      await clickNthFilterIcon(page);
-      const firstItem = await getOption(page);
-      await firstItem.click();
-      const component = page.getByTestId('optional-selection-list');
-      const clearButton = component.locator('#clear');
-      await clearButton.click();
+      await page.locator(option).click();
+      await expect(optionContainer.locator(option)).not.toBeVisible();
+      await expect(selectedOptionContainer.locator(option)).toBeVisible();
+      await component.locator('#clear').click();
 
       // Then
-      const selectedOptionContainer = component.locator('#selected-options-container');
       await expect(selectedOptionContainer).toBeEmpty();
-      const optionContainer = component.locator('#options-container');
-      await expect(optionContainer).toBeVisible();
-      const firstOption = await getOption(page);
-      const options = await optionContainer.getByRole('listitem').all();
-      expect(firstOption).toEqual(options[0]);
+      await expect(optionContainer.locator(option)).toBeVisible();
     });
   });
   test.describe('Add Filters', () => {
@@ -1232,3 +1231,7 @@ const clickNthFilterIcon = async (page: any, rowIndex = 0) => {
   await expect(filterIcon).toBeVisible();
   await filterIcon.click();
 };
+
+function getId(option: string) {
+  return option.replaceAll(' ', '-').toLowerCase();
+}

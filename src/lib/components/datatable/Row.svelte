@@ -1,21 +1,29 @@
 <script lang="ts">
   import type { Column } from '$lib/models/Tables';
   import type { Indexable } from '$lib/types';
-  import { activeRow, expandableComponents, activeComponent } from '$lib/stores/ExpandableRow';
+  import {
+    activeTable,
+    activeRow,
+    expandableComponents,
+    activeComponent,
+    setActiveRow,
+  } from '$lib/stores/ExpandableRow';
 
   export let cellOverides: Indexable = {};
   export let columns: Column[] = [];
   export let index: number = -2;
   export let row: Indexable = {};
-  export let rowClickHandler: (index: number) => void;
+  export let tableName: string = '';
+  export let rowClickHandler: (row: Indexable) => void = () => {};
 
-  function onClick(index: number) {
-    if (index === undefined || index === null || index < 0) return;
-    rowClickHandler && rowClickHandler(index);
+  function onClick(row: Indexable) {
+    setActiveRow({ row: row.id, table: tableName });
+    rowClickHandler(row);
   }
+  $: active = $activeTable === tableName && $activeRow === row?.id;
 </script>
 
-<tr id={index.toString()} on:click|stopPropagation={() => onClick(index)} class="cursor-pointer">
+<tr id={index.toString()} on:click|stopPropagation={() => onClick(row)} class="cursor-pointer">
   {#each columns as column}
     <td>
       {#if cellOverides[column.dataElement]}
@@ -30,7 +38,7 @@
   {/each}
 </tr>
 
-{#if Object.keys($expandableComponents).length > 0 && $activeRow === index}
+{#if active && Object.keys($expandableComponents).length > 0}
   <tr class="expandable-row">
     <td colspan={columns.length}>
       {#if $activeComponent}

@@ -1,83 +1,49 @@
 import { expect } from '@playwright/test';
 import { getUserTest, test, unauthedTest } from '../../../custom-context';
-import { picsureUser, picsureAdmin, topAdmin, mockLoginResponse } from '../../../mock-data';
+import { picsureUser, mockLoginResponse } from '../../../mock-data';
 import { routes } from '../../../../src/lib/configuration';
 import { PicsurePrivileges } from '../../../../src/lib/models/Privilege';
+import type { Route } from '../../../../src/lib/models/Route';
 
 // TODO: This should probably be moved to a component test, not an e2e/integration test.
 
-const unprotectedRoutes = routes.filter((route) => route.privilege === undefined);
-const protectedRoutes = [
-  ...unprotectedRoutes,
-  ...routes.filter((route) => route.privilege === PicsurePrivileges.QUERY),
-];
-const adminRoutes = [
-  ...protectedRoutes,
-  ...routes.filter((route) => route.privilege === PicsurePrivileges.ADMIN),
-];
-const superRoutes = [
-  ...adminRoutes,
-  ...routes.filter(
-    (route) => route.privilege === PicsurePrivileges.SUPER && route.path !== '/admin',
-  ),
-];
+const testCases = {
+  generalUser: [PicsurePrivileges.QUERY],
+  adminUser: [PicsurePrivileges.QUERY, PicsurePrivileges.ADMIN],
+  superUser: [PicsurePrivileges.QUERY, PicsurePrivileges.SUPER],
+  dataUser: [PicsurePrivileges.QUERY, PicsurePrivileges.DATA_ADMIN],
+};
 
-const userTest = getUserTest(picsureUser);
-const adminTest = getUserTest(picsureAdmin);
-const topAdminTest = getUserTest(topAdmin);
+unauthedTest.describe('Public Routes Navigation', () => {
+  routes
+    .filter((route) => route.privilege === undefined)
+    .forEach((route, _index, routes) => {
+      unauthedTest(
+        `Path ${route.path} navigation bar has correct active element before login`,
+        async ({ page }) => {
+          // Given
+          await page.goto(route.path);
 
-unauthedTest.describe('Unauthorized Navigation', () => {
-  unprotectedRoutes.forEach((route, _index, routes) => {
-    unauthedTest(
-      `Path ${route.path} navigation bar has correct active element before login`,
-      async ({ page }) => {
-        // Given
-        await page.goto(route.path);
+          // Then
+          // Check that this element is active
+          const navItem = page.locator(`#nav-link${route.path.replaceAll('/', '-')}`);
+          await expect(navItem).toHaveAttribute('aria-current', 'page');
 
-        // Then
-        // Check that this element is active
-        const navItem = page.locator(`#nav-link${route.path.replaceAll('/', '-')}`);
-        await expect(navItem).toHaveAttribute('aria-current', 'page');
-
-        // Check that other routes elements aren't active
-        const inactive = routes
-          .filter((altRoute) => altRoute.path !== route.path)
-          .map((altRoute) => {
-            const navItem = page.locator(`#nav-link${altRoute.path.replaceAll('/', '-')}`);
-            return expect(navItem).not.toHaveAttribute('aria-current');
-          });
-        await Promise.all(inactive);
-      },
-    );
-  });
+          // Check that other routes elements aren't active
+          const inactive = routes
+            .filter((altRoute) => altRoute.path !== route.path)
+            .map((altRoute) => {
+              const navItem = page.locator(`#nav-link${altRoute.path.replaceAll('/', '-')}`);
+              return expect(navItem).not.toHaveAttribute('aria-current');
+            });
+          await Promise.all(inactive);
+        },
+      );
+    });
 });
 
-userTest.describe('Authorized Navigation', () => {
-  protectedRoutes.forEach((route, _index, routes) => {
-    userTest(
-      `Users: Path ${route.path} navigation bar has correct active element after login`,
-      async ({ page }) => {
-        // Given
-        await page.goto(mockLoginResponse);
-        await page.waitForURL('/');
-        const navItem = page.locator(`#nav-link${route.path.replaceAll('/', '-')}`);
-        await navItem.click();
-
-        // Then
-        // Check that this element is active
-        await expect(navItem).toHaveAttribute('aria-current', 'page');
-
-        // Check that other routes elements aren't active
-        const inactive = routes
-          .filter((altRoute) => altRoute.path !== route.path)
-          .map((altRoute) => {
-            const navItem = page.locator(`#nav-link${altRoute.path.replaceAll('/', '-')}`);
-            return expect(navItem).not.toHaveAttribute('aria-current');
-          });
-        await Promise.all(inactive);
-      },
-    );
-  });
+const userTest = getUserTest({ ...picsureUser, privileges: testCases.generalUser });
+userTest.describe('Logged in users', () => {
   userTest('Session avatar should reflect correct user initial after login', async ({ page }) => {
     // Given
     await page.goto(mockLoginResponse);
@@ -103,62 +69,44 @@ userTest.describe('Authorized Navigation', () => {
   });
 });
 
-adminTest.describe('Admin Navigation', () => {
-  adminRoutes.forEach((route, _index, routes) => {
-    adminTest(
-      `Admins: Path ${route.path} navigation bar has correct active element after login`,
-      async ({ page }) => {
-        // Given
-        await page.goto(mockLoginResponse);
-        await page.waitForURL('/');
-        const navItem = page.locator(`#nav-link${route.path.replaceAll('/', '-')}`);
-        await navItem.click();
+Object.entries(testCases).forEach(([testCase, privileges]) => {
+  const privTest = getUserTest({ ...picsureUser, privileges });
+  const testRoutes = routes.filter((route: Route) =>
+    route.privilege ? privileges.includes(route.privilege) : true,
+  );
 
-        // Then
-        // Check that this element is active
-        await expect(navItem).toHaveAttribute('aria-current', 'page');
+  privTest.describe(`${testCase} Navigation`, () => {
+    testRoutes
+      .filter((route) => !route.children)
+      .forEach((route, _index, routes) => {
+        privTest(
+          `Path ${route.path} navigation bar has correct active element after login`,
+          async ({ page }) => {
+            // Given
+            await page.goto(mockLoginResponse);
+            await page.waitForURL('/');
+            const navItem = page.locator(`#nav-link${route.path.replaceAll('/', '-')}`);
+            await navItem.click();
 
-        // Check that other routes elements aren't active
-        const inactive = routes
-          .filter((altRoute) => altRoute.path !== route.path)
-          .map((altRoute) => {
-            const navItem = page.locator(`#nav-link${altRoute.path.replaceAll('/', '-')}`);
-            return expect(navItem).not.toHaveAttribute('aria-current');
-          });
-        await Promise.all(inactive);
-      },
-    );
+            // Then
+            // Check that this element is active
+            await expect(navItem).toHaveAttribute('aria-current', 'page');
+
+            // Check that other routes elements aren't active
+            const inactive = routes
+              .filter((altRoute) => altRoute.path !== route.path)
+              .map((altRoute) => {
+                const navItem = page.locator(`#nav-link${altRoute.path.replaceAll('/', '-')}`);
+                return expect(navItem).not.toHaveAttribute('aria-current');
+              });
+            await Promise.all(inactive);
+          },
+        );
+      });
   });
 });
 
-topAdminTest.describe('Super Admin Navigation', () => {
-  superRoutes.forEach((route, _index, routes) => {
-    topAdminTest(
-      `Top Admins: Path ${route.path} navigation bar has correct active element after login`,
-      async ({ page }) => {
-        // Given
-        await page.goto(mockLoginResponse);
-        await page.waitForURL('/');
-        const navItem = page.locator(`#nav-link${route.path.replaceAll('/', '-')}`);
-        await navItem.click();
-
-        // Then
-        // Check that this element is active
-        await expect(navItem).toHaveAttribute('aria-current', 'page');
-
-        // Check that other routes elements aren't active
-        const inactive = routes
-          .filter((altRoute) => altRoute.path !== route.path)
-          .map((altRoute) => {
-            const navItem = page.locator(`#nav-link${altRoute.path.replaceAll('/', '-')}`);
-            return expect(navItem).not.toHaveAttribute('aria-current');
-          });
-        await Promise.all(inactive);
-      },
-    );
-  });
-});
-
+const topAdminTest = getUserTest({ ...picsureUser, privileges: testCases.superUser });
 topAdminTest.describe('Keyboard navigation', () => {
   topAdminTest('Pressing Enter on a dropdown item opens dropdown', async ({ page }) => {
     // Given
@@ -207,7 +155,7 @@ test.describe('Navigation', () => {
     await page.goto('/help');
 
     // When
-    const logo = page.locator('#nav-logo');
+    const logo = page.getByTestId('nav-logo');
     await logo.click();
 
     // Then
