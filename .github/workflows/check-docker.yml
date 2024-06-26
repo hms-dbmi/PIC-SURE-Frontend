@@ -1,9 +1,7 @@
 name: Docker Build
 on:
   push:
-    branches: [main, dev, workflows/docker]
-  pull_request:
-    branches: [main, dev, workflows/docker]
+    branches: [main, release]
   schedule:
     - cron: 33 7 * * 1,3,5
 
