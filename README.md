@@ -1,6 +1,7 @@
 # PIC-SURE Frontend
 
 [![Tests](https://github.com/hms-dbmi/PIC-SURE-Frontend/actions/workflows/tests.yml/badge.svg)](https://github.com/hms-dbmi/PIC-SURE-Frontend/actions/workflows/tests.yml)
+[![Docker Build](https://github.com/hms-dbmi/PIC-SURE-Frontend/actions/workflows/check-docker.yml/badge.svg)](https://github.com/hms-dbmi/PIC-SURE-Frontend/actions/workflows/check-docker.yml)
 
 <b><i>NOTE: This project is still under its inital development</i></b>
 
