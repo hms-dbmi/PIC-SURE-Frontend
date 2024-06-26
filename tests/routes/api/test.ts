@@ -43,7 +43,7 @@ test.describe('API page', () => {
   });
   test('Has expected badge and expiration', async ({ page }) => {
     // Given
-    let user = { ...picsureUser };
+    const user = picsureUser;
     user.token = mockExpiredToken;
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', user);
     await page.goto('/api');
