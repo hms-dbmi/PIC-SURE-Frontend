@@ -179,6 +179,6 @@ test.describe('API page', () => {
     await expect(refreshButton).toHaveText('Refresh');
     await expect(refreshButton).not.toBeDisabled();
     expect(await userToken.innerText()).toBe(placeHolderDots);
-    expect(await expires.innerText()).toContain('Tue Jul 07 2274');
+    expect(await expires.innerText()).toContain('Mon Feb 01 2021');
   });
 });
