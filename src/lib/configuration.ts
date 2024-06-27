@@ -6,24 +6,39 @@ export const branding = {
   applicationName: 'PIC‑SURE',
   sitemap: [
     {
-      category: 'Explore PIC‑SURE',
+      category: 'Configuration',
+      privilege: PicsurePrivileges.SUPER,
       links: [
-        { title: 'User Guide', url: 'https://pic-sure.gitbook.io/pic-sure', newTab: true },
-        { title: 'Data Dashboard', url: '#' },
+        { title: 'Authorization', url: '/admin/authorization' },
+        { title: 'Authentication', url: '/admin/authentication' },
       ],
     },
     {
-      category: 'About',
+      category: 'Administration',
+      privilege: PicsurePrivileges.ADMIN,
+      links: [{ title: 'User Management', url: '/admin/users' }],
+    },
+    {
+      category: 'Use PIC-Sure',
+      privilege: PicsurePrivileges.QUERY,
       links: [
-        { title: 'Some link', url: '#' },
-        { title: 'Wow, another link', url: '#' },
-        { title: "You're probably crazy but, it's another link", url: '#' },
-        { title: "Yep, you're crazy", url: '#' },
+        { title: 'Explorer', url: '/explorer' },
+        { title: 'API', url: '/api' },
+        { title: 'Dataset Management', url: '/dataset' },
+      ],
+    },
+    {
+      category: 'Help',
+      links: [
+        { title: 'User Guide', url: 'https://pic-sure.gitbook.io/pic-sure', newTab: true },
+        { title: 'Videos', url: 'https://www.youtube.com/@pic-sure446/featured', newTab: true },
+        { title: 'About', url: 'http://pic-sure.org/', newTab: true },
       ],
     },
   ],
   footer: {
-    addSitemap: true,
+    showSitemap: true,
+    excludeSitemapOn: ['/explorer'],
     links: [
       {
         title: 'Terms of Service',
