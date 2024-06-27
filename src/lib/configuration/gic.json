@@ -1,0 +1,16 @@
+{
+  "features": {
+    "explorer": {
+      "exportsEnableExport": true,
+      "variantExplorer": true
+    },
+    "genomicFilter": false
+  },
+  "settings": {
+    "variantExplorer": {
+      "type": "aggregate",
+      "maxCount": 10000,
+      "excludeColumns": ["AC", "AN"]
+    }
+  }
+}

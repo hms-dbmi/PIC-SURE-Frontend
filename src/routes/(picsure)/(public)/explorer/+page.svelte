@@ -5,6 +5,8 @@
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
 
+  import { config } from '$lib/stores/Configuration';
+
   import { branding, features } from '$lib/configuration';
 
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
@@ -90,7 +92,7 @@
             <Searchbox bind:searchTerm={searchInput} search={updateSearch} />
           </div>
           <div class="flex-none">
-            {#if features.genomicFilter}
+            {#if $config.features.genomicFilter}
               <a
                 data-testid="genomic-filter-btn"
                 class="btn variant-ghost-primary hover:variant-filled-primary"

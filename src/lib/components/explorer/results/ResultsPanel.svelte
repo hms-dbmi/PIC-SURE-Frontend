@@ -29,9 +29,9 @@
     type: 'component',
     title: 'Export Data',
     component: 'stepper',
-    response: (r: string) => {
-      console.log(r);
-    },
+    // response: (r: string) => {
+    //   console.log(r);
+    // },
   };
 
   let triggerRefreshCount = getCount();

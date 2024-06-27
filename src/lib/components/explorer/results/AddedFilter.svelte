@@ -29,9 +29,9 @@
         component: 'modalWrapper',
         modalClasses: 'bg-surface-100-800-token p-4 block',
         meta: { existingFilter: filter, component: AddFilter },
-        response: (r: string) => {
-          console.log(r);
-        },
+        // response: (r: string) => {
+        //   console.log(r);
+        // },
       };
       modalStore.trigger(modal);
     }
@@ -81,7 +81,7 @@
   };
 
   const deleteFilter = function () {
-    console.log('delete filter', filter.uuid);
+    // console.log('delete filter', filter.uuid);
     return removeFilter(filter.uuid);
   };
 </script>

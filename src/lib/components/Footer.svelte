@@ -1,11 +1,10 @@
 <script lang="ts">
   import { LightSwitch } from '@skeletonlabs/skeleton';
 
-  import { branding } from '$lib/configuration';
-  export let showSitemap = branding.footer.addSitemap;
+  import { branding } from '$lib/stores/Configuration';
 </script>
 
-{#if showSitemap && branding.sitemap.length > 0}
+{#if branding.footer.addSitemap && branding.sitemap.length > 0}
   <div id="sitemap-footer">
     <div class="flex flex-wrap place-content-center">
       {#each branding.sitemap as section}

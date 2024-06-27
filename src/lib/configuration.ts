@@ -168,5 +168,5 @@ export const features: Indexable = {
 };
 
 export const resources = {
-  hpds: 'bf638674-053b-46c4-96a1-4cd6c8395248',
+  hpds: import.meta.env?.VITE_RESOURCE_HPDS || '',
 };

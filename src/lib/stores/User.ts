@@ -11,7 +11,7 @@ function restoreUserSession() {
   if (browser && localStorage.getItem('user')) {
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      console.log('Restored user from local storage:  ', user);
+      // console.log('Restored user from local storage:  ', user);
       return user;
     } catch (error) {
       console.error('Error reading user from local storage:  ' + error);
