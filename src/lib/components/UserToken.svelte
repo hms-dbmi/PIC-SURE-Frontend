@@ -2,7 +2,13 @@
   import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import { user, getUser, refreshToken as refresh } from '$lib/stores/User';
+  import {
+    user,
+    getUser,
+    getTokenExpiration,
+    getTokenExpirationAsDate,
+    refreshLongTermToken as refresh,
+  } from '$lib/stores/User';
 
   const modalStore = getModalStore();
   const toastStore = getToastStore();
@@ -46,7 +52,7 @@
   function extractExperationDate(token: string) {
     if (!token) return 0;
     try {
-      return JSON.parse(atob(token.split('.')[1])).exp * 1000;
+      return getTokenExpiration(token);
     } catch (error) {
       console.error(error);
       toastStore.trigger({
@@ -91,7 +97,9 @@
         <label for="expires">Expires:</label>
         <div>
           <span id="expires" class="w-1/3 mr-2"
-            >{new Date(expires).toString().substring(0, 24)}</span
+            >{getTokenExpirationAsDate($user?.token || '')
+              ?.toString()
+              ?.substring(0, 24)}</span
           >
           {#if badge}
             <span id="expires-badge" class="badge {badge}" data-testid="expires-badge"
