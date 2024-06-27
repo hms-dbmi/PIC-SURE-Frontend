@@ -15,7 +15,7 @@ export const count: Writable<number> = writable(0);
 export const columns: Writable<Column[]> = writable([]);
 export const data: Writable<Indexable[]> = writable([]);
 export const downloadUrl: Writable<string> = writable('');
-export const dataExportType: Writable<ExportType> = writable(settings.variantExplorer.type);
+export const dataExportType: Writable<ExportType> = writable(ExportType.Aggregate);
 
 export async function getVariantCount(request: QueryRequestInterface) {
   request.query.expectedResultType = 'VARIANT_COUNT_FOR_QUERY';

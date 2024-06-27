@@ -21,7 +21,7 @@
   } from '$lib/stores/Variants';
 
   let loading: Promise<void> = getData();
-  let aggregateCheckbox: boolean = features.explorer.variantExplorerStatus === ExportType.Full;
+  let aggregateCheckbox: boolean = settings.variantExplorer.type === ExportType.Full;
 
   async function getData() {
     const query = getQueryRequest();
