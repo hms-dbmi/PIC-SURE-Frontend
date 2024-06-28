@@ -29,7 +29,7 @@ async function send({
   }
 
   if (browser) {
-    const token = sessionStorage.getItem('token');
+    const token = localStorage.getItem('token');
     if (token) {
       opts.headers['Authorization'] = `Token ${token}`;
     }

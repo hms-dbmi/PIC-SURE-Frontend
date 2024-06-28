@@ -33,6 +33,7 @@ export const unauthedTest = base.extend({
   context: async ({ context }, use) => {
     await context.addInitScript(() => {
       sessionStorage.clear();
+      localStorage.clear();
     });
 
     use(context);
@@ -42,12 +43,11 @@ export const unauthedTest = base.extend({
 export const test = base.extend({
   context: async ({ context }, use) => {
     await mockApiSuccess(context, '*/**/psama/user/me?hasToken', picsureUser);
-    await context.addInitScript(() => {
-      sessionStorage.setItem(
+    await context.addInitScript((picsureUser: User) => {
+      localStorage.setItem('user', JSON.stringify(picsureUser));
+      localStorage.setItem(
         'token',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0Z' +
-          'XN0QHBpYy1zdXJlLm9yZyIsImV4cCI6MTYxMjE2NDk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.kzaW-ZkhCPlTgdGQQAz_CA1ZB80PpZ5aiRa2' +
-          'lj46hbw',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6OTYwOTU3Mjk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.M1W7a3jQNoHQxAUwfj3sDqyVtNH_DkRdzsIF3prIYQA',
       );
     });
 
@@ -58,13 +58,12 @@ export const test = base.extend({
 export function getUserTest(user: User = picsureUser) {
   return base.extend({
     context: async ({ context }, use) => {
-      await context.addInitScript(() => {
-        sessionStorage.setItem(
+      await context.addInitScript((user: User) => {
+        localStorage.setItem(
           'token',
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0Z' +
-            'XN0QHBpYy1zdXJlLm9yZyIsImV4cCI6MTYxMjE2NDk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.kzaW-ZkhCPlTgdGQQAz_CA1ZB80PpZ5aiRa2' +
-            'lj46hbw',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6OTYwOTU3Mjk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.M1W7a3jQNoHQxAUwfj3sDqyVtNH_DkRdzsIF3prIYQA',
         );
+        localStorage.setItem('user', JSON.stringify(user));
       });
 
       await mockApiSuccess(context, '*/**/psama/authentication', user);

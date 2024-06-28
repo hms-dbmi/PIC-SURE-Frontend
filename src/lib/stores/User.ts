@@ -7,11 +7,24 @@ import type { User } from '$lib/models/User';
 import { PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, features } from '$lib/configuration';
 
-function restoreUserSession() {
+export const user: Writable<User> = writable(restoreUser());
+
+user.subscribe((user: User) => {
+  if (browser) {
+    clearSessionTokenIfExpired();
+    localStorage.setItem('user', JSON.stringify(user));
+  }
+});
+
+function restoreUser() {
   if (browser && localStorage.getItem('user')) {
+    clearSessionTokenIfExpired();
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
-      console.log('Restored user from local storage:  ', user);
+      if (!user || Object.keys(user).length === 0) {
+        return {};
+      }
+      console.log('Restored user from local storage: ', user);
       return user;
     } catch (error) {
       console.error('Error reading user from local storage:  ' + error);
@@ -21,13 +34,15 @@ function restoreUserSession() {
   return {};
 }
 
-export const user: Writable<User> = writable(restoreUserSession());
-
-user.subscribe((value) => {
+function clearSessionTokenIfExpired() {
   if (browser) {
-    localStorage.setItem('user', JSON.stringify(value));
+    const token = localStorage.getItem('token');
+    if (token && isTokenExpired(token)) {
+      console.log('Clearing expired token from local storage.');
+      localStorage.removeItem('token');
+    }
   }
-});
+}
 
 export const userRoutes: Readable<Route[]> = derived(user, ($user) => {
   const userPrivileges: string[] = $user?.privileges || [];
@@ -68,7 +83,7 @@ export async function getUser(force?: boolean) {
   }
 }
 
-export async function refreshToken() {
+export async function refreshLongTermToken() {
   const newLongTermToken = await api
     .get('psama/user/me/refresh_long_term_token')
     .then((response: { userLongTermToken: string }) => {
@@ -82,14 +97,43 @@ export async function refreshToken() {
 
 export async function login(token: string) {
   if (browser && token) {
-    sessionStorage.setItem('token', token);
+    localStorage.setItem('token', token);
     await getUser(true);
   }
 }
 
 export async function logout() {
   if (browser) {
-    sessionStorage.removeItem('token');
+    localStorage.removeItem('token');
   }
   user.set({});
+}
+
+export function isTokenExpired(token: string) {
+  try {
+    return getTokenExpiration(token) < new Date().getTime();
+  } catch (error) {
+    console.error('Error checking token expiration: ' + error);
+    return true;
+  }
+}
+
+export function getTokenExpiration(token: string) {
+  if (!token) {
+    throw new Error('No token provided.');
+  }
+  try {
+    return JSON.parse(atob(token.split('.')[1])).exp * 1000;
+  } catch (error) {
+    throw new Error('Error parsing token: ' + error);
+  }
+}
+
+export function getTokenExpirationAsDate(token: string) {
+  try {
+    return new Date(getTokenExpiration(token));
+  } catch (error) {
+    console.error('Error getting token expiration as date: ' + error);
+    return undefined;
+  }
 }
