@@ -45,10 +45,22 @@
 
 <Content full={true} backUrl="/explorer" backTitle="Back to Cohort builder">
   {#if features.explorer.variantExplorer}
-    <h3 data-testid="variant-count">
-      Variant Explorer{$count > 0 ? `: ${$count} variants found` : ''}
-    </h3>
+    {#if $downloadUrl}
+      <div>
+        <a
+          data-testid="variant-download-btn"
+          class="btn variant-ghost-primary mt-2 float-right"
+          href={$downloadUrl}
+          download="variantData.tsv"
+          >Download Variant{aggregateCheckbox ? ' (Aggregate)' : ''} Data</a
+        >
+      </div>
+    {/if}
+    <h2 class="text-center clear-both">Variant Explorer</h2>
     {#await loading}
+      {#if $count > 0}
+        <div data-testid="variant-count" class="flex-none w-full">{$count} variants found</div>
+      {/if}
       <h3 class="text-left">Loading</h3>
       <ProgressBar animIndeterminate="anim-progress-bar" />
     {:then}
@@ -64,15 +76,6 @@
         </aside>
         <p></p>
       {:else if $count > 0 && $data.length > 0}
-        {#if $downloadUrl}
-          <a
-            data-testid="variant-download-btn"
-            class="btn variant-ghost-primary mt-2"
-            href={$downloadUrl}
-            download="variantData.tsv"
-            >Download Variant{aggregateCheckbox ? ' (Aggregate)' : ''} Data</a
-          >
-        {/if}
         <Datatable
           tableName="variant-explorer"
           data={$data}
@@ -82,17 +85,26 @@
           search={true}
         >
           <svelte:fragment slot="tableActions">
-            {#if settings.variantExplorer.type === ExportType.Full}
-              <label class="flex items-center space-x-2">
-                <input
-                  class="checkbox"
-                  type="checkbox"
-                  bind:checked={aggregateCheckbox}
-                  on:click={aggregateChange}
-                />
-                <p>Aggregate data</p>
-              </label>
-            {/if}
+            <div class="flex-auto flex items-end justify-between">
+              {#if $count > 0}
+                <div data-testid="variant-count" class="">
+                  <p>{$count} variants found</p>
+                </div>
+              {/if}
+              {#if settings.variantExplorer.type === ExportType.Full}
+                <div class="">
+                  <label class="flex items-center space-x-2">
+                    <input
+                      class="checkbox"
+                      type="checkbox"
+                      bind:checked={aggregateCheckbox}
+                      on:click={aggregateChange}
+                    />
+                    <p>Aggregate data</p>
+                  </label>
+                </div>
+              {/if}
+            </div>
           </svelte:fragment>
         </Datatable>
       {/if}

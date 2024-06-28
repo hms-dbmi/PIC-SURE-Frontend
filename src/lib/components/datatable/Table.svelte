@@ -31,7 +31,11 @@
 
 <div class="space-y-1">
   {#if title || search || $$slots.tableActions}
-    <header class="flex {title ? 'justify-between' : 'justify-end'} gap-4">
+    <header
+      class="flex items-center {title || $$slots.tableActions
+        ? 'justify-between'
+        : 'justify-end'} gap-4"
+    >
       {#if title}
         <div class="flex-auto">
           <h2>{title}</h2>
