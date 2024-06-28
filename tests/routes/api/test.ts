@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess } from '../../custom-context';
 import { branding } from '../../../src/lib/configuration';
-import { picsureUser, roles as mockRoles } from '../../../tests/mock-data';
+import { picsureUser, roles as mockRoles, mockExpiredToken } from '../../../tests/mock-data';
 
 const placeHolderDots =
   '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
@@ -43,6 +43,9 @@ test.describe('API page', () => {
   });
   test('Has expected badge and expiration', async ({ page }) => {
     // Given
+    const user = picsureUser;
+    user.token = mockExpiredToken;
+    await mockApiSuccess(page, '*/**/psama/user/me?hasToken', user);
     await page.goto('/api');
     // When
     const expires = page.locator('#expires');
