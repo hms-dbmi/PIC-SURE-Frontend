@@ -1,11 +1,12 @@
 import { expect } from '@playwright/test';
-import { resources } from '../../../../src/lib/configuration';
 import { test, mockApiSuccess } from '../../../custom-context';
 import { infoColumns, infoColumnDescriptions, geneValues } from '../../../mock-data';
 
+const HPDS = process.env.VITE_RESOURCE_HPDS;
+
 test.describe('genomic filter', () => {
   test.beforeEach(async ({ page }) => {
-    await mockApiSuccess(page, '*/**//picsure/query/sync', infoColumns);
+    await mockApiSuccess(page, '*/**/picsure/query/sync', infoColumns);
   });
   test('Clicking the Genomic filter button navigates to genomic filter page', async ({ page }) => {
     // Given
@@ -29,7 +30,7 @@ test.describe('genomic filter', () => {
   });
   test.describe('Gene filter', () => {
     test.beforeEach(async ({ page }) => {
-      await mockApiSuccess(page, `*/**/picsure/search/${resources.hpds}/values/*`, geneValues);
+      await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
     });
     test('Selecting Gene option advances to step 2 with gene filter options', async ({ page }) => {
       // Given
@@ -62,7 +63,7 @@ test.describe('genomic filter', () => {
 
         // When
         const mockSearchResults = ['G123Z', 'G234Z'];
-        await mockApiSuccess(page, `*/**/picsure/search/${resources.hpds}/values/*`, {
+        await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, {
           ...geneValues,
           results: mockSearchResults,
         });
@@ -333,7 +334,7 @@ test.describe('genomic filter', () => {
     const snpError =
       'Please check that value matches: chromosome (chr#), position, reference allele, variant allele.';
     test.beforeEach(async ({ page }) => {
-      await mockApiSuccess(page, `*/**/picsure/search/${resources.hpds}/values/*`, geneValues);
+      await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
     });
     test('Selecting SNP option advances to step 2 with snp filter options', async ({ page }) => {
       // Given

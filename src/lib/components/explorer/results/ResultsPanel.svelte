@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { branding, resources, features } from '$lib/configuration';
+  import { branding, features } from '$lib/configuration';
   import { slide, scale } from 'svelte/transition';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import FilterComponent from './AddedFilter.svelte';
-  import { Query } from '$lib/models/query/Query';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import ExportedVariable from './ExportedVariable.svelte';
   import FilterStore from '$lib/stores/Filter';
@@ -17,7 +18,7 @@
   } from '@skeletonlabs/skeleton';
   import { elasticInOut } from 'svelte/easing';
 
-  const { filters } = FilterStore;
+  const { filters, hasGenomicFilter, getQueryRequest } = FilterStore;
   const { exports } = ExportStore;
 
   const modalStore = getModalStore();
@@ -37,30 +38,7 @@
   let triggerRefreshCount = getCount();
 
   async function getCount() {
-    let newQuery = new Query();
-    $filters.forEach((filter) => {
-      if (filter.filterType === 'categorical') {
-        if (filter.displayType === 'restrict') {
-          newQuery.addCategoryFilter(filter.id, filter.categoryValues);
-        } else {
-          newQuery.addRequiredField(filter.id);
-        }
-      } else if (filter.filterType === 'numeric') {
-        newQuery.addNumericFilter(filter.id, filter.min || '', filter.max || '');
-      } else if (filter.filterType === 'genomic') {
-        newQuery.addCategoryVariantInfoFilters({
-          Gene_with_variant: filter.Gene_with_variant,
-          Variant_consequence_calculated: filter.Variant_consequence_calculated,
-          Variant_frequency_as_text: filter.Variant_frequency_as_text,
-        });
-      } else if (filter.filterType === 'snp') {
-        newQuery.addSnpFilter(filter.id, filter.categoryValues);
-      }
-    });
-    let request: QueryRequestInterface = {
-      query: newQuery,
-      resourceUUID: resources.hpds,
-    };
+    let request: QueryRequestInterface = getQueryRequest();
     try {
       totalPatients = await api.post('picsure/query/sync', request);
       return totalPatients;
@@ -89,7 +67,6 @@
   class="flex flex-col items-center pt-8 pr-10 section-width"
   transition:slide={{ axis: 'x' }}
 >
-  <!-- <h3>Results Panel</h3> -->
   <div class="h-11">
     {#if showExportButton}
       <button
@@ -147,20 +124,27 @@
   <div class="flex flex-col items-center mt-8">
     <h5 class="text-center underline">Explore Cohort</h5>
     <div class="flex flex-wrap items-center justify-evenly w-9/12">
-      <button
+      <!-- <button
         type="button"
         class="btn btn-lg-sq variant-ringed-surface"
         aria-label="Visualizations"
       >
         <i class="fa-solid fa-chart-pie"></i>
-      </button>
-      <button
-        type="button"
-        class="btn btn-lg-sq variant-ringed-surface"
-        aria-label="Vairant Explorer"
-      >
-        <i class="fa-solid fa-dna"></i>
-      </button>
+      </button> -->
+      {#if features.explorer.variantExplorer && $hasGenomicFilter}
+        <button
+          type="button"
+          data-testid="variant-explorer-btn"
+          class="btn btn-lg-sq cursor {$page.url.pathname.includes('explorer/variant')
+            ? 'variant-ghost-surface'
+            : 'variant-ringed-surface'}"
+          aria-label="Variant Explorer"
+          title="Variant Explorer"
+          on:click={() => goto('/explorer/variant')}
+        >
+          <i class="fa-solid fa-dna"></i>
+        </button>
+      {/if}
     </div>
   </div>
 </section>
