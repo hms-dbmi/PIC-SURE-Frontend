@@ -44,7 +44,7 @@
 
   onMount(() => {
     queryRequest = getQueryRequest();
-    if (queryRequest.query.hasFilter) {
+    if (queryRequest.query.hasFilter()) {
       variantError.subscribe((error) => {
         if (error) {
           toastStore.trigger({
