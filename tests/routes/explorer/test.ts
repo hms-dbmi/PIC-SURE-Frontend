@@ -1,7 +1,7 @@
 import { expect, type Route } from '@playwright/test';
 import { test, mockApiFail } from '../../custom-context';
 import { searchResults as mockData, searchResultPath } from '../../mock-data';
-import { mapSearchResults, type SearchResult } from '../../../src/lib/models/Search';
+import { type SearchResult } from '../../../src/lib/models/Search';
 import { createCategoricalFilter, createNumericFilter } from '../../../src/lib/models/Filter';
 
 const firstId = 'tag-dataset-nhanes';
@@ -879,9 +879,18 @@ test.describe('explorer', () => {
       await firstItem.click();
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
-      const searchResult: SearchResult = mapSearchResults(
-        mockData.results.phenotypes['\\some\\test\\lab1\\'],
-      );
+      const searchResult: SearchResult = {
+        conceptPath: '\\NHANES\\questionnaire\\disease\\Any family with heart attack or angina?\\',
+        name: 'MCQ300a',
+        display: 'Any family with heart attack or angina?',
+        dataset: '2',
+        description:
+          "Including living and deceased, were any of {SP's/your} close biological that is, blood relatives including father, mother, sisters or brothers, ever told by a health professional that they had a heart attack or angina (an-gi-na) before the age of 50?",
+        values: ['Yes'],
+        children: null,
+        meta: null,
+        type: 'Categorical',
+      };
       const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
 
       // Then
