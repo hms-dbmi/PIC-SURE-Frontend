@@ -1,65 +1,74 @@
 import { get, writable, type Writable } from 'svelte/store';
 
-import {
-  mapTags,
-  type SearchTagType,
-  mapSearchResults,
-  type SearchResult,
-  TagCheckbox,
-} from '$lib/models/Search';
-import * as api from '$lib/api';
+import { type Facet, type SearchResult } from '$lib/models/Search';
 
-import { resources } from '$lib/configuration';
+import type {
+  DictionaryConceptResult,
+} from '$lib/models/api/DictionaryResponses';
+import { searchDictionary } from '$lib/services/dictionary';
 
-const searchUrl = `picsure/search/${resources.hpds}`;
-
-const tags: Writable<SearchTagType[]> = writable([]);
 const searchTerm: Writable<string> = writable('');
 const searchResults: Writable<SearchResult[]> = writable([]);
+const selectedFacets: Writable<Facet[]> = writable([]);
 
-const tagsMock = [
-  {
-    title: 'Dataset',
-    tags: ['NHANES', '1000 Genomes'],
-  },
-  {
-    title: 'Category',
-    tags: ['laboratory', 'questionaire'],
-  },
-  {
-    title: 'Data Type',
-    tags: ['type 1', 'type 2'],
-  },
-];
-
-async function search(search: string) {
-  if (!search) {
-    tags.set([]);
+async function search(search: string, page: number = 0, pageSize: number = 10) {
+  console.log('searching');
+  const selectedFacetsToUse = get(selectedFacets);
+  if (!search && selectedFacetsToUse.length === 0) {
     searchResults.set([]);
     searchTerm.set('');
     return;
   }
-  const response = await api.post(searchUrl, { query: search });
-  tags.set(tagsMock.map(mapTags));
-  searchResults.set(Object.values(response.results.phenotypes).map(mapSearchResults));
+  let response: DictionaryConceptResult;
+  try {
+    response = await searchDictionary(search, selectedFacetsToUse, {
+      pageNumber: page,
+      pageSize: pageSize,
+    });
+    //response = await api.post(`${searchUrl}?page=${page}&page_size=${pageSize}`, { facets: [], search });
+  } catch (e) {
+    console.error(e);
+    return; //TODO: error handling
+  }
+  searchResults.set(response.content);
   searchTerm.set(search);
 }
 
-// TODO: Update include/exclude method to send api update to the server, maybe with a debounce?
-function updateTag(type: string, tag: string, newState: TagCheckbox) {
-  const newTags = get(tags);
-  const typeIndex = newTags.findIndex((t) => t.title == type);
-  const tagIndex = newTags[typeIndex].tags.findIndex((t) => t.name == tag);
-
-  newTags[typeIndex].tags[tagIndex].state = newState;
-  tags.set(newTags);
+async function updateFacet(newFacet: Facet) {
+  try {
+    selectedFacets.update((facets) => {
+      const index = facets.findIndex((facet) => facet.name === newFacet.name);
+      if (index === -1) {
+        facets.push(newFacet);
+      } else {
+        facets.splice(index, 1);
+      }
+      /*  eslint-disable no-self-assign */
+      selectedFacets.set(get(selectedFacets));
+      return facets;
+    });
+  } catch (e) {
+    console.error(e);
+    return;
+  }
 }
 
+// async function resetFacets() {
+//   let facetResponse: DictionaryFacetResult[];
+//   try {
+//     facetResponse = await getAllFacets();
+//     facets.set(facetResponse);
+//   } catch (e) {
+//     console.error(e);
+//     return;
+//   }
+// }
+
 export default {
-  subscribe: tags.subscribe,
-  tags,
+  subscribe: searchResults.subscribe,
+  selectedFacets: selectedFacets,
   searchTerm,
   searchResults,
   search,
-  updateTag,
+  updateFacet: updateFacet,
 };
