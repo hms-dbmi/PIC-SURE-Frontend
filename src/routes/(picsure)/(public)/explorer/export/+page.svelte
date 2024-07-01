@@ -14,7 +14,7 @@ export let query: any;
   </svelte:fragment>
 	Export Data for Research Analysis
 </AppBar>
-<section class="flex justify-center items-center w-full h-full">
+<section class="flex justify-center items-center w-full h-full mt-8">
   <ExportStepper {query}  />
 </section>
 
