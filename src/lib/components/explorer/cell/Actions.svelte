@@ -7,12 +7,12 @@
   export let data = {} as SearchResult;
   $: exportItem = {
     variableName: data.row.name,
-    variableId: data.row.id,
+    variableId: data.row.conceptPath,
   } as Export;
   function updateActiveRow(component: string) {
     return () => {
       setActiveRow({
-        row: data.row.id,
+        row: data.row.conceptPath,
         component: $expandableComponents[component],
         table: $activeTable,
       });

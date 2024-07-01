@@ -17,10 +17,10 @@
   export let rowClickHandler: (row: Indexable) => void = () => {};
 
   function onClick(row: Indexable) {
-    setActiveRow({ row: row.id, table: tableName });
+    setActiveRow({ row: row.conceptPath, table: tableName });
     rowClickHandler(row);
   }
-  $: active = $activeTable === tableName && $activeRow === row?.id;
+  $: active = $activeTable === tableName && $activeRow === row?.conceptPath;
 </script>
 
 <tr id={index.toString()} on:click|stopPropagation={() => onClick(row)} class="cursor-pointer">
