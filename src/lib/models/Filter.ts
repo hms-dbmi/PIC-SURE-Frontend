@@ -1,7 +1,7 @@
 import type { SearchResult } from './Search';
 import { v4 as uuidv4 } from 'uuid';
 
-type FilterType = 'categorical' | 'numeric' | 'required' | 'datatable' | 'genomic' | 'snp' | 'auto';
+type FilterType = 'Categorical' | 'numeric' | 'required' | 'datatable' | 'genomic' | 'snp' | 'auto';
 type DisplayType =
   | 'any'
   | 'anyRecordOf'
@@ -25,7 +25,7 @@ export interface FilterInterface {
 }
 
 export interface CategoricalFilterInterface extends FilterInterface {
-  filterType: 'categorical' | 'required' | 'snp';
+  filterType: 'Categorical' | 'required' | 'snp';
   categoryValues: string[];
 }
 
@@ -50,8 +50,8 @@ export interface SnpFilterInterface extends CategoricalFilterInterface {
 export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
   const filter: Filter = {
     uuid: uuidv4(),
-    id: searchResult.id,
-    filterType: 'categorical',
+    id: searchResult.conceptPath,
+    filterType: 'Categorical',
     displayType: values && values?.length > 0 ? 'restrict' : 'anyRecordOf',
     searchResult: searchResult,
     categoryValues: values || [],
@@ -64,8 +64,8 @@ export function createCategoricalFilter(searchResult: SearchResult, values?: str
 export function createRequiredFilter(searchResult: SearchResult) {
   const filter: Filter = {
     uuid: uuidv4(),
-    id: searchResult.id,
-    filterType: 'categorical',
+    id: searchResult.conceptPath,
+    filterType: 'Categorical',
     displayType: 'any',
     searchResult: searchResult,
     variableName: searchResult.name,
@@ -78,8 +78,8 @@ export function createRequiredFilter(searchResult: SearchResult) {
 export function createAnyRecordOfFilter(searchResult: SearchResult, values?: string[]) {
   const filter: Filter = {
     uuid: uuidv4(),
-    id: searchResult.id,
-    filterType: 'categorical',
+    id: searchResult.conceptPath,
+    filterType: 'Categorical',
     displayType: 'anyRecordOf',
     searchResult: searchResult,
     categoryValues: values || [],
@@ -92,7 +92,7 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, values?: str
 export function createNumericFilter(searchResult: SearchResult, min?: string, max?: string) {
   const filter: Filter = {
     uuid: uuidv4(),
-    id: searchResult.id,
+    id: searchResult.conceptPath,
     filterType: 'numeric',
     displayType:
       min !== undefined && max !== undefined
@@ -132,11 +132,13 @@ export function createGenomicFilter(filters: {
 export function createSnpFilter(id: string, name: string, values: string[]) {
   const filter: Filter = createCategoricalFilter(
     {
-      id,
+      conceptPath: id,
+      dataset: '',
+      display: name,
       name,
       description: '',
-      isCategorical: true,
-      categoryValues: values,
+      values: values,
+      type: 'Categorical',
     },
     values,
   );
