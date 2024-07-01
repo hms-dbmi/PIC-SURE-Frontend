@@ -17,17 +17,22 @@
   type StepperEvent = {
     cancel: { state: StepperState };
     complete: { step: number; state: StepperState };
+    next: { step: number; state: StepperState };
+    step: { step: number; state: StepperState };
+    back: { step: number; state: StepperState };
   };
   const dispatch = createEventDispatcher<StepperEvent>();
-  async function onNext(locked: boolean) {
+  async function onNext(stepIndex: number, locked: boolean) {
     // Allows any forms to submit before the Step is removed from the DOM:
     // https://github.com/skeletonlabs/skeleton/issues/1328
     await new Promise((resolve) => setTimeout(resolve));
 
     if (locked) return;
+    dispatch('next', { step: $state.current, state: $state });
     $state.current++;
   }
   function onBack() {
+    dispatch('back', { step: $state.current, state: $state });
     $state.current = $state.current === 1 ? 0 : $state.current - 1;
   }
   function onComplete(stepIndex: number, locked: boolean) {
