@@ -126,13 +126,13 @@
         </div>
       {:else}
         <!-- Login -->
-        <button id="user-login-btn" title="Login" on:click={handleLogin}>
-          <span
-            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ringed-surface hover:variant-ghost-secondary w-12 rounded-full text-2xl"
-          >
-            <i class="fa-solid fa-user"></i>
-            <span class="sr-only">Login</span>
-          </span>
+        <button
+          id="user-login-btn"
+          title="Login"
+          class="btn variant-ghost-primary hover:variant-ghost-secondary"
+          on:click={handleLogin}
+        >
+          Login
         </button>
       {/if}
     </div>
