@@ -1,8 +1,12 @@
 <script lang="ts">
-  import { ProgressBar } from '@skeletonlabs/skeleton';
+  import { onMount } from 'svelte';
+  import { ProgressBar, getToastStore } from '@skeletonlabs/skeleton';
+  const toastStore = getToastStore();
 
+  import { goto } from '$app/navigation';
   import { branding, features, settings } from '$lib/configuration';
   import { ExportType } from '$lib/models/Variant';
+  import type { QueryRequestInterface } from '$lib/models/api/Request';
   import FilterStore from '$lib/stores/Filter';
   const { getQueryRequest } = FilterStore;
 
@@ -18,25 +22,46 @@
     dataExportType,
     getVariantCount,
     getVariantData,
+    variantError,
   } from '$lib/stores/Variants';
 
-  let loading: Promise<void> = getData();
+  let loading: Promise<void>;
   let aggregateCheckbox: boolean = settings.variantExplorer.type === ExportType.Full;
+  let queryRequest: QueryRequestInterface;
 
   async function getData() {
-    const query = getQueryRequest();
-    await getVariantCount(query);
+    await getVariantCount(queryRequest);
     if ($count > 0 && $count <= settings.variantExplorer.maxCount) {
-      await getVariantData(query);
+      await getVariantData(queryRequest);
     }
   }
 
   async function aggregateChange() {
     aggregateCheckbox = !aggregateCheckbox;
     dataExportType.set(aggregateCheckbox ? ExportType.Aggregate : ExportType.Full);
-    const query = getQueryRequest();
-    loading = getVariantData(query);
+    loading = getVariantData(queryRequest);
   }
+
+  onMount(() => {
+    queryRequest = getQueryRequest();
+    if (queryRequest.query.hasFilter) {
+      variantError.subscribe((error) => {
+        if (error) {
+          toastStore.trigger({
+            message: error,
+            background: 'variant-filled-error',
+          });
+        }
+      });
+      loading = getData();
+    } else {
+      toastStore.trigger({
+        message: 'No query provided. Please add a genomic filter to explore variant data.',
+        background: 'variant-filled-error',
+      });
+      goto('/explorer');
+    }
+  });
 </script>
 
 <svelte:head>

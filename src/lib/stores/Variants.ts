@@ -16,6 +16,7 @@ export const columns: Writable<Column[]> = writable([]);
 export const data: Writable<Indexable[]> = writable([]);
 export const downloadUrl: Writable<string> = writable('');
 export const dataExportType: Writable<ExportType> = writable(ExportType.Aggregate);
+export const variantError: Writable<string> = writable('');
 
 export async function getVariantCount(request: QueryRequestInterface) {
   request.query.expectedResultType = 'VARIANT_COUNT_FOR_QUERY';
@@ -24,6 +25,9 @@ export async function getVariantCount(request: QueryRequestInterface) {
     .then((resp) => resp.count)
     .catch((error) => {
       console.error(error);
+      variantError.set(
+        'An error occured while retrieving variant count data. Please contact your PIC-SURE admin.',
+      );
       return 0;
     });
 
@@ -35,8 +39,14 @@ export async function getVariantData(request: QueryRequestInterface) {
     get(dataExportType) === ExportType.Aggregate ? 'AGGREGATE_VCF_EXCERPT' : 'VCF_EXCERPT';
   const response = await api.post(SYNC_URL, request).catch((error) => {
     console.error(error);
+    variantError.set(
+      'An error occured while retrieving variant data. Please contact your PIC-SURE admin.',
+    );
     return '';
   });
+
+  if (!response) return;
+
   downloadUrl.set(URL.createObjectURL(new Blob([response], { type: 'octet/stream' })));
 
   const lines = response.split('\n');
@@ -76,6 +86,7 @@ export default {
   data,
   downloadUrl,
   dataExportType,
+  variantError,
   getVariantCount,
   getVariantData,
 };

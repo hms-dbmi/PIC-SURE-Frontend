@@ -4,22 +4,29 @@ import { geneValues, infoColumns, variantDataAggregate, variantDataFull } from '
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
-function mockSyncAPISuccess(context: BrowserContext | Page) {
+interface Results {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: { pass: boolean; data: any };
+}
+
+const successResults: Results = {
+  VARIANT_COUNT_FOR_QUERY: { pass: true, data: { count: 5, message: 'Query ran successfully' } },
+  AGGREGATE_VCF_EXCERPT: { pass: true, data: variantDataAggregate },
+  VCF_EXCERPT: { pass: true, data: variantDataFull },
+  INFO_COLUMN_LISTING: { pass: true, data: infoColumns },
+  COUNT: { pass: true, data: '999' },
+};
+
+function mockSyncAPI(context: BrowserContext | Page, resultMap: Results) {
   return context.route('*/**/picsure/query/sync', (route: Route) => {
     const request = route.request().postDataJSON();
-    switch (request.query.expectedResultType) {
-      case 'VARIANT_COUNT_FOR_QUERY':
-        return route.fulfill({ json: { count: 5, message: 'Query ran successfully' } });
-      case 'AGGREGATE_VCF_EXCERPT':
-        return route.fulfill({ json: variantDataAggregate });
-      case 'VCF_EXCERPT':
-        return route.fulfill({ json: variantDataFull });
-      case 'INFO_COLUMN_LISTING':
-        return route.fulfill({ json: infoColumns });
-      case 'COUNT':
-        return route.fulfill({ json: '999' });
-      default:
-        return route.abort('request has undefined query expectedResultType');
+    const result = resultMap[request.query.expectedResultType];
+    if (result && result.pass) {
+      return route.fulfill({ json: result.data });
+    } else if (result) {
+      return route.abort(result.data);
+    } else {
+      return route.abort('request has undefined query expectedResultType');
     }
   });
 }
@@ -28,7 +35,7 @@ test.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () 
   test.describe('Genetic filter applied', () => {
     test.beforeEach(async ({ page }) => {
       // Add genomic filter steps
-      await mockSyncAPISuccess(page);
+      await mockSyncAPI(page, successResults);
       await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
       await page.goto('/explorer/genome-filter');
       await page.getByTestId('gene-variant-option').click();
@@ -72,5 +79,41 @@ test.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () 
       // Then
       await expect(download.suggestedFilename()).toBe('variantData.tsv');
     });
+    test('Error occurs during variant count retrieval', async ({ page }) => {
+      // Given
+      await mockSyncAPI(page, {
+        ...successResults,
+        VARIANT_COUNT_FOR_QUERY: { pass: false, data: 'failed' },
+      });
+
+      // When
+      await page.locator('#results-panel').getByTestId('variant-explorer-btn').click();
+
+      // Then
+      await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
+    });
+    test('Error occurs during variant retrieval', async ({ page }) => {
+      // Given
+      await mockSyncAPI(page, {
+        ...successResults,
+        AGGREGATE_VCF_EXCERPT: { pass: false, data: 'failed' },
+      });
+
+      // When
+      await page.locator('#results-panel').getByTestId('variant-explorer-btn').click();
+
+      // Then
+      await expect(page).toHaveURL('/explorer/variant');
+      await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
+    });
+  });
+  test('Display notice when no query exists', async ({ page }) => {
+    // Given
+    mockSyncAPI(page, successResults);
+    await page.goto('/explorer/variant');
+
+    // Then
+    await expect(page).toHaveURL('/explorer');
+    await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
   });
 });

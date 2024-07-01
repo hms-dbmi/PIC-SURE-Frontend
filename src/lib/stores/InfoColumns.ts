@@ -31,7 +31,7 @@ export async function loadInfoColumns() {
   } catch (e) {
     console.error(e);
     error.set(
-      'An error occured while loading help information. Please contact you PIC-SURE admin.',
+      'An error occured while loading help information. Please contact your PIC-SURE admin.',
     );
   }
 }
