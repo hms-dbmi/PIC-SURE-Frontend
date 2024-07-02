@@ -12,7 +12,10 @@ export const user: Writable<User> = writable(restoreUser());
 user.subscribe((user: User) => {
   if (browser) {
     clearSessionTokenIfExpired();
-    localStorage.setItem('user', JSON.stringify(user));
+    const userCopy: User = { ...user };
+    // We don't want to save the long term token in local storage
+    userCopy.token = undefined; 
+    localStorage.setItem('user', JSON.stringify(userCopy));
   }
 });
 
