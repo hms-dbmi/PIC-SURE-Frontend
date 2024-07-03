@@ -24,9 +24,14 @@ function removeExport(variableId: string) {
   );
 }
 
+function clearExports() {
+  exports.set([]);
+}
+
 export default {
   subscribe: exports.subscribe,
   exports,
   addExport,
   removeExport,
+  clearExports,
 };

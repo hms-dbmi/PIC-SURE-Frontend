@@ -12,7 +12,7 @@
   import '@fortawesome/fontawesome-free/css/all.min.css';
   import '../../app.postcss';
   import { onMount } from 'svelte';
-  import ResultsPanel from '$lib/components/explorer/results/SidePanel.svelte';
+  import SidePanel from '$lib/components/explorer/results/SidePanel.svelte';
   import { page } from '$app/stores';
   import ExportStepper from '$lib/components/explorer/dataExport/ExportStepper.svelte';
   import Footer from '$lib/components/Footer.svelte';
@@ -47,7 +47,7 @@
   </svelte:fragment>
   <svelte:fragment slot="sidebarRight">
     <div id="right-panel-container" class={'flex ' + classesSidebar}>
-      <ResultsPanel />
+      <SidePanel />
     </div>
   </svelte:fragment>
   <slot />

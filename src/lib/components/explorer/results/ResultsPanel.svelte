@@ -18,8 +18,8 @@
   } from '@skeletonlabs/skeleton';
   import { elasticInOut } from 'svelte/easing';
 
-  const { filters, hasGenomicFilter, getQueryRequest } = FilterStore;
-  const { exports } = ExportStore;
+  const { filters, hasGenomicFilter, getQueryRequest, clearFilters } = FilterStore;
+  const { exports, clearExports } = ExportStore;
 
   const modalStore = getModalStore();
   const toastStore = getToastStore();
@@ -56,15 +56,31 @@
     triggerRefreshCount = getCount();
   });
 
+  function clearFiltersModal() {
+    modalStore.trigger({
+      type: 'confirm',
+      title: 'Clear All Filters',
+      body: 'Are you sure you want to clear all filters?',
+      buttonTextConfirm: 'Yes',
+      buttonTextCancel: 'No',
+      response: (yes: boolean) => {
+        if (yes) {
+          clearFilters();
+          clearExports();
+        }
+      },
+    });
+  }
+
   $: showExportButton =
     features.explorer.allowExport &&
-    ($filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0)) &&
-    totalPatients !== 0;
+    totalPatients !== 0 &&
+    ($filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0));
 </script>
 
 <section
   id="results-panel"
-  class="flex flex-col items-center pt-8 pr-10 section-width"
+  class="flex flex-col items-center pt-8 pr-10 w-64"
   transition:slide={{ axis: 'x' }}
 >
   <div class="h-11">
@@ -84,23 +100,28 @@
     {#await triggerRefreshCount}
       <ProgressRadial width="w-6" />
     {:then}
-      <span id="result-count">{totalPatients}</span>
+      <span class="text-4xl">{totalPatients}</span>
     {:catch}
-      <span id="result-count">N/A</span>
+      <span class="text-4xl">N/A</span>
     {/await}
     <h4 class="text-center">{branding.explorePage.totalPatientsText}</h4>
   </div>
   <div class="flex flex-col items-center mt-8">
-    <h5 class="underline">Added to Export</h5>
+    <div class="flex content-center pb-2">
+      <h5 class="font-bold text-lg flex-auto mr-2">Added to Export</h5>
+      {#if showExportButton}
+        <button class="anchor text-sm flex-none" on:click={clearFiltersModal}>Clear All</button>
+      {/if}
+    </div>
     {#if $filters.length === 0}
       <p class="text-center">No filters added</p>
     {:else}
       <div class="px-4 py-1 w-80">
-        <header class="text-primary-500 text-left">
+        <header class="text-left">
           <strong>Filters added</strong>
           <hr class="!border-t-2" />
         </header>
-        <section>
+        <section class="py-1">
           {#each $filters as filter}
             <FilterComponent {filter} />
           {/each}
@@ -109,11 +130,11 @@
     {/if}
     {#if $exports.length !== 0}
       <div class="px-4 py-1 w-80">
-        <header class="text-primary-500 font-extrabold text-left" data-testid="export-header">
+        <header class="font-extrabold text-left" data-testid="export-header">
           Exports added
           <hr class="!border-t-2" />
         </header>
-        <section>
+        <section class="py-1">
           {#each $exports as variable (variable.variableId)}
             <ExportedVariable {variable} />
           {/each}
@@ -121,46 +142,33 @@
       </div>
     {/if}
   </div>
-  <div class="flex flex-col items-center mt-8">
-    <h5 class="text-center underline">Explore Cohort</h5>
-    <div class="flex flex-wrap items-center justify-evenly w-9/12">
-      <!-- <button
-        type="button"
-        class="btn btn-lg-sq variant-ringed-surface"
-        aria-label="Visualizations"
-      >
-        <i class="fa-solid fa-chart-pie"></i>
-      </button> -->
-      {#if features.explorer.variantExplorer && $hasGenomicFilter}
+  {#if $filters.length > 0}
+    <div class="flex flex-col items-center mt-4">
+      <h5 class="text-center font-bold text-lg py-2">Explore Cohort</h5>
+      <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
         <button
           type="button"
-          data-testid="variant-explorer-btn"
-          class="btn btn-lg-sq cursor {$page.url.pathname.includes('explorer/variant')
-            ? 'variant-ghost-surface'
-            : 'variant-ringed-surface'}"
-          aria-label="Variant Explorer"
-          title="Variant Explorer"
-          on:click={() => goto('/explorer/variant')}
+          class="leading-4 flex flex-col w-28 max-w-28 h-28 items-center justify-center rounded-container-token hover:scale-110 hover:variant-ghost-surface"
+          aria-label="Variable Distributions"
         >
-          <i class="fa-solid fa-dna"></i>
+          <i class="fa-solid fa-chart-pie text-4xl"></i>
+          <span>Variable Distributions</span>
         </button>
-      {/if}
+        {#if features.explorer.variantExplorer && $hasGenomicFilter}
+          <button
+            type="button"
+            data-testid="variant-explorer-btn"
+            class="leading-4 flex flex-col w-28 max-w-28 h-28 items-center justify-center rounded-container-token hover:scale-110 hover:variant-ghost-surface"
+            class:variant-ghost-primary={$page.url.pathname.includes('explorer/variant')}
+            aria-label="Variant Explorer"
+            title="Variant Explorer"
+            on:click={() => goto('/explorer/variant')}
+          >
+            <i class="fa-solid fa-dna text-4xl"></i>
+            <span>Variant Explorer</span>
+          </button>
+        {/if}
+      </div>
     </div>
-  </div>
+  {/if}
 </section>
-
-<style>
-  #result-count {
-    font-size: 2.5rem;
-  }
-  .btn-lg-sq {
-    flex: 50%;
-  }
-  .btn-lg-sq i {
-    font-size: 2.5rem;
-    color: rgba(var(--color-primary-500));
-  }
-  .section-width {
-    width: 20rem;
-  }
-</style>

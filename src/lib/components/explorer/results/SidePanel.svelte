@@ -1,7 +1,7 @@
 <script lang="ts">
   import FilterStore from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
-  import ResultsPanel from './ResultsPanel.svelte';
+  import ResultsPanel from '$lib/components/explorer/results/ResultsPanel.svelte';
   let { filters } = FilterStore;
   let { exports } = ExportStore;
 
@@ -26,7 +26,7 @@
     <button
       type="button"
       id="results-panel-toggle"
-      class="btn-icon btn-icon-sm variant-ringed-primary"
+      class="btn-icon btn-icon-sm variant-ghost-primary hover:variant-filled-primary"
       aria-label="Toggle Results Panel"
       on:click={() => {
         panelOpen = !panelOpen;
@@ -44,8 +44,11 @@
   #side-panel-bar {
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: top;
     width: 42px;
     padding: 0 0.25rem;
+  }
+  #side-panel-bar #results-panel-toggle {
+    margin-top: 2.3rem;
   }
 </style>

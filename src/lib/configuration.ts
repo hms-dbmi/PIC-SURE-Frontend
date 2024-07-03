@@ -72,7 +72,7 @@ export const branding = {
     ],
   },
   explorePage: {
-    totalPatientsText: 'Filtered Results',
+    totalPatientsText: 'Filtered Participants',
     queryErrorText:
       'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
   },
