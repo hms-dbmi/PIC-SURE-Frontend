@@ -14,7 +14,7 @@ user.subscribe((user: User) => {
     clearSessionTokenIfExpired();
     const userCopy: User = { ...user };
     // We don't want to save the long term token in local storage
-    userCopy.token = undefined; 
+    userCopy.token = undefined;
     localStorage.setItem('user', JSON.stringify(userCopy));
   }
 });
