@@ -27,7 +27,7 @@
   let pageSize = 10;
 
   const columns = [
-    { dataElement: 'name', label: 'Variable Name', sort: true },
+    { dataElement: 'display', label: 'Variable Name', sort: true },
     { dataElement: 'description', label: 'Variable Description', sort: true },
     { dataElement: 'id', label: 'Actions', class: 'w-36' },
   ];
