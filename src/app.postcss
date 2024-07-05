@@ -8,23 +8,26 @@ body {
   @apply h-full overflow-hidden;
 }
 
-section.main-content {
+.main-content {
+  width: 70%;
   padding: 0 1em;
-}
-
-section.main-content {
-  width: 70%; /* The width is 60%, by default */
   margin: 2rem auto 0;
 }
 
-section.main-content.w-full {
-  width: calc(100% - 3rem);
+.main-content.w-full {
+  width: calc(100% - 4rem);
   margin: 2rem 1.5rem;
+}
+
+#landing {
+  width: 60%;
+  margin: 2rem auto 0;
 }
 
 /* Use a media query to add a breakpoint at 800px: */
 @media screen and (max-width: 1366px) {
-  section.main-content {
+  .main-content,
+  #landing {
     width: calc(100% - 4rem); /* The width is 100%, when the viewport is 800px or smaller */
     margin: 2rem;
   }
@@ -52,7 +55,7 @@ select {
   .app-bar #page-navigation {
     display: none;
   }
-  section.main-content {
+  .main-content {
     width: 100%;
   }
   h1,
@@ -273,14 +276,14 @@ nav#page-navigation li .nav-dropdown a:focus {
 }
 
 #landing .stats {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-evenly;
-  align-items: center;
-  width: 70%;
-  margin: 2rem 0;
+  font-size: 1rem;
+  margin: 1rem 0;
   padding: 2rem;
   @apply card variant-filled-primary;
+}
+
+#landing .stats a {
+  text-decoration: underline;
 }
 
 .subtitle {

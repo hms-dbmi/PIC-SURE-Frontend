@@ -20,12 +20,12 @@ export const branding = {
       links: [{ title: 'User Management', url: '/admin/users' }],
     },
     {
-      category: 'Use PIC-Sure',
+      category: 'Use PIC-SURE',
       privilege: PicsurePrivileges.QUERY,
       links: [
-        { title: 'Explorer', url: '/explorer' },
-        { title: 'API', url: '/api' },
-        { title: 'Dataset Management', url: '/dataset' },
+        { title: 'Explore', url: '/explorer' },
+        { title: 'Analyze', url: '/analyze' },
+        { title: 'Manage Datasets', url: '/dataset' },
       ],
     },
     {
@@ -62,12 +62,12 @@ export const branding = {
       {
         header: 'What is the PIC‑SURE API?',
         body: 'The PIC-SURE Application Programming Interface allows you to search, query, and export data using Python or R. \n\nClick this card to read more about the PIC-SURE API.',
-        link: '/api/help',
+        link: '/analyze/help',
       },
       {
         header: 'PIC‑SURE API Examples',
         body: 'Get started using the PIC‑SURE API with real example code and analyses from simple queries to complex real-world use cases. \n\nClick this card to check out the PIC-SURE API example code.',
-        link: 'https://pic-sure.org/about',
+        link: '/analyze/start',
       },
     ],
   },
@@ -78,47 +78,23 @@ export const branding = {
   },
   landing: {
     searchPlaceholder: 'Search terms or variables of interest…',
-    description:
-      'PIC-SURE can be used to search phenotypic variables and genomic variants, apply filters, build cohorts, and export participant-level data.',
+    explanation:
+      'The <a href="https://www.cdc.gov/nchs/nhanes/index.htm" target="_blank">National Health and Nutrition Examination Survey (NHANES)</a> dataset is designed to assess the health and nutritional status of adults and children in the United States',
     actions: [
       {
+        title: 'Explore',
         description: 'Explore data, apply filters, and build cohorts',
         icon: 'fa-solid fa-magnifying-glass fa-5x',
         url: '/explorer',
       },
       {
-        description: 'Manage Previously Saved Datasets',
-        icon: 'fa-solid fa-table-list fa-5x',
-        url: '/dataset',
-      },
-      {
-        description: 'Take a tour of the PIC-SURE API',
-        icon: 'fa-solid fa-route fa-5x',
-        url: '/explorer?tour=true',
-      },
-      {
-        description: 'Learn more about PIC‑SURE',
-        icon: 'fa-solid fa-circle-question fa-5x',
-        url: 'https://pic-sure.org/about',
+        title: 'Analyze',
+        description: 'Access data and kickstart your research',
+        icon: 'fa-solid fa-chart-line fa-5x',
+        url: '/analyze',
       },
     ],
-    stats: [
-      {
-        title: 'Data Sources',
-        value: '10',
-        valueSrc: undefined,
-      },
-      {
-        title: 'Variables',
-        value: '1,000,000',
-        valueSrc: undefined,
-      },
-      {
-        title: 'Participants with Genomic Data',
-        value: '1,000',
-        valueSrc: undefined,
-      },
-    ],
+    stats: ['Variables', 'Participants', 'Data Sources'],
   },
   login: {
     title: undefined,
@@ -159,7 +135,7 @@ export const branding = {
 
 export const routes: Route[] = [
   { path: '/explorer', text: 'Explore' },
-  { path: '/api', text: 'Analyze', privilege: PicsurePrivileges.QUERY },
+  { path: '/analyze', text: 'Analyze', privilege: PicsurePrivileges.QUERY },
   { path: '/dataset', text: 'Manage Datasets', privilege: PicsurePrivileges.QUERY },
   { path: '/admin/users', text: 'User Management', privilege: PicsurePrivileges.ADMIN },
   {

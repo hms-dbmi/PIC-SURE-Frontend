@@ -13,7 +13,7 @@ test.describe('API page', () => {
   test('Has expected error message', async ({ page }) => {
     // Given
     await mockApiFail(page, '*/**/psama/user/me?hasToken', 'accessdenied');
-    await page.goto('/api');
+    await page.goto('/analyze');
     // When
     const errorAlert = page.locator('[data-testid=error-alert]');
     // Then
@@ -22,7 +22,7 @@ test.describe('API page', () => {
   branding.apiPage.cards.forEach((card) => {
     test(`Has expect card, ${card.header} from branding`, async ({ page }) => {
       // Given
-      await page.goto('/api');
+      await page.goto('/analyze');
       // When
       const cardTitle = page.getByText(card.header);
       const cardBody = page.getByText(card.body);
@@ -33,7 +33,7 @@ test.describe('API page', () => {
   });
   test('Has expected content', async ({ page }) => {
     // Given
-    await page.goto('/api');
+    await page.goto('/analyze');
 
     // When
     const userToken = page.locator('#user-token');
@@ -46,7 +46,7 @@ test.describe('API page', () => {
     const user = picsureUser;
     user.token = mockExpiredToken;
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', user);
-    await page.goto('/api');
+    await page.goto('/analyze');
     // When
     const expires = page.locator('#expires');
     const badge = page.locator('#expires-badge');
@@ -59,7 +59,7 @@ test.describe('API page', () => {
   });
   test(`User account matches expected email of ${picsureUser.email}`, async ({ page }) => {
     // Given
-    await page.goto('/api');
+    await page.goto('/analyze');
     // When
     const userEmail = page.locator('#account');
     // Then
@@ -68,7 +68,7 @@ test.describe('API page', () => {
   });
   test('Token is hidden by default', async ({ page }) => {
     // Given
-    await page.goto('/api');
+    await page.goto('/analyze');
     // When
     const userToken = page.locator('#token');
     // Then
@@ -77,7 +77,7 @@ test.describe('API page', () => {
   });
   test('Buttons are displayed', async ({ page }) => {
     // Given
-    await page.goto('/api');
+    await page.goto('/analyze');
     // When
     const copyButton = page.getByTestId('copy-button');
     const refeshButton = page.locator('#refresh-button');
@@ -89,7 +89,7 @@ test.describe('API page', () => {
   });
   test('Copy button copies token to clipboard', async ({ page }) => {
     // Given
-    await page.goto('/api');
+    await page.goto('/analyze');
 
     // When
     const copyButton = page.getByTestId('copy-button');
@@ -107,7 +107,7 @@ test.describe('API page', () => {
   });
   test('Token is visible when reveal button is clicked', async ({ page }) => {
     // Given
-    await page.goto('/api');
+    await page.goto('/analyze');
     // When
     const revealButton = page.locator('#reveal-button');
     await revealButton.click();
@@ -118,7 +118,7 @@ test.describe('API page', () => {
   });
   test('Reveal button text changes when clicked', async ({ page }) => {
     // Given
-    await page.goto('/api');
+    await page.goto('/analyze');
     // When
     const revealButton = page.locator('#reveal-button');
     await revealButton.click();
@@ -127,7 +127,7 @@ test.describe('API page', () => {
   });
   test('Refresh button changes token', async ({ page }) => {
     // Given
-    await page.goto('/api');
+    await page.goto('/analyze');
     // When
     const refreshButton = page.locator('#refresh-button');
     const userToken = page.locator('#token');
@@ -142,7 +142,7 @@ test.describe('API page', () => {
     await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
       userLongTermToken: 'new longterm token',
     });
-    await page.goto('/api');
+    await page.goto('/analyze');
     // When
     const userToken = page.locator('#token');
     const refreshButton = page.locator('#refresh-button');
@@ -166,7 +166,7 @@ test.describe('API page', () => {
     await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
       userLongTermToken: 'new longterm token',
     });
-    await page.goto('/api');
+    await page.goto('/analyze');
     // When
     const userToken = page.locator('#token');
     const refreshButton = page.locator('#refresh-button');

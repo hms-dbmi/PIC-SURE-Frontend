@@ -6,7 +6,7 @@
 
 <Content>
   <div class="mb-8 text-center">
-    <AngleButton class="float-left" href="/api">Back</AngleButton>
+    <AngleButton class="float-left" href="/analyze">Back</AngleButton>
     <h1>Get Started with the PIC-SURE API</h1>
   </div>
 
@@ -69,7 +69,7 @@
   </div>
 
   <div class="text-right my-6">
-    <a class="btn btn-lg variant-ringed-primary" href="/api/help">
+    <a class="btn btn-lg variant-ringed-primary" href="/analyze/help">
       What is the PIC-SURE API <i class="fa-solid fa-angles-right ml-1 text-primary-500"></i>
     </a>
   </div>
