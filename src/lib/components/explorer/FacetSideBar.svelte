@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { Accordion, AccordionItem, ProgressRadial } from '@skeletonlabs/skeleton';
+  import { Accordion, ProgressRadial } from '@skeletonlabs/skeleton';
   import SearchStore from '$lib/stores/Search';
   import { updateFacetsFromSearch } from '$lib/services/dictionary';
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
   import { browser } from '$app/environment';
   import ErrorAlert from '../ErrorAlert.svelte';
   import type { Facet } from '$lib/models/Search';
-  let { updateFacet, searchTerm, selectedFacets } = SearchStore;
+  import FacetCategory from './FacetCategory.svelte';
+  let { searchTerm, selectedFacets } = SearchStore;
 
   let facetsPromise: Promise<DictionaryFacetResult[]>;
   if (browser) {
@@ -17,43 +18,43 @@
       facetsPromise = updateFacetsFromSearch($searchTerm, $selectedFacets);
     });
   }
-  $: isChecked = (facetToCheck: string) =>
-    $selectedFacets.some((facet: Facet) => {
-      return facet.name === facetToCheck;
+
+  function recreateFacetCategories(): DictionaryFacetResult[] {
+    let facetsToShow: DictionaryFacetResult[] = [];
+    $selectedFacets.forEach((facet: Facet) => {
+      let facetCategory = facetsToShow.find((category) => category.display === facet.category);
+      if (facetCategory) {
+        facetCategory.facets.push(facet);
+      } else {
+        facetsToShow.push({
+          display: facet?.categoryRef?.display || facet.category,
+          facets: [facet],
+          description: facet?.categoryRef?.description || '',
+          name: facet.category,
+        });
+      }
     });
+    return facetsToShow;
+  }
 </script>
 
 <div id="facet-side-bar">
+  <h2 class="m-0 -mt-2 text-xl">Refine Search</h2>
   {#await facetsPromise}
     <ProgressRadial />
   {:then newFacets}
     {#if newFacets?.length > 0}
-      <Accordion autocollapse>
-        {#each newFacets as facetCategroy, index}
-          <AccordionItem open={index === 0}>
-            <svelte:fragment slot="summary">{facetCategroy.display}</svelte:fragment>
-            <svelte:fragment slot="content">
-              <div class="flex flex-col">
-                {#each facetCategroy.facets as tag}
-                  <label for={tag.name} class="m-1">
-                    <input
-                      type="checkbox"
-                      id={tag.name}
-                      name={tag.name}
-                      value={tag}
-                      checked={isChecked(tag.name)}
-                      on:click={() => updateFacet(tag)}
-                    />
-                    <span>{`${tag.display} (${tag.count})`}</span>
-                  </label>
-                {/each}
-              </div>
-            </svelte:fragment>
-          </AccordionItem>
+      <Accordion autocollapse rounded="rounded-container-token">
+        {#each newFacets as facetCategory, index}
+          <FacetCategory {facetCategory} {index} />
         {/each}
       </Accordion>
     {:else}
-      <p>No Tags to display.</p>
+      <Accordion autocollapse>
+        {#each recreateFacetCategories() as facetCategory, index}
+          <FacetCategory {facetCategory} {index} />
+        {/each}
+      </Accordion>
     {/if}
   {:catch}
     <ErrorAlert title="An error occured while retrieving facets." />
