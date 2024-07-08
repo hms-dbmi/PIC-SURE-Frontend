@@ -7,7 +7,13 @@ export type Facet = Indexable & {
   count: number;
   children?: Facet[];
   category: string;
-  state?: boolean;
+  categoryRef?: ShallowFacetCategory;
+};
+
+export type ShallowFacetCategory = Indexable & {
+  name: string;
+  display: string;
+  description: string;
 };
 
 export type SearchResult = Indexable & {

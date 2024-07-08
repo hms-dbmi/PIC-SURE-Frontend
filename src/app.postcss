@@ -294,11 +294,13 @@ nav#page-navigation li .nav-dropdown a:focus {
   vertical-align: middle;
 }
 
-.accordion-item {
-  border-top: solid 1px rgb(var(--color-surface-400));
+.accordion-item button {
+  @apply bg-primary-300;
+  border-radius: var(--theme-rounded-container) var(--theme-rounded-container) 0 0;
 }
-.accordion {
-  border-bottom: solid 1px rgb(var(--color-surface-400));
+
+.accordion-item button[aria-expanded='false'] {
+  @apply rounded-container-token;
 }
 
 #user-token span.badge.expired {
