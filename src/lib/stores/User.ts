@@ -9,7 +9,6 @@ import { routes, features } from '$lib/configuration';
 import { goto } from '$app/navigation';
 import SearchStore from '$lib/stores/Search';
 
-
 export const user: Writable<User> = writable(restoreUser());
 
 user.subscribe((user: User) => {
