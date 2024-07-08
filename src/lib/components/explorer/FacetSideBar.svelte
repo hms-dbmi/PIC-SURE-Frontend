@@ -39,7 +39,7 @@
 </script>
 
 <div id="facet-side-bar">
-  <h2 class="m-0 -mt-2 text-xl">Refine Search</h2>
+  <h2 class="m-1 -mt-2 text-xl text-center">Refine Search</h2>
   {#await facetsPromise}
     <ProgressRadial />
   {:then newFacets}
