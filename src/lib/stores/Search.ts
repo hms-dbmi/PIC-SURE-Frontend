@@ -4,6 +4,7 @@ import { type Facet, type SearchResult } from '$lib/models/Search';
 
 import type {
   DictionaryConceptResult,
+  DictionaryFacetResult,
 } from '$lib/models/api/DictionaryResponses';
 import { searchDictionary } from '$lib/services/dictionary';
 
@@ -34,7 +35,14 @@ async function search(search: string, page: number = 0, pageSize: number = 10) {
   searchTerm.set(search);
 }
 
-async function updateFacet(newFacet: Facet) {
+async function updateFacet(newFacet: Facet, facetCategory: DictionaryFacetResult | undefined) {
+  if (facetCategory) {
+    newFacet.categoryRef = {
+      display: facetCategory.display,
+      name: facetCategory.name,
+      description: facetCategory.description,
+    };
+  }
   try {
     selectedFacets.update((facets) => {
       const index = facets.findIndex((facet) => facet.name === newFacet.name);

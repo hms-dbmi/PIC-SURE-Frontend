@@ -11,19 +11,19 @@
   <section class="card-body">
     <ul class="break-all">
       {#if data.display}
-      <li>
-        <strong>Name</strong>: {data.display}
-      </li>
+        <li>
+          <strong>Name</strong>: {data.display}
+        </li>
       {/if}
       {#if data.description}
-      <li>
-        <strong>Description</strong>: {data.description}
-      </li>
+        <li>
+          <strong>Description</strong>: {data.description}
+        </li>
       {/if}
       {#if data.type}
-      <li>
-        <strong>Type</strong>: {data.type}
-      </li>
+        <li>
+          <strong>Type</strong>: {data.type}
+        </li>
       {/if}
     </ul>
   </section>
