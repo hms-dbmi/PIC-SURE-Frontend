@@ -6,6 +6,7 @@ import type { Route } from '$lib/models/Route';
 import type { User } from '$lib/models/User';
 import { PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, features } from '$lib/configuration';
+import { goto } from '$app/navigation';
 
 export const user: Writable<User> = writable(restoreUser());
 
@@ -110,6 +111,7 @@ export async function logout() {
     localStorage.removeItem('token');
   }
   user.set({});
+  goto('/login');
 }
 
 export function isTokenExpired(token: string) {

@@ -4,7 +4,7 @@
   import { ProgressRadial } from '@skeletonlabs/skeleton';
   import Logo from '$lib/components/Logo.svelte';
   import type { AuthData } from '$lib/models/AuthProvider';
-  import { branding } from '$lib/configuration';
+  import { branding, features } from '$lib/configuration';
 
   const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
   let selected: string;
@@ -77,9 +77,9 @@
             {/each}
           {/if}
         </div>
-        {#if branding.login.openPicsureLink}
+        {#if features.login.open}
           <a
-            href={branding.login.openPicsureLink}
+            href={branding.login.openPicsureLink || '/'}
             class="btn variant-outline-primary text-primary-500 m-1 mt-2 text-sm"
             >{openPicsureLinkText}</a
           >

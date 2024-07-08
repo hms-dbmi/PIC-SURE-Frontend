@@ -180,6 +180,9 @@ export const features: Indexable = {
     exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
   },
+  login: {
+    open: import.meta.env?.VITE_OPEN === 'true',
+  },
   dataRequests: import.meta.env?.VITE_DATA_REQUESTS === 'true',
   genomicFilter: import.meta.env?.VITE_GENOMIC_FILTER === 'true',
 };
