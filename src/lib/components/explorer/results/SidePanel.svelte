@@ -26,6 +26,7 @@
     <button
       type="button"
       id="results-panel-toggle"
+      title="{panelOpen ? 'Hide' : 'Show'} Results"
       class="btn-icon btn-icon-sm variant-ghost-primary hover:variant-filled-primary"
       aria-label="Toggle Results Panel"
       on:click={() => {
