@@ -100,9 +100,9 @@
     {#await triggerRefreshCount}
       <ProgressRadial width="w-6" />
     {:then}
-      <span class="text-4xl">{totalPatients}</span>
+      <span id="result-count" class="text-4xl">{totalPatients}</span>
     {:catch}
-      <span class="text-4xl">N/A</span>
+      <span id="result-count" class="text-4xl">N/A</span>
     {/await}
     <h4 class="text-center">{branding.explorePage.totalPatientsText}</h4>
   </div>
@@ -110,7 +110,11 @@
     <div class="flex content-center pb-2">
       <h5 class="font-bold text-lg flex-auto mr-2">Added to Export</h5>
       {#if showExportButton}
-        <button class="anchor text-sm flex-none" on:click={clearFiltersModal}>Clear All</button>
+        <button
+          data-testid="clear-all-results-btn"
+          class="anchor text-sm flex-none"
+          on:click={clearFiltersModal}>Clear All</button
+        >
       {/if}
     </div>
     {#if $filters.length === 0}

@@ -12,6 +12,7 @@
 
 <div
   id={variable.studyId ? `${variable.studyId}-${variable.variableId}` : variable.variableId}
+  data-testid="added-export-{variable.variableName}"
   class="flex flex-col card p-1 m-1"
   transition:fade={{ duration: 300 }}
 >
