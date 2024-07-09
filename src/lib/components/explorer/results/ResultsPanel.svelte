@@ -12,12 +12,10 @@
   import {
     ProgressRadial,
     getModalStore,
-    type ModalSettings,
     type ToastSettings,
     getToastStore,
   } from '@skeletonlabs/skeleton';
   import { elasticInOut } from 'svelte/easing';
-    import { goto } from '$app/navigation';
 
   const { filters, hasGenomicFilter, getQueryRequest, clearFilters } = FilterStore;
   const { exports, clearExports } = ExportStore;
@@ -26,15 +24,6 @@
   const toastStore = getToastStore();
 
   let totalPatients = 0;
-
-  // const modal: ModalSettings = {
-  //   type: 'component',
-  //   title: 'Export Data',
-  //   component: 'stepper',
-  //   response: (r: string) => {
-  //     console.log(r);
-  //   },
-  // };
 
   let triggerRefreshCount = getCount();
 

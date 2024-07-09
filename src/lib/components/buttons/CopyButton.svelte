@@ -28,3 +28,9 @@
 >
   {buttonText}
 </button>
+
+<style lang="postcss">
+  button:hover {
+    @apply variant-ghost-primary;
+  }
+</style>

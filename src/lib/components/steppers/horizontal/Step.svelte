@@ -27,7 +27,7 @@
 {#if stepIndex === $state.current}
   <div class="step space-y-4" data-testid="step-{stepIndex + 1}">
     <header class="step-header text-2xl font-bold">
-      <slot name="header"></slot>
+      <slot name="header" />
     </header>
     <div class="step-content space-y-4 px-2">
       <slot>(Step {stepIndex + 1} Content)</slot>

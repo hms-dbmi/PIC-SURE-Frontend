@@ -1,9 +1,7 @@
 <script>
-
-$: participantsCount = 0;
-$: variablesCount = 0;
-$: dataPoints = 0;
-
+  $: participantsCount = 0;
+  $: variablesCount = 0;
+  $: dataPoints = 0;
 </script>
 
 <div id="stats" class="w-2/3 flex justify-evenly mb-2">
@@ -25,5 +23,4 @@ $: dataPoints = 0;
 </div>
 
 <style>
-
 </style>
