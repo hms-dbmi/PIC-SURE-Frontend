@@ -112,12 +112,14 @@
         <CopyButton buttonText="Copy" itemToCopy={$user.token || ''} />
         <button
           id="refresh-button"
-          class="btn variant-ringed-primary"
+          class="btn variant-ringed-primary hover:variant-ghost-primary"
           on:click={confirmRefreshToken}
           disabled={refreshButtonDisabled}>{refreshButtonText}</button
         >
-        <button id="reveal-button" class="btn variant-ringed-primary" on:click={revealToken}
-          >{revealButtonText}</button
+        <button
+          id="reveal-button"
+          class="btn variant-ringed-primary hover:variant-ghost-primary"
+          on:click={revealToken}>{revealButtonText}</button
         >
       </footer>
     </div>

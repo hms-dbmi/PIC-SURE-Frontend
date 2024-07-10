@@ -1,26 +1,14 @@
 <script lang="ts">
   import { createEventDispatcher, setContext } from 'svelte';
   import { fade } from 'svelte/transition';
-  import { type Writable, writable } from 'svelte/store';
+  import { state } from '$lib/stores/Stepper';
+  import type { StepperEvent, StepperState } from '$lib/models/Stepper';
 
-  export let startStep: number = 0;
   export let buttonCompleteLabel = '';
   setContext('buttonCompleteLabel', buttonCompleteLabel);
 
-  interface StepperState {
-    current: number;
-    total: number;
-  }
-  const state: Writable<StepperState> = writable({ current: startStep, total: 0 });
   setContext('state', state);
 
-  type StepperEvent = {
-    cancel: { state: StepperState };
-    complete: { step: number; state: StepperState };
-    next: { step: number; state: StepperState };
-    step: { step: number; state: StepperState };
-    back: { step: number; state: StepperState };
-  };
   const dispatch = createEventDispatcher<StepperEvent>();
   async function onNext(stepIndex: number, locked: boolean) {
     // Allows any forms to submit before the Step is removed from the DOM:

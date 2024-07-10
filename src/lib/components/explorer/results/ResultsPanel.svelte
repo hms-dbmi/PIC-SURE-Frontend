@@ -9,18 +9,14 @@
   import FilterStore from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
   import * as api from '$lib/api';
-  import {
-    ProgressRadial,
-    getModalStore,
-    type ToastSettings,
-    getToastStore,
-  } from '@skeletonlabs/skeleton';
+  import { ProgressRadial, type ToastSettings, getToastStore } from '@skeletonlabs/skeleton';
   import { elasticInOut } from 'svelte/easing';
+  import { getModalStore } from '@skeletonlabs/skeleton';
+  const modalStore = getModalStore();
 
-  const { filters, hasGenomicFilter, getQueryRequest, clearFilters } = FilterStore;
+  const { filters, hasGenomicFilter, getQueryRequest, clearFilters, totalParticipants } = FilterStore;
   const { exports, clearExports } = ExportStore;
 
-  const modalStore = getModalStore();
   const toastStore = getToastStore();
 
   let totalPatients = 0;
@@ -31,6 +27,7 @@
     let request: QueryRequestInterface = getQueryRequest();
     try {
       totalPatients = await api.post('picsure/query/sync', request);
+      totalParticipants.set(totalPatients);
       return totalPatients;
     } catch (error) {
       const toast: ToastSettings = {
@@ -79,7 +76,7 @@
         id="export-data-button"
         type="button"
         class="btn variant-filled-primary"
-        on:click={() => goto('/export')}
+        on:click={() => goto('/explorer/export')}
         transition:scale={{ easing: elasticInOut }}
       >
         Export Data
