@@ -72,7 +72,7 @@
   <div>
     <a
       data-testid="variant-download-btn"
-      class="btn variant-ghost-primary mt-2 float-right"
+      class="btn variant-ghost-primary mt-8 mr-6 float-right"
       href={$downloadUrl}
       download="variantData.tsv">Download Variant{aggregateCheckbox ? ' (Aggregate)' : ''} Data</a
     >
