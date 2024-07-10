@@ -68,19 +68,18 @@
   <title>{branding.applicationName} | Variant Explorer</title>
 </svelte:head>
 
-<Content full={true} backUrl="/explorer" backTitle="Back to Cohort builder">
+{#if $downloadUrl}
+  <div>
+    <a
+      data-testid="variant-download-btn"
+      class="btn variant-ghost-primary mt-2 float-right"
+      href={$downloadUrl}
+      download="variantData.tsv">Download Variant{aggregateCheckbox ? ' (Aggregate)' : ''} Data</a
+    >
+  </div>
+{/if}
+<Content full={true} backUrl="/explorer" backTitle="Back to Cohort Builder">
   {#if features.explorer.variantExplorer}
-    {#if $downloadUrl}
-      <div>
-        <a
-          data-testid="variant-download-btn"
-          class="btn variant-ghost-primary mt-2 float-right"
-          href={$downloadUrl}
-          download="variantData.tsv"
-          >Download Variant{aggregateCheckbox ? ' (Aggregate)' : ''} Data</a
-        >
-      </div>
-    {/if}
     <h2 class="text-center clear-both">Variant Explorer</h2>
     {#await loading}
       {#if $count > 0}

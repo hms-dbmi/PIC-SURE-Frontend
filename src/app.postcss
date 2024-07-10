@@ -360,3 +360,38 @@ input.required:invalid,
   transform: rotate(180deg);
   z-index: -1;
 }
+
+/* === Button Groups - Horizontal === */
+/* Skeleton ships the btn-group class with a background color on hover, which can't 
+    be overriden, so we're using a custom btn-group and copying their other styles.
+    See: https://github.com/skeletonlabs/skeleton/blob/0791fcf916b3f96db3be6ee941b48564c39cbffb/packages/plugin/src/styles/components/buttons.css#L82-L111
+*/
+
+.btn-group-custom {
+  @apply variant-ghost-surface [&>*+*]:border-surface-500 inline-flex flex-row space-x-0 overflow-hidden rounded-token;
+  /* Safari: hover overflow fix for border radius */
+  isolation: isolate;
+}
+
+.btn-group-custom > * + * {
+  @apply border-t-0 border-l border-surface-500/20;
+}
+
+.btn-group-custom button,
+.btn-group-custom a {
+  @apply button-base-styles;
+  /* Reset Anchor Styles */
+  @apply !no-underline !text-inherit;
+}
+
+.btn-group-custom button:not(:disabled):hover,
+.btn-group-custom a:not(:disabled):hover {
+  @apply variant-soft-secondary;
+}
+
+.btn-group-custom button.active,
+.btn-group-custom a.active,
+.btn-group-custom button:not(:disabled):active,
+.btn-group-custom a:not(:disabled):active {
+  @apply variant-soft-primary;
+}
