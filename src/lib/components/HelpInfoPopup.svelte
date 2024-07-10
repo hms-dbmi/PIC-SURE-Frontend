@@ -8,7 +8,7 @@
 {#if text}
   <div data-testid={id}>
     <i
-      class="fa-solid fa-circle-question text-primary-700-200-token hover:text-tertiary-700-200-token cursor-pointer"
+      class="fa-solid fa-circle-question text-primary-700-200-token hover:text-secondary-700-200-token cursor-pointer"
       use:popup={{
         event: 'click',
         target: id,
