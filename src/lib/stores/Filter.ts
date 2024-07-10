@@ -6,6 +6,7 @@ import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { Query } from '$lib/models/query/Query';
 
 const filters: Writable<Filter[]> = writable([]);
+const totalParticipants: Writable<number> = writable(0);
 const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
   $f.find((filter) => filter.filterType === 'genomic') ? true : false,
 );
@@ -76,6 +77,7 @@ export default {
   setFilters,
   getFilter,
   getQueryRequest,
+  totalParticipants,
 };
 
 //TODO: CLEAN UP

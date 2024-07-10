@@ -1,35 +1,76 @@
 <script lang="ts">
+  import * as api from '$lib/api';
+  import { browser } from '$app/environment';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
-  import { Query } from '$lib/models/query/Query';
   import Summary from './Summary.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
+  import type { QueryRequestInterface } from '$lib/models/api/Request';
+  import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import ExportStore from '$lib/stores/Export';
+  let { exports } = ExportStore;
 
-  const tableName = 'ExportSummary';
-  export let query: Query;
+  export let query: QueryRequestInterface;
   export let showTreeStep = false;
   export let rows: ExportRowInterface[] = [];
-  let datasetNameInput: HTMLInputElement;
+  let statusPromise: Promise<void>;
+  let datasetNameInput: string = '';
+  let picsureResultId: string = '';
   // $: participantsCount = 0;
   // $: variablesCount = 0;
   // $: dataPoints = 0;
-  $: datasetId = '00000000-0000-0000-0000-000000000000'; //TODO: Get a UUID for the dataset ID
+  $: datasetId = '';
   $: canDownload = true;
-  $: apiExport = true;
+  $: apiExport = false;
   const columns = [
-    { dataElement: 'name', label: 'Variable Name', sort: true },
+    // { dataElement: 'selected', label: 'Selected', sort: true },
+    { dataElement: 'variableName', label: 'Variable Name', sort: true },
     { dataElement: 'description', label: 'Variable Description', sort: true },
     { dataElement: 'type', label: 'Type', sort: true },
   ];
 
-  function onCompleteHandler(e: Event): void {
-    console.log('event:complete', e);
+  async function onCompleteHandler(): Promise<void> {
+    try {
+      const res = await api.post(`picsure/query/${datasetId}/result`, {});
+      const responseDataUrl = URL.createObjectURL(new Blob([res], { type: 'octet/stream' }));
+      if (browser) {
+        const link = document.createElement('a');
+        link.href = responseDataUrl;
+        link.download = 'pic-sure-data.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('Error in onCompleteHandler', error);
+    }
   }
-  function onNextHandler(e: Event): void {
+  function onNextHandler(e: CustomEvent): void {
     console.log('event:next', e);
+    if (e.detail.step === 0 && !showTreeStep) {
+      handleFirstStep();
+    }
+    if (e.detail.step === 1 && showTreeStep) {
+      console.log('event:next', e);
+      //TODO: Load tree
+    } else if ((e.detail.step === 1 && !showTreeStep) || (showTreeStep && e.detail.step === 2)) {
+      createNamedDataset();
+    }
+    if (e.detail.state.total - 1 === e.detail.step + 1) {
+      statusPromise = new Promise((resolve, reject) => {
+        const interval = setInterval(async () => {
+          const status = await checkExportStatus(picsureResultId);
+          if (status !== 'PENDING' || status !== 'RUNNING' || status !== 'QUEUED') {
+            clearInterval(interval);
+            status === 'ERROR' ? reject(status) : resolve(status);
+          }
+        }, 2000);
+      });
+    }
   }
   function onStepHandler(e: Event): void {
     console.log('event:next', e);
@@ -38,8 +79,42 @@
     console.log('event:next', e);
   }
 
-  async function handleUpdateDatasetName(event: { currentTarget: EventTarget & HTMLFormElement }) {
-    const datasetName = encodeURIComponent(datasetNameInput.innerText);
+  async function handleFirstStep() {
+    try {
+      query.query.expectedResultType = 'DATAFRAME';
+      query.query.fields = $exports.map((exp) => exp.variableId);
+      const res = await api.post('picsure/query', query);
+      console.log('res', res);
+      datasetId = res.picsureResultId; //todo real res types
+    } catch (error) {
+      console.error('Error in handleFirstStep', error);
+    }
+  }
+
+  async function createNamedDataset() {
+    try {
+      const datasetName = encodeURIComponent(datasetNameInput);
+      const res = await api.post('picsure/dataset/named', {
+        name: datasetName,
+        queryId: datasetId,
+      }); //Todo: types
+      console.log('res', res);
+    } catch (error) {
+      console.error('Error in createNamedDataset', error);
+    }
+  }
+
+  async function checkExportStatus(lastPicsureResultId?: string) {
+    let statusId = lastPicsureResultId ? lastPicsureResultId : datasetId;
+    const path = 'picsure/query/' + statusId + '/status';
+    try {
+      const res = await api.post(path, query);
+      picsureResultId = res.picsureResultId;
+      return res.status;
+    } catch (error) {
+      console.error('Error in checkExportStatus', error); //TODO handle errors
+    }
+    return 'ERROR';
   }
 </script>
 
@@ -56,7 +131,7 @@
     <div id="first-step-container" class="flex flex-col w-full h-full items-center">
       <Summary />
       <section class="w-full">
-        <Datatable {tableName} data={rows} {columns} />
+        <Datatable tableName="ExportSummary" data={rows} {columns} />
       </section>
     </div>
   </Step>
@@ -76,7 +151,7 @@
       </section>
     </Step>
   {/if}
-  <Step locked={!datasetNameInput}>
+  <Step locked={!datasetNameInput || datasetNameInput.length < 2}>
     <svelte:fragment slot="header">Save Dataset ID:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
       <div class="w-full h-full m-2 card p-4">
@@ -87,8 +162,8 @@
         </header>
         <hr />
         <div class="card-body p-4 flex flex-col justify-center items-center">
-          <form method="POST" on:submit|preventDefault={handleUpdateDatasetName}>
-            <div class="flex items-center justify-start m-2">
+          <div>
+            <div class="flex items-center m-2">
               <label for="dataset-name" class="font-bold mr-2">Dataset Name:</label>
               <input
                 type="text"
@@ -100,12 +175,12 @@
               />
             </div>
             <div class="flex items-center m-2">
-              <div class="flex items-center justify-start">
+              <div class="flex items-center">
                 <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
                 <div id="dataset-id">{datasetId}</div>
               </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </section>
@@ -116,11 +191,28 @@
       <Summary />
       <div class="w-full h-full m-2 card p-4">
         <div>
-          {#if canDownload && !apiExport}
-            <div class="flex justify-center">
-              Click the “Export Data” button below to download your participant-level cohort data
-              for research analysis
-            </div>
+          {#if canDownload}
+            {#await statusPromise}
+              <div class="flex justify-center">
+                <ProgressRadial width="w-4" />
+                <div>Prepareing your dataset...</div>
+              </div>
+            {:then status}
+              <!-- <ProgressRadial width="w-2" />
+              {status} -->
+              <div class="flex justify-center">
+                <i class="fa-solid fa-checkmark"></i>
+                Click the “Export Data” button below to download your participant-level cohort data for
+                research analysis
+              </div>
+            {:catch}
+              <div class="flex justify-center">
+                <ErrorAlert
+                  title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
+                contact an administrator."
+                />
+              </div>
+            {/await}
           {/if}
         </div>
         {#if apiExport}

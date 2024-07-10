@@ -5,12 +5,12 @@
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import FilterStore from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
-    import type { ExportRowInterface } from '$lib/models/ExportRow';
+  import type { ExportRowInterface } from '$lib/models/ExportRow';
   let { getQueryRequest } = FilterStore;
   let { exports } = ExportStore;
   let { filters } = FilterStore;
 
-  export let queryRequest: QueryRequestInterface =  getQueryRequest();
+  let queryRequest: QueryRequestInterface = getQueryRequest();
   let exportRows: ExportRowInterface[] = $exports.map((exp) => {
     return {
       ref: exp,
@@ -20,7 +20,7 @@
       description: exp.searchResult?.description,
       type: exp.searchResult?.isCategorical ? 'Categorical' : 'Continuous',
     };
-  })
+  });
   let filterRows: ExportRowInterface[] = $filters.map((filter) => {
     return {
       ref: filter,
@@ -30,7 +30,7 @@
       description: filter.searchResult?.description,
       type: filter.searchResult?.isCategorical ? 'Categorical' : 'Continuous',
     };
-  })
+  });
 </script>
 
 <AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end">
@@ -46,7 +46,7 @@
   Export Data for Research Analysis
 </AppBar>
 <section class="flex justify-center items-center w-full h-full mt-8">
-  <ExportStepper query={queryRequest.query} rows={[...exportRows, ...filterRows]} />
+  <ExportStepper query={queryRequest} rows={[...exportRows, ...filterRows]} />
 </section>
 
 <style>

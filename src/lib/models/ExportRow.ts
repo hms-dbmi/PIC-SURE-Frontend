@@ -1,5 +1,5 @@
-import type { Export } from "./Export";
-import type { Filter } from "./Filter";
+import type { Export } from '$lib/models/Export';
+import type { Filter } from '$lib/models/Filter';
 
 export interface ExportRowInterface {
   ref?: Export | Filter;

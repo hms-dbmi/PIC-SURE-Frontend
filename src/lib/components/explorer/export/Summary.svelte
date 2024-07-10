@@ -1,7 +1,12 @@
 <script>
-  $: participantsCount = 0;
-  $: variablesCount = 0;
-  $: dataPoints = 0;
+  import FilterStore from '$lib/stores/Filter';
+  import ExportStore from '$lib/stores/Export';
+  let { filters, totalParticipants } = FilterStore;
+  let { exports } = ExportStore;
+
+  $: participantsCount = $totalParticipants;
+  $: variablesCount = $filters.length + $exports.length;
+  $: dataPoints = participantsCount * variablesCount;
 </script>
 
 <div id="stats" class="w-2/3 flex justify-evenly mb-2">
