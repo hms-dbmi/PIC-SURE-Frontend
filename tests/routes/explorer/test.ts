@@ -335,6 +335,43 @@ test.describe('explorer', () => {
       await expect(page.locator('#results-panel')).toBeVisible();
       await expect(page.locator('#export-data-button')).not.toBeVisible();
     });
+    test('Clear All clears exports and filters', async ({ page }) => {
+      // Given
+      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+      await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        route.fulfill({ body: '9999' }),
+      );
+      await page.goto('/explorer?search=somedata');
+
+      const expectedRowIds = Object.keys(mockData.results.phenotypes).map((key) =>
+        key
+          .split('\\')
+          .filter((x) => x)
+          .pop(),
+      );
+      const tableBody = page.locator('tbody');
+
+      const firstRow = tableBody.locator('tr').nth(0);
+      const filterIcon = firstRow.locator('td').last().locator('button').nth(1);
+      await filterIcon.click();
+      const firstFilter = await getOption(page);
+      await firstFilter.click();
+      const addFilterButton = page.getByTestId('add-filter');
+      await addFilterButton.click();
+      await expect(page.getByTestId(`added-filter-${expectedRowIds[0]}`)).toBeVisible();
+
+      const secondRow = tableBody.locator('tr').nth(1);
+      const exportButton = secondRow.locator('td').last().locator('button').last();
+      await exportButton.click();
+      await expect(page.getByTestId(`added-export-${expectedRowIds[1]}`)).toBeVisible();
+
+      // When
+      await page.getByTestId('clear-all-results-btn').click();
+      await page.getByTestId('modal').getByRole('button', { name: 'Yes' }).click();
+
+      // Then
+      await expect(page.getByText('No filters added')).toBeVisible();
+    });
   });
   test.describe('Search row actions', () => {
     // TODO: Some feartures will be hidden in the future. Cannot use nth.

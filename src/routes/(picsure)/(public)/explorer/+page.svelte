@@ -97,18 +97,6 @@
                 href="/explorer/genome-filter">Genomic Filtering</a
               >
             {/if}
-            <button
-              type="button"
-              class="btn variant-ghost-error hover:variant-filled-error"
-              aria-label="You are on the reset button"
-              disabled={!searchInput}
-              on:click={() => {
-                searchInput = '';
-                updateSearch();
-              }}
-            >
-              Reset
-            </button>
           </div>
         </div>
         <Datatable {tableName} data={$searchResults} {columns} {cellOverides} />
