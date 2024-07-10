@@ -95,8 +95,9 @@
             class="w-2/3"
           >
             <svelte:fragment slot="action">
-              <button class="btn btn-xs variant-ringed-surface" on:click={clearSelectedGenes}
-                >Clear</button
+              <button
+                class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
+                on:click={clearSelectedGenes}>Clear</button
               >
             </svelte:fragment>
             <SelectGenes />
@@ -124,8 +125,9 @@
           </Panel>
           <Panel title="Selected Genomic Filters" class="w-3/4">
             <svelte:fragment slot="action">
-              <button class="btn btn-xs variant-ringed-surface" on:click={clearGeneFilters}
-                >Clear</button
+              <button
+                class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
+                on:click={clearGeneFilters}>Clear</button
               >
             </svelte:fragment>
             <FilterSummary />

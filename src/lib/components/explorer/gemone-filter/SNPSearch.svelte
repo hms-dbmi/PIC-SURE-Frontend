@@ -51,7 +51,7 @@
     </p>
     <p class="text-center">chromosome (chr#), position, reference allele, variant allele</p>
     <p class="text-center font-bold my-6"><em class="font-bold">Example:</em> chr17,35269878,G,A</p>
-    <div class="flex gap-2 justify-center my-6">
+    <div class="flex gap-2 mx-auto my-6 w-2/3">
       <input
         type="search"
         class="input w-1/2"
@@ -85,7 +85,10 @@
   {:else}
     <p class="text-center">
       Select the genotype of interest for the specified variant.
-      <button class="btn btn-xs variant-ringed-surface" on:click={clearSnpFilters}>Clear</button>
+      <button
+        class="btn btn-xs float-right variant-ringed-surface hover:variant-ghost-secondary"
+        on:click={clearSnpFilters}>Clear</button
+      >
     </p>
     <div class="flex gap-2 items-center justify-center my-6">
       <label class="mr-4">

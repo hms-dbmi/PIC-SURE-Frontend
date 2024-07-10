@@ -5,7 +5,7 @@
 
 <div class="overflow-auto h-60 max-h-60">
   <div class="border rounded border-surface-400-500-token p-2 match-searchbar">
-    <span class="pb-8">Gene with variant: </span>
+    <span class="pb-8">Gene with Variant: </span>
     <div id="selected-variant" class="ml-3">
       {#each $selectedGenes as gene, index}
         {#if index !== 0}
@@ -17,7 +17,7 @@
   </div>
   <div class="ml-2 font-bold">AND</div>
   <div class="border rounded border-surface-400-500-token p-2 match-searchbar">
-    <span class="pb-8">Variant frequency: </span>
+    <span class="pb-8">Variant Frequency: </span>
     <div id="selected-frequency" class="ml-3">
       {#each $selectedFrequency as freq, index}
         {#if index !== 0}
@@ -29,7 +29,7 @@
   </div>
   <div class="ml-2 font-bold">AND</div>
   <div class="border rounded border-surface-400-500-token p-2 match-searchbar">
-    <span class="pb-8">Consequence Group by severity:</span>
+    <span class="pb-8">Consequence Group by Severity:</span>
     <div id="selected-consequence" class="ml-3">
       {#each $consequences as cons, index}
         {#if index !== 0}
