@@ -5,6 +5,7 @@
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import FilterStore from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
+  import { state } from '$lib/stores/Stepper';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   let { getQueryRequest } = FilterStore;
   let { exports } = ExportStore;
@@ -18,7 +19,7 @@
       variableId: exp.variableId,
       variableName: exp.variableName,
       description: exp.searchResult?.description,
-      type: exp.searchResult?.isCategorical ? 'Categorical' : 'Continuous',
+      type: exp.searchResult?.type,
     };
   });
   let filterRows: ExportRowInterface[] = $filters.map((filter) => {
@@ -28,7 +29,7 @@
       variableId: filter.id,
       variableName: filter.searchResult?.display || filter.variableName,
       description: filter.searchResult?.description,
-      type: filter.searchResult?.isCategorical ? 'Categorical' : 'Continuous',
+      type: filter.searchResult?.type,
     };
   });
 </script>
@@ -40,7 +41,10 @@
       variant="ringed"
       color="primary"
       name="Back"
-      on:click={() => history.back()}>Back to Cohort Builder</AngleButton
+      on:click={() => {
+        $state.current = 0;
+        history.back();
+      }}>Back to Cohort Builder</AngleButton
     >
   </svelte:fragment>
   Export Data for Research Analysis
