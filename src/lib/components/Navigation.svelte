@@ -20,11 +20,6 @@
     placement: 'bottom',
   };
 
-  function handleLogout() {
-    logout();
-    goto('/');
-  }
-
   function handleLogin() {
     goto(`/login?redirectTo=${$page.url.pathname}`);
   }
@@ -121,7 +116,7 @@
             id="user-logout-btn"
             class="btn variant-ringed-primary"
             title="Logout"
-            on:click={handleLogout}>Logout</button
+            on:click={logout}>Logout</button
           >
         </div>
       {:else}

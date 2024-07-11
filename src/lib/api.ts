@@ -1,4 +1,5 @@
 import { error, type NumericRange } from '@sveltejs/kit';
+import { logout } from '$lib/stores/User';
 import { browser } from '$app/environment';
 
 // TODO: fix any types
@@ -43,6 +44,9 @@ async function send({
     } catch (e) {
       return text; //TODO: Change this
     }
+  } else if (res.status === 401) {
+    logout();
+    throw error(401, 'Unauthorized');
   }
 
   throw error(res.status as NumericRange<400, 599>, await res.text());
