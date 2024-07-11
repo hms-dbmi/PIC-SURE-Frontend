@@ -36,7 +36,10 @@
     document.body.classList.add('started');
   });
 
-  $: classesSidebar = $page.url.pathname.includes('/explorer') ? '' : 'hidden';
+  $: classesSidebar =
+    $page.url.pathname.includes('/explorer') && !$page.url.pathname.includes('/export')
+      ? ''
+      : 'hidden';
 </script>
 
 <Toast position="t" />
