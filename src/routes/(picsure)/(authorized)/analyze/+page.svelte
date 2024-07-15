@@ -7,7 +7,7 @@
   <title>{branding.applicationName} | API</title>
 </svelte:head>
 <div id="api-page">
-  <section>
+  <section class="mt-10">
     <UserToken />
   </section>
   <section id="info-cards" class="w-full flex flex-wrap flex-row justify-between mt-6">
