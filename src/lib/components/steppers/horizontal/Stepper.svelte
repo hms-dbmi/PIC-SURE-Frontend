@@ -2,7 +2,7 @@
   import { createEventDispatcher, setContext } from 'svelte';
   import { fade } from 'svelte/transition';
   import { state } from '$lib/stores/Stepper';
-  import type { StepperEvent, StepperState } from '$lib/models/Stepper';
+  import type { StepperEvent } from '$lib/models/Stepper';
 
   export let buttonCompleteLabel = '';
   setContext('buttonCompleteLabel', buttonCompleteLabel);
