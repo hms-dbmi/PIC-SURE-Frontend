@@ -131,6 +131,8 @@
             </div>
           </svelte:fragment>
         </Datatable>
+      {:else}
+        <div data-testid="variant-count" class="flex-none w-full">{$count} variants found</div>
       {/if}
     {:catch error}
       <ErrorAlert title="Error">

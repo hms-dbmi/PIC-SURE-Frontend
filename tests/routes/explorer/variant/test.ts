@@ -79,6 +79,21 @@ test.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () 
       // Then
       await expect(download.suggestedFilename()).toBe('variantData.tsv');
     });
+    test("Displays count, even if it's 0", async ({ page }) => {
+      // When
+      await mockSyncAPI(page, {
+        ...successResults,
+        VARIANT_COUNT_FOR_QUERY: {
+          pass: true,
+          data: { count: 0, message: 'Query ran successfully' },
+        },
+      });
+      await page.locator('#results-panel').getByTestId('variant-explorer-btn').click();
+
+      // Then
+      await expect(page).toHaveURL('/explorer/variant');
+      await expect(page.getByTestId('variant-count')).toContainText('0');
+    });
     test('Error occurs during variant count retrieval', async ({ page }) => {
       // Given
       await mockSyncAPI(page, {

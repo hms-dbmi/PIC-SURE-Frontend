@@ -72,10 +72,9 @@
     });
   }
 
-  $: showExportButton =
-    features.explorer.allowExport &&
-    totalPatients !== 0 &&
-    ($filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0));
+  $: hasFilterOrExport =
+    $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0);
+  $: showExportButton = features.explorer.allowExport && totalPatients !== 0 && hasFilterOrExport;
 </script>
 
 <section
@@ -109,7 +108,7 @@
   <div class="flex flex-col items-center mt-8">
     <div class="flex content-center pb-2">
       <h5 class="font-bold text-lg flex-auto mr-2">Added to Export</h5>
-      {#if showExportButton}
+      {#if hasFilterOrExport}
         <button
           data-testid="clear-all-results-btn"
           class="anchor text-sm flex-none"
@@ -158,7 +157,7 @@
           <i class="fa-solid fa-chart-pie text-4xl"></i>
           <span>Variable Distributions</span>
         </button>
-        {#if features.explorer.variantExplorer && $hasGenomicFilter}
+        {#if totalPatients !== 0 && features.explorer.variantExplorer && $hasGenomicFilter}
           <button
             type="button"
             data-testid="variant-explorer-btn"
