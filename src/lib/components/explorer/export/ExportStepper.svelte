@@ -13,13 +13,16 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExportStore from '$lib/stores/Export';
   let { exports } = ExportStore;
+  import { state } from '$lib/stores/Stepper';
+  import { goto } from '$app/navigation';
 
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
   export let rows: ExportRowInterface[] = [];
-  let statusPromise: Promise<void>;
+  let statusPromise: Promise<string>;
   let datasetNameInput: string = '';
   let picsureResultId: string = '';
+  let allowComplete = false;
   // $: participantsCount = 0;
   // $: variablesCount = 0;
   // $: dataPoints = 0;
@@ -45,6 +48,10 @@
         link.click();
         document.body.removeChild(link);
       }
+      if (!apiExport) {
+        $state.current = 0;
+        goto('/dataset');
+      }
     } catch (error) {
       console.error('Error in onCompleteHandler', error);
     }
@@ -66,7 +73,13 @@
           const status = await checkExportStatus(picsureResultId);
           if (status !== 'PENDING' || status !== 'RUNNING' || status !== 'QUEUED') {
             clearInterval(interval);
-            status === 'ERROR' ? reject(status) : resolve(status);
+            if (status === 'ERROR') {
+              allowComplete = false;
+              reject(status);
+            } else {
+              allowComplete = true;
+              resolve(status);
+            }
           }
         }, 2000);
       });
@@ -185,25 +198,32 @@
       </div>
     </section>
   </Step>
-  <Step>
+  <Step locked={allowComplete}>
     <svelte:fragment slot="header">Export Data:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
       <Summary />
       <div class="w-full h-full m-2 card p-4">
-        <div>
+        <div class="flex justify-center">
           {#if canDownload}
             {#await statusPromise}
-              <div class="flex justify-center">
+              <div class="flex justify-center items-center">
                 <ProgressRadial width="w-4" />
                 <div>Prepareing your dataset...</div>
               </div>
             {:then status}
-              <!-- <ProgressRadial width="w-2" />
-              {status} -->
-              <div class="flex justify-center">
-                <i class="fa-solid fa-checkmark"></i>
-                Click the “Export Data” button below to download your participant-level cohort data for
-                research analysis
+              <div class="flex flex-col justify-center">
+                <p>
+                  Click the “Export Data” button below to download your participant-level cohort
+                  data for research analysis.
+                </p>
+                <div>
+                  Export Status: {status}
+                  <i
+                    class="fa-solid {status === 'ERROR'
+                      ? 'fa-circle-xmark text-error-500'
+                      : 'fa-check-circle text-success-500'}"
+                  ></i>
+                </div>
               </div>
             {:catch}
               <div class="flex justify-center">
@@ -231,7 +251,7 @@
             </div>
             <p>
               Navigate to the <a class="anchor" href="/api">API page</a> to view examples and learn more
-              about the PIC-SURE API
+              about the PIC-SURE API.
             </p>
           </div>
         {/if}

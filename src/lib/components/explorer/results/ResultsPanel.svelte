@@ -14,7 +14,8 @@
   import { getModalStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
 
-  const { filters, hasGenomicFilter, getQueryRequest, clearFilters, totalParticipants } = FilterStore;
+  const { filters, hasGenomicFilter, getQueryRequest, clearFilters, totalParticipants } =
+    FilterStore;
   const { exports, clearExports } = ExportStore;
 
   const toastStore = getToastStore();
