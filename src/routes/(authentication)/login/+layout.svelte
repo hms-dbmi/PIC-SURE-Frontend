@@ -1,10 +1,13 @@
 <script lang="ts">
+  import { initializeStores } from '@skeletonlabs/skeleton';
   import '../../../app.postcss';
   import { user } from '$lib/stores/User';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import Footer from '$lib/components/Footer.svelte';
   import Dots from '$lib/components/Dots.svelte';
+
+  initializeStores();
 
   onMount(() => {
     if ($user && $user.token) {

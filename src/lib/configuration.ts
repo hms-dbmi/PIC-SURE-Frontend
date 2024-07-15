@@ -42,10 +42,6 @@ export const branding = {
     excludeSitemapOn: ['/explorer'],
     links: [
       {
-        title: 'Terms of Service',
-        url: '#',
-      },
-      {
         title: 'Privacy Policy',
         url: 'https://pic-sure.gitbook.io/pic-sure/privacy-policy',
         newTab: true,
