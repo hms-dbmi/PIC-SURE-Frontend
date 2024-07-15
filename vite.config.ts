@@ -4,6 +4,6 @@ import { defineConfig } from 'vite';
 
 export default () => {
   return defineConfig({
-    plugins: [sveltekit(), purgeCss()],
+    plugins: [sveltekit()/*, purgeCss()*/],
   });
 };

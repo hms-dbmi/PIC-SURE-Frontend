@@ -23,7 +23,7 @@
   // @html branding.landing.explanation is from a static file and will only be populated by staff.
 </script>
 
-<section class="stats flex flex-row flex-wrap justify-evenly items-center w-full px-4 gap-y-4">
+<section class="stats flex flex-row flex-wrap justify-evenly items-center w-full p-4 my-4 gap-y-9">
   {#await getValues()}
     {#each branding.landing.stats as stat}
       <div id="value-{stat}" class="flex flex-col justify-center items-center">
@@ -39,7 +39,7 @@
   {:then}
     {#each stats as stat}
       <div class="flex flex-col w-1/{width}">
-        <div data-testid="value-{stat.title}" class="flex flex-col justify-center items-center">
+        <div data-testid="value-{stat.title}" class="flex flex-col justify-center items-center text-2xl">
           {#if stat.value === ERROR_VALUE}
             <i class="fa-solid fa-circle-exclamation"></i>
           {:else}

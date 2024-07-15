@@ -15,21 +15,21 @@
   <title>{branding.applicationName}</title>
 </svelte:head>
 
-<div id="landing" class="flex flex-wrap flex-row justify-evenly text-center items-center mt-8">
+<div id="landing" class="flex flex-wrap flex-row justify-evenly text-center items-center mx-auto mt-10">
   <section id="search-section" class="flex flex-col text-center w-full items-center my-4">
     <Searchbox placeholder={branding.landing.searchPlaceholder} bind:searchTerm {search} />
   </section>
-  <section class="actions flex flex-row justify-center items-center w-full my-4">
+  <section class="actions flex flex-row justify-evenly items-center w-full mt-4 mb-8">
     {#each branding.landing.actions as link}
       <a
         href={link.url}
         target={link.url.startsWith('/') ? undefined : '_blank'}
-        class=""
+        class="border border-surface-300-600-token rounded-container-token shadow-lg"
         tabindex="0"
       >
         <i class="{link.icon} text-primary-500-400-token" />
-        <header>{link.title}</header>
-        <div>{link.description}</div>
+        <header class="text-2xl my-2">{link.title}</header>
+        <div class="leading-5">{link.description}</div>
       </a>
     {/each}
   </section>
