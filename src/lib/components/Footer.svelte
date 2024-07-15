@@ -22,9 +22,7 @@
   function openTermsModal() {
     modalStore.trigger({
       type: 'component',
-      title: 'PIC-SURE Terms of Service',
       component: 'modalWrapper',
-      modalClasses: 'bubbles',
       meta: { component: TermsModal, width: 'w-3/4' },
     });
   }

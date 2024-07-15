@@ -1,3 +1,4 @@
+<h1>PIC-SURE Terms of Service</h1>
 <div class="subtitle">Terms as of 22 November 2023</div>
 <p>
   These Terms of Service constitute a legally binding agreement made between you, whether personally
