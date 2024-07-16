@@ -4,11 +4,9 @@
   export let href: string = '';
 
   export let angle: 'right' | 'left' = 'left';
-  export let variant = 'ringed';
+  export let variant = 'filled';
   export let color = 'primary';
   export let disabled = false;
-  let clazz = '';
-  export { clazz as class };
   export let name: string = '';
 
   const dispatch = createEventDispatcher();
@@ -17,7 +15,7 @@
     dispatch('click', event);
   }
 
-  $: iconStyle = `btn btn-sm variant-${variant}-${color} text-on-${color}-500`;
+  $: btnStyle = `btn btn-sm variant-${variant}-${color} text-lg`;
   const testid = name.replaceAll(' ', '-').toLowerCase() + '-btn';
 </script>
 
@@ -25,24 +23,24 @@
   <a
     data-testid={testid}
     aria-disabled={disabled}
-    class="text-{color}-500 &[aria-disabled=“true”]:opacity-75 text-lg {clazz}"
+    class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {$$props.class || ''}"
     rel={disabled ? 'nofollow' : ''}
     {href}
   >
-    {#if angle === 'left'}<i class="{iconStyle} fa-solid fa-angles-left mr-1"></i>{/if}
+    {#if angle === 'left'}<i class="fa-solid fa-arrow-left mr-3"></i>{/if}
     <slot />
-    {#if angle === 'right'}<i class="{iconStyle} fa-solid fa-angles-right ml-1"></i>{/if}
+    {#if angle === 'right'}<i class="fa-solid fa-arrow-right ml-3"></i>{/if}
   </a>
 {:else}
   <button
     data-testid={testid}
     type="button"
-    class="text-{color}-500 text-lg disabled:opacity-75 {clazz}"
+    class="{btnStyle} disabled:opacity-75 {$$props.class || ''}"
     on:click={onClick}
     {disabled}
   >
-    {#if angle === 'left'}<i class="{iconStyle} fa-solid fa-angles-left mr-1"></i>{/if}
+    {#if angle === 'left'}<i class="fa-solid fa-arrow-left mr-3"></i>{/if}
     <slot />
-    {#if angle === 'right'}<i class="{iconStyle} fa-solid fa-angles-right ml-1"></i>{/if}
+    {#if angle === 'right'}<i class="fa-solid fa-arrow-right ml-3"></i>{/if}
   </button>
 {/if}

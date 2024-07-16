@@ -17,7 +17,7 @@ export const branding = {
     {
       category: 'Administration',
       privilege: PicsurePrivileges.ADMIN,
-      links: [{ title: 'User Management', url: '/admin/users' }],
+      links: [{ title: 'Manage Users', url: '/admin/users' }],
     },
     {
       category: 'Use PIC-SURE',
@@ -61,12 +61,12 @@ export const branding = {
     cards: [
       {
         header: 'What is the PIC‑SURE API?',
-        body: 'The PIC-SURE Application Programming Interface allows you to search, query, and export data using Python or R. \n\nClick this card to read more about the PIC-SURE API.',
+        body: 'The PIC-SURE Application Programming Interface allows you to search, query, and export data using Python or R.',
         link: '/analyze/help',
       },
       {
         header: 'PIC‑SURE API Examples',
-        body: 'Get started using the PIC‑SURE API with real example code and analyses from simple queries to complex real-world use cases. \n\nClick this card to check out the PIC-SURE API example code.',
+        body: 'Get started using the PIC‑SURE API with real example code and analyses from simple queries to complex real-world use cases.',
         link: '/analyze/start',
       },
     ],
@@ -137,7 +137,7 @@ export const routes: Route[] = [
   { path: '/explorer', text: 'Explore' },
   { path: '/analyze', text: 'Analyze', privilege: PicsurePrivileges.QUERY },
   { path: '/dataset', text: 'Manage Datasets', privilege: PicsurePrivileges.QUERY },
-  { path: '/admin/users', text: 'User Management', privilege: PicsurePrivileges.ADMIN },
+  { path: '/admin/users', text: 'Manage Users', privilege: PicsurePrivileges.ADMIN },
   {
     path: '/admin',
     text: 'Configuration',

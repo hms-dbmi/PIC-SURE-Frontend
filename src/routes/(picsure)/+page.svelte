@@ -15,7 +15,10 @@
   <title>{branding.applicationName}</title>
 </svelte:head>
 
-<div id="landing" class="flex flex-wrap flex-row justify-evenly text-center items-center mx-auto mt-10">
+<div
+  id="landing"
+  class="flex flex-wrap flex-row justify-evenly text-center items-center mx-auto mt-10"
+>
   <section id="search-section" class="flex flex-col text-center w-full items-center my-4">
     <Searchbox placeholder={branding.landing.searchPlaceholder} bind:searchTerm {search} />
   </section>

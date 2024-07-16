@@ -22,7 +22,10 @@
             <h4 class="my-1" data-testid={card.header}>{card.header}</h4>
             <hr class="!border-t-2" />
           </header>
-          <section class="p-4 whitespace-pre-wrap" data-testid={card.body}>{card.body}</section>
+          <section class="p-4 whitespace-pre-wrap flex flex-col" data-testid={card.body}>
+            <div>{card.body}</div>
+            <div class="btn variant-filled-primary mt-3 my-auto">Learn More</div>
+          </section>
         </div>
       </a>
     {/each}

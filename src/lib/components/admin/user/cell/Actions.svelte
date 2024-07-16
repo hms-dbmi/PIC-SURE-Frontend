@@ -64,11 +64,10 @@
   data-testid={`user-view-btn-${data.cell}`}
   type="button"
   title="View"
-  class="text-secondary-600 hover:text-primary-600"
+  class="text-black-600 hover:text-primary-600"
   on:click|stopPropagation={() => goto(`/admin/users/${data.cell}`)}
 >
   <i class="fa-solid fa-circle-info fa-xl"></i>
-  <span class="sr-only">View User</span>
 </button>
 
 {#if data.row.status === 'Active'}
@@ -76,31 +75,28 @@
     data-testid={`user-edit-btn-${data.cell}`}
     type="button"
     title="Edit"
-    class="text-secondary-600 hover:text-primary-600"
+    class="text-black-600 hover:text-primary-600"
     on:click|stopPropagation={() => goto(`/admin/users/${data.cell}/edit`)}
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
-    <span class="sr-only">Edit</span>
   </button>
   <button
     data-testid={`user-deactivate-btn-${data.cell}`}
     type="button"
     title="Deactivate user"
-    class="bg-initial text-secondary-600 hover:text-primary-600"
+    class="text-black-600 hover:text-primary-600"
     on:click|stopPropagation={() => userActivation(false)}
   >
-    <i class="fa-solid fa-circle-xmark fa-xl"></i>
-    <span class="sr-only">Deactivate user</span>
+    <i class="fa-solid fa-trash fa-xl"></i>
   </button>
 {:else}
   <button
     data-testid={`user-activate-btn-${data.cell}`}
     type="button"
     title="Reactivate user"
-    class="bg-initial text-secondary-600 hover:text-primary-600"
+    class="text-black-600 hover:text-primary-600"
     on:click|stopPropagation={() => userActivation(true)}
   >
-    <i class="fa-solid fa-circle-check fa-xl"></i>
-    <span class="sr-only">Reactivate user</span>
+    <i class="fa-solid fa-trash-arrow-up fa-xl"></i>
   </button>
 {/if}

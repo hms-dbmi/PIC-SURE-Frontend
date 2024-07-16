@@ -38,29 +38,34 @@
   <title>{branding.applicationName} | Datasets</title>
 </svelte:head>
 
-<Content title="Dataset Management">
+<Content title="Manage Datasets">
   {#await loadDatasets()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />
   {:then}
-    <h3 class="text-left">Active Datasets</h3>
     <Datatable
       tableName="ActiveDatasets"
+      title="Active Datasets"
       data={$active}
       {columns}
       {cellOverides}
       {rowClickHandler}
     />
     {#if displayArchived}
-      <h3 class="text-left mt-5">Archived Datasets</h3>
-      <Datatable tableName="ArchivedDatasets" data={$archived} {columns} {cellOverides} />
+      <Datatable
+        tableName="ArchivedDatasets"
+        title="Deleted Datasets"
+        data={$archived}
+        {columns}
+        {cellOverides}
+      />
     {/if}
     <button
       data-testid="dataset-toggle-archive"
       type="button"
       class="btn bg-secondary-500 text-on-secondary-token"
       on:click={() => (displayArchived = !displayArchived)}
-      >{displayArchived ? 'Exclude' : 'Include'} archived Dataset IDs</button
+      >{displayArchived ? 'Hide' : 'Show'} deleted datasets</button
     >
   {:catch}
     <ErrorAlert title="API Error">

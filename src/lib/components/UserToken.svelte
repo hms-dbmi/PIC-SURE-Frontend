@@ -108,7 +108,7 @@
           {/if}
         </div>
       </section>
-      <footer class="card-footer">
+      <footer class="card-footer mt-2">
         <CopyButton buttonText="Copy" itemToCopy={$user.token || ''} />
         <button
           id="refresh-button"

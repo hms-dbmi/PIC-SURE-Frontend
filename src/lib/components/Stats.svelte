@@ -39,7 +39,10 @@
   {:then}
     {#each stats as stat}
       <div class="flex flex-col w-1/{width}">
-        <div data-testid="value-{stat.title}" class="flex flex-col justify-center items-center text-2xl">
+        <div
+          data-testid="value-{stat.title}"
+          class="flex flex-col justify-center items-center text-2xl"
+        >
           {#if stat.value === ERROR_VALUE}
             <i class="fa-solid fa-circle-exclamation"></i>
           {:else}

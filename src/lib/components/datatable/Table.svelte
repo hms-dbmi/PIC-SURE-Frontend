@@ -38,7 +38,7 @@
     >
       {#if title}
         <div class="flex-auto">
-          <h2>{title}</h2>
+          <h2 class="my-2">{title}</h2>
         </div>
       {/if}
       <slot name="tableActions" />

@@ -85,24 +85,44 @@ select {
 #sidebar-right {
   border-left: 2px solid rgba(var(--color-surface-500));
 }
-
-h1 {
-  @apply h1 my-1;
-}
-h2 {
-  @apply h2 my-1;
-}
-h3 {
-  @apply h3 my-1;
-}
-h4 {
-  @apply h4 my-1;
-}
-h5 {
-  @apply h5 my-1;
-}
+h1,
+h2,
+h3,
+h4,
+h5,
 h6 {
-  @apply h6 my-1;
+  @apply my-1;
+}
+
+h1,
+.h1 {
+  font-size: 2.5rem;
+  line-height: 2.75rem;
+}
+h2,
+.h2 {
+  font-size: 2rem;
+  line-height: 2.25rem;
+}
+h3,
+.h3 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+h4,
+.h4 {
+  font-size: 1, 25rem;
+  line-height: 1.75rem;
+}
+h5,
+.h5 {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+h6,
+.h6 {
+  font-size: 1rem;
+  line-height: 1.5rem;
 }
 
 button:disabled,
@@ -144,6 +164,11 @@ ul.primary-list li::marker {
 
 .table thead th.progress-bar {
   padding: 0px;
+}
+
+.table tbody td {
+  font-size: 1rem;
+  line-height: 1.25rem;
 }
 
 #nav-logo {

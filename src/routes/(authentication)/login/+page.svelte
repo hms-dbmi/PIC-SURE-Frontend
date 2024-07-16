@@ -12,7 +12,7 @@
   const title = branding.login.title || 'Welcome to PIC-SURE';
   const description =
     branding.login?.description ||
-    'Where searching for, filtering on, and exporting data is made simple.';
+    'Where searching for, filtering on, and analyzing data is made simple.';
   const openPicsureLinkText = branding.login.openPicsureLinkText || 'Explore without Login';
   $: selectedProvider = selected
     ? ($page.data?.providers?.find((provider: AuthData) => provider.name === selected) as AuthData)
@@ -22,7 +22,7 @@
 <section id="logins" class="flex flex-col items-center h-screen text-center">
   <div id="title-box" class="flex flex-col items-center text-center">
     <h1 data-testid="login-title" class="mb-8 text-primary-500-400-token">{title}</h1>
-    <p data-testid="login-description" class="max-w-16">{description}</p>
+    <p data-testid="login-description" class="max-w-16 text-2xl">{description}</p>
   </div>
   {#await $page.data?.providers}
     <ProgressRadial width="w-10" value={undefined} />

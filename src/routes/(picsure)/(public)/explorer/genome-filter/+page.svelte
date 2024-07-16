@@ -70,7 +70,7 @@
   <title>{branding.applicationName} | Gemonic Filter</title>
 </svelte:head>
 
-<Content backUrl="/explorer" backAction={() => clearFilters()} backTitle="Back to Cohort builder">
+<Content backUrl="/explorer" backAction={() => clearFilters()} backTitle="Back to Explore">
   <h2 class="text-center mb-4 text-3xl">Genomic Filtering</h2>
   <Stepper
     buttonCompleteLabel="Apply Filter"

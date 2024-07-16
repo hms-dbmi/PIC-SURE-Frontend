@@ -3,8 +3,6 @@
 
   export let buttonText = 'Copy';
   export let itemToCopy: string;
-  let clazz = 'btn variant-ringed-primary';
-  export { clazz as class };
   let timer: ReturnType<typeof setTimeout>;
 
   function debounce(text: string) {
@@ -22,7 +20,7 @@
 <button
   type="button"
   data-testid="copy-button"
-  class={clazz}
+  class="btn variant-ringed-primary {$$props.class || ''}"
   on:click|stopPropagation={updateCopyButtonText}
   use:clipboard={itemToCopy}
 >
