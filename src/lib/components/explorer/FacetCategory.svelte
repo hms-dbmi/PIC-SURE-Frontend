@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
-  import { AccordionItem } from '@skeletonlabs/skeleton';
+  import { AccordionItem, filter } from '@skeletonlabs/skeleton';
   import SearchStore from '$lib/stores/Search';
   import type { Facet } from '$lib/models/Search';
   let { updateFacet, selectedFacets } = SearchStore;
