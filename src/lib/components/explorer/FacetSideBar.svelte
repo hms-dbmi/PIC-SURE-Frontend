@@ -44,13 +44,13 @@
     <ProgressRadial />
   {:then newFacets}
     {#if newFacets?.length > 0}
-      <Accordion autocollapse rounded="rounded-container-token">
+      <Accordion rounded="rounded-container-token">
         {#each newFacets as facetCategory, index}
           <FacetCategory {facetCategory} {index} />
         {/each}
       </Accordion>
     {:else}
-      <Accordion autocollapse>
+      <Accordion>
         {#each recreateFacetCategories() as facetCategory, index}
           <FacetCategory {facetCategory} {index} />
         {/each}
