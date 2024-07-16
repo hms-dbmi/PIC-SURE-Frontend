@@ -45,14 +45,14 @@
   {:then newFacets}
     {#if newFacets?.length > 0}
       <Accordion rounded="rounded-container-token">
-        {#each newFacets as facetCategory, index}
-          <FacetCategory {facetCategory} {index} />
+        {#each newFacets as facetCategory}
+          <FacetCategory {facetCategory} />
         {/each}
       </Accordion>
     {:else}
       <Accordion>
-        {#each recreateFacetCategories() as facetCategory, index}
-          <FacetCategory {facetCategory} {index} />
+        {#each recreateFacetCategories() as facetCategory}
+          <FacetCategory {facetCategory} />
         {/each}
       </Accordion>
     {/if}
