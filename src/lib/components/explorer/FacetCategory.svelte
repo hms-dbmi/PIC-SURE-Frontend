@@ -14,7 +14,7 @@
     });
 </script>
 
-<AccordionItem class="card" open={index === 0}>
+<AccordionItem class="card" open>
   <svelte:fragment slot="summary">{facetCategory.display}</svelte:fragment>
   <svelte:fragment slot="content">
     <div class="flex flex-col">
@@ -26,6 +26,7 @@
             name={facet.name}
             value={facet}
             checked={isChecked(facet.name)}
+            aria-checked={isChecked(facet.name)}
             on:click={() => updateFacet(facet, facetCategory)}
           />
           <span>{`${facet.display} (${facet.count})`}</span>
