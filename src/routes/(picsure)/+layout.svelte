@@ -1,12 +1,5 @@
 <script lang="ts">
-  import {
-    AppShell,
-    initializeStores,
-    Modal,
-    Toast,
-    storePopup,
-    type ModalComponent,
-  } from '@skeletonlabs/skeleton';
+  import { AppShell, Modal, Toast, storePopup, type ModalComponent } from '@skeletonlabs/skeleton';
   import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
   import Navigation from '$lib/components/Navigation.svelte';
   import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -20,7 +13,6 @@
 
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
-  initializeStores();
   // Registered list of Components for Modals
   const modalComponentRegistry: Record<string, ModalComponent> = {
     stepper: { ref: ExportStepper },

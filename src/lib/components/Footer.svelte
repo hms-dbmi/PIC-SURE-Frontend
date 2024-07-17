@@ -1,10 +1,13 @@
 <script lang="ts">
   import { LightSwitch } from '@skeletonlabs/skeleton';
+  import { getModalStore } from '@skeletonlabs/skeleton';
+  const modalStore = getModalStore();
 
   import { page } from '$app/stores';
-
   import { branding } from '$lib/configuration';
   import { user } from '$lib/stores/User';
+
+  import TermsModal from '$lib/components/TermsModal.svelte';
   export let showSitemap: boolean = branding.footer.showSitemap;
 
   $: hideSitemap =
@@ -15,6 +18,14 @@
     ...section,
     show: !section.privilege || ($user.privileges && $user.privileges.includes(section.privilege)),
   }));
+
+  function openTermsModal() {
+    modalStore.trigger({
+      type: 'component',
+      component: 'modalWrapper',
+      meta: { component: TermsModal, width: 'w-3/4' },
+    });
+  }
 </script>
 
 {#if !hideSitemap && branding.sitemap.length > 0}
@@ -42,6 +53,7 @@
 <footer id="main-footer" class="flex">
   <LightSwitch />
   <ul>
+    <li><button on:click={openTermsModal}>Terms of Service</button></li>
     {#each branding.footer.links as link}
       <li><a target={link.newTab ? '_blank' : '_self'} href={link.url}>{link.title}</a></li>
     {/each}
