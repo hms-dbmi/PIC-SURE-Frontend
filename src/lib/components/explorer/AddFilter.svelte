@@ -53,17 +53,6 @@
           `picsure/proxy/dictionary-api/concepts/detail/${data.dataset}`,
           String.raw`${data.conceptPath.replace(/\\\\/g, '\\')}`,
         );
-        // const response = {
-        //   type: 'Categorical',
-        //   conceptPath: '\\Variant Data Type\\Low coverage WGS\\',
-        //   name: 'Low coverage WGS',
-        //   display: 'Low coverage WGS',
-        //   dataset: '1',
-        //   description: 'Low coverage WGS',
-        //   values: ['TRUE'],
-        //   children: null,
-        //   meta: { values: 'TRUE', description: 'Low coverage WGS' },
-        // } as SearchResult;
         data = response;
         unselectedOptions = data?.values || [];
         if (unselectedOptions.length >= 50) {
