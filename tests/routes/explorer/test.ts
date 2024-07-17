@@ -344,7 +344,6 @@ test.describe('explorer', () => {
     });
     test('Add button is enabled when something is selected', async ({ page }) => {
       // Given
-
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -362,7 +361,6 @@ test.describe('explorer', () => {
     });
     test('Clicking the add butoon options the results panel', async ({ page }) => {
       // Given
-
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -383,7 +381,6 @@ test.describe('explorer', () => {
     });
     test('Clicking the add button adds the filter to the results panel', async ({ page }) => {
       // Given
-
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -417,7 +414,6 @@ test.describe('explorer', () => {
     });
     test('Added Filter has expected buttons', async ({ page }) => {
       // Given
-
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -457,7 +453,6 @@ test.describe('explorer', () => {
     });
     test('Clicking added filter opens more info', async ({ page }) => {
       // Given
-
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -484,7 +479,6 @@ test.describe('explorer', () => {
     });
     test('Clicking open filter closes the more info section', async ({ page }) => {
       // Given
-
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -514,7 +508,6 @@ test.describe('explorer', () => {
     });
     test('Fitlers with selected values list values and count', async ({ page }) => {
       // Given
-
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -546,7 +539,6 @@ test.describe('explorer', () => {
     });
     test('Fitlers with all values selected list count and correct text', async ({ page }) => {
       // Given
-
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -664,7 +656,6 @@ test.describe('explorer', () => {
       page,
     }) => {
       // Given
-
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -693,7 +684,6 @@ test.describe('explorer', () => {
       page,
     }) => {
       // Given
-
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -720,7 +710,6 @@ test.describe('explorer', () => {
     });
     test('Edit modal maintains selected items', async ({ page }) => {
       // Given
-
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -751,7 +740,6 @@ test.describe('explorer', () => {
     });
     test('Edit modal changes the filter', async ({ page }) => {
       // Given
-
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
