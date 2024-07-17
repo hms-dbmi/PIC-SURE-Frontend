@@ -9,7 +9,7 @@ test.describe('dataset', () => {
     await page.goto('/dataset');
 
     // Then
-    await expect(page.getByText('Active Datasets', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('ActiveDatasets-table')).toBeVisible();
     await expect(page.getByText(mockData[0].query.uuid, { exact: true })).toBeVisible();
   });
   test('Should not show archived datasets table on page load', async ({ page }) => {
@@ -18,7 +18,7 @@ test.describe('dataset', () => {
     await page.goto('/dataset');
 
     // Then
-    await expect(page.getByText('Archived Datasets', { exact: true })).not.toBeVisible();
+    await expect(page.getByTestId('ArchivedDatasets-table')).not.toBeVisible();
     await expect(page.getByText(mockData[1].query.uuid, { exact: true })).not.toBeVisible();
   });
   test('Shows archived datasets on archive toggle button press', async ({ page }) => {
@@ -33,6 +33,18 @@ test.describe('dataset', () => {
     // Then
     await expect(page.getByTestId('dataset-toggle-archive')).toBeVisible();
     await expect(page.getByText(mockData[1].query.uuid, { exact: true })).toBeVisible();
+  });
+  test('Copy button displays popup msg', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
+    await page.goto('/dataset');
+
+    // When
+    const copyBtn = page.getByTestId(`${mockData[0].query.uuid}-copy-btn`);
+    await copyBtn.click();
+
+    // Then
+    await expect(page.getByTestId(`${mockData[0].query.uuid}-copy-btn-popup`)).toBeVisible();
   });
   test('Archive button press moves item to archived', async ({ page }) => {
     // Given

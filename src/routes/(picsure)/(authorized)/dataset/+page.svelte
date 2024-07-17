@@ -8,7 +8,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
-  import CopyButton from '$lib/components/dataset/cell/CopyButtonCell.svelte';
+  import CopyButtonCell from '$lib/components/dataset/cell/CopyButtonCell.svelte';
   import Actions from '$lib/components/dataset/cell/Actions.svelte';
   import { branding } from '$lib/configuration';
 
@@ -20,7 +20,7 @@
   ];
 
   const cellOverides: Indexable = {
-    queryId: CopyButton,
+    queryId: CopyButtonCell,
     uuid: Actions,
   };
 
