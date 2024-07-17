@@ -1,7 +1,7 @@
 import type { User } from '../src/lib/models/User';
 import { PicsurePrivileges } from '../src/lib/models/Privilege';
 
-const HPDS = process.env.VITE_RESOURCE_HPDS;
+export const HPDS = process.env.VITE_RESOURCE_HPDS;
 
 export const mockToken =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6OTYwOTU3Mjk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.M1W7a3jQNoHQxAUwfj3sDqyVtNH_DkRdzsIF3prIYQA';
@@ -46,8 +46,9 @@ export const picsureUser: User = {
   acceptedTOS: true,
 };
 
-export const searchResultPath = 'picsure/proxy/dictionary-api/concepts/';
-export const facetResultPath = 'picsure/proxy/dictionary-api/facets?page_number=0&page_size=25';
+export const searchResultPath = 'picsure/proxy/dictionary-api/concepts?page_number=0&page_size=10';
+export const facetResultPath = 'picsure/proxy/dictionary-api/facets/';
+export const conceptsDetailPath = 'picsure/proxy/dictionary-api/concepts/detail/'; // + name
 
 export const searchRequest = { facets: [], search: 'age' };
 
@@ -72,15 +73,15 @@ export const searchResults = {
   size: 10,
   content: [
     {
-      conceptPath: '\\this\\is\\a\\age\\',
-      name: 'age1',
-      display: 'age',
+      conceptPath: '\\SOMEDATA\\questionnaire\\disease\\Any family with heart attack?\\',
+      name: 'heart_test',
+      display: 'Any family with heart attack?',
       dataset: 'test_data_set',
-      description: 'Age',
-      min: 0,
-      max: 99,
+      description: 'Do you have a history of heart attack? Including extended family?',
+      values: ['Yes', 'No', "Don't know"],
+      children: null,
       meta: null,
-      type: 'Continuous',
+      type: 'Categorical',
     },
     {
       conceptPath: '\\TEST\\questionnaire\\disease\\Any tests today?\\',
@@ -92,6 +93,17 @@ export const searchResults = {
       children: null,
       meta: null,
       type: 'Categorical',
+    },
+    {
+      conceptPath: '\\this\\is\\a\\age\\',
+      name: 'age1',
+      display: 'age',
+      dataset: 'test_data_set',
+      description: 'Age',
+      min: 0,
+      max: 99,
+      meta: null,
+      type: 'Continuous',
     },
     {
       conceptPath: '\\Study123\\AGE\\',
@@ -123,6 +135,36 @@ export const searchResults = {
     empty: true,
   },
   empty: false,
+};
+
+export const detailResponseCat = {
+  type: 'Categorical',
+  conceptPath: '\\SOMEDATA\\questionnaire\\disease\\Any family with heart attack?\\',
+  name: 'heart_test',
+  display: 'Any family with heart attack?',
+  dataset: 'test_data_set',
+  description: 'Do you have a history of heart attack? Including extended family?',
+  values: ['Yes', 'No', "Don't know"],
+  children: null,
+  meta: {
+    values: ['Yes', 'No', "Don't know"],
+    description: 'Do you have a history of heart attack? Including extended family?',
+  },
+};
+
+export const detailResponseNum = {
+  type: 'Continuous',
+  conceptPath: '\\this\\is\\a\\age\\',
+  name: 'age1',
+  display: 'age',
+  dataset: 'test_data_set',
+  description: 'Age',
+  children: null,
+  min: 0,
+  max: 99,
+  meta: {
+    description: 'Age',
+  },
 };
 
 export const facetsResponse = [
