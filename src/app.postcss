@@ -20,8 +20,7 @@ body {
 }
 
 #landing {
-  width: 60%;
-  margin: 2rem auto 0;
+  width: 45%;
 }
 
 /* Use a media query to add a breakpoint at 800px: */
@@ -86,24 +85,44 @@ select {
 #sidebar-right {
   border-left: 2px solid rgba(var(--color-surface-500));
 }
-
-h1 {
-  @apply h1 my-1;
-}
-h2 {
-  @apply h2 my-1;
-}
-h3 {
-  @apply h3 my-1;
-}
-h4 {
-  @apply h4 my-1;
-}
-h5 {
-  @apply h5 my-1;
-}
+h1,
+h2,
+h3,
+h4,
+h5,
 h6 {
-  @apply h6 my-1;
+  @apply my-1;
+}
+
+h1,
+.h1 {
+  font-size: 2.5rem;
+  line-height: 2.75rem;
+}
+h2,
+.h2 {
+  font-size: 2rem;
+  line-height: 2.25rem;
+}
+h3,
+.h3 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+h4,
+.h4 {
+  font-size: 1, 25rem;
+  line-height: 1.75rem;
+}
+h5,
+.h5 {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+h6,
+.h6 {
+  font-size: 1rem;
+  line-height: 1.5rem;
 }
 
 button:disabled,
@@ -145,6 +164,11 @@ ul.primary-list li::marker {
 
 .table thead th.progress-bar {
   padding: 0px;
+}
+
+.table tbody td {
+  font-size: 1rem;
+  line-height: 1.25rem;
 }
 
 #nav-logo {
@@ -277,8 +301,7 @@ nav#page-navigation li .nav-dropdown a:focus {
 
 #landing .stats {
   font-size: 1rem;
-  margin: 1rem 0;
-  padding: 2rem;
+  padding: 1rem;
   @apply card variant-filled-primary;
 }
 
@@ -286,7 +309,7 @@ nav#page-navigation li .nav-dropdown a:focus {
   text-decoration: underline;
 }
 
-.subtitle {
+.main-content .subtitle {
   font-size: 2rem;
 }
 
@@ -331,6 +354,10 @@ nav#page-navigation li .nav-dropdown a:focus {
   line-height: 1rem;
 }
 
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+
 .label.required span:after {
   content: ' *';
   display: inline;
@@ -355,6 +382,84 @@ input.required:invalid,
   right: 10px;
   transform: rotate(180deg);
   z-index: -1;
+}
+
+.card-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  text-decoration: none;
+  text-align: center;
+
+  padding: 1rem 0.5rem;
+  margin: 0.3rem;
+
+  @apply border rounded-container-token;
+
+  &:hover {
+    @apply border border-surface-300-600-token scale-110 shadow-lg;
+  }
+}
+
+.card-btn-sm {
+  width: 6rem;
+  height: 6rem;
+  max-width: 6rem;
+
+  .icon {
+    font-size: 1.5rem;
+  }
+
+  .title {
+    font-size: 1rem;
+    line-height: 1rem;
+  }
+}
+
+.card-btn-md {
+  width: 7rem;
+  height: 7rem;
+  max-width: 7rem;
+
+  .icon {
+    font-size: 2.25rem;
+  }
+
+  .title {
+    font-size: 1.125rem;
+    line-height: 1.25rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.8rem;
+    line-height: 1rem;
+  }
+}
+
+.card-btn-lg {
+  width: 13rem;
+  height: 13rem;
+  max-width: 13rem;
+
+  .icon {
+    font-size: 5em;
+  }
+
+  .title {
+    font-size: 1.5rem;
+    line-height: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    line-height: 1.25rem;
+  }
 }
 
 /* === Button Groups - Horizontal === */

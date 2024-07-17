@@ -88,12 +88,12 @@
 
 <div
   id={filter.uuid}
-  class="flex flex-col card p-1 m-1"
+  class="flex flex-col card p-1 m-1 {!open && 'hover:bg-primary-200-700-token'}"
   in:scale={{ easing: elasticInOut }}
   out:fade={{ duration: 300 }}
   data-testid="added-filter-{filter.variableName}"
 >
-  <header class="card-header p-1 flex">
+  <header class="card-header p-1 flex {open && 'hover:bg-primary-200-700-token rounded-xl'}">
     <div
       class="flex-auto font-bold"
       tabindex="0"

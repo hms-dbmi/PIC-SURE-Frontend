@@ -17,7 +17,7 @@ export const branding = {
     {
       category: 'Administration',
       privilege: PicsurePrivileges.ADMIN,
-      links: [{ title: 'User Management', url: '/admin/users' }],
+      links: [{ title: 'Manage Users', url: '/admin/users' }],
     },
     {
       category: 'Use PIC-SURE',
@@ -57,12 +57,12 @@ export const branding = {
     cards: [
       {
         header: 'What is the PIC‑SURE API?',
-        body: 'The PIC-SURE Application Programming Interface allows you to search, query, and export data using Python or R. \n\nClick this card to read more about the PIC-SURE API.',
+        body: 'The PIC-SURE Application Programming Interface allows you to search, query, and export data using Python or R.',
         link: '/analyze/help',
       },
       {
         header: 'PIC‑SURE API Examples',
-        body: 'Get started using the PIC‑SURE API with real example code and analyses from simple queries to complex real-world use cases. \n\nClick this card to check out the PIC-SURE API example code.',
+        body: 'Get started using the PIC‑SURE API with real example code and analyses from simple queries to complex real-world use cases.',
         link: '/analyze/start',
       },
     ],
@@ -80,13 +80,13 @@ export const branding = {
       {
         title: 'Explore',
         description: 'Explore data, apply filters, and build cohorts',
-        icon: 'fa-solid fa-magnifying-glass fa-5x',
+        icon: 'fa-solid fa-magnifying-glass',
         url: '/explorer',
       },
       {
         title: 'Analyze',
         description: 'Access data and kickstart your research',
-        icon: 'fa-solid fa-chart-line fa-5x',
+        icon: 'fa-solid fa-chart-line',
         url: '/analyze',
       },
     ],
@@ -94,7 +94,7 @@ export const branding = {
   },
   login: {
     title: undefined,
-    description: undefined,
+    description: 'Where searching for, filtering on, and analyzing data is made simple.',
     showSiteName: false,
     openPicsureLink: '/',
     openPicsureLinkText: 'Explore without Login',
@@ -133,7 +133,13 @@ export const routes: Route[] = [
   { path: '/explorer', text: 'Explore' },
   { path: '/analyze', text: 'Analyze', privilege: PicsurePrivileges.QUERY },
   { path: '/dataset', text: 'Manage Datasets', privilege: PicsurePrivileges.QUERY },
-  { path: '/admin/users', text: 'User Management', privilege: PicsurePrivileges.ADMIN },
+  { path: '/admin/users', text: 'Manage Users', privilege: PicsurePrivileges.ADMIN },
+  {
+    path: '/admin/requests',
+    text: 'Data Requests',
+    privilege: PicsurePrivileges.DATA_ADMIN,
+    feature: 'dataRequests',
+  },
   {
     path: '/admin',
     text: 'Configuration',

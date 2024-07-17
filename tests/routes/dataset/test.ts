@@ -31,7 +31,7 @@ test.describe('dataset', () => {
     await toggleButton.click();
 
     // Then
-    await expect(page.getByText('Archived Datasets', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('dataset-toggle-archive')).toBeVisible();
     await expect(page.getByText(mockData[1].query.uuid, { exact: true })).toBeVisible();
   });
   test('Archive button press moves item to archived', async ({ page }) => {

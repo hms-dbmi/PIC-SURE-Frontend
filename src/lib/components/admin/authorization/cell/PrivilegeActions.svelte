@@ -39,33 +39,35 @@
   }
 </script>
 
-<button
-  data-testid={`privilege-view-btn-${data.cell}`}
-  type="button"
-  title="View"
-  class="text-secondary-600 hover:text-primary-600"
-  on:click|stopPropagation={() => goto(`/admin/authorization/privilege/${data.cell}`)}
->
-  <i class="fa-solid fa-circle-info fa-xl"></i>
-  <span class="sr-only">View Privilege</span>
-</button>
-<button
-  data-testid={`privilege-edit-btn-${data.cell}`}
-  type="button"
-  title="Edit"
-  class="text-secondary-600 hover:text-primary-600"
-  on:click|stopPropagation={() => goto(`/admin/authorization/privilege/${data.cell}/edit`)}
->
-  <i class="fa-solid fa-pen-to-square fa-xl"></i>
-  <span class="sr-only">Edit</span>
-</button>
-<button
-  data-testid={`privilege-delete-btn-${data.cell}`}
-  type="button"
-  title="Delete"
-  class="bg-initial text-secondary-600 hover:text-primary-600"
-  on:click|stopPropagation={deleteModal}
->
-  <i class="fa-solid fa-trash fa-xl"></i>
-  <span class="sr-only">Delete</span>
-</button>
+<div class="w-20 min-w-20">
+  <button
+    data-testid={`privilege-view-btn-${data.cell}`}
+    type="button"
+    title="View"
+    class="text-black-600 hover:text-primary-600"
+    on:click|stopPropagation={() => goto(`/admin/authorization/privilege/${data.cell}`)}
+  >
+    <i class="fa-solid fa-circle-info fa-xl"></i>
+    <span class="sr-only">View Privilege</span>
+  </button>
+  <button
+    data-testid={`privilege-edit-btn-${data.cell}`}
+    type="button"
+    title="Edit"
+    class="text-black-600 hover:text-primary-600"
+    on:click|stopPropagation={() => goto(`/admin/authorization/privilege/${data.cell}/edit`)}
+  >
+    <i class="fa-solid fa-pen-to-square fa-xl"></i>
+    <span class="sr-only">Edit</span>
+  </button>
+  <button
+    data-testid={`privilege-delete-btn-${data.cell}`}
+    type="button"
+    title="Delete"
+    class="text-black-600 hover:text-primary-600"
+    on:click|stopPropagation={deleteModal}
+  >
+    <i class="fa-solid fa-trash fa-xl"></i>
+    <span class="sr-only">Delete</span>
+  </button>
+</div>

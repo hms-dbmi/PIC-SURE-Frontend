@@ -1,11 +1,11 @@
 <script lang="ts">
   import { branding, features } from '$lib/configuration';
   import { slide, scale } from 'svelte/transition';
-  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import FilterComponent from './AddedFilter.svelte';
+  import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import ExportedVariable from './ExportedVariable.svelte';
+  import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
+  import CardButton from '$lib/components/buttons/CardButton.svelte';
   import FilterStore from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
   import * as api from '$lib/api';
@@ -82,20 +82,7 @@
   class="flex flex-col items-center pt-8 pr-10 w-64"
   transition:slide={{ axis: 'x' }}
 >
-  <div class="h-11">
-    {#if showExportButton}
-      <button
-        id="export-data-button"
-        type="button"
-        class="btn variant-filled-primary"
-        on:click={() => modalStore.trigger(modal)}
-        transition:scale={{ easing: elasticInOut }}
-      >
-        Export Data
-      </button>
-    {/if}
-  </div>
-  <div class="flex flex-col items-center mt-6">
+  <div class="flex flex-col items-center mt-2">
     {#await triggerRefreshCount}
       <ProgressRadial width="w-6" />
     {:then}
@@ -105,8 +92,21 @@
     {/await}
     <h4 class="text-center">{branding.explorePage.totalPatientsText}</h4>
   </div>
-  <div class="flex flex-col items-center mt-8">
-    <div class="flex content-center pb-2">
+  <div class="h-11 mt-4">
+    {#if showExportButton}
+      <button
+        id="export-data-button"
+        type="button"
+        class="btn variant-filled-primary"
+        on:click={() => modalStore.trigger(modal)}
+        transition:scale={{ easing: elasticInOut }}
+      >
+        Prepare for Analysis
+      </button>
+    {/if}
+  </div>
+  <div class="flex flex-col items-center mt-11">
+    <div class="flex content-center">
       <h5 class="font-bold text-lg flex-auto mr-2">Added to Export</h5>
       {#if hasFilterOrExport}
         <button
@@ -119,8 +119,8 @@
     {#if $filters.length === 0}
       <p class="text-center">No filters added</p>
     {:else}
-      <div class="px-4 py-1 w-80">
-        <header class="text-left">
+      <div class="px-4 mb-1 w-80">
+        <header class="text-left ml-1">
           <strong>Filters added</strong>
           <hr class="!border-t-2" />
         </header>
@@ -132,9 +132,9 @@
       </div>
     {/if}
     {#if $exports.length !== 0}
-      <div class="px-4 py-1 w-80">
-        <header class="font-extrabold text-left" data-testid="export-header">
-          Exports added
+      <div class="px-4 mb-1 w-80">
+        <header class="text-left ml-1" data-testid="export-header">
+          <strong>Exports added</strong>
           <hr class="!border-t-2" />
         </header>
         <section class="py-1">
@@ -146,30 +146,24 @@
     {/if}
   </div>
   {#if $filters.length > 0}
-    <div class="flex flex-col items-center mt-4">
+    <div class="flex flex-col items-center mt-8">
       <h5 class="text-center font-bold text-lg py-2">Explore Cohort</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
-        <button
-          type="button"
-          class="leading-4 flex flex-col w-28 max-w-28 h-28 items-center justify-center rounded-container-token hover:scale-110 hover:variant-ghost-surface"
-          aria-label="Variable Distributions"
-        >
-          <i class="fa-solid fa-chart-pie text-4xl"></i>
-          <span>Variable Distributions</span>
-        </button>
+        <CardButton
+          data-testid="distributions-btn"
+          title="Variable Distributions"
+          icon="fa-solid fa-chart-pie"
+          size="md"
+        />
         {#if totalPatients !== 0 && features.explorer.variantExplorer && $hasGenomicFilter}
-          <button
-            type="button"
+          <CardButton
+            href="/explorer/variant"
             data-testid="variant-explorer-btn"
-            class="leading-4 flex flex-col w-28 max-w-28 h-28 items-center justify-center rounded-container-token hover:scale-110 hover:variant-ghost-surface"
-            class:variant-ghost-primary={$page.url.pathname.includes('explorer/variant')}
-            aria-label="Variant Explorer"
             title="Variant Explorer"
-            on:click={() => goto('/explorer/variant')}
-          >
-            <i class="fa-solid fa-dna text-4xl"></i>
-            <span>Variant Explorer</span>
-          </button>
+            icon="fa-solid fa-dna"
+            size="md"
+            active={$page.url.pathname.includes('explorer/variant')}
+          />
         {/if}
       </div>
     </div>

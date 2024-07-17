@@ -88,7 +88,7 @@
     <ProgressRadial width="w-10" value={undefined} />
   {:then}
     <div id="user-token" class="card variant-filled-sureface">
-      <header class="card-header">PIC-SURE Token</header>
+      <header class="card-header"><h4>PIC-SURE Token</h4></header>
       <section class="p-4 grid grid-cols-2 gap-y-2 items-center">
         <label for="account">Account:</label>
         <span id="account" class="w-full">{account}</span>
@@ -108,7 +108,7 @@
           {/if}
         </div>
       </section>
-      <footer class="card-footer">
+      <footer class="card-footer mt-2">
         <CopyButton buttonText="Copy" itemToCopy={$user.token || ''} />
         <button
           id="refresh-button"

@@ -4,9 +4,9 @@
 </script>
 
 <Content>
-  <div class="mb-8 text-center">
-    <AngleButton class="float-left" href="/analyze">Back</AngleButton>
-    <h1>PIC-SURE Application Programming Interface (API)</h1>
+  <div class="mb-8">
+    <AngleButton href="/analyze">Back</AngleButton>
+    <h1 class="text-center">PIC-SURE Application Programming Interface (API)</h1>
   </div>
 
   <div class="my-2">
@@ -18,7 +18,7 @@
       (PIC-SURE) <em> Application Programming Interface</em> (API) is a powerful tool designed to simplify
       access to a diverse range of databases in the healthcare and research domains. These databases
       often have varying architectures and data organizations, presenting challenges for researchers
-      looking to extract and interpret medical insights
+      looking to extract and interpret medical insights.
     </p>
     <p>
       Despite the inherent diversity among these databases, the PIC-SURE API facilitates a seamless
@@ -98,9 +98,8 @@
   </div>
 
   <div class="text-right my-6">
-    <a class="btn btn-lg variant-ringed-primary" href="/analyze/start">
-      Get started using the PIC-Sure API <i class="fa-solid fa-angles-right ml-1 text-primary-500"
-      ></i>
+    <a class="btn btn-lg variant-filled-primary" href="/analyze/start">
+      Get started using the PIC-SURE API <i class="fa-solid fa-arrow-right ml-3"></i>
     </a>
   </div>
 </Content>

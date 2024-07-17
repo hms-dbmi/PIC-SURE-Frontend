@@ -18,28 +18,39 @@
     disabled
     data-testid={`dataset-action-view-${data.cell}`}
     type="button"
-    class="btn bg-primary-500 text-on-primary-token">View</button
+    title="View"
+    class="bg-initial text-black-600 hover:text-primary-600"
   >
+    <i class="fa-solid fa-circle-info fa-xl"></i>
+  </button>
   <button
     bind:this={toggleButton}
     data-testid={`dataset-action-restore-${data.cell}`}
     type="button"
-    class="btn bg-secondary-500 text-on-secondary-token loader"
-    on:click|stopPropagation={toggleArchive}>Restore</button
+    title="Restore"
+    class="bg-initial text-black-600 hover:text-primary-600"
+    on:click|stopPropagation={toggleArchive}
   >
+    <i class="fa-solid fa-trash-arrow-up fa-xl"></i>
+  </button>
 {:else}
   <button
     data-testid={`dataset-action-view-${data.cell}`}
     type="button"
     title="View"
-    class="btn bg-primary-500 text-on-primary-token"
-    on:click|stopPropagation={() => goto(`/dataset/${data.cell}`)}>View</button
+    class="bg-initial text-black-600 hover:text-primary-600"
+    on:click|stopPropagation={() => goto(`/dataset/${data.cell}`)}
   >
+    <i class="fa-solid fa-circle-info fa-xl"></i>
+  </button>
   <button
     bind:this={toggleButton}
     data-testid={`dataset-action-archive-${data.cell}`}
     type="button"
-    class="btn bg-secondary-500 text-on-secondary-token loader"
-    on:click|stopPropagation={toggleArchive}>Archive</button
+    title="Delete"
+    class="bg-initial text-black-600 hover:text-primary-600"
+    on:click|stopPropagation={toggleArchive}
   >
+    <i class="fa-solid fa-trash fa-xl"></i>
+  </button>
 {/if}

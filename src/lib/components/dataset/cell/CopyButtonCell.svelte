@@ -3,10 +3,10 @@
 
   export let data = { cell: '', row: {} };
   let buttonText = 'Copy';
-  const buttonClasses = ['w-24', 'bg-primary-500', 'text-on-primary-token'];
+  const buttonClasses = ['w-24', 'bg-primary-500', 'text-on-primary-token', 'ml-2'];
 </script>
 
-<div class="flex justify-between items-center">
+<div class="flex items-center">
   <span class="uuid">{data.cell}</span>
-  <CopyButton {buttonText} itemToCopy={data.cell} classes={buttonClasses} />
+  <CopyButton {buttonText} itemToCopy={data.cell} class={buttonClasses} />
 </div>

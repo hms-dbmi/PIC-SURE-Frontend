@@ -5,9 +5,9 @@
 </script>
 
 <Content>
-  <div class="mb-8 text-center">
-    <AngleButton class="float-left" href="/analyze">Back</AngleButton>
-    <h1>Get Started with the PIC-SURE API</h1>
+  <div class="mb-8">
+    <AngleButton href="/analyze">Back</AngleButton>
+    <h1 class="text-center">Get Started with the PIC-SURE API</h1>
   </div>
 
   <div class="img-placeholder border my-2">Placeholder image</div>
@@ -69,8 +69,8 @@
   </div>
 
   <div class="text-right my-6">
-    <a class="btn btn-lg variant-ringed-primary" href="/analyze/help">
-      What is the PIC-SURE API <i class="fa-solid fa-angles-right ml-1 text-primary-500"></i>
+    <a class="btn btn-lg variant-filled-primary" href="/analyze/help">
+      What is the PIC-SURE API <i class="fa-solid fa-arrow-right ml-3"></i>
     </a>
   </div>
 </Content>
