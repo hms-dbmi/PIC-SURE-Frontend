@@ -20,7 +20,7 @@
 <button
   type="button"
   data-testid="copy-button"
-  class="btn variant-ringed-primary {$$props.class || ''}"
+  class={$$props.class ?? 'btn variant-ringed-primary hover:variant-ghost-primary'}
   on:click|stopPropagation={updateCopyButtonText}
   use:clipboard={itemToCopy}
 >
