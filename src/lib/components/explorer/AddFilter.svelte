@@ -50,7 +50,7 @@
         //todo: move this to some service or something
         //TODO: cache this response
         const response: SearchResult = await api.post(
-          `/picsure/proxy/dictionary-api/concepts/detail/${data.dataset}`,
+          `picsure/proxy/dictionary-api/concepts/detail/${data.dataset}`,
           String.raw`${data.conceptPath.replace(/\\\\/g, '\\')}`,
         );
         // const response = {

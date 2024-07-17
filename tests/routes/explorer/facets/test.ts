@@ -1,7 +1,7 @@
 import { expect, type Route } from '@playwright/test';
-import { test, mockApiFail } from '../../../custom-context';
+import { test } from '../../../custom-context';
 import {
-  searchResults as mockData,
+  searchResults,
   facetsResponse,
   searchResultPath,
   facetResultPath,
@@ -12,19 +12,23 @@ const MAX_FACETS_TO_SHOW = 5;
 test.describe('Facet Side Bar', () => {
   test('Facet Side Bar is shown after loading', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
     await page.goto('/explorer?search=age');
     //When
     const facetSideBar = page.locator('#facet-side-bar');
-    
+
     await expect(facetSideBar).toBeVisible();
-    });
+  });
   test('Facet side bar has a title', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -38,7 +42,9 @@ test.describe('Facet Side Bar', () => {
   });
   test("Facet Side Bar shows error when it doesn't load data", async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     const errorAlert = page.getByTestId('error-alert');
@@ -50,7 +56,9 @@ test.describe('Facet Side Bar', () => {
   });
   test('Facet Side Bar showes all categories', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -71,7 +79,9 @@ test.describe('Facet Side Bar', () => {
   });
   test('Facet Side Bar categories are all open', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -95,7 +105,9 @@ test.describe('Facet Side Bar', () => {
 test.describe('Facet Categories', () => {
   test('Facet Category has a title', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -110,7 +122,9 @@ test.describe('Facet Categories', () => {
   });
   test('Facet Category has facets listed', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -118,7 +132,7 @@ test.describe('Facet Categories', () => {
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
-    for (let i=0; i<facetsResponse.length; i++) {
+    for (let i = 0; i < facetsResponse.length; i++) {
       //When
       const facetList = page.locator('.accordion-panel').nth(i);
       const facetItems = await facetList.locator('label').all();
@@ -131,9 +145,13 @@ test.describe('Facet Categories', () => {
       }
     }
   });
-  test(`If facet category has over ${MAX_FACETS_TO_SHOW} facets then we show the more button`, async ({ page }) => {
+  test(`If facet category has over ${MAX_FACETS_TO_SHOW} facets then we show the more button`, async ({
+    page,
+  }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -141,7 +159,7 @@ test.describe('Facet Categories', () => {
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
-    for (let i=0; i<facetsResponse.length; i++) {
+    for (let i = 0; i < facetsResponse.length; i++) {
       //When
       const facetList = page.locator('.accordion-panel').nth(i);
       const numFacets = facetsResponse[i].facets.length;
@@ -157,7 +175,9 @@ test.describe('Facet Categories', () => {
   });
   test(`Clicking Show More shows more`, async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -165,7 +185,7 @@ test.describe('Facet Categories', () => {
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
-    for (let i=0; i<facetsResponse.length; i++) {
+    for (let i = 0; i < facetsResponse.length; i++) {
       //When
       const facetList = page.locator('.accordion-panel').nth(i);
       const numFacets = facetsResponse[i].facets.length;
@@ -181,7 +201,9 @@ test.describe('Facet Categories', () => {
   });
   test(`Clicking Show More toggles text to Show Less`, async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -189,7 +211,7 @@ test.describe('Facet Categories', () => {
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
-    for (let i=0; i<facetsResponse.length; i++) {
+    for (let i = 0; i < facetsResponse.length; i++) {
       //When
       const facetList = page.locator('.accordion-panel').nth(i);
       const numFacets = facetsResponse[i].facets.length;
@@ -206,7 +228,9 @@ test.describe('Facet Categories', () => {
   });
   test(`Clicking Show Less shows less`, async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -214,7 +238,7 @@ test.describe('Facet Categories', () => {
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
-    for (let i=0; i<facetsResponse.length; i++) {
+    for (let i = 0; i < facetsResponse.length; i++) {
       //When
       const facetList = page.locator('.accordion-panel').nth(i);
       const numFacets = facetsResponse[i].facets.length;
@@ -233,7 +257,9 @@ test.describe('Facet Categories', () => {
   });
   test('Clicking a facet category header closes the category', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -252,7 +278,9 @@ test.describe('Facet Categories', () => {
   });
   test('Clicking a closed facet category header opens the category', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -271,9 +299,13 @@ test.describe('Facet Categories', () => {
     // Then
     await expect(facetList).toBeVisible();
   });
-  test(`Facet category has search input when facets are more than ${MAX_FACETS_TO_SHOW}`, async ({ page }) => {
+  test(`Facet category has search input when facets are more than ${MAX_FACETS_TO_SHOW}`, async ({
+    page,
+  }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -282,7 +314,7 @@ test.describe('Facet Categories', () => {
     await expect(facetSideBar).toBeVisible();
 
     // When
-    for (let i=0; i<facetsResponse.length; i++) {
+    for (let i = 0; i < facetsResponse.length; i++) {
       const facetList = page.locator('.accordion-panel').nth(i);
       const numFacets = facetsResponse[i].facets.length;
       if (numFacets > MAX_FACETS_TO_SHOW) {
@@ -293,7 +325,9 @@ test.describe('Facet Categories', () => {
   });
   test(`Facet search filters facets`, async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -302,7 +336,7 @@ test.describe('Facet Categories', () => {
     await expect(facetSideBar).toBeVisible();
 
     // When
-    for (let i=0; i<facetsResponse.length; i++) {
+    for (let i = 0; i < facetsResponse.length; i++) {
       const facetList = page.locator('.accordion-panel').nth(i);
       const numFacets = facetsResponse[i].facets.length;
       if (numFacets > MAX_FACETS_TO_SHOW) {
@@ -322,7 +356,9 @@ test.describe('Facet Categories', () => {
 test.describe('Facet & search', () => {
   test('Facet toggles included icon on', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -340,7 +376,9 @@ test.describe('Facet & search', () => {
   });
   test('Facet toggle adds badge', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -358,7 +396,9 @@ test.describe('Facet & search', () => {
   });
   test('Facet toggles included icon off', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -376,7 +416,9 @@ test.describe('Facet & search', () => {
   });
   test('Unselecting  ', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
@@ -396,7 +438,9 @@ test.describe('Facet & search', () => {
   });
   test('Facet toggles included', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );

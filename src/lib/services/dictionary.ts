@@ -7,17 +7,22 @@ import type {
 import type { Pageable } from '$lib/models/api/Pageable';
 
 const dictionaryUrl = 'picsure/proxy/dictionary-api/';
-const searchUrl = 'picsure/proxy/dictionary-api/concepts/';
+const searchUrl = 'picsure/proxy/dictionary-api/concepts';
+
+// TODO: facets pagination
 
 export function searchDictionary(
   searchTerm = '',
   facets: Facet[],
   pageable: Pageable,
 ): Promise<DictionaryConceptResult> {
-  return api.post(`${searchUrl}?page=${pageable.pageNumber}&page_size=${pageable.pageSize}`, {
-    facets,
-    search: searchTerm,
-  });
+  return api.post(
+    `${searchUrl}?page_number=${pageable.pageNumber}&page_size=${pageable.pageSize}`,
+    {
+      facets,
+      search: searchTerm,
+    },
+  );
 }
 
 export function getAllFacets(): Promise<DictionaryFacetResult[]> {
@@ -26,7 +31,7 @@ export function getAllFacets(): Promise<DictionaryFacetResult[]> {
     facets: [],
     search: '',
   };
-  return api.post(`${dictionaryUrl}facets?page_number=0&page_size=25`, facetRequest);
+  return api.post(`${dictionaryUrl}facets/`, facetRequest);
 }
 
 export function updateFacetsFromSearch(search: string, facets: Facet[]) {
@@ -35,5 +40,5 @@ export function updateFacetsFromSearch(search: string, facets: Facet[]) {
     facets: facets,
     search: search,
   };
-  return api.post(`${dictionaryUrl}/facets?page_number=0&page_size=25`, facetRequest);
+  return api.post(`${dictionaryUrl}facets/`, facetRequest);
 }
