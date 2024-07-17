@@ -38,7 +38,7 @@
   }
 </script>
 
-<div id="facet-side-bar">
+<div id="facet-side-bar" class="flex flex-col items-center w-full">
   <h2 class="m-1 -mt-2 text-xl text-center">Refine Search</h2>
   {#await facetsPromise}
     <ProgressRadial />
