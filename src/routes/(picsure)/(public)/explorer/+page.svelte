@@ -69,9 +69,7 @@
 </svelte:head>
 <Content full>
   <section id="search-container" class="grid grid-cols-4 gap-6">
-    <div id="facets-col">
-      <FacetSideBar />
-    </div>
+    <FacetSideBar />
     <div id="search-results-col" class="col-span-3">
       <div id="search-bar" class="flex gap-2 mb-6">
         <div class="flex-auto">

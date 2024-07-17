@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
-  import { AccordionItem, filter } from '@skeletonlabs/skeleton';
+  import { AccordionItem } from '@skeletonlabs/skeleton';
   import SearchStore from '$lib/stores/Search';
   import type { Facet } from '$lib/models/Search';
   let { updateFacet, selectedFacets } = SearchStore;
@@ -61,6 +61,7 @@
       {/each}
       {#if facets.length > numFacetsToShow && !filterValue}
         <button
+          data-testId="show-more-facets"
           class="show-more w-fit mx-auto my-1"
           on:click={() => (moreThanTenFacets = !moreThanTenFacets)}
         >
