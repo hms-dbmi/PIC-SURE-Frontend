@@ -10,9 +10,7 @@
   let selected: string;
   const siteName = branding.applicationName || 'PIC-SURE Demo';
   const title = branding.login.title || 'Welcome to PIC-SURE';
-  const description =
-    branding.login?.description ||
-    'Where searching for, filtering on, and analyzing data is made simple.';
+  const description = branding.login?.description;
   const openPicsureLinkText = branding.login.openPicsureLinkText || 'Explore without Login';
   $: selectedProvider = selected
     ? ($page.data?.providers?.find((provider: AuthData) => provider.name === selected) as AuthData)

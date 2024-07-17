@@ -98,7 +98,7 @@ export const branding = {
   },
   login: {
     title: undefined,
-    description: undefined,
+    description: 'Where searching for, filtering on, and analyzing data is made simple.',
     showSiteName: false,
     openPicsureLink: '/',
     openPicsureLinkText: 'Explore without Login',

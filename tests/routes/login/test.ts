@@ -73,9 +73,7 @@ unauthedTest.describe('Login page', () => {
     await page.goto('/login');
     // When
     const subtitle = page.getByTestId('login-description');
-    const expectedBranding =
-      branding.login.description ||
-      'Where searching for, filtering on, and exporting data is made simple.';
+    const expectedBranding = branding.login.description;
     // Then
     await expect(subtitle).toBeVisible();
     await expect(await subtitle.textContent()).toBe(expectedBranding);
