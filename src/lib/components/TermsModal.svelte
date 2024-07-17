@@ -3,7 +3,7 @@
   const modalStore = getModalStore();
 
   // Ideally, this should be a value from the database that has timestamps, author, etc.
-  // For now, the easiest place to find and update the html used here is in the src file.
+  // For now, the easiest place to find and update the html used here is in the src folder.
   import Terms from '../../terms.svelte';
 </script>
 

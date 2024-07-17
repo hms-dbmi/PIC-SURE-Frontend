@@ -1,7 +1,6 @@
 <script lang="ts">
   import {
     AppShell,
-    initializeStores,
     Modal,
     Toast,
     storePopup,
@@ -20,7 +19,6 @@
 
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
-  initializeStores();
   // Registered list of Components for Modals
   const modalComponentRegistry: Record<string, ModalComponent> = {
     stepper: { ref: ExportStepper },
