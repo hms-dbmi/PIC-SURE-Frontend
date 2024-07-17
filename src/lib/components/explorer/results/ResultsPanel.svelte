@@ -1,11 +1,11 @@
 <script lang="ts">
   import { branding, features } from '$lib/configuration';
   import { slide, scale } from 'svelte/transition';
-  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import FilterComponent from './AddedFilter.svelte';
+  import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import ExportedVariable from './ExportedVariable.svelte';
+  import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
+  import CardButton from '$lib/components/buttons/CardButton.svelte';
   import FilterStore from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
   import * as api from '$lib/api';
@@ -149,27 +149,21 @@
     <div class="flex flex-col items-center mt-8">
       <h5 class="text-center font-bold text-lg py-2">Explore Cohort</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
-        <button
-          type="button"
-          class="leading-4 flex flex-col w-28 max-w-28 h-28 items-center justify-center rounded-container-token hover:scale-110 hover:variant-ghost-surface"
-          aria-label="Variable Distributions"
-        >
-          <i class="fa-solid fa-chart-pie text-4xl"></i>
-          <span>Variable Distributions</span>
-        </button>
+        <CardButton
+          data-testid="distributions-btn"
+          title="Variable Distributions"
+          icon="fa-solid fa-chart-pie"
+          size="md"
+        />
         {#if totalPatients !== 0 && features.explorer.variantExplorer && $hasGenomicFilter}
-          <button
-            type="button"
+          <CardButton
+            href="/explorer/variant"
             data-testid="variant-explorer-btn"
-            class="leading-4 flex flex-col w-28 max-w-28 h-28 items-center justify-center rounded-container-token hover:scale-110 hover:variant-ghost-surface"
-            class:variant-ghost-primary={$page.url.pathname.includes('explorer/variant')}
-            aria-label="Variant Explorer"
             title="Variant Explorer"
-            on:click={() => goto('/explorer/variant')}
-          >
-            <i class="fa-solid fa-dna text-4xl"></i>
-            <span>Variant Explorer</span>
-          </button>
+            icon="fa-solid fa-dna"
+            size="md"
+            active={$page.url.pathname.includes('explorer/variant')}
+          />
         {/if}
       </div>
     </div>

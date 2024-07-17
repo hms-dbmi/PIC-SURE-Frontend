@@ -84,13 +84,13 @@ export const branding = {
       {
         title: 'Explore',
         description: 'Explore data, apply filters, and build cohorts',
-        icon: 'fa-solid fa-magnifying-glass fa-5x',
+        icon: 'fa-solid fa-magnifying-glass',
         url: '/explorer',
       },
       {
         title: 'Analyze',
         description: 'Access data and kickstart your research',
-        icon: 'fa-solid fa-chart-line fa-5x',
+        icon: 'fa-solid fa-chart-line',
         url: '/analyze',
       },
     ],
@@ -138,6 +138,12 @@ export const routes: Route[] = [
   { path: '/analyze', text: 'Analyze', privilege: PicsurePrivileges.QUERY },
   { path: '/dataset', text: 'Manage Datasets', privilege: PicsurePrivileges.QUERY },
   { path: '/admin/users', text: 'Manage Users', privilege: PicsurePrivileges.ADMIN },
+  {
+    path: '/admin/requests',
+    text: 'Data Requests',
+    privilege: PicsurePrivileges.DATA_ADMIN,
+    feature: 'dataRequests',
+  },
   {
     path: '/admin',
     text: 'Configuration',

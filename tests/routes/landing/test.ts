@@ -116,7 +116,7 @@ test.describe('Landing page', () => {
         await page.goto('/');
         // Then
         const iconElement = page.locator(`.${icon.replaceAll(' ', '.')}`);
-        const pattern = new RegExp(`^${icon}.*`);
+        const pattern = new RegExp(`.*${icon}.*`);
         await expect(iconElement).toBeVisible();
         await expect(iconElement).toHaveClass(pattern);
       });
