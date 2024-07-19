@@ -37,7 +37,7 @@
 <button
   type="button"
   title="Information"
-  class="bg-initial text-black-600 hover:text-primary-600"
+  class="btn-icon-color"
   on:click|stopPropagation={insertInfoContent}
 >
   <i class="fa-solid fa-circle-info fa-xl"></i>
@@ -46,7 +46,7 @@
 <button
   type="button"
   title="Filter"
-  class="bg-initial text-black-600 hover:text-primary-600"
+  class="btn-icon-color"
   on:click|stopPropagation={insertFilterContent}
 >
   <i class="fa-solid fa-filter fa-xl"></i>
@@ -55,7 +55,7 @@
 <button
   type="button"
   title="Data Hierarchy"
-  class="bg-initial text-black-600 hover:text-primary-600"
+  class="btn-icon-color"
   on:click|stopPropagation={insertHierarchyContent}
 >
   <i class="fa-solid fa-sitemap fa-xl"></i>
@@ -64,7 +64,7 @@
 <button
   type="button"
   title="Data Export"
-  class="bg-initial text-black-600 hover:text-primary-600"
+  class="btn-icon-color"
   on:click|stopPropagation={insertExportContent}
 >
   {#if isExported}

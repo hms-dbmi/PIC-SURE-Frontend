@@ -105,30 +105,15 @@
       {filter.variableName}
     </div>
     <div class="actions">
-      <button
-        type="button"
-        title="Edit Filter"
-        class="bg-initial text-black-500 hover:text-primary-600"
-        on:click={editFilter}
-      >
+      <button type="button" title="Edit Filter" class="btn-icon-color" on:click={editFilter}>
         <i class="fa-solid fa-pen-to-square"></i>
         <span class="sr-only">Edit Filter</span>
       </button>
-      <button
-        type="button"
-        title="Remove Filter"
-        class="bg-initial text-black-500 hover:text-primary-600"
-        on:click={deleteFilter}
-      >
+      <button type="button" title="Remove Filter" class="btn-icon-color" on:click={deleteFilter}>
         <i class="fa-solid fa-times-circle"></i>
         <span class="sr-only">Remove Filter</span>
       </button>
-      <button
-        type="button"
-        title="See details"
-        class="bg-initial text-black-500 hover:text-primary-600"
-        on:click={toggleCardBody}
-      >
+      <button type="button" title="See details" class="btn-icon-color" on:click={toggleCardBody}>
         <i class="fa-solid {carot}"></i>
         <span class="sr-only">See details</span>
       </button>
