@@ -1,7 +1,10 @@
 <script lang="ts">
+  import { branding } from '$lib/configuration';
+
   export let height: number = 0;
   export let width: number = 0;
   export let unit: string = 'rem';
+  export let alt: string = '';
 
   const finalClass = `colors ${$$props.class ?? ''}`;
   // read setting from .env
@@ -27,7 +30,7 @@
   <img
     src={useLogoImg}
     data-testid="nav-logo"
-    alt="logo"
+    {alt}
     class={finalClass}
     height={imgSize.height}
     width={imgSize.width}
@@ -43,6 +46,7 @@
     viewBox="0 0 1010 180"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>{branding.applicationName}</title>
     <g id="text" transform="translate(-46,-10)">
       <path
         id="text-P"
