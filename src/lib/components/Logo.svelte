@@ -1,16 +1,44 @@
 <script lang="ts">
+  export let height: number = 0;
+  export let width: number = 0;
+  export let unit: string = 'rem';
+
   const finalClass = `colors ${$$props.class ?? ''}`;
-  //read setting from .env
+  // read setting from .env
   const useLogoImg = import.meta.env.VITE_LOGO;
+
+  // If width or height is set, scale the image or svg to the larger size
+  $: imgSize =
+    !width && !height
+      ? { width: useLogoImg ? 'auto' : undefined, height: useLogoImg ? 'auto' : undefined }
+      : (width && !height) || (width && height && width > height)
+        ? {
+            width: width + unit,
+            height: (useLogoImg ? 'auto' : ((width / 1010) * 180).toFixed(2)) + unit,
+          }
+        : {
+            width: (useLogoImg ? 'auto' : ((height / 180) * 1010).toFixed(2)) + unit,
+            height: height + unit,
+          };
 </script>
 
 <!-- TODO: Add real SVG Code here -->
 {#if useLogoImg}
-  <img src={useLogoImg} data-testid="nav-logo" alt="logo" class={finalClass} />
+  <img
+    src={useLogoImg}
+    data-testid="nav-logo"
+    alt="logo"
+    class={finalClass}
+    height={imgSize.height}
+    width={imgSize.width}
+  />
 {:else}
   <svg
     data-testid="nav-logo"
     class={finalClass}
+    style={[imgSize.width && 'width:' + imgSize.width, imgSize.height && 'height:' + imgSize.height]
+      .filter((x) => x)
+      .join(';')}
     version="1.1"
     viewBox="0 0 1010 180"
     xmlns="http://www.w3.org/2000/svg"

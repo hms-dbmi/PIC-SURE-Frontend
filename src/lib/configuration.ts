@@ -4,7 +4,7 @@ import { ExportType } from './models/Variant';
 import type { Indexable } from './types';
 
 export const branding = {
-  applicationName: 'PIC‑SURE',
+  applicationName: 'PIC-SURE',
   sitemap: [
     {
       category: 'Configuration',
@@ -93,7 +93,7 @@ export const branding = {
     stats: ['Variables', 'Participants', 'Data Sources'],
   },
   login: {
-    title: undefined,
+    greeting: 'Welcome to',
     description: 'Where searching for, filtering on, and analyzing data is made simple.',
     showSiteName: false,
     openPicsureLink: '/',
