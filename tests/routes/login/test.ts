@@ -62,11 +62,8 @@ unauthedTest.describe('Login page', () => {
     await page.goto('/login');
     // When
     const title = page.getByTestId('login-title');
-    console.log('title', title);
-    const expectedBranding = branding.login.title || 'Welcome to PIC-SURE';
     // Then
     await expect(title).toBeVisible();
-    expect(await title.textContent()).toBe(expectedBranding);
   });
   unauthedTest('Description shows on the page and matching branding', async ({ page }) => {
     // Given

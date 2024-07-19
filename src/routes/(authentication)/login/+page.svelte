@@ -7,32 +7,37 @@
   import { branding, features } from '$lib/configuration';
 
   const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
+  const siteName = branding.applicationName;
+  const description = branding.login.description;
+  const openPicsureLinkText = branding.login.openPicsureLinkText;
+
   let selected: string;
-  const siteName = branding.applicationName || 'PIC-SURE Demo';
-  const title = branding.login.title || 'Welcome to PIC-SURE';
-  const description = branding.login?.description;
-  const openPicsureLinkText = branding.login.openPicsureLinkText || 'Explore without Login';
+
   $: selectedProvider = selected
     ? ($page.data?.providers?.find((provider: AuthData) => provider.name === selected) as AuthData)
     : undefined;
 </script>
 
-<section id="logins" class="flex flex-col items-center h-screen text-center">
-  <div id="title-box" class="flex flex-col items-center text-center">
-    <h1 data-testid="login-title" class="mb-8 text-primary-500-400-token">{title}</h1>
+<section
+  id="logins"
+  class="flex flex-col items-center h-screen text-center place-content-center text-lg"
+>
+  <div id="title-box" class="flex flex-col items-center text-center mb-8">
+    <h1 data-testid="login-title" class="mb-6 w-full flex gap-2 items-center justify-center">
+      <Logo class="flex-none" height={4} />
+    </h1>
     <p data-testid="login-description" class="max-w-16 text-2xl">{description}</p>
   </div>
   {#await $page.data?.providers}
     <ProgressRadial width="w-10" value={undefined} />
   {:then providers}
-    <div id="login-box" class="card !bg-transparent p-6 w-max">
-      <header class="card-header flex flex-col items-center">
-        <Logo class="" />
+    <div id="login-box" class="w-max mt-2">
+      <header class="flex flex-col items-center">
         {#if branding.login.showSiteName}
           <div>{siteName}</div>
         {/if}
       </header>
-      <div class="card-body flex flex-col items-center justify-center mx-8 mt-6">
+      <div class="flex flex-col items-center justify-center">
         <div id="main-logins" class="flex flex-col items-center w-max">
           {#if providers.length === 0}
             <aside class="auth-warning alert variant-ghost-warning">
@@ -103,12 +108,6 @@
 </section>
 
 <style>
-  #logins {
-    margin-top: 9%;
-  }
-  #title-box {
-    margin-bottom: 3%;
-  }
   .auth-warning {
     width: 239px;
   }

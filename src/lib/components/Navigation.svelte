@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
   import { user, userRoutes, logout } from '$lib/stores/User';
   import type { Route } from '$lib/models/Route';
-  import Logo from './Logo.svelte';
+  import Logo from '$lib/components/Logo.svelte';
 
   function setDropdown(path: string) {
     dropdownPath = path;

@@ -5,6 +5,10 @@ import type { Indexable } from './types';
 
 export const branding = {
   applicationName: 'PIC‑SURE',
+  logo: {
+    alt: import.meta.env?.VITE_LOGO_ALT || 'PIC‑SURE',
+    src: import.meta.env?.VITE_LOGO || '',
+  },
   sitemap: [
     {
       category: 'Configuration',
@@ -93,7 +97,6 @@ export const branding = {
     stats: ['Variables', 'Participants', 'Data Sources'],
   },
   login: {
-    title: undefined,
     description: 'Where searching for, filtering on, and analyzing data is made simple.',
     showSiteName: false,
     openPicsureLink: '/',

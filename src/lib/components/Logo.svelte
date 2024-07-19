@@ -1,20 +1,51 @@
 <script lang="ts">
+  import { branding } from '$lib/configuration';
+
+  export let height: number = 0;
+  export let width: number = 0;
+  export let unit: string = 'rem';
+
   const finalClass = `colors ${$$props.class ?? ''}`;
-  //read setting from .env
-  const useLogoImg = import.meta.env.VITE_LOGO;
+  const src = branding.logo.src;
+  const alt = branding.logo.alt;
+
+  // If width or height is set, scale the image or svg to the larger size
+  $: imgSize =
+    !width && !height
+      ? { width: src ? 'auto' : undefined, height: src ? 'auto' : undefined }
+      : (width && !height) || (width && height && width > height)
+        ? {
+            width: width + unit,
+            height: (src ? 'auto' : ((width / 1010) * 180).toFixed(2)) + unit,
+          }
+        : {
+            width: (src ? 'auto' : ((height / 180) * 1010).toFixed(2)) + unit,
+            height: height + unit,
+          };
 </script>
 
 <!-- TODO: Add real SVG Code here -->
-{#if useLogoImg}
-  <img src={useLogoImg} data-testid="nav-logo" alt="logo" class={finalClass} />
+{#if src}
+  <img
+    {src}
+    {alt}
+    data-testid="nav-logo"
+    class={finalClass}
+    height={imgSize.height}
+    width={imgSize.width}
+  />
 {:else}
   <svg
     data-testid="nav-logo"
     class={finalClass}
+    style={[imgSize.width && 'width:' + imgSize.width, imgSize.height && 'height:' + imgSize.height]
+      .filter((x) => x)
+      .join(';')}
     version="1.1"
     viewBox="0 0 1010 180"
     xmlns="http://www.w3.org/2000/svg"
   >
+    <title>PIC‑SURE</title>
     <g id="text" transform="translate(-46,-10)">
       <path
         id="text-P"
