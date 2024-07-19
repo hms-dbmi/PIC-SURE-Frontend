@@ -67,7 +67,9 @@ test.describe('Facet Side Bar', () => {
     await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
-    const facetCategoryElement = await page.locator('.accordion-summary').all();
+    const accordionDiv = facetSideBar.getByTestId('accordion');
+    await expect(accordionDiv).toBeVisible();
+    const facetCategoryElement = await facetSideBar.locator('.accordion-summary').all();
     expect(facetCategoryElement).toHaveLength(facetsResponse.length);
 
     // Then
@@ -90,6 +92,8 @@ test.describe('Facet Side Bar', () => {
     await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
+    const accordionDiv = facetSideBar.getByTestId('accordion');
+    await expect(accordionDiv).toBeVisible();
     const facetCategoryElement = await page.locator('.accordion-summary').all();
     expect(facetCategoryElement).toHaveLength(facetsResponse.length);
 
@@ -455,5 +459,24 @@ test.describe('Facet & search', () => {
 
     // Then
     await expect(facetCheckBox).toHaveAttribute('aria-checked', 'false');
+  });
+  test('Facets have counts', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: facetsResponse }),
+    );
+    await page.goto('/explorer?search=age');
+
+    //When
+    const firstCheckName = facetsResponse[0].facets[0].name;
+    const facetCheckBox = page.getByTestId(`facet-${firstCheckName}-label`);
+    const spanInInput = facetCheckBox.locator('span');
+    await expect(spanInInput).toBeVisible();
+
+    // Then
+    await expect(spanInInput).toContainText(facetsResponse[0].facets[0].count.toString());
   });
 });
