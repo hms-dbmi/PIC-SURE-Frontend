@@ -2,11 +2,9 @@
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
 
   export let data = { cell: '', row: {} };
-  let buttonText = 'Copy';
-  const buttonClasses = ['w-24', 'bg-primary-500', 'text-on-primary-token', 'ml-2'];
 </script>
 
 <div class="flex items-center">
-  <span class="uuid">{data.cell}</span>
-  <CopyButton {buttonText} itemToCopy={data.cell} class={buttonClasses} />
+  <span class="monospace">{data.cell}</span>
+  <CopyButton data-testid="{data.cell}-copy-btn" useIcon={true} itemToCopy={data.cell} />
 </div>
