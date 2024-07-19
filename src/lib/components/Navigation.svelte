@@ -2,7 +2,6 @@
   import { AppBar, popup, type PopupSettings } from '@skeletonlabs/skeleton';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { branding } from '$lib/configuration';
   import { user, userRoutes, logout } from '$lib/stores/User';
   import type { Route } from '$lib/models/Route';
   import Logo from '$lib/components/Logo.svelte';
@@ -43,7 +42,7 @@
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-900-token">
   <svelte:fragment slot="lead">
     <a href="/" aria-current="page" data-testid="logo-home-link">
-      <Logo class="mx-1" alt={branding.login.logoName} />
+      <Logo class="mx-1" />
     </a>
   </svelte:fragment>
   <nav id="page-navigation">

@@ -8,7 +8,6 @@
 
   const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
   const siteName = branding.applicationName;
-  const logoName = branding.login.logoName;
   const description = branding.login.description;
   const openPicsureLinkText = branding.login.openPicsureLinkText;
 
@@ -25,7 +24,7 @@
 >
   <div id="title-box" class="flex flex-col items-center text-center mb-8">
     <h1 data-testid="login-title" class="mb-6 w-full flex gap-2 items-center justify-center">
-      <Logo class="flex-none" alt={logoName} height={4} />
+      <Logo class="flex-none" height={4} />
     </h1>
     <p data-testid="login-description" class="max-w-16 text-2xl">{description}</p>
   </div>
