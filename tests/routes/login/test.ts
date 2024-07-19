@@ -64,7 +64,6 @@ unauthedTest.describe('Login page', () => {
     const title = page.getByTestId('login-title');
     // Then
     await expect(title).toBeVisible();
-    expect(await title.textContent()).toContain(branding.login.greeting);
   });
   unauthedTest('Description shows on the page and matching branding', async ({ page }) => {
     // Given

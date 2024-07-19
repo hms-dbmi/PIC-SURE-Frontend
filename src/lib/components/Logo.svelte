@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
-
   export let height: number = 0;
   export let width: number = 0;
   export let unit: string = 'rem';
