@@ -46,7 +46,7 @@
     viewBox="0 0 1010 180"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <title>{branding.applicationName}</title>
+    <title>PIC‑SURE</title>
     <g id="text" transform="translate(-46,-10)">
       <path
         id="text-P"
