@@ -1,10 +1,12 @@
 import type { Indexable } from '$lib/types';
 
 export enum Option {
-  None,
-  Genomic,
-  SNP,
+  None = 'none',
+  Genomic = 'genomic',
+  SNP = 'snp',
 }
+
+export type SNP = { search: string; constraint: string };
 
 export enum Genotype {
   Heterozygous = '0/1',

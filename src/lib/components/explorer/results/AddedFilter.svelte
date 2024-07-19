@@ -5,13 +5,14 @@
 
   import { goto } from '$app/navigation';
 
+  import { Option } from '$lib/models/GemoneFilter';
   import type { Filter } from '$lib/models/Filter';
-  import { GenotypeMap } from '$lib/models/GemoneFilter';
-  import FilterStore from '$lib/stores/Filter';
-  import GeneFilterStore from '$lib/stores/GenomicFilter';
+  import { removeFilter } from '$lib/stores/Filter';
+  import { populateFromGeneFilter } from '$lib/stores/GeneFilter';
+  import { populateFromSNPFilter } from '$lib/stores/SNPFilter';
+
   import AddFilter from '$lib/components/explorer/AddFilter.svelte';
-  let { removeFilter } = FilterStore;
-  let { populateFromFilter } = GeneFilterStore;
+
   const modalStore = getModalStore();
 
   export let filter: Filter;
@@ -19,9 +20,12 @@
   let carot = 'fa-caret-up';
 
   function editFilter() {
-    if (filter.filterType === 'genomic' || filter.filterType === 'snp') {
-      populateFromFilter(filter);
-      goto('/explorer/genome-filter');
+    if (filter.filterType === 'genomic') {
+      populateFromGeneFilter(filter);
+      goto('/explorer/genome-filter?edit=' + Option.Genomic);
+    } else if (filter.filterType === 'snp') {
+      populateFromSNPFilter(filter);
+      goto('/explorer/genome-filter?edit=' + Option.SNP);
     } else {
       const modal: ModalSettings = {
         type: 'component',
@@ -59,19 +63,8 @@
         default:
           return filter.description;
       }
-    } else if (filter.filterType === 'genomic') {
-      const orJoin = (key: string, arr: string[] | undefined) =>
-        arr && arr.length > 0 ? `${key}: ${arr.join(', ')}` : undefined;
-      return [
-        orJoin('Gene with variant', filter.Gene_with_variant),
-        orJoin('Variant frequency', filter.Variant_frequency_as_text),
-        orJoin('Consequence Group by severity', filter.Variant_consequence_calculated),
-      ]
-        .filter((x) => x)
-        .join('; ');
-    } else if (filter.filterType === 'snp') {
-      const index = filter.categoryValues.join(',');
-      return `Variant SNP: ${filter.id} ${GenotypeMap[index]}` || 'Unknown';
+    } else if (filter.filterType === 'genomic' || filter.filterType === 'snp') {
+      return filter.description;
     }
   };
 

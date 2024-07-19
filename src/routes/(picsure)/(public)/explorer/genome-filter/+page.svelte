@@ -5,44 +5,37 @@
   const toastStore = getToastStore();
 
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
 
   import Content from '$lib/components/Content.svelte';
-  import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
-  import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
-  import Step from '$lib/components/steppers/horizontal/Step.svelte';
-  import Panel from '$lib/components/explorer/Panel.svelte';
   import FilterType from '$lib/components/explorer/gemone-filter/FilterType.svelte';
-  import SelectGenes from '$lib/components/explorer/gemone-filter/SelectGenes.svelte';
-  import SelectFrequency from '$lib/components/explorer/gemone-filter/SelectFrequency.svelte';
-  import SelectedConsequence from '$lib/components/explorer/gemone-filter/SelectedConsequence.svelte';
-  import FilterSummary from '$lib/components/explorer/gemone-filter/FilterSummary.svelte';
   import SnpSearch from '$lib/components/explorer/gemone-filter/SNPSearch.svelte';
+  import GeneSearch from '$lib/components/explorer/gemone-filter/GeneSearch.svelte';
+  import AngleButton from '$lib/components/buttons/AngleButton.svelte';
 
-  import { VariantKeys } from '$lib/models/InfoColumns';
   import { Option } from '$lib/models/GemoneFilter';
-  import GeneFilterStore from '$lib/stores/GenomicFilter';
-  import FilterStore from '$lib/stores/Filter';
-  import InfoColumns from '$lib/stores/InfoColumns';
-  let {
-    selectedOption,
+  import {
     selectedGenes,
     selectedFrequency,
-    selectedConsequence,
-    snpSearch,
-    snpConstraint,
-    generateFilter,
+    consequences,
     clearGeneFilters,
-    clearFilters,
-  } = GeneFilterStore;
-  let { addFilter } = FilterStore;
-  let { error: infoColumnError, loadInfoColumns, getInfoColumn } = InfoColumns;
+    generateGenomicFilter,
+  } from '$lib/stores/GeneFilter';
+  import { selectedSNPs, generateSNPFilter, clearSnpFilters } from '$lib/stores/SNPFilter';
+  import { addFilter } from '$lib/stores/Filter';
+  import { error as infoColumnError, loadInfoColumns } from '$lib/stores/InfoColumns';
 
-  function clearSelectedGenes() {
-    selectedGenes.set([]);
+  let edit = $page.url.searchParams.get('edit') || '';
+  let selectedOption: Option = ['snp', 'genomic'].includes(edit) ? (edit as Option) : Option.None;
+
+  function clearFilters() {
+    clearGeneFilters();
+    clearSnpFilters();
   }
 
   function onComplete() {
-    const filter = generateFilter();
+    const filter =
+      selectedOption === Option.Genomic ? generateGenomicFilter() : generateSNPFilter();
     addFilter(filter);
     clearFilters();
     goto('/explorer');
@@ -59,83 +52,64 @@
   });
 
   $: canComplete =
-    ($selectedOption === Option.Genomic &&
-      ($selectedGenes.length > 0 ||
-        $selectedFrequency.length > 0 ||
-        $selectedConsequence.length > 0)) ||
-    ($selectedOption === Option.SNP && $snpSearch !== '' && $snpConstraint !== '');
+    (selectedOption === Option.Genomic &&
+      ($selectedGenes.length > 0 || $selectedFrequency.length > 0 || $consequences.length > 0)) ||
+    (selectedOption === Option.SNP && $selectedSNPs.length > 0);
 </script>
 
 <svelte:head>
   <title>{branding.applicationName} | Gemonic Filter</title>
 </svelte:head>
 
-<Content backUrl="/explorer" backAction={() => clearFilters()} backTitle="Back to Explore">
-  <h2 class="text-center mb-4 text-3xl">Genomic Filtering</h2>
-  <Stepper
-    buttonCompleteLabel="Apply Filter"
-    startStep={$selectedOption === Option.None ? 0 : 1}
-    on:complete={onComplete}
-    bind:canComplete
-    class="mx-5 p-4 border rounded-md border-surface-500-400-token"
-  >
-    <Step title="Select Search Type" locked={$selectedOption === Option.None}>
-      <FilterType />
-    </Step>
-    <Step
-      title={$selectedOption === Option.Genomic ? undefined : 'Specific SNP'}
-      locked={!canComplete}
-    >
-      {#if $selectedOption === Option.Genomic}
-        <div class="flex gap-3">
-          <Panel
-            title="Gene with Variant"
-            subtitle={getInfoColumn(VariantKeys.gene)}
-            required={true}
-            class="w-2/3"
-          >
-            <svelte:fragment slot="action">
-              <button
-                class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
-                on:click={clearSelectedGenes}>Clear</button
-              >
-            </svelte:fragment>
-            <SelectGenes />
-          </Panel>
-          <Panel title="Select Variant frequency" class="w-1/3">
-            <svelte:fragment slot="help">
-              <HelpInfoPopup id="freq-help-popup" text={getInfoColumn(VariantKeys.frequency)} />
-            </svelte:fragment>
-            <SelectFrequency />
-          </Panel>
-        </div>
-        <div class="flex gap-3">
-          <Panel title="Variant Consequence calculated" class="w-1/2">
-            <svelte:fragment slot="help">
-              {#if getInfoColumn(VariantKeys.consequence) && getInfoColumn(VariantKeys.severity)}
-                <HelpInfoPopup
-                  id="cons-help-popup"
-                  text={getInfoColumn(VariantKeys.consequence) +
-                    ' Severity: ' +
-                    getInfoColumn(VariantKeys.severity)}
-                />
-              {/if}
-            </svelte:fragment>
-            <SelectedConsequence />
-          </Panel>
-          <Panel title="Selected Genomic Filters" class="w-3/4">
-            <svelte:fragment slot="action">
-              <button
-                class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
-                on:click={clearGeneFilters}>Clear</button
-              >
-            </svelte:fragment>
-            <FilterSummary />
-          </Panel>
-        </div>
-      {:else}
-        <SnpSearch />
-      {/if}
-    </Step>
-  </Stepper>
+<Content
+  full={true}
+  title="Genomic Filtering"
+  backUrl="/explorer"
+  backAction={clearFilters}
+  backTitle="Back to Explore"
+>
+  {#if selectedOption === Option.None}
+    <FilterType
+      class="my-4"
+      on:select={(event) => {
+        selectedOption = event.detail.option;
+      }}
+    />
+  {:else}
+    {#if selectedOption === Option.Genomic}
+      <h2 class="mb-2">Search by Gene:</h2>
+      <GeneSearch class="mb-0" />
+    {:else}
+      <h2 class="mb-2">Search by SNP:</h2>
+      <SnpSearch />
+    {/if}
+    {#if edit}
+      <div class="flex justify-end my-4">
+        <button
+          data-testid="save-filter-btn"
+          type="button"
+          class="btn btn-sm variant-filled-primary text-lg disabled:opacity-75"
+          on:click={onComplete}
+          disabled={!canComplete}
+        >
+          Save Filter <i class="fa-solid fa-plus ml-3"></i>
+        </button>
+      </div>
+    {:else}
+      <div class="flex justify-between my-4">
+        <AngleButton data-testid="back-btn" on:click={() => (selectedOption = Option.None)}
+          >Back
+        </AngleButton>
+        <button
+          data-testid="add-filter-btn"
+          type="button"
+          class="btn btn-sm variant-filled-primary text-lg disabled:opacity-75"
+          on:click={onComplete}
+          disabled={!canComplete}
+        >
+          Add Filter <i class="fa-solid fa-plus ml-3"></i>
+        </button>
+      </div>
+    {/if}
+  {/if}
 </Content>

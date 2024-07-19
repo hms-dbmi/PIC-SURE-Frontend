@@ -1,32 +1,30 @@
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
   import { Option } from '$lib/models/GemoneFilter';
-  import GeneFilterStore from '$lib/stores/GenomicFilter';
-  let { selectedOption } = GeneFilterStore;
+  import CardButton from '$lib/components/buttons/CardButton.svelte';
 
-  function selectOption(value: Option) {
-    return () => selectedOption.set(value);
-  }
+  export let active: Option = Option.None;
+
+  const dispatch = createEventDispatcher<{ select: { option: Option } }>();
 </script>
 
-<div class="text-center flex space-x-6">
-  <button
+<div class="text-center flex space-x-6 gap-4 {$$props.class ?? ''}">
+  <CardButton
     data-testid="gene-variant-option"
-    class="clock card card-hover p-6 w-2/3"
-    class:bg-primary-200-700-token={$selectedOption === Option.Genomic}
-    class:shadow-md={$selectedOption === Option.Genomic}
-    on:click={selectOption(Option.Genomic)}
-  >
-    <p class="text-lg font-bold">Search for variants by gene name</p>
-    <p class="text-sm">Ex: Rare BRCA1 variants with high consequence severity</p>
-  </button>
-  <button
+    title="Search for variants by gene name"
+    subtitle="Ex: Rare BRCA1 variants with high consequence severity"
+    size="other"
+    class="w-1/2 h-32 min-h-32"
+    active={active === Option.Genomic}
+    on:click={() => dispatch('select', { option: Option.Genomic })}
+  />
+  <CardButton
     data-testid="snp-option"
-    class="clock card card-hover p-6 w-2/3"
-    class:bg-primary-200-700-token={$selectedOption === Option.SNP}
-    class:shadow-md={$selectedOption === Option.SNP}
-    on:click={selectOption(Option.SNP)}
-  >
-    <p class="text-lg font-bold">Search for a specific SNP</p>
-    <p class="text-sm">Ex: chr17,35269878,G,A</p>
-  </button>
+    title="Search for a specific SNP"
+    subtitle="Ex: chr17,35269878,G,A"
+    size="other"
+    class="w-1/2 h-32 min-h-32"
+    active={active === Option.SNP}
+    on:click={() => dispatch('select', { option: Option.SNP })}
+  />
 </div>

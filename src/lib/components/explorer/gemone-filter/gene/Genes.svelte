@@ -4,10 +4,9 @@
 
   import * as api from '$lib/api';
   import { resources } from '$lib/configuration';
-  import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
+  import { selectedGenes } from '$lib/stores/GeneFilter';
 
-  import GeneFilterStore from '$lib/stores/GenomicFilter';
-  let { selectedGenes } = GeneFilterStore;
+  import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
 
   const toastStore = getToastStore();
 
@@ -68,7 +67,7 @@
   });
 </script>
 
-<div class="flex gap-4">
+<div class="flex gap-4 mb-2">
   <OptionsSelectionList
     showSelectAll={false}
     showClearAll={false}
