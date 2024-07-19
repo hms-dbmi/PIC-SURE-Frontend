@@ -79,7 +79,7 @@ test.describe('API page', () => {
     // Given
     await page.goto('/analyze');
     // When
-    const copyButton = page.getByTestId('copy-button');
+    const copyButton = page.getByTestId('copy-btn');
     const refeshButton = page.locator('#refresh-button');
     const revealButton = page.locator('#reveal-button');
     // Then
@@ -92,7 +92,7 @@ test.describe('API page', () => {
     await page.goto('/analyze');
 
     // When
-    const copyButton = page.getByTestId('copy-button');
+    const copyButton = page.getByTestId('copy-btn');
 
     // Then
     await expect(copyButton).toBeVisible();
