@@ -8,30 +8,49 @@
   export let facetCategory: DictionaryFacetResult;
   let facets = facetCategory.facets;
   export let numFacetsToShow: number = 5;
-  export let shouldShowSearchBar: boolean = facets.length > 3;
+  export let shouldShowSearchBar: boolean = facets.length > numFacetsToShow;
   let filterValue: string;
   let moreThanTenFacets = facets.length > numFacetsToShow;
-  $: facetsToDisplay = (facets || filterValue || moreThanTenFacets) && getFacetsToDisplay();
-  $: isChecked = (facetToCheck: string) =>
-    $selectedFacets.some((facet: Facet) => {
+  $: facetsToDisplay =
+    (facets || filterValue || moreThanTenFacets || $selectedFacets || facetCategory) &&
+    getFacetsToDisplay();
+  $: isChecked = (facetToCheck: string) => {
+    return $selectedFacets.some((facet: Facet) => {
       return facet.name === facetToCheck;
     });
+  };
   $: selectedFacetsChips = $selectedFacets.filter(
     (facet) => facet?.categoryRef?.name === facetCategory?.name,
   );
+  const anyFacetNot0 = facets.some((facet) => facet.count > 0);
 
   function getFacetsToDisplay() {
-    if (!filterValue) {
-      return moreThanTenFacets ? facets.slice(0, numFacetsToShow) : facets;
-    } else {
-      return facets.filter((facet) =>
-        facet.display.toLowerCase().includes(filterValue.toLowerCase()),
+    let facetsToDisplay = facets;
+
+    $selectedFacets.forEach((facet) => {
+      let index = facetsToDisplay.findIndex((f) => f.name === facet.name);
+      if (index > -1) {
+        facetsToDisplay.splice(index, 1);
+      }
+    });
+    facetsToDisplay.unshift(
+      ...$selectedFacets.filter((facet) => facet.category === facetCategory.name),
+    );
+    if (filterValue) {
+      const lowerFilterValue = filterValue.toLowerCase();
+      facetsToDisplay = facetsToDisplay.filter(
+        (facet) =>
+          facet.display.toLowerCase().includes(lowerFilterValue) ||
+          facet.name.toLowerCase().includes(lowerFilterValue),
       );
+    } else if (moreThanTenFacets) {
+      facetsToDisplay = facetsToDisplay.slice(0, numFacetsToShow);
     }
+    return facetsToDisplay;
   }
 </script>
 
-<AccordionItem class="card" open>
+<AccordionItem class="card" open={anyFacetNot0}>
   <svelte:fragment slot="summary">{facetCategory.display}</svelte:fragment>
   <svelte:fragment slot="content">
     {#if shouldShowSearchBar}
@@ -46,17 +65,21 @@
     {/if}
     <div class="flex flex-col">
       {#each facetsToDisplay as facet}
-        <label for={facet.name} class="m-1">
+        <label data-testId={`facet-${facet.name}-label`} for={facet.name} class="m-1">
           <input
             type="checkbox"
+            class="&[aria-disabled=“true”]:opacity-75"
             id={facet.name}
             name={facet.name}
             value={facet}
             checked={isChecked(facet.name)}
+            disabled={facet.count === 0}
             aria-checked={isChecked(facet.name)}
             on:click={() => updateFacet(facet, facetCategory)}
           />
-          <span>{`${facet.display} (${facet.count})`}</span>
+          <span class={facet.count === 0 ? 'opacity-75' : ''}
+            >{`${facet.display} (${facet.count})`}</span
+          >
         </label>
       {/each}
       {#if facets.length > numFacetsToShow && !filterValue}

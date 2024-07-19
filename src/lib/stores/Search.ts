@@ -51,8 +51,8 @@ async function updateFacet(newFacet: Facet, facetCategory: DictionaryFacetResult
       } else {
         facets.splice(index, 1);
       }
-      /*  eslint-disable no-self-assign */
-      selectedFacets.set(get(selectedFacets));
+      //For reactivity and sorting
+      selectedFacets.set(get(selectedFacets).sort((a, b) => b.count - a.count));
       return facets;
     });
   } catch (e) {
@@ -60,17 +60,6 @@ async function updateFacet(newFacet: Facet, facetCategory: DictionaryFacetResult
     return;
   }
 }
-
-// async function resetFacets() {
-//   let facetResponse: DictionaryFacetResult[];
-//   try {
-//     facetResponse = await getAllFacets();
-//     facets.set(facetResponse);
-//   } catch (e) {
-//     console.error(e);
-//     return;
-//   }
-// }
 
 export default {
   subscribe: searchResults.subscribe,
