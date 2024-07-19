@@ -19,7 +19,7 @@
     data-testid={`dataset-action-view-${data.cell}`}
     type="button"
     title="View"
-    class="bg-initial text-black-600 hover:text-primary-600"
+    class="btn-icon-color"
   >
     <i class="fa-solid fa-circle-info fa-xl"></i>
   </button>
@@ -28,7 +28,7 @@
     data-testid={`dataset-action-restore-${data.cell}`}
     type="button"
     title="Restore"
-    class="bg-initial text-black-600 hover:text-primary-600"
+    class="btn-icon-color"
     on:click|stopPropagation={toggleArchive}
   >
     <i class="fa-solid fa-trash-arrow-up fa-xl"></i>
@@ -38,7 +38,7 @@
     data-testid={`dataset-action-view-${data.cell}`}
     type="button"
     title="View"
-    class="bg-initial text-black-600 hover:text-primary-600"
+    class="btn-icon-color"
     on:click|stopPropagation={() => goto(`/dataset/${data.cell}`)}
   >
     <i class="fa-solid fa-circle-info fa-xl"></i>
@@ -48,7 +48,7 @@
     data-testid={`dataset-action-archive-${data.cell}`}
     type="button"
     title="Delete"
-    class="bg-initial text-black-600 hover:text-primary-600"
+    class="btn-icon-color"
     on:click|stopPropagation={toggleArchive}
   >
     <i class="fa-solid fa-trash fa-xl"></i>

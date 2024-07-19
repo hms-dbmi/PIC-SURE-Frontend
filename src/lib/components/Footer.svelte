@@ -37,10 +37,8 @@
             <li class="font-bold text-center">{section.category}</li>
             {#each section.links as link}
               <li class="text-center">
-                <a
-                  target={link.newTab ? '_blank' : '_self'}
-                  href={link.url}
-                  class="hover:text-primary-600-300-token hover:underline">{link.title}</a
+                <a target={link.newTab ? '_blank' : '_self'} href={link.url} class="hover:underline"
+                  >{link.title}</a
                 >
               </li>
             {/each}
@@ -53,9 +51,13 @@
 <footer id="main-footer" class="flex">
   <LightSwitch />
   <ul>
-    <li><button on:click={openTermsModal}>Terms of Service</button></li>
+    <li><button class="hover:underline" on:click={openTermsModal}>Terms of Service</button></li>
     {#each branding.footer.links as link}
-      <li><a target={link.newTab ? '_blank' : '_self'} href={link.url}>{link.title}</a></li>
+      <li>
+        <a class="hover:underline" target={link.newTab ? '_blank' : '_self'} href={link.url}
+          >{link.title}</a
+        >
+      </li>
     {/each}
   </ul>
 </footer>

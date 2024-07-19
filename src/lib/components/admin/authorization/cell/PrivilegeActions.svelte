@@ -44,7 +44,7 @@
     data-testid={`privilege-view-btn-${data.cell}`}
     type="button"
     title="View"
-    class="text-black-600 hover:text-primary-600"
+    class="btn-icon-color"
     on:click|stopPropagation={() => goto(`/admin/authorization/privilege/${data.cell}`)}
   >
     <i class="fa-solid fa-circle-info fa-xl"></i>
@@ -54,7 +54,7 @@
     data-testid={`privilege-edit-btn-${data.cell}`}
     type="button"
     title="Edit"
-    class="text-black-600 hover:text-primary-600"
+    class="btn-icon-color"
     on:click|stopPropagation={() => goto(`/admin/authorization/privilege/${data.cell}/edit`)}
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
@@ -64,7 +64,7 @@
     data-testid={`privilege-delete-btn-${data.cell}`}
     type="button"
     title="Delete"
-    class="text-black-600 hover:text-primary-600"
+    class="btn-icon-color"
     on:click|stopPropagation={deleteModal}
   >
     <i class="fa-solid fa-trash fa-xl"></i>

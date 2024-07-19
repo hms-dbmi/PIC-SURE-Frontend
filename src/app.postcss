@@ -145,6 +145,10 @@ ul.primary-list li::marker {
   color: rgba(var(--color-primary-500));
 }
 
+.anchor {
+  @apply text-primary-700-200-token;
+}
+
 /* Loading progress bar animation */
 .anim-progress-bar {
   transform-origin: 0% 50%;
@@ -384,6 +388,27 @@ input.required:invalid,
   z-index: -1;
 }
 
+.btn-icon-color {
+  color: rgba(var(--theme-font-color-base));
+
+  &:hover {
+    @apply text-primary-600-300-token;
+  }
+}
+
+.dark .btn-icon-color {
+  color: rgba(var(--theme-font-color-dark));
+}
+
+.dark .shadow-lg {
+  --tw-shadow: 0 10px 15px -3px rgb(var(--color-surface-50) / 0.1),
+    0 4px 6px -4px rgb(var(--color-surface-50) / 0.1);
+  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color),
+    0 4px 6px -4px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 rgb(var(--color-surface-50))),
+    var(--tw-ring-shadow, 0 0 rgb(var(--color-surface-50))), var(--tw-shadow);
+}
+
 .card-btn {
   display: flex;
   flex-direction: column;
@@ -396,7 +421,7 @@ input.required:invalid,
   padding: 1rem 0.5rem;
   margin: 0.3rem;
 
-  @apply border rounded-container-token;
+  @apply border border-surface-50-900-token rounded-container-token;
 
   &:hover {
     @apply border border-surface-300-600-token scale-110 shadow-lg;
