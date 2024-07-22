@@ -6,27 +6,32 @@
   let { updateFacet, selectedFacets } = SearchStore;
 
   export let facetCategory: DictionaryFacetResult;
-  let facets = facetCategory.facets;
+  export let facets = facetCategory.facets;
   export let numFacetsToShow: number = 5;
   export let shouldShowSearchBar: boolean = facets.length > numFacetsToShow;
-  let filterValue: string;
+
+  const anyFacetNot0 = facets.some((facet) => facet.count > 0);
+  let textFilterValue: string;
   let moreThanTenFacets = facets.length > numFacetsToShow;
+
   $: facetsToDisplay =
-    (facets || filterValue || moreThanTenFacets || $selectedFacets || facetCategory) &&
+    (facets || textFilterValue || moreThanTenFacets || $selectedFacets || facetCategory) &&
     getFacetsToDisplay();
+
+  $: selectedFacetsChips = $selectedFacets.filter(
+    (facet) => facet?.categoryRef?.name === facetCategory?.name,
+  );
+
   $: isChecked = (facetToCheck: string) => {
     return $selectedFacets.some((facet: Facet) => {
       return facet.name === facetToCheck;
     });
   };
-  $: selectedFacetsChips = $selectedFacets.filter(
-    (facet) => facet?.categoryRef?.name === facetCategory?.name,
-  );
-  const anyFacetNot0 = facets.some((facet) => facet.count > 0);
 
   function getFacetsToDisplay() {
     let facetsToDisplay = facets;
 
+    //Put selected facets at the top
     $selectedFacets.forEach((facet) => {
       let index = facetsToDisplay.findIndex((f) => f.name === facet.name);
       if (index > -1) {
@@ -36,14 +41,16 @@
     facetsToDisplay.unshift(
       ...$selectedFacets.filter((facet) => facet.category === facetCategory.name),
     );
-    if (filterValue) {
-      const lowerFilterValue = filterValue.toLowerCase();
+    if (textFilterValue) {
+      //Filter Facets by searched text
+      const lowerFilterValue = textFilterValue.toLowerCase();
       facetsToDisplay = facetsToDisplay.filter(
         (facet) =>
           facet.display.toLowerCase().includes(lowerFilterValue) ||
           facet.name.toLowerCase().includes(lowerFilterValue),
       );
     } else if (moreThanTenFacets) {
+      // Only show the first n facets
       facetsToDisplay = facetsToDisplay.slice(0, numFacetsToShow);
     }
     return facetsToDisplay;
@@ -60,7 +67,7 @@
         placeholder={'Filter ' + facetCategory.display}
         name="facet-fitler"
         id={facetCategory.name + '-filter'}
-        bind:value={filterValue}
+        bind:value={textFilterValue}
       />
     {/if}
     <div class="flex flex-col">
@@ -82,7 +89,7 @@
           >
         </label>
       {/each}
-      {#if facets.length > numFacetsToShow && !filterValue}
+      {#if facets.length > numFacetsToShow && !textFilterValue}
         <button
           data-testId="show-more-facets"
           class="show-more w-fit mx-auto my-1"
@@ -97,7 +104,7 @@
 </AccordionItem>
 <div class="m-1 p-1">
   {#each selectedFacetsChips as facet}
-    <span class="badge variant-ringed-primary m-1 p-2" id={facet.name}>
+    <span class="badge relative z-10 variant-ringed-primary m-1 p-2" id={facet.name}>
       {facet.display}
       <button class="chip-close ml-1" on:click={() => updateFacet(facet, facetCategory)}>
         <i class="fa-solid fa-times hover:text-secondary-500"></i>

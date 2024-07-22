@@ -160,6 +160,7 @@ test.describe('data requests', () => {
       // Given
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
+      await expect(page.getByTestId('v-stepper-step-2')).toBeVisible();
       await page.getByLabel('Date approved').fill(dummyDate);
 
       // When
