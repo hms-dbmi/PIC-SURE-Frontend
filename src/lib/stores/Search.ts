@@ -13,7 +13,6 @@ const searchResults: Writable<SearchResult[]> = writable([]);
 const selectedFacets: Writable<Facet[]> = writable([]);
 
 async function search(search: string, page: number = 0, pageSize: number = 10) {
-  console.log('searching');
   const selectedFacetsToUse = get(selectedFacets);
   if (!search && selectedFacetsToUse.length === 0) {
     searchResults.set([]);
@@ -21,18 +20,14 @@ async function search(search: string, page: number = 0, pageSize: number = 10) {
     return;
   }
   let response: DictionaryConceptResult;
-  try {
     response = await searchDictionary(search, selectedFacetsToUse, {
       pageNumber: page,
       pageSize: pageSize,
     });
     //response = await api.post(`${searchUrl}?page=${page}&page_size=${pageSize}`, { facets: [], search });
-  } catch (e) {
-    console.error(e);
-    return; //TODO: error handling
-  }
   searchResults.set(response.content);
   searchTerm.set(search);
+  return response;
 }
 
 async function updateFacet(newFacet: Facet, facetCategory: DictionaryFacetResult | undefined) {

@@ -3,16 +3,25 @@ import { test, mockApiFail } from '../../custom-context';
 import {
   conceptsDetailPath,
   detailResponseCat,
+  facetResultPath,
+  facetsResponse,
   searchResults as mockData,
   searchResultPath,
 } from '../../mock-data';
 import { type SearchResult } from '../../../src/lib/models/Search';
 import { createCategoricalFilter, createNumericFilter } from '../../../src/lib/models/Filter';
 
+test.beforeEach(async ({ page }) => {
+  await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+  await page.route(facetResultPath, async (route: Route) =>
+    route.fulfill({ json: facetsResponse }),
+  );
+});
+
 test.describe('explorer', () => {
   test('Has datatable, filters, and searchbar', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
     await page.goto('/explorer');
 
     // Then
@@ -32,7 +41,7 @@ test.describe('explorer', () => {
     // TODO: Some feartures will be hidden in the future. Cannot use nth.
     test('Clicking a row opens info panel', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -51,7 +60,7 @@ test.describe('explorer', () => {
     });
     test('Clicking the row again closes the info panel', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -74,7 +83,7 @@ test.describe('explorer', () => {
     });
     test('Clicking the info icon opens and then closes the info panel', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -98,7 +107,7 @@ test.describe('explorer', () => {
     });
     test('Clicking the filter button opens and then closes the filter panel', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -118,7 +127,7 @@ test.describe('explorer', () => {
     });
     test('Clicking the filter button opens the correct filter panel', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -142,7 +151,7 @@ test.describe('explorer', () => {
       page,
     }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -164,7 +173,7 @@ test.describe('explorer', () => {
     });
     test('Clicking the export button flips the icon', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -187,7 +196,7 @@ test.describe('explorer', () => {
     });
     test('Clicking the export button opens result panel', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -207,7 +216,7 @@ test.describe('explorer', () => {
       page,
     }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -227,7 +236,7 @@ test.describe('explorer', () => {
     test('Clicking an export remove button removes the export', async ({ page }) => {
       //todo check remove button class
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -249,7 +258,7 @@ test.describe('explorer', () => {
     });
     test('Clicking a second export adds a second export', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -272,7 +281,7 @@ test.describe('explorer', () => {
     });
     test('Exports remmain after closing and opening the results panel', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -301,7 +310,7 @@ test.describe('explorer', () => {
     });
     test('Hierarchy component shows when action button clicked', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -321,7 +330,7 @@ test.describe('explorer', () => {
   test.describe('Add Filters', () => {
     test('Add button is disabled when nothing is selected', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -335,7 +344,7 @@ test.describe('explorer', () => {
     });
     test('Add button is enabled when something is selected', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -353,7 +362,7 @@ test.describe('explorer', () => {
     });
     test('Clicking the add butoon options the results panel', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -374,7 +383,7 @@ test.describe('explorer', () => {
     });
     test('Clicking the add button adds the filter to the results panel', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -408,7 +417,7 @@ test.describe('explorer', () => {
     });
     test('Added Filter has expected buttons', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -448,7 +457,7 @@ test.describe('explorer', () => {
     });
     test('Clicking added filter opens more info', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -475,7 +484,7 @@ test.describe('explorer', () => {
     });
     test('Clicking open filter closes the more info section', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -505,7 +514,7 @@ test.describe('explorer', () => {
     });
     test('Fitlers with selected values list values and count', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -537,7 +546,7 @@ test.describe('explorer', () => {
     });
     test('Fitlers with all values selected list count and correct text', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -566,7 +575,7 @@ test.describe('explorer', () => {
     });
     test('Fitlers with min and max display in the info panel', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -595,7 +604,7 @@ test.describe('explorer', () => {
     });
     test('Fitlers with no min display less than text', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -624,7 +633,7 @@ test.describe('explorer', () => {
     });
     test('Fitlers with no max display greater than text', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route('*/**/picsure/query/sync', async (route: Route) =>
         route.fulfill({ body: '9999' }),
       );
@@ -655,7 +664,7 @@ test.describe('explorer', () => {
       page,
     }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -684,7 +693,7 @@ test.describe('explorer', () => {
       page,
     }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -711,7 +720,7 @@ test.describe('explorer', () => {
     });
     test('Edit modal maintains selected items', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );
@@ -742,7 +751,7 @@ test.describe('explorer', () => {
     });
     test('Edit modal changes the filter', async ({ page }) => {
       // Given
-      await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+
       await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
         route.fulfill({ json: detailResponseCat }),
       );

@@ -46,9 +46,10 @@ export const picsureUser: User = {
   acceptedTOS: true,
 };
 
-export const searchResultPath = 'picsure/proxy/dictionary-api/concepts?page_number=0&page_size=10';
-export const facetResultPath = 'picsure/proxy/dictionary-api/facets/';
-export const conceptsDetailPath = 'picsure/proxy/dictionary-api/concepts/detail/'; // + name
+export const searchResultPath =
+  '*/**/picsure/proxy/dictionary-api/concepts?page_number=0&page_size=10';
+export const facetResultPath = '*/**/picsure/proxy/dictionary-api/facets/';
+export const conceptsDetailPath = '*/**/picsure/proxy/dictionary-api/concepts/detail/'; // + name
 
 export const searchRequest = { facets: [], search: 'age' };
 
