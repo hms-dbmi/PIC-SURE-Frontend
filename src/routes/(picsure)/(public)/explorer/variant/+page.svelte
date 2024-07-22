@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { ProgressBar, getToastStore } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
 
@@ -24,8 +24,10 @@
     getVariantData,
     variantError,
   } from '$lib/stores/Variants';
+  import type { Unsubscriber } from 'svelte/store';
 
   let loading: Promise<void>;
+  let unsubVariantError: Unsubscriber;
   let aggregateCheckbox: boolean = settings.variantExplorer.type === ExportType.Full;
   let queryRequest: QueryRequestInterface;
 
@@ -45,7 +47,7 @@
   onMount(() => {
     queryRequest = getQueryRequest();
     if (queryRequest.query.hasFilter()) {
-      variantError.subscribe((error) => {
+      unsubVariantError = variantError.subscribe((error) => {
         if (error) {
           toastStore.trigger({
             message: error,
@@ -60,6 +62,11 @@
         background: 'variant-filled-error',
       });
       goto('/explorer');
+    }
+  });
+  onDestroy(() => {
+    if (unsubVariantError) {
+      unsubVariantError();
     }
   });
 </script>
