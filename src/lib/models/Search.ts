@@ -29,7 +29,6 @@ export type SearchResult = Indexable & {
   type: 'Categorical' | 'Continuous';
 };
 
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 // export function mapSearchResults(data: any): SearchResult {
 //   const segments = data.name.split('\\').filter((x: string) => x);

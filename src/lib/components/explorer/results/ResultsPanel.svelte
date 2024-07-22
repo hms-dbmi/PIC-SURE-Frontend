@@ -17,6 +17,7 @@
     getToastStore,
   } from '@skeletonlabs/skeleton';
   import { elasticInOut } from 'svelte/easing';
+  import { onDestroy } from 'svelte';
 
   const { filters, hasGenomicFilter, getQueryRequest, clearFilters } = FilterStore;
   const { exports, clearExports } = ExportStore;
@@ -52,7 +53,7 @@
     }
   }
 
-  filters.subscribe(() => {
+  const unsubFilters = filters.subscribe(() => {
     triggerRefreshCount = getCount();
   });
 
@@ -75,6 +76,8 @@
   $: hasFilterOrExport =
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0);
   $: showExportButton = features.explorer.allowExport && totalPatients !== 0 && hasFilterOrExport;
+
+  onDestroy(unsubFilters);
 </script>
 
 <section

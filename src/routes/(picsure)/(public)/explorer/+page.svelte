@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { ProgressRadial } from '@skeletonlabs/skeleton';
 
   import { page } from '$app/stores';
@@ -19,10 +19,18 @@
   import SearchStore from '$lib/stores/Search';
   import { setComponentRegistry } from '$lib/stores/ExpandableRow';
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
+  import type { DictionaryConceptResult } from '$lib/models/api/DictionaryResponses';
+  import type { Unsubscriber } from 'svelte/store';
   let { searchTerm, searchResults, search, selectedFacets } = SearchStore;
 
+  let unsubSelectedFacets: Unsubscriber;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
-  let searchPromise: Promise<void> = search(searchInput);
+  let searchPromise: Promise<DictionaryConceptResult | undefined> = search(searchInput).catch(
+    (e) => {
+      console.error('Error searching for dictionary concepts', e);
+      return undefined;
+    },
+  );
   let resultsPage = 0;
   let pageSize = 10;
 
@@ -48,6 +56,10 @@
       tableName,
     );
 
+    unsubSelectedFacets = selectedFacets.subscribe(() => {
+      searchPromise = search(searchInput, resultsPage, pageSize);
+    });
+
     return () => {
       setComponentRegistry({});
     };
@@ -57,10 +69,8 @@
     goto(searchInput ? `/explorer?search=${searchInput}` : '/explorer', { replaceState: true });
     searchPromise = search(searchInput, resultsPage, pageSize);
   }
-
-  selectedFacets.subscribe(() => {
-    console.log('selectedFacets changed, now getting facets with: ', $searchTerm, $selectedFacets);
-    searchPromise = search(searchInput, resultsPage, pageSize);
+  onDestroy(() => {
+    unsubSelectedFacets && unsubSelectedFacets();
   });
 </script>
 
