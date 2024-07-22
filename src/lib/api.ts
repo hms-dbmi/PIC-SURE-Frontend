@@ -20,12 +20,9 @@ async function send({
     headers: {},
   };
 
-  if (data && data instanceof Object) {
+  if (data) {
     opts.headers['Content-Type'] = 'application/json';
-    opts.body = JSON.stringify(data);
-  } else if (data && typeof data === 'string') {
-    opts.headers['Content-Type'] = 'application/json';
-    opts.body = data;
+    opts.body = typeof data === 'string' ? data : JSON.stringify(data);
   }
 
   if (headers) {

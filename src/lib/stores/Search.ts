@@ -19,12 +19,11 @@ async function search(search: string, page: number = 0, pageSize: number = 10) {
     searchTerm.set('');
     return;
   }
-  let response: DictionaryConceptResult;
-    response = await searchDictionary(search, selectedFacetsToUse, {
-      pageNumber: page,
-      pageSize: pageSize,
-    });
-    //response = await api.post(`${searchUrl}?page=${page}&page_size=${pageSize}`, { facets: [], search });
+  const response: DictionaryConceptResult = await searchDictionary(search, selectedFacetsToUse, {
+    pageNumber: page,
+    pageSize: pageSize,
+  });
+  //response = await api.post(`${searchUrl}?page=${page}&page_size=${pageSize}`, { facets: [], search });
   searchResults.set(response.content);
   searchTerm.set(search);
   return response;
