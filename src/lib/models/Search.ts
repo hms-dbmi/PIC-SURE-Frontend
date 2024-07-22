@@ -29,16 +29,6 @@ export type SearchResult = Indexable & {
   type: 'Categorical' | 'Continuous';
 };
 
-// export function mapTags(typeData: { title: string; tags: string[] }): Facet {
-//   return {
-//     title: typeData.title,
-//     tags: typeData.tags.map((tag) => ({
-//       name: tag,
-//       type: typeData.title,
-//       state: TagCheckbox.Default,
-//     })),
-//   };
-// }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 // export function mapSearchResults(data: any): SearchResult {
