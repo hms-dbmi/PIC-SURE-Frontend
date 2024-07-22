@@ -28,17 +28,3 @@ export type SearchResult = Indexable & {
   meta?: Record<string, string> | null;
   type: 'Categorical' | 'Continuous';
 };
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// export function mapSearchResults(data: any): SearchResult {
-//   const segments = data.name.split('\\').filter((x: string) => x);
-//   return {
-//     id: data.name,
-//     name: segments[segments.length - 1],
-//     description: `categorical: ${data.categorical}, patients: ${data.patientCount}`,
-//     isCategorical: data.categorical,
-//     categoryValues: data.categoryValues || undefined,
-//     min: data.min >= 0 ? data.min : undefined || undefined, //Fix TypeScript interpreting 0 as false
-//     max: data.max >= 0 ? data.max : undefined || undefined, //Fix TypeScript interpreting 0 as false
-//   };
-// }

@@ -12,7 +12,7 @@
     createNumericFilter,
     createRequiredFilter,
   } from '$lib/models/Filter';
-  import * as api from '$lib/api';
+  import { getConceptDetails } from '$lib/services/dictionary';
 
   const modalStore = getModalStore();
   const toastStore = getToastStore();
@@ -47,13 +47,7 @@
       }
     } else if (data?.type === 'Categorical') {
       try {
-        //todo: move this to some service or something
-        //TODO: cache this response
-        const response: SearchResult = await api.post(
-          `picsure/proxy/dictionary-api/concepts/detail/${data.dataset}`,
-          String.raw`${data.conceptPath.replace(/\\\\/g, '\\')}`,
-        );
-        data = response;
+        data = await getConceptDetails(data.conceptPath, data.dataset);
         unselectedOptions = data?.values || [];
         if (unselectedOptions.length >= 50) {
           unselectedOptions = unselectedOptions.slice(0, pageSize);

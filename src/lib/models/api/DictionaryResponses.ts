@@ -1,6 +1,6 @@
 import { type SearchResult } from '$lib/models/Search';
-import type { Pageable } from './Pageable';
-import type { Sort } from './Sort';
+import type { Pageable } from '$lib/models/api/Pageable';
+import type { Sort } from '$lib/models/api/Sort';
 import type { Facet } from '$lib/models/Search';
 
 export interface DictionaryConceptResult {
