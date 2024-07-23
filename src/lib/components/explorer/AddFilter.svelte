@@ -47,7 +47,9 @@
       }
     } else if (data?.type === 'Categorical') {
       try {
+        loading = true;
         data = await getConceptDetails(data.conceptPath, data.dataset);
+        loading = false;
         unselectedOptions = data?.values || [];
         if (unselectedOptions.length >= 50) {
           unselectedOptions = unselectedOptions.slice(0, pageSize);
@@ -134,7 +136,6 @@
   {:else}
     {#if data?.type === 'Categorical'}
       <div data-testid="categoical-filter" class="w-full">
-        <!-- {await response} -->
         <OptionsSelectionList
           bind:unselectedOptions
           bind:selectedOptions
