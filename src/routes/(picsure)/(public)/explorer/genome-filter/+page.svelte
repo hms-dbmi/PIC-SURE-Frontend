@@ -104,7 +104,9 @@
       </div>
     {:else}
       <div class="flex justify-between my-4">
-        <AngleButton data-testid="back-btn" on:click={() => (selectedOption = Option.None)}
+        <AngleButton
+          data-testid="back-to-options-btn"
+          on:click={() => (selectedOption = Option.None)}
           >Back
         </AngleButton>
         <button

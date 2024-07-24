@@ -17,6 +17,7 @@ test('Selecting Gene option advances to gene filter options', async ({ page }) =
 
   // Then
   await expect(page.locator('#gene-search')).toBeVisible();
+  await expect(page.getByTestId('back-to-options-btn')).toBeVisible();
 });
 test.describe('Gene selection', () => {
   test('Loads list of genes ', async ({ page }) => {
@@ -278,6 +279,49 @@ test('Clicking edit filter button in results panel returns to genomic filter wit
     .getByTestId('added-filter-Genomic Filter')
     .getByRole('button', { name: 'Edit Filter' })
     .click();
+
+  // Then
+  await expect(page.getByTestId('select-variant-frequency').getByLabel('Rare')).toBeChecked();
+});
+test('Editing filter from results panel updates results panel on save', async ({ page }) => {
+  // Given
+  await page.goto('/explorer/genome-filter');
+  await page.getByTestId('gene-variant-option').click();
+  await page.getByTestId('select-variant-frequency').getByLabel('Rare').click();
+  await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
+  await page.getByTestId('add-filter-btn').click();
+
+  // When
+  await page.waitForURL('**/explorer');
+  await page
+    .getByTestId('added-filter-Genomic Filter')
+    .getByRole('button', { name: 'Edit Filter' })
+    .click();
+  await page.getByTestId('select-variant-frequency').getByLabel('Novel').click();
+  await page.getByTestId('save-filter-btn').click();
+  await page
+    .getByTestId('added-filter-Genomic Filter')
+    .getByRole('button', { name: 'See Details' })
+    .click();
+
+  // Then
+  await expect(page.getByTestId('added-filter-Genomic Filter').getByText('Rare')).toBeVisible();
+  await expect(page.getByTestId('added-filter-Genomic Filter').getByText('Novel')).toBeVisible();
+});
+test('Clicking Genomic Filtering after adding a gene filter navigates to edit filter view', async ({
+  page,
+}) => {
+  // Given
+  await page.goto('/explorer/genome-filter');
+  await page.getByTestId('gene-variant-option').click();
+  await page.getByTestId('select-variant-frequency').getByLabel('Rare').click();
+  await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
+  await page.getByTestId('add-filter-btn').click();
+  await expect(page.getByTestId('added-filter-Genomic Filter')).toBeVisible();
+
+  // When
+  await page.getByTestId('genomic-filter-btn').click();
+  await page.getByTestId('gene-variant-option').click();
 
   // Then
   await expect(page.getByTestId('select-variant-frequency').getByLabel('Rare')).toBeChecked();
