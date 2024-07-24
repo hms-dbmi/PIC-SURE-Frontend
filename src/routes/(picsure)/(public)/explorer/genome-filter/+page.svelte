@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { branding } from '$lib/configuration';
   import { getToastStore } from '@skeletonlabs/skeleton';
-  const toastStore = getToastStore();
 
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
@@ -23,7 +21,6 @@
   } from '$lib/stores/GeneFilter';
   import { selectedSNPs, generateSNPFilter, clearSnpFilters } from '$lib/stores/SNPFilter';
   import { addFilter } from '$lib/stores/Filter';
-  import { error as infoColumnError, loadInfoColumns } from '$lib/stores/InfoColumns';
 
   let edit = $page.url.searchParams.get('edit') || '';
   let selectedOption: Option = ['snp', 'genomic'].includes(edit) ? (edit as Option) : Option.None;
@@ -40,16 +37,6 @@
     clearFilters();
     goto('/explorer');
   }
-
-  onMount(async () => {
-    await loadInfoColumns();
-    if ($infoColumnError) {
-      toastStore.trigger({
-        message: $infoColumnError,
-        background: 'variant-filled-error',
-      });
-    }
-  });
 
   $: canComplete =
     (selectedOption === Option.Genomic &&

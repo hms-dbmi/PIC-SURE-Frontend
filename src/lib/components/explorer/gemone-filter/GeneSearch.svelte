@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { branding } from '$lib/configuration';
+
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   import Panel from '$lib/components/explorer/Panel.svelte';
   import Genes from '$lib/components/explorer/gemone-filter/gene/Genes.svelte';
@@ -6,13 +8,13 @@
   import Consequence from '$lib/components/explorer/gemone-filter/gene/Consequence.svelte';
   import Summary from '$lib/components/explorer/gemone-filter/gene/Summary.svelte';
 
-  import { VariantKeys } from '$lib/models/InfoColumns';
   import { selectedGenes, clearGeneFilters } from '$lib/stores/GeneFilter';
-  import { getInfoColumn } from '$lib/stores/InfoColumns';
 
   function clearSelectedGenes() {
     selectedGenes.set([]);
   }
+
+  const helpText = branding.help.popups.genomicFilter;
 </script>
 
 <div class="grid grid-col-3 gap-3 {$$props.class || ''}">
@@ -36,20 +38,13 @@
     class="h-full"
   >
     <svelte:fragment slot="help">
-      {#if getInfoColumn(VariantKeys.consequence) && getInfoColumn(VariantKeys.severity)}
-        <HelpInfoPopup
-          id="cons-help-popup"
-          text={getInfoColumn(VariantKeys.consequence) +
-            ' Severity: ' +
-            getInfoColumn(VariantKeys.severity)}
-        />
-      {/if}
+      <HelpInfoPopup id="cons-help-popup" text={helpText.consequence} />
     </svelte:fragment>
     <Consequence />
   </Panel>
   <Panel title="Select Variant Frequency" class="h-full">
     <svelte:fragment slot="help">
-      <HelpInfoPopup id="freq-help-popup" text={getInfoColumn(VariantKeys.frequency)} />
+      <HelpInfoPopup id="freq-help-popup" text={helpText.frequency} />
     </svelte:fragment>
     <Frequency />
   </Panel>
