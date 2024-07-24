@@ -84,7 +84,7 @@
             aria-checked={isChecked(facet.name)}
             on:click={() => updateFacet(facet, facetCategory)}
           />
-          <span class={facet.count === 0 ? 'opacity-75' : ''}
+          <span class:opacity-75={facet.count === 0}
             >{`${facet.display} (${facet.count})`}</span
           >
         </label>
