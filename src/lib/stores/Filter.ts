@@ -34,8 +34,12 @@ function setFilters(newFilters: Filter[]) {
   filters.set(newFilters);
 }
 
-function getFilter(uuid: string) {
+export function getFilter(uuid: string) {
   return get(filters).find((f) => f.uuid === uuid);
+}
+
+export function getFiltersByType(type: string) {
+  return get(filters).filter((f) => f.filterType === type);
 }
 
 function getQueryRequest(): QueryRequestInterface {

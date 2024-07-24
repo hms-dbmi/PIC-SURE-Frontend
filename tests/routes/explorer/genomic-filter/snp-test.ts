@@ -62,9 +62,7 @@ test('Search returns > 0, indicating SNP was found', async ({ page }) => {
   // Then
   await expect(page.getByTestId('snp-constraint')).toBeVisible();
 });
-test('Apply Filters button enables once genotype interest selection is made', async ({
-  page,
-}) => {
+test('Apply Filters button enables once genotype interest selection is made', async ({ page }) => {
   // Given
   await page.goto('/explorer/genome-filter');
   await page.getByTestId('snp-option').click();
@@ -122,9 +120,7 @@ test('Clicking edit filter button in results panel returns to snp filter with co
     .click();
 
   // Then
-  await expect(
-    page.getByTestId('summary-of-selected-filters').getByText(validSnp),
-  ).toBeVisible();
+  await expect(page.getByTestId('summary-of-selected-filters').getByText(validSnp)).toBeVisible();
   await expect(
     page.getByTestId('summary-of-selected-filters').getByText(snpConstraint),
   ).toBeVisible();

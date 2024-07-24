@@ -117,9 +117,7 @@ test.describe('Consequnce selection', () => {
     await page.getByTestId('gene-variant-option').click();
 
     const consPanel = page.getByTestId('select-calculated-consequence');
-    const parent = consPanel
-      .getByRole('treeitem', { name: 'High Severity' })
-      .getByRole('checkbox');
+    const parent = consPanel.getByRole('treeitem', { name: 'High Severity' }).getByRole('checkbox');
     const child = consPanel
       .getByRole('treeitem', { name: 'splice_acceptor_variant' })
       .getByRole('checkbox');

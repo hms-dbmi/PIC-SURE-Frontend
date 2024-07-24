@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { ProgressRadial } from '@skeletonlabs/skeleton';
   import type { SNP } from '$lib/models/GemoneFilter';
   import { getSNPCounts } from '$lib/stores/SNPFilter';
 
@@ -9,6 +10,7 @@
   const validSnp = /^\w+,\d+,(A|T|C|G)+,(A|T|C|G)+$/;
   let searchElement: HTMLInputElement;
   let warn: boolean = false;
+  let searching: boolean = false;
 
   function setInvalid() {
     searchElement.classList.add('required');
@@ -31,7 +33,9 @@
     }
 
     removeInvalid();
+    searching = true;
     const valid = (await getSNPCounts({ search, constraint: '' })) > 0;
+    searching = false;
     if (valid) {
       dispatch('valid', { snp: { search, constraint: '' } });
     } else {
@@ -61,9 +65,18 @@
     data-testid="snp-search-btn"
     class="btn btn-sm variant-filled-primary text-lg disabled:opacity-75"
     on:click={searchSnp}
-    disabled={$$props.disabled || !search}
+    disabled={$$props.disabled || !search || searching}
   >
     Search
+    {#if searching}
+      <ProgressRadial
+        value={undefined}
+        width="w-4"
+        meter="stroke-primary-100  dark:stroke-secondary-400"
+        track="stroke-surface-900/100"
+        class="ml-2"
+      />
+    {/if}
   </button>
 </div>
 {#if warn}

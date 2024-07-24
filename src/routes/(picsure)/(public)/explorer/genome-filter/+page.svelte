@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
   import { branding } from '$lib/configuration';
 
   import { goto } from '$app/navigation';
@@ -10,6 +12,7 @@
   import GeneSearch from '$lib/components/explorer/gemone-filter/GeneSearch.svelte';
   import AngleButton from '$lib/components/buttons/AngleButton.svelte';
 
+  import type { GenomicFilterInterface, SnpFilterInterface } from '$lib/models/Filter';
   import { Option } from '$lib/models/GemoneFilter';
   import {
     selectedGenes,
@@ -17,9 +20,15 @@
     consequences,
     clearGeneFilters,
     generateGenomicFilter,
+    populateFromGeneFilter,
   } from '$lib/stores/GeneFilter';
-  import { selectedSNPs, generateSNPFilter, clearSnpFilters } from '$lib/stores/SNPFilter';
-  import { addFilter } from '$lib/stores/Filter';
+  import {
+    selectedSNPs,
+    generateSNPFilter,
+    clearSnpFilters,
+    populateFromSNPFilter,
+  } from '$lib/stores/SNPFilter';
+  import { addFilter, getFiltersByType } from '$lib/stores/Filter';
 
   let edit = $page.url.searchParams.get('edit') || '';
   let selectedOption: Option = ['snp', 'genomic'].includes(edit) ? (edit as Option) : Option.None;
@@ -35,6 +44,23 @@
     addFilter(filter);
     clearFilters();
     goto('/explorer');
+  }
+
+  function populateExistingFilters() {
+    if (selectedOption === Option.Genomic) {
+      const filters = getFiltersByType('genomic') as GenomicFilterInterface[];
+      filters.length === 1 && populateFromGeneFilter(filters[0]);
+    } else if (selectedOption === Option.SNP) {
+      const filters = getFiltersByType('snp') as SnpFilterInterface[];
+      filters.length === 1 && populateFromSNPFilter(filters[0]);
+    }
+  }
+
+  onMount(populateExistingFilters);
+
+  function onSelectFilterType(event: { detail: { option: Option } }) {
+    selectedOption = event.detail.option;
+    populateExistingFilters();
   }
 
   $: canComplete =
@@ -55,12 +81,7 @@
   backTitle="Back to Explore"
 >
   {#if selectedOption === Option.None}
-    <FilterType
-      class="my-4"
-      on:select={(event) => {
-        selectedOption = event.detail.option;
-      }}
-    />
+    <FilterType class="my-4" on:select={onSelectFilterType} />
   {:else}
     {#if selectedOption === Option.Genomic}
       <h2 class="mb-2">Search by Gene:</h2>
