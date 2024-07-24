@@ -23,7 +23,7 @@
 <button
   type="button"
   aria-label="Save SNP"
-  data-testid="snp-search-btn"
+  data-testid="snp-save-btn"
   class="btn btn-sm variant-filled-primary text-lg disabled:opacity-75"
   on:click={save}
   disabled={constraint === ''}

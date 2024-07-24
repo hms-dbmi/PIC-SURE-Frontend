@@ -16,7 +16,7 @@
   }
 
   $: btnStyle = `btn btn-sm variant-${variant}-${color} text-lg`;
-  const testid = name.replaceAll(' ', '-').toLowerCase() + '-btn';
+  const testid = $$props['data-testid'] || name.replaceAll(' ', '-').toLowerCase() + '-btn';
 </script>
 
 {#if href}

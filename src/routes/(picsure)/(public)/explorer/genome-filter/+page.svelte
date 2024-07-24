@@ -1,6 +1,5 @@
 <script lang="ts">
   import { branding } from '$lib/configuration';
-  import { getToastStore } from '@skeletonlabs/skeleton';
 
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';

@@ -1,13 +1,11 @@
 import { expect } from '@playwright/test';
 import { test, mockApiSuccess } from '../../../custom-context';
-import { infoColumns, infoColumnDescriptions, geneValues } from '../../../mock-data';
+import { geneValues } from '../../../mock-data';
+import { branding } from '../../../../src/lib/configuration';
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
 test.describe('genomic filter', () => {
-  test.beforeEach(async ({ page }) => {
-    await mockApiSuccess(page, '*/**/picsure/query/sync', infoColumns);
-  });
   test('Clicking the Genomic filter button navigates to genomic filter page', async ({ page }) => {
     // Given
     await page.goto('/explorer');
@@ -21,34 +19,25 @@ test.describe('genomic filter', () => {
       page.getByRole('heading').getByText('Genomic Filtering', { exact: true }),
     ).toBeTruthy();
   });
-  test('Displays a stepper', async ({ page }) => {
-    // Given
-    await page.goto('/explorer/genome-filter');
-
-    // Then
-    await expect(page.locator('.stepper')).toBeVisible();
-  });
   test.describe('Gene filter', () => {
     test.beforeEach(async ({ page }) => {
       await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
     });
-    test('Selecting Gene option advances to step 2 with gene filter options', async ({ page }) => {
+    test('Selecting Gene option advances to gene filter options', async ({ page }) => {
       // Given
       await page.goto('/explorer/genome-filter');
 
       // When
       await page.getByTestId('gene-variant-option').click();
-      await page.getByTestId('next-btn').click();
 
       // Then
-      await expect(page.getByTestId('step-2')).toBeVisible();
+      await expect(page.locator('#gene-search')).toBeVisible();
     });
     test.describe('Gene selection', () => {
       test('Loads list of genes ', async ({ page }) => {
         // Given
         await page.goto('/explorer/genome-filter');
         await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
 
         // Then
         await expect(page.getByLabel(geneValues.results[0])).toBeVisible();
@@ -57,7 +46,6 @@ test.describe('genomic filter', () => {
         // Given
         await page.goto('/explorer/genome-filter');
         await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
 
         await expect(page.getByLabel(geneValues.results[0])).toBeVisible();
 
@@ -73,11 +61,10 @@ test.describe('genomic filter', () => {
         await expect(page.getByLabel(geneValues.results[0])).not.toBeVisible();
         await expect(page.getByLabel(mockSearchResults[1])).toBeVisible();
       });
-      test('Selected gens move to selected box', async ({ page }) => {
+      test('Selected genes move to selected box', async ({ page }) => {
         // Given
         await page.goto('/explorer/genome-filter');
         await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
 
         const optionsContainer = page.locator('#options-container');
         const selectedContainer = page.locator('#selected-options-container');
@@ -93,14 +80,13 @@ test.describe('genomic filter', () => {
         // Given
         await page.goto('/explorer/genome-filter');
         await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
 
         const optionsContainer = page.locator('#options-container');
         const selectedContainer = page.locator('#selected-options-container');
 
         // When
         await optionsContainer.getByLabel(geneValues.results[0]).click();
-        await page.getByTestId('gene-with-variant').getByRole('button', { name: 'Clear' }).click();
+        await page.getByTestId('clear-selected-genes-btn').click();
 
         // Then
         await expect(selectedContainer.getByLabel(geneValues.results[0])).not.toBeVisible();
@@ -112,7 +98,6 @@ test.describe('genomic filter', () => {
         // Given
         await page.goto('/explorer/genome-filter');
         await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
 
         await expect(page.getByTestId('freq-help-popup-content')).not.toBeVisible();
 
@@ -121,7 +106,7 @@ test.describe('genomic filter', () => {
 
         // Then
         await expect(page.getByTestId('freq-help-popup-content')).toContainText(
-          infoColumnDescriptions.Variant_frequency_as_text,
+          branding.help.popups.genomicFilter.frequency,
         );
       });
     });
@@ -130,7 +115,6 @@ test.describe('genomic filter', () => {
         // Given
         await page.goto('/explorer/genome-filter');
         await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
 
         await expect(page.getByTestId('cons-help-popup-content')).not.toBeVisible();
 
@@ -139,19 +123,15 @@ test.describe('genomic filter', () => {
 
         // Then
         await expect(page.getByTestId('cons-help-popup-content')).toContainText(
-          infoColumnDescriptions.Variant_consequence_calculated,
-        );
-        await expect(page.getByTestId('cons-help-popup-content')).toContainText(
-          infoColumnDescriptions.Variant_severity,
+          branding.help.popups.genomicFilter.consequence,
         );
       });
       test('Selecting parent node selects all children nodes', async ({ page }) => {
         // Given
         await page.goto('/explorer/genome-filter');
         await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
 
-        const consPanel = page.getByTestId('variant-consequence-calculated');
+        const consPanel = page.getByTestId('select-calculated-consequence');
         const parent = consPanel
           .getByRole('treeitem', { name: 'High Severity' })
           .getByRole('checkbox');
@@ -169,15 +149,16 @@ test.describe('genomic filter', () => {
         // Given
         await page.goto('/explorer/genome-filter');
         await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
 
-        const consPanel = page.getByTestId('variant-consequence-calculated');
+        const consPanel = page.getByTestId('select-calculated-consequence');
+        const parentNode = consPanel.getByRole('treeitem', { name: 'High Severity' });
         const child = consPanel.getByRole('treeitem', { name: 'stop_lost' }).getByRole('checkbox');
         const sibling = consPanel
           .getByRole('treeitem', { name: 'splice_acceptor_variant' })
           .getByRole('checkbox');
 
         // When
+        await parentNode.click();
         await child.click();
 
         // Then
@@ -190,11 +171,10 @@ test.describe('genomic filter', () => {
         // Given
         await page.goto('/explorer/genome-filter');
         await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
 
         const geneContainer = page.locator('#options-container');
         const geneSummary = page
-          .getByTestId('selected-genomic-filters')
+          .getByTestId('summary-of-selected-filters')
           .locator('#selected-variant');
 
         // When
@@ -209,11 +189,10 @@ test.describe('genomic filter', () => {
         // Given
         await page.goto('/explorer/genome-filter');
         await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
 
         const freqContainer = page.getByTestId('select-variant-frequency');
         const freqSummary = page
-          .getByTestId('selected-genomic-filters')
+          .getByTestId('summary-of-selected-filters')
           .locator('#selected-frequency');
 
         // When
@@ -228,11 +207,10 @@ test.describe('genomic filter', () => {
         // Given
         await page.goto('/explorer/genome-filter');
         await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
 
-        const consContainer = page.getByTestId('variant-consequence-calculated');
+        const consContainer = page.getByTestId('select-calculated-consequence');
         const consSummary = page
-          .getByTestId('selected-genomic-filters')
+          .getByTestId('summary-of-selected-filters')
           .locator('#selected-consequence');
         const parent = consContainer
           .getByRole('treeitem', { name: 'High Severity' })
@@ -249,23 +227,22 @@ test.describe('genomic filter', () => {
         // Given
         await page.goto('/explorer/genome-filter');
         await page.getByTestId('gene-variant-option').click();
-        await page.getByTestId('next-btn').click();
 
         await page.getByTestId('select-variant-frequency').getByLabel('Rare').click();
         await page
-          .getByTestId('variant-consequence-calculated')
+          .getByTestId('select-calculated-consequence')
           .getByRole('treeitem', { name: 'High Severity' })
           .getByRole('checkbox')
           .click();
-        await page.getByTestId('gene-with-variant').getByLabel(geneValues.results[0]).click();
+        await page
+          .getByTestId('search-for-gene-with-variant')
+          .getByLabel(geneValues.results[0])
+          .click();
 
-        const summaryPanel = page.getByTestId('selected-genomic-filters');
+        const summaryPanel = page.getByTestId('summary-of-selected-filters');
 
         // When
-        await page
-          .getByTestId('selected-genomic-filters')
-          .getByRole('button', { name: 'Clear' })
-          .click();
+        await page.getByTestId('clear-gene-filters-btn').click();
 
         // Then
         await expect(summaryPanel.locator('#selected-consequence')).not.toContainText('stop_lost');
@@ -279,27 +256,25 @@ test.describe('genomic filter', () => {
       // Given
       await page.goto('/explorer/genome-filter');
       await page.getByTestId('gene-variant-option').click();
-      await page.getByTestId('next-btn').click();
 
-      await expect(page.getByTestId('apply-filter-btn')).not.toBeEnabled();
+      await expect(page.getByTestId('add-filter-btn')).not.toBeEnabled();
 
       // When
       await page.getByTestId('select-variant-frequency').getByLabel('Rare').click();
 
       // Then
-      await expect(page.getByTestId('apply-filter-btn')).toBeEnabled();
+      await expect(page.getByTestId('add-filter-btn')).toBeEnabled();
     });
     test('Apply Filter adds to sidepanel', async ({ page }) => {
       // Given
       await page.goto('/explorer/genome-filter');
       await page.getByTestId('gene-variant-option').click();
-      await page.getByTestId('next-btn').click();
 
       await page.getByTestId('select-variant-frequency').getByLabel('Rare').click();
 
       // When
       await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
-      await page.getByTestId('apply-filter-btn').click();
+      await page.getByTestId('add-filter-btn').click();
 
       // Then
       await expect(page.getByTestId('added-filter-Genomic Filter')).toBeVisible();
@@ -310,10 +285,9 @@ test.describe('genomic filter', () => {
       // Given
       await page.goto('/explorer/genome-filter');
       await page.getByTestId('gene-variant-option').click();
-      await page.getByTestId('next-btn').click();
       await page.getByTestId('select-variant-frequency').getByLabel('Rare').click();
       await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
-      await page.getByTestId('apply-filter-btn').click();
+      await page.getByTestId('add-filter-btn').click();
 
       // When
       await page.waitForURL('**/explorer');
@@ -323,9 +297,7 @@ test.describe('genomic filter', () => {
         .click();
 
       // Then
-      await expect(
-        page.getByTestId('step-2').getByTestId('select-variant-frequency').getByLabel('Rare'),
-      ).toBeChecked();
+      await expect(page.getByTestId('select-variant-frequency').getByLabel('Rare')).toBeChecked();
     });
   });
   test.describe('SNP filter', () => {
@@ -336,22 +308,20 @@ test.describe('genomic filter', () => {
     test.beforeEach(async ({ page }) => {
       await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
     });
-    test('Selecting SNP option advances to step 2 with snp filter options', async ({ page }) => {
+    test('Selecting SNP option advances snp filter options', async ({ page }) => {
       // Given
       await page.goto('/explorer/genome-filter');
 
       // When
       await page.getByTestId('snp-option').click();
-      await page.getByTestId('next-btn').click();
 
       // Then
-      await expect(page.getByTestId('step-2')).toBeVisible();
+      await expect(page.locator('#snp-search')).toBeVisible();
     });
     test('Search box enforces valid snp format', async ({ page }) => {
       // Given
       await page.goto('/explorer/genome-filter');
       await page.getByTestId('snp-option').click();
-      await page.getByTestId('next-btn').click();
 
       // When
       await page.getByTestId('snp-search-box').fill(invalidSnp);
@@ -367,7 +337,6 @@ test.describe('genomic filter', () => {
       // Given
       await page.goto('/explorer/genome-filter');
       await page.getByTestId('snp-option').click();
-      await page.getByTestId('next-btn').click();
 
       // When
       await mockApiSuccess(page, '*/**/picsure/query/sync', 0);
@@ -381,7 +350,6 @@ test.describe('genomic filter', () => {
       // Given
       await page.goto('/explorer/genome-filter');
       await page.getByTestId('snp-option').click();
-      await page.getByTestId('next-btn').click();
 
       // When
       await mockApiSuccess(page, '*/**/picsure/query/sync', 12);
@@ -397,7 +365,6 @@ test.describe('genomic filter', () => {
       // Given
       await page.goto('/explorer/genome-filter');
       await page.getByTestId('snp-option').click();
-      await page.getByTestId('next-btn').click();
 
       await mockApiSuccess(page, '*/**/picsure/query/sync', 12);
       await page.getByTestId('snp-search-box').fill(validSnp);
@@ -405,25 +372,26 @@ test.describe('genomic filter', () => {
 
       // When
       await page.getByTestId('snp-constraint').selectOption({ label: 'Heterozygous' });
+      await page.getByTestId('snp-save-btn').click();
 
       // Then
-      await expect(page.getByTestId('apply-filter-btn')).toBeEnabled();
+      await expect(page.getByTestId('add-filter-btn')).toBeEnabled();
     });
     test('Apply Filter adds to sidepanel', async ({ page }) => {
       // Given
       await page.goto('/explorer/genome-filter');
       await page.getByTestId('snp-option').click();
-      await page.getByTestId('next-btn').click();
 
       await mockApiSuccess(page, '*/**/picsure/query/sync', 12);
       await page.getByTestId('snp-search-box').fill(validSnp);
       await page.getByTestId('snp-search-btn').click();
 
       await page.getByTestId('snp-constraint').selectOption({ label: 'Heterozygous' });
+      await page.getByTestId('snp-save-btn').click();
 
       // When
       await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
-      await page.getByTestId('apply-filter-btn').click();
+      await page.getByTestId('add-filter-btn').click();
 
       // Then
       await expect(page.getByTestId('added-filter-Variant Filter')).toBeVisible();
@@ -431,16 +399,17 @@ test.describe('genomic filter', () => {
     test('Clicking edit filter button in results panel returns to snp filter with correct values', async ({
       page,
     }) => {
+      const snpConstraint = 'Heterozygous';
       // Given
       await page.goto('/explorer/genome-filter');
       await page.getByTestId('snp-option').click();
-      await page.getByTestId('next-btn').click();
       await mockApiSuccess(page, '*/**/picsure/query/sync', 12);
       await page.getByTestId('snp-search-box').fill(validSnp);
       await page.getByTestId('snp-search-btn').click();
-      await page.getByTestId('snp-constraint').selectOption({ label: 'Heterozygous' });
+      await page.getByTestId('snp-constraint').selectOption({ label: snpConstraint });
+      await page.getByTestId('snp-save-btn').click();
       await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
-      await page.getByTestId('apply-filter-btn').click();
+      await page.getByTestId('add-filter-btn').click();
 
       // When
       await page.waitForURL('**/explorer');
@@ -450,8 +419,12 @@ test.describe('genomic filter', () => {
         .click();
 
       // Then
-      await expect(page.getByTestId('step-2').getByText(validSnp)).toBeVisible();
-      await expect(page.getByTestId('step-2').getByTestId('snp-constraint')).toHaveValue('0/1');
+      await expect(
+        page.getByTestId('summary-of-selected-filters').getByText(validSnp),
+      ).toBeVisible();
+      await expect(
+        page.getByTestId('summary-of-selected-filters').getByText(snpConstraint),
+      ).toBeVisible();
     });
   });
 });

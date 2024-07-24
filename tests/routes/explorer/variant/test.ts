@@ -1,6 +1,6 @@
 import { expect, type Route, type BrowserContext, type Page } from '@playwright/test';
 import { test, mockApiSuccess } from '../../../custom-context';
-import { geneValues, infoColumns, variantDataAggregate, variantDataFull } from '../../../mock-data';
+import { geneValues, variantDataAggregate, variantDataFull } from '../../../mock-data';
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
@@ -13,7 +13,6 @@ const successResults: Results = {
   VARIANT_COUNT_FOR_QUERY: { pass: true, data: { count: 5, message: 'Query ran successfully' } },
   AGGREGATE_VCF_EXCERPT: { pass: true, data: variantDataAggregate },
   VCF_EXCERPT: { pass: true, data: variantDataFull },
-  INFO_COLUMN_LISTING: { pass: true, data: infoColumns },
   COUNT: { pass: true, data: '999' },
 };
 
@@ -39,12 +38,11 @@ test.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () 
       await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
       await page.goto('/explorer/genome-filter');
       await page.getByTestId('gene-variant-option').click();
-      await page.getByTestId('next-btn').click();
       await page.locator('#options-container').getByLabel(geneValues.results[0]).click();
-      await page.getByTestId('apply-filter-btn').click();
+      await page.getByTestId('add-filter-btn').click();
       await expect(page).toHaveURL('/explorer');
     });
-    test('Adds variant explorer button to results', async ({ page }) => {
+    test('Adds variant explorer button to gene results', async ({ page }) => {
       // Then
       await expect(
         page.locator('#results-panel').getByTestId('variant-explorer-btn'),

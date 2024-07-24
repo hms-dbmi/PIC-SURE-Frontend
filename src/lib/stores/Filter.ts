@@ -56,7 +56,7 @@ function getQueryRequest(): QueryRequestInterface {
         Variant_frequency_as_text: filter.Variant_frequency_as_text,
       });
     } else if (filter.filterType === 'snp') {
-      newQuery.addSnpFilter(filter.id, filter.categoryValues);
+      newQuery.addSnpFilter(filter.snpValues);
     }
   });
 
