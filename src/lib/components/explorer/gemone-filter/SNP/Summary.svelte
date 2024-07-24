@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { GenotypeMap, type SNP } from '$lib/models/GemoneFilter';
+  import { GenotypeMap, type SNP } from '$lib/models/GenomeFilter';
   import { selectedSNPs } from '$lib/stores/SNPFilter';
 
   const dispatch = createEventDispatcher<{ edit: { snp: SNP }; delete: { snp: SNP } }>();

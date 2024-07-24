@@ -1,6 +1,6 @@
 <script lang="ts">
   import { selectedSNPs, clearSnpFilters, saveSNP, deleteSNP } from '$lib/stores/SNPFilter';
-  import type { SNP } from '$lib/models/GemoneFilter';
+  import type { SNP } from '$lib/models/GenomeFilter';
 
   import Panel from '$lib/components/explorer/Panel.svelte';
   import Search from '$lib/components/explorer/gemone-filter/SNP/Search.svelte';

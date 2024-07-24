@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import type { SearchResult } from './Search';
-import { GenotypeMap, type SNP } from './GemoneFilter';
+import { GenotypeMap, type SNP } from './GenomeFilter';
 
 type FilterType = 'categorical' | 'numeric' | 'required' | 'datatable' | 'genomic' | 'snp' | 'auto';
 type DisplayType = 'any' | 'anyRecordOf' | 'restrict' | 'lessThan' | 'greaterThan' | 'between';

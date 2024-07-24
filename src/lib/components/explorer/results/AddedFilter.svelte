@@ -5,7 +5,7 @@
 
   import { goto } from '$app/navigation';
 
-  import { Option } from '$lib/models/GemoneFilter';
+  import { Option } from '$lib/models/GenomeFilter';
   import type { Filter } from '$lib/models/Filter';
   import { removeFilter } from '$lib/stores/Filter';
   import { populateFromGeneFilter } from '$lib/stores/GeneFilter';

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { Genotype, type SNP } from '$lib/models/GemoneFilter';
+  import { Genotype, type SNP } from '$lib/models/GenomeFilter';
 
   export let snp: SNP;
 

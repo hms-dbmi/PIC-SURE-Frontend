@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { ProgressRadial } from '@skeletonlabs/skeleton';
-  import type { SNP } from '$lib/models/GemoneFilter';
+  import type { SNP } from '$lib/models/GenomeFilter';
   import { getSNPCounts } from '$lib/stores/SNPFilter';
 
   export let search: string = '';

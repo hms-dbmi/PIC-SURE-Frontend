@@ -1,5 +1,5 @@
 import type { Indexable } from '$lib/types';
-import { type SNP } from '$lib/models/GemoneFilter';
+import { type SNP } from '$lib/models/GenomeFilter';
 
 type ExpectedResultType =
   | 'COUNT'

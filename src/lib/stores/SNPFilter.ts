@@ -2,7 +2,7 @@ import { get, writable, type Writable } from 'svelte/store';
 
 import * as api from '$lib/api';
 import { resources } from '$lib/configuration';
-import { Genotype, type SNP } from '$lib/models/GemoneFilter';
+import { Genotype, type SNP } from '$lib/models/GenomeFilter';
 import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter';
 
 export const selectedSNPs: Writable<SNP[]> = writable([]);

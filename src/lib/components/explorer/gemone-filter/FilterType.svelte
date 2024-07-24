@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { Option } from '$lib/models/GemoneFilter';
+  import { Option } from '$lib/models/GenomeFilter';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
 
   export let active: Option = Option.None;

@@ -13,7 +13,7 @@
   import AngleButton from '$lib/components/buttons/AngleButton.svelte';
 
   import type { GenomicFilterInterface, SnpFilterInterface } from '$lib/models/Filter';
-  import { Option } from '$lib/models/GemoneFilter';
+  import { Option } from '$lib/models/GenomeFilter';
   import {
     selectedGenes,
     selectedFrequency,
