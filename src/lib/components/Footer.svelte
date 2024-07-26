@@ -10,6 +10,8 @@
   import TermsModal from '$lib/components/TermsModal.svelte';
   export let showSitemap: boolean = branding.footer.showSitemap;
 
+  let toggleDevtools: boolean = false;
+
   $: hideSitemap =
     !showSitemap ||
     branding.footer.excludeSitemapOn.find((hide) => $page.url.pathname.includes(hide));
@@ -48,8 +50,12 @@
     </div>
   </div>
 {/if}
-<footer id="main-footer" class="flex">
-  <LightSwitch />
+<footer
+  id="main-footer"
+  class="flex relative"
+  on:contextmenu={() => (toggleDevtools = !toggleDevtools)}
+>
+  <div id="devtools" class="absolute" class:invisible={!toggleDevtools}><LightSwitch /></div>
   <ul>
     <li><button class="hover:underline" on:click={openTermsModal}>Terms of Service</button></li>
     {#each branding.footer.links as link}
