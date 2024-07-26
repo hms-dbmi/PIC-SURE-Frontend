@@ -30,9 +30,10 @@
     if (!validSnp.test(search)) {
       setInvalid();
       return;
+    } else {
+      removeInvalid();
     }
 
-    removeInvalid();
     searching = true;
     const valid = (await getSNPCounts({ search, constraint: '' })) > 0;
     searching = false;
