@@ -124,7 +124,7 @@
         <button
           id="user-login-btn"
           title="Login"
-          class="btn variant-ghost-primary hover:variant-ghost-secondary"
+          class="btn variant-ghost-primary hover:variant-filled-primary"
           on:click={handleLogin}
         >
           Login

@@ -2,8 +2,6 @@
   import { AppShell, Modal, Toast, storePopup, type ModalComponent } from '@skeletonlabs/skeleton';
   import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
   import Navigation from '$lib/components/Navigation.svelte';
-  import '@fortawesome/fontawesome-free/css/all.min.css';
-  import '../../app.postcss';
   import { onMount } from 'svelte';
   import SidePanel from '$lib/components/explorer/results/SidePanel.svelte';
   import { page } from '$app/stores';
