@@ -1,7 +1,23 @@
-<section class="w-full h-full flex flex-col justify-center items-center">
-  <h1>Oops!</h1>
-  <h3>Something went wrong with your login attempt. Please try again!</h3>
-  <p>If the problem persists contact an administrator.</p>
+<script lang="ts">
+  import { branding } from '$lib/configuration';
+  import { quintOut } from 'svelte/easing';
+  import { fly } from 'svelte/transition';
+</script>
 
-  <a class="anchor" href="/login">Back to Login</a>
+<section
+  class="w-full h-full flex flex-col justify-center items-center"
+  out:fly={{ duration: 300, easing: quintOut, x: '-100%', opacity: 40 }}
+>
+  <h3 class="m-0">Something went wrong with your login attempt.</h3>
+  <h3 class="m-0">Please try again!</h3>
+  <p class="m-1">If the problem persists contact an administrator.</p>
+
+  <div class="flex flex-col justify-between mt-5">
+    <a class="btn variant-filled-primary m-1" href="/login"
+      >Back to Login <i class="fa-solid fa-arrow-right ml-3"></i></a
+    >
+    <a class="btn variant-ghost-primary m-1" target="_blank" href={branding.login.contactLink}
+      >Contact Administrator</a
+    >
+  </div>
 </section>

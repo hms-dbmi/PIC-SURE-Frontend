@@ -101,6 +101,7 @@ export const branding = {
     showSiteName: false,
     openPicsureLink: '/',
     openPicsureLinkText: 'Explore without Login',
+    contactLink: 'https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5',
   },
   help: {
     links: [
