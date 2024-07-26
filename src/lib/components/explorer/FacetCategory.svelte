@@ -84,9 +84,7 @@
             aria-checked={isChecked(facet.name)}
             on:click={() => updateFacet(facet, facetCategory)}
           />
-          <span class:opacity-75={facet.count === 0}
-            >{`${facet.display} (${facet.count})`}</span
-          >
+          <span class:opacity-75={facet.count === 0}>{`${facet.display} (${facet.count})`}</span>
         </label>
       {/each}
       {#if facets.length > numFacetsToShow && !textFilterValue}

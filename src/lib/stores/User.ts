@@ -7,7 +7,6 @@ import type { User } from '$lib/models/User';
 import { PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, features } from '$lib/configuration';
 import { goto } from '$app/navigation';
-import SearchStore from '$lib/stores/Search';
 
 export const user: Writable<User> = writable(restoreUser());
 
@@ -111,7 +110,6 @@ export async function logout() {
   if (browser) {
     localStorage.removeItem('token');
   }
-  SearchStore.searchResults.set([]);
   user.set({});
   goto('/login');
 }

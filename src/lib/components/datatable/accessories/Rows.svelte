@@ -1,11 +1,18 @@
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
-  export let handler: DataHandler;
-  export let options: number[];
+  import { DataHandler as RemoteHander } from '@vincjo/datatables/remote';
+  export let handler: DataHandler | RemoteHander;
+  export let options: number[] = [5, 10, 20, 50];
   const rowsPerPage = handler.getRowsPerPage();
+  const setRowsPerPage = () => {
+    handler.setPage(1);
+    if (handler instanceof RemoteHander) {
+      handler.invalidate();
+    }
+  };
 </script>
 
-<aside>
+<aside class={$$props.class ?? ''}>
   <label class="flex place-items-center"
     >Show
     <select
@@ -13,7 +20,7 @@
       class="select ml-2"
       aria-label="Rows per page"
       bind:value={$rowsPerPage}
-      on:change={() => handler.setPage(1)}
+      on:change={() => setRowsPerPage()}
     >
       {#each options as option}
         <option value={option}>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
-  export let handler: DataHandler;
+  import { DataHandler as RemoteDataHandler } from '@vincjo/datatables/remote';
+  export let handler: DataHandler | RemoteDataHandler;
   let value: string;
 </script>
 

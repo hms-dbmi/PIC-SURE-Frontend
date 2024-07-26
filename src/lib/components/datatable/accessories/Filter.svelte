@@ -1,23 +1,29 @@
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
-
-  let clazz = '';
-  export { clazz as class };
-  export let handler: DataHandler;
+  import { DataHandler as RemoteDataHandler } from '@vincjo/datatables/remote';
+  export let handler: DataHandler | RemoteDataHandler;
   export let filterBy: string;
+  let timeout: ReturnType<typeof setTimeout>;
 
   let value: string;
+  const filter = () => {
+    handler.filter(value, filterBy);
+    if (handler instanceof RemoteDataHandler) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        handler.invalidate();
+      }, 400);
+    }
+  };
 </script>
 
-<th class={clazz}>
+<th class={$$props.class ?? ''}>
   <input
     class="input text-sm w-full"
     type="text"
     placeholder="Filter"
     bind:value
-    on:input={() => {
-      filterBy && handler.filter(value, filterBy);
-    }}
+    on:input={filter}
   />
 </th>
 
