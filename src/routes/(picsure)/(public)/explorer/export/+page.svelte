@@ -1,12 +1,13 @@
 <script lang="ts">
   import AngleButton from '$lib/components/buttons/AngleButton.svelte';
   import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
-  import { AppBar } from '@skeletonlabs/skeleton';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import FilterStore from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
   import { state } from '$lib/stores/Stepper';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
+  import Content from '$lib/components/Content.svelte';
+  import { goto } from '$app/navigation';
   let { getQueryRequest } = FilterStore;
   let { exports } = ExportStore;
   let { filters } = FilterStore;
@@ -34,24 +35,35 @@
   });
 </script>
 
-<AppBar gridColumns="grid-cols-3" slotDefault="place-self-center" slotTrail="place-content-end">
-  <svelte:fragment slot="lead">
-    <AngleButton
-      angle="left"
-      variant="ringed"
-      color="primary"
-      name="Back"
-      on:click={() => {
-        $state.current = 0;
-        history.back();
-      }}>Back to Cohort Builder</AngleButton
-    >
-  </svelte:fragment>
-  Export Data for Research Analysis
-</AppBar>
-<section class="flex justify-center items-center w-full h-full mt-8">
-  <ExportStepper query={queryRequest} rows={[...exportRows, ...filterRows]} />
-</section>
-
-<style>
-</style>
+<Content
+  backUrl="/explorer"
+  backTitle="Back to Explore"
+  backAction={() => {
+    $state.current = 0;
+  }}
+  title="Export Data for Research Analysis"
+>
+  {#if $exports.length > 0 || $filters.length > 0}
+    <section class="flex justify-center items-center w-full h-full mt-8">
+      <ExportStepper query={queryRequest} rows={[...filterRows, ...exportRows]} />
+    </section>
+  {:else}
+    <div class="flex flex-col items-center justify-center m-8">
+      <p>No filters or exports have been created.</p>
+      <div class="flex gap-4">
+        <AngleButton
+          name="back"
+          on:click={() => {
+            goto('/explorer');
+          }}>Back to Explore</AngleButton
+        >
+        <button
+          class="btn variant-filled-primary m-4"
+          on:click={() => {
+            alert('This would start the tour at some step');
+          }}>Learn How</button
+        >
+      </div>
+    </div>
+  {/if}
+</Content>
