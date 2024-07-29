@@ -19,7 +19,6 @@
   let { searchTerm, search, selectedFacets, error } = SearchStore;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
   const tableName = 'ExplorerTable';
-  let errorMsg = '';
 
   const columns: Column[] = [
     { dataElement: 'display', label: 'Variable Name', sort: false },
@@ -35,7 +34,6 @@
 
   let unsubSelectedFacets: Unsubscriber;
   let unsubSearchTerm: Unsubscriber;
-  let unsubError: Unsubscriber;
 
   onMount(() => {
     unsubSelectedFacets = selectedFacets.subscribe(() => {
@@ -48,18 +46,16 @@
       }
     });
 
-    unsubError = error.subscribe(() => {
-      errorMsg = $error;
-    });
-
     if (searchInput) {
       searchTerm.set(searchInput);
     }
   });
 
   function updateSearch() {
-    errorMsg = '';
-    error.set('');
+    if ($error) {
+      error.set('');
+      searchTerm.set('');
+    }
     searchTerm.set(searchInput);
     goto(searchInput ? `/explorer?search=${searchInput}` : '/explorer', { replaceState: true });
   }
@@ -67,7 +63,6 @@
   onDestroy(() => {
     unsubSelectedFacets && unsubSelectedFacets();
     unsubSearchTerm && unsubSearchTerm();
-    unsubError && unsubError();
   });
 </script>
 
@@ -107,9 +102,9 @@
           </button>
         </div>
       </div>
-      {#if errorMsg}
+      {#if $error}
         <ErrorAlert title="API Error">
-          <p>{errorMsg}</p>
+          <p>{$error}</p>
         </ErrorAlert>
       {:else}
         <SearchDatatable {tableName} {handler} {columns} {cellOverides} />
