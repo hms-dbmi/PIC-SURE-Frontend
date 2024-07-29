@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { LightSwitch } from '@skeletonlabs/skeleton';
   import { getModalStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
 
@@ -9,8 +8,6 @@
 
   import TermsModal from '$lib/components/TermsModal.svelte';
   export let showSitemap: boolean = branding.footer.showSitemap;
-
-  let toggleDevtools: boolean = false;
 
   $: hideSitemap =
     !showSitemap ||
@@ -50,12 +47,7 @@
     </div>
   </div>
 {/if}
-<footer
-  id="main-footer"
-  class="flex relative"
-  on:contextmenu={() => (toggleDevtools = !toggleDevtools)}
->
-  <div id="devtools" class="absolute" class:invisible={!toggleDevtools}><LightSwitch /></div>
+<footer id="main-footer" class="flex relative">
   <ul>
     <li><button class="hover:underline" on:click={openTermsModal}>Terms of Service</button></li>
     {#each branding.footer.links as link}
