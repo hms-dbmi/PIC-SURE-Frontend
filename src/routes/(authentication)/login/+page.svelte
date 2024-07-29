@@ -5,6 +5,7 @@
   import Logo from '$lib/components/Logo.svelte';
   import type { AuthData } from '$lib/models/AuthProvider';
   import { branding, features } from '$lib/configuration';
+  import { fly } from 'svelte/transition';
 
   const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
   const siteName = branding.applicationName;
@@ -20,7 +21,8 @@
 
 <section
   id="logins"
-  class="flex flex-col items-center h-screen text-center place-content-center text-lg"
+  class="flex flex-col items-center h-screen w-full text-center place-content-center text-lg"
+  in:fly={{ duration: 600, x: '100%' }}
 >
   <div id="title-box" class="flex flex-col items-center text-center mb-8">
     <h1 data-testid="login-title" class="mb-6 w-full flex gap-2 items-center justify-center">
@@ -39,7 +41,7 @@
       </header>
       <div class="flex flex-col items-center justify-center">
         <div id="main-logins" class="flex flex-col items-center w-max">
-          {#if providers.length === 0}
+          {#if providers?.length === 0}
             <aside class="auth-warning alert variant-ghost-warning">
               <div class="alert-message">
                 No main authentication providers are registed. Please add them to your

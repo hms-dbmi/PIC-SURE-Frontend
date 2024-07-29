@@ -79,6 +79,8 @@
   backUrl="/explorer"
   backAction={clearFilters}
   backTitle="Back to Explore"
+  transition={true}
+
 >
   {#if selectedOption === Option.None}
     <FilterType class="my-4" on:select={onSelectFilterType} />
