@@ -46,8 +46,8 @@ export interface SnpFilterInterface extends FilterInterface {
 export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
   const filter: Filter = {
     uuid: uuidv4(),
-    id: searchResult.id,
-    filterType: 'categorical',
+    id: searchResult.conceptPath,
+    filterType: 'Categorical',
     displayType: values && values?.length > 0 ? 'restrict' : 'anyRecordOf',
     searchResult: searchResult,
     categoryValues: values || [],
@@ -60,8 +60,8 @@ export function createCategoricalFilter(searchResult: SearchResult, values?: str
 export function createRequiredFilter(searchResult: SearchResult) {
   const filter: Filter = {
     uuid: uuidv4(),
-    id: searchResult.id,
-    filterType: 'categorical',
+    id: searchResult.conceptPath,
+    filterType: 'Categorical',
     displayType: 'any',
     searchResult: searchResult,
     variableName: searchResult.name,
@@ -74,8 +74,8 @@ export function createRequiredFilter(searchResult: SearchResult) {
 export function createAnyRecordOfFilter(searchResult: SearchResult, values?: string[]) {
   const filter: Filter = {
     uuid: uuidv4(),
-    id: searchResult.id,
-    filterType: 'categorical',
+    id: searchResult.conceptPath,
+    filterType: 'Categorical',
     displayType: 'anyRecordOf',
     searchResult: searchResult,
     categoryValues: values || [],
@@ -88,7 +88,7 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, values?: str
 export function createNumericFilter(searchResult: SearchResult, min?: string, max?: string) {
   const filter: Filter = {
     uuid: uuidv4(),
-    id: searchResult.id,
+    id: searchResult.conceptPath,
     filterType: 'numeric',
     displayType:
       min !== undefined && max !== undefined

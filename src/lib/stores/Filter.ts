@@ -45,7 +45,7 @@ export function getFiltersByType(type: string) {
 function getQueryRequest(): QueryRequestInterface {
   const newQuery = new Query();
   get(filters).forEach((filter) => {
-    if (filter.filterType === 'categorical') {
+    if (filter.filterType === 'Categorical') {
       if (filter.displayType === 'restrict') {
         newQuery.addCategoryFilter(filter.id, filter.categoryValues);
       } else {

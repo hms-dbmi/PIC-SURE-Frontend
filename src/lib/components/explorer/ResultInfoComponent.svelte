@@ -6,17 +6,25 @@
 
 <div class="card min-h-60 p-4">
   <header class="card-header">
-    <h4>Variable Information for: {data.name}</h4>
+    <h4>Variable Information for: {data.display}</h4>
   </header>
   <section class="card-body">
     <ul class="break-all">
-      {#each Object.keys(data) as key}
-        {#if data[key] !== undefined}
-          <li>
-            <strong>{key}</strong>: {data[key]}
-          </li>
-        {/if}
-      {/each}
+      {#if data.display}
+        <li>
+          <strong>Name</strong>: {data.display}
+        </li>
+      {/if}
+      {#if data.description}
+        <li>
+          <strong>Description</strong>: {data.description}
+        </li>
+      {/if}
+      {#if data.type}
+        <li>
+          <strong>Type</strong>: {data.type}
+        </li>
+      {/if}
     </ul>
   </section>
 </div>

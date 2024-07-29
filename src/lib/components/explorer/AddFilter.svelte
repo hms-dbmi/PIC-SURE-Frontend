@@ -3,7 +3,7 @@
   import OptionsSelectionList from '../OptionsSelectionList.svelte';
   import FilterStore from '$lib/stores/Filter';
   import { activeRow } from '$lib/stores/ExpandableRow';
-  import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+  import { ProgressRadial, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   let { addFilter } = FilterStore;
   import { onMount } from 'svelte';
   import type { Filter } from '$lib/models/Filter';
@@ -12,11 +12,12 @@
     createNumericFilter,
     createRequiredFilter,
   } from '$lib/models/Filter';
+  import { getConceptDetails } from '$lib/services/dictionary';
 
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
-  export let data: SearchResult = {} as SearchResult;
+  export let data: SearchResult;
 
   let max: string;
   let min: string;
@@ -29,30 +30,36 @@
   onMount(async () => {
     if ($modalStore[0]?.meta.existingFilter) {
       const existingFilter: Filter = $modalStore[0]?.meta.existingFilter;
-      data.description = existingFilter.description || '';
-      data.name = existingFilter.variableName || '';
-      data.id = existingFilter.id || '';
-      data.searchResult = existingFilter.searchResult || {};
-      if (existingFilter.filterType === 'categorical') {
+      data = $modalStore[0]?.meta.existingFilter.searchResult;
+      if (existingFilter.filterType === 'Categorical') {
         if (existingFilter.categoryValues.length === 0) {
-          selectedOptions = data?.searchResult?.categoryValues || [];
+          selectedOptions = data?.values || [];
         } else {
           selectedOptions = existingFilter.categoryValues;
         }
-        data.isCategorical = true;
-        data.categoryValues = existingFilter?.searchResult?.categoryValues || [];
         unselectedOptions =
-          data?.categoryValues?.filter((value) => {
+          data?.values?.filter((value) => {
             return !selectedOptions.find((selected) => selected === value);
           }) || [];
       } else if (existingFilter.filterType === 'numeric') {
         min = existingFilter.min || '';
         max = existingFilter.max || '';
       }
-    } else if (data.isCategorical) {
-      unselectedOptions = data?.categoryValues || [];
-      if (unselectedOptions.length >= 50) {
-        unselectedOptions = unselectedOptions.slice(0, pageSize);
+    } else if (data?.type === 'Categorical') {
+      try {
+        loading = true;
+        data = await getConceptDetails(data.conceptPath, data.dataset);
+        loading = false;
+        unselectedOptions = data?.values || [];
+        if (unselectedOptions.length >= 50) {
+          unselectedOptions = unselectedOptions.slice(0, pageSize);
+        }
+      } catch (e) {
+        console.error(e);
+        toastStore.trigger({
+          message: 'An error occured while loading the filter. Please try again later.',
+          background: 'variant-filled-error',
+        });
       }
     } else {
       min = data.min !== undefined && data.min >= 0 ? data.min.toString() : '';
@@ -62,9 +69,9 @@
 
   function addNewFilter() {
     let filter: Filter;
-    if (data.isCategorical) {
+    if (data.type === 'Categorical') {
       if (!valuesSelected || valuesSelected.length === 0) return;
-      if (valuesSelected.length === data?.categoryValues?.length) {
+      if (valuesSelected.length === data?.values?.length) {
         filter = createRequiredFilter(data);
       } else {
         filter = createCategoricalFilter(data, valuesSelected);
@@ -85,7 +92,7 @@
   }
 
   function getNextValues(search: string = '') {
-    const totalOptions = data?.categoryValues?.length || 0;
+    const totalOptions = data?.values?.length || 0;
     if (totalOptions === 0) return;
 
     loading = true;
@@ -98,12 +105,12 @@
 
       if (search) {
         nextOptions =
-          data?.categoryValues
+          data?.values
             ?.filter((value) => value.toLowerCase().includes(search.toLowerCase()))
             .slice(startLoacation, end) || [];
         startLoacation = end;
       } else {
-        nextOptions = data?.categoryValues?.slice(startLoacation, end) || [];
+        nextOptions = data?.values?.slice(startLoacation, end) || [];
         startLoacation = end;
       }
 
@@ -124,41 +131,45 @@
 </script>
 
 <div class="flex justify-between" data-testid="filter-component">
-  {#if data.isCategorical}
-    <div data-testid="categoical-filter" class="w-full">
-      <OptionsSelectionList
-        bind:unselectedOptions
-        bind:selectedOptions
-        bind:currentlyLoading={loading}
-        on:scroll={(event) => getNextValues(event.detail.search)}
-      />
-    </div>
+  {#if !data}
+    <ProgressRadial width="w-10" value={undefined} />
   {:else}
-    <div class="flex flex-col" data-testid="numerical-filter">
-      <label for="min">Min:</label><input
-        id="min"
-        data-testid="min-input"
-        type="text"
-        placeholder={min}
-        bind:value={min}
-      />
-      <label for="min">Max:</label><input
-        id="max"
-        data-testid="max-input"
-        type="text"
-        placeholder={max}
-        bind:value={max}
-      />
-    </div>
+    {#if data?.type === 'Categorical'}
+      <div data-testid="categoical-filter" class="w-full">
+        <OptionsSelectionList
+          bind:unselectedOptions
+          bind:selectedOptions
+          bind:currentlyLoading={loading}
+          on:scroll={(event) => getNextValues(event.detail.search)}
+        />
+      </div>
+    {:else if data?.type === 'Continuous'}
+      <div class="flex flex-col" data-testid="numerical-filter">
+        <label for="min">Min:</label><input
+          id="min"
+          data-testid="min-input"
+          type="text"
+          placeholder={min}
+          bind:value={min}
+        />
+        <label for="min">Max:</label><input
+          id="max"
+          data-testid="max-input"
+          type="text"
+          placeholder={max}
+          bind:value={max}
+        />
+      </div>
+    {/if}
+    <button
+      class="btn btn-icon variant-filled-primary m-1"
+      data-testid="add-filter"
+      on:click={addNewFilter}
+      disabled={data.type === 'Categorical' && valuesSelected.length === 0}
+    >
+      <i class="fas fa-plus"></i>
+    </button>
   {/if}
-  <button
-    class="btn btn-icon variant-filled-primary m-1"
-    data-testid="add-filter"
-    on:click={addNewFilter}
-    disabled={data.isCategorical && valuesSelected.length === 0}
-  >
-    <i class="fas fa-plus"></i>
-  </button>
 </div>
 
 <style>

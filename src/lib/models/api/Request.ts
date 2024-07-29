@@ -1,4 +1,4 @@
-import type { Query } from '../query/Query';
+import type { Query } from '$lib/models/query/Query';
 
 interface QueryRequestInterface {
   resourceUUID: string;

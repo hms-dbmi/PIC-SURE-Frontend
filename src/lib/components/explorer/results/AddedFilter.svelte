@@ -43,7 +43,7 @@
 
   // TODO: Clean up once dictionary is more clear
   const derivedFilterDescription = function (filter: Filter) {
-    if (filter.filterType === 'categorical') {
+    if (filter.filterType === 'Categorical') {
       if (filter.displayType === 'restrict') {
         let valueText = filter.categoryValues.length === 1 ? 'value' : 'values';
         return `Restricting to ${filter.categoryValues.length} ${valueText}.`;
@@ -115,7 +115,7 @@
   {#if open}
     <section class="p-1 whitespace-pre-wrap" transition:slide={{ axis: 'y' }}>
       {derivedFilterDescription(filter)}
-      {#if filter.filterType === 'categorical' && filter.displayType !== 'any' && filter.displayType !== 'anyRecordOf'}
+      {#if filter.filterType === 'Categorical' && filter.displayType !== 'any' && filter.displayType !== 'anyRecordOf'}
         <div>Values: {filter.categoryValues.join(', ')}</div>
       {/if}
     </section>
