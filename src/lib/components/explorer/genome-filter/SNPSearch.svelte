@@ -3,9 +3,9 @@
   import type { SNP } from '$lib/models/GenomeFilter';
 
   import Panel from '$lib/components/explorer/Panel.svelte';
-  import Search from '$lib/components/explorer/gemone-filter/SNP/Search.svelte';
-  import Edit from '$lib/components/explorer/gemone-filter/SNP/Edit.svelte';
-  import Summary from '$lib/components/explorer/gemone-filter/SNP/Summary.svelte';
+  import Search from '$lib/components/explorer/genome-filter/SNP/Search.svelte';
+  import Edit from '$lib/components/explorer/genome-filter/SNP/Edit.svelte';
+  import Summary from '$lib/components/explorer/genome-filter/SNP/Summary.svelte';
 
   type SNPEvent = { detail: { snp: SNP } };
   let snp: SNP = { search: '', constraint: '' };

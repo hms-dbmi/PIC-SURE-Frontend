@@ -3,10 +3,10 @@
 
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   import Panel from '$lib/components/explorer/Panel.svelte';
-  import Genes from '$lib/components/explorer/gemone-filter/gene/Genes.svelte';
-  import Frequency from '$lib/components/explorer/gemone-filter/gene/Frequency.svelte';
-  import Consequence from '$lib/components/explorer/gemone-filter/gene/Consequence.svelte';
-  import Summary from '$lib/components/explorer/gemone-filter/gene/Summary.svelte';
+  import Genes from '$lib/components/explorer/genome-filter/gene/Genes.svelte';
+  import Frequency from '$lib/components/explorer/genome-filter/gene/Frequency.svelte';
+  import Consequence from '$lib/components/explorer/genome-filter/gene/Consequence.svelte';
+  import Summary from '$lib/components/explorer/genome-filter/gene/Summary.svelte';
 
   import { selectedGenes, clearGeneFilters } from '$lib/stores/GeneFilter';
 

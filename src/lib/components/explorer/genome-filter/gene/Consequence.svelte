@@ -1,7 +1,7 @@
 <script lang="ts">
   import { TreeView, TreeViewItem } from '@skeletonlabs/skeleton';
 
-  import variantData from '$lib/components/explorer/gemone-filter/variant-data.json';
+  import variantData from '$lib/components/explorer/genome-filter/variant-data.json';
 
   import { selectedConsequence } from '$lib/stores/GeneFilter';
 

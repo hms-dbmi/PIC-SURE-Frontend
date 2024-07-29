@@ -1,7 +1,7 @@
 import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
 
 import { createGenomicFilter, type GenomicFilterInterface } from '$lib/models/Filter';
-import variantData from '$lib/components/explorer/gemone-filter/variant-data.json';
+import variantData from '$lib/components/explorer/genome-filter/variant-data.json';
 
 const severityKeys = variantData.map((sev) => sev.key);
 

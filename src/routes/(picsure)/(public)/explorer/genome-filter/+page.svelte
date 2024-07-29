@@ -7,9 +7,9 @@
   import { page } from '$app/stores';
 
   import Content from '$lib/components/Content.svelte';
-  import FilterType from '$lib/components/explorer/gemone-filter/FilterType.svelte';
-  import SnpSearch from '$lib/components/explorer/gemone-filter/SNPSearch.svelte';
-  import GeneSearch from '$lib/components/explorer/gemone-filter/GeneSearch.svelte';
+  import FilterType from '$lib/components/explorer/genome-filter/FilterType.svelte';
+  import SnpSearch from '$lib/components/explorer/genome-filter/SNPSearch.svelte';
+  import GeneSearch from '$lib/components/explorer/genome-filter/GeneSearch.svelte';
   import AngleButton from '$lib/components/buttons/AngleButton.svelte';
 
   import type { GenomicFilterInterface, SnpFilterInterface } from '$lib/models/Filter';
