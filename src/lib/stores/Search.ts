@@ -1,65 +1,65 @@
 import { get, writable, type Writable } from 'svelte/store';
+import { type Facet, type SearchResult } from '$lib/models/Search';
+import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
+import type { State } from '@vincjo/datatables/remote';
+import { searchDictionary } from '$lib/services/dictionary';
 
-import {
-  mapTags,
-  type SearchTagType,
-  mapSearchResults,
-  type SearchResult,
-  TagCheckbox,
-} from '$lib/models/Search';
-import * as api from '$lib/api';
-
-import { resources } from '$lib/configuration';
-
-const searchUrl = `picsure/search/${resources.hpds}`;
-
-const tags: Writable<SearchTagType[]> = writable([]);
 const searchTerm: Writable<string> = writable('');
-const searchResults: Writable<SearchResult[]> = writable([]);
+const selectedFacets: Writable<Facet[]> = writable([]);
+const error: Writable<string> = writable('');
 
-const tagsMock = [
-  {
-    title: 'Dataset',
-    tags: ['NHANES', '1000 Genomes'],
-  },
-  {
-    title: 'Category',
-    tags: ['laboratory', 'questionaire'],
-  },
-  {
-    title: 'Data Type',
-    tags: ['type 1', 'type 2'],
-  },
-];
-
-async function search(search: string) {
-  if (!search) {
-    tags.set([]);
-    searchResults.set([]);
-    searchTerm.set('');
-    return;
+async function search(searchTerm: string, facets: Facet[], state?: State): Promise<SearchResult[]> {
+  if (!searchTerm && (!facets || !facets.length)) {
+    state?.setTotalRows(0);
+    return [];
   }
-  const response = await api.post(searchUrl, { query: search });
-  tags.set(tagsMock.map(mapTags));
-  searchResults.set(Object.values(response.results.phenotypes).map(mapSearchResults));
-  searchTerm.set(search);
+  try {
+    const response = await searchDictionary(searchTerm.trim(), facets, {
+      pageNumber: state?.pageNumber ? state?.pageNumber - 1 : 0,
+      pageSize: state?.rowsPerPage,
+    });
+    state?.setTotalRows(response.totalElements);
+    return response.content;
+  } catch (e) {
+    console.error(e);
+    error.set(
+      'An error occurred while searching. If the problem persists, please contact an administrator.',
+    );
+    state?.setTotalRows(0);
+    return [];
+  }
 }
 
-// TODO: Update include/exclude method to send api update to the server, maybe with a debounce?
-function updateTag(type: string, tag: string, newState: TagCheckbox) {
-  const newTags = get(tags);
-  const typeIndex = newTags.findIndex((t) => t.title == type);
-  const tagIndex = newTags[typeIndex].tags.findIndex((t) => t.name == tag);
-
-  newTags[typeIndex].tags[tagIndex].state = newState;
-  tags.set(newTags);
+async function updateFacet(newFacet: Facet, facetCategory: DictionaryFacetResult | undefined) {
+  if (facetCategory) {
+    newFacet.categoryRef = {
+      display: facetCategory.display,
+      name: facetCategory.name,
+      description: facetCategory.description,
+    };
+  }
+  try {
+    selectedFacets.update((facets) => {
+      const index = facets.findIndex((facet) => facet.name === newFacet.name);
+      if (index === -1) {
+        facets.push(newFacet);
+      } else {
+        facets.splice(index, 1);
+      }
+      //For reactivity and sorting
+      selectedFacets.set(get(selectedFacets).sort((a, b) => b.count - a.count));
+      return facets;
+    });
+  } catch (e) {
+    console.error(e);
+    return;
+  }
 }
 
 export default {
-  subscribe: tags.subscribe,
-  tags,
+  selectedFacets: selectedFacets,
   searchTerm,
-  searchResults,
+  error,
   search,
-  updateTag,
+  updateFacet,
 };

@@ -2,22 +2,36 @@
   import FilterStore from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
   import ResultsPanel from '$lib/components/explorer/results/ResultsPanel.svelte';
+  import { onDestroy, onMount } from 'svelte';
+  import type { Unsubscriber } from 'svelte/store';
   let { filters } = FilterStore;
   let { exports } = ExportStore;
 
+  let unsubFilterStore: Unsubscriber;
+  let unsubExportStore: Unsubscriber;
+
   export let panelOpen = false;
+
   function openPanel() {
     panelOpen = true;
   }
-  FilterStore.subscribe(() => {
-    if ($filters?.length !== 0) {
-      openPanel();
-    }
+
+  onMount(() => {
+    unsubFilterStore = FilterStore.subscribe(() => {
+      if ($filters?.length !== 0) {
+        openPanel();
+      }
+    });
+    unsubExportStore = ExportStore.subscribe(() => {
+      if ($exports?.length !== 0) {
+        openPanel();
+      }
+    });
   });
-  ExportStore.subscribe(() => {
-    if ($exports?.length !== 0) {
-      openPanel();
-    }
+
+  onDestroy(() => {
+    unsubFilterStore && unsubFilterStore();
+    unsubExportStore && unsubExportStore();
   });
 </script>
 

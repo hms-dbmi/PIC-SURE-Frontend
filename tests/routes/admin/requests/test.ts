@@ -103,6 +103,7 @@ test.describe('data requests', () => {
       await page.getByLabel('Dataset Id').fill(dummyUuid);
 
       // Then
+      await expect(page.getByTestId('v-stepper-step-2')).toBeVisible();
       await expect(page.getByTestId('v-stepper-step-2')).toHaveAttribute('aria-current', 'step');
     });
     test('Should show data request summary modal', async ({ page }) => {
@@ -138,6 +139,7 @@ test.describe('data requests', () => {
       await page.getByLabel('Dataset Id').fill(dummyUuid);
 
       // When
+      await expect(page.getByTestId('v-stepper-step-2')).toBeVisible();
       await page.getByLabel('Date approved').fill(dummyDate);
 
       // Then
@@ -158,6 +160,7 @@ test.describe('data requests', () => {
       // Given
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
+      await expect(page.getByTestId('v-stepper-step-2')).toBeVisible();
       await page.getByLabel('Date approved').fill(dummyDate);
 
       // When
@@ -209,6 +212,7 @@ test.describe('data requests', () => {
       // Given
       await page.goto('/admin/requests');
       await page.getByLabel('Dataset Id').fill(dummyUuid);
+      await expect(page.getByTestId('v-stepper-step-2')).toBeVisible();
       await page.getByLabel('Date approved').fill(dummyDate);
 
       // Then

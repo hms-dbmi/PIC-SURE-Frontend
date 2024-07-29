@@ -22,7 +22,7 @@ async function send({
 
   if (data) {
     opts.headers['Content-Type'] = 'application/json';
-    opts.body = JSON.stringify(data);
+    opts.body = typeof data === 'string' ? data : JSON.stringify(data);
   }
 
   if (headers) {
