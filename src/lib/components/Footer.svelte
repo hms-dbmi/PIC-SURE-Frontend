@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { LightSwitch } from '@skeletonlabs/skeleton';
   import { getModalStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
 
@@ -48,8 +47,7 @@
     </div>
   </div>
 {/if}
-<footer id="main-footer" class="flex">
-  <LightSwitch />
+<footer id="main-footer" class="flex relative">
   <ul>
     <li><button class="hover:underline" on:click={openTermsModal}>Terms of Service</button></li>
     {#each branding.footer.links as link}
