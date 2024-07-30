@@ -1,4 +1,6 @@
 import type { Indexable } from '$lib/types';
+import { type SNP } from '$lib/models/GenomeFilter';
+
 type ExpectedResultType =
   | 'COUNT'
   | 'CROSS_COUNT'
@@ -75,7 +77,13 @@ export class Query implements QueryInterface {
     };
   }
 
-  addSnpFilter = this.addCategoryFilter;
+  addSnpFilter(snps: SNP[]) {
+    snps.forEach((snp) => {
+      {
+        (this.categoryFilters as Indexable)[snp.search] = snp.constraint.split(',');
+      }
+    });
+  }
 
   addRequiredField(field: string) {
     this.requiredFields.push(field);

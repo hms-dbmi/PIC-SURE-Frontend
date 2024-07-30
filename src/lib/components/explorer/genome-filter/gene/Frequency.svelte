@@ -1,17 +1,16 @@
 <script lang="ts">
-  import GeneFilterStore from '$lib/stores/GenomicFilter';
-  let { selectedFrequency } = GeneFilterStore;
+  import { selectedFrequency } from '$lib/stores/GeneFilter';
 </script>
 
-<label>
+<label class="cursor-pointer hover:variant-soft-surface hover:rounded-md">
   <input bind:group={$selectedFrequency} id="Rare" type="checkbox" value="Rare" />
   Rare
 </label>
-<label>
+<label class="cursor-pointer hover:variant-soft-surface hover:rounded-md">
   <input bind:group={$selectedFrequency} id="Common" type="checkbox" value="Common" />
   Common
 </label>
-<label>
+<label class="cursor-pointer hover:variant-soft-surface hover:rounded-md">
   <input bind:group={$selectedFrequency} id="Novel" type="checkbox" value="Novel" />
   Novel
 </label>
