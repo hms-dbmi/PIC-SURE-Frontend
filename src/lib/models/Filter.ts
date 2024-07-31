@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { SearchResult } from './Search';
 import { GenotypeMap, type SNP } from './GenomeFilter';
 
-type FilterType = 'categorical' | 'numeric' | 'required' | 'datatable' | 'genomic' | 'snp' | 'auto';
+type FilterType = 'Categorical' | 'numeric' | 'required' | 'datatable' | 'genomic' | 'snp' | 'auto';
 type DisplayType = 'any' | 'anyRecordOf' | 'restrict' | 'lessThan' | 'greaterThan' | 'between';
 
 export interface FilterInterface {
@@ -20,7 +20,7 @@ export interface FilterInterface {
 }
 
 export interface CategoricalFilterInterface extends FilterInterface {
-  filterType: 'categorical' | 'required';
+  filterType: 'Categorical' | 'required';
   categoryValues: string[];
 }
 
