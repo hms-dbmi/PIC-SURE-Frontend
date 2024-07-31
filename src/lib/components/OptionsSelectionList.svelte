@@ -22,7 +22,10 @@
     const contentHeight = element.scrollHeight;
     const scrollBuffer = 30;
     const hasLoadedAll = !unselectedOptions || unselectedOptions.length === 0;
-    return !hasLoadedAll && contentHeight - (scrollTop + containerHeight) <= scrollBuffer;
+    return (
+      hasLoadedAll ||
+      (!hasLoadedAll && contentHeight - (scrollTop + containerHeight) <= scrollBuffer)
+    );
   }
 
   function handleScroll() {
@@ -54,7 +57,7 @@
   }
 
   function selectAllOptions() {
-    selectedOptions = unselectedOptions;
+    selectedOptions = [...selectedOptions, ...unselectedOptions];
     unselectedOptions = [];
     selectedOptionEndLocation = 20;
   }
@@ -88,6 +91,7 @@
         <button
           id="select-all"
           class="btn variant-ringed-surface hover:variant-filled-primary ml-2"
+          disabled={unselectedOptions.length === 0}
           on:click={selectAllOptions}>Select All</button
         >
       {/if}
