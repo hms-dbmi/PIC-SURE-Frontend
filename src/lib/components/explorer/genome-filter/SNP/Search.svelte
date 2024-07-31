@@ -26,6 +26,8 @@
     warn = false;
   }
 
+  $: search && removeInvalid(); // remove warnings on search value change.
+
   async function searchSnp() {
     if (!validSnp.test(search)) {
       setInvalid();
