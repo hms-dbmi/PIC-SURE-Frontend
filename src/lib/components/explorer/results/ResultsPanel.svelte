@@ -108,7 +108,7 @@
       </button>
     {/if}
   </div>
-  <div class="flex flex-col items-center mt-11">
+  <div id="export-filters" class="flex flex-col items-center mt-11">
     <div class="flex content-center">
       <h5 class="font-bold text-lg flex-auto mr-2">Added to Export</h5>
       {#if hasFilterOrExport}

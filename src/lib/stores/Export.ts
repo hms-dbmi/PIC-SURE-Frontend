@@ -24,7 +24,7 @@ function removeExport(variableId: string) {
   );
 }
 
-function clearExports() {
+export function clearExports() {
   exports.set([]);
 }
 
