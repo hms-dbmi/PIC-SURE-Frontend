@@ -6,6 +6,7 @@ import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { Query } from '$lib/models/query/Query';
 
 const filters: Writable<Filter[]> = writable([]);
+const totalParticipants: Writable<number> = writable(0);
 const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
   $f.find((filter) => filter.filterType === 'genomic') ? true : false,
 );
@@ -40,21 +41,29 @@ function getFilter(uuid: string) {
 
 function getQueryRequest(): QueryRequestInterface {
   const newQuery = new Query();
+  
   get(filters).forEach((filter) => {
+
     if (filter.filterType === 'Categorical') {
+      
       if (filter.displayType === 'restrict') {
         newQuery.addCategoryFilter(filter.id, filter.categoryValues);
       } else {
         newQuery.addRequiredField(filter.id);
+      
       }
     } else if (filter.filterType === 'numeric') {
+      
       newQuery.addNumericFilter(filter.id, filter.min || '', filter.max || '');
+    
     } else if (filter.filterType === 'genomic') {
+      
       newQuery.addCategoryVariantInfoFilters({
         Gene_with_variant: filter.Gene_with_variant,
         Variant_consequence_calculated: filter.Variant_consequence_calculated,
         Variant_frequency_as_text: filter.Variant_frequency_as_text,
       });
+    
     } else if (filter.filterType === 'snp') {
       newQuery.addSnpFilter(filter.id, filter.categoryValues);
     }
@@ -76,6 +85,7 @@ export default {
   setFilters,
   getFilter,
   getQueryRequest,
+  totalParticipants,
 };
 
 //TODO: CLEAN UP

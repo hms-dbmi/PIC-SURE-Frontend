@@ -57,7 +57,7 @@ async function updateFacet(newFacet: Facet, facetCategory: DictionaryFacetResult
 }
 
 export default {
-  selectedFacets: selectedFacets,
+  selectedFacets,
   searchTerm,
   error,
   search,

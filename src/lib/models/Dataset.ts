@@ -12,6 +12,7 @@ export type DataSet = Indexable & {
   queryId: string;
   federated?: any;
   startTime: string;
+  rawStartTime: number;
 };
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
@@ -47,6 +48,7 @@ export function mapDataset(data: any) {
     federated,
     queryId: data.query.uuid,
     startTime: secondsToDate(data.query.startTime),
+    rawStartTime: data.query.startTime,
   };
   return dataset;
 }

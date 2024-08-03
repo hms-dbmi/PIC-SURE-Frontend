@@ -1,5 +1,5 @@
 # Step 1: Build the app with node
-FROM node:22.2.0-alpine3.18 AS builder
+FROM node:22.2.0-alpine3.19 AS builder
 WORKDIR /app
 COPY package*.json .
 COPY .env .
@@ -9,7 +9,7 @@ RUN npm run build
 RUN npm ci --omit dev
 
 # Step 2: Serve the app with httpd
-FROM httpd:2.4.61-alpine
+FROM httpd:2.4.62-alpine
 
 RUN apk add --update openssl sed nodejs supervisor
 #TODO: volume mount the certs

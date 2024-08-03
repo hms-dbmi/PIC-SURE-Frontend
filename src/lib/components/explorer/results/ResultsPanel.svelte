@@ -12,36 +12,30 @@
   import {
     ProgressRadial,
     getModalStore,
-    type ModalSettings,
     type ToastSettings,
     getToastStore,
   } from '@skeletonlabs/skeleton';
   import { elasticInOut } from 'svelte/easing';
-  import { onDestroy } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+    import type { Unsubscriber } from 'svelte/store';
 
-  const { filters, hasGenomicFilter, getQueryRequest, clearFilters } = FilterStore;
+  const { filters, hasGenomicFilter, getQueryRequest, clearFilters, totalParticipants } = 
+    FilterStore;
   const { exports, clearExports } = ExportStore;
 
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
+  let unsubFilters: Unsubscriber;
   let totalPatients = 0;
-
-  const modal: ModalSettings = {
-    type: 'component',
-    title: 'Export Data',
-    component: 'stepper',
-    response: (r: string) => {
-      console.log(r);
-    },
-  };
-
   let triggerRefreshCount = getCount();
 
   async function getCount() {
     let request: QueryRequestInterface = getQueryRequest();
     try {
       totalPatients = await api.post('picsure/query/sync', request);
+      totalParticipants.set(totalPatients);
       return totalPatients;
     } catch (error) {
       const toast: ToastSettings = {
@@ -52,10 +46,6 @@
       return 0;
     }
   }
-
-  const unsubFilters = filters.subscribe(() => {
-    triggerRefreshCount = getCount();
-  });
 
   function clearFiltersModal() {
     modalStore.trigger({
@@ -77,7 +67,15 @@
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0);
   $: showExportButton = features.explorer.allowExport && totalPatients !== 0 && hasFilterOrExport;
 
-  onDestroy(unsubFilters);
+  onMount(async () => {
+    unsubFilters = filters.subscribe(() => {
+      triggerRefreshCount = getCount();
+    });
+  });
+
+  onDestroy(() => {
+    unsubFilters && unsubFilters();
+  });
 </script>
 
 <section
@@ -101,7 +99,7 @@
         id="export-data-button"
         type="button"
         class="btn variant-filled-primary"
-        on:click={() => modalStore.trigger(modal)}
+        on:click={() => goto('/explorer/export')}
         transition:scale={{ easing: elasticInOut }}
       >
         Prepare for Analysis

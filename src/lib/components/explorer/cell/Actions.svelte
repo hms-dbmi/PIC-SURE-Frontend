@@ -6,8 +6,8 @@
   let { exports, addExport, removeExport } = ExportStore;
   export let data = {} as SearchResult;
   $: exportItem = {
-    variableName: data.row.name,
     variableId: data.row.conceptPath,
+    searchResult: data.row,
   } as Export;
   function updateActiveRow(component: string) {
     return () => {
