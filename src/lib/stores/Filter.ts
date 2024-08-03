@@ -11,7 +11,7 @@ const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
   $f.find((filter) => filter.filterType === 'genomic') ? true : false,
 );
 
-function addFilter(filter: Filter) {
+export function addFilter(filter: Filter) {
   const currentFilters = get(filters);
   currentFilters.forEach((f) => {
     if (f.variableName === filter.variableName) {
@@ -22,7 +22,7 @@ function addFilter(filter: Filter) {
   return filter;
 }
 
-function removeFilter(uuid: string) {
+export function removeFilter(uuid: string) {
   const currentFilters = get(filters);
   filters.set(currentFilters.filter((f) => f.uuid !== uuid));
 }
@@ -35,8 +35,12 @@ function setFilters(newFilters: Filter[]) {
   filters.set(newFilters);
 }
 
-function getFilter(uuid: string) {
+export function getFilter(uuid: string) {
   return get(filters).find((f) => f.uuid === uuid);
+}
+
+export function getFiltersByType(type: string) {
+  return get(filters).filter((f) => f.filterType === type);
 }
 
 function getQueryRequest(): QueryRequestInterface {
@@ -65,7 +69,7 @@ function getQueryRequest(): QueryRequestInterface {
       });
     
     } else if (filter.filterType === 'snp') {
-      newQuery.addSnpFilter(filter.id, filter.categoryValues);
+      newQuery.addSnpFilter(filter.snpValues);
     }
   });
 

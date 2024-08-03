@@ -1,11 +1,13 @@
 <script lang="ts">
   import { TreeView, TreeViewItem } from '@skeletonlabs/skeleton';
-  import variantData from '$lib/components/explorer/gemone-filter/variant-data.json';
 
-  import GeneFilterStore from '$lib/stores/GenomicFilter';
-  let { selectedConsequence } = GeneFilterStore;
+  import variantData from '$lib/components/explorer/genome-filter/variant-data.json';
+
+  import { selectedConsequence } from '$lib/stores/GeneFilter';
 
   let severityChildren: TreeViewItem[][] = variantData.map(() => []);
+
+  const intersection = (A: string[], B: string[]) => A.some((a: string) => B.includes(a));
 </script>
 
 <div class="overflow-auto h-60 max-h-60">
@@ -16,6 +18,7 @@
         name="severity"
         value={severity.key}
         children={severityChildren[sIndex]}
+        open={intersection($selectedConsequence, severity.children)}
       >
         <p>{severity.key}</p>
         <svelte:fragment slot="children">

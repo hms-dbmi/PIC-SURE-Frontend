@@ -39,292 +39,361 @@ test.describe('explorer', () => {
   });
   test.describe('Search row actions', () => {
     // TODO: Some feartures will be hidden in the future. Cannot use nth.
-    test('Clicking a row opens info panel', async ({ page }) => {
-      // Given
+    test.describe('Info Actions', () => {
+      test('Clicking a row opens info panel', async ({ page }) => {
+        // Given
 
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
 
-      // When
-      await expect(page.locator('tbody')).toBeVisible();
-      const tableBody = page.locator('tbody');
-      const firstRow = tableBody.locator('tr').first();
-      await expect(firstRow).toBeVisible();
-      await firstRow.click();
+        // When
+        await expect(page.locator('tbody')).toBeVisible();
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        await expect(firstRow).toBeVisible();
+        await firstRow.click();
 
-      // Then
-      const infoPanel = tableBody.locator('tr.expandable-row').first();
-      await expect(infoPanel).toBeVisible();
+        // Then
+        const infoPanel = tableBody.locator('tr.expandable-row').first();
+        await expect(infoPanel).toBeVisible();
+      });
+      test('Clicking the row again closes the info panel', async ({ page }) => {
+        // Given
+
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        await expect(page.locator('tbody')).toBeVisible();
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        await expect(firstRow).toBeVisible();
+        await firstRow.click();
+
+        // Then
+        const infoPanel = tableBody.locator('tr.expandable-row').first();
+        await expect(infoPanel).toBeVisible();
+
+        // Then
+        await firstRow.click();
+        await expect(infoPanel).not.toBeVisible();
+      });
+      test('Clicking the info icon opens and then closes the info panel', async ({ page }) => {
+        // Given
+
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        await expect(page.locator('tbody')).toBeVisible();
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        const infoIcon = firstRow.locator('td').last().locator('button').first();
+        await expect(infoIcon).toBeVisible();
+        await infoIcon.click();
+
+        // Then
+        const infoPanel = tableBody.locator('tr.expandable-row').first();
+        await expect(infoPanel).toBeVisible();
+
+        // Then
+        await infoIcon.click();
+        await expect(infoPanel).not.toBeVisible();
+      });
     });
-    test('Clicking the row again closes the info panel', async ({ page }) => {
-      // Given
+    test.describe('Filter Actions', () => {
+      test('Clicking the filter button opens and then closes the filter panel', async ({
+        page,
+      }) => {
+        // Given
 
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
 
-      // When
-      await expect(page.locator('tbody')).toBeVisible();
-      const tableBody = page.locator('tbody');
-      const firstRow = tableBody.locator('tr').first();
-      await expect(firstRow).toBeVisible();
-      await firstRow.click();
+        // When
+        await clickNthFilterIcon(page);
 
-      // Then
-      const infoPanel = tableBody.locator('tr.expandable-row').first();
-      await expect(infoPanel).toBeVisible();
+        // Then
+        const tableBody = page.locator('tbody');
+        const panel = tableBody.locator('tr.expandable-row').first();
+        await expect(panel).toBeVisible();
 
-      // Then
-      await firstRow.click();
-      await expect(infoPanel).not.toBeVisible();
+        // Then
+        await clickNthFilterIcon(page);
+        await expect(panel).not.toBeVisible();
+      });
+      test('Clicking the filter button opens the correct filter panel', async ({ page }) => {
+        // Given
+
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        await clickNthFilterIcon(page);
+        const mockdataType = mockData.content[0].type;
+
+        // Then
+        const tableBody = page.locator('tbody');
+        const panel = tableBody.locator('tr.expandable-row').first();
+        await expect(panel).toBeVisible();
+        if (mockdataType === 'Categorical') {
+          await expect(page.getByTestId('categoical-filter')).toBeVisible();
+        } else {
+          await expect(page.getByTestId('numerical-filter')).toBeVisible();
+        }
+      });
+      test('Clicking the filter button opens the correct filter panel (numerical)', async ({
+        page,
+      }) => {
+        // Given
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        await clickNthFilterIcon(page, 2);
+        const mockdataType = mockData.content[2].type;
+
+        // Then
+        const tableBody = page.locator('tbody');
+        const panel = tableBody.locator('tr.expandable-row').first();
+        await expect(panel).toBeVisible();
+        if (mockdataType === 'Categorical') {
+          await expect(page.getByTestId('categoical-filter')).toBeVisible();
+        } else {
+          await expect(page.getByTestId('numerical-filter')).toBeVisible();
+        }
+      });
+      test('Searching in filter shows only searched options', async ({ page }) => {
+        // Given
+        const row = mockData.content[0] as SearchResult;
+        const searchValue = 'No';
+
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.route(
+          '*/**/picsure/proxy/dictionary-api/concepts/detail/' + row.dataset,
+          async (route: Route) => route.fulfill({ body: JSON.stringify(row) }),
+        );
+        await page.goto('/explorer?search=somedata');
+        await clickNthFilterIcon(page, 0);
+
+        // When
+        await page
+          .getByTestId('optional-selection-list')
+          .getByPlaceholder('Search...')
+          .fill(searchValue);
+
+        // Then
+        const searchString = (value: string) =>
+          value.toLowerCase().includes(searchValue.toLowerCase());
+        const include = (row.values || []).filter(searchString);
+        const exclude = (row.values || []).filter((value) => !searchString(value));
+        const options = page.locator('#options-container');
+        await Promise.all([
+          ...include.map((value) =>
+            expect(options.getByLabel(value, { exact: true })).toBeVisible(),
+          ),
+          ...exclude.map((value) =>
+            expect(options.getByLabel(value, { exact: true })).not.toBeVisible(),
+          ),
+        ]);
+      });
+      test('Select all disabled when all options are added', async ({ page }) => {
+        // Given
+        const row = mockData.content[0] as SearchResult;
+
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.route(
+          '*/**/picsure/proxy/dictionary-api/concepts/detail/' + row.dataset,
+          async (route: Route) => route.fulfill({ body: JSON.stringify(row) }),
+        );
+        await page.goto('/explorer?search=somedata');
+        await clickNthFilterIcon(page, 0);
+
+        // When
+        const searchBtn = page.locator('#select-all');
+        await page.locator('#select-all').click();
+
+        // Then
+        await expect(page.locator('#options-container')).toBeEmpty();
+        await expect(searchBtn).toBeDisabled();
+      });
     });
-    test('Clicking the info icon opens and then closes the info panel', async ({ page }) => {
-      // Given
+    test.describe('Export Actions', () => {
+      test('Clicking the export button flips the icon', async ({ page }) => {
+        // Given
 
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
 
-      // When
-      await expect(page.locator('tbody')).toBeVisible();
-      const tableBody = page.locator('tbody');
-      const firstRow = tableBody.locator('tr').first();
-      const infoIcon = firstRow.locator('td').last().locator('button').first();
-      await expect(infoIcon).toBeVisible();
-      await infoIcon.click();
+        // When
+        await expect(page.locator('tbody')).toBeVisible();
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        const exportButton = firstRow.locator('td').last().locator('button').last();
+        await expect(exportButton).toBeVisible();
+        const iconExport = exportButton.locator('i');
+        await expect(iconExport).toHaveClass(/fa-right-from-bracket/);
 
-      // Then
-      const infoPanel = tableBody.locator('tr.expandable-row').first();
-      await expect(infoPanel).toBeVisible();
+        // Then
+        await exportButton.click();
+        await expect(iconExport).toHaveClass(/fa-square-check/);
+        await exportButton.click();
+        await expect(iconExport).toHaveClass(/fa-right-from-bracket/);
+      });
+      test('Clicking the export button opens result panel', async ({ page }) => {
+        // Given
 
-      // Then
-      await infoIcon.click();
-      await expect(infoPanel).not.toBeVisible();
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        await expect(page.locator('tbody')).toBeVisible();
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        const exportButton = firstRow.locator('td').last().locator('button').last();
+        await exportButton.click();
+
+        // Then
+        await expect(page.locator('#results-panel')).toBeVisible();
+      });
+      test('Clicking the export button opens result panel and the variable show in the list', async ({
+        page,
+      }) => {
+        // Given
+
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        await expect(page.locator('tbody')).toBeVisible();
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        const exportButton = firstRow.locator('td').last().locator('button').last();
+        await exportButton.click();
+
+        // Then
+        await expect(page.getByTestId('export-header')).toBeVisible();
+        await expect(page.getByTestId(`added-export-${mockData.content[0].name}`)).toBeVisible();
+      });
+      test('Clicking an export remove button removes the export', async ({ page }) => {
+        //todo check remove button class
+        // Given
+
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        await expect(page.locator('tbody')).toBeVisible();
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        const exportButton = firstRow.locator('td').last().locator('button').last();
+        await exportButton.click();
+        const removeButton = page
+          .getByTestId(`added-export-${mockData.content[0].name}`)
+          .locator('button');
+        removeButton.click();
+        // Then
+        await expect(page.getByTestId('export-header')).not.toBeVisible();
+        await expect(
+          page.getByTestId(`added-export-${mockData.content[0].name}`),
+        ).not.toBeVisible();
+      });
+      test('Clicking a second export adds a second export', async ({ page }) => {
+        // Given
+
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        await expect(page.locator('tbody')).toBeVisible();
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        const exportButton = firstRow.locator('td').last().locator('button').last();
+        const firstRow2 = tableBody.locator('tr').nth(1);
+        const exportButton2 = firstRow2.locator('td').last().locator('button').last();
+        await exportButton.click();
+        await exportButton2.click();
+
+        // Then
+        await expect(page.getByTestId('export-header')).toBeVisible();
+        await expect(page.getByTestId(`added-export-${mockData.content[0].name}`)).toBeVisible();
+        await expect(page.getByTestId(`added-export-${mockData.content[1].name}`)).toBeVisible();
+      });
+      test('Exports remmain after closing and opening the results panel', async ({ page }) => {
+        // Given
+
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        await expect(page.locator('tbody')).toBeVisible();
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        const exportButton = firstRow.locator('td').last().locator('button').last();
+        const firstRow2 = tableBody.locator('tr').nth(1);
+        const exportButton2 = firstRow2.locator('td').last().locator('button').last();
+        await exportButton.click();
+        await exportButton2.click();
+        await page.locator('#results-panel-toggle').click();
+
+        // Then
+        await expect(page.locator('#results-panel')).not.toBeVisible();
+        await page.locator('#results-panel-toggle').click();
+
+        // Then
+        await expect(page.locator('#results-panel')).toBeVisible();
+        await expect(page.getByTestId('export-header')).toBeVisible();
+        await expect(page.getByTestId(`added-export-${mockData.content[0].name}`)).toBeVisible();
+        await expect(page.getByTestId(`added-export-${mockData.content[1].name}`)).toBeVisible();
+      });
     });
-    test('Clicking the filter button opens and then closes the filter panel', async ({ page }) => {
-      // Given
+    test.describe('Export Actions', () => {
+      test('Hierarchy component shows when action button clicked', async ({ page }) => {
+        // Given
 
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
 
-      // When
-      await clickNthFilterIcon(page);
+        // When
+        await expect(page.locator('tbody')).toBeVisible();
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
+        await hierarchyButton.click();
 
-      // Then
-      const tableBody = page.locator('tbody');
-      const panel = tableBody.locator('tr.expandable-row').first();
-      await expect(panel).toBeVisible();
-
-      // Then
-      await clickNthFilterIcon(page);
-      await expect(panel).not.toBeVisible();
-    });
-    test('Clicking the filter button opens the correct filter panel', async ({ page }) => {
-      // Given
-
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
-
-      // When
-      await clickNthFilterIcon(page);
-      const mockdataType = mockData.content[0].type;
-
-      // Then
-      const tableBody = page.locator('tbody');
-      const panel = tableBody.locator('tr.expandable-row').first();
-      await expect(panel).toBeVisible();
-      if (mockdataType === 'Categorical') {
-        await expect(page.getByTestId('categoical-filter')).toBeVisible();
-      } else {
-        await expect(page.getByTestId('numerical-filter')).toBeVisible();
-      }
-    });
-    test('Clicking the filter button opens the correct filter panel (numerical)', async ({
-      page,
-    }) => {
-      // Given
-
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
-
-      // When
-      await clickNthFilterIcon(page, 2);
-      const mockdataType = mockData.content[2].type;
-
-      // Then
-      const tableBody = page.locator('tbody');
-      const panel = tableBody.locator('tr.expandable-row').first();
-      await expect(panel).toBeVisible();
-      if (mockdataType === 'Categorical') {
-        await expect(page.getByTestId('categoical-filter')).toBeVisible();
-      } else {
-        await expect(page.getByTestId('numerical-filter')).toBeVisible();
-      }
-    });
-    test('Clicking the export button flips the icon', async ({ page }) => {
-      // Given
-
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
-
-      // When
-      await expect(page.locator('tbody')).toBeVisible();
-      const tableBody = page.locator('tbody');
-      const firstRow = tableBody.locator('tr').first();
-      const exportButton = firstRow.locator('td').last().locator('button').last();
-      await expect(exportButton).toBeVisible();
-      const iconExport = exportButton.locator('i');
-      await expect(iconExport).toHaveClass(/fa-right-from-bracket/);
-
-      // Then
-      await exportButton.click();
-      await expect(iconExport).toHaveClass(/fa-square-check/);
-      await exportButton.click();
-      await expect(iconExport).toHaveClass(/fa-right-from-bracket/);
-    });
-    test('Clicking the export button opens result panel', async ({ page }) => {
-      // Given
-
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
-
-      // When
-      await expect(page.locator('tbody')).toBeVisible();
-      const tableBody = page.locator('tbody');
-      const firstRow = tableBody.locator('tr').first();
-      const exportButton = firstRow.locator('td').last().locator('button').last();
-      await exportButton.click();
-
-      // Then
-      await expect(page.locator('#results-panel')).toBeVisible();
-    });
-    test('Clicking the export button opens result panel and the variable show in the list', async ({
-      page,
-    }) => {
-      // Given
-
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
-
-      // When
-      await expect(page.locator('tbody')).toBeVisible();
-      const tableBody = page.locator('tbody');
-      const firstRow = tableBody.locator('tr').first();
-      const exportButton = firstRow.locator('td').last().locator('button').last();
-      await exportButton.click();
-
-      // Then
-      await expect(page.getByTestId('export-header')).toBeVisible();
-      await expect(page.getByTestId(`added-export-${mockData.content[0].name}`)).toBeVisible();
-    });
-    test('Clicking an export remove button removes the export', async ({ page }) => {
-      //todo check remove button class
-      // Given
-
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
-
-      // When
-      await expect(page.locator('tbody')).toBeVisible();
-      const tableBody = page.locator('tbody');
-      const firstRow = tableBody.locator('tr').first();
-      const exportButton = firstRow.locator('td').last().locator('button').last();
-      await exportButton.click();
-      const removeButton = page
-        .getByTestId(`added-export-${mockData.content[0].name}`)
-        .locator('button');
-      removeButton.click();
-      // Then
-      await expect(page.getByTestId('export-header')).not.toBeVisible();
-      await expect(page.getByTestId(`added-export-${mockData.content[0].name}`)).not.toBeVisible();
-    });
-    test('Clicking a second export adds a second export', async ({ page }) => {
-      // Given
-
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
-
-      // When
-      await expect(page.locator('tbody')).toBeVisible();
-      const tableBody = page.locator('tbody');
-      const firstRow = tableBody.locator('tr').first();
-      const exportButton = firstRow.locator('td').last().locator('button').last();
-      const firstRow2 = tableBody.locator('tr').nth(1);
-      const exportButton2 = firstRow2.locator('td').last().locator('button').last();
-      await exportButton.click();
-      await exportButton2.click();
-
-      // Then
-      await expect(page.getByTestId('export-header')).toBeVisible();
-      await expect(page.getByTestId(`added-export-${mockData.content[0].name}`)).toBeVisible();
-      await expect(page.getByTestId(`added-export-${mockData.content[1].name}`)).toBeVisible();
-    });
-    test('Exports remmain after closing and opening the results panel', async ({ page }) => {
-      // Given
-
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
-
-      // When
-      await expect(page.locator('tbody')).toBeVisible();
-      const tableBody = page.locator('tbody');
-      const firstRow = tableBody.locator('tr').first();
-      const exportButton = firstRow.locator('td').last().locator('button').last();
-      const firstRow2 = tableBody.locator('tr').nth(1);
-      const exportButton2 = firstRow2.locator('td').last().locator('button').last();
-      await exportButton.click();
-      await exportButton2.click();
-      await page.locator('#results-panel-toggle').click();
-
-      // Then
-      await expect(page.locator('#results-panel')).not.toBeVisible();
-      await page.locator('#results-panel-toggle').click();
-
-      // Then
-      await expect(page.locator('#results-panel')).toBeVisible();
-      await expect(page.getByTestId('export-header')).toBeVisible();
-      await expect(page.getByTestId(`added-export-${mockData.content[0].name}`)).toBeVisible();
-      await expect(page.getByTestId(`added-export-${mockData.content[1].name}`)).toBeVisible();
-    });
-    test('Hierarchy component shows when action button clicked', async ({ page }) => {
-      // Given
-
-      await page.route('*/**/picsure/query/sync', async (route: Route) =>
-        route.fulfill({ body: '9999' }),
-      );
-      await page.goto('/explorer?search=somedata');
-
-      // When
-      await expect(page.locator('tbody')).toBeVisible();
-      const tableBody = page.locator('tbody');
-      const firstRow = tableBody.locator('tr').first();
-      const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
-      await hierarchyButton.click();
-
-      // Then
-      await expect(page.getByTestId('hierarchy-component')).toBeVisible();
+        // Then
+        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
+      });
     });
   });
   test.describe('Add Filters', () => {

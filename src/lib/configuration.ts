@@ -131,6 +131,14 @@ export const branding = {
         url: 'https://pic-sure.org/',
       },
     ],
+    popups: {
+      genomicFilter: {
+        frequency:
+          'The variant allele frequency in gnomAD combined population as discrete text categories. Possible values: Novel (variant not in gnomAD database), Rare (variant frequency less than 1%), Common (variant frequency greater than or equal to 1%).',
+        consequence:
+          'A standardized term from the Sequence Ontology (http://www.sequenceontology.org) to describe the calculated consequence of a variant. The severity for the calculated consequence of a variant on a gene has possible values HIGH (frameshift, splice disrupting, or truncating variants), MEDIUM (non-frameshift insertions or deletions, variants altering protein sequencing without affecting its length) or LOW (other coding variants including synonymous variants).',
+      },
+    },
   },
 };
 

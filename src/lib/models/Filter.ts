@@ -1,15 +1,10 @@
-import type { SearchResult } from './Search';
 import { v4 as uuidv4 } from 'uuid';
 
+import type { SearchResult } from './Search';
+import { GenotypeMap, type SNP } from './GenomeFilter';
+
 type FilterType = 'Categorical' | 'numeric' | 'required' | 'datatable' | 'genomic' | 'snp' | 'auto';
-type DisplayType =
-  | 'any'
-  | 'anyRecordOf'
-  | 'restrict'
-  | 'genomic'
-  | 'lessThan'
-  | 'greaterThan'
-  | 'between';
+type DisplayType = 'any' | 'anyRecordOf' | 'restrict' | 'lessThan' | 'greaterThan' | 'between';
 
 export interface FilterInterface {
   uuid: string;
@@ -25,7 +20,7 @@ export interface FilterInterface {
 }
 
 export interface CategoricalFilterInterface extends FilterInterface {
-  filterType: 'Categorical' | 'required' | 'snp';
+  filterType: 'Categorical' | 'required';
   categoryValues: string[];
 }
 
@@ -43,8 +38,9 @@ export interface GenomicFilterInterface extends FilterInterface {
   Variant_frequency_as_text?: string[];
 }
 
-export interface SnpFilterInterface extends CategoricalFilterInterface {
+export interface SnpFilterInterface extends FilterInterface {
   filterType: 'snp';
+  snpValues: SNP[];
 }
 
 export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
@@ -111,39 +107,54 @@ export function createNumericFilter(searchResult: SearchResult, min?: string, ma
   return filter;
 }
 
-export function createGenomicFilter(filters: {
+export function createGenomicFilter(geneFilter: {
   Gene_with_variant?: string[];
   Variant_consequence_calculated?: string[];
   Variant_frequency_as_text?: string[];
 }) {
+  const orJoin = (key: string, arr: string[] | undefined) =>
+    arr && arr.length > 0 ? `${key}: ${arr.join(', ')}` : undefined;
+  const description = [
+    orJoin('Gene with variant', geneFilter.Gene_with_variant),
+    orJoin('Variant frequency', geneFilter.Variant_frequency_as_text),
+    orJoin('Consequence Group by severity', geneFilter.Variant_consequence_calculated),
+  ]
+    .filter((x) => x)
+    .join('; ');
+
   const filter: Filter = {
     uuid: uuidv4(),
     id: 'genomic',
     filterType: 'genomic',
-    displayType: 'genomic',
+    displayType: 'any',
     variableName: 'Genomic Filter',
-    Gene_with_variant: filters.Gene_with_variant,
-    Variant_consequence_calculated: filters.Variant_consequence_calculated,
-    Variant_frequency_as_text: filters.Variant_frequency_as_text,
+    description,
+    Gene_with_variant: geneFilter.Gene_with_variant,
+    Variant_consequence_calculated: geneFilter.Variant_consequence_calculated,
+    Variant_frequency_as_text: geneFilter.Variant_frequency_as_text,
   };
   return filter;
 }
 
-export function createSnpFilter(id: string, name: string, values: string[]) {
-  const filter: Filter = createCategoricalFilter(
-    {
-      conceptPath: id,
-      dataset: '',
-      display: name,
-      name,
-      description: '',
-      values: values,
-      type: 'Categorical',
-    },
-    values,
-  );
-  filter.filterType = 'snp';
-  filter.variableName = 'Variant Filter';
+export function createSnpsFilter(snps: SNP[]) {
+  const description = snps
+    .map(
+      (snp) =>
+        `${snp.search}: ${snp.constraint
+          .split(',')
+          .map((index: string) => GenotypeMap[index])
+          .join(', ')}`,
+    )
+    .join('; ');
+  const filter: Filter = {
+    uuid: uuidv4(),
+    id: 'snp-variant',
+    filterType: 'snp',
+    displayType: 'any',
+    snpValues: snps,
+    variableName: 'Variant Filter',
+    description,
+  };
   return filter;
 }
 

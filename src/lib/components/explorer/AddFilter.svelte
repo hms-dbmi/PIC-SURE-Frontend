@@ -24,7 +24,8 @@
   let pageSize = 20;
   let unselectedOptions: string[] = [];
   let selectedOptions: string[] = [];
-  let startLoacation = 20;
+  let startLocation = 0;
+  let lastSearchTerm = '';
   let loading = false;
 
   onMount(async () => {
@@ -41,6 +42,9 @@
           data?.values?.filter((value) => {
             return !selectedOptions.find((selected) => selected === value);
           }) || [];
+        if (unselectedOptions.length >= 50) {
+          unselectedOptions = unselectedOptions.slice(0, pageSize);
+        }
       } else if (existingFilter.filterType === 'numeric') {
         min = existingFilter.min || '';
         max = existingFilter.max || '';
@@ -97,26 +101,26 @@
 
     loading = true;
     try {
-      let nextOptions: string[] = [];
-      let end = startLoacation + pageSize;
-      if (end > totalOptions) {
-        end = totalOptions;
+      let nextOptions = (data?.values || []).filter((option) => !selectedOptions.includes(option));
+      let endLocation = Math.min(startLocation + pageSize, totalOptions);
+
+      if (search !== lastSearchTerm || !lastSearchTerm.includes(search)) {
+        // new search
+        startLocation = 0;
+        endLocation = startLocation + pageSize;
+        unselectedOptions = [];
+        lastSearchTerm = search;
       }
 
       if (search) {
-        nextOptions =
-          data?.values
-            ?.filter((value) => value.toLowerCase().includes(search.toLowerCase()))
-            .slice(startLoacation, end) || [];
-        startLoacation = end;
-      } else {
-        nextOptions = data?.values?.slice(startLoacation, end) || [];
-        startLoacation = end;
+        nextOptions = nextOptions.filter((value) =>
+          value.toLowerCase().includes(search.toLowerCase()),
+        );
       }
 
-      if (nextOptions && Array.isArray(nextOptions) && nextOptions.length > 0) {
-        unselectedOptions = [...unselectedOptions, ...nextOptions];
-      }
+      nextOptions = nextOptions.slice(startLocation, endLocation);
+      unselectedOptions = [...unselectedOptions, ...nextOptions];
+      startLocation = endLocation;
     } catch (error) {
       console.error(error);
       toastStore.trigger({
