@@ -72,7 +72,7 @@
       statusPromise = new Promise((resolve, reject) => {
         const interval = setInterval(async () => {
           const status = await checkExportStatus(picsureResultId);
-         if (status === 'ERROR') {
+          if (status === 'ERROR') {
             lockDownload = true;
             clearInterval(interval);
             reject(status);
