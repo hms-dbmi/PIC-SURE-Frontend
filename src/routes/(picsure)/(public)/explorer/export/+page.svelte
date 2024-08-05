@@ -1,5 +1,4 @@
 <script lang="ts">
-  import AngleButton from '$lib/components/buttons/AngleButton.svelte';
   import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import FilterStore from '$lib/stores/Filter';
@@ -7,7 +6,6 @@
   import { state } from '$lib/stores/Stepper';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import Content from '$lib/components/Content.svelte';
-  import { goto } from '$app/navigation';
   let { getQueryRequest } = FilterStore;
   let { exports } = ExportStore;
   let { filters } = FilterStore;
@@ -51,12 +49,6 @@
     <div class="flex flex-col items-center justify-center m-8">
       <p>No filters or exports have been created.</p>
       <div class="flex gap-4">
-        <AngleButton
-          name="back"
-          on:click={() => {
-            goto('/explorer');
-          }}>Back to Explore</AngleButton
-        >
         <button
           class="btn variant-filled-primary m-4"
           on:click={() => {

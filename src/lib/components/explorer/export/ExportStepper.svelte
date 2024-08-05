@@ -28,14 +28,10 @@
   let lockDownload = true;
   let error: string = '';
   let namedDataset: DataSet;
-  // $: participantsCount = 0;
-  // $: variablesCount = 0;
-  // $: dataPoints = 0;
   $: datasetId = '';
   $: canDownload = true;
   $: apiExport = false;
   const columns = [
-    // { dataElement: 'selected', label: 'Selected', sort: true },
     { dataElement: 'variableName', label: 'Variable Name', sort: true },
     { dataElement: 'description', label: 'Variable Description', sort: true },
     { dataElement: 'type', label: 'Type', sort: true },
@@ -104,11 +100,11 @@
       query.query.fields = $exports.map((exp) => exp.conceptPath);
       const res = await api.post('picsure/query', query);
       console.log('res', res);
-      datasetId = res.picsureResultId; //todo real res types
+      datasetId = res.picsureResultId;
     } catch (error) {
       $state.current--;
       console.error('Error in handleFirstStep', error);
-      throw error; // Rethrow the error to be consistent with the original function's behavior
+      throw error;
     }
   }
 
@@ -198,7 +194,7 @@
         {#if error}
           <div class="w-full h-full m-2">
             <ErrorAlert title="Error">
-              {error.message}
+              {error}
             </ErrorAlert>
           </div>
         {/if}
