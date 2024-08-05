@@ -14,6 +14,15 @@ export type DataSet = Indexable & {
   startTime: string;
   rawStartTime: number;
 };
+
+export interface DatasetError {
+  message: Message;
+}
+
+interface Message {
+  errorType: string;
+  message: string;
+}
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 function secondsToDate(seconds: number) {

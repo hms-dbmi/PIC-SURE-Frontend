@@ -15,7 +15,7 @@
   let { exports } = ExportStore;
   import { state } from '$lib/stores/Stepper';
   import { goto } from '$app/navigation';
-  import type { DataSet } from '$lib/models/Dataset';
+  import { type DataSet, type DatasetError } from '$lib/models/Dataset';
   import { createDatasetName } from '$lib/services/datasets';
 
   export let query: QueryRequestInterface;
@@ -101,7 +101,7 @@
   async function handleFirstStep(): Promise<void> {
     try {
       query.query.expectedResultType = 'DATAFRAME';
-      query.query.fields = $exports.map((exp) => exp.variableId);
+      query.query.fields = $exports.map((exp) => exp.conceptPath);
       const res = await api.post('picsure/query', query);
       console.log('res', res);
       datasetId = res.picsureResultId; //todo real res types
@@ -117,7 +117,12 @@
       const datasetName = encodeURIComponent(datasetNameInput);
       namedDataset = await createDatasetName(datasetId, datasetName);
     } catch (err) {
-      error = String(err) || 'Error Creating Named Dataset';
+      if (err instanceof Object) {
+        const errObj = err as DatasetError;
+        error = errObj?.message?.message || 'Error Creating Named Dataset';
+      } else {
+        error = String(err) || 'Error Creating Named Dataset';
+      }
       $state.current--;
       console.error('Error in createNamedDataset', err);
     }
@@ -187,14 +192,13 @@
       <div class="w-full h-full m-2 card p-4">
         <header class="card-header">
           Save the information in your final data export by clicking the Save Dataset ID button.
-          Navigate to the <a class="anchor" href="/dataset">Dataset Management tab</a> to view or manage
-          your Dataset IDs.
+          Navigate to the Dataset Management tab to view or manageyour Dataset IDs.
         </header>
         <hr />
         {#if error}
           <div class="w-full h-full m-2">
             <ErrorAlert title="Error">
-              {error}
+              {error.message}
             </ErrorAlert>
           </div>
         {/if}

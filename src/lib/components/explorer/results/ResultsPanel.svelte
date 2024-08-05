@@ -18,9 +18,9 @@
   import { elasticInOut } from 'svelte/easing';
   import { onDestroy, onMount } from 'svelte';
   import { goto } from '$app/navigation';
-    import type { Unsubscriber } from 'svelte/store';
+  import type { Unsubscriber } from 'svelte/store';
 
-  const { filters, hasGenomicFilter, getQueryRequest, clearFilters, totalParticipants } = 
+  const { filters, hasGenomicFilter, getQueryRequest, clearFilters, totalParticipants } =
     FilterStore;
   const { exports, clearExports } = ExportStore;
 
@@ -139,7 +139,7 @@
           <hr class="!border-t-2" />
         </header>
         <section class="py-1">
-          {#each $exports as variable (variable.variableId)}
+          {#each $exports as variable (variable.id)}
             <ExportedVariable {variable} />
           {/each}
         </section>

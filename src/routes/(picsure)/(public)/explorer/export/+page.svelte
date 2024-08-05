@@ -17,8 +17,8 @@
     return {
       ref: exp,
       selected: true,
-      variableId: exp.variableId,
-      variableName: exp.variableName,
+      variableId: exp.conceptPath,
+      variableName: exp.display || exp.searchResult?.display,
       description: exp.searchResult?.description,
       type: exp.searchResult?.type,
     };

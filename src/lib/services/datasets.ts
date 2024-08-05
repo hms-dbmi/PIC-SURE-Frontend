@@ -7,7 +7,7 @@ export async function createDatasetName(queryId: string, name: string): Promise<
   }
   const validName = /^[\w\d \-\\/?+=[\].():"']+$/g;
   if (!name.match(validName)) {
-    throw 'Name can only contain letters, numbers, and these special symbols - ? + = [ ] . ( ) : \' \"';
+    throw 'Name can only contain letters, numbers, and these special symbols - ? + = [ ] . ( ) : \' "';
   }
 
   return await api.post('picsure/dataset/named', { queryId, name });

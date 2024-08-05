@@ -1,10 +1,9 @@
 import type { SearchResult } from '$lib/models/Search';
 
-interface ExportInterface {
-  variableName: string;
-  variableId: string;
-  studyId?: string;
+export interface ExportInterface {
+  id: string;
   searchResult: SearchResult;
+  display: string;
+  conceptPath: string;
+  studyId?: string;
 }
-
-export type Export = ExportInterface;

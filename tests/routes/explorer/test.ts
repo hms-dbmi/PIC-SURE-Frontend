@@ -295,7 +295,7 @@ test.describe('explorer', () => {
 
         // Then
         await expect(page.getByTestId('export-header')).toBeVisible();
-        await expect(page.getByTestId(`added-export-${mockData.content[0].name}`)).toBeVisible();
+        await expect(page.getByTestId(`added-export-${mockData.content[0].display}`)).toBeVisible();
       });
       test('Clicking an export remove button removes the export', async ({ page }) => {
         //todo check remove button class
@@ -313,13 +313,13 @@ test.describe('explorer', () => {
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await exportButton.click();
         const removeButton = page
-          .getByTestId(`added-export-${mockData.content[0].name}`)
+          .getByTestId(`added-export-${mockData.content[0].display}`)
           .locator('button');
         removeButton.click();
         // Then
         await expect(page.getByTestId('export-header')).not.toBeVisible();
         await expect(
-          page.getByTestId(`added-export-${mockData.content[0].name}`),
+          page.getByTestId(`added-export-${mockData.content[0].display}`),
         ).not.toBeVisible();
       });
       test('Clicking a second export adds a second export', async ({ page }) => {
@@ -342,8 +342,8 @@ test.describe('explorer', () => {
 
         // Then
         await expect(page.getByTestId('export-header')).toBeVisible();
-        await expect(page.getByTestId(`added-export-${mockData.content[0].name}`)).toBeVisible();
-        await expect(page.getByTestId(`added-export-${mockData.content[1].name}`)).toBeVisible();
+        await expect(page.getByTestId(`added-export-${mockData.content[0].display}`)).toBeVisible();
+        await expect(page.getByTestId(`added-export-${mockData.content[1].display}`)).toBeVisible();
       });
       test('Exports remmain after closing and opening the results panel', async ({ page }) => {
         // Given
@@ -371,8 +371,8 @@ test.describe('explorer', () => {
         // Then
         await expect(page.locator('#results-panel')).toBeVisible();
         await expect(page.getByTestId('export-header')).toBeVisible();
-        await expect(page.getByTestId(`added-export-${mockData.content[0].name}`)).toBeVisible();
-        await expect(page.getByTestId(`added-export-${mockData.content[1].name}`)).toBeVisible();
+        await expect(page.getByTestId(`added-export-${mockData.content[0].display}`)).toBeVisible();
+        await expect(page.getByTestId(`added-export-${mockData.content[1].display}`)).toBeVisible();
       });
     });
     test.describe('Export Actions', () => {
@@ -475,7 +475,7 @@ test.describe('explorer', () => {
         meta: null,
         type: 'Categorical',
       };
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
 
       // Then
       await expect(page.locator('#results-panel')).toBeVisible();
@@ -498,7 +498,7 @@ test.describe('explorer', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[0];
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const buttons = firstAddedFilter.locator('button');
       const editbutton = buttons.first();
       const removeButton = buttons.nth(1);
@@ -537,7 +537,7 @@ test.describe('explorer', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[0];
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const openButton = firstAddedFilter.locator('button').last();
       await openButton.click();
 
@@ -563,7 +563,7 @@ test.describe('explorer', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[0];
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const openButton = firstAddedFilter.locator('button').last();
       await openButton.click();
 
@@ -596,7 +596,7 @@ test.describe('explorer', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[0];
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const openButton = firstAddedFilter.locator('button').last();
       await openButton.click();
 
@@ -625,7 +625,7 @@ test.describe('explorer', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[0];
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const openButton = firstAddedFilter.locator('button').last();
       await openButton.click();
 
@@ -652,7 +652,7 @@ test.describe('explorer', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[2];
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const openButton = firstAddedFilter.locator('button').last();
       await openButton.click();
 
@@ -683,7 +683,7 @@ test.describe('explorer', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[2];
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const openButton = firstAddedFilter.locator('button').last();
       await openButton.click();
 
@@ -712,7 +712,7 @@ test.describe('explorer', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[2];
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const openButton = firstAddedFilter.locator('button').last();
       await openButton.click();
 
@@ -740,7 +740,7 @@ test.describe('explorer', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[0];
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       await expect(page.locator('#results-panel')).toBeVisible();
       await expect(firstAddedFilter).toBeVisible();
 
@@ -768,7 +768,7 @@ test.describe('explorer', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[0];
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const edit = firstAddedFilter.locator('button').first();
       await edit.click();
 
@@ -795,7 +795,7 @@ test.describe('explorer', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[0];
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const edit = firstAddedFilter.locator('button').first();
       await edit.click();
       const modal = page.getByTestId('modal-component');
@@ -824,7 +824,7 @@ test.describe('explorer', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[0];
-      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.name}`);
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       await firstAddedFilter.click();
       const firstValueString = await firstAddedFilter.locator('section').innerText();
       const edit = firstAddedFilter.locator('button').first();
