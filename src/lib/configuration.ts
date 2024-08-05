@@ -60,14 +60,9 @@ export const branding = {
   apiPage: {
     cards: [
       {
-        header: 'What is the PIC‑SURE API?',
-        body: 'The PIC-SURE Application Programming Interface allows you to search, query, and export data using Python or R.',
-        link: '/analyze/help',
-      },
-      {
-        header: 'PIC‑SURE API Examples',
-        body: 'Get started using the PIC‑SURE API with real example code and analyses from simple queries to complex real-world use cases.',
-        link: '/analyze/start',
+        header: 'Example Analyses with PIC-SURE page',
+        body: 'Detailed step-by-step example code that demonstrates how to use PIC-SURE for analysis.',
+        link: '/analyze/example',
       },
     ],
   },
