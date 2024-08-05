@@ -72,15 +72,14 @@
       statusPromise = new Promise((resolve, reject) => {
         const interval = setInterval(async () => {
           const status = await checkExportStatus(picsureResultId);
-          if (status !== 'PENDING' || status !== 'RUNNING' || status !== 'QUEUED') {
+         if (status === 'ERROR') {
+            lockDownload = true;
             clearInterval(interval);
-            if (status === 'ERROR') {
-              lockDownload = true;
-              reject(status);
-            } else {
-              lockDownload = false;
-              resolve(status);
-            }
+            reject(status);
+          } else if (!['PENDING', 'RUNNING', 'QUEUED'].includes(status)) {
+            lockDownload = false;
+            clearInterval(interval);
+            resolve(status);
           }
         }, 2000);
       });
