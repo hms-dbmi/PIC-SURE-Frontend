@@ -12,7 +12,17 @@ export type DataSet = Indexable & {
   queryId: string;
   federated?: any;
   startTime: string;
+  rawStartTime: number;
 };
+
+export interface DatasetError {
+  message: Message;
+}
+
+interface Message {
+  errorType: string;
+  message: string;
+}
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 function secondsToDate(seconds: number) {
@@ -47,6 +57,7 @@ export function mapDataset(data: any) {
     federated,
     queryId: data.query.uuid,
     startTime: secondsToDate(data.query.startTime),
+    rawStartTime: data.query.startTime,
   };
   return dataset;
 }

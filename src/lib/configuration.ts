@@ -1,5 +1,6 @@
 import { PicsurePrivileges } from './models/Privilege';
 import type { Route } from './models/Route';
+import type { ExpectedResultType } from './models/query/Query';
 import { ExportType } from './models/Variant';
 import type { Indexable } from './types';
 
@@ -168,6 +169,8 @@ export const features: Indexable = {
   explorer: {
     allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
     exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
+    exportResultType: (import.meta.env?.VITE_EXPORT_RESULT_TYPE ||
+      'DATAFRAME') as ExpectedResultType,
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
   },
   login: {

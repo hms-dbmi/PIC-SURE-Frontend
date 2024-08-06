@@ -43,6 +43,12 @@ export interface SnpFilterInterface extends FilterInterface {
   snpValues: SNP[];
 }
 
+export type Filter =
+  | CategoricalFilterInterface
+  | NumericFilterInterface
+  | GenomicFilterInterface
+  | SnpFilterInterface;
+
 export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
   const filter: Filter = {
     uuid: uuidv4(),
@@ -51,7 +57,7 @@ export function createCategoricalFilter(searchResult: SearchResult, values?: str
     displayType: values && values?.length > 0 ? 'restrict' : 'anyRecordOf',
     searchResult: searchResult,
     categoryValues: values || [],
-    variableName: searchResult.name,
+    variableName: searchResult.display,
     description: searchResult.description,
   };
   return filter;
@@ -64,7 +70,7 @@ export function createRequiredFilter(searchResult: SearchResult) {
     filterType: 'Categorical',
     displayType: 'any',
     searchResult: searchResult,
-    variableName: searchResult.name,
+    variableName: searchResult.display,
     description: searchResult.description,
     categoryValues: [],
   };
@@ -79,7 +85,7 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, values?: str
     displayType: 'anyRecordOf',
     searchResult: searchResult,
     categoryValues: values || [],
-    variableName: searchResult.name,
+    variableName: searchResult.display,
     description: searchResult.description,
   };
   return filter;
@@ -101,7 +107,7 @@ export function createNumericFilter(searchResult: SearchResult, min?: string, ma
     searchResult: searchResult,
     min: min !== undefined ? min : undefined,
     max: max !== undefined ? max : undefined,
-    variableName: searchResult.name,
+    variableName: searchResult.display,
     description: searchResult.description,
   };
   return filter;
@@ -157,9 +163,3 @@ export function createSnpsFilter(snps: SNP[]) {
   };
   return filter;
 }
-
-export type Filter =
-  | CategoricalFilterInterface
-  | NumericFilterInterface
-  | GenomicFilterInterface
-  | SnpFilterInterface;

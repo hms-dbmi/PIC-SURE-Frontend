@@ -2,6 +2,7 @@
 
 [![Tests](https://github.com/hms-dbmi/PIC-SURE-Frontend/actions/workflows/tests.yml/badge.svg)](https://github.com/hms-dbmi/PIC-SURE-Frontend/actions/workflows/tests.yml)
 [![Docker Build](https://github.com/hms-dbmi/PIC-SURE-Frontend/actions/workflows/check-docker.yml/badge.svg)](https://github.com/hms-dbmi/PIC-SURE-Frontend/actions/workflows/check-docker.yml)
+[![GitHub license](https://img.shields.io/github/license/hms-dbmi/pic-sure-hpds-ui)](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/main/LICENSE)
 
 <b><i>NOTE: This project is still under its inital development</i></b>
 
