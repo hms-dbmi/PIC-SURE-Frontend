@@ -15,7 +15,7 @@
     dispatch('click', event);
   }
 
-  $: btnStyle = `btn btn-sm variant-${variant}-${color} text-lg`;
+  $: btnStyle = `btn btn-sm h-fit variant-${variant}-${color} text-lg`;
   const testid = $$props['data-testid'] || name.replaceAll(' ', '-').toLowerCase() + '-btn';
 </script>
 

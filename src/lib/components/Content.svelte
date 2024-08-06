@@ -19,12 +19,15 @@
 </script>
 
 <section
-  class={`main-content ${full ? 'w-full' : ''}`}
+  class={`main-content ${full ? 'w-full' : ''} ${$$props.class ?? ''}`}
   in:fly={{ duration: 300, x: transition ? '100%' : '0' }}
 >
-  {#if backUrl}<AngleButton name="back" class="my-2" on:click={onBack}>{backTitle}</AngleButton
-    >{/if}
-  {#if title}<h1 class="my-4">{title}</h1>{/if}
-  {#if subtitle}<p class="subtitle mb-4">{subtitle}</p>{/if}
+  <div class="flex items-center">
+    {#if backUrl}<AngleButton name="back" class="my-2 mr-8" on:click={onBack}
+        >{backTitle}</AngleButton
+      >{/if}
+    {#if title}<h1 class="my-4">{title}</h1>{/if}
+  </div>
+  {#if subtitle}<h2 class="subtitle mb-4">{subtitle}</h2>{/if}
   <slot />
 </section>
