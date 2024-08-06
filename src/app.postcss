@@ -527,22 +527,31 @@ input.required:invalid,
   @apply variant-soft-primary;
 }
 
-#terms-of-service .subtitle {
-  @apply text-base font-bold italic;
-}
+#terms-of-service {
+  @apply mx-4;
 
-#terms-of-service h1 {
-  @apply h3;
-}
+  .subtitle {
+    @apply text-base font-bold italic mb-4;
+  }
 
-#terms-of-service h2 {
-  @apply h4;
-}
+  h1 {
+    @apply h3;
+  }
 
-#terms-of-service ul {
-  @apply list-disc ml-8;
-}
+  h2 {
+    @apply h4;
+  }
 
-#terms-of-service a {
-  @apply anchor;
+  h1,
+  h2 {
+    @apply mt-4;
+  }
+
+  ul {
+    @apply list-disc ml-8;
+  }
+
+  a {
+    @apply anchor;
+  }
 }

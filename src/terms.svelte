@@ -86,7 +86,6 @@
     Any modification made is effective immediately upon posting the modification (unless otherwise
     stated). You should visit this page periodically to review the current Terms of Service.
   </li>
-  <li></li>
 </ul>
 
 <h2>By accessing and using PIC-SURE, you agree that you must NOT:</h2>

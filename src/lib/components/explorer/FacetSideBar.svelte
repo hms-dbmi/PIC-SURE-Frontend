@@ -47,28 +47,22 @@
   });
 </script>
 
-<div id="facet-side-bar" class="flex flex-col items-center w-full">
-  <h2 class="m-1 -mt-2 text-xl text-center">Refine Search</h2>
-  {#await facetsPromise}
-    <ProgressRadial />
-  {:then newFacets}
-    {#if newFacets?.length > 0}
-      <Accordion rounded="rounded-container-token">
-        {#each newFacets as facetCategory}
-          <FacetCategory {facetCategory} />
-        {/each}
-      </Accordion>
-    {:else}
-      <Accordion>
-        {#each recreateFacetCategories() as facetCategory}
-          <FacetCategory {facetCategory} />
-        {/each}
-      </Accordion>
-    {/if}
-  {:catch}
-    <ErrorAlert title="An error occured while retrieving facets." />
-  {/await}
-</div>
-
-<style>
-</style>
+{#await facetsPromise}
+  <ProgressRadial />
+{:then newFacets}
+  {#if newFacets?.length > 0}
+    <Accordion rounded="rounded-container-token">
+      {#each newFacets as facetCategory}
+        <FacetCategory {facetCategory} />
+      {/each}
+    </Accordion>
+  {:else}
+    <Accordion>
+      {#each recreateFacetCategories() as facetCategory}
+        <FacetCategory {facetCategory} />
+      {/each}
+    </Accordion>
+  {/if}
+{:catch}
+  <ErrorAlert title="An error occured while retrieving facets." />
+{/await}
