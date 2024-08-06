@@ -73,6 +73,8 @@ export const branding = {
     ],
   },
   explorePage: {
+    tourSearchTerm: import.meta.env?.EXPLORE_TOUR_SEARCH_TERM || 'age',
+    tourSearchIntro: 'PIC-SURE Search allows you to search for variable level data.',
     totalPatientsText: 'Filtered Participants',
     queryErrorText:
       'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
@@ -172,6 +174,7 @@ export const features: Indexable = {
     exportResultType: (import.meta.env?.VITE_EXPORT_RESULT_TYPE ||
       'DATAFRAME') as ExpectedResultType,
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
+    enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',

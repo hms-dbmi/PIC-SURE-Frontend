@@ -9,6 +9,7 @@
     type="search"
     autocomplete="off"
     class="search-box w-full"
+    id="explorer-search-box"
     data-testid="search-box"
     aria-label="Type search terms here, use enter or the search button to submit search"
     title="Type search terms here, use enter or the search button to submit search"

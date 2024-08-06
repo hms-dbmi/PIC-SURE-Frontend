@@ -21,7 +21,6 @@ test.beforeEach(async ({ page }) => {
 test.describe('explorer', () => {
   test('Has datatable, filters, and searchbar', async ({ page }) => {
     // Given
-
     await page.goto('/explorer');
 
     // Then

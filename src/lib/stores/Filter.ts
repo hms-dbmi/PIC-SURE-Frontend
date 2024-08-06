@@ -27,7 +27,7 @@ export function removeFilter(uuid: string) {
   filters.set(currentFilters.filter((f) => f.uuid !== uuid));
 }
 
-function clearFilters() {
+export function clearFilters() {
   filters.set([]);
 }
 

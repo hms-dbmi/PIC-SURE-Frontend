@@ -2,11 +2,14 @@
   import { onDestroy, onMount } from 'svelte';
   import { DataHandler, type State } from '@vincjo/datatables/remote';
   import type { Unsubscriber } from 'svelte/store';
+
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+
   import type { Column } from '$lib/models/Tables';
   import type { SearchResult } from '$lib/models/Search';
   import { branding, features } from '$lib/configuration';
+  import SearchStore from '$lib/stores/Search';
 
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
   import Content from '$lib/components/Content.svelte';
@@ -14,7 +17,7 @@
   import Searchbox from '$lib/components/Searchbox.svelte';
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import SearchStore from '$lib/stores/Search';
+  import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
 
   let { searchTerm, search, selectedFacets, error } = SearchStore;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
@@ -108,6 +111,11 @@
         </ErrorAlert>
       {:else}
         <SearchDatatable {tableName} {handler} {columns} {cellOverides} />
+      {/if}
+      {#if features.explorer.enableTour}
+        <div id="explorer-tour" class="text-center">
+          <ExplorerTour />
+        </div>
       {/if}
     </div>
   </section>

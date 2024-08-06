@@ -22,7 +22,7 @@ function removeExport(uuid: string) {
   );
 }
 
-function clearExports() {
+export function clearExports() {
   exports.set([]);
 }
 
