@@ -1,5 +1,4 @@
 <script lang="ts">
-  import '../../../app.postcss';
   import { user } from '$lib/stores/User';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
