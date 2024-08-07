@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { slide } from 'svelte/transition';
   import type { Column } from '$lib/models/Tables';
   import type { Indexable } from '$lib/types';
   import {
@@ -45,9 +46,11 @@
 {#if active && Object.keys($expandableComponents).length > 0}
   <tr id="active-row-{index.toString()}" class="expandable-row">
     <td colspan={columns.length}>
-      {#if $activeComponent}
-        <svelte:component this={$activeComponent} data={row} />
-      {/if}
+      <div transition:slide={{ axis: 'y' }}>
+        {#if $activeComponent}
+          <svelte:component this={$activeComponent} data={row} />
+        {/if}
+      </div>
     </td>
   </tr>
 {/if}

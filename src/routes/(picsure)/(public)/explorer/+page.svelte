@@ -73,9 +73,11 @@
   <title>{branding.applicationName} | Explorer</title>
 </svelte:head>
 <Content full>
-  <section id="search-container" class="grid grid-cols-4 gap-6">
-    <FacetSideBar />
-    <div id="search-results-col" class="col-span-3">
+  <section id="search-container" class="flex gap-9">
+    <div id="facet-side-bar" class="flex-none flex-col items-center w-64">
+      <FacetSideBar />
+    </div>
+    <div id="search-results-col" class="flex-auto">
       <div id="search-bar" class="flex gap-2 mb-6">
         <div class="flex-auto">
           <Searchbox bind:searchTerm={searchInput} search={updateSearch} />
@@ -109,11 +111,11 @@
         <ErrorAlert title="API Error">
           <p>{$error}</p>
         </ErrorAlert>
-      {:else}
+      {:else if $searchTerm || $selectedFacets.length > 0}
         <SearchDatatable {tableName} {handler} {columns} {cellOverides} />
       {/if}
       {#if features.explorer.enableTour}
-        <div id="explorer-tour" class="text-center">
+        <div id="explorer-tour" class="text-center mt-4">
           <ExplorerTour />
         </div>
       {/if}

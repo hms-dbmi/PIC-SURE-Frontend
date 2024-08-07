@@ -19,14 +19,27 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('explorer', () => {
-  test('Has datatable, filters, and searchbar', async ({ page }) => {
+  test('Has filters, and searchbar', async ({ page }) => {
     // Given
     await page.goto('/explorer');
 
     // Then
-    await expect(page.locator('table')).toBeVisible();
     await expect(page.locator('#search-bar')).toBeVisible();
     await expect(page.locator('#facet-side-bar')).toBeVisible();
+  });
+  test('Has search result table when search is executed', async ({ page }) => {
+    // Given
+    await page.route('*/**/picsure/query/sync', async (route: Route) =>
+      route.fulfill({ body: '9999' }),
+    );
+    await page.goto('/explorer');
+
+    // When
+    await page.getByTestId('search-box').fill('somedata');
+    await page.locator('#search-button').click();
+
+    // Then
+    await expect(page.locator('table')).toBeVisible();
   });
   test('Error message on api error', async ({ page }) => {
     // Given
@@ -41,7 +54,6 @@ test.describe('explorer', () => {
     test.describe('Info Actions', () => {
       test('Clicking a row opens info panel', async ({ page }) => {
         // Given
-
         await page.route('*/**/picsure/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
@@ -374,26 +386,27 @@ test.describe('explorer', () => {
         await expect(page.getByTestId(`added-export-${mockData.content[1].display}`)).toBeVisible();
       });
     });
-    test.describe('Export Actions', () => {
-      test('Hierarchy component shows when action button clicked', async ({ page }) => {
-        // Given
+    // TODO: Renable Hierarchy action tests when feature is implemented
+    // test.describe('Hierarchy Actions', () => {
+    //   test('Hierarchy component shows when action button clicked', async ({ page }) => {
+    //     // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
-        await page.goto('/explorer?search=somedata');
+    //     await page.route('*/**/picsure/query/sync', async (route: Route) =>
+    //       route.fulfill({ body: '9999' }),
+    //     );
+    //     await page.goto('/explorer?search=somedata');
 
-        // When
-        await expect(page.locator('tbody')).toBeVisible();
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr').first();
-        const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
-        await hierarchyButton.click();
+    //     // When
+    //     await expect(page.locator('tbody')).toBeVisible();
+    //     const tableBody = page.locator('tbody');
+    //     const firstRow = tableBody.locator('tr').first();
+    //     const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
+    //     await hierarchyButton.click();
 
-        // Then
-        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-      });
-    });
+    //     // Then
+    //     await expect(page.getByTestId('hierarchy-component')).toBeVisible();
+    //   });
+    // });
   });
   test.describe('Add Filters', () => {
     test('Add button is disabled when nothing is selected', async ({ page }) => {
@@ -648,6 +661,8 @@ test.describe('explorer', () => {
         mockData.content[2]?.max?.toString(),
       );
       await clickNthFilterIcon(page, 2);
+      await page.getByTestId('min-input').fill(filter.min + '');
+      await page.getByTestId('max-input').fill(filter.max + '');
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[2];
@@ -677,8 +692,7 @@ test.describe('explorer', () => {
         mockData.content[2]?.max?.toString(),
       );
       await clickNthFilterIcon(page, 2);
-      const minInput = page.getByTestId('min-input');
-      await minInput.clear();
+      await page.getByTestId('max-input').fill(filter.max + '');
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[2];
@@ -706,8 +720,7 @@ test.describe('explorer', () => {
         mockData.content[2].max?.toString(),
       );
       await clickNthFilterIcon(page, 2);
-      const maxInput = page.getByTestId('max-input');
-      await maxInput.clear();
+      await page.getByTestId('min-input').fill(filter.min + '');
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
       const searchResult = mockData.content[2];

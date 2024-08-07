@@ -24,7 +24,7 @@
 
   const insertInfoContent = updateActiveRow('info');
   const insertFilterContent = updateActiveRow('filter');
-  const insertHierarchyContent = updateActiveRow('hierarchy');
+  // const insertHierarchyContent = updateActiveRow('hierarchy');
 
   function insertExportContent() {
     if ($exports.includes(exportItem)) {
@@ -55,6 +55,7 @@
   <i class="fa-solid fa-filter fa-xl"></i>
   <span class="sr-only">View Filters</span>
 </button>
+<!-- TODO: Renable Hierarchy button when feature is implemented
 <button
   type="button"
   title="Data Hierarchy"
@@ -64,6 +65,7 @@
   <i class="fa-solid fa-sitemap fa-xl"></i>
   <span class="sr-only">View Data Hierarchy</span>
 </button>
+-->
 <button
   type="button"
   title="Data Export"
