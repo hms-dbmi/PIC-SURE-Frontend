@@ -6,7 +6,6 @@
   import { storeHighlightJs } from '@skeletonlabs/skeleton';
 
   let tabSet: number = 0;
-  console.log($storeHighlightJs);
 </script>
 
 <svelte:head>

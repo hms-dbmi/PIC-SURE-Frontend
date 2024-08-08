@@ -74,7 +74,6 @@
   };
 
   const deleteFilter = function () {
-    console.log('delete filter', filter.uuid);
     return removeFilter(filter.uuid);
   };
 </script>
