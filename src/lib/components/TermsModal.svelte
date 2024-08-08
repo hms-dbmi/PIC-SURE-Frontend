@@ -10,7 +10,7 @@
 <section id="terms-of-service">
   <Terms />
   <button
-    class="btn variant-filled-primary hover:variant-filled-secondary mt-2 float-right"
-    on:click={() => modalStore.close()}>Ok</button
+    class="btn variant-filled-primary hover:variant-filled-secondary mt-6 float-right"
+    on:click={() => modalStore.close()}>Accept</button
   >
 </section>

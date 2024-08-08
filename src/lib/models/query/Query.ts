@@ -5,11 +5,13 @@ type ExpectedResultType =
   | 'COUNT'
   | 'CROSS_COUNT'
   | 'DATAFRAME'
+  | 'DATAFRAME_TIMESERIES'
   | 'AGGREGATE_VCF_EXCERPT'
   | 'VCF_EXCERPT'
   | 'VARIANT_COUNT_FOR_QUERY';
 
 interface QueryInterface {
+  fields: string[];
   categoryFilters: object; //TODO: define type
   numericFilters: object;
   requiredFields: string[];
@@ -38,6 +40,7 @@ export class Query implements QueryInterface {
   numericFilters: object;
   requiredFields: string[];
   anyRecordOf: string[];
+  fields: string[];
   variantInfoFilters: VariantInfoFilters[];
   expectedResultType: ExpectedResultType;
 
@@ -46,6 +49,7 @@ export class Query implements QueryInterface {
     this.numericFilters = {};
     this.requiredFields = [];
     this.anyRecordOf = [];
+    this.fields = [];
     const variantInfoFilter = {
       categoryVariantInfoFilters: {},
       numericVariantInfoFilters: {},

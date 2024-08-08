@@ -1,5 +1,6 @@
 import { PicsurePrivileges } from './models/Privilege';
 import type { Route } from './models/Route';
+import type { ExpectedResultType } from './models/query/Query';
 import { ExportType } from './models/Variant';
 import type { Indexable } from './types';
 
@@ -67,6 +68,8 @@ export const branding = {
     ],
   },
   explorePage: {
+    tourSearchTerm: import.meta.env?.EXPLORE_TOUR_SEARCH_TERM || 'age',
+    tourSearchIntro: 'PIC-SURE Search allows you to search for variable level data.',
     totalPatientsText: 'Filtered Participants',
     queryErrorText:
       'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
@@ -163,7 +166,10 @@ export const features: Indexable = {
   explorer: {
     allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
     exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
+    exportResultType: (import.meta.env?.VITE_EXPORT_RESULT_TYPE ||
+      'DATAFRAME') as ExpectedResultType,
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
+    enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
@@ -182,4 +188,8 @@ export const settings: Indexable = {
 
 export const resources = {
   hpds: import.meta.env?.VITE_RESOURCE_HPDS || '',
+};
+
+export const auth = {
+  auth0Tenant: import.meta.env?.VITE_AUTH0_TENANT || 'avillachlab',
 };

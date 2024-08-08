@@ -21,6 +21,8 @@
 
   let max: string;
   let min: string;
+  let minFormValue: string;
+  let maxFormValue: string;
   let pageSize = 20;
   let unselectedOptions: string[] = [];
   let selectedOptions: string[] = [];
@@ -46,8 +48,8 @@
           unselectedOptions = unselectedOptions.slice(0, pageSize);
         }
       } else if (existingFilter.filterType === 'numeric') {
-        min = existingFilter.min || '';
-        max = existingFilter.max || '';
+        minFormValue = existingFilter.min || '';
+        maxFormValue = existingFilter.max || '';
       }
     } else if (data?.type === 'Categorical') {
       try {
@@ -65,10 +67,9 @@
           background: 'variant-filled-error',
         });
       }
-    } else {
-      min = data.min !== undefined && data.min >= 0 ? data.min.toString() : '';
-      max = data.max !== undefined && data.max >= 0 ? data.max.toString() : '';
     }
+    min = data.min !== undefined && data.min >= 0 ? data.min.toString() : '';
+    max = data.max !== undefined && data.max >= 0 ? data.max.toString() : '';
   });
 
   function addNewFilter() {
@@ -81,7 +82,7 @@
         filter = createCategoricalFilter(data, valuesSelected);
       }
     } else {
-      filter = createNumericFilter(data, min || undefined, max || undefined);
+      filter = createNumericFilter(data, minFormValue || undefined, maxFormValue || undefined);
     }
     if (!filter) return; //todo errors
     addFilter(filter);
@@ -148,21 +149,23 @@
         />
       </div>
     {:else if data?.type === 'Continuous'}
-      <div class="flex flex-col" data-testid="numerical-filter">
-        <label for="min">Min:</label><input
-          id="min"
-          data-testid="min-input"
-          type="text"
-          placeholder={min}
-          bind:value={min}
-        />
-        <label for="min">Max:</label><input
-          id="max"
-          data-testid="max-input"
-          type="text"
-          placeholder={max}
-          bind:value={max}
-        />
+      <div class="card p-3 m-1 w-full">
+        <section class="card-body flex flex-col w-64" data-testid="numerical-filter">
+          <label for="min">Min: {min}</label><input
+            id="min"
+            data-testid="min-input"
+            type="text"
+            placeholder="Enter value or leave blank for variable min"
+            bind:value={minFormValue}
+          />
+          <label for="min">Max: {max}</label><input
+            id="max"
+            data-testid="max-input"
+            type="text"
+            placeholder="Enter value or leave blank for variable max"
+            bind:value={maxFormValue}
+          />
+        </section>
       </div>
     {/if}
     <button

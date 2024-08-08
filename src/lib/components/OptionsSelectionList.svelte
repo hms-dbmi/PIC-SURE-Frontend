@@ -80,7 +80,7 @@
   <div class="flex flex-1 flex-col h-full p-3 m-1 card">
     <header class="flex pb-1">
       <input
-        class="input"
+        class="input text-sm"
         type="search"
         name="search"
         bind:value={searchInput}
@@ -90,7 +90,7 @@
       {#if showSelectAll}
         <button
           id="select-all"
-          class="btn variant-ringed-surface hover:variant-filled-primary ml-2"
+          class="btn variant-ringed-surface hover:variant-filled-primary ml-2 text-sm"
           disabled={unselectedOptions.length === 0}
           on:click={selectAllOptions}>Select All</button
         >
@@ -112,6 +112,7 @@
             <input
               type="checkbox"
               value={option}
+              class="mr-1 float-left"
               on:click|preventDefault={() => onSelect(option)}
             />
             {option}
@@ -127,11 +128,11 @@
   </div>
   <div class="flex flex-1 flex-col h-full p-3 m-1 card">
     <header class="flex justify-between pb-1">
-      <span>Selected:</span>
+      <div class="py-2">Selected:</div>
       {#if showClearAll}
         <button
           id="clear"
-          class="btn variant-ringed-surface hover:variant-filled-primary ml-2"
+          class="btn variant-ringed-surface hover:variant-filled-primary ml-2 text-sm"
           on:click={clearSelectedOptions}
           disabled={selectedOptions.length === 0}>Clear</button
         >

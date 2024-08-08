@@ -1,12 +1,18 @@
 import { get, writable, type Writable } from 'svelte/store';
 import { type Facet, type SearchResult } from '$lib/models/Search';
-import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
+import type {
+  DictionaryConceptResult,
+  DictionaryFacetResult,
+} from '$lib/models/api/DictionaryResponses';
 import type { State } from '@vincjo/datatables/remote';
 import { searchDictionary } from '$lib/services/dictionary';
 
-const searchTerm: Writable<string> = writable('');
-const selectedFacets: Writable<Facet[]> = writable([]);
-const error: Writable<string> = writable('');
+export const loading: Writable<Promise<DictionaryConceptResult | undefined>> = writable(
+  Promise.resolve(undefined),
+);
+export const searchTerm: Writable<string> = writable('');
+export const selectedFacets: Writable<Facet[]> = writable([]);
+export const error: Writable<string> = writable('');
 
 async function search(searchTerm: string, facets: Facet[], state?: State): Promise<SearchResult[]> {
   if (!searchTerm && (!facets || !facets.length)) {
@@ -14,10 +20,12 @@ async function search(searchTerm: string, facets: Facet[], state?: State): Promi
     return [];
   }
   try {
-    const response = await searchDictionary(searchTerm.trim(), facets, {
+    const search = searchDictionary(searchTerm.trim(), facets, {
       pageNumber: state?.pageNumber ? state?.pageNumber - 1 : 0,
       pageSize: state?.rowsPerPage,
     });
+    loading.set(search);
+    const response = await search;
     state?.setTotalRows(response.totalElements);
     return response.content;
   } catch (e) {
@@ -57,7 +65,7 @@ async function updateFacet(newFacet: Facet, facetCategory: DictionaryFacetResult
 }
 
 export default {
-  selectedFacets: selectedFacets,
+  selectedFacets,
   searchTerm,
   error,
   search,

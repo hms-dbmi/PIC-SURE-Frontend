@@ -4,7 +4,9 @@ import { mapDataset, type DataSet } from '$lib/models/Dataset';
 import * as api from '$lib/api';
 
 const datasets: Writable<DataSet[]> = writable([]);
-const active: Readable<DataSet[]> = derived(datasets, ($ds) => $ds.filter((ds) => !ds.archived));
+const active: Readable<DataSet[]> = derived(datasets, ($ds) =>
+  $ds.filter((ds) => !ds.archived).sort((a, b) => b.rawStartTime - a.rawStartTime),
+);
 const archived: Readable<DataSet[]> = derived(datasets, ($ds) => $ds.filter((ds) => ds.archived));
 
 async function loadDatasets() {

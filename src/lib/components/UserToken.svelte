@@ -108,15 +108,20 @@
         </div>
       </section>
       <footer class="card-footer mt-2">
-        <CopyButton itemToCopy={$user.token || ''} class="variant-ringed-primary" />
+        <CopyButton
+          itemToCopy={$user.token || ''}
+          class="variant-ghost-primary hover:variant-filled-primary"
+        />
         <button
           id="refresh-button"
-          class="btn variant-ringed-primary"
+          class="btn variant-ghost-primary hover:variant-filled-primary"
           on:click={confirmRefreshToken}
           disabled={refreshButtonDisabled}>{refreshButtonText}</button
         >
-        <button id="reveal-button" class="btn variant-ringed-primary" on:click={revealToken}
-          >{revealButtonText}</button
+        <button
+          id="reveal-button"
+          class="btn variant-ghost-primary hover:variant-filled-primary"
+          on:click={revealToken}>{revealButtonText}</button
         >
       </footer>
     </div>

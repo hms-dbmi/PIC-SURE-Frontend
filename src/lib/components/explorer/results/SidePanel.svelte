@@ -35,7 +35,7 @@
   });
 </script>
 
-<div class="flex">
+<div id="side-panel" class="flex {panelOpen ? 'open-panel' : 'closed-panel'}">
   <div id="side-panel-bar">
     <button
       type="button"
