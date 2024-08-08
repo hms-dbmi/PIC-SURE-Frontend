@@ -51,7 +51,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
   };
 
   login = async (redirectTo: string, type: string): Promise<void> => {
-    let redirectUrl = this.getRedirectURI(redirectTo, type);
+    const redirectUrl = this.getRedirectURI(redirectTo, type);
     const webAuth = new auth0.WebAuth({
       domain: auth.auth0Tenent + '.auth0.com',
       clientID: this.clientid || '',
