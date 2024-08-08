@@ -194,3 +194,7 @@ export const settings: Indexable = {
 export const resources = {
   hpds: import.meta.env?.VITE_RESOURCE_HPDS || '',
 };
+
+export const auth = {
+  auth0Tenent: import.meta.env?.VITE_AUTH0_TENANT || 'avillachlab',
+};
