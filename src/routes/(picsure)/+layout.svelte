@@ -16,6 +16,17 @@
   import Footer from '$lib/components/Footer.svelte';
   import ModalWrapper from '$lib/components/ModalWrapper.svelte';
 
+  // Highlight.js
+  import hljs from 'highlight.js/lib/core';
+  import R from 'highlight.js/lib/languages/r';
+  import python from 'highlight.js/lib/languages/python';
+  import { storeHighlightJs } from '@skeletonlabs/skeleton';
+  import 'highlight.js/styles/obsidian.css';
+
+  hljs.registerLanguage('python', python);
+  hljs.registerLanguage('r', R);
+  storeHighlightJs.set(hljs);
+
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
   initializeStores();

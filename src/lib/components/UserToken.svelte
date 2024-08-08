@@ -66,7 +66,7 @@
 
   async function refreshToken() {
     await refresh().catch((e) => {
-      console.log(e);
+      console.log('Error: ', e);
       toastStore.trigger({
         message:
           'An error occured while refreshing your token. Please try again later. If this problem persists, please contact an administrator.',
@@ -88,7 +88,7 @@
     <ProgressRadial width="w-10" value={undefined} />
   {:then}
     <div id="user-token" class="card variant-filled-sureface">
-      <header class="card-header"><h4>PIC-SURE Token</h4></header>
+      <header class="card-header"><h4>Personal Access Token</h4></header>
       <section class="p-4 grid grid-cols-2 gap-y-2 items-center">
         <label for="account">Account:</label>
         <span id="account" class="w-full">{account}</span>
