@@ -66,6 +66,7 @@
 
   async function refreshToken() {
     await refresh().catch((e) => {
+      console.log('Error: ', e);
       toastStore.trigger({
         message:
           'An error occured while refreshing your token. Please try again later. If this problem persists, please contact an administrator.',

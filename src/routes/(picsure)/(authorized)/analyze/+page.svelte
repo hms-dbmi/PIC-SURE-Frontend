@@ -3,7 +3,6 @@
   import UserToken from '$lib/components/UserToken.svelte';
   import { branding } from '$lib/configuration';
   import { CodeBlock, Tab, TabGroup } from '@skeletonlabs/skeleton';
-  import { storeHighlightJs } from '@skeletonlabs/skeleton';
 
   let tabSet: number = 0;
 </script>
