@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import type { Indexable } from '$lib/types';
 
 export interface AuthData extends Indexable {
@@ -32,6 +33,7 @@ export default class AuthProvider implements AuthData {
 
   protected getRedirectURI(redirectTo = '/', type: string): string {
     if (!type) throw new Error('Provider type is required');
+    if (!browser) return '/';
     return encodeURI(
       `${window.location.protocol}//${window.location.hostname}${
         window.location.port ? ':' + window.location.port : ''

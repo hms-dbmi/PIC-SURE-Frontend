@@ -2,11 +2,14 @@
   import { onDestroy, onMount } from 'svelte';
   import { DataHandler, type State } from '@vincjo/datatables/remote';
   import type { Unsubscriber } from 'svelte/store';
+
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+
   import type { Column } from '$lib/models/Tables';
   import type { SearchResult } from '$lib/models/Search';
   import { branding, features } from '$lib/configuration';
+  import SearchStore from '$lib/stores/Search';
 
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
   import Content from '$lib/components/Content.svelte';
@@ -14,7 +17,7 @@
   import Searchbox from '$lib/components/Searchbox.svelte';
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import SearchStore from '$lib/stores/Search';
+  import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
 
   let { searchTerm, search, selectedFacets, error } = SearchStore;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
@@ -70,9 +73,11 @@
   <title>{branding.applicationName} | Explorer</title>
 </svelte:head>
 <Content full>
-  <section id="search-container" class="grid grid-cols-4 gap-6">
-    <FacetSideBar />
-    <div id="search-results-col" class="col-span-3">
+  <section id="search-container" class="flex gap-9">
+    <div id="facet-side-bar" class="flex-none flex-col items-center w-64">
+      <FacetSideBar />
+    </div>
+    <div id="search-results-col" class="flex-auto">
       <div id="search-bar" class="flex gap-2 mb-6">
         <div class="flex-auto">
           <Searchbox bind:searchTerm={searchInput} search={updateSearch} />
@@ -106,8 +111,13 @@
         <ErrorAlert title="API Error">
           <p>{$error}</p>
         </ErrorAlert>
-      {:else}
+      {:else if $searchTerm || $selectedFacets.length > 0}
         <SearchDatatable {tableName} {handler} {columns} {cellOverides} />
+      {/if}
+      {#if features.explorer.enableTour}
+        <div id="explorer-tour" class="text-center mt-4">
+          <ExplorerTour />
+        </div>
       {/if}
     </div>
   </section>

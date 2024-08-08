@@ -125,7 +125,7 @@ test.describe('Results Panel', () => {
     );
     await page.goto('/explorer?search=age');
 
-    const expectedRowIds = mockData.content.map((row) => row.name);
+    const expectedRowIds = mockData.content.map((row) => row.display);
     const tableBody = page.locator('tbody');
     await expect(tableBody).toBeVisible();
 

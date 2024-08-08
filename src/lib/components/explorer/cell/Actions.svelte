@@ -1,14 +1,17 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
   import { activeTable, expandableComponents, setActiveRow } from '$lib/stores/ExpandableRow';
-  import type { Export } from '$lib/models/Export';
+  import type { ExportInterface } from '$lib/models/Export';
   import ExportStore from '$lib/stores/Export';
+  import { v4 as uuidv4 } from 'uuid';
   let { exports, addExport, removeExport } = ExportStore;
   export let data = {} as SearchResult;
   $: exportItem = {
-    variableName: data.row.name,
-    variableId: data.row.conceptPath,
-  } as Export;
+    id: uuidv4(),
+    searchResult: data.row,
+    display: data.row.display,
+    conceptPath: data.row.conceptPath,
+  } as ExportInterface;
   function updateActiveRow(component: string) {
     return () => {
       setActiveRow({
@@ -21,17 +24,17 @@
 
   const insertInfoContent = updateActiveRow('info');
   const insertFilterContent = updateActiveRow('filter');
-  const insertHierarchyContent = updateActiveRow('hierarchy');
+  // const insertHierarchyContent = updateActiveRow('hierarchy');
 
   function insertExportContent() {
     if ($exports.includes(exportItem)) {
-      removeExport(exportItem.variableId);
+      removeExport(exportItem.id);
     } else {
       addExport(exportItem);
     }
   }
 
-  $: isExported = $exports.map((exp) => exp.variableName).includes(exportItem.variableName);
+  $: isExported = $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath);
 </script>
 
 <button
@@ -52,6 +55,7 @@
   <i class="fa-solid fa-filter fa-xl"></i>
   <span class="sr-only">View Filters</span>
 </button>
+<!-- TODO: Renable Hierarchy button when feature is implemented
 <button
   type="button"
   title="Data Hierarchy"
@@ -61,6 +65,7 @@
   <i class="fa-solid fa-sitemap fa-xl"></i>
   <span class="sr-only">View Data Hierarchy</span>
 </button>
+-->
 <button
   type="button"
   title="Data Export"

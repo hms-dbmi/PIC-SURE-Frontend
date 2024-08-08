@@ -5,9 +5,6 @@
 </script>
 
 <div class="card min-h-60 p-4">
-  <header class="card-header">
-    <h4>Variable Information for: {data.display}</h4>
-  </header>
   <section class="card-body">
     <ul class="break-all">
       {#if data.display}
@@ -28,3 +25,12 @@
     </ul>
   </section>
 </div>
+
+<style>
+  li {
+    margin-bottom: 0.25rem;
+  }
+  li:last-child {
+    margin-bottom: none;
+  }
+</style>
