@@ -196,5 +196,5 @@ export const resources = {
 };
 
 export const auth = {
-  auth0Tenent: import.meta.env?.VITE_AUTH0_TENANT || 'avillachlab',
+  auth0Tenant: import.meta.env?.VITE_AUTH0_TENANT || 'avillachlab',
 };
