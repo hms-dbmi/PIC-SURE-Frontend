@@ -51,6 +51,7 @@
   {/if}
   <div class="overflow-x-auto">
     <table
+      id="{tableName}-table"
       data-testid="{tableName}-table"
       class="table table-auto table-hover align-middle {fullWidth ? 'w-max' : ''}"
     >

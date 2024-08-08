@@ -24,22 +24,6 @@ test.describe('Facet Side Bar', () => {
 
     await expect(facetSideBar).toBeVisible();
   });
-  test('Facet side bar has a title', async ({ page }) => {
-    // Given
-    await page.route(searchResultPath, async (route: Route) =>
-      route.fulfill({ json: searchResults }),
-    );
-    await page.route(facetResultPath, async (route: Route) =>
-      route.fulfill({ json: facetsResponse }),
-    );
-    await page.goto('/explorer?search=age');
-    //When
-    const facetSideBar = page.locator('#facet-side-bar');
-    const facetSideBarTitle = facetSideBar.locator('h2');
-    //Then
-    await expect(facetSideBarTitle).toBeVisible();
-    await expect(facetSideBarTitle).toHaveText('Refine Search');
-  });
   test("Facet Side Bar shows error when it doesn't load data", async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) =>

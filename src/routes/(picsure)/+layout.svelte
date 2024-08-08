@@ -1,11 +1,18 @@
 <script lang="ts">
-  import { AppShell, Modal, Toast, storePopup, type ModalComponent } from '@skeletonlabs/skeleton';
+  import {
+    AppShell,
+    initializeStores,
+    Modal,
+    Toast,
+    storePopup,
+    type ModalComponent,
+  } from '@skeletonlabs/skeleton';
   import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
   import Navigation from '$lib/components/Navigation.svelte';
   import { onMount } from 'svelte';
   import SidePanel from '$lib/components/explorer/results/SidePanel.svelte';
   import { page } from '$app/stores';
-  import ExportStepper from '$lib/components/explorer/dataExport/ExportStepper.svelte';
+  import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import ModalWrapper from '$lib/components/ModalWrapper.svelte';
 
@@ -22,6 +29,7 @@
 
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
+  initializeStores();
   // Registered list of Components for Modals
   const modalComponentRegistry: Record<string, ModalComponent> = {
     stepper: { ref: ExportStepper },
@@ -37,7 +45,10 @@
     document.body.classList.add('started');
   });
 
-  $: classesSidebar = $page.url.pathname.includes('/explorer') ? '' : 'hidden';
+  $: classesSidebar =
+    $page.url.pathname.includes('/explorer') && !$page.url.pathname.includes('/export')
+      ? ''
+      : 'hidden';
 </script>
 
 <Toast position="t" />

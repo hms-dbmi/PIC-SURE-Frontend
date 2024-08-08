@@ -5,7 +5,6 @@
 
   import AngleButton from '$lib/components/buttons/AngleButton.svelte';
 
-  export let title = '';
   export let locked = false;
   export let buttonCompleteLabel: string = getContext('buttonCompleteLabel');
 
@@ -26,11 +25,9 @@
 
 {#if stepIndex === $state.current}
   <div class="step space-y-4" data-testid="step-{stepIndex + 1}">
-    {#if title}
-      <header class="step-header text-2xl font-bold">
-        <slot name="header">{title}</slot>
-      </header>
-    {/if}
+    <header class="step-header text-2xl font-bold">
+      <slot name="header" />
+    </header>
     <div class="step-content space-y-4 px-2">
       <slot>(Step {stepIndex + 1} Content)</slot>
     </div>

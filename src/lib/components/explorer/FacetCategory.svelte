@@ -57,20 +57,20 @@
   }
 </script>
 
-<AccordionItem class="card" open={anyFacetNot0}>
+<AccordionItem class="card space-y-2" open={anyFacetNot0}>
   <svelte:fragment slot="summary">{facetCategory.display}</svelte:fragment>
   <svelte:fragment slot="content">
-    {#if shouldShowSearchBar}
-      <input
-        class="p-1"
-        type="search"
-        placeholder={'Filter ' + facetCategory.display}
-        name="facet-fitler"
-        id={facetCategory.name + '-filter'}
-        bind:value={textFilterValue}
-      />
-    {/if}
     <div class="flex flex-col">
+      {#if shouldShowSearchBar}
+        <input
+          class="text-sm"
+          type="search"
+          placeholder={'Filter ' + facetCategory.display}
+          name="facet-fitler"
+          id={facetCategory.name + '-filter'}
+          bind:value={textFilterValue}
+        />
+      {/if}
       {#each facetsToDisplay as facet}
         <label data-testId={`facet-${facet.name}-label`} for={facet.name} class="m-1">
           <input

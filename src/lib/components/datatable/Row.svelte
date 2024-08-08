@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { slide } from 'svelte/transition';
   import type { Column } from '$lib/models/Tables';
   import type { Indexable } from '$lib/types';
   import {
@@ -23,9 +24,13 @@
   $: active = $activeTable === tableName && $activeRow === row?.conceptPath;
 </script>
 
-<tr id={index.toString()} on:click|stopPropagation={() => onClick(row)} class="cursor-pointer">
-  {#each columns as column}
-    <td>
+<tr
+  id="row-{index.toString()}"
+  on:click|stopPropagation={() => onClick(row)}
+  class="cursor-pointer"
+>
+  {#each columns as column, colIndex}
+    <td id="row-{index.toString()}-col-{colIndex.toString()}">
       {#if cellOverides[column.dataElement]}
         <svelte:component
           this={cellOverides[column.dataElement]}
@@ -39,11 +44,13 @@
 </tr>
 
 {#if active && Object.keys($expandableComponents).length > 0}
-  <tr class="expandable-row">
+  <tr id="active-row-{index.toString()}" class="expandable-row">
     <td colspan={columns.length}>
-      {#if $activeComponent}
-        <svelte:component this={$activeComponent} data={row} />
-      {/if}
+      <div transition:slide={{ axis: 'y' }}>
+        {#if $activeComponent}
+          <svelte:component this={$activeComponent} data={row} />
+        {/if}
+      </div>
     </td>
   </tr>
 {/if}

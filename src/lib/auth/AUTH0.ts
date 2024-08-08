@@ -5,6 +5,7 @@ import { login as UserLogin } from '$lib/stores/User';
 import type { User } from '$lib/models/User';
 import * as api from '$lib/api';
 import auth0 from 'auth0-js';
+import { auth } from '$lib/configuration';
 
 interface Auth0Data extends AuthData {
   clientid: string;
@@ -50,12 +51,9 @@ class Auth0 extends AuthProvider implements Auth0Data {
   };
 
   login = async (redirectTo: string, type: string): Promise<void> => {
-    let redirectUrl = '/';
-    if (browser) {
-      redirectUrl = this.getRedirectURI(redirectTo, type);
-    }
+    const redirectUrl = this.getRedirectURI(redirectTo, type);
     const webAuth = new auth0.WebAuth({
-      domain: 'avillachlab.auth0.com',
+      domain: auth.auth0Tenant + '.auth0.com',
       clientID: this.clientid || '',
       redirectUri: redirectUrl,
       responseType: 'token',
