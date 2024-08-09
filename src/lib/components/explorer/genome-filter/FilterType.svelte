@@ -8,13 +8,13 @@
   const dispatch = createEventDispatcher<{ select: { option: Option } }>();
 </script>
 
-<div class="text-center flex space-x-6 gap-4 {$$props.class ?? ''}">
+<div class="grid grid-cols-2 place-items-center {$$props.class ?? ''}">
   <CardButton
     data-testid="gene-variant-option"
     title="Search for variants by gene name"
     subtitle="Ex: Rare BRCA1 variants with high consequence severity"
     size="other"
-    class="w-1/2 h-32 min-h-32"
+    class="w-2/3 h-32 min-h-32"
     active={active === Option.Genomic}
     on:click={() => dispatch('select', { option: Option.Genomic })}
   />
@@ -23,7 +23,7 @@
     title="Search for a specific SNP"
     subtitle="Ex: chr17,35269878,G,A"
     size="other"
-    class="w-1/2 h-32 min-h-32"
+    class="w-2/3 h-32 min-h-32"
     active={active === Option.SNP}
     on:click={() => dispatch('select', { option: Option.SNP })}
   />
