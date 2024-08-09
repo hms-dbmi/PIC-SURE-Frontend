@@ -14,6 +14,9 @@ const config: PlaywrightTestConfig = {
   reporter: [['list'], ['html']],
   use: {
     permissions: ['clipboard-read', 'clipboard-write'],
+    launchOptions: {
+      slowMo: 200,
+    },
   },
 };
 

@@ -3,6 +3,8 @@ import { test, mockApiFail } from '../../custom-context';
 import {
   conceptsDetailPath,
   detailResponseCat,
+  detailResponseCat2,
+  detailResponseCatSameDataset,
   facetResultPath,
   facetsResponse,
   searchResults as mockData,
@@ -243,6 +245,91 @@ test.describe('explorer', () => {
         // Then
         await expect(page.locator('#options-container')).toBeEmpty();
         await expect(searchBtn).toBeDisabled();
+      });
+      test('The dictionary details are different for the same dataset', async ({ page }) => {
+        // Given
+        await page.route(
+          `${conceptsDetailPath}${detailResponseCat.dataset}`,
+          async (route: Route) => route.fulfill({ json: detailResponseCat }),
+        );
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        await clickNthFilterIcon(page);
+        const firstItem = await getOption(page);
+
+        // Then
+        const firstItemText: string = await firstItem.textContent();
+        expect(await firstItemText?.trim()).toBe(detailResponseCat.values[0]);
+        // Close the filter panel
+        clickNthFilterIcon(page);
+
+        // Then Given
+        await page.route(
+          `${conceptsDetailPath}${detailResponseCat.dataset}`,
+          async (route: Route) => route.fulfill({ json: detailResponseCatSameDataset }),
+        );
+        // When
+        await clickNthFilterIcon(page, 1);
+
+        const secondItem = await getOption(page);
+        // Then
+        const secondItemText: string = await secondItem.textContent();
+        expect(secondItemText?.trim()).toBe(detailResponseCatSameDataset.values[0]);
+      });
+      test('The dictionary details are cached', async ({ page }) => {
+        // Given
+        // Given
+        await page.route(
+          `${conceptsDetailPath}${detailResponseCat.dataset}`,
+          async (route: Route) => route.fulfill({ json: detailResponseCat }),
+        );
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        await clickNthFilterIcon(page);
+        let firstItem = await getOption(page);
+
+        // Then
+        const firstItemText: string = await firstItem.textContent();
+        expect(await firstItemText?.trim()).toBe(detailResponseCat.values[0]);
+        // Close the filter panel
+        clickNthFilterIcon(page);
+
+        // Then Given
+        await page.route(
+          `${conceptsDetailPath}${detailResponseCat.dataset}`,
+          async (route: Route) => route.fulfill({ json: detailResponseCatSameDataset }),
+        );
+        // When
+        await clickNthFilterIcon(page, 1);
+
+        const secondItem = await getOption(page);
+        // Then
+        const secondItemText: string = await secondItem.textContent();
+        expect(secondItemText?.trim()).toBe(detailResponseCatSameDataset.values[0]);
+
+        // Then Given
+        // This should not be hit so I am putting detailResponseCat2 which is wrong
+        await clickNthFilterIcon(page, 1);
+        await page.route(
+          `${conceptsDetailPath}${detailResponseCat.dataset}`,
+          async (route: Route) => route.fulfill({ json: detailResponseCat2 }),
+        );
+
+        // When
+        await clickNthFilterIcon(page, 0);
+        firstItem = await getOption(page);
+        // Then
+        const sameString: string = await firstItem.textContent();
+        expect(sameString?.trim()).toBe(detailResponseCat.values[0]);
+        expect(sameString?.trim()).toBe(firstItemText?.trim());
       });
     });
     test.describe('Export Actions', () => {
@@ -660,12 +747,12 @@ test.describe('explorer', () => {
         mockData.content[2]?.min?.toString(),
         mockData.content[2]?.max?.toString(),
       );
-      await clickNthFilterIcon(page, 2);
+      await clickNthFilterIcon(page, 3);
       await page.getByTestId('min-input').fill(filter.min + '');
       await page.getByTestId('max-input').fill(filter.max + '');
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
-      const searchResult = mockData.content[2];
+      const searchResult = mockData.content[3];
       const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const openButton = firstAddedFilter.locator('button').last();
       await openButton.click();
@@ -691,11 +778,11 @@ test.describe('explorer', () => {
         mockData.content[2]?.min?.toString(),
         mockData.content[2]?.max?.toString(),
       );
-      await clickNthFilterIcon(page, 2);
+      await clickNthFilterIcon(page, 3);
       await page.getByTestId('max-input').fill(filter.max + '');
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
-      const searchResult = mockData.content[2];
+      const searchResult = mockData.content[3];
       const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const openButton = firstAddedFilter.locator('button').last();
       await openButton.click();
@@ -719,11 +806,11 @@ test.describe('explorer', () => {
         mockData.content[2].min?.toString(),
         mockData.content[2].max?.toString(),
       );
-      await clickNthFilterIcon(page, 2);
+      await clickNthFilterIcon(page, 3);
       await page.getByTestId('min-input').fill(filter.min + '');
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
-      const searchResult = mockData.content[2];
+      const searchResult = mockData.content[3];
       const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.display}`);
       const openButton = firstAddedFilter.locator('button').last();
       await openButton.click();
