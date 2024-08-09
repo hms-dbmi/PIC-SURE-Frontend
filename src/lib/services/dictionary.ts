@@ -65,8 +65,8 @@ export async function getConceptDetails(
 ): Promise<SearchResult> {
   const url = `${conceptDetailUrl}${dataset}`;
 
-  if (dictonaryCacheMap.has(url)) {
-    return dictonaryCacheMap.get(url) as SearchResult;
+  if (dictonaryCacheMap.has(conceptPath)) {
+    return dictonaryCacheMap.get(conceptPath) as SearchResult;
   }
 
   const response: SearchResult = await api.post(
