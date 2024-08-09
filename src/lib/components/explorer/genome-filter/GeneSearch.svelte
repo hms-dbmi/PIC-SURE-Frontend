@@ -22,7 +22,6 @@
     title="Search for Gene with Variant"
     subtitle="Use the official gene symbol."
     required={true}
-    class="h-full"
   >
     <svelte:fragment slot="action">
       <button
@@ -36,14 +35,13 @@
   <Panel
     title="Select Calculated Consequence"
     subtitle="The calculated consequence is based on VEP annotation."
-    class="h-full"
   >
     <svelte:fragment slot="help">
       <HelpInfoPopup id="cons-help-popup" text={helpText.consequence} />
     </svelte:fragment>
     <Consequence />
   </Panel>
-  <Panel title="Select Variant Frequency" class="h-full">
+  <Panel title="Select Variant Frequency">
     <svelte:fragment slot="help">
       <HelpInfoPopup id="freq-help-popup" text={helpText.frequency} />
     </svelte:fragment>

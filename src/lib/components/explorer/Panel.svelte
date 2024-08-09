@@ -5,7 +5,7 @@
 </script>
 
 <div
-  class={$$props.class ?? ''}
+  class="flex flex-col {$$props.class ?? ''}"
   data-testid={$$props['data-testid'] || title.replaceAll(' ', '-').toLowerCase()}
 >
   <div class="relative rounded-t-2xl bg-primary-300-600-token p-4 items-center flex">
@@ -19,7 +19,7 @@
     {#if $$slots.action}<span class="flex-none ml-1"><slot name="action" /></span>{/if}
     {#if $$slots.help}<span class="flex-none ml-1"><slot name="help" /></span>{/if}
   </div>
-  <div class="p-2 border rounded-b-2xl border-surface-300-600-token">
+  <div class="h-full p-2 border rounded-b-2xl border-surface-300-600-token">
     <slot />
   </div>
 </div>

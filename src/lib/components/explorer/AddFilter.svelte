@@ -150,21 +150,27 @@
       </div>
     {:else if data?.type === 'Continuous'}
       <div class="card p-3 m-1 w-full">
-        <section class="card-body flex flex-col w-64" data-testid="numerical-filter">
-          <label for="min">Min: {min}</label><input
-            id="min"
-            data-testid="min-input"
-            type="text"
-            placeholder="Enter value or leave blank for variable min"
-            bind:value={minFormValue}
-          />
-          <label for="min">Max: {max}</label><input
-            id="max"
-            data-testid="max-input"
-            type="text"
-            placeholder="Enter value or leave blank for variable max"
-            bind:value={maxFormValue}
-          />
+        <section class="card-body flex flex-grow gap-4" data-testid="numerical-filter">
+          <label class="flex-auto flex-col">
+            <span>Min: {min}</span>
+            <input
+              data-testid="min-input"
+              type="text"
+              placeholder="Enter value or leave blank for variable min"
+              class="input"
+              bind:value={minFormValue}
+            />
+          </label>
+          <label class="flex-auto flex-col">
+            <span>Max: {max}</span>
+            <input
+              data-testid="max-input"
+              type="text"
+              placeholder="Enter value or leave blank for variable max"
+              class="input"
+              bind:value={maxFormValue}
+            />
+          </label>
         </section>
       </div>
     {/if}

@@ -112,17 +112,17 @@ export const branding = {
       {
         title: 'Video Library',
         description: "Example 'how-to' video demonstrations.",
-        icon: 'fa-solid fa-tv fa-4x',
+        icon: 'fa-solid fa-circle-play fa-4x',
         url: 'https://www.youtube.com/@pic-sure446/featured',
       },
       {
-        title: 'Request Assistance',
+        title: 'Request Help',
         description: 'Need help? Submit a service desk ticket, we are here to help!',
-        icon: 'fa-solid fa-hands-holding-circle fa-4x',
+        icon: 'fa-solid fa-handshake fa-4x',
         url: 'https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5',
       },
       {
-        title: 'PIC-SURE Website',
+        title: 'PIC-SURE',
         description: 'Check out the PIC-SURE website for information.',
         icon: 'fa-solid fa-circle-info fa-4x',
         url: 'https://pic-sure.org/',
