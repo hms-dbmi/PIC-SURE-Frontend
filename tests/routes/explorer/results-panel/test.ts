@@ -1,16 +1,22 @@
-import { expect, type Route } from '@playwright/test';
-import { test } from '../../../custom-context';
+import { expect } from '@playwright/test';
+import { test, mockApiFail, mockApiSuccess } from '../../../custom-context';
 import {
   conceptsDetailPath,
   detailResponseCat,
   searchResults as mockData,
   searchResultPath,
+  facetResultPath,
+  facetsResponse,
 } from '../../../mock-data';
+
+const countResultPath = '*/**/picsure/query/sync';
 
 test.describe('Results Panel', () => {
   test('Result panel bar and button shows', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // Then
@@ -20,7 +26,9 @@ test.describe('Results Panel', () => {
   });
   test('Result toggle button opens and closes the results panel', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     //When
@@ -35,21 +43,52 @@ test.describe('Results Panel', () => {
     // Then
     await expect(page.locator('#results-panel')).not.toBeVisible();
   });
-  test('Result panel shows 0 results on an error', async ({ page }) => {
+  test('Result panel shows N/A icon on add filter error with popup', async ({ page }) => {
     // Given
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await page.locator('#results-panel-toggle').click();
+
+    // When
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiFail(page, countResultPath, 'failed');
+    await page.locator('#row-0-col-2 button[title=Filter]').click();
+    await page.locator('#options-container label:nth-child(1)').click();
+    await page.getByTestId('add-filter').click();
+
+    // Then
+    await expect(page.locator('#result-count')).toBeVisible();
+    await expect(page.locator('#result-count')).toHaveText('N/A');
+    await expect(page.getByTestId('snackbar-wrapper')).toBeVisible();
+  });
+  test('Result panel shows N/A icon and generic error on open with no filters', async ({
+    page,
+  }) => {
+    // Given
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiFail(page, countResultPath, 'failed');
+    await page.goto('/explorer?search=somedata');
+
+    // When
     await page.locator('#results-panel-toggle').click();
 
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
-    await expect(page.locator('#result-count')).toHaveText('0');
+    await expect(page.locator('#result-count')).toHaveText('N/A');
+    await expect(page.getByTestId('snackbar-wrapper')).toBeVisible();
   });
   test('Result panel shows the correct number of results', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
     await page.locator('#results-panel-toggle').click();
 
@@ -59,10 +98,9 @@ test.describe('Results Panel', () => {
   });
   test('Result panel shows no filters added when there are no filters', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
     await page.locator('#results-panel-toggle').click();
 
@@ -71,10 +109,9 @@ test.describe('Results Panel', () => {
   });
   test('Export button hidden when no filters or exports are added', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -86,10 +123,9 @@ test.describe('Results Panel', () => {
   });
   test('Export button hidden when count is 0', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '0' }),
-    );
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '0');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -99,12 +135,34 @@ test.describe('Results Panel', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
     await expect(page.locator('#export-data-button')).not.toBeVisible();
   });
+  test('Export button hidden when filter error', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await page.locator('#results-panel-toggle').click();
+
+    // When
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await mockApiFail(page, countResultPath, 'failed');
+    await page.locator('#row-0-col-2 button[title=Filter]').click();
+    await page.locator('#options-container label:nth-child(1)').click();
+    await page.getByTestId('add-filter').click();
+
+    // Then
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await expect(page.locator('#export-data-button')).not.toBeVisible();
+  });
   test('Export button hidden when count is not 0 and there is no filters', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
 
     // When
     await page.goto('/explorer?search=somedata');
@@ -116,13 +174,14 @@ test.describe('Results Panel', () => {
   });
   test('Clear All clears exports and filters', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
-      route.fulfill({ json: detailResponseCat }),
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      detailResponseCat,
     );
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=age');
 
     const expectedRowIds = mockData.content.map((row) => row.display);
