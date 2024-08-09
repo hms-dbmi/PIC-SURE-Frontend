@@ -64,20 +64,18 @@ export async function getConceptDetails(
   dataset: string,
 ): Promise<SearchResult> {
   const url = `${conceptDetailUrl}${dataset}`;
+  const rawConceptPath = String.raw`${conceptPath.replace(/\\\\/g, '\\')}`;
 
-  if (dictonaryCacheMap.has(conceptPath)) {
-    return dictonaryCacheMap.get(conceptPath) as SearchResult;
+  if (dictonaryCacheMap.has(rawConceptPath)) {
+    return dictonaryCacheMap.get(rawConceptPath) as SearchResult;
   }
 
-  const response: SearchResult = await api.post(
-    url,
-    String.raw`${conceptPath.replace(/\\\\/g, '\\')}`,
-  );
+  const response: SearchResult = await api.post(url, rawConceptPath);
 
   if (!response) {
     throw new Error('No response');
   }
 
-  cacheResult(url, response);
+  cacheResult(rawConceptPath, response);
   return response;
 }
