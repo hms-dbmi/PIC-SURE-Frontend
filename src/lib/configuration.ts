@@ -182,7 +182,8 @@ export const features: Indexable = {
     exportResultType: (import.meta.env?.VITE_EXPORT_RESULT_TYPE ||
       'DATAFRAME') as ExpectedResultType,
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
-    enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true
+    distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
+    enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
@@ -197,10 +198,16 @@ export const settings: Indexable = {
     maxCount: parseInt(import.meta.env?.VITE_VARIANT_EXPLORER_MAX_COUNT || 10000),
     excludeColumns: JSON.parse(import.meta.env?.VITE_VARIANT_EXPLORER_EXCLUDE_COLUMNS || '[]'),
   },
+  distributionExplorer: {
+    graphColors: JSON.parse(
+      import.meta.env?.VITE_DIST_EXPLORER_GRAPH_COLORS || '["#328FFF", "#675AFF", "#FFBC35"]',
+    ),
+  },
 };
 
 export const resources = {
   hpds: import.meta.env?.VITE_RESOURCE_HPDS || '',
+  Visualizer: import.meta.env?.VITE_RESOURCE_VIZ || '',
 };
 
 export const auth = {

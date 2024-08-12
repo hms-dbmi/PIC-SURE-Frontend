@@ -167,17 +167,20 @@
       </div>
     {/if}
   </div>
-  {#if $filters.length > 0}
+  {#if totalPatients !== 0}
     <div class="flex flex-col items-center mt-8">
       <h5 class="text-center font-bold text-lg py-2">Explore Cohort</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
-        <CardButton
-          data-testid="distributions-btn"
-          title="Variable Distributions"
-          icon="fa-solid fa-chart-pie"
-          size="md"
-        />
-        {#if totalPatients != ERROR_VALUE && totalPatients !== 0 && features.explorer.variantExplorer && $hasGenomicFilter}
+        {#if features.explorer.distributionExplorer && $filters.length !== 0}
+          <CardButton
+            href="/explorer/distributions"
+            data-testid="distributions-btn"
+            title="Variable Distributions"
+            icon="fa-solid fa-chart-pie"
+            size="md"
+          />
+        {/if}
+        {#if features.explorer.variantExplorer && $hasGenomicFilter}
           <CardButton
             href="/explorer/variant"
             data-testid="variant-explorer-btn"
