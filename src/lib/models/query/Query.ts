@@ -1,7 +1,7 @@
 import type { Indexable } from '$lib/types';
 import { type SNP } from '$lib/models/GenomeFilter';
 
-type ExpectedResultType =
+export type ExpectedResultType =
   | 'COUNT'
   | 'CROSS_COUNT'
   | 'DATAFRAME'

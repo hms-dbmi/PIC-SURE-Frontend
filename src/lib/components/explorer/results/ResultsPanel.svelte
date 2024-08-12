@@ -9,12 +9,7 @@
   import FilterStore from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
   import * as api from '$lib/api';
-  import {
-    ProgressRadial,
-    getModalStore,
-    type ToastSettings,
-    getToastStore,
-  } from '@skeletonlabs/skeleton';
+  import { ProgressRadial, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   import { elasticInOut } from 'svelte/easing';
   import { onDestroy, onMount } from 'svelte';
   import { goto } from '$app/navigation';
@@ -27,22 +22,34 @@
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
+  const ERROR_VALUE = 'N/A';
+
   let unsubFilters: Unsubscriber;
-  let totalPatients = 0;
-  let triggerRefreshCount = getCount();
+  let totalPatients: number | typeof ERROR_VALUE = 0;
+  let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = Promise.resolve(0);
 
   async function getCount() {
     let request: QueryRequestInterface = getQueryRequest();
     try {
-      totalPatients = await api.post('picsure/query/sync', request);
-      totalParticipants.set(totalPatients);
-      return totalPatients;
+      const count = await api.post('picsure/query/sync', request);
+      totalParticipants.set(count);
+      totalPatients = count;
+      return count;
     } catch (error) {
-      const toast: ToastSettings = {
-        message: branding.explorePage.queryErrorText,
-        background: 'variant-filled-error',
-      };
-      toastStore.trigger(toast);
+      if ($filters.length !== 0) {
+        toastStore.trigger({
+          message: branding.explorePage.filterErrorText,
+          background: 'variant-filled-error',
+          autohide: false,
+          hoverable: true,
+        });
+      } else {
+        toastStore.trigger({
+          message: branding.explorePage.queryErrorText,
+          background: 'variant-filled-error',
+        });
+      }
+      totalPatients = ERROR_VALUE;
       return 0;
     }
   }
@@ -65,7 +72,11 @@
 
   $: hasFilterOrExport =
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0);
-  $: showExportButton = features.explorer.allowExport && totalPatients !== 0 && hasFilterOrExport;
+  $: showExportButton =
+    features.explorer.allowExport &&
+    totalPatients !== ERROR_VALUE &&
+    totalPatients !== 0 &&
+    hasFilterOrExport;
 
   onMount(async () => {
     unsubFilters = filters.subscribe(() => {
@@ -87,9 +98,19 @@
     {#await triggerRefreshCount}
       <ProgressRadial width="w-6" />
     {:then}
-      <span id="result-count" class="text-4xl">{totalPatients}</span>
+      <span id="result-count" class="text-4xl">
+        {#if totalPatients === ERROR_VALUE}
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span class="sr-only">{ERROR_VALUE}</span>
+        {:else}
+          {totalPatients}
+        {/if}
+      </span>
     {:catch}
-      <span id="result-count" class="text-4xl">N/A</span>
+      <span id="result-count" class="text-4xl">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span class="sr-only">{ERROR_VALUE}</span>
+      </span>
     {/await}
     <h4 class="text-center">{branding.explorePage.totalPatientsText}</h4>
   </div>
@@ -156,7 +177,7 @@
           icon="fa-solid fa-chart-pie"
           size="md"
         />
-        {#if totalPatients !== 0 && features.explorer.variantExplorer && $hasGenomicFilter}
+        {#if totalPatients != ERROR_VALUE && totalPatients !== 0 && features.explorer.variantExplorer && $hasGenomicFilter}
           <CardButton
             href="/explorer/variant"
             data-testid="variant-explorer-btn"

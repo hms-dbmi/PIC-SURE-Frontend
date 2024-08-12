@@ -73,11 +73,18 @@ export const branding = {
     totalPatientsText: 'Filtered Participants',
     queryErrorText:
       'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
+    filterErrorText:
+      'There was an error when adding the filter to the query. Please remove your most recent filter and try again. ' +
+      'If this error persists, please contact us by filling out the form at ' +
+      '<a href="https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5" target="_blank" ' +
+      'class="underline">Avillach Lab Software Requests</a>. We will respond to your request as soon as we can.',
   },
   landing: {
     searchPlaceholder: 'Search terms or variables of interest…',
     explanation:
-      'The <a href="https://www.cdc.gov/nchs/nhanes/index.htm" target="_blank">National Health and Nutrition Examination Survey (NHANES)</a> dataset is designed to assess the health and nutritional status of adults and children in the United States',
+      'The <a href="https://www.cdc.gov/nchs/nhanes/index.htm" target="_blank">National Health and Nutrition ' +
+      'Examination Survey (NHANES)</a> dataset is designed to assess the health and nutritional status of adults ' +
+      'and children in the United States',
     actions: [
       {
         title: 'Explore',
@@ -131,9 +138,15 @@ export const branding = {
     popups: {
       genomicFilter: {
         frequency:
-          'The variant allele frequency in gnomAD combined population as discrete text categories. Possible values: Novel (variant not in gnomAD database), Rare (variant frequency less than 1%), Common (variant frequency greater than or equal to 1%).',
+          'The variant allele frequency in gnomAD combined population as discrete text categories. Possible values: ' +
+          'Novel (variant not in gnomAD database), Rare (variant frequency less than 1%), Common (variant frequency ' +
+          'greater than or equal to 1%).',
         consequence:
-          'A standardized term from the Sequence Ontology (http://www.sequenceontology.org) to describe the calculated consequence of a variant. The severity for the calculated consequence of a variant on a gene has possible values HIGH (frameshift, splice disrupting, or truncating variants), MEDIUM (non-frameshift insertions or deletions, variants altering protein sequencing without affecting its length) or LOW (other coding variants including synonymous variants).',
+          'A standardized term from the Sequence Ontology (http://www.sequenceontology.org) to describe the ' +
+          'calculated consequence of a variant. The severity for the calculated consequence of a variant on a gene ' +
+          'has possible values HIGH (frameshift, splice disrupting, or truncating variants), MEDIUM (non-frameshift ' +
+          'insertions or deletions, variants altering protein sequencing without affecting its length) or LOW ' +
+          '(other coding variants including synonymous variants).',
       },
     },
   },
@@ -169,7 +182,7 @@ export const features: Indexable = {
     exportResultType: (import.meta.env?.VITE_EXPORT_RESULT_TYPE ||
       'DATAFRAME') as ExpectedResultType,
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
-    enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
+    enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
