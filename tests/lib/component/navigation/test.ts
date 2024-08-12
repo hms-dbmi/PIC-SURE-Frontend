@@ -64,6 +64,8 @@ userTest.describe('Logged in users', () => {
     const logoutButton = page.locator('#user-logout-btn');
     await logoutButton.click();
 
+    await page.goto('/');
+
     // Then
     await expect(page.locator('#user-session-avatar')).toContainText('Login');
   });
