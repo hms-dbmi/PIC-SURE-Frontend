@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getToastStore } from '@skeletonlabs/skeleton';
+  import { getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
   import { onMount } from 'svelte';
 
   import { resources } from '$lib/configuration';
@@ -24,6 +24,7 @@
 
   let plotValues: PlotValues[] = [];
   let newPlot: PlotlyNewPlot;
+  let plotlyLoading: Promise<void>;
 
   async function loadPlotData() {
     const query = getQueryRequest();
@@ -55,7 +56,7 @@
     // Instead of loading it in each plot component, I'm passing down it's newPlot method.
     const Plotly = await import('plotly.js-dist-min');
     newPlot = Plotly.newPlot;
-    loadPlotData();
+    plotlyLoading = loadPlotData();
   });
 </script>
 
@@ -63,8 +64,24 @@
   <title>{branding.applicationName} | Variant Explorer</title>
 </svelte:head>
 
-<Content full={true} backUrl="/explorer" backTitle="Back to Cohort Builder">
-  {#each plotValues as { data, layout, meta }, index}
-    <PlotlyPlot {index} {data} {layout} {meta} {newPlot} />
-  {/each}
+<Content
+  full={true}
+  backUrl="/explorer"
+  backTitle="Back to Cohort Builder"
+  title="Variable Distributions"
+  subtitle="All visualizations display the distributions of each variable filter for the specified cohort."
+>
+  <div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
+    {#await plotlyLoading}
+      <ProgressRadial />
+    {:then}
+      {#if plotValues.length}
+        {#each plotValues as { data, layout, meta }, index}
+          <PlotlyPlot {index} {data} {layout} {meta} {newPlot} />
+        {/each}
+      {:else}
+        <div>No Visualizations Available</div>
+      {/if}
+    {/await}
+  </div>
 </Content>
