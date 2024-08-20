@@ -22,7 +22,7 @@
   class={`main-content ${full ? 'w-full' : ''} ${$$props.class ?? ''}`}
   in:fly={{ duration: 300, x: transition ? '100%' : '0' }}
 >
-  {#if backUrl}<AngleButton name="back" on:click={onBack}>{backTitle}</AngleButton>{/if}
+  {#if backUrl}<AngleButton name="back" variant="ghost" on:click={onBack}>{backTitle}</AngleButton>{/if}
   {#if title}<h1 class="{backUrl ? 'mb-4' : 'my-4'} text-center">{title}</h1>{/if}
   {#if subtitle}<p class="subtitle mb-4">{subtitle}</p>{/if}
   <slot />
