@@ -68,7 +68,7 @@
 -->
 <button
   type="button"
-  title="{isExported ? 'Remove from Analysis' : 'Add for Analysis'}"
+  title={isExported ? 'Remove from Analysis' : 'Add for Analysis'}
   class="btn-icon-color"
   on:click|stopPropagation={insertExportContent}
 >
