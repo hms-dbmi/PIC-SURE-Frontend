@@ -15,7 +15,7 @@
     dispatch('click', event);
   }
 
-  $: btnStyle = `btn btn-sm h-fit variant-${variant}-${color} ${variant !== 'filled' ? `hover:variant-filled-${color}` : `` } text-lg`;
+  $: btnStyle = `btn btn-sm h-fit variant-${variant}-${color} ${variant !== 'filled' ? `hover:variant-filled-${color}` : ``} text-lg`;
   const testid = $$props['data-testid'] || name.replaceAll(' ', '-').toLowerCase() + '-btn';
 </script>
 

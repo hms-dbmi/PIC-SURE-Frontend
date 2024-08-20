@@ -29,7 +29,8 @@
         First, you will need to set up your analysis workspace. This can be done locally or in a
         cloud computing environment. Examples of how to programmatically access the PIC-SURE API
         with Python or R are publicly available. These include Jupyter notebooks and RStudio files,
-        which you can access on the <a class="anchor"
+        which you can access on the <a
+          class="anchor"
           href="https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API/"
           target="_blank">GitHub repository</a
         >
