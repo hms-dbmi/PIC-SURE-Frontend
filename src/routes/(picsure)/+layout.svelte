@@ -46,7 +46,9 @@
   });
 
   $: classesSidebar =
-    $page.url.pathname.includes('/explorer') && !$page.url.pathname.includes('/export') && !$page.url.pathname.includes('/distributions')
+    $page.url.pathname.includes('/explorer') &&
+    !$page.url.pathname.includes('/export') &&
+    !$page.url.pathname.includes('/distributions')
       ? ''
       : 'hidden';
 </script>
