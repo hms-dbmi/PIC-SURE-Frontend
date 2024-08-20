@@ -13,7 +13,7 @@
 
 <Content title="Analyze">
   <section class="flex flex-col gap-8">
-    <p>
+    <p class="mt-4">
       To start your analysis, use the following code to connect to PIC-SURE. Note that you will need
       your personal access token below to complete the connection.
     </p>

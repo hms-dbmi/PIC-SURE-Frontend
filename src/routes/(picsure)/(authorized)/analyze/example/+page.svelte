@@ -3,9 +3,9 @@
   import UserToken from '$lib/components/UserToken.svelte';
 </script>
 
-<Content backUrl="/analyze" title="Analyze Example" class="max-w-3xl">
+<Content backUrl="/analyze" title="Analyze Example">
   <div class="w-full flex flex-col items-center">
-    <div class="max-w-3xl">
+    <div>
       <h3>
         Follow these steps to start using the PIC-SURE Application Programming Interface (API) to
         search, filter, and export using Python or R code.
@@ -17,19 +17,20 @@
         their analysis by applying statistical and analytical functions or packages on this exported
         data frame.
       </p>
-      <h3>To use the PIC-SURE API, follow these three steps:</h3>
+      <p class="mt-1">To use the PIC-SURE API, follow these three steps:</p>
       <ol class="list-decimal ml-12">
         <li>Set up your analysis workspace</li>
         <li>Get your Personal Access Token</li>
         <li>Start your research</li>
       </ol>
 
-      <h4 class="font-medium"><strong>1.</strong> Set up your analysis workspace</h4>
+      <h4 class="font-medium mt-8">1. Set up your analysis workspace</h4>
       <p>
         First, you will need to set up your analysis workspace. This can be done locally or in a
         cloud computing environment. Examples of how to programmatically access the PIC-SURE API
         with Python or R are publicly available. These include Jupyter notebooks and RStudio files,
         which you can access on the <a
+          class="anchor"
           href="https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API/"
           target="_blank">GitHub repository</a
         >
@@ -39,7 +40,7 @@
         GitHub repository to your analysis workspace or set up a new file.
       </p>
 
-      <h4 class="font-medium"><strong>2.</strong> Get your Personal Access Token</h4>
+      <h4 class="font-medium mt-8">2. Get your Personal Access Token</h4>
       <p>
         The personal access token serves as credentials to authenticate and authorize access to the
         PIC-SURE API. Retrieve your token below:
@@ -52,7 +53,7 @@
         Otherwise, please save this token to connect to the PIC-SURE API.
       </p>
 
-      <h4 class="font-medium"><strong>3.</strong> Start your research</h4>
+      <h4 class="font-medium mt-8">3. Start your research</h4>
       <p>
         Now you're ready to start your research! Run the example code to connect to the PIC-SURE API
         and learn how to search for variables, build queries, and export data using code.
