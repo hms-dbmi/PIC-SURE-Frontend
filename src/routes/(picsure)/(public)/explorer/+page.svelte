@@ -45,6 +45,7 @@
 
     unsubSearchTerm = searchTerm.subscribe(() => {
       if ($searchTerm) {
+        handler.setPage(1);
         handler.invalidate();
       }
     });
