@@ -59,3 +59,16 @@
     {/each}
   </ul>
 </footer>
+
+<style lang="postcss">
+  #sitemap-footer {
+    padding: 0.5em 0 0;
+    margin: 0 auto;
+    text-align: center;
+    padding: 1em 15%;
+  }
+  #sitemap-footer ul {
+    text-align: left;
+    margin: 0 2em;
+  }
+</style>
