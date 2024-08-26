@@ -21,8 +21,9 @@
     data-testid={$$props['data-testid']}
     aria-disabled={disabled || undefined}
     target={href.startsWith('/') ? undefined : '_blank'}
+    class:variant-filled-primary={active}
+    class:variant-ringed-primary={!active}
     class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {$$props.class ?? ''}"
-    class:variant-ghost-primary={active}
     rel={disabled ? 'nofollow' : undefined}
     tabindex="0"
   >
@@ -34,8 +35,9 @@
   <button
     data-testid={$$props['data-testid']}
     type="button"
+    class:variant-filled-primary={active}
+    class:variant-ringed-primary={!active}
     class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {$$props.class ?? ''}"
-    class:variant-ghost-primary={active}
     on:click={onClick}
     {disabled}
   >

@@ -82,14 +82,13 @@
   transition={true}
 >
   {#if selectedOption === Option.None}
-    <FilterType class="my-4" on:select={onSelectFilterType} />
+    <FilterType class="my-4" on:select={onSelectFilterType} active={selectedOption} />
   {:else}
+    <FilterType class="my-4" on:select={onSelectFilterType} active={selectedOption} />
     {#if selectedOption === Option.Genomic}
-      <h2 class="mb-2">Search by Gene:</h2>
-      <GeneSearch class="mb-0" />
+      <GeneSearch class="mb-0 mt-6" />
     {:else}
-      <h2 class="mb-2">Search by SNP:</h2>
-      <SnpSearch />
+      <SnpSearch class="mt-6"/>
     {/if}
     {#if edit}
       <div class="flex justify-end my-4">
@@ -104,12 +103,7 @@
         </button>
       </div>
     {:else}
-      <div class="flex justify-between my-4">
-        <AngleButton
-          data-testid="back-to-options-btn"
-          on:click={() => (selectedOption = Option.None)}
-          >Back
-        </AngleButton>
+      <div class="flex justify-end my-4" data-testid="filter-options-container">
         <button
           data-testid="add-filter-btn"
           type="button"
