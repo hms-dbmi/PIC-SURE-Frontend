@@ -331,10 +331,40 @@ test.describe('Facet Categories', () => {
         const searchInput = facetList.locator('input[type="search"]');
         await expect(searchInput).toBeVisible();
         await searchInput.fill('Study Display');
+        await expect(searchInput).toHaveValue('Study Display');
         const facetItems = await facetList.locator('label').all();
         facetItems.forEach(async (facetItem) => {
           const facetItemText = await facetItem.textContent();
           expect(facetItemText).toContain('Study Display');
+        });
+      }
+    }
+  });
+  test(`Facet search filters facets includes full name`, async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: facetsResponse }),
+    );
+    await page.goto('/explorer?search=age');
+    const facetSideBar = page.locator('#facet-side-bar');
+    await expect(facetSideBar).toBeVisible();
+
+    // When
+    for (let i = 0; i < facetsResponse.length; i++) {
+      const facetList = page.locator('.accordion-panel').nth(i);
+      const numFacets = facetsResponse[i].facets.length;
+      if (numFacets > MAX_FACETS_TO_SHOW) {
+        const searchInput = facetList.locator('input[type="search"]');
+        await expect(searchInput).toBeVisible();
+        await searchInput.fill('NSRR CFS full name');
+        await expect(searchInput).toHaveValue('NSRR CFS full name');
+        const facetItems = await facetList.locator('label').all();
+        facetItems.forEach(async (facetItem) => {
+          const facetItemText = await facetItem.textContent();
+          expect(facetItemText).toContain('NSRR CFS');
         });
       }
     }
