@@ -34,6 +34,14 @@ export const branding = {
       ],
     },
     {
+      category: 'Use PIC-SURE',
+      links: [
+        { title: 'Explore', url: '/explorer' },
+        { title: 'Analyze', url: '/analyze' },
+        { title: 'Manage Datasets', url: '/dataset' },
+      ],
+    },
+    {
       category: 'Help',
       links: [
         { title: 'User Guide', url: 'https://pic-sure.gitbook.io/pic-sure', newTab: true },
@@ -76,13 +84,13 @@ export const branding = {
     filterErrorText:
       'There was an error when adding the filter to the query. Please remove your most recent filter and try again. ' +
       'If this error persists, please contact us by filling out the form at ' +
-      '<a href="https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5" target="_blank" ' +
+      '<a class="anchor" href="https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5" target="_blank" ' +
       'class="underline">Avillach Lab Software Requests</a>. We will respond to your request as soon as we can.',
   },
   landing: {
     searchPlaceholder: 'Search terms or variables of interest…',
     explanation:
-      'The <a href="https://www.cdc.gov/nchs/nhanes/index.htm" target="_blank">National Health and Nutrition ' +
+      'The <a class="anchor" href="https://www.cdc.gov/nchs/nhanes/index.htm" target="_blank">National Health and Nutrition ' +
       'Examination Survey (NHANES)</a> dataset is designed to assess the health and nutritional status of adults ' +
       'and children in the United States',
     actions: [
@@ -91,12 +99,14 @@ export const branding = {
         description: 'Explore data, apply filters, and build cohorts',
         icon: 'fa-solid fa-magnifying-glass',
         url: '/explorer',
+        btnText: 'Start Exploring',
       },
       {
         title: 'Analyze',
         description: 'Access data and kickstart your research',
         icon: 'fa-solid fa-chart-line',
         url: '/analyze',
+        btnText: 'Go to Analyze',
       },
     ],
     stats: ['Variables', 'Participants', 'Data Sources'],
