@@ -47,7 +47,8 @@
       facetsToDisplay = facetsToDisplay.filter(
         (facet) =>
           facet.display.toLowerCase().includes(lowerFilterValue) ||
-          facet.name.toLowerCase().includes(lowerFilterValue),
+          facet.name.toLowerCase().includes(lowerFilterValue) ||
+          facet.fullName.toLowerCase().includes(lowerFilterValue),
       );
     } else if (moreThanTenFacets) {
       // Only show the first n facets

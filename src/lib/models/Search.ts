@@ -5,16 +5,13 @@ export type Facet = Indexable & {
   display: string;
   description: string;
   count: number;
+  fullName: string;
   children?: Facet[];
   category: string;
   categoryRef?: ShallowFacetCategory;
 };
 
-export type ShallowFacetCategory = Indexable & {
-  name: string;
-  display: string;
-  description: string;
-};
+export type ShallowFacetCategory = Pick<Facet, 'name' | 'display' | 'description'>;
 
 export type SearchResult = Indexable & {
   conceptPath: string;
