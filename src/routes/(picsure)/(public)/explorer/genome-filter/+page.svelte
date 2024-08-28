@@ -10,7 +10,6 @@
   import FilterType from '$lib/components/explorer/genome-filter/FilterType.svelte';
   import SnpSearch from '$lib/components/explorer/genome-filter/SNPSearch.svelte';
   import GeneSearch from '$lib/components/explorer/genome-filter/GeneSearch.svelte';
-  import AngleButton from '$lib/components/buttons/AngleButton.svelte';
 
   import type { GenomicFilterInterface, SnpFilterInterface } from '$lib/models/Filter';
   import { Option } from '$lib/models/GenomeFilter';
@@ -88,7 +87,7 @@
     {#if selectedOption === Option.Genomic}
       <GeneSearch class="mb-0 mt-6" />
     {:else}
-      <SnpSearch class="mt-6"/>
+      <SnpSearch class="mt-6" />
     {/if}
     {#if edit}
       <div class="flex justify-end my-4">

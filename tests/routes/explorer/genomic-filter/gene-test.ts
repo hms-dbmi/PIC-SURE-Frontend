@@ -17,7 +17,6 @@ test('Selecting Gene option advances to gene filter options', async ({ page }) =
 
   // Then
   await expect(page.locator('#gene-search')).toBeVisible();
-  await expect(page.getByTestId('back-to-options-btn')).toBeVisible();
 });
 test.describe('Gene selection', () => {
   test('Loads list of genes ', async ({ page }) => {
