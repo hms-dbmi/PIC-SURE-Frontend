@@ -92,7 +92,7 @@ test.describe('Frequency selection', () => {
 
     // Then
     await expect(page.getByTestId('freq-help-popup-content')).toContainText(
-      branding.help.popups.genomicFilter.frequency,
+      branding?.help?.popups?.genomicFilter?.frequency,
     );
   });
 });
@@ -109,7 +109,7 @@ test.describe('Consequnce selection', () => {
 
     // Then
     await expect(page.getByTestId('cons-help-popup-content')).toContainText(
-      branding.help.popups.genomicFilter.consequence,
+      branding?.help?.popups?.genomicFilter?.consequence,
     );
   });
   test('Selecting parent node selects all children nodes', async ({ page }) => {

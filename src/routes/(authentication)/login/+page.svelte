@@ -8,9 +8,9 @@
   import { fly } from 'svelte/transition';
 
   const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
-  const siteName = branding.applicationName;
-  const description = branding.login.description;
-  const openPicsureLinkText = branding.login.openPicsureLinkText;
+  const siteName = branding?.applicationName;
+  const description = branding?.login.description;
+  const openPicsureLinkText = branding?.login.openPicsureLinkText;
 
   let selected: string;
 
@@ -35,7 +35,7 @@
   {:then providers}
     <div id="login-box" class="w-max mt-2">
       <header class="flex flex-col items-center">
-        {#if branding.login.showSiteName}
+        {#if branding?.login?.showSiteName}
           <div>{siteName}</div>
         {/if}
       </header>
@@ -84,7 +84,7 @@
         </div>
         {#if features.login.open}
           <a
-            href={branding.login.openPicsureLink || '/'}
+            href={branding?.login?.openPicsureLink || '/'}
             class="btn variant-outline-primary text-primary-500 m-1 mt-2 text-sm"
             >{openPicsureLinkText}</a
           >

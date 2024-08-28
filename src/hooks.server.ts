@@ -1,6 +1,9 @@
 import type { HandleServerError } from '@sveltejs/kit';
 import { registerProviderData } from './lib/AuthProviderRegistry';
 import type { AuthData } from './lib/models/AuthProvider';
+import * as configJson from './lib/assets/configuration.json';
+import { branding } from '$lib/configuration';
+import type { SiteMapConfig } from '$lib/types';
 
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
