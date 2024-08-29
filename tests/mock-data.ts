@@ -139,6 +139,17 @@ export const searchResults = {
       meta: null,
       type: 'Categorical',
     },
+    {
+      conceptPath: '\\phs123\\age1\\',
+      name: 'AGE_CATEGORY',
+      display: 'age',
+      dataset: 'phs123',
+      description: "Participant's age (category)",
+      values: ['21', '22', '23', '24', '25', '26'],
+      children: null,
+      meta: null,
+      type: 'Categorical',
+    },
   ],
   number: 0,
   sort: {
@@ -192,6 +203,34 @@ export const detailResponseCat2 = {
     values: ['Yes', 'No'],
     description: 'This is a test description?',
   },
+};
+
+export const detailResForAge = {
+  conceptPath: '\\phs123\\age\\',
+  name: 'AGE_CATEGORY',
+  display: 'age',
+  dataset: 'phs123',
+  description: "Participant's age (category)",
+  values: ['21', '22', '23', '24', '25'],
+  children: null,
+  meta: {
+    values: ['21', '22', '23', '24', '25'],
+  },
+  type: 'Categorical',
+};
+
+export const detailResForAge2 = {
+  conceptPath: '\\phs123\\age1\\',
+  name: 'AGE_CATEGORY',
+  display: 'age',
+  dataset: 'phs123',
+  description: "Participant's age2 (category)",
+  values: ['21', '22', '23', '24', '25', '26'],
+  children: null,
+  meta: {
+    values: ['21', '22', '23', '24', '25', '26'],
+  },
+  type: 'Categorical',
 };
 
 export const detailResponseNum = {

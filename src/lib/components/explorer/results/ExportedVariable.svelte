@@ -12,7 +12,7 @@
 
 <div
   id={variable.studyId ? `${variable.studyId}-${variable.conceptPath}` : variable.conceptPath}
-  data-testid="added-export-{variable.display}"
+  data-testid="added-export-{variable.conceptPath}"
   class="flex flex-col card p-1 m-1"
   transition:fade={{ duration: 300 }}
 >

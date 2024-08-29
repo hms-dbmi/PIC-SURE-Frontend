@@ -83,7 +83,7 @@
   class="flex flex-col card p-1 m-1"
   in:scale={{ easing: elasticInOut }}
   out:fade={{ duration: 300 }}
-  data-testid="added-filter-{filter.variableName}"
+  data-testid="added-filter-{filter.id}"
 >
   <header class="card-header p-1 flex">
     <div
