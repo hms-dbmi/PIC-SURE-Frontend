@@ -171,7 +171,7 @@ test('Apply Filter adds to sidepanel', async ({ page }) => {
   await page.getByTestId('add-filter-btn').click();
 
   // Then
-  await expect(page.getByTestId('added-filter-Variant Filter')).toBeVisible();
+  await expect(page.getByTestId('added-filter-snp-variant')).toBeVisible();
 });
 test('Clicking edit filter button in results panel returns to snp filter with correct values', async ({
   page,
@@ -190,7 +190,7 @@ test('Clicking edit filter button in results panel returns to snp filter with co
   // When
   await page.waitForURL('**/explorer');
   await page
-    .getByTestId('added-filter-Variant Filter')
+    .getByTestId('added-filter-snp-variant')
     .getByRole('button', { name: 'Edit Filter' })
     .click();
 
@@ -217,7 +217,7 @@ test('Editing filter from results panel updates results panel on save', async ({
   // When
   await page.waitForURL('**/explorer');
   await page
-    .getByTestId('added-filter-Variant Filter')
+    .getByTestId('added-filter-snp-variant')
     .getByRole('button', { name: 'Edit Filter' })
     .click();
   await page.getByTestId(`snp-edit-btn-${validSnp}`).click();
@@ -225,14 +225,14 @@ test('Editing filter from results panel updates results panel on save', async ({
   await page.getByTestId('snp-save-btn').click();
   await page.getByTestId('save-filter-btn').click();
   await page
-    .getByTestId('added-filter-Variant Filter')
+    .getByTestId('added-filter-snp-variant')
     .getByRole('button', { name: 'See Details' })
     .click();
 
   // Then
-  await expect(page.getByTestId('added-filter-Variant Filter').getByText(validSnp)).toBeVisible();
+  await expect(page.getByTestId('added-filter-snp-variant').getByText(validSnp)).toBeVisible();
   await expect(
-    page.getByTestId('added-filter-Variant Filter').getByText(secondConstraintLabel),
+    page.getByTestId('added-filter-snp-variant').getByText(secondConstraintLabel),
   ).toBeVisible();
 });
 test('Clicking Genomic Filtering after adding a snp filter navigates to edit filter view', async ({

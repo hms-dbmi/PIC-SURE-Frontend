@@ -184,7 +184,7 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=age');
 
-    const expectedRowIds = mockData.content.map((row) => row.display);
+    const expectedRowIds = mockData.content.map((row) => row.conceptPath);
     const tableBody = page.locator('tbody');
     await expect(tableBody).toBeVisible();
 
