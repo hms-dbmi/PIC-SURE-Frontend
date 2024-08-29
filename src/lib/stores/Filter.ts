@@ -13,8 +13,9 @@ const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
 
 export function addFilter(filter: Filter) {
   const currentFilters = get(filters);
+  console.log(currentFilters, filter);
   currentFilters.forEach((f) => {
-    if (f.variableName === filter.variableName) {
+    if (f.id === filter.id) {
       currentFilters.splice(currentFilters.indexOf(f), 1);
     }
   });
