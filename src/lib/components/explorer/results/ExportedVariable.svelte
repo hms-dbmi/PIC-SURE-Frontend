@@ -17,7 +17,7 @@
   transition:fade={{ duration: 300 }}
 >
   <header class="card-header p-1 flex">
-    <div class="flex-auto font-bold">{variable.display}</div>
+    <div class="flex-auto">{variable.display}</div>
     <button type="button" title="Remove Export" class="btn-icon-color" on:click={remove}>
       <i class="fa-solid fa-times-circle"></i>
     </button>
