@@ -4,7 +4,7 @@
 </script>
 
 <Content backUrl="/analyze" title="Analyze Example">
-  <div class="w-full flex flex-col items-center">
+  <div class="w-full flex flex-col items-center mb-8">
     <div>
       <h3>
         Follow these steps to start using the PIC-SURE Application Programming Interface (API) to

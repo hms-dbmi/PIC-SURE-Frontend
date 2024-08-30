@@ -64,13 +64,10 @@
   <title>{branding.applicationName} | Variant Explorer</title>
 </svelte:head>
 
-<Content
-  full={true}
-  backUrl="/explorer"
-  backTitle="Back to Cohort Builder"
-  title="Variable Distributions"
-  subtitle="All visualizations display the distributions of each variable filter for the specified cohort."
->
+<Content full={true} backUrl="/explorer" backTitle="Back to Explore" title="Variable Distributions">
+  <p class="mb-8 text-center">
+    All visualizations display the distributions of each variable filter for the specified cohort.
+  </p>
   <div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
     {#await plotlyLoading}
       <ProgressRadial />

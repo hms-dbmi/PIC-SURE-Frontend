@@ -115,7 +115,7 @@
     <h4 class="text-center">{branding.explorePage.totalPatientsText}</h4>
   </div>
   {#if showExportButton}
-  <div class="h-11 mt-4">
+    <div class="h-11 mt-4">
       <button
         id="export-data-button"
         type="button"
@@ -128,7 +128,7 @@
     </div>
   {/if}
   <div id="export-filters" class="flex flex-col items-center mt-7 w-80">
-    <hr class="!border-t-2">
+    <hr class="!border-t-2" />
     <div class="flex content-center mt-7">
       <h5 class="text-xl flex-auto mr-2">Filtered Data Summary</h5>
       {#if hasFilterOrExport}
@@ -144,9 +144,7 @@
     {:else}
       <div class="px-4 mb-1 w-80">
         {#if $filters.length !== 0}
-        <header class="text-left ml-1">
-          Filters
-        </header>
+          <header class="text-left ml-1">Filters</header>
         {/if}
         <section class="py-1">
           {#each $filters as filter}
@@ -157,9 +155,7 @@
     {/if}
     {#if $exports.length !== 0}
       <div class="px-4 mb-1 w-80">
-        <header class="text-left ml-1" data-testid="export-header">
-          Added Variables
-        </header>
+        <header class="text-left ml-1" data-testid="export-header">Added Variables</header>
         <section class="py-1">
           {#each $exports as variable (variable.id)}
             <ExportedVariable {variable} />
@@ -169,8 +165,8 @@
     {/if}
   </div>
   {#if totalPatients !== 0 && ($filters.length !== 0 || $exports.length !== 0)}
-  <div class="flex flex-col items-center mt-7">
-    <hr class="!border-t-2">
+    <div class="flex flex-col items-center mt-7">
+      <hr class="!border-t-2" />
       <h5 class="text-center text-xl mt-7">Tool Suite</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
         {#if features.explorer.distributionExplorer && $filters.length !== 0}
@@ -196,7 +192,6 @@
     </div>
   {/if}
 </section>
-
 
 <style>
   hr {
