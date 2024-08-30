@@ -5,6 +5,7 @@ import type { Branding } from '$lib/configuration';
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
 //TypeScript is confused by the JSON import so I am fxing it here
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
 
 //TODO: Tests for login dropdown
