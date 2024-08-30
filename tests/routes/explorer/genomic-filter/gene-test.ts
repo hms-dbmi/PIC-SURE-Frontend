@@ -1,7 +1,10 @@
 import { expect } from '@playwright/test';
 import { test, mockApiSuccess } from '../../../custom-context';
 import { geneValues } from '../../../mock-data';
-import { branding } from '../../../../src/lib/configuration';
+import * as config from '../../../../src/lib/assets/configuration.json' assert { type: 'json' };
+import type { Branding } from '$lib/configuration';
+//TypeScript is confused by the JSON import so I am fxing it here
+const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 

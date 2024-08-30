@@ -1,7 +1,7 @@
 import { PicsurePrivileges } from './models/Privilege';
 import type { Route } from './models/Route';
 import type { ExpectedResultType } from './models/query/Query';
-import * as configJson from './assets/configuration.json';
+import * as configJson from './assets/configuration.json' assert { type: 'json' };
 import { ExportType } from './models/Variant';
 import type {
   ApiPageConfig,
@@ -13,9 +13,23 @@ import type {
   LoginConfig,
   SiteMapConfig,
 } from './types';
-import { setContext } from 'svelte';
 
-export let branding = {
+export interface Branding {
+  applicationName: string;
+  logo: {
+    alt: string;
+    src: string;
+  };
+  sitemap: SiteMapConfig[];
+  footer: FooterConfig;
+  apiPage: ApiPageConfig;
+  explorePage: ExplorePageConfig;
+  landing: LandingConfig;
+  login: LoginConfig;
+  help: HelpConfig;
+}
+
+export const branding: Branding = {
   applicationName: 'PIC-SURE',
   logo: {
     alt: import.meta.env?.VITE_LOGO_ALT || 'PIC‑SURE',
@@ -41,7 +55,6 @@ export const initializeBranding = () => {
   branding.help = configJson.help;
   branding.footer = configJson.footer;
   branding.sitemap = configJson.sitemap as SiteMapConfig[];
-  setContext('branding', branding);
 };
 
 export const routes: Route[] = [

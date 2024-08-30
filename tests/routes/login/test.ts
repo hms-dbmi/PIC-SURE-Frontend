@@ -1,8 +1,11 @@
 import { expect } from '@playwright/test';
 import { unauthedTest } from '../../custom-context';
-import { branding } from '../../../src/lib/configuration';
-
+import * as config from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
+import type { Branding } from '$lib/configuration';
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
+
+//TypeScript is confused by the JSON import so I am fxing it here
+const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
 
 //TODO: Tests for login dropdown
 
@@ -73,7 +76,7 @@ unauthedTest.describe('Login page', () => {
     const expectedBranding = branding?.login?.description;
     // Then
     await expect(subtitle).toBeVisible();
-    await expect(await subtitle.textContent()).toBe(expectedBranding);
+    expect(await subtitle.textContent()).toBe(expectedBranding);
   });
   unauthedTest('Login button shows on login page', async ({ page }) => {
     // Given
