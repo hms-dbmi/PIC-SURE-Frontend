@@ -187,7 +187,7 @@
       <div class="w-full h-full m-2 card p-4">
         <header class="card-header">
           Save the information in your final data export by clicking the Save Dataset ID button.
-          Navigate to the Dataset Management tab to view or manageyour Dataset IDs.
+          Navigate to the Dataset Management tab to view or manage your Dataset IDs.
         </header>
         <hr />
         {#if error}
@@ -282,3 +282,9 @@
     </section>
   </Step>
 </Stepper>
+
+<style>
+  input {
+    border-radius: var(--theme-rounded-base);
+  }
+</style>

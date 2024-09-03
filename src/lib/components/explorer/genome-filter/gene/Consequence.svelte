@@ -10,7 +10,7 @@
   const intersection = (A: string[], B: string[]) => A.some((a: string) => B.includes(a));
 </script>
 
-<div class="overflow-auto h-60 max-h-60">
+<div class="overflow-auto h-[350.75px]">
   <TreeView selection multiple open padding="py-0 px-0" spacing="space-y-0">
     {#each variantData as severity, sIndex}
       <TreeViewItem

@@ -16,7 +16,7 @@
 
 <div
   id="landing"
-  class="flex flex-wrap flex-col justify-evenly text-center items-center w-full h-full"
+  class="flex flex-wrap flex-col justify-evenly text-center items-center w-full h-full mt-8"
 >
   <section id="search-section" class="flex flex-col text-center items-center my-4 mt-auto w-2/3">
     <Searchbox placeholder={branding.landing.searchPlaceholder} bind:searchTerm {search} />

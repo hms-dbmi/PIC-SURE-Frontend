@@ -87,7 +87,7 @@
 >
   <header class="card-header p-1 flex">
     <div
-      class="flex-auto font-bold"
+      class="flex-auto"
       tabindex="0"
       role="button"
       on:click|preventDefault|stopPropagation={toggleCardBody}
