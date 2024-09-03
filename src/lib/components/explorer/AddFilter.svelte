@@ -154,6 +154,7 @@
           <label class="flex-auto flex-col">
             <span>Min: {min}</span>
             <input
+              id="min"
               data-testid="min-input"
               type="text"
               placeholder="Enter value or leave blank for variable min"
@@ -164,6 +165,7 @@
           <label class="flex-auto flex-col">
             <span>Max: {max}</span>
             <input
+              id="max"
               data-testid="max-input"
               type="text"
               placeholder="Enter value or leave blank for variable max"
