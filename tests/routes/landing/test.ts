@@ -104,7 +104,7 @@ test.describe('Landing page', () => {
   });
   test.describe('Actions', () => {
     test.beforeEach(({ page }) => mockAllStats(page));
-    branding.landing.actions.forEach(({ description, icon, url }) => {
+    branding.landing.actions.forEach(({ description, icon, url, title }) => {
       test(`Has expected action of description: ${description}`, async ({ page }) => {
         // Given
         await page.goto('/');
@@ -126,7 +126,7 @@ test.describe('Landing page', () => {
         await page.goto('/');
 
         // When
-        const action = page.getByText(description, { exact: true }).locator('..');
+        const action = page.getByTestId(`landing-action-${title}-btn`);
         await action.isVisible();
 
         // Then

@@ -22,19 +22,6 @@ body {
   margin: 2rem 1.5rem;
 }
 
-#landing {
-  width: 45%;
-}
-
-/* Use a media query to add a breakpoint at 800px: */
-@media screen and (max-width: 1366px) {
-  .main-content,
-  #landing {
-    width: calc(100% - 4rem); /* The width is 100%, when the viewport is 800px or smaller */
-    margin: 2rem;
-  }
-}
-
 input[type='search'] {
   width: 100%;
   box-sizing: border-box;
@@ -95,12 +82,12 @@ h6 {
 
 h1,
 .h1 {
-  font-size: 2.5rem;
+  font-size: 2rem;
   line-height: 2.75rem;
 }
 h2,
 .h2 {
-  font-size: 2rem;
+  font-size: 1.75rem;
   line-height: 2.25rem;
 }
 h3,
@@ -183,21 +170,11 @@ header .app-bar {
 }
 
 #page-footer {
-  margin: 3em 0 0 0;
   border-style: solid;
   border-top-width: 2px;
   @apply bg-primary-100-800-token border-surface-400-500-token;
 }
-#sitemap-footer {
-  padding: 0.5em 0 0;
-  margin: 0 auto;
-  text-align: center;
-  padding: 1em 15%;
-}
-#sitemap-footer ul {
-  text-align: left;
-  margin: 0 2em;
-}
+
 #main-footer {
   padding: 1em;
   @apply bg-primary-300-600-token;
@@ -303,18 +280,18 @@ nav#page-navigation li .nav-dropdown a:focus {
   @apply anchor;
 }
 
-#landing .stats {
-  font-size: 1rem;
-  padding: 1rem;
-  @apply card variant-filled-primary;
-}
-
-#landing .stats a {
-  text-decoration: underline;
+#visualizations {
+  .main-svg {
+    border-radius: var(--theme-rounded-container);
+    box-shadow: 0 0 2px 0px rgba(var(--color-surface-500));
+  }
+  .modebar-group:last-child {
+    background-color: transparent !important;
+  }
 }
 
 .main-content .subtitle {
-  font-size: 2rem;
+  font-size: 1.5rem;
 }
 
 .table.align-middle tbody td {
@@ -423,18 +400,20 @@ input.required:invalid,
   padding: 1rem 0.5rem;
   margin: 0.3rem;
 
-  @apply border border-surface-50-900-token rounded-container-token;
+  @apply border border-surface-300-600-token rounded-container-token;
 
   &:hover {
-    @apply border border-surface-300-600-token scale-110 shadow-lg;
+    @apply scale-110 shadow-lg;
   }
 
   .title {
+    text-wrap: wrap;
     font-size: 1.5rem;
     line-height: 1.5rem;
   }
 
   .subtitle {
+    text-wrap: wrap;
     font-size: 1rem;
     line-height: 1.25rem;
   }
@@ -467,8 +446,8 @@ input.required:invalid,
   }
 
   .title {
-    font-size: 1.125rem;
-    line-height: 1.25rem;
+    font-size: 1rem;
+    line-height: 1rem;
     margin-top: 0.5rem;
   }
 

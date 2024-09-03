@@ -12,12 +12,12 @@
 
 <div
   id={variable.studyId ? `${variable.studyId}-${variable.conceptPath}` : variable.conceptPath}
-  data-testid="added-export-{variable.display}"
+  data-testid="added-export-{variable.conceptPath}"
   class="flex flex-col card p-1 m-1"
   transition:fade={{ duration: 300 }}
 >
   <header class="card-header p-1 flex">
-    <div class="flex-auto font-bold">{variable.display}</div>
+    <div class="flex-auto">{variable.display}</div>
     <button type="button" title="Remove Export" class="btn-icon-color" on:click={remove}>
       <i class="fa-solid fa-times-circle"></i>
     </button>

@@ -12,6 +12,7 @@
     {#each branding.help.links as link}
       <CardButton
         data-testid="variant-explorer-btn"
+        class="variant-ringed-primary"
         href={link.url}
         title={link.title}
         subtitle={link.description}

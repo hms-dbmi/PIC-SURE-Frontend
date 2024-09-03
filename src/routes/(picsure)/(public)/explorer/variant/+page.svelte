@@ -85,7 +85,7 @@
     >
   </div>
 {/if}
-<Content full={true} backUrl="/explorer" backTitle="Back to Cohort Builder">
+<Content full={true} backUrl="/explorer" backTitle="Back to Explore">
   {#if features.explorer.variantExplorer}
     <h2 class="text-center clear-both">Variant Explorer</h2>
     {#await loading}
