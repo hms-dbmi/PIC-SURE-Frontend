@@ -221,7 +221,7 @@ export const tourSearchResults = {
     empty: true,
   },
   empty: false,
-}
+};
 
 export const detailResponseCat = {
   type: 'Categorical',

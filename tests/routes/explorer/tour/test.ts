@@ -1,6 +1,13 @@
 import { expect, type Route } from '@playwright/test';
 import { test, mockApiSuccess } from '../../../custom-context';
-import { facetResultPath, facetsResponse, detailResponseCat, searchResultPath, tourSearchResults as mockData, conceptsDetailPath, } from '../../../mock-data';
+import {
+  facetResultPath,
+  facetsResponse,
+  detailResponseCat,
+  searchResultPath,
+  tourSearchResults as mockData,
+  conceptsDetailPath,
+} from '../../../mock-data';
 
 test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, facetResultPath, facetsResponse);
@@ -32,13 +39,18 @@ test('Tour Finishes', async ({ page }) => {
   await page.getByTestId('start-explorer-tour-btn').click();
 
   // When
-  const stepCount = await page.locator('#driver-popover-content').locator('footer').locator('.driver-popover-progress-text').textContent();
+  const stepCount = await page
+    .locator('#driver-popover-content')
+    .locator('footer')
+    .locator('.driver-popover-progress-text')
+    .textContent();
   if (!stepCount) {
     throw new Error('Step count not found');
   }
   const stepCountInt = parseInt(stepCount.split(' ')[2]) || 0;
   console.log('Step count:', stepCountInt);
-  for (let i = 0; i < stepCountInt+1; i++) { // +1 to account for the Done button
+  for (let i = 0; i < stepCountInt + 1; i++) {
+    // +1 to account for the Done button
     await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(500);
   }
