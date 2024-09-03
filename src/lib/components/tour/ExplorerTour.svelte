@@ -42,24 +42,7 @@
     clearExports();
   }
 
-  // Notes:
-  // - The object that we want to interact with must be fully loaded in the dom before the step that interracts with it,
-  // otherwise the tour can not find the element at step start time. For this reason, we're loading some things in
-  // the step before, or adding steps to open components we'll need later.
-  const tourDriver = driver({
-    showProgress: true,
-    popoverClass: 'picsure-theme',
-    overlayColor: 'rgb(var(--color-surface-400) / .7)',
-    // Although we're not using the previous button, this would be it's custom text
-    // prevBtnText: '<i class="fa-solid fa-arrow-left mr-1"></i> Previous',
-    nextBtnText: 'Next <i class="fa-solid fa-arrow-right ml-1"></i>',
-
-    // Even if previous button is disabled, navigating with the left arrow key still seems to trigger,
-    // so we'll disable it in each step.
-    showButtons: ['next', 'close'],
-    disableButtons: ['previous'],
-
-    steps: [
+  export const steps = [
       {
         // Step 1
         element: '#explorer-search-box',
@@ -228,7 +211,26 @@
           onPrevClick: disablePrevious,
         },
       },
-    ],
+    ];
+
+  // Notes:
+  // - The object that we want to interact with must be fully loaded in the dom before the step that interracts with it,
+  // otherwise the tour can not find the element at step start time. For this reason, we're loading some things in
+  // the step before, or adding steps to open components we'll need later.
+  const tourDriver = driver({
+    showProgress: true,
+    popoverClass: 'picsure-theme',
+    overlayColor: 'rgb(var(--color-surface-400) / .7)',
+    // Although we're not using the previous button, this would be it's custom text
+    // prevBtnText: '<i class="fa-solid fa-arrow-left mr-1"></i> Previous',
+    nextBtnText: 'Next <i class="fa-solid fa-arrow-right ml-1"></i>',
+
+    // Even if previous button is disabled, navigating with the left arrow key still seems to trigger,
+    // so we'll disable it in each step.
+    showButtons: ['next', 'close'],
+    disableButtons: ['previous'],
+
+    steps: steps,
     onDestroyed: () => {
       resetSearch();
       selectedFacets.set([]);
