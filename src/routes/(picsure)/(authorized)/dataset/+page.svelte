@@ -15,7 +15,7 @@
   const columns = [
     { dataElement: 'name', label: 'Dataset ID Name' },
     { dataElement: 'startTime', label: 'Created' },
-    { dataElement: 'queryId', label: 'Query ID' },
+    { dataElement: 'queryId', label: 'Dataset ID' },
     { dataElement: 'uuid', label: 'Actions' },
   ];
 
