@@ -160,6 +160,69 @@ export const searchResults = {
   empty: false,
 };
 
+export const tourSearchResults = {
+  totalPages: 1,
+  totalElements: 3,
+  pageable: {
+    pageNumber: 0,
+    pageSize: 10,
+    sort: {
+      unsorted: true,
+      sorted: false,
+      empty: true,
+    },
+    offset: 0,
+    unpaged: false,
+    paged: true,
+  },
+  numberOfElements: 3,
+  first: true,
+  last: true,
+  size: 3,
+  content: [
+    {
+      conceptPath: '\\this\\is\\a\\age\\',
+      name: 'age1',
+      display: 'age',
+      dataset: 'test_data_set',
+      description: 'Age',
+      min: 0,
+      max: 99,
+      meta: null,
+      type: 'Continuous',
+    },
+    {
+      conceptPath: '\\phs123\\age\\',
+      name: 'AGE_CATEGORY',
+      display: 'age',
+      dataset: 'phs123',
+      description: "Participant's age (category)",
+      values: ['21', '22', '23', '24', '25'],
+      children: null,
+      meta: null,
+      type: 'Categorical',
+    },
+    {
+      conceptPath: '\\phs123\\age1\\',
+      name: 'AGE_CATEGORY',
+      display: 'age',
+      dataset: 'phs123',
+      description: "Participant's age (category)",
+      values: ['21', '22', '23', '24', '25', '26'],
+      children: null,
+      meta: null,
+      type: 'Categorical',
+    },
+  ],
+  number: 0,
+  sort: {
+    unsorted: true,
+    sorted: false,
+    empty: true,
+  },
+  empty: false,
+};
+
 export const detailResponseCat = {
   type: 'Categorical',
   conceptPath: '\\SOMEDATA\\questionnaire\\disease\\Any family with heart attack?\\',

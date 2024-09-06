@@ -42,6 +42,177 @@
     clearExports();
   }
 
+  export const steps = [
+    {
+      // Step 1
+      element: '#explorer-search-box',
+      popover: {
+        title: 'Search',
+        description: 'Search clinical variables of interest.',
+        onPrevClick: disablePrevious,
+      },
+    },
+    {
+      // Step 2
+      element: '#search-button',
+      popover: {
+        title: 'Search',
+        description: 'Press the Enter key or click the search icon to submit your search.',
+        onPrevClick: disablePrevious,
+      },
+    },
+    {
+      // Step 3
+      element: '#ExplorerTable-table',
+      popover: {
+        title: 'Search results',
+        description:
+          'The results of the search are displayed in this area. Each row describes a different variable that matches your search result.',
+        onPrevClick: disablePrevious,
+      },
+    },
+    {
+      // Step 4
+      element: '[data-testid=genomic-filter-btn]',
+      popover: {
+        title: 'Add a genomic Filter',
+        description:
+          'Use the genomic filtering button to apply a filter using genomic information. \n Note* you can also search for genomic variables using the search bar.',
+        onPrevClick: disablePrevious,
+      },
+    },
+    {
+      // Step 5
+      element: '#row-0-col-2 button[title=Filter]',
+      onHighlightStarted: clickElement,
+      popover: {
+        title: 'Add a filter',
+        description:
+          'To view available filters for a variable, click on the filter icon in the row of interest.',
+        onPrevClick: disablePrevious,
+      },
+    },
+    {
+      // Step 6
+      element: '#active-row-0 [data-testid=numerical-filter]',
+      popover: {
+        title: 'Add numeric filter',
+        description:
+          'To add a numeric filter, enter the min and max values you want in the filter.',
+        onPrevClick: disablePrevious,
+        onNextClick: () => {
+          const min = document.querySelector(
+            '#active-row-0 [data-testid=numerical-filter] input#min',
+          ) as HTMLInputElement;
+          const max = document.querySelector(
+            '#active-row-0 [data-testid=numerical-filter] input#max',
+          ) as HTMLInputElement;
+          min.value = '2';
+          max.value = '4';
+          tourDriver.moveNext();
+        },
+      },
+    },
+    {
+      // Step 7
+      element: '#active-row-0 [data-testid=add-filter]',
+      popover: {
+        title: 'Add numeric filter',
+        description: 'Click the plus icon to add the filter',
+        onPrevClick: disablePrevious,
+        onNextClick: clickElementThenNext,
+      },
+    },
+    {
+      // Step 8
+      element: '#sidebar-right',
+      popover: {
+        title: 'Filters added',
+        description: 'Any filters added will end up in the results sidebar.',
+      },
+    },
+    {
+      // Step 9
+      element: '#row-1-col-2 button[title=Filter]',
+      onHighlightStarted: clickElement,
+      popover: {
+        title: 'Add categorical filter',
+        description: 'You can continue to add filters.',
+        onPrevClick: disablePrevious,
+      },
+    },
+    {
+      // Step 10
+      element: '#active-row-1 #options-container',
+      popover: {
+        title: 'Add categorical filter',
+        description:
+          'To add a categorical filter, click on the options you want to include in the filter.',
+        onPrevClick: disablePrevious,
+        onNextClick: () => {
+          const firstOption = document.querySelector(
+            '#active-row-1 #options-container label:nth-child(1)',
+          ) as HTMLInputElement;
+          firstOption?.click();
+          tourDriver.moveNext();
+        },
+      },
+    },
+    {
+      // Step 11
+      element: '#active-row-1 [data-testid=add-filter]',
+      popover: {
+        title: 'Add categorical filter',
+        description: 'Click the plus icon to add the filter',
+        onPrevClick: disablePrevious,
+        onNextClick: clickElementThenNext,
+      },
+    },
+    {
+      // Step 12
+      element: '#sidebar-right',
+      popover: {
+        title: 'Added filters',
+        description:
+          'You can view, edit, or delete previously added filters from the result sidebar.',
+        onPrevClick: disablePrevious,
+      },
+    },
+    {
+      // Step 13
+      element: '#row-0-col-2 button[title="Data Export"]',
+      popover: {
+        title: 'Add a varible to export',
+        description:
+          'Add a varible to exported data by clicking the export icon on the variable of interest.',
+        onPrevClick: disablePrevious,
+        onNextClick: clickElementThenNext,
+      },
+    },
+    {
+      // Step 14
+      element: '#sidebar-right',
+      popover: {
+        title: 'Added exports',
+        description:
+          'You can view, or delete previously added variables for export from the result sidebar.',
+        onPrevClick: disablePrevious,
+      },
+    },
+    {
+      // Step 15
+      element: '#nav-link-help',
+      onHighlighted: addHighlightClass(true),
+      onDeselected: addHighlightClass(false),
+      popover: {
+        title: 'Get help',
+        description:
+          'To learn more about these features, consult the documentation and use the information links throughout the site.',
+        onPrevClick: disablePrevious,
+      },
+    },
+  ];
+
   // Notes:
   // - The object that we want to interact with must be fully loaded in the dom before the step that interracts with it,
   // otherwise the tour can not find the element at step start time. For this reason, we're loading some things in
@@ -59,176 +230,7 @@
     showButtons: ['next', 'close'],
     disableButtons: ['previous'],
 
-    steps: [
-      {
-        // Step 1
-        element: '#explorer-search-box',
-        popover: {
-          title: 'Search',
-          description: 'Search clinical variables of interest.',
-          onPrevClick: disablePrevious,
-        },
-      },
-      {
-        // Step 2
-        element: '#search-button',
-        popover: {
-          title: 'Search',
-          description: 'Press the Enter key or click the search icon to submit your search.',
-          onPrevClick: disablePrevious,
-        },
-      },
-      {
-        // Step 3
-        element: '#ExplorerTable-table',
-        popover: {
-          title: 'Search results',
-          description:
-            'The results of the search are displayed in this area. Each row describes a different variable that matches your search result.',
-          onPrevClick: disablePrevious,
-        },
-      },
-      {
-        // Step 4
-        element: '[data-testid=genomic-filter-btn]',
-        popover: {
-          title: 'Add a genomic Filter',
-          description:
-            'Use the genomic filtering button to apply a filter using genomic information. \n Note* you can also search for genomic variables using the search bar.',
-          onPrevClick: disablePrevious,
-        },
-      },
-      {
-        // Step 5
-        element: '#row-0-col-2 button[title=Filter]',
-        onHighlightStarted: clickElement,
-        popover: {
-          title: 'Add a filter',
-          description:
-            'To view available filters for a variable, click on the filter icon in the row of interest.',
-          onPrevClick: disablePrevious,
-        },
-      },
-      {
-        // Step 6
-        element: '#active-row-0 [data-testid=numerical-filter]',
-        popover: {
-          title: 'Add numeric filter',
-          description:
-            'To add a numeric filter, enter the min and max values you want in the filter.',
-          onPrevClick: disablePrevious,
-          onNextClick: () => {
-            const min = document.querySelector(
-              '#active-row-0 [data-testid=numerical-filter] input#min',
-            ) as HTMLInputElement;
-            const max = document.querySelector(
-              '#active-row-0 [data-testid=numerical-filter] input#max',
-            ) as HTMLInputElement;
-            min.value = '2';
-            max.value = '4';
-            tourDriver.moveNext();
-          },
-        },
-      },
-      {
-        // Step 7
-        element: '#active-row-0 [data-testid=add-filter]',
-        popover: {
-          title: 'Add numeric filter',
-          description: 'Click the plus icon to add the filter',
-          onPrevClick: disablePrevious,
-          onNextClick: clickElementThenNext,
-        },
-      },
-      {
-        // Step 8
-        element: '#sidebar-right',
-        popover: {
-          title: 'Filters added',
-          description: 'Any filters added will end up in the results sidebar.',
-        },
-      },
-      {
-        // Step 9
-        element: '#row-1-col-2 button[title=Filter]',
-        onHighlightStarted: clickElement,
-        popover: {
-          title: 'Add categorical filter',
-          description: 'You can continue to add filters.',
-          onPrevClick: disablePrevious,
-        },
-      },
-      {
-        // Step 10
-        element: '#active-row-1 #options-container',
-        popover: {
-          title: 'Add categorical filter',
-          description:
-            'To add a categorical filter, click on the options you want to include in the filter.',
-          onPrevClick: disablePrevious,
-          onNextClick: () => {
-            const firstOption = document.querySelector(
-              '#active-row-1 #options-container label:nth-child(1)',
-            ) as HTMLInputElement;
-            firstOption?.click();
-            tourDriver.moveNext();
-          },
-        },
-      },
-      {
-        // Step 11
-        element: '#active-row-1 [data-testid=add-filter]',
-        popover: {
-          title: 'Add categorical filter',
-          description: 'Click the plus icon to add the filter',
-          onPrevClick: disablePrevious,
-          onNextClick: clickElementThenNext,
-        },
-      },
-      {
-        // Step 12
-        element: '#sidebar-right',
-        popover: {
-          title: 'Added filters',
-          description:
-            'You can view, edit, or delete previously added filters from the result sidebar.',
-          onPrevClick: disablePrevious,
-        },
-      },
-      {
-        // Step 13
-        element: '#row-0-col-2 button[title="Data Export"]',
-        popover: {
-          title: 'Add a varible to export',
-          description:
-            'Add a varible to exported data by clicking the export icon on the variable of interest.',
-          onPrevClick: disablePrevious,
-          onNextClick: clickElementThenNext,
-        },
-      },
-      {
-        // Step 14
-        element: '#sidebar-right',
-        popover: {
-          title: 'Added exports',
-          description:
-            'You can view, or delete previously added variables for export from the result sidebar.',
-          onPrevClick: disablePrevious,
-        },
-      },
-      {
-        // Step 15
-        element: '#nav-link-help',
-        onHighlighted: addHighlightClass(true),
-        onDeselected: addHighlightClass(false),
-        popover: {
-          title: 'Get help',
-          description:
-            'To learn more about these features, consult the documentation and use the information links throughout the site.',
-          onPrevClick: disablePrevious,
-        },
-      },
-    ],
+    steps: steps,
     onDestroyed: () => {
       resetSearch();
       selectedFacets.set([]);
