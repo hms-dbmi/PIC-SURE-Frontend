@@ -72,6 +72,7 @@ export function getUserTest(user: User = picsureUser) {
 
       await mockApiSuccess(context, '*/**/psama/authentication', user);
       await mockApiSuccess(context, '*/**/psama/user/me?hasToken', user);
+      await mockApiSuccess(context, '*/**/psama/user/me', user);
 
       use(context);
     },

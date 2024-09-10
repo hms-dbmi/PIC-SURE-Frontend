@@ -100,7 +100,7 @@ export async function refreshLongTermToken() {
   user.set({ ...get(user), token: newLongTermToken });
 }
 
-export async function getQueryTemplate(): Promise<{queryTemplate: Query | string}> {
+export async function getQueryTemplate(): Promise<{ queryTemplate: Query | string }> {
   return api.get('psama/user/me/queryTemplate/' + resources.application);
 }
 
@@ -111,8 +111,8 @@ export async function login(token: string) {
     if (features.useQueryTemplate) {
       const res = await getQueryTemplate();
       //FIXME: This is a temporary fix for the backend returning "null" as a string
-      if (res.queryTemplate != "null") { 
-        let queryTemplate = res.queryTemplate as Query;
+      if (res.queryTemplate != 'null') {
+        const queryTemplate = res.queryTemplate as Query;
         user.update((u) => ({ ...u, queryTemplate }));
       }
     }

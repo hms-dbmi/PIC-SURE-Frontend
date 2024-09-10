@@ -11,13 +11,12 @@ const harmonizedConsentPath = '\\_harmonized_consent\\';
 const topmedConsentPath = '\\_topmed_consents\\';
 
 export function getQueryRequest(openAccess = false): QueryRequestInterface {
-  let query = new Query();
   let resourceUUID = resources.hpds;
-
+  let query = new Query();
   if (features.useQueryTemplate) {
     const queryTemplate = get(user).queryTemplate;
     if (queryTemplate) {
-      query = queryTemplate;
+      query = new Query(queryTemplate);
     }
   }
 
