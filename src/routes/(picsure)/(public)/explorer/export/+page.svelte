@@ -7,9 +7,8 @@
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import Content from '$lib/components/Content.svelte';
   import { getQueryRequest } from '$lib/QueryBuilder';
-    import { onMount } from 'svelte';
-    import type { ExportInterface } from '$lib/models/Export';
-    import { features } from '$lib/configuration';
+  import type { ExportInterface } from '$lib/models/Export';
+  import { features } from '$lib/configuration';
   let { exports } = ExportStore;
 
   let queryRequest: QueryRequestInterface = getQueryRequest();
@@ -54,7 +53,7 @@
       variableName: patientIdExport.display || patientIdExport.searchResult?.name,
       description: patientIdExport.searchResult?.description,
       type: patientIdExport.searchResult?.type,
-    }
+    };
     exportRows.push(patientIdRow);
     if (features.useQueryTemplate) {
       const topmedExport: ExportInterface = {
@@ -77,9 +76,9 @@
         variableName: topmedExport.display || topmedExport.searchResult?.name,
         description: topmedExport.searchResult?.description,
         type: topmedExport.searchResult?.type,
-      }
+      };
       exportRows.push(topMedRow);
-  
+
       const parentStudyExport: ExportInterface = {
         id: '\\_Parent Study Accession with Subject ID\\',
         conceptPath: '\\_Parent Study Accession with Subject ID\\',
@@ -100,7 +99,7 @@
         variableName: parentStudyExport.display || parentStudyExport.searchResult?.name,
         description: parentStudyExport.searchResult?.description,
         type: parentStudyExport.searchResult?.type,
-      }
+      };
       exportRows.push(parentStudyRow);
     }
   }

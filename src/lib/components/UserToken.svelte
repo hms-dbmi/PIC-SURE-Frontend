@@ -84,7 +84,7 @@
 </script>
 
 <div id="user-token-container">
-  {#await getUser(true)}
+  {#await getUser(true, true)}
     <ProgressRadial width="w-10" value={undefined} />
   {:then}
     <div id="user-token" class="card variant-filled-sureface">

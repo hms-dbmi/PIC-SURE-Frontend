@@ -107,7 +107,7 @@ export async function getQueryTemplate(): Promise<Query> {
 export async function login(token: string) {
   if (browser && token) {
     localStorage.setItem('token', token);
-    await getUser(true);
+    await getUser(true, false);
     if (features.useQueryTemplate) {
       const queryTemplate = await getQueryTemplate();
       user.update((u) => ({ ...u, queryTemplate }));
