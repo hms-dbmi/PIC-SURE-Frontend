@@ -44,6 +44,7 @@ export const unauthedTest = base.extend({
 export const test = base.extend({
   context: async ({ context }, use) => {
     await mockApiSuccess(context, '*/**/psama/user/me?hasToken', picsureUser);
+    await mockApiSuccess(context, '*/**/psama/user/me', picsureUser);
     await context.addInitScript((picsureUser: User) => {
       localStorage.setItem('user', JSON.stringify(picsureUser));
       localStorage.setItem(

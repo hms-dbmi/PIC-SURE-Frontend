@@ -83,7 +83,7 @@ export const userRoutes: Readable<Route[]> = derived(user, ($user) => {
 
 export async function getUser(force?: boolean, hasToken = false) {
   if (force || !get(user)?.privileges || !get(user)?.token) {
-    const res = await api.get(`psama/user/me${'?' + (hasToken ? 'hasToken' : '')}`);
+    const res = await api.get(`psama/user/me${hasToken ? '?hasToken' : ''}`);
     user.set(res);
   }
 }
@@ -100,7 +100,7 @@ export async function refreshLongTermToken() {
   user.set({ ...get(user), token: newLongTermToken });
 }
 
-export async function getQueryTemplate(): Promise<Query> {
+export async function getQueryTemplate(): Promise<{queryTemplate: Query | string}> {
   return api.get('psama/user/me/queryTemplate/' + resources.application);
 }
 
@@ -109,8 +109,12 @@ export async function login(token: string) {
     localStorage.setItem('token', token);
     await getUser(true, false);
     if (features.useQueryTemplate) {
-      const queryTemplate = await getQueryTemplate();
-      user.update((u) => ({ ...u, queryTemplate }));
+      const res = await getQueryTemplate();
+      //FIXME: This is a temporary fix for the backend returning "null" as a string
+      if (res.queryTemplate != "null") { 
+        let queryTemplate = res.queryTemplate as Query;
+        user.update((u) => ({ ...u, queryTemplate }));
+      }
     }
   }
 }
