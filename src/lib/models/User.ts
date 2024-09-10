@@ -1,3 +1,5 @@
+import type { Query } from './query/Query';
+
 export interface User {
   uuid?: string;
   email?: string;
@@ -5,6 +7,7 @@ export interface User {
   privileges?: string[];
   token?: string;
   acceptedTOS?: boolean;
+  queryTemplate?: Query;
 }
 
 export interface ExtendedUser extends User {

@@ -1,7 +1,6 @@
 <script>
-  import FilterStore from '$lib/stores/Filter';
+  import { filters, totalParticipants } from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
-  let { filters, totalParticipants } = FilterStore;
   let { exports } = ExportStore;
 
   $: participantsCount = $totalParticipants;

@@ -5,8 +5,9 @@ import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
 import type { User } from '$lib/models/User';
 import { PicsurePrivileges } from '$lib/models/Privilege';
-import { routes, features } from '$lib/configuration';
+import { routes, features, resources } from '$lib/configuration';
 import { goto } from '$app/navigation';
+import type { Query } from '$lib/models/query/Query';
 
 export const user: Writable<User> = writable(restoreUser());
 
@@ -80,9 +81,9 @@ export const userRoutes: Readable<Route[]> = derived(user, ($user) => {
   return allowedRoutes(featured);
 });
 
-export async function getUser(force?: boolean) {
+export async function getUser(force?: boolean, hasToken = false) {
   if (force || !get(user)?.privileges || !get(user)?.token) {
-    const res = await api.get('psama/user/me?hasToken');
+    const res = await api.get(`psama/user/me${'?' + (hasToken ? 'hasToken' : '')}`);
     user.set(res);
   }
 }
@@ -99,10 +100,18 @@ export async function refreshLongTermToken() {
   user.set({ ...get(user), token: newLongTermToken });
 }
 
+export async function getQueryTemplate(): Promise<Query> {
+  return api.get('psama/user/me/queryTemplate/' + resources.application);
+}
+
 export async function login(token: string) {
   if (browser && token) {
     localStorage.setItem('token', token);
     await getUser(true);
+    if (features.useQueryTemplate) {
+      const queryTemplate = await getQueryTemplate();
+      user.update((u) => ({ ...u, queryTemplate }));
+    }
   }
 }
 

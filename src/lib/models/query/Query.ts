@@ -62,6 +62,10 @@ export class Query implements QueryInterface {
     (this.categoryFilters as Indexable)[key] = value;
   }
 
+  removeCategoryFilter(key: string) {
+    delete (this.categoryFilters as Indexable)[key];
+  }
+
   addNumericFilter(key: string, min: string, max: string) {
     (this.numericFilters as Indexable)[key] = {
       min: min.toString(),

@@ -200,6 +200,8 @@ export const features: Indexable = {
   },
   dataRequests: import.meta.env?.VITE_DATA_REQUESTS === 'true',
   genomicFilter: import.meta.env?.VITE_GENOMIC_FILTER === 'true',
+  requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
+  useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
 };
 
 export const settings: Indexable = {
@@ -217,7 +219,9 @@ export const settings: Indexable = {
 
 export const resources = {
   hpds: import.meta.env?.VITE_RESOURCE_HPDS || '',
+  openHPDS: import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '',
   Visualizer: import.meta.env?.VITE_RESOURCE_VIZ || '',
+  application: import.meta.env?.VITE_RESOURCE_APP || '',
 };
 
 export const auth = {

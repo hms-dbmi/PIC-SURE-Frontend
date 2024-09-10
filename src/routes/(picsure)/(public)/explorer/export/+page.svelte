@@ -1,14 +1,16 @@
 <script lang="ts">
   import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import FilterStore from '$lib/stores/Filter';
+  import { filters } from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
   import { state } from '$lib/stores/Stepper';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import Content from '$lib/components/Content.svelte';
-  let { getQueryRequest } = FilterStore;
+  import { getQueryRequest } from '$lib/QueryBuilder';
+    import { onMount } from 'svelte';
+    import type { ExportInterface } from '$lib/models/Export';
+    import { features } from '$lib/configuration';
   let { exports } = ExportStore;
-  let { filters } = FilterStore;
 
   let queryRequest: QueryRequestInterface = getQueryRequest();
   let exportRows: ExportRowInterface[] = $exports.map((exp) => {
@@ -31,6 +33,77 @@
       type: filter.searchResult?.type,
     };
   });
+  if (features.useQueryTemplate) {
+    const patientIdExport: ExportInterface = {
+      id: '\\_Patient ID\\',
+      conceptPath: '\\_Patient ID\\',
+      display: 'Patient ID',
+      searchResult: {
+        conceptPath: '\\_Patient ID\\',
+        name: '_Patient ID',
+        dataset: '',
+        display: 'Patient ID',
+        description: 'Patient identifier.',
+        type: 'Categorical',
+      },
+    };
+    let patientIdRow: ExportRowInterface = {
+      ref: patientIdExport,
+      selected: true,
+      variableId: patientIdExport.conceptPath,
+      variableName: patientIdExport.display || patientIdExport.searchResult?.name,
+      description: patientIdExport.searchResult?.description,
+      type: patientIdExport.searchResult?.type,
+    }
+    exportRows.push(patientIdRow);
+    if (features.useQueryTemplate) {
+      const topmedExport: ExportInterface = {
+        id: '\\_Topmed Study Accession with Subject ID\\',
+        conceptPath: '\\_Topmed Study Accession with Subject ID\\',
+        display: 'TOPMed Study Accession with Subject ID',
+        searchResult: {
+          conceptPath: '\\_Topmed Study Accession with Subject ID\\',
+          name: '_TOPMed Study Accession with Subject ID',
+          dataset: 'TOPMed',
+          display: 'TOPMed Study Accession with Subject ID',
+          description: 'TOPMed study accession number and subject identifier.',
+          type: 'Categorical',
+        },
+      };
+      let topMedRow: ExportRowInterface = {
+        ref: topmedExport,
+        selected: true,
+        variableId: topmedExport.conceptPath,
+        variableName: topmedExport.display || topmedExport.searchResult?.name,
+        description: topmedExport.searchResult?.description,
+        type: topmedExport.searchResult?.type,
+      }
+      exportRows.push(topMedRow);
+  
+      const parentStudyExport: ExportInterface = {
+        id: '\\_Parent Study Accession with Subject ID\\',
+        conceptPath: '\\_Parent Study Accession with Subject ID\\',
+        display: 'Parent Study Accession with Subject ID',
+        searchResult: {
+          conceptPath: '\\_Parent Study Accession with Subject ID\\',
+          name: '_Parent Study Accession with Subject ID',
+          dataset: '',
+          display: 'Parent Study Accession with Subject ID',
+          description: 'Parent study accession number and subject identifier.',
+          type: 'Categorical',
+        },
+      };
+      let parentStudyRow: ExportRowInterface = {
+        ref: parentStudyExport,
+        selected: true,
+        variableId: parentStudyExport.conceptPath,
+        variableName: parentStudyExport.display || parentStudyExport.searchResult?.name,
+        description: parentStudyExport.searchResult?.description,
+        type: parentStudyExport.searchResult?.type,
+      }
+      exportRows.push(parentStudyRow);
+    }
+  }
 </script>
 
 <Content
