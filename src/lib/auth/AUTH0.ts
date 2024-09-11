@@ -23,16 +23,16 @@ class Auth0 extends AuthProvider implements Auth0Data {
   }
 
   //TODO: create real return types
-  authenticate = async (redirectTo = '/', hashParts: string[]): Promise<boolean> => {
+  authenticate = async (hashParts: string[]): Promise<boolean> => {
     if (!hashParts || hashParts.length === 0) {
       return true;
     }
     const auth0ResponseMap: Map<string, string> = this.getResponseMap(hashParts);
     const token = auth0ResponseMap.get('#access_token');
     if (browser && token) {
-      const redirectURI = this.getRedirectURI(redirectTo, this.type);
+      const redirectURI = this.getRedirectURI();
       try {
-        const newUser: User = await api.post('psama/authentication', {
+        const newUser: User = await api.post('psama/authentication/auth0', {
           access_token: token,
           redirectURI: redirectURI,
         });
@@ -51,7 +51,8 @@ class Auth0 extends AuthProvider implements Auth0Data {
   };
 
   login = async (redirectTo: string, type: string): Promise<void> => {
-    const redirectUrl = this.getRedirectURI(redirectTo, type);
+    const redirectUrl = this.getRedirectURI();
+    this.saveState(redirectTo, type);
     const webAuth = new auth0.WebAuth({
       domain: auth.auth0Tenant + '.auth0.com',
       clientID: this.clientid || '',

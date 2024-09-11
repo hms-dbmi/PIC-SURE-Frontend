@@ -31,10 +31,13 @@ class RAS extends AuthProvider implements RasData {
 
   //TODO: create real return types
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  authenticate = async (redirectTo = '/', hashParts: string[]): Promise<boolean> => {
+  authenticate = async (hashParts: string[]): Promise<boolean> => {
     const responseMap = this.getResponseMap(hashParts);
     const code = responseMap.get('code');
-    const state = sessionStorage.getItem('state');
+    let state = '';
+    if (browser) {
+      state = sessionStorage.getItem('state') || '';
+    }
     if (!code || state !== this.state) {
       return true;
     }
@@ -55,7 +58,7 @@ class RAS extends AuthProvider implements RasData {
   login = async (redirectTo: string, type: string): Promise<void> => {
     let redirectUrl = '/';
     if (browser) {
-      redirectUrl = this.getRedirectURI(redirectTo, type);
+      redirectUrl = this.getRedirectURI();
       window.location.href = encodeURI(
         `${this.uri}/oauth2/default/v1/authorize?response_type=code&scope=openid&client_id=${this.clientid}&provider=${type}&redirect_uri=${redirectUrl}&state=${this.state}`,
       );
