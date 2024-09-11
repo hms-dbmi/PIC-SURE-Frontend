@@ -31,9 +31,8 @@ class RAS extends AuthProvider implements RasData {
 
   //TODO: create real return types
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  authenticate = async (redirectTo = '/', hashParts: string[]): Promise<boolean> => {
-    const responseMap = this.getResponseMap(hashParts);
-    const code = responseMap.get('code');
+  authenticate = async (redirectTo = '/', hashParts: URLSearchParams): Promise<boolean> => {
+    const code = hashParts.get('code');
     const state = sessionStorage.getItem('state');
     if (!code || state !== this.state) {
       return true;

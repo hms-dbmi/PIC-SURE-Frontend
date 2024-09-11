@@ -50,7 +50,7 @@ export default class AuthProvider implements AuthData {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  authenticate = async (redirectTo: string, hashParts: string[]): Promise<boolean> => {
+  authenticate = async (redirectTo: string, hashParts: URLSearchParams): Promise<boolean> => {
     throw new Error('Method not implemented.');
   };
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

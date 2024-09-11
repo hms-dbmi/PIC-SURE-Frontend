@@ -20,8 +20,7 @@
       failed = true;
     }
     const providerInstance = await createInstance(provider);
-    const hashParts = window.location.hash.split('&');
-    failed = await providerInstance.authenticate(redirectTo, hashParts);
+    failed = await providerInstance.authenticate(redirectTo, $page.url.searchParams);
     goto(failed ? '/login/error' : redirectTo);
   });
 </script>

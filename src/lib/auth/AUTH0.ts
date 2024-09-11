@@ -23,12 +23,11 @@ class Auth0 extends AuthProvider implements Auth0Data {
   }
 
   //TODO: create real return types
-  authenticate = async (redirectTo = '/', hashParts: string[]): Promise<boolean> => {
-    if (!hashParts || hashParts.length === 0) {
+  authenticate = async (redirectTo = '/', hashParts: URLSearchParams): Promise<boolean> => {
+    if (!hashParts || hashParts.size === 0) {
       return true;
     }
-    const auth0ResponseMap: Map<string, string> = this.getResponseMap(hashParts);
-    const token = auth0ResponseMap.get('#access_token');
+    const token = hashParts.get('#access_token');
     if (browser && token) {
       const redirectURI = this.getRedirectURI(redirectTo, this.type);
       try {

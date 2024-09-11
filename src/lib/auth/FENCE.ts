@@ -25,14 +25,13 @@ class Fence extends AuthProvider implements FenceData {
 
   //TODO: create real return types
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  authenticate = async (redirectTo = '/', hashParts: string[]): Promise<boolean> => {
-    const responseMap = this.getResponseMap(hashParts);
-    const code = responseMap.get('code');
+  authenticate = async (redirectTo = '/', hashParts: URLSearchParams): Promise<boolean> => {
+    const code = hashParts.get('code');
     if (!code) {
       return true;
     }
     try {
-      const newUser: User = await api.post('psama/authentication', { code });
+      const newUser: User = await api.post('auth/authentication/fence', { code });
       if (newUser?.token) {
         UserLogin(newUser.token);
         return false;
