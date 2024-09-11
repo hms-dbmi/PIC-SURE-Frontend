@@ -12,10 +12,8 @@ RUN npm ci --omit dev
 FROM httpd:2.4.62-alpine
 
 RUN apk add --update openssl sed nodejs supervisor
-#TODO: volume mount the certs
+
 RUN mkdir -p ${HTTPD_PREFIX}/cert
-#COPY cert ${HTTPD_PREFIX}/cert
-#COPY httpd-vhosts.conf ${HTTPD_PREFIX}/conf/extra/httpd-vhosts.conf
 
 RUN sed -i '/^#Include conf.extra.httpd-vhosts.conf/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf
 
