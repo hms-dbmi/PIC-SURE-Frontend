@@ -6,7 +6,7 @@
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
-  import FilterStore from '$lib/stores/Filter';
+  import { filters, hasGenomicFilter, clearFilters, totalParticipants } from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
   import * as api from '$lib/api';
   import { ProgressRadial, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
@@ -14,9 +14,8 @@
   import { onDestroy, onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import type { Unsubscriber } from 'svelte/store';
+  import { getQueryRequest } from '$lib/QueryBuilder';
 
-  const { filters, hasGenomicFilter, getQueryRequest, clearFilters, totalParticipants } =
-    FilterStore;
   const { exports, clearExports } = ExportStore;
 
   const modalStore = getModalStore();

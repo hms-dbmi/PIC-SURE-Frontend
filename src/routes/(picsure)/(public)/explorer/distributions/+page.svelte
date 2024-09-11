@@ -1,25 +1,21 @@
 <script lang="ts">
   import { getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
   import { onMount } from 'svelte';
-
   import { resources } from '$lib/configuration';
   import * as api from '$lib/api';
-  import FilterStore from '$lib/stores/Filter';
-
   import { branding } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
   import PlotlyPlot from '$lib/components/plots/PlotlyPlot.svelte';
-
   import {
     type PlotValues,
     type PlotlyNewPlot,
     createContinuousPlot,
     createCategoryPlot,
   } from '$lib/utilities/Plotly';
+  import { getQueryRequest } from '$lib/QueryBuilder';
 
   const SYNC_URL = '/picsure/query/sync';
 
-  const { getQueryRequest } = FilterStore;
   const toastStore = getToastStore();
 
   let plotValues: PlotValues[] = [];

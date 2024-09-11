@@ -1,5 +1,6 @@
 import type { User } from '../src/lib/models/User';
 import { PicsurePrivileges } from '../src/lib/models/Privilege';
+import type { QueryInterface } from '$lib/models/query/Query';
 
 export const HPDS = process.env.VITE_RESOURCE_HPDS;
 
@@ -37,6 +38,21 @@ export const datasets = [
   },
 ];
 
+const mockQueryTemplate: QueryInterface = {
+  categoryFilters: {},
+  numericFilters: {},
+  requiredFields: [],
+  anyRecordOf: [],
+  variantInfoFilters: [
+    {
+      categoryVariantInfoFilters: {},
+      numericVariantInfoFilters: {},
+    },
+  ],
+  expectedResultType: 'COUNT',
+  fields: [],
+};
+
 export const picsureUser: User = {
   uuid: '1234',
   email: 'test@pic-sure.org',
@@ -44,6 +60,7 @@ export const picsureUser: User = {
   // expired token
   token: mockToken,
   acceptedTOS: true,
+  queryTemplate: mockQueryTemplate,
 };
 
 export const searchResultPath =
