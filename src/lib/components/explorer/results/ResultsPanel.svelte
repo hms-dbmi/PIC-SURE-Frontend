@@ -38,14 +38,14 @@
     } catch (error) {
       if ($filters.length !== 0) {
         toastStore.trigger({
-          message: branding.explorePage.filterErrorText,
+          message: branding?.explorePage?.filterErrorText,
           background: 'variant-filled-error',
           autohide: false,
           hoverable: true,
         });
       } else {
         toastStore.trigger({
-          message: branding.explorePage.queryErrorText,
+          message: branding?.explorePage?.queryErrorText,
           background: 'variant-filled-error',
         });
       }
@@ -112,7 +112,7 @@
         <span class="sr-only">{ERROR_VALUE}</span>
       </span>
     {/await}
-    <h4 class="text-center">{branding.explorePage.totalPatientsText}</h4>
+    <h4 class="text-center">{branding?.explorePage?.totalPatientsText}</h4>
   </div>
   {#if showExportButton}
     <div class="h-11 mt-4">

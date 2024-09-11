@@ -6,17 +6,17 @@
   import { branding } from '$lib/configuration';
   import type { Value } from '$lib/models/Value';
 
-  let stats: Value[] = branding.landing.stats.map((stat) => ({
+  let stats: Value[] = branding?.landing?.stats?.map((stat) => ({
     title: stat,
     value: ERROR_VALUE,
     loading: true,
   }));
-  let width = branding.landing.stats.length;
+  let width = branding?.landing?.stats.length;
   $: hasError = stats.find((stat) => !stat.loading && stat.value === ERROR_VALUE) || false;
 
   onMount(async () => {
     stats = await Promise.all(
-      branding.landing.stats.map(async (stat) => {
+      branding?.landing?.stats?.map(async (stat) => {
         let value = await getOrApi(stat);
         return { value, title: stat, loading: false } as Value;
       }),
@@ -56,7 +56,7 @@
     {/each}
   </div>
   <div class="w-2/4 p-8">
-    {@html branding.landing.explanation}
+    {@html branding?.landing?.explanation}
   </div>
   {#if hasError}
     <div

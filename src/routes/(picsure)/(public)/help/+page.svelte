@@ -9,7 +9,7 @@
 </svelte:head>
 <Content title="Knowledge Hub">
   <section id="info-cards" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-8">
-    {#each branding.help.links as link}
+    {#each branding?.help?.links as link}
       <CardButton
         data-testid="variant-explorer-btn"
         class="variant-ringed-primary"

@@ -256,7 +256,7 @@
 
         // Load search in bg then start tour
         const searchBox = document.querySelector('#explorer-search-box') as HTMLInputElement;
-        searchBox.value = branding.explorePage.tourSearchTerm;
+        searchBox.value = branding?.explorePage?.tourSearchTerm;
         searchBox.dispatchEvent(new Event('input'));
         searchBox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
 

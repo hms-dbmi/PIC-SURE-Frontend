@@ -64,7 +64,7 @@ test.describe('Landing page', () => {
     });
   });
   test.describe('Stats', () => {
-    branding.landing.stats.forEach((stat) => {
+    branding?.landing?.stats?.forEach((stat) => {
       test(`Has expected stat of ${stat}`, async ({ page }) => {
         // Given
         await mockAllStats(page);
@@ -104,7 +104,7 @@ test.describe('Landing page', () => {
   });
   test.describe('Actions', () => {
     test.beforeEach(({ page }) => mockAllStats(page));
-    branding.landing.actions.forEach(({ description, icon, url, title }) => {
+    branding?.landing?.actions?.forEach(({ description, icon, url, title }) => {
       test(`Has expected action of description: ${description}`, async ({ page }) => {
         // Given
         await page.goto('/');
