@@ -31,7 +31,7 @@ class Fence extends AuthProvider implements FenceData {
       return true;
     }
     try {
-      const newUser: User = await api.post('auth/authentication/fence', { code });
+      const newUser: User = await api.post('psama/authentication/fence', { code });
       if (newUser?.token) {
         UserLogin(newUser.token);
         return false;
