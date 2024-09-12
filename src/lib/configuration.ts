@@ -1,4 +1,4 @@
-import { PicsurePrivileges } from './models/Privilege';
+import { BDCPrivileges, PicsurePrivileges } from './models/Privilege';
 import type { Route } from './models/Route';
 import type { ExpectedResultType } from './models/query/Query';
 import * as configJson from './assets/configuration.json' assert { type: 'json' };
@@ -32,8 +32,8 @@ export interface Branding {
 export const branding: Branding = {
   applicationName: 'PIC-SURE',
   logo: {
+    alt: import.meta.env?.VITE_LOGO_ALT || 'PIC‑SURE',
     src: import.meta.env?.VITE_LOGO || '',
-    alt: import.meta.env?.VITE_LOGO_ALT || 'PIC‑SURE Logo',
   },
   sitemap: [] as SiteMapConfig[],
   footer: {} as FooterConfig,
@@ -58,23 +58,39 @@ export const initializeBranding = () => {
 };
 
 export const routes: Route[] = [
-  { path: '/explorer', text: 'Explore' },
-  { path: '/analyze', text: 'Analyze', feature: 'enableAPI', privilege: PicsurePrivileges.QUERY },
-  { path: '/dataset', text: 'Manage Datasets', privilege: PicsurePrivileges.QUERY },
-  { path: '/admin/users', text: 'Manage Users', privilege: PicsurePrivileges.ADMIN },
+  {
+    path: '/explorer',
+    text: 'Explore',
+    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
+  },
+  {
+    path: '/analyze',
+    text: 'Analyze',
+    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
+  },
+  {
+    path: '/dataset',
+    text: 'Manage Datasets',
+    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.NAMED_DATASET],
+  },
+  { path: '/admin/users', text: 'Manage Users', privilege: [PicsurePrivileges.ADMIN] },
   {
     path: '/admin/requests',
     text: 'Data Requests',
-    privilege: PicsurePrivileges.DATA_ADMIN,
+    privilege: [PicsurePrivileges.DATA_ADMIN],
     feature: 'dataRequests',
   },
   {
     path: '/admin',
     text: 'Configuration',
-    privilege: PicsurePrivileges.SUPER,
+    privilege: [PicsurePrivileges.SUPER],
     children: [
-      { path: '/admin/authorization', text: 'Authorization', privilege: PicsurePrivileges.SUPER },
-      { path: '/admin/authentication', text: 'Authentication', privilege: PicsurePrivileges.SUPER },
+      { path: '/admin/authorization', text: 'Authorization', privilege: [PicsurePrivileges.SUPER] },
+      {
+        path: '/admin/authentication',
+        text: 'Authentication',
+        privilege: [PicsurePrivileges.SUPER],
+      },
     ],
   },
   { path: '/help', text: 'Help' },
@@ -84,15 +100,15 @@ export const features: Indexable = {
   explorer: {
     allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
     exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
-    enableHierarchy : import.meta.env?.VITE_ENABLE_VARIABLE_HIERARCHY=== 'true',
+    exportResultType: (import.meta.env?.VITE_EXPORT_RESULT_TYPE ||
+      'DATAFRAME') as ExpectedResultType,
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
-    enableTour: import.meta.env?.EXPLORE_TOUR !== 'false',
+    enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
   },
-  enableAPI: import.meta.env?.VITE_API === 'true',
   dataRequests: import.meta.env?.VITE_DATA_REQUESTS === 'true',
   genomicFilter: import.meta.env?.VITE_GENOMIC_FILTER === 'true',
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
@@ -115,7 +131,7 @@ export const settings: Indexable = {
 export const resources = {
   hpds: import.meta.env?.VITE_RESOURCE_HPDS || '',
   openHPDS: import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '',
-  visualization: import.meta.env?.VITE_RESOURCE_VIZ || '',
+  Visualizer: import.meta.env?.VITE_RESOURCE_VIZ || '',
   application: import.meta.env?.VITE_RESOURCE_APP || '',
 };
 

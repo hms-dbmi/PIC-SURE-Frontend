@@ -4,10 +4,10 @@ import { browser } from '$app/environment';
 import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
 import type { User } from '$lib/models/User';
-import { PicsurePrivileges } from '$lib/models/Privilege';
+import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, features, resources } from '$lib/configuration';
 import { goto } from '$app/navigation';
-import type { Query } from '$lib/models/query/Query';
+import type { QueryInterface } from '$lib/models/query/Query';
 
 export const user: Writable<User> = writable(restoreUser());
 
@@ -73,7 +73,9 @@ export const userRoutes: Readable<Route[]> = derived(user, ($user) => {
 
   function allowedRoutes(routeList: Route[]): Route[] {
     return routeList
-      .filter((route) => (route.privilege ? userPrivileges.includes(route.privilege) : true))
+      .filter((route) =>
+        route.privilege ? route.privilege.some((priv) => userPrivileges.includes(priv)) : true,
+      )
       .map((route: Route) =>
         route.children ? { ...route, children: allowedRoutes(route.children) } : route,
       );
@@ -83,7 +85,15 @@ export const userRoutes: Readable<Route[]> = derived(user, ($user) => {
 
 export async function getUser(force?: boolean, hasToken = false) {
   if (force || !get(user)?.privileges || !get(user)?.token) {
-    const res = await api.get(`psama/user/me${hasToken ? '?hasToken' : ''}`);
+    const res: User = await api.get(`psama/user/me${hasToken ? '?hasToken' : ''}`);
+    if (res.privileges && res.token) {
+      for (const privilege of res.privileges) {
+        if (privilege.includes(BDCPrivileges.PRIV_MANAGED)) {
+          res.privileges.push(BDCPrivileges.AUTHORIZED_ACCESS);
+          break;
+        }
+      }
+    }
     user.set(res);
   }
 }
@@ -100,8 +110,15 @@ export async function refreshLongTermToken() {
   user.set({ ...get(user), token: newLongTermToken });
 }
 
-export async function getQueryTemplate(): Promise<{ queryTemplate: Query | string }> {
-  return api.get('psama/user/me/queryTemplate/' + resources.application);
+export async function getQueryTemplate(): Promise<QueryInterface> {
+  try {
+    const res = await api.get('psama/user/me/queryTemplate/' + resources.application);
+    const queryTemplate = JSON.parse(res.queryTemplate) as QueryInterface;
+    return queryTemplate;
+  } catch (error) {
+    console.error('Error parsing query template: ' + error);
+    return {} as QueryInterface;
+  }
 }
 
 export async function login(token: string) {
@@ -109,11 +126,9 @@ export async function login(token: string) {
     localStorage.setItem('token', token);
     await getUser(true, false);
     if (features.useQueryTemplate) {
-      const res = await getQueryTemplate();
-      //FIXME: This is a temporary fix for the backend returning "null" as a string
-      if (res.queryTemplate != 'null') {
-        const queryTemplate = res.queryTemplate as Query;
-        user.update((u) => ({ ...u, queryTemplate }));
+      const queryTemplate = await getQueryTemplate();
+      if (queryTemplate) {
+        user.set({ ...get(user), queryTemplate });
       }
     }
   }
