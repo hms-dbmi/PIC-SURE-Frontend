@@ -67,17 +67,17 @@
   <span class="sr-only">View Data Hierarchy</span>
 </button>
 -->
-{#if features.explorer.exportsEnableExport }
-<button
-  type="button"
-  title={isExported ? 'Remove from Analysis' : 'Add for Analysis'}
-  class="btn-icon-color"
-  on:click|stopPropagation={insertExportContent}
->
-  {#if isExported}
-    <i class="fa-regular fa-square-check fa-xl"></i>
-  {:else}
-    <i class="fa-solid fa-right-from-bracket fa-xl"></i>
-  {/if}
-</button>
+{#if features.explorer.exportsEnableExport}
+  <button
+    type="button"
+    title={isExported ? 'Remove from Analysis' : 'Add for Analysis'}
+    class="btn-icon-color"
+    on:click|stopPropagation={insertExportContent}
+  >
+    {#if isExported}
+      <i class="fa-regular fa-square-check fa-xl"></i>
+    {:else}
+      <i class="fa-solid fa-right-from-bracket fa-xl"></i>
+    {/if}
+  </button>
 {/if}
