@@ -32,7 +32,7 @@ async function send({
   if (browser) {
     const token = localStorage.getItem('token');
     if (token) {
-      opts.headers['Authorization'] = `Token ${token}`;
+      opts.headers['Authorization'] = `Bearer ${token}`;
     }
   }
 
