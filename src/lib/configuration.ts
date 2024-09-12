@@ -32,8 +32,8 @@ export interface Branding {
 export const branding: Branding = {
   applicationName: 'PIC-SURE',
   logo: {
-    alt: import.meta.env?.VITE_LOGO_ALT || 'PIC‑SURE',
     src: import.meta.env?.VITE_LOGO || '',
+    alt: import.meta.env?.VITE_LOGO_ALT || 'PIC‑SURE Logo',
   },
   sitemap: [] as SiteMapConfig[],
   footer: {} as FooterConfig,
@@ -59,7 +59,7 @@ export const initializeBranding = () => {
 
 export const routes: Route[] = [
   { path: '/explorer', text: 'Explore' },
-  { path: '/analyze', text: 'Analyze', privilege: PicsurePrivileges.QUERY },
+  { path: '/analyze', text: 'Analyze', feature: 'enableAPI', privilege: PicsurePrivileges.QUERY },
   { path: '/dataset', text: 'Manage Datasets', privilege: PicsurePrivileges.QUERY },
   { path: '/admin/users', text: 'Manage Users', privilege: PicsurePrivileges.ADMIN },
   {
@@ -84,15 +84,15 @@ export const features: Indexable = {
   explorer: {
     allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
     exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
-    exportResultType: (import.meta.env?.VITE_EXPORT_RESULT_TYPE ||
-      'DATAFRAME') as ExpectedResultType,
+    enableHierarchy : import.meta.env?.VITE_ENABLE_VARIABLE_HIERARCHY=== 'true',
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
-    enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
+    enableTour: import.meta.env?.EXPLORE_TOUR !== 'false',
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
   },
+  enableAPI: import.meta.env?.VITE_API === 'true',
   dataRequests: import.meta.env?.VITE_DATA_REQUESTS === 'true',
   genomicFilter: import.meta.env?.VITE_GENOMIC_FILTER === 'true',
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
@@ -115,7 +115,7 @@ export const settings: Indexable = {
 export const resources = {
   hpds: import.meta.env?.VITE_RESOURCE_HPDS || '',
   openHPDS: import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '',
-  Visualizer: import.meta.env?.VITE_RESOURCE_VIZ || '',
+  visualization: import.meta.env?.VITE_RESOURCE_VIZ || '',
   application: import.meta.env?.VITE_RESOURCE_APP || '',
 };
 

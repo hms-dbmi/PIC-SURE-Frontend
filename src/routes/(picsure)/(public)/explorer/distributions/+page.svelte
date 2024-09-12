@@ -29,7 +29,7 @@
     await api
       .post(SYNC_URL, {
         ...query,
-        resourceUUID: resources.Visualizer,
+        resourceUUID: resources.visualization,
         resourceCredentials: { Authorization: 'Bearer ' + token },
       })
       .then((resp) => {
