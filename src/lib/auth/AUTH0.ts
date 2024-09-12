@@ -29,7 +29,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
     }
     const responseMap = this.getResponseMap(hashParts);
     console.log('Token: ', responseMap.get('access_token'));
-    const token  = responseMap.get('#access_token');
+    const token = responseMap.get('#access_token');
     if (browser && token) {
       const redirectURI = this.getRedirectURI();
       try {

@@ -17,7 +17,7 @@ export interface QueryInterface {
   requiredFields: string[];
   anyRecordOf: string[];
   variantInfoFilters: VariantInfoFilters[];
-  expectedResultType: ExpectedResultType;
+  expectedResultType: ExpectedResultType | ExpectedResultType[];
 }
 
 interface CategoryVariantInfoFilterInterface {
@@ -42,7 +42,7 @@ export class Query implements QueryInterface {
   anyRecordOf: string[];
   fields: string[];
   variantInfoFilters: VariantInfoFilters[];
-  expectedResultType: ExpectedResultType;
+  expectedResultType: ExpectedResultType | ExpectedResultType[];
 
   constructor(newQuery?: QueryInterface) {
     this.categoryFilters = newQuery?.categoryFilters || {};

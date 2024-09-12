@@ -1,4 +1,4 @@
-import { Query } from '$lib/models/query/Query';
+import { Query, type QueryInterface } from '$lib/models/query/Query';
 import { features, resources } from '$lib/configuration';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
@@ -12,9 +12,9 @@ const topmedConsentPath = '\\_topmed_consents\\';
 
 export function getQueryRequest(openAccess = false): QueryRequestInterface {
   let resourceUUID = resources.hpds;
-  let query = new Query();
+  let query: Query = new Query();
   if (features.useQueryTemplate) {
-    const queryTemplate = get(user).queryTemplate;
+    const queryTemplate: QueryInterface = get(user).queryTemplate as QueryInterface;
     if (queryTemplate) {
       query = new Query(queryTemplate);
     }
@@ -46,6 +46,10 @@ export function getQueryRequest(openAccess = false): QueryRequestInterface {
 
   if (openAccess) {
     resourceUUID = resources.openHPDS;
+  }
+
+  if (Array.isArray(query.expectedResultType)) {
+    query.expectedResultType = query.expectedResultType[0];
   }
 
   return {
