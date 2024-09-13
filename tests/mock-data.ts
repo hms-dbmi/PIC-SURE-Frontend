@@ -337,8 +337,7 @@ export const facetsResponse = [
       {
         name: 'study2',
         display: 'National Health and Nutrition Examination Survey',
-        fullName: 'study2 full name',
-        description: null,
+        description: 'study2 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -347,8 +346,7 @@ export const facetsResponse = [
       {
         name: 'phs002715',
         display: 'NSRR CFS',
-        fullName: 'NSRR CFS full name',
-        description: null,
+        description: 'NSRR CFS full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -357,8 +355,7 @@ export const facetsResponse = [
       {
         name: 'phs000284',
         display: 'CFS',
-        description: null,
-        fullName: 'CFS full name',
+        description: 'CFS full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -367,8 +364,7 @@ export const facetsResponse = [
       {
         name: 'phs002385',
         display: 'HCT_for_SCD',
-        description: null,
-        fullName: 'HCT_for_SCD full name',
+        description: 'HCT_for_SCD full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -377,8 +373,7 @@ export const facetsResponse = [
       {
         name: 'study1',
         display: 'Study Display 1',
-        fullName: 'study1 full name',
-        description: null,
+        description: 'study1 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -387,8 +382,7 @@ export const facetsResponse = [
       {
         name: 'study3',
         display: 'Study Display 3',
-        fullName: 'study3 full name',
-        description: null,
+        description: 'study3 full name',
         count: 5,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -397,8 +391,7 @@ export const facetsResponse = [
       {
         name: 'study4',
         display: 'Study Display 4',
-        fullName: 'study4 full name',
-        description: null,
+        description: 'study4 full name',
         count: 2,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -407,8 +400,7 @@ export const facetsResponse = [
       {
         name: 'study5',
         display: 'Study Display 5',
-        fullName: 'study5 full name',
-        description: null,
+        description: 'study5 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -417,8 +409,7 @@ export const facetsResponse = [
       {
         name: 'study6',
         display: 'Study Display 6',
-        fullName: 'study6 full name',
-        description: null,
+        description: 'study6 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -427,8 +418,7 @@ export const facetsResponse = [
       {
         name: 'study7',
         display: 'Study Display 7',
-        description: null,
-        fullName: 'study7 full name',
+        description: 'study7 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -437,8 +427,7 @@ export const facetsResponse = [
       {
         name: 'study8',
         display: 'Study Display 8',
-        fullName: 'study8 full name',
-        description: null,
+        description: 'study8 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -447,8 +436,7 @@ export const facetsResponse = [
       {
         name: 'study9',
         display: 'Study Display 9',
-        fullName: 'study9 full name',
-        description: null,
+        description: 'study9 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -464,8 +452,7 @@ export const facetsResponse = [
       {
         name: 'facet1',
         display: 'Facet 1',
-        fullName: 'facet1 full name',
-        description: null,
+        description: 'facet1 full name',
         count: 1,
         children: null,
         category: 'another_category_name',
@@ -474,8 +461,7 @@ export const facetsResponse = [
       {
         name: 'facet2',
         display: 'Facet 2',
-        fullName: 'facet2 full name',
-        description: null,
+        description: 'facet2 full name',
         count: 4,
         children: null,
         category: 'another_category_name',
@@ -484,8 +470,7 @@ export const facetsResponse = [
       {
         name: 'facet3',
         display: 'This is a really long facet name for testing',
-        fullName: 'facet3 full name',
-        description: null,
+        description: 'facet3 full name',
         count: 1,
         children: null,
         category: 'another_category_name',
