@@ -1,3 +1,9 @@
+<script lang="ts" context="module">
+  export interface ExportStepperContext {
+    exportType: string;
+  }
+</script>
+
 <script lang="ts">
   import * as api from '$lib/api';
   import { browser } from '$app/environment';
@@ -9,7 +15,7 @@
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import {CodeBlock, ProgressRadial, Tab, TabGroup} from '@skeletonlabs/skeleton';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExportStore from '$lib/stores/Export';
   let { exports } = ExportStore;
@@ -17,6 +23,11 @@
   import { goto } from '$app/navigation';
   import { type DataSet, type DatasetError } from '$lib/models/Dataset';
   import { createDatasetName } from '$lib/services/datasets';
+  import {writable, type Writable} from "svelte/store";
+  import CardButton from "$lib/components/buttons/CardButton.svelte";
+  import {Option} from "$lib/models/GenomeFilter.ts";
+  import type {ExpectedResultType} from "$lib/models/query/Query.ts";
+  import {branding} from "$lib/configuration.ts";
 
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
@@ -37,21 +48,26 @@
     { dataElement: 'type', label: 'Type', sort: true },
   ];
 
-  async function onCompleteHandler(): Promise<void> {
+  const exportContext: () => Writable<ExportStepperContext> = () => writable({
+    exportType: ""
+  });
+
+
+  async function download(): Promise<void> {
     try {
       const res = await api.post(`picsure/query/${datasetId}/result`, {});
       const responseDataUrl = URL.createObjectURL(new Blob([res], { type: 'octet/stream' }));
       if (browser) {
         const link = document.createElement('a');
         link.href = responseDataUrl;
-        link.download = 'pic-sure-data.csv';
+        if (query.query.expectedResultType === 'DATAFRAME') {
+          link.download = 'pic-sure-data.csv';
+        } else if (query.query.expectedResultType === 'DATAFRAME_PFB') {
+          link.download = 'pic-sure-data.avro';
+        }
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-      }
-      if (!apiExport) {
-        $state.current = 0;
-        goto('/dataset/' + namedDataset.uuid);
       }
     } catch (error) {
       console.error('Error in onCompleteHandler', error);
@@ -60,12 +76,15 @@
   function onNextHandler(e: CustomEvent): void {
     console.log('event:next', e);
     if (e.detail.step === 0 && !showTreeStep) {
-      preparePromise = handleFirstStep();
+      // nothing needs to be done here
     }
     if (e.detail.step === 1 && showTreeStep) {
       console.log('event:next', e);
       //TODO: Load tree
     } else if ((e.detail.step === 1 && !showTreeStep) || (showTreeStep && e.detail.step === 2)) {
+      console.log("Export type selected");
+      preparePromise = submitQuery();
+    } else if ((e.detail.step === 2 && !showTreeStep) || (showTreeStep && e.detail.step === 3)) {
       createNamedDataset();
     }
     if (e.detail.state.total - 1 === e.detail.step + 1) {
@@ -93,9 +112,8 @@
     console.log('event:next', e);
   }
 
-  async function handleFirstStep(): Promise<void> {
+  async function submitQuery(): Promise<void> {
     try {
-      query.query.expectedResultType = 'DATAFRAME';
       query.query.fields = $exports.map((exp) => exp.conceptPath);
       const res = await api.post('picsure/query', query);
       console.log('res', res);
@@ -135,15 +153,30 @@
     }
     return 'ERROR';
   }
+
+  export let activeType: ExpectedResultType = undefined;
+  function selectExportType(exportType: ExpectedResultType) {
+    query.query.expectedResultType = exportType;
+    activeType = exportType;
+    console.log("query.query.expectedResultType = " + query.query.expectedResultType)
+  }
+
+  function onComplete() {
+    goto("/explorer")
+  }
+
+  let tabSet: number = 0;
+  let tabIndex: number = 0;
 </script>
 
 <Stepper
   class="w-full h-full m-8"
-  on:complete={onCompleteHandler}
+  on:complete={onComplete}
   on:next={onNextHandler}
   on:step={onStepHandler}
   on:back={onBackHandler}
-  buttonCompleteLabel="Export Data"
+  context={exportContext}
+  buttonCompleteLabel="Done"
 >
   <Step>
     <svelte:fragment slot="header">Review Cohort Details:</svelte:fragment>
@@ -181,6 +214,31 @@
       </section>
     </Step>
   {/if}
+  <Step locked="{activeType === undefined}">
+    <svelte:fragment slot="header">Choose Formats</svelte:fragment>
+    <section class="flex flex-col w-full h-full items-center">
+      <div class="grid gap-4 grid-cols-2">
+        <CardButton
+                data-testid="csv-export-option"
+                title="Export as Data Frame or CSV"
+                subtitle="Export data as a Python or R data frame or a comma-separated values file"
+                size="other"
+                class="card variant-ringed-primary"
+                active={activeType === 'DATAFRAME'}
+                on:click={() => selectExportType("DATAFRAME")}>
+        </CardButton>
+        <CardButton
+                data-testid="csv-export-option"
+                title="Export as PFB"
+                subtitle="Export data in Portable Format for Biomedical Data file format"
+                size="other"
+                class="card variant-ringed-primary"
+                active={activeType === 'DATAFRAME_PFB'}
+                on:click={() => selectExportType("DATAFRAME_PFB")}>
+        </CardButton>
+      </div>
+    </section>
+  </Step>
   <Step locked={!datasetNameInput || datasetNameInput.length < 2}>
     <svelte:fragment slot="header">Save Dataset ID:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
@@ -222,10 +280,8 @@
     </section>
   </Step>
   <Step locked={lockDownload}>
-    <svelte:fragment slot="header">Export Data:</svelte:fragment>
+    <svelte:fragment slot="header">Start Analysis:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
-      <Summary />
-      <div class="w-full h-full m-2 card p-4">
         <div class="flex justify-center">
           {#if canDownload}
             {#await statusPromise}
@@ -234,21 +290,118 @@
                 <div>Prepareing your dataset...</div>
               </div>
             {:then status}
-              <div class="flex flex-col items-center justify-center">
-                <p>
-                  Click the “Export Data” button below to download your participant-level cohort
-                  data for research analysis.
-                </p>
-                <div>
-                  Export Status: {status}
-                  <i
-                    class="fa-solid {status === 'ERROR'
-                      ? 'fa-circle-xmark text-error-500'
-                      : 'fa-check-circle text-success-500'}"
-                  ></i>
-                </div>
-              </div>
-            {:catch}
+              {#if query.query.expectedResultType === 'DATAFRAME'}
+                <section class="flex flex-col gap-8">
+                  <p class="mt-4">
+                    To start your analysis, use the following code to connect to PIC-SURE. Note that you will need
+                    your personal access token below to complete the connection.
+                  </p>
+                  <TabGroup class="card p-4">
+                    {#if query.query.expectedResultType === 'DATAFRAME'}
+                      <Tab bind:group={tabSet} name="python" value={tabIndex++}>Python</Tab>
+                      <Tab bind:group={tabSet} name="r" value={tabIndex++}>R</Tab>
+                    {/if}
+                    <Tab bind:group={tabSet} name="download" value={tabIndex++}>Download</Tab>
+                    <svelte:fragment slot="panel">
+                      {#if tabSet === 0}
+                        <CodeBlock
+                                language="python"
+                                lineNumbers={true}
+                                buttonCopied="Copied!"
+                                code={`# Requires python 3.7 or later
+import sys
+import pandas as pd
+import matplotlib.pyplot as plt
+!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-adapter-hpds.git
+!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-client.git
+
+import PicSureHpdsLib
+import PicSureClient
+
+token_file = "token.txt"
+with open(token_file, "r") as f:
+my_token = f.read()
+
+connection = PicSureClient.Client.connect(url = PICSURE_network_URL, token = my_token)`}
+                        ></CodeBlock>
+                      {:else if tabSet === 1}
+                        <CodeBlock
+                                language="r"
+                                lineNumbers={true}
+                                code={`# Requires R 3.4 or later
+install.packages("devtools")
+
+devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", ref="main", force=T, quiet=FALSE)
+library(dplyr)
+
+PICSURE_network_URL = "https://nhanes.hms.harvard.edu/picsure"
+token_file <- "token.txt"
+token <- scan(token_file, what = "character")
+session <- picsure::bdc.initializeSession(PICSURE_network_URL, token)
+session <- picsure::bdc.setResource(session = session)`}
+                        ></CodeBlock>
+                      {:else if tabSet ===2}
+                        <div>
+                          <button class="btn variant-filled-primary" on:click={() => download()}>Download</button>
+                        </div>
+                      {/if}
+                    </svelte:fragment>
+                  </TabGroup>
+                  <p>
+                    Copy your personal access token and save as a text file called “token.txt” in the same working
+                    directory to execute the code above.
+                  </p>
+                  <div class="flex justify-center">
+                    <UserToken />
+                  </div>
+                </section>
+                <!--<section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
+                  {#each branding.apiPage.cards as card}
+                    <a
+                            href={card.link}
+                            target={card.link.startsWith('http') ? '_blank' : '_self'}
+                            class="pic-sure-info-card p-4 basis-2/4"
+                    >
+                      <div class="card card-hover">
+                        <header class="card-header flex flex-col items-center">
+                          <h4 class="my-1" data-testid={card.header}>{card.header}</h4>
+                          <hr class="!border-t-2" />
+                        </header>
+                        <section class="p-4 whitespace-pre-wrap flex flex-col" data-testid={card.body}>
+                          <div>{card.body}</div>
+                          <div class="flex justify-center">
+                            <div class="btn variant-filled-primary mt-3 w-fit">Learn More</div>
+                          </div>
+                        </section>
+                      </div>
+                    </a>
+                  {/each}
+                </section>-->
+                <!--<div class="flex flex-col items-center justify-center">
+                  <div>
+                    Export Status: {status}
+                    <i
+                      class="fa-solid {status === 'ERROR'
+                        ? 'fa-circle-xmark text-error-500'
+                        : 'fa-check-circle text-success-500'}"
+                    ></i>
+                  </div>
+                </div>-->
+              {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
+                <section class="flex flex-col gap-8">
+                  <div class="flex justify-center mt-4">
+                    Use the option below to download your selected data in the PFB format.
+                  </div>
+                  <div class="grid grid-cols-3">
+                    <div></div>
+                    <div>
+                      <button class="flex-initial w-64 btn variant-filled-primary" on:click={() => download()}><i class="fa-solid fa-download"></i>Download as PFB</button>
+                    </div>
+                    <div></div>
+                  </div>
+                </section>
+              {/if}
+            {:catch e}
               <div class="flex justify-center">
                 <ErrorAlert
                   title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
@@ -278,7 +431,6 @@
             </p>
           </div>
         {/if}
-      </div>
     </section>
   </Step>
 </Stepper>
@@ -286,5 +438,11 @@
 <style>
   input {
     border-radius: var(--theme-rounded-base);
+  }
+
+  a.pic-sure-info-card {
+    max-width: 25rem;
+    min-height: 18rem;
+    margin: 0 8px;
   }
 </style>

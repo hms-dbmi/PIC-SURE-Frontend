@@ -31,6 +31,7 @@
       type: filter.searchResult?.type,
     };
   });
+  state.set({ current: 0, total: 0 });
 </script>
 
 <Content

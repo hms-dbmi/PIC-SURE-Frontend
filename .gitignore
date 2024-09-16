@@ -16,3 +16,7 @@ vite.config.ts.timestamp-*
 /certs
 /httpd-docker-logs
 httpd-vhosts.conf
+.idea/
+*.iml
+*.log
+*.pid

@@ -68,11 +68,11 @@ export const branding = {
   },
   apiPage: {
     cards: [
-      {
+/*      {
         header: 'Example Analyses with PIC-SURE page',
         body: 'Detailed step-by-step example code that demonstrates how to use PIC-SURE for analysis.',
         link: '/analyze/example',
-      },
+      },*/
     ],
   },
   explorePage: {
