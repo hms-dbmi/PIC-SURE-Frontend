@@ -54,19 +54,19 @@
   });
 </script>
 
-  <p class="mb-8 text-center">
-    All visualizations display the distributions of each variable filter for the specified cohort.
-  </p>
-  <div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
-    {#await plotlyLoading}
-      <ProgressRadial />
-    {:then}
-      {#if plotValues.length}
-        {#each plotValues as { data, layout, meta }, index}
-          <PlotlyPlot {index} {data} {layout} {meta} {newPlot} />
-        {/each}
-      {:else}
-        <div>No Visualizations Available</div>
-      {/if}
-    {/await}
-  </div>
+<p class="mb-8 text-center">
+  All visualizations display the distributions of each variable filter for the specified cohort.
+</p>
+<div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
+  {#await plotlyLoading}
+    <ProgressRadial />
+  {:then}
+    {#if plotValues.length}
+      {#each plotValues as { data, layout, meta }, index}
+        <PlotlyPlot {index} {data} {layout} {meta} {newPlot} />
+      {/each}
+    {:else}
+      <div>No Visualizations Available</div>
+    {/if}
+  {/await}
+</div>

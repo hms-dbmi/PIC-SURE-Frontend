@@ -68,7 +68,7 @@
       },
     });
   }
-  
+
   $: isOpenAccess = $page.url.pathname.includes('/discover');
 
   $: hasFilterOrExport =

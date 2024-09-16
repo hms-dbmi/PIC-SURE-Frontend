@@ -86,6 +86,6 @@ function refreshToken(res: Response) {
   let newAuthToken = res.headers.get('Authorization');
   if (newAuthToken) {
     newAuthToken = newAuthToken.replace(BEARER, '');
-    login(newAuthToken)
+    login(newAuthToken);
   }
 }

@@ -61,7 +61,7 @@ export const routes: Route[] = [
   {
     path: '/discover',
     text: 'Discover',
-    feature: 'discover'
+    feature: 'discover',
   },
   {
     path: '/explorer',
@@ -122,7 +122,7 @@ export const features: Indexable = {
   discoverFeautures: {
     enableTour: import.meta.env?.EXPLORER_TOUR !== 'false',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
-  }
+  },
 };
 
 export const settings: Indexable = {

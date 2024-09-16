@@ -1,7 +1,7 @@
 <script lang="ts">
-    import Content from "$lib/components/Content.svelte";
-    import Visualizations from "$lib/components/explorer/Visualizations.svelte";
-    import { branding } from "$lib/configuration";
+  import Content from '$lib/components/Content.svelte';
+  import Visualizations from '$lib/components/explorer/Visualizations.svelte';
+  import { branding } from '$lib/configuration';
 </script>
 
 <svelte:head>
