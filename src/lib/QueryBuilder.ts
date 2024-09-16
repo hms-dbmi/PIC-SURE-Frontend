@@ -40,7 +40,7 @@ export function getQueryRequest(openAccess = false): QueryRequestInterface {
     }
   });
 
-  if (features.requireConsents) {
+  if (features.requireConsents && !openAccess) {
     query = updateConsentFilters(query);
   }
 

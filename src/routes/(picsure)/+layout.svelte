@@ -46,7 +46,8 @@
   });
 
   $: classesSidebar =
-    $page.url.pathname.includes('/explorer') &&
+    ($page.url.pathname.includes('/explorer') ||
+    $page.url.pathname.includes('/discover')) &&
     !$page.url.pathname.includes('/export') &&
     !$page.url.pathname.includes('/distributions')
       ? ''

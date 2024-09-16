@@ -28,7 +28,7 @@
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = Promise.resolve(0);
 
   async function getCount() {
-    let request: QueryRequestInterface = getQueryRequest();
+    let request: QueryRequestInterface = getQueryRequest(isOpenAccess);
     try {
       const count = await api.post('picsure/query/sync', request);
       totalParticipants.set(count);
@@ -68,11 +68,14 @@
       },
     });
   }
+  
+  $: isOpenAccess = $page.url.pathname.includes('/discover');
 
   $: hasFilterOrExport =
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0);
   $: showExportButton =
     features.explorer.allowExport &&
+    !isOpenAccess &&
     totalPatients !== ERROR_VALUE &&
     totalPatients !== 0 &&
     hasFilterOrExport;
@@ -168,7 +171,7 @@
       <hr class="!border-t-2" />
       <h5 class="text-center text-xl mt-7">Tool Suite</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
-        {#if features.explorer.distributionExplorer && $filters.length !== 0}
+        {#if !isOpenAccess && features.explorer.distributionExplorer && $filters.length !== 0}
           <CardButton
             href="/explorer/distributions"
             data-testid="distributions-btn"
@@ -177,7 +180,16 @@
             size="md"
           />
         {/if}
-        {#if features.explorer.variantExplorer && $hasGenomicFilter}
+        {#if isOpenAccess && features.discoverFeautures.distributionExplorer && $filters.length !== 0}
+          <CardButton
+            href="/discover/distributions"
+            data-testid="distributions-btn"
+            title="Variable Distributions"
+            icon="fa-solid fa-chart-pie"
+            size="md"
+          />
+        {/if}
+        {#if !isOpenAccess && features.explorer.variantExplorer && $hasGenomicFilter}
           <CardButton
             href="/explorer/variant"
             data-testid="variant-explorer-btn"

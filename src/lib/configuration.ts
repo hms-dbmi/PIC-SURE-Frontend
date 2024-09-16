@@ -59,6 +59,11 @@ export const initializeBranding = () => {
 
 export const routes: Route[] = [
   {
+    path: '/discover',
+    text: 'Discover',
+    feature: 'discover'
+  },
+  {
     path: '/explorer',
     text: 'Explore',
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
@@ -113,6 +118,11 @@ export const features: Indexable = {
   genomicFilter: import.meta.env?.VITE_GENOMIC_FILTER === 'true',
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
   useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
+  discover: import.meta.env?.VITE_DISCOVER === 'true',
+  discoverFeautures: {
+    enableTour: import.meta.env?.EXPLORER_TOUR !== 'false',
+    distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
+  }
 };
 
 export const settings: Indexable = {
@@ -131,7 +141,7 @@ export const settings: Indexable = {
 export const resources = {
   hpds: import.meta.env?.VITE_RESOURCE_HPDS || '',
   openHPDS: import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '',
-  Visualizer: import.meta.env?.VITE_RESOURCE_VIZ || '',
+  visualization: import.meta.env?.VITE_RESOURCE_VIZ || '',
   application: import.meta.env?.VITE_RESOURCE_APP || '',
 };
 
