@@ -135,6 +135,7 @@ export async function login(token: string) {
 }
 
 export async function logout() {
+  api.get('/psama/logout');
   if (browser) {
     localStorage.removeItem('token');
   }
