@@ -19,6 +19,7 @@ export interface SiteMapConfig {
 
 export interface FooterConfig {
   showSitemap: boolean;
+  showTerms: boolean;
   excludeSitemapOn: string[];
   links: Array<{
     title: string;
