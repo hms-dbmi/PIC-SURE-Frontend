@@ -75,7 +75,7 @@
       {#each facetsToDisplay as facet}
         <label data-testId={`facet-${facet.name}-label`} for={facet.name} class="m-1">
           <input
-            type="checkbox"
+          type="checkbox"
             class="&[aria-disabled=“true”]:opacity-75"
             id={facet.name}
             name={facet.name}
@@ -85,7 +85,7 @@
             aria-checked={isChecked(facet.name)}
             on:click={() => updateFacet(facet, facetCategory)}
           />
-          <span class:opacity-75={facet.count === 0}>{`${facet.display} (${facet.count})`}</span>
+          <span class:opacity-75={facet.count === 0}>{`${facet.display} (${facet.count?.toLocaleString()})`}</span>
         </label>
       {/each}
       {#if facets.length > numFacetsToShow && !textFilterValue}
