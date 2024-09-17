@@ -3,7 +3,7 @@ import { get, derived, writable, type Readable, type Writable } from 'svelte/sto
 import type { Filter } from '$lib/models/Filter';
 
 export const filters: Writable<Filter[]> = writable([]);
-export const totalParticipants: Writable<number> = writable(0);
+export const totalParticipants: Writable<number | string> = writable(0);
 export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
   $f.find((filter) => filter.filterType === 'genomic') ? true : false,
 );

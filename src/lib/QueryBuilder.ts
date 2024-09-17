@@ -1,4 +1,4 @@
-import { Query, type QueryInterface } from '$lib/models/query/Query';
+import { Query, type ExpectedResultType, type QueryInterface } from '$lib/models/query/Query';
 import { features, resources } from '$lib/configuration';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
@@ -13,6 +13,7 @@ const topmedConsentPath = '\\_topmed_consents\\';
 export function getQueryRequest(
   addConsents = true,
   resourceUUID = resources.hpds,
+  expectedResultType: ExpectedResultType = 'COUNT',
 ): QueryRequestInterface {
   let query: Query = new Query();
   if (features.useQueryTemplate) {
@@ -45,6 +46,8 @@ export function getQueryRequest(
   if (features.requireConsents && addConsents) {
     query = updateConsentFilters(query);
   }
+
+  query.expectedResultType = expectedResultType;
 
   if (Array.isArray(query.expectedResultType)) {
     query.expectedResultType = query.expectedResultType[0];

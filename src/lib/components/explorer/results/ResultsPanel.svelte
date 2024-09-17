@@ -25,17 +25,28 @@
 
   let unsubFilters: Unsubscriber;
   let totalPatients: number | typeof ERROR_VALUE = 0;
+  let suffix = '';
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = Promise.resolve(0);
 
   async function getCount() {
     let request: QueryRequestInterface = getQueryRequest(
       !isOpenAccess,
       isOpenAccess ? resources.openHPDS : resources.hpds,
+      isOpenAccess ? 'CROSS_COUNT' : 'COUNT',
     );
     try {
       const count = await api.post('picsure/query/sync', request);
-      totalParticipants.set(count);
-      totalPatients = count;
+      if (isOpenAccess) {
+        let openTotalPatients = String(count['\\_studies_consents\\']);
+        totalPatients = openTotalPatients.includes(' \u00B1')
+          ? parseInt(openTotalPatients.split(' ')[0])
+          : parseInt(openTotalPatients);
+        totalParticipants.set(totalPatients);
+        suffix = openTotalPatients.split(' ')[1];
+      } else {
+        totalParticipants.set(count);
+        totalPatients = count;
+      }
       return count;
     } catch (error) {
       if ($filters.length !== 0) {
@@ -108,7 +119,7 @@
           <i class="fa-solid fa-triangle-exclamation"></i>
           <span class="sr-only">{ERROR_VALUE}</span>
         {:else}
-          {totalPatients?.toLocaleString()}
+          {totalPatients?.toLocaleString()} {suffix || ''}
         {/if}
       </span>
     {:catch}
