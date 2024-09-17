@@ -10,6 +10,8 @@
   export let showClearAll: boolean = true;
   export let showSelectAll: boolean = true;
 
+  export let allOptions: string[] = [];
+
   let unselectedOptionsContainer: HTMLElement;
   let selectedOptionsContainer: HTMLElement;
   let selectedOptionEndLocation = 20;
@@ -57,9 +59,15 @@
   }
 
   function selectAllOptions() {
-    selectedOptions = [...selectedOptions, ...unselectedOptions];
-    unselectedOptions = [];
-    selectedOptionEndLocation = 20;
+    if (allOptions.length !== 0) {
+      selectedOptions = allOptions;
+      unselectedOptions = [];
+      selectedOptionEndLocation = 20;
+    } else {
+      selectedOptions = [...selectedOptions, ...unselectedOptions];
+      unselectedOptions = [];
+      selectedOptionEndLocation = 20;
+    }
   }
 
   function loadMoreSelectedOptions() {

@@ -144,6 +144,7 @@
           bind:unselectedOptions
           bind:selectedOptions
           bind:currentlyLoading={loading}
+          allOptions={data?.values}
           on:scroll={(event) => getNextValues(event.detail.search)}
         />
       </div>
