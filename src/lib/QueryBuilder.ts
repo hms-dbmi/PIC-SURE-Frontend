@@ -1,4 +1,4 @@
-import { Query } from '$lib/models/query/Query';
+import { Query, type ExpectedResultType, type QueryInterface } from '$lib/models/query/Query';
 import { features, resources } from '$lib/configuration';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
@@ -10,11 +10,14 @@ const harmonizedPath = '\\DCC Harmonized data set';
 const harmonizedConsentPath = '\\_harmonized_consent\\';
 const topmedConsentPath = '\\_topmed_consents\\';
 
-export function getQueryRequest(openAccess = false): QueryRequestInterface {
-  let resourceUUID = resources.hpds;
-  let query = new Query();
+export function getQueryRequest(
+  addConsents = true,
+  resourceUUID = resources.hpds,
+  expectedResultType: ExpectedResultType = 'COUNT',
+): QueryRequestInterface {
+  let query: Query = new Query();
   if (features.useQueryTemplate) {
-    const queryTemplate = get(user).queryTemplate;
+    const queryTemplate: QueryInterface = get(user).queryTemplate as QueryInterface;
     if (queryTemplate) {
       query = new Query(queryTemplate);
     }
@@ -40,12 +43,14 @@ export function getQueryRequest(openAccess = false): QueryRequestInterface {
     }
   });
 
-  if (features.requireConsents) {
+  if (features.requireConsents && addConsents) {
     query = updateConsentFilters(query);
   }
 
-  if (openAccess) {
-    resourceUUID = resources.openHPDS;
+  query.expectedResultType = expectedResultType;
+
+  if (Array.isArray(query.expectedResultType)) {
+    query.expectedResultType = query.expectedResultType[0];
   }
 
   return {
@@ -64,22 +69,7 @@ export const updateConsentFilters = (query: Query) => {
     query.removeCategoryFilter(harmonizedConsentPath);
   }
 
-  let topmedPresent = false;
-  if (
-    query.variantInfoFilters.length &&
-    Object.keys(query.variantInfoFilters[0].categoryVariantInfoFilters as any).length > 0
-  ) {
-    topmedPresent = true;
-  }
-
-  if (
-    query.variantInfoFilters.length &&
-    Object.keys(query.variantInfoFilters[0].numericVariantInfoFilters as any).length > 0
-  ) {
-    topmedPresent = true;
-  }
-
-  if (!topmedPresent) {
+  if (!query.hasGenomicFilter()) {
     query.removeCategoryFilter(topmedConsentPath);
   }
 

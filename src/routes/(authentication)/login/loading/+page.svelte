@@ -5,11 +5,16 @@
   import { goto } from '$app/navigation';
   import type AuthProvider from '$lib/models/AuthProvider';
   import { createInstance } from '$lib/AuthProviderRegistry';
+  import { browser } from '$app/environment';
 
   let failed = false;
   onMount(async () => {
-    let redirectTo = $page.url.searchParams.get('redirectTo');
-    let providerType = $page.url.searchParams.get('provider');
+    let redirectTo = '/';
+    let providerType: string | undefined | null;
+    if (browser) {
+      redirectTo = sessionStorage.getItem('redirect') || '/';
+      providerType = sessionStorage.getItem('type');
+    }
     if (!providerType) {
       failed = true;
     }
@@ -20,8 +25,12 @@
       failed = true;
     }
     const providerInstance = await createInstance(provider);
-    const hashParts = window.location.hash.split('&');
-    failed = await providerInstance.authenticate(redirectTo, hashParts);
+    let hashParts = $page.url.hash?.split('&') || [];
+    if ($page.url.search.startsWith('?')) {
+      hashParts = $page.url.search.substring(1).split('&') || [];
+    }
+    console.log('hashParts', hashParts);
+    failed = await providerInstance.authenticate(hashParts);
     goto(failed ? '/login/error' : redirectTo);
   });
 </script>

@@ -49,10 +49,12 @@
 {/if}
 <footer id="main-footer" class="flex relative">
   <ul>
-    <li><button class="hover:underline" on:click={openTermsModal}>Terms of Service</button></li>
+    {#if branding?.footer?.showTerms}
+      <li><button class="hover:underline" on:click={openTermsModal}>Terms of Service</button></li>
+    {/if}
     {#each branding?.footer?.links as link}
       <li>
-        <a class="hover:underline" target={link.newTab ? '_blank' : '_self'} href={link.url}
+        <a class="hover:underline text-xs" target={link.newTab ? '_blank' : '_self'} href={link.url}
           >{link.title}</a
         >
       </li>

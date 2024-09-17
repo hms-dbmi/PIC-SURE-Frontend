@@ -11,7 +11,7 @@
   import { features } from '$lib/configuration';
   let { exports } = ExportStore;
 
-  let queryRequest: QueryRequestInterface = getQueryRequest();
+  let queryRequest: QueryRequestInterface = getQueryRequest(true);
   let exportRows: ExportRowInterface[] = $exports.map((exp) => {
     return {
       ref: exp,

@@ -1,4 +1,4 @@
-import { PicsurePrivileges } from './models/Privilege';
+import { BDCPrivileges, PicsurePrivileges } from './models/Privilege';
 import type { Route } from './models/Route';
 import type { ExpectedResultType } from './models/query/Query';
 import * as configJson from './assets/configuration.json' assert { type: 'json' };
@@ -58,24 +58,48 @@ export const initializeBranding = () => {
 };
 
 export const routes: Route[] = [
-  { path: '/dashboard', text: 'Dashboard' },
-  { path: '/explorer', text: 'Explore' },
-  { path: '/analyze', text: 'Analyze', privilege: PicsurePrivileges.QUERY },
-  { path: '/dataset', text: 'Manage Datasets', privilege: PicsurePrivileges.QUERY },
-  { path: '/admin/users', text: 'Manage Users', privilege: PicsurePrivileges.ADMIN },
+  {
+    path: '/dashboard',
+    text: 'Dashboard',
+    feature: 'dashboard',
+  },
+  {
+    path: '/discover',
+    text: 'Discover',
+    feature: 'discover',
+  },
+  {
+    path: '/explorer',
+    text: 'Explore',
+    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
+  },
+  {
+    path: '/analyze',
+    text: 'Analyze',
+    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
+  },
+  {
+    path: '/dataset',
+    text: 'Manage Datasets',
+    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.NAMED_DATASET],
+  },
   {
     path: '/admin/requests',
     text: 'Data Requests',
-    privilege: PicsurePrivileges.DATA_ADMIN,
+    privilege: [PicsurePrivileges.DATA_ADMIN],
     feature: 'dataRequests',
   },
   {
     path: '/admin',
     text: 'Configuration',
-    privilege: PicsurePrivileges.SUPER,
+    privilege: [PicsurePrivileges.SUPER],
     children: [
-      { path: '/admin/authorization', text: 'Authorization', privilege: PicsurePrivileges.SUPER },
-      { path: '/admin/authentication', text: 'Authentication', privilege: PicsurePrivileges.SUPER },
+      { path: '/admin/authorization', text: 'Authorization', privilege: [PicsurePrivileges.SUPER] },
+      {
+        path: '/admin/authentication',
+        text: 'Authentication',
+        privilege: [PicsurePrivileges.SUPER],
+      },
     ],
   },
   { path: '/help', text: 'Help' },
@@ -98,7 +122,12 @@ export const features: Indexable = {
   genomicFilter: import.meta.env?.VITE_GENOMIC_FILTER === 'true',
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
   useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
-  dashboard: import.meta.env?.VITE_DASHBOARD === 'true', // TODO add for dashboard
+  discover: import.meta.env?.VITE_DISCOVER === 'true',
+  discoverFeautures: {
+    enableTour: import.meta.env?.EXPLORER_TOUR !== 'false',
+    distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
+  },
+  dashboard: import.meta.env?.VITE_DASHBOARD === 'true',
 };
 
 export const settings: Indexable = {
@@ -115,10 +144,10 @@ export const settings: Indexable = {
 };
 
 export const resources = {
-  hpds: import.meta.env?.VITE_RESOURCE_HPDS || '',
-  openHPDS: import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '',
-  Visualizer: import.meta.env?.VITE_RESOURCE_VIZ || '',
-  application: import.meta.env?.VITE_RESOURCE_APP || '',
+  hpds: (import.meta.env?.VITE_RESOURCE_HPDS || '') as string,
+  openHPDS: (import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '') as string,
+  visualization: (import.meta.env?.VITE_RESOURCE_VIZ || '') as string,
+  application: (import.meta.env?.VITE_RESOURCE_APP || '') as string,
 };
 
 export const auth = {

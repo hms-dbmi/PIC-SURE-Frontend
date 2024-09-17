@@ -64,10 +64,17 @@ async function updateFacet(newFacet: Facet, facetCategory: DictionaryFacetResult
   }
 }
 
+export function resetSearch() {
+  searchTerm.set('');
+  selectedFacets.set([]);
+  error.set('');
+}
+
 export default {
   selectedFacets,
   searchTerm,
   error,
   search,
   updateFacet,
+  resetSearch,
 };

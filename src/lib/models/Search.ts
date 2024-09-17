@@ -5,7 +5,6 @@ export type Facet = Indexable & {
   display: string;
   description: string;
   count: number;
-  fullName: string;
   children?: Facet[];
   category: string;
   categoryRef?: ShallowFacetCategory;

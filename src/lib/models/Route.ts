@@ -1,9 +1,9 @@
-import type { PicsurePrivileges } from './Privilege';
+import type { BDCPrivileges, PicsurePrivileges } from './Privilege';
 
-export type Route = {
+export interface Route {
   path: string;
   text: string;
-  privilege?: PicsurePrivileges;
+  privilege?: (PicsurePrivileges | BDCPrivileges)[];
   feature?: string;
   children?: Route[];
-};
+}

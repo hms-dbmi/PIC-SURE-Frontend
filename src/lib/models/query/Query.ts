@@ -17,7 +17,7 @@ export interface QueryInterface {
   requiredFields: string[];
   anyRecordOf: string[];
   variantInfoFilters: VariantInfoFilters[];
-  expectedResultType: ExpectedResultType;
+  expectedResultType: ExpectedResultType | ExpectedResultType[];
 }
 
 interface CategoryVariantInfoFilterInterface {
@@ -42,7 +42,7 @@ export class Query implements QueryInterface {
   anyRecordOf: string[];
   fields: string[];
   variantInfoFilters: VariantInfoFilters[];
-  expectedResultType: ExpectedResultType;
+  expectedResultType: ExpectedResultType | ExpectedResultType[];
 
   constructor(newQuery?: QueryInterface) {
     this.categoryFilters = newQuery?.categoryFilters || {};
@@ -99,6 +99,19 @@ export class Query implements QueryInterface {
 
   addAnyRecordOf(field: string) {
     this.anyRecordOf.push(field);
+  }
+
+  hasGenomicFilter() {
+    const Gene_with_variant =
+      this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Gene_with_variant?.length || 0;
+    const Variant_consequence_calculated =
+      this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Variant_consequence_calculated
+        ?.length || 0;
+    const Variant_frequency_as_text =
+      this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Variant_frequency_as_text?.length ||
+      0;
+
+    return Gene_with_variant + Variant_consequence_calculated + Variant_frequency_as_text;
   }
 
   hasFilter() {
