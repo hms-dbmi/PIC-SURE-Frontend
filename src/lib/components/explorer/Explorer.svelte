@@ -31,7 +31,7 @@
     id: Actions,
   };
 
-  const handler = new DataHandler([] as SearchResult[], { rowsPerPage: 5 });
+  const handler = new DataHandler([] as SearchResult[], { rowsPerPage: 10 });
   handler.onChange((state: State) => search($searchTerm, $selectedFacets, state));
 
   let unsubSelectedFacets: Unsubscriber;

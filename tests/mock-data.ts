@@ -64,7 +64,7 @@ export const picsureUser: User = {
 };
 
 export const searchResultPath =
-  '*/**/picsure/proxy/dictionary-api/concepts?page_number=0&page_size=5';
+  '*/**/picsure/proxy/dictionary-api/concepts?page_number=0&page_size=10';
 export const facetResultPath = '*/**/picsure/proxy/dictionary-api/facets/';
 export const conceptsDetailPath = '*/**/picsure/proxy/dictionary-api/concepts/detail/'; // + name
 

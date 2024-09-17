@@ -108,7 +108,7 @@
           <i class="fa-solid fa-triangle-exclamation"></i>
           <span class="sr-only">{ERROR_VALUE}</span>
         {:else}
-          {totalPatients}
+          {totalPatients?.toLocaleString()}
         {/if}
       </span>
     {:catch}

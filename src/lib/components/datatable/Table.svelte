@@ -17,7 +17,7 @@
   export let title = '';
   export let fullWidth: boolean = false;
   export let options: number[] = [5, 10, 20, 50, 100];
-  export let defaultRowsPerPage = 5;
+  export let defaultRowsPerPage = 10;
   export let columns: Column[] = [];
   export let cellOverides: Indexable = {};
   export let rowClickHandler: (row: Indexable) => void = () => {};
