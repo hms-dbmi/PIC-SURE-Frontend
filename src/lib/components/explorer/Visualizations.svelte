@@ -11,6 +11,7 @@
     createCategoryPlot,
   } from '$lib/utilities/Plotly';
   import { getQueryRequest } from '$lib/QueryBuilder';
+  import { page } from '$app/stores';
 
   const SYNC_URL = '/picsure/query/sync';
 
@@ -19,9 +20,10 @@
   let plotValues: PlotValues[] = [];
   let newPlot: PlotlyNewPlot;
   let plotlyLoading: Promise<void>;
+  const isOpenAccess = $page.url.pathname.includes('/discover');
 
   async function loadPlotData() {
-    const query = getQueryRequest(true);
+    const query = getQueryRequest(!isOpenAccess, resources.visualization);
     const token = localStorage.getItem('token');
 
     await api

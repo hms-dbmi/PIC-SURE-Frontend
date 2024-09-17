@@ -44,7 +44,7 @@
   }
 
   onMount(() => {
-    queryRequest = getQueryRequest();
+    queryRequest = getQueryRequest(true);
     if (queryRequest.query.hasFilter()) {
       unsubVariantError = variantError.subscribe((error) => {
         if (error) {

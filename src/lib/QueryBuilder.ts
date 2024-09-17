@@ -10,8 +10,10 @@ const harmonizedPath = '\\DCC Harmonized data set';
 const harmonizedConsentPath = '\\_harmonized_consent\\';
 const topmedConsentPath = '\\_topmed_consents\\';
 
-export function getQueryRequest(openAccess = false): QueryRequestInterface {
-  let resourceUUID = resources.hpds;
+export function getQueryRequest(
+  addConsents = true,
+  resourceUUID = resources.hpds,
+): QueryRequestInterface {
   let query: Query = new Query();
   if (features.useQueryTemplate) {
     const queryTemplate: QueryInterface = get(user).queryTemplate as QueryInterface;
@@ -40,12 +42,8 @@ export function getQueryRequest(openAccess = false): QueryRequestInterface {
     }
   });
 
-  if (features.requireConsents && !openAccess) {
+  if (features.requireConsents && addConsents) {
     query = updateConsentFilters(query);
-  }
-
-  if (openAccess) {
-    resourceUUID = resources.openHPDS;
   }
 
   if (Array.isArray(query.expectedResultType)) {

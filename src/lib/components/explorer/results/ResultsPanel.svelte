@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding, features } from '$lib/configuration';
+  import { branding, features, resources } from '$lib/configuration';
   import { slide, scale } from 'svelte/transition';
   import { page } from '$app/stores';
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
@@ -28,7 +28,10 @@
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = Promise.resolve(0);
 
   async function getCount() {
-    let request: QueryRequestInterface = getQueryRequest(isOpenAccess);
+    let request: QueryRequestInterface = getQueryRequest(
+      !isOpenAccess,
+      isOpenAccess ? resources.openHPDS : resources.hpds,
+    );
     try {
       const count = await api.post('picsure/query/sync', request);
       totalParticipants.set(count);
