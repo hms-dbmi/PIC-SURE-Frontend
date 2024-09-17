@@ -58,6 +58,7 @@ export const initializeBranding = () => {
 };
 
 export const routes: Route[] = [
+  { path: '/dashboard', text: 'Dashboard' },
   { path: '/explorer', text: 'Explore' },
   { path: '/analyze', text: 'Analyze', privilege: PicsurePrivileges.QUERY },
   { path: '/dataset', text: 'Manage Datasets', privilege: PicsurePrivileges.QUERY },
@@ -97,6 +98,7 @@ export const features: Indexable = {
   genomicFilter: import.meta.env?.VITE_GENOMIC_FILTER === 'true',
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
   useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
+  dashboard: import.meta.env?.VITE_DASHBOARD === 'true', // TODO add for dashboard
 };
 
 export const settings: Indexable = {
