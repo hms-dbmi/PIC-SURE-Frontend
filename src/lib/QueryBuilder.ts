@@ -68,22 +68,7 @@ export const updateConsentFilters = (query: Query) => {
     query.removeCategoryFilter(harmonizedConsentPath);
   }
 
-  let topmedPresent = false;
-  if (
-    query.variantInfoFilters.length &&
-    Object.keys(query.variantInfoFilters[0].categoryVariantInfoFilters as any).length > 0
-  ) {
-    topmedPresent = true;
-  }
-
-  if (
-    query.variantInfoFilters.length &&
-    Object.keys(query.variantInfoFilters[0].numericVariantInfoFilters as any).length > 0
-  ) {
-    topmedPresent = true;
-  }
-
-  if (!topmedPresent) {
+  if (!query.hasGenomicFilter()) {
     query.removeCategoryFilter(topmedConsentPath);
   }
 
