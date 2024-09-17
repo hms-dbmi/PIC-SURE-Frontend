@@ -58,6 +58,11 @@ export const initializeBranding = () => {
 };
 
 export const routes: Route[] = [
+  { 
+    path: '/dashboard',
+    text: 'Dashboard',
+    feature: 'dashboard'
+  },
   {
     path: '/discover',
     text: 'Discover',
@@ -78,7 +83,6 @@ export const routes: Route[] = [
     text: 'Manage Datasets',
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.NAMED_DATASET],
   },
-  { path: '/admin/users', text: 'Manage Users', privilege: [PicsurePrivileges.ADMIN] },
   {
     path: '/admin/requests',
     text: 'Data Requests',
@@ -123,6 +127,7 @@ export const features: Indexable = {
     enableTour: import.meta.env?.EXPLORER_TOUR !== 'false',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
   },
+  dashboard: import.meta.env?.VITE_DASHBOARD === 'true',
 };
 
 export const settings: Indexable = {
