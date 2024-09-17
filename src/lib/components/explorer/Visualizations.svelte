@@ -28,7 +28,7 @@
 
     await api
       .post(SYNC_URL, {
-        ...query.query,
+        query: query.query,
         resourceUUID: resources.visualization,
         resourceCredentials: { Authorization: 'Bearer ' + token },
       })

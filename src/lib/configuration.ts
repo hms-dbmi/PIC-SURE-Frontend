@@ -139,10 +139,10 @@ export const settings: Indexable = {
 };
 
 export const resources = {
-  hpds: import.meta.env?.VITE_RESOURCE_HPDS || '',
-  openHPDS: import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '',
-  visualization: import.meta.env?.VITE_RESOURCE_VIZ || '',
-  application: import.meta.env?.VITE_RESOURCE_APP || '',
+  hpds: (import.meta.env?.VITE_RESOURCE_HPDS || '') as string,
+  openHPDS: (import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '') as string,
+  visualization: (import.meta.env?.VITE_RESOURCE_VIZ || '') as string,
+  application: (import.meta.env?.VITE_RESOURCE_APP || '') as string,
 };
 
 export const auth = {
