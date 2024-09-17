@@ -8,6 +8,10 @@ import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, features, resources } from '$lib/configuration';
 import { goto } from '$app/navigation';
 import type { QueryInterface } from '$lib/models/query/Query';
+import { filters } from '$lib/stores/Filter';
+import ExportStore from '$lib/stores/Export';
+import { resetSearch } from '$lib/stores/Search';
+const { exports } = ExportStore;
 
 export const user: Writable<User> = writable(restoreUser());
 
@@ -140,6 +144,9 @@ export async function logout() {
     localStorage.removeItem('token');
   }
   user.set({});
+  filters.set([]);
+  exports.set([]);
+  resetSearch();
   goto('/login');
 }
 

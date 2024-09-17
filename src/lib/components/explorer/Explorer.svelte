@@ -60,7 +60,8 @@
       searchTerm.set('');
     }
     searchTerm.set(searchInput);
-    goto(searchInput ? `/explorer?search=${searchInput}` : '/explorer', { replaceState: true });
+    const path = isOpenAccess ? '/discover' : '/explorer';
+    goto(searchInput ? `${path}?search=${searchInput}` : `${path}`, { replaceState: true });
   }
 
   onDestroy(() => {
