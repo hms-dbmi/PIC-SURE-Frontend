@@ -10,7 +10,7 @@
 
 <Content
   full={true}
-  backUrl="/discrover"
+  backUrl="/discover"
   backTitle="Back to Discover"
   title="Variable Distributions"
 >
