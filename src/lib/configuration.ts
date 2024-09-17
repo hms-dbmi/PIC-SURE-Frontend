@@ -58,10 +58,10 @@ export const initializeBranding = () => {
 };
 
 export const routes: Route[] = [
-  { 
+  {
     path: '/dashboard',
     text: 'Dashboard',
-    feature: 'dashboard'
+    feature: 'dashboard',
   },
   {
     path: '/discover',
