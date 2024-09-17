@@ -5,13 +5,21 @@ import type {
   DictionaryFacetResult,
 } from '$lib/models/api/DictionaryResponses';
 import type { Pageable } from '$lib/models/api/Pageable';
+import { page } from '$app/stores';
+import { get } from 'svelte/store';
+import { user } from '$lib/stores/User';
 
 const dictionaryUrl = 'picsure/proxy/dictionary-api/';
 const searchUrl = 'picsure/proxy/dictionary-api/concepts';
 const conceptDetailUrl = 'picsure/proxy/dictionary-api/concepts/detail/';
 
 const dictonaryCacheMap = new Map<string, SearchResult>();
-let allFacetsCache: DictionaryFacetResult[];
+
+interface DictionarySearchRequest {
+  facets: Facet[];
+  search: string;
+  consents?: string[];
+}
 
 function cacheResult(key: string, value: SearchResult) {
   if (!key || !value) return;
@@ -26,25 +34,22 @@ export function searchDictionary(
   facets: Facet[],
   pageable: Pageable,
 ): Promise<DictionaryConceptResult> {
+  let request: DictionarySearchRequest = { facets, search: searchTerm };
+  if (!get(page).url.pathname.includes('/discover')) {
+    request = addConsents(request);
+  }
   return api.post(
     `${searchUrl}?page_number=${pageable.pageNumber}&page_size=${pageable.pageSize}`,
-    {
-      facets,
-      search: searchTerm,
-    },
+    request,
   );
 }
 
 export async function getAllFacets(): Promise<DictionaryFacetResult[]> {
-  const facetRequest = {
-    facets: [],
-    search: '',
-  };
-  if (allFacetsCache) {
-    return allFacetsCache;
+  let request: DictionarySearchRequest = { facets: [], search: '' };
+  if (!get(page).url.pathname.includes('/discover')) {
+    request = addConsents(request);
   }
-  const response = await api.post(`${dictionaryUrl}facets/`, facetRequest);
-  allFacetsCache = response;
+  const response = await api.post(`${dictionaryUrl}facets/`, request);
   return response;
 }
 
@@ -52,11 +57,11 @@ export function updateFacetsFromSearch(
   search: string,
   facets: Facet[],
 ): Promise<DictionaryFacetResult[]> {
-  const facetRequest = {
-    facets: facets,
-    search: search,
-  };
-  return api.post(`${dictionaryUrl}facets/`, facetRequest);
+  let request: DictionarySearchRequest = { facets: facets, search: search };
+  if (!get(page).url.pathname.includes('/discover')) {
+    request = addConsents(request);
+  }
+  return api.post(`${dictionaryUrl}facets/`, request);
 }
 
 export async function getConceptDetails(
@@ -78,4 +83,15 @@ export async function getConceptDetails(
 
   cacheResult(rawConceptPath, response);
   return response;
+}
+
+function addConsents(request: DictionarySearchRequest) {
+  const queryTemplate = get(user)?.queryTemplate;
+  if (queryTemplate) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const filters = queryTemplate.categoryFilters as any;
+    const consents = filters['\\_consents\\'] as string[];
+    request.consents = consents;
+  }
+  return request;
 }
