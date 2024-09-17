@@ -18,7 +18,9 @@
   import {CodeBlock, ProgressRadial, Tab, TabGroup} from '@skeletonlabs/skeleton';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExportStore from '$lib/stores/Export';
+  import FilterStore from '$lib/stores/Filter';
   let { exports } = ExportStore;
+  let { filters, totalParticipants } = FilterStore;
   import { state } from '$lib/stores/Stepper';
   import { goto } from '$app/navigation';
   import { type DataSet, type DatasetError } from '$lib/models/Dataset';
@@ -167,6 +169,11 @@
 
   let tabSet: number = 0;
   let tabIndex: number = 0;
+
+  function dataLimitExceeded(): boolean {
+    let totalDataPoints: number = $totalParticipants + $filters.length + $exports.length;
+    return totalDataPoints > 1000000;
+  }
 </script>
 
 <Stepper
@@ -178,23 +185,39 @@
   context={exportContext}
   buttonCompleteLabel="Done"
 >
-  <Step>
+  <Step locked={dataLimitExceeded()}>
     <svelte:fragment slot="header">Review Cohort Details:</svelte:fragment>
     <div id="first-step-container" class="flex flex-col w-full h-full items-center">
       <Summary />
       <section class="w-full">
-        {#await preparePromise}
-          <ProgressRadial width="w-4" />
-          <div>Preparing your dataset...</div>
-        {:catch}
-          <div class="flex justify-center mb-4">
-            <ErrorAlert
-              title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
-                contact an administrator."
-            />
-          </div>
-        {/await}
-        <Datatable tableName="ExportSummary" data={rows} {columns} />
+        {#if dataLimitExceeded()}
+          <aside class="alert variant-filled-error">
+            <!-- Icon -->
+            <div><i class="fa-solid fa-triangle-exclamation text-4xl"></i></div>
+            <!-- Message -->
+            <div class="alert-message">
+              <h3 class="h3">Warning</h3>
+              <p>Warning: Your selected data exceeds 1,000,000 estimated data points, which is too large to export. Please reduce the data selection or the number of selected participants.</p>
+            </div>
+            <!-- Actions -->
+            <div class="alert-actions dark">
+              <button class="btn variant-filled" on:click={() => onComplete()}>Back</button>
+            </div>
+          </aside>
+        {:else}
+          {#await preparePromise}
+            <ProgressRadial width="w-4" />
+            <div>Preparing your dataset...</div>
+          {:catch}
+            <div class="flex justify-center mb-4">
+              <ErrorAlert
+                      title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
+                  contact an administrator."
+              />
+            </div>
+          {/await}
+          <Datatable tableName="ExportSummary" data={rows} {columns} />
+        {/if}
       </section>
     </div>
   </Step>
@@ -247,7 +270,7 @@
       <div class="w-full h-full m-2 card p-4">
         <header class="card-header">
           Save the information in your final data export by clicking the Save Dataset ID button.
-          Navigate to the Dataset Management tab to view or manage your Dataset IDs.
+          Navigate to the <a class="anchor" href="/dataset">Manage Datasets page</a> to view or manage your Dataset IDs.
         </header>
         <hr />
         {#if error}
@@ -295,8 +318,10 @@
               {#if query.query.expectedResultType === 'DATAFRAME'}
                 <section class="flex flex-col gap-8">
                   <p class="mt-4">
-                    To start your analysis, use the following code to connect to PIC-SURE. Note that you will need
-                    your personal access token below to complete the connection.
+                    To export data and start your analysis, copy and paste the following code in an analysis workspace,
+                    such as BioData Catalyst Powered by Seven Bridges or BioData Catalyst Powered by Terra, to connect
+                    to PIC-SURE and save the data frame or download the file. Note that you will need your personal
+                    access token to complete the connection to PIC-SURE with code.
                   </p>
                   <TabGroup class="card p-4">
                     {#if query.query.expectedResultType === 'DATAFRAME'}
@@ -314,33 +339,51 @@
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
-!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-adapter-hpds.git
+# BDC Powered by Terra users uncomment the following line to specify package install location
+# sys.path.insert(0, r"/home/jupyter/.local/lib/python3.7/site-packages")
 !{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-client.git
-
+!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-adapter-hpds.git
+!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-biodatacatalyst-python-adapter-hpds.git
 import PicSureHpdsLib
 import PicSureClient
 
+PICSURE_network_URL = "https://picsure.biodatacatalyst.nhlbi.nih.gov/picsure"
+
 token_file = "token.txt"
 with open(token_file, "r") as f:
-my_token = f.read()
+    my_token = f.read()
 
-connection = PicSureClient.Client.connect(url = PICSURE_network_URL, token = my_token)`}
+connection = PicSureClient.Client.connect(url = PICSURE_network_URL, token = my_token)
+
+queryID = THIS SHOULD DISPLAY THE GENERATED DATASET ID
+
+results = resource.retrieveQueryResults(queryID)
+
+from io import StringIO
+df_UI = pd.read_csv(StringIO(results), low_memory=False)`}
                         ></CodeBlock>
                       {:else if tabSet === 1}
                         <CodeBlock
                                 language="r"
                                 lineNumbers={true}
                                 code={`# Requires R 3.4 or later
-install.packages("devtools")
+### Uncomment this code if you are not using the PIC-SURE environment in *BDC-Seven Bridges*, or if you do not have all the necessary dependencies installed.
+#install.packages("devtools")
 
+Sys.setenv(TAR = "/bin/tar")
+options(unzip = "internal")
 devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", ref="main", force=T, quiet=FALSE)
 library(dplyr)
 
-PICSURE_network_URL = "https://nhanes.hms.harvard.edu/picsure"
+PICSURE_network_URL = "https://picsure.biodatacatalyst.nhlbi.nih.gov/picsure"
 token_file <- "token.txt"
 token <- scan(token_file, what = "character")
 session <- picsure::bdc.initializeSession(PICSURE_network_URL, token)
-session <- picsure::bdc.setResource(session = session)`}
+session <- picsure::bdc.setResource(session = session)
+
+queryID <- THIS SHOULD DISPLAY THE GENERATED DATASET ID
+
+results <- picsure::getResultByQueryUUID(session, queryID)`}
                         ></CodeBlock>
                       {:else if tabSet ===2}
                         <div>
