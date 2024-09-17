@@ -215,9 +215,10 @@
     </Step>
   {/if}
   <Step locked="{activeType === undefined}">
-    <svelte:fragment slot="header">Choose Formats</svelte:fragment>
+    <svelte:fragment slot="header">Review and Save Dataset:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
-      <div class="grid gap-4 grid-cols-2">
+      <Summary />
+      <div class="grid gap-10 grid-cols-2">
         <CardButton
                 data-testid="csv-export-option"
                 title="Export as Data Frame or CSV"
@@ -242,6 +243,7 @@
   <Step locked={!datasetNameInput || datasetNameInput.length < 2}>
     <svelte:fragment slot="header">Save Dataset ID:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
+      <Summary />
       <div class="w-full h-full m-2 card p-4">
         <header class="card-header">
           Save the information in your final data export by clicking the Save Dataset ID button.
@@ -287,7 +289,7 @@
             {#await statusPromise}
               <div class="flex justify-center items-center">
                 <ProgressRadial width="w-4" />
-                <div>Prepareing your dataset...</div>
+                <div>Preparing your dataset...</div>
               </div>
             {:then status}
               {#if query.query.expectedResultType === 'DATAFRAME'}
