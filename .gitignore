@@ -16,3 +16,5 @@ vite.config.ts.timestamp-*
 /certs
 /httpd-docker-logs
 httpd-vhosts.conf
+supervisord.log
+supervisord.pid

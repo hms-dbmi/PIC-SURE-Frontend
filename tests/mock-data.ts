@@ -1,6 +1,7 @@
 import type { User } from '../src/lib/models/User';
 import { PicsurePrivileges } from '../src/lib/models/Privilege';
 import type { QueryInterface } from '$lib/models/query/Query';
+import type { DashboardResp } from '$lib/stores/Dashboard';
 
 export const HPDS = process.env.VITE_RESOURCE_HPDS;
 
@@ -37,6 +38,17 @@ export const datasets = [
     metadata: {},
   },
 ];
+
+export const mockDashboard: DashboardResp = {
+  columns: [
+    { label: 'Name', dataElement: 'name' },
+    { label: 'Link', dataElement: 'link' },
+  ],
+  rows: [
+    { name: 'A', link: 'foo.invalid' },
+    { name: 'B', link: 'bar.invalid' },
+  ],
+};
 
 const mockQueryTemplate: QueryInterface = {
   categoryFilters: {},
