@@ -490,10 +490,4 @@ results <- picsure::getResultByQueryUUID(session, queryID)`}
   input {
     border-radius: var(--theme-rounded-base);
   }
-
-  a.pic-sure-info-card {
-    max-width: 25rem;
-    min-height: 18rem;
-    margin: 0 8px;
-  }
 </style>
