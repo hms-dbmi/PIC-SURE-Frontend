@@ -192,14 +192,11 @@
       <section class="w-full">
         {#if dataLimitExceeded()}
           <aside class="alert variant-filled-error">
-            <!-- Icon -->
             <div><i class="fa-solid fa-triangle-exclamation text-4xl"></i></div>
-            <!-- Message -->
             <div class="alert-message">
               <h3 class="h3">Warning</h3>
               <p>Warning: Your selected data exceeds 1,000,000 estimated data points, which is too large to export. Please reduce the data selection or the number of selected participants.</p>
             </div>
-            <!-- Actions -->
             <div class="alert-actions dark">
               <button class="btn variant-filled" on:click={() => onComplete()}>Back</button>
             </div>
@@ -387,7 +384,7 @@ results <- picsure::getResultByQueryUUID(session, queryID)`}
                         ></CodeBlock>
                       {:else if tabSet ===2}
                         <div>
-                          <button class="btn variant-filled-primary" on:click={() => download()}>Download</button>
+                          <button class="btn variant-filled-primary" on:click={() => download()}><i class="fa-solid fa-download mr-1"></i>Download as CSV</button>
                         </div>
                       {/if}
                     </svelte:fragment>
@@ -398,6 +395,10 @@ results <- picsure::getResultByQueryUUID(session, queryID)`}
                   </p>
                   <div class="flex justify-center">
                     <UserToken />
+                  </div>
+                  <div class="flex justify-center">
+                    <a class="btn variant-ghost-primary m-2 hover:variant-filled-primary" href="https://platform.sb.biodatacatalyst.nhlbi.nih.gov/u/biodatacatalyst/data-export-from-the-pic-sure-ui" target="_blank">Go to Seven Bridges</a>
+                    <a class="btn variant-ghost-primary m-2 hover:variant-filled-primary" href="https://terra.biodatacatalyst.nhlbi.nih.gov/" target="_blank">Go to Terra</a>
                   </div>
                 </section>
                 <!--<section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
