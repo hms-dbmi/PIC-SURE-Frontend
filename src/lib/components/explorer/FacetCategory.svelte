@@ -48,7 +48,7 @@
         (facet) =>
           facet.display.toLowerCase().includes(lowerFilterValue) ||
           facet.name.toLowerCase().includes(lowerFilterValue) ||
-          facet.fullName.toLowerCase().includes(lowerFilterValue),
+          facet.description?.toLowerCase().includes(lowerFilterValue),
       );
     } else if (moreThanTenFacets) {
       // Only show the first n facets
@@ -85,7 +85,9 @@
             aria-checked={isChecked(facet.name)}
             on:click={() => updateFacet(facet, facetCategory)}
           />
-          <span class:opacity-75={facet.count === 0}>{`${facet.display} (${facet.count})`}</span>
+          <span class:opacity-75={facet.count === 0}
+            >{`${facet.display} (${facet.count?.toLocaleString()})`}</span
+          >
         </label>
       {/each}
       {#if facets.length > numFacetsToShow && !textFilterValue}

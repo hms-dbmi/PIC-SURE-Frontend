@@ -31,14 +31,34 @@ export default class AuthProvider implements AuthData {
     this.alt = data.alt || false;
   }
 
-  protected getRedirectURI(redirectTo = '/', type: string): string {
-    if (!type) throw new Error('Provider type is required');
+  protected getRedirectURI(): string {
     if (!browser) return '/';
     return encodeURI(
       `${window.location.protocol}//${window.location.hostname}${
         window.location.port ? ':' + window.location.port : ''
-      }/login/loading?provider=${type}&redirectTo=${redirectTo ?? '/'}`,
+      }/login/loading/`,
     );
+  }
+
+  protected saveState(redirectTo = '/', type: string, idp?: string): void {
+    if (!browser) return;
+    sessionStorage.setItem('redirect', redirectTo);
+    type && sessionStorage.setItem('type', type);
+    idp && sessionStorage.setItem('idp', idp);
+  }
+
+  protected getState() {
+    if (!browser)
+      return {
+        redirect: '/',
+        type: 'AUTH0',
+        idp: '',
+      };
+    return {
+      redirect: sessionStorage.getItem('redirect') || '/',
+      type: sessionStorage.getItem('type') || 'FENCE',
+      idp: sessionStorage.getItem('idp') || '',
+    };
   }
 
   protected getResponseMap(hashParts: string[] = []): Map<string, string> {
@@ -50,7 +70,7 @@ export default class AuthProvider implements AuthData {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  authenticate = async (redirectTo: string, hashParts: string[]): Promise<boolean> => {
+  authenticate = async (hashParts: string[]): Promise<boolean> => {
     throw new Error('Method not implemented.');
   };
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

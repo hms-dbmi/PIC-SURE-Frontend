@@ -14,7 +14,7 @@
     selectedGenes.set([]);
   }
 
-  const helpText = branding.help.popups.genomicFilter;
+  const helpText = branding?.help?.popups?.genomicFilter;
 </script>
 
 <div id="gene-search" class="grid grid-col-3 gap-3 {$$props.class || ''}">

@@ -29,11 +29,12 @@ export function mockApiFail(
 ) {
   return context.route(path, (route: Route) => route.abort(message));
 }
-
 export const unauthedTest = base.extend({
   context: async ({ context }, use) => {
     await context.addInitScript(() => {
-      sessionStorage.clear();
+      window.sessionStorage.clear();
+      sessionStorage.setItem('type', 'AUTH0');
+      sessionStorage.setItem('redirect', '/');
       localStorage.clear();
     });
 
@@ -44,7 +45,10 @@ export const unauthedTest = base.extend({
 export const test = base.extend({
   context: async ({ context }, use) => {
     await mockApiSuccess(context, '*/**/psama/user/me?hasToken', picsureUser);
+    await mockApiSuccess(context, '*/**/psama/user/me', picsureUser);
     await context.addInitScript((picsureUser: User) => {
+      sessionStorage.setItem('type', 'AUTH0');
+      sessionStorage.setItem('redirect', '/');
       localStorage.setItem('user', JSON.stringify(picsureUser));
       localStorage.setItem(
         'token',
@@ -62,6 +66,8 @@ export function getUserTest(user: User = picsureUser) {
   return base.extend({
     context: async ({ context }, use) => {
       await context.addInitScript((user: User) => {
+        sessionStorage.setItem('type', 'AUTH0');
+        sessionStorage.setItem('redirect', '/');
         localStorage.setItem(
           'token',
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6OTYwOTU3Mjk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.M1W7a3jQNoHQxAUwfj3sDqyVtNH_DkRdzsIF3prIYQA',
@@ -70,7 +76,10 @@ export function getUserTest(user: User = picsureUser) {
       });
 
       await mockApiSuccess(context, '*/**/psama/authentication', user);
+      await mockApiSuccess(context, '*/**/psama/authentication/auth0', user);
+      await mockApiSuccess(context, '*/**/psama/authentication/fence', user);
       await mockApiSuccess(context, '*/**/psama/user/me?hasToken', user);
+      await mockApiSuccess(context, '*/**/psama/user/me', user);
 
       use(context);
     },

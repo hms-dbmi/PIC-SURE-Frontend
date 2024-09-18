@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { branding, features } from '$lib/configuration';
+  import { branding, features, resources } from '$lib/configuration';
   import { slide, scale } from 'svelte/transition';
   import { page } from '$app/stores';
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
-  import FilterStore from '$lib/stores/Filter';
+  import { filters, hasGenomicFilter, clearFilters, totalParticipants } from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
   import * as api from '$lib/api';
   import { ProgressRadial, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
@@ -14,9 +14,8 @@
   import { onDestroy, onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import type { Unsubscriber } from 'svelte/store';
+  import { getQueryRequest } from '$lib/QueryBuilder';
 
-  const { filters, hasGenomicFilter, getQueryRequest, clearFilters, totalParticipants } =
-    FilterStore;
   const { exports, clearExports } = ExportStore;
 
   const modalStore = getModalStore();
@@ -26,26 +25,40 @@
 
   let unsubFilters: Unsubscriber;
   let totalPatients: number | typeof ERROR_VALUE = 0;
+  let suffix = '';
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = Promise.resolve(0);
 
   async function getCount() {
-    let request: QueryRequestInterface = getQueryRequest();
+    let request: QueryRequestInterface = getQueryRequest(
+      !isOpenAccess,
+      isOpenAccess ? resources.openHPDS : resources.hpds,
+      isOpenAccess ? 'CROSS_COUNT' : 'COUNT',
+    );
     try {
       const count = await api.post('picsure/query/sync', request);
-      totalParticipants.set(count);
-      totalPatients = count;
+      if (isOpenAccess) {
+        let openTotalPatients = String(count['\\_studies_consents\\']);
+        totalPatients = openTotalPatients.includes(' \u00B1')
+          ? parseInt(openTotalPatients.split(' ')[0])
+          : parseInt(openTotalPatients);
+        totalParticipants.set(totalPatients);
+        suffix = openTotalPatients.split(' ')[1];
+      } else {
+        totalParticipants.set(count);
+        totalPatients = count;
+      }
       return count;
     } catch (error) {
       if ($filters.length !== 0) {
         toastStore.trigger({
-          message: branding.explorePage.filterErrorText,
+          message: branding?.explorePage?.filterErrorText,
           background: 'variant-filled-error',
           autohide: false,
           hoverable: true,
         });
       } else {
         toastStore.trigger({
-          message: branding.explorePage.queryErrorText,
+          message: branding?.explorePage?.queryErrorText,
           background: 'variant-filled-error',
         });
       }
@@ -70,10 +83,13 @@
     });
   }
 
+  $: isOpenAccess = $page.url.pathname.includes('/discover');
+
   $: hasFilterOrExport =
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0);
   $: showExportButton =
     features.explorer.allowExport &&
+    !isOpenAccess &&
     totalPatients !== ERROR_VALUE &&
     totalPatients !== 0 &&
     hasFilterOrExport;
@@ -103,7 +119,7 @@
           <i class="fa-solid fa-triangle-exclamation"></i>
           <span class="sr-only">{ERROR_VALUE}</span>
         {:else}
-          {totalPatients}
+          {totalPatients?.toLocaleString()} {suffix || ''}
         {/if}
       </span>
     {:catch}
@@ -112,7 +128,7 @@
         <span class="sr-only">{ERROR_VALUE}</span>
       </span>
     {/await}
-    <h4 class="text-center">{branding.explorePage.totalPatientsText}</h4>
+    <h4 class="text-center">{branding?.explorePage?.totalPatientsText}</h4>
   </div>
   {#if showExportButton}
     <div class="h-11 mt-4">
@@ -169,7 +185,7 @@
       <hr class="!border-t-2" />
       <h5 class="text-center text-xl mt-7">Tool Suite</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
-        {#if features.explorer.distributionExplorer && $filters.length !== 0}
+        {#if !isOpenAccess && features.explorer.distributionExplorer && $filters.length !== 0}
           <CardButton
             href="/explorer/distributions"
             data-testid="distributions-btn"
@@ -178,7 +194,16 @@
             size="md"
           />
         {/if}
-        {#if features.explorer.variantExplorer && $hasGenomicFilter}
+        {#if isOpenAccess && features.discoverFeautures.distributionExplorer && $filters.length !== 0}
+          <CardButton
+            href="/discover/distributions"
+            data-testid="distributions-btn"
+            title="Variable Distributions"
+            icon="fa-solid fa-chart-pie"
+            size="md"
+          />
+        {/if}
+        {#if !isOpenAccess && features.explorer.variantExplorer && $hasGenomicFilter}
           <CardButton
             href="/explorer/variant"
             data-testid="variant-explorer-btn"

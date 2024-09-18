@@ -7,13 +7,13 @@
   import { user } from '$lib/stores/User';
 
   import TermsModal from '$lib/components/TermsModal.svelte';
-  export let showSitemap: boolean = branding.footer.showSitemap;
+  export let showSitemap: boolean = branding?.footer?.showSitemap || false;
 
   $: hideSitemap =
     !showSitemap ||
-    branding.footer.excludeSitemapOn.find((hide) => $page.url.pathname.includes(hide));
+    branding?.footer?.excludeSitemapOn?.find((hide) => $page.url.pathname.includes(hide));
 
-  $: sitemap = branding.sitemap.map((section) => ({
+  $: sitemap = branding?.sitemap?.map((section) => ({
     ...section,
     show: !section.privilege || ($user.privileges && $user.privileges.includes(section.privilege)),
   }));
@@ -27,7 +27,7 @@
   }
 </script>
 
-{#if !hideSitemap && branding.sitemap.length > 0}
+{#if !hideSitemap && branding?.sitemap?.length > 0}
   <div id="sitemap-footer">
     <div class="flex flex-wrap place-content-center">
       {#each sitemap as section}
@@ -49,10 +49,12 @@
 {/if}
 <footer id="main-footer" class="flex relative">
   <ul>
-    <li><button class="hover:underline" on:click={openTermsModal}>Terms of Service</button></li>
-    {#each branding.footer.links as link}
+    {#if branding?.footer?.showTerms}
+      <li><button class="hover:underline" on:click={openTermsModal}>Terms of Service</button></li>
+    {/if}
+    {#each branding?.footer?.links as link}
       <li>
-        <a class="hover:underline" target={link.newTab ? '_blank' : '_self'} href={link.url}
+        <a class="hover:underline text-xs" target={link.newTab ? '_blank' : '_self'} href={link.url}
           >{link.title}</a
         >
       </li>

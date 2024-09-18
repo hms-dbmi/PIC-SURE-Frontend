@@ -7,8 +7,6 @@
   import { branding, features, settings } from '$lib/configuration';
   import { ExportType } from '$lib/models/Variant';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import FilterStore from '$lib/stores/Filter';
-  const { getQueryRequest } = FilterStore;
 
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -25,6 +23,7 @@
     variantError,
   } from '$lib/stores/Variants';
   import type { Unsubscriber } from 'svelte/store';
+  import { getQueryRequest } from '$lib/QueryBuilder';
 
   let loading: Promise<void>;
   let unsubVariantError: Unsubscriber;
@@ -45,7 +44,7 @@
   }
 
   onMount(() => {
-    queryRequest = getQueryRequest();
+    queryRequest = getQueryRequest(true);
     if (queryRequest.query.hasFilter()) {
       unsubVariantError = variantError.subscribe((error) => {
         if (error) {

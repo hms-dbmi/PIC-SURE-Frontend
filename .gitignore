@@ -18,5 +18,5 @@ vite.config.ts.timestamp-*
 httpd-vhosts.conf
 .idea/
 *.iml
-*.log
-*.pid
+supervisord.log
+supervisord.pid

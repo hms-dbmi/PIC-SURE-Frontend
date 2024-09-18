@@ -1,31 +1,42 @@
 import * as api from '$lib/api';
 import { get, writable, type Writable } from 'svelte/store';
-import { Query } from '$lib/models/query/Query';
 import { resources } from '$lib/configuration';
+import { getQueryRequest } from '$lib/QueryBuilder';
+import { browser } from '$app/environment';
 
 export const ERROR_VALUE = '-';
 type StatMap = { [key: string]: string | undefined };
 type ApiMap = { [key: string]: () => Promise<string> };
 
 const cachedMap: Writable<StatMap> = writable({});
+const isUserLoggedIn = () => {
+  if (browser) {
+    return !!localStorage.getItem('token');
+  }
+  return false;
+};
 
 const apiMap: ApiMap = {
   'Data Sources': () => Promise.resolve('1'),
   Participants: () =>
     api
-      .post('picsure/query/sync', {
-        resourceUUID: resources.hpds,
-        query: new Query(),
-      })
+      .post(
+        'picsure/query/sync',
+        getQueryRequest(isUserLoggedIn(), isUserLoggedIn() ? resources.hpds : resources.openHPDS),
+      )
       .then((response) => response.toLocaleString()),
   Variables: () =>
-    api.post(`picsure/search/${resources.hpds}`, { query: '\\' }).then((response) => {
-      console.log('variables results', Object.keys(response));
-      if (response.results) {
-        return Object.keys(response.results.phenotypes).length.toLocaleString();
-      }
-      return ERROR_VALUE;
-    }),
+    api
+      .post(`picsure/search/${isUserLoggedIn() ? resources.hpds : resources.openHPDS}`, {
+        query: '\\',
+      })
+      .then((response) => {
+        //TODO: consents?
+        if (response.results) {
+          return Object.keys(response.results.phenotypes).length.toLocaleString();
+        }
+        return ERROR_VALUE;
+      }),
 };
 
 export async function getOrApi(key: string): Promise<string> {

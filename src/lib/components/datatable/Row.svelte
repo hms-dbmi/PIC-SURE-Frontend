@@ -37,7 +37,7 @@
           data={{ index, row, cell: row[column.dataElement] }}
         />
       {:else}
-        {row[column.dataElement]}
+        {row[column.dataElement] ? row[column.dataElement] : ''}
       {/if}
     </td>
   {/each}

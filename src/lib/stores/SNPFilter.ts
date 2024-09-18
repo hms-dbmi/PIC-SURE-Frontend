@@ -1,9 +1,9 @@
 import { get, writable, type Writable } from 'svelte/store';
 
 import * as api from '$lib/api';
-import { resources } from '$lib/configuration';
 import { Genotype, type SNP } from '$lib/models/GenomeFilter';
 import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter';
+import { getQueryRequest, updateConsentFilters } from '$lib/QueryBuilder';
 
 export const selectedSNPs: Writable<SNP[]> = writable([]);
 
@@ -23,17 +23,10 @@ export function clearSnpFilters() {
 export async function getSNPCounts(check: SNP) {
   // Search for results with Heterozygous or Homozygous variants. If there are none, then we know that this
   // snp isn't set anywhere and the user doesn't need to include or exclude it.
-  const response: number = await api.post('/picsure/query/sync', {
-    resourceUUID: resources.hpds,
-    query: {
-      categoryFilters: { [check.search]: [Genotype.Homozygous, Genotype.Heterozygous] },
-      numericFilters: {},
-      requiredFields: [],
-      anyRecordOf: [],
-      variantInfoFilters: [{ categoryVariantInfoFilters: {}, numericVariantInfoFilters: {} }],
-      expectedResultType: 'COUNT',
-    },
-  });
+  const searchQuery = getQueryRequest(true);
+  searchQuery.query.addCategoryFilter(check.search, [Genotype.Heterozygous, Genotype.Homozygous]);
+  searchQuery.query = updateConsentFilters(searchQuery.query);
+  const response: number = await api.post('/picsure/query/sync', searchQuery.query);
   return response;
 }
 

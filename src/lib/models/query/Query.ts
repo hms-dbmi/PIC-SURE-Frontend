@@ -12,14 +12,14 @@ export type ExpectedResultType =
   | 'VARIANT_COUNT_FOR_QUERY'
   | undefined;
 
-interface QueryInterface {
+export interface QueryInterface {
   fields: string[];
   categoryFilters: object; //TODO: define type
   numericFilters: object;
   requiredFields: string[];
   anyRecordOf: string[];
   variantInfoFilters: VariantInfoFilters[];
-  expectedResultType: ExpectedResultType;
+  expectedResultType: ExpectedResultType | ExpectedResultType[];
 }
 
 interface CategoryVariantInfoFilterInterface {
@@ -44,24 +44,28 @@ export class Query implements QueryInterface {
   anyRecordOf: string[];
   fields: string[];
   variantInfoFilters: VariantInfoFilters[];
-  expectedResultType: ExpectedResultType;
+  expectedResultType: ExpectedResultType | ExpectedResultType[];
 
-  constructor() {
-    this.categoryFilters = {};
-    this.numericFilters = {};
-    this.requiredFields = [];
-    this.anyRecordOf = [];
-    this.fields = [];
-    const variantInfoFilter = {
+  constructor(newQuery?: QueryInterface) {
+    this.categoryFilters = newQuery?.categoryFilters || {};
+    this.numericFilters = newQuery?.numericFilters || {};
+    this.requiredFields = newQuery?.requiredFields || [];
+    this.anyRecordOf = newQuery?.anyRecordOf || [];
+    this.fields = newQuery?.fields || [];
+    const variantInfoFilter = newQuery?.variantInfoFilters?.[0] || {
       categoryVariantInfoFilters: {},
       numericVariantInfoFilters: {},
     };
     this.variantInfoFilters = [variantInfoFilter];
-    this.expectedResultType = 'COUNT';
+    this.expectedResultType = newQuery?.expectedResultType || 'COUNT';
   }
 
   addCategoryFilter(key: string, value: string[]) {
     (this.categoryFilters as Indexable)[key] = value;
+  }
+
+  removeCategoryFilter(key: string) {
+    delete (this.categoryFilters as Indexable)[key];
   }
 
   addNumericFilter(key: string, min: string, max: string) {
@@ -97,6 +101,19 @@ export class Query implements QueryInterface {
 
   addAnyRecordOf(field: string) {
     this.anyRecordOf.push(field);
+  }
+
+  hasGenomicFilter() {
+    const Gene_with_variant =
+      this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Gene_with_variant?.length || 0;
+    const Variant_consequence_calculated =
+      this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Variant_consequence_calculated
+        ?.length || 0;
+    const Variant_frequency_as_text =
+      this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Variant_frequency_as_text?.length ||
+      0;
+
+    return Gene_with_variant + Variant_consequence_calculated + Variant_frequency_as_text;
   }
 
   hasFilter() {

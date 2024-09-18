@@ -1,185 +1,105 @@
-import { PicsurePrivileges } from './models/Privilege';
+import { BDCPrivileges, PicsurePrivileges } from './models/Privilege';
 import type { Route } from './models/Route';
 import type { ExpectedResultType } from './models/query/Query';
+import * as configJson from './assets/configuration.json' assert { type: 'json' };
 import { ExportType } from './models/Variant';
-import type { Indexable } from './types';
+import type {
+  ApiPageConfig,
+  ExplorePageConfig,
+  FooterConfig,
+  HelpConfig,
+  Indexable,
+  LandingConfig,
+  LoginConfig,
+  SiteMapConfig,
+} from './types';
 
-export const branding = {
-  applicationName: 'PIC‑SURE',
+export interface Branding {
+  applicationName: string;
+  logo: {
+    alt: string;
+    src: string;
+  };
+  sitemap: SiteMapConfig[];
+  footer: FooterConfig;
+  apiPage: ApiPageConfig;
+  explorePage: ExplorePageConfig;
+  landing: LandingConfig;
+  login: LoginConfig;
+  help: HelpConfig;
+}
+
+export const branding: Branding = {
+  applicationName: 'PIC-SURE',
   logo: {
     alt: import.meta.env?.VITE_LOGO_ALT || 'PIC‑SURE',
     src: import.meta.env?.VITE_LOGO || '',
   },
-  sitemap: [
-    {
-      category: 'Configuration',
-      privilege: PicsurePrivileges.SUPER,
-      links: [
-        { title: 'Authorization', url: '/admin/authorization' },
-        { title: 'Authentication', url: '/admin/authentication' },
-      ],
-    },
-    {
-      category: 'Administration',
-      privilege: PicsurePrivileges.ADMIN,
-      links: [{ title: 'Manage Users', url: '/admin/users' }],
-    },
-    {
-      category: 'Use PIC-SURE',
-      privilege: PicsurePrivileges.QUERY,
-      links: [
-        { title: 'Explore', url: '/explorer' },
-        { title: 'Analyze', url: '/analyze' },
-        { title: 'Manage Datasets', url: '/dataset' },
-      ],
-    },
-    {
-      category: 'Use PIC-SURE',
-      links: [
-        { title: 'Explore', url: '/explorer' },
-        { title: 'Analyze', url: '/analyze' },
-        { title: 'Manage Datasets', url: '/dataset' },
-      ],
-    },
-    {
-      category: 'Help',
-      links: [
-        { title: 'User Guide', url: 'https://pic-sure.gitbook.io/pic-sure', newTab: true },
-        { title: 'Videos', url: 'https://www.youtube.com/@pic-sure446/featured', newTab: true },
-        { title: 'About', url: 'http://pic-sure.org/', newTab: true },
-      ],
-    },
-  ],
-  footer: {
-    showSitemap: true,
-    excludeSitemapOn: ['/explorer'],
-    links: [
-      {
-        title: 'Privacy Policy',
-        url: 'https://pic-sure.gitbook.io/pic-sure/privacy-policy',
-        newTab: true,
-      },
-      {
-        title: 'Contact Us',
-        url: 'https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5',
-        newTab: true,
-      },
-    ],
-  },
-  apiPage: {
-    cards: [
-/*      {
-        header: 'Example Analyses with PIC-SURE page',
-        body: 'Detailed step-by-step example code that demonstrates how to use PIC-SURE for analysis.',
-        link: '/analyze/example',
-      },*/
-    ],
-  },
+  sitemap: [] as SiteMapConfig[],
+  footer: {} as FooterConfig,
+  apiPage: {} as ApiPageConfig,
   explorePage: {
     tourSearchTerm: import.meta.env?.EXPLORE_TOUR_SEARCH_TERM || 'age',
-    tourSearchIntro: 'PIC-SURE Search allows you to search for variable level data.',
-    totalPatientsText: 'Filtered Participants',
-    queryErrorText:
-      'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
-    filterErrorText:
-      'There was an error when adding the filter to the query. Please remove your most recent filter and try again. ' +
-      'If this error persists, please contact us by filling out the form at ' +
-      '<a class="anchor" href="https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5" target="_blank" ' +
-      'class="underline">Avillach Lab Software Requests</a>. We will respond to your request as soon as we can.',
-  },
-  landing: {
-    searchPlaceholder: 'Search terms or variables of interest…',
-    explanation:
-      'The <a class="anchor" href="https://www.cdc.gov/nchs/nhanes/index.htm" target="_blank">National Health and Nutrition ' +
-      'Examination Survey (NHANES)</a> dataset is designed to assess the health and nutritional status of adults ' +
-      'and children in the United States',
-    actions: [
-      {
-        title: 'Explore',
-        description: 'Explore data, apply filters, and build cohorts',
-        icon: 'fa-solid fa-magnifying-glass',
-        url: '/explorer',
-        btnText: 'Start Exploring',
-      },
-      {
-        title: 'Analyze',
-        description: 'Access data and kickstart your research',
-        icon: 'fa-solid fa-chart-line',
-        url: '/analyze',
-        btnText: 'Go to Analyze',
-      },
-    ],
-    stats: ['Variables', 'Participants', 'Data Sources'],
-  },
-  login: {
-    description: 'Where searching for, filtering on, and analyzing data is made simple.',
-    showSiteName: false,
-    openPicsureLink: '/',
-    openPicsureLinkText: 'Explore without Login',
-    contactLink: 'https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5',
-  },
-  help: {
-    links: [
-      {
-        title: 'User Guide',
-        description: 'Complete user manual for seamless navigation and utilization.',
-        icon: 'fa-solid fa-book fa-4x',
-        url: 'https://pic-sure.gitbook.io/pic-sure',
-      },
-      {
-        title: 'Video Library',
-        description: "Example 'how-to' video demonstrations.",
-        icon: 'fa-solid fa-circle-play fa-4x',
-        url: 'https://www.youtube.com/@pic-sure446/featured',
-      },
-      {
-        title: 'Request Help',
-        description: 'Need help? Submit a service desk ticket, we are here to help!',
-        icon: 'fa-solid fa-handshake fa-4x',
-        url: 'https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5',
-      },
-      {
-        title: 'PIC-SURE',
-        description: 'Check out the PIC-SURE website for information.',
-        icon: 'fa-solid fa-circle-info fa-4x',
-        url: 'https://pic-sure.org/',
-      },
-    ],
-    popups: {
-      genomicFilter: {
-        frequency:
-          'The variant allele frequency in gnomAD combined population as discrete text categories. Possible values: ' +
-          'Novel (variant not in gnomAD database), Rare (variant frequency less than 1%), Common (variant frequency ' +
-          'greater than or equal to 1%).',
-        consequence:
-          'A standardized term from the Sequence Ontology (http://www.sequenceontology.org) to describe the ' +
-          'calculated consequence of a variant. The severity for the calculated consequence of a variant on a gene ' +
-          'has possible values HIGH (frameshift, splice disrupting, or truncating variants), MEDIUM (non-frameshift ' +
-          'insertions or deletions, variants altering protein sequencing without affecting its length) or LOW ' +
-          '(other coding variants including synonymous variants).',
-      },
-    },
-  },
+  } as ExplorePageConfig,
+  landing: {} as LandingConfig,
+  login: {} as LoginConfig,
+  help: {} as HelpConfig,
+};
+
+export const initializeBranding = () => {
+  branding.applicationName = configJson.applicationName;
+  branding.apiPage = configJson.apiPage;
+  branding.explorePage = { ...branding.explorePage, ...configJson.explorePage };
+  branding.landing = configJson.landing;
+  branding.login = configJson.login;
+  branding.help = configJson.help;
+  branding.footer = configJson.footer;
+  branding.sitemap = configJson.sitemap as SiteMapConfig[];
 };
 
 export const routes: Route[] = [
-  { path: '/explorer', text: 'Explore' },
-  { path: '/analyze', text: 'Analyze', privilege: PicsurePrivileges.QUERY },
-  { path: '/dataset', text: 'Manage Datasets', privilege: PicsurePrivileges.QUERY },
-  { path: '/admin/users', text: 'Manage Users', privilege: PicsurePrivileges.ADMIN },
+  {
+    path: '/dashboard',
+    text: 'Dashboard',
+    feature: 'dashboard',
+  },
+  {
+    path: '/discover',
+    text: 'Discover',
+    feature: 'discover',
+  },
+  {
+    path: '/explorer',
+    text: 'Explore',
+    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
+  },
+  {
+    path: '/analyze',
+    text: 'Analyze',
+    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
+  },
+  {
+    path: '/dataset',
+    text: 'Manage Datasets',
+    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.NAMED_DATASET],
+  },
   {
     path: '/admin/requests',
     text: 'Data Requests',
-    privilege: PicsurePrivileges.DATA_ADMIN,
+    privilege: [PicsurePrivileges.DATA_ADMIN],
     feature: 'dataRequests',
   },
   {
     path: '/admin',
     text: 'Configuration',
-    privilege: PicsurePrivileges.SUPER,
+    privilege: [PicsurePrivileges.SUPER],
     children: [
-      { path: '/admin/authorization', text: 'Authorization', privilege: PicsurePrivileges.SUPER },
-      { path: '/admin/authentication', text: 'Authentication', privilege: PicsurePrivileges.SUPER },
+      { path: '/admin/authorization', text: 'Authorization', privilege: [PicsurePrivileges.SUPER] },
+      {
+        path: '/admin/authentication',
+        text: 'Authentication',
+        privilege: [PicsurePrivileges.SUPER],
+      },
     ],
   },
   { path: '/help', text: 'Help' },
@@ -200,6 +120,14 @@ export const features: Indexable = {
   },
   dataRequests: import.meta.env?.VITE_DATA_REQUESTS === 'true',
   genomicFilter: import.meta.env?.VITE_GENOMIC_FILTER === 'true',
+  requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
+  useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
+  discover: import.meta.env?.VITE_DISCOVER === 'true',
+  discoverFeautures: {
+    enableTour: import.meta.env?.EXPLORER_TOUR !== 'false',
+    distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
+  },
+  dashboard: import.meta.env?.VITE_DASHBOARD === 'true',
 };
 
 export const settings: Indexable = {
@@ -216,8 +144,10 @@ export const settings: Indexable = {
 };
 
 export const resources = {
-  hpds: import.meta.env?.VITE_RESOURCE_HPDS || '',
-  Visualizer: import.meta.env?.VITE_RESOURCE_VIZ || '',
+  hpds: (import.meta.env?.VITE_RESOURCE_HPDS || '') as string,
+  openHPDS: (import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '') as string,
+  visualization: (import.meta.env?.VITE_RESOURCE_VIZ || '') as string,
+  application: (import.meta.env?.VITE_RESOURCE_APP || '') as string,
 };
 
 export const auth = {

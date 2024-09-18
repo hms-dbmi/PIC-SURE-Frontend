@@ -1,10 +1,9 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
   import OptionsSelectionList from '../OptionsSelectionList.svelte';
-  import FilterStore from '$lib/stores/Filter';
+  import { addFilter } from '$lib/stores/Filter';
   import { activeRow } from '$lib/stores/ExpandableRow';
   import { ProgressRadial, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
-  let { addFilter } = FilterStore;
   import { onMount } from 'svelte';
   import type { Filter } from '$lib/models/Filter';
   import {
@@ -145,6 +144,7 @@
           bind:unselectedOptions
           bind:selectedOptions
           bind:currentlyLoading={loading}
+          allOptions={data?.values}
           on:scroll={(event) => getNextValues(event.detail.search)}
         />
       </div>

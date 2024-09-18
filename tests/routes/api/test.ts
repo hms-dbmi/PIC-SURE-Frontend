@@ -11,6 +11,7 @@ test.describe('API page', () => {
     await mockApiSuccess(context, '*/**/psama/role', mockRoles);
   });
   test('Has expected error message', async ({ page }) => {
+    console.log(branding);
     // Given
     await mockApiFail(page, '*/**/psama/user/me?hasToken', 'accessdenied');
     await page.goto('/analyze');
@@ -19,7 +20,7 @@ test.describe('API page', () => {
     // Then
     await expect(errorAlert).toBeVisible();
   });
-  branding.apiPage.cards.forEach((card) => {
+  branding?.apiPage?.cards?.forEach((card) => {
     test(`Has expect card, ${card.header} from branding`, async ({ page }) => {
       // Given
       await page.goto('/analyze');

@@ -3,6 +3,7 @@ import { test } from '../../../custom-context';
 import {
   conceptsDetailPath,
   detailResponseCat,
+  detailResponseCat2,
   searchResults as mockData,
   searchResultPath,
 } from '../../../mock-data';
@@ -138,6 +139,40 @@ test.describe('OptionaSelectionList', () => {
       await expect(option).toBeChecked();
       await expect(option).toHaveText(dataValues.shift() || '');
     }
+    const optionContainer = component.locator('#options-container');
+    await expect(optionContainer).toBeEmpty();
+  });
+  test('Clicking select all button selects all options in the data', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(`${conceptsDetailPath}${detailResponseCat2.dataset}`, async (route: Route) =>
+      route.fulfill({ json: detailResponseCat2 }),
+    );
+    await page.route('*/**/picsure/query/sync', async (route: Route) =>
+      route.fulfill({ body: '9999' }),
+    );
+    await page.goto('/explorer?search=somedata');
+    const dataValues = mockData.content[2].values || [];
+
+    // When
+    await clickNthFilterIcon(page, 2);
+
+    // Select All
+    const component = page.getByTestId('optional-selection-list');
+    const selectAllButton = component.locator('#select-all');
+    await selectAllButton.click();
+
+    const selectedOptionContainer = component.locator('#selected-options-container');
+    const selectedOptions = await selectedOptionContainer.getByRole('listitem').all();
+
+    // Then
+    await expect(selectedOptionContainer).toBeVisible();
+    for (const option of selectedOptions) {
+      await expect(option).toBeVisible();
+      await expect(option).toBeChecked();
+      await expect(option).toHaveText(dataValues.shift() || '');
+    }
+    expect(selectedOptions.length === dataValues.length);
     const optionContainer = component.locator('#options-container');
     await expect(optionContainer).toBeEmpty();
   });

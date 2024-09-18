@@ -1,7 +1,11 @@
 import { expect } from '@playwright/test';
 import { test, mockApiSuccess } from '../../../custom-context';
 import { geneValues } from '../../../mock-data';
-import { branding } from '../../../../src/lib/configuration';
+import * as config from '../../../../src/lib/assets/configuration.json' assert { type: 'json' };
+import type { Branding } from '$lib/configuration';
+//TypeScript is confused by the JSON import so I am fxing it here
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
@@ -91,7 +95,7 @@ test.describe('Frequency selection', () => {
 
     // Then
     await expect(page.getByTestId('freq-help-popup-content')).toContainText(
-      branding.help.popups.genomicFilter.frequency,
+      branding?.help?.popups?.genomicFilter?.frequency,
     );
   });
 });
@@ -108,7 +112,7 @@ test.describe('Consequnce selection', () => {
 
     // Then
     await expect(page.getByTestId('cons-help-popup-content')).toContainText(
-      branding.help.popups.genomicFilter.consequence,
+      branding?.help?.popups?.genomicFilter?.consequence,
     );
   });
   test('Selecting parent node selects all children nodes', async ({ page }) => {

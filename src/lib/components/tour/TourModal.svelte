@@ -27,7 +27,7 @@
       <header data-testid="modal-wrapper-header" class="text-2xl font-bold">
         <button class="float-right" on:click={modalStore.close}>&times;</button>
       </header>
-      {branding.explorePage.tourSearchIntro}
+      <stronng>{branding.explorePage.tourSearchIntro}</stronng>
       {#if keyboardInstructions}
         <p>
           Once the tour starts you can click anywhere or press the escape key to stop the tour at

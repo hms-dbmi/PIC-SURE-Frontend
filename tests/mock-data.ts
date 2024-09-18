@@ -1,5 +1,7 @@
 import type { User } from '../src/lib/models/User';
 import { PicsurePrivileges } from '../src/lib/models/Privilege';
+import type { QueryInterface } from '$lib/models/query/Query';
+import type { DashboardResp } from '$lib/stores/Dashboard';
 
 export const HPDS = process.env.VITE_RESOURCE_HPDS;
 
@@ -8,7 +10,7 @@ export const mockToken =
 export const mockExpiredToken =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6MTYxMjE2NDk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.kzaW-ZkhCPlTgdGQQAz_CA1ZB80PpZ5aiRa2lj46hbw';
 export const mockLoginResponse =
-  '/login/loading?redirectTo=/&provider=AUTH0#access_token=' +
+  '/login/loading/#access_token=' +
   mockToken +
   '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G';
 
@@ -37,6 +39,32 @@ export const datasets = [
   },
 ];
 
+export const mockDashboard: DashboardResp = {
+  columns: [
+    { label: 'Name', dataElement: 'name' },
+    { label: 'Link', dataElement: 'link' },
+  ],
+  rows: [
+    { name: 'A', link: 'foo.invalid' },
+    { name: 'B', link: 'bar.invalid' },
+  ],
+};
+
+const mockQueryTemplate: QueryInterface = {
+  categoryFilters: {},
+  numericFilters: {},
+  requiredFields: [],
+  anyRecordOf: [],
+  variantInfoFilters: [
+    {
+      categoryVariantInfoFilters: {},
+      numericVariantInfoFilters: {},
+    },
+  ],
+  expectedResultType: 'COUNT',
+  fields: [],
+};
+
 export const picsureUser: User = {
   uuid: '1234',
   email: 'test@pic-sure.org',
@@ -44,10 +72,11 @@ export const picsureUser: User = {
   // expired token
   token: mockToken,
   acceptedTOS: true,
+  queryTemplate: mockQueryTemplate,
 };
 
 export const searchResultPath =
-  '*/**/picsure/proxy/dictionary-api/concepts?page_number=0&page_size=5';
+  '*/**/picsure/proxy/dictionary-api/concepts?page_number=0&page_size=10';
 export const facetResultPath = '*/**/picsure/proxy/dictionary-api/facets/';
 export const conceptsDetailPath = '*/**/picsure/proxy/dictionary-api/concepts/detail/'; // + name
 
@@ -99,9 +128,37 @@ export const searchResults = {
       conceptPath: '\\TEST\\questionnaire\\disease\\Any tests today?\\',
       name: 'MCQ300a',
       display: 'Any tests today?',
-      dataset: '2',
+      dataset: 'test_data_set',
       description: 'This is a test description?',
-      values: ['Yes', 'No'],
+      values: [
+        'Yes',
+        'No',
+        '1',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '7',
+        '8',
+        '9',
+        '10',
+        '11',
+        '12',
+        '13',
+        '14',
+        '15',
+        '16',
+        '17',
+        '18',
+        '19',
+        '20',
+        '21',
+        '22',
+        '23',
+        '24',
+        '25',
+      ],
       children: null,
       meta: null,
       type: 'Categorical',
@@ -260,10 +317,66 @@ export const detailResponseCat2 = {
   display: 'Any tests today?',
   dataset: 'test_data_set',
   description: 'This is a test description?',
-  values: ['Yes', 'No'],
+  values: [
+    'Yes',
+    'No',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+    '10',
+    '11',
+    '12',
+    '13',
+    '14',
+    '15',
+    '16',
+    '17',
+    '18',
+    '19',
+    '20',
+    '21',
+    '22',
+    '23',
+    '24',
+    '25',
+  ],
   children: null,
   meta: {
-    values: ['Yes', 'No'],
+    values: [
+      'Yes',
+      'No',
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      '10',
+      '11',
+      '12',
+      '13',
+      '14',
+      '15',
+      '16',
+      '17',
+      '18',
+      '19',
+      '20',
+      '21',
+      '22',
+      '23',
+      '24',
+      '25',
+    ],
     description: 'This is a test description?',
   },
 };
@@ -320,8 +433,7 @@ export const facetsResponse = [
       {
         name: 'study2',
         display: 'National Health and Nutrition Examination Survey',
-        fullName: 'study2 full name',
-        description: null,
+        description: 'study2 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -330,8 +442,7 @@ export const facetsResponse = [
       {
         name: 'phs002715',
         display: 'NSRR CFS',
-        fullName: 'NSRR CFS full name',
-        description: null,
+        description: 'NSRR CFS full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -340,8 +451,7 @@ export const facetsResponse = [
       {
         name: 'phs000284',
         display: 'CFS',
-        description: null,
-        fullName: 'CFS full name',
+        description: 'CFS full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -350,8 +460,7 @@ export const facetsResponse = [
       {
         name: 'phs002385',
         display: 'HCT_for_SCD',
-        description: null,
-        fullName: 'HCT_for_SCD full name',
+        description: 'HCT_for_SCD full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -360,8 +469,7 @@ export const facetsResponse = [
       {
         name: 'study1',
         display: 'Study Display 1',
-        fullName: 'study1 full name',
-        description: null,
+        description: 'study1 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -370,8 +478,7 @@ export const facetsResponse = [
       {
         name: 'study3',
         display: 'Study Display 3',
-        fullName: 'study3 full name',
-        description: null,
+        description: 'study3 full name',
         count: 5,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -380,8 +487,7 @@ export const facetsResponse = [
       {
         name: 'study4',
         display: 'Study Display 4',
-        fullName: 'study4 full name',
-        description: null,
+        description: 'study4 full name',
         count: 2,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -390,8 +496,7 @@ export const facetsResponse = [
       {
         name: 'study5',
         display: 'Study Display 5',
-        fullName: 'study5 full name',
-        description: null,
+        description: 'study5 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -400,8 +505,7 @@ export const facetsResponse = [
       {
         name: 'study6',
         display: 'Study Display 6',
-        fullName: 'study6 full name',
-        description: null,
+        description: 'study6 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -410,8 +514,7 @@ export const facetsResponse = [
       {
         name: 'study7',
         display: 'Study Display 7',
-        description: null,
-        fullName: 'study7 full name',
+        description: 'study7 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -420,8 +523,7 @@ export const facetsResponse = [
       {
         name: 'study8',
         display: 'Study Display 8',
-        fullName: 'study8 full name',
-        description: null,
+        description: 'study8 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -430,8 +532,7 @@ export const facetsResponse = [
       {
         name: 'study9',
         display: 'Study Display 9',
-        fullName: 'study9 full name',
-        description: null,
+        description: 'study9 full name',
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
@@ -447,8 +548,7 @@ export const facetsResponse = [
       {
         name: 'facet1',
         display: 'Facet 1',
-        fullName: 'facet1 full name',
-        description: null,
+        description: 'facet1 full name',
         count: 1,
         children: null,
         category: 'another_category_name',
@@ -457,8 +557,7 @@ export const facetsResponse = [
       {
         name: 'facet2',
         display: 'Facet 2',
-        fullName: 'facet2 full name',
-        description: null,
+        description: 'facet2 full name',
         count: 4,
         children: null,
         category: 'another_category_name',
@@ -467,8 +566,7 @@ export const facetsResponse = [
       {
         name: 'facet3',
         display: 'This is a really long facet name for testing',
-        fullName: 'facet3 full name',
-        description: null,
+        description: 'facet3 full name',
         count: 1,
         children: null,
         category: 'another_category_name',
