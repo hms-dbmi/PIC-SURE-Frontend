@@ -63,6 +63,7 @@
     console.log('event:next', e);
     if (e.detail.step === 0 && !showTreeStep) {
       // nothing needs to be done here
+      return;
     }
     if (e.detail.step === 1 && showTreeStep) {
       console.log('event:next', e);
