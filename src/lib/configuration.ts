@@ -102,6 +102,7 @@ export const routes: Route[] = [
       },
     ],
   },
+  { path: '/admin/users', text: 'Manage Users', privilege: [PicsurePrivileges.ADMIN] },
   { path: '/help', text: 'Help' },
 ];
 
