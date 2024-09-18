@@ -1,11 +1,12 @@
 <script>
-  import { filters, totalParticipants } from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
+  import { filters, totalParticipants } from '$lib/stores/Filter';
+  import {isNumberObject} from "node:util/types";
   let { exports } = ExportStore;
 
   $: participantsCount = $totalParticipants;
   $: variablesCount = $filters.length + $exports.length;
-  $: dataPoints = participantsCount * variablesCount;
+  $: dataPoints = isNumberObject(participantsCount) ? participantsCount * variablesCount : 0;
 </script>
 
 <div id="stats" class="w-full flex justify-evenly mb-5 pb-2">

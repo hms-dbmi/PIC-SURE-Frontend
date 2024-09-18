@@ -18,9 +18,8 @@
   import {CodeBlock, ProgressRadial, Tab, TabGroup} from '@skeletonlabs/skeleton';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExportStore from '$lib/stores/Export';
-  import FilterStore from '$lib/stores/Filter';
+  import { filters, totalParticipants } from '$lib/stores/Filter';
   let { exports } = ExportStore;
-  let { filters, totalParticipants } = FilterStore;
   import { state } from '$lib/stores/Stepper';
   import { goto } from '$app/navigation';
   import { type DataSet, type DatasetError } from '$lib/models/Dataset';
@@ -171,7 +170,8 @@
   let tabIndex: number = 0;
 
   function dataLimitExceeded(): boolean {
-    let totalDataPoints: number = $totalParticipants + $filters.length + $exports.length;
+    let participantCount: number = (typeof $totalParticipants === 'number') ? $totalParticipants : 0;
+    let totalDataPoints: number = participantCount + $filters.length + $exports.length;
     return totalDataPoints > 1000000;
   }
 </script>
