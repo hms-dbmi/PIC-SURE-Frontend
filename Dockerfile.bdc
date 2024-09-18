@@ -5,6 +5,7 @@ COPY package*.json .
 COPY .env .
 RUN npm ci
 COPY . .
+RUN sed -i 's/data-theme="[^"]*"/data-theme="bdc-theme"/' ./src/app.html
 RUN npm run build
 RUN npm ci --omit dev
 
