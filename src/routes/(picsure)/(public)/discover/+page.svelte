@@ -2,6 +2,7 @@
   import Content from '$lib/components/Content.svelte';
   import { branding } from '$lib/configuration';
   import Explorer from '$lib/components/explorer/Explorer.svelte';
+  import openTour from '$lib/assets/testConfiguration.json';
 </script>
 
 <svelte:head>
@@ -9,5 +10,5 @@
 </svelte:head>
 
 <Content full>
-  <Explorer />
+  <Explorer tourConfig={openTour} />
 </Content>

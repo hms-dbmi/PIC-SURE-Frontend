@@ -17,6 +17,8 @@
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  export let tourConfig: any;
 
   let { searchTerm, search, selectedFacets, error } = SearchStore;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
@@ -114,7 +116,7 @@
     {/if}
     {#if features.explorer.enableTour}
       <div id="explorer-tour" class="text-center mt-4">
-        <ExplorerTour />
+        <ExplorerTour tourConfig={tourConfig}/>
       </div>
     {/if}
   </div>
