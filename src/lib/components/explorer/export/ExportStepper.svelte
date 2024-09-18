@@ -39,6 +39,8 @@
     { dataElement: 'type', label: 'Type', sort: true },
   ];
 
+  const MAX_DATA_POINTS_FOR_EXPORT = 1000000;
+
   async function download(): Promise<void> {
     try {
       const res = await api.post(`picsure/query/${datasetId}/result`, {});
@@ -155,9 +157,9 @@
   let tabIndex: number = 0;
 
   function dataLimitExceeded(): boolean {
-    let participantCount: number = typeof $totalParticipants === 'number' ? $totalParticipants : 0;
+    let participantCount: number = typeof $totalParticipants === 'number' ? $totalParticipants : MAX_DATA_POINTS_FOR_EXPORT + 1;
     let totalDataPoints: number = participantCount + $filters.length + $exports.length;
-    return totalDataPoints > 1000000;
+    return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
   }
 </script>
 
@@ -342,7 +344,7 @@ with open(token_file, "r") as f:
 
 connection = PicSureClient.Client.connect(url = PICSURE_network_URL, token = my_token)
 
-queryID = THIS SHOULD DISPLAY THE GENERATED DATASET ID
+queryID = "${datasetId}"
 
 results = resource.retrieveQueryResults(queryID)
 
@@ -368,7 +370,7 @@ token <- scan(token_file, what = "character")
 session <- picsure::bdc.initializeSession(PICSURE_network_URL, token)
 session <- picsure::bdc.setResource(session = session)
 
-queryID <- THIS SHOULD DISPLAY THE GENERATED DATASET ID
+queryID <- "${datasetId}"
 
 results <- picsure::getResultByQueryUUID(session, queryID)`}
                       ></CodeBlock>
