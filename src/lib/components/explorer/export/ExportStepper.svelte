@@ -1,9 +1,3 @@
-<script lang="ts" context="module">
-  export interface ExportStepperContext {
-    exportType: string;
-  }
-</script>
-
 <script lang="ts">
   import * as api from '$lib/api';
   import { browser } from '$app/environment';
