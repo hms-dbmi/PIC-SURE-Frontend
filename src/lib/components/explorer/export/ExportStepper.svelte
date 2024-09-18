@@ -9,14 +9,17 @@
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import { CodeBlock, ProgressRadial, Tab, TabGroup } from '@skeletonlabs/skeleton';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExportStore from '$lib/stores/Export';
+  import { filters, totalParticipants } from '$lib/stores/Filter';
   let { exports } = ExportStore;
   import { state } from '$lib/stores/Stepper';
   import { goto } from '$app/navigation';
-  import { type DataSet, type DatasetError } from '$lib/models/Dataset';
+  import { type DatasetError } from '$lib/models/Dataset';
   import { createDatasetName } from '$lib/services/datasets';
+  import CardButton from '$lib/components/buttons/CardButton.svelte';
+  import type { ExpectedResultType } from '$lib/models/query/Query.ts';
 
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
@@ -27,7 +30,6 @@
   let picsureResultId: string = '';
   let lockDownload = true;
   let error: string = '';
-  let namedDataset: DataSet;
   $: datasetId = '';
   $: canDownload = true;
   $: apiExport = false;
@@ -37,21 +39,24 @@
     { dataElement: 'type', label: 'Type', sort: true },
   ];
 
-  async function onCompleteHandler(): Promise<void> {
+  // todo: make configurable
+  const MAX_DATA_POINTS_FOR_EXPORT = 1000000;
+
+  async function download(): Promise<void> {
     try {
       const res = await api.post(`picsure/query/${datasetId}/result`, {});
       const responseDataUrl = URL.createObjectURL(new Blob([res], { type: 'octet/stream' }));
       if (browser) {
         const link = document.createElement('a');
         link.href = responseDataUrl;
-        link.download = 'pic-sure-data.csv';
+        if (query.query.expectedResultType === 'DATAFRAME') {
+          link.download = 'pic-sure-data.csv';
+        } else if (query.query.expectedResultType === 'DATAFRAME_PFB') {
+          link.download = 'pic-sure-data.avro';
+        }
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-      }
-      if (!apiExport) {
-        $state.current = 0;
-        goto('/dataset/' + namedDataset.uuid);
       }
     } catch (error) {
       console.error('Error in onCompleteHandler', error);
@@ -60,12 +65,15 @@
   function onNextHandler(e: CustomEvent): void {
     console.log('event:next', e);
     if (e.detail.step === 0 && !showTreeStep) {
-      preparePromise = handleFirstStep();
+      // nothing needs to be done here
+      return;
     }
     if (e.detail.step === 1 && showTreeStep) {
       console.log('event:next', e);
       //TODO: Load tree
     } else if ((e.detail.step === 1 && !showTreeStep) || (showTreeStep && e.detail.step === 2)) {
+      preparePromise = submitQuery();
+    } else if ((e.detail.step === 2 && !showTreeStep) || (showTreeStep && e.detail.step === 3)) {
       createNamedDataset();
     }
     if (e.detail.state.total - 1 === e.detail.step + 1) {
@@ -93,9 +101,8 @@
     console.log('event:next', e);
   }
 
-  async function handleFirstStep(): Promise<void> {
+  async function submitQuery(): Promise<void> {
     try {
-      query.query.expectedResultType = 'DATAFRAME';
       query.query.fields = $exports.map((exp) => exp.conceptPath);
       const res = await api.post('picsure/query', query);
       console.log('res', res);
@@ -110,7 +117,7 @@
   async function createNamedDataset() {
     try {
       const datasetName = encodeURIComponent(datasetNameInput);
-      namedDataset = await createDatasetName(datasetId, datasetName);
+      await createDatasetName(datasetId, datasetName);
     } catch (err) {
       if (err instanceof Object) {
         const errObj = err as DatasetError;
@@ -135,33 +142,70 @@
     }
     return 'ERROR';
   }
+
+  export let activeType: ExpectedResultType;
+  function selectExportType(exportType: ExpectedResultType) {
+    query.query.expectedResultType = exportType;
+    activeType = exportType;
+  }
+
+  function onComplete() {
+    goto('/explorer');
+  }
+
+  let tabSet: number = 0;
+  let tabIndex: number = 0;
+
+  function dataLimitExceeded(): boolean {
+    let participantCount: number =
+      typeof $totalParticipants === 'number' ? $totalParticipants : MAX_DATA_POINTS_FOR_EXPORT + 1;
+    let totalDataPoints: number = participantCount + $filters.length + $exports.length;
+    return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
+  }
 </script>
 
 <Stepper
   class="w-full h-full m-8"
-  on:complete={onCompleteHandler}
+  on:complete={onComplete}
   on:next={onNextHandler}
   on:step={onStepHandler}
   on:back={onBackHandler}
-  buttonCompleteLabel="Export Data"
+  buttonCompleteLabel="Done"
 >
-  <Step>
+  <Step locked={dataLimitExceeded()}>
     <svelte:fragment slot="header">Review Cohort Details:</svelte:fragment>
     <div id="first-step-container" class="flex flex-col w-full h-full items-center">
       <Summary />
       <section class="w-full">
-        {#await preparePromise}
-          <ProgressRadial width="w-4" />
-          <div>Preparing your dataset...</div>
-        {:catch}
-          <div class="flex justify-center mb-4">
-            <ErrorAlert
-              title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
-                contact an administrator."
-            />
-          </div>
-        {/await}
-        <Datatable tableName="ExportSummary" data={rows} {columns} />
+        {#if dataLimitExceeded()}
+          <aside class="alert variant-filled-error">
+            <div><i class="fa-solid fa-triangle-exclamation text-4xl"></i></div>
+            <div class="alert-message">
+              <h3 class="h3">Warning</h3>
+              <p>
+                Warning: Your selected data exceeds 1,000,000 estimated data points, which is too
+                large to export. Please reduce the data selection or the number of selected
+                participants.
+              </p>
+            </div>
+            <div class="alert-actions dark">
+              <button class="btn variant-filled" on:click={() => onComplete()}>Back</button>
+            </div>
+          </aside>
+        {:else}
+          {#await preparePromise}
+            <ProgressRadial width="w-4" />
+            <div>Preparing your dataset...</div>
+          {:catch}
+            <div class="flex justify-center mb-4">
+              <ErrorAlert
+                title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
+                  contact an administrator."
+              />
+            </div>
+          {/await}
+          <Datatable tableName="ExportSummary" data={rows} {columns} />
+        {/if}
       </section>
     </div>
   </Step>
@@ -181,13 +225,41 @@
       </section>
     </Step>
   {/if}
+  <Step locked={activeType === undefined}>
+    <svelte:fragment slot="header">Review and Save Dataset:</svelte:fragment>
+    <section class="flex flex-col w-full h-full items-center">
+      <Summary />
+      <div class="grid gap-10 grid-cols-2">
+        <CardButton
+          data-testid="csv-export-option"
+          title="Export as Data Frame or CSV"
+          subtitle="Export data as a Python or R data frame or a comma-separated values file"
+          size="other"
+          class="card variant-ringed-primary"
+          active={activeType === 'DATAFRAME'}
+          on:click={() => selectExportType('DATAFRAME')}
+        ></CardButton>
+        <CardButton
+          data-testid="csv-export-option"
+          title="Export as PFB"
+          subtitle="Export data in Portable Format for Biomedical Data file format"
+          size="other"
+          class="card variant-ringed-primary"
+          active={activeType === 'DATAFRAME_PFB'}
+          on:click={() => selectExportType('DATAFRAME_PFB')}
+        ></CardButton>
+      </div>
+    </section>
+  </Step>
   <Step locked={!datasetNameInput || datasetNameInput.length < 2}>
     <svelte:fragment slot="header">Save Dataset ID:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
+      <Summary />
       <div class="w-full h-full m-2 card p-4">
         <header class="card-header">
           Save the information in your final data export by clicking the Save Dataset ID button.
-          Navigate to the Dataset Management tab to view or manage your Dataset IDs.
+          Navigate to the <a class="anchor" href="/dataset">Manage Datasets page</a> to view or manage
+          your Dataset IDs.
         </header>
         <hr />
         {#if error}
@@ -222,63 +294,197 @@
     </section>
   </Step>
   <Step locked={lockDownload}>
-    <svelte:fragment slot="header">Export Data:</svelte:fragment>
+    <svelte:fragment slot="header">Start Analysis:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
-      <Summary />
-      <div class="w-full h-full m-2 card p-4">
-        <div class="flex justify-center">
-          {#if canDownload}
-            {#await statusPromise}
-              <div class="flex justify-center items-center">
-                <ProgressRadial width="w-4" />
-                <div>Prepareing your dataset...</div>
-              </div>
-            {:then status}
-              <div class="flex flex-col items-center justify-center">
-                <p>
-                  Click the “Export Data” button below to download your participant-level cohort
-                  data for research analysis.
+      <div class="flex justify-center">
+        {#if canDownload}
+          {#await statusPromise}
+            <div class="flex justify-center items-center">
+              <ProgressRadial width="w-4" />
+              <div>Preparing your dataset...</div>
+            </div>
+          {:then}
+            {#if query.query.expectedResultType === 'DATAFRAME'}
+              <section class="flex flex-col gap-8">
+                <p class="mt-4">
+                  To export data and start your analysis, copy and paste the following code in an
+                  analysis workspace, such as BioData Catalyst Powered by Seven Bridges or BioData
+                  Catalyst Powered by Terra, to connect to PIC-SURE and save the data frame or
+                  download the file. Note that you will need your personal access token to complete
+                  the connection to PIC-SURE with code.
                 </p>
-                <div>
-                  Export Status: {status}
-                  <i
-                    class="fa-solid {status === 'ERROR'
-                      ? 'fa-circle-xmark text-error-500'
-                      : 'fa-check-circle text-success-500'}"
-                  ></i>
+                <TabGroup class="card p-4">
+                  {#if query.query.expectedResultType === 'DATAFRAME'}
+                    <Tab bind:group={tabSet} name="python" value={tabIndex++}>Python</Tab>
+                    <Tab bind:group={tabSet} name="r" value={tabIndex++}>R</Tab>
+                  {/if}
+                  <Tab bind:group={tabSet} name="download" value={tabIndex++}>Download</Tab>
+                  <svelte:fragment slot="panel">
+                    {#if tabSet === 0}
+                      <CodeBlock
+                        language="python"
+                        lineNumbers={true}
+                        buttonCopied="Copied!"
+                        code={`# Requires python 3.7 or later
+import sys
+import pandas as pd
+import matplotlib.pyplot as plt
+# BDC Powered by Terra users uncomment the following line to specify package install location
+# sys.path.insert(0, r"/home/jupyter/.local/lib/python3.7/site-packages")
+!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-client.git
+!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-adapter-hpds.git
+!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-biodatacatalyst-python-adapter-hpds.git
+import PicSureHpdsLib
+import PicSureClient
+
+PICSURE_network_URL = "https://picsure.biodatacatalyst.nhlbi.nih.gov/picsure"
+
+token_file = "token.txt"
+with open(token_file, "r") as f:
+    my_token = f.read()
+
+connection = PicSureClient.Client.connect(url = PICSURE_network_URL, token = my_token)
+
+queryID = "${datasetId}"
+
+results = resource.retrieveQueryResults(queryID)
+
+from io import StringIO
+df_UI = pd.read_csv(StringIO(results), low_memory=False)`}
+                      ></CodeBlock>
+                    {:else if tabSet === 1}
+                      <CodeBlock
+                        language="r"
+                        lineNumbers={true}
+                        code={`# Requires R 3.4 or later
+### Uncomment this code if you are not using the PIC-SURE environment in *BDC-Seven Bridges*, or if you do not have all the necessary dependencies installed.
+#install.packages("devtools")
+
+Sys.setenv(TAR = "/bin/tar")
+options(unzip = "internal")
+devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", ref="main", force=T, quiet=FALSE)
+library(dplyr)
+
+PICSURE_network_URL = "https://picsure.biodatacatalyst.nhlbi.nih.gov/picsure"
+token_file <- "token.txt"
+token <- scan(token_file, what = "character")
+session <- picsure::bdc.initializeSession(PICSURE_network_URL, token)
+session <- picsure::bdc.setResource(session = session)
+
+queryID <- "${datasetId}"
+
+results <- picsure::getResultByQueryUUID(session, queryID)`}
+                      ></CodeBlock>
+                    {:else if tabSet === 2}
+                      <div>
+                        <button class="btn variant-filled-primary" on:click={() => download()}
+                          ><i class="fa-solid fa-download mr-1"></i>Download as CSV</button
+                        >
+                      </div>
+                    {/if}
+                  </svelte:fragment>
+                </TabGroup>
+                <p>
+                  Copy your personal access token and save as a text file called “token.txt” in the
+                  same working directory to execute the code above.
+                </p>
+                <div class="flex justify-center">
+                  <UserToken />
                 </div>
-              </div>
-            {:catch}
-              <div class="flex justify-center">
-                <ErrorAlert
-                  title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
-                contact an administrator."
-                />
-              </div>
-            {/await}
-          {/if}
-        </div>
-        {#if apiExport}
-          <div class="flex flex-col justify-center items-center">
+                <div class="flex justify-center">
+                  <a
+                    class="btn variant-ghost-primary m-2 hover:variant-filled-primary"
+                    href="https://platform.sb.biodatacatalyst.nhlbi.nih.gov/u/biodatacatalyst/data-export-from-the-pic-sure-ui"
+                    target="_blank">Go to Seven Bridges</a
+                  >
+                  <a
+                    class="btn variant-ghost-primary m-2 hover:variant-filled-primary"
+                    href="https://terra.biodatacatalyst.nhlbi.nih.gov/"
+                    target="_blank">Go to Terra</a
+                  >
+                </div>
+              </section>
+              <!--<section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
+                  {#each branding.apiPage.cards as card}
+                    <a
+                            href={card.link}
+                            target={card.link.startsWith('http') ? '_blank' : '_self'}
+                            class="pic-sure-info-card p-4 basis-2/4"
+                    >
+                      <div class="card card-hover">
+                        <header class="card-header flex flex-col items-center">
+                          <h4 class="my-1" data-testid={card.header}>{card.header}</h4>
+                          <hr class="!border-t-2" />
+                        </header>
+                        <section class="p-4 whitespace-pre-wrap flex flex-col" data-testid={card.body}>
+                          <div>{card.body}</div>
+                          <div class="flex justify-center">
+                            <div class="btn variant-filled-primary mt-3 w-fit">Learn More</div>
+                          </div>
+                        </section>
+                      </div>
+                    </a>
+                  {/each}
+                </section>-->
+              <!--<div class="flex flex-col items-center justify-center">
+                  <div>
+                    Export Status: {status}
+                    <i
+                      class="fa-solid {status === 'ERROR'
+                        ? 'fa-circle-xmark text-error-500'
+                        : 'fa-check-circle text-success-500'}"
+                    ></i>
+                  </div>
+                </div>-->
+            {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
+              <section class="flex flex-col gap-8">
+                <div class="flex justify-center mt-4">
+                  Use the option below to download your selected data in the PFB format.
+                </div>
+                <div class="grid grid-cols-3">
+                  <div></div>
+                  <div>
+                    <button
+                      class="flex-initial w-64 btn variant-filled-primary"
+                      on:click={() => download()}
+                      ><i class="fa-solid fa-download"></i>Download as PFB</button
+                    >
+                  </div>
+                  <div></div>
+                </div>
+              </section>
+            {/if}
+          {:catch e}
             <div class="flex justify-center">
-              Use your personal access token and the dataset ID to export your participant-level
-              cohort data using the PIC-SURE API.
+              <ErrorAlert
+                title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
+                contact an administrator."
+              />
+              <div class="hidden">{e}</div>
             </div>
-            <UserToken />
-            <div class="flex items-center m-4">
-              <div class="flex items-center">
-                <label for="dataset-id" class="font-bold ml-4 mr-2">Dataset ID:</label>
-                <div id="dataset-id" class="mr-4">{datasetId}</div>
-                <CopyButton itemToCopy={datasetId} />
-              </div>
-            </div>
-            <p>
-              Navigate to the <a class="anchor" href="/api">API page</a> to view examples and learn more
-              about the PIC-SURE API.
-            </p>
-          </div>
+          {/await}
         {/if}
       </div>
+      {#if apiExport}
+        <div class="flex flex-col justify-center items-center">
+          <div class="flex justify-center">
+            Use your personal access token and the dataset ID to export your participant-level
+            cohort data using the PIC-SURE API.
+          </div>
+          <UserToken />
+          <div class="flex items-center m-4">
+            <div class="flex items-center">
+              <label for="dataset-id" class="font-bold ml-4 mr-2">Dataset ID:</label>
+              <div id="dataset-id" class="mr-4">{datasetId}</div>
+              <CopyButton itemToCopy={datasetId} />
+            </div>
+          </div>
+          <p>
+            Navigate to the <a class="anchor" href="/api">API page</a> to view examples and learn more
+            about the PIC-SURE API.
+          </p>
+        </div>
+      {/if}
     </section>
   </Step>
 </Stepper>

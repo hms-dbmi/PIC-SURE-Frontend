@@ -5,6 +5,7 @@ export type ExpectedResultType =
   | 'COUNT'
   | 'CROSS_COUNT'
   | 'DATAFRAME'
+  | 'DATAFRAME_PFB'
   | 'DATAFRAME_TIMESERIES'
   | 'AGGREGATE_VCF_EXCERPT'
   | 'VCF_EXCERPT'
