@@ -72,7 +72,6 @@
       console.log('event:next', e);
       //TODO: Load tree
     } else if ((e.detail.step === 1 && !showTreeStep) || (showTreeStep && e.detail.step === 2)) {
-      console.log('Export type selected');
       preparePromise = submitQuery();
     } else if ((e.detail.step === 2 && !showTreeStep) || (showTreeStep && e.detail.step === 3)) {
       createNamedDataset();
