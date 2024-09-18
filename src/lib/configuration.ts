@@ -30,7 +30,7 @@ export interface Branding {
 }
 
 export const branding: Branding = {
-  applicationName: 'PIC-SURE',
+  applicationName: 'PIC‑SURE',
   logo: {
     alt: import.meta.env?.VITE_LOGO_ALT || 'PIC‑SURE',
     src: import.meta.env?.VITE_LOGO || '',

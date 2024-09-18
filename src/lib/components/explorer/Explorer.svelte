@@ -8,7 +8,7 @@
 
   import type { Column } from '$lib/models/Tables';
   import type { SearchResult } from '$lib/models/Search';
-  import { features } from '$lib/configuration';
+  import { features, resources } from '$lib/configuration';
   import SearchStore from '$lib/stores/Search';
 
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
