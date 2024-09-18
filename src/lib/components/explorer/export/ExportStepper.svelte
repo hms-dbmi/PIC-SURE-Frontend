@@ -22,13 +22,10 @@
   let { exports } = ExportStore;
   import { state } from '$lib/stores/Stepper';
   import { goto } from '$app/navigation';
-  import { type DataSet, type DatasetError } from '$lib/models/Dataset';
+  import { type DatasetError } from '$lib/models/Dataset';
   import { createDatasetName } from '$lib/services/datasets';
-  import { writable, type Writable } from 'svelte/store';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
-  import { Option } from '$lib/models/GenomeFilter.ts';
   import type { ExpectedResultType } from '$lib/models/query/Query.ts';
-  import { branding } from '$lib/configuration.ts';
 
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
@@ -39,7 +36,6 @@
   let picsureResultId: string = '';
   let lockDownload = true;
   let error: string = '';
-  let namedDataset: DataSet;
   $: datasetId = '';
   $: canDownload = true;
   $: apiExport = false;
@@ -48,11 +44,6 @@
     { dataElement: 'description', label: 'Variable Description', sort: true },
     { dataElement: 'type', label: 'Type', sort: true },
   ];
-
-  const exportContext: () => Writable<ExportStepperContext> = () =>
-    writable({
-      exportType: '',
-    });
 
   async function download(): Promise<void> {
     try {
@@ -182,7 +173,6 @@
   on:next={onNextHandler}
   on:step={onStepHandler}
   on:back={onBackHandler}
-  context={exportContext}
   buttonCompleteLabel="Done"
 >
   <Step locked={dataLimitExceeded()}>
@@ -316,7 +306,7 @@
               <ProgressRadial width="w-4" />
               <div>Preparing your dataset...</div>
             </div>
-          {:then status}
+          {:then}
             {#if query.query.expectedResultType === 'DATAFRAME'}
               <section class="flex flex-col gap-8">
                 <p class="mt-4">
@@ -473,6 +463,7 @@ results <- picsure::getResultByQueryUUID(session, queryID)`}
                 title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
                 contact an administrator."
               />
+              <div class="hidden">{e}</div>
             </div>
           {/await}
         {/if}
