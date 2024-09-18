@@ -145,7 +145,6 @@
   function selectExportType(exportType: ExpectedResultType) {
     query.query.expectedResultType = exportType;
     activeType = exportType;
-    console.log('query.query.expectedResultType = ' + query.query.expectedResultType);
   }
 
   function onComplete() {
