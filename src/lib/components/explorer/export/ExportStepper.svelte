@@ -15,7 +15,7 @@
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import {CodeBlock, ProgressRadial, Tab, TabGroup} from '@skeletonlabs/skeleton';
+  import { CodeBlock, ProgressRadial, Tab, TabGroup } from '@skeletonlabs/skeleton';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExportStore from '$lib/stores/Export';
   import { filters, totalParticipants } from '$lib/stores/Filter';
@@ -24,11 +24,11 @@
   import { goto } from '$app/navigation';
   import { type DataSet, type DatasetError } from '$lib/models/Dataset';
   import { createDatasetName } from '$lib/services/datasets';
-  import {writable, type Writable} from "svelte/store";
-  import CardButton from "$lib/components/buttons/CardButton.svelte";
-  import {Option} from "$lib/models/GenomeFilter.ts";
-  import type {ExpectedResultType} from "$lib/models/query/Query.ts";
-  import {branding} from "$lib/configuration.ts";
+  import { writable, type Writable } from 'svelte/store';
+  import CardButton from '$lib/components/buttons/CardButton.svelte';
+  import { Option } from '$lib/models/GenomeFilter.ts';
+  import type { ExpectedResultType } from '$lib/models/query/Query.ts';
+  import { branding } from '$lib/configuration.ts';
 
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
@@ -49,10 +49,10 @@
     { dataElement: 'type', label: 'Type', sort: true },
   ];
 
-  const exportContext: () => Writable<ExportStepperContext> = () => writable({
-    exportType: ""
-  });
-
+  const exportContext: () => Writable<ExportStepperContext> = () =>
+    writable({
+      exportType: '',
+    });
 
   async function download(): Promise<void> {
     try {
@@ -83,7 +83,7 @@
       console.log('event:next', e);
       //TODO: Load tree
     } else if ((e.detail.step === 1 && !showTreeStep) || (showTreeStep && e.detail.step === 2)) {
-      console.log("Export type selected");
+      console.log('Export type selected');
       preparePromise = submitQuery();
     } else if ((e.detail.step === 2 && !showTreeStep) || (showTreeStep && e.detail.step === 3)) {
       createNamedDataset();
@@ -159,18 +159,18 @@
   function selectExportType(exportType: ExpectedResultType) {
     query.query.expectedResultType = exportType;
     activeType = exportType;
-    console.log("query.query.expectedResultType = " + query.query.expectedResultType)
+    console.log('query.query.expectedResultType = ' + query.query.expectedResultType);
   }
 
   function onComplete() {
-    goto("/explorer")
+    goto('/explorer');
   }
 
   let tabSet: number = 0;
   let tabIndex: number = 0;
 
   function dataLimitExceeded(): boolean {
-    let participantCount: number = (typeof $totalParticipants === 'number') ? $totalParticipants : 0;
+    let participantCount: number = typeof $totalParticipants === 'number' ? $totalParticipants : 0;
     let totalDataPoints: number = participantCount + $filters.length + $exports.length;
     return totalDataPoints > 1000000;
   }
@@ -195,7 +195,11 @@
             <div><i class="fa-solid fa-triangle-exclamation text-4xl"></i></div>
             <div class="alert-message">
               <h3 class="h3">Warning</h3>
-              <p>Warning: Your selected data exceeds 1,000,000 estimated data points, which is too large to export. Please reduce the data selection or the number of selected participants.</p>
+              <p>
+                Warning: Your selected data exceeds 1,000,000 estimated data points, which is too
+                large to export. Please reduce the data selection or the number of selected
+                participants.
+              </p>
             </div>
             <div class="alert-actions dark">
               <button class="btn variant-filled" on:click={() => onComplete()}>Back</button>
@@ -208,7 +212,7 @@
           {:catch}
             <div class="flex justify-center mb-4">
               <ErrorAlert
-                      title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
+                title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
                   contact an administrator."
               />
             </div>
@@ -234,29 +238,29 @@
       </section>
     </Step>
   {/if}
-  <Step locked="{activeType === undefined}">
+  <Step locked={activeType === undefined}>
     <svelte:fragment slot="header">Review and Save Dataset:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
       <Summary />
       <div class="grid gap-10 grid-cols-2">
         <CardButton
-                data-testid="csv-export-option"
-                title="Export as Data Frame or CSV"
-                subtitle="Export data as a Python or R data frame or a comma-separated values file"
-                size="other"
-                class="card variant-ringed-primary"
-                active={activeType === 'DATAFRAME'}
-                on:click={() => selectExportType("DATAFRAME")}>
-        </CardButton>
+          data-testid="csv-export-option"
+          title="Export as Data Frame or CSV"
+          subtitle="Export data as a Python or R data frame or a comma-separated values file"
+          size="other"
+          class="card variant-ringed-primary"
+          active={activeType === 'DATAFRAME'}
+          on:click={() => selectExportType('DATAFRAME')}
+        ></CardButton>
         <CardButton
-                data-testid="csv-export-option"
-                title="Export as PFB"
-                subtitle="Export data in Portable Format for Biomedical Data file format"
-                size="other"
-                class="card variant-ringed-primary"
-                active={activeType === 'DATAFRAME_PFB'}
-                on:click={() => selectExportType("DATAFRAME_PFB")}>
-        </CardButton>
+          data-testid="csv-export-option"
+          title="Export as PFB"
+          subtitle="Export data in Portable Format for Biomedical Data file format"
+          size="other"
+          class="card variant-ringed-primary"
+          active={activeType === 'DATAFRAME_PFB'}
+          on:click={() => selectExportType('DATAFRAME_PFB')}
+        ></CardButton>
       </div>
     </section>
   </Step>
@@ -267,7 +271,8 @@
       <div class="w-full h-full m-2 card p-4">
         <header class="card-header">
           Save the information in your final data export by clicking the Save Dataset ID button.
-          Navigate to the <a class="anchor" href="/dataset">Manage Datasets page</a> to view or manage your Dataset IDs.
+          Navigate to the <a class="anchor" href="/dataset">Manage Datasets page</a> to view or manage
+          your Dataset IDs.
         </header>
         <hr />
         {#if error}
@@ -304,35 +309,36 @@
   <Step locked={lockDownload}>
     <svelte:fragment slot="header">Start Analysis:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
-        <div class="flex justify-center">
-          {#if canDownload}
-            {#await statusPromise}
-              <div class="flex justify-center items-center">
-                <ProgressRadial width="w-4" />
-                <div>Preparing your dataset...</div>
-              </div>
-            {:then status}
-              {#if query.query.expectedResultType === 'DATAFRAME'}
-                <section class="flex flex-col gap-8">
-                  <p class="mt-4">
-                    To export data and start your analysis, copy and paste the following code in an analysis workspace,
-                    such as BioData Catalyst Powered by Seven Bridges or BioData Catalyst Powered by Terra, to connect
-                    to PIC-SURE and save the data frame or download the file. Note that you will need your personal
-                    access token to complete the connection to PIC-SURE with code.
-                  </p>
-                  <TabGroup class="card p-4">
-                    {#if query.query.expectedResultType === 'DATAFRAME'}
-                      <Tab bind:group={tabSet} name="python" value={tabIndex++}>Python</Tab>
-                      <Tab bind:group={tabSet} name="r" value={tabIndex++}>R</Tab>
-                    {/if}
-                    <Tab bind:group={tabSet} name="download" value={tabIndex++}>Download</Tab>
-                    <svelte:fragment slot="panel">
-                      {#if tabSet === 0}
-                        <CodeBlock
-                                language="python"
-                                lineNumbers={true}
-                                buttonCopied="Copied!"
-                                code={`# Requires python 3.7 or later
+      <div class="flex justify-center">
+        {#if canDownload}
+          {#await statusPromise}
+            <div class="flex justify-center items-center">
+              <ProgressRadial width="w-4" />
+              <div>Preparing your dataset...</div>
+            </div>
+          {:then status}
+            {#if query.query.expectedResultType === 'DATAFRAME'}
+              <section class="flex flex-col gap-8">
+                <p class="mt-4">
+                  To export data and start your analysis, copy and paste the following code in an
+                  analysis workspace, such as BioData Catalyst Powered by Seven Bridges or BioData
+                  Catalyst Powered by Terra, to connect to PIC-SURE and save the data frame or
+                  download the file. Note that you will need your personal access token to complete
+                  the connection to PIC-SURE with code.
+                </p>
+                <TabGroup class="card p-4">
+                  {#if query.query.expectedResultType === 'DATAFRAME'}
+                    <Tab bind:group={tabSet} name="python" value={tabIndex++}>Python</Tab>
+                    <Tab bind:group={tabSet} name="r" value={tabIndex++}>R</Tab>
+                  {/if}
+                  <Tab bind:group={tabSet} name="download" value={tabIndex++}>Download</Tab>
+                  <svelte:fragment slot="panel">
+                    {#if tabSet === 0}
+                      <CodeBlock
+                        language="python"
+                        lineNumbers={true}
+                        buttonCopied="Copied!"
+                        code={`# Requires python 3.7 or later
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -358,12 +364,12 @@ results = resource.retrieveQueryResults(queryID)
 
 from io import StringIO
 df_UI = pd.read_csv(StringIO(results), low_memory=False)`}
-                        ></CodeBlock>
-                      {:else if tabSet === 1}
-                        <CodeBlock
-                                language="r"
-                                lineNumbers={true}
-                                code={`# Requires R 3.4 or later
+                      ></CodeBlock>
+                    {:else if tabSet === 1}
+                      <CodeBlock
+                        language="r"
+                        lineNumbers={true}
+                        code={`# Requires R 3.4 or later
 ### Uncomment this code if you are not using the PIC-SURE environment in *BDC-Seven Bridges*, or if you do not have all the necessary dependencies installed.
 #install.packages("devtools")
 
@@ -381,27 +387,37 @@ session <- picsure::bdc.setResource(session = session)
 queryID <- THIS SHOULD DISPLAY THE GENERATED DATASET ID
 
 results <- picsure::getResultByQueryUUID(session, queryID)`}
-                        ></CodeBlock>
-                      {:else if tabSet ===2}
-                        <div>
-                          <button class="btn variant-filled-primary" on:click={() => download()}><i class="fa-solid fa-download mr-1"></i>Download as CSV</button>
-                        </div>
-                      {/if}
-                    </svelte:fragment>
-                  </TabGroup>
-                  <p>
-                    Copy your personal access token and save as a text file called “token.txt” in the same working
-                    directory to execute the code above.
-                  </p>
-                  <div class="flex justify-center">
-                    <UserToken />
-                  </div>
-                  <div class="flex justify-center">
-                    <a class="btn variant-ghost-primary m-2 hover:variant-filled-primary" href="https://platform.sb.biodatacatalyst.nhlbi.nih.gov/u/biodatacatalyst/data-export-from-the-pic-sure-ui" target="_blank">Go to Seven Bridges</a>
-                    <a class="btn variant-ghost-primary m-2 hover:variant-filled-primary" href="https://terra.biodatacatalyst.nhlbi.nih.gov/" target="_blank">Go to Terra</a>
-                  </div>
-                </section>
-                <!--<section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
+                      ></CodeBlock>
+                    {:else if tabSet === 2}
+                      <div>
+                        <button class="btn variant-filled-primary" on:click={() => download()}
+                          ><i class="fa-solid fa-download mr-1"></i>Download as CSV</button
+                        >
+                      </div>
+                    {/if}
+                  </svelte:fragment>
+                </TabGroup>
+                <p>
+                  Copy your personal access token and save as a text file called “token.txt” in the
+                  same working directory to execute the code above.
+                </p>
+                <div class="flex justify-center">
+                  <UserToken />
+                </div>
+                <div class="flex justify-center">
+                  <a
+                    class="btn variant-ghost-primary m-2 hover:variant-filled-primary"
+                    href="https://platform.sb.biodatacatalyst.nhlbi.nih.gov/u/biodatacatalyst/data-export-from-the-pic-sure-ui"
+                    target="_blank">Go to Seven Bridges</a
+                  >
+                  <a
+                    class="btn variant-ghost-primary m-2 hover:variant-filled-primary"
+                    href="https://terra.biodatacatalyst.nhlbi.nih.gov/"
+                    target="_blank">Go to Terra</a
+                  >
+                </div>
+              </section>
+              <!--<section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
                   {#each branding.apiPage.cards as card}
                     <a
                             href={card.link}
@@ -423,7 +439,7 @@ results <- picsure::getResultByQueryUUID(session, queryID)`}
                     </a>
                   {/each}
                 </section>-->
-                <!--<div class="flex flex-col items-center justify-center">
+              <!--<div class="flex flex-col items-center justify-center">
                   <div>
                     Export Status: {status}
                     <i
@@ -433,50 +449,54 @@ results <- picsure::getResultByQueryUUID(session, queryID)`}
                     ></i>
                   </div>
                 </div>-->
-              {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
-                <section class="flex flex-col gap-8">
-                  <div class="flex justify-center mt-4">
-                    Use the option below to download your selected data in the PFB format.
+            {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
+              <section class="flex flex-col gap-8">
+                <div class="flex justify-center mt-4">
+                  Use the option below to download your selected data in the PFB format.
+                </div>
+                <div class="grid grid-cols-3">
+                  <div></div>
+                  <div>
+                    <button
+                      class="flex-initial w-64 btn variant-filled-primary"
+                      on:click={() => download()}
+                      ><i class="fa-solid fa-download"></i>Download as PFB</button
+                    >
                   </div>
-                  <div class="grid grid-cols-3">
-                    <div></div>
-                    <div>
-                      <button class="flex-initial w-64 btn variant-filled-primary" on:click={() => download()}><i class="fa-solid fa-download"></i>Download as PFB</button>
-                    </div>
-                    <div></div>
-                  </div>
-                </section>
-              {/if}
-            {:catch e}
-              <div class="flex justify-center">
-                <ErrorAlert
-                  title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
-                contact an administrator."
-                />
-              </div>
-            {/await}
-          {/if}
-        </div>
-        {#if apiExport}
-          <div class="flex flex-col justify-center items-center">
+                  <div></div>
+                </div>
+              </section>
+            {/if}
+          {:catch e}
             <div class="flex justify-center">
-              Use your personal access token and the dataset ID to export your participant-level
-              cohort data using the PIC-SURE API.
+              <ErrorAlert
+                title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
+                contact an administrator."
+              />
             </div>
-            <UserToken />
-            <div class="flex items-center m-4">
-              <div class="flex items-center">
-                <label for="dataset-id" class="font-bold ml-4 mr-2">Dataset ID:</label>
-                <div id="dataset-id" class="mr-4">{datasetId}</div>
-                <CopyButton itemToCopy={datasetId} />
-              </div>
-            </div>
-            <p>
-              Navigate to the <a class="anchor" href="/api">API page</a> to view examples and learn more
-              about the PIC-SURE API.
-            </p>
-          </div>
+          {/await}
         {/if}
+      </div>
+      {#if apiExport}
+        <div class="flex flex-col justify-center items-center">
+          <div class="flex justify-center">
+            Use your personal access token and the dataset ID to export your participant-level
+            cohort data using the PIC-SURE API.
+          </div>
+          <UserToken />
+          <div class="flex items-center m-4">
+            <div class="flex items-center">
+              <label for="dataset-id" class="font-bold ml-4 mr-2">Dataset ID:</label>
+              <div id="dataset-id" class="mr-4">{datasetId}</div>
+              <CopyButton itemToCopy={datasetId} />
+            </div>
+          </div>
+          <p>
+            Navigate to the <a class="anchor" href="/api">API page</a> to view examples and learn more
+            about the PIC-SURE API.
+          </p>
+        </div>
+      {/if}
     </section>
   </Step>
 </Stepper>

@@ -1,7 +1,7 @@
 <script>
   import ExportStore from '$lib/stores/Export';
   import { filters, totalParticipants } from '$lib/stores/Filter';
-  import {isNumberObject} from "node:util/types";
+  import { isNumberObject } from 'node:util/types';
   let { exports } = ExportStore;
 
   $: participantsCount = $totalParticipants;
@@ -10,7 +10,7 @@
 </script>
 
 <div id="stats" class="w-full flex justify-evenly mb-5 pb-2">
-  <div id="summary" class="w-full grid grid-flow-col auto-cols-auto ">
+  <div id="summary" class="w-full grid grid-flow-col auto-cols-auto">
     <div class="text-xl">
       <label for="summary" class="mr-8 font-bold">Summary:</label>
     </div>
