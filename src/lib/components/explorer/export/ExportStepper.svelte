@@ -39,6 +39,7 @@
     { dataElement: 'type', label: 'Type', sort: true },
   ];
 
+  // todo: make configurable
   const MAX_DATA_POINTS_FOR_EXPORT = 1000000;
 
   async function download(): Promise<void> {
@@ -143,7 +144,7 @@
     return 'ERROR';
   }
 
-  export let activeType: ExpectedResultType = undefined;
+  export let activeType: ExpectedResultType;
   function selectExportType(exportType: ExpectedResultType) {
     query.query.expectedResultType = exportType;
     activeType = exportType;
@@ -157,7 +158,8 @@
   let tabIndex: number = 0;
 
   function dataLimitExceeded(): boolean {
-    let participantCount: number = typeof $totalParticipants === 'number' ? $totalParticipants : MAX_DATA_POINTS_FOR_EXPORT + 1;
+    let participantCount: number =
+      typeof $totalParticipants === 'number' ? $totalParticipants : MAX_DATA_POINTS_FOR_EXPORT + 1;
     let totalDataPoints: number = participantCount + $filters.length + $exports.length;
     return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
   }
