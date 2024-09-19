@@ -14,21 +14,23 @@
 <Content title="Prepare for Analysis with the PIC-SURE API">
   <section class="flex flex-col gap-8">
     <p class="mt-4">
-      The PIC-SURE Application Programming Interface (API) can be used in an analysis environment of your choice.
-      This API is available in both Python and R coding languages.
+      The PIC-SURE Application Programming Interface (API) can be used in an analysis environment of
+      your choice. This API is available in both Python and R coding languages.
     </p>
     <p>
-      To connect to the PIC-SURE Application Programming Interface (API), you will need your personal access token.
-      Copy your token and save as a text file called “token.txt” in the working directory of your chosen analysis
-      workspace, such as BioData Catalyst Powered by Seven Bridges or BioData Catalyst Powered by Terra.
+      To connect to the PIC-SURE Application Programming Interface (API), you will need your
+      personal access token. Copy your token and save as a text file called “token.txt” in the
+      working directory of your chosen analysis workspace, such as BioData Catalyst Powered by Seven
+      Bridges or BioData Catalyst Powered by Terra.
     </p>
     <div class="flex justify-center">
       <UserToken />
     </div>
     <p>
-      To start your analysis, copy and execute the following code in an analysis environment, such as BioData Catalyst
-      Powered by Seven Bridges or BioData Catalyst Powered by Terra, to connect to the PIC-SURE API. Note that you will
-      need your personal access token to complete the connection.
+      To start your analysis, copy and execute the following code in an analysis environment, such
+      as BioData Catalyst Powered by Seven Bridges or BioData Catalyst Powered by Terra, to connect
+      to the PIC-SURE API. Note that you will need your personal access token to complete the
+      connection.
     </p>
     <TabGroup class="card p-4">
       <Tab bind:group={tabSet} name="python" value={0}>Python</Tab>
