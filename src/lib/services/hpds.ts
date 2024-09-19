@@ -15,7 +15,7 @@ export async function loadAllConcepts() {
     query: '\\_studies_consents\\',
   });
   console.log('studies', studies);
-  let consentPaths = Object.keys(studies?.results?.phenotypes);
+  const consentPaths = Object.keys(studies?.results?.phenotypes);
   cachedConsentPaths = consentPaths;
   cacheTimestamp = now;
   console.log('studyConcepts', consentPaths);

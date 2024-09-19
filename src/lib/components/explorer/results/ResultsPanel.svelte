@@ -15,7 +15,7 @@
   import { goto } from '$app/navigation';
   import type { Unsubscriber } from 'svelte/store';
   import { getQueryRequest } from '$lib/QueryBuilder';
-    import { loadAllConcepts } from '$lib/services/hpds';
+  import { loadAllConcepts } from '$lib/services/hpds';
 
   const { exports, clearExports } = ExportStore;
 
@@ -42,19 +42,19 @@
       }
       const count = await api.post('picsure/query/sync', request);
       if (isOpenAccess) {
-          let openTotalPatients = String(count['\\_studies_consents\\']);
-          if (openTotalPatients.includes(' \u00B1')) {
-            totalPatients = parseInt(openTotalPatients.split(' ')[0]) 
-            suffix = openTotalPatients.split(' ')[1];
-            totalParticipants.set(totalPatients);
-          } else {
-            totalPatients = openTotalPatients;
-            totalParticipants.set(openTotalPatients);
-          }
+        let openTotalPatients = String(count['\\_studies_consents\\']);
+        if (openTotalPatients.includes(' \u00B1')) {
+          totalPatients = parseInt(openTotalPatients.split(' ')[0]);
+          suffix = openTotalPatients.split(' ')[1];
+          totalParticipants.set(totalPatients);
         } else {
-          totalParticipants.set(count);
-          totalPatients = count;
+          totalPatients = openTotalPatients;
+          totalParticipants.set(openTotalPatients);
         }
+      } else {
+        totalParticipants.set(count);
+        totalPatients = count;
+      }
       return count;
     } catch (error) {
       if ($filters.length !== 0) {
