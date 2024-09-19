@@ -42,11 +42,11 @@ export const datasets = [
 export const mockDashboard: DashboardResp = {
   columns: [
     { label: 'Name', dataElement: 'name' },
-    { label: 'Link', dataElement: 'link' },
+    { label: 'Link', dataElement: 'additional_info_link' },
   ],
   rows: [
-    { name: 'A', link: 'foo.invalid' },
-    { name: 'B', link: 'bar.invalid' },
+    { name: 'A', additional_info_link: 'foo.invalid' },
+    { name: 'B', additional_info_link: 'bar.invalid' },
   ],
 };
 

@@ -60,7 +60,7 @@ export const initializeBranding = () => {
 export const routes: Route[] = [
   {
     path: '/dashboard',
-    text: 'Dashboard',
+    text: 'Data Dashboard',
     feature: 'dashboard',
   },
   {
