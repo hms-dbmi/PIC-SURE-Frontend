@@ -23,7 +23,7 @@
   let currentRows: any[] = [];
 
   const cellOverides = {
-    link: Link,
+    additional_info_link: Link,
   };
 
   const dataLoadPromise = loadDashboardData();
@@ -49,7 +49,13 @@
     {#await dataLoadPromise}
       <ProgressBar animIndeterminate="anim-progress-bar" />
     {:then}
-      <Datatable {tableName} data={currentRows} columns={currentColumns} {cellOverides} />
+      <Datatable
+        {tableName}
+        data={currentRows}
+        columns={currentColumns}
+        {cellOverides}
+        search={true}
+      />
     {/await}
   </section>
 </Content>
