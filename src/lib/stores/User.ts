@@ -139,7 +139,11 @@ export async function login(token: string) {
 }
 
 export async function logout() {
-  api.get('/psama/logout');
+  try {
+    api.get('/psama/logout');
+  } catch (error) {
+    console.error('Error logging out.', error);
+  }
   if (browser) {
     localStorage.removeItem('token');
   }
