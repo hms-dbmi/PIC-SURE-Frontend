@@ -26,18 +26,30 @@
 
       <h4 class="font-medium mt-8">1. Set up your analysis workspace</h4>
       <p>
-        First, you will need to set up your analysis workspace. This can be done locally or in a
-        cloud computing environment. Examples of how to programmatically access the PIC-SURE API
-        with Python or R are publicly available. These include Jupyter notebooks and RStudio files,
-        which you can access on the <a
+        First, you will need to set up your analysis workspace. This can be done in one of the
+        BioData Catalyst cloud computing environments, Seven Bridges or Terra. Examples of how to
+        programmatically access the PIC-SURE API with Python or R are publicly available. These
+        include Jupyter notebooks and RStudio files, which you can access on the
+        <a
           class="anchor"
-          href="https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API/"
+          href="https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API/tree/master/NHLBI_BioData_Catalyst"
           target="_blank">GitHub repository</a
         >
       </p>
       <p>
-        The PIC-SURE team recommends starting with the PIC-SURE_101 example code. You can clone this
-        GitHub repository to your analysis workspace or set up a new file.
+        The PIC-SURE team recommends starting with the PIC-SURE_101 example code. You can access
+        these files in the
+        <a
+          class="anchor"
+          href="https://platform.sb.biodatacatalyst.nhlbi.nih.gov/u/biodatacatalyst/data-export-from-the-pic-sure-ui"
+          target="_blank">Data Export from the PIC-SURE UI Seven Bridges Public Project</a
+        >
+        or using one of the
+        <a
+          class="anchor"
+          href="https://terra.biodatacatalyst.nhlbi.nih.gov/#workspaces?tab=public&filter=pic-sure"
+          target="_blank">PIC-SURE Workspaces on Terra</a
+        >
       </p>
 
       <h4 class="font-medium mt-8">2. Get your Personal Access Token</h4>

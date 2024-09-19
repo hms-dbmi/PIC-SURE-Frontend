@@ -75,7 +75,7 @@ export const routes: Route[] = [
   },
   {
     path: '/analyze',
-    text: 'Analyze',
+    text: 'Prepare for Analysis',
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
   },
   {
