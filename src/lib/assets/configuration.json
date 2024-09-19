@@ -55,8 +55,8 @@
   "apiPage": {
     "cards": [
       {
-        "header": "Example Analyses with PIC-SURE page",
-        "body": "Detailed step-by-step example code that demonstrates how to use PIC-SURE for analysis.",
+        "header": "Setting Up the PIC-SURE API",
+        "body": "Step-by-step instructions to get started using the PIC-SURE API",
         "link": "/analyze/example"
       }
     ]
@@ -79,11 +79,11 @@
         "btnText": "Start Exploring"
       },
       {
-        "title": "Analyze",
-        "description": "Access data and kickstart your research",
+        "title": "Prepare for Analysis",
+        "description": "Use the PIC-SURE API to prepare data for analysis",
         "icon": "fa-solid fa-chart-line",
         "url": "/analyze",
-        "btnText": "Go to Analyze"
+        "btnText": "Prepare for Analysis"
       }
     ],
     "stats": ["Variables", "Participants", "Data Sources"]
