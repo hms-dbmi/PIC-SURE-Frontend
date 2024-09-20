@@ -30,7 +30,7 @@
       .post(SYNC_URL, {
         query: query.query,
         resourceUUID: resources.visualization,
-        resourceCredentials: { Authorization: 'Bearer ' + token },
+        resourceCredentials: token ? { Authorization: 'Bearer ' + token } : {},
       })
       .then((resp) => {
         plotValues = [
