@@ -1,23 +1,74 @@
 <script lang="ts">
+  import * as api from '$lib/api';
   import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import { branding, resources } from '$lib/configuration';
+  import { browser } from '$app/environment';
+  import { getQueryRequest } from '$lib/QueryBuilder';
+  import { getStudiesCount, getConceptCount } from '$lib/services/dictionary';
 
-  import { getOrApi, ERROR_VALUE } from '$lib/stores/Stats';
-  import { branding } from '$lib/configuration';
-  import type { Value } from '$lib/models/Value';
+  const ERROR_VALUE = '-';
+  type ApiMap = { [key: string]: () => Promise<string> };
 
-  let stats: Value[] = branding?.landing?.stats?.map((stat) => ({
-    title: stat,
-    value: ERROR_VALUE,
-    loading: true,
-  }));
+  const isUserLoggedIn = () => {
+    if (browser) {
+      return !!localStorage.getItem('token');
+    }
+    return false;
+  };
+
+  const apiMap: ApiMap = {
+    'Data Sources': () =>
+      getStudiesCount(!isUserLoggedIn()).then((response) => {
+        if (response) {
+          return response.toLocaleString();
+        }
+        hasError = true;
+        return ERROR_VALUE;
+      }),
+    Participants: () =>
+      api
+        .post(
+          'picsure/query/sync',
+          getQueryRequest(isUserLoggedIn(), isUserLoggedIn() ? resources.hpds : resources.openHPDS),
+        )
+        .then((response) => {
+          if (response) {
+            return response.toLocaleString();
+          }
+          hasError = true;
+          return ERROR_VALUE;
+        }),
+    Variables: () =>
+      getConceptCount(!isUserLoggedIn()).then((response) => {
+        if (response) {
+          return response.toLocaleString();
+        }
+        hasError = true;
+        return ERROR_VALUE;
+      }),
+  };
+
+  async function getOrApi(key: string): Promise<string> {
+    return apiMap[key]();
+  }
+
   let width = branding?.landing?.stats.length;
-  $: hasError = stats.find((stat) => !stat.loading && stat.value === ERROR_VALUE) || false;
+
+  let hasError = false;
 
   let statMap: Map<string, Promise<string>> = new Map();
   branding?.landing?.stats?.forEach((stat) => {
     statMap.set(stat, getOrApi(stat));
   });
-
+  let promises = statMap.values();
+  //if any of the promises fail, we will set hasError to true
+  Promise.allSettled(Array.from(promises)).then((results) => {
+    results.forEach((result) => {
+      if (result.status === 'rejected') {
+        hasError = true;
+      }
+    });
+  });
   /* eslint-disable svelte/no-at-html-tags */
   // @html branding.landing.explanation is from a static file and will only be populated by staff.
 </script>
