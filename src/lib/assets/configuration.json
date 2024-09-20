@@ -16,7 +16,7 @@
     },
     {
       "category": "Use PIC-SURE",
-      "privilege": "PIC_SURE_ANY_QUERY",
+      "privilege": "AUTHORIZED_ACCESS",
       "links": [
         { "title": "Explore", "url": "/explorer" },
         { "title": "Analyze", "url": "/analyze" },
@@ -37,18 +37,48 @@
     }
   ],
   "footer": {
-    "showTerms": true,
     "showSitemap": true,
-    "excludeSitemapOn": ["/explorer"],
+    "showTerms": false,
+    "excludeSitemapOn": ["/explorer", "/discover"],
     "links": [
       {
         "title": "Privacy Policy",
-        "url": "https://pic-sure.gitbook.io/pic-sure/privacy-policy",
+        "url": "https://biodatacatalyst.nhlbi.nih.gov/privacy",
         "newTab": true
       },
       {
-        "title": "Contact Us",
-        "url": "https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5",
+        "title": "Data Sharing Policy",
+        "url": "https://osp.od.nih.gov/scientific-sharing/policies/",
+        "newTab": true
+      },
+      {
+        "title": "Freedom of Information Act (FOIA)",
+        "url": "https://www.nhlbi.nih.gov/about/foia-fee-for-service-office",
+        "newTab": true
+      },
+      {
+        "title": "Accessibility",
+        "url": "https://biodatacatalyst.nhlbi.nih.gov/accessibility",
+        "newTab": true
+      },
+      {
+        "title": "U.S. Department of Health & Human Services",
+        "url": "https://www.hhs.gov/",
+        "newTab": true
+      },
+      {
+        "title": "National Heart, Lung, and Blood Institute",
+        "url": "https://www.nhlbi.nih.gov/",
+        "newTab": true
+      },
+      {
+        "title": "USA.gov",
+        "url": "https://www.usa.gov/",
+        "newTab": true
+      },
+      {
+        "title": "HHS Vulnerability Disclosure",
+        "url": "https://www.hhs.gov/vulnerability-disclosure-policy/index.html",
         "newTab": true
       }
     ]
@@ -56,8 +86,8 @@
   "apiPage": {
     "cards": [
       {
-        "header": "Setting Up the PIC-SURE API",
-        "body": "Step-by-step instructions to get started using the PIC-SURE API",
+        "header": "Example Analyses with PIC-SURE page",
+        "body": "Detailed step-by-step example code that demonstrates how to use PIC-SURE for analysis.",
         "link": "/analyze/example"
       }
     ]
@@ -70,21 +100,43 @@
   },
   "landing": {
     "searchPlaceholder": "Search terms or variables of interest…",
-    "explanation": "The <a class=\"anchor\" href=\"https://www.cdc.gov/nchs/nhanes/index.htm\" target=\"_blank\">National Health and Nutrition Examination Survey (NHANES)</a> dataset is designed to assess the health and nutritional status of adults and children in the United States",
+    "explanation": "The total amount of data that you are authorized to access.",
     "actions": [
+      {
+        "title": "Discover",
+        "description": "Discover studies in BioData Catalyst by searching for terms, applying filters, and retrieving aggregate counts",
+        "icon": "fa-regular fa-compass",
+        "url": "/discover",
+        "btnText": "Start Discovering",
+        "isOpen": true,
+        "showIfLoggedIn": true
+      },
       {
         "title": "Explore",
         "description": "Explore data, apply filters, and build cohorts",
         "icon": "fa-solid fa-magnifying-glass",
         "url": "/explorer",
-        "btnText": "Start Exploring"
+        "btnText": "Start Exploring",
+        "isOpen": false,
+        "showIfLoggedIn": true
       },
       {
         "title": "Prepare for Analysis",
         "description": "Use the PIC-SURE API to prepare data for analysis",
         "icon": "fa-solid fa-chart-line",
         "url": "/analyze",
-        "btnText": "Prepare for Analysis"
+        "btnText": "Prepare for Analysis",
+        "isOpen": false,
+        "showIfLoggedIn": true
+      },
+      {
+        "title": "Login",
+        "description": "Log In to explore participant-level data, save datasets, and kickstart your research analysis",
+        "icon": "fa-solid fa-user",
+        "url": "/login",
+        "btnText": "Go to Login",
+        "isOpen": true,
+        "showIfLoggedIn": false
       }
     ],
     "stats": ["Variables", "Participants", "Data Sources"]
@@ -102,19 +154,19 @@
         "title": "User Guide",
         "description": "Complete user manual for seamless navigation and utilization.",
         "icon": "fa-solid fa-book fa-4x",
-        "url": "https://pic-sure.gitbook.io/pic-sure"
+        "url": "https://pic-sure.gitbook.io/nhlbi-biodata-catalyst-powered-by-pic-sure"
       },
       {
         "title": "Video Library",
         "description": "Example 'how-to' video demonstrations.",
         "icon": "fa-solid fa-circle-play fa-4x",
-        "url": "https://www.youtube.com/@pic-sure446/featured"
+        "url": "https://www.youtube.com/playlist?list=PLJ6YccH8TEufZ5L-ctxzFF7vuZRLVacKw"
       },
       {
         "title": "Request Help",
         "description": "Need help? Submit a service desk ticket, we are here to help!",
         "icon": "fa-solid fa-handshake fa-4x",
-        "url": "https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5"
+        "url": "https://biodatacatalyst.nhlbi.nih.gov/help-and-support/contact-us/"
       },
       {
         "title": "PIC-SURE",

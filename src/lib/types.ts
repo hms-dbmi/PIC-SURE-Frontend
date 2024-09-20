@@ -53,6 +53,8 @@ export interface LandingConfig {
     icon: string;
     url: string;
     btnText: string;
+    isOpen: boolean;
+    showIfLoggedIn: boolean;
   }>;
   stats: string[];
 }
