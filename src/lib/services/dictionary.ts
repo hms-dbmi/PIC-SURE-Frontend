@@ -95,3 +95,12 @@ function addConsents(request: DictionarySearchRequest) {
   }
   return request;
 }
+
+export async function getConceptCount(isOpenAccess = false) {
+  let request: DictionarySearchRequest = { facets: [], search: '', consents: [] };
+  if (!isOpenAccess) {
+    request = addConsents(request);
+  }
+  let res = await api.post(`${searchUrl}?page_number=0&page_size=0`, request);
+  return res.totalElements as number;
+}

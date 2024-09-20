@@ -3,12 +3,12 @@ import { get, writable, type Writable } from 'svelte/store';
 import { resources } from '$lib/configuration';
 import { getQueryRequest } from '$lib/QueryBuilder';
 import { browser } from '$app/environment';
+import { getConceptCount } from '$lib/services/dictionary';
 
 export const ERROR_VALUE = '-';
-type StatMap = { [key: string]: string | undefined };
 type ApiMap = { [key: string]: () => Promise<string> };
 
-const cachedMap: Writable<StatMap> = writable({});
+export const cachedMap: Writable<Map<string, string>> = writable(new Map());
 const isUserLoggedIn = () => {
   if (browser) {
     return !!localStorage.getItem('token');
@@ -26,32 +26,14 @@ const apiMap: ApiMap = {
       )
       .then((response) => response.toLocaleString()),
   Variables: () =>
-    api
-      .post(`picsure/search/${isUserLoggedIn() ? resources.hpds : resources.openHPDS}`, {
-        query: '\\',
-      })
-      .then((response) => {
-        //TODO: consents?
-        if (response.results) {
-          return Object.keys(response.results.phenotypes).length.toLocaleString();
-        }
-        return ERROR_VALUE;
-      }),
+    getConceptCount(!isUserLoggedIn()).then((response) => {
+      if (response) {
+        return response.toLocaleString();
+      }
+      return ERROR_VALUE;
+    }),
 };
 
 export async function getOrApi(key: string): Promise<string> {
-  const map = get(cachedMap);
-  if (map[key] && map[key] !== ERROR_VALUE) {
-    // retry on error
-    return map[key];
-  }
-  const resolvedValue = await apiMap[key]().catch((error) => {
-    console.error(error);
-    return ERROR_VALUE;
-  });
-  cachedMap.set({
-    ...get(cachedMap), // reload map in case of change
-    [key]: resolvedValue,
-  });
-  return resolvedValue;
+  return apiMap[key]();
 }
