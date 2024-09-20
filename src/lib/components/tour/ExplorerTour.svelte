@@ -7,7 +7,6 @@
   import 'driver.js/dist/driver.css';
   import '../../../tour.postcss';
 
-  import { branding } from '$lib/configuration';
   import { searchTerm, selectedFacets, loading } from '$lib/stores/Search';
   import { clearFilters } from '$lib/stores/Filter';
   import { clearExports } from '$lib/stores/Export';
@@ -45,31 +44,34 @@
     clearExports();
   }
 
-  /*
-  TODO: I need to determine how to dynamically check what type of filter is being applied.
-  If it is a numerical filter, I need to apply the min and max values.
-  If it is a categorical filter, I need to select the first option.
-   */
-
-  const applyNumericFilter: DriverHook = () => {
-    const min = document.querySelector(
-      '#active-row-0 [data-testid=numerical-filter] input#min',
-    ) as HTMLInputElement;
-    const max = document.querySelector(
-      '#active-row-0 [data-testid=numerical-filter] input#max',
-    ) as HTMLInputElement;
-    min.value = '2';
-    max.value = '4';
+  const applyNumericFilter = (activeRowSelector?: string) => {
+    const filter = document.querySelector(`#${activeRowSelector} [data-testid="numerical-filter"]`) as HTMLElement;
+    filter.click();
     tourDriver.moveNext();
+  };
+
+  const clickFilterOption = (activeRowSelector?: string) => {
+    const allOptions = document.querySelector(
+      `#${activeRowSelector} #select-all`,
+    ) as HTMLInputElement;
+    allOptions?.click();
+    tourDriver.moveNext();
+  };
+
+  function openDrawer() {
+    const sidePanel = document.querySelector('#results-panel-toggle') as HTMLElement;
+    sidePanel.click();
   }
 
-  const clickFilterOption: DriverHook = () => {
-    const firstOption = document.querySelector(
-      '#active-row-1 #options-container label:nth-child(1)',
-    ) as HTMLInputElement;
-    firstOption?.click();
-    tourDriver.moveNext();
-  }
+  const applyFilterThenNext: DriverHook = (element?: Element) => {
+    const activeRowId = element?.id;
+    const filterType = document.querySelector(`#${activeRowId} [data-testid="numerical-filter"]`) ? 'numerical' : 'categorical';
+    if (filterType === 'numerical') {
+      applyNumericFilter(activeRowId);
+    } else {
+      clickFilterOption(activeRowId);
+    }
+  };
 
   /*
   This is used to replace the placeholder in the tour configuration with the actual search term.
@@ -88,7 +90,6 @@
   that will be executed when the tour reaches that step. If the function is not in this
   map, the tour will throw an error.
    */
-  // TODO: This could possible be a record or real map.
   const functionMap: FunctionMap = {
     disablePrevious,
     clickElement,
@@ -96,33 +97,42 @@
     addHighlightClass: addHighlightClass(true),
     removeHighlightClass: addHighlightClass(false),
     resetSearch,
-    applyNumericFilter,
-    clickFilterOption
+    applyFilterThenNext,
   };
 
   // This method will serialize the json configuration to a DriveStep array
   // that driver.js can use for the tour steps
   // It will map the function names in pop over to actual functions
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  function mapConfigurationToSteps(configuration: any): DriveStep[] {
-    return configuration.steps.map((step: any) => {
+  function mapConfigurationToSteps(steps: any): DriveStep[] {
+    return steps.map((step: any) => {
       const { popover, ...rest } = step;
-      return {
+      const serializedStep: any = {
         ...rest,
         popover: {
           ...popover,
-          title: replacePlaceholders(popover.title, branding?.explorePage?.tourSearchTerm),
-          description: replacePlaceholders(popover.description, branding?.explorePage?.tourSearchTerm),
-          onPrevClick: functionMap[popover.onPrevClick],
-          onNextClick: functionMap[popover.onNextClick],
+          title: replacePlaceholders(popover.title, tourConfig?.searchTerm),
+          description: replacePlaceholders(popover.description, tourConfig?.searchTerm),
         },
-        onHighlightStarted: functionMap[step.onHighlightStarted],
-        onNextClick: functionMap[step.onNextClick],
       };
+
+      if (popover.onPrevClick) {
+        serializedStep.popover.onPrevClick = functionMap[popover.onPrevClick];
+      }
+
+      if (popover.onNextClick) {
+        serializedStep.popover.onNextClick = functionMap[popover.onNextClick];
+      }
+
+      if (step.onHighlightStarted) {
+          serializedStep.onHighlightStarted = functionMap[step.onHighlightStarted];
+      }
+
+      return serializedStep;
     });
   }
 
-  const steps = mapConfigurationToSteps(tourConfig);
+  const steps = mapConfigurationToSteps(tourConfig.steps);
 
   // Notes:
   // - The object that we want to interact with must be fully loaded in the dom before the step that interracts with it,
@@ -164,10 +174,11 @@
         if (!start) return;
 
         resetSearch();
+        openDrawer();
 
         // Load search in bg then start tour
         const searchBox = document.querySelector('#explorer-search-box') as HTMLInputElement;
-        searchBox.value = branding?.explorePage?.tourSearchTerm;
+        searchBox.value = tourConfig.searchTerm;
         searchBox.dispatchEvent(new Event('input'));
         searchBox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
 
@@ -181,10 +192,11 @@
     });
   }
 </script>
-
 <button
   type="button"
   data-testid="explorer-tour-btn"
-  class="btn variant-ghost-secondary hover:variant-filled-secondary"
-  on:click={startTour}>Take a Tour</button
+  id="tourBtn"
+  class="btn variant-filled-secondary"
+  on:click={startTour}>Take a Tour
+</button
 >

@@ -23,6 +23,7 @@
   let { searchTerm, search, selectedFacets, error } = SearchStore;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
   const tableName = 'ExplorerTable';
+  let tourEnabled = true;
 
   const columns: Column[] = [
     { dataElement: 'display', label: 'Variable Name', sort: false },
@@ -34,7 +35,10 @@
   };
 
   const handler = new DataHandler([] as SearchResult[], { rowsPerPage: 10 });
-  handler.onChange((state: State) => search($searchTerm, $selectedFacets, state));
+  handler.onChange((state: State) => {
+    doDisableTour();
+    return search($searchTerm, $selectedFacets, state);
+  });
 
   let unsubSelectedFacets: Unsubscriber;
   let unsubSearchTerm: Unsubscriber;
@@ -55,6 +59,12 @@
       searchTerm.set(searchInput);
     }
   });
+
+  function doDisableTour() {
+    if (tourEnabled && (searchInput || ($selectedFacets && $selectedFacets.length > 0))) {
+      tourEnabled = false;
+    }
+  }
 
   function updateSearch() {
     if ($error) {
@@ -114,9 +124,9 @@
     {:else if $searchTerm || $selectedFacets.length > 0}
       <SearchDatatable {tableName} {handler} {columns} {cellOverides} />
     {/if}
-    {#if features.explorer.enableTour}
+    {#if features.explorer.enableTour && tourEnabled}
       <div id="explorer-tour" class="text-center mt-4">
-        <ExplorerTour tourConfig={tourConfig}/>
+        <ExplorerTour tourConfig={tourConfig} />
       </div>
     {/if}
   </div>
