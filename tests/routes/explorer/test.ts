@@ -1008,7 +1008,7 @@ test.describe('explorer', () => {
   });
 });
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 const getOption = async (page: any, optionIndex = 0) => {
   const component = page.getByTestId('optional-selection-list');
   const optionContainer = component.locator('#options-container');
@@ -1017,7 +1017,7 @@ const getOption = async (page: any, optionIndex = 0) => {
   return options[optionIndex];
 };
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 const clickNthFilterIcon = async (page: any, rowIndex = 0) => {
   await expect(page.locator('tbody')).toBeVisible();
   const tableBody = page.locator('tbody');

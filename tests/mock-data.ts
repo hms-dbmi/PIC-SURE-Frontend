@@ -75,6 +75,40 @@ export const picsureUser: User = {
   queryTemplate: mockQueryTemplate,
 };
 
+
+export const crossCountSyncResponseInital = {
+  results: {
+    phenotypes: {
+      "\\_studies_consents\\": "458917 ±3",
+      "\\_studies_consents\\open_access-1000Genomes\\": "6267",
+      "\\_studies_consents\\other_data\\code\\": "4000",
+      "\\_studies_consents\\tutorial-biolincc_camp\\": "2000",
+      "\\_studies_consents\\tutorial-biolincc_digitalis\\": "3000",
+      "\\_studies_consents\\tutorial-biolincc_framingham\\": "4000",
+      "\\_studies_consents\\phs001\\": "12 ±3"
+    }
+  }
+}
+
+export const crossCountSyncResponsePlus3= {
+  "\\_studies_consents\\": "458917 ±3",
+  "\\_studies_consents\\open_access-1000Genomes\\": "6267",
+  "\\_studies_consents\\other_data\\code\\": "< 10",
+  "\\_studies_consents\\tutorial-biolincc_camp\\": "2000",
+  "\\_studies_consents\\tutorial-biolincc_digitalis\\": "3000",
+  "\\_studies_consents\\tutorial-biolincc_framingham\\": "12",
+  "\\_studies_consents\\phs001\\": "2305 ±3"
+}
+
+export const crossCountSyncResponseLessThan10 = {
+  "\\_studies_consents\\": "< 10",
+  "\\_studies_consents\\open_access-1000Genomes\\": "< 10",
+  "\\_studies_consents\\other_data\\code\\": "< 10",
+  "\\_studies_consents\\tutorial-biolincc_camp\\": "< 10",
+  "\\_studies_consents\\tutorial-biolincc_digitalis\\": "< 10",
+  "\\_studies_consents\\tutorial-biolincc_framingham\\": "< 10"
+}
+
 export const searchResultPath =
   '*/**/picsure/proxy/dictionary-api/concepts?page_number=0&page_size=10';
 export const facetResultPath = '*/**/picsure/proxy/dictionary-api/facets/';
