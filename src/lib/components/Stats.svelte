@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ProgressRadial } from '@skeletonlabs/skeleton';
 
-  import { getOrApi, ERROR_VALUE, cachedMap } from '$lib/stores/Stats';
+  import { getOrApi, ERROR_VALUE } from '$lib/stores/Stats';
   import { branding } from '$lib/configuration';
   import type { Value } from '$lib/models/Value';
 
