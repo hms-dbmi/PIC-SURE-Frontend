@@ -3,7 +3,7 @@ import { get, writable, type Writable } from 'svelte/store';
 import { resources } from '$lib/configuration';
 import { getQueryRequest } from '$lib/QueryBuilder';
 import { browser } from '$app/environment';
-import { getConceptCount } from '$lib/services/dictionary';
+import { getConceptCount, getStudiesCount } from '$lib/services/dictionary';
 
 export const ERROR_VALUE = '-';
 type ApiMap = { [key: string]: () => Promise<string> };
@@ -17,7 +17,12 @@ const isUserLoggedIn = () => {
 };
 
 const apiMap: ApiMap = {
-  'Data Sources': () => Promise.resolve('1'),
+  'Data Sources': () => getStudiesCount(!isUserLoggedIn()).then((response) => {
+    if (response) {
+      return response.toLocaleString();
+    }
+    return ERROR_VALUE;
+  }),
   Participants: () =>
     api
       .post(
