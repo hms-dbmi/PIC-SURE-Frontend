@@ -95,3 +95,29 @@ function addConsents(request: DictionarySearchRequest) {
   }
   return request;
 }
+
+export async function getConceptCount(isOpenAccess = false) {
+  let request: DictionarySearchRequest = { facets: [], search: '', consents: [] };
+  if (!isOpenAccess) {
+    request = addConsents(request);
+  }
+  const res = await api.post(`${searchUrl}?page_number=1&page_size=1`, request);
+  return res.totalElements as number;
+}
+
+export async function getStudiesCount(isOpenAccess = false) {
+  let request: DictionarySearchRequest = { facets: [], search: '', consents: [] };
+  if (!isOpenAccess) {
+    request = addConsents(request);
+  }
+  const res: DictionaryFacetResult[] = await api.post(`${dictionaryUrl}facets/`, request);
+  const facetCat = res.find((facetCat) => facetCat.name === 'dataset_id');
+  if (!facetCat) {
+    return 0;
+  }
+  if (isOpenAccess) {
+    return facetCat.facets.length;
+  }
+  const facetsForUser = facetCat.facets.filter((facet) => facet.count > 0);
+  return facetsForUser.length;
+}
