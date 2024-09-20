@@ -30,7 +30,7 @@ export interface Branding {
 }
 
 export const branding: Branding = {
-  applicationName: 'PIC-SURE',
+  applicationName: 'PIC‑SURE',
   logo: {
     alt: import.meta.env?.VITE_LOGO_ALT || 'PIC‑SURE',
     src: import.meta.env?.VITE_LOGO || '',
@@ -60,7 +60,7 @@ export const initializeBranding = () => {
 export const routes: Route[] = [
   {
     path: '/dashboard',
-    text: 'Dashboard',
+    text: 'Data Dashboard',
     feature: 'dashboard',
   },
   {
@@ -75,7 +75,7 @@ export const routes: Route[] = [
   },
   {
     path: '/analyze',
-    text: 'Analyze',
+    text: 'Prepare for Analysis',
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
   },
   {

@@ -15,6 +15,7 @@
   import { goto } from '$app/navigation';
   import type { Unsubscriber } from 'svelte/store';
   import { getQueryRequest } from '$lib/QueryBuilder';
+  import { loadAllConcepts } from '$lib/services/hpds';
 
   const { exports, clearExports } = ExportStore;
 
@@ -24,25 +25,32 @@
   const ERROR_VALUE = 'N/A';
 
   let unsubFilters: Unsubscriber;
-  let totalPatients: number | typeof ERROR_VALUE = 0;
-  let suffix = '';
+  let totalPatients: string | number | typeof ERROR_VALUE = 0;
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = Promise.resolve(0);
 
   async function getCount() {
+    suffix = '';
     let request: QueryRequestInterface = getQueryRequest(
       !isOpenAccess,
       isOpenAccess ? resources.openHPDS : resources.hpds,
       isOpenAccess ? 'CROSS_COUNT' : 'COUNT',
     );
     try {
+      if (isOpenAccess) {
+        const concepts = await loadAllConcepts();
+        request.query.setCrossCountFields(concepts);
+      }
       const count = await api.post('picsure/query/sync', request);
       if (isOpenAccess) {
         let openTotalPatients = String(count['\\_studies_consents\\']);
-        totalPatients = openTotalPatients.includes(' \u00B1')
-          ? parseInt(openTotalPatients.split(' ')[0])
-          : parseInt(openTotalPatients);
-        totalParticipants.set(totalPatients);
-        suffix = openTotalPatients.split(' ')[1];
+        if (openTotalPatients.includes(' \u00B1')) {
+          totalPatients = parseInt(openTotalPatients.split(' ')[0]);
+          suffix = openTotalPatients.split(' ')[1];
+          totalParticipants.set(totalPatients);
+        } else {
+          totalPatients = openTotalPatients;
+          totalParticipants.set(openTotalPatients);
+        }
       } else {
         totalParticipants.set(count);
         totalPatients = count;
@@ -84,7 +92,7 @@
   }
 
   $: isOpenAccess = $page.url.pathname.includes('/discover');
-
+  $: suffix = '';
   $: hasFilterOrExport =
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0);
   $: showExportButton =

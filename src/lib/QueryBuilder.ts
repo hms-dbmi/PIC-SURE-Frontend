@@ -3,7 +3,7 @@ import { features, resources } from '$lib/configuration';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/User';
-import { filters } from '$lib/stores/Filter';
+import { filters, hasGenomicFilter } from '$lib/stores/Filter';
 import type { Filter } from '$lib/models/Filter';
 
 const harmonizedPath = '\\DCC Harmonized data set';
@@ -16,7 +16,7 @@ export function getQueryRequest(
   expectedResultType: ExpectedResultType = 'COUNT',
 ): QueryRequestInterface {
   let query: Query = new Query();
-  if (features.useQueryTemplate) {
+  if (features.useQueryTemplate && addConsents) {
     const queryTemplate: QueryInterface = get(user).queryTemplate as QueryInterface;
     if (queryTemplate) {
       query = new Query(queryTemplate);
@@ -49,10 +49,6 @@ export function getQueryRequest(
 
   query.expectedResultType = expectedResultType;
 
-  if (Array.isArray(query.expectedResultType)) {
-    query.expectedResultType = query.expectedResultType[0];
-  }
-
   return {
     query,
     resourceUUID,
@@ -69,7 +65,7 @@ export const updateConsentFilters = (query: Query) => {
     query.removeCategoryFilter(harmonizedConsentPath);
   }
 
-  if (!query.hasGenomicFilter()) {
+  if (!hasGenomicFilter) {
     query.removeCategoryFilter(topmedConsentPath);
   }
 
