@@ -17,6 +17,7 @@ export interface QueryInterface {
   numericFilters: object;
   requiredFields: string[];
   anyRecordOf: string[];
+  crossCountFields?: string[];
   variantInfoFilters: VariantInfoFilters[];
   expectedResultType: ExpectedResultType | ExpectedResultType[];
 }
@@ -42,6 +43,7 @@ export class Query implements QueryInterface {
   requiredFields: string[];
   anyRecordOf: string[];
   fields: string[];
+  crossCountFields?: string[];
   variantInfoFilters: VariantInfoFilters[];
   expectedResultType: ExpectedResultType | ExpectedResultType[];
 
@@ -50,6 +52,7 @@ export class Query implements QueryInterface {
     this.numericFilters = newQuery?.numericFilters || {};
     this.requiredFields = newQuery?.requiredFields || [];
     this.anyRecordOf = newQuery?.anyRecordOf || [];
+    this.crossCountFields = newQuery?.crossCountFields || undefined;
     this.fields = newQuery?.fields || [];
     const variantInfoFilter = newQuery?.variantInfoFilters?.[0] || {
       categoryVariantInfoFilters: {},
@@ -86,6 +89,10 @@ export class Query implements QueryInterface {
     };
   }
 
+  setCrossCountFields(fields: string[]) {
+    this.crossCountFields = fields;
+  }
+
   addSnpFilter(snps: SNP[]) {
     snps.forEach((snp) => {
       {
@@ -100,19 +107,6 @@ export class Query implements QueryInterface {
 
   addAnyRecordOf(field: string) {
     this.anyRecordOf.push(field);
-  }
-
-  hasGenomicFilter() {
-    const Gene_with_variant =
-      this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Gene_with_variant?.length || 0;
-    const Variant_consequence_calculated =
-      this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Variant_consequence_calculated
-        ?.length || 0;
-    const Variant_frequency_as_text =
-      this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Variant_frequency_as_text?.length ||
-      0;
-
-    return Gene_with_variant + Variant_consequence_calculated + Variant_frequency_as_text;
   }
 
   hasFilter() {

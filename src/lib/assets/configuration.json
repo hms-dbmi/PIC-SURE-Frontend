@@ -37,6 +37,7 @@
     }
   ],
   "footer": {
+    "showTerms": true,
     "showSitemap": true,
     "excludeSitemapOn": ["/explorer"],
     "links": [
