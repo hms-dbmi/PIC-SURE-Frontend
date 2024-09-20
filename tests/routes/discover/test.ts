@@ -47,12 +47,14 @@ test.describe('Discover', () => {
     const addFilterButton = page.getByTestId('add-filter');
     await addFilterButton.click();
     const resultArray = crossCountSyncResponsePlus3['\\_studies_consents\\'].split(' ');
-    let resultCount = parseInt(resultArray[0]) || 0;
-    let suffix = resultArray[1];
+    const resultCount = parseInt(resultArray[0]) || 0;
+    const suffix = resultArray[1];
 
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(page.locator('#result-count')).toHaveText(`${resultCount?.toLocaleString()} ${suffix}`);
+    await expect(page.locator('#result-count')).toHaveText(
+      `${resultCount?.toLocaleString()} ${suffix}`,
+    );
   });
   test('Discover can display < 10', async ({ page }) => {
     // Given
