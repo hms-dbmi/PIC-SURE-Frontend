@@ -14,15 +14,9 @@
   $: hasError = stats.find((stat) => !stat.loading && stat.value === ERROR_VALUE) || false;
 
   let statMap: Map<string, Promise<string>> = new Map();
-  if ($cachedMap.size === branding?.landing?.stats.length) {
-    $cachedMap.forEach((value, key) => {
-      statMap.set(key, Promise.resolve(value));
-    });
-  } else {
-    branding?.landing?.stats?.forEach((stat) => {
-      statMap.set(stat, getOrApi(stat));
-    });
-  }
+  branding?.landing?.stats?.forEach((stat) => {
+    statMap.set(stat, getOrApi(stat));
+  });
 
   /* eslint-disable svelte/no-at-html-tags */
   // @html branding.landing.explanation is from a static file and will only be populated by staff.
@@ -44,7 +38,6 @@
               value={undefined}
             />
           {:then statValue}
-            {$cachedMap.set(key, statValue)}
             <strong class="p-1 mb-3">{statValue}</strong>
           {:catch}
             <i class="fa-solid fa-circle-exclamation p-1 mb-4 mt-1"></i>

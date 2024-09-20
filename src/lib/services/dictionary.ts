@@ -101,6 +101,6 @@ export async function getConceptCount(isOpenAccess = false) {
   if (!isOpenAccess) {
     request = addConsents(request);
   }
-  let res = await api.post(`${searchUrl}?page_number=0&page_size=0`, request);
+  let res = await api.post(`${searchUrl}?page_number=1&page_size=1`, request);
   return res.totalElements as number;
 }
