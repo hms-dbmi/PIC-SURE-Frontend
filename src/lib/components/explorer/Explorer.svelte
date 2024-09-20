@@ -23,7 +23,7 @@
   let { searchTerm, search, selectedFacets, error } = SearchStore;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
   const tableName = 'ExplorerTable';
-  let tourEnabled = true;
+  $: tourEnabled = true;
 
   const columns: Column[] = [
     { dataElement: 'display', label: 'Variable Name', sort: false },
@@ -110,6 +110,7 @@
             searchTerm.set('');
             error.set('');
             selectedFacets.set([]);
+            tourEnabled = true;
             goto(isOpenAccess ? '/discover' : '/explorer');
           }}
         >
