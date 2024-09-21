@@ -24,7 +24,7 @@ const mockStatsRoutesFail: { [key: string]: (context: Page) => Promise<void> } =
     context.route('*/**/picsure/query/sync', (route: Route) => route.abort('failed')),
   Variables: (context: Page) =>
     context.route(`*/**/picsure/search/${HPDS}`, (route: Route) => route.abort('failed')),
-  "Data Sources": (context: Page) =>
+  'Data Sources': (context: Page) =>
     context.route('*/**/picsure/proxy/dictionary-api/facets/', (route: Route) =>
       route.abort('failed'),
     ),
