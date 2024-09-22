@@ -1,10 +1,11 @@
 {
-  "searchTerm": "cardiac surgery",
+  "searchTerm": "RECOVER",
   "steps": [
-    {      "element": "#explorer-search-box",
+    {
+      "element": "#explorer-search-box",
       "popover": {
         "title": "Search",
-        "description": "Search clinical variables of interest. Here, the term \"{{searchTerm}}\" was used to get all results related to {{searchTerm}}. Click anywhere to continue the tour.",
+        "description": "Search clinical variables of interest. Here, the term \"{{searchTerm}}\" was used to get all {{searchTerm}}-related results. Click anywhere to continue the tour.",
         "onPrevClick": "disablePrevious"
       }
     },
@@ -73,7 +74,7 @@
       "element": "#sidebar-right",
       "popover": {
         "title": "Cohort Summary",
-        "description": "You can view the summary of the filtered cohort based on the applied variable filters. Additionally, you can also view variable distributions and prepare your cohort for analysis.",
+        "description": "You can view the summary of the filtered cohort based on the applied variable filters. Additionally, you can also view variable distributions and counts per study. Note that this count is obfuscated to protect participant-level data.",
         "onPrevClick": "disablePrevious"
       }
     },
@@ -82,8 +83,10 @@
       "popover": {
         "title": "Help Resources",
         "description": "To learn more about PIC-SURE, please consult the <a href='https://pic-sure.gitbook.io/nhlbi-biodata-catalyst-powered-by-pic-sure' class='anchor' target='_blank'>user guide</a> and <a href='https://www.youtube.com/playlist?list=PLJ6YccH8TEufZ5L-ctxzFF7vuZRLVacKw' class='anchor' target='_blank'>video</a> demonstrations. You can also find these resources on the help page.",
-        "onPrevClick": "disablePrevious"
+        "onPrevClick": "disablePrevious",
+        "onNextClick": "closeTour"
       }
     }
   ]
 }
+
