@@ -1,7 +1,8 @@
 {
   "searchTerm": "cardiac surgery",
   "steps": [
-    {      "element": "#explorer-search-box",
+    {
+      "element": "#explorer-search-box",
       "popover": {
         "title": "Search",
         "description": "Search clinical variables of interest. Here, the term \"{{searchTerm}}\" was used to get all results related to {{searchTerm}}. Click anywhere to continue the tour.",

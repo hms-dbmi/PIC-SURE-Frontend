@@ -30,9 +30,14 @@
       <strong>{branding.explorePage.tourSearchIntro}</strong>
       {#if keyboardInstructions}
         <p>
-          BioData Catalyst Powered by PIC-SURE allows you to explore variables, apply filters, and prepare data for analysis. When applying filters, participants are selected that meet those criteria.<br><br>
-          This tour demonstrates how to search, apply filters, and interpret results using PIC-SURE.<br><br>
-          Once the tour starts, you can click anywhere to go to the next step. You can press the escape key to stop the tour at any point. You may also use the arrow keys, enter key, or the spacebar to navigate the tour.
+          BioData Catalyst Powered by PIC-SURE allows you to explore variables, apply filters, and
+          prepare data for analysis. When applying filters, participants are selected that meet
+          those criteria.<br /><br />
+          This tour demonstrates how to search, apply filters, and interpret results using PIC-SURE.<br
+          /><br />
+          Once the tour starts, you can click anywhere to go to the next step. You can press the escape
+          key to stop the tour at any point. You may also use the arrow keys, enter key, or the spacebar
+          to navigate the tour.
         </p>
       {/if}
       <div class="flex justify-between gap-4">

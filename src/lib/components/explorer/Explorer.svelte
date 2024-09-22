@@ -127,7 +127,7 @@
     {/if}
     {#if features.explorer.enableTour && tourEnabled}
       <div id="explorer-tour" class="text-center mt-4">
-        <ExplorerTour tourConfig={tourConfig} />
+        <ExplorerTour {tourConfig} />
       </div>
     {/if}
   </div>

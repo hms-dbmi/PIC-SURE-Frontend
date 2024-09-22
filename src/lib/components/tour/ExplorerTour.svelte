@@ -20,12 +20,12 @@
 
   const clickElement: DriverHook = (element?: Element) => {
     (element as HTMLElement)?.click();
-  }
+  };
 
   const clickElementThenNext: DriverHook = (element?: Element) => {
     (element as HTMLElement)?.click();
     tourDriver.moveNext();
-  }
+  };
 
   // In this case we are return a function of type DriverHook
   const addHighlightClass = (on: boolean): DriverHook => {
@@ -36,7 +36,7 @@
         (element as HTMLElement).classList.remove('highlight');
       }
     };
-  }
+  };
 
   function resetSearch() {
     searchTerm.set('');
@@ -45,7 +45,9 @@
   }
 
   const applyNumericFilter = (activeRowSelector?: string) => {
-    const filter = document.querySelector(`#${activeRowSelector} [data-testid="numerical-filter"]`) as HTMLElement;
+    const filter = document.querySelector(
+      `#${activeRowSelector} [data-testid="numerical-filter"]`,
+    ) as HTMLElement;
     filter.click();
     tourDriver.moveNext();
   };
@@ -65,7 +67,9 @@
 
   const applyFilterThenNext: DriverHook = (element?: Element) => {
     const activeRowId = element?.id;
-    const filterType = document.querySelector(`#${activeRowId} [data-testid="numerical-filter"]`) ? 'numerical' : 'categorical';
+    const filterType = document.querySelector(`#${activeRowId} [data-testid="numerical-filter"]`)
+      ? 'numerical'
+      : 'categorical';
     if (filterType === 'numerical') {
       applyNumericFilter(activeRowId);
     } else {
@@ -125,7 +129,7 @@
       }
 
       if (step.onHighlightStarted) {
-          serializedStep.onHighlightStarted = functionMap[step.onHighlightStarted];
+        serializedStep.onHighlightStarted = functionMap[step.onHighlightStarted];
       }
 
       return serializedStep;
@@ -192,11 +196,12 @@
     });
   }
 </script>
+
 <button
   type="button"
   data-testid="explorer-tour-btn"
   id="tourBtn"
   class="btn variant-filled-secondary"
-  on:click={startTour}>Take a Tour
-</button
->
+  on:click={startTour}
+  >Take a Tour
+</button>
