@@ -3,11 +3,27 @@
   import { goto } from '$app/navigation';
   import Searchbox from '$lib/components/Searchbox.svelte';
   import Stats from '$lib/components/Stats.svelte';
+  import { browser } from '$app/environment';
   let searchTerm = '';
+
+  const isUserLoggedIn = () => {
+    if (browser) {
+      return !!localStorage.getItem('token');
+    }
+    return false;
+  };
 
   function search() {
     goto(`/explorer?search=${searchTerm}`);
   }
+
+  const actionsToDisplay = branding?.landing?.actions.filter((action) => {
+    if (isUserLoggedIn()) {
+      return action.showIfLoggedIn;
+    } else {
+      return action.isOpen || !action.showIfLoggedIn;
+    }
+  });
 </script>
 
 <svelte:head>
@@ -25,11 +41,11 @@
     id="actions-section"
     class="flex flex-row justify-evenly items-center w-2/3 mt-auto mb-8"
   >
-    {#each branding?.landing?.actions as { title, description, icon, url, btnText }}
+    {#each actionsToDisplay as { title, description, icon, url, btnText }}
       <div class="flex flex-col items-center w-1/{branding?.landing?.actions.length}">
         <div class="text-3xl my-1">{title}</div>
         <i class="text-[5rem] my-3 text-secondary-500-400-token {icon}" />
-        <div class="subtitle my-3 w-1/3">{description}</div>
+        <div class="subtitle my-3">{description}</div>
         <a data-testid="landing-action-{title}-btn" href={url} class="btn variant-filled-primary"
           >{btnText}</a
         >

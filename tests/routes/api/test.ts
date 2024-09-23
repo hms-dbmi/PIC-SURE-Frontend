@@ -1,7 +1,11 @@
 import { expect } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess } from '../../custom-context';
-import { branding } from '../../../src/lib/configuration';
 import { picsureUser, roles as mockRoles, mockExpiredToken } from '../../../tests/mock-data';
+import type { Branding } from '../../../src/lib/configuration';
+import * as config from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
+//TypeScript is confused by the JSON import so I am fxing it here
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
 
 const placeHolderDots =
   '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
