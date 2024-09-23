@@ -4,16 +4,12 @@
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import {filters, hasGenomicFilter, hasStigmatizedFilter} from "$lib/stores/Filter.ts";
   import {goto} from "$app/navigation";
+  import ErrorAlert from "$lib/components/ErrorAlert.svelte";
+  import {page} from "$app/stores";
 
-  if (hasGenomicFilter) {
-    alert("You have genomic filters");
-    goto("/explore")
+  function isValidDiscoverQuery(): boolean {
+    return !(hasGenomicFilter || hasStigmatizedFilter);
   }
-  if (hasStigmatizedFilter) {
-    alert("You have Stigmatized filters");
-    goto("/explore")
-  }
-  filters.set($filters);
 </script>
 
 <svelte:head>
@@ -21,5 +17,21 @@
 </svelte:head>
 
 <Content full>
-  <Explorer />
+  {#if isValidDiscoverQuery()}
+    {() => filters.set($filters)}
+    <Explorer />
+  {:else}
+    <section id="discover-error-container" class="flex gap-9">
+      {#if hasGenomicFilter}
+        <ErrorAlert title="Your selected filters contain stigmatizing variables which are not supported with Discover">
+          <p>Please reset the query or go back to Explore.</p>
+        </ErrorAlert>
+      {/if}
+      {#if hasStigmatizedFilter}
+        <ErrorAlert title="Your selected filters contain genomic filters, which are not supported with Discover.">
+          <p>Please reset the query or go back to Explore.</p>
+        </ErrorAlert>
+      {/if}
+    </section>
+  {/if}
 </Content>
