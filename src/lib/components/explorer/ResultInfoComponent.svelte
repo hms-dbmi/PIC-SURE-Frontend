@@ -3,9 +3,9 @@
     import { getConceptDetails } from '$lib/services/dictionary';
     import { ProgressRadial } from '@skeletonlabs/skeleton';
 
-  export let searchResult: SearchResult;
+  export let data: SearchResult;
 
-  let detailPromise = getConceptDetails(searchResult.conceptPath, searchResult.dataset);
+  let detailPromise = getConceptDetails(data.conceptPath, data.dataset);
 
 
 </script>
