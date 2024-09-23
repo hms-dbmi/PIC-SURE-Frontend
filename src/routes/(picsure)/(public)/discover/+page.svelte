@@ -25,6 +25,12 @@
     <Explorer />
   {:else}
     <section id="discover-error-container" class="flex gap-9">
+      <div>
+        Has stigmatized filter: ${hasStigmatizedFilter}
+      </div>
+      <div>
+        Has genomic filter: ${hasGenomicFilter}
+      </div>
       {#if hasStigmatizedFilter}
         <ErrorAlert title="Your selected filters contain stigmatizing variables which are not supported with Discover">
           <p>Please <a on:click={() => resetQuery()}>reset the query</a> or go back to <a href="/explorer">Explore</a>.</p>
