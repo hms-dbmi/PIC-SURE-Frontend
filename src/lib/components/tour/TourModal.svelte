@@ -27,19 +27,24 @@
       <header data-testid="modal-wrapper-header" class="text-2xl font-bold">
         <button class="float-right" on:click={modalStore.close}>&times;</button>
       </header>
-      <stronng>{branding.explorePage.tourSearchIntro}</stronng>
+      <strong>{branding.explorePage.tourSearchIntro}</strong>
       {#if keyboardInstructions}
         <p>
-          Once the tour starts you can click anywhere or press the escape key to stop the tour at
-          any point. You may also use the right key to move to the next step during the tour or
-          navigate within the tour with tab, spacebar, and enter keys.
+          BioData Catalyst Powered by PIC-SURE allows you to explore variables, apply filters, and
+          prepare data for analysis. When applying filters, participants are selected that meet
+          those criteria.<br /><br />
+          This tour demonstrates how to search, apply filters, and interpret results using PIC-SURE.<br
+          /><br />
+          Once the tour starts, you can click anywhere to go to the next step. You can press the escape
+          key to stop the tour at any point. You may also use the arrow keys, enter key, or the spacebar
+          to navigate the tour.
         </p>
       {/if}
       <div class="flex justify-between gap-4">
         <button
           data-testid="close-explorer-tour-btn"
           type="button"
-          class="btn btn-sm variant-filled-surface text-lg"
+          class="btn btn-sm variant-ghost-error text-lg"
           on:click={modalStore.close}>Cancel</button
         >
         <button
