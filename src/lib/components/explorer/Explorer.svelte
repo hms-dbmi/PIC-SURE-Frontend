@@ -70,18 +70,6 @@
     unsubSearchTerm && unsubSearchTerm();
   });
   $: isOpenAccess = $page.url.pathname.includes('/discover');
-
-  if (isOpenAccess) {
-    if (hasGenomicFilter) {
-      alert("You have genomic filters");
-      goto("/explore")
-    }
-    if (hasStigmatizedFilter) {
-      alert("You have Stigmatized filters");
-      goto("/explore")
-    }
-  }
-  filters.set($filters);
 </script>
 
 <section id="search-container" class="flex gap-9">
