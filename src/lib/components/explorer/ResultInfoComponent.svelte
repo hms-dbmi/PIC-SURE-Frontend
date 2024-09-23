@@ -16,30 +16,30 @@
       <ProgressRadial />
     {:then searchResultDetail } 
       <section class="flex flex-col w-3/4 p-4">
-        <h3>Variable Information</h3>
+        <h3 class="text-primary-500">Variable Information</h3>
         <div class="w-full flex flex-row justify-between">
-          <div><span class="label">Name:</span> {searchResultDetail.display}</div>
-          <div><span class="label">Accession:</span> {searchResultDetail.name}</div>
-          <div><span class="label">Type:</span> {searchResultDetail.type}</div>
+          <div><span class="font-bold">Name:</span> {searchResultDetail.display}</div>
+          <div><span class="font-bold mb-1">Accession:</span> {searchResultDetail.name}</div>
+          <div><span class="font-bold mb-1">Type:</span> {searchResultDetail.type}</div>
         </div>
-        <div><span class="label">Description:</span> {searchResultDetail.description}</div>
+        <div><span class="font-bold">Description:</span> {searchResultDetail.description}</div>
       </section>
       {#if searchResultDetail.table}
       <section class="flex flex-col w-3/4 p-4">
-        <h3>Dataset Information</h3>
+        <h3 class="text-primary-500">Dataset Information</h3>
         <div class="w-full flex flex-row justify-between">
-          <div><span class="label">Name:</span> {searchResultDetail.display}</div>
-          <div><span class="label">Accession:</span> {searchResultDetail.name}</div>
+          <div><span class="font-bold mb-1">Name:</span> {searchResultDetail.display}</div>
+          <div><span class="font-bold">Accession:</span> {searchResultDetail.name}</div>
         </div>
-        <div><span class="label">Description:</span> {searchResultDetail.description}</div>
+        <div><span class="font-bold">Description:</span> {searchResultDetail.description}</div>
       </section>
       {/if}
       {#if searchResultDetail.study}
       <section class="flex flex-col w-3/4 p-4">
-        <h3>Study Information</h3>
-        <div class="w-full flex flex-row justify-between">
-          <div><span class="label">Study Name:</span> {searchResultDetail.display}</div>
-          <div><span class="label">Study Accession:</span> {searchResultDetail.name}</div>
+        <h3 class="text-primary-500">Study Information</h3>
+        <div class="w-full flex flex-col">
+          <div><span class="font-bold mb-1">Study Name:</span> {searchResultDetail.display}</div>
+          <div><span class="font-bold">Study Accession:</span> {searchResultDetail.name}</div>
         </div>
       </section>
       {/if}
@@ -47,11 +47,3 @@
   </div>
 </div>
 
-<style>
-  li {
-    margin-bottom: 0.25rem;
-  }
-  li:last-child {
-    margin-bottom: none;
-  }
-</style>
