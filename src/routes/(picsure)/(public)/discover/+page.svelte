@@ -21,7 +21,6 @@
 
 <Content full>
   {#if isValidDiscoverQuery()}
-    {() => filters.set($filters)}
     <Explorer />
   {:else}
     <section id="discover-error-container" class="flex gap-9">
