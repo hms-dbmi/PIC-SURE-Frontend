@@ -30,8 +30,6 @@
 
 <style>
   #stats {
-    border-bottom-color: #888888;
-    border-bottom: 1px solid;
-    color: #888888;
+    border-bottom: 1px solid #888888;
   }
 </style>
