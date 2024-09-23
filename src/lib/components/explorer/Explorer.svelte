@@ -17,6 +17,7 @@
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
+  import {filters, hasGenomicFilter, hasStigmatizedFilter} from "$lib/stores/Filter.ts";
 
   let { searchTerm, search, selectedFacets, error } = SearchStore;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
@@ -69,6 +70,18 @@
     unsubSearchTerm && unsubSearchTerm();
   });
   $: isOpenAccess = $page.url.pathname.includes('/discover');
+
+  if (isOpenAccess) {
+    if (hasGenomicFilter) {
+      alert("You have genomic filters");
+      goto("/explore")
+    }
+    if (hasStigmatizedFilter) {
+      alert("You have Stigmatized filters");
+      goto("/explore")
+    }
+  }
+  filters.set($filters);
 </script>
 
 <section id="search-container" class="flex gap-9">

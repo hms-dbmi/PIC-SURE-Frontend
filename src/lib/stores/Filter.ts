@@ -5,7 +5,11 @@ import type { Filter } from '$lib/models/Filter';
 export const filters: Writable<Filter[]> = writable([]);
 export const totalParticipants: Writable<number | string> = writable(0);
 export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
-  $f.find((filter) => filter.filterType === 'genomic') ? true : false,
+    $f.find((filter) => filter.filterType === 'genomic') ? true : false,
+);
+export const hasStigmatizedFilter: Readable<boolean> = derived(filters, ($f) =>
+    // todo: actually implement this when there is a stigmatized field
+    $f.find((filter) => filter.description === 'stigmatized') ? true : false,
 );
 
 export function addFilter(filter: Filter) {
