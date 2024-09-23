@@ -28,6 +28,10 @@ export function removeFilter(uuid: string) {
   const currentFilters = get(filters);
   filters.set(currentFilters.filter((f) => f.uuid !== uuid));
 }
+export function removeGenomicFilters() {
+  const currentFilters = get(filters);
+  filters.set(currentFilters.filter((f) => f.filterType === 'genomic'));
+}
 
 export function clearFilters() {
   filters.set([]);
