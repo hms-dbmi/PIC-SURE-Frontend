@@ -47,6 +47,7 @@ export interface ExplorePageConfig {
 export interface LandingConfig {
   searchPlaceholder: string;
   explanation: string;
+  authExplanation: string;
   actions: Array<{
     title: string;
     description: string;

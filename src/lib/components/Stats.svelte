@@ -99,7 +99,7 @@
     {/each}
   </div>
   <div class="w-2/4 p-8">
-    {@html branding?.landing?.explanation}
+    {@html isUserLoggedIn() ? branding?.landing?.authExplanation : branding?.landing?.explanation}
   </div>
   {#if hasError}
     <div
