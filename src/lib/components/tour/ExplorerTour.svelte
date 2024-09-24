@@ -1,11 +1,12 @@
 <script lang="ts">
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  export let tourConfig: any;
   import { getModalStore, type ModalComponent } from '@skeletonlabs/skeleton';
 
-  import { driver } from 'driver.js';
+  import { driver, type DriverHook, type DriveStep } from 'driver.js';
   import 'driver.js/dist/driver.css';
   import '../../../tour.postcss';
 
-  import { branding } from '$lib/configuration';
   import { searchTerm, selectedFacets, loading } from '$lib/stores/Search';
   import { clearFilters } from '$lib/stores/Filter';
   import { clearExports } from '$lib/stores/Export';
@@ -17,16 +18,17 @@
 
   const disablePrevious = () => {};
 
-  function clickElement(element?: Element) {
+  const clickElement: DriverHook = (element?: Element) => {
     (element as HTMLElement)?.click();
-  }
+  };
 
-  function clickElementThenNext(element?: Element) {
+  const clickElementThenNext: DriverHook = (element?: Element) => {
     (element as HTMLElement)?.click();
     tourDriver.moveNext();
-  }
+  };
 
-  function addHighlightClass(on: boolean) {
+  // In this case we are return a function of type DriverHook
+  const addHighlightClass = (on: boolean): DriverHook => {
     return (element?: Element) => {
       if (on) {
         (element as HTMLElement).classList.add('highlight');
@@ -34,7 +36,7 @@
         (element as HTMLElement).classList.remove('highlight');
       }
     };
-  }
+  };
 
   function resetSearch() {
     searchTerm.set('');
@@ -42,176 +44,99 @@
     clearExports();
   }
 
-  export const steps = [
-    {
-      // Step 1
-      element: '#explorer-search-box',
-      popover: {
-        title: 'Search',
-        description: 'Search clinical variables of interest.',
-        onPrevClick: disablePrevious,
-      },
-    },
-    {
-      // Step 2
-      element: '#search-button',
-      popover: {
-        title: 'Search',
-        description: 'Press the Enter key or click the search icon to submit your search.',
-        onPrevClick: disablePrevious,
-      },
-    },
-    {
-      // Step 3
-      element: '#ExplorerTable-table',
-      popover: {
-        title: 'Search results',
-        description:
-          'The results of the search are displayed in this area. Each row describes a different variable that matches your search result.',
-        onPrevClick: disablePrevious,
-      },
-    },
-    {
-      // Step 4
-      element: '[data-testid=genomic-filter-btn]',
-      popover: {
-        title: 'Add a genomic Filter',
-        description:
-          'Use the genomic filtering button to apply a filter using genomic information. \n Note* you can also search for genomic variables using the search bar.',
-        onPrevClick: disablePrevious,
-      },
-    },
-    {
-      // Step 5
-      element: '#row-0-col-2 button[title=Filter]',
-      onHighlightStarted: clickElement,
-      popover: {
-        title: 'Add a filter',
-        description:
-          'To view available filters for a variable, click on the filter icon in the row of interest.',
-        onPrevClick: disablePrevious,
-      },
-    },
-    {
-      // Step 6
-      element: '#active-row-0 [data-testid=numerical-filter]',
-      popover: {
-        title: 'Add numeric filter',
-        description:
-          'To add a numeric filter, enter the min and max values you want in the filter.',
-        onPrevClick: disablePrevious,
-        onNextClick: () => {
-          const min = document.querySelector(
-            '#active-row-0 [data-testid=numerical-filter] input#min',
-          ) as HTMLInputElement;
-          const max = document.querySelector(
-            '#active-row-0 [data-testid=numerical-filter] input#max',
-          ) as HTMLInputElement;
-          min.value = '2';
-          max.value = '4';
-          tourDriver.moveNext();
+  const applyNumericFilter = (activeRowSelector?: string) => {
+    const filter = document.querySelector(
+      `#${activeRowSelector} [data-testid="numerical-filter"]`,
+    ) as HTMLElement;
+    filter.click();
+    tourDriver.moveNext();
+  };
+
+  const clickFilterOption = (activeRowSelector?: string) => {
+    const allOptions = document.querySelector(
+      `#${activeRowSelector} #select-all`,
+    ) as HTMLInputElement;
+    allOptions?.click();
+    tourDriver.moveNext();
+  };
+
+  function openDrawer() {
+    const sidePanel = document.querySelector('#results-panel-toggle') as HTMLElement;
+    sidePanel.click();
+  }
+
+  const applyFilterThenNext: DriverHook = (element?: Element) => {
+    const activeRowId = element?.id;
+    const filterType = document.querySelector(`#${activeRowId} [data-testid="numerical-filter"]`)
+      ? 'numerical'
+      : 'categorical';
+    if (filterType === 'numerical') {
+      applyNumericFilter(activeRowId);
+    } else {
+      clickFilterOption(activeRowId);
+    }
+  };
+
+  /*
+  This is used to replace the placeholder in the tour configuration with the actual search term.
+  This is used for the title and description of the popover.
+   */
+  function replacePlaceholders(text: string, searchTerm: string): string {
+    return text.replace(/\{\{searchTerm\}\}/g, searchTerm);
+  }
+
+  type FunctionMap = {
+    [key: string]: DriverHook;
+  };
+
+  /*
+  This object maps the function names in the tour configuration to the actual functions
+  that will be executed when the tour reaches that step. If the function is not in this
+  map, the tour will throw an error.
+   */
+  const functionMap: FunctionMap = {
+    disablePrevious,
+    clickElement,
+    clickElementThenNext,
+    addHighlightClass: addHighlightClass(true),
+    removeHighlightClass: addHighlightClass(false),
+    resetSearch,
+    applyFilterThenNext,
+  };
+
+  // This method will serialize the json configuration to a DriveStep array
+  // that driver.js can use for the tour steps
+  // It will map the function names in pop over to actual functions
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  function mapConfigurationToSteps(steps: any): DriveStep[] {
+    return steps.map((step: any) => {
+      const { popover, ...rest } = step;
+      const serializedStep: any = {
+        ...rest,
+        popover: {
+          ...popover,
+          title: replacePlaceholders(popover.title, tourConfig?.searchTerm),
+          description: replacePlaceholders(popover.description, tourConfig?.searchTerm),
         },
-      },
-    },
-    {
-      // Step 7
-      element: '#active-row-0 [data-testid=add-filter]',
-      popover: {
-        title: 'Add numeric filter',
-        description: 'Click the plus icon to add the filter',
-        onPrevClick: disablePrevious,
-        onNextClick: clickElementThenNext,
-      },
-    },
-    {
-      // Step 8
-      element: '#sidebar-right',
-      popover: {
-        title: 'Filters added',
-        description: 'Any filters added will end up in the results sidebar.',
-      },
-    },
-    {
-      // Step 9
-      element: '#row-1-col-2 button[title=Filter]',
-      onHighlightStarted: clickElement,
-      popover: {
-        title: 'Add categorical filter',
-        description: 'You can continue to add filters.',
-        onPrevClick: disablePrevious,
-      },
-    },
-    {
-      // Step 10
-      element: '#active-row-1 #options-container',
-      popover: {
-        title: 'Add categorical filter',
-        description:
-          'To add a categorical filter, click on the options you want to include in the filter.',
-        onPrevClick: disablePrevious,
-        onNextClick: () => {
-          const firstOption = document.querySelector(
-            '#active-row-1 #options-container label:nth-child(1)',
-          ) as HTMLInputElement;
-          firstOption?.click();
-          tourDriver.moveNext();
-        },
-      },
-    },
-    {
-      // Step 11
-      element: '#active-row-1 [data-testid=add-filter]',
-      popover: {
-        title: 'Add categorical filter',
-        description: 'Click the plus icon to add the filter',
-        onPrevClick: disablePrevious,
-        onNextClick: clickElementThenNext,
-      },
-    },
-    {
-      // Step 12
-      element: '#sidebar-right',
-      popover: {
-        title: 'Added filters',
-        description:
-          'You can view, edit, or delete previously added filters from the result sidebar.',
-        onPrevClick: disablePrevious,
-      },
-    },
-    {
-      // Step 13
-      element: '#row-0-col-2 button[title="Data Export"]',
-      popover: {
-        title: 'Add a varible to export',
-        description:
-          'Add a varible to exported data by clicking the export icon on the variable of interest.',
-        onPrevClick: disablePrevious,
-        onNextClick: clickElementThenNext,
-      },
-    },
-    {
-      // Step 14
-      element: '#sidebar-right',
-      popover: {
-        title: 'Added exports',
-        description:
-          'You can view, or delete previously added variables for export from the result sidebar.',
-        onPrevClick: disablePrevious,
-      },
-    },
-    {
-      // Step 15
-      element: '#nav-link-help',
-      onHighlighted: addHighlightClass(true),
-      onDeselected: addHighlightClass(false),
-      popover: {
-        title: 'Get help',
-        description:
-          'To learn more about these features, consult the documentation and use the information links throughout the site.',
-        onPrevClick: disablePrevious,
-      },
-    },
-  ];
+      };
+
+      if (popover.onPrevClick) {
+        serializedStep.popover.onPrevClick = functionMap[popover.onPrevClick];
+      }
+
+      if (popover.onNextClick) {
+        serializedStep.popover.onNextClick = functionMap[popover.onNextClick];
+      }
+
+      if (step.onHighlightStarted) {
+        serializedStep.onHighlightStarted = functionMap[step.onHighlightStarted];
+      }
+
+      return serializedStep;
+    });
+  }
+
+  const steps = mapConfigurationToSteps(tourConfig.steps);
 
   // Notes:
   // - The object that we want to interact with must be fully loaded in the dom before the step that interracts with it,
@@ -253,10 +178,11 @@
         if (!start) return;
 
         resetSearch();
+        openDrawer();
 
         // Load search in bg then start tour
         const searchBox = document.querySelector('#explorer-search-box') as HTMLInputElement;
-        searchBox.value = branding?.explorePage?.tourSearchTerm;
+        searchBox.value = tourConfig.searchTerm;
         searchBox.dispatchEvent(new Event('input'));
         searchBox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
 
@@ -274,6 +200,8 @@
 <button
   type="button"
   data-testid="explorer-tour-btn"
-  class="btn variant-ghost-secondary hover:variant-filled-secondary"
-  on:click={startTour}>Take a Tour</button
->
+  id="tourBtn"
+  class="btn variant-filled-secondary"
+  on:click={startTour}
+  >Take a Tour
+</button>

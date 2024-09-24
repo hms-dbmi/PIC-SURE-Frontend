@@ -2,10 +2,10 @@
   import Content from '$lib/components/Content.svelte';
   import { branding } from '$lib/configuration';
   import Explorer from '$lib/components/explorer/Explorer.svelte';
-  import {filters, hasGenomicFilter, hasStigmatizedFilter, removeGenomicFilters} from "$lib/stores/Filter.ts";
+  import {hasGenomicFilter, hasStigmatizedFilter, removeGenomicFilters} from "$lib/stores/Filter.ts";
   import {goto} from "$app/navigation";
   import ErrorAlert from "$lib/components/ErrorAlert.svelte";
-  import {page} from "$app/stores";
+  import openTour from '$lib/assets/openTourConfiguration.json';
 
   function resetQuery() {
     removeGenomicFilters();
@@ -28,6 +28,6 @@
       </ErrorAlert>
     </section>
   {:else}
-    <Explorer />
+    <Explorer tourConfig={openTour} />
   {/if}
 </Content>

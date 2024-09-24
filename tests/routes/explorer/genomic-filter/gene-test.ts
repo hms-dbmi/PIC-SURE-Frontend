@@ -4,7 +4,7 @@ import { geneValues } from '../../../mock-data';
 import * as config from '../../../../src/lib/assets/configuration.json' assert { type: 'json' };
 import type { Branding } from '$lib/configuration';
 //TypeScript is confused by the JSON import so I am fxing it here
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;

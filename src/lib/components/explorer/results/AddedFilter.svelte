@@ -87,7 +87,7 @@
 >
   <header class="card-header p-1 flex">
     <div
-      class="flex-auto"
+      class="flex-auto variable"
       tabindex="0"
       role="button"
       on:click|preventDefault|stopPropagation={toggleCardBody}
@@ -139,5 +139,9 @@
 <style>
   .actions {
     flex: none;
+  }
+  .card-header .variable {
+    overflow-wrap: break-word;
+    overflow: auto;
   }
 </style>

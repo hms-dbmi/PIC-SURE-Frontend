@@ -18,10 +18,13 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
   import {filters, hasGenomicFilter, hasStigmatizedFilter} from "$lib/stores/Filter.ts";
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  export let tourConfig: any;
 
   let { searchTerm, search, selectedFacets, error } = SearchStore;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
   const tableName = 'ExplorerTable';
+  $: tourEnabled = true;
 
   const columns: Column[] = [
     { dataElement: 'display', label: 'Variable Name', sort: false },
@@ -33,7 +36,10 @@
   };
 
   const handler = new DataHandler([] as SearchResult[], { rowsPerPage: 10 });
-  handler.onChange((state: State) => search($searchTerm, $selectedFacets, state));
+  handler.onChange((state: State) => {
+    doDisableTour();
+    return search($searchTerm, $selectedFacets, state);
+  });
 
   let unsubSelectedFacets: Unsubscriber;
   let unsubSearchTerm: Unsubscriber;
@@ -54,6 +60,12 @@
       searchTerm.set(searchInput);
     }
   });
+
+  function doDisableTour() {
+    if (tourEnabled && (searchInput || ($selectedFacets && $selectedFacets.length > 0))) {
+      tourEnabled = false;
+    }
+  }
 
   function updateSearch() {
     if ($error) {
@@ -99,6 +111,7 @@
             searchTerm.set('');
             error.set('');
             selectedFacets.set([]);
+            tourEnabled = true;
             goto(isOpenAccess ? '/discover' : '/explorer');
           }}
         >
@@ -113,9 +126,9 @@
     {:else if $searchTerm || $selectedFacets.length > 0}
       <SearchDatatable {tableName} {handler} {columns} {cellOverides} />
     {/if}
-    {#if features.explorer.enableTour}
+    {#if features.explorer.enableTour && tourEnabled}
       <div id="explorer-tour" class="text-center mt-4">
-        <ExplorerTour />
+        <ExplorerTour {tourConfig} />
       </div>
     {/if}
   </div>

@@ -22,5 +22,7 @@ export type SearchResult = Indexable & {
   min?: number;
   max?: number;
   meta?: Record<string, string> | null;
+  table?: SearchResult;
+  study?: SearchResult;
   type: 'Categorical' | 'Continuous';
 };
