@@ -5,7 +5,7 @@ export async function createDatasetName(queryId: string, name: string): Promise<
   if (name === '' && name.trim() === '') {
     throw 'Please input a Dataset ID name';
   }
-  const validName = /^[\w\d \-\\/?+=[\].():"']+$/g;
+  const validName = /^[\w\d \-\/?+=[\].():"']+$/g;
   if (!name.match(validName)) {
     throw 'Name can only contain letters, numbers, and these special symbols - ? + = [ ] . ( ) : \' "';
   }
