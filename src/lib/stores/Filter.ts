@@ -30,7 +30,7 @@ export function removeFilter(uuid: string) {
 }
 export function removeGenomicFilters() {
   const currentFilters = get(filters);
-  filters.set(currentFilters.filter((f) => f.filterType === 'genomic'));
+  filters.set(currentFilters.filter((f) => f.filterType !== 'genomic'));
 }
 
 export function clearFilters() {
