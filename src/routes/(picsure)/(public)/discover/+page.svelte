@@ -10,6 +10,8 @@
   function isValidDiscoverQuery(): boolean {
     return !($hasGenomicFilter || $hasStigmatizedFilter);
   }
+
+  $: showExplorer = isValidDiscoverQuery()
   function resetQuery() {
     removeGenomicFilters();
     goto("/discover");
@@ -21,7 +23,7 @@
 </svelte:head>
 
 <Content full>
-  {#if isValidDiscoverQuery()}
+  {#if showExplorer}
     <Explorer />
   {:else}
     <section id="discover-error-container" class="flex gap-9">
