@@ -116,12 +116,11 @@
 
   async function createNamedDataset() {
     try {
-      const validName = /^[\w \-\/?+=[\].():"']+$/g;
+      const validName = /^[\w\-\/?+=[\].():"']+$/g;
       if (!datasetNameInput.match(validName)) {
         throw 'Name can only contain letters, numbers, and these special symbols - ? + = [ ] . ( ) : \' "';
       }
-      const datasetName = encodeURIComponent(datasetNameInput);
-      await createDatasetName(datasetId, datasetName);
+      await createDatasetName(datasetId, datasetNameInput);
     } catch (err) {
       if (err instanceof Object) {
         const errObj = err as DatasetError;
