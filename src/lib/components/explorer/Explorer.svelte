@@ -17,7 +17,6 @@
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
-  import {filters, hasGenomicFilter, hasStigmatizedFilter} from "$lib/stores/Filter.ts";
   /* eslint-disable @typescript-eslint/no-explicit-any */
   export let tourConfig: any;
 

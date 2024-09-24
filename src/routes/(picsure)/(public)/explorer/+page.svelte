@@ -3,7 +3,7 @@
   import Content from '$lib/components/Content.svelte';
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import authTour from '$lib/assets/authTourConfiguration.json';
-  import {filters} from "$lib/stores/Filter.ts";
+  import { filters } from '$lib/stores/Filter.ts';
 
   filters.set($filters);
 </script>
