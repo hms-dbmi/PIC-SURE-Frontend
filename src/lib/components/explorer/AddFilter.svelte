@@ -28,11 +28,15 @@
   let startLocation = 0;
   let lastSearchTerm = '';
   let loading = false;
+  let display: string;
+  let description: string;
 
   onMount(async () => {
     if ($modalStore[0]?.meta.existingFilter) {
       const existingFilter: Filter = $modalStore[0]?.meta.existingFilter;
       data = $modalStore[0]?.meta.existingFilter.searchResult;
+      display = data?.display || '';
+      description = data?.description || '';
       if (existingFilter.filterType === 'Categorical') {
         if (existingFilter.categoryValues.length === 0) {
           selectedOptions = data?.values || [];
@@ -134,57 +138,65 @@
   $: valuesSelected = selectedOptions.map((option) => option);
 </script>
 
-<div class="flex justify-between" data-testid="filter-component">
-  {#if !data}
-    <ProgressRadial width="w-10" value={undefined} />
-  {:else}
-    {#if data?.type === 'Categorical'}
-      <div data-testid="categoical-filter" class="w-full">
-        <OptionsSelectionList
-          bind:unselectedOptions
-          bind:selectedOptions
-          bind:currentlyLoading={loading}
-          allOptions={data?.values}
-          on:scroll={(event) => getNextValues(event.detail.search)}
-        />
-      </div>
-    {:else if data?.type === 'Continuous'}
-      <div class="card p-3 m-1 w-full">
-        <section class="card-body flex flex-grow gap-4" data-testid="numerical-filter">
-          <label class="flex-auto flex-col">
-            <span>Min: {min}</span>
-            <input
-              id="min"
-              data-testid="min-input"
-              type="text"
-              placeholder="Enter value or leave blank for variable min"
-              class="input"
-              bind:value={minFormValue}
-            />
-          </label>
-          <label class="flex-auto flex-col">
-            <span>Max: {max}</span>
-            <input
-              id="max"
-              data-testid="max-input"
-              type="text"
-              placeholder="Enter value or leave blank for variable max"
-              class="input"
-              bind:value={maxFormValue}
-            />
-          </label>
-        </section>
-      </div>
-    {/if}
-    <button
-      class="btn btn-icon variant-filled-primary m-1"
-      data-testid="add-filter"
-      on:click={addNewFilter}
-      disabled={data.type === 'Categorical' && valuesSelected.length === 0}
-    >
-      <i class="fas fa-plus"></i>
-    </button>
+<div>
+  {#if !!data && description !== undefined && display !== undefined}
+    <div class="variable-info">
+      <div class="variable-name">Variable Name: {display}</div>
+      <div class="variable-desc">Variable Description: {description}</div>
+    </div>
   {/if}
+  <div class="flex justify-between" data-testid="filter-component">
+    {#if !data}
+      <ProgressRadial width="w-10" value={undefined} />
+    {:else}
+      {#if data?.type === 'Categorical'}
+        <div data-testid="categoical-filter" class="w-full">
+          <OptionsSelectionList
+            bind:unselectedOptions
+            bind:selectedOptions
+            bind:currentlyLoading={loading}
+            allOptions={data?.values}
+            on:scroll={(event) => getNextValues(event.detail.search)}
+          />
+        </div>
+      {:else if data?.type === 'Continuous'}
+        <div class="card p-3 m-1 w-full">
+          <section class="card-body flex flex-grow gap-4" data-testid="numerical-filter">
+            <label class="flex-auto flex-col">
+              <span>Min: {min}</span>
+              <input
+                id="min"
+                data-testid="min-input"
+                type="text"
+                placeholder="Enter value or leave blank for variable min"
+                class="input"
+                bind:value={minFormValue}
+              />
+            </label>
+            <label class="flex-auto flex-col">
+              <span>Max: {max}</span>
+              <input
+                id="max"
+                data-testid="max-input"
+                type="text"
+                placeholder="Enter value or leave blank for variable max"
+                class="input"
+                bind:value={maxFormValue}
+              />
+            </label>
+          </section>
+        </div>
+      {/if}
+      <button
+        class="btn btn-icon variant-filled-primary m-1"
+        data-testid="add-filter"
+        on:click={addNewFilter}
+        disabled={data.type === 'Categorical' && valuesSelected.length === 0}
+      >
+        <i class="fas fa-plus"></i>
+      </button>
+    {/if}
+  </div>
 </div>
 
 <style>

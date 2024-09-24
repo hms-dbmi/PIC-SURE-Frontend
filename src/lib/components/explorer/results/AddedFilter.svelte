@@ -140,10 +140,8 @@
   .actions {
     flex: none;
   }
-  .card-header {
-    .variable {
-      text-overflow: ellipsis;
-      overflow: hidden;
-    }
+  .card-header .variable {
+    overflow-wrap: break-word;
+    overflow: auto;
   }
 </style>
