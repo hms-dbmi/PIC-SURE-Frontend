@@ -7,14 +7,8 @@
   import ErrorAlert from "$lib/components/ErrorAlert.svelte";
   import {page} from "$app/stores";
 
-  function isValidDiscoverQuery(): boolean {
-    return !($hasGenomicFilter || $hasStigmatizedFilter);
-  }
-
-  $: showExplorer = isValidDiscoverQuery()
   function resetQuery() {
     removeGenomicFilters();
-    goto("/discover");
   }
 </script>
 
@@ -23,9 +17,7 @@
 </svelte:head>
 
 <Content full>
-  {#if showExplorer}
-    <Explorer />
-  {:else}
+  {#if $hasGenomicFilter || $hasStigmatizedFilter}
     <section id="discover-error-container" class="flex gap-9">
       {#if $hasStigmatizedFilter}
         <ErrorAlert title="Your selected filters contain stigmatizing variables which are not supported with Discover">
@@ -38,5 +30,7 @@
         </ErrorAlert>
       {/if}
     </section>
+  {:else}
+    <Explorer />
   {/if}
 </Content>
