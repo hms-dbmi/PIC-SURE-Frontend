@@ -47,12 +47,15 @@ export interface ExplorePageConfig {
 export interface LandingConfig {
   searchPlaceholder: string;
   explanation: string;
+  authExplanation: string;
   actions: Array<{
     title: string;
     description: string;
     icon: string;
     url: string;
     btnText: string;
+    isOpen: boolean;
+    showIfLoggedIn: boolean;
   }>;
   stats: string[];
 }

@@ -117,7 +117,7 @@ export const searchRequest = { facets: [], search: 'age' };
 
 export const searchResults = {
   totalPages: 1,
-  totalElements: 4,
+  totalElements: 7,
   pageable: {
     pageNumber: 0,
     pageSize: 10,
@@ -456,7 +456,6 @@ export const detailResponseNum = {
     description: 'Age',
   },
 };
-
 export const facetsResponse = [
   {
     name: 'study_ids_dataset_ids',
@@ -569,6 +568,31 @@ export const facetsResponse = [
         count: 1,
         children: null,
         category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+    ],
+  },
+  {
+    name: 'dataset_id',
+    display: 'Study IDs/Dataset IDs',
+    description: '',
+    facets: [
+      {
+        name: 'Test For Landing',
+        display: 'Test',
+        description: 'dataset_id study',
+        count: 1,
+        children: null,
+        category: 'dataset_id',
+        meta: null,
+      },
+      {
+        name: 'Test For Landing 2',
+        display: 'Test 2',
+        description: 'dataset_id study',
+        count: 1,
+        children: null,
+        category: 'dataset_id',
         meta: null,
       },
     ],

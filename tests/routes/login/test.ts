@@ -2,11 +2,10 @@ import { expect } from '@playwright/test';
 import { unauthedTest } from '../../custom-context';
 import * as config from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
 import type { Branding } from '$lib/configuration';
-const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
-
 //TypeScript is confused by the JSON import so I am fxing it here
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
+const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
 //TODO: Tests for login dropdown
 
