@@ -12,6 +12,7 @@
   }
   function resetQuery() {
     removeGenomicFilters();
+    goto("/discover");
   }
 </script>
 
