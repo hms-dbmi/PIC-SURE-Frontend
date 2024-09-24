@@ -19,16 +19,9 @@
 <Content full>
   {#if $hasGenomicFilter || $hasStigmatizedFilter}
     <section id="discover-error-container" class="flex gap-9">
-      {#if $hasStigmatizedFilter}
-        <ErrorAlert title="Your selected filters contain stigmatizing variables which are not supported with Discover">
-          <p>Please <a on:click={() => resetQuery()}>reset the query</a> or go back to <a href="/explorer">Explore</a>.</p>
-        </ErrorAlert>
-      {/if}
-      {#if $hasGenomicFilter}
-        <ErrorAlert title="Your selected filters contain genomic filters, which are not supported with Discover.">
-          <p>Please <a on:click={() => resetQuery()}>reset the query</a> or go back to <a href="/explorer">Explore</a>.</p>
-        </ErrorAlert>
-      {/if}
+      <ErrorAlert title="Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover">
+        <p>Would you like to <a on:click={() => resetQuery()}>remove the invalid filters</a> or go back to <a href="/explorer">Explore</a>?</p>
+      </ErrorAlert>
     </section>
   {:else}
     <Explorer />
