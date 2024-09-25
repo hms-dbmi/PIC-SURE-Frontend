@@ -13,7 +13,6 @@
 
   import TourModal from '$lib/components/tour/TourModal.svelte';
   import { branding } from '$lib/configuration';
-  import { text } from 'stream/consumers';
 
   const modalStore = getModalStore();
   const tourComponent: ModalComponent = { ref: TourModal };
