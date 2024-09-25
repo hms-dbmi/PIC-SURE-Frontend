@@ -1,7 +1,7 @@
 <script lang="ts">
   import { branding, features, resources } from '$lib/configuration';
   import { slide, scale } from 'svelte/transition';
-  import { page } from '$app/stores';
+  import { navigating, page } from '$app/stores';
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
@@ -25,8 +25,10 @@
   const ERROR_VALUE = 'N/A';
 
   let unsubFilters: Unsubscriber;
+  let unsubNav: Unsubscriber;
   let totalPatients: string | number | typeof ERROR_VALUE = 0;
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = Promise.resolve(0);
+  let isOpenAccess = $page.url.pathname.includes('/discover');
 
   async function getCount() {
     suffix = '';
@@ -91,7 +93,6 @@
     });
   }
 
-  $: isOpenAccess = $page.url.pathname.includes('/discover');
   $: suffix = '';
   $: hasFilterOrExport =
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0);
@@ -106,10 +107,14 @@
     unsubFilters = filters.subscribe(() => {
       triggerRefreshCount = getCount();
     });
+    unsubNav = navigating.subscribe(() => {
+      isOpenAccess = $page.url.pathname.includes('/discover');
+    });
   });
 
   onDestroy(() => {
     unsubFilters && unsubFilters();
+    unsubNav && unsubNav();
   });
 </script>
 
