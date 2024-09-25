@@ -44,7 +44,7 @@
       }
     },
     {
-      "element": "#row-0-col-2 button[title=Filter]",
+      "element": "#row-0-col-\"{{columnCount}}\" button[title=Filter]",
       "onHighlightStarted": "clickElement",
       "popover": {
         "title": "Apply Filters",
@@ -62,7 +62,7 @@
       }
     },
     {
-      "element": "#row-0-col-2 button[title=\"Add for Analysis\"]",
+      "element": "#row-0-col-\"{{columnCount}}\" button[title=\"Add for Analysis\"]",
       "popover": {
         "title": "Export Variable",
         "description": "Click the export icon to add a variable to your export without applying a filter.",
