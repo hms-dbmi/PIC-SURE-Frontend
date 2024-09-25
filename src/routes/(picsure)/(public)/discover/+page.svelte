@@ -24,6 +24,8 @@
 </svelte:head>
 
 <Content full>
+  <div>Has genomic filter: ${$hasGenomicFilter}</div>
+  <div>Has genomic filter: ${$hasUnallowedFilter}</div>
   {#if $hasGenomicFilter || $hasUnallowedFilter}
     <section id="discover-error-container" class="flex gap-9">
       <ErrorAlert
