@@ -17,7 +17,6 @@
     removeGenomicFilters();
     removeUnallowedFilters();
   }
-  console.log("Pathname: " + $page.url.pathname);
   filters.set($filters);
 </script>
 
