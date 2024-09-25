@@ -4,7 +4,10 @@
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import authTour from '$lib/assets/authTourConfiguration.json';
   import { filters } from '$lib/stores/Filter.ts';
+  import {page} from "$app/stores";
 
+
+  console.log("Pathname: " + $page.url.pathname);
   filters.set($filters);
 </script>
 

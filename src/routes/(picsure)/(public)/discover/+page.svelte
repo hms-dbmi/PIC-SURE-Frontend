@@ -11,11 +11,13 @@
   import { goto } from '$app/navigation';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import openTour from '$lib/assets/openTourConfiguration.json';
+  import {page} from "$app/stores";
 
   function resetQuery() {
     removeGenomicFilters();
     removeUnallowedFilters();
   }
+  console.log("Pathname: " + $page.url.pathname);
   filters.set($filters);
 </script>
 
