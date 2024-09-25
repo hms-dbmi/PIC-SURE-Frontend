@@ -58,7 +58,7 @@ test.describe('Results Panel', () => {
       detailResponseCat,
     );
     await mockApiFail(page, countResultPath, 'failed');
-    await page.locator('#row-0-col-2 button[title=Filter]').click();
+    await page.locator('#row-0-col-3 button[title=Filter]').click();
     await page.locator('#options-container label:nth-child(1)').click();
     await page.getByTestId('add-filter').click();
 
@@ -150,7 +150,7 @@ test.describe('Results Panel', () => {
       detailResponseCat,
     );
     await mockApiFail(page, countResultPath, 'failed');
-    await page.locator('#row-0-col-2 button[title=Filter]').click();
+    await page.locator('#row-0-col-3 button[title=Filter]').click();
     await page.locator('#options-container label:nth-child(1)').click();
     await page.getByTestId('add-filter').click();
 
