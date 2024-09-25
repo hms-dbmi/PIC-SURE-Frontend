@@ -7,9 +7,8 @@ export const totalParticipants: Writable<number | string> = writable(0);
 export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
   $f.find((filter) => filter.filterType === 'genomic') ? true : false,
 );
-export const hasStigmatizedFilter: Readable<boolean> = derived(filters, ($f) =>
-  // todo: actually implement this when there is a stigmatized field
-  $f.find((filter) => filter.description === 'stigmatized') ? true : false,
+export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
+  $f.find((filter) => !filter.allowFiltering) ? true : false,
 );
 
 export function addFilter(filter: Filter) {
@@ -31,6 +30,10 @@ export function removeFilter(uuid: string) {
 export function removeGenomicFilters() {
   const currentFilters = get(filters);
   filters.set(currentFilters.filter((f) => f.filterType !== 'genomic'));
+}
+export function removeUnallowedFilters() {
+  const currentFilters = get(filters);
+  filters.set(currentFilters.filter((f) => f.allowFiltering));
 }
 
 export function clearFilters() {

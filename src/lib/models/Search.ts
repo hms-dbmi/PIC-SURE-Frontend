@@ -25,4 +25,5 @@ export type SearchResult = Indexable & {
   table?: SearchResult;
   study?: SearchResult;
   type: 'Categorical' | 'Continuous';
+  allowFiltering: boolean;
 };

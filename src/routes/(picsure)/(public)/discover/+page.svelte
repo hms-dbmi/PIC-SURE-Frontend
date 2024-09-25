@@ -4,8 +4,8 @@
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import {
     hasGenomicFilter,
-    hasStigmatizedFilter,
-    removeGenomicFilters,
+    hasUnallowedFilter,
+    removeGenomicFilters, removeUnallowedFilters,
   } from '$lib/stores/Filter.ts';
   import { goto } from '$app/navigation';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -13,6 +13,7 @@
 
   function resetQuery() {
     removeGenomicFilters();
+    removeUnallowedFilters();
   }
 </script>
 
@@ -21,7 +22,7 @@
 </svelte:head>
 
 <Content full>
-  {#if $hasGenomicFilter || $hasStigmatizedFilter}
+  {#if $hasGenomicFilter || $hasUnallowedFilter}
     <section id="discover-error-container" class="flex gap-9">
       <ErrorAlert
         title="Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover"

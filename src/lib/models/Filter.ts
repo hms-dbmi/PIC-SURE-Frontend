@@ -17,6 +17,7 @@ export interface FilterInterface {
   isHarmonized?: boolean;
   topmed?: boolean;
   sites?: string[];
+  allowFiltering: boolean;
 }
 
 export interface CategoricalFilterInterface extends FilterInterface {
@@ -59,6 +60,7 @@ export function createCategoricalFilter(searchResult: SearchResult, values?: str
     categoryValues: values || [],
     variableName: searchResult.display,
     description: searchResult.description,
+    allowFiltering: searchResult.allowFiltering,
   };
   return filter;
 }
@@ -73,6 +75,7 @@ export function createRequiredFilter(searchResult: SearchResult) {
     variableName: searchResult.display,
     description: searchResult.description,
     categoryValues: [],
+    allowFiltering: searchResult.allowFiltering,
   };
   return filter;
 }
@@ -87,6 +90,7 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, values?: str
     categoryValues: values || [],
     variableName: searchResult.display,
     description: searchResult.description,
+    allowFiltering: searchResult.allowFiltering,
   };
   return filter;
 }
@@ -109,6 +113,7 @@ export function createNumericFilter(searchResult: SearchResult, min?: string, ma
     max: max !== undefined ? max : undefined,
     variableName: searchResult.display,
     description: searchResult.description,
+    allowFiltering: searchResult.allowFiltering,
   };
   return filter;
 }
@@ -138,6 +143,7 @@ export function createGenomicFilter(geneFilter: {
     Gene_with_variant: geneFilter.Gene_with_variant,
     Variant_consequence_calculated: geneFilter.Variant_consequence_calculated,
     Variant_frequency_as_text: geneFilter.Variant_frequency_as_text,
+    allowFiltering: true
   };
   return filter;
 }
@@ -160,6 +166,7 @@ export function createSnpsFilter(snps: SNP[]) {
     snpValues: snps,
     variableName: 'Variant Filter',
     description,
+    allowFiltering: true
   };
   return filter;
 }
