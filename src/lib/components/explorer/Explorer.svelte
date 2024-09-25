@@ -96,7 +96,7 @@
         <Searchbox bind:searchTerm={searchInput} search={updateSearch} />
       </div>
       <div class="flex-none">
-        {#if !isOpenAccess && features.genomicFilter}
+        {#if !isOpenAccess && features.genomicFilter && (features.explorer.enableGENEQuery || features.explorer.enableSNPQuery)}
           <a
             data-testid="genomic-filter-btn"
             class="btn variant-ghost-primary hover:variant-filled-primary"
