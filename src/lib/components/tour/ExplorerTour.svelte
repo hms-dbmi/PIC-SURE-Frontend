@@ -12,12 +12,12 @@
   import { clearExports } from '$lib/stores/Export';
 
   import TourModal from '$lib/components/tour/TourModal.svelte';
-    import { branding } from '$lib/configuration';
-    import { text } from 'stream/consumers';
+  import { branding } from '$lib/configuration';
+  import { text } from 'stream/consumers';
 
   const modalStore = getModalStore();
   const tourComponent: ModalComponent = { ref: TourModal };
-  const searchResultsColumnCount = branding.explorePage.additionalColumns.length + 3
+  const searchResultsColumnCount = branding.explorePage.additionalColumns.length + 3;
 
   const disablePrevious = () => {};
 
@@ -89,7 +89,7 @@
   }
 
   function replaceColumnCount(text: string) {
-    return text.replace(/\{\{columnCount\}\}/g, searchResultsColumnCount.toString())
+    return text.replace(/\{\{columnCount\}\}/g, searchResultsColumnCount.toString());
   }
 
   type FunctionMap = {
@@ -120,7 +120,7 @@
       const { popover, element, ...rest } = step;
       const serializedStep: any = {
         ...rest,
-        element : replaceColumnCount(element),
+        element: replaceColumnCount(element),
         popover: {
           ...popover,
           title: replacePlaceholders(popover.title, tourConfig?.searchTerm),
