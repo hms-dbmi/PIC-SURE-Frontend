@@ -109,6 +109,7 @@
     });
     unsubNav = navigating.subscribe(() => {
       isOpenAccess = $page.url.pathname.includes('/discover');
+      triggerRefreshCount = getCount();
     });
   });
 
