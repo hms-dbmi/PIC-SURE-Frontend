@@ -30,6 +30,7 @@
 
   async function getCount() {
     isOpenAccess = $page.url.pathname.includes('/discover');
+    console.log("Results panel pagename = " + $page.url.pathname);
     // leaving this because it is often true on /explore ???
     console.log('Get count, isOpenAccess = ' + isOpenAccess);
     suffix = '';
