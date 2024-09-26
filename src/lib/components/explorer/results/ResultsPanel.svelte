@@ -1,7 +1,7 @@
 <script lang="ts">
   import { branding, features, resources } from '$lib/configuration';
   import { slide, scale } from 'svelte/transition';
-  import { navigating, page } from '$app/stores';
+  import { page } from '$app/stores';
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
@@ -108,13 +108,13 @@
     });
   });
 
-  afterNavigate(async ()=> {
+  afterNavigate(async () => {
     isOpenAccess = $page.url.pathname.includes('/discover');
     const isExplorer = $page.url.pathname.includes('/explorer');
     if (isExplorer || isOpenAccess) {
       triggerRefreshCount = getCount();
     }
-  })
+  });
 
   onDestroy(() => {
     unsubFilters && unsubFilters();
