@@ -34,11 +34,13 @@
           <p>Would you like to remove the invalid filters or go back to explore?</p>
           <div>
             <div class="dark">
-              <button class="btn variant-ringed hover:variant-filled-warning" on:click={() => resetQuery()}
-              >Remove Invalid Filters</button
+              <button
+                class="btn variant-ringed hover:variant-filled-warning"
+                on:click={() => resetQuery()}>Remove Invalid Filters</button
               >
-              <button class="btn variant-ringed hover:variant-filled-warning" on:click={() => goto('/explorer')}
-              >Back to Explore</button
+              <button
+                class="btn variant-ringed hover:variant-filled-warning"
+                on:click={() => goto('/explorer')}>Back to Explore</button
               >
             </div>
           </div>
