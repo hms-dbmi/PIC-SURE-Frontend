@@ -17,7 +17,6 @@
     removeGenomicFilters();
     removeUnallowedFilters();
   }
-  filters.set($filters);
 </script>
 
 <svelte:head>
