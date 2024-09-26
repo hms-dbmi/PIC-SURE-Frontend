@@ -47,3 +47,7 @@ export function getFilter(uuid: string) {
 export function getFiltersByType(type: string) {
   return get(filters).filter((f) => f.filterType === type);
 }
+
+filters.subscribe((filterArray) => {
+  localStorage.setItem('filters', JSON.stringify(filterArray));
+})

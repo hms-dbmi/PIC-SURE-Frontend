@@ -105,7 +105,6 @@
 
   onMount(async () => {
     unsubFilters = filters.subscribe(() => {
-      localStorage.setItem('filters', JSON.stringify($filters));
       triggerRefreshCount = getCount();
     });
   });
