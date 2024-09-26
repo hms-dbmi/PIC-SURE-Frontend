@@ -21,5 +21,4 @@
     script.async = true;
     document.head.appendChild(script);
   });
-
 </script>
