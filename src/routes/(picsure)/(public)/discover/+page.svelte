@@ -3,7 +3,6 @@
   import { branding } from '$lib/configuration';
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import {
-    filters,
     hasGenomicFilter,
     hasUnallowedFilter,
     removeGenomicFilters,
