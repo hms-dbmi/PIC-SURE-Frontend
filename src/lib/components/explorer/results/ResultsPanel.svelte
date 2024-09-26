@@ -29,6 +29,7 @@
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = Promise.resolve(0);
 
   async function getCount() {
+    isOpenAccess = $page.url.pathname.includes('/discover');
     suffix = '';
     let request: QueryRequestInterface = getQueryRequest(
       !isOpenAccess,
