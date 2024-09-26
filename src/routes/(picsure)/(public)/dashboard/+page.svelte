@@ -44,7 +44,7 @@
 <svelte:head>
   <title>{branding.applicationName}</title>
 </svelte:head>
-<Content title="Data Dashboard" class="content-center">
+<Content title="Data Dashboard" class="content-center" full={true}>
   <section id="data-container" class="">
     {#await dataLoadPromise}
       <ProgressBar animIndeterminate="anim-progress-bar" />
