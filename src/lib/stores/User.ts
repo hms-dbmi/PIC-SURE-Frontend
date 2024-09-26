@@ -139,9 +139,11 @@ export async function login(token: string) {
 }
 
 export async function logout() {
-  const token = localStorage.getItem('token');
-  token && api.get('/psama/logout');
-  browser && localStorage.removeItem('token');
+  if (browser) {
+    const token = localStorage.getItem('token');
+    token && api.get('/psama/logout');
+    localStorage.removeItem('token');
+  }
   user.set({});
   filters.set([]);
   exports.set([]);
