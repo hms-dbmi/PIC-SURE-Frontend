@@ -107,7 +107,7 @@
     unsubFilters = filters.subscribe((filterArray) => {
       triggerRefreshCount = getCount();
       let value = JSON.stringify(filterArray);
-      console.log("writing filters to local storage: " + value);
+      console.log('writing filters to local storage: ' + value);
       localStorage.setItem('filters', value);
     });
   });
