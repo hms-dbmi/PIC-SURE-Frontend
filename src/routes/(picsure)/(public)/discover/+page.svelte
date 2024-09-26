@@ -39,7 +39,7 @@
         </div>
       </ErrorAlert>
     </section>
-    <section id="discover-error-container2" class="flex gap-9">
+    <section id="discover-error-container2" class="flex gap-9 justify-center">
       <aside data-testid="error-alert" class="alert variant-soft-warning">
         <i class="fa-solid fa-triangle-exclamation text-4xl" aria-hidden="true"></i>
         <div class="alert-message">
