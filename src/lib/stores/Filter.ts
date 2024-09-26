@@ -48,11 +48,3 @@ export function getFilter(uuid: string) {
 export function getFiltersByType(type: string) {
   return get(filters).filter((f) => f.filterType === type);
 }
-
-if (browser) {
-  filters.subscribe((filterArray) => {
-    let value = JSON.stringify(filterArray);
-    console.log("writing filters to local storage: " + value);
-    localStorage.setItem('filters', value);
-  });
-}
