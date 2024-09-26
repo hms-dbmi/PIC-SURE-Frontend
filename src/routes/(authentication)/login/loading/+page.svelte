@@ -33,7 +33,7 @@
     console.log('hashParts', hashParts);
     failed = await providerInstance.authenticate(hashParts);
 
-    let filtersJson = localStorage.getItem('filters');
+    let filtersJson = sessionStorage.getItem('filters');
     console.log('filtersJson: ' + filtersJson);
     if (filtersJson) {
       let storedFilters = JSON.parse(filtersJson || '{}');
