@@ -44,7 +44,53 @@
           </div>
         </div>
       </aside>
+    </section>
+    <section id="discover-error-container" class="flex gap-9 justify-center">
       <aside data-testid="error-alert" class="alert variant-ghost-warning">
+        <i class="fa-solid fa-triangle-exclamation text-4xl" aria-hidden="true"></i>
+        <div class="alert-message">
+          <h3 class="h3 text-left">
+            Your selected filters contain stigmatizing variables and/or genomic filters,
+          </h3>
+          <h3 class="h3 text-left">which are not supported with Discover</h3>
+          <p>Would you like to remove the invalid filters or go back to explore?</p>
+          <div>
+            <div class="dark">
+              <button class="btn variant-ringed" on:click={() => resetQuery()}
+              >Remove Invalid Filters</button
+              >
+              <button class="btn variant-ringed" on:click={() => goto('/explorer')}
+              >Back to Explore</button
+              >
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+    <section id="discover-error-container" class="flex gap-9 justify-center">
+      <aside data-testid="error-alert" class="alert variant-soft-error">
+        <i class="fa-solid fa-triangle-exclamation text-4xl" aria-hidden="true"></i>
+        <div class="alert-message">
+          <h3 class="h3 text-left">
+            Your selected filters contain stigmatizing variables and/or genomic filters,
+          </h3>
+          <h3 class="h3 text-left">which are not supported with Discover</h3>
+          <p>Would you like to remove the invalid filters or go back to explore?</p>
+          <div>
+            <div class="dark">
+              <button class="btn variant-ringed" on:click={() => resetQuery()}
+              >Remove Invalid Filters</button
+              >
+              <button class="btn variant-ringed" on:click={() => goto('/explorer')}
+              >Back to Explore</button
+              >
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+    <section id="discover-error-container" class="flex gap-9 justify-center">
+      <aside data-testid="error-alert" class="alert variant-soft-warning">
         <i class="fa-solid fa-triangle-exclamation text-4xl" aria-hidden="true"></i>
         <div class="alert-message">
           <h3 class="h3 text-left">
