@@ -25,12 +25,12 @@
     if (!consentMode) {
       // Default to deny all
       gtag('consent', 'default', {
-        ad_storage: 'denied',
-        analytics_storage: 'denied',
-        personalization_storage: 'denied',
-        security_storage: 'denied',
-        ad_personalization: 'denied',
-        ad_data: 'denied',
+        'ad_storage': 'denied',
+        'analytics_storage': 'denied',
+        'personalization_storage': 'denied',
+        'security_storage': 'denied',
+        'ad_personalization': 'denied',
+        'ad_data': 'denied',
       });
     }
   };
