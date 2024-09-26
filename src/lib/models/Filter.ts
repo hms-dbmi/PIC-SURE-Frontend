@@ -143,7 +143,7 @@ export function createGenomicFilter(geneFilter: {
     Gene_with_variant: geneFilter.Gene_with_variant,
     Variant_consequence_calculated: geneFilter.Variant_consequence_calculated,
     Variant_frequency_as_text: geneFilter.Variant_frequency_as_text,
-    allowFiltering: true
+    allowFiltering: true,
   };
   return filter;
 }
@@ -166,7 +166,7 @@ export function createSnpsFilter(snps: SNP[]) {
     snpValues: snps,
     variableName: 'Variant Filter',
     description,
-    allowFiltering: true
+    allowFiltering: true,
   };
   return filter;
 }

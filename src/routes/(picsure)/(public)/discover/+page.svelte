@@ -6,12 +6,12 @@
     filters,
     hasGenomicFilter,
     hasUnallowedFilter,
-    removeGenomicFilters, removeUnallowedFilters,
+    removeGenomicFilters,
+    removeUnallowedFilters,
   } from '$lib/stores/Filter.ts';
   import { goto } from '$app/navigation';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import openTour from '$lib/assets/openTourConfiguration.json';
-  import {page} from "$app/stores";
 
   function resetQuery() {
     removeGenomicFilters();
