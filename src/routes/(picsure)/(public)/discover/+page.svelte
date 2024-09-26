@@ -9,7 +9,6 @@
     removeUnallowedFilters,
   } from '$lib/stores/Filter.ts';
   import { goto } from '$app/navigation';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import openTour from '$lib/assets/openTourConfiguration.json';
 
   function resetQuery() {
@@ -32,8 +31,13 @@
           <h3 class="h3 text-left">which are not supported with Discover</h3>
           <p>Would you like to remove the invalid filters or go back to explore?</p>
           <div>
-            <button class="btn variant-ringed" on:click={() => resetQuery()}>Remove Invalid Filters</button>
-            <button class="btn variant-ringed" on:click={() => resetQuery()}>Remove Invalid Filters</button>
+            <div class="dark">
+              <button class="btn variant-ringed" on:click={() => resetQuery()}
+              >Remove Invalid Filters</button
+              >
+              <button class="btn variant-ringed" on:click={() => goto('/explorer')}
+              >Back to Explore</button
+              >
           </div>
         </div>
       </aside>
