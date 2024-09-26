@@ -585,6 +585,7 @@ test.describe('explorer', () => {
         children: null,
         meta: null,
         type: 'Categorical',
+        allowFiltering: true,
       };
       const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.conceptPath}`);
 

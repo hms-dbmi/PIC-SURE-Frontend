@@ -44,6 +44,7 @@
         display: 'Patient ID',
         description: 'Patient identifier.',
         type: 'Categorical',
+        allowFiltering: true,
       },
     };
     let patientIdRow: ExportRowInterface = {
@@ -67,6 +68,7 @@
           display: 'TOPMed Study Accession with Subject ID',
           description: 'TOPMed study accession number and subject identifier.',
           type: 'Categorical',
+          allowFiltering: true,
         },
       };
       let topMedRow: ExportRowInterface = {
@@ -90,6 +92,7 @@
           display: 'Parent Study Accession with Subject ID',
           description: 'Parent study accession number and subject identifier.',
           type: 'Categorical',
+          allowFiltering: true,
         },
       };
       let parentStudyRow: ExportRowInterface = {

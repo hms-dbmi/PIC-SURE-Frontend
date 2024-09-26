@@ -7,6 +7,9 @@ export const totalParticipants: Writable<number | string> = writable(0);
 export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
   $f.find((filter) => filter.filterType === 'genomic') ? true : false,
 );
+export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
+  $f.find((filter) => !filter.allowFiltering) ? true : false,
+);
 
 export function addFilter(filter: Filter) {
   const currentFilters = get(filters);
@@ -23,6 +26,14 @@ export function addFilter(filter: Filter) {
 export function removeFilter(uuid: string) {
   const currentFilters = get(filters);
   filters.set(currentFilters.filter((f) => f.uuid !== uuid));
+}
+export function removeGenomicFilters() {
+  const currentFilters = get(filters);
+  filters.set(currentFilters.filter((f) => f.filterType !== 'genomic'));
+}
+export function removeUnallowedFilters() {
+  const currentFilters = get(filters);
+  filters.set(currentFilters.filter((f) => f.allowFiltering));
 }
 
 export function clearFilters() {
