@@ -24,7 +24,7 @@
 <Content full>
   {#if $hasGenomicFilter || $hasUnallowedFilter}
     <section id="discover-error-container" class="flex gap-9 justify-center">
-      <aside data-testid="error-alert" class="alert variant-ghost-warning">
+      <aside data-testid="warning-alert" class="alert variant-ghost-warning">
         <i class="fa-solid fa-triangle-exclamation text-4xl" aria-hidden="true"></i>
         <div class="alert-message">
           <h3 class="h3 text-left">
