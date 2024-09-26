@@ -12,6 +12,7 @@ import type {
   LandingConfig,
   LoginConfig,
   SiteMapConfig,
+  PrivacyConfig,
 } from './types';
 
 export interface Branding {
@@ -27,6 +28,7 @@ export interface Branding {
   landing: LandingConfig;
   login: LoginConfig;
   help: HelpConfig;
+  privacyPolicy: PrivacyConfig;
 }
 
 export const branding: Branding = {
@@ -44,6 +46,7 @@ export const branding: Branding = {
   landing: {} as LandingConfig,
   login: {} as LoginConfig,
   help: {} as HelpConfig,
+  privacyPolicy: {} as PrivacyConfig,
 };
 
 export const initializeBranding = () => {
@@ -55,6 +58,7 @@ export const initializeBranding = () => {
   branding.help = configJson.help;
   branding.footer = configJson.footer;
   branding.sitemap = configJson.sitemap as SiteMapConfig[];
+  branding.privacyPolicy = configJson.privacyPolicy;
 };
 
 export const routes: Route[] = [
@@ -141,6 +145,10 @@ export const settings: Indexable = {
     graphColors: JSON.parse(
       import.meta.env?.VITE_DIST_EXPLORER_GRAPH_COLORS || '["#328FFF", "#675AFF", "#FFBC35"]',
     ),
+  },
+  google: {
+    analytics: import.meta.env?.VITE_GOOGLE_ANALYTICS_ID || '',
+    tagManager: import.meta.env?.VITE_GOOGLE_TAG_MANAGER_ID || '',
   },
 };
 
