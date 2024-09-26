@@ -67,6 +67,9 @@
             <button class="btn variant-soft" on:click={() => goto('/explorer')}
             >Back to Explore</button
             >
+            <button class="btn variant-ringed" on:click={() => goto('/explorer')}
+            >Button 3</button
+            >
             <button class="btn variant-filled" on:click={() => goto('/explorer')}
             >Button 4</button
             >
