@@ -117,6 +117,7 @@ export const features: Indexable = {
     enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
     enableSNPQuery: import.meta.env?.VITE_ENABLE_SNP_QUERY === 'true',
     enableGENEQuery: import.meta.env?.VITE_ENABLE_GENE_QUERY === 'true',
+    enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
