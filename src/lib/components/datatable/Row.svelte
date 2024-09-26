@@ -60,7 +60,7 @@
     background-color: rgb(var(--color-surface-300)) !important;
   }
 
-  tr td:last-child {
+  tr:not(.expandable-row) td:last-child {
     text-align: center;
   }
 </style>

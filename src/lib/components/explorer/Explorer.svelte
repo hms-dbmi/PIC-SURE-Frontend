@@ -19,13 +19,13 @@
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
   /* eslint-disable @typescript-eslint/no-explicit-any */
   export let tourConfig: any;
-  
+
   let { searchTerm, search, selectedFacets, error } = SearchStore;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
   const tableName = 'ExplorerTable';
   $: tourEnabled = true;
   $: isOpenAccess = $page.url.pathname.includes('/discover');
-  
+
   const additionalColumns = branding.explorePage.additionalColumns || [];
 
   const columns: Column[] = [

@@ -51,13 +51,15 @@
 </button>
 <button
   type="button"
-  title={shouldDisableFilter ? "Filtering is not available for this variable" : "Filter"}
+  title={shouldDisableFilter ? 'Filtering is not available for this variable' : 'Filter'}
   class="btn-icon-color"
   disabled={shouldDisableFilter}
   on:click|stopPropagation={insertFilterContent}
 >
   <i class="fa-solid fa-filter fa-xl"></i>
-  <span class="sr-only">{shouldDisableFilter ? "Filtering is not available for this variable" : "View Filter"}</span>
+  <span class="sr-only"
+    >{shouldDisableFilter ? 'Filtering is not available for this variable' : 'View Filter'}</span
+  >
 </button>
 {#if features.explorer.enableHierarchy}
   <button

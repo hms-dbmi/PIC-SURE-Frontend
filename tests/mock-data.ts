@@ -165,7 +165,7 @@ export const searchResults = {
       display: 'Any tests today?',
       dataset: 'test_data_set',
       allowFiltering: true,
-        description: 'This is a test description?',
+      description: 'This is a test description?',
       values: [
         'Yes',
         'No',
@@ -240,7 +240,7 @@ export const searchResults = {
       name: 'AGE_CATEGORY',
       display: 'age',
       dataset: 'phs123',
-      allowFiltering: true,
+      allowFiltering: false,
       description: "Participant's age (category)",
       values: ['21', '22', '23', '24', '25', '26'],
       children: null,
