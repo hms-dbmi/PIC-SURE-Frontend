@@ -80,6 +80,42 @@ test.describe('Discover', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
     await expect(page.locator('#result-count')).toHaveText('< 10');
   });
+  test('Search results with allowFiltering false are not filterable', async ({ page }) => {
+    // Given
+    await page.route('*/**/picsure/query/sync', async (route: Route) =>
+      route.fulfill({ body: '9999' }),
+    );
+    await page.goto('/discover?search=somedata');
+
+    // When
+    await expect(page.locator('tbody')).toBeVisible();
+    const tableBody = page.locator('tbody');
+    const firstRow = tableBody.locator('tr').nth(6);
+    const filterIcon = firstRow.locator('td').last().locator('button').nth(1);
+    console.log(filterIcon);
+
+    // Then
+    await expect(filterIcon).toBeVisible();
+    await expect(filterIcon).toBeDisabled();
+  });
+  test('Search results with allowFiltering true are filterable', async ({ page }) => {
+    // Given
+    await page.route('*/**/picsure/query/sync', async (route: Route) =>
+      route.fulfill({ body: '9999' }),
+    );
+    await page.goto('/discover?search=somedata');
+
+    // When
+    await expect(page.locator('tbody')).toBeVisible();
+    const tableBody = page.locator('tbody');
+    const firstRow = tableBody.locator('tr').nth(5);
+    const filterIcon = firstRow.locator('td').last().locator('button').nth(1);
+    console.log(filterIcon);
+
+    // Then
+    await expect(filterIcon).toBeVisible();
+    await expect(filterIcon).not.toBeDisabled();
+  });
 });
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */

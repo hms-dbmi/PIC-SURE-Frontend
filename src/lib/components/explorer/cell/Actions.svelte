@@ -5,6 +5,7 @@
   import ExportStore from '$lib/stores/Export';
   import { v4 as uuidv4 } from 'uuid';
   import { features } from '$lib/configuration';
+  import { page } from '$app/stores';
   let { exports, addExport, removeExport } = ExportStore;
   export let data = {} as SearchResult;
   $: exportItem = {
@@ -25,7 +26,7 @@
 
   const insertInfoContent = updateActiveRow('info');
   const insertFilterContent = updateActiveRow('filter');
-  // const insertHierarchyContent = updateActiveRow('hierarchy');
+  const insertHierarchyContent = updateActiveRow('hierarchy');
 
   function insertExportContent() {
     if ($exports.includes(exportItem)) {
@@ -34,8 +35,9 @@
       addExport(exportItem);
     }
   }
-
+  $: isOpenAccess = $page.url.pathname.includes('/discover');
   $: isExported = $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath);
+  $: shouldDisableFilter = isOpenAccess && !data.row.allowFiltering;
 </script>
 
 <button
@@ -49,25 +51,28 @@
 </button>
 <button
   type="button"
-  title="Filter"
+  title={shouldDisableFilter ? 'Filtering is not available for this variable' : 'Filter'}
   class="btn-icon-color"
+  disabled={shouldDisableFilter}
   on:click|stopPropagation={insertFilterContent}
 >
   <i class="fa-solid fa-filter fa-xl"></i>
-  <span class="sr-only">View Filters</span>
+  <span class="sr-only"
+    >{shouldDisableFilter ? 'Filtering is not available for this variable' : 'View Filter'}</span
+  >
 </button>
-<!-- TODO: Renable Hierarchy button when feature is implemented
-<button
-  type="button"
-  title="Data Hierarchy"
-  class="btn-icon-color"
-  on:click|stopPropagation={insertHierarchyContent}
->
-  <i class="fa-solid fa-sitemap fa-xl"></i>
-  <span class="sr-only">View Data Hierarchy</span>
-</button>
--->
-{#if features.explorer.exportsEnableExport}
+{#if features.explorer.enableHierarchy}
+  <button
+    type="button"
+    title="Data Hierarchy"
+    class="btn-icon-color"
+    on:click|stopPropagation={insertHierarchyContent}
+  >
+    <i class="fa-solid fa-sitemap fa-xl"></i>
+    <span class="sr-only">View Data Hierarchy</span>
+  </button>
+{/if}
+{#if features.explorer.exportsEnableExport && !isOpenAccess}
   <button
     type="button"
     title={isExported ? 'Remove from Analysis' : 'Add for Analysis'}
