@@ -119,6 +119,8 @@ export const features: Indexable = {
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
     enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
+    enableSNPQuery: import.meta.env?.VITE_ENABLE_SNP_QUERY === 'true',
+    enableGENEQuery: import.meta.env?.VITE_ENABLE_GENE_QUERY === 'true',
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
