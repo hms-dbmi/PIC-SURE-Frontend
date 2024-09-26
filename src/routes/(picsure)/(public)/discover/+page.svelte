@@ -50,6 +50,9 @@
             <button class="btn variant-ghost" on:click={() => resetQuery()}
             >Remove Invalid Filters</button
             >
+            <button class="btn variant-ghost-warning" on:click={() => resetQuery()}
+            >Remove Invalid Filters</button
+            >
             <button class="btn variant-soft" on:click={() => goto('/explorer')}
             >Back to Explore</button
             >
@@ -62,6 +65,9 @@
           </div>
           <div class="dark">
             <button class="btn variant-ghost" on:click={() => resetQuery()}
+            >Remove Invalid Filters</button
+            >
+            <button class="btn variant-ghost-warning" on:click={() => resetQuery()}
             >Remove Invalid Filters</button
             >
             <button class="btn variant-soft" on:click={() => goto('/explorer')}
