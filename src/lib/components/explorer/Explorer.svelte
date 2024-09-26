@@ -8,7 +8,7 @@
 
   import type { Column } from '$lib/models/Tables';
   import type { SearchResult } from '$lib/models/Search';
-  import { features } from '$lib/configuration';
+  import { branding, features } from '$lib/configuration';
   import SearchStore from '$lib/stores/Search';
 
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
@@ -25,7 +25,10 @@
   const tableName = 'ExplorerTable';
   $: tourEnabled = true;
 
+  const additionalColumns = branding.explorePage.additionalColumns || [];
+
   const columns: Column[] = [
+    ...additionalColumns,
     { dataElement: 'display', label: 'Variable Name', sort: false },
     { dataElement: 'description', label: 'Variable Description', sort: false },
     { dataElement: 'id', label: 'Actions', class: 'w-36' },
