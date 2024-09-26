@@ -1,6 +1,7 @@
 import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
 
 import type { Filter } from '$lib/models/Filter';
+import {browser} from "$app/environment";
 
 export const filters: Writable<Filter[]> = writable([]);
 export const totalParticipants: Writable<number | string> = writable(0);
@@ -46,4 +47,10 @@ export function getFilter(uuid: string) {
 
 export function getFiltersByType(type: string) {
   return get(filters).filter((f) => f.filterType === type);
+}
+
+if (browser) {
+  filters.subscribe((filterArray) => {
+    localStorage.setItem('filters', JSON.stringify(filterArray));
+  });
 }

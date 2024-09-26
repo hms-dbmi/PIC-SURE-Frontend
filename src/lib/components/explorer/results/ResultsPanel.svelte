@@ -104,8 +104,7 @@
     hasFilterOrExport;
 
   onMount(async () => {
-    unsubFilters = filters.subscribe((filterArray) => {
-      localStorage.setItem('filters', JSON.stringify(filterArray));
+    unsubFilters = filters.subscribe(() => {
       triggerRefreshCount = getCount();
     });
   });
