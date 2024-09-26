@@ -32,7 +32,7 @@
     }
   },
   {
-    "element": "#row-0-col-\"{{columnCount}}\" button[title=Filter]",
+    "element": "#row-0-col-{{columnCount}} button[title=Filter]",
     "onHighlightStarted": "clickElement",
     "popover": {
       "title": "Add a filter",
@@ -101,7 +101,7 @@
     }
   },
   {
-    "element": "#row-0-col-\"{{columnCount}}\" button[title='Data Export']",
+    "element": "#row-0 button[title='Data Export']",
     "popover": {
       "title": "Add a variable to export",
       "description": "Add a variable to exported data by clicking the export icon on the variable of interest.",
