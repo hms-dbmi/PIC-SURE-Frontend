@@ -34,10 +34,10 @@
     failed = await providerInstance.authenticate(hashParts);
 
     let filtersJson = localStorage.getItem('filters');
-    console.log("filtersJson: " + filtersJson);
+    console.log('filtersJson: ' + filtersJson);
     if (filtersJson) {
       let storedFilters = JSON.parse(filtersJson || '{}');
-      console.log("Stored filters: " + storedFilters)
+      console.log('Stored filters: ' + storedFilters);
       filters.set(storedFilters);
     }
 

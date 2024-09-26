@@ -50,4 +50,4 @@ export function getFiltersByType(type: string) {
 
 filters.subscribe((filterArray) => {
   localStorage.setItem('filters', JSON.stringify(filterArray));
-})
+});
