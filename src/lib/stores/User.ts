@@ -98,7 +98,7 @@ export async function getUser(force?: boolean, hasToken = false) {
         }
       }
     }
-    user.set(res);
+    user.set({ ...get(user), ...res });
   }
 }
 
