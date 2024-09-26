@@ -19,19 +19,20 @@
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
   /* eslint-disable @typescript-eslint/no-explicit-any */
   export let tourConfig: any;
-
+  
   let { searchTerm, search, selectedFacets, error } = SearchStore;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
   const tableName = 'ExplorerTable';
   $: tourEnabled = true;
-
+  $: isOpenAccess = $page.url.pathname.includes('/discover');
+  
   const additionalColumns = branding.explorePage.additionalColumns || [];
 
   const columns: Column[] = [
     ...additionalColumns,
     { dataElement: 'display', label: 'Variable Name', sort: false },
     { dataElement: 'description', label: 'Variable Description', sort: false },
-    { dataElement: 'id', label: 'Actions', class: 'w-36' },
+    { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
   ];
   const cellOverides = {
     id: Actions,
@@ -83,7 +84,6 @@
     unsubSelectedFacets && unsubSelectedFacets();
     unsubSearchTerm && unsubSearchTerm();
   });
-  $: isOpenAccess = $page.url.pathname.includes('/discover');
 </script>
 
 <section id="search-container" class="flex gap-9">

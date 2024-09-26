@@ -59,4 +59,8 @@
   .expandable-row {
     background-color: rgb(var(--color-surface-300)) !important;
   }
+
+  tr td:last-child {
+    text-align: center;
+  }
 </style>
