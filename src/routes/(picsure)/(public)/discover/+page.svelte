@@ -24,22 +24,7 @@
 
 <Content full>
   {#if $hasGenomicFilter || $hasUnallowedFilter}
-    <section id="discover-error-container" class="flex gap-9">
-      <ErrorAlert
-        title="Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover"
-      >
-        <p>Would you like to remove the invalid filters or go back to explore?</p>
-        <div class="dark">
-          <button class="btn variant-filled" on:click={() => resetQuery()}
-            >Remove Invalid Filters</button
-          >
-          <button class="btn variant-filled" on:click={() => goto('/explorer')}
-            >Back to Explore</button
-          >
-        </div>
-      </ErrorAlert>
-    </section>
-    <section id="discover-error-container2" class="flex gap-9 justify-center">
+    <section id="discover-error-container" class="flex gap-9 justify-center">
       <aside data-testid="error-alert" class="alert variant-soft-warning">
         <i class="fa-solid fa-triangle-exclamation text-4xl" aria-hidden="true"></i>
         <div class="alert-message">
@@ -47,38 +32,8 @@
           <h3 class="h3 text-left">which are not supported with Discover</h3>
           <p>Would you like to remove the invalid filters or go back to explore?</p>
           <div>
-            <button class="btn variant-ghost" on:click={() => resetQuery()}
-            >Remove Invalid Filters</button
-            >
-            <button class="btn variant-ghost-warning" on:click={() => resetQuery()}
-            >Remove Invalid Filters</button
-            >
-            <button class="btn variant-soft" on:click={() => goto('/explorer')}
-            >Back to Explore</button
-            >
-            <button class="btn variant-ringed" on:click={() => goto('/explorer')}
-            >Button 3</button
-            >
-            <button class="btn variant-filled" on:click={() => goto('/explorer')}
-            >Button 4</button
-            >
-          </div>
-          <div class="dark">
-            <button class="btn variant-ghost" on:click={() => resetQuery()}
-            >Remove Invalid Filters</button
-            >
-            <button class="btn variant-ghost-warning" on:click={() => resetQuery()}
-            >Remove Invalid Filters</button
-            >
-            <button class="btn variant-soft" on:click={() => goto('/explorer')}
-            >Back to Explore</button
-            >
-            <button class="btn variant-ringed" on:click={() => goto('/explorer')}
-            >Button 3</button
-            >
-            <button class="btn variant-filled" on:click={() => goto('/explorer')}
-            >Button 4</button
-            >
+            <button class="btn variant-ringed" on:click={() => resetQuery()}>Remove Invalid Filters</button>
+            <button class="btn variant-ringed" on:click={() => resetQuery()}>Remove Invalid Filters</button>
           </div>
         </div>
       </aside>
