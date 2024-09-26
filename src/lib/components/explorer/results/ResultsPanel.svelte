@@ -12,7 +12,7 @@
   import { ProgressRadial, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   import { elasticInOut } from 'svelte/easing';
   import { onDestroy, onMount } from 'svelte';
-  import { goto } from '$app/navigation';
+  import { afterNavigate, goto } from '$app/navigation';
   import type { Unsubscriber } from 'svelte/store';
   import { getQueryRequest } from '$lib/QueryBuilder';
   import { loadAllConcepts } from '$lib/services/hpds';
@@ -27,6 +27,7 @@
   let unsubFilters: Unsubscriber;
   let totalPatients: string | number | typeof ERROR_VALUE = 0;
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = Promise.resolve(0);
+  let isOpenAccess = $page.url.pathname.includes('/discover');
 
   async function getCount() {
     isOpenAccess = $page.url.pathname.includes('/discover');
@@ -92,7 +93,6 @@
     });
   }
 
-  $: isOpenAccess = $page.url.pathname.includes('/discover');
   $: suffix = '';
   $: hasFilterOrExport =
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0);
@@ -110,6 +110,14 @@
       console.log('writing filters to local storage: ' + value);
       localStorage.setItem('filters', value);
     });
+  });
+
+  afterNavigate(async () => {
+    isOpenAccess = $page.url.pathname.includes('/discover');
+    const isExplorer = $page.url.pathname.includes('/explorer');
+    if (isExplorer || isOpenAccess) {
+      triggerRefreshCount = getCount();
+    }
   });
 
   onDestroy(() => {

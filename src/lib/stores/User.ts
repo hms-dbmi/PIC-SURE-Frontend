@@ -98,7 +98,7 @@ export async function getUser(force?: boolean, hasToken = false) {
         }
       }
     }
-    user.set(res);
+    user.set({ ...get(user), ...res });
   }
 }
 
@@ -139,12 +139,9 @@ export async function login(token: string) {
 }
 
 export async function logout() {
-  try {
-    api.get('/psama/logout');
-  } catch (error) {
-    console.error('Error logging out.', error);
-  }
   if (browser) {
+    const token = localStorage.getItem('token');
+    token && api.get('/psama/logout');
     localStorage.removeItem('token');
   }
   user.set({});
