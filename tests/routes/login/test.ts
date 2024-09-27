@@ -2,7 +2,6 @@ import { expect } from '@playwright/test';
 import { unauthedTest } from '../../custom-context';
 import * as config from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
 import type { Branding } from '$lib/configuration';
-import exp from 'node:constants';
 //TypeScript is confused by the JSON import so I am fxing it here
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
@@ -137,29 +136,32 @@ unauthedTest.describe('Login page', () => {
     // Then expect the consentModal to be hidden
     await expect(page.getByTestId('[data-testid="consentModal"]')).not.toBeVisible();
   });
-  unauthedTest('Google Consents saved in local storage on accept as \'granted\'', async ({ page }) => {
-    // Given Google Consent Modal is open
-    await page.goto('/login');
-    await page.waitForSelector('[data-testid="consentModal"]');
+  unauthedTest(
+    "Google Consents saved in local storage on accept as 'granted'",
+    async ({ page }) => {
+      // Given Google Consent Modal is open
+      await page.goto('/login');
+      await page.waitForSelector('[data-testid="consentModal"]');
 
-    // When
-    const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
-    await acceptConsentButton.click();
+      // When
+      const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
+      await acceptConsentButton.click();
 
-    // Then google consents are saved in local storage and are 'granted'
-    const googleConsent = await page.evaluate(() => localStorage.getItem('consentMode'));
-    expect(googleConsent).not.toBeNull();
-    if (googleConsent) {
-      const parsedGoogleConsent = JSON.parse(googleConsent);
-      expect(parsedGoogleConsent).toHaveProperty('ad_storage', 'granted');
-      expect(parsedGoogleConsent).toHaveProperty('analytics_storage', 'granted');
-      expect(parsedGoogleConsent).toHaveProperty('personalization_storage', 'granted');
-      expect(parsedGoogleConsent).toHaveProperty('security_storage', 'granted');
-      expect(parsedGoogleConsent).toHaveProperty('ad_personalization', 'granted');
-      expect(parsedGoogleConsent).toHaveProperty('ad_data', 'granted');
-    }
-  });
-  unauthedTest('Google Consents saved in local storage on reject as \'denied\'', async ({ page }) => {
+      // Then google consents are saved in local storage and are 'granted'
+      const googleConsent = await page.evaluate(() => localStorage.getItem('consentMode'));
+      expect(googleConsent).not.toBeNull();
+      if (googleConsent) {
+        const parsedGoogleConsent = JSON.parse(googleConsent);
+        expect(parsedGoogleConsent).toHaveProperty('ad_storage', 'granted');
+        expect(parsedGoogleConsent).toHaveProperty('analytics_storage', 'granted');
+        expect(parsedGoogleConsent).toHaveProperty('personalization_storage', 'granted');
+        expect(parsedGoogleConsent).toHaveProperty('security_storage', 'granted');
+        expect(parsedGoogleConsent).toHaveProperty('ad_personalization', 'granted');
+        expect(parsedGoogleConsent).toHaveProperty('ad_data', 'granted');
+      }
+    },
+  );
+  unauthedTest("Google Consents saved in local storage on reject as 'denied'", async ({ page }) => {
     // Given Google Consent Modal is open
     await page.goto('/login');
     await page.waitForSelector('[data-testid="consentModal"]');
@@ -171,7 +173,7 @@ unauthedTest.describe('Login page', () => {
     // Then google consents are saved in local storage and are 'denied'
     const googleConsent = await page.evaluate(() => localStorage.getItem('consentMode'));
     expect(googleConsent).not.toBeNull();
-    if(googleConsent) {
+    if (googleConsent) {
       const parsedGoogleConsent = JSON.parse(googleConsent);
       expect(parsedGoogleConsent).toHaveProperty('ad_storage', 'denied');
       expect(parsedGoogleConsent).toHaveProperty('analytics_storage', 'denied');
