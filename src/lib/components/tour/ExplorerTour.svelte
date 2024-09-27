@@ -12,11 +12,9 @@
   import { clearExports } from '$lib/stores/Export';
 
   import TourModal from '$lib/components/tour/TourModal.svelte';
-  import { branding } from '$lib/configuration';
 
   const modalStore = getModalStore();
   const tourComponent: ModalComponent = { ref: TourModal };
-  const searchResultsColumnCount = branding.explorePage.additionalColumns.length + 3;
 
   const disablePrevious = () => {};
 
@@ -87,10 +85,6 @@
     return text.replace(/\{\{searchTerm\}\}/g, searchTerm);
   }
 
-  function replaceColumnCount(text: string) {
-    return text.replace(/\{\{columnCount\}\}/g, searchResultsColumnCount.toString());
-  }
-
   type FunctionMap = {
     [key: string]: DriverHook;
   };
@@ -116,10 +110,9 @@
   /* eslint-disable @typescript-eslint/no-explicit-any */
   function mapConfigurationToSteps(steps: any): DriveStep[] {
     return steps.map((step: any) => {
-      const { popover, element, ...rest } = step;
+      const { popover, ...rest } = step;
       const serializedStep: any = {
         ...rest,
-        element: replaceColumnCount(element),
         popover: {
           ...popover,
           title: replacePlaceholders(popover.title, tourConfig?.searchTerm),
