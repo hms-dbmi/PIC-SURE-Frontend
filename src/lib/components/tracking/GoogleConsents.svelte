@@ -6,12 +6,12 @@
 
   function setUsersGoogleConsent(wasAccepted: boolean) {
     let consent = {
-      ad_storage: wasAccepted ? 'granted' : 'denied',
+      ad_storage: 'denied',
       analytics_storage: wasAccepted ? 'granted' : 'denied',
       personalization_storage: wasAccepted ? 'granted' : 'denied',
       security_storage: wasAccepted ? 'granted' : 'denied',
-      ad_personalization: wasAccepted ? 'granted' : 'denied',
-      ad_data: wasAccepted ? 'granted' : 'denied',
+      ad_personalization: 'denied',
+      ad_data: 'denied',
     };
 
     gtag('consent', 'default', consent);
