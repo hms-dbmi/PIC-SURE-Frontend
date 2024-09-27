@@ -116,8 +116,7 @@
 
   async function createNamedDataset() {
     try {
-      const datasetName = encodeURIComponent(datasetNameInput);
-      await createDatasetName(datasetId, datasetName);
+      await createDatasetName(datasetId, datasetNameInput);
     } catch (err) {
       if (err instanceof Object) {
         const errObj = err as DatasetError;
