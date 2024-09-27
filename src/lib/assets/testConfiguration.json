@@ -32,7 +32,7 @@
     }
   },
   {
-    "element": "#row-0-col-{{columnCount}} button[title=Filter]",
+    "element": "#row-0-col-{{columnCount}} button[title=\"Filter\"]",
     "onHighlightStarted": "clickElement",
     "popover": {
       "title": "Add a filter",
