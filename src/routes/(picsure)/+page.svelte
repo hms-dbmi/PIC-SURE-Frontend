@@ -4,7 +4,6 @@
   import Searchbox from '$lib/components/Searchbox.svelte';
   import Stats from '$lib/components/Stats.svelte';
   import { browser } from '$app/environment';
-  import DashboardLink from '$lib/components/datatable/DashboardLink.svelte';
   let searchTerm = '';
 
   const isUserLoggedIn = () => {
@@ -35,7 +34,6 @@
   id="landing"
   class="flex flex-wrap flex-col justify-evenly text-center items-center w-full h-full mt-8"
 >
-  <DashboardLink href="https://www.google.com" consentGranted={true} />
   <section id="search-section" class="flex flex-col text-center items-center my-4 mt-auto w-2/3">
     <Searchbox placeholder={branding?.landing?.searchPlaceholder} bind:searchTerm {search} />
   </section>

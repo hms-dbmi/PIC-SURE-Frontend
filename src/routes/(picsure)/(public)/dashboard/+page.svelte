@@ -7,11 +7,12 @@
   import { branding } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
-  import Link from '$lib/components/datatable/DashboardLink.svelte';
+  import DashboardLink from '$lib/components/datatable/DashboardLink.svelte';
 
   import { columns, loadDashboardData, rows } from '$lib/stores/Dashboard.ts';
 
   import type { Column } from '$lib/models/Tables';
+  import type { DashboardRow } from '$lib/stores/Dashboard';
 
   const tableName = 'ExplorerTable';
 
@@ -20,10 +21,10 @@
 
   let currentColumns: Column[] = [];
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  let currentRows: any[] = [];
+  let currentRows: DashboardRow[] = [];
 
   const cellOverides = {
-    additional_info_link: Link,
+    additional_info_link: DashboardLink,
   };
 
   const dataLoadPromise = loadDashboardData();
