@@ -60,6 +60,14 @@ export const test = base.extend({
   },
 });
 
+test.beforeEach(async ({ page }) => {
+  // We must accept the Google consent dialog before we can interact with some elements in the page.
+  await page.goto('/');
+  await page.waitForSelector('[data-testid="consentModal"]');
+  const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
+  await acceptConsentButton.click();
+});
+
 test.afterEach(screenshotOnFailure);
 
 export function getUserTest(user: User = picsureUser) {

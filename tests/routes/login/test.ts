@@ -189,6 +189,9 @@ unauthedTest.describe('Login page', () => {
       async ({ page }) => {
         // Given
         await page.goto('/login');
+        await page.waitForSelector('[data-testid="consentModal"]');
+        const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
+        await acceptConsentButton.click();
         // When
         const testId = `login-button-${providerName.toLowerCase()}`;
         const loginButton = page.getByTestId(testId);
