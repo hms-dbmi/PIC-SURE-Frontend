@@ -57,6 +57,7 @@
         {cellOverides}
         defaultRowsPerPage={currentRows.length}
         search={true}
+        stickyHeader={true}
       />
     {/await}
   </section>

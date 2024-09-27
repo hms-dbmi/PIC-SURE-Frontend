@@ -61,13 +61,20 @@ export async function loadDashboardData() {
       }
     });
   }
-  const sortedRows = dashboardData.rows.sort((a, b) => {
+  const consentGrantedRows = dashboardData.rows.filter((row) => row.consentGranted);
+  const nonConsentGrantedRows = dashboardData.rows.filter((row) => !row.consentGranted);
+
+  const sortByAbbreviation = (a: DashboardRow, b: DashboardRow) => {
     if (typeof a.abbreviation === 'string' && typeof b.abbreviation === 'string') {
       return a.abbreviation.localeCompare(b.abbreviation);
     }
     if (typeof a.abbreviation === 'string') return -1;
     if (typeof b.abbreviation === 'string') return 1;
     return 0;
-  });
-  rows.set(sortedRows);
+  };
+
+  const sortedConsentGrantedRows = consentGrantedRows.sort(sortByAbbreviation);
+  const sortedNonConsentGrantedRows = nonConsentGrantedRows.sort(sortByAbbreviation);
+
+  rows.set([...sortedConsentGrantedRows, ...sortedNonConsentGrantedRows]);
 }
