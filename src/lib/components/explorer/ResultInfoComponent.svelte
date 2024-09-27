@@ -15,7 +15,7 @@
         <ProgressRadial />
       </div>
     {:then searchResultDetail}
-      <section class="flex flex-col w-3/4 p-4">
+      <section data-testid="variable-info" class="flex flex-col w-3/4 p-4">
         <h3 class="text-primary-500">Variable Information</h3>
         <div class="w-full flex flex-row justify-between">
           <div><span class="font-bold">Name:</span> {searchResultDetail.display}</div>
@@ -25,21 +25,30 @@
         <div><span class="font-bold">Description:</span> {searchResultDetail.description}</div>
       </section>
       {#if searchResultDetail.table}
-        <section class="flex flex-col w-3/4 p-4">
+        <section data-testid="dataset-info" class="flex flex-col w-3/4 p-4">
           <h3 class="text-primary-500">Dataset Information</h3>
           <div class="w-full flex flex-row justify-between">
-            <div><span class="font-bold mb-1">Name:</span> {searchResultDetail.display}</div>
-            <div><span class="font-bold">Accession:</span> {searchResultDetail.name}</div>
+            <div><span class="font-bold mb-1">Name:</span> {searchResultDetail.table.display}</div>
+            <div><span class="font-bold">Accession:</span> {searchResultDetail.table.name}</div>
           </div>
-          <div><span class="font-bold">Description:</span> {searchResultDetail.description}</div>
+          <div>
+            <span class="font-bold">Description:</span>
+            {searchResultDetail.table.description}
+          </div>
         </section>
       {/if}
       {#if searchResultDetail.study}
-        <section class="flex flex-col w-3/4 p-4">
+        <section data-testid="study-info" class="flex flex-col w-3/4 p-4">
           <h3 class="text-primary-500">Study Information</h3>
           <div class="w-full flex flex-col">
-            <div><span class="font-bold mb-1">Study Name:</span> {searchResultDetail.display}</div>
-            <div><span class="font-bold">Study Accession:</span> {searchResultDetail.name}</div>
+            <div>
+              <span class="font-bold mb-1">Study Name:</span>
+              {searchResultDetail.study.display}
+            </div>
+            <div>
+              <span class="font-bold">Study Accession:</span>
+              {searchResultDetail.study.name}
+            </div>
           </div>
         </section>
       {/if}

@@ -121,6 +121,61 @@ test.describe('explorer', () => {
         await infoIcon.click();
         await expect(infoPanel).not.toBeVisible();
       });
+      test('Clicking the info icon opens the info panel with the correct information', async ({
+        page,
+      }) => {
+        // Given
+
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.route(
+          '*/**/picsure/proxy/dictionary-api/concepts/detail/' + mockData.content[0].dataset,
+          async (route: Route) => route.fulfill({ json: detailResponseCat }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        await expect(page.locator('tbody')).toBeVisible();
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        const infoIcon = firstRow.locator('td').last().locator('button').first();
+        await expect(infoIcon).toBeVisible();
+        await infoIcon.click();
+
+        // Then
+        const infoPanel = tableBody.locator('tr.expandable-row').first();
+        await expect(infoPanel).toBeVisible();
+        const variableInfo = infoPanel.getByTestId('variable-info');
+        await expect(variableInfo).toBeVisible();
+        // Check Variable Information
+        await expect(variableInfo.getByText('Variable Information')).toBeVisible();
+        await expect(variableInfo.getByText('Name: ' + detailResponseCat.display)).toBeVisible();
+        await expect(variableInfo.getByText('Accession: ' + detailResponseCat.name)).toBeVisible();
+        await expect(variableInfo.getByText('Type: ' + detailResponseCat.type)).toBeVisible();
+        await expect(
+          variableInfo.getByText('Description: ' + detailResponseCat.description),
+        ).toBeVisible();
+
+        // Check Dataset Information
+        await expect(infoPanel.getByText('Dataset Information')).toBeVisible();
+        await expect(infoPanel.getByText('Name: ' + detailResponseCat.table.display)).toBeVisible();
+        await expect(
+          infoPanel.getByText('Accession: ' + detailResponseCat.table.name),
+        ).toBeVisible();
+        await expect(
+          infoPanel.getByText('Description: ' + detailResponseCat.table.description),
+        ).toBeVisible();
+
+        // Check Study Information
+        await expect(infoPanel.getByText('Study Information')).toBeVisible();
+        await expect(
+          infoPanel.getByText('Study Name: ' + detailResponseCat.study.display),
+        ).toBeVisible();
+        await expect(
+          infoPanel.getByText('Study Accession: ' + detailResponseCat.study.name),
+        ).toBeVisible();
+      });
     });
     test.describe('Filter Actions', () => {
       test('Clicking the filter button opens and then closes the filter panel', async ({
