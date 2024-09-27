@@ -2,11 +2,12 @@
   import { ProgressRadial, getModalStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
 
-  import { branding } from '$lib/configuration';
-
   let started: boolean = false;
   $: skipIntro = $modalStore[0]?.meta?.skipIntro || false;
   $: keyboardInstructions = $modalStore[0]?.meta?.keyboardInstructions || true;
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  export let tourConfig: any;
 
   function startTour() {
     started = true;
@@ -27,17 +28,11 @@
       <header data-testid="modal-wrapper-header" class="text-2xl font-bold">
         <button class="float-right" on:click={modalStore.close}>&times;</button>
       </header>
-      <strong>{branding.explorePage.tourSearchIntro}</strong>
+      <strong>{tourConfig?.title}</strong>
       {#if keyboardInstructions}
         <p>
-          BioData Catalyst Powered by PIC-SURE allows you to explore variables, apply filters, and
-          prepare data for analysis. When applying filters, participants are selected that meet
-          those criteria.<br /><br />
-          This tour demonstrates how to search, apply filters, and interpret results using PIC-SURE.<br
-          /><br />
-          Once the tour starts, you can click anywhere to go to the next step. You can press the escape
-          key to stop the tour at any point. You may also use the arrow keys, enter key, or the spacebar
-          to navigate the tour.
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html tourConfig?.description}
         </p>
       {/if}
       <div class="flex justify-between gap-4">

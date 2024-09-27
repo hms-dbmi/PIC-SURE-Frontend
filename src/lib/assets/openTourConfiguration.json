@@ -1,5 +1,7 @@
 {
   "searchTerm": "RECOVER",
+  "title": "Welcome to BioData Catalyst Powered by PIC-SURE",
+  "description": "BioData Catalyst Powered by PIC-SURE allows you to explore variables, apply filters, and prepare data for analysis. When applying filters, participants are selected that meet those criteria. <br />This tour demonstrates how to search, apply filters, and interpret results using PIC-SURE. <br />Once the tour starts, you can click anywhere to go to the next step. You can press the escape key to stop the tour at any point. You may also use the arrow keys, enter key, or the spacebar to navigate the tour.",
   "steps": [
     {
       "element": "#explorer-search-box",
