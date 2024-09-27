@@ -7,7 +7,7 @@
   import { branding } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
-  import Link from '$lib/components/datatable/Link.svelte';
+  import Link from '$lib/components/datatable/DashboardLink.svelte';
 
   import { columns, loadDashboardData, rows } from '$lib/stores/Dashboard.ts';
 
@@ -54,6 +54,7 @@
         data={currentRows}
         columns={currentColumns}
         {cellOverides}
+        defaultRowsPerPage={currentRows.length}
         search={true}
       />
     {/await}
