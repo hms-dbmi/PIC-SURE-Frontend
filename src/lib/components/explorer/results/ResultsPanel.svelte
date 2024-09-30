@@ -30,7 +30,6 @@
   let isOpenAccess = $page.url.pathname.includes('/discover');
 
   async function getCount() {
-    isOpenAccess = $page.url.pathname.includes('/discover');
     suffix = '';
     let request: QueryRequestInterface = getQueryRequest(
       !isOpenAccess,
