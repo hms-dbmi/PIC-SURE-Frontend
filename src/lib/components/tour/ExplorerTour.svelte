@@ -14,7 +14,7 @@
   import TourModal from '$lib/components/tour/TourModal.svelte';
 
   const modalStore = getModalStore();
-  const tourComponent: ModalComponent = { ref: TourModal, props: {tourConfig} };
+  const tourComponent: ModalComponent = { ref: TourModal, props: { tourConfig } };
 
   const disablePrevious = () => {};
 
