@@ -6,6 +6,7 @@
   import type AuthProvider from '$lib/models/AuthProvider';
   import { createInstance } from '$lib/AuthProviderRegistry';
   import { browser } from '$app/environment';
+  import { filters } from '$lib/stores/Filter';
 
   let failed = false;
   onMount(async () => {
@@ -31,6 +32,13 @@
     }
     console.log('hashParts', hashParts);
     failed = await providerInstance.authenticate(hashParts);
+
+    let filtersJson = sessionStorage.getItem('filters');
+    if (filtersJson) {
+      let storedFilters = JSON.parse(filtersJson || '{}');
+      filters.set(storedFilters);
+    }
+
     goto(failed ? '/login/error' : redirectTo);
   });
 </script>

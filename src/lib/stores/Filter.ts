@@ -1,8 +1,9 @@
 import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
 
 import type { Filter } from '$lib/models/Filter';
+import { browser } from '$app/environment';
 
-export const filters: Writable<Filter[]> = writable([]);
+export const filters: Writable<Filter[]> = writable(restoreFilters());
 export const totalParticipants: Writable<number | string> = writable(0);
 export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
   $f.find((filter) => filter.filterType === 'genomic') ? true : false,
@@ -10,6 +11,19 @@ export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
 export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
   $f.find((filter) => !filter.allowFiltering) ? true : false,
 );
+
+filters.subscribe((f) => {
+  if (browser) {
+    sessionStorage.setItem('filters', JSON.stringify(f));
+  }
+});
+
+function restoreFilters() {
+  if (browser && sessionStorage.getItem('filters')) {
+    return JSON.parse(sessionStorage.getItem('filters') || '[]');
+  }
+  return [];
+}
 
 export function addFilter(filter: Filter) {
   const currentFilters = get(filters);
