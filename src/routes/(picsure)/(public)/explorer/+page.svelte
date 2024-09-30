@@ -23,9 +23,9 @@
     let hasInvalidFilter : boolean = !!currentFilters.find((filter) => {
       console.log("Filter description: " + filter.description);
       let filterHasValidQueryScope: boolean = !!queryScopes.find((qs) => {
-        let filterMatchesQueryScope = (filter.description || '').length > 0 && qs.indexOf(filter.description || 'INVALID FILTER')  >= 0;
+        let filterMatchesQueryScope = (filter.dataset || '').length > 0 && qs.indexOf(filter.dataset || 'INVALID FILTER')  >= 0;
         if (filterMatchesQueryScope) {
-          console.log("Filter {" + filter.description + "} matches queryScope {" + qs + "}");
+          console.log("Filter {" + filter.dataset + "} matches queryScope {" + qs + "}");
         }
         return filterMatchesQueryScope;
       });
