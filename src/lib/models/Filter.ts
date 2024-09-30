@@ -18,6 +18,7 @@ export interface FilterInterface {
   topmed?: boolean;
   sites?: string[];
   allowFiltering: boolean;
+  dataset: string;
 }
 
 export interface CategoricalFilterInterface extends FilterInterface {
@@ -61,6 +62,7 @@ export function createCategoricalFilter(searchResult: SearchResult, values?: str
     variableName: searchResult.display,
     description: searchResult.description,
     allowFiltering: searchResult.allowFiltering,
+    dataset: searchResult.dataset,
   };
   return filter;
 }
@@ -76,6 +78,7 @@ export function createRequiredFilter(searchResult: SearchResult) {
     description: searchResult.description,
     categoryValues: [],
     allowFiltering: searchResult.allowFiltering,
+    dataset: searchResult.dataset,
   };
   return filter;
 }
@@ -91,6 +94,7 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, values?: str
     variableName: searchResult.display,
     description: searchResult.description,
     allowFiltering: searchResult.allowFiltering,
+    dataset: searchResult.dataset,
   };
   return filter;
 }
@@ -114,6 +118,7 @@ export function createNumericFilter(searchResult: SearchResult, min?: string, ma
     variableName: searchResult.display,
     description: searchResult.description,
     allowFiltering: searchResult.allowFiltering,
+    dataset: searchResult.dataset,
   };
   return filter;
 }
@@ -144,6 +149,7 @@ export function createGenomicFilter(geneFilter: {
     Variant_consequence_calculated: geneFilter.Variant_consequence_calculated,
     Variant_frequency_as_text: geneFilter.Variant_frequency_as_text,
     allowFiltering: true,
+    dataset: '',
   };
   return filter;
 }
@@ -167,6 +173,7 @@ export function createSnpsFilter(snps: SNP[]) {
     variableName: 'Variant Filter',
     description,
     allowFiltering: true,
+    dataset: '',
   };
   return filter;
 }
