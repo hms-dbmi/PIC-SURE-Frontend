@@ -152,12 +152,12 @@ unauthedTest.describe('Login page', () => {
       expect(googleConsent).not.toBeNull();
       if (googleConsent) {
         const parsedGoogleConsent = JSON.parse(googleConsent);
-        expect(parsedGoogleConsent).toHaveProperty('ad_storage', 'granted');
+        expect(parsedGoogleConsent).toHaveProperty('ad_storage', 'denied');
         expect(parsedGoogleConsent).toHaveProperty('analytics_storage', 'granted');
         expect(parsedGoogleConsent).toHaveProperty('personalization_storage', 'granted');
         expect(parsedGoogleConsent).toHaveProperty('security_storage', 'granted');
-        expect(parsedGoogleConsent).toHaveProperty('ad_personalization', 'granted');
-        expect(parsedGoogleConsent).toHaveProperty('ad_data', 'granted');
+        expect(parsedGoogleConsent).toHaveProperty('ad_personalization', 'denied');
+        expect(parsedGoogleConsent).toHaveProperty('ad_data', 'denied');
       }
     },
   );
