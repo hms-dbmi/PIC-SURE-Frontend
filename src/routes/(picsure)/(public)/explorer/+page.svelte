@@ -14,6 +14,9 @@
     console.log(user.queryScopes);
     return true;
   }
+
+  export const localUser = $user;
+  export const localFilters = $filters;
 </script>
 
 <svelte:head>
@@ -21,7 +24,7 @@
 </svelte:head>
 
 <Content full>
-  {#if filtersValidForUser($user, $filters)}
+  {#if filtersValidForUser(localUser, localFilters)}
     <div>Invalid filters</div>
   {:else}
     <Explorer tourConfig={authTour} />
