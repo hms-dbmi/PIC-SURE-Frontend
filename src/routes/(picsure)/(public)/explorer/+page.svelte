@@ -10,7 +10,7 @@
 
 
 
-  function filtersValidForUser(): boolean {
+  function filtersInvalidForUser(): boolean {
     const currentFilters: Filter[] = get(filters);
     const queryScopes: string[] = get(user).queryScopes || [];
     console.log("query scopes: " + queryScopes);
@@ -40,10 +40,10 @@
 </svelte:head>
 
 <Content full>
-  {#if filtersValidForUser()}
-    <Explorer tourConfig={authTour} />
-  {:else}
+  {#if filtersInvalidForUser()}
     <div>Invalid filters</div>
+  {:else}
+    <Explorer tourConfig={authTour} />
   {/if}
 
 </Content>
