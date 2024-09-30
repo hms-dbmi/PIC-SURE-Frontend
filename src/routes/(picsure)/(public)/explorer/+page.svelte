@@ -5,13 +5,24 @@
   import authTour from '$lib/assets/authTourConfiguration.json';
   import {user} from "$lib/stores/User.ts";
   import {filters} from "$lib/stores/Filter.ts";
+  import {derived, get, type Readable} from "svelte/store";
+  import type {Filter} from "$lib/models/Filter.ts";
 
 
 
   function filtersValidForUser(): boolean {
-    console.log("User: " + $user.queryScopes);
-    console.log("Filters:" + $filters);
-    return true;
+    const currentFilters: Filter[] = get(filters);
+    const queryScopes: string[] = get(user).queryScopes || [];
+    console.log("query scopes: " + queryScopes);
+    console.log("filters:" + currentFilters);
+
+    let hasInvalidFilter : boolean = !!currentFilters.find((filter) => {
+      let filterHasValidQueryScope: boolean = !!queryScopes.find((qs) => {
+        (filter.description || '').indexOf(qs) >= 0;
+      });
+      return !filterHasValidQueryScope;
+    });
+    return hasInvalidFilter;
   }
 </script>
 
@@ -21,9 +32,9 @@
 
 <Content full>
   {#if filtersValidForUser()}
-    <div>Invalid filters</div>
-  {:else}
     <Explorer tourConfig={authTour} />
+  {:else}
+    <div>Invalid filters</div>
   {/if}
 
 </Content>
