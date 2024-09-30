@@ -34,10 +34,8 @@
     failed = await providerInstance.authenticate(hashParts);
 
     let filtersJson = sessionStorage.getItem('filters');
-    console.log('filtersJson: ' + filtersJson);
     if (filtersJson) {
       let storedFilters = JSON.parse(filtersJson || '{}');
-      console.log('Stored filters: ' + storedFilters);
       filters.set(storedFilters);
     }
 
