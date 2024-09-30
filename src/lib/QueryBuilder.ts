@@ -54,6 +54,33 @@ export function getQueryRequest(
     resourceUUID,
   };
 }
+
+export function getBlankQueryRequest(
+  addConsents = true,
+  resourceUUID = resources.hpds,
+  expectedResultType: ExpectedResultType = 'COUNT',
+): QueryRequestInterface {
+  let query: Query = new Query();
+
+  if (features.useQueryTemplate && addConsents) {
+    const queryTemplate: QueryInterface = get(user).queryTemplate as QueryInterface;
+    if (queryTemplate) {
+      query = new Query(queryTemplate);
+    }
+  }
+
+  if (features.requireConsents && addConsents) {
+    query = updateConsentFilters(query);
+  }
+
+  query.expectedResultType = expectedResultType;
+
+  return {
+    query,
+    resourceUUID,
+  };
+}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const updateConsentFilters = (query: Query) => {
   if (
