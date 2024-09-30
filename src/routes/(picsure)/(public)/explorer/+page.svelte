@@ -21,7 +21,7 @@
     }
 
     let hasInvalidFilter : boolean = !!currentFilters.find((filter) => {
-      console.log("Filter description: " + filter.description);
+      console.log("Filter description: " + filter.dataset);
       let filterHasValidQueryScope: boolean = !!queryScopes.find((qs) => {
         let filterMatchesQueryScope = (filter.dataset || '').length > 0 && qs.indexOf(filter.dataset || 'INVALID FILTER')  >= 0;
         if (filterMatchesQueryScope) {
