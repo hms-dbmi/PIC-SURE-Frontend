@@ -6,10 +6,10 @@ import { browser } from '$app/environment';
 export const filters: Writable<Filter[]> = writable(restoreFilters());
 export const totalParticipants: Writable<number | string> = writable(0);
 export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
-  $f.find((filter) => filter.filterType === 'genomic') ? true : false,
+  $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic') : false,
 );
 export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
-  $f.find((filter) => !filter.allowFiltering) ? true : false,
+  $f && $f.length > 0 ? $f.some((filter) => !filter.allowFiltering) : false,
 );
 
 filters.subscribe((f) => {
@@ -27,7 +27,6 @@ function restoreFilters() {
 
 export function addFilter(filter: Filter) {
   const currentFilters = get(filters);
-  console.log(currentFilters, filter);
   currentFilters.forEach((f) => {
     if (f.id === filter.id) {
       currentFilters.splice(currentFilters.indexOf(f), 1);

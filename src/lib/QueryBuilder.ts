@@ -17,9 +17,9 @@ export function getQueryRequest(
 ): QueryRequestInterface {
   let query: Query = new Query();
   if (features.useQueryTemplate && addConsents) {
-    const queryTemplate: QueryInterface = get(user).queryTemplate as QueryInterface;
+    const queryTemplate: QueryInterface | undefined = get(user).queryTemplate;
     if (queryTemplate) {
-      query = new Query(queryTemplate);
+      query = new Query(structuredClone(queryTemplate));
     }
   }
 
@@ -92,7 +92,7 @@ export const updateConsentFilters = (query: Query) => {
     query.removeCategoryFilter(harmonizedConsentPath);
   }
 
-  if (!hasGenomicFilter) {
+  if (!get(hasGenomicFilter)) {
     query.removeCategoryFilter(topmedConsentPath);
   }
 
