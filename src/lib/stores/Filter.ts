@@ -1,7 +1,7 @@
 import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
 
 import type { Filter } from '$lib/models/Filter';
-import {browser} from "$app/environment";
+import { browser } from '$app/environment';
 
 export const filters: Writable<Filter[]> = writable(restoreFilters());
 export const totalParticipants: Writable<number | string> = writable(0);
