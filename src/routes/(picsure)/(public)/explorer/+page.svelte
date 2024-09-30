@@ -17,7 +17,7 @@
     console.log("filters:" + currentFilters);
 
     if (currentFilters.length === 0) {
-      return true;
+      return false;
     }
 
     let hasInvalidFilter : boolean = !!currentFilters.find((filter) => {
