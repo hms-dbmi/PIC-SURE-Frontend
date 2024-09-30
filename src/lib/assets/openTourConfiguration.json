@@ -1,13 +1,13 @@
 {
   "searchTerm": "RECOVER",
   "title": "Welcome to BioData Catalyst Powered by PIC-SURE",
-  "description": "BioData Catalyst Powered by PIC-SURE allows you to explore variables, apply filters, and prepare data for analysis. When applying filters, participants are selected that meet those criteria. <br /><br />This tour demonstrates how to search, apply filters, and interpret results using PIC-SURE. This tour uses the Researching COVID to Enhance Recovery (RECOVER) dataset as an example. The RECOVER initiative is focused on understanding, diagnosing, treating, and preventing Long COVID.  <br /><br />Once the tour starts, you can click anywhere to go to the next step. You can press the escape key to stop the tour at any point. You may also use the arrow keys, enter key, or the spacebar to navigate the tour.",
+  "description": "BioData Catalyst Powered by PIC-SURE allows you to explore variables, apply filters, and prepare data for analysis. When applying filters, participants are selected that meet those criteria. <br /><br />This tour demonstrates how to search, apply filters, and interpret results using PIC-SURE. This tour uses the Researching COVID to Enhance Recovery (RECOVER) dataset as an example. The RECOVER initiative is focused on understanding, diagnosing, treating, and preventing Long COVID. <br /><br />Once the tour starts, you can click “Next” or use the arrow keys to navigate the tour. You can press any other key or click anywhere on the screen to escape the tour.",
   "steps": [
     {
       "element": "#explorer-search-box",
       "popover": {
         "title": "Search",
-        "description": "Search clinical variables of interest. Here, the term \"{{searchTerm}}\" was used to get all {{searchTerm}}-related results. Click anywhere to continue the tour.",
+        "description": "Search clinical variables of interest. Here, the term \"{{searchTerm}}\" was used to get all {{searchTerm}}-related results.",
         "onPrevClick": "disablePrevious"
       }
     },
@@ -82,11 +82,11 @@
     },
     {
       "element": "#nav-link-help",
+      "onDeselected": "removeHighlightClass",
       "popover": {
         "title": "Help Resources",
         "description": "To learn more about PIC-SURE, please consult the <a href='https://pic-sure.gitbook.io/nhlbi-biodata-catalyst-powered-by-pic-sure' class='anchor' target='_blank'>user guide</a> and <a href='https://www.youtube.com/playlist?list=PLJ6YccH8TEufZ5L-ctxzFF7vuZRLVacKw' class='anchor' target='_blank'>video</a> demonstrations. You can also find these resources on the help page.",
-        "onPrevClick": "disablePrevious",
-        "onNextClick": "closeTour"
+        "onPrevClick": "disablePrevious"
       }
     }
   ]
