@@ -16,6 +16,10 @@
     console.log("query scopes: " + queryScopes);
     console.log("filters:" + currentFilters);
 
+    if (currentFilters.length === 0) {
+      return true;
+    }
+
     let hasInvalidFilter : boolean = !!currentFilters.find((filter) => {
       let filterHasValidQueryScope: boolean = !!queryScopes.find((qs) => {
         (filter.description || '').indexOf(qs) >= 0;
