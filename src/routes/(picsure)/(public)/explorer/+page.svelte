@@ -21,6 +21,7 @@
     }
 
     let hasInvalidFilter : boolean = !!currentFilters.find((filter) => {
+      console.log("Filter description: " + filter.description);
       let filterHasValidQueryScope: boolean = !!queryScopes.find((qs) => {
         (filter.description || '').indexOf(qs) >= 0;
       });
