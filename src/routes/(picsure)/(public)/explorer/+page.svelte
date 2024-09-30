@@ -23,7 +23,7 @@
     let hasInvalidFilter : boolean = !!currentFilters.find((filter) => {
       console.log("Filter description: " + filter.description);
       let filterHasValidQueryScope: boolean = !!queryScopes.find((qs) => {
-        (filter.description || '').indexOf(qs) >= 0;
+        return (filter.description || '').length > 0 && qs.indexOf(filter.description || 'INVALID FILTER')  >= 0;
       });
       return !filterHasValidQueryScope;
     });
