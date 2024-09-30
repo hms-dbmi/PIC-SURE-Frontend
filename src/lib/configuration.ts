@@ -115,15 +115,14 @@ export const features: Indexable = {
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
     enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
-    enableSNPQuery: import.meta.env?.VITE_ENABLE_SNP_QUERY === 'true',
-    enableGENEQuery: import.meta.env?.VITE_ENABLE_GENE_QUERY === 'true',
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
   },
   dataRequests: import.meta.env?.VITE_DATA_REQUESTS === 'true',
-  genomicFilter: import.meta.env?.VITE_GENOMIC_FILTER === 'true',
+  enableSNPQuery: import.meta.env?.VITE_ENABLE_SNP_QUERY === 'true',
+  enableGENEQuery: import.meta.env?.VITE_ENABLE_GENE_QUERY === 'true',
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
   useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
   discover: import.meta.env?.VITE_DISCOVER === 'true',
