@@ -30,6 +30,7 @@
   let loading = false;
   let display: string;
   let description: string;
+  let studyDisplay: string;
 
   onMount(async () => {
     if ($modalStore[0]?.meta.existingFilter) {
@@ -37,6 +38,10 @@
       data = $modalStore[0]?.meta.existingFilter.searchResult;
       display = data?.display || '';
       description = data?.description || '';
+      studyDisplay =
+        data.studyAcronym && data.dataset
+          ? `${data.studyAcronym} (${data.dataset})`
+          : data.studyAcronym || data.dataset || '';
       if (existingFilter.filterType === 'Categorical') {
         if (existingFilter.categoryValues.length === 0) {
           selectedOptions = data?.values || [];
@@ -139,10 +144,17 @@
 </script>
 
 <div>
-  {#if !!data && description !== undefined && display !== undefined}
+  {#if !!data}
     <div class="variable-info">
-      <div class="variable-name">Variable Name: {display}</div>
-      <div class="variable-desc">Variable Description: {description}</div>
+      {#if display}
+        <div class="variable-name">Variable Name: {display}</div>
+      {/if}
+      {#if description}
+        <div class="variable-desc">Variable Description: {description}</div>
+      {/if}
+      {#if studyDisplay}
+        <div class="variable-study">Study: {studyDisplay}</div>
+      {/if}
     </div>
   {/if}
   <div class="flex justify-between" data-testid="filter-component">

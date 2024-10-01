@@ -17,13 +17,15 @@ export type SearchResult = Indexable & {
   dataset: string;
   name: string;
   display: string;
+  studyAcronym: string;
   description: string;
   values?: string[];
   min?: number;
   max?: number;
   meta?: Record<string, string> | null;
-  table?: SearchResult;
-  study?: SearchResult;
+  table?: SearchResult | null;
+  study?: SearchResult | null;
   type: 'Categorical' | 'Continuous';
   allowFiltering: boolean;
+  children?: SearchResult | null;
 };

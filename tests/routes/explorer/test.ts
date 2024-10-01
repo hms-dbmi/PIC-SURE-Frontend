@@ -635,6 +635,7 @@ test.describe('explorer', () => {
         name: 'heart_test',
         display: 'Any family with heart attack?',
         dataset: 'test_data_set',
+        studyAcronym: 'TDS',
         description: 'Do you have a history of heart attack? Including extended family?',
         values: ['Yes', 'No', "Don't know"],
         children: null,
@@ -1015,6 +1016,35 @@ test.describe('explorer', () => {
       // Then
       await expect(firstSelectedOption).toBeVisible();
       await expect(firstSelectedOption).toHaveText(firstValue);
+    });
+    test('Edit modal maintains info on the top', async ({ page }) => {
+      // Given
+      await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
+        route.fulfill({ json: detailResponseCat }),
+      );
+      await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        route.fulfill({ body: '9999' }),
+      );
+      await page.goto('/explorer?search=somedata');
+
+      // When
+      await clickNthFilterIcon(page);
+      const firstItem = await getOption(page);
+      const firstValue = await firstItem.textContent();
+      await firstItem.click();
+      const addFilterButton = page.getByTestId('add-filter');
+      await addFilterButton.click();
+      const searchResult = mockData.content[0];
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.conceptPath}`);
+      const edit = firstAddedFilter.locator('button').first();
+      await edit.click();
+      const modal = page.getByTestId('modal-component');
+      const variableInfo = modal.locator('.variable-info');
+      // Then
+      await expect(variableInfo).toBeVisible();
+      await expect(variableInfo).toContainText(`${searchResult.display}`);
+      await expect(variableInfo).toContainText(`${searchResult.description}`);
+      await expect(variableInfo).toContainText(`${searchResult.studyAcronym} (${searchResult.dataset})`);
     });
     test('Edit modal changes the filter', async ({ page }) => {
       // Given
