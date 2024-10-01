@@ -14,7 +14,7 @@
   import TourModal from '$lib/components/tour/TourModal.svelte';
 
   const modalStore = getModalStore();
-  const tourComponent: ModalComponent = { ref: TourModal };
+  const tourComponent: ModalComponent = { ref: TourModal, props: { tourConfig } };
 
   const disablePrevious = () => {};
 
@@ -46,8 +46,9 @@
 
   const applyNumericFilter = (activeRowSelector?: string) => {
     const filter = document.querySelector(
-      `#${activeRowSelector} [data-testid="numerical-filter"]`,
+      `#${activeRowSelector} [data-testid="add-filter"]`,
     ) as HTMLElement;
+
     filter.click();
     tourDriver.moveNext();
   };
@@ -57,6 +58,12 @@
       `#${activeRowSelector} #select-all`,
     ) as HTMLInputElement;
     allOptions?.click();
+
+    const addFilter = document.querySelector(
+      `#${activeRowSelector} [data-testid="add-filter"]`,
+    ) as HTMLElement;
+    addFilter.click();
+
     tourDriver.moveNext();
   };
 
@@ -85,6 +92,23 @@
     return text.replace(/\{\{searchTerm\}\}/g, searchTerm);
   }
 
+  const findAndSetFirstNonStigmatizedAvailableFilterThenNext: DriverHook = () => {
+    // click the first row that doesn't have a disabled filter button
+    // Work from the table rows to find the first one that has a filter button
+    // #ExplorerTable-table
+    const table = document.querySelector('#ExplorerTable-table') as HTMLTableElement;
+    const rows = table.querySelectorAll('tr');
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      let filter = row.querySelector('button[title="Filter"]') as HTMLElement | undefined;
+      if (filter) {
+        row.classList.add('non-stigmatized-row');
+        break;
+      }
+    }
+    tourDriver.moveNext();
+  };
+
   type FunctionMap = {
     [key: string]: DriverHook;
   };
@@ -102,6 +126,7 @@
     removeHighlightClass: addHighlightClass(false),
     resetSearch,
     applyFilterThenNext,
+    findAndSetFirstNonStigmatizedAvailableFilterThenNext,
   };
 
   // This method will serialize the json configuration to a DriveStep array
