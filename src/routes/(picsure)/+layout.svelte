@@ -22,6 +22,7 @@
   import python from 'highlight.js/lib/languages/python';
   import { storeHighlightJs } from '@skeletonlabs/skeleton';
   import 'highlight.js/styles/obsidian.css';
+  import {panelOpen} from "$lib/stores/SidePanel.ts";
 
   hljs.registerLanguage('python', python);
   hljs.registerLanguage('r', R);
@@ -44,6 +45,8 @@
   onMount(() => {
     document.body.classList.add('started');
   });
+
+  panelOpen.set(false);
 
   $: classesSidebar =
     ($page.url.pathname.includes('/explorer') || $page.url.pathname.includes('/discover')) &&
