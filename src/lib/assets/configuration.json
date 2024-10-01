@@ -159,5 +159,10 @@
         "consequence": "A standardized term from the Sequence Ontology (http://www.sequenceontology.org) to describe the calculated consequence of a variant. The severity for the calculated consequence of a variant on a gene has possible values HIGH (frameshift, splice disrupting, or truncating variants), MEDIUM (non-frameshift insertions or deletions, variants altering protein sequencing without affecting its length) or LOW (other coding variants including synonymous variants)."
       }
     }
+  },
+  "privacyPolicy": {
+    "title": "Privacy Policy",
+    "content": "This is the privacy policy for the PIC-SURE application.",
+    "url": "https://pic-sure.gitbook.io/pic-sure/privacy-policy"
   }
 }

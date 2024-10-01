@@ -3,7 +3,7 @@
   import { ProgressRadial } from '@skeletonlabs/skeleton';
   import { branding, resources } from '$lib/configuration';
   import { browser } from '$app/environment';
-  import { getQueryRequest } from '$lib/QueryBuilder';
+  import { getBlankQueryRequest } from '$lib/QueryBuilder';
   import { getStudiesCount, getConceptCount } from '$lib/services/dictionary';
 
   const ERROR_VALUE = '-';
@@ -29,7 +29,10 @@
       api
         .post(
           'picsure/query/sync',
-          getQueryRequest(isUserLoggedIn(), isUserLoggedIn() ? resources.hpds : resources.openHPDS),
+          getBlankQueryRequest(
+            isUserLoggedIn(),
+            isUserLoggedIn() ? resources.hpds : resources.openHPDS,
+          ),
         )
         .then((response) => {
           if (response) {
@@ -104,7 +107,7 @@
   {#if hasError}
     <div
       id="landing-errors"
-      class="alert variant-ghost-secondary text-surface-200-700-token w-3/4 px-4"
+      class="alert variant-filled-error text-error-50-900-token 200-700-token w-3/4 px-4 mb-6 mt-2"
     >
       <div><i class="fa-solid fa-circle-exclamation text-4xl"></i></div>
       <div class="alert-message">

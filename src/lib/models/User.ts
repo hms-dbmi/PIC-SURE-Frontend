@@ -8,7 +8,7 @@ export interface User {
   queryScopes?: string[];
   token?: string;
   acceptedTOS?: boolean;
-  queryTemplate?: QueryInterface;
+  readonly queryTemplate?: QueryInterface;
 }
 
 export interface ExtendedUser extends User {

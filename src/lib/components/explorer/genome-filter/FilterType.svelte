@@ -10,7 +10,7 @@
 </script>
 
 <div class="flex flex-row justify-center justify-items-center gap-16 {$$props.class ?? ''}">
-  {#if features.explorer.enableGENEQuery}
+  {#if features.enableGENEQuery}
     <CardButton
       data-testid="gene-variant-option"
       title="Variants by gene name"
@@ -21,7 +21,7 @@
       on:click={() => dispatch('select', { option: Option.Genomic })}
     />
   {/if}
-  {#if features.explorer.enableSNPQuery}
+  {#if features.enableSNPQuery}
     <CardButton
       data-testid="snp-option"
       title="Specific SNPs"
@@ -32,7 +32,7 @@
       on:click={() => dispatch('select', { option: Option.SNP })}
     />
   {/if}
-  {#if !features.explorer.enableGENEQuery && !features.explorer.enableSNPQuery}
+  {#if !features.enableGENEQuery && !features.enableSNPQuery}
     Genomic filtering has not been enabled in this environment. :(
   {/if}
 </div>

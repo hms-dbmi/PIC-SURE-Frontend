@@ -103,11 +103,19 @@
     </div>
   </svelte:fragment>
 </AccordionItem>
-<div class="m-1 p-1">
+<div class="m-1 p-1 max-w">
   {#each selectedFacetsChips as facet}
-    <span class="badge relative z-10 variant-ringed-primary m-1 p-2" id={facet.name}>
-      {facet.display}
-      <button class="chip-close ml-1" on:click={() => updateFacet(facet, facetCategory)}>
+    <span
+      class="badge relative z-10 variant-ringed-primary m-1 p-2 flex items-center box-border w-full max-w-full overflow-hidden"
+      id={facet.name}
+    >
+      <span class="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
+        {facet.display}
+      </span>
+      <button
+        class="chip-close ml-1 flex-shrink-0"
+        on:click={() => updateFacet(facet, facetCategory)}
+      >
         <i class="fa-solid fa-times hover:text-secondary-500"></i>
       </button>
     </span>

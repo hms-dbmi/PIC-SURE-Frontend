@@ -80,3 +80,9 @@ export interface HelpConfig {
   }>;
   popups: Indexable;
 }
+
+export interface PrivacyConfig {
+  title: string;
+  content: string;
+  url: string;
+}
