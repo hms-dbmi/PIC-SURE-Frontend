@@ -37,19 +37,8 @@
 
   $: isDiscoverPage = $page && $page.url.pathname.includes("/discover");
 
-  function disablePanel() : boolean {
-    console.log("disablePanel() called. Page = " + ($page && $page.url.pathname))
-    if (!isDiscoverPage) {
-      let isValidForExplore = get(hasInvalidFilter(get(user).queryScopes || []));
-      console.log("Not discover page. Is valid = " + isValidForExplore);
-      return isValidForExplore;
-    } else {
-      console.log("Discover page. Is valid = " + ($hasGenomicFilter || $hasUnallowedFilter))
-      return $hasGenomicFilter || $hasUnallowedFilter;
-    }
-  }
-
-  $: shouldDisablePanel = disablePanel();
+  $: shouldDisablePanel = (!isDiscoverPage && get(hasInvalidFilter(get(user).queryScopes || []))) ||
+          (isDiscoverPage && ($hasGenomicFilter || $hasUnallowedFilter));
 </script>
 
 <div id="side-panel" class="flex {panelOpen ? 'open-panel' : 'closed-panel'}">
