@@ -40,11 +40,11 @@
         {/if}
       </header>
       <div class="flex flex-col items-center justify-center">
-        <div id="main-logins" class="flex flex-col items-center w-max">
+        <div id="main-logins" class="grid grid-cols-1 gap-4 w-full">
           {#if providers?.length === 0}
             <aside class="auth-warning alert variant-ghost-warning">
               <div class="alert-message">
-                No main authentication providers are registed. Please add them to your
+                No main authentication providers are registered. Please add them to your
                 configuration. Click <a
                   class="anchor"
                   href="https://pic-sure.gitbook.io/pic-sure-developer-guide/configuring-pic-sure"
@@ -68,7 +68,7 @@
                 provider={selectedProvider}
                 {redirectTo}
                 helpText={selectedProvider.helptext}
-                class="btn variant-filled-primary m-1 mt-2"
+                class="btn variant-filled-primary m-1 mt-2 w-full"
               />
             {/if}
           {:else}
@@ -78,6 +78,7 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
+                class="btn variant-filled-primary w-full"
               />
             {/each}
           {/if}
@@ -85,25 +86,23 @@
         {#if features.login.open}
           <a
             href={branding?.login?.openPicsureLink || '/'}
-            class="btn variant-outline-primary text-primary-500 m-1 mt-2 text-sm"
+            class="btn variant-outline-primary hover:variant-filled-primary text-primary-500 m-1 mt-2 w-full mb-1"
             >{openPicsureLinkText}</a
           >
         {/if}
-        <div id="alt-logins" class="flex flex-col items-center mt-8">
-          {#await $page.data?.altProviders}
-            <ProgressRadial width="w-3" value={undefined} />
-          {:then altProviders}
-            {#each altProviders as provider}
-              <LoginButton
-                buttonText={provider.description || provider.name}
-                {provider}
-                {redirectTo}
-                helpText={provider.helptext}
-                class="btn variant-ringed-surface text-xs m-1 last:mb-4"
-              />
-            {/each}
-          {/await}
-        </div>
+        {#await $page.data?.altProviders}
+          <ProgressRadial width="w-3" value={undefined} />
+        {:then altProviders}
+          {#each altProviders as provider}
+            <LoginButton
+              buttonText={provider.description || provider.name}
+              {provider}
+              {redirectTo}
+              helpText={provider.helptext}
+              class="btn variant-outline-tertiary hover:variant-filled-tertiary m-1 w-full last:mb-4"
+            />
+          {/each}
+        {/await}
       </div>
     </div>
   {/await}

@@ -92,14 +92,15 @@ unauthedTest.describe('Login page', () => {
   unauthedTest('Alternate logins show below the other logins', async ({ page }) => {
     // Given
     await page.goto('/login');
-    // When
-    const altLoginsContainer = page.locator('#alt-logins');
+
+    const loginContainer = page.locator('#login-box');
+
     // Then
     if (altProviders.length > 0) {
-      await expect(altLoginsContainer).toBeVisible();
+      await expect(loginContainer).toBeVisible();
       for (const providerName of altProviders) {
         const testId = `login-button-${providerName.toLowerCase()}`;
-        const loginButton = altLoginsContainer.getByTestId(testId);
+        const loginButton = loginContainer.getByTestId(testId);
         await expect(loginButton).toBeVisible();
       }
     }
