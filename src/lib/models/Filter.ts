@@ -109,8 +109,8 @@ export function createNumericFilter(searchResult: SearchResult, min?: string, ma
             ? 'lessThan'
             : 'any',
     searchResult: searchResult,
-    min: min !== undefined ? min : undefined,
-    max: max !== undefined ? max : undefined,
+    min: min !== undefined ? min.toLocaleString() : undefined,
+    max: max !== undefined ? max.toLocaleString() : undefined,
     variableName: searchResult.display,
     description: searchResult.description,
     allowFiltering: searchResult.allowFiltering,
