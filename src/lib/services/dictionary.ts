@@ -6,12 +6,17 @@ import type {
 } from '$lib/models/api/DictionaryResponses';
 import type { Pageable } from '$lib/models/api/Pageable';
 import { page } from '$app/stores';
-import { get } from 'svelte/store';
+import { get, writable, type Writable } from 'svelte/store';
 import { user } from '$lib/stores/User';
 
 const dictionaryUrl = 'picsure/proxy/dictionary-api/';
 const searchUrl = 'picsure/proxy/dictionary-api/concepts';
 const conceptDetailUrl = 'picsure/proxy/dictionary-api/concepts/detail/';
+
+export type FacetSkeleton = {
+  [facetCategory: string]: string[];
+};
+export const hiddenFacets: Writable<FacetSkeleton> = writable({});
 
 const dictonaryCacheMap = new Map<string, SearchResult>();
 
@@ -49,11 +54,31 @@ export async function getAllFacets(): Promise<DictionaryFacetResult[]> {
   if (!get(page).url.pathname.includes('/discover')) {
     request = addConsents(request);
   }
-  const response = await api.post(`${dictionaryUrl}facets/`, request);
+  const response: DictionaryFacetResult[] = await api.post(`${dictionaryUrl}facets/`, request);
+  initializeHiddenFacets(response);
   return response;
 }
 
-export function updateFacetsFromSearch(
+function initializeHiddenFacets(response: DictionaryFacetResult[]) {
+  // facets that have a count of zero should never be shown in the UI
+  // this happens because of consent filters
+  const facetsWithZeroConcepts = response
+    .map((cat) => {
+      return {
+        name: cat.name,
+        values: cat.facets.filter((f) => f.count === 0).map((f) => f.name),
+      };
+    })
+    .reduce((prev, cur) => {
+      prev[cur.name] = cur.values;
+      return prev;
+    }, {} as FacetSkeleton);
+  console.log('Found the following facets that should be hidden: {}', facetsWithZeroConcepts);
+
+  hiddenFacets.set(facetsWithZeroConcepts);
+}
+
+export async function updateFacetsFromSearch(
   search: string,
   facets: Facet[],
 ): Promise<DictionaryFacetResult[]> {
@@ -61,7 +86,12 @@ export function updateFacetsFromSearch(
   if (!get(page).url.pathname.includes('/discover')) {
     request = addConsents(request);
   }
-  return api.post(`${dictionaryUrl}facets/`, request);
+
+  const response: DictionaryFacetResult[] = await api.post(`${dictionaryUrl}facets/`, request);
+  if (facets.length === 0 && search.length === 0) {
+    initializeHiddenFacets(response);
+  }
+  return response;
 }
 
 export async function getConceptDetails(
