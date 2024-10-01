@@ -7,14 +7,11 @@
   import {hasInvalidFilter} from '$lib/stores/Filter.ts';
   import {get, type Readable} from 'svelte/store';
 
-  function filtersInvalidForUser(): boolean {
-    const queryScopes: string[] = get(user).queryScopes || [];
-    let filtersInvalid = get(hasInvalidFilter(queryScopes));
-    if (filtersInvalid) {
-      console.log("Filters are invalid");
-    }
-    return filtersInvalid;
-  }
+
+
+  const queryScopes: string[] = get(user).queryScopes || [];
+
+  $: filtersInvalid = get(hasInvalidFilter(queryScopes));
 
 </script>
 
@@ -23,7 +20,7 @@
 </svelte:head>
 
 <Content full>
-  {#if filtersInvalidForUser()}
+  {#if filtersInvalid}
     <div>Invalid filters</div>
   {:else}
     <Explorer tourConfig={authTour} />
