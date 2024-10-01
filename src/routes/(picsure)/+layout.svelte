@@ -15,7 +15,6 @@
   import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import ModalWrapper from '$lib/components/ModalWrapper.svelte';
-  import FilterWarning from '$lib/components/FilterWarning.svelte';
   import { getModalStore } from '@skeletonlabs/skeleton';
 
   const modalStore = getModalStore();
@@ -26,8 +25,6 @@
   import python from 'highlight.js/lib/languages/python';
   import { storeHighlightJs } from '@skeletonlabs/skeleton';
   import 'highlight.js/styles/obsidian.css';
-  import { beforeNavigate } from '$app/navigation';
-  import { hasInvalidFilter, hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
 
   hljs.registerLanguage('python', python);
   hljs.registerLanguage('r', R);
@@ -56,22 +53,6 @@
     !$page.url.pathname.includes('/export') &&
     !$page.url.pathname.includes('/distributions');
 
-  beforeNavigate((nav) => {
-    console.log(nav);
-    if ($hasInvalidFilter && nav?.to?.url.pathname.includes('/explorer')) {
-      modalStore.trigger({
-        type: 'component',
-        component: 'modalWrapper',
-        meta: { component: FilterWarning, width: 'w-3/4' },
-      });
-    } else if (($hasGenomicFilter || $hasUnallowedFilter) && nav?.to?.url.pathname.includes('/discover')) {
-      modalStore.trigger({
-          type: 'component',
-          component: 'modalWrapper',
-          meta: { component: FilterWarning, width: 'w-3/4' },
-        });
-      }
-  });
 </script>
 
 <Toast position="t" />
