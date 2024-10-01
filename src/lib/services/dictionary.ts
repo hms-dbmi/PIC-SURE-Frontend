@@ -49,11 +49,14 @@ export async function getAllFacets(): Promise<DictionaryFacetResult[]> {
   if (!get(page).url.pathname.includes('/discover')) {
     request = addConsents(request);
   }
-  const response = await api.post(`${dictionaryUrl}facets/`, request);
+  const response: DictionaryFacetResult[] = await api.post(`${dictionaryUrl}facets/`, request);
+  response.forEach((facetCategory) => {
+    facetCategory.facets = facetCategory.facets.filter((facet) => facet.count > 0);
+  });
   return response;
 }
 
-export function updateFacetsFromSearch(
+export async function updateFacetsFromSearch(
   search: string,
   facets: Facet[],
 ): Promise<DictionaryFacetResult[]> {
@@ -61,7 +64,13 @@ export function updateFacetsFromSearch(
   if (!get(page).url.pathname.includes('/discover')) {
     request = addConsents(request);
   }
-  return api.post(`${dictionaryUrl}facets/`, request);
+  const response: DictionaryFacetResult[] = await api.post(`${dictionaryUrl}facets/`, request);
+  if (facets.length === 0 && !search) {
+    response.forEach((facetCategory) => {
+      facetCategory.facets = facetCategory.facets.filter((facet) => facet.count > 0);
+    });
+  }
+  return response;
 }
 
 export async function getConceptDetails(
