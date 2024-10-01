@@ -38,10 +38,15 @@
   $: isDiscoverPage = $page && $page.url.pathname.includes("/discover");
 
   function disablePanel() : boolean {
+    console.log("disablePanel() called. Page = " + ($page && $page.url.pathname))
     if (!isDiscoverPage) {
-      return get(hasInvalidFilter(get(user).queryScopes || []));
+      let isValidForExplore = get(hasInvalidFilter(get(user).queryScopes || []));
+      console.log("Not discover page. Is valid = " + isValidForExplore);
+      return isValidForExplore;
+    } else {
+      console.log("Discover page. Is valid = " + ($hasGenomicFilter || $hasUnallowedFilter))
+      return $hasGenomicFilter || $hasUnallowedFilter;
     }
-    return isDiscoverPage && ($hasGenomicFilter || $hasUnallowedFilter);
   }
 
   $: shouldDisablePanel = disablePanel();
