@@ -1,7 +1,4 @@
 <script lang="ts">
-  import Content from '$lib/components/Content.svelte';
-  import Visualizations from '$lib/components/explorer/Visualizations.svelte';
-  import { branding } from '$lib/configuration';
   import { beforeNavigate } from '$app/navigation';
   import { hasInvalidFilter, hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
   import { getModalStore } from '@skeletonlabs/skeleton';
@@ -26,16 +23,3 @@
       }
   });
 </script>
-
-<svelte:head>
-  <title>{branding.applicationName} | Distributions</title>
-</svelte:head>
-
-<Content
-  full={true}
-  backUrl="/discover"
-  backTitle="Back to Discover"
-  title="Variable Distributions"
->
-  <Visualizations />
-</Content>

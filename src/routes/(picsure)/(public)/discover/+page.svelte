@@ -7,20 +7,37 @@
     hasUnallowedFilter,
     removeGenomicFilters,
     removeUnallowedFilters,
+    hasInvalidFilter,
   } from '$lib/stores/Filter.ts';
   import { goto } from '$app/navigation';
   import openTour from '$lib/assets/openTourConfiguration.json';
-  import { panelOpen } from '$lib/stores/SidePanel';
-  import { beforeNavigate } from '$app/navigation';
-  import { hasInvalidFilter } from '$lib/stores/Filter.ts';
 
   function resetQuery() {
     removeGenomicFilters();
     removeUnallowedFilters();
   }
 
-  beforeNavigate(() => {
-    panelOpen.set(false);
+  import { beforeNavigate } from '$app/navigation';
+  import { getModalStore } from '@skeletonlabs/skeleton';
+  import FilterWarning from '$lib/components/FilterWarning.svelte';
+
+  const modalStore = getModalStore();
+
+  beforeNavigate((nav) => {
+    console.log(nav);
+    if ($hasInvalidFilter && nav?.to?.url.pathname.includes('/explorer')) {
+      modalStore.trigger({
+        type: 'component',
+        component: 'modalWrapper',
+        meta: { component: FilterWarning, width: 'w-3/4' },
+      });
+    } else if (($hasGenomicFilter || $hasUnallowedFilter) && nav?.to?.url.pathname.includes('/discover')) {
+      modalStore.trigger({
+          type: 'component',
+          component: 'modalWrapper',
+          meta: { component: FilterWarning, width: 'w-3/4' },
+        });
+      }
   });
 </script>
 

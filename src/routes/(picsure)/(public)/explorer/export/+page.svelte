@@ -10,6 +10,29 @@
   import type { ExportInterface } from '$lib/models/Export';
   import { features } from '$lib/configuration';
   let { exports } = ExportStore;
+  import { beforeNavigate } from '$app/navigation';
+  import { hasInvalidFilter, hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
+  import { getModalStore } from '@skeletonlabs/skeleton';
+  import FilterWarning from '$lib/components/FilterWarning.svelte';
+
+  const modalStore = getModalStore();
+
+  beforeNavigate((nav) => {
+    console.log(nav);
+    if ($hasInvalidFilter && nav?.to?.url.pathname.includes('/explorer')) {
+      modalStore.trigger({
+        type: 'component',
+        component: 'modalWrapper',
+        meta: { component: FilterWarning, width: 'w-3/4' },
+      });
+    } else if (($hasGenomicFilter || $hasUnallowedFilter) && nav?.to?.url.pathname.includes('/discover')) {
+      modalStore.trigger({
+          type: 'component',
+          component: 'modalWrapper',
+          meta: { component: FilterWarning, width: 'w-3/4' },
+        });
+      }
+  });
 
   let queryRequest: QueryRequestInterface = getQueryRequest(true);
   let exportRows: ExportRowInterface[] = $exports.map((exp) => {
@@ -40,6 +63,7 @@
       searchResult: {
         conceptPath: '\\_Patient ID\\',
         name: '_Patient ID',
+        studyAcronym: '',
         dataset: '',
         display: 'Patient ID',
         description: 'Patient identifier.',
@@ -64,6 +88,7 @@
         searchResult: {
           conceptPath: '\\_Topmed Study Accession with Subject ID\\',
           name: '_TOPMed Study Accession with Subject ID',
+          studyAcronym: 'TOPMed',
           dataset: 'TOPMed',
           display: 'TOPMed Study Accession with Subject ID',
           description: 'TOPMed study accession number and subject identifier.',
@@ -88,6 +113,7 @@
         searchResult: {
           conceptPath: '\\_Parent Study Accession with Subject ID\\',
           name: '_Parent Study Accession with Subject ID',
+          studyAcronym: '',
           dataset: '',
           display: 'Parent Study Accession with Subject ID',
           description: 'Parent study accession number and subject identifier.',
