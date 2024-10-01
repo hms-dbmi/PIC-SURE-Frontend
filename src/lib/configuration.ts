@@ -12,6 +12,7 @@ import type {
   LandingConfig,
   LoginConfig,
   SiteMapConfig,
+  PrivacyConfig,
 } from './types';
 
 export interface Branding {
@@ -27,6 +28,7 @@ export interface Branding {
   landing: LandingConfig;
   login: LoginConfig;
   help: HelpConfig;
+  privacyPolicy: PrivacyConfig;
 }
 
 export const branding: Branding = {
@@ -44,6 +46,7 @@ export const branding: Branding = {
   landing: {} as LandingConfig,
   login: {} as LoginConfig,
   help: {} as HelpConfig,
+  privacyPolicy: {} as PrivacyConfig,
 };
 
 export const initializeBranding = () => {
@@ -55,6 +58,7 @@ export const initializeBranding = () => {
   branding.help = configJson.help;
   branding.footer = configJson.footer;
   branding.sitemap = configJson.sitemap as SiteMapConfig[];
+  branding.privacyPolicy = configJson.privacyPolicy;
 };
 
 export const routes: Route[] = [
@@ -115,15 +119,14 @@ export const features: Indexable = {
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
     enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
-    enableSNPQuery: import.meta.env?.VITE_ENABLE_SNP_QUERY === 'true',
-    enableGENEQuery: import.meta.env?.VITE_ENABLE_GENE_QUERY === 'true',
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
   },
   dataRequests: import.meta.env?.VITE_DATA_REQUESTS === 'true',
-  genomicFilter: import.meta.env?.VITE_GENOMIC_FILTER === 'true',
+  enableSNPQuery: import.meta.env?.VITE_ENABLE_SNP_QUERY === 'true',
+  enableGENEQuery: import.meta.env?.VITE_ENABLE_GENE_QUERY === 'true',
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
   useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
   discover: import.meta.env?.VITE_DISCOVER === 'true',
@@ -144,6 +147,10 @@ export const settings: Indexable = {
     graphColors: JSON.parse(
       import.meta.env?.VITE_DIST_EXPLORER_GRAPH_COLORS || '["#328FFF", "#675AFF", "#FFBC35"]',
     ),
+  },
+  google: {
+    analytics: import.meta.env?.VITE_GOOGLE_ANALYTICS_ID || '',
+    tagManager: import.meta.env?.VITE_GOOGLE_TAG_MANAGER_ID || '',
   },
 };
 

@@ -71,8 +71,8 @@
         });
       }
     }
-    min = data.min !== undefined && data.min >= 0 ? data.min.toString() : '';
-    max = data.max !== undefined && data.max >= 0 ? data.max.toString() : '';
+    min = data.min ? data.min.toString() : '';
+    max = data.max ? data.max.toString() : '';
   });
 
   function addNewFilter() {

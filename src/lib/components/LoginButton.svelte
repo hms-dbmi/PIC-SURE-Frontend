@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createInstance } from '$lib/AuthProviderRegistry';
   import type { AuthData } from '$lib/models/AuthProvider';
+  import { resetSearch } from '$lib/stores/Search';
 
   export let buttonText = 'Log In';
   export let redirectTo = '/';
@@ -10,7 +11,9 @@
 
   let login = async (redirectTo: string, providerType: string) => {
     let instance = await createInstance(provider);
-    instance.login(redirectTo, providerType);
+    instance.login(redirectTo, providerType).then(() => {
+      resetSearch();
+    });
   };
 </script>
 
