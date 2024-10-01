@@ -35,13 +35,13 @@
     unsubExportStore && unsubExportStore();
   });
 
+  $: isDiscoverPage = $page && $page.url.pathname.includes("/discover");
+
   function disablePanel() : boolean {
-    if ($page.url.pathname.includes("/explorer")) {
+    if (!isDiscoverPage) {
       return get(hasInvalidFilter(get(user).queryScopes || []));
-    } else if ($page.url.pathname.includes("/discover")) {
-      return $hasGenomicFilter || $hasUnallowedFilter;
     }
-    else return true;
+    return isDiscoverPage && ($hasGenomicFilter || $hasUnallowedFilter);
   }
 
   $: shouldDisablePanel = disablePanel();

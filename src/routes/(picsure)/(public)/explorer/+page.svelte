@@ -10,7 +10,9 @@
   function filtersInvalidForUser(): boolean {
     const queryScopes: string[] = get(user).queryScopes || [];
     let filtersInvalid = get(hasInvalidFilter(queryScopes));
-    console.log("Filters are invalid");
+    if (filtersInvalid) {
+      console.log("Filters are invalid");
+    }
     return filtersInvalid;
   }
 
