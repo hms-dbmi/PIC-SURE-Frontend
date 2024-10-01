@@ -35,8 +35,11 @@
 
     let filtersJson = sessionStorage.getItem('filters');
     if (filtersJson) {
-      let storedFilters = JSON.parse(filtersJson || '{}');
+      let storedFilters = JSON.parse(filtersJson || '[]');
       filters.set(storedFilters);
+      // wait to delete from session storage, in case loading the filters in the line above triggers the session
+      // storage to be re-written
+      setTimeout(() => sessionStorage.setItem('filters', '[]'), 500);
     }
 
     goto(failed ? '/login/error' : redirectTo);
