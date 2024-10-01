@@ -45,7 +45,8 @@
             'An error occured while parsing your token. Please try again later. If this problem persists, please contact an administrator.',
           background: 'variant-filled-error',
         });
-      }).finally(() => {
+      })
+      .finally(() => {
         loading = false;
       });
   }
@@ -64,13 +65,11 @@
 <div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
   {#if loading}
     <ProgressRadial />
+  {:else if plotValues.length}
+    {#each plotValues as { data, layout, meta }, index}
+      <PlotlyPlot {index} {data} {layout} {meta} {newPlot} />
+    {/each}
   {:else}
-    {#if plotValues.length}
-      {#each plotValues as { data, layout, meta }, index}
-        <PlotlyPlot {index} {data} {layout} {meta} {newPlot} />
-      {/each}
-    {:else}
-      <div>No Visualizations Available</div>
-    {/if}
+    <div>No Visualizations Available</div>
   {/if}
 </div>
