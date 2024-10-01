@@ -45,12 +45,10 @@
     document.body.classList.add('started');
   });
 
-  $: classesSidebar =
+  $: showSidebar =
     ($page.url.pathname.includes('/explorer') || $page.url.pathname.includes('/discover')) &&
     !$page.url.pathname.includes('/export') &&
-    !$page.url.pathname.includes('/distributions')
-      ? ''
-      : 'hidden';
+    !$page.url.pathname.includes('/distributions');
 </script>
 
 <Toast position="t" />
@@ -60,9 +58,11 @@
     <Navigation />
   </svelte:fragment>
   <svelte:fragment slot="sidebarRight">
-    <div id="right-panel-container" class={'flex ' + classesSidebar}>
-      <SidePanel />
-    </div>
+    {#if showSidebar}
+      <div id="right-panel-container" class={'flex'}>
+        <SidePanel />
+      </div>
+    {/if}
   </svelte:fragment>
   <slot />
   <svelte:fragment slot="pageFooter">
