@@ -20,6 +20,7 @@
   export let defaultRowsPerPage = 10;
   export let columns: Column[] = [];
   export let cellOverides: Indexable = {};
+  export let stickyHeader = false;
   export let rowClickHandler: (row: Indexable) => void = () => {};
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,7 +57,7 @@
       class="table table-auto table-hover align-middle {fullWidth ? 'w-max' : ''}"
     >
       <thead>
-        <tr>
+        <tr class={stickyHeader ? 'sticky-header' : ''}>
           {#each columns as column}
             {#if column.sort}
               <ThSort
@@ -106,5 +107,10 @@
 
   table thead th {
     font-weight: normal !important;
+  }
+
+  .sticky-header th {
+    position: sticky;
+    top: 0;
   }
 </style>
