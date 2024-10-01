@@ -4,13 +4,15 @@
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import authTour from '$lib/assets/authTourConfiguration.json';
   import { hasInvalidFilter } from '$lib/stores/Filter.ts';
+    import { beforeNavigate } from '$app/navigation';
   import { panelOpen } from '$lib/stores/SidePanel';
+  import { hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
 
-  panelOpen.set(false);
-
-  if (!$hasInvalidFilter) {
-    panelOpen.set(true);
-  }
+  beforeNavigate((nav) => {
+    if (nav && nav?.to?.url.pathname === '/discover' && $hasGenomicFilter || $hasUnallowedFilter) {
+      panelOpen.set(false);
+    }
+  });
   
 </script>
 
