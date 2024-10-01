@@ -6,7 +6,7 @@ import { user } from '$lib/stores/User';
 import { get } from 'svelte/store';
 import type { User } from '$lib/models/User';
 import { browser } from '$app/environment';
-
+import { features } from '$lib/configuration';
 export const columns: Writable<Column[]> = writable([]);
 
 export type DashboardRow = Record<string, string | number | boolean | null>;
@@ -36,45 +36,48 @@ function isUserLoggedIn() {
 export async function loadDashboardData() {
   const dashboardData = await fetchDashboard();
   columns.set(dashboardData.columns);
+
   const loggedInUser: User = get(user);
-  if (isUserLoggedIn() && loggedInUser && loggedInUser.queryTemplate) {
+  const useConsents = features.useQueryTemplate && isUserLoggedIn() && loggedInUser?.queryTemplate;
+
+  let consents: string[] = [];
+  if (useConsents) {
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    const filters = loggedInUser.queryTemplate.categoryFilters as any;
-    const consents = filters['\\_consents\\'] as string[];
-    dashboardData.rows.forEach((row) => {
-      if (row?.accession) {
-        const accessionRegex = /^phs\d+\.v\d+\.p\d+\.c\d+$/;
-        if (accessionRegex.test(row.accession as string)) {
-          const accessionBase = (row.accession as string).replace(/\.v\d+\.p\d+/, '');
-          console.log(accessionBase);
-          row.consentGranted = consents.includes(accessionBase);
-        } else {
-          try {
-            row.consentGranted = consents.includes(row?.accession.toLocaleString());
-          } catch (e) {
-            console.error(e);
-            row.consentGranted = false;
-          }
-        }
-      } else {
-        row.consentGranted = false;
-      }
-    });
+    consents = (loggedInUser.queryTemplate?.categoryFilters as any)?.['\\_consents\\'] || [];
   }
-  const consentGrantedRows = dashboardData.rows.filter((row) => row.consentGranted);
-  const nonConsentGrantedRows = dashboardData.rows.filter((row) => !row.consentGranted);
 
-  const sortByAbbreviation = (a: DashboardRow, b: DashboardRow) => {
-    if (typeof a.abbreviation === 'string' && typeof b.abbreviation === 'string') {
-      return a.abbreviation.localeCompare(b.abbreviation);
+  const processedRows = dashboardData.rows.map(processRow(consents));
+
+  const sortedRows = processedRows.sort((a, b) => {
+    if (a.consentGranted === b.consentGranted) {
+      return sortByAbbreviation(a, b);
     }
-    if (typeof a.abbreviation === 'string') return -1;
-    if (typeof b.abbreviation === 'string') return 1;
-    return 0;
+    return a.consentGranted ? -1 : 1;
+  });
+
+  rows.set(sortedRows);
+}
+
+function processRow(consents: string[]) {
+  return (row: DashboardRow): DashboardRow => {
+    if (!row.accession) {
+      return { ...row, consentGranted: false };
+    }
+
+    const accession = row.accession.toString();
+    const accessionRegex = /^phs\d+\.v\d+\.p\d+\.c\d+$/;
+
+    if (accessionRegex.test(accession)) {
+      const accessionBase = accession.replace(/\.v\d+\.p\d+/, '');
+      return { ...row, consentGranted: consents.includes(accessionBase) };
+    }
+
+    return { ...row, consentGranted: consents.includes(accession) };
   };
+}
 
-  const sortedConsentGrantedRows = consentGrantedRows.sort(sortByAbbreviation);
-  const sortedNonConsentGrantedRows = nonConsentGrantedRows.sort(sortByAbbreviation);
-
-  rows.set([...sortedConsentGrantedRows, ...sortedNonConsentGrantedRows]);
+function sortByAbbreviation(a: DashboardRow, b: DashboardRow): number {
+  const aAbbr = a.abbreviation?.toString() || '';
+  const bAbbr = b.abbreviation?.toString() || '';
+  return aAbbr.localeCompare(bAbbr);
 }
