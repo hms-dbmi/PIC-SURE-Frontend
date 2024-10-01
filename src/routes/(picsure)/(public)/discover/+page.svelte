@@ -19,10 +19,8 @@
     removeUnallowedFilters();
   }
 
-  beforeNavigate((nav) => {
-    if (nav && nav?.to?.url.pathname === '/explorer' && $hasInvalidFilter) {
-      panelOpen.set(false);
-    }
+  beforeNavigate(() => {
+    panelOpen.set(false);
   });
 </script>
 
