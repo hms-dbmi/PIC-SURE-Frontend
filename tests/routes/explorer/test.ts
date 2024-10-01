@@ -931,6 +931,53 @@ test.describe('explorer', () => {
       await expect(infoSection).toBeVisible();
       await expect(infoSection).toContainText(`Restricting to greater than ${filter.min}.`);
     });
+    test('Fitlers where the min and max were left blank show the correct text', async ({
+      page,
+    }) => {
+      // Given
+
+      await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        route.fulfill({ body: '9999' }),
+      );
+      await page.goto('/explorer?search=somedata');
+
+      // When
+      await clickNthFilterIcon(page, 3);
+      const addFilterButton = page.getByTestId('add-filter');
+      await addFilterButton.click();
+      const searchResult = mockData.content[3];
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.conceptPath}`);
+      const openButton = firstAddedFilter.locator('button').last();
+      await openButton.click();
+
+      // Then
+      const infoSection = firstAddedFilter.locator('section');
+      await expect(infoSection).toBeVisible();
+      await expect(infoSection).toContainText(`Restricting to any value.`);
+    });
+    test('Added Fitlers contain study acronym and dataset', async ({ page }) => {
+      // Given
+      await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        route.fulfill({ body: '9999' }),
+      );
+      await page.goto('/explorer?search=somedata');
+
+      // When
+      await clickNthFilterIcon(page, 3);
+      const addFilterButton = page.getByTestId('add-filter');
+      await addFilterButton.click();
+      const searchResult = mockData.content[3];
+      const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.conceptPath}`);
+      const openButton = firstAddedFilter.locator('button').last();
+      await openButton.click();
+
+      // Then
+      const infoSection = firstAddedFilter.locator('section');
+      await expect(infoSection).toBeVisible();
+      await expect(infoSection).toContainText(
+        `${searchResult.studyAcronym} (${searchResult.dataset})`,
+      );
+    });
     test('Clicking the remove button removes the filter from the results panel', async ({
       page,
     }) => {
@@ -1030,7 +1077,6 @@ test.describe('explorer', () => {
       // When
       await clickNthFilterIcon(page);
       const firstItem = await getOption(page);
-      const firstValue = await firstItem.textContent();
       await firstItem.click();
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
@@ -1044,7 +1090,9 @@ test.describe('explorer', () => {
       await expect(variableInfo).toBeVisible();
       await expect(variableInfo).toContainText(`${searchResult.display}`);
       await expect(variableInfo).toContainText(`${searchResult.description}`);
-      await expect(variableInfo).toContainText(`${searchResult.studyAcronym} (${searchResult.dataset})`);
+      await expect(variableInfo).toContainText(
+        `${searchResult.studyAcronym} (${searchResult.dataset})`,
+      );
     });
     test('Edit modal changes the filter', async ({ page }) => {
       // Given

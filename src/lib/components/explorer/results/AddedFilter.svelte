@@ -54,6 +54,8 @@
       }
     } else if (filter.filterType === 'numeric') {
       switch (filter.displayType) {
+        case 'any':
+          return 'Restricting to any value.';
         case 'between':
           return `Restricting to between ${filter.min} and ${filter.max}.`;
         case 'greaterThan':
@@ -61,11 +63,18 @@
         case 'lessThan':
           return `Restricting to less than ${filter.max}.`;
         default:
-          return filter.description;
+          return filter.description || 'N/A';
       }
     } else if (filter.filterType === 'genomic' || filter.filterType === 'snp') {
       return filter.description;
     }
+  };
+
+  const derivedStudyDescription = function (filter: Filter) {
+    if (filter.searchResult?.studyAcronym && filter.searchResult?.dataset) {
+      return `${filter.searchResult.studyAcronym} (${filter.searchResult.dataset})`;
+    }
+    return filter.searchResult?.studyAcronym || filter.searchResult?.dataset || '';
   };
 
   const toggleCardBody = function () {
@@ -129,6 +138,7 @@
   {#if open}
     <section class="p-1 whitespace-pre-wrap" transition:slide={{ axis: 'y' }}>
       {derivedFilterDescription(filter)}
+      {derivedStudyDescription(filter)}
       {#if filter.filterType === 'Categorical' && filter.displayType !== 'any' && filter.displayType !== 'anyRecordOf'}
         <div>Values: {filter.categoryValues.join(', ')}</div>
       {/if}
