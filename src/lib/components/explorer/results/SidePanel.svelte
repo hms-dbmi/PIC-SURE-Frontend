@@ -44,6 +44,12 @@
   $: shouldDisablePanel =
     (!isDiscoverPage && $hasInvalidFilter) ||
     (isDiscoverPage && ($hasGenomicFilter || $hasUnallowedFilter));
+  console.log('shouldDisablePanel', shouldDisablePanel);
+  console.log('panelOpen', $panelOpen);
+  console.log('isDiscoverPage', isDiscoverPage);
+  console.log('hasInvalidFilter', $hasInvalidFilter);
+  console.log('hasGenomicFilter', $hasGenomicFilter);
+  console.log('hasUnallowedFilter', $hasUnallowedFilter);
 </script>
 
 <div id="side-panel" class="flex {panelOpen ? 'open-panel' : 'closed-panel'}">
