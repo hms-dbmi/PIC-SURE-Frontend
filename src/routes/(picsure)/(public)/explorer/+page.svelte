@@ -7,9 +7,11 @@
   import {hasInvalidFilter} from '$lib/stores/Filter.ts';
   import {get, type Readable} from 'svelte/store';
 
-  function filtersInvalidForUser(): Readable<boolean> {
+  function filtersInvalidForUser(): boolean {
     const queryScopes: string[] = get(user).queryScopes || [];
-    return hasInvalidFilter(queryScopes);
+    let filtersInvalid = get(hasInvalidFilter(queryScopes));
+    console.log("Filters are invalid");
+    return filtersInvalid;
   }
 
 </script>

@@ -15,10 +15,11 @@ export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
 export function hasInvalidFilter(queryScopes: string[]): Readable<boolean> {
   let readable: Readable<boolean> = derived(filters, ($f) => {
     if ($f.length ===0) {
+      console.log("no filters, returning false")
       return false;
     }
     let hasInvalidFilter: boolean = !!$f.find((filter) => {
-      console.log('Filter description: ' + filter.dataset);
+      console.log('Filter dataset: ' + filter.dataset);
       let filterHasValidQueryScope: boolean = !!queryScopes.find((qs) => {
         let filterMatchesQueryScope =
             (filter.dataset || '').length > 0 && qs.indexOf(filter.dataset || 'INVALID FILTER') >= 0;
