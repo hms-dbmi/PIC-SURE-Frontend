@@ -2,19 +2,23 @@
   import ExportStore from '$lib/stores/Export';
   import ResultsPanel from '$lib/components/explorer/results/ResultsPanel.svelte';
   import { onDestroy, onMount } from 'svelte';
-  import {get, type Readable, type Unsubscriber} from 'svelte/store';
-  import {filters, hasGenomicFilter, hasInvalidFilter, hasUnallowedFilter} from '$lib/stores/Filter';
-  import {user} from "$lib/stores/User.ts";
-  import {page} from "$app/stores";
+  import { type Unsubscriber } from 'svelte/store';
+  import {
+    filters,
+    hasGenomicFilter,
+    hasInvalidFilter,
+    hasUnallowedFilter,
+  } from '$lib/stores/Filter';
+  import { page } from '$app/stores';
+  import { panelOpen } from '$lib/stores/SidePanel';
   let { exports } = ExportStore;
 
   let unsubFilterStore: Unsubscriber;
   let unsubExportStore: Unsubscriber;
 
-  export let panelOpen = false;
 
   function openPanel() {
-    panelOpen = true;
+    panelOpen.set(true);
   }
 
   onMount(() => {
@@ -35,10 +39,17 @@
     unsubExportStore && unsubExportStore();
   });
 
-  $: isDiscoverPage = $page && $page.url.pathname.includes("/discover");
+  $: isDiscoverPage = $page && $page.url.pathname.includes('/discover');
 
-  $: shouldDisablePanel = (!isDiscoverPage && get(hasInvalidFilter(get(user).queryScopes || []))) ||
-          (isDiscoverPage && ($hasGenomicFilter || $hasUnallowedFilter));
+  $: shouldDisablePanel =
+    (!isDiscoverPage && $hasInvalidFilter) ||
+    (isDiscoverPage && ($hasGenomicFilter || $hasUnallowedFilter));
+  console.log('shouldDisablePanel', shouldDisablePanel);
+  console.log('panelOpen', $panelOpen);
+  console.log('isDiscoverPage', isDiscoverPage);
+  console.log('hasInvalidFilter', $hasInvalidFilter);
+  console.log('hasGenomicFilter', $hasGenomicFilter);
+  console.log('hasUnallowedFilter', $hasUnallowedFilter);
 </script>
 
 <div id="side-panel" class="flex {panelOpen ? 'open-panel' : 'closed-panel'}">
@@ -51,7 +62,7 @@
       aria-label="Toggle Results Panel"
       disabled={shouldDisablePanel}
       on:click={() => {
-        panelOpen = !panelOpen;
+        panelOpen.update(value => !value);
       }}
     >
       <i class="fa-solid {panelOpen ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>

@@ -3,16 +3,16 @@
   import Content from '$lib/components/Content.svelte';
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import authTour from '$lib/assets/authTourConfiguration.json';
-  import { user } from '$lib/stores/User.ts';
-  import {hasInvalidFilter} from '$lib/stores/Filter.ts';
-  import {get, type Readable} from 'svelte/store';
+  import { hasInvalidFilter } from '$lib/stores/Filter.ts';
+    import { beforeNavigate } from '$app/navigation';
+    import { panelOpen } from '$lib/stores/SidePanel';
 
-
-
-  const queryScopes: string[] = get(user).queryScopes || [];
-
-  $: filtersInvalid = get(hasInvalidFilter(queryScopes));
-
+  beforeNavigate((nav) => {
+    if (nav && nav?.to?.url.pathname === '/explorer') {
+      panelOpen.set(false);
+    }
+  });
+  
 </script>
 
 <svelte:head>
@@ -20,7 +20,7 @@
 </svelte:head>
 
 <Content full>
-  {#if filtersInvalid}
+  {#if $hasInvalidFilter}
     <div>Invalid filters</div>
   {:else}
     <Explorer tourConfig={authTour} />

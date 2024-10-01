@@ -2,6 +2,7 @@ import { get, derived, writable, type Readable, type Writable } from 'svelte/sto
 
 import type { Filter } from '$lib/models/Filter';
 import { browser } from '$app/environment';
+import { user } from './User';
 
 export const filters: Writable<Filter[]> = writable(restoreFilters());
 export const totalParticipants: Writable<number | string> = writable(0);
@@ -12,27 +13,20 @@ export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => !filter.allowFiltering) : false,
 );
 
-export function hasInvalidFilter(queryScopes: string[]): Readable<boolean> {
-  let readable: Readable<boolean> = derived(filters, ($f) => {
-    if ($f.length ===0) {
-      console.log("no filters, returning false")
-      return false;
-    }
-    let hasInvalidFilter: boolean = !!$f.find((filter) => {
-      console.log('Filter dataset: ' + filter.dataset);
-      let filterHasValidQueryScope: boolean = !!queryScopes.find((qs) => {
-        let filterMatchesQueryScope =
-            (filter.dataset || '').length > 0 && qs.indexOf(filter.dataset || 'INVALID FILTER') >= 0;
-        if (filterMatchesQueryScope) {
-          console.log('Filter {' + filter.dataset + '} matches queryScope {' + qs + '}');
-        }
-        return filterMatchesQueryScope;
-      });
-      return !filterHasValidQueryScope;
-    })
+export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$user, $filters]) => {
+  if ($filters.length === 0) return false;
+
+  return $filters.some((filter) => {
+    const filterDataset = filter.dataset || '';
+
+    const isValidFilter = $user?.queryScopes?.some((scope) => {
+      const isMatch = filterDataset.length > 0 && scope.includes(filterDataset);
+      return isMatch;
+    });
+
+    return !isValidFilter;
   });
-  return readable;
-}
+});
 
 filters.subscribe((f) => {
   if (browser) {
