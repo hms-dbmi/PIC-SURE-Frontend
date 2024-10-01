@@ -14,7 +14,9 @@
   };
 
   function search() {
-    goto(`/explorer?search=${searchTerm}`);
+    isUserLoggedIn()
+      ? goto(`/explorer?search=${searchTerm}`)
+      : goto(`/discover?search=${searchTerm}`);
   }
 
   const actionsToDisplay = branding?.landing?.actions.filter((action) => {
