@@ -44,7 +44,7 @@
           {#if providers?.length === 0}
             <aside class="auth-warning alert variant-ghost-warning">
               <div class="alert-message">
-                No main authentication providers are registed. Please add them to your
+                No main authentication providers are registered. Please add them to your
                 configuration. Click <a
                   class="anchor"
                   href="https://pic-sure.gitbook.io/pic-sure-developer-guide/configuring-pic-sure"
