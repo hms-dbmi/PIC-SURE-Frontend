@@ -10,11 +10,19 @@
   } from '$lib/stores/Filter.ts';
   import { goto } from '$app/navigation';
   import openTour from '$lib/assets/openTourConfiguration.json';
+  import { panelOpen } from '$lib/stores/SidePanel';
+  import { beforeNavigate } from '$app/navigation';
 
   function resetQuery() {
     removeGenomicFilters();
     removeUnallowedFilters();
   }
+
+  beforeNavigate((nav) => {
+    if (nav && nav?.to?.url.pathname === '/discover') {
+      panelOpen.set(false);
+    }
+  });
 </script>
 
 <svelte:head>
