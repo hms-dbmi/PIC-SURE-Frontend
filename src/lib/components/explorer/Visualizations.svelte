@@ -62,7 +62,7 @@
   All visualizations display the distributions of each variable filter for the specified cohort.
 </p>
 <div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
-  {#if !loading}
+  {#if loading}
     <ProgressRadial />
   {:else}
     {#if plotValues.length}
