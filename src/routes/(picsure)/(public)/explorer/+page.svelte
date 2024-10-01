@@ -3,16 +3,7 @@
   import Content from '$lib/components/Content.svelte';
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import authTour from '$lib/assets/authTourConfiguration.json';
-  import { user } from '$lib/stores/User.ts';
-  import {hasInvalidFilter} from '$lib/stores/Filter.ts';
-  import {get, type Readable} from 'svelte/store';
-
-
-
-  const queryScopes: string[] = get(user).queryScopes || [];
-
-  $: filtersInvalid = get(hasInvalidFilter(queryScopes));
-
+  import { hasInvalidFilter } from '$lib/stores/Filter.ts';
 </script>
 
 <svelte:head>
@@ -20,7 +11,7 @@
 </svelte:head>
 
 <Content full>
-  {#if filtersInvalid}
+  {#if $hasInvalidFilter}
     <div>Invalid filters</div>
   {:else}
     <Explorer tourConfig={authTour} />

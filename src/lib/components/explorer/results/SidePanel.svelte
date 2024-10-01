@@ -2,10 +2,14 @@
   import ExportStore from '$lib/stores/Export';
   import ResultsPanel from '$lib/components/explorer/results/ResultsPanel.svelte';
   import { onDestroy, onMount } from 'svelte';
-  import {get, type Readable, type Unsubscriber} from 'svelte/store';
-  import {filters, hasGenomicFilter, hasInvalidFilter, hasUnallowedFilter} from '$lib/stores/Filter';
-  import {user} from "$lib/stores/User.ts";
-  import {page} from "$app/stores";
+  import { type Unsubscriber } from 'svelte/store';
+  import {
+    filters,
+    hasGenomicFilter,
+    hasInvalidFilter,
+    hasUnallowedFilter,
+  } from '$lib/stores/Filter';
+  import { page } from '$app/stores';
   let { exports } = ExportStore;
 
   let unsubFilterStore: Unsubscriber;
@@ -35,10 +39,11 @@
     unsubExportStore && unsubExportStore();
   });
 
-  $: isDiscoverPage = $page && $page.url.pathname.includes("/discover");
+  $: isDiscoverPage = $page && $page.url.pathname.includes('/discover');
 
-  $: shouldDisablePanel = (!isDiscoverPage && get(hasInvalidFilter(get(user).queryScopes || []))) ||
-          (isDiscoverPage && ($hasGenomicFilter || $hasUnallowedFilter));
+  $: shouldDisablePanel =
+    (!isDiscoverPage && $hasInvalidFilter) ||
+    (isDiscoverPage && ($hasGenomicFilter || $hasUnallowedFilter));
 </script>
 
 <div id="side-panel" class="flex {panelOpen ? 'open-panel' : 'closed-panel'}">
