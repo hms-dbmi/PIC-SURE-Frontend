@@ -12,6 +12,7 @@
   import openTour from '$lib/assets/openTourConfiguration.json';
   import { panelOpen } from '$lib/stores/SidePanel';
   import { beforeNavigate } from '$app/navigation';
+  import { hasInvalidFilter } from '$lib/stores/Filter.ts';
 
   function resetQuery() {
     removeGenomicFilters();
@@ -19,7 +20,7 @@
   }
 
   beforeNavigate((nav) => {
-    if (nav && nav?.to?.url.pathname === '/discover') {
+    if (nav && nav?.to?.url.pathname === '/explorer' && $hasInvalidFilter) {
       panelOpen.set(false);
     }
   });
