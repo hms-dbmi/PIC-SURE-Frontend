@@ -19,7 +19,7 @@
 
   let plotValues: PlotValues[] = [];
   let newPlot: PlotlyNewPlot;
-  let plotlyLoading: Promise<void>;
+  $: loading = true;
   const isOpenAccess = $page.url.pathname.includes('/discover');
 
   async function loadPlotData() {
@@ -45,6 +45,8 @@
             'An error occured while parsing your token. Please try again later. If this problem persists, please contact an administrator.',
           background: 'variant-filled-error',
         });
+      }).finally(() => {
+        loading = false;
       });
   }
   onMount(async () => {
@@ -52,7 +54,7 @@
     // Instead of loading it in each plot component, I'm passing down it's newPlot method.
     const Plotly = await import('plotly.js-dist-min');
     newPlot = Plotly.newPlot;
-    plotlyLoading = loadPlotData();
+    await loadPlotData();
   });
 </script>
 
@@ -60,9 +62,9 @@
   All visualizations display the distributions of each variable filter for the specified cohort.
 </p>
 <div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
-  {#await plotlyLoading}
+  {#if !loading}
     <ProgressRadial />
-  {:then}
+  {:else}
     {#if plotValues.length}
       {#each plotValues as { data, layout, meta }, index}
         <PlotlyPlot {index} {data} {layout} {meta} {newPlot} />
@@ -70,5 +72,5 @@
     {:else}
       <div>No Visualizations Available</div>
     {/if}
-  {/await}
+  {/if}
 </div>
