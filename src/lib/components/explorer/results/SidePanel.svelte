@@ -52,12 +52,12 @@
   console.log('hasUnallowedFilter', $hasUnallowedFilter);
 </script>
 
-<div id="side-panel" class="flex {panelOpen ? 'open-panel' : 'closed-panel'}">
+<div id="side-panel" class="flex {$panelOpen ? 'open-panel' : 'closed-panel'}">
   <div id="side-panel-bar">
     <button
       type="button"
       id="results-panel-toggle"
-      title="{panelOpen ? 'Hide' : 'Show'} Results"
+      title="{$panelOpen ? 'Hide' : 'Show'} Results"
       class="btn-icon btn-icon-sm variant-ghost-primary hover:variant-filled-primary"
       aria-label="Toggle Results Panel"
       disabled={shouldDisablePanel}
@@ -65,10 +65,10 @@
         panelOpen.update(value => !value);
       }}
     >
-      <i class="fa-solid {panelOpen ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
+      <i class="fa-solid {$panelOpen ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
     </button>
   </div>
-  {#if panelOpen}
+  {#if $panelOpen}
     <ResultsPanel on:openPanel={openPanel} />
   {/if}
 </div>
