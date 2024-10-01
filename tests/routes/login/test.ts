@@ -104,12 +104,94 @@ unauthedTest.describe('Login page', () => {
       }
     }
   });
+  unauthedTest('Google Consent Modal shows on login page', async ({ page }) => {
+    // Given
+    await page.goto('/login');
+    // When
+    const googleConsentModal = page.getByTestId('consentModal');
+    // Then
+    await expect(googleConsentModal).toBeVisible();
+  });
+  unauthedTest('Accept Google Consent hides modal', async ({ page }) => {
+    // Given Google Consent Modal is open
+    await page.goto('/login');
+    await page.waitForSelector('[data-testid="consentModal"]');
+
+    // When
+    const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
+    await acceptConsentButton.click();
+
+    // Then expect the consentModal to be hidden
+    await expect(page.getByTestId('[data-testid="consentModal"]')).not.toBeVisible();
+  });
+  unauthedTest('Reject Google Consent hides modal', async ({ page }) => {
+    // Given Google Consent Modal is open
+    await page.goto('/login');
+    await page.waitForSelector('[data-testid="consentModal"]');
+
+    // When
+    const denyConsentButton = page.getByTestId('rejectGoogleConsent');
+    await denyConsentButton.click();
+
+    // Then expect the consentModal to be hidden
+    await expect(page.getByTestId('[data-testid="consentModal"]')).not.toBeVisible();
+  });
+  unauthedTest(
+    "Google Consents saved in local storage on accept as 'granted'",
+    async ({ page }) => {
+      // Given Google Consent Modal is open
+      await page.goto('/login');
+      await page.waitForSelector('[data-testid="consentModal"]');
+
+      // When
+      const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
+      await acceptConsentButton.click();
+
+      // Then google consents are saved in local storage and are 'granted'
+      const googleConsent = await page.evaluate(() => localStorage.getItem('consentMode'));
+      expect(googleConsent).not.toBeNull();
+      if (googleConsent) {
+        const parsedGoogleConsent = JSON.parse(googleConsent);
+        expect(parsedGoogleConsent).toHaveProperty('ad_storage', 'denied');
+        expect(parsedGoogleConsent).toHaveProperty('analytics_storage', 'granted');
+        expect(parsedGoogleConsent).toHaveProperty('personalization_storage', 'granted');
+        expect(parsedGoogleConsent).toHaveProperty('security_storage', 'granted');
+        expect(parsedGoogleConsent).toHaveProperty('ad_personalization', 'denied');
+        expect(parsedGoogleConsent).toHaveProperty('ad_data', 'denied');
+      }
+    },
+  );
+  unauthedTest("Google Consents saved in local storage on reject as 'denied'", async ({ page }) => {
+    // Given Google Consent Modal is open
+    await page.goto('/login');
+    await page.waitForSelector('[data-testid="consentModal"]');
+
+    // When
+    const denyConsentButton = page.getByTestId('rejectGoogleConsent');
+    await denyConsentButton.click();
+
+    // Then google consents are saved in local storage and are 'denied'
+    const googleConsent = await page.evaluate(() => localStorage.getItem('consentMode'));
+    expect(googleConsent).not.toBeNull();
+    if (googleConsent) {
+      const parsedGoogleConsent = JSON.parse(googleConsent);
+      expect(parsedGoogleConsent).toHaveProperty('ad_storage', 'denied');
+      expect(parsedGoogleConsent).toHaveProperty('analytics_storage', 'denied');
+      expect(parsedGoogleConsent).toHaveProperty('personalization_storage', 'denied');
+      expect(parsedGoogleConsent).toHaveProperty('security_storage', 'denied');
+      expect(parsedGoogleConsent).toHaveProperty('ad_personalization', 'denied');
+      expect(parsedGoogleConsent).toHaveProperty('ad_data', 'denied');
+    }
+  });
   for (const providerName of enabledProviders) {
     unauthedTest(
       `Clicking the ${providerName} login button opens the idp login page`,
       async ({ page }) => {
         // Given
         await page.goto('/login');
+        await page.waitForSelector('[data-testid="consentModal"]');
+        const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
+        await acceptConsentButton.click();
         // When
         const testId = `login-button-${providerName.toLowerCase()}`;
         const loginButton = page.getByTestId(testId);

@@ -60,6 +60,7 @@
     "highlight.js": "^11.10.0",
     "plotly.js-dist-min": "^2.34.0",
     "svelte-eslint-parser": "^0.40.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "gtagjs": "^0.0.10"
   }
 }
