@@ -12,6 +12,27 @@ export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => !filter.allowFiltering) : false,
 );
 
+export function hasInvalidFilter(queryScopes: string[]): Readable<boolean> {
+  let readable: Readable<boolean> = derived(filters, ($f) => {
+    if ($f.length ===0) {
+      return false;
+    }
+    let hasInvalidFilter: boolean = !!$f.find((filter) => {
+      console.log('Filter description: ' + filter.dataset);
+      let filterHasValidQueryScope: boolean = !!queryScopes.find((qs) => {
+        let filterMatchesQueryScope =
+            (filter.dataset || '').length > 0 && qs.indexOf(filter.dataset || 'INVALID FILTER') >= 0;
+        if (filterMatchesQueryScope) {
+          console.log('Filter {' + filter.dataset + '} matches queryScope {' + qs + '}');
+        }
+        return filterMatchesQueryScope;
+      });
+      return !filterHasValidQueryScope;
+    })
+  });
+  return readable;
+}
+
 filters.subscribe((f) => {
   if (browser) {
     sessionStorage.setItem('filters', JSON.stringify(f));

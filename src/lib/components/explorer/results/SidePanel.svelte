@@ -2,8 +2,10 @@
   import ExportStore from '$lib/stores/Export';
   import ResultsPanel from '$lib/components/explorer/results/ResultsPanel.svelte';
   import { onDestroy, onMount } from 'svelte';
-  import type { Unsubscriber } from 'svelte/store';
-  import { filters } from '$lib/stores/Filter';
+  import {get, type Readable, type Unsubscriber} from 'svelte/store';
+  import {filters, hasGenomicFilter, hasInvalidFilter, hasUnallowedFilter} from '$lib/stores/Filter';
+  import {user} from "$lib/stores/User.ts";
+  import {page} from "$app/stores";
   let { exports } = ExportStore;
 
   let unsubFilterStore: Unsubscriber;
@@ -32,6 +34,17 @@
     unsubFilterStore && unsubFilterStore();
     unsubExportStore && unsubExportStore();
   });
+
+  function disablePanel() : boolean {
+    if ($page.url.pathname.includes("/explorer")) {
+      return get(hasInvalidFilter(get(user).queryScopes || []));
+    } else if ($page.url.pathname.includes("/discover")) {
+      return $hasGenomicFilter || $hasUnallowedFilter;
+    }
+    else return true;
+  }
+
+  $: shouldDisablePanel = disablePanel();
 </script>
 
 <div id="side-panel" class="flex {panelOpen ? 'open-panel' : 'closed-panel'}">
@@ -42,6 +55,7 @@
       title="{panelOpen ? 'Hide' : 'Show'} Results"
       class="btn-icon btn-icon-sm variant-ghost-primary hover:variant-filled-primary"
       aria-label="Toggle Results Panel"
+      disabled={shouldDisablePanel}
       on:click={() => {
         panelOpen = !panelOpen;
       }}
