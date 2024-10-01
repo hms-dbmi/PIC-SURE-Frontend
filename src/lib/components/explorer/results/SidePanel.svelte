@@ -10,15 +10,15 @@
     hasUnallowedFilter,
   } from '$lib/stores/Filter';
   import { page } from '$app/stores';
+  import { panelOpen } from '$lib/stores/SidePanel';
   let { exports } = ExportStore;
 
   let unsubFilterStore: Unsubscriber;
   let unsubExportStore: Unsubscriber;
 
-  export let panelOpen = false;
 
   function openPanel() {
-    panelOpen = true;
+    panelOpen.set(true);
   }
 
   onMount(() => {
@@ -56,7 +56,7 @@
       aria-label="Toggle Results Panel"
       disabled={shouldDisablePanel}
       on:click={() => {
-        panelOpen = !panelOpen;
+        panelOpen.update(value => !value);
       }}
     >
       <i class="fa-solid {panelOpen ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
