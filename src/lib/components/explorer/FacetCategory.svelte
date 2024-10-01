@@ -3,6 +3,7 @@
   import { AccordionItem } from '@skeletonlabs/skeleton';
   import SearchStore from '$lib/stores/Search';
   import type { Facet } from '$lib/models/Search';
+  import { hiddenFacets } from '$lib/services/dictionary';
   let { updateFacet, selectedFacets } = SearchStore;
 
   export let facetCategory: DictionaryFacetResult;
@@ -29,7 +30,8 @@
   };
 
   function getFacetsToDisplay() {
-    let facetsToDisplay = facets;
+    const hiddenFacetsForCategory = $hiddenFacets[facetCategory.name];
+    let facetsToDisplay = facets.filter((f) => !hiddenFacetsForCategory.includes(f.name));
 
     //Put selected facets at the top
     $selectedFacets.forEach((facet) => {
