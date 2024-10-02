@@ -22,6 +22,7 @@
       personal access token. Copy your token and save as a text file called “token.txt” in the
       working directory of your chosen analysis workspace, such as <a
         href="https://platform.sb.biodatacatalyst.nhlbi.nih.gov/home"
+        target="_blank"
         title="BioData Catalyst Powered by Seven
       Bridges"
         class="anchor font-bold">BioData Catalyst Powered by Seven Bridges</a
@@ -29,6 +30,7 @@
       or
       <a
         href="https://terra.biodatacatalyst.nhlbi.nih.gov/#workspaces"
+        target="_blank"
         title="BioData Catalyst Powered by Terra"
         class="anchor font-bold">BioData Catalyst Powered by Terra</a
       >.
