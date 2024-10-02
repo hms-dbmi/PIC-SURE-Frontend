@@ -29,8 +29,9 @@
   let displayArchived = false;
 
   const rowClickHandler = (row: Indexable) => {
-    const uuid = row?.uuid;
-    goto(`/dataset/${uuid}`);
+    console.error('Function not implemented.');
+    // const uuid = row?.uuid;
+    // goto(`/dataset/${uuid}`);
   };
 </script>
 
