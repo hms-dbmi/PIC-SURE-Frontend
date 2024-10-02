@@ -27,9 +27,9 @@
       'Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover';
     backTo = 'Explore';
     resetQuery = () => {
+      panelOpen.set(false);
       removeGenomicFilters();
       removeUnallowedFilters();
-      panelOpen.set(false);
       goto(`/discover`);
       closedModal();
     };
@@ -38,6 +38,7 @@
       'You are not authorized to access the data in Explore based on your selected filters.';
     backTo = 'Discover';
     resetQuery = () => {
+      panelOpen.set(false);
       removeInvalidFilters();
       goto(`/explorer`);
       closedModal();
