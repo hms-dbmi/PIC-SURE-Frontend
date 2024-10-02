@@ -32,7 +32,6 @@
 
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
-  initializeStores();
   // Registered list of Components for Modals
   const modalComponentRegistry: Record<string, ModalComponent> = {
     stepper: { ref: ExportStepper },
@@ -58,19 +57,26 @@
   import { hasInvalidFilter, hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
   import FilterWarning from '$lib/components/FilterWarning.svelte';
 
-  beforeNavigate((nav) => {
-    console.log(nav);
-    if ($hasInvalidFilter && nav?.to?.url.pathname.includes('/explorer')) {
+  beforeNavigate(({to, cancel}) => {
+    console.log(to);
+    cancel();
+    if ($hasInvalidFilter && to?.url.pathname.includes('/explorer')) {
       modalStore.trigger({
         type: 'component',
         component: 'modalWrapper',
         meta: { component: FilterWarning, width: 'w-3/4' },
+        response: (r: string) => {
+          console.log(r);
+        },
       });
-    } else if (($hasGenomicFilter || $hasUnallowedFilter) && nav?.to?.url.pathname.includes('/discover')) {
+    } else if (($hasGenomicFilter || $hasUnallowedFilter) && .to?.url.pathname.includes('/discover')) {
       modalStore.trigger({
           type: 'component',
           component: 'modalWrapper',
           meta: { component: FilterWarning, width: 'w-3/4' },
+          response: (r: string) => {
+            console.log(r);
+          },
         });
       }
   });
