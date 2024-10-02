@@ -28,7 +28,7 @@
   if ($hasGenomicFilter || $hasUnallowedFilter) {
     message =
       'Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover';
-    backTo = 'Explorer';
+    backTo = 'Explore';
     resetQuery = () => {
       removeGenomicFilters();
       removeUnallowedFilters();
