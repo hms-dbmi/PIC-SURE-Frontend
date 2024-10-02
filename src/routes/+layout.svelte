@@ -16,16 +16,17 @@
   
   initializeStores();
   initializeBranding();
-  const modalStore = getModalStore();
   beforeNavigate((nav) => {
     console.log(nav);
     if ($hasInvalidFilter && nav?.to?.url.pathname.includes('/explorer')) {
+      const modalStore = getModalStore();
       modalStore.trigger({
         type: 'component',
         component: 'modalWrapper',
         meta: { component: FilterWarning, width: 'w-3/4' },
       });
     } else if (($hasGenomicFilter || $hasUnallowedFilter) && nav?.to?.url.pathname.includes('/discover')) {
+      const modalStore = getModalStore();
       modalStore.trigger({
           type: 'component',
           component: 'modalWrapper',
