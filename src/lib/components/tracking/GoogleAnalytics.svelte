@@ -7,7 +7,7 @@
   let googleAnalyticsID = settings.google.analytics;
 
   $: {
-    if (browser && typeof gtag === 'function') {
+    if (browser && typeof gtag === 'function' && localStorage.getItem('consentMode')?.includes('granted')) {
       console.debug('Tracking page view with Google Analytics');
       // Send page view to Google Analytics
       gtag('config', googleAnalyticsID, {
