@@ -153,7 +153,6 @@
   }
 
   let tabSet: number = 0;
-  let tabIndex: number = 0;
 
   function dataLimitExceeded(): boolean {
     let participantCount: number =
