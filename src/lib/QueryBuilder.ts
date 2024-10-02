@@ -96,10 +96,19 @@ export const updateConsentFilters = (query: Query) => {
     console.debug('removing topmed consent');
     query.removeCategoryFilter(topmedConsentPath);
   } else {
-    if (!query.categoryFilters) {
-      console.log("Topmed consents: ", query?.categoryFilters[topmedConsentPath]);
-    } else {
-      console.log("Topmed consents: ", query?.categoryFilters);
+    // check if the category filter is not an empty object
+    if (Object.keys(query.categoryFilters).length !== 0) {
+      // log category filters
+      console.debug('category filters:', query.categoryFilters);
+      // if the filters contain topmed consent log it. If not log a message that it is not present
+      if (Object.keys(query.categoryFilters).includes(topmedConsentPath)) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        const topmedConsent = query.categoryFilters[topmedConsentPath];
+        console.debug('topmed consent filter:', topmedConsent);
+      } else {
+        console.debug('topmed consent filter not present');
+      }
     }
   }
 
