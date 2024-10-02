@@ -8,6 +8,7 @@
     removeInvalidFilters,
   } from '$lib/stores/Filter.ts';
   import { getModalStore } from '@skeletonlabs/skeleton';
+  import { panelOpen } from '$lib/stores/SidePanel.ts';
   let message = '';
   let backTo = '';
   let resetQuery = () => {};
@@ -28,6 +29,7 @@
     resetQuery = () => {
       removeGenomicFilters();
       removeUnallowedFilters();
+      panelOpen.set(false);
       goto(`/discover`);
       closedModal();
     };
