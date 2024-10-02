@@ -28,6 +28,9 @@
     if (!provider) {
       failed = true;
     }
+    if (!provider || failed) {
+      goto('/login/error');
+    }
     const providerInstance = await createInstance(provider);
     let hashParts = $page.url.hash?.split('&') || [];
     if ($page.url.search.startsWith('?')) {
