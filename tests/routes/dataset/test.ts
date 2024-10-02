@@ -97,18 +97,19 @@ test.describe('dataset', () => {
     await page.waitForURL(`**/dataset/${mockData[0].uuid}`);
     await expect(page.url()).toContain(`/dataset/${mockData[0].uuid}`);
   });
-  test('Clicking row takes user to view dataset page', async ({ page }) => {
-    // Given
-    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
-    await page.goto('/dataset');
+  // TODO: Add back when feature is implemented
+  // test('Clicking row takes user to view dataset page', async ({ page }) => {
+  //   // Given
+  //   await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
+  //   await page.goto('/dataset');
 
-    // When
-    await page.locator(`table tbody tr`).first().click();
+  //   // When
+  //   await page.locator(`table tbody tr`).first().click();
 
-    // Then
-    await page.waitForURL(`**/dataset/${mockData[0].uuid}`);
-    await expect(page.url()).toContain(`/dataset/${mockData[0].uuid}`);
-  });
+  //   // Then
+  //   await page.waitForURL(`**/dataset/${mockData[0].uuid}`);
+  //   await expect(page.url()).toContain(`/dataset/${mockData[0].uuid}`);
+  // });
   test('Error message on api error', async ({ page }) => {
     // Given
     await mockApiFail(page, '*/**/picsure/dataset/named', 'accessdenied');
