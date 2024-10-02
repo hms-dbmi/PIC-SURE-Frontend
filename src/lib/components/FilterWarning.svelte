@@ -5,19 +5,23 @@
 
   let message = '';
   let backTo = '';
-  function resetQuery() {
-    removeGenomicFilters();
-    removeUnallowedFilters();
-    goto(`/${backTo.toLowerCase()}`);
-  }
+  let resetQuery = () => {};
 
 
   if ($hasGenomicFilter || $hasUnallowedFilter) {
     message = 'Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover';
     backTo = 'Discover';
+    resetQuery = () => {
+      removeGenomicFilters();
+      goto(`/${backTo.toLowerCase()}`);
+    };
   } else if ($hasInvalidFilter) {
     message = 'Your selected filters contain invalid filters, which are not supported with Explorer';
     backTo = 'Explorer';
+    resetQuery = () => {
+      removeUnallowedFilters();
+      goto(`/${backTo.toLowerCase()}`);
+    };
   }
 </script>
 
