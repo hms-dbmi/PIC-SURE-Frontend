@@ -65,7 +65,7 @@ export function getBlankQueryRequest(
   if (features.useQueryTemplate && addConsents) {
     const queryTemplate: QueryInterface = get(user).queryTemplate as QueryInterface;
     if (queryTemplate) {
-      query = new Query(queryTemplate);
+      query = new Query(structuredClone(queryTemplate));
     }
   }
 
