@@ -94,8 +94,8 @@
   <footer class="flex justify-between">
     <RowCount {handler} />
     {#if showPagination}
-    <div class="flex justify-end gap-4">
-      <RowsPerPage {options} {handler} />
+      <div class="flex justify-end gap-4">
+        <RowsPerPage {options} {handler} />
         <Pagination {handler} />
       </div>
     {/if}
