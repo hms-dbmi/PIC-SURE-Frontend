@@ -36,6 +36,7 @@
   const modalComponentRegistry: Record<string, ModalComponent> = {
     stepper: { ref: ExportStepper },
     modalWrapper: { ref: ModalWrapper },
+    filterWarning: { ref: FilterWarning },
   };
   let modalProps: Record<string, unknown> = {
     buttonPositive: 'variant-filled-primary',
@@ -62,30 +63,28 @@
     console.log($hasInvalidFilter);
     console.log($hasGenomicFilter);
     console.log($hasUnallowedFilter);
-    if ($hasInvalidFilter && to?.url.pathname.includes('/explorer')) {
-      cancel();
-      modalStore.trigger({
-        type: 'component',
-        component: 'modalWrapper',
-        meta: { component: FilterWarning, width: 'w-3/4' },
-        response: (r: string) => {
-          console.log(r);
-        },
-      });
+    if ($hasInvalidFilter && to?.url.pathname.includes('/discover')) {
+    cancel();
+    modalStore.trigger({
+      type: 'component',
+      component: 'filterWarning',
+      response: (r: string) => {
+        console.log(r);
+      },
+    });
     } else if (
       ($hasGenomicFilter || $hasUnallowedFilter) &&
-      to?.url.pathname.includes('/discover')
+      to?.url.pathname.includes('/explorer')
     ) {
       cancel();
       modalStore.trigger({
         type: 'component',
-        component: 'modalWrapper',
-        meta: { component: FilterWarning, width: 'w-3/4' },
+        component: 'filterWarning',
         response: (r: string) => {
           console.log(r);
         },
       });
-    } 
+    }
   });
 </script>
 

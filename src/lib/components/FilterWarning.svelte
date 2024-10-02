@@ -1,25 +1,34 @@
 <script lang="ts">
   import { removeGenomicFilters, removeUnallowedFilters } from '$lib/stores/Filter.ts';
   import { goto } from '$app/navigation';
-  import { hasGenomicFilter, hasUnallowedFilter, hasInvalidFilter } from '$lib/stores/Filter.ts';
+  import {
+    hasGenomicFilter,
+    hasUnallowedFilter,
+    hasInvalidFilter,
+    removeInvalidFilters,
+  } from '$lib/stores/Filter.ts';
 
   let message = '';
   let backTo = '';
   let resetQuery = () => {};
 
-
   if ($hasGenomicFilter || $hasUnallowedFilter) {
-    message = 'Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover';
-    backTo = 'Discover';
+    message =
+      'Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover';
+    backTo = 'Explorer';
     resetQuery = () => {
       removeGenomicFilters();
+      removeUnallowedFilters();
       goto(`/${backTo.toLowerCase()}`);
     };
   } else if ($hasInvalidFilter) {
-    message = 'Your selected filters contain invalid filters, which are not supported with Explorer';
-    backTo = 'Explorer';
+    message =
+      'You are not authorized to access the data in Explore based on your selected filters. Would you like to remove unauthorized filters or go back to ';
+    backTo = 'Discover';
     resetQuery = () => {
-      removeUnallowedFilters();
+      resetQuery = () => {
+        removeInvalidFilters();
+      };
       goto(`/${backTo.toLowerCase()}`);
     };
   }

@@ -12,9 +12,5 @@
 </svelte:head>
 
 <Content full>
-  {#if $hasInvalidFilter}
-    <div>Invalid filters</div>
-  {:else}
-    <Explorer tourConfig={authTour} />
-  {/if}
+  <Explorer tourConfig={authTour} />
 </Content>
