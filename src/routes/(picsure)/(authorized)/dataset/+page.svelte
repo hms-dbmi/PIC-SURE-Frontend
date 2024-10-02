@@ -1,8 +1,6 @@
 <script lang="ts">
   import { ProgressBar } from '@skeletonlabs/skeleton';
 
-  import { goto } from '$app/navigation';
-
   import type { Indexable } from '$lib/types';
   import DataSetStore from '$lib/stores/Dataset';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -28,7 +26,7 @@
 
   let displayArchived = false;
 
-  const rowClickHandler = (row: Indexable) => {
+  const rowClickHandler = () => {
     console.error('Function not implemented.');
     // const uuid = row?.uuid;
     // goto(`/dataset/${uuid}`);
