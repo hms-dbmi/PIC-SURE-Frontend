@@ -16,6 +16,9 @@
   import Footer from '$lib/components/Footer.svelte';
   import ModalWrapper from '$lib/components/ModalWrapper.svelte';
   import { getModalStore } from '@skeletonlabs/skeleton';
+  import { beforeNavigate } from '$app/navigation';
+  import { hasInvalidFilter, hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
+  import FilterWarning from '$lib/components/FilterWarning.svelte';
 
   const modalStore = getModalStore();
 
@@ -52,10 +55,6 @@
     ($page.url.pathname.includes('/explorer') || $page.url.pathname.includes('/discover')) &&
     !$page.url.pathname.includes('/export') &&
     !$page.url.pathname.includes('/distributions');
-
-  import { beforeNavigate, goto } from '$app/navigation';
-  import { hasInvalidFilter, hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
-  import FilterWarning from '$lib/components/FilterWarning.svelte';
 
   beforeNavigate(({ to, cancel, type }) => {
     console.log(to);

@@ -7,10 +7,18 @@
     hasInvalidFilter,
     removeInvalidFilters,
   } from '$lib/stores/Filter.ts';
-
+  import { getModalStore } from '@skeletonlabs/skeleton';
   let message = '';
   let backTo = '';
   let resetQuery = () => {};
+
+  const modalStore = getModalStore();
+
+  function closedModal() {
+    if ($modalStore[0]) {
+      modalStore.close();
+    }
+  }
 
   if ($hasGenomicFilter || $hasUnallowedFilter) {
     message =
@@ -20,6 +28,7 @@
       removeGenomicFilters();
       removeUnallowedFilters();
       goto(`/${backTo.toLowerCase()}`);
+      closedModal()
     };
   } else if ($hasInvalidFilter) {
     message =
@@ -30,6 +39,7 @@
         removeInvalidFilters();
       };
       goto(`/${backTo.toLowerCase()}`);
+      closedModal();
     };
   }
 </script>
