@@ -21,6 +21,7 @@
   export let columns: Column[] = [];
   export let cellOverides: Indexable = {};
   export let stickyHeader = false;
+  export let showPagination = true;
   export let rowClickHandler: (row: Indexable) => void = () => {};
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,10 +93,12 @@
   </div>
   <footer class="flex justify-between">
     <RowCount {handler} />
+    {#if showPagination}
     <div class="flex justify-end gap-4">
       <RowsPerPage {options} {handler} />
-      <Pagination {handler} />
-    </div>
+        <Pagination {handler} />
+      </div>
+    {/if}
   </footer>
 </div>
 

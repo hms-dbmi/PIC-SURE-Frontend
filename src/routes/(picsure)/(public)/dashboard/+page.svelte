@@ -56,7 +56,8 @@
         columns={currentColumns}
         {cellOverides}
         defaultRowsPerPage={currentRows.length}
-        search={true}
+        search={false}
+        showPagination={false}
         stickyHeader={true}
       />
     {/await}
