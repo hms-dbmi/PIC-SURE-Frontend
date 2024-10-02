@@ -37,7 +37,7 @@
     };
   } else if ($hasInvalidFilter) {
     message =
-      'You are not authorized to access the data in Explore based on your selected filters. Would you like to remove unauthorized filters or go back to ';
+      'You are not authorized to access the data in Explore based on your selected filters.';
     backTo = 'Discover';
       resetQuery = () => {
         removeInvalidFilters();
