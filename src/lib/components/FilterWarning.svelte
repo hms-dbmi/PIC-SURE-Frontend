@@ -27,7 +27,7 @@
     resetQuery = () => {
       removeGenomicFilters();
       removeUnallowedFilters();
-      goto(`/${backTo.toLowerCase()}`);
+      goto(`/discover`);
       closedModal()
     };
   } else if ($hasInvalidFilter) {
@@ -36,13 +36,13 @@
     backTo = 'Discover';
       resetQuery = () => {
         removeInvalidFilters();
-        goto(`/${backTo.toLowerCase()}`);
+        goto(`/explorer`);
         closedModal();
       };
     }
 </script>
 
-<section id="discover-error-container" class="flex gap-9 justify-center">
+<section id="discover-error-container" class="flex gap-9 justify-center bg-surface-200">
   <aside data-testid="warning-alert" class="alert variant-ghost-warning">
     <i class="fa-solid fa-triangle-exclamation text-4xl" aria-hidden="true"></i>
     <div class="alert-message">
