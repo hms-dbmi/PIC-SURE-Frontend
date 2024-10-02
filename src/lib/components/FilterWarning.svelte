@@ -20,6 +20,11 @@
     }
   }
 
+  function goBack() {
+    goto(`/${backTo.toLowerCase()}`);
+    closedModal();
+  }
+
   if ($hasGenomicFilter || $hasUnallowedFilter) {
     message =
       'Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover';
@@ -58,7 +63,7 @@
           >
           <button
             class="btn variant-ringed hover:variant-filled-warning"
-            on:click={() => goto(`/${backTo.toLowerCase()}`)}>Back to {backTo}</button
+            on:click={() => goBack()}>Back to {backTo}</button
           >
         </div>
       </div>
