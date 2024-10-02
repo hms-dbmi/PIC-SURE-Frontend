@@ -17,6 +17,7 @@
   import ModalWrapper from '$lib/components/ModalWrapper.svelte';
   import { getModalStore } from '@skeletonlabs/skeleton';
 
+
   const modalStore = getModalStore();
 
   // Highlight.js
@@ -53,11 +54,11 @@
     !$page.url.pathname.includes('/distributions');
 
 
-    import { beforeNavigate } from '$app/navigation';
+    import { beforeNavigate, goto } from '$app/navigation';
   import { hasInvalidFilter, hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
   import FilterWarning from '$lib/components/FilterWarning.svelte';
 
-  beforeNavigate(({to, cancel}) => {
+  beforeNavigate(({to, cancel, type}) => {
     console.log(to);
     cancel();
     if ($hasInvalidFilter && to?.url.pathname.includes('/explorer')) {
@@ -78,6 +79,12 @@
             console.log(r);
           },
         });
+      } else {
+        if (type !== 'leave') {
+          goto(to?.url.pathname ?? '/');
+        } else {
+          goto(to?.url ?? '/');
+        }
       }
   });
 
