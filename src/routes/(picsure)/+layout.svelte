@@ -63,14 +63,14 @@
     console.log($hasGenomicFilter);
     console.log($hasUnallowedFilter);
     if ($hasInvalidFilter && to?.url.pathname.includes('/explorer')) {
-    cancel();
-    modalStore.trigger({
-      type: 'component',
-      component: 'filterWarning',
-      response: (r: string) => {
-        console.log(r);
-      },
-    });
+      cancel();
+      modalStore.trigger({
+        type: 'component',
+        component: 'filterWarning',
+        response: (r: string) => {
+          console.log(r);
+        },
+      });
     } else if (
       ($hasGenomicFilter || $hasUnallowedFilter) &&
       to?.url.pathname.includes('/discover')

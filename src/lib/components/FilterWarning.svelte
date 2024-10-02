@@ -34,12 +34,11 @@
     message =
       'You are not authorized to access the data in Explore based on your selected filters. Would you like to remove unauthorized filters or go back to ';
     backTo = 'Discover';
-    resetQuery = () => {
       resetQuery = () => {
         removeInvalidFilters();
+        goto(`/${backTo.toLowerCase()}`);
+        closedModal();
       };
-      goto(`/${backTo.toLowerCase()}`);
-      closedModal();
     };
   }
 </script>
