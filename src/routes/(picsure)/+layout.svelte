@@ -69,7 +69,7 @@
           console.log(r);
         },
       });
-    } else if (($hasGenomicFilter || $hasUnallowedFilter) && .to?.url.pathname.includes('/discover')) {
+    } else if (($hasGenomicFilter || $hasUnallowedFilter) && to?.url.pathname.includes('/discover')) {
       modalStore.trigger({
           type: 'component',
           component: 'modalWrapper',
