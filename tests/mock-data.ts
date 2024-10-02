@@ -1,5 +1,5 @@
 import type { User } from '../src/lib/models/User';
-import { PicsurePrivileges } from '../src/lib/models/Privilege';
+import { PicsurePrivileges, BDCPrivileges } from '../src/lib/models/Privilege';
 import type { QueryInterface } from '$lib/models/query/Query';
 import type { DashboardResp } from '$lib/stores/Dashboard';
 
@@ -51,7 +51,11 @@ export const mockDashboard: DashboardResp = {
 };
 
 const mockQueryTemplate: QueryInterface = {
-  categoryFilters: {},
+  categoryFilters: {
+    '\\_consents\\': ['test_data_set', 'STUDY123', 'phs001', 'phs123'],
+    '\\_harmonized_consent\\': ['test_data_set', 'STUDY123', 'phs001', 'phs123'],
+    '\\_topmed_consents\\': ['test_data_set', 'STUDY123', 'phs001', 'phs123'],
+  },
   numericFilters: {},
   requiredFields: [],
   anyRecordOf: [],
@@ -68,7 +72,14 @@ const mockQueryTemplate: QueryInterface = {
 export const picsureUser: User = {
   uuid: '1234',
   email: 'test@pic-sure.org',
-  privileges: [PicsurePrivileges.QUERY],
+  privileges: [
+    PicsurePrivileges.QUERY,
+    BDCPrivileges.DICTIONARY,
+    BDCPrivileges.AUTHORIZED_ACCESS,
+    BDCPrivileges.OPEN,
+    BDCPrivileges.NAMED_DATASET,
+  ],
+  queryScopes: ['Gene_with_variant', 'test_data_set', 'STUDY123', 'phs001', 'phs123'],
   // expired token
   token: mockToken,
   acceptedTOS: true,

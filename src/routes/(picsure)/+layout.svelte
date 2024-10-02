@@ -1,12 +1,5 @@
 <script lang="ts">
-  import {
-    AppShell,
-    initializeStores,
-    Modal,
-    Toast,
-    storePopup,
-    type ModalComponent,
-  } from '@skeletonlabs/skeleton';
+  import { AppShell, Modal, Toast, storePopup, type ModalComponent } from '@skeletonlabs/skeleton';
   import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
   import Navigation from '$lib/components/Navigation.svelte';
   import { onMount } from 'svelte';
@@ -15,6 +8,12 @@
   import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import ModalWrapper from '$lib/components/ModalWrapper.svelte';
+  import { getModalStore } from '@skeletonlabs/skeleton';
+  import { beforeNavigate } from '$app/navigation';
+  import { hasInvalidFilter, hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
+  import FilterWarning from '$lib/components/FilterWarning.svelte';
+
+  const modalStore = getModalStore();
 
   // Highlight.js
   import hljs from 'highlight.js/lib/core';
@@ -29,11 +28,11 @@
 
   storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 
-  initializeStores();
   // Registered list of Components for Modals
   const modalComponentRegistry: Record<string, ModalComponent> = {
     stepper: { ref: ExportStepper },
     modalWrapper: { ref: ModalWrapper },
+    filterWarning: { ref: FilterWarning },
   };
   let modalProps: Record<string, unknown> = {
     buttonPositive: 'variant-filled-primary',
@@ -49,6 +48,22 @@
     ($page.url.pathname.includes('/explorer') || $page.url.pathname.includes('/discover')) &&
     !$page.url.pathname.includes('/export') &&
     !$page.url.pathname.includes('/distributions');
+
+  beforeNavigate(({ to, cancel }) => {
+    if (
+      ($hasInvalidFilter && to?.url.pathname.includes('/explorer')) ||
+      (($hasGenomicFilter || $hasUnallowedFilter) && to?.url.pathname.includes('/discover'))
+    ) {
+      cancel();
+      modalStore.trigger({
+        type: 'component',
+        component: 'filterWarning',
+        response: (r: string) => {
+          console.log(r);
+        },
+      });
+    }
+  });
 </script>
 
 <Toast position="t" />

@@ -2,17 +2,16 @@
   import ExportStore from '$lib/stores/Export';
   import ResultsPanel from '$lib/components/explorer/results/ResultsPanel.svelte';
   import { onDestroy, onMount } from 'svelte';
-  import type { Unsubscriber } from 'svelte/store';
+  import { type Unsubscriber } from 'svelte/store';
   import { filters } from '$lib/stores/Filter';
+  import { panelOpen } from '$lib/stores/SidePanel';
   let { exports } = ExportStore;
 
   let unsubFilterStore: Unsubscriber;
   let unsubExportStore: Unsubscriber;
 
-  export let panelOpen = false;
-
   function openPanel() {
-    panelOpen = true;
+    panelOpen.set(true);
   }
 
   onMount(() => {
@@ -34,22 +33,22 @@
   });
 </script>
 
-<div id="side-panel" class="flex {panelOpen ? 'open-panel' : 'closed-panel'}">
+<div id="side-panel" class="flex {$panelOpen ? 'open-panel' : 'closed-panel'}">
   <div id="side-panel-bar">
     <button
       type="button"
       id="results-panel-toggle"
-      title="{panelOpen ? 'Hide' : 'Show'} Results"
+      title="{$panelOpen ? 'Hide' : 'Show'} Results"
       class="btn-icon btn-icon-sm variant-ghost-primary hover:variant-filled-primary"
       aria-label="Toggle Results Panel"
       on:click={() => {
-        panelOpen = !panelOpen;
+        panelOpen.update((value) => !value);
       }}
     >
-      <i class="fa-solid {panelOpen ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
+      <i class="fa-solid {$panelOpen ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
     </button>
   </div>
-  {#if panelOpen}
+  {#if $panelOpen}
     <ResultsPanel on:openPanel={openPanel} />
   {/if}
 </div>
