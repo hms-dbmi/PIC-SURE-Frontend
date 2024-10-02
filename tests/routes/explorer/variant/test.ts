@@ -1,6 +1,11 @@
 import { expect, type Route, type BrowserContext, type Page } from '@playwright/test';
-import { test, mockApiSuccess } from '../../../custom-context';
-import { geneValues, variantDataAggregate, variantDataFull } from '../../../mock-data';
+import { mockApiSuccess, getUserTest } from '../../../custom-context';
+import {
+  geneValues,
+  variantDataAggregate,
+  variantDataFull,
+  mockLoginResponse,
+} from '../../../mock-data';
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
@@ -30,25 +35,31 @@ function mockSyncAPI(context: BrowserContext | Page, resultMap: Results) {
   });
 }
 
-test.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () => {
-  test.describe('Genetic filter applied', () => {
-    test.beforeEach(async ({ page }) => {
+const userTest = getUserTest();
+
+userTest.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () => {
+  userTest.describe('Genetic filter applied', () => {
+    userTest.beforeEach(async ({ page }) => {
       // Add genomic filter steps
+      await page.goto(mockLoginResponse);
+      await page.waitForURL('/');
+      await page.locator('#nav-link-explorer').click();
+      await page.waitForURL('/explorer');
       await mockSyncAPI(page, successResults);
       await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
-      await page.goto('/explorer/genome-filter');
+      await page.getByTestId('genomic-filter-btn').click();
       await page.getByTestId('gene-variant-option').click();
       await page.locator('#options-container').getByLabel(geneValues.results[0]).click();
       await page.getByTestId('add-filter-btn').click();
       await expect(page).toHaveURL('/explorer');
     });
-    test('Adds variant explorer button to gene results', async ({ page }) => {
+    userTest('Adds variant explorer button to gene results', async ({ page }) => {
       // Then
       await expect(
         page.locator('#results-panel').getByTestId('variant-explorer-btn'),
       ).toBeEnabled();
     });
-    test('Displays variant count', async ({ page }) => {
+    userTest('Displays variant count', async ({ page }) => {
       // When
       await page.locator('#results-panel').getByTestId('variant-explorer-btn').click();
 
@@ -56,7 +67,7 @@ test.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () 
       await expect(page).toHaveURL('/explorer/variant');
       await expect(page.getByTestId('variant-count')).toContainText('5');
     });
-    test('Loads variant data table', async ({ page }) => {
+    userTest('Loads variant data table', async ({ page }) => {
       // When
       await page.locator('#results-panel').getByTestId('variant-explorer-btn').click();
 
@@ -64,7 +75,7 @@ test.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () 
       await expect(page).toHaveURL('/explorer/variant');
       await expect(page.getByTestId('variant-explorer-table')).toBeVisible();
     });
-    test('Can download variant data', async ({ page }) => {
+    userTest('Can download variant data', async ({ page }) => {
       // Given
       await page.locator('#results-panel').getByTestId('variant-explorer-btn').click();
 
@@ -77,7 +88,7 @@ test.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () 
       // Then
       await expect(download.suggestedFilename()).toBe('variantData.tsv');
     });
-    test("Displays count, even if it's 0", async ({ page }) => {
+    userTest("Displays count, even if it's 0", async ({ page }) => {
       // When
       await mockSyncAPI(page, {
         ...successResults,
@@ -92,7 +103,7 @@ test.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () 
       await expect(page).toHaveURL('/explorer/variant');
       await expect(page.getByTestId('variant-count')).toContainText('0');
     });
-    test('Error occurs during variant count retrieval', async ({ page }) => {
+    userTest('Error occurs during variant count retrieval', async ({ page }) => {
       // Given
       await mockSyncAPI(page, {
         ...successResults,
@@ -105,7 +116,7 @@ test.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () 
       // Then
       await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
     });
-    test('Error occurs during variant retrieval', async ({ page }) => {
+    userTest('Error occurs during variant retrieval', async ({ page }) => {
       // Given
       await mockSyncAPI(page, {
         ...successResults,
@@ -120,7 +131,7 @@ test.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () 
       await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
     });
   });
-  test('Display notice when no query exists', async ({ page }) => {
+  userTest('Display notice when no query exists', async ({ page }) => {
     // Given
     mockSyncAPI(page, successResults);
     await page.goto('/explorer/variant');

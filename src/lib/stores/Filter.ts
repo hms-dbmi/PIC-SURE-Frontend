@@ -18,7 +18,7 @@ export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$u
 
   return $filters.some((filter) => {
     let filterDataset = filter.dataset || '';
-    if (filter.filterType === 'genomic') {
+    if (filter.filterType === 'genomic' || filter.filterType === 'snp') {
       filterDataset = 'Gene_with_variant';
     }
 
@@ -76,7 +76,7 @@ export function removeInvalidFilters(): void {
 
   const validFilters = currentFilters.filter((filter) => {
     let filterDataset = filter.dataset || '';
-    if (filter.filterType === 'genomic') {
+    if (filter.filterType === 'genomic' || filter.filterType === 'snp') {
       filterDataset = 'Gene_with_variant';
     }
 
