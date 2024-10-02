@@ -5,11 +5,7 @@
   import { type Unsubscriber } from 'svelte/store';
   import {
     filters,
-    hasGenomicFilter,
-    hasInvalidFilter,
-    hasUnallowedFilter,
   } from '$lib/stores/Filter';
-  import { page } from '$app/stores';
   import { panelOpen } from '$lib/stores/SidePanel';
   let { exports } = ExportStore;
 
@@ -37,18 +33,6 @@
     unsubFilterStore && unsubFilterStore();
     unsubExportStore && unsubExportStore();
   });
-
-  $: isDiscoverPage = $page && $page.url.pathname.includes('/discover');
-
-  $: shouldDisablePanel =
-    (!isDiscoverPage && $hasInvalidFilter) ||
-    (isDiscoverPage && ($hasGenomicFilter || $hasUnallowedFilter));
-  console.log('shouldDisablePanel', shouldDisablePanel);
-  console.log('panelOpen', $panelOpen);
-  console.log('isDiscoverPage', isDiscoverPage);
-  console.log('hasInvalidFilter', $hasInvalidFilter);
-  console.log('hasGenomicFilter', $hasGenomicFilter);
-  console.log('hasUnallowedFilter', $hasUnallowedFilter);
 </script>
 
 <div id="side-panel" class="flex {$panelOpen ? 'open-panel' : 'closed-panel'}">
@@ -59,7 +43,6 @@
       title="{$panelOpen ? 'Hide' : 'Show'} Results"
       class="btn-icon btn-icon-sm variant-ghost-primary hover:variant-filled-primary"
       aria-label="Toggle Results Panel"
-      disabled={shouldDisablePanel}
       on:click={() => {
         panelOpen.update((value) => !value);
       }}

@@ -57,11 +57,6 @@
     !$page.url.pathname.includes('/distributions');
 
   beforeNavigate(({ to, cancel, type }) => {
-    console.log(to);
-    console.log(type);
-    console.log($hasInvalidFilter);
-    console.log($hasGenomicFilter);
-    console.log($hasUnallowedFilter);
     if ($hasInvalidFilter && to?.url.pathname.includes('/explorer')) {
       cancel();
       modalStore.trigger({
