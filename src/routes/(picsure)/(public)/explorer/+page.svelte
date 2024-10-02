@@ -4,13 +4,12 @@
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import authTour from '$lib/assets/authTourConfiguration.json';
   import { hasInvalidFilter } from '$lib/stores/Filter.ts';
-    import { beforeNavigate } from '$app/navigation';
+  import { beforeNavigate } from '$app/navigation';
   import { panelOpen } from '$lib/stores/SidePanel';
 
   beforeNavigate(() => {
     panelOpen.set(false);
   });
-  
 </script>
 
 <svelte:head>

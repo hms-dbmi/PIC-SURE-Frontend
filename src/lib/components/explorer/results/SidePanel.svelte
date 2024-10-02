@@ -16,7 +16,6 @@
   let unsubFilterStore: Unsubscriber;
   let unsubExportStore: Unsubscriber;
 
-
   function openPanel() {
     panelOpen.set(true);
   }
@@ -62,7 +61,7 @@
       aria-label="Toggle Results Panel"
       disabled={shouldDisablePanel}
       on:click={() => {
-        panelOpen.update(value => !value);
+        panelOpen.update((value) => !value);
       }}
     >
       <i class="fa-solid {$panelOpen ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>

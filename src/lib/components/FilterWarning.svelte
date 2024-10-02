@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { removeGenomicFilters,
-    removeUnallowedFilters, } from '$lib/stores/Filter.ts';
+  import { removeGenomicFilters, removeUnallowedFilters } from '$lib/stores/Filter.ts';
   import { goto } from '$app/navigation';
-
 
   function resetQuery() {
     removeGenomicFilters();
@@ -10,7 +8,6 @@
     goto('/explorer');
   }
 </script>
-
 
 <section id="discover-error-container" class="flex gap-9 justify-center">
   <aside data-testid="warning-alert" class="alert variant-ghost-warning">

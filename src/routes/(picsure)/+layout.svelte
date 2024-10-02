@@ -17,7 +17,6 @@
   import ModalWrapper from '$lib/components/ModalWrapper.svelte';
   import { getModalStore } from '@skeletonlabs/skeleton';
 
-
   const modalStore = getModalStore();
 
   // Highlight.js
@@ -53,15 +52,18 @@
     !$page.url.pathname.includes('/export') &&
     !$page.url.pathname.includes('/distributions');
 
-
-    import { beforeNavigate, goto } from '$app/navigation';
+  import { beforeNavigate, goto } from '$app/navigation';
   import { hasInvalidFilter, hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
   import FilterWarning from '$lib/components/FilterWarning.svelte';
 
-  beforeNavigate(({to, cancel, type}) => {
+  beforeNavigate(({ to, cancel, type }) => {
     console.log(to);
-    cancel();
+    console.log(type);
+    console.log($hasInvalidFilter);
+    console.log($hasGenomicFilter);
+    console.log($hasUnallowedFilter);
     if ($hasInvalidFilter && to?.url.pathname.includes('/explorer')) {
+      cancel();
       modalStore.trigger({
         type: 'component',
         component: 'modalWrapper',
@@ -70,24 +72,21 @@
           console.log(r);
         },
       });
-    } else if (($hasGenomicFilter || $hasUnallowedFilter) && to?.url.pathname.includes('/discover')) {
+    } else if (
+      ($hasGenomicFilter || $hasUnallowedFilter) &&
+      to?.url.pathname.includes('/discover')
+    ) {
+      cancel();
       modalStore.trigger({
-          type: 'component',
-          component: 'modalWrapper',
-          meta: { component: FilterWarning, width: 'w-3/4' },
-          response: (r: string) => {
-            console.log(r);
-          },
-        });
-      } else {
-        if (type !== 'leave') {
-          goto(to?.url.pathname ?? '/');
-        } else {
-          goto(to?.url.href ?? '/');
-        }
-      }
+        type: 'component',
+        component: 'modalWrapper',
+        meta: { component: FilterWarning, width: 'w-3/4' },
+        response: (r: string) => {
+          console.log(r);
+        },
+      });
+    } 
   });
-
 </script>
 
 <Toast position="t" />
