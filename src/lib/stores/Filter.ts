@@ -17,7 +17,10 @@ export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$u
   if ($filters.length === 0) return false;
 
   return $filters.some((filter) => {
-    const filterDataset = filter.dataset || '';
+    let filterDataset = filter.dataset || '';
+    if (filter.filterType === 'genomic') {
+      filterDataset = 'Gene_with_variant';
+    }
 
     const isValidFilter = $user?.queryScopes?.some((scope) => {
       const isMatch = filterDataset.length > 0 && scope.includes(filterDataset);
