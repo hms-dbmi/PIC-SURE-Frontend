@@ -63,7 +63,7 @@
     console.log($hasInvalidFilter);
     console.log($hasGenomicFilter);
     console.log($hasUnallowedFilter);
-    if ($hasInvalidFilter && to?.url.pathname.includes('/discover')) {
+    if ($hasInvalidFilter && to?.url.pathname.includes('/explorer')) {
     cancel();
     modalStore.trigger({
       type: 'component',
@@ -74,7 +74,7 @@
     });
     } else if (
       ($hasGenomicFilter || $hasUnallowedFilter) &&
-      to?.url.pathname.includes('/explorer')
+      to?.url.pathname.includes('/discover')
     ) {
       cancel();
       modalStore.trigger({
