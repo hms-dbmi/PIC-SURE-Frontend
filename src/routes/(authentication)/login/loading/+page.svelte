@@ -7,9 +7,12 @@
   import { createInstance } from '$lib/AuthProviderRegistry';
   import { browser } from '$app/environment';
   import { filters } from '$lib/stores/Filter';
+  import { panelOpen } from '$lib/stores/SidePanel';
 
   let failed = false;
   onMount(async () => {
+    panelOpen.set(false);
+
     let redirectTo = '/';
     let providerType: string | undefined | null;
     if (browser) {

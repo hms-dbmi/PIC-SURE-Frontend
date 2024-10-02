@@ -2,6 +2,7 @@ import { get, derived, writable, type Readable, type Writable } from 'svelte/sto
 
 import type { Filter } from '$lib/models/Filter';
 import { browser } from '$app/environment';
+import { user } from './User';
 
 export const filters: Writable<Filter[]> = writable(restoreFilters());
 export const totalParticipants: Writable<number | string> = writable(0);
@@ -11,6 +12,24 @@ export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
 export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => !filter.allowFiltering) : false,
 );
+
+export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$user, $filters]) => {
+  if ($filters.length === 0) return false;
+
+  return $filters.some((filter) => {
+    let filterDataset = filter.dataset || '';
+    if (filter.filterType === 'genomic') {
+      filterDataset = 'Gene_with_variant';
+    }
+
+    const isValidFilter = $user?.queryScopes?.some((scope) => {
+      const isMatch = filterDataset.length > 0 && scope.includes(filterDataset);
+      return isMatch;
+    });
+
+    return !isValidFilter;
+  });
+});
 
 filters.subscribe((f) => {
   if (browser) {
@@ -47,6 +66,29 @@ export function removeGenomicFilters() {
 export function removeUnallowedFilters() {
   const currentFilters = get(filters);
   filters.set(currentFilters.filter((f) => f.allowFiltering));
+}
+
+export function removeInvalidFilters(): void {
+  const currentUser = get(user);
+  const currentFilters = get(filters);
+
+  if (!currentUser || currentFilters.length === 0) return;
+
+  const validFilters = currentFilters.filter((filter) => {
+    let filterDataset = filter.dataset || '';
+    if (filter.filterType === 'genomic') {
+      filterDataset = 'Gene_with_variant';
+    }
+
+    const isValidFilter = currentUser.queryScopes?.some((scope) => {
+      const isMatch = filterDataset.length > 0 && scope.includes(filterDataset);
+      return isMatch;
+    });
+
+    return isValidFilter;
+  });
+
+  filters.set(validFilters);
 }
 
 export function clearFilters() {
