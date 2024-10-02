@@ -5,9 +5,13 @@ import { browser } from '$app/environment';
 
 export const filters: Writable<Filter[]> = writable(restoreFilters());
 export const totalParticipants: Writable<number | string> = writable(0);
-export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
-  $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic') : false,
-);
+export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) => {
+  console.log($f);
+  console.log($f.length);
+  console.log($f.some((filter) => filter.filterType === 'genomic'));
+
+  return $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic') : false;
+});
 export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => !filter.allowFiltering) : false,
 );

@@ -93,6 +93,7 @@ export const updateConsentFilters = (query: Query) => {
   }
 
   if (!get(hasGenomicFilter)) {
+    console.debug('removing topmed consent');
     query.removeCategoryFilter(topmedConsentPath);
   }
 
