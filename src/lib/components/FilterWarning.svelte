@@ -39,8 +39,7 @@
         goto(`/${backTo.toLowerCase()}`);
         closedModal();
       };
-    };
-  }
+    }
 </script>
 
 <section id="discover-error-container" class="flex gap-9 justify-center">
