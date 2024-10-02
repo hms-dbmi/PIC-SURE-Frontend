@@ -313,10 +313,8 @@
                   the connection to PIC-SURE with code.
                 </p>
                 <TabGroup class="card p-4">
-                  {#if query.query.expectedResultType === 'DATAFRAME'}
-                    <Tab bind:group={tabSet} name="python" value={tabIndex++}>Python</Tab>
-                    <Tab bind:group={tabSet} name="r" value={tabIndex++}>R</Tab>
-                  {/if}
+                  <Tab bind:group={tabSet} hidden={query.query.expectedResultType !== 'DATAFRAME'} name="python" value={tabIndex++}>Python</Tab>
+                  <Tab bind:group={tabSet} hidden={query.query.expectedResultType !== 'DATAFRAME'} name="r" value={tabIndex++}>R</Tab>
                   <Tab bind:group={tabSet} name="download" value={tabIndex++}>Download</Tab>
                   <svelte:fragment slot="panel">
                     {#if tabSet === 0}
