@@ -83,7 +83,7 @@
         if (type !== 'leave') {
           goto(to?.url.pathname ?? '/');
         } else {
-          goto(to?.url ?? '/');
+          goto(to?.url.href ?? '/');
         }
       }
   });
