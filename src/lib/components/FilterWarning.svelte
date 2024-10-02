@@ -8,7 +8,7 @@
   function resetQuery() {
     removeGenomicFilters();
     removeUnallowedFilters();
-    goto(backTo);
+    goto(`/${backTo.toLowerCase()}`);
   }
 
 
@@ -37,7 +37,7 @@
           >
           <button
             class="btn variant-ringed hover:variant-filled-warning"
-            on:click={() => goto(backTo)}>Back to {backTo}</button
+            on:click={() => goto(`/${backTo.toLowerCase()}`)}>Back to {backTo}</button
           >
         </div>
       </div>
