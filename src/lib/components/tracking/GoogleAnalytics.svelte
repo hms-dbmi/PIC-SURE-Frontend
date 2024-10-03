@@ -7,7 +7,12 @@
   let googleAnalyticsID = settings.google.analytics;
 
   $: {
-    if (browser && typeof gtag === 'function') {
+    if (
+      googleAnalyticsID &&
+      browser &&
+      typeof gtag === 'function' &&
+      localStorage.getItem('consentMode')?.includes('granted')
+    ) {
       console.debug('Tracking page view with Google Analytics');
       // Send page view to Google Analytics
       gtag('config', googleAnalyticsID, {
@@ -41,6 +46,8 @@
 </script>
 
 <svelte:head>
-  <script async src="https://www.googletagmanager.com/gtag/js?id={googleAnalyticsID}">
-  </script>
+  {#if googleAnalyticsID}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={googleAnalyticsID}">
+    </script>
+  {/if}
 </svelte:head>

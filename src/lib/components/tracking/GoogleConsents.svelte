@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { gtag } from 'gtagjs';
-  import { branding } from '$lib/configuration';
+  import { branding, settings } from '$lib/configuration';
+  let googleTag = settings.google.tagManager;
   $: googleConsentVisible = false;
 
   function setUsersGoogleConsent(wasAccepted: boolean) {
@@ -28,7 +29,7 @@
   });
 </script>
 
-{#if googleConsentVisible && branding?.privacyPolicy?.url && branding?.privacyPolicy?.title}
+{#if googleTag && googleConsentVisible && branding?.privacyPolicy?.url && branding?.privacyPolicy?.title}
   <div
     data-testid="consentModal"
     class="fixed"
