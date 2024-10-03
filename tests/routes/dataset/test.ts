@@ -84,20 +84,20 @@ test.describe('dataset', () => {
     // Then
     await expect(page.getByText(mockData[1].query.uuid, { exact: true })).toBeVisible();
   });
-  test('View button should route to view page', async ({ page }) => {
-    // Given
-    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
-    await page.goto('/dataset');
-
-    // When
-    const viewButton = page.getByTestId(`dataset-action-view-${mockData[0].uuid}`);
-    await viewButton.click();
-
-    // Then
-    await page.waitForURL(`**/dataset/${mockData[0].uuid}`);
-    await expect(page.url()).toContain(`/dataset/${mockData[0].uuid}`);
-  });
   // TODO: Add back when feature is implemented
+  // test('View button should route to view page', async ({ page }) => {
+  //   // Given
+  //   await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
+  //   await page.goto('/dataset');
+
+  //   // When
+  //   const viewButton = page.getByTestId(`dataset-action-view-${mockData[0].uuid}`);
+  //   await viewButton.click();
+
+  //   // Then
+  //   await page.waitForURL(`**/dataset/${mockData[0].uuid}`);
+  //   await expect(page.url()).toContain(`/dataset/${mockData[0].uuid}`);
+  // });
   // test('Clicking row takes user to view dataset page', async ({ page }) => {
   //   // Given
   //   await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);

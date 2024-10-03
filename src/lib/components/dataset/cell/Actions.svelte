@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-
   import DataSetStore from '$lib/stores/Dataset';
 
   export let data = { cell: '', row: { archived: false } };
@@ -14,7 +12,7 @@
 </script>
 
 {#if data.row.archived}
-  <button
+  <!-- <button
     disabled
     data-testid={`dataset-action-view-${data.cell}`}
     type="button"
@@ -22,7 +20,7 @@
     class="btn-icon-color"
   >
     <i class="fa-solid fa-circle-info fa-xl"></i>
-  </button>
+  </button> -->
   <button
     bind:this={toggleButton}
     data-testid={`dataset-action-restore-${data.cell}`}
@@ -34,7 +32,7 @@
     <i class="fa-solid fa-trash-arrow-up fa-xl"></i>
   </button>
 {:else}
-  <button
+  <!-- <button
     data-testid={`dataset-action-view-${data.cell}`}
     type="button"
     title="View"
@@ -42,7 +40,7 @@
     on:click|stopPropagation={() => goto(`/dataset/${data.cell}`)}
   >
     <i class="fa-solid fa-circle-info fa-xl"></i>
-  </button>
+  </button> -->
   <button
     bind:this={toggleButton}
     data-testid={`dataset-action-archive-${data.cell}`}
