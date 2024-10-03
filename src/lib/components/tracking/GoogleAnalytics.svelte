@@ -47,7 +47,7 @@
 
 <svelte:head>
   {#if googleAnalyticsID}
-  <script async src="https://www.googletagmanager.com/gtag/js?id={googleAnalyticsID}">
-  </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id={googleAnalyticsID}">
+    </script>
   {/if}
 </svelte:head>
