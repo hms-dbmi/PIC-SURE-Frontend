@@ -1,12 +1,16 @@
 import { expect, type Route } from '@playwright/test';
-import { test } from '../../../custom-context';
+import { test, mockApiSuccess } from '../../../custom-context';
 import {
   conceptsDetailPath,
   detailResponseCat,
   detailResponseCat2,
   searchResults as mockData,
   searchResultPath,
+  geneValues,
+  geneValuesPage2,
 } from '../../../mock-data';
+
+const HPDS = process.env.VITE_RESOURCE_HPDS;
 
 test.describe('OptionaSelectionList', () => {
   // TODO: Some feartures will be hidden in the future. Cannot use nth.
@@ -201,6 +205,154 @@ test.describe('OptionaSelectionList', () => {
     // Then
     await expect(selectedOptionContainer).toBeEmpty();
     await expect(optionContainer.locator(option)).toBeVisible();
+  });
+  test('Loads next values when scrolling', async ({ page }) => {
+    // Given
+    const mockDataWithManyOptions = {
+      ...detailResponseCat2,
+      values: Array.from({ length: 100 }, (_, i) => `Option ${i + 1}`),
+    };
+    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(`${conceptsDetailPath}${detailResponseCat2.dataset}`, async (route: Route) =>
+      route.fulfill({ json: mockDataWithManyOptions }),
+    );
+    await page.route('*/**/picsure/query/sync', async (route: Route) =>
+      route.fulfill({ body: '9999' }),
+    );
+    await page.goto('/explorer?search=somedata');
+
+    // When
+    await clickNthFilterIcon(page);
+    const component = page.getByTestId('optional-selection-list');
+    const optionContainer = component.locator('#options-container');
+
+    // Then
+    await expect(optionContainer).toBeVisible();
+
+    // Check initial load
+    let visibleOptions = await optionContainer.getByRole('listitem').all();
+    expect(visibleOptions.length).toBeLessThan(41);
+
+    // Scroll to bottom
+    await optionContainer.evaluate((node) => node.scrollTo(0, node.scrollHeight));
+
+    // Wait for more options to load
+    await page.waitForTimeout(1000); // Adjust timeout as needed
+
+    // Check if more options have loaded
+    visibleOptions = await optionContainer.getByRole('listitem').all();
+    expect(visibleOptions.length).toBeGreaterThan(20); // Assuming initial page size is 20
+    expect(visibleOptions.length).toBeLessThan(100); // Ensure not all options are loaded at once
+
+    // Verify last visible option
+    const lastVisibleOption = visibleOptions[visibleOptions.length - 1];
+    await expect(lastVisibleOption).toBeVisible();
+    await expect(lastVisibleOption).toHaveText(/Option \d+/);
+  });
+  test('Loads next values when scrolling when infinite scroll is enabled', async ({ page }) => {
+    // Given
+    const mockDataWithManyOptions = {
+      ...detailResponseCat2,
+      values: Array.from({ length: 100 }, (_, i) => `Option ${i + 1}`),
+    };
+    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(`${conceptsDetailPath}${detailResponseCat2.dataset}`, async (route: Route) =>
+      route.fulfill({ json: mockDataWithManyOptions }),
+    );
+    await page.route('*/**/picsure/query/sync', async (route: Route) =>
+      route.fulfill({ body: '9999' }),
+    );
+    await mockApiSuccess(
+      page,
+      `*/**/picsure/search/${HPDS}/values/?genomicConceptPath=Gene_with_variant&query=&page=1&size=20`,
+      {
+        ...geneValues,
+      },
+    );
+    await page.goto('/explorer');
+
+    // When
+    await page.getByTestId('genomic-filter-btn').click();
+    await page.getByTestId('gene-variant-option').click();
+    const component = page.getByTestId('optional-selection-list');
+    const optionContainer = component.locator('#options-container');
+
+    // Then
+    await expect(optionContainer).toBeVisible();
+
+    // Check initial load
+    let visibleOptions = await optionContainer.getByRole('listitem').all();
+    expect(visibleOptions.length).toBeLessThan(21);
+
+    await mockApiSuccess(
+      page,
+      `*/**/picsure/search/${HPDS}/values/?genomicConceptPath=Gene_with_variant&query=&page=2&size=20`,
+      {
+        ...geneValuesPage2,
+      },
+    );
+
+    // Scroll to bottom
+    await optionContainer.evaluate((node) => node.scrollTo(0, node.scrollHeight + 30));
+
+    // Wait for more options to load
+    await page.waitForTimeout(1000); // Adjust timeout as needed
+
+    // Check if more options have loaded
+    visibleOptions = await optionContainer.getByRole('listitem').all();
+    expect(visibleOptions.length).toBeGreaterThan(20); // Assuming initial page size is 20
+    expect(visibleOptions.length).toBeLessThan(100); // Ensure not all options are loaded at once
+
+    // Verify last visible option
+    const lastVisibleOption = visibleOptions[visibleOptions.length - 1];
+    await expect(lastVisibleOption).toBeVisible();
+  });
+  test('Loads next selected values when scrolling', async ({ page }) => {
+    // Given
+    const mockDataWithManyOptions = {
+      ...detailResponseCat2,
+      values: Array.from({ length: 100 }, (_, i) => `Option ${i + 1}`),
+    };
+    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await page.route(`${conceptsDetailPath}${detailResponseCat2.dataset}`, async (route: Route) =>
+      route.fulfill({ json: mockDataWithManyOptions }),
+    );
+    await page.route('*/**/picsure/query/sync', async (route: Route) =>
+      route.fulfill({ body: '9999' }),
+    );
+    await page.goto('/explorer?search=somedata');
+
+    // When
+    await clickNthFilterIcon(page);
+    const component = page.getByTestId('optional-selection-list');
+
+    // Select all options
+    await component.locator('#select-all').click();
+
+    const selectedOptionsContainer = component.locator('#selected-options-container');
+
+    // Then
+    await expect(selectedOptionsContainer).toBeVisible();
+
+    // Check initial load of selected options
+    let visibleSelectedOptions = await selectedOptionsContainer.getByRole('listitem').all();
+    expect(visibleSelectedOptions.length).toBe(20); // Assuming initial page size is 20
+
+    // Scroll to bottom of selected options
+    await selectedOptionsContainer.evaluate((node) => node.scrollTo(0, node.scrollHeight));
+
+    // Wait for more options to load
+    await page.waitForTimeout(1000); // Adjust timeout as needed
+
+    // Check if more selected options have loaded
+    visibleSelectedOptions = await selectedOptionsContainer.getByRole('listitem').all();
+    expect(visibleSelectedOptions.length).toBeGreaterThan(20);
+    expect(visibleSelectedOptions.length).toBeLessThan(50); // Ensure not all options are loaded at once
+
+    // Verify last visible selected option
+    const lastVisibleSelectedOption = visibleSelectedOptions[visibleSelectedOptions.length - 1];
+    await expect(lastVisibleSelectedOption).toBeVisible();
+    await expect(lastVisibleSelectedOption).toHaveText(/Option \d+/);
   });
 });
 

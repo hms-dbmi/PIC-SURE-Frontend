@@ -17,20 +17,19 @@
       : allGenes.filter((gene) => !$selectedGenes.includes(gene));
 
   let lastFilter = '';
-  let pageSize = 50;
+  let pageSize = 20;
   let currentPage = 0;
   let totalPages = 1;
   let loading = false;
+  let allOptionsLoaded = false;
 
   // given a search term, return new values to be added to displayed options
   async function getGeneValues(search: string = '') {
     const newSearch = lastFilter !== search;
-
-    if (!newSearch && currentPage >= totalPages) return;
-
+    if (!newSearch && (currentPage >= totalPages || allOptionsLoaded)) return;
     loading = true;
-    await api
-      .get(
+    try {
+      const response = await api.get(
         `picsure/search/${resources.hpds}/values/?` +
           new URLSearchParams({
             genomicConceptPath: 'Gene_with_variant',
@@ -39,27 +38,29 @@
             size: pageSize.toString(),
           }),
         { 'content-type': 'application/json' },
-      )
-      .then((response) => {
-        if (response?.error) {
-          return Promise.reject(response.error);
-        }
-        return response;
-      })
-      .then((response) => {
-        allGenes = newSearch ? response.results : [...allGenes, ...response.results];
-        totalPages = Math.ceil(response.total / pageSize);
-        currentPage = response.page;
-        lastFilter = search;
-      })
-      .catch((error) => {
-        console.error(error);
-        toastStore.trigger({
-          message: 'An error occured while loading genes list.',
-          background: 'variant-filled-error',
-        });
+      );
+
+      if (response?.error) {
+        throw response.error;
+      }
+
+      const newGenes = response.results;
+      allGenes = newSearch ? newGenes : [...allGenes, ...newGenes];
+      totalPages = Math.ceil(response.total / pageSize);
+      currentPage = response.page;
+      lastFilter = search;
+
+      // Check if we've loaded all options
+      allOptionsLoaded = newGenes.length < pageSize;
+    } catch (error) {
+      console.error(error);
+      toastStore.trigger({
+        message: 'An error occurred while loading genes list.',
+        background: 'variant-filled-error',
       });
-    loading = false;
+    } finally {
+      loading = false;
+    }
   }
 
   onMount(async () => {
@@ -74,6 +75,8 @@
     bind:unselectedOptions={unselectedGenes}
     bind:selectedOptions={$selectedGenes}
     bind:currentlyLoading={loading}
+    allOptions={undefined}
+    {allOptionsLoaded}
     on:scroll={(event) => getGeneValues(event.detail.search)}
   />
 </div>
