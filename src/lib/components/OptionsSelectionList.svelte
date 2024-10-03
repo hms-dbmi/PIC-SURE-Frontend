@@ -23,9 +23,9 @@
     const containerHeight = element.clientHeight;
     const contentHeight = element.scrollHeight;
     const scrollBuffer = 30;
-    const hasLoadedAll = !unselectedOptions || unselectedOptions.length === 0;
+    const hasLoadedAll = unselectedOptions.length >= allOptions.length;
     return (
-      hasLoadedAll ||
+      !hasLoadedAll ||
       (!hasLoadedAll && contentHeight - (scrollTop + containerHeight) <= scrollBuffer)
     );
   }
