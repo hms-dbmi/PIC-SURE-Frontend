@@ -16,24 +16,9 @@
     });
   };
 
-  // Import images from the assets directory
-  const images = import.meta.glob('../assets/login/*.{png,jpg,jpeg,svg}', {
-    eager: true,
-    as: 'url',
-  });
-
-  // Create a mapping from filenames to URLs
-  const imageMap: Record<string, string> = {};
-  for (const path in images) {
-    const filename = path.split('/').pop();
-    if (filename) {
-      imageMap[filename] = images[path];
-    }
-  }
-
   let imageSrc: string | undefined = undefined;
   if (provider.imagesrc) {
-    imageSrc = imageMap[provider.imagesrc];
+    imageSrc = './' + provider.imagesrc;
   }
 </script>
 
