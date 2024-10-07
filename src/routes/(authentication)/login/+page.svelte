@@ -68,7 +68,7 @@
                 provider={selectedProvider}
                 {redirectTo}
                 helpText={selectedProvider.helptext}
-                class="btn variant-filled-primary m-1 mt-2 w-full"
+                class="btn variant-outline-primary m-1 mt-2 w-full"
               />
             {/if}
           {:else}
@@ -78,7 +78,7 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn variant-filled-primary w-full"
+                class="btn variant-outline-primary text-primary-500 w-full"
               />
             {/each}
           {/if}
