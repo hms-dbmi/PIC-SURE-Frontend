@@ -9,6 +9,8 @@ export interface AuthData extends Indexable {
   helpText?: string;
   enabled: boolean;
   alt: boolean;
+  imageSrc?: string;
+  imageAlt?: string;
 }
 
 export default class AuthProvider implements AuthData {
@@ -21,14 +23,19 @@ export default class AuthProvider implements AuthData {
   logouturl?: string | undefined;
   callbackurl?: string | undefined;
   alt: boolean;
+  imageSrc?: string | undefined;
+  imageAlt?: string | undefined;
 
   constructor(data: AuthData) {
+    console.log(data);
     this.name = data.name;
     this.description = data.description;
     this.type = data.type;
     this.icon = data.icon;
     this.enabled = data.enabled;
     this.alt = data.alt || false;
+    this.imageSrc = data.imagesrc;
+    this.imageAlt = data.imagealt;
   }
 
   protected getRedirectURI(): string {
