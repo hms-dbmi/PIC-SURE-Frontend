@@ -25,7 +25,7 @@
   let pageSize = 20;
   let unselectedOptions: string[] = [];
   let selectedOptions: string[] = [];
-  let startLocation = 0;
+  let startLocation = pageSize;
   let lastSearchTerm = '';
   let loading = false;
   let display: string;
@@ -110,30 +110,30 @@
 
     loading = true;
     try {
-      let nextOptions = (data?.values || []).filter((option) => !selectedOptions.includes(option));
-      let endLocation = Math.min(startLocation + pageSize, totalOptions);
+      let allOptions = data?.values || [];
 
       if (search !== lastSearchTerm || !lastSearchTerm.includes(search)) {
         // new search
         startLocation = 0;
-        endLocation = startLocation + pageSize;
         unselectedOptions = [];
         lastSearchTerm = search;
       }
 
-      if (search) {
-        nextOptions = nextOptions.filter((value) =>
-          value.toLowerCase().includes(search.toLowerCase()),
-        );
-      }
+      let filteredOptions = allOptions.filter(
+        (option) =>
+          !selectedOptions.includes(option) &&
+          (!search || option.toLowerCase().includes(search.toLowerCase())),
+      );
 
-      nextOptions = nextOptions.slice(startLocation, endLocation);
+      const endLocation = Math.min(startLocation + pageSize, filteredOptions.length);
+      const nextOptions = filteredOptions.slice(startLocation, endLocation);
+
       unselectedOptions = [...unselectedOptions, ...nextOptions];
       startLocation = endLocation;
     } catch (error) {
       console.error(error);
       toastStore.trigger({
-        message: 'An error occured while loading more options. Please try again later.',
+        message: 'An error occurred while loading more options. Please try again later.',
         background: 'variant-filled-error',
       });
     }
