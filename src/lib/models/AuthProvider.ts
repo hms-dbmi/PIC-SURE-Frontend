@@ -27,7 +27,6 @@ export default class AuthProvider implements AuthData {
   imageAlt?: string | undefined;
 
   constructor(data: AuthData) {
-    console.log(data);
     this.name = data.name;
     this.description = data.description;
     this.type = data.type;

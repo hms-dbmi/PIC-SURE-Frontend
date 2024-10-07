@@ -31,13 +31,10 @@
     }
   }
 
-  console.log(provider);
   let imageSrc: string | undefined = undefined;
   if (provider.imagesrc) {
     imageSrc = imageMap[provider.imagesrc];
   }
-
-  console.log('imageSrc', imageSrc);
 </script>
 
 <button
