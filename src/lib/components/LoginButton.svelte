@@ -15,6 +15,11 @@
       resetSearch();
     });
   };
+
+  let imageSrc: string | undefined = undefined;
+  if (provider.imagesrc) {
+    imageSrc = './' + provider.imagesrc;
+  }
 </script>
 
 <button
@@ -23,6 +28,9 @@
   class={$$props.class ?? 'btn variant-filled-primary m-1'}
   on:click={() => login(redirectTo, provider.type)}
 >
+  {#if imageSrc}
+    <img src={imageSrc} alt={provider.imageAlt} class="h-8 mr-2" />
+  {/if}
   {buttonText}
 </button>
 
