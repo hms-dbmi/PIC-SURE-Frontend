@@ -11,7 +11,7 @@
   export let showSelectAll: boolean = true;
   export let allOptionsLoaded: boolean = false;
 
-  export let allOptions: string[] | undefined;
+  export let allOptions: string[] | undefined = undefined;
 
   let currentlyLoadingSelected: boolean = false;
   let unselectedOptionsContainer: HTMLElement;

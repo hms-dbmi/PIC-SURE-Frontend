@@ -75,7 +75,6 @@
     bind:unselectedOptions={unselectedGenes}
     bind:selectedOptions={$selectedGenes}
     bind:currentlyLoading={loading}
-    allOptions={undefined}
     {allOptionsLoaded}
     on:scroll={(event) => getGeneValues(event.detail.search)}
   />
