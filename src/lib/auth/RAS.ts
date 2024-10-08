@@ -34,7 +34,7 @@ class RAS extends AuthProvider implements RasData {
       throw new Error('OKTA IDP Id is required for RAS');
     }
     this.oktaidpid = data.oktaidpid;
-    this.state = data.state ?? this.generateRandomState();
+    this.state = 'ras-' + this.generateRandomState();
     this.idp = data.idp;
     this.rasRedirect = data.rasRedirect;
     this.oktaIdToken = data.oktaIdToken;
@@ -49,7 +49,9 @@ class RAS extends AuthProvider implements RasData {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   authenticate = async (hashParts: string[]): Promise<boolean> => {
+    console.log('RAS authenticate');
     const responseMap = this.getResponseMap(hashParts);
+    console.log('responseMap: ', responseMap);
     const code = responseMap.get('code');
     let state = responseMap.get('state') || '';
 
@@ -57,17 +59,22 @@ class RAS extends AuthProvider implements RasData {
       state = sessionStorage.getItem('state') || '';
     }
 
+    console.log('code: ', code);
+    console.log('state: ', state);
     if (!code || state !== this.state) {
       return true;
     }
 
     try {
+      console.log('calling RAS API');
       const newUser: OktaUser = await api.post('psama/authentication/ras', { code });
       if (newUser?.token) {
+        console.log('RAS API response: ', newUser);
         await UserLogin(newUser.token);
         newUser.oktaIdToken && localStorage.setItem('oktaIdToken', newUser.oktaIdToken);
         return false;
       } else {
+        console.error('RAS API response: ', newUser);
         return true;
       }
     } catch (error) {

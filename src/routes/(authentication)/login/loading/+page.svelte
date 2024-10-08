@@ -26,9 +26,11 @@
     // Retrives the providers from the server's AuthProviderRegistry created via hooks.server.ts
     const provider = $page.data?.providers.find((p: AuthProvider) => p.type === providerType);
     if (!provider) {
+      console.error('Provider not found', providerType);
       failed = true;
     }
     if (!provider || failed) {
+      console.error('Provider not found', providerType);
       goto('/login/error');
     }
     const providerInstance = await createInstance(provider);
