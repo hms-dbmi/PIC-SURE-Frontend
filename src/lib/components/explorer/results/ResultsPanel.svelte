@@ -102,6 +102,25 @@
     totalPatients !== 0 &&
     hasFilterOrExport;
 
+  $: showExplorerDistributions = !isOpenAccess && 
+    features.explorer.distributionExplorer && 
+    $filters.length !== 0 && 
+    !$filters.every(filter => filter.filterType === 'genomic' || filter.filterType === 'snp');
+
+  $: showDiscoverDistributions = isOpenAccess && 
+    features.discoverFeautures.distributionExplorer && 
+    $filters.length !== 0;
+
+  $: showVariantExplorer = !isOpenAccess && 
+    features.explorer.variantExplorer && 
+    $hasGenomicFilter;
+
+  $: showToolSuite = (
+    totalPatients !== 0 &&
+    ($filters.length !== 0 || $exports.length !== 0) &&
+    (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer)
+  );
+
   onMount(async () => {
     unsubFilters = filters.subscribe(() => {
       triggerRefreshCount = getCount();
@@ -196,12 +215,12 @@
       </div>
     {/if}
   </div>
-  {#if totalPatients !== 0 && ($filters.length !== 0 || $exports.length !== 0)}
+  {#if showToolSuite}
     <div class="flex flex-col items-center mt-7">
       <hr class="!border-t-2" />
       <h5 class="text-center text-xl mt-7">Tool Suite</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
-        {#if !isOpenAccess && features.explorer.distributionExplorer && $filters.length !== 0}
+        {#if showExplorerDistributions}
           <CardButton
             href="/explorer/distributions"
             data-testid="distributions-btn"
@@ -210,7 +229,7 @@
             size="md"
           />
         {/if}
-        {#if isOpenAccess && features.discoverFeautures.distributionExplorer && $filters.length !== 0}
+        {#if showDiscoverDistributions}
           <CardButton
             href="/discover/distributions"
             data-testid="distributions-btn"
@@ -219,7 +238,7 @@
             size="md"
           />
         {/if}
-        {#if !isOpenAccess && features.explorer.variantExplorer && $hasGenomicFilter}
+        {#if showVariantExplorer}
           <CardButton
             href="/explorer/variant"
             data-testid="variant-explorer-btn"
