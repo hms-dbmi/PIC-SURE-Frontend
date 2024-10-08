@@ -83,7 +83,7 @@ class RAS extends AuthProvider implements RasData {
       );
     }
   };
-  logout = (): Promise<void> => {
+  logout = (): Promise<string> => {
     const oktaRedirect = this.rasRedirect +
       '?id_token_hint' + this.oktaIdToken +
       '&post_logout_redirect_uri=' + this.getRedirectURI();

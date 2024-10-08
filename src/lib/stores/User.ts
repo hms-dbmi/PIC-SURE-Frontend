@@ -1,6 +1,5 @@
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/environment';
-
 import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
 import type { User } from '$lib/models/User';
@@ -8,6 +7,7 @@ import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, features, resources } from '$lib/configuration';
 import { goto } from '$app/navigation';
 import type { QueryInterface } from '$lib/models/query/Query';
+import type AuthProvider from '$lib/models/AuthProvider.ts';
 
 export const user: Writable<User> = writable(restoreUser());
 
@@ -134,19 +134,26 @@ export async function login(token: string) {
   }
 }
 
-export async function logout() {
+export async function logout(authProvider: AuthProvider | undefined) {
   if (browser) {
     const token = localStorage.getItem('token');
     token && api.get('/psama/logout');
     token && localStorage.removeItem('token');
   }
 
-  user.set({});
   // get the auth provider
-  const type = sessionStorage.getItem('type');
-  if (type) {
-
+  if (authProvider) {
+      authProvider.logout().then(redirect => {
+        user.set({});
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        window.location = redirect;
+      }).catch(error => {
+        console.error('Error logging out: ' + error);
+        goto('/login');
+      });
   } else {
+    user.set({});
     goto('/login');
   }
 }

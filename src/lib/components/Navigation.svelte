@@ -5,6 +5,7 @@
   import { user, userRoutes, logout } from '$lib/stores/User';
   import type { Route } from '$lib/models/Route';
   import Logo from '$lib/components/Logo.svelte';
+  import type AuthProvider from '$lib/models/AuthProvider.ts';
 
   function setDropdown(path: string) {
     dropdownPath = path;
@@ -37,6 +38,11 @@
   };
 
   $: dropdownPath = '';
+  const providerType = sessionStorage.getItem('type');
+  let provider: AuthProvider | undefined = undefined;
+  if (providerType) {
+    provider = $page.data?.providers.find((p: AuthProvider) => p.type === providerType);
+  }
 </script>
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-900-token">
@@ -116,7 +122,7 @@
             id="user-logout-btn"
             class="btn variant-ringed-primary"
             title="Logout"
-            on:click={logout}>Logout</button
+            on:click={logout(provider)}>Logout</button
           >
         </div>
       {:else}
