@@ -15,7 +15,7 @@
 
   $: sitemap = branding?.sitemap?.map((section) => ({
     ...section,
-    show: !section.privilege || ($user.privileges && $user.privileges.includes(section.privilege)),
+    show: !section.privilege || ($user?.privileges && $user?.privileges.includes(section.privilege)),
   }));
 
   function openTermsModal() {

@@ -97,21 +97,21 @@
   </nav>
   <svelte:fragment slot="trail">
     <div id="user-session-avatar">
-      {#if $user.privileges && $user.email}
+      {#if $user?.privileges && $user?.email}
         <!-- Logout -->
         <button id="user-session-popout" use:popup={logoutClick}>
           <span
             class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ghost-primary hover:variant-ghost-secondary w-12 rounded-full text-2xl"
           >
-            {$user.email[0].toUpperCase()}
-            <span class="sr-only">Logout user {$user.email}</span>
+            {$user?.email[0].toUpperCase()}
+            <span class="sr-only">Logout user {$user?.email}</span>
           </span>
         </button>
         <div
           class="card p-6 variant-surface border-surface-100-800-token text-center"
           data-popup="logoutClick"
         >
-          <p class="pb-6">{$user.email}</p>
+          <p class="pb-6">{$user?.email}</p>
           <button
             id="user-logout-btn"
             class="btn variant-ringed-primary"

@@ -1,6 +1,5 @@
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/environment';
-import { page } from '$app/stores';
 import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
 import type { User } from '$lib/models/User';
@@ -36,10 +35,8 @@ function restoreUser() {
         return {};
       }
     } else {
-      if (get(page).url.pathname.includes('/explorer')) {
-        goto('/login');
-        sessionStorage.setItem('logout-reason', 'Session expired. Please login again.');
-      }
+      sessionStorage.setItem('logout-reason', 'Session expired. Please login again.');
+      goto('/login');
     }
     return {};
   }
