@@ -13,6 +13,7 @@ interface RasData extends AuthData {
   rasRedirect?: string;
   oktaIdToken?: string;
   rasSessionLogoutUri?: string;
+  oktaidpid?: string;
 }
 
 class RAS extends AuthProvider implements RasData {
@@ -23,11 +24,16 @@ class RAS extends AuthProvider implements RasData {
   rasRedirect?: string;
   oktaIdToken?: string;
   sessionLogoutUri?: string;
+  oktaidpid: string;
 
   constructor(data: RasData) {
     super(data);
     this.uri = data.uri;
     this.clientid = data.clientid;
+    if (data.oktaidpid === undefined) {
+      throw new Error('OKTA IDP Id is required for RAS');
+    }
+    this.oktaidpid = data.oktaidpid;
     this.state = data.state ?? this.generateRandomState();
     this.idp = data.idp;
     this.rasRedirect = data.rasRedirect;
@@ -76,8 +82,9 @@ class RAS extends AuthProvider implements RasData {
       redirectUrl = this.getRedirectURI();
       this.saveState(redirectTo, type, this.idp);
       const rasClientID = encodeURIComponent(this.clientid);
+      const rasIdpId = encodeURIComponent(this.oktaidpid);
       window.location.href = encodeURI(
-        `${this.uri}?response_type=code&scope=openid&client_id=${rasClientID}&redirect_uri=${redirectUrl}&state=${this.state}`,
+        `${this.uri}?response_type=code&scope=openid&client_id=${rasClientID}&idp=${rasIdpId}&redirect_uri=${redirectUrl}&state=${this.state}`,
       );
     }
   };
