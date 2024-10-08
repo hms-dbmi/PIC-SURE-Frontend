@@ -80,11 +80,13 @@ class RAS extends AuthProvider implements RasData {
     let redirectUrl = '/';
     if (browser) {
       redirectUrl = this.getRedirectURI();
+      // remove trailing slash
+      redirectUrl = redirectUrl.replace(/\/$/, '');
       this.saveState(redirectTo, type, this.idp);
       const rasClientID = encodeURIComponent(this.clientid);
       const rasIdpId = encodeURIComponent(this.oktaidpid);
-      const loginUrl = `${this.uri}?response_type=code&scope=openid&client_id=${rasClientID}&idp=${rasIdpId}&redirect_uri=${redirectUrl}&state=${this.state}`
-      console.log("login URL: " + loginUrl)
+      const loginUrl = `${this.uri}?response_type=code&scope=openid&client_id=${rasClientID}&idp=${rasIdpId}&redirect_uri=${redirectUrl}&state=${this.state}`;
+      console.log('login URL: ' + loginUrl);
       window.location.href = loginUrl;
     }
   };
@@ -101,7 +103,7 @@ class RAS extends AuthProvider implements RasData {
 
     const oktaEncodedRedirect = encodeURIComponent(oktaRedirect);
     const logoutUrl = this.sessionLogoutUri + oktaEncodedRedirect;
-    console.log("logout URL: " + logoutUrl)
+    console.log('logout URL: ' + logoutUrl);
     return Promise.resolve(logoutUrl);
   };
 }
