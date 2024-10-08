@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import type { AuthData } from '$lib/models/AuthProvider';
 import AuthProvider from '$lib/models/AuthProvider';
 import * as api from '$lib/api';
-import type { OktaUser, User } from '$lib/models/User';
+import type { OktaUser } from '$lib/models/User';
 import { login as UserLogin } from '$lib/stores/User';
 
 interface RasData extends AuthData {
@@ -22,7 +22,7 @@ class RAS extends AuthProvider implements RasData {
   idp: string;
   rasRedirect?: string;
   oktaIdToken?: string;
-  rasSessionLogoutUri?: string;
+  sessionLogoutUri?: string;
 
   constructor(data: RasData) {
     super(data);
@@ -32,7 +32,7 @@ class RAS extends AuthProvider implements RasData {
     this.idp = data.idp;
     this.rasRedirect = data.rasRedirect;
     this.oktaIdToken = data.oktaIdToken;
-    this.rasSessionLogoutUri = data.rasSessionLogoutUri;
+    this.sessionLogoutUri = data.sesseionLogoutUri;
   }
 
   private generateRandomState() {
@@ -77,7 +77,7 @@ class RAS extends AuthProvider implements RasData {
       this.saveState(redirectTo, type, this.idp);
       const rasClientID = encodeURIComponent(this.clientid);
       window.location.href = encodeURI(
-        `${this.uri}/oauth2/default/v1/authorize?response_type=code&scope=openid&client_id=${rasClientID}&redirect_uri=${redirectUrl}&state=${this.state}`,
+        `${this.uri}?response_type=code&scope=openid&client_id=${rasClientID}&redirect_uri=${redirectUrl}&state=${this.state}`,
       );
     }
   };
@@ -90,7 +90,7 @@ class RAS extends AuthProvider implements RasData {
       this.getRedirectURI();
 
     const oktaEncodedRedirect = encodeURIComponent(oktaRedirect);
-    const logoutUrl = this.rasSessionLogoutUri + oktaEncodedRedirect;
+    const logoutUrl = this.sessionLogoutUri + oktaEncodedRedirect;
     return Promise.resolve(logoutUrl);
   };
 }
