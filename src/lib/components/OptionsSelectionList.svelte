@@ -5,36 +5,62 @@
   let searchInput: string = '';
   export let unselectedOptions: string[] = [];
   export let selectedOptions: string[] = [];
+  export let selectedOptionEndLocation = 20;
   export let currentlyLoading: boolean = false;
-
   export let showClearAll: boolean = true;
   export let showSelectAll: boolean = true;
+  export let allOptionsLoaded: boolean = false;
 
-  export let allOptions: string[] = [];
+  export let allOptions: string[] | undefined = undefined;
 
+  let currentlyLoadingSelected: boolean = false;
   let unselectedOptionsContainer: HTMLElement;
   let selectedOptionsContainer: HTMLElement;
-  let selectedOptionEndLocation = 20;
+  let allSelectedOptionsLoaded: boolean = false;
 
   const dispatch = createEventDispatcher<{ scroll: { search: string } }>();
 
-  function shouldLoadMore(element: HTMLElement) {
+  $: infiniteScroll = allOptions === undefined;
+
+  $: totalAvailableOptions = infiniteScroll
+    ? Infinity
+    : (allOptions?.length || 0) - selectedOptions.length;
+
+  $: allUnselectedOptionsLoaded = infiniteScroll
+    ? allOptionsLoaded
+    : unselectedOptions.length >= totalAvailableOptions;
+
+  $: allSelectedOptionsLoaded = infiniteScroll
+    ? allSelectedOptionsLoaded
+    : displayedSelectedOptions.length >= selectedOptions.length;
+
+  $: displayedSelectedOptions = selectedOptions.slice(0, selectedOptionEndLocation);
+
+  function shouldLoadMore(element: HTMLElement, allLoaded: boolean) {
     const scrollTop = element.scrollTop;
     const containerHeight = element.clientHeight;
     const contentHeight = element.scrollHeight;
     const scrollBuffer = 30;
-    const hasLoadedAll = !unselectedOptions || unselectedOptions.length === 0;
-    return (
-      hasLoadedAll ||
-      (!hasLoadedAll && contentHeight - (scrollTop + containerHeight) <= scrollBuffer)
-    );
+    return !allLoaded && contentHeight - (scrollTop + containerHeight) <= scrollBuffer;
   }
 
   function handleScroll() {
     if (!unselectedOptionsContainer) return;
-    if (!currentlyLoading && shouldLoadMore(unselectedOptionsContainer)) {
+    if (
+      !currentlyLoading &&
+      shouldLoadMore(unselectedOptionsContainer, allUnselectedOptionsLoaded)
+    ) {
       dispatch('scroll', { search: searchInput });
     }
+  }
+
+  function loadMoreSelectedOptions() {
+    if (!selectedOptionsContainer) return;
+    currentlyLoadingSelected = true;
+    if (shouldLoadMore(selectedOptionsContainer, allSelectedOptionsLoaded)) {
+      selectedOptionEndLocation = selectedOptionEndLocation + 20;
+    }
+    currentlyLoadingSelected = false;
   }
 
   function onSearch() {
@@ -59,7 +85,7 @@
   }
 
   function selectAllOptions() {
-    if (allOptions.length !== 0) {
+    if (allOptions && allOptions?.length !== 0) {
       selectedOptions = allOptions;
       unselectedOptions = [];
       selectedOptionEndLocation = 20;
@@ -70,18 +96,9 @@
     }
   }
 
-  function loadMoreSelectedOptions() {
-    if (!selectedOptionsContainer) return;
-    if (shouldLoadMore(selectedOptionsContainer)) {
-      selectedOptionEndLocation = selectedOptionEndLocation + 20;
-    }
-  }
-
   function getID(option: string) {
     return option.replaceAll(' ', '-').toLowerCase();
   }
-
-  $: displayedSelectedOptions = selectedOptions.slice(0, selectedOptionEndLocation);
 </script>
 
 <div data-testid="optional-selection-list" class="flex w-full">
@@ -169,6 +186,11 @@
             {option}
           </label>
         {/each}
+        {#if currentlyLoadingSelected}
+          <div class="flex justify-center">
+            <ProgressRadial width="w-5" meter="stroke-primary-500" track="stroke-primary-500/30" />
+          </div>
+        {/if}
       </div>
     </section>
   </div>
