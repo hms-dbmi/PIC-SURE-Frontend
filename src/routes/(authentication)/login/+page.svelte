@@ -6,6 +6,16 @@
   import type { AuthData } from '$lib/models/AuthProvider';
   import { branding, features } from '$lib/configuration';
   import { fly } from 'svelte/transition';
+  import { getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
+  import { browser } from '$app/environment';
+  const toast = getToastStore();
+
+  const sessionExpiredToast: ToastSettings = {
+    message: 'Session expired. Please login again.',
+    autohide: true,
+    timeout: 5000,
+    hoverable: false,
+  };
 
   const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
   const siteName = branding?.applicationName;
@@ -17,6 +27,15 @@
   $: selectedProvider = selected
     ? ($page.data?.providers?.find((provider: AuthData) => provider.name === selected) as AuthData)
     : undefined;
+
+  if (browser) {
+    const logoutReason = sessionStorage.getItem('logout-reason');
+    if (logoutReason) {
+      sessionExpiredToast.message = logoutReason;
+      toast.trigger(sessionExpiredToast);
+      sessionStorage.removeItem('logout-reason');
+    }
+  }
 </script>
 
 <section

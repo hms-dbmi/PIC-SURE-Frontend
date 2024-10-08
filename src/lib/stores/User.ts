@@ -1,6 +1,6 @@
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/environment';
-
+import { page } from '$app/stores';
 import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
 import type { User } from '$lib/models/User';
@@ -13,7 +13,7 @@ export const user: Writable<User> = writable(restoreUser());
 
 user.subscribe((user: User) => {
   if (browser) {
-    clearSessionTokenIfExpired();
+    removeExpiredSessionToken();
     const userCopy: User = { ...user };
     // We don't want to save the long term token in local storage
     userCopy.token = undefined;
@@ -23,30 +23,38 @@ user.subscribe((user: User) => {
 
 function restoreUser() {
   if (browser && localStorage.getItem('user')) {
-    clearSessionTokenIfExpired();
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!user || Object.keys(user).length === 0) {
+    if (!removeExpiredSessionToken()) {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!user || Object.keys(user).length === 0) {
+          return {};
+        }
+        console.log('Restored user from local storage: ', user);
+        return user;
+      } catch (error) {
+        console.error('Error reading user from local storage:  ' + error);
         return {};
       }
-      console.log('Restored user from local storage: ', user);
-      return user;
-    } catch (error) {
-      console.error('Error reading user from local storage:  ' + error);
-      return {};
+    } else {
+      if (get(page).url.pathname.includes('/explorer')) {
+        goto('/login');
+        sessionStorage.setItem('logout-reason', 'Session expired. Please login again.');
+      }
     }
+    return {};
   }
-  return {};
 }
 
-function clearSessionTokenIfExpired() {
+function removeExpiredSessionToken() {
   if (browser) {
     const token = localStorage.getItem('token');
     if (token && isTokenExpired(token)) {
       console.log('Clearing expired token from local storage.');
       localStorage.removeItem('token');
+      return false;
     }
   }
+  return true;
 }
 
 export const userRoutes: Readable<Route[]> = derived(user, ($user) => {
