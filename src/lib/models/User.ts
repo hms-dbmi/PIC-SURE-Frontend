@@ -9,7 +9,6 @@ export interface User {
   token?: string;
   acceptedTOS?: boolean;
   readonly queryTemplate?: QueryInterface;
-  readonly oktaIdToken?: string;
 }
 
 export interface ExtendedUser extends User {
@@ -18,6 +17,10 @@ export interface ExtendedUser extends User {
   generalMetadata: string;
   active: boolean;
   roles: string[];
+}
+
+export interface OktaUser extends User {
+  readonly oktaIdToken: string;
 }
 
 // TODO: Replace metadata nad query types
