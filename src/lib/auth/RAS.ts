@@ -101,6 +101,7 @@ class RAS extends AuthProvider implements RasData {
 
     const oktaEncodedRedirect = encodeURIComponent(oktaRedirect);
     const logoutUrl = this.sessionLogoutUri + oktaEncodedRedirect;
+    console.log("logout URL: " + logoutUrl)
     return Promise.resolve(logoutUrl);
   };
 }
