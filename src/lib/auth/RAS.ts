@@ -24,7 +24,6 @@ class RAS extends AuthProvider implements RasData {
   oktaIdToken?: string;
   rasSessionLogoutUri?: string;
 
-
   constructor(data: RasData) {
     super(data);
     this.uri = data.uri;
@@ -65,7 +64,6 @@ class RAS extends AuthProvider implements RasData {
       } else {
         return true;
       }
-
     } catch (error) {
       console.error('Login Error: ', error);
       return true;
@@ -84,9 +82,12 @@ class RAS extends AuthProvider implements RasData {
     }
   };
   logout = (): Promise<string> => {
-    const oktaRedirect = this.rasRedirect +
-      '?id_token_hint' + this.oktaIdToken +
-      '&post_logout_redirect_uri=' + this.getRedirectURI();
+    const oktaRedirect =
+      this.rasRedirect +
+      '?id_token_hint' +
+      this.oktaIdToken +
+      '&post_logout_redirect_uri=' +
+      this.getRedirectURI();
 
     const oktaEncodedRedirect = encodeURIComponent(oktaRedirect);
     const logoutUrl = this.rasSessionLogoutUri + oktaEncodedRedirect;

@@ -83,7 +83,7 @@ export default class AuthProvider implements AuthData {
   login = async (redirectTo: string, type: string): Promise<void> => {
     throw new Error('Method not implemented.');
   };
-  logout = async (): Promise<string|void> => {
+  logout = async (): Promise<string | void> => {
     throw new Error('Method not implemented.');
   };
 }

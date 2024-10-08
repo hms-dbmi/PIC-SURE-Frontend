@@ -143,12 +143,15 @@ export async function logout(authProvider: AuthProvider | undefined) {
 
   // get the auth provider
   if (authProvider) {
-      authProvider.logout().then(redirect => {
+    authProvider
+      .logout()
+      .then((redirect) => {
         user.set({});
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-expect-error
         window.location = redirect;
-      }).catch(error => {
+      })
+      .catch((error) => {
         console.error('Error logging out: ' + error);
         goto('/login');
       });

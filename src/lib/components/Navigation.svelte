@@ -6,6 +6,7 @@
   import type { Route } from '$lib/models/Route';
   import Logo from '$lib/components/Logo.svelte';
   import type AuthProvider from '$lib/models/AuthProvider.ts';
+  import { browser } from '$app/environment';
 
   function setDropdown(path: string) {
     dropdownPath = path;
@@ -38,10 +39,12 @@
   };
 
   $: dropdownPath = '';
-  const providerType = sessionStorage.getItem('type');
   let provider: AuthProvider | undefined = undefined;
-  if (providerType) {
-    provider = $page.data?.providers.find((p: AuthProvider) => p.type === providerType);
+  if (browser && $page) {
+    const providerType = sessionStorage.getItem('type');
+    if (providerType) {
+      provider = $page.data?.providers.find((p: AuthProvider) => p.type === providerType);
+    }
   }
 </script>
 
@@ -122,7 +125,7 @@
             id="user-logout-btn"
             class="btn variant-ringed-primary"
             title="Logout"
-            on:click={logout(provider)}>Logout</button
+            on:click={() => logout(provider)}>Logout</button
           >
         </div>
       {:else}
