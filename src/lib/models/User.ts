@@ -9,6 +9,7 @@ export interface User {
   token?: string;
   acceptedTOS?: boolean;
   readonly queryTemplate?: QueryInterface;
+  readonly oktaIdToken?: string;
 }
 
 export interface ExtendedUser extends User {

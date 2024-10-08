@@ -140,8 +140,15 @@ export async function logout() {
     token && api.get('/psama/logout');
     token && localStorage.removeItem('token');
   }
+
   user.set({});
-  goto('/login');
+  // get the auth provider
+  const type = sessionStorage.getItem('type');
+  if (type) {
+
+  } else {
+    goto('/login');
+  }
 }
 
 export function isTokenExpired(token: string) {

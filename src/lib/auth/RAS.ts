@@ -9,18 +9,31 @@ interface RasData extends AuthData {
   uri: string;
   clientid: string;
   state?: string;
+  idp: string;
+  rasRedirect?: string;
+  oktaIdToken?: string;
+  rasSessionLogoutUri?: string;
 }
 
 class RAS extends AuthProvider implements RasData {
   uri: string;
   clientid: string;
   state: string;
+  idp: string;
+  rasRedirect?: string;
+  oktaIdToken?: string;
+  rasSessionLogoutUri?: string;
+
 
   constructor(data: RasData) {
     super(data);
     this.uri = data.uri;
     this.clientid = data.clientid;
     this.state = data.state ?? this.generateRandomState();
+    this.idp = data.idp;
+    this.rasRedirect = data.rasRedirect;
+    this.oktaIdToken = data.oktaIdToken;
+    this.rasSessionLogoutUri = data.rasSessionLogoutUri;
   }
 
   private generateRandomState() {
@@ -29,26 +42,30 @@ class RAS extends AuthProvider implements RasData {
     return randomPart + timePart;
   }
 
-  //TODO: create real return types
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   authenticate = async (hashParts: string[]): Promise<boolean> => {
     const responseMap = this.getResponseMap(hashParts);
     const code = responseMap.get('code');
-    let state = '';
+    let state = responseMap.get('state') || '';
+
     if (browser) {
       state = sessionStorage.getItem('state') || '';
     }
+
     if (!code || state !== this.state) {
       return true;
     }
+
     try {
-      const newUser: User = await api.post('psama/okta/authentication', { code });
+      const newUser: User = await api.post('psama/authentication/ras', { code });
       if (newUser?.token) {
-        UserLogin(newUser.token);
+        await UserLogin(newUser.token);
+        newUser.oktaIdToken && localStorage.setItem('oktaIdToken', newUser.oktaIdToken);
         return false;
       } else {
         return true;
       }
+
     } catch (error) {
       console.error('Login Error: ', error);
       return true;
@@ -59,13 +76,21 @@ class RAS extends AuthProvider implements RasData {
     let redirectUrl = '/';
     if (browser) {
       redirectUrl = this.getRedirectURI();
+      this.saveState(redirectTo, type, this.idp);
+      const rasClientID = encodeURIComponent(this.clientid);
       window.location.href = encodeURI(
-        `${this.uri}/oauth2/default/v1/authorize?response_type=code&scope=openid&client_id=${this.clientid}&provider=${type}&redirect_uri=${redirectUrl}&state=${this.state}`,
+        `${this.uri}/oauth2/default/v1/authorize?response_type=code&scope=openid&client_id=${rasClientID}&redirect_uri=${redirectUrl}&state=${this.state}`,
       );
     }
   };
   logout = (): Promise<void> => {
-    throw new Error('Method not implemented.');
+    const oktaRedirect = this.rasRedirect +
+      '?id_token_hint' + this.oktaIdToken +
+      '&post_logout_redirect_uri=' + this.getRedirectURI();
+
+    const oktaEncodedRedirect = encodeURIComponent(oktaRedirect);
+    const logoutUrl = this.rasSessionLogoutUri + oktaEncodedRedirect;
+    return Promise.resolve(logoutUrl);
   };
 }
 
