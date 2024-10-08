@@ -83,9 +83,9 @@ class RAS extends AuthProvider implements RasData {
       this.saveState(redirectTo, type, this.idp);
       const rasClientID = encodeURIComponent(this.clientid);
       const rasIdpId = encodeURIComponent(this.oktaidpid);
-      window.location.href = encodeURI(
-        `${this.uri}?response_type=code&scope=openid&client_id=${rasClientID}&idp=${rasIdpId}&redirect_uri=${redirectUrl}&state=${this.state}`,
-      );
+      const loginUrl = `${this.uri}?response_type=code&scope=openid&client_id=${rasClientID}&idp=${rasIdpId}&redirect_uri=${redirectUrl}&state=${this.state}`
+      console.log("login URL: " + loginUrl)
+      window.location.href = loginUrl;
     }
   };
   logout = (): Promise<string> => {
