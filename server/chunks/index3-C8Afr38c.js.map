@@ -1,0 +1,1 @@
+{"version":3,"file":"index3-C8Afr38c.js","sources":["../../../.svelte-kit/adapter-node/chunks/index3.js"],"sourcesContent":["import { B as BROWSER } from \"./prod-ssr.js\";\nconst browser = BROWSER;\nexport {\n  browser as b\n};\n"],"names":[],"mappings":";;AACK,MAAC,OAAO,GAAG;;;;"}
