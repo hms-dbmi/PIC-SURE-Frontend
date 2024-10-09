@@ -102,24 +102,21 @@
     totalPatients !== 0 &&
     hasFilterOrExport;
 
-  $: showExplorerDistributions = !isOpenAccess && 
-    features.explorer.distributionExplorer && 
-    $filters.length !== 0 && 
-    !$filters.every(filter => filter.filterType === 'genomic' || filter.filterType === 'snp');
+  $: showExplorerDistributions =
+    !isOpenAccess &&
+    features.explorer.distributionExplorer &&
+    $filters.length !== 0 &&
+    !$filters.every((filter) => filter.filterType === 'genomic' || filter.filterType === 'snp');
 
-  $: showDiscoverDistributions = isOpenAccess && 
-    features.discoverFeautures.distributionExplorer && 
-    $filters.length !== 0;
+  $: showDiscoverDistributions =
+    isOpenAccess && features.discoverFeautures.distributionExplorer && $filters.length !== 0;
 
-  $: showVariantExplorer = !isOpenAccess && 
-    features.explorer.variantExplorer && 
-    $hasGenomicFilter;
+  $: showVariantExplorer = !isOpenAccess && features.explorer.variantExplorer && $hasGenomicFilter;
 
-  $: showToolSuite = (
+  $: showToolSuite =
     totalPatients !== 0 &&
     ($filters.length !== 0 || $exports.length !== 0) &&
-    (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer)
-  );
+    (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer);
 
   onMount(async () => {
     unsubFilters = filters.subscribe(() => {
