@@ -29,6 +29,7 @@
       failed = true;
     }
     if (!provider || failed) {
+      console.error('Provider not found');
       goto('/login/error');
     }
     const providerInstance = await createInstance(provider);
