@@ -54,9 +54,6 @@ class RAS extends AuthProvider implements RasData {
     const responseState = responseMap.get('state') || '';
     const localState = this.state;
 
-    console.log('code: ', code);
-    console.log('localState: ', localState);
-    console.log('responseState: ', responseState);
     if (!code || localState !== localState) {
       return true;
     }
