@@ -58,7 +58,14 @@ class RAS extends AuthProvider implements RasData {
     const localState = this.state;
 
     if (!code || localState !== responseState) {
-      console.debug('RAS authentication failed code: ', code, ' state: ', responseState, ' localState: ', localState);
+      console.debug(
+        'RAS authentication failed code: ',
+        code,
+        ' state: ',
+        responseState,
+        ' localState: ',
+        localState,
+      );
       return true;
     }
 
@@ -89,6 +96,8 @@ class RAS extends AuthProvider implements RasData {
     }
   };
   logout = (): Promise<string> => {
+    localStorage.removeItem('state');
+
     const redirect = encodeURI(
       `${window.location.protocol}//${window.location.hostname}${
         window.location.port ? ':' + window.location.port : ''
