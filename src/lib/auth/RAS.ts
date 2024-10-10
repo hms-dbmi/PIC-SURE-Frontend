@@ -10,31 +10,29 @@ interface RasData extends AuthData {
   clientid: string;
   state?: string;
   idp: string;
-  oktalogoutredirect: string;
-  sessionlogouturi: string;
   oktaidpid: string;
+  oktalogouturl: string;
 }
 
 class RAS extends AuthProvider implements RasData {
   uri: string;
   clientid: string;
   state: string;
-  idp: string;
-  oktalogoutredirect: string;
-  sessionlogouturi: string;
   oktaidpid: string;
+  oktalogouturl: string;
+  idp: string;
 
   constructor(data: RasData) {
     super(data);
     this.state = 'ras-' + this.generateRandomState();
+    console.log('RAS constructor called with data: ', data);
 
     if (
       data.uri === undefined ||
       data.clientid === undefined ||
       data.oktaidpid === undefined ||
-      data.idp === undefined ||
-      data.oktalogoutredirect === undefined ||
-      data.sessionlogouturi === undefined
+      data.logouturl === undefined ||
+      data.oktalogouturl === undefined
     ) {
       throw new Error('Missing required RAS parameter(s).');
     }
@@ -43,8 +41,7 @@ class RAS extends AuthProvider implements RasData {
     this.clientid = data.clientid;
     this.oktaidpid = data.oktaidpid;
     this.idp = data.idp;
-    this.oktalogoutredirect = data.oktalogoutredirect;
-    this.sessionlogouturi = data.sessionlogouturi;
+    this.oktalogouturl = data.oktalogouturl;
   }
 
   private generateRandomState() {
@@ -99,14 +96,14 @@ class RAS extends AuthProvider implements RasData {
 
     const oktaIdToken = localStorage.getItem('oktaIdToken');
     const oktaRedirect =
-      this.oktalogoutredirect +
+      this.oktalogouturl +
       '?id_token_hint=' +
       oktaIdToken +
       '&post_logout_redirect_uri=' +
       redirect;
 
     const oktaEncodedRedirect = encodeURIComponent(oktaRedirect);
-    const logoutUrl = this.sessionLogoutURI + oktaEncodedRedirect;
+    const logoutUrl = this.logouturl + oktaEncodedRedirect;
     return Promise.resolve(logoutUrl);
   };
 }

@@ -11,6 +11,7 @@ export interface AuthData extends Indexable {
   alt: boolean;
   imageSrc?: string;
   imageAlt?: string;
+  logouturl?: string;
 }
 
 export default class AuthProvider implements AuthData {
@@ -25,7 +26,6 @@ export default class AuthProvider implements AuthData {
   alt: boolean;
   imageSrc?: string | undefined;
   imageAlt?: string | undefined;
-  sessionLogoutURI?: string | undefined;
 
   constructor(data: AuthData) {
     this.name = data.name;
@@ -36,7 +36,7 @@ export default class AuthProvider implements AuthData {
     this.alt = data.alt || false;
     this.imageSrc = data.imagesrc;
     this.imageAlt = data.imagealt;
-    this.sessionLogoutURI = data.sessionlogouturi;
+    this.logouturl = data.logouturl;
   }
 
   protected getRedirectURI(): string {
