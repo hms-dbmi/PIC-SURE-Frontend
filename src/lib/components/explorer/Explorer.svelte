@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { DataHandler, type State } from '@vincjo/datatables/remote';
-  import type { Unsubscriber } from 'svelte/store';
+  import { type Unsubscriber, writable } from 'svelte/store';
 
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
@@ -19,6 +19,8 @@
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
   /* eslint-disable @typescript-eslint/no-explicit-any */
   export let tourConfig: any;
+
+  const isLoading = writable(false);
 
   let { searchTerm, search, selectedFacets, error } = SearchStore;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
@@ -39,9 +41,15 @@
   };
 
   const handler = new DataHandler([] as SearchResult[], { rowsPerPage: 10 });
-  handler.onChange((state: State) => {
+  handler.onChange(async (state: State) => {
     doDisableTour();
-    return search($searchTerm, $selectedFacets, state);
+    isLoading.set(true);
+    try {
+      const results = await search($searchTerm, $selectedFacets, state);
+      return results;
+    } finally {
+      isLoading.set(false);
+    }
   });
 
   let unsubSelectedFacets: Unsubscriber;
@@ -49,6 +57,7 @@
 
   onMount(() => {
     unsubSelectedFacets = selectedFacets.subscribe(() => {
+      handler.setPage(1);
       handler.invalidate();
     });
 
@@ -126,7 +135,7 @@
         <p>{$error}</p>
       </ErrorAlert>
     {:else if $searchTerm || $selectedFacets.length > 0}
-      <SearchDatatable {tableName} {handler} {columns} {cellOverides} />
+      <SearchDatatable {tableName} {handler} {columns} {cellOverides} {isLoading} />
     {/if}
     {#if features.explorer.enableTour && tourEnabled}
       <div id="explorer-tour" class="text-center mt-4">
