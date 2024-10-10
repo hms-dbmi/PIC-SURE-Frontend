@@ -137,7 +137,7 @@ export async function login(token: string) {
 export async function logout(authProvider: AuthProvider | undefined) {
   if (browser) {
     const token = localStorage.getItem('token');
-    token && (await api.get('/psama/logout'));
+    token && api.get('/psama/logout');
     token && localStorage.removeItem('token');
   }
 

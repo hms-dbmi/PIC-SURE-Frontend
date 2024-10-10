@@ -10,10 +10,9 @@ interface RasData extends AuthData {
   clientid: string;
   state?: string;
   idp: string;
-  oktalogoutredirect?: string;
-  oktaidtoken?: string;
-  sessionlogouturi?: string;
-  oktaidpid?: string;
+  oktalogoutredirect: string;
+  sessionlogouturi: string;
+  oktaidpid: string;
 }
 
 class RAS extends AuthProvider implements RasData {
@@ -21,23 +20,30 @@ class RAS extends AuthProvider implements RasData {
   clientid: string;
   state: string;
   idp: string;
-  oktalogoutredirect?: string;
-  oktaidioken?: string;
-  sessionlogouturi?: string;
+  oktalogoutredirect: string;
+  sessionlogouturi: string;
   oktaidpid: string;
 
   constructor(data: RasData) {
     super(data);
+    this.state = 'ras-' + this.generateRandomState();
+
+    if (
+      data.uri === undefined ||
+      data.clientid === undefined ||
+      data.oktaidpid === undefined ||
+      data.idp === undefined ||
+      data.oktalogoutredirect === undefined ||
+      data.sessionlogouturi === undefined
+    ) {
+      throw new Error('Missing required RAS parameter(s).');
+    }
+
     this.uri = data.uri;
     this.clientid = data.clientid;
-    if (data.oktaidpid === undefined) {
-      throw new Error('OKTA IDP Id is required for RAS');
-    }
     this.oktaidpid = data.oktaidpid;
-    this.state = 'ras-' + this.generateRandomState();
     this.idp = data.idp;
     this.oktalogoutredirect = data.oktalogoutredirect;
-    this.oktaidioken = data.oktaidioken;
     this.sessionlogouturi = data.sessionlogouturi;
   }
 
