@@ -24,8 +24,8 @@ class RAS extends AuthProvider implements RasData {
 
   constructor(data: RasData) {
     super(data);
-    this.state = 'ras-' + this.generateRandomState();
-    console.log('RAS constructor called with data: ', data);
+    this.state = localStorage.getItem('state') || 'ras-' + this.generateRandomState();
+    localStorage.setItem('state', this.state);
 
     if (
       data.uri === undefined ||
