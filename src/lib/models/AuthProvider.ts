@@ -25,6 +25,7 @@ export default class AuthProvider implements AuthData {
   alt: boolean;
   imageSrc?: string | undefined;
   imageAlt?: string | undefined;
+  sessionLogoutURI?: string | undefined;
 
   constructor(data: AuthData) {
     this.name = data.name;
@@ -35,6 +36,7 @@ export default class AuthProvider implements AuthData {
     this.alt = data.alt || false;
     this.imageSrc = data.imagesrc;
     this.imageAlt = data.imagealt;
+    this.sessionLogoutURI = data.sessionlogouturi;
   }
 
   protected getRedirectURI(): string {
@@ -83,7 +85,7 @@ export default class AuthProvider implements AuthData {
   login = async (redirectTo: string, type: string): Promise<void> => {
     throw new Error('Method not implemented.');
   };
-  logout = async (): Promise<void> => {
+  logout = async (): Promise<string | void> => {
     throw new Error('Method not implemented.');
   };
 }

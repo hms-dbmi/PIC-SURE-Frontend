@@ -36,7 +36,7 @@
     if ($page.url.search.startsWith('?')) {
       hashParts = $page.url.search.substring(1).split('&') || [];
     }
-    console.log('hashParts', hashParts);
+
     failed = await providerInstance.authenticate(hashParts);
 
     let filtersJson = sessionStorage.getItem('filters');

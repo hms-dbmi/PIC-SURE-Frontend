@@ -29,7 +29,7 @@
   on:click={() => login(redirectTo, provider.type)}
 >
   {#if imageSrc}
-    <img src={imageSrc} alt={provider.imageAlt} class="h-8 mr-2" />
+    <img src={imageSrc} alt={provider.imageAlt} class="mr-2" style="height: 2em" />
   {/if}
   {buttonText}
 </button>
