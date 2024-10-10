@@ -11,6 +11,7 @@ export interface AuthData extends Indexable {
   alt: boolean;
   imageSrc?: string;
   imageAlt?: string;
+  logouturl?: string;
 }
 
 export default class AuthProvider implements AuthData {
@@ -35,6 +36,7 @@ export default class AuthProvider implements AuthData {
     this.alt = data.alt || false;
     this.imageSrc = data.imagesrc;
     this.imageAlt = data.imagealt;
+    this.logouturl = data.logouturl;
   }
 
   protected getRedirectURI(): string {
@@ -83,7 +85,7 @@ export default class AuthProvider implements AuthData {
   login = async (redirectTo: string, type: string): Promise<void> => {
     throw new Error('Method not implemented.');
   };
-  logout = async (): Promise<void> => {
+  logout = async (): Promise<string | void> => {
     throw new Error('Method not implemented.');
   };
 }
