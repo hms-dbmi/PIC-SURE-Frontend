@@ -1,0 +1,60 @@
+name: Sync Release with Main
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  update-release-branch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git
+        run: |
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+
+      - name: Fetch all branches
+        run: git fetch --all
+
+      - name: Check for differences between main and release
+        id: diff-check
+        run: |
+          git checkout release
+          git fetch origin main
+          if git diff --quiet origin/main; then
+            echo "No differences, safe to proceed."
+            echo "diff_found=false" >> $GITHUB_OUTPUT
+          else
+            echo "::error::Differences found between release and main!"
+            echo "diff_found=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Reset release branch to main
+        if: steps.diff-check.outputs.diff_found == 'false'
+        run: |
+          git reset --hard origin/main
+
+      - name: Force push release branch
+        if: steps.diff-check.outputs.diff_found == 'false'
+        run: git push origin release --force
+
+      - name: Notify via GitHub Issue if differences found
+        if: steps.diff-check.outputs.diff_found == 'true'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Sync Failure: Differences found between main and release',
+              body: 'There are differences between `main` and `release` branches that prevented synchronization. Please review the branches and resolve manually.'
+            });
