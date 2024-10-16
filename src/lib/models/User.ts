@@ -19,6 +19,10 @@ export interface ExtendedUser extends User {
   roles: string[];
 }
 
+export interface OktaUser extends User {
+  readonly oktaIdToken: string;
+}
+
 // TODO: Replace metadata nad query types
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function mapExtendedUser(data: any) {

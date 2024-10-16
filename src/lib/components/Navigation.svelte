@@ -5,7 +5,13 @@
   import { user, userRoutes, logout } from '$lib/stores/User';
   import type { Route } from '$lib/models/Route';
   import Logo from '$lib/components/Logo.svelte';
-
+  import type AuthData from '$lib/models/AuthProvider.ts';
+  import type AuthProvider from '$lib/models/AuthProvider.ts';
+  import { browser } from '$app/environment';
+  import { createInstance } from '$lib/AuthProviderRegistry.ts';
+  import { onMount } from 'svelte';
+  let providerData: AuthData;
+  let providerInstance: AuthProvider | undefined = undefined;
   function setDropdown(path: string) {
     dropdownPath = path;
   }
@@ -35,6 +41,16 @@
     }
     return $page.url.pathname.includes(route.path) ? 'page' : undefined;
   };
+
+  onMount(async () => {
+    if (browser && $page) {
+      const providerType = sessionStorage.getItem('type');
+      if (providerType) {
+        providerData = $page.data?.providers.find((p: AuthProvider) => p.type === providerType);
+        providerInstance = await createInstance(providerData);
+      }
+    }
+  });
 
   $: dropdownPath = '';
 </script>
@@ -116,7 +132,7 @@
             id="user-logout-btn"
             class="btn variant-ringed-primary"
             title="Logout"
-            on:click={logout}>Logout</button
+            on:click={() => logout(providerInstance)}>Logout</button
           >
         </div>
       {:else}
