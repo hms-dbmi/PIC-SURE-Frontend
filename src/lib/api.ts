@@ -75,8 +75,8 @@ async function handleResponse(res: Response) {
       return text; //TODO: Change this
     }
   } else if (res.status === 401) {
-    logout();
-    throw error(401, 'Unauthorized');
+    logout(undefined, true);
+    return;
   }
 
   throw error(res.status as NumericRange<400, 599>, await res.text());

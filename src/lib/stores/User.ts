@@ -8,6 +8,10 @@ import { routes, features, resources } from '$lib/configuration';
 import { goto } from '$app/navigation';
 import type { QueryInterface } from '$lib/models/query/Query';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
+import { page } from '$app/stores';
+import { getToastStore } from '@skeletonlabs/skeleton';
+
+let toastStore = getToastStore();
 
 export const user: Writable<User> = writable(restoreUser());
 
@@ -134,7 +138,7 @@ export async function login(token: string) {
   }
 }
 
-export async function logout(authProvider: AuthProvider | undefined) {
+export async function logout(authProvider?: AuthProvider, redirect = false) {
   if (browser) {
     const token = localStorage.getItem('token');
     token && api.get('/psama/logout');
@@ -161,7 +165,15 @@ export async function logout(authProvider: AuthProvider | undefined) {
       });
   } else {
     user.set({});
-    goto('/login');
+    if (redirect) {
+      toastStore.trigger({
+        message: 'Your session has timed out. Please log in.',
+        background: 'variant-filled-error',
+      });
+      goto(`/login?redirectTo=${encodeURIComponent(get(page).url.pathname)}`);
+    } else {
+      goto('/login')
+    }
   }
 }
 
