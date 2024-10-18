@@ -6,11 +6,25 @@
   import type { AuthData } from '$lib/models/AuthProvider';
   import { branding, features } from '$lib/configuration';
   import { fly } from 'svelte/transition';
-
+  import { browser } from '$app/environment';
+  import { getToastStore } from '@skeletonlabs/skeleton';
+  const toastStore = getToastStore();
   const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
   const siteName = branding?.applicationName;
   const description = branding?.login.description;
   const openPicsureLinkText = branding?.login.openPicsureLinkText;
+  let logoutReason: string | null;
+
+  if (browser) {
+    logoutReason = sessionStorage.getItem('logout-reason');
+    if (logoutReason) {
+      sessionStorage.removeItem('logout-reason');
+      toastStore.trigger({
+        message: logoutReason,
+        background: 'variant-filled-error',
+      });
+    }
+  }
 
   let selected: string;
 
