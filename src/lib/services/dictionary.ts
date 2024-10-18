@@ -49,16 +49,6 @@ export function searchDictionary(
   );
 }
 
-export async function getAllFacets(): Promise<DictionaryFacetResult[]> {
-  let request: DictionarySearchRequest = { facets: [], search: '' };
-  if (!get(page).url.pathname.includes('/discover')) {
-    request = addConsents(request);
-  }
-  const response: DictionaryFacetResult[] = await api.post(`${dictionaryUrl}facets/`, request);
-  initializeHiddenFacets(response);
-  return response;
-}
-
 function initializeHiddenFacets(response: DictionaryFacetResult[]) {
   // facets that have a count of zero should never be shown in the UI
   // this happens because of consent filters
@@ -87,11 +77,17 @@ export async function updateFacetsFromSearch(
     request = addConsents(request);
   }
 
-  const response: DictionaryFacetResult[] = await api.post(`${dictionaryUrl}facets/`, request);
-  if (facets.length === 0 && search.length === 0) {
-    initializeHiddenFacets(response);
+  try {
+    const response: DictionaryFacetResult[] = await api.post(`${dictionaryUrl}facets/`, request);
+    if (facets.length === 0 && search.length === 0) {
+      initializeHiddenFacets(response);
+    }
+    return response;
+  } catch (error) {
+    console.error('Failed to update facets from search:', error);
+    // You might want to throw the error or return a default value depending on your use case
+    return [];
   }
-  return response;
 }
 
 export async function getConceptDetails(

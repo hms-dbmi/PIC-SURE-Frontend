@@ -138,8 +138,12 @@ export async function login(token: string) {
 export async function logout(authProvider?: AuthProvider, redirect = false) {
   if (browser) {
     const token = localStorage.getItem('token');
-    token && api.get('/psama/logout');
-    token && localStorage.removeItem('token');
+    if (token) {
+      api.get('/psama/logout').catch((error) => {
+        console.error('Error logging out: ' + error);
+      });
+      localStorage.removeItem('token');
+    }
   }
 
   // get the auth provider
