@@ -75,6 +75,8 @@ async function handleResponse(res: Response) {
       return text; //TODO: Change this
     }
   } else if (res.status === 401) {
+    browser &&
+      sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
     logout(undefined, true);
     return;
   }
