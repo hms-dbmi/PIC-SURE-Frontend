@@ -322,7 +322,8 @@
                         language="python"
                         lineNumbers={true}
                         buttonCopied="Copied!"
-                        code={codeBlocks?.bdcPythonExport || 'Code not set'}
+                        code={codeBlocks?.bdcPythonExport?.replace('{{queryId}}', datasetId) ||
+                          'Code not set'}
                       ></CodeBlock>
                     {:else if tabSet === 1}
                       <CodeBlock
