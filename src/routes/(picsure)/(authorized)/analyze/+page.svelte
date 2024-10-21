@@ -3,6 +3,7 @@
   import UserToken from '$lib/components/UserToken.svelte';
   import { branding } from '$lib/configuration';
   import { CodeBlock, Tab, TabGroup } from '@skeletonlabs/skeleton';
+  import codeBlocks from '$lib/assets/codeBlocks.json';
 
   let tabSet: number = 0;
 </script>
@@ -53,42 +54,10 @@
             language="python"
             lineNumbers={true}
             buttonCopied="Copied!"
-            code={`# Requires python 3.6 or later
-import sys
-import pandas as pd
-import matplotlib.pyplot as plt
-# BDC Powered by Terra users uncomment the following line to specify package install location
-# sys.path.insert(0, r"/home/jupyter/.local/lib/python3.7/site-packages")
-!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-client.git
-!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-adapter-hpds.git
-!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-biodatacatalyst-python-adapter-hpds.git
-import PicSureClient
-import PicSureBdcAdapter
-# Set up connection to PIC-SURE API
-PICSURE_network_URL = "https://picsure.biodatacatalyst.nhlbi.nih.gov/picsure"
-token_file = "token.txt"
-
-with open(token_file, "r") as f:
-    my_token = f.read()
-
-bdc = PicSureBdcAdapter.Adapter(PICSURE_network_URL, my_token)`}
+            code={codeBlocks?.bdcPythonAPI || 'Code not set'}
           ></CodeBlock>
         {:else if tabSet === 1}
-          <CodeBlock
-            language="r"
-            lineNumbers={true}
-            code={`# Requires R 3.4 or later
-### Uncomment this code if you are not using the PIC-SURE environment in *BDC-Seven Bridges*, or if you do not have all the necessary dependencies installed.
-#install.packages("devtools")
-Sys.setenv(TAR = "/bin/tar")
-options(unzip = "internal")
-devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", ref="main", force=T, quiet=FALSE)
-library(dplyr)
-PICSURE_network_URL = "https://picsure.biodatacatalyst.nhlbi.nih.gov/picsure"
-token_file <- "token.txt"
-token <- scan(token_file, what = "character")
-session <- picsure::bdc.initializeSession(PICSURE_network_URL, token)
-session <- picsure::bdc.setResource(session = session,  resourceName = "AUTH")`}
+          <CodeBlock language="r" lineNumbers={true} code={codeBlocks?.bdcRAPI || 'Code not set'}
           ></CodeBlock>
         {/if}
       </svelte:fragment>
