@@ -3,30 +3,30 @@
   import '../app.postcss';
   import { initializeStores } from '@skeletonlabs/skeleton';
   import { initializeBranding } from '$lib/configuration';
+  import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
   import { settings } from '$lib/configuration';
-  import GoogleAnalytics from '$lib/components/tracking/GoogleAnalytics.svelte';
-  import GoogleConsents from '$lib/components/tracking/GoogleConsents.svelte';
-  import GoogleTagManger from '$lib/components/tracking/GoogleTagManger.svelte';
-  let googleTagManagerId = settings.google.tagManager;
+
+  let googleTag = settings.google.tagManager;
 
   initializeStores();
   initializeBranding();
 </script>
 
-<main class="w-full h-full">
-  <!-- Google Tag Manager (noscript) -->
+<!-- Google Tag Manager (noscript) -->
+{#if googleTag}
   <noscript>
     <iframe
-      title="googleTagManager"
-      src="https://www.googletagmanager.com/ns.html?id={googleTagManagerId}"
+      src="https://www.googletagmanager.com/ns.html?id={googleTag}"
+      title="googleTagManger"
       height="0"
       width="0"
       style="display:none;visibility:hidden"
     ></iframe>
   </noscript>
   <!-- End Google Tag Manager (noscript) -->
+{/if}
+
+<main class="w-full h-full">
   <slot />
-  <GoogleConsents />
+  <GoogleTracking />
 </main>
-<GoogleAnalytics />
-<GoogleTagManger />
