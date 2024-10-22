@@ -4,6 +4,7 @@
   import { onMount } from 'svelte';
   import Footer from '$lib/components/Footer.svelte';
   import Dots from '$lib/components/Dots.svelte';
+  import { Toast } from '@skeletonlabs/skeleton';
 
   onMount(() => {
     if ($user && $user.token) {
@@ -12,6 +13,7 @@
   });
 </script>
 
+<Toast position="t" />
 <div class="w-full full-height">
   <Dots class="top-dots" />
   <slot />
