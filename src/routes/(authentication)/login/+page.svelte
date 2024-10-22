@@ -20,11 +20,13 @@
     if (browser) {
       logoutReason = sessionStorage.getItem('logout-reason');
       if (logoutReason) {
-        sessionStorage.removeItem('logout-reason');
-        toastStore.trigger({
-          message: logoutReason,
-          background: 'variant-filled-error',
-        });
+        setTimeout(() => {
+          toastStore.trigger({
+            message: logoutReason!,
+            background: 'variant-filled-error',
+          });
+          sessionStorage.removeItem('logout-reason');
+        }, 1000);
       }
     }
   });
