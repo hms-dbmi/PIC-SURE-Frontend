@@ -132,7 +132,7 @@
             id="user-logout-btn"
             class="btn variant-ringed-primary"
             title="Logout"
-            on:click={() => logout(providerInstance)}>Logout</button
+            on:click={() => logout(providerInstance, false)}>Logout</button
           >
         </div>
       {:else}
