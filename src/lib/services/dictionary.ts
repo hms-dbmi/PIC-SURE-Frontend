@@ -85,7 +85,6 @@ export async function updateFacetsFromSearch(
     return response;
   } catch (error) {
     console.error('Failed to update facets from search:', error);
-    // You might want to throw the error or return a default value depending on your use case
     throw error;
   }
 }
