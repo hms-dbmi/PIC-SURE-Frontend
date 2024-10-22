@@ -156,7 +156,7 @@ unauthedTest.describe('Login page', () => {
         expect(parsedGoogleConsent).toHaveProperty('ad_storage', 'denied');
         expect(parsedGoogleConsent).toHaveProperty('analytics_storage', 'granted');
         expect(parsedGoogleConsent).toHaveProperty('personalization_storage', 'granted');
-        expect(parsedGoogleConsent).toHaveProperty('security_storage', 'granted');
+        expect(parsedGoogleConsent).toHaveProperty('ad_user_data', 'denied');
         expect(parsedGoogleConsent).toHaveProperty('ad_personalization', 'denied');
         expect(parsedGoogleConsent).toHaveProperty('ad_data', 'denied');
       }
@@ -179,7 +179,7 @@ unauthedTest.describe('Login page', () => {
       expect(parsedGoogleConsent).toHaveProperty('ad_storage', 'denied');
       expect(parsedGoogleConsent).toHaveProperty('analytics_storage', 'denied');
       expect(parsedGoogleConsent).toHaveProperty('personalization_storage', 'denied');
-      expect(parsedGoogleConsent).toHaveProperty('security_storage', 'denied');
+      expect(parsedGoogleConsent).toHaveProperty('ad_user_data', 'denied');
       expect(parsedGoogleConsent).toHaveProperty('ad_personalization', 'denied');
       expect(parsedGoogleConsent).toHaveProperty('ad_data', 'denied');
     }

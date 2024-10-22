@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { branding } from '$lib/configuration';
+  import { branding, features } from '$lib/configuration';
 
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
@@ -30,7 +30,11 @@
   import { addFilter, getFiltersByType } from '$lib/stores/Filter';
 
   let edit = $page.url.searchParams.get('edit') || '';
-  let selectedOption: Option = ['snp', 'genomic'].includes(edit) ? (edit as Option) : Option.None;
+  let selectedOption: Option = (() => {
+    if (features.enableGENEQuery && !features.enableSNPQuery) return Option.Genomic;
+    if (!features.enableGENEQuery && features.enableSNPQuery) return Option.SNP;
+    return ['snp', 'genomic'].includes(edit) ? (edit as Option) : Option.None;
+  })();
 
   function clearFilters() {
     clearGeneFilters();
@@ -80,10 +84,10 @@
   backTitle="Back to Explore"
   transition={true}
 >
-  {#if selectedOption === Option.None}
+  {#if features.enableGENEQuery && features.enableSNPQuery}
     <FilterType class="my-4" on:select={onSelectFilterType} active={selectedOption} />
-  {:else}
-    <FilterType class="my-4" on:select={onSelectFilterType} active={selectedOption} />
+  {/if}
+  {#if selectedOption !== Option.None}
     {#if selectedOption === Option.Genomic}
       <GeneSearch class="mb-0 mt-6" />
     {:else}

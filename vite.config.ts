@@ -5,5 +5,10 @@ import { defineConfig } from 'vite';
 export default () => {
   return defineConfig({
     plugins: [sveltekit(), purgeCss()],
+    build: {
+      rollupOptions: {
+        maxParallelFileOps: 10,
+      },
+    },
   });
 };

@@ -12,9 +12,12 @@
   import RowsPerPage from '$lib/components/datatable/accessories/Rows.svelte';
   import RowCount from '$lib/components/datatable/accessories/Count.svelte';
   import Pagination from '$lib/components/datatable/accessories/Pagination.svelte';
+  import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import type { Writable } from 'svelte/store';
 
   export let tableName: string = 'ExplorerTable';
   export let handler: DataHandler;
+  export let isLoading: Writable<boolean>;
   export let searchable = false;
   export let title = '';
   export let fullWidth: boolean = false;
@@ -87,7 +90,15 @@
       </tr>
     </thead>
     <tbody>
-      {#if $rows.length > 0}
+      {#if $isLoading}
+        <tr>
+          <td colspan={columns.length} class="text-center py-8">
+            <div class="flex justify-center items-center">
+              <ProgressRadial width="w-12" />
+            </div>
+          </td>
+        </tr>
+      {:else if $rows.length > 0}
         {#each $rows as row, i}
           <ExpandableRow {tableName} {cellOverides} {columns} index={i} {row} {rowClickHandler} />
         {/each}
