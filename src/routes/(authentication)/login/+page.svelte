@@ -16,7 +16,6 @@
   const openPicsureLinkText = branding?.login.openPicsureLinkText;
   let logoutReason: string | null;
 
-
   onMount(() => {
     if (browser) {
       logoutReason = sessionStorage.getItem('logout-reason');
