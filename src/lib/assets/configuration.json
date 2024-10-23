@@ -73,7 +73,9 @@
     "tourSearchIntro": "PIC-SURE Search allows you to search for variable level data.",
     "totalPatientsText": "Filtered Participants",
     "queryErrorText": "There was an error with your query. If this persists, please contact you PIC-SURE admin.",
-    "filterErrorText": "There was an error when adding the filter to the query. Please remove your most recent filter and try again. If this error persists, please contact us by filling out the form at <a class=\"anchor\" href=\"https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5\" target=\"_blank\" class=\"underline\">Avillach Lab Software Requests</a>. We will respond to your request as soon as we can."
+    "filterErrorText": "There was an error when adding the filter to the query. Please remove your most recent filter and try again. If this error persists, please contact us by filling out the form at <a class=\"anchor\" href=\"https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5\" target=\"_blank\" class=\"underline\">Avillach Lab Software Requests</a>. We will respond to your request as soon as we can.",
+    "confirmDownloadTitle": "Are you sure you want to download data?",
+    "confirmDownloadMessage": "This action will download the data to your local machine. Are you sure you want to proceed?"
   },
   "landing": {
     "searchPlaceholder": "Search terms or variables of interest…",

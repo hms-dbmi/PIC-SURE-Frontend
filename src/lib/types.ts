@@ -45,6 +45,8 @@ export interface ExplorePageConfig {
   totalPatientsText: string;
   queryErrorText: string;
   filterErrorText: string;
+  confirmDownloadTitle: string;
+  confirmDownloadMessage: string;
 }
 
 export interface LandingConfig {
