@@ -34,15 +34,17 @@
     let facetsToDisplay = facets.filter((f) => !hiddenFacetsForCategory.includes(f.name));
 
     //Put selected facets at the top
-    $selectedFacets.forEach((facet) => {
-      let index = facetsToDisplay.findIndex((f) => f.name === facet.name);
-      if (index > -1) {
-        facetsToDisplay.splice(index, 1);
-      }
-    });
-    facetsToDisplay.unshift(
-      ...$selectedFacets.filter((facet) => facet.category === facetCategory.name),
+    const selectedFacetsMap = new Map($selectedFacets.map((facet) => [facet.name, facet]));
+    facetsToDisplay = facetsToDisplay.filter((f) => !selectedFacetsMap.has(f.name));
+
+    const selectedFacetsForCategory = $selectedFacets.filter(
+      (facet) => facet.category === facetCategory.name,
     );
+    selectedFacetsForCategory.forEach((facet) => {
+      facet.count = facets.find((f) => f.name === facet.name)?.count || 0;
+    });
+
+    facetsToDisplay.unshift(...selectedFacetsForCategory);
     if (textFilterValue) {
       //Filter Facets by searched text
       const lowerFilterValue = textFilterValue.toLowerCase();
