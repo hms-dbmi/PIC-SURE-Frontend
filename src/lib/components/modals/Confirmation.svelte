@@ -5,7 +5,7 @@
   const modalStore = getModalStore();
 
   export let message: string;
-  export let onCancel: () => void;
+  export let onCancel: () => void = () => modalStore.close();
   export let onConfirm: () => void;
   export let cancelText: string = 'Cancel';
   export let confirmText: string = 'Accept';
