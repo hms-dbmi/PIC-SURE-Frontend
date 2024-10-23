@@ -6,7 +6,7 @@
   import { branding } from '$lib/configuration';
   import { user } from '$lib/stores/User';
 
-  import TermsModal from '$lib/components/TermsModal.svelte';
+  import TermsModal from '$lib/components/modals/TermsModal.svelte';
   export let showSitemap: boolean = branding?.footer?.showSitemap || false;
 
   $: hideSitemap =
