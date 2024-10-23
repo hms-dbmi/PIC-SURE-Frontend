@@ -7,11 +7,11 @@
   import { page } from '$app/stores';
   import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
   import Footer from '$lib/components/Footer.svelte';
-  import ModalWrapper from '$lib/components/ModalWrapper.svelte';
+  import ModalWrapper from '$lib/components/modals/ModalWrapper.svelte';
   import { getModalStore } from '@skeletonlabs/skeleton';
   import { beforeNavigate } from '$app/navigation';
   import { hasInvalidFilter, hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
-  import FilterWarning from '$lib/components/FilterWarning.svelte';
+  import FilterWarning from '$lib/components/modals/FilterWarning.svelte';
 
   const modalStore = getModalStore();
 

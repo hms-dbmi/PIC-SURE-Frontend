@@ -135,6 +135,7 @@ export const features: Indexable = {
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
   },
   dashboard: import.meta.env?.VITE_DASHBOARD === 'true',
+  confirmDownload: import.meta.env?.VITE_CONFIRM_DOWNLOAD === 'true',
 };
 
 export const settings: Indexable = {
@@ -152,6 +153,7 @@ export const settings: Indexable = {
     analytics: import.meta.env?.VITE_GOOGLE_ANALYTICS_ID || '',
     tagManager: import.meta.env?.VITE_GOOGLE_TAG_MANAGER_ID || '',
   },
+  maxDataPointsForExport: parseInt(import.meta.env?.VITE_MAX_DATA_POINTS_FOR_EXPORT || 1000000),
 };
 
 export const resources = {
