@@ -21,10 +21,14 @@
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import type { ExpectedResultType } from '$lib/models/query/Query.ts';
   import codeBlocks from '$lib/assets/codeBlocks.json';
-
+  import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+  import Confirmation from '$lib/components/modals/Confirmation.svelte';
+  import { branding, features, settings } from '$lib/configuration';
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
   export let rows: ExportRowInterface[] = [];
+
+  const modalStore = getModalStore();
   let statusPromise: Promise<string>;
   let preparePromise: Promise<void>;
   let datasetNameInput: string = '';
@@ -40,8 +44,34 @@
     { dataElement: 'type', label: 'Type', sort: true },
   ];
 
-  // todo: make configurable
-  const MAX_DATA_POINTS_FOR_EXPORT = 1000000;
+  const MAX_DATA_POINTS_FOR_EXPORT = settings.maxDataPointsForExport || 1000000;
+
+  function openConfirmationModal() {
+    const onConfirm = async () => {
+      await download();
+      modalStore.close();
+    };
+    const onCancel = () => {
+      modalStore.close();
+    };
+    const modal: ModalSettings = {
+      type: 'component',
+      title: branding.explorePage.confirmDownloadTitle || 'Are you sure you want to download data?',
+      component: 'modalWrapper',
+      modalClasses: 'bg-surface-100-800-token p-4 block',
+      meta: {
+        component: Confirmation,
+        message: branding.explorePage.confirmDownloadMessage,
+        onConfirm,
+        onCancel,
+        confirmText: 'Download',
+      },
+      response: (r: string) => {
+        console.log(r);
+      },
+    };
+    modalStore.trigger(modal);
+  }
 
   async function download(): Promise<void> {
     try {
@@ -333,7 +363,10 @@
                       ></CodeBlock>
                     {:else if tabSet === 2}
                       <div>
-                        <button class="btn variant-filled-primary" on:click={() => download()}
+                        <button
+                          class="btn variant-filled-primary"
+                          on:click={() =>
+                            features.confirmDownload ? openConfirmationModal() : download()}
                           ><i class="fa-solid fa-download mr-1"></i>Download as CSV</button
                         >
                       </div>
@@ -402,7 +435,8 @@
                   <div>
                     <button
                       class="flex-initial w-64 btn variant-filled-primary"
-                      on:click={() => download()}
+                      on:click={() =>
+                        features.confirmDownload ? openConfirmationModal() : download()}
                       ><i class="fa-solid fa-download"></i>Download as PFB</button
                     >
                   </div>
