@@ -3,7 +3,7 @@
   import { getModalStore } from '@skeletonlabs/skeleton';
 
   const modalStore = getModalStore();
-  
+
   export let message: string;
   export let onCancel: () => void;
   export let onConfirm: () => void;
@@ -33,11 +33,11 @@
   <p>{message}</p>
   <div class="flex justify-end gap-4">
     <button
-      class="btn variant-filled-primary hover:variant-filled-secondary mt-6"
+      class="btn variant-ghost-surface hover:variant-filled-surface mt-6"
       on:click={() => onCancel()}>{cancelText}</button
     >
     <button
-      class="btn variant-filled-primary hover:variant-filled-secondary mt-6"
+      class="btn variant-filled hover:variant-filled-primary mt-6"
       on:click={() => onConfirm()}>{confirmText}</button
     >
   </div>
