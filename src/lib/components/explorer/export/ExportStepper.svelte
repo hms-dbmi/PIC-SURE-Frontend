@@ -70,7 +70,7 @@
         console.log(r);
       },
     };
-    $modalStore.push(modal);
+    modalStore.trigger(modal);
   }
 
   async function download(): Promise<void> {
