@@ -69,12 +69,26 @@ userTest.describe('Logged in users', () => {
     // Then
     await expect(page.locator('#user-session-avatar')).toContainText('Login');
   });
+  userTest('Clicking logout redirects to login page', async ({ page }) => {
+    // Given
+    await page.goto(mockLoginResponse);
+
+    // When
+    const popoutButton = page.locator('#user-session-popout');
+    await popoutButton.click();
+
+    const logoutButton = page.locator('#user-logout-btn');
+    await logoutButton.click();
+
+    // Then
+    await expect(page).toHaveURL('/login');
+  });
 });
 
 Object.entries(testCases).forEach(([testCase, privileges]) => {
   const privTest = getUserTest({ ...picsureUser, privileges });
   const testRoutes = routes.filter((route: Route) =>
-    route.privilege ? privileges.includes(route.privilege) : true,
+    route.privilege ? privileges.includes(route.privilege as unknown as PicsurePrivileges) : true,
   );
 
   privTest.describe(`${testCase} Navigation`, () => {
