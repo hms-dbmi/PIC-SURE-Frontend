@@ -150,25 +150,31 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
   if (authProvider) {
     authProvider
       .logout()
-      .then((redirect) => {
-        user.set({});
-        if (typeof redirect === 'string') {
-          location.replace(redirect);
+      .then((redirectURL) => {
+        if (typeof redirectURL === 'string') {
+          user.set({});
+          location.replace(redirectURL);
         } else {
           // If no redirect is provided, go to the login page
-          console.error('Error logging out: ' + redirect);
-          goto('/login');
+          console.error('Error logging out: ' + redirectURL);
+          handleLogout(redirect);
         }
       })
       .catch((error) => {
         console.error('Error logging out: ' + error);
-        goto('/login');
+        handleLogout(redirect);
       });
   } else {
-    user.set({});
-    redirect
-      ? goto(`/login?redirectTo=${encodeURIComponent(get(page).url.pathname)}`)
-      : goto('/login');
+    handleLogout(redirect);
+  }
+}
+
+function handleLogout(redirect: boolean) {
+  user.set({});
+  if (redirect) {
+    goto(`/login?redirectTo=${encodeURIComponent(get(page).url.pathname)}`);
+  } else {
+    goto('/login');
   }
 }
 
