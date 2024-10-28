@@ -359,7 +359,8 @@
                       <CodeBlock
                         language="r"
                         lineNumbers={true}
-                        code={codeBlocks?.bdcRExport || 'Code not set'}
+                        code={codeBlocks?.bdcRExport?.replace('{{queryId}}', datasetId) ||
+                          'Code not set'}
                       ></CodeBlock>
                     {:else if tabSet === 2}
                       <div>
