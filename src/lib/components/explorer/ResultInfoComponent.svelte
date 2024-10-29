@@ -58,18 +58,22 @@
         <section data-testid="study-info" class="flex flex-col w-3/4 p-4">
           <h3 class="text-primary-500">Study Information</h3>
           <div class="w-full flex flex-col">
-            {#if searchResultDetail.study.display || searchResultDetail.study.studyAcronym || searchResultDetail?.studyAcronym}
+            {#if searchResultDetail.study.fullName ||
+              searchResultDetail.study.display ||
+              searchResultDetail.study.studyAcronym ||
+              searchResultDetail?.studyAcronym}
               <div>
                 <span class="font-bold mb-1">Study Name:</span>
-                {searchResultDetail.study.display ||
+                {searchResultDetail.study.fullName ||
+                  searchResultDetail.study.display ||
                   searchResultDetail.study.studyAcronym ||
                   searchResultDetail?.studyAcronym}
               </div>
             {/if}
-            {#if searchResultDetail.study.name}
+            {#if searchResultDetail.study.ref}
               <div>
                 <span class="font-bold">Study Accession:</span>
-                {searchResultDetail.study.name}
+                {searchResultDetail.study.ref}
               </div>
             {/if}
           </div>
