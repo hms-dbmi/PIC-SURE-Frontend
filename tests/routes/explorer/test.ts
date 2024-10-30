@@ -170,10 +170,10 @@ test.describe('explorer', () => {
         // Check Study Information
         await expect(infoPanel.getByText('Study Information')).toBeVisible();
         await expect(
-          infoPanel.getByText('Study Name: ' + detailResponseCat.study.display),
+          infoPanel.getByText('Study Name: ' + detailResponseCat.study.fullName),
         ).toBeVisible();
         await expect(
-          infoPanel.getByText('Study Accession: ' + detailResponseCat.study.name),
+          infoPanel.getByText('Study Accession: ' + detailResponseCat.study.ref),
         ).toBeVisible();
       });
     });

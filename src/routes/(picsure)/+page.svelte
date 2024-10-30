@@ -44,7 +44,7 @@
     class="flex flex-row justify-evenly items-center w-2/3 mt-auto mb-8"
   >
     {#each actionsToDisplay as { title, description, icon, url, btnText }}
-      <div class="flex flex-col items-center w-1/{branding?.landing?.actions.length}">
+      <div class="flex flex-col items-center w-1/{actionsToDisplay?.length || 3}">
         <div class="text-3xl my-1">{title}</div>
         <i class="text-[5rem] my-3 text-secondary-500-400-token {icon}" />
         <div class="subtitle my-3">{description}</div>
