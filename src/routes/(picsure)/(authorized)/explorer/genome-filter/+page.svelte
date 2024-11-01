@@ -15,8 +15,6 @@
   import { Option } from '$lib/models/GenomeFilter';
   import {
     selectedGenes,
-    selectedFrequency,
-    consequences,
     clearGeneFilters,
     generateGenomicFilter,
     populateFromGeneFilter,
@@ -67,8 +65,7 @@
   }
 
   $: canComplete =
-    (selectedOption === Option.Genomic &&
-      ($selectedGenes.length > 0 || $selectedFrequency.length > 0 || $consequences.length > 0)) ||
+    (selectedOption === Option.Genomic && $selectedGenes.length > 0) ||
     (selectedOption === Option.SNP && $selectedSNPs.length > 0);
 </script>
 
@@ -111,6 +108,11 @@
           data-testid="add-filter-btn"
           type="button"
           class="btn btn-sm variant-filled-primary text-lg disabled:opacity-75"
+          title={canComplete
+            ? 'Add Filter'
+            : selectedOption === Option.Genomic
+              ? 'A gene is required'
+              : 'A SNP is required'}
           on:click={onComplete}
           disabled={!canComplete}
         >
