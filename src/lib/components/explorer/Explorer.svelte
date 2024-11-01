@@ -131,7 +131,7 @@
       </div>
     </div>
     {#if $error}
-      <ErrorAlert title="Sorry, we could not retrieve your search results.">
+      <ErrorAlert title="Sorry, we could not retrieve your search results." color="secondary">
         <p>{$error}</p>
       </ErrorAlert>
     {:else if $searchTerm || $selectedFacets.length > 0}
