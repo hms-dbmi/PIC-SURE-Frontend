@@ -79,6 +79,13 @@ async function handleResponse(res: Response) {
       sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
     logout(undefined, true);
     return;
+  } else if (res.status === 403) {
+    if (browser) {
+      sessionStorage.removeItem('logout-reason');
+      sessionStorage.removeItem('filters');
+    }
+    logout(undefined, false);
+    return;
   }
 
   throw error(res.status as NumericRange<400, 599>, await res.text());
