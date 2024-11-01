@@ -64,5 +64,7 @@
     </Accordion>
   {/if}
 {:catch}
-  <ErrorAlert title="An error occured while retrieving facets." />
+  <ErrorAlert title="Something went wrong loading your search options.">
+    <p>Please wait a moment, refresh the page, and try again.</p>
+  </ErrorAlert>
 {/await}
