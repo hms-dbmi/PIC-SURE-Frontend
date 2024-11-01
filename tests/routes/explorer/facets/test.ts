@@ -36,7 +36,9 @@ test.describe('Facet Side Bar', () => {
 
     await expect(facetSideBar).toBeVisible();
     await expect(errorAlert).toBeVisible();
-    await expect(errorAlert).toHaveText('An error occured while retrieving facets.');
+    await expect(errorAlert).toHaveText(
+      'Something went wrong loading your search options. Please wait a moment, refresh the page, and try again.',
+    );
   });
   test('Facet Side Bar showes all categories', async ({ page }) => {
     // Given
