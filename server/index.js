@@ -234,7 +234,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "ezqr24"
+  version_hash: "sg2sj4"
 };
 async function get_hooks() {
   return {
@@ -1850,7 +1850,7 @@ async function handle_action_request(event, server) {
 function check_named_default_separate(actions) {
   if (actions.default && Object.keys(actions).length > 1) {
     throw new Error(
-      "When using named actions, the default action cannot be used. See the docs for more info: https://kit.svelte.dev/docs/form-actions#named-actions"
+      "When using named actions, the default action cannot be used. See the docs for more info: https://svelte.dev/docs/kit/form-actions#named-actions"
     );
   }
 }
@@ -1895,6 +1895,11 @@ function try_deserialize(data, fn, route_id) {
       /** @type {any} */
       e
     );
+    if (data instanceof Response) {
+      throw new Error(
+        `Data returned from action inside ${route_id} is not serializable. Form actions need to return plain objects or fail(). E.g. return { success: true } or return fail(400, { message: "invalid" });`
+      );
+    }
     if ("path" in error) {
       let message = `Data returned from action inside ${route_id} is not serializable: ${error.message}`;
       if (error.path !== "") message += ` (data.${error.path})`;
@@ -2123,7 +2128,7 @@ function create_universal_fetch(event, state, fetched, csr, resolve_opts) {
           const included = resolve_opts.filterSerializedResponseHeaders(lower, value);
           if (!included) {
             throw new Error(
-              `Failed to get response header "${lower}" — it must be included by the \`filterSerializedResponseHeaders\` option: https://kit.svelte.dev/docs/hooks#Server-hooks-handle (at ${event.route.id})`
+              `Failed to get response header "${lower}" — it must be included by the \`filterSerializedResponseHeaders\` option: https://svelte.dev/docs/kit/hooks#Server-hooks-handle (at ${event.route.id})`
             );
           }
         }
@@ -3000,10 +3005,9 @@ function get_data(event, options2, nodes, csp, global) {
             data = void 0;
             str = uneval({ id, data, error }, replacer);
           }
-          push(
-            `<script${csp.script_needs_nonce ? ` nonce="${csp.nonce}"` : ""}>${global}.resolve(${str})<\/script>
-`
-          );
+          const nonce = csp.script_needs_nonce ? ` nonce="${csp.nonce}"` : "";
+          push(`<script${nonce}>${global}.resolve(${str})<\/script>
+`);
           if (count === 0) done();
         }
       );
@@ -3774,7 +3778,7 @@ function create_fetch({ event, options: options2, manifest, state, get_cookie_he
             return new Response(state.read(file), {
               headers: type ? { "content-type": type } : {}
             });
-          } else if (read_implementation) {
+          } else if (read_implementation && file in manifest._.server_assets) {
             const length = manifest._.server_assets[file];
             const type = manifest.mimeTypes[file.slice(file.lastIndexOf("."))];
             return new Response(read_implementation(file), {
