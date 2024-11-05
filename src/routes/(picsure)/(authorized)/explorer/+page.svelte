@@ -7,7 +7,7 @@
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const Tour: Record<string, any> = TourData;
 
-  const tourName: string | undefined = import.meta.env.AUTH_TOUR_NAME;
+  const tourName: string | undefined = import.meta.env.VITE_AUTH_TOUR_NAME;
 
   let authTour: any = undefined;
   if (tourName !== undefined && tourName in Tour) {
