@@ -47,14 +47,6 @@
         }
       },
       {
-        "element": "#data-hierarchy-icon",
-        "popover": {
-          "title": "Data Hierarchy",
-          "description": "Click the data hierarchy icon to view the variable’s hierarchy and apply filters based on this information.",
-          "onPrevClick": "disablePrevious"
-        }
-      },
-      {
         "element": "#row-0 button[title=\"Add for Analysis\"]",
         "popover": {
           "title": "Export Variable",
