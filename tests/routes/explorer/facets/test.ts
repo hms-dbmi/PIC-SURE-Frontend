@@ -335,10 +335,10 @@ test.describe('Facet Categories', () => {
         await searchInput.fill('Study Display');
         await expect(searchInput).toHaveValue('Study Display');
         const facetItems = await facetList.locator('label').all();
-        facetItems.forEach(async (facetItem) => {
+        for (const facetItem of facetItems) {
           const facetItemText = await facetItem.textContent();
           expect(facetItemText).toContain('Study Display');
-        });
+        }
       }
     }
   });
