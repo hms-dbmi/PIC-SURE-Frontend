@@ -429,18 +429,25 @@
             {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
               <section class="flex flex-col gap-8">
                 <div class="flex justify-center mt-4">
-                  Use the option below to download your selected data in the PFB format.
+                  Select an option below to export your selected data in PFB format.
                 </div>
                 <div class="grid grid-cols-3">
                   <div></div>
                   <div>
                     <button
-                      class="flex-initial w-64 btn variant-filled-primary"
-                      on:click={() =>
+                            class="flex-initial w-64 btn variant-filled-primary"
+                            on:click={() =>
                         features.confirmDownload ? openConfirmationModal() : download()}
-                      ><i class="fa-solid fa-download"></i>Download as PFB</button
+                    ><i class="fa-solid fa-download"></i>Download as PFB</button
                     >
                   </div>
+                  <div class="grid grid-cols-3">
+                    <div></div>
+                    <div>
+                      <button on:click={() => window.open('/query/' + datasetId + '/signed-redirect?target=https%3A%2F%2Fapp.terra.bio%2F%23import-data%3Fformat%3Dpfb%26url%3D%25s','_blank')}
+                      ><i class="fa-solid fa-download"></i>Export to Terra</button
+                      >
+                    </div>
                   <div></div>
                 </div>
               </section>
