@@ -13,7 +13,6 @@
   if (tourName !== undefined && tourName in Tour) {
     authTour = Tour[tourName];
   }
-
 </script>
 
 <svelte:head>
