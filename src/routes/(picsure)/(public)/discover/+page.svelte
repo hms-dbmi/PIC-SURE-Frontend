@@ -4,7 +4,7 @@
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import TourData from '$lib/assets/TourConfiguration.json';
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const Tour: Record<string, any> = TourData;
   const tourName = import.meta.env.VITE_OPEN_TOUR_NAME;
 
