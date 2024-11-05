@@ -9,6 +9,7 @@
 
   const tourName: string | undefined = import.meta.env.VITE_AUTH_TOUR_NAME;
 
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   let authTour: any = undefined;
   if (tourName !== undefined && tourName in Tour) {
     authTour = Tour[tourName];
