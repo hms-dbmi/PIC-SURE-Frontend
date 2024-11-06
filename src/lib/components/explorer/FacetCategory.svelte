@@ -30,7 +30,7 @@
   };
 
   function getFacetsToDisplay() {
-    const hiddenFacetsForCategory = $hiddenFacets[facetCategory.name];
+    const hiddenFacetsForCategory = $hiddenFacets[facetCategory.name] || [];
     let facetsToDisplay = facets.filter((f) => !hiddenFacetsForCategory.includes(f.name));
 
     //Put selected facets at the top
