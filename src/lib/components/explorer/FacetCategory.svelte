@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
-  import { AccordionItem } from '@skeletonlabs/skeleton';
+  import { AccordionItem, RecursiveTreeView, type TreeViewNode } from '@skeletonlabs/skeleton';
   import SearchStore from '$lib/stores/Search';
   import type { Facet } from '$lib/models/Search';
   import { hiddenFacets } from '$lib/services/dictionary';
@@ -14,6 +14,8 @@
   const anyFacetNot0 = facets.some((facet) => facet.count > 0);
   let textFilterValue: string;
   let moreThanTenFacets = facets.length > numFacetsToShow;
+  let selectedFacetsNames: string[] = $selectedFacets.map((facet) => facet.name);
+  let indeterminateNodes: string[] = [];
 
   $: facetsToDisplay =
     (facets || textFilterValue || moreThanTenFacets || $selectedFacets || facetCategory) &&
@@ -23,42 +25,119 @@
     (facet) => facet?.categoryRef?.name === facetCategory?.name,
   );
 
-  $: isChecked = (facetToCheck: string) => {
-    return $selectedFacets.some((facet: Facet) => {
-      return facet.name === facetToCheck;
-    });
-  };
-
   function getFacetsToDisplay() {
     const hiddenFacetsForCategory = $hiddenFacets[facetCategory.name] || [];
-    let facetsToDisplay = facets.filter((f) => !hiddenFacetsForCategory.includes(f.name));
+    let facetsToReturn = facets.filter((f) => !hiddenFacetsForCategory.includes(f.name));
 
-    //Put selected facets at the top
-    const selectedFacetsMap = new Map($selectedFacets.map((facet) => [facet.name, facet]));
-    facetsToDisplay = facetsToDisplay.filter((f) => !selectedFacetsMap.has(f.name));
-
+    // Find parents of selected children and selected top-level facets
     const selectedFacetsForCategory = $selectedFacets.filter(
-      (facet) => facet.category === facetCategory.name,
+      (facet) => facet.category === facetCategory.name
     );
-    selectedFacetsForCategory.forEach((facet) => {
-      facet.count = facets.find((f) => f.name === facet.name)?.count || 0;
+    
+    const parentsToPromote = new Set<string>();
+    // Reset indeterminate nodes
+    indeterminateNodes = [];
+    
+    selectedFacetsForCategory.forEach((selectedFacet) => {
+      // Update counts for selected facets
+      selectedFacet.count = facets.find((f) => f.name === selectedFacet.name)?.count || 0;
+      
+      // If this is a child facet, mark its parent for promotion and indeterminate state
+      if (selectedFacet.parentRef?.name) {
+        parentsToPromote.add(selectedFacet.parentRef.name);
+        if (!indeterminateNodes.includes(selectedFacet.parentRef.name)) {
+          indeterminateNodes = [...indeterminateNodes, selectedFacet.parentRef.name];
+        }
+      }
     });
 
-    facetsToDisplay.unshift(...selectedFacetsForCategory);
+    // Separate facets into promoted and non-promoted
+    const promotedFacets: Facet[] = [];
+    const remainingFacets: Facet[] = [];
+
+    facetsToReturn.forEach((facet) => {
+      if (parentsToPromote.has(facet.name) || 
+          selectedFacetsForCategory.some(sf => sf.name === facet.name && !sf.parentRef)) {
+        promotedFacets.push(facet);
+      } else {
+        remainingFacets.push(facet);
+      }
+    });
+
+    // Combine the arrays with promoted facets first
+    facetsToReturn = [...promotedFacets, ...remainingFacets];
+
     if (textFilterValue) {
       //Filter Facets by searched text
       const lowerFilterValue = textFilterValue.toLowerCase();
-      facetsToDisplay = facetsToDisplay.filter(
+      facetsToReturn = facetsToReturn.filter(
         (facet) =>
           facet.display.toLowerCase().includes(lowerFilterValue) ||
           facet.name.toLowerCase().includes(lowerFilterValue) ||
-          facet.description?.toLowerCase().includes(lowerFilterValue),
+          facet.description?.toLowerCase().includes(lowerFilterValue)
       );
     } else if (moreThanTenFacets) {
       // Only show the first n facets
-      facetsToDisplay = facetsToDisplay.slice(0, numFacetsToShow);
+      facetsToReturn = facetsToReturn.slice(0, numFacetsToShow);
     }
-    return facetsToDisplay;
+    return facetsToReturn;
+  }
+
+  function convertFacetsToTreeViewNode(facets: Facet[]): TreeViewNode[] {
+    let treeViewNodes: TreeViewNode[] = [];
+    for (const facet of facets) {
+      treeViewNodes.push({
+        id: facet.name,
+        content: `${facet.display} (${facet.count})`,
+        contentProps: {
+          spacing: 'space-x-2',
+        },
+        children: facet.children ? convertFacetsToTreeViewNode(facet.children) : undefined,
+      });
+    }
+    return treeViewNodes;
+  }
+
+  $: if (selectedFacetsNames) {
+    const currentSelectedNames = new Set($selectedFacets.map((f) => f.name));
+    const newSelectedNames = new Set(selectedFacetsNames);
+
+    for (const facetName of [...currentSelectedNames, ...newSelectedNames]) {
+      if (currentSelectedNames.has(facetName) !== newSelectedNames.has(facetName)) {
+        const findFacet = (facets: Facet[]): { facet: Facet, parent?: Facet } | undefined => {
+          for (const f of facets) {
+            if (f.name === facetName) return { facet: f };
+            if (f.children) {
+              const childFacet = f.children.find((child) => child.name === facetName);
+              if (childFacet) return { facet: childFacet, parent: f };
+            }
+          }
+          return undefined;
+        };
+
+        const result = findFacet(facets);
+        if (result) {
+          const { facet, parent } = result;
+          updateFacet(
+            {
+              name: facet.name,
+              display: facet.display,
+              count: facet.count,
+              category: facetCategory.name,
+              description: facet.description,
+            },
+            facetCategory,
+            parent
+              ? {
+                  name: parent.name,
+                  category: facetCategory.name,
+                  categoryRef: facetCategory,
+            }
+            : undefined,
+          );
+        }
+      }
+    }
   }
 </script>
 
@@ -76,24 +155,17 @@
           bind:value={textFilterValue}
         />
       {/if}
-      {#each facetsToDisplay as facet}
-        <label data-testId={`facet-${facet.name}-label`} for={facet.name} class="m-1">
-          <input
-            type="checkbox"
-            class="&[aria-disabled=“true”]:opacity-75"
-            id={facet.name}
-            name={facet.name}
-            value={facet}
-            checked={isChecked(facet.name)}
-            disabled={facet.count === 0}
-            aria-checked={isChecked(facet.name)}
-            on:click={() => updateFacet(facet, facetCategory)}
-          />
-          <span class:opacity-75={facet.count === 0}
-            >{`${facet.display} (${facet.count?.toLocaleString()})`}</span
-          >
-        </label>
-      {/each}
+      <RecursiveTreeView
+        selection
+        multiple
+        relational
+        padding="p-2"
+        indent="pl-1"
+        hover=""
+        nodes={convertFacetsToTreeViewNode(facetsToDisplay)}
+        bind:checkedNodes={selectedFacetsNames}
+        bind:indeterminateNodes
+      />
       {#if facets.length > numFacetsToShow && !textFilterValue}
         <button
           data-testId="show-more-facets"
@@ -127,6 +199,9 @@
 </div>
 
 <style lang="postcss">
+  .tree-item-content {
+    cursor: default !important;
+  }
   .show-more {
     @apply btn btn-sm variant-outline rounded-container-token;
   }
