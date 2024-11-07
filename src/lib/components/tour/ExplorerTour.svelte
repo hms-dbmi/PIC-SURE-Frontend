@@ -55,12 +55,12 @@
 
   const clickFilterOption = (activeRowSelector?: string) => {
     const allOptions = document.querySelector(
-      `#${activeRowSelector} #select-all`,
+      `${activeRowSelector} #select-all`,
     ) as HTMLInputElement;
     allOptions?.click();
 
     const addFilter = document.querySelector(
-      `#${activeRowSelector} [data-testid="add-filter"]`,
+      `${activeRowSelector} [data-testid="add-filter"]`,
     ) as HTMLElement;
     addFilter.click();
 
