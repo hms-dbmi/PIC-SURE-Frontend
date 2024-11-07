@@ -119,6 +119,7 @@ export const features: Indexable = {
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
     enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
+    authTour: import.meta.env?.VITE_OPEN_TOUR_NAME ?? 'NHANES-Auth',
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
   },
   login: {
@@ -132,6 +133,7 @@ export const features: Indexable = {
   discover: import.meta.env?.VITE_DISCOVER === 'true',
   discoverFeautures: {
     enableTour: import.meta.env?.EXPLORER_TOUR !== 'false',
+    openTour: import.meta.env?.VITE_OPEN_TOUR_NAME ?? 'BDC-Open',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
   },
   dashboard: import.meta.env?.VITE_DASHBOARD === 'true',
