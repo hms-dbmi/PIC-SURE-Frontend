@@ -175,7 +175,7 @@
 
   function getSignedUrl() {
     const path = 'picsure/query/' + datasetId + '/signed-url';
-    const res = await api.get(path, query);
+    const res = api.get(path, query);
     return res.signedUrl;
   }
 
