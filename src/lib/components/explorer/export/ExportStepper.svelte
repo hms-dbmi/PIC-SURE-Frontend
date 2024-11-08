@@ -173,6 +173,12 @@
     return 'ERROR';
   }
 
+  function getSignedUrl() {
+    const path = 'picsure/query/' + datasetId + '/signed-url';
+    const res = await api.get(path, query);
+    return res.signedUrl;
+  }
+
   export let activeType: ExpectedResultType;
   function selectExportType(exportType: ExpectedResultType) {
     query.query.expectedResultType = exportType;
@@ -190,6 +196,12 @@
       typeof $totalParticipants === 'number' ? $totalParticipants : MAX_DATA_POINTS_FOR_EXPORT + 1;
     let totalDataPoints: number = participantCount + $filters.length + $exports.length;
     return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
+  }
+
+  function exportToTerra() {
+    let signedUrl = getSignedUrl();
+    let url = "https://app.terra.bio/#import-data?format=pfb&url=" + encodeURIComponent(signedUrl);
+    window.open(url);
   }
 </script>
 
@@ -444,7 +456,7 @@
                   <div class="grid grid-cols-3">
                     <div></div>
                     <div>
-                      <button on:click={() => window.open('/picsure/query/' + datasetId + '/signed-redirect?target=https%3A%2F%2Fapp.terra.bio%2F%23import-data%3Fformat%3Dpfb%26url%3D%25s','_blank')}
+                      <button on:click={() => exportToTerra()}
                       ><i class="fa-solid fa-download"></i>Export to Terra</button
                       >
                     </div>
