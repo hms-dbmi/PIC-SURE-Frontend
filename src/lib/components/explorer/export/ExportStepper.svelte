@@ -173,10 +173,15 @@
     return 'ERROR';
   }
 
-  function getSignedUrl() {
+  async function getSignedUrl() {
     const path = 'picsure/query/' + datasetId + '/signed-url';
-    const res = api.post(path, query);
-    return res.signedUrl;
+    try {
+      const res = await api.post(path, query);
+      let url = "https://app.terra.bio/#import-data?format=pfb&url=" + encodeURIComponent(res.signedUrl);
+      window.open(url);
+    } catch (error) {
+      console.error('Error in getSignedUrl', error);
+    }
   }
 
   export let activeType: ExpectedResultType;
@@ -198,10 +203,8 @@
     return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
   }
 
-  function exportToTerra() {
-    let signedUrl = getSignedUrl();
-    let url = "https://app.terra.bio/#import-data?format=pfb&url=" + encodeURIComponent(signedUrl);
-    window.open(url);
+  async function exportToTerra() {
+    getSignedUrl();
   }
 </script>
 
