@@ -460,7 +460,7 @@
                 <div class="grid grid-cols-3">
                   <div></div>
                   <div>
-                    <button on:click={() => exportToTerra()}
+                    <button class="flex-initial w-64 btn variant-filled-primary" on:click={() => exportToTerra()}
                     ><i class="fa-solid fa-download"></i>Export to Terra</button
                     >
                   </div>
