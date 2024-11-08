@@ -164,7 +164,7 @@
         hover=""
         nodes={convertFacetsToTreeViewNode(facetsToDisplay)}
         bind:checkedNodes={selectedFacetsNames}
-        bind:indeterminateNodes
+        bind:indeterminateNodes={indeterminateNodes}
       />
       {#if facets.length > numFacetsToShow && !textFilterValue}
         <button
