@@ -456,14 +456,14 @@
                     ><i class="fa-solid fa-download"></i>Download as PFB</button
                     >
                   </div>
-                  <div class="grid grid-cols-3">
-                    <div></div>
-                    <div>
-                      <button on:click={() => exportToTerra()}
-                      ><i class="fa-solid fa-download"></i>Export to Terra</button
-                      >
-                    </div>
+                </div>
+                <div class="grid grid-cols-3">
                   <div></div>
+                  <div>
+                    <button on:click={() => exportToTerra()}
+                    ><i class="fa-solid fa-download"></i>Export to Terra</button
+                    >
+                  </div>
                 </div>
               </section>
             {/if}
