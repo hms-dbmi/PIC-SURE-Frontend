@@ -1,9 +1,6 @@
 import { get, writable, type Writable } from 'svelte/store';
 import { type Facet, type SearchResult } from '$lib/models/Search';
-import type {
-  DictionaryConceptResult,
-  DictionaryFacetResult,
-} from '$lib/models/api/DictionaryResponses';
+import type { DictionaryConceptResult } from '$lib/models/api/DictionaryResponses';
 import type { State } from '@vincjo/datatables/remote';
 import { searchDictionary } from '$lib/services/dictionary';
 
@@ -38,30 +35,18 @@ async function search(searchTerm: string, facets: Facet[], state?: State): Promi
   }
 }
 
-async function updateFacet(newFacet: Facet, facetCategory: DictionaryFacetResult | undefined) {
-  if (facetCategory) {
-    newFacet.categoryRef = {
-      display: facetCategory.display,
-      name: facetCategory.name,
-      description: facetCategory.description,
-    };
-  }
-  try {
-    selectedFacets.update((facets) => {
-      const index = facets.findIndex((facet) => facet.name === newFacet.name);
-      if (index === -1) {
-        facets.push(newFacet);
-      } else {
-        facets.splice(index, 1);
-      }
-      //For reactivity and sorting
-      selectedFacets.set(get(selectedFacets).sort((a, b) => b.count - a.count));
-      return facets;
-    });
-  } catch (e) {
-    console.error(e);
-    return;
-  }
+async function updateFacets(facetsToUpdate: Facet[]) {
+  const currentFacets = get(selectedFacets);
+  facetsToUpdate.forEach((facet) => {
+    const facetIndex = currentFacets.findIndex((f) => f.name === facet.name);
+    if (facetIndex !== -1) {
+      currentFacets.splice(facetIndex, 1);
+    } else {
+      currentFacets.push(facet);
+    }
+  });
+
+  selectedFacets.set(currentFacets.sort((a, b) => b.count - a.count));
 }
 
 export function resetSearch() {
@@ -75,6 +60,6 @@ export default {
   searchTerm,
   error,
   search,
-  updateFacet,
+  updateFacets,
   resetSearch,
 };
