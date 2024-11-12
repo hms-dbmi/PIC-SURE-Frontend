@@ -446,7 +446,7 @@
                 <div class="flex justify-center mt-4">
                   Select an option below to export your selected data in PFB format.
                 </div>
-                {#if features.enableTerraExport}
+                {#if features.explorer.enableTerraExport}
                   <div class="grid grid-cols-3">
                     <div></div>
                     <div>
