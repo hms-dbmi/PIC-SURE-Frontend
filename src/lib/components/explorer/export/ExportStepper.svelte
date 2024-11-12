@@ -195,6 +195,7 @@
   }
 
   let tabSet: number = 0;
+  $: terraLoading = false;
 
   function dataLimitExceeded(): boolean {
     let participantCount: number =
@@ -204,7 +205,9 @@
   }
 
   async function exportToTerra() {
+    terraLoading = true;
     getSignedUrl("https://app.terra.bio/#import-data?format=pfb&url=");
+    terraLoading = false;
   }
 </script>
 
@@ -444,13 +447,13 @@
             {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
               <section class="flex flex-col gap-8">
                 <div class="flex justify-center mt-4">
-                  Select an option below to export your selected data in PFB format. Terra = {features.explorer.enableTerraExport}
+                  Select an option below to export your selected data in PFB format.
                 </div>
                 {#if features.explorer.enableTerraExport}
                   <div class="grid grid-cols-3">
                     <div></div>
                     <div>
-                      <button class="flex-initial w-64 btn variant-filled-primary" on:click={() => exportToTerra()}
+                      <button disabled="{terraLoading}" class="flex-initial w-64 btn variant-filled-primary" on:click={() => exportToTerra()}
                       ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Terra</button
                       >
                     </div>
