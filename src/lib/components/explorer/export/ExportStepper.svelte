@@ -173,11 +173,11 @@
     return 'ERROR';
   }
 
-  async function getSignedUrl() {
+  async function getSignedUrl(urlTemplate: string) {
     const path = 'picsure/query/' + datasetId + '/signed-url';
     try {
       const res = await api.post(path, query);
-      let url = "https://app.terra.bio/#import-data?format=pfb&url=" + encodeURIComponent(res.signedUrl);
+      let url = urlTemplate + encodeURIComponent(res.signedUrl);
       window.open(url);
     } catch (error) {
       console.error('Error in getSignedUrl', error);
@@ -204,7 +204,7 @@
   }
 
   async function exportToTerra() {
-    getSignedUrl();
+    getSignedUrl("https://app.terra.bio/#import-data?format=pfb&url=");
   }
 </script>
 
@@ -446,6 +446,16 @@
                 <div class="flex justify-center mt-4">
                   Select an option below to export your selected data in PFB format.
                 </div>
+                {#if features.enableTerraExport}
+                  <div class="grid grid-cols-3">
+                    <div></div>
+                    <div>
+                      <button class="flex-initial w-64 btn variant-filled-primary" on:click={() => exportToTerra()}
+                      ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Terra</button
+                      >
+                    </div>
+                  </div>
+                {/if}
                 <div class="grid grid-cols-3">
                   <div></div>
                   <div>
@@ -454,14 +464,6 @@
                             on:click={() =>
                         features.confirmDownload ? openConfirmationModal() : download()}
                     ><i class="fa-solid fa-download"></i>Download as PFB</button
-                    >
-                  </div>
-                </div>
-                <div class="grid grid-cols-3">
-                  <div></div>
-                  <div>
-                    <button class="flex-initial w-64 btn variant-filled-primary" on:click={() => exportToTerra()}
-                    ><i class="fa-solid fa-download"></i>Export to Terra</button
                     >
                   </div>
                 </div>
