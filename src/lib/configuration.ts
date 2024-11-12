@@ -120,7 +120,7 @@ export const features: Indexable = {
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
     enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
-    enableTerraExport: import.meta.env?.ALLOW_TERRA_EXPORT === 'true',
+    enableTerraExport: import.meta.env?.VITE_ENABLE_TERRA_EXPORT === 'true',
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
