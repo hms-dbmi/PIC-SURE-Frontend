@@ -444,7 +444,7 @@
             {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
               <section class="flex flex-col gap-8">
                 <div class="flex justify-center mt-4">
-                  Select an option below to export your selected data in PFB format.
+                  Select an option below to export your selected data in PFB format. Terra = {features.explorer.enableTerraExport}
                 </div>
                 {#if features.explorer.enableTerraExport}
                   <div class="grid grid-cols-3">
