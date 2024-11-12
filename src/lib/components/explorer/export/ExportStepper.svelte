@@ -195,7 +195,7 @@
   }
 
   let tabSet: number = 0;
-  $: terraLoading = false;
+  $: exportLoading = false;
 
   function dataLimitExceeded(): boolean {
     let participantCount: number =
@@ -205,8 +205,9 @@
   }
 
   async function exportToTerra() {
-    terraLoading = true;
-    getSignedUrl("https://app.terra.bio/#import-data?format=pfb&url=");
+    exportLoading = true;
+    await getSignedUrl("https://app.terra.bio/#import-data?format=pfb&url=");
+    exportLoading = false;
   }
 </script>
 
@@ -452,7 +453,7 @@
                   <div class="grid grid-cols-3">
                     <div></div>
                     <div>
-                      <button disabled="{terraLoading}" class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary" on:click={() => exportToTerra()}
+                      <button disabled="{exportLoading}" class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary" on:click={() => exportToTerra()}
                       ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Terra</button
                       >
                     </div>
