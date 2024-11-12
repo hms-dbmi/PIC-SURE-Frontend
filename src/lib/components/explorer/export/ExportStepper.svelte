@@ -453,7 +453,7 @@
                   <div class="grid grid-cols-3">
                     <div></div>
                     <div>
-                      <button disabled="{terraLoading}" class="flex-initial w-64 btn variant-filled-primary" on:click={() => exportToTerra()}
+                      <button disabled="{terraLoading}" class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary" on:click={() => exportToTerra()}
                       ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Terra</button
                       >
                     </div>
