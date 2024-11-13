@@ -206,7 +206,9 @@
   async function exportToTerra() {
     exportLoading = true;
     let signedUrl = await getSignedUrl();
-    window.open("https://app.terra.bio/#import-data?format=pfb&url=" + encodeURIComponent(signedUrl));
+    window.open(
+      'https://app.terra.bio/#import-data?format=pfb&url=' + encodeURIComponent(signedUrl),
+    );
     exportLoading = false;
   }
 </script>
@@ -453,8 +455,11 @@
                   <div class="grid grid-cols-3">
                     <div></div>
                     <div>
-                      <button disabled="{exportLoading}" class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary" on:click={() => exportToTerra()}
-                      ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Terra</button
+                      <button
+                        disabled={exportLoading}
+                        class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary"
+                        on:click={() => exportToTerra()}
+                        ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Terra</button
                       >
                     </div>
                   </div>
@@ -463,10 +468,10 @@
                   <div></div>
                   <div>
                     <button
-                            class="flex-initial w-64 btn variant-filled-primary"
-                            on:click={() =>
+                      class="flex-initial w-64 btn variant-filled-primary"
+                      on:click={() =>
                         features.confirmDownload ? openConfirmationModal() : download()}
-                    ><i class="fa-solid fa-download"></i>Download as PFB</button
+                      ><i class="fa-solid fa-download"></i>Download as PFB</button
                     >
                   </div>
                 </div>
