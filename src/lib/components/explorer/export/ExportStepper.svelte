@@ -173,12 +173,11 @@
     return 'ERROR';
   }
 
-  async function getSignedUrl(urlTemplate: string) {
+  async function getSignedUrl() {
     const path = 'picsure/query/' + datasetId + '/signed-url';
     try {
       const res = await api.post(path, query);
-      let url = urlTemplate + encodeURIComponent(res.signedUrl);
-      window.open(url);
+      return res.signedUrl;
     } catch (error) {
       console.error('Error in getSignedUrl', error);
     }
@@ -206,7 +205,8 @@
 
   async function exportToTerra() {
     exportLoading = true;
-    await getSignedUrl("https://app.terra.bio/#import-data?format=pfb&url=");
+    let signedUrl = await getSignedUrl();
+    window.open("https://app.terra.bio/#import-data?format=pfb&url=" + encodeURIComponent(signedUrl));
     exportLoading = false;
   }
 </script>
