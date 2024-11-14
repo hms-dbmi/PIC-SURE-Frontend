@@ -8,6 +8,7 @@ export type Facet = Indexable & {
   children?: Facet[];
   category: string;
   categoryRef?: ShallowFacetCategory;
+  parentRef?: ShallowFacetCategory;
 };
 
 export type ShallowFacetCategory = Pick<Facet, 'name' | 'display' | 'description'>;
