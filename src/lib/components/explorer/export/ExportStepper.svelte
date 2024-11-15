@@ -289,15 +289,16 @@
     } finally {
       loadingSampleIds = false;
     }
-    
-    async function exportToTerra() {
-      exportLoading = true;
-      let signedUrl = await getSignedUrl();
-      window.open(
-        'https://app.terra.bio/#import-data?format=pfb&url=' + encodeURIComponent(signedUrl),
-      );
-      exportLoading = false;
-    }
+  }
+  
+  async function exportToTerra() {
+    exportLoading = true;
+    let signedUrl = await getSignedUrl();
+    window.open(
+      'https://app.terra.bio/#import-data?format=pfb&url=' + encodeURIComponent(signedUrl),
+    );
+    exportLoading = false;
+  }
 </script>
 
 <Stepper
