@@ -2,18 +2,19 @@
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
   import { AccordionItem } from '@skeletonlabs/skeleton';
   import SearchStore from '$lib/stores/Search';
-  import type { Facet } from '$lib/models/Search';
   import { hiddenFacets } from '$lib/services/dictionary';
-  let { updateFacet, selectedFacets } = SearchStore;
+  import FacetItem from './FacetItem.svelte';
+  import type { Facet } from '$lib/models/Search';
+  let { updateFacets, selectedFacets } = SearchStore;
 
   export let facetCategory: DictionaryFacetResult;
   export let facets = facetCategory.facets;
   export let numFacetsToShow: number = 5;
-  export let shouldShowSearchBar: boolean = facets.length > numFacetsToShow;
+  export let shouldShowSearchBar: boolean = facets?.length > numFacetsToShow;
 
-  const anyFacetNot0 = facets.some((facet) => facet.count > 0);
+  const anyFacetNot0 = facets?.some((facet) => facet.count > 0);
   let textFilterValue: string;
-  let moreThanTenFacets = facets.length > numFacetsToShow;
+  let moreThanTenFacets = facets?.length > numFacetsToShow;
 
   $: facetsToDisplay =
     (facets || textFilterValue || moreThanTenFacets || $selectedFacets || facetCategory) &&
@@ -23,37 +24,100 @@
     (facet) => facet?.categoryRef?.name === facetCategory?.name,
   );
 
-  $: isChecked = (facetToCheck: string) => {
-    return $selectedFacets.some((facet: Facet) => {
-      return facet.name === facetToCheck;
+  function isIndeterminate(facet: Facet): boolean {
+    const atLeastOneChildSelected =
+      facet.children?.some((child) => $selectedFacets.some((f) => f.name === child.name)) ?? false;
+    const isEveryChildSelected = facet.children?.length
+      ? facet.children.every((child) => $selectedFacets.some((f) => f.name === child.name))
+      : false;
+    return atLeastOneChildSelected && !isEveryChildSelected;
+  }
+
+  function isParentFullySelected(facetName: string): boolean {
+    const result = facets.some((parent) => {
+      if (!parent.children || parent?.children?.length === 0) return false;
+      return parent.children.every(
+        (child) => child.name === facetName || $selectedFacets.some((f) => f.name === child.name),
+      );
     });
-  };
+    return result;
+  }
 
   function getFacetsToDisplay() {
     const hiddenFacetsForCategory = $hiddenFacets[facetCategory.name] || [];
     let facetsToDisplay = facets.filter((f) => !hiddenFacetsForCategory.includes(f.name));
 
-    //Put selected facets at the top
     const selectedFacetsMap = new Map($selectedFacets.map((facet) => [facet.name, facet]));
-    facetsToDisplay = facetsToDisplay.filter((f) => !selectedFacetsMap.has(f.name));
+    const indeterminateFacets = facetsToDisplay.filter(isIndeterminate);
+    const indeterminateMap = new Map(indeterminateFacets.map((facet) => [facet.name, facet]));
 
+    const isChildOfIndeterminate = (facetName: string) => {
+      return indeterminateFacets.some((parent) =>
+        parent.children?.some((child) => child.name === facetName),
+      );
+    };
+
+    // Remove facets that will be added to the top or are children of fully selected parents
+    facetsToDisplay = facetsToDisplay.filter(
+      (f) =>
+        !selectedFacetsMap.has(f.name) &&
+        !isChildOfIndeterminate(f.name) &&
+        !indeterminateMap.has(f.name) &&
+        !isParentFullySelected(f.name),
+    );
+
+    // Add selected facets at the top (excluding children of indeterminate parents and fully selected parents)
     const selectedFacetsForCategory = $selectedFacets.filter(
-      (facet) => facet.category === facetCategory.name,
+      (facet) =>
+        facet.category === facetCategory.name &&
+        !isChildOfIndeterminate(facet.name) &&
+        !isParentFullySelected(facet.name),
     );
     selectedFacetsForCategory.forEach((facet) => {
       facet.count = facets.find((f) => f.name === facet.name)?.count || 0;
     });
 
-    facetsToDisplay.unshift(...selectedFacetsForCategory);
+    //Add parents with all children selected
+    const parentsWithAllChildrenSelected = facets.filter(
+      (f) =>
+        f.children?.length &&
+        f.children.every((child) => $selectedFacets.some((f) => f.name === child.name)),
+    );
+    parentsWithAllChildrenSelected.forEach((facet) => {
+      facet.count = facets.find((f) => f.name === facet.name)?.count || 0;
+    });
+
+    // Add indeterminate facets at the top
+    const indeterminateFacetsForCategory = indeterminateFacets.filter(
+      (facet) => facet.category === facetCategory.name,
+    );
+    indeterminateFacetsForCategory.forEach((facet) => {
+      facet.count = facets.find((f) => f.name === facet.name)?.count || 0;
+    });
+
+    facetsToDisplay.unshift(
+      ...selectedFacetsForCategory,
+      ...parentsWithAllChildrenSelected,
+      ...indeterminateFacetsForCategory,
+    );
+
     if (textFilterValue) {
-      //Filter Facets by searched text
       const lowerFilterValue = textFilterValue.toLowerCase();
-      facetsToDisplay = facetsToDisplay.filter(
-        (facet) =>
+      facetsToDisplay = facetsToDisplay.filter((facet) => {
+        const facetMatches =
           facet.display.toLowerCase().includes(lowerFilterValue) ||
           facet.name.toLowerCase().includes(lowerFilterValue) ||
-          facet.description?.toLowerCase().includes(lowerFilterValue),
-      );
+          facet.description?.toLowerCase().includes(lowerFilterValue);
+
+        const childrenMatch = facet.children?.some(
+          (child) =>
+            child.display.toLowerCase().includes(lowerFilterValue) ||
+            child.name.toLowerCase().includes(lowerFilterValue) ||
+            child.description?.toLowerCase().includes(lowerFilterValue),
+        );
+
+        return facetMatches || childrenMatch;
+      });
     } else if (moreThanTenFacets) {
       // Only show the first n facets
       facetsToDisplay = facetsToDisplay.slice(0, numFacetsToShow);
@@ -77,24 +141,9 @@
         />
       {/if}
       {#each facetsToDisplay as facet}
-        <label data-testId={`facet-${facet.name}-label`} for={facet.name} class="m-1">
-          <input
-            type="checkbox"
-            class="&[aria-disabled=“true”]:opacity-75"
-            id={facet.name}
-            name={facet.name}
-            value={facet}
-            checked={isChecked(facet.name)}
-            disabled={facet.count === 0}
-            aria-checked={isChecked(facet.name)}
-            on:click={() => updateFacet(facet, facetCategory)}
-          />
-          <span class:opacity-75={facet.count === 0}
-            >{`${facet.display} (${facet.count?.toLocaleString()})`}</span
-          >
-        </label>
+        <FacetItem {facet} {facetCategory} facetParent={undefined} {textFilterValue} />
       {/each}
-      {#if facets.length > numFacetsToShow && !textFilterValue}
+      {#if facets?.length > numFacetsToShow && !textFilterValue}
         <button
           data-testId="show-more-facets"
           class="show-more w-fit mx-auto my-1"
@@ -116,10 +165,7 @@
       <span class="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
         {facet.display}
       </span>
-      <button
-        class="chip-close ml-1 flex-shrink-0"
-        on:click={() => updateFacet(facet, facetCategory)}
-      >
+      <button class="chip-close ml-1 flex-shrink-0" on:click={() => updateFacets([facet])}>
         <i class="fa-solid fa-times hover:text-secondary-500"></i>
       </button>
     </span>

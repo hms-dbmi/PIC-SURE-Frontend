@@ -179,6 +179,16 @@
     return 'ERROR';
   }
 
+  async function getSignedUrl() {
+    const path = 'picsure/query/' + datasetId + '/signed-url';
+    try {
+      const res = await api.post(path, query);
+      return res.signedUrl;
+    } catch (error) {
+      console.error('Error in getSignedUrl', error);
+    }
+  }
+
   export let activeType: ExpectedResultType;
   function selectExportType(exportType: ExpectedResultType) {
     query.query.expectedResultType = exportType;
@@ -190,6 +200,7 @@
   }
 
   let tabSet: number = 0;
+  $: exportLoading = false;
 
   function dataLimitExceeded(): boolean {
     let participantCount: number =
@@ -278,7 +289,15 @@
     } finally {
       loadingSampleIds = false;
     }
-  }
+    
+    async function exportToTerra() {
+      exportLoading = true;
+      let signedUrl = await getSignedUrl();
+      window.open(
+        'https://app.terra.bio/#import-data?format=pfb&url=' + encodeURIComponent(signedUrl),
+      );
+      exportLoading = false;
+    }
 </script>
 
 <Stepper
@@ -539,8 +558,21 @@
             {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
               <section class="flex flex-col gap-8">
                 <div class="flex justify-center mt-4">
-                  Use the option below to download your selected data in the PFB format.
+                  Select an option below to export your selected data in PFB format.
                 </div>
+                {#if features.explorer.enableTerraExport}
+                  <div class="grid grid-cols-3">
+                    <div></div>
+                    <div>
+                      <button
+                        disabled={exportLoading}
+                        class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary"
+                        on:click={() => exportToTerra()}
+                        ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Terra</button
+                      >
+                    </div>
+                  </div>
+                {/if}
                 <div class="grid grid-cols-3">
                   <div></div>
                   <div>
@@ -551,7 +583,6 @@
                       ><i class="fa-solid fa-download"></i>Download as PFB</button
                     >
                   </div>
-                  <div></div>
                 </div>
               </section>
             {/if}
