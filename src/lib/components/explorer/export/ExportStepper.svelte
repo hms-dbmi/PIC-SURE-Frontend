@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as api from '$lib/api';
+  import { v4 as uuidv4 } from 'uuid';
   import { browser } from '$app/environment';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
@@ -13,17 +14,19 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExportStore from '$lib/stores/Export';
   import { filters, totalParticipants } from '$lib/stores/Filter';
-  let { exports } = ExportStore;
+  let { exports, addExports, removeExports } = ExportStore;
   import { state } from '$lib/stores/Stepper';
   import { goto } from '$app/navigation';
   import { type DatasetError } from '$lib/models/Dataset';
   import { createDatasetName } from '$lib/services/datasets';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
-  import type { ExpectedResultType } from '$lib/models/query/Query.ts';
+  import { Query, type ExpectedResultType } from '$lib/models/query/Query.ts';
   import codeBlocks from '$lib/assets/codeBlocks.json';
   import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
   import Confirmation from '$lib/components/modals/Confirmation.svelte';
-  import { branding, features, settings } from '$lib/configuration';
+  import { branding, features, settings, resources } from '$lib/configuration';
+  import { searchDictionary } from '$lib/services/dictionary';
+  import type { ExportInterface } from '$lib/models/Export';
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
   export let rows: ExportRowInterface[] = [];
@@ -35,6 +38,9 @@
   let picsureResultId: string = '';
   let lockDownload = true;
   let error: string = '';
+  let sampleIds = false;
+  let lastExports: ExportRowInterface[] = [];
+  let loadingSampleIds = false;
   $: datasetId = '';
   $: canDownload = true;
   $: apiExport = false;
@@ -191,6 +197,88 @@
     let totalDataPoints: number = participantCount + $filters.length + $exports.length;
     return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
   }
+
+  async function toggleSampleIds() {
+    try {
+      loadingSampleIds = true;
+      if (sampleIds) {
+        //Get sample Ids using user consents from queryTemplate to call the dictionary API getting the concepts from the genomic facet
+        const concepts = await searchDictionary(
+          '',
+          [
+            {
+              name: 'data_source_genomic',
+              display: 'Genomic',
+              description: 'Associated with genomic data',
+              fullName: null,
+              count: 32,
+              children: [],
+              category: 'data_source',
+              meta: null,
+              categoryRef: {
+                display: 'Data Type',
+                name: 'data_source',
+                description: 'Associated metadata source',
+              },
+            },
+          ],
+          { pageNumber: 0, pageSize: 10000 },
+        );
+        if (concepts.content.length > 0) {
+          // Call HPDS via a cross counts query to get the sample id counts, etc
+          const crossCountQuery = new Query(structuredClone(query.query));
+          crossCountQuery.expectedResultType = 'CROSS_COUNT';
+          const crossCountFields: string[] = [];
+          for (const concept of concepts.content) {
+            crossCountFields.push(concept.conceptPath);
+          }
+          crossCountQuery.setCrossCountFields(crossCountFields);
+          const crossCountResponse: Record<string, number> = await api.post('picsure/query/sync', {
+            query: crossCountQuery,
+            resourceUUID: resources.hpds,
+          });
+          const conceptPathsToAdd = Object.entries(crossCountResponse)
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            .filter(([_, count]) => count > 0)
+            .map(([path]) => path);
+          console.log('conceptPathsToAdd', conceptPathsToAdd);
+          const newExports = conceptPathsToAdd.map((path) => {
+            let concept = concepts.content.find((c) => c.conceptPath === path);
+            return {
+              id: uuidv4(),
+              searchResult: concept,
+              display: concept?.display || '',
+              conceptPath: concept?.conceptPath || '',
+            } as ExportInterface;
+          });
+          addExports(newExports);
+          let newRows = newExports.map(
+            (e) =>
+              ({
+                ref: e,
+                variableId: e.id,
+                variableName: e.display,
+                description: e?.searchResult?.description,
+                type: e?.searchResult.type,
+                selected: true,
+              }) as ExportRowInterface,
+          );
+          rows = [...rows, ...newRows];
+          lastExports = newRows;
+        }
+      } else {
+        const exportsToRemove: ExportInterface[] = lastExports?.map(
+          (e) => e.ref,
+        ) as ExportInterface[];
+        removeExports(exportsToRemove || []);
+        rows = rows.filter((r) => !lastExports.includes(r));
+      }
+    } catch (error) {
+      console.error('Error in toggleSampleIds', error);
+    } finally {
+      loadingSampleIds = false;
+    }
+  }
 </script>
 
 <Stepper
@@ -233,7 +321,29 @@
               />
             </div>
           {/await}
-          <Datatable tableName="ExportSummary" data={rows} {columns} />
+          {#if !loadingSampleIds}
+            <Datatable tableName="ExportSummary" data={rows} {columns} />
+            <div>
+              <label
+                for="sample-ids-checkbox"
+                class="flex items-center"
+                data-testid="sample-ids-label"
+              >
+                <input
+                  type="checkbox"
+                  class="mr-1 &[aria-disabled=“true”]:opacity-75"
+                  data-testid="sample-ids-checkbox"
+                  id="sample-ids-checkbox"
+                  bind:checked={sampleIds}
+                  on:change={toggleSampleIds}
+                />
+                <span>Include sample identifiers</span>
+              </label>
+            </div>
+          {:else}
+            <ProgressRadial width="w-4" />
+            <div>Loading sample IDs...</div>
+          {/if}
         {/if}
       </section>
     </div>
@@ -481,7 +591,7 @@
 </Stepper>
 
 <style>
-  input {
+  input[type='text'] {
     border-radius: var(--theme-rounded-base);
   }
 </style>
