@@ -1,8 +1,19 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { branding, features } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
   import Explorer from '$lib/components/explorer/Explorer.svelte';
-  import authTour from '$lib/assets/authTourConfiguration.json';
+  import TourData from '$lib/assets/TourConfiguration.json';
+
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  const Tour: Record<string, any> = TourData;
+
+  const tourName = features.explorer.authTour;
+
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  let authTour: any = undefined;
+  if (tourName !== undefined && tourName in Tour) {
+    authTour = Tour[tourName];
+  }
 </script>
 
 <svelte:head>

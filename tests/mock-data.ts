@@ -697,6 +697,96 @@ export const facetsResponse = [
   },
 ];
 
+export const nestedFacetsResponse = [
+  ...facetsResponse,
+  {
+    name: 'nested_category',
+    display: 'Nested Category',
+    description: 'Nested Category Description',
+    facets: [
+      {
+        name: 'nested_facet',
+        display: 'Nested Facet',
+        description: 'Nested Facet Description',
+        count: 8,
+        children: [
+          {
+            name: 'nested_facet_child',
+            display: 'Nested Facet Child',
+            description: 'Nested Facet Child Description',
+            count: 2,
+            children: null,
+          },
+          {
+            name: 'nested_facet_child_2',
+            display: 'Nested Facet Child 2',
+            description: 'Nested Facet Child 2 Description',
+            count: 5,
+            children: null,
+          },
+          {
+            name: 'nested_facet_child_3',
+            display: 'Nested Facet Child 3',
+            description: 'Nested Facet Child 3 Description',
+            count: 1,
+            children: null,
+          },
+        ],
+      },
+      {
+        name: 'nested_facet_2',
+        display: 'Nested Facet 2',
+        description: 'Nested Facet 2 Description',
+        count: 1,
+        children: null,
+      },
+      {
+        name: 'nested_facet_3',
+        display: 'Nested Facet 3',
+        description: 'Nested Facet 3 Description',
+        count: 10,
+        children: [
+          {
+            name: 'nested_facet_child_4',
+            display: 'Nested Facet Child 4',
+            description: 'Nested Facet Child 4 Description',
+            count: 1,
+            children: null,
+          },
+          {
+            name: 'nested_facet_child_5',
+            display: 'Nested Facet Child 5',
+            description: 'Nested Facet Child 5 Description',
+            count: 1,
+            children: null,
+          },
+          {
+            name: 'nested_facet_child_6',
+            display: 'Nested Facet Child 6',
+            description: 'Nested Facet Child 6 Description',
+            count: 5,
+            children: null,
+          },
+          {
+            name: 'nested_facet_child_7',
+            display: 'Nested Facet Child 7',
+            description: 'Nested Facet Child 7 Description',
+            count: 3,
+            children: null,
+          },
+        ],
+      },
+      {
+        name: 'nested_facet_4',
+        display: 'Nested Facet 4',
+        description: 'Nested Facet 4 Description',
+        count: 300,
+        children: null,
+      },
+    ],
+  },
+];
+
 const _application = {
   app1: {
     uuid: 'a1234',

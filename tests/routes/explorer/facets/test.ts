@@ -5,6 +5,7 @@ import {
   facetsResponse,
   searchResultPath,
   facetResultPath,
+  nestedFacetsResponse,
 } from '../../../mock-data';
 
 const MAX_FACETS_TO_SHOW = 5;
@@ -335,10 +336,10 @@ test.describe('Facet Categories', () => {
         await searchInput.fill('Study Display');
         await expect(searchInput).toHaveValue('Study Display');
         const facetItems = await facetList.locator('label').all();
-        facetItems.forEach(async (facetItem) => {
+        for (const facetItem of facetItems) {
           const facetItemText = await facetItem.textContent();
           expect(facetItemText).toContain('Study Display');
-        });
+        }
       }
     }
   });
@@ -494,5 +495,46 @@ test.describe('Facet & search', () => {
 
     // Then
     await expect(spanInInput).toContainText(facetsResponse[0].facets[0].count.toString());
+  });
+});
+
+test.describe('Nested Facets', () => {
+  test('Nested facets are displayed', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: nestedFacetsResponse }),
+    );
+    await page.goto('/explorer?search=age');
+
+    // When
+    const nestedCategory = page.getByText('Nested Category');
+    const nestedFacetArrow = page.getByTestId('facet-nested_facet-arrow');
+
+    // Then
+    await expect(nestedCategory).toBeVisible();
+    await expect(nestedFacetArrow).toBeVisible();
+  });
+  test('Nested facets are toggleable', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: nestedFacetsResponse }),
+    );
+    await page.goto('/explorer?search=age');
+
+    // When
+    const nestedFacetArrow = page.getByTestId('facet-nested_facet-arrow');
+    await nestedFacetArrow.click();
+
+    // Then
+    const nestedFacetChildren = page.getByTestId('facet-nested_facet-children');
+    await expect(nestedFacetChildren).toBeVisible();
+    await nestedFacetArrow.click();
+    await expect(nestedFacetChildren).not.toBeVisible();
   });
 });
