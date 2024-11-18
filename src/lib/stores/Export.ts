@@ -13,6 +13,14 @@ function addExport(exportedField: ExportInterface) {
   return exportedField;
 }
 
+function addExports(exportedFields: ExportInterface[]) {
+  const currentExports = get(exports);
+  const newExports = exportedFields.filter(
+    (e: ExportInterface) => !currentExports.some((ce: ExportInterface) => ce.id === e.id),
+  );
+  exports.set([...currentExports, ...newExports]);
+}
+
 function removeExport(uuid: string) {
   const currentExports = get(exports);
   exports.set(
@@ -20,6 +28,11 @@ function removeExport(uuid: string) {
       e.studyId ? e.id !== uuid && e.studyId !== uuid : e.id !== uuid,
     ),
   );
+}
+
+function removeExports(exportsToRemove: ExportInterface[]) {
+  const currentExports = get(exports);
+  exports.set(currentExports.filter((e: ExportInterface) => !exportsToRemove.includes(e)));
 }
 
 export function clearExports() {
@@ -30,6 +43,8 @@ export default {
   subscribe: exports.subscribe,
   exports,
   addExport,
+  addExports,
   removeExport,
+  removeExports,
   clearExports,
 };
