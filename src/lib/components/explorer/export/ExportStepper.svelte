@@ -22,7 +22,7 @@
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import { Query, type ExpectedResultType } from '$lib/models/query/Query.ts';
   import codeBlocks from '$lib/assets/codeBlocks.json';
-  import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+  import { getModalStore, type ModalSettings, getToastStore } from '@skeletonlabs/skeleton';
   import Confirmation from '$lib/components/modals/Confirmation.svelte';
   import { branding, features, settings, resources } from '$lib/configuration';
   import { searchDictionary } from '$lib/services/dictionary';
@@ -32,6 +32,7 @@
   export let rows: ExportRowInterface[] = [];
 
   const modalStore = getModalStore();
+  const toastStore = getToastStore();
   let statusPromise: Promise<string>;
   let preparePromise: Promise<void>;
   let datasetNameInput: string = '';
@@ -285,6 +286,11 @@
       lastExports = newRows;
     } catch (error) {
       console.error('Error in toggleSampleIds', error);
+      toastStore.trigger({
+        message: 'We were unable to fetch the sample IDs for your selected data. Please try again later.',
+        background: 'variant-ghost-error',
+      });
+      sampleIds = false;
     } finally {
       loadingSampleIds = false;
     }
