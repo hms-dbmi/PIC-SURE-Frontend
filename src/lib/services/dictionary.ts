@@ -12,6 +12,7 @@ import { user } from '$lib/stores/User';
 const dictionaryUrl = 'picsure/proxy/dictionary-api/';
 const searchUrl = 'picsure/proxy/dictionary-api/concepts';
 const conceptDetailUrl = 'picsure/proxy/dictionary-api/concepts/detail/';
+const datasetDetailUrl = 'picsure/proxy/dictionary-api/dataset/detail/';
 
 export type FacetSkeleton = {
   [facetCategory: string]: string[];
@@ -145,4 +146,8 @@ export async function getStudiesCount(isOpenAccess = false) {
   }
   const facetsForUser = facetCat.facets.filter((facet) => facet.count > 0);
   return facetsForUser.length;
+}
+
+export async function getDatasetDetails(datasetId: string) {
+  return api.post(`${datasetDetailUrl}/${datasetId}`, {});
 }

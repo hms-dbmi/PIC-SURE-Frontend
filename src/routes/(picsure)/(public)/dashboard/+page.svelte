@@ -14,6 +14,10 @@
   import type { Column } from '$lib/models/Tables';
   import type { DashboardRow } from '$lib/stores/Dashboard';
 
+  import { getDrawerStore } from '@skeletonlabs/skeleton';
+
+  const drawerStore = getDrawerStore();
+
   const tableName = 'ExplorerTable';
 
   let unsubColumns: Unsubscriber;
@@ -59,6 +63,14 @@
         search={false}
         showPagination={false}
         stickyHeader={true}
+        rowClickHandler={(row) => {
+          drawerStore.open({
+            id: 'dashboard-drawer',
+            meta: {
+              row,
+            },
+          });
+        }}
       />
     {/await}
   </section>
