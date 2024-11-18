@@ -342,23 +342,25 @@
           {/await}
           {#if !loadingSampleIds}
             <Datatable tableName="ExportSummary" data={rows} {columns} />
-            <div>
-              <label
-                for="sample-ids-checkbox"
-                class="flex items-center"
-                data-testid="sample-ids-label"
-              >
-                <input
-                  type="checkbox"
-                  class="mr-1 &[aria-disabled=“true”]:opacity-75"
-                  data-testid="sample-ids-checkbox"
-                  id="sample-ids-checkbox"
-                  bind:checked={sampleIds}
-                  on:change={toggleSampleIds}
-                />
-                <span>Include sample identifiers</span>
-              </label>
-            </div>
+            {#if features.explorer.enableSampleIdCheckbox}
+              <div>
+                <label
+                  for="sample-ids-checkbox"
+                  class="flex items-center"
+                  data-testid="sample-ids-label"
+                >
+                  <input
+                    type="checkbox"
+                    class="mr-1 &[aria-disabled=“true”]:opacity-75"
+                    data-testid="sample-ids-checkbox"
+                    id="sample-ids-checkbox"
+                    bind:checked={sampleIds}
+                    on:change={toggleSampleIds}
+                  />
+                  <span>Include sample identifiers</span>
+                </label>
+              </div>
+            {/if}
           {:else}
             <div class="flex justify-center items-center">
               <ProgressRadial width="w-4" />
