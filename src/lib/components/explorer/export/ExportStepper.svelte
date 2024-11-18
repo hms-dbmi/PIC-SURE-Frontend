@@ -67,7 +67,9 @@
       modalClasses: 'bg-surface-100-800-token p-4 block',
       meta: {
         component: Confirmation,
-        message: branding.explorePage.confirmDownloadMessage,
+        message:
+          branding.explorePage.confirmDownloadMessage ||
+          'This action will download the data to your local machine. Are you sure you want to proceed?',
         onConfirm,
         onCancel,
         confirmText: 'Download',
@@ -100,13 +102,11 @@
     }
   }
   function onNextHandler(e: CustomEvent): void {
-    console.log('event:next', e);
     if (e.detail.step === 0 && !showTreeStep) {
       // nothing needs to be done here
       return;
     }
     if (e.detail.step === 1 && showTreeStep) {
-      console.log('event:next', e);
       //TODO: Load tree
     } else if ((e.detail.step === 1 && !showTreeStep) || (showTreeStep && e.detail.step === 2)) {
       preparePromise = submitQuery();
@@ -142,7 +142,6 @@
     try {
       query.query.fields = $exports.map((exp) => exp.conceptPath);
       const res = await api.post('picsure/query', query);
-      console.log('res', res);
       datasetId = res.picsureResultId;
     } catch (error) {
       $state.current--;
@@ -212,85 +211,85 @@
   async function toggleSampleIds() {
     try {
       loadingSampleIds = true;
-      if (sampleIds) {
-        //Get sample Ids using user consents from queryTemplate to call the dictionary API getting the concepts from the genomic facet
-        const concepts = await searchDictionary(
-          '',
-          [
-            {
-              name: 'data_source_genomic',
-              display: 'Genomic',
-              description: 'Associated with genomic data',
-              fullName: null,
-              count: 32,
-              children: [],
-              category: 'data_source',
-              meta: null,
-              categoryRef: {
-                display: 'Data Type',
-                name: 'data_source',
-                description: 'Associated metadata source',
-              },
-            },
-          ],
-          { pageNumber: 0, pageSize: 10000 },
-        );
-        if (concepts.content.length > 0) {
-          // Call HPDS via a cross counts query to get the sample id counts, etc
-          const crossCountQuery = new Query(structuredClone(query.query));
-          crossCountQuery.expectedResultType = 'CROSS_COUNT';
-          const crossCountFields: string[] = [];
-          for (const concept of concepts.content) {
-            crossCountFields.push(concept.conceptPath);
-          }
-          crossCountQuery.setCrossCountFields(crossCountFields);
-          const crossCountResponse: Record<string, number> = await api.post('picsure/query/sync', {
-            query: crossCountQuery,
-            resourceUUID: resources.hpds,
-          });
-          const conceptPathsToAdd = Object.entries(crossCountResponse)
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            .filter(([_, count]) => count > 0)
-            .map(([path]) => path);
-          console.log('conceptPathsToAdd', conceptPathsToAdd);
-          const newExports = conceptPathsToAdd.map((path) => {
-            let concept = concepts.content.find((c) => c.conceptPath === path);
-            return {
-              id: uuidv4(),
-              searchResult: concept,
-              display: concept?.display || '',
-              conceptPath: concept?.conceptPath || '',
-            } as ExportInterface;
-          });
-          addExports(newExports);
-          let newRows = newExports.map(
-            (e) =>
-              ({
-                ref: e,
-                variableId: e.id,
-                variableName: e.display,
-                description: e?.searchResult?.description,
-                type: e?.searchResult.type,
-                selected: true,
-              }) as ExportRowInterface,
-          );
-          rows = [...rows, ...newRows];
-          lastExports = newRows;
-        }
-      } else {
+      if (!sampleIds) {
         const exportsToRemove: ExportInterface[] = lastExports?.map(
           (e) => e.ref,
         ) as ExportInterface[];
         removeExports(exportsToRemove || []);
         rows = rows.filter((r) => !lastExports.includes(r));
+        return;
       }
+
+      // Get genomic concepts from dictionary
+      const concepts = await searchDictionary(
+        '',
+        [
+          {
+            name: 'data_source_genomic',
+            category: 'data_source',
+            display: 'Genomic',
+            description: 'Associated with genomic data',
+            count: 0,
+          },
+        ],
+        { pageNumber: 0, pageSize: 10000 },
+      );
+
+      if (concepts.content.length === 0) {
+        return;
+      }
+
+      // Get sample ID counts via cross counts query
+      const crossCountQuery = new Query(structuredClone(query.query));
+      crossCountQuery.expectedResultType = 'CROSS_COUNT';
+      const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
+      crossCountQuery.setCrossCountFields(crossCountFields);
+
+      const crossCountResponse: Record<string, number> = await api.post('picsure/query/sync', {
+        query: crossCountQuery,
+        resourceUUID: resources.hpds,
+      });
+
+      // Filter to paths with counts > 0
+      const conceptPathsToAdd = Object.entries(crossCountResponse)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        .filter(([_, count]) => count > 0)
+        .map(([path]) => path);
+
+      // Create new exports for each path
+      const newExports = conceptPathsToAdd.map((path) => {
+        const concept = concepts.content.find((c) => c.conceptPath === path);
+        return {
+          id: uuidv4(),
+          searchResult: concept,
+          display: concept?.display || '',
+          conceptPath: concept?.conceptPath || '',
+        } as ExportInterface;
+      });
+
+      // Add exports and create corresponding rows
+      addExports(newExports);
+      const newRows = newExports.map(
+        (e) =>
+          ({
+            ref: e,
+            variableId: e.id,
+            variableName: e.display,
+            description: e?.searchResult?.description,
+            type: e?.searchResult.type,
+            selected: true,
+          }) as ExportRowInterface,
+      );
+
+      rows = [...rows, ...newRows];
+      lastExports = newRows;
     } catch (error) {
       console.error('Error in toggleSampleIds', error);
     } finally {
       loadingSampleIds = false;
     }
   }
-  
+
   async function exportToTerra() {
     exportLoading = true;
     let signedUrl = await getSignedUrl();
@@ -361,8 +360,10 @@
               </label>
             </div>
           {:else}
-            <ProgressRadial width="w-4" />
-            <div>Loading sample IDs...</div>
+            <div class="flex justify-center items-center">
+              <ProgressRadial width="w-4" />
+              <div>Loading sample IDs...</div>
+            </div>
           {/if}
         {/if}
       </section>
@@ -524,38 +525,6 @@
                   >
                 </div>
               </section>
-              <!--<section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
-                  {#each branding.apiPage.cards as card}
-                    <a
-                            href={card.link}
-                            target={card.link.startsWith('http') ? '_blank' : '_self'}
-                            class="pic-sure-info-card p-4 basis-2/4"
-                    >
-                      <div class="card card-hover">
-                        <header class="card-header flex flex-col items-center">
-                          <h4 class="my-1" data-testid={card.header}>{card.header}</h4>
-                          <hr class="!border-t-2" />
-                        </header>
-                        <section class="p-4 whitespace-pre-wrap flex flex-col" data-testid={card.body}>
-                          <div>{card.body}</div>
-                          <div class="flex justify-center">
-                            <div class="btn variant-filled-primary mt-3 w-fit">Learn More</div>
-                          </div>
-                        </section>
-                      </div>
-                    </a>
-                  {/each}
-                </section>-->
-              <!--<div class="flex flex-col items-center justify-center">
-                  <div>
-                    Export Status: {status}
-                    <i
-                      class="fa-solid {status === 'ERROR'
-                        ? 'fa-circle-xmark text-error-500'
-                        : 'fa-check-circle text-success-500'}"
-                    ></i>
-                  </div>
-                </div>-->
             {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
               <section class="flex flex-col gap-8">
                 <div class="flex justify-center mt-4">
