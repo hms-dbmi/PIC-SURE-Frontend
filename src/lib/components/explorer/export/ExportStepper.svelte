@@ -287,7 +287,8 @@
     } catch (error) {
       console.error('Error in toggleSampleIds', error);
       toastStore.trigger({
-        message: 'We were unable to fetch the sample IDs for your selected data. Please try again later.',
+        message:
+          'We were unable to fetch the sample IDs for your selected data. Please try again later.',
         background: 'variant-ghost-error',
       });
       sampleIds = false;
