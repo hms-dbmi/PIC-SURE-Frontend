@@ -7,6 +7,7 @@
   const drawerStore = getDrawerStore();
 
   const datasetId = (($drawerStore.meta.row as DashboardRow)?.dataset_id as string) || '';
+  const title = (($drawerStore.meta.row as DashboardRow)?.name as string) || '';
 
   async function getDataset() {
     const res = await getDatasetDetails(datasetId);
@@ -15,6 +16,9 @@
       if (details.datasetId) {
         delete details.datasetId;
       }
+      if (details.studyFullname) {
+        delete details.studyFullname;
+      }
       return details;
     }
     throw new Error('No dashboardDrawerList found');
@@ -22,17 +26,20 @@
 </script>
 
 <div>
+  {#if title}
+    <h2 class="text-2xl font-bold ml-4">{title}</h2>
+  {/if}
   {#await getDataset()}
     <div class="flex justify-center items-center h-full">
       <ProgressRadial />
     </div>
   {:then details}
-    <ul>
+    <ul class="m-4">
       {#each Object.entries(details) as [key, value]}
-        <li>
-          <strong>{key}</strong>:
+        <li class="m-2">
+          <strong>{key.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}</strong>:
           {#if Array.isArray(value)}
-            <ul>
+            <ul class="list-disc">
               {#each value as item}
                 <li>{item}</li>
               {/each}
@@ -51,3 +58,7 @@
     </div>
   {/await}
 </div>
+
+<style>
+
+</style>
