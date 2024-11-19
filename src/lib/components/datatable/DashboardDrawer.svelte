@@ -9,10 +9,10 @@
   const datasetId = (($drawerStore.meta.row as DashboardRow)?.dataset_id as string) || '';
   const title = (($drawerStore.meta.row as DashboardRow)?.name as string) || '';
   const link = (($drawerStore.meta.row as DashboardRow)?.additional_info_link as string) || '';
-  
+
   async function getDataset() {
     const details = await getDatasetDetails(datasetId);
-    if (!details) throw new Error('No details found');
+    if (!details || Object.keys(details).length === 0) throw new Error('No details found');
     if (details.datasetId) {
       delete details.datasetId;
     }
