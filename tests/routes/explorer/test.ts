@@ -12,6 +12,7 @@ import {
   searchResults as mockData,
   searchResultPath,
   picsureUser,
+  facetResponseWithZeroCount,
 } from '../../mock-data';
 import { type SearchResult } from '../../../src/lib/models/Search';
 import { createCategoricalFilter, createNumericFilter } from '../../../src/lib/models/Filter';
@@ -54,6 +55,21 @@ userTest.describe('Explorer for authenticated users', () => {
     // Then
     await expect(page.locator('#search-bar')).toBeVisible();
     await expect(page.locator('#facet-side-bar')).toBeVisible();
+  });
+  userTest('Facets with zero count are hidden', async ({ page }) => {
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: facetResponseWithZeroCount }),
+    );
+    // Given
+    await page.goto('/explorer?search=somedata');
+
+    // Then
+    await expect(page.locator('#facet-side-bar')).toBeVisible();
+    expect(page
+      .getByTestId('accordion-item')
+      .first()
+      .getByTestId(`facet-${facetResponseWithZeroCount[0].name}-label`)
+    ).not.toBeVisible();
   });
 });
 
