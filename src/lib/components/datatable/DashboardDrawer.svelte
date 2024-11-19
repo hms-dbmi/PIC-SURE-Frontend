@@ -26,7 +26,7 @@
 </script>
 
 {#if title}
-  <h2 class="text-2xl font-bold ml-4">{title}</h2>
+  <h2 data-testid="drawer-title" class="text-2xl font-bold ml-4">{title}</h2>
 {/if}
 <hr class="m-4 border-t-2 border-gray-200" />
 {#await getDataset()}
@@ -34,7 +34,7 @@
     <ProgressRadial />
   </div>
 {:then details}
-  <ul class="m-4 p-4">
+  <ul data-testid="drawer-details" class="m-4 p-4">
     {#each Object.entries(details) as [key, value]}
       {#if value}
         <li class="m-2">

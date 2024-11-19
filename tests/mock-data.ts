@@ -45,8 +45,9 @@ export const mockDashboard: DashboardResp = {
     { label: 'Link', dataElement: 'additional_info_link' },
   ],
   rows: [
-    { name: 'A', additional_info_link: 'foo.invalid' },
-    { name: 'B', additional_info_link: 'bar.invalid' },
+    { name: 'A', description: 'This is a description 1', additional_info_link: 'foo.invalid', dataset_id: '1' },
+    { name: 'B', description: 'This is a description 2', additional_info_link: 'bar.invalid', dataset_id: '2' },
+    { name: 'C', description: 'This is a description 3', additional_info_link: null, dataset_id: '3' },
   ],
 };
 
