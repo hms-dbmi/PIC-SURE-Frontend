@@ -520,6 +520,63 @@ export const detailResponseNum = {
     description: 'Age',
   },
 };
+
+export const facetResponseWithZeroCount = [
+  {
+    name: 'things_that_use_consents',
+    display: 'Consented Things',
+    description: 'This is a description',
+    facets: [
+      {
+        name: 'thing1',
+        display: 'Thing 1',
+        description: 'Thing 1',
+        count: 0,
+      },
+      {
+        name: 'thing2',
+        display: 'Thing 2',
+        description: 'Thing 2',
+        count: 1,
+      },
+    ],
+  },
+  {
+    name: 'another_category_name',
+    display: 'Another Category Name',
+    description: 'Hello World',
+    facets: [
+      {
+        name: 'facet1',
+        display: 'Facet 1',
+        description: 'facet1 full name',
+        count: 0,
+        children: null,
+        category: 'another_category_name',
+        meta: null,
+      },
+      {
+        name: 'facet2',
+        display: 'Facet 2',
+        description: 'facet2 full name',
+        count: 0,
+        children: null,
+        category: 'another_category_name',
+        meta: null,
+      },
+      {
+        name: 'facet3',
+        display: 'This is a really long facet name for testing',
+        description: 'facet3 full name',
+        count: 0,
+        children: null,
+        category: 'another_category_name',
+        meta: null,
+      },
+    ],
+  },
+];
+
 export const facetsResponse = [
   {
     name: 'study_ids_dataset_ids',
@@ -634,6 +691,15 @@ export const facetsResponse = [
         category: 'study_ids_dataset_ids',
         meta: null,
       },
+      {
+        name: 'Empty',
+        display: 'Empty',
+        description: 'Empty',
+        count: 0,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
     ],
   },
   {
@@ -691,6 +757,40 @@ export const facetsResponse = [
         count: 1,
         children: null,
         category: 'another_category_name',
+        meta: null,
+      },
+    ],
+  },
+  {
+    name: 'another_category_name_empty',
+    display: 'Empty Category',
+    description: 'Hello World',
+    facets: [
+      {
+        name: 'facet1',
+        display: 'Facet 1',
+        description: 'facet1 full name',
+        count: 0,
+        children: null,
+        category: 'another_category_name_empty',
+        meta: null,
+      },
+      {
+        name: 'facet2',
+        display: 'Facet 2',
+        description: 'facet2 full name',
+        count: 0,
+        children: null,
+        category: 'another_category_name_empty',
+        meta: null,
+      },
+      {
+        name: 'facet3',
+        display: 'This is a really long facet name for testing',
+        description: 'facet3 full name',
+        count: 0,
+        children: null,
+        category: 'another_category_name_empty',
         meta: null,
       },
     ],

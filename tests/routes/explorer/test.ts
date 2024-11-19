@@ -1,5 +1,5 @@
 import { expect, type Route } from '@playwright/test';
-import { test, mockApiFail } from '../../custom-context';
+import { test, mockApiFail, getUserTest } from '../../custom-context';
 import {
   conceptsDetailPath,
   detailResForAge,
@@ -11,6 +11,7 @@ import {
   facetsResponse,
   searchResults as mockData,
   searchResultPath,
+  picsureUser,
 } from '../../mock-data';
 import { type SearchResult } from '../../../src/lib/models/Search';
 import { createCategoricalFilter, createNumericFilter } from '../../../src/lib/models/Filter';
@@ -22,10 +23,62 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
+const userTest = getUserTest(picsureUser);
+
+userTest.describe('Explorer for authenticated users', () => {
+  userTest('Has filters, and searchbar', async ({ page }) => {
+    // Given
+    await page.goto('/explorer');
+
+    // Then
+    await expect(page.locator('#search-bar')).toBeVisible();
+    await expect(page.locator('#facet-side-bar')).toBeVisible();
+  });
+  userTest(
+    'Has filters, and searchbar when a search is from the landing page',
+    async ({ page }) => {
+      // Given
+      await page.goto('/');
+      await page.getByTestId('search-box').fill('somedata');
+      await page.locator('#search-button').click();
+
+      // Then
+      await expect(page.locator('#search-bar')).toBeVisible();
+      await expect(page.locator('#facet-side-bar')).toBeVisible();
+    },
+  );
+  userTest('Has filters, and searchbar when a search is from the url', async ({ page }) => {
+    // Given
+    await page.goto('/explorer?search=somedata');
+
+    // Then
+    await expect(page.locator('#search-bar')).toBeVisible();
+    await expect(page.locator('#facet-side-bar')).toBeVisible();
+  });
+});
+
 test.describe('explorer', () => {
   test('Has filters, and searchbar', async ({ page }) => {
     // Given
     await page.goto('/explorer');
+
+    // Then
+    await expect(page.locator('#search-bar')).toBeVisible();
+    await expect(page.locator('#facet-side-bar')).toBeVisible();
+  });
+  test('Has filters, and searchbar when a search is from the landing page', async ({ page }) => {
+    // Given
+    await page.goto('/');
+    await page.getByTestId('search-box').fill('somedata');
+    await page.locator('#search-button').click();
+
+    // Then
+    await expect(page.locator('#search-bar')).toBeVisible();
+    await expect(page.locator('#facet-side-bar')).toBeVisible();
+  });
+  test('Has filters, and searchbar when a search is from the url', async ({ page }) => {
+    // Given
+    await page.goto('/explorer?search=somedata');
 
     // Then
     await expect(page.locator('#search-bar')).toBeVisible();

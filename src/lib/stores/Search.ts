@@ -16,23 +16,26 @@ async function search(searchTerm: string, facets: Facet[], state?: State): Promi
     state?.setTotalRows(0);
     return [];
   }
-  try {
-    const search = searchDictionary(searchTerm.trim(), facets, {
-      pageNumber: state?.pageNumber ? state?.pageNumber - 1 : 0,
-      pageSize: state?.rowsPerPage,
-    });
-    loading.set(search);
-    const response = await search;
-    state?.setTotalRows(response.totalElements);
-    return response.content;
-  } catch (e) {
+  const search = searchDictionary(searchTerm.trim(), facets, {
+    pageNumber: state?.pageNumber ? state?.pageNumber - 1 : 0,
+    pageSize: state?.rowsPerPage,
+  });
+  loading.set(search);
+  const response = await search.catch((e) => {
     console.error(e);
+    state?.setTotalRows(0);
     error.set(
       'An error occurred while searching. If the problem persists, please contact an administrator.',
     );
-    state?.setTotalRows(0);
-    return [];
+    throw e;
+  });
+  if (!response) {
+    error.set(
+      'An error occurred while searching. If the problem persists, please contact an administrator.',
+    );
   }
+  state?.setTotalRows(response?.totalElements ?? 0);
+  return response?.content ?? [];
 }
 
 async function updateFacets(facetsToUpdate: Facet[]) {
