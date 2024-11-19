@@ -31,6 +31,7 @@
   id="row-{index.toString()}"
   on:click|stopPropagation={() => onClick(row)}
   class={isClickable ? 'cursor-pointer' : ''}
+  tabindex={isClickable ? 0 : -1}
 >
   {#each columns as column, colIndex}
     <td id="row-{index.toString()}-col-{colIndex.toString()}">
