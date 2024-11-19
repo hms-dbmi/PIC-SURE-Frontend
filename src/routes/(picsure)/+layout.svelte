@@ -18,7 +18,7 @@
   import { getModalStore, getDrawerStore } from '@skeletonlabs/skeleton';
   import { beforeNavigate } from '$app/navigation';
   import { hasInvalidFilter, hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
-  import DashboardDrawer from '$lib/components/DashboardDrawer.svelte';
+  import DashboardDrawer from '$lib/components/datatable/DashboardDrawer.svelte';
   import FilterWarning from '$lib/components/modals/FilterWarning.svelte';
 
   const modalStore = getModalStore();
