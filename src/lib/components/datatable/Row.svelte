@@ -18,16 +18,18 @@
   export let rowClickHandler: (row: Indexable) => void = () => {};
 
   function onClick(row: Indexable) {
-    setActiveRow({ row: row.conceptPath, table: tableName });
+    setActiveRow({ row: row.conceptPath || row.dataset_id, table: tableName });
     rowClickHandler(row);
   }
-  $: active = $activeTable === tableName && $activeRow === row?.conceptPath;
+  $: active =
+    $activeTable === tableName &&
+    ($activeRow === row?.conceptPath || $activeRow === row.dataset_id);
 </script>
 
 <tr
   id="row-{index.toString()}"
   on:click|stopPropagation={() => onClick(row)}
-  class="cursor-pointer"
+  class={rowClickHandler !== (() => {}) ? 'cursor-pointer' : ''}
 >
   {#each columns as column, colIndex}
     <td id="row-{index.toString()}-col-{colIndex.toString()}">

@@ -4,7 +4,7 @@
 
   import { ProgressBar } from '@skeletonlabs/skeleton';
 
-  import { branding } from '$lib/configuration';
+  import { branding, features } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
   import DashboardLink from '$lib/components/datatable/DashboardLink.svelte';
@@ -44,6 +44,13 @@
     unsubColumns && unsubColumns();
     unsubRows && unsubRows();
   });
+
+  function rowClickHandler(row: DashboardRow) {
+    drawerStore.open({
+      id: 'dashboard-drawer',
+      meta: { row },
+    });
+  }
 </script>
 
 <svelte:head>
@@ -63,14 +70,7 @@
         search={false}
         showPagination={false}
         stickyHeader={true}
-        rowClickHandler={(row) => {
-          drawerStore.open({
-            id: 'dashboard-drawer',
-            meta: {
-              row,
-            },
-          });
-        }}
+        rowClickHandler={features.dashboardDrawer ? rowClickHandler : undefined}
       />
     {/await}
   </section>

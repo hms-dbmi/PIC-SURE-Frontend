@@ -6,7 +6,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   const drawerStore = getDrawerStore();
 
-  const datasetId = ($drawerStore.meta.row as DashboardRow)?.accession as string || '';
+  const datasetId = ($drawerStore.meta.row as DashboardRow)?.dataset_id as string || '';
 
   async function getDataset() {
     return getDatasetDetails(datasetId) as Promise<Record<string, unknown>>;
