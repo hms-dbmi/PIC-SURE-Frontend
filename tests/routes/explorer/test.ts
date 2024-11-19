@@ -65,10 +65,11 @@ userTest.describe('Explorer for authenticated users', () => {
 
     // Then
     await expect(page.locator('#facet-side-bar')).toBeVisible();
-    expect(page
-      .getByTestId('accordion-item')
-      .first()
-      .getByTestId(`facet-${facetResponseWithZeroCount[0].name}-label`)
+    expect(
+      page
+        .getByTestId('accordion-item')
+        .first()
+        .getByTestId(`facet-${facetResponseWithZeroCount[0].name}-label`),
     ).not.toBeVisible();
   });
 });
