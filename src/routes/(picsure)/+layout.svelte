@@ -77,7 +77,7 @@
 
 <Toast position="t" />
 <Modal {...modalProps} />
-<Drawer position="right" width="w-1/2">
+<Drawer position="right" width="w-1/2" rounded="rounded-none">
   {#if $drawerStore.id === 'dashboard-drawer'}
     <DashboardDrawer />
   {/if}

@@ -36,18 +36,20 @@
   {:then details}
     <ul class="m-4">
       {#each Object.entries(details) as [key, value]}
-        <li class="m-2">
-          <strong>{key.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}</strong>:
+        {#if value}
+          <li class="m-2">
+            <strong class="capitalize">{key.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}</strong>:
           {#if Array.isArray(value)}
             <ul class="list-disc">
               {#each value as item}
-                <li>{item}</li>
+                <li class="ml-8">{item}</li>
               {/each}
-            </ul>
-          {:else}
-            {value}
-          {/if}
-        </li>
+              </ul>
+            {:else}
+              {value}
+            {/if}
+          </li>
+        {/if}
       {/each}
     </ul>
   {:catch}
