@@ -11,7 +11,7 @@
   const link = (($drawerStore.meta.row as DashboardRow)?.additional_info_link as string) || '';
   async function getDataset() {
     const res = await getDatasetDetails(datasetId);
-    if (res.dashboardDrawerList) {
+    if (res.dashboardDrawerList && res.dashboardDrawerList.length > 0) {
       let details = res.dashboardDrawerList[0];
       if (details.datasetId) {
         delete details.datasetId;
