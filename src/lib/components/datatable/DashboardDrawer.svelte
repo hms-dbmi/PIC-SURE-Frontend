@@ -9,19 +9,17 @@
   const datasetId = (($drawerStore.meta.row as DashboardRow)?.dataset_id as string) || '';
   const title = (($drawerStore.meta.row as DashboardRow)?.name as string) || '';
   const link = (($drawerStore.meta.row as DashboardRow)?.additional_info_link as string) || '';
+  
   async function getDataset() {
-    const res = await getDatasetDetails(datasetId);
-    if (res.dashboardDrawerList && res.dashboardDrawerList.length > 0) {
-      let details = res.dashboardDrawerList[0];
-      if (details.datasetId) {
-        delete details.datasetId;
-      }
-      if (details.studyFullname) {
-        delete details.studyFullname;
-      }
-      return details;
+    const details = await getDatasetDetails(datasetId);
+    if (!details) throw new Error('No details found');
+    if (details.datasetId) {
+      delete details.datasetId;
     }
-    throw new Error('No dashboardDrawerList found');
+    if (details.studyFullname) {
+      delete details.studyFullname;
+    }
+    return details;
   }
 </script>
 
