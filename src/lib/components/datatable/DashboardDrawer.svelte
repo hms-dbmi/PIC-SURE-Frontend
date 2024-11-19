@@ -60,7 +60,7 @@
     {/each}
   </ul>
   {#if link}
-    <div class="flex justify-center items-center">
+    <div class="flex justify-center items-center mb-4">
       <a
         href={link || '#'}
         on:click|stopPropagation
@@ -70,7 +70,7 @@
     </div>
   {/if}
 {:catch}
-  <div class="flex justify-center items-center h-full">
+  <div class="flex justify-center items-center">
     <ErrorAlert title="An Error Occured">
       <p>We're having trouble fetching the dataset details right now. Please try again later.</p>
     </ErrorAlert>
