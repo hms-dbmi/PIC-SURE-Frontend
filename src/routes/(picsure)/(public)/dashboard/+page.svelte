@@ -71,6 +71,7 @@
         showPagination={false}
         stickyHeader={true}
         rowClickHandler={features.dashboardDrawer ? rowClickHandler : undefined}
+        isClickable={features.dashboardDrawer}
       />
     {/await}
   </section>

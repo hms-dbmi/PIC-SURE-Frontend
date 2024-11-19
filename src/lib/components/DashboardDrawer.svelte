@@ -6,10 +6,18 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   const drawerStore = getDrawerStore();
 
-  const datasetId = ($drawerStore.meta.row as DashboardRow)?.dataset_id as string || '';
+  const datasetId = (($drawerStore.meta.row as DashboardRow)?.dataset_id as string) || '';
 
   async function getDataset() {
-    return getDatasetDetails(datasetId) as Promise<Record<string, unknown>>;
+    const res = await getDatasetDetails(datasetId);
+    if (res.dashboardDrawerList) {
+      let details = res.dashboardDrawerList[0];
+      if (details.datasetId) {
+        delete details.datasetId;
+      }
+      return details;
+    }
+    throw new Error('No dashboardDrawerList found');
   }
 </script>
 
@@ -21,7 +29,18 @@
   {:then details}
     <ul>
       {#each Object.entries(details) as [key, value]}
-        <li><strong>{key}</strong>: {value}</li>
+        <li>
+          <strong>{key}</strong>:
+          {#if Array.isArray(value)}
+            <ul>
+              {#each value as item}
+                <li>{item}</li>
+              {/each}
+            </ul>
+          {:else}
+            {value}
+          {/if}
+        </li>
       {/each}
     </ul>
   {:catch}

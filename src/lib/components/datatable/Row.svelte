@@ -15,6 +15,7 @@
   export let index: number = -2;
   export let row: Indexable = {};
   export let tableName: string = '';
+  export let isClickable: boolean = false;
   export let rowClickHandler: (row: Indexable) => void = () => {};
 
   function onClick(row: Indexable) {
@@ -29,7 +30,7 @@
 <tr
   id="row-{index.toString()}"
   on:click|stopPropagation={() => onClick(row)}
-  class={rowClickHandler !== (() => {}) ? 'cursor-pointer' : ''}
+  class={isClickable ? 'cursor-pointer' : ''}
 >
   {#each columns as column, colIndex}
     <td id="row-{index.toString()}-col-{colIndex.toString()}">
