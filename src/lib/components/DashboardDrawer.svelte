@@ -29,12 +29,13 @@
   {#if title}
     <h2 class="text-2xl font-bold ml-4">{title}</h2>
   {/if}
+  <hr class="my-4" />
   {#await getDataset()}
     <div class="flex justify-center items-center h-full">
       <ProgressRadial />
     </div>
   {:then details}
-    <ul class="m-4">
+    <ul class="m-4 p-4">
       {#each Object.entries(details) as [key, value]}
         {#if value}
           <li class="m-2">
