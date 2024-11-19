@@ -38,12 +38,19 @@
       {#each Object.entries(details) as [key, value]}
         {#if value}
           <li class="m-2">
-            <strong class="capitalize">{key.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}</strong>:
-          {#if Array.isArray(value)}
-            <ul class="list-disc">
-              {#each value as item}
-                <li class="ml-8">{item}</li>
-              {/each}
+            <strong class="capitalize"
+              >{key
+                .replace(/([A-Z])/g, ' $1')
+                .toLowerCase()
+                .trim()}</strong
+            >:
+            {#if Array.isArray(value)}
+              <ul class="list-disc">
+                {#each value as item}
+                  {#if item}
+                    <li class="ml-8">{item}</li>
+                  {/if}
+                {/each}
               </ul>
             {:else}
               {value}
@@ -62,5 +69,4 @@
 </div>
 
 <style>
-
 </style>
