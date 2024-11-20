@@ -40,7 +40,9 @@ test.describe('Dashboard page', () => {
     });
     test('Dashboard rows are clickable and open drawer', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/dashboard-drawer/1', { dashboardDrawerList: [ { ...mockDashboard.rows[0] } ] });
+      await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/dashboard-drawer/1', {
+        dashboardDrawerList: [{ ...mockDashboard.rows[0] }],
+      });
       await page.goto('/dashboard');
 
       // When
@@ -54,7 +56,9 @@ test.describe('Dashboard page', () => {
     });
     test('Dashboard drawer displays correct data', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/dashboard-drawer/1', { dashboardDrawerList: [ { ...mockDashboard.rows[0] } ] });
+      await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/dashboard-drawer/1', {
+        dashboardDrawerList: [{ ...mockDashboard.rows[0] }],
+      });
       await page.goto('/dashboard');
 
       // When
@@ -65,12 +69,15 @@ test.describe('Dashboard page', () => {
       const entries = Object.entries(mockDashboard.rows[0]);
       const drawerText = await page.getByTestId('drawer').getByTestId('drawer-details').innerText();
       const lines = drawerText.split('\n');
-      
+
       for (let i = 0; i < entries.length; i++) {
         const [key, value] = entries[i];
         if (key === 'additional_info_link' || key === 'dataset_id') continue;
-        
-        const formattedKey = key.replace(/([A-Z])/g, ' $1').toLowerCase().trim();
+
+        const formattedKey = key
+          .replace(/([A-Z])/g, ' $1')
+          .toLowerCase()
+          .trim();
         expect(lines[i].toLowerCase()).toBe(`${formattedKey}: ${value}`.toLowerCase());
       }
     });
