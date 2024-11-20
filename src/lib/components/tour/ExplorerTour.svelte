@@ -59,11 +59,10 @@
     ) as HTMLInputElement;
     allOptions?.click();
 
-   setTimeout(() => {
+    setTimeout(() => {
       const addFilter = document.querySelector(
         `#${activeRowSelector} [data-testid="add-filter"]`,
       ) as HTMLInputElement;
-      console.log('addFilter', addFilter);
       addFilter?.click();
       tourDriver.moveNext();
     }, 200);
@@ -157,6 +156,10 @@
 
       if (step.onHighlightStarted) {
         serializedStep.onHighlightStarted = functionMap[step.onHighlightStarted];
+      }
+
+      if (step.removeHighlightClass) {
+        serializedStep.removeHighlightClass = functionMap[step.removeHighlightClass];
       }
 
       return serializedStep;

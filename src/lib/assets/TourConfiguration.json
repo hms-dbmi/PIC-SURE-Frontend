@@ -64,7 +64,6 @@
       },
       {
         "element": "#nav-link-help",
-        "onDeselected": "removeHighlightClass",
         "popover": {
           "title": "Help Resources",
           "description": "To learn more about PIC-SURE, please consult the <a href='https://pic-sure.gitbook.io/pic-sure' class='anchor' target='_blank'>user guide</a> and <a href='https://www.youtube.com/@pic-sure446/featured' class='anchor' target='_blank'>video</a> demonstrations. You can also find these resources on the help page.",
@@ -148,7 +147,6 @@
       },
       {
         "element": "#nav-link-help",
-        "onDeselected": "removeHighlightClass",
         "popover": {
           "title": "Help Resources",
           "description": "To learn more about PIC-SURE, please consult the <a href='https://pic-sure.gitbook.io/nhlbi-biodata-catalyst-powered-by-pic-sure' class='anchor' target='_blank'>user guide</a> and <a href='https://www.youtube.com/playlist?list=PLJ6YccH8TEufZ5L-ctxzFF7vuZRLVacKw' class='anchor' target='_blank'>video</a> demonstrations. You can also find these resources on the help page.",
@@ -241,7 +239,6 @@
       },
       {
         "element": "#nav-link-help",
-        "onDeselected": "removeHighlightClass",
         "popover": {
           "title": "Help Resources",
           "description": "To learn more about PIC-SURE, please consult the <a href='https://pic-sure.gitbook.io/nhlbi-biodata-catalyst-powered-by-pic-sure' class='anchor' target='_blank'>user guide</a> and <a href='https://www.youtube.com/playlist?list=PLJ6YccH8TEufZ5L-ctxzFF7vuZRLVacKw' class='anchor' target='_blank'>video</a> demonstrations. You can also find these resources on the help page.",
