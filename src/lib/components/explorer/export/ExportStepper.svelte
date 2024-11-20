@@ -301,7 +301,8 @@
     exportLoading = true;
     let signedUrl = await getSignedUrl();
     window.open(
-      'https://app.terra.bio/#import-data?format=pfb&url=' + encodeURIComponent(signedUrl),
+      'https://terra.biodatacatalyst.nhlbi.nih.gov/#import-data?format=pfb&url=' +
+        encodeURIComponent(signedUrl),
     );
     exportLoading = false;
   }
