@@ -122,6 +122,7 @@ export const features: Indexable = {
     authTour: import.meta.env?.VITE_OPEN_TOUR_NAME ?? 'NHANES-Auth',
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
     enableTerraExport: import.meta.env?.VITE_ENABLE_TERRA_EXPORT === 'true',
+    enableSampleIdCheckbox: import.meta.env?.VITE_ENABLE_SAMPLE_ID_CHECKBOX === 'true',
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',

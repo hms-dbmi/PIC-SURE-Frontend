@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as api from '$lib/api';
+  import { v4 as uuidv4 } from 'uuid';
   import { browser } from '$app/environment';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
@@ -13,28 +14,34 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExportStore from '$lib/stores/Export';
   import { filters, totalParticipants } from '$lib/stores/Filter';
-  let { exports } = ExportStore;
+  let { exports, addExports, removeExports } = ExportStore;
   import { state } from '$lib/stores/Stepper';
   import { goto } from '$app/navigation';
   import { type DatasetError } from '$lib/models/Dataset';
   import { createDatasetName } from '$lib/services/datasets';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
-  import type { ExpectedResultType } from '$lib/models/query/Query.ts';
+  import { Query, type ExpectedResultType } from '$lib/models/query/Query.ts';
   import codeBlocks from '$lib/assets/codeBlocks.json';
-  import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+  import { getModalStore, type ModalSettings, getToastStore } from '@skeletonlabs/skeleton';
   import Confirmation from '$lib/components/modals/Confirmation.svelte';
-  import { branding, features, settings } from '$lib/configuration';
+  import { branding, features, settings, resources } from '$lib/configuration';
+  import { searchDictionary } from '$lib/services/dictionary';
+  import type { ExportInterface } from '$lib/models/Export';
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
   export let rows: ExportRowInterface[] = [];
 
   const modalStore = getModalStore();
+  const toastStore = getToastStore();
   let statusPromise: Promise<string>;
   let preparePromise: Promise<void>;
   let datasetNameInput: string = '';
   let picsureResultId: string = '';
   let lockDownload = true;
   let error: string = '';
+  let sampleIds = false;
+  let lastExports: ExportRowInterface[] = [];
+  let loadingSampleIds = false;
   $: datasetId = '';
   $: canDownload = true;
   $: apiExport = false;
@@ -61,7 +68,9 @@
       modalClasses: 'bg-surface-100-800-token p-4 block',
       meta: {
         component: Confirmation,
-        message: branding.explorePage.confirmDownloadMessage,
+        message:
+          branding.explorePage.confirmDownloadMessage ||
+          'This action will download the data to your local machine. Are you sure you want to proceed?',
         onConfirm,
         onCancel,
         confirmText: 'Download',
@@ -94,13 +103,11 @@
     }
   }
   function onNextHandler(e: CustomEvent): void {
-    console.log('event:next', e);
     if (e.detail.step === 0 && !showTreeStep) {
       // nothing needs to be done here
       return;
     }
     if (e.detail.step === 1 && showTreeStep) {
-      console.log('event:next', e);
       //TODO: Load tree
     } else if ((e.detail.step === 1 && !showTreeStep) || (showTreeStep && e.detail.step === 2)) {
       preparePromise = submitQuery();
@@ -136,7 +143,6 @@
     try {
       query.query.fields = $exports.map((exp) => exp.conceptPath);
       const res = await api.post('picsure/query', query);
-      console.log('res', res);
       datasetId = res.picsureResultId;
     } catch (error) {
       $state.current--;
@@ -203,6 +209,94 @@
     return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
   }
 
+  async function toggleSampleIds() {
+    try {
+      loadingSampleIds = true;
+      if (!sampleIds) {
+        const exportsToRemove: ExportInterface[] = lastExports?.map(
+          (e) => e.ref,
+        ) as ExportInterface[];
+        removeExports(exportsToRemove || []);
+        rows = rows.filter((r) => !lastExports.includes(r));
+        return;
+      }
+
+      // Get genomic concepts from dictionary
+      const concepts = await searchDictionary(
+        '',
+        [
+          {
+            name: 'data_source_genomic',
+            category: 'data_source',
+            display: 'Genomic',
+            description: 'Associated with genomic data',
+            count: 0,
+          },
+        ],
+        { pageNumber: 0, pageSize: 10000 },
+      );
+
+      if (concepts.content.length === 0) {
+        return;
+      }
+
+      // Get sample ID counts via cross counts query
+      const crossCountQuery = new Query(structuredClone(query.query));
+      crossCountQuery.expectedResultType = 'CROSS_COUNT';
+      const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
+      crossCountQuery.setCrossCountFields(crossCountFields);
+
+      const crossCountResponse: Record<string, number> = await api.post('picsure/query/sync', {
+        query: crossCountQuery,
+        resourceUUID: resources.hpds,
+      });
+
+      // Filter to paths with counts > 0
+      const conceptPathsToAdd = Object.entries(crossCountResponse)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        .filter(([_, count]) => count > 0)
+        .map(([path]) => path);
+
+      // Create new exports for each path
+      const newExports = conceptPathsToAdd.map((path) => {
+        const concept = concepts.content.find((c) => c.conceptPath === path);
+        return {
+          id: uuidv4(),
+          searchResult: concept,
+          display: concept?.display || '',
+          conceptPath: concept?.conceptPath || '',
+        } as ExportInterface;
+      });
+
+      // Add exports and create corresponding rows
+      addExports(newExports);
+      const newRows = newExports.map(
+        (e) =>
+          ({
+            ref: e,
+            variableId: e.id,
+            variableName: e.display,
+            description: e?.searchResult?.description,
+            type: e?.searchResult.type,
+            selected: true,
+          }) as ExportRowInterface,
+      );
+
+      rows = [...rows, ...newRows];
+      lastExports = newRows;
+    } catch (error) {
+      console.error('Error in toggleSampleIds', error);
+      toastStore.trigger({
+        message:
+          'We were unable to fetch the sample IDs for your selected data. Please try again later.',
+        background: 'variant-ghost-error',
+      });
+      sampleIds = false;
+    } finally {
+      loadingSampleIds = false;
+    }
+  }
+
   async function exportToTerra() {
     exportLoading = true;
     let signedUrl = await getSignedUrl();
@@ -253,7 +347,33 @@
               />
             </div>
           {/await}
-          <Datatable tableName="ExportSummary" data={rows} {columns} />
+          {#if !loadingSampleIds}
+            <Datatable tableName="ExportSummary" data={rows} {columns} />
+            {#if features.explorer.enableSampleIdCheckbox}
+              <div>
+                <label
+                  for="sample-ids-checkbox"
+                  class="flex items-center"
+                  data-testid="sample-ids-label"
+                >
+                  <input
+                    type="checkbox"
+                    class="mr-1 &[aria-disabled=“true”]:opacity-75"
+                    data-testid="sample-ids-checkbox"
+                    id="sample-ids-checkbox"
+                    bind:checked={sampleIds}
+                    on:change={toggleSampleIds}
+                  />
+                  <span>Include sample identifiers</span>
+                </label>
+              </div>
+            {/if}
+          {:else}
+            <div class="flex justify-center items-center">
+              <ProgressRadial width="w-4" />
+              <div>Loading sample IDs...</div>
+            </div>
+          {/if}
         {/if}
       </section>
     </div>
@@ -414,38 +534,6 @@
                   >
                 </div>
               </section>
-              <!--<section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
-                  {#each branding.apiPage.cards as card}
-                    <a
-                            href={card.link}
-                            target={card.link.startsWith('http') ? '_blank' : '_self'}
-                            class="pic-sure-info-card p-4 basis-2/4"
-                    >
-                      <div class="card card-hover">
-                        <header class="card-header flex flex-col items-center">
-                          <h4 class="my-1" data-testid={card.header}>{card.header}</h4>
-                          <hr class="!border-t-2" />
-                        </header>
-                        <section class="p-4 whitespace-pre-wrap flex flex-col" data-testid={card.body}>
-                          <div>{card.body}</div>
-                          <div class="flex justify-center">
-                            <div class="btn variant-filled-primary mt-3 w-fit">Learn More</div>
-                          </div>
-                        </section>
-                      </div>
-                    </a>
-                  {/each}
-                </section>-->
-              <!--<div class="flex flex-col items-center justify-center">
-                  <div>
-                    Export Status: {status}
-                    <i
-                      class="fa-solid {status === 'ERROR'
-                        ? 'fa-circle-xmark text-error-500'
-                        : 'fa-check-circle text-success-500'}"
-                    ></i>
-                  </div>
-                </div>-->
             {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
               <section class="flex flex-col gap-8">
                 <div class="flex justify-center mt-4">
@@ -513,7 +601,7 @@
 </Stepper>
 
 <style>
-  input {
+  input[type='text'] {
     border-radius: var(--theme-rounded-base);
   }
 </style>
