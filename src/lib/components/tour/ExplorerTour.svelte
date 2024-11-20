@@ -47,7 +47,7 @@
   const applyNumericFilter = (activeRowSelector?: string) => {
     const filter = document.querySelector(
       `#${activeRowSelector} [data-testid="add-filter"]`,
-    ) as HTMLElement;
+    ) as HTMLInputElement;
 
     filter.click();
     tourDriver.moveNext();
@@ -55,16 +55,17 @@
 
   const clickFilterOption = (activeRowSelector?: string) => {
     const allOptions = document.querySelector(
-      `${activeRowSelector} #select-all`,
+      `#${activeRowSelector} #select-all`,
     ) as HTMLInputElement;
     allOptions?.click();
 
-    const addFilter = document.querySelector(
-      `${activeRowSelector} [data-testid="add-filter"]`,
-    ) as HTMLElement;
-    addFilter.click();
-
-    tourDriver.moveNext();
+    setTimeout(() => {
+      const addFilter = document.querySelector(
+        `#${activeRowSelector} [data-testid="add-filter"]`,
+      ) as HTMLInputElement;
+      addFilter?.click();
+      tourDriver.moveNext();
+    }, 200);
   };
 
   function openDrawer() {
@@ -155,6 +156,10 @@
 
       if (step.onHighlightStarted) {
         serializedStep.onHighlightStarted = functionMap[step.onHighlightStarted];
+      }
+
+      if (step.removeHighlightClass) {
+        serializedStep.removeHighlightClass = functionMap[step.removeHighlightClass];
       }
 
       return serializedStep;
