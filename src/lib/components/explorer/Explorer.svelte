@@ -45,8 +45,9 @@
     doDisableTour();
     isLoading.set(true);
     try {
-      const results = await search($searchTerm, $selectedFacets, state);
-      return results;
+      return await search($searchTerm, $selectedFacets, state);
+    } catch (e) {
+      return [];
     } finally {
       isLoading.set(false);
     }
