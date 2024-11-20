@@ -21,9 +21,7 @@ test.describe('Dashboard page', () => {
 
       // Then
       const buttons = await page.getByText('More Info').all();
-      console.log(buttons);
-      console.log(buttons.length);
-      console.log(mockDashboard.rows.length);
+
       expect(buttons.length).toBe(mockDashboard.rows.length);
       await expect(buttons[0]).toHaveClass(
         'btn variant-ghost-primary hover:variant-filled-primary',
