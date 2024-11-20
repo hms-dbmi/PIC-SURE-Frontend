@@ -55,7 +55,7 @@ test.describe('Dashboard page', () => {
     test('Dashboard drawer displays correct data', async ({ page }) => {
       // Given
       await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/dashboard-drawer/1', {
-        dashboardDrawerList: [{ ...mockDashboard.rows[0] }],
+        ...mockDashboard.rows[0],
       });
       await page.goto('/dashboard');
 
