@@ -132,7 +132,8 @@ test.describe('Facet Categories', () => {
       if (numFacets > MAX_FACETS_TO_SHOW) {
         expect(facetItems).toHaveLength(MAX_FACETS_TO_SHOW);
       } else {
-        expect(facetItems).toHaveLength(facetsResponse[i].facets.length);
+        const facetsToExpect = facetsResponse[i].facets.filter((facet) => facet.count > 0);
+        expect(facetItems).toHaveLength(facetsToExpect.length);
       }
     }
   });
@@ -186,7 +187,8 @@ test.describe('Facet Categories', () => {
         await expect(moreButton).toBeVisible();
         await moreButton.click();
         const facetItems = await page.locator('.accordion-panel').nth(i).locator('label').all();
-        expect(facetItems).toHaveLength(facetsResponse[i].facets.length);
+        const facetsToExpect = facetsResponse[i].facets.filter((facet) => facet.count > 0);
+        expect(facetItems).toHaveLength(facetsToExpect.length);
       }
     }
   });
