@@ -23,7 +23,7 @@
   export let stickyHeader = false;
   export let showPagination = true;
   export let rowClickHandler: (row: Indexable) => void = () => {};
-
+  export let isClickable: boolean = false;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export let data: any = []; //TODO: Fix this type
 
@@ -83,7 +83,15 @@
       <tbody>
         {#if $rows.length > 0}
           {#each $rows as row, i}
-            <ExpandableRow {tableName} {cellOverides} {columns} index={i} {row} {rowClickHandler} />
+            <ExpandableRow
+              {tableName}
+              {cellOverides}
+              {columns}
+              index={i}
+              {row}
+              {rowClickHandler}
+              {isClickable}
+            />
           {/each}
         {:else}
           <tr><td colspan={columns.length}>No entries found.</td></tr>
