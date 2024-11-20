@@ -84,6 +84,7 @@
         cellOverides={roleTable.overrides}
         defaultRowsPerPage={10}
         rowClickHandler={roleRowCLick}
+        isClickable={true}
       />
     </div>
     <div id="authorization-privilege-table" class="mb-10">
@@ -106,6 +107,7 @@
         cellOverides={privilegesTable.overrides}
         defaultRowsPerPage={10}
         rowClickHandler={privilegeRowClick}
+        isClickable={true}
       />
     </div>
   {:catch}

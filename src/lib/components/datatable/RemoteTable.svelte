@@ -25,7 +25,7 @@
   export let columns: Column[] = [];
   export let cellOverides: Indexable = {};
   export let rowClickHandler: (row: Indexable) => void = () => {};
-
+  export let isClickable: boolean = false;
   let rows = handler.getRows();
 
   onMount(() => {
@@ -100,7 +100,15 @@
         </tr>
       {:else if $rows.length > 0}
         {#each $rows as row, i}
-          <ExpandableRow {tableName} {cellOverides} {columns} index={i} {row} {rowClickHandler} />
+          <ExpandableRow
+            {tableName}
+            {cellOverides}
+            {columns}
+            index={i}
+            {row}
+            {rowClickHandler}
+            {isClickable}
+          />
         {/each}
       {:else}
         <tr><td colspan={columns.length}>No entries found.</td></tr>

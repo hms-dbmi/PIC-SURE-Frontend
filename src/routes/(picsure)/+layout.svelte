@@ -1,5 +1,12 @@
 <script lang="ts">
-  import { AppShell, Modal, Toast, storePopup, type ModalComponent } from '@skeletonlabs/skeleton';
+  import {
+    AppShell,
+    Modal,
+    Toast,
+    Drawer,
+    storePopup,
+    type ModalComponent,
+  } from '@skeletonlabs/skeleton';
   import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
   import Navigation from '$lib/components/Navigation.svelte';
   import { onMount } from 'svelte';
@@ -8,12 +15,14 @@
   import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import ModalWrapper from '$lib/components/modals/ModalWrapper.svelte';
-  import { getModalStore } from '@skeletonlabs/skeleton';
+  import { getModalStore, getDrawerStore } from '@skeletonlabs/skeleton';
   import { beforeNavigate } from '$app/navigation';
   import { hasInvalidFilter, hasGenomicFilter, hasUnallowedFilter } from '$lib/stores/Filter.ts';
+  import DashboardDrawer from '$lib/components/datatable/DashboardDrawer.svelte';
   import FilterWarning from '$lib/components/modals/FilterWarning.svelte';
 
   const modalStore = getModalStore();
+  const drawerStore = getDrawerStore();
 
   // Highlight.js
   import hljs from 'highlight.js/lib/core';
@@ -68,6 +77,11 @@
 
 <Toast position="t" />
 <Modal {...modalProps} />
+<Drawer position="right" width="w-1/2" rounded="rounded-none">
+  {#if $drawerStore.id === 'dashboard-drawer'}
+    <DashboardDrawer />
+  {/if}
+</Drawer>
 <AppShell>
   <svelte:fragment slot="header">
     <Navigation />

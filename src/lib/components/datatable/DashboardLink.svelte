@@ -7,7 +7,13 @@
 {#if consentGranted}
   <i class="fa-regular fa-circle-check text-3xl text-success-500"></i>
 {:else}
-  <a href={link} class="btn variant-ghost-primary hover:variant-filled-primary" target="_blank"
-    >More Info</a
+  <a
+    href={link || '#'}
+    title={link ? 'More Info' : 'Link not available'}
+    on:click|stopPropagation={(e) => !link && e.preventDefault()}
+    class="btn variant-ghost-primary hover:variant-filled-primary{!link
+      ? ' opacity-50 cursor-not-allowed'
+      : ''}"
+    target="_blank">More Info</a
   >
 {/if}

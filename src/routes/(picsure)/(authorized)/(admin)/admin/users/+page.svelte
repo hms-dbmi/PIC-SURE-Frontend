@@ -109,6 +109,7 @@
           defaultRowsPerPage={10}
           title={connection.label}
           {rowClickHandler}
+          isClickable={true}
         />
       </div>
     {/each}
