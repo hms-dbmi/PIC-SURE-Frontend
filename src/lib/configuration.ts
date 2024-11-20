@@ -119,7 +119,7 @@ export const features: Indexable = {
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
     enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
-    authTour: import.meta.env?.VITE_OPEN_TOUR_NAME ?? 'NHANES-Auth',
+    authTour: import.meta.env?.VITE_AUTH_TOUR_NAME ?? 'NHANES-Auth',
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
     enableTerraExport: import.meta.env?.VITE_ENABLE_TERRA_EXPORT === 'true',
     enableSampleIdCheckbox: import.meta.env?.VITE_ENABLE_SAMPLE_ID_CHECKBOX === 'true',
