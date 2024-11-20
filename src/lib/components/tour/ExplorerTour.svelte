@@ -46,8 +46,8 @@
 
   const applyNumericFilter = (activeRowSelector?: string) => {
     const filter = document.querySelector(
-      `${activeRowSelector} [data-testid="add-filter"]`,
-    ) as HTMLElement;
+      `#${activeRowSelector} [data-testid="add-filter"]`,
+    ) as HTMLInputElement;
 
     filter.click();
     tourDriver.moveNext();
@@ -59,12 +59,14 @@
     ) as HTMLInputElement;
     allOptions?.click();
 
-    const addFilter = document.querySelector(
-      `#${activeRowSelector} [data-testid="add-filter"]`,
-    ) as HTMLElement;
-    addFilter.click();
-
-    tourDriver.moveNext();
+   setTimeout(() => {
+      const addFilter = document.querySelector(
+        `#${activeRowSelector} [data-testid="add-filter"]`,
+      ) as HTMLInputElement;
+      console.log('addFilter', addFilter);
+      addFilter?.click();
+      tourDriver.moveNext();
+    }, 200);
   };
 
   function openDrawer() {
