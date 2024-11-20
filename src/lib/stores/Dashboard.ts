@@ -49,6 +49,11 @@ export async function loadDashboardData() {
   const processedRows = dashboardData.rows.map(processRow(consents));
 
   const sortedRows = processedRows.sort((a, b) => {
+    const aIsAnvil = (a.program_name?.toString().toLowerCase() || '') === 'anvil';
+    const bIsAnvil = (b.program_name?.toString().toLowerCase() || '') === 'anvil';
+    if (aIsAnvil !== bIsAnvil) {
+      return aIsAnvil ? 1 : -1;
+    }
     if (a.consentGranted === b.consentGranted) {
       return sortByAbbreviation(a, b);
     }
