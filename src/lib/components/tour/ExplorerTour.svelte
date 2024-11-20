@@ -46,7 +46,7 @@
 
   const applyNumericFilter = (activeRowSelector?: string) => {
     const filter = document.querySelector(
-      `#${activeRowSelector} [data-testid="add-filter"]`,
+      `${activeRowSelector} [data-testid="add-filter"]`,
     ) as HTMLElement;
 
     filter.click();
@@ -74,7 +74,7 @@
 
   const applyFilterThenNext: DriverHook = (element?: Element) => {
     const activeRowId = element?.id;
-    const filterType = document.querySelector(`#${activeRowId} [data-testid="numerical-filter"]`)
+    const filterType = document.querySelector(`${activeRowId} [data-testid="numerical-filter"]`)
       ? 'numerical'
       : 'categorical';
     if (filterType === 'numerical') {
