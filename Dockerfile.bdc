@@ -1,5 +1,5 @@
 # Step 1: Build the app with node
-FROM node:23.0.0-alpine3.19 AS builder
+FROM node:23.3.0-alpine3.19 AS builder
 WORKDIR /app
 COPY package*.json .
 COPY .env .
