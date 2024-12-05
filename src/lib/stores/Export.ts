@@ -6,7 +6,7 @@ const exports: Writable<ExportInterface[]> = writable([]);
 
 function addExport(exportedField: ExportInterface) {
   const currentExports = get(exports);
-  if (currentExports.some((e: ExportInterface) => e.id === exportedField.id)) {
+  if (currentExports.some((e: ExportInterface) => e.conceptPath === exportedField.conceptPath)) {
     return;
   }
   exports.set([...currentExports, exportedField]);
@@ -16,7 +16,7 @@ function addExport(exportedField: ExportInterface) {
 function addExports(exportedFields: ExportInterface[]) {
   const currentExports = get(exports);
   const newExports = exportedFields.filter(
-    (e: ExportInterface) => !currentExports.some((ce: ExportInterface) => ce.id === e.id),
+    (e: ExportInterface) => !currentExports.some((ce: ExportInterface) => ce.conceptPath === e.conceptPath),
   );
   exports.set([...currentExports, ...newExports]);
 }
@@ -32,7 +32,9 @@ function removeExport(uuid: string) {
 
 function removeExports(exportsToRemove: ExportInterface[]) {
   const currentExports = get(exports);
-  exports.set(currentExports.filter((e: ExportInterface) => !exportsToRemove.includes(e)));
+  exports.set(currentExports.filter((e: ExportInterface) => 
+    !exportsToRemove.some(re => re.conceptPath === e.conceptPath)
+  ));
 }
 
 export function clearExports() {
