@@ -283,7 +283,9 @@
       );
       //Remove duplicates
       rows = Array.from(
-        [...rows, ...newRows].reduce((map, row) => map.set(row.variableId, row), new Map()).values()
+        [...rows, ...newRows]
+          .reduce((map, row) => map.set(row.variableId, row), new Map())
+          .values(),
       );
       lastExports = newRows;
     } catch (error) {

@@ -16,7 +16,8 @@ function addExport(exportedField: ExportInterface) {
 function addExports(exportedFields: ExportInterface[]) {
   const currentExports = get(exports);
   const newExports = exportedFields.filter(
-    (e: ExportInterface) => !currentExports.some((ce: ExportInterface) => ce.conceptPath === e.conceptPath),
+    (e: ExportInterface) =>
+      !currentExports.some((ce: ExportInterface) => ce.conceptPath === e.conceptPath),
   );
   exports.set([...currentExports, ...newExports]);
 }
@@ -32,9 +33,11 @@ function removeExport(uuid: string) {
 
 function removeExports(exportsToRemove: ExportInterface[]) {
   const currentExports = get(exports);
-  exports.set(currentExports.filter((e: ExportInterface) => 
-    !exportsToRemove.some(re => re.conceptPath === e.conceptPath)
-  ));
+  exports.set(
+    currentExports.filter(
+      (e: ExportInterface) => !exportsToRemove.some((re) => re.conceptPath === e.conceptPath),
+    ),
+  );
 }
 
 export function clearExports() {
