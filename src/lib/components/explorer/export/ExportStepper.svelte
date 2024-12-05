@@ -274,15 +274,19 @@
         (e) =>
           ({
             ref: e,
-            variableId: e.id,
-            variableName: e.display,
+            variableId: e?.searchResult?.conceptPath,
+            variableName: e?.display,
             description: e?.searchResult?.description,
-            type: e?.searchResult.type,
+            type: e?.searchResult?.type,
             selected: true,
           }) as ExportRowInterface,
       );
-
-      rows = [...rows, ...newRows];
+      //Remove duplicates
+      rows = Array.from(
+        [...rows, ...newRows]
+          .reduce((map, row) => map.set(row.variableId, row), new Map())
+          .values(),
+      );
       lastExports = newRows;
     } catch (error) {
       console.error('Error in toggleSampleIds', error);
