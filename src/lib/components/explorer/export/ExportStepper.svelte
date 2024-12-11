@@ -43,6 +43,7 @@
   let sampleIds = false;
   let lastExports: ExportRowInterface[] = [];
   let loadingSampleIds = false;
+  let checkingSampleIds = false;
   $: datasetId = '';
   $: canDownload = true;
   $: apiExport = false;
@@ -57,15 +58,17 @@
       e.conceptPath.includes('SAMPLE_ID'),
     );
     if (exportedSampleIds.length > 0) {
+      checkingSampleIds = true;
       const genomicConcepts = await getGenomicConcepts();
       if (genomicConcepts.length > 0) {
         // Find sample IDs that match genomic concepts
         const matchingSampleIds = exportedSampleIds.filter((sampleId) =>
-          genomicConcepts.some((concept) => concept.conceptPath === sampleId.conceptPath)
+          genomicConcepts.some((concept) => concept.conceptPath === sampleId.conceptPath),
         );
         sampleIds = matchingSampleIds.length === genomicConcepts.length;
+        checkingSampleIds = false;
         if (sampleIds) {
-          lastExports = matchingSampleIds.map(item => ({
+          lastExports = matchingSampleIds.map((item) => ({
             ref: item,
             variableId: item.conceptPath,
             variableName: item.display,
@@ -76,6 +79,7 @@
         }
       } else {
         sampleIds = false;
+        checkingSampleIds = false;
       }
     } else {
       sampleIds = false;
@@ -278,21 +282,26 @@
     try {
       loadingSampleIds = true;
       if (!sampleIds) {
-        const exportsToRemove: ExportInterface[] = lastExports?.map((e) => e.ref) as ExportInterface[];
+        const exportsToRemove: ExportInterface[] = lastExports?.map(
+          (e) => e.ref,
+        ) as ExportInterface[];
         removeExports(exportsToRemove || []);
-        rows = rows.filter((r) => !lastExports.includes(r));
+        rows = rows.filter((r) => !lastExports.some((le) => le.variableId === r.variableId));
         return;
       }
 
       const genomicConcepts = await getGenomicConcepts();
-      
+
       // Create new exports for each concept
-      const newExports = genomicConcepts.map((concept) => ({
-        id: uuidv4(),
-        searchResult: concept,
-        display: concept?.display || '',
-        conceptPath: concept?.conceptPath || '',
-      } as ExportInterface));
+      const newExports = genomicConcepts.map(
+        (concept) =>
+          ({
+            id: uuidv4(),
+            searchResult: concept,
+            display: concept?.display || '',
+            conceptPath: concept?.conceptPath || '',
+          }) as ExportInterface,
+      );
 
       // Add exports and create corresponding rows
       addExports(newExports);
@@ -387,14 +396,18 @@
                   class="flex items-center"
                   data-testid="sample-ids-label"
                 >
-                  <input
-                    type="checkbox"
-                    class="mr-1 &[aria-disabled=“true”]:opacity-75"
-                    data-testid="sample-ids-checkbox"
-                    id="sample-ids-checkbox"
-                    bind:checked={sampleIds}
-                    on:change={toggleSampleIds}
-                  />
+                  {#if checkingSampleIds}
+                    <ProgressRadial width="w-4" />
+                  {:else}
+                    <input
+                      type="checkbox"
+                      class="mr-1 &[aria-disabled=“true”]:opacity-75"
+                      data-testid="sample-ids-checkbox"
+                      id="sample-ids-checkbox"
+                      bind:checked={sampleIds}
+                      on:change={toggleSampleIds}
+                    />
+                  {/if}
                   <span>Include sample identifiers</span>
                 </label>
               </div>
