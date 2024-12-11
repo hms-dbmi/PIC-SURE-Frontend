@@ -27,6 +27,7 @@
   import { branding, features, settings, resources } from '$lib/configuration';
   import { searchDictionary } from '$lib/services/dictionary';
   import type { ExportInterface } from '$lib/models/Export';
+  import { onMount } from 'svelte';
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
   export let rows: ExportRowInterface[] = [];
@@ -50,6 +51,36 @@
     { dataElement: 'description', label: 'Variable Description', sort: true },
     { dataElement: 'type', label: 'Type', sort: true },
   ];
+
+  onMount(async () => {
+    const exportedSampleIds = $exports.filter((e: ExportInterface) =>
+      e.conceptPath.includes('SAMPLE_ID'),
+    );
+    if (exportedSampleIds.length > 0) {
+      const genomicConcepts = await getGenomicConcepts();
+      if (genomicConcepts.length > 0) {
+        // Find sample IDs that match genomic concepts
+        const matchingSampleIds = exportedSampleIds.filter((sampleId) =>
+          genomicConcepts.some((concept) => concept.conceptPath === sampleId.conceptPath)
+        );
+        sampleIds = matchingSampleIds.length === genomicConcepts.length;
+        if (sampleIds) {
+          lastExports = matchingSampleIds.map(item => ({
+            ref: item,
+            variableId: item.conceptPath,
+            variableName: item.display,
+            description: item.searchResult?.description,
+            type: item.searchResult?.type,
+            selected: true,
+          })) as ExportRowInterface[];
+        }
+      } else {
+        sampleIds = false;
+      }
+    } else {
+      sampleIds = false;
+    }
+  });
 
   const MAX_DATA_POINTS_FOR_EXPORT = settings.maxDataPointsForExport || 1000000;
 
@@ -209,64 +240,59 @@
     return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
   }
 
+  async function getGenomicConcepts() {
+    const concepts = await searchDictionary(
+      '',
+      [
+        {
+          name: 'data_source_genomic',
+          category: 'data_source',
+          display: 'Genomic',
+          description: 'Associated with genomic data',
+          count: 0,
+        },
+      ],
+      { pageNumber: 0, pageSize: 10000 },
+    );
+
+    if (concepts.content.length === 0) {
+      return [];
+    }
+
+    // Get sample ID counts via cross counts query
+    const crossCountQuery = new Query(structuredClone(query.query));
+    crossCountQuery.expectedResultType = 'CROSS_COUNT';
+    const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
+    crossCountQuery.setCrossCountFields(crossCountFields);
+
+    const crossCountResponse: Record<string, number> = await api.post('picsure/query/sync', {
+      query: crossCountQuery,
+      resourceUUID: resources.hpds,
+    });
+
+    // Filter and return only concepts with counts > 0
+    return concepts.content.filter((concept) => crossCountResponse[concept.conceptPath] > 0);
+  }
+
   async function toggleSampleIds() {
     try {
       loadingSampleIds = true;
       if (!sampleIds) {
-        const exportsToRemove: ExportInterface[] = lastExports?.map(
-          (e) => e.ref,
-        ) as ExportInterface[];
+        const exportsToRemove: ExportInterface[] = lastExports?.map((e) => e.ref) as ExportInterface[];
         removeExports(exportsToRemove || []);
         rows = rows.filter((r) => !lastExports.includes(r));
         return;
       }
 
-      // Get genomic concepts from dictionary
-      const concepts = await searchDictionary(
-        '',
-        [
-          {
-            name: 'data_source_genomic',
-            category: 'data_source',
-            display: 'Genomic',
-            description: 'Associated with genomic data',
-            count: 0,
-          },
-        ],
-        { pageNumber: 0, pageSize: 10000 },
-      );
-
-      if (concepts.content.length === 0) {
-        return;
-      }
-
-      // Get sample ID counts via cross counts query
-      const crossCountQuery = new Query(structuredClone(query.query));
-      crossCountQuery.expectedResultType = 'CROSS_COUNT';
-      const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
-      crossCountQuery.setCrossCountFields(crossCountFields);
-
-      const crossCountResponse: Record<string, number> = await api.post('picsure/query/sync', {
-        query: crossCountQuery,
-        resourceUUID: resources.hpds,
-      });
-
-      // Filter to paths with counts > 0
-      const conceptPathsToAdd = Object.entries(crossCountResponse)
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        .filter(([_, count]) => count > 0)
-        .map(([path]) => path);
-
-      // Create new exports for each path
-      const newExports = conceptPathsToAdd.map((path) => {
-        const concept = concepts.content.find((c) => c.conceptPath === path);
-        return {
-          id: uuidv4(),
-          searchResult: concept,
-          display: concept?.display || '',
-          conceptPath: concept?.conceptPath || '',
-        } as ExportInterface;
-      });
+      const genomicConcepts = await getGenomicConcepts();
+      
+      // Create new exports for each concept
+      const newExports = genomicConcepts.map((concept) => ({
+        id: uuidv4(),
+        searchResult: concept,
+        display: concept?.display || '',
+        conceptPath: concept?.conceptPath || '',
+      } as ExportInterface));
 
       // Add exports and create corresponding rows
       addExports(newExports);
