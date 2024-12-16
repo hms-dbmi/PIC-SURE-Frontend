@@ -345,6 +345,15 @@
     );
     exportLoading = false;
   }
+  async function exportToSevenBridges() {
+    exportLoading = true;
+    let signedUrl = await getSignedUrl();
+    window.open(
+      'https://platform.sb.biodatacatalyst.nhlbi.nih.gov/import/pfb?source=bdc&URL=' +
+        encodeURIComponent(signedUrl),
+    );
+    exportLoading = false;
+  }
 </script>
 
 <Stepper
@@ -592,6 +601,18 @@
                         class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary"
                         on:click={() => exportToTerra()}
                         ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Terra</button
+                      >
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-3">
+                    <div></div>
+                    <div>
+                      <button
+                        disabled={exportLoading}
+                        class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary"
+                        on:click={() => exportToSevenBridges()}
+                        ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Seven
+                        Bridges</button
                       >
                     </div>
                   </div>
