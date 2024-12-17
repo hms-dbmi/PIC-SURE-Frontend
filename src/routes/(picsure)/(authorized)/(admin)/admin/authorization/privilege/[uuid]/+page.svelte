@@ -39,46 +39,62 @@ https://svelte.dev/e/node_invalid_placement -->
   {:then}
     <section id="privilege-view" class="m-3">
       <table class="table bg-transparent">
-        <tr>
-          <td>ID:</td>
-          <td>{privilege.uuid}</td>
-        </tr>
-        <tr>
-          <td>Name:</td>
-          <td>{privilege.name}</td>
-        </tr>
-        <tr>
-          <td>Description:</td>
-          <td>{privilege.description}</td>
-        </tr>
-        <tr>
-          {#if typeof application !== 'string'}
-            <td class="align-top">Application:</td>
-            <td
-              ><table class="table bg-transparent">
-                <tr>
-                  <td>ID:</td>
-                  <td>{application.uuid}</td>
-                </tr>
-                <tr>
-                  <td>Name:</td>
-                  <td>{application.name}</td>
-                </tr>
-                <tr>
-                  <td>Description:</td>
-                  <td>{application.description}</td>
-                </tr>
-                <tr>
-                  <td>Enabled:</td>
-                  <td>{application.enable ? 'Yes' : 'No'}</td>
-                </tr>
-              </table></td
-            >
-          {:else}
-            <td>Application:</td>
-            <td>none</td>
-          {/if}
-        </tr>
+        <thead>
+          <tr>
+            <th scope="col">Field</th>
+            <th scope="col">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">ID:</th>
+            <td>{privilege.uuid}</td>
+          </tr>
+          <tr>
+            <th scope="row">Name:</th>
+            <td>{privilege.name}</td>
+          </tr>
+          <tr>
+            <th scope="row">Description:</th>
+            <td>{privilege.description}</td>
+          </tr>
+          <tr>
+            {#if typeof application !== 'string'}
+              <th scope="row" class="align-top">Application:</th>
+              <td>
+                <table class="table bg-transparent">
+                  <thead>
+                    <tr>
+                      <th scope="col">Field</th>
+                      <th scope="col">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">ID:</th>
+                      <td>{application.uuid}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Name:</th>
+                      <td>{application.name}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Description:</th>
+                      <td>{application.description}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Enabled:</th>
+                      <td>{application.enable ? 'Yes' : 'No'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            {:else}
+              <th scope="row">Application:</th>
+              <td>none</td>
+            {/if}
+          </tr>
+        </tbody>
       </table>
     </section>
   {:catch}
