@@ -37,22 +37,30 @@ https://svelte.dev/e/node_invalid_placement -->
   {:then}
     <section id="role-view">
       <table class="table bg-transparent">
-        <tr>
-          <td>ID:</td>
-          <td>{role.uuid}</td>
-        </tr>
-        <tr>
-          <td>Name:</td>
-          <td>{role.name}</td>
-        </tr>
-        <tr>
-          <td>Description:</td>
-          <td>{role.description}</td>
-        </tr>
-        <tr>
-          <td>Privileges:</td>
-          <td>{privileges.map((p) => p.name).join(', ')}</td>
-        </tr>
+        <thead>
+          <tr>
+            <th scope="col">Field</th>
+            <th scope="col">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">ID:</th>
+            <td>{role.uuid}</td>
+          </tr>
+          <tr>
+            <th scope="row">Name:</th>
+            <td>{role.name}</td>
+          </tr>
+          <tr>
+            <th scope="row">Description:</th>
+            <td>{role.description}</td>
+          </tr>
+          <tr>
+            <th scope="row">Privileges:</th>
+            <td>{privileges.map((p) => p.name).join(', ')}</td>
+          </tr>
+        </tbody>
       </table>
     </section>
   {:catch}
