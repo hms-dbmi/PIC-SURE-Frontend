@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import { goto } from '$app/navigation';
   import { getToastStore } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
@@ -9,12 +11,16 @@
   import PrivilegesStore from '$lib/stores/Privileges';
   const { addPrivilege, updatePrivilege } = PrivilegesStore;
 
-  export let privilege: Privilege | undefined = undefined;
-  export let applicationList: string[][];
+  interface Props {
+    privilege?: Privilege | undefined;
+    applicationList: string[][];
+  }
 
-  let name = privilege ? privilege.name : '';
-  let description = privilege ? privilege.description : '';
-  let application = privilege ? privilege.application : '';
+  let { privilege = undefined, applicationList }: Props = $props();
+
+  let name = $state(privilege ? privilege.name : '');
+  let description = $state(privilege ? privilege.description : '');
+  let application = $state(privilege ? privilege.application : '');
 
   async function savePrivilege() {
     let newPrivilege: Privilege = {
@@ -46,7 +52,7 @@
   }
 </script>
 
-<form on:submit|preventDefault={savePrivilege}>
+<form onsubmit={preventDefault(savePrivilege)}>
   <label class="label required">
     <span>Name:</span>
     <input

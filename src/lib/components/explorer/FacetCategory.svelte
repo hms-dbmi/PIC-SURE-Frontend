@@ -7,22 +7,25 @@
   import type { Facet } from '$lib/models/Search';
   let { updateFacets, selectedFacets } = SearchStore;
 
-  export let facetCategory: DictionaryFacetResult;
-  export let facets = facetCategory.facets;
-  export let numFacetsToShow: number = 5;
-  export let shouldShowSearchBar: boolean = facets?.length > numFacetsToShow;
+  interface Props {
+    facetCategory: DictionaryFacetResult;
+    facets?: any;
+    numFacetsToShow?: number;
+    shouldShowSearchBar?: boolean;
+  }
+
+  let {
+    facetCategory,
+    facets = facetCategory.facets,
+    numFacetsToShow = 5,
+    shouldShowSearchBar = facets?.length > numFacetsToShow
+  }: Props = $props();
 
   const anyFacetNot0 = facets?.some((facet) => facet.count > 0);
-  let textFilterValue: string;
-  let moreThanTenFacets = facets?.length > numFacetsToShow;
+  let textFilterValue: string = $state();
+  let moreThanTenFacets = $state(facets?.length > numFacetsToShow);
 
-  $: facetsToDisplay =
-    (facets || textFilterValue || moreThanTenFacets || $selectedFacets || facetCategory) &&
-    getFacetsToDisplay();
 
-  $: selectedFacetsChips = $selectedFacets.filter(
-    (facet) => facet?.categoryRef?.name === facetCategory?.name,
-  );
 
   function isIndeterminate(facet: Facet): boolean {
     const atLeastOneChildSelected =
@@ -124,37 +127,47 @@
     }
     return facetsToDisplay;
   }
+  let facetsToDisplay =
+    $derived((facets || textFilterValue || moreThanTenFacets || $selectedFacets || facetCategory) &&
+    getFacetsToDisplay());
+  let selectedFacetsChips = $derived($selectedFacets.filter(
+    (facet) => facet?.categoryRef?.name === facetCategory?.name,
+  ));
 </script>
 
 <AccordionItem class="card space-y-2" open={anyFacetNot0}>
-  <svelte:fragment slot="summary">{facetCategory.display}</svelte:fragment>
-  <svelte:fragment slot="content">
-    <div class="flex flex-col">
-      {#if shouldShowSearchBar}
-        <input
-          class="text-sm"
-          type="search"
-          placeholder={'Filter ' + facetCategory.display}
-          name="facet-fitler"
-          id={facetCategory.name + '-filter'}
-          bind:value={textFilterValue}
-        />
-      {/if}
-      {#each facetsToDisplay as facet}
-        <FacetItem {facet} {facetCategory} facetParent={undefined} {textFilterValue} />
-      {/each}
-      {#if facets?.length > numFacetsToShow && !textFilterValue}
-        <button
-          data-testId="show-more-facets"
-          class="show-more w-fit mx-auto my-1"
-          on:click={() => (moreThanTenFacets = !moreThanTenFacets)}
-        >
-          {moreThanTenFacets ? 'Show More' : 'Show Less'}
-          <i class="ml-1 fa-solid {moreThanTenFacets ? 'fa-angle-down' : 'fa-angle-up'}"></i>
-        </button>
-      {/if}
-    </div>
-  </svelte:fragment>
+  {#snippet summary()}
+    {facetCategory.display}
+  {/snippet}
+  {#snippet content()}
+  
+      <div class="flex flex-col">
+        {#if shouldShowSearchBar}
+          <input
+            class="text-sm"
+            type="search"
+            placeholder={'Filter ' + facetCategory.display}
+            name="facet-fitler"
+            id={facetCategory.name + '-filter'}
+            bind:value={textFilterValue}
+          />
+        {/if}
+        {#each facetsToDisplay as facet}
+          <FacetItem {facet} {facetCategory} facetParent={undefined} {textFilterValue} />
+        {/each}
+        {#if facets?.length > numFacetsToShow && !textFilterValue}
+          <button
+            data-testId="show-more-facets"
+            class="show-more w-fit mx-auto my-1"
+            onclick={() => (moreThanTenFacets = !moreThanTenFacets)}
+          >
+            {moreThanTenFacets ? 'Show More' : 'Show Less'}
+            <i class="ml-1 fa-solid {moreThanTenFacets ? 'fa-angle-down' : 'fa-angle-up'}"></i>
+          </button>
+        {/if}
+      </div>
+    
+  {/snippet}
 </AccordionItem>
 <div class="m-1 p-1 max-w">
   {#each selectedFacetsChips as facet}
@@ -165,7 +178,7 @@
       <span class="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
         {facet.display}
       </span>
-      <button class="chip-close ml-1 flex-shrink-0" on:click={() => updateFacets([facet])}>
+      <button class="chip-close ml-1 flex-shrink-0" onclick={() => updateFacets([facet])}>
         <i class="fa-solid fa-times hover:text-secondary-500"></i>
       </button>
     </span>

@@ -3,9 +3,9 @@
   import { filters, totalParticipants } from '$lib/stores/Filter';
   let { exports } = ExportStore;
 
-  $: participantsCount = $totalParticipants;
-  $: variablesCount = $filters.length + $exports.length;
-  $: dataPoints = typeof participantsCount === 'number' ? participantsCount * variablesCount : 0;
+  let participantsCount = $derived($totalParticipants);
+  let variablesCount = $derived($filters.length + $exports.length);
+  let dataPoints = $derived(typeof participantsCount === 'number' ? participantsCount * variablesCount : 0);
 </script>
 
 <div id="stats" class="w-full flex justify-evenly mb-5 pb-2">

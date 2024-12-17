@@ -25,7 +25,7 @@
           data-testid={`snp-edit-btn-${snp.search}`}
           title="Edit"
           class="btn-icon-color"
-          on:click={() => dispatch('edit', { snp })}
+          onclick={() => dispatch('edit', { snp })}
         >
           <i class="fa-solid fa-pen-to-square"></i>
         </button>
@@ -34,7 +34,7 @@
           data-testid={`snp-delete-btn-${snp.search}`}
           title="Delete"
           class="btn-icon-color"
-          on:click={() => dispatch('delete', { snp })}
+          onclick={() => dispatch('delete', { snp })}
         >
           <i class="fa-solid fa-trash"></i>
         </button>

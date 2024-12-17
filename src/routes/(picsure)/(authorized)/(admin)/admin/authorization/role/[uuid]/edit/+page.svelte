@@ -13,7 +13,7 @@
   const { loadRoles, getRole } = RolesStore;
   const { privilegeList, loadPrivileges } = PrivilegesStore;
 
-  let role: Role;
+  let role: Role = $state();
 
   async function load() {
     await loadRoles();

@@ -29,11 +29,11 @@
     }
   });
 
-  let selected: string;
+  let selected: string = $state();
 
-  $: selectedProvider = selected
+  let selectedProvider = $derived(selected
     ? ($page.data?.providers?.find((provider: AuthData) => provider.name === selected) as AuthData)
-    : undefined;
+    : undefined);
 </script>
 
 <section

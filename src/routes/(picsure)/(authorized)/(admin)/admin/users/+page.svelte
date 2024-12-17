@@ -31,7 +31,7 @@
     users: UserRow[];
   }
 
-  let usersByConnection: Readable<Connection[]> = readable([]);
+  let usersByConnection: Readable<Connection[]> = $state(readable([]));
 
   const columns = [
     { dataElement: 'email', label: 'Username', sort: true },

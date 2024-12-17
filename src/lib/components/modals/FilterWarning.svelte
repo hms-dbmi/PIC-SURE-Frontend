@@ -9,9 +9,9 @@
   } from '$lib/stores/Filter.ts';
   import { getModalStore } from '@skeletonlabs/skeleton';
   import { panelOpen } from '$lib/stores/SidePanel.ts';
-  let message = '';
-  let backTo = '';
-  let resetQuery = () => {};
+  let message = $state('');
+  let backTo = $state('');
+  let resetQuery = $state(() => {});
   const modalStore = getModalStore();
   function closedModal() {
     if ($modalStore[0]) {
@@ -61,9 +61,9 @@
         <div class="dark">
           <button
             class="btn variant-ringed hover:variant-filled-warning"
-            on:click={() => resetQuery()}>Remove Invalid Filters</button
+            onclick={() => resetQuery()}>Remove Invalid Filters</button
           >
-          <button class="btn variant-ringed hover:variant-filled-warning" on:click={() => goBack()}
+          <button class="btn variant-ringed hover:variant-filled-warning" onclick={() => goBack()}
             >Back to {backTo}</button
           >
         </div>

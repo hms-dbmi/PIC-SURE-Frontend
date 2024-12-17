@@ -2,12 +2,25 @@
   import { slide } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
 
-  export let step: number;
-  export let title: string = '';
-  export let collapsed: boolean = false;
-  export let show: boolean = true;
-  export let inline: boolean = false;
-  export let active: boolean = false;
+  interface Props {
+    step: number;
+    title?: string;
+    collapsed?: boolean;
+    show?: boolean;
+    inline?: boolean;
+    active?: boolean;
+    children?: import('svelte').Snippet;
+  }
+
+  let {
+    step,
+    title = '',
+    collapsed = false,
+    show = true,
+    inline = false,
+    active = false,
+    children
+  }: Props = $props();
 </script>
 
 {#if show}
@@ -28,11 +41,11 @@
         >
       </div>
       {#if title}<div class={`flex-${inline ? 'none' : 'auto'}`}><h3>{title}</h3></div>{/if}
-      {#if inline}<div class="flex-auto"><slot /></div>{/if}
+      {#if inline}<div class="flex-auto">{@render children?.()}</div>{/if}
     </div>
     {#if !inline && !collapsed}
       <div class="border rounded-md border-surface-500-400-token ml-4 p-1">
-        <slot />
+        {@render children?.()}
       </div>
     {/if}
   </div>

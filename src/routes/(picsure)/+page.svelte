@@ -4,7 +4,7 @@
   import Searchbox from '$lib/components/Searchbox.svelte';
   import Stats from '$lib/components/Stats.svelte';
   import { browser } from '$app/environment';
-  let searchTerm = '';
+  let searchTerm = $state('');
 
   const isUserLoggedIn = () => {
     if (browser) {
@@ -46,7 +46,7 @@
     {#each actionsToDisplay as { title, description, icon, url, btnText }}
       <div class="flex flex-col items-center w-1/{actionsToDisplay?.length || 3}">
         <div class="text-3xl my-1">{title}</div>
-        <i class="text-[5rem] my-3 text-secondary-500-400-token {icon}" />
+        <i class="text-[5rem] my-3 text-secondary-500-400-token {icon}"></i>
         <div class="subtitle my-3">{description}</div>
         <a data-testid="landing-action-{title}-btn" href={url} class="btn variant-filled-primary"
           >{btnText}</a

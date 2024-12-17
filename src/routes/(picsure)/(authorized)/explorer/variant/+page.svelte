@@ -25,9 +25,9 @@
   import type { Unsubscriber } from 'svelte/store';
   import { getQueryRequest } from '$lib/QueryBuilder';
 
-  let loading: Promise<void>;
+  let loading: Promise<void> = $state();
   let unsubVariantError: Unsubscriber;
-  let aggregateCheckbox: boolean = settings.variantExplorer.type === ExportType.Full;
+  let aggregateCheckbox: boolean = $state(settings.variantExplorer.type === ExportType.Full);
   let queryRequest: QueryRequestInterface;
 
   async function getData() {
@@ -114,28 +114,30 @@
           fullWidth={true}
           search={true}
         >
-          <svelte:fragment slot="tableActions">
-            <div class="flex-auto flex items-end justify-between">
-              {#if $count > 0}
-                <div data-testid="variant-count" class="">
-                  <p>{$count} variants found</p>
-                </div>
-              {/if}
-              {#if settings.variantExplorer.type === ExportType.Full}
-                <div class="">
-                  <label class="flex items-center space-x-2">
-                    <input
-                      class="checkbox"
-                      type="checkbox"
-                      bind:checked={aggregateCheckbox}
-                      on:click={aggregateChange}
-                    />
-                    <p>Aggregate data</p>
-                  </label>
-                </div>
-              {/if}
-            </div>
-          </svelte:fragment>
+          {#snippet tableActions()}
+                      
+              <div class="flex-auto flex items-end justify-between">
+                {#if $count > 0}
+                  <div data-testid="variant-count" class="">
+                    <p>{$count} variants found</p>
+                  </div>
+                {/if}
+                {#if settings.variantExplorer.type === ExportType.Full}
+                  <div class="">
+                    <label class="flex items-center space-x-2">
+                      <input
+                        class="checkbox"
+                        type="checkbox"
+                        bind:checked={aggregateCheckbox}
+                        onclick={aggregateChange}
+                      />
+                      <p>Aggregate data</p>
+                    </label>
+                  </div>
+                {/if}
+              </div>
+            
+                      {/snippet}
         </Datatable>
       {:else}
         <div data-testid="variant-count" class="flex-none w-full">{$count} variants found</div>

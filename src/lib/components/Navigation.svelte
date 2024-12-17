@@ -11,7 +11,7 @@
   import { createInstance } from '$lib/AuthProviderRegistry.ts';
   import { onMount } from 'svelte';
   let providerData: AuthData;
-  let providerInstance: AuthProvider | undefined = undefined;
+  let providerInstance: AuthProvider | undefined = $state(undefined);
   function setDropdown(path: string) {
     dropdownPath = path;
   }
@@ -30,7 +30,7 @@
     goto(`/login?redirectTo=${$page.url.pathname}`);
   }
 
-  $: currentPage = (route: Route) => {
+  let currentPage = $derived((route: Route) => {
     if (route.children) {
       for (const child of route.children) {
         if ($page.url.pathname.includes(child.path)) {
@@ -40,7 +40,7 @@
       return undefined;
     }
     return $page.url.pathname.includes(route.path) ? 'page' : undefined;
-  };
+  });
 
   onMount(async () => {
     if (browser && $page) {
@@ -52,32 +52,35 @@
     }
   });
 
-  $: dropdownPath = '';
+  let dropdownPath = $state('');
+  
 </script>
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-900-token">
-  <svelte:fragment slot="lead">
-    <a href="/" aria-current="page" data-testid="logo-home-link">
-      <Logo class="mx-1" />
-    </a>
-  </svelte:fragment>
+  {#snippet lead()}
+  
+      <a href="/" aria-current="page" data-testid="logo-home-link">
+        <Logo class="mx-1" />
+      </a>
+    
+  {/snippet}
   <nav id="page-navigation">
     <ul>
       {#each $userRoutes as route}
         {#if route.children && route.children.length > 0}
           <li
             class={`has-dropdown ${dropdownPath === route.path ? 'open' : ''}`}
-            on:mouseenter={() => setDropdown(route.path)}
-            on:mouseleave={() => setDropdown('')}
-            on:focus={() => setDropdown(route.path)}
-            on:blur={() => setDropdown('')}
+            onmouseenter={() => setDropdown(route.path)}
+            onmouseleave={() => setDropdown('')}
+            onfocus={() => setDropdown(route.path)}
+            onblur={() => setDropdown('')}
           >
             <a
               class="nav-link"
               id={getId(route)}
               href={route.path}
-              on:click={(e) => e.preventDefault()}
-              on:keydown={(e) => e.key === 'Enter' && setDropdown(dropdownPath ? '' : route.path)}
+              onclick={(e) => e.preventDefault()}
+              onkeydown={(e) => e.key === 'Enter' && setDropdown(dropdownPath ? '' : route.path)}
               aria-expanded={dropdownPath === route.path}
               aria-current={currentPage(route)}>{route.text}</a
             >
@@ -90,7 +93,7 @@
                   <a
                     class="no-underline"
                     href={child.path}
-                    on:keydown={(e) => e.key === 'Enter' && setDropdown('')}>{child.text}</a
+                    onkeydown={(e) => e.key === 'Enter' && setDropdown('')}>{child.text}</a
                   >
                 </li>
               {/each}
@@ -102,7 +105,7 @@
               class="nav-link"
               id={getId(route)}
               href={route.path}
-              on:focus={() => setDropdown('')}
+              onfocus={() => setDropdown('')}
               aria-current={currentPage(route)}
               >{route.text}
             </a>
@@ -111,41 +114,43 @@
       {/each}
     </ul>
   </nav>
-  <svelte:fragment slot="trail">
-    <div id="user-session-avatar">
-      {#if $user.privileges && $user.email}
-        <!-- Logout -->
-        <button id="user-session-popout" use:popup={logoutClick}>
-          <span
-            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ghost-primary hover:variant-ghost-secondary w-12 rounded-full text-2xl"
+  {#snippet trail()}
+  
+      <div id="user-session-avatar">
+        {#if $user.privileges && $user.email}
+          <!-- Logout -->
+          <button id="user-session-popout" use:popup={logoutClick}>
+            <span
+              class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ghost-primary hover:variant-ghost-secondary w-12 rounded-full text-2xl"
+            >
+              {$user.email[0].toUpperCase()}
+              <span class="sr-only">Logout user {$user.email}</span>
+            </span>
+          </button>
+          <div
+            class="card p-6 variant-surface border-surface-100-800-token text-center"
+            data-popup="logoutClick"
           >
-            {$user.email[0].toUpperCase()}
-            <span class="sr-only">Logout user {$user.email}</span>
-          </span>
-        </button>
-        <div
-          class="card p-6 variant-surface border-surface-100-800-token text-center"
-          data-popup="logoutClick"
-        >
-          <p class="pb-6">{$user.email}</p>
+            <p class="pb-6">{$user.email}</p>
+            <button
+              id="user-logout-btn"
+              class="btn variant-ringed-primary"
+              title="Logout"
+              onclick={() => logout(providerInstance, false)}>Logout</button
+            >
+          </div>
+        {:else}
+          <!-- Login -->
           <button
-            id="user-logout-btn"
-            class="btn variant-ringed-primary"
-            title="Logout"
-            on:click={() => logout(providerInstance, false)}>Logout</button
+            id="user-login-btn"
+            title="Login"
+            class="btn variant-ghost-primary hover:variant-filled-primary"
+            onclick={handleLogin}
           >
-        </div>
-      {:else}
-        <!-- Login -->
-        <button
-          id="user-login-btn"
-          title="Login"
-          class="btn variant-ghost-primary hover:variant-filled-primary"
-          on:click={handleLogin}
-        >
-          Login
-        </button>
-      {/if}
-    </div>
-  </svelte:fragment>
+            Login
+          </button>
+        {/if}
+      </div>
+    
+  {/snippet}
 </AppBar>

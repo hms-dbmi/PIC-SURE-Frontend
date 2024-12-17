@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { onMount } from 'svelte';
   import { gtag } from 'gtagjs';
   import { branding, settings } from '$lib/configuration';
@@ -7,9 +9,10 @@
 
   let googleTag = settings.google.tagManager;
   let googleAnalyticsID = settings.google.analytics;
-  $: googleConsentVisible = false;
+  let googleConsentVisible = $state(false);
+  
 
-  $: {
+  run(() => {
     if (
       googleAnalyticsID &&
       browser &&
@@ -23,7 +26,7 @@
         page_path: $page.url.pathname,
       });
     }
-  }
+  });
 
   function setUsersGoogleConsent(wasAccepted: boolean) {
     let consent = {
@@ -125,12 +128,12 @@
           <button
             data-testid="acceptGoogleConsent"
             class="btn variant-filled-primary mt-1 mb-1"
-            on:click={() => setUsersGoogleConsent(true)}>Accept</button
+            onclick={() => setUsersGoogleConsent(true)}>Accept</button
           >
           <button
             data-testid="rejectGoogleConsent"
             class="btn variant-ghost-primary mt-1 mb-1 self-center"
-            on:click={() => setUsersGoogleConsent(false)}>Reject</button
+            onclick={() => setUsersGoogleConsent(false)}>Reject</button
           >
         </div>
       </div>

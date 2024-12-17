@@ -10,7 +10,7 @@
   import type { Unsubscriber } from 'svelte/store';
   let { searchTerm, selectedFacets } = SearchStore;
 
-  let facetsPromise: Promise<DictionaryFacetResult[]>;
+  let facetsPromise: Promise<DictionaryFacetResult[]> = $state();
   let unsubSearchTerm: Unsubscriber;
   let unsubSelectedFacets: Unsubscriber;
 

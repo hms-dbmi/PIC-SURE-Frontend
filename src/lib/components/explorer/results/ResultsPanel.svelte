@@ -25,9 +25,9 @@
   const ERROR_VALUE = 'N/A';
 
   let unsubFilters: Unsubscriber;
-  let totalPatients: string | number | typeof ERROR_VALUE = 0;
-  let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = Promise.resolve(0);
-  let isOpenAccess = $page.url.pathname.includes('/discover');
+  let totalPatients: string | number | typeof ERROR_VALUE = $state(0);
+  let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = $state(Promise.resolve(0));
+  let isOpenAccess = $state($page.url.pathname.includes('/discover'));
 
   async function getCount() {
     suffix = '';
@@ -92,31 +92,32 @@
     });
   }
 
-  $: suffix = '';
-  $: hasFilterOrExport =
-    $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0);
-  $: showExportButton =
-    features.explorer.allowExport &&
+  let suffix = $state('');
+  
+  let hasFilterOrExport =
+    $derived($filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0));
+  let showExportButton =
+    $derived(features.explorer.allowExport &&
     !isOpenAccess &&
     totalPatients !== ERROR_VALUE &&
     totalPatients !== 0 &&
-    hasFilterOrExport;
+    hasFilterOrExport);
 
-  $: showExplorerDistributions =
-    !isOpenAccess &&
+  let showExplorerDistributions =
+    $derived(!isOpenAccess &&
     features.explorer.distributionExplorer &&
     $filters.length !== 0 &&
-    !$filters.every((filter) => filter.filterType === 'genomic' || filter.filterType === 'snp');
+    !$filters.every((filter) => filter.filterType === 'genomic' || filter.filterType === 'snp'));
 
-  $: showDiscoverDistributions =
-    isOpenAccess && features.discoverFeautures.distributionExplorer && $filters.length !== 0;
+  let showDiscoverDistributions =
+    $derived(isOpenAccess && features.discoverFeautures.distributionExplorer && $filters.length !== 0);
 
-  $: showVariantExplorer = !isOpenAccess && features.explorer.variantExplorer && $hasGenomicFilter;
+  let showVariantExplorer = $derived(!isOpenAccess && features.explorer.variantExplorer && $hasGenomicFilter);
 
-  $: showToolSuite =
-    totalPatients !== 0 &&
+  let showToolSuite =
+    $derived(totalPatients !== 0 &&
     ($filters.length !== 0 || $exports.length !== 0) &&
-    (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer);
+    (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer));
 
   onMount(async () => {
     unsubFilters = filters.subscribe(() => {
@@ -168,7 +169,7 @@
         id="export-data-button"
         type="button"
         class="btn variant-filled-primary"
-        on:click={() => goto('/explorer/export')}
+        onclick={() => goto('/explorer/export')}
         transition:scale={{ easing: elasticInOut }}
       >
         Prepare for Analysis
@@ -183,7 +184,7 @@
         <button
           data-testid="clear-all-results-btn"
           class="anchor text-sm flex-none"
-          on:click={clearFiltersModal}>Reset</button
+          onclick={clearFiltersModal}>Reset</button
         >
       {/if}
     </div>

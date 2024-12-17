@@ -1,13 +1,23 @@
 <script lang="ts">
+  import FacetItem from './FacetItem.svelte';
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
   import type { Facet } from '$lib/models/Search';
   import SearchStore from '$lib/stores/Search';
   let { updateFacets, selectedFacets } = SearchStore;
 
-  export let facet: Facet;
-  export let facetCategory: DictionaryFacetResult;
-  export let facetParent: Facet | undefined;
-  export let textFilterValue: string | undefined;
+  interface Props {
+    facet: Facet;
+    facetCategory: DictionaryFacetResult;
+    facetParent: Facet | undefined;
+    textFilterValue: string | undefined;
+  }
+
+  let {
+    facet = $bindable(),
+    facetCategory,
+    facetParent,
+    textFilterValue
+  }: Props = $props();
 
   if (facetParent) {
     facet.parentRef = {
@@ -25,7 +35,7 @@
     };
   }
 
-  let open = false;
+  let open = $state(false);
 
   function toggleOpen() {
     open = !open;
@@ -49,7 +59,7 @@
     }
   }
 
-  $: checkedState = (facetToCheck: string) => {
+  let checkedState = $derived((facetToCheck: string) => {
     const atLeastOneChildSelected =
       facet.children &&
       facet.children.some((child) => $selectedFacets.some((f) => f.name === child.name));
@@ -66,10 +76,10 @@
     if (isSelected) return 'true';
     if (isIndeterminate) return 'indeterminate';
     return 'false';
-  };
+  });
 
-  $: checked = checkedState(facet.name) === 'true';
-  $: facetsToDisplay = facet.children
+  let checked = $derived(checkedState(facet.name) === 'true');
+  let facetsToDisplay = $derived(facet.children
     ? [
         ...facet.children
           .filter((child) => {
@@ -92,7 +102,7 @@
           })
           .sort((a, b) => (b.count || 0) - (a.count || 0)),
       ]
-    : [];
+    : []);
 </script>
 
 <label data-testId={`facet-${facet.name}-label`} for={facet.name} class="m-1">
@@ -101,7 +111,7 @@
       type="button"
       class="arrow-button"
       data-testId={`facet-${facet.name}-arrow`}
-      on:click={toggleOpen}
+      onclick={toggleOpen}
     >
       <i class="fa-solid {open ? 'fa-angle-down' : 'fa-angle-right'}"></i>
     </button>
@@ -115,7 +125,7 @@
     {checked}
     disabled={facet.count === 0}
     aria-checked={checked}
-    on:click={onClick}
+    onclick={onClick}
   />
   <span class:opacity-75={facet.count === 0}
     >{`${facet.display} (${facet.count?.toLocaleString()})`}</span
@@ -124,7 +134,7 @@
 {#if open && facetsToDisplay !== undefined && facetsToDisplay?.length > 0}
   <div class="flex flex-col ml-4" data-testId={`facet-${facet.name}-children`}>
     {#each facetsToDisplay as child}
-      <svelte:self facet={child} {facetCategory} facetParent={facet} {textFilterValue} />
+      <FacetItem facet={child} {facetCategory} facetParent={facet} {textFilterValue} />
     {/each}
   </div>
 {/if}

@@ -17,16 +17,22 @@
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  export let tourConfig: any;
+  
+  interface Props {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    tourConfig: any;
+  }
+
+  let { tourConfig }: Props = $props();
 
   const isLoading = writable(false);
 
   let { searchTerm, search, selectedFacets, error } = SearchStore;
-  let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
+  let searchInput = $state($page.url.searchParams.get('search') || $searchTerm || '');
   const tableName = 'ExplorerTable';
-  $: tourEnabled = true;
-  $: isOpenAccess = $page.url.pathname.includes('/discover');
+  let tourEnabled = $state(true);
+  
+  let isOpenAccess = $derived($page.url.pathname.includes('/discover'));
 
   const additionalColumns = branding.explorePage.additionalColumns || [];
 
@@ -118,7 +124,7 @@
           class="btn variant-ghost-error hover:variant-filled-error"
           aria-label="You are on the reset button"
           disabled={!searchInput && $selectedFacets.length === 0}
-          on:click={() => {
+          onclick={() => {
             searchInput = '';
             searchTerm.set('');
             error.set('');

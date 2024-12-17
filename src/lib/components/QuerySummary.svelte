@@ -1,7 +1,12 @@
 <script lang="ts">
   // TODO: use query type instead of any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  export let query: any = {};
+  
+  interface Props {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    query?: any;
+  }
+
+  let { query = {} }: Props = $props();
 </script>
 
 <section id="detail-filters-container" class="m-3">

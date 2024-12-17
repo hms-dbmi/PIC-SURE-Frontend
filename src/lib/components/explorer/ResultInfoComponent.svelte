@@ -3,7 +3,11 @@
   import { getConceptDetails } from '$lib/services/dictionary';
   import { ProgressRadial } from '@skeletonlabs/skeleton';
 
-  export let data: SearchResult;
+  interface Props {
+    data: SearchResult;
+  }
+
+  let { data }: Props = $props();
 
   let detailPromise = getConceptDetails(data.conceptPath, data.dataset);
 </script>

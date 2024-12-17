@@ -39,21 +39,21 @@
   } from '$lib/stores/DataRequest';
 
   // Steps
-  $: search = {
+  let search = $derived({
     show: true,
     active: $queryError || (!$queryId && !$approved),
-  };
-  $: review = {
+  });
+  let review = $derived({
     show: !$queryError && !!$queryId,
     active: !$queryError && !!$queryId && !$approved,
-  };
-  $: share = {
+  });
+  let share = $derived({
     show: !$queryError && !!$queryId && !!$approved,
     active: !$queryError && !!$queryId && !!$approved,
-  };
-  $: sendEnabled =
-    ($dataType.genomic && $status?.genomic === UploadStatus.Unsent) ||
-    ($dataType.phenotypic && $status?.phenotypic === UploadStatus.Unsent);
+  });
+  let sendEnabled =
+    $derived(($dataType.genomic && $status?.genomic === UploadStatus.Unsent) ||
+    ($dataType.phenotypic && $status?.phenotypic === UploadStatus.Unsent));
 
   // Status icons
   function statusIcon(status: UploadStatus) {
@@ -80,10 +80,10 @@
       }
     );
   }
-  $: statusInfo = {
+  let statusInfo = $derived({
     genomic: statusIcon($status?.genomic || UploadStatus.Unsent),
     phenotypic: statusIcon($status?.phenotypic || UploadStatus.Unsent),
-  };
+  });
 
   // Modals
   function dataSummaryModal() {
@@ -182,7 +182,7 @@
           <button
             data-testid="data-request-btn"
             class="text-primary-700-200-token hover:text-secondary-700-200-token inline-block mt-4"
-            on:click={dataSummaryModal}
+            onclick={dataSummaryModal}
           >
             <i class="fa-regular fa-2xl fa-file-pdf"></i>
             <span>Data Request Summary</span>
@@ -206,11 +206,13 @@
   <Step step={3} title="Share Patient-Level Data" show={share.show} active={share.active}>
     <Grid columns={3}>
       <GridCell title="Data Storage Location">
-        <svelte:fragment slot="help">
-          <button data-testid="data-loc-modal-btn" on:click={dataLocationModal}>
-            <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
-          </button>
-        </svelte:fragment>
+        {#snippet help()}
+              
+            <button data-testid="data-loc-modal-btn" onclick={dataLocationModal}>
+              <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
+            </button>
+          
+              {/snippet}
         <select
           data-testid="selected-site"
           class="select"
@@ -223,11 +225,13 @@
         </select>
       </GridCell>
       <GridCell title="Select &amp; Send Data">
-        <svelte:fragment slot="help">
-          <button data-testid="data-type-modal-btn" on:click={dataTypeModal}>
-            <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
-          </button>
-        </svelte:fragment>
+        {#snippet help()}
+              
+            <button data-testid="data-type-modal-btn" onclick={dataTypeModal}>
+              <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
+            </button>
+          
+              {/snippet}
         <label class="flex items-center space-x-2 my-2">
           <input
             type="checkbox"
@@ -253,22 +257,24 @@
           data-testid="send-data-btn"
           class="btn variant-ringed-success hover:variant-ghost-success"
           disabled={!sendEnabled}
-          on:click={sendDataModal}>Send Data</button
+          onclick={sendDataModal}>Send Data</button
         >
       </GridCell>
       <GridCell title="Status">
-        <svelte:fragment slot="help">
-          <button
-            type="button"
-            data-testid="status-refresh-btn"
-            title="Refresh"
-            class="text-primary-500 disabled:text-secondary-500"
-            on:click={refreshStatus}
-          >
-            <i class="fa-solid fa-arrows-rotate fa-sm"></i>
-            <span class="sr-only">Refresh</span>
-          </button>
-        </svelte:fragment>
+        {#snippet help()}
+              
+            <button
+              type="button"
+              data-testid="status-refresh-btn"
+              title="Refresh"
+              class="text-primary-500 disabled:text-secondary-500"
+              onclick={refreshStatus}
+            >
+              <i class="fa-solid fa-arrows-rotate fa-sm"></i>
+              <span class="sr-only">Refresh</span>
+            </button>
+          
+              {/snippet}
         <div class="flex space-x-2 my-2 align-top">
           <i class={`${statusInfo.phenotypic.icon} flex-none`}></i>
           <p class="text-left flex-auto">
@@ -291,7 +297,7 @@
       type="button"
       data-testid="reset-btn"
       class="btn variant-ghost-secondary float-right"
-      on:click={reset}>Reset</button
+      onclick={reset}>Reset</button
     >
   {/if}
 </Content>

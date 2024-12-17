@@ -4,7 +4,11 @@
   import ExportStore from '$lib/stores/Export';
   const { removeExport } = ExportStore;
 
-  export let variable: ExportInterface;
+  interface Props {
+    variable: ExportInterface;
+  }
+
+  let { variable }: Props = $props();
   const remove = function () {
     removeExport(variable.id);
   };
@@ -18,7 +22,7 @@
 >
   <header class="card-header p-1 flex">
     <div class="flex-auto">{variable.display}</div>
-    <button type="button" title="Remove Export" class="btn-icon-color" on:click={remove}>
+    <button type="button" title="Remove Export" class="btn-icon-color" onclick={remove}>
       <i class="fa-solid fa-times-circle"></i>
     </button>
   </header>

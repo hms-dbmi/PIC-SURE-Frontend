@@ -14,7 +14,7 @@
   const { loadPrivileges, getPrivilege } = PrivilegesStore;
   const { applicationList, loadApplications } = ApplicationStore;
 
-  let privilege: Privilege;
+  let privilege: Privilege = $state();
 
   async function load() {
     await loadPrivileges();

@@ -1,10 +1,15 @@
 <script lang="ts">
-  let primaryCircle = '--color-primary-500';
-  let secondaryCircle = '--color-secondary-500';
-  let tertiaryCircle = '--color-tertiary-500';
-  let successCircle = '';
-  let errorCircle = '';
-  let useFiveColors = false;
+  interface Props {
+    [key: string]: any
+  }
+
+  let { ...props }: Props = $props();
+  let primaryCircle = $state('--color-primary-500');
+  let secondaryCircle = $state('--color-secondary-500');
+  let tertiaryCircle = $state('--color-tertiary-500');
+  let successCircle = $state('');
+  let errorCircle = $state('');
+  let useFiveColors = $state(false);
 
   const dotsColorsClass: string[] = (() => {
     try {
@@ -40,7 +45,7 @@
 </script>
 
 <svg
-  class={`${$$props.class ?? ''}`}
+  class={`${props.class ?? ''}`}
   width="402px"
   height="373px"
   viewBox="0 0 402 373"

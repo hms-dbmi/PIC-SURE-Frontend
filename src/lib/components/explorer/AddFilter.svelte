@@ -16,21 +16,25 @@
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
-  export let data: SearchResult;
+  interface Props {
+    data: SearchResult;
+  }
 
-  let max: string;
-  let min: string;
-  let minFormValue: string;
-  let maxFormValue: string;
+  let { data = $bindable() }: Props = $props();
+
+  let max: string = $state();
+  let min: string = $state();
+  let minFormValue: string = $state();
+  let maxFormValue: string = $state();
   let pageSize = 20;
-  let unselectedOptions: string[] = [];
-  let selectedOptions: string[] = [];
+  let unselectedOptions: string[] = $state([]);
+  let selectedOptions: string[] = $state([]);
   let startLocation = pageSize;
   let lastSearchTerm = '';
-  let loading = false;
-  let display: string;
-  let description: string;
-  let studyDisplay: string;
+  let loading = $state(false);
+  let display: string = $state();
+  let description: string = $state();
+  let studyDisplay: string = $state();
 
   onMount(async () => {
     if ($modalStore[0]?.meta.existingFilter) {
@@ -140,7 +144,7 @@
     loading = false;
   }
 
-  $: valuesSelected = selectedOptions.map((option) => option);
+  let valuesSelected = $derived(selectedOptions.map((option) => option));
 </script>
 
 <div>
@@ -202,7 +206,7 @@
       <button
         class="btn btn-icon variant-filled-primary m-1"
         data-testid="add-filter"
-        on:click={addNewFilter}
+        onclick={addNewFilter}
         disabled={data.type === 'Categorical' && valuesSelected.length === 0}
       >
         <i class="fas fa-plus"></i>

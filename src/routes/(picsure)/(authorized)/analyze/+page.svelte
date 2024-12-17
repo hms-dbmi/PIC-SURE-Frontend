@@ -5,7 +5,7 @@
   import { CodeBlock, Tab, TabGroup } from '@skeletonlabs/skeleton';
   import codeBlocks from '$lib/assets/codeBlocks.json';
 
-  let tabSet: number = 0;
+  let tabSet: number = $state(0);
 </script>
 
 <svelte:head>
@@ -48,19 +48,21 @@
     <TabGroup class="card p-4">
       <Tab bind:group={tabSet} name="python" value={0}>Python</Tab>
       <Tab bind:group={tabSet} name="r" value={1}>R</Tab>
-      <svelte:fragment slot="panel">
-        {#if tabSet === 0}
-          <CodeBlock
-            language="python"
-            lineNumbers={true}
-            buttonCopied="Copied!"
-            code={codeBlocks?.bdcPythonAPI || 'Code not set'}
-          ></CodeBlock>
-        {:else if tabSet === 1}
-          <CodeBlock language="r" lineNumbers={true} code={codeBlocks?.bdcRAPI || 'Code not set'}
-          ></CodeBlock>
-        {/if}
-      </svelte:fragment>
+      {#snippet panel()}
+          
+          {#if tabSet === 0}
+            <CodeBlock
+              language="python"
+              lineNumbers={true}
+              buttonCopied="Copied!"
+              code={codeBlocks?.bdcPythonAPI || 'Code not set'}
+            ></CodeBlock>
+          {:else if tabSet === 1}
+            <CodeBlock language="r" lineNumbers={true} code={codeBlocks?.bdcRAPI || 'Code not set'}
+            ></CodeBlock>
+          {/if}
+        
+          {/snippet}
     </TabGroup>
   </section>
   <section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">

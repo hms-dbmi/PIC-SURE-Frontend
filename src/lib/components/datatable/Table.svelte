@@ -11,30 +11,52 @@
   import type { Column } from '$lib/models/Tables';
   import ExpandableRow from '$lib/components/datatable/Row.svelte';
 
-  // Parameters
-  export let tableName: string;
-  export let search = false;
-  export let title = '';
-  export let fullWidth: boolean = false;
-  export let options: number[] = [5, 10, 20, 50, 100];
-  export let defaultRowsPerPage = 10;
-  export let columns: Column[] = [];
-  export let cellOverides: Indexable = {};
-  export let stickyHeader = false;
-  export let showPagination = true;
-  export let rowClickHandler: (row: Indexable) => void = () => {};
-  export let isClickable: boolean = false;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  export let data: any = []; //TODO: Fix this type
+  
+  
+  interface Props {
+    // Parameters
+    tableName: string;
+    search?: boolean;
+    title?: string;
+    fullWidth?: boolean;
+    options?: number[];
+    defaultRowsPerPage?: number;
+    columns?: Column[];
+    cellOverides?: Indexable;
+    stickyHeader?: boolean;
+    showPagination?: boolean;
+    rowClickHandler?: (row: Indexable) => void;
+    isClickable?: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data?: any; //TODO: Fix this type
+    tableActions?: import('svelte').Snippet;
+  }
 
-  $: handler = new DataHandler(data, { rowsPerPage: defaultRowsPerPage });
-  $: rows = handler.getRows();
+  let {
+    tableName,
+    search = false,
+    title = '',
+    fullWidth = false,
+    options = [5, 10, 20, 50, 100],
+    defaultRowsPerPage = 10,
+    columns = [],
+    cellOverides = {},
+    stickyHeader = false,
+    showPagination = true,
+    rowClickHandler = () => {},
+    isClickable = false,
+    data = [],
+    tableActions
+  }: Props = $props();
+
+  let handler = $derived(new DataHandler(data, { rowsPerPage: defaultRowsPerPage }));
+  let rows = $derived(handler.getRows());
 </script>
 
 <div class="space-y-1">
-  {#if title || search || $$slots.tableActions}
+  {#if title || search || tableActions}
     <header
-      class="flex items-center {title || $$slots.tableActions
+      class="flex items-center {title || tableActions
         ? 'justify-between'
         : 'justify-end'} gap-4"
     >
@@ -43,7 +65,7 @@
           <h2 class="my-2">{title}</h2>
         </div>
       {/if}
-      <slot name="tableActions" />
+      {@render tableActions?.()}
       {#if search}
         <div class="flex-none">
           <Search {handler} />

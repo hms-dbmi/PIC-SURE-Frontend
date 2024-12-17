@@ -7,16 +7,20 @@
   import { user } from '$lib/stores/User';
 
   import TermsModal from '$lib/components/modals/TermsModal.svelte';
-  export let showSitemap: boolean = branding?.footer?.showSitemap || false;
+  interface Props {
+    showSitemap?: boolean;
+  }
 
-  $: hideSitemap =
-    !showSitemap ||
-    branding?.footer?.excludeSitemapOn?.find((hide) => $page.url.pathname.includes(hide));
+  let { showSitemap = branding?.footer?.showSitemap || false }: Props = $props();
 
-  $: sitemap = branding?.sitemap?.map((section) => ({
+  let hideSitemap =
+    $derived(!showSitemap ||
+    branding?.footer?.excludeSitemapOn?.find((hide) => $page.url.pathname.includes(hide)));
+
+  let sitemap = $derived(branding?.sitemap?.map((section) => ({
     ...section,
     show: !section.privilege || ($user.privileges && $user.privileges.includes(section.privilege)),
-  }));
+  })));
 
   function openTermsModal() {
     modalStore.trigger({
@@ -50,7 +54,7 @@
 <footer id="main-footer" class="flex relative">
   <ul>
     {#if branding?.footer?.showTerms}
-      <li><button class="hover:underline" on:click={openTermsModal}>Terms of Service</button></li>
+      <li><button class="hover:underline" onclick={openTermsModal}>Terms of Service</button></li>
     {/if}
     {#each branding?.footer?.links as link}
       <li>

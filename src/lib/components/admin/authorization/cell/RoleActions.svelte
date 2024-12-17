@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { stopPropagation } from 'svelte/legacy';
+
   import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
   const toastStore = getToastStore();
@@ -8,7 +10,7 @@
   import RolesStore from '$lib/stores/Roles';
   const { deleteRole } = RolesStore;
 
-  export let data = { cell: '', row: { name: '' } };
+  let { data = { cell: '', row: { name: '' } } } = $props();
 
   function deleteModal() {
     const name = data.row.name;
@@ -45,7 +47,7 @@
     type="button"
     title="View"
     class="btn-icon-color"
-    on:click|stopPropagation={() => goto(`/admin/authorization/role/${data.cell}`)}
+    onclick={stopPropagation(() => goto(`/admin/authorization/role/${data.cell}`))}
   >
     <i class="fa-solid fa-circle-info fa-xl"></i>
     <span class="sr-only">View Role</span>
@@ -55,7 +57,7 @@
     type="button"
     title="Edit"
     class="btn-icon-color"
-    on:click|stopPropagation={() => goto(`/admin/authorization/role/${data.cell}/edit`)}
+    onclick={stopPropagation(() => goto(`/admin/authorization/role/${data.cell}/edit`))}
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
     <span class="sr-only">Edit</span>
@@ -65,7 +67,7 @@
     type="button"
     title="Delete"
     class="btn-icon-color"
-    on:click|stopPropagation={deleteModal}
+    onclick={stopPropagation(deleteModal)}
   >
     <i class="fa-solid fa-trash fa-xl"></i>
     <span class="sr-only">Delete</span>

@@ -1,8 +1,12 @@
 <script lang="ts">
   import { popup } from '@skeletonlabs/skeleton';
 
-  export let text: string = '';
-  export let id: string = '';
+  interface Props {
+    text?: string;
+    id?: string;
+  }
+
+  let { text = '', id = '' }: Props = $props();
 </script>
 
 {#if text}
@@ -21,7 +25,7 @@
       data-popup={id}
     >
       {text}
-      <div class="arrow variant-filled-surface" />
+      <div class="arrow variant-filled-surface"></div>
     </div>
   </div>
 {/if}

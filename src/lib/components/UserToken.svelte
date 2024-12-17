@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -13,18 +15,13 @@
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
-  let account = '';
+  let account = $state('');
   let placeHolderToken =
     '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
-  let revealed = false;
-  let refreshButtonDisabled = false;
-  let refreshButtonText = 'Refresh';
+  let revealed = $state(false);
+  let refreshButtonDisabled = $state(false);
+  let refreshButtonText = $state('Refresh');
 
-  $: displayedToken = revealed ? $user?.token : placeHolderToken;
-  $: revealButtonText = revealed ? 'Hide' : 'Reveal';
-  $: expires = $user && $user.token ? extractExperationDate($user.token) : 0;
-  $: badge = expires && checkIfExpired();
-  $: account = $user?.email || 'There was an error retrieving your account.';
 
   function checkIfExpired() {
     if (!expires || expires === 0) {
@@ -81,6 +78,13 @@
   function revealToken() {
     revealed = !revealed;
   }
+  let displayedToken = $derived(revealed ? $user?.token : placeHolderToken);
+  let revealButtonText = $derived(revealed ? 'Hide' : 'Reveal');
+  let expires = $derived($user && $user.token ? extractExperationDate($user.token) : 0);
+  let badge = $derived(expires && checkIfExpired());
+  run(() => {
+    account = $user?.email || 'There was an error retrieving your account.';
+  });
 </script>
 
 <div id="user-token-container">
@@ -116,13 +120,13 @@
         <button
           id="refresh-button"
           class="btn variant-ghost-primary hover:variant-filled-primary"
-          on:click={confirmRefreshToken}
+          onclick={confirmRefreshToken}
           disabled={refreshButtonDisabled}>{refreshButtonText}</button
         >
         <button
           id="reveal-button"
           class="btn variant-ghost-primary hover:variant-filled-primary"
-          on:click={revealToken}>{revealButtonText}</button
+          onclick={revealToken}>{revealButtonText}</button
         >
       </footer>
     </div>

@@ -4,7 +4,7 @@
 
   import { browser } from '$app/environment';
 
-  let disablePrompt = false;
+  let disablePrompt = $state(false);
 
   async function close() {
     if (disablePrompt && browser) {
@@ -47,7 +47,7 @@
       type="button"
       data-testid="send-data-modal-confirm-btn"
       class="btn variant-ringed-primary hover:variant-ghost-primary"
-      on:click={close}
+      onclick={close}
     >
       Okay, got it!
     </button>

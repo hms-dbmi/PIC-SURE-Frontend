@@ -1,6 +1,5 @@
 <script lang="ts">
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  export let tourConfig: any;
+  
   import { getModalStore, type ModalComponent } from '@skeletonlabs/skeleton';
 
   import { driver, type DriverHook, type DriveStep } from 'driver.js';
@@ -12,6 +11,12 @@
   import { clearExports } from '$lib/stores/Export';
 
   import TourModal from '$lib/components/tour/TourModal.svelte';
+  interface Props {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    tourConfig: any;
+  }
+
+  let { tourConfig }: Props = $props();
 
   const modalStore = getModalStore();
   const tourComponent: ModalComponent = { ref: TourModal, props: { tourConfig } };
@@ -232,6 +237,6 @@
   data-testid="explorer-tour-btn"
   id="tourBtn"
   class="btn variant-filled-secondary"
-  on:click={startTour}
+  onclick={startTour}
   >Take a Tour
 </button>
