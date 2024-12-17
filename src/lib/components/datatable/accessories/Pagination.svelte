@@ -1,7 +1,11 @@
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
   import { DataHandler as RemoteHander } from '@vincjo/datatables/remote';
-  export let handler: DataHandler | RemoteHander;
+  interface Props {
+    handler: DataHandler | RemoteHander;
+  }
+
+  let { handler }: Props = $props();
   const pageNumber = handler.getPageNumber();
   const pageCount = handler.getPageCount();
   const pages = handler.getPages({ ellipsis: true });
@@ -16,7 +20,7 @@
 <!-- Desktop buttons -->
 <section class="btn-group-custom h-10 hidden lg:block">
   {#if $pages !== undefined}
-    <button type="button" disabled={$pageNumber === 1} on:click={() => setPage('previous')}>
+    <button type="button" disabled={$pageNumber === 1} onclick={() => setPage('previous')}>
       ←
     </button>
     {#each $pages as page}
@@ -24,12 +28,12 @@
         type="button"
         class:active={$pageNumber === page}
         class:ellipse={page === null}
-        on:click={() => setPage(page)}
+        onclick={() => setPage(page)}
       >
         {page ?? '...'}
       </button>
     {/each}
-    <button type="button" disabled={$pageNumber === $pageCount} on:click={() => setPage('next')}>
+    <button type="button" disabled={$pageNumber === $pageCount} onclick={() => setPage('next')}>
       →
     </button>
   {/if}

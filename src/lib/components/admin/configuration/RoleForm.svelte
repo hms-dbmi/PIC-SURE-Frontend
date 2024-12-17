@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import { goto } from '$app/navigation';
   import { getToastStore } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
@@ -6,16 +8,22 @@
   import { type Role } from '$lib/models/Role';
   import { addRole, updateRole } from '$lib/stores/Roles';
 
-  export let role: Role | undefined = undefined;
-  export let privilegeList: string[][];
+  interface Props {
+    role?: Role | undefined;
+    privilegeList: string[][];
+  }
 
-  let name = role ? role.name : '';
-  let description = role ? role.description : '';
+  let { role = undefined, privilegeList }: Props = $props();
+
+  let name = $state(role ? role.name : '');
+  let description = $state(role ? role.description : '');
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let privileges = privilegeList.map(([_name, uuid]) => ({
-    uuid,
-    checked: role ? role.privileges.includes(uuid) : false,
-  }));
+  let privileges = $state(
+    privilegeList.map(([_name, uuid]) => ({
+      uuid,
+      checked: role ? role.privileges.includes(uuid) : false,
+    })),
+  );
   let validationError: string = '';
 
   async function saveRole() {
@@ -55,7 +63,7 @@
   }
 </script>
 
-<form on:submit|preventDefault={saveRole} class="grid gap-4 my-3">
+<form onsubmit={preventDefault(saveRole)} class="grid gap-4 my-3">
   {#if role?.uuid}
     <label class="label">
       <span>UUID:</span>

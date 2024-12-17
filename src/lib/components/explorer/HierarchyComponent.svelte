@@ -1,7 +1,11 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
 
-  export let data: SearchResult = {} as SearchResult;
+  interface Props {
+    data?: SearchResult;
+  }
+
+  let { data = {} as SearchResult }: Props = $props();
 </script>
 
 <div data-testid="hierarchy-component">

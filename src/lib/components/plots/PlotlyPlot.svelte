@@ -4,17 +4,21 @@
 
   import { type PlotMeta, type PlotlyNewPlot, defaultPlotlyConfig } from '$lib/utilities/Plotly';
 
-  export let index: number;
-  export let data: Data[];
-  export let meta: PlotMeta;
-  export let layout: Partial<Layout>;
-  export let newPlot: PlotlyNewPlot;
+  interface Props {
+    index: number;
+    data: Data[];
+    meta: PlotMeta;
+    layout: Partial<Layout>;
+    newPlot: PlotlyNewPlot;
+  }
+
+  let { index, data, meta, layout, newPlot }: Props = $props();
 
   const screenReaderText = meta.isCategorical
     ? 'Column chart showing the visualization of '
     : 'Histogram showing the visualization of ';
 
-  let plotContainer: Root;
+  let plotContainer: Root = $state();
 
   onMount(async () => {
     newPlot(plotContainer, data, layout, {

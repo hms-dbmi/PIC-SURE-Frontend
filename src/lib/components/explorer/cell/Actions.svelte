@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { stopPropagation } from 'svelte/legacy';
+
   import type { SearchResult } from '$lib/models/Search';
   import { activeTable, expandableComponents, setActiveRow } from '$lib/stores/ExpandableRow';
   import type { ExportInterface } from '$lib/models/Export';
@@ -7,13 +9,13 @@
   import { features } from '$lib/configuration';
   import { page } from '$app/stores';
   let { exports, addExport, removeExport } = ExportStore;
-  export let data = {} as SearchResult;
-  $: exportItem = {
+  let { data = {} as SearchResult } = $props();
+  let exportItem = $derived({
     id: uuidv4(),
     searchResult: data.row,
     display: data.row.display,
     conceptPath: data.row.conceptPath,
-  } as ExportInterface;
+  } as ExportInterface);
   function updateActiveRow(component: string) {
     return () => {
       setActiveRow({
@@ -35,16 +37,18 @@
       addExport(exportItem);
     }
   }
-  $: isOpenAccess = $page.url.pathname.includes('/discover');
-  $: isExported = $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath);
-  $: shouldDisableFilter = isOpenAccess && !data.row.allowFiltering;
+  let isOpenAccess = $derived($page.url.pathname.includes('/discover'));
+  let isExported = $derived(
+    $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath),
+  );
+  let shouldDisableFilter = $derived(isOpenAccess && !data.row.allowFiltering);
 </script>
 
 <button
   type="button"
   title="Information"
   class="btn-icon-color"
-  on:click|stopPropagation={insertInfoContent}
+  onclick={stopPropagation(insertInfoContent)}
 >
   <i class="fa-solid fa-circle-info fa-xl"></i>
   <span class="sr-only">View Information</span>
@@ -54,7 +58,7 @@
   title={shouldDisableFilter ? 'Filtering is not available for this variable' : 'Filter'}
   class="btn-icon-color"
   disabled={shouldDisableFilter}
-  on:click|stopPropagation={insertFilterContent}
+  onclick={stopPropagation(insertFilterContent)}
 >
   <i class="fa-solid fa-filter fa-xl"></i>
   <span class="sr-only"
@@ -66,7 +70,7 @@
     type="button"
     title="Data Hierarchy"
     class="btn-icon-color"
-    on:click|stopPropagation={insertHierarchyContent}
+    onclick={stopPropagation(insertHierarchyContent)}
   >
     <i class="fa-solid fa-sitemap fa-xl"></i>
     <span class="sr-only">View Data Hierarchy</span>
@@ -77,7 +81,7 @@
     type="button"
     title={isExported ? 'Remove from Analysis' : 'Add for Analysis'}
     class="btn-icon-color"
-    on:click|stopPropagation={insertExportContent}
+    onclick={stopPropagation(insertExportContent)}
   >
     {#if isExported}
       <i class="fa-regular fa-square-check fa-xl"></i>

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import { goto } from '$app/navigation';
   import { getToastStore } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
@@ -14,18 +16,24 @@
   const { getRole } = RoleStore;
   const { getPrivilege } = PrivilegesStore;
 
-  export let user: ExtendedUser | undefined = undefined;
-  export let roleList: string[][];
-  export let connections: Connection[];
+  interface Props {
+    user?: ExtendedUser | undefined;
+    roleList: string[][];
+    connections: Connection[];
+  }
 
-  let email = user ? user.email : '';
-  let connection = user ? user.connection : '';
-  let active = user ? user.active : true;
+  let { user = undefined, roleList, connections }: Props = $props();
+
+  let email = $state(user ? user.email : '');
+  let connection = $state(user ? user.connection : '');
+  let active = $state(user ? user.active : true);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let roles = roleList.map(([_name, uuid]) => ({
-    uuid,
-    checked: user ? user.roles.includes(uuid) : false,
-  }));
+  let roles = $state(
+    roleList.map(([_name, uuid]) => ({
+      uuid,
+      checked: user ? user.roles.includes(uuid) : false,
+    })),
+  );
 
   async function saveUser() {
     const generalMetadata = JSON.parse(user?.generalMetadata || '{"email":""}');
@@ -68,7 +76,7 @@
   }
 </script>
 
-<form on:submit|preventDefault={saveUser}>
+<form onsubmit={preventDefault(saveUser)}>
   <label class="flex items-center space-x-2">
     <input class="checkbox" type="checkbox" bind:checked={active} />
     <p>Active</p>

@@ -5,6 +5,11 @@
   import Footer from '$lib/components/Footer.svelte';
   import Dots from '$lib/components/Dots.svelte';
   import { Toast } from '@skeletonlabs/skeleton';
+  interface Props {
+    children?: import('svelte').Snippet;
+  }
+
+  let { children }: Props = $props();
 
   onMount(() => {
     if ($user && $user.token) {
@@ -16,7 +21,7 @@
 <Toast position="t" />
 <div class="w-full full-height">
   <Dots class="top-dots" />
-  <slot />
+  {@render children?.()}
   <Dots class="bottom-dots" />
   <div class="footer">
     <Footer showSitemap={false} />

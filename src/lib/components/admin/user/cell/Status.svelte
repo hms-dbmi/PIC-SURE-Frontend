@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let data = { cell: '', row: {} };
+  let { data = { cell: '', row: {} } } = $props();
 </script>
 
 <span

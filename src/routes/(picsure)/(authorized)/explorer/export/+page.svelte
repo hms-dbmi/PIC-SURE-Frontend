@@ -127,7 +127,7 @@
       <div class="flex gap-4">
         <button
           class="btn variant-filled-primary m-4"
-          on:click={() => {
+          onclick={() => {
             alert('This would start the tour at some step');
           }}>Learn How</button
         >

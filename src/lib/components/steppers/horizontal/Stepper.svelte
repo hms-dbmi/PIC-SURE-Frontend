@@ -1,12 +1,13 @@
+<!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
   import { createEventDispatcher, setContext } from 'svelte';
   import { fade } from 'svelte/transition';
   import { state } from '$lib/stores/Stepper';
   import type { StepperEvent } from '$lib/models/Stepper';
 
-  export let buttonCompleteLabel = '';
-  setContext('buttonCompleteLabel', buttonCompleteLabel);
+  let { class: className, buttonCompleteLabel = '' } = $props();
 
+  setContext('buttonCompleteLabel', buttonCompleteLabel);
   setContext('state', state);
 
   const dispatch = createEventDispatcher<StepperEvent>();
@@ -32,10 +33,10 @@
   setContext('onNext', onNext);
   setContext('onComplete', onComplete);
 
-  $: isActive = (step: number) => step === $state.current;
+  const isActive = $derived((step: number): boolean => step === $state.current);
 </script>
 
-<div class="stepper space-y-4 {$$props.class ?? ''}" data-testid="stepper">
+<div class="stepper space-y-4 {className ?? ''}" data-testid="stepper">
   {#if $state.total}
     <header
       class="stepper-header flex items-center border-t mt-[15px] mb-7 border-surface-400-500-token gap-4"

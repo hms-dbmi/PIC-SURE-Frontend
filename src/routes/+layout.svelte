@@ -5,6 +5,11 @@
   import { initializeBranding } from '$lib/configuration';
   import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
   import { settings } from '$lib/configuration';
+  interface Props {
+    children?: import('svelte').Snippet;
+  }
+
+  let { children }: Props = $props();
 
   let googleTag = settings.google.tagManager;
 
@@ -27,6 +32,6 @@
 {/if}
 
 <main class="w-full h-full">
-  <slot />
+  {@render children?.()}
   <GoogleTracking />
 </main>

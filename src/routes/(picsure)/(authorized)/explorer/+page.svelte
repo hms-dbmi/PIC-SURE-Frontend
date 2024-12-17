@@ -10,7 +10,7 @@
   const tourName = features.explorer.authTour;
 
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  let authTour: any = undefined;
+  let authTour: any = $state(undefined);
   if (tourName !== undefined && tourName in Tour) {
     authTour = Tour[tourName];
   }

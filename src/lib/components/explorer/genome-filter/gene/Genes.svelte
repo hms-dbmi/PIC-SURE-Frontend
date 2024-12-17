@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { onMount } from 'svelte';
   import { getToastStore } from '@skeletonlabs/skeleton';
 
@@ -10,18 +12,21 @@
 
   const toastStore = getToastStore();
 
-  let allGenes: string[] = [];
-  $: unselectedGenes =
-    $selectedGenes.length === 0
-      ? allGenes
-      : allGenes.filter((gene) => !$selectedGenes.includes(gene));
+  let allGenes: string[] = $state([]);
+  let unselectedGenes;
+  run(() => {
+    unselectedGenes =
+      $selectedGenes.length === 0
+        ? allGenes
+        : allGenes.filter((gene) => !$selectedGenes.includes(gene));
+  });
 
   let lastFilter = '';
   let pageSize = 20;
   let currentPage = 0;
   let totalPages = 1;
-  let loading = false;
-  let allOptionsLoaded = false;
+  let loading = $state(false);
+  let allOptionsLoaded = $state(false);
 
   // given a search term, return new values to be added to displayed options
   async function getGeneValues(search: string = '') {

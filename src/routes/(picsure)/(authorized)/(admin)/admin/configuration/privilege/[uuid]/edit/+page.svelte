@@ -11,7 +11,7 @@
   import { getPrivilege } from '$lib/stores/Privileges';
   import { applicationList, loadApplications } from '$lib/stores/Application';
 
-  let privilege: Privilege;
+  let privilege: Privilege = $state();
 
   async function load() {
     privilege = await getPrivilege($page.params.uuid);

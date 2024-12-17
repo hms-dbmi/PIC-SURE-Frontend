@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: `<tr>` cannot be a child of `<table>`. `<table>` only allows these children: `<caption>`, `<colgroup>`, `<tbody>`, `<thead>`, `<tfoot>`, `<style>`, `<script>`, `<template>`. The browser will 'repair' the HTML (by moving, removing, or inserting elements) which breaks Svelte's assumptions about the structure of your components.
+https://svelte.dev/e/node_invalid_placement -->
 <script lang="ts">
   import { page } from '$app/stores';
   import { ProgressBar } from '@skeletonlabs/skeleton';
@@ -39,31 +41,37 @@
   {:then}
     <section id="role-view">
       <table class="table bg-transparent">
+        <thead>
+          <tr>
+            <th scope="col">Field</th>
+            <th scope="col">Value</th>
+          </tr>
+        </thead>
         <tbody>
           <tr>
-            <td>Id:</td>
+            <th scope="row">Id:</th>
             <td>{user.uuid}</td>
           </tr>
           <tr>
-            <td>Email:</td>
+            <th scope="row">Email:</th>
             <td>{user.email}</td>
           </tr>
           <tr>
-            <td>Active:</td>
+            <th scope="row">Active:</th>
             <td>{user.active}</td>
           </tr>
           {#if user.subject}
             <tr>
-              <td>Subject:</td>
+              <th scope="row">Subject:</th>
               <td>{user.subject}</td>
             </tr>
           {/if}
           <tr>
-            <td>Connection:</td>
+            <th scope="row">Connection:</th>
             <td>{typeof connection !== 'string' ? connection.label : user.connection}</td>
           </tr>
           <tr>
-            <td>Roles:</td>
+            <th scope="row">Roles:</th>
             <td>{roles.map((p) => p.name).join(', ')}</td>
           </tr>
         </tbody>

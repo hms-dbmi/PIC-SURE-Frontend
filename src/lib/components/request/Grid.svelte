@@ -1,7 +1,12 @@
 <script lang="ts">
-  export let columns: number;
+  interface Props {
+    columns: number;
+    children?: import('svelte').Snippet;
+  }
+
+  let { columns, children }: Props = $props();
 </script>
 
 <div class={`grid grid-cols-${columns} divide-x py-4`}>
-  <slot />
+  {@render children?.()}
 </div>

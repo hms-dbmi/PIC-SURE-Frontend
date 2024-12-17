@@ -1,40 +1,42 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { run, preventDefault } from 'svelte/legacy';
+
   import { ProgressRadial } from '@skeletonlabs/skeleton';
 
-  let searchInput: string = '';
-  export let unselectedOptions: string[] = [];
-  export let selectedOptions: string[] = [];
-  export let selectedOptionEndLocation = 20;
-  export let currentlyLoading: boolean = false;
-  export let showClearAll: boolean = true;
-  export let showSelectAll: boolean = true;
-  export let allOptionsLoaded: boolean = false;
+  let searchInput: string = $state('');
 
-  export let allOptions: string[] | undefined = undefined;
+  interface Props {
+    unselectedOptions?: string[];
+    selectedOptions?: string[];
+    selectedOptionEndLocation?: number;
+    currentlyLoading?: boolean;
+    showClearAll?: boolean;
+    showSelectAll?: boolean;
+    allOptionsLoaded?: boolean;
+    allOptions?: string[] | undefined;
+  }
 
-  let currentlyLoadingSelected: boolean = false;
-  let unselectedOptionsContainer: HTMLElement;
-  let selectedOptionsContainer: HTMLElement;
-  let allSelectedOptionsLoaded: boolean = false;
+  let {
+    unselectedOptions = $bindable([]),
+    selectedOptions = $bindable([]),
+    selectedOptionEndLocation = $bindable(20),
+    currentlyLoading = false,
+    showClearAll = true,
+    showSelectAll = true,
+    allOptionsLoaded = false,
+    allOptions = undefined,
+  }: Props = $props();
 
-  const dispatch = createEventDispatcher<{ scroll: { search: string } }>();
+  let currentlyLoadingSelected: boolean = $state(false);
+  let unselectedOptionsContainer: HTMLElement = $state();
+  let selectedOptionsContainer: HTMLElement = $state();
+  let allSelectedOptionsLoaded: boolean = $state(false);
 
-  $: infiniteScroll = allOptions === undefined;
+  interface ScrollEvent {
+    search: string;
+  }
 
-  $: totalAvailableOptions = infiniteScroll
-    ? Infinity
-    : (allOptions?.length || 0) - selectedOptions.length;
-
-  $: allUnselectedOptionsLoaded = infiniteScroll
-    ? allOptionsLoaded
-    : unselectedOptions.length >= totalAvailableOptions;
-
-  $: allSelectedOptionsLoaded = infiniteScroll
-    ? allSelectedOptionsLoaded
-    : displayedSelectedOptions.length >= selectedOptions.length;
-
-  $: displayedSelectedOptions = selectedOptions.slice(0, selectedOptionEndLocation);
+  const dispatch = $event<ScrollEvent>('scroll');
 
   function shouldLoadMore(element: HTMLElement, allLoaded: boolean) {
     const scrollTop = element.scrollTop;
@@ -99,6 +101,20 @@
   function getID(option: string) {
     return option.replaceAll(' ', '-').toLowerCase();
   }
+
+  let infiniteScroll = $derived(allOptions === undefined);
+  let totalAvailableOptions = $derived(
+    infiniteScroll ? Infinity : (allOptions?.length || 0) - selectedOptions.length,
+  );
+  let allUnselectedOptionsLoaded = $derived(
+    infiniteScroll ? allOptionsLoaded : unselectedOptions.length >= totalAvailableOptions,
+  );
+  let displayedSelectedOptions = $derived(selectedOptions.slice(0, selectedOptionEndLocation));
+  run(() => {
+    allSelectedOptionsLoaded = infiniteScroll
+      ? allSelectedOptionsLoaded
+      : displayedSelectedOptions.length >= selectedOptions.length;
+  });
 </script>
 
 <div data-testid="optional-selection-list" class="flex w-full">
@@ -109,7 +125,7 @@
         type="search"
         name="search"
         bind:value={searchInput}
-        on:input={onSearch}
+        oninput={onSearch}
         placeholder="Search..."
       />
       {#if showSelectAll}
@@ -117,7 +133,7 @@
           id="select-all"
           class="btn variant-ringed-surface hover:variant-filled-primary ml-2 text-sm"
           disabled={unselectedOptions.length === 0}
-          on:click={selectAllOptions}>Select All</button
+          onclick={selectAllOptions}>Select All</button
         >
       {/if}
     </header>
@@ -126,7 +142,7 @@
         id="options-container"
         bind:this={unselectedOptionsContainer}
         class="overflow-scroll scrollbar-color h-25vh"
-        on:scroll={handleScroll}
+        onscroll={handleScroll}
       >
         {#each unselectedOptions as option}
           <label
@@ -138,7 +154,7 @@
               type="checkbox"
               value={option}
               class="mr-1 float-left"
-              on:click|preventDefault={() => onSelect(option)}
+              onclick={preventDefault(() => onSelect(option))}
             />
             {option}
           </label>
@@ -158,7 +174,7 @@
         <button
           id="clear"
           class="btn variant-ringed-surface hover:variant-filled-primary ml-2 text-sm"
-          on:click={clearSelectedOptions}
+          onclick={clearSelectedOptions}
           disabled={selectedOptions.length === 0}>Clear</button
         >
       {/if}
@@ -168,7 +184,7 @@
         id="selected-options-container"
         bind:this={selectedOptionsContainer}
         class="overflow-scroll scrollbar-color h-25vh"
-        on:scroll={loadMoreSelectedOptions}
+        onscroll={loadMoreSelectedOptions}
       >
         {#each displayedSelectedOptions as option (option)}
           <label
@@ -180,7 +196,7 @@
               type="checkbox"
               class="mr-1"
               value={option}
-              on:click|preventDefault={() => onUnselect(option)}
+              onclick={preventDefault(() => onUnselect(option))}
               checked
             />
             {option}

@@ -25,9 +25,9 @@
   import type { Unsubscriber } from 'svelte/store';
   import { getQueryRequest } from '$lib/QueryBuilder';
 
-  let loading: Promise<void>;
+  let loading: Promise<void> = $state();
   let unsubVariantError: Unsubscriber;
-  let aggregateCheckbox: boolean = settings.variantExplorer.type === ExportType.Full;
+  let aggregateCheckbox: boolean = $state(settings.variantExplorer.type === ExportType.Full);
   let queryRequest: QueryRequestInterface;
 
   async function getData() {
@@ -114,7 +114,7 @@
           fullWidth={true}
           search={true}
         >
-          <svelte:fragment slot="tableActions">
+          {#snippet tableActions()}
             <div class="flex-auto flex items-end justify-between">
               {#if $count > 0}
                 <div data-testid="variant-count" class="">
@@ -128,14 +128,14 @@
                       class="checkbox"
                       type="checkbox"
                       bind:checked={aggregateCheckbox}
-                      on:click={aggregateChange}
+                      onclick={aggregateChange}
                     />
                     <p>Aggregate data</p>
                   </label>
                 </div>
               {/if}
             </div>
-          </svelte:fragment>
+          {/snippet}
         </Datatable>
       {:else}
         <div data-testid="variant-count" class="flex-none w-full">{$count} variants found</div>

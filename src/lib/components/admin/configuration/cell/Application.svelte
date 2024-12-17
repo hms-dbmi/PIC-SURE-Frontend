@@ -2,7 +2,11 @@
   import ApplicationStore from '$lib/stores/Application';
   const { getApplication } = ApplicationStore;
 
-  export let data: { cell: '' };
+  interface Props {
+    data: { cell: '' };
+  }
+
+  let { data }: Props = $props();
 </script>
 
 {data.cell ? getApplication(data.cell).name : 'none'}

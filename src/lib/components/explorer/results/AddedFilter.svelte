@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault, stopPropagation } from 'svelte/legacy';
+
   import { elasticInOut } from 'svelte/easing';
   import { fade, scale, slide } from 'svelte/transition';
   import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
@@ -15,9 +17,13 @@
 
   const modalStore = getModalStore();
 
-  export let filter: Filter;
-  let open = false;
-  let carot = 'fa-caret-up';
+  interface Props {
+    filter: Filter;
+  }
+
+  let { filter }: Props = $props();
+  let open = $state(false);
+  let carot = $state('fa-caret-up');
 
   function editFilter() {
     if (filter.filterType === 'genomic') {
@@ -99,9 +105,10 @@
       class="flex-auto variable"
       tabindex="0"
       role="button"
-      on:click|preventDefault|stopPropagation={toggleCardBody}
-      on:keydown|preventDefault|stopPropagation={(e) =>
-        (e.key === 'Enter' || e.key === ' ') && toggleCardBody}
+      onclick={stopPropagation(preventDefault(toggleCardBody))}
+      onkeydown={stopPropagation(
+        preventDefault((e) => (e.key === 'Enter' || e.key === ' ') && toggleCardBody),
+      )}
     >
       {filter.variableName}
     </div>
@@ -110,7 +117,7 @@
         type="button"
         title="Edit Filter"
         class="bg-initial text-black-500 hover:text-primary-600"
-        on:click={editFilter}
+        onclick={editFilter}
       >
         <i class="fa-solid fa-pen-to-square"></i>
         <span class="sr-only">Edit Filter</span>
@@ -119,7 +126,7 @@
         type="button"
         title="Remove Filter"
         class="bg-initial text-black-500 hover:text-primary-600"
-        on:click={deleteFilter}
+        onclick={deleteFilter}
       >
         <i class="fa-solid fa-times-circle"></i>
         <span class="sr-only">Remove Filter</span>
@@ -128,7 +135,7 @@
         type="button"
         title="See details"
         class="bg-initial text-black-500 hover:text-primary-600"
-        on:click={toggleCardBody}
+        onclick={toggleCardBody}
       >
         <i class="fa-solid {carot}"></i>
         <span class="sr-only">See details</span>

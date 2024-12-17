@@ -1,16 +1,14 @@
+<!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
   import { branding } from '$lib/configuration';
 
-  export let height: number = 0;
-  export let width: number = 0;
-  export let unit: string = 'rem';
+  let { class: className, height = 0, width = 0, unit = 'rem' } = $props();
 
-  const finalClass = `colors ${$$props.class ?? ''}`;
+  const finalClass = `colors ${className ?? ''}`;
   const src = branding.logo.src;
   const alt = branding.logo.alt;
 
-  // If width or height is set, scale the image or svg to the larger size
-  $: imgSize =
+  const imgSize = $derived(
     !width && !height
       ? { width: src ? 'auto' : undefined, height: src ? 'auto' : undefined }
       : (width && !height) || (width && height && width > height)
@@ -21,7 +19,8 @@
         : {
             width: (src ? 'auto' : ((height / 180) * 1010).toFixed(2)) + unit,
             height: height + unit,
-          };
+          },
+  );
 </script>
 
 <!-- TODO: Add real SVG Code here -->

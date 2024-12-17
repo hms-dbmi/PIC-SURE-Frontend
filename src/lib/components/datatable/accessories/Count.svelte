@@ -1,7 +1,11 @@
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
   import type { DataHandler as RemoteHander } from '@vincjo/datatables/remote';
-  export let handler: DataHandler | RemoteHander;
+  interface Props {
+    handler: DataHandler | RemoteHander;
+  }
+
+  let { handler }: Props = $props();
   const rowCount = handler.getRowCount();
 </script>
 

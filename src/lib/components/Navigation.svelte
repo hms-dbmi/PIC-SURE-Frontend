@@ -11,7 +11,7 @@
   import { createInstance } from '$lib/AuthProviderRegistry.ts';
   import { onMount } from 'svelte';
   let providerData: AuthData;
-  let providerInstance: AuthProvider | undefined = undefined;
+  let providerInstance: AuthProvider | undefined = $state(undefined);
 
   function getId({ path, id }: { path: string; id?: string; text: string }) {
     return `nav-link` + (id ? `-` + id : path.replaceAll('/', '-'));
@@ -27,7 +27,7 @@
     goto(`/login?redirectTo=${$page.url.pathname}`);
   }
 
-  $: currentPage = (route: Route) => {
+  let currentPage = $derived((route: Route) => {
     if (route.children) {
       for (const child of route.children) {
         if ($page.url.pathname.includes(child.path)) {
@@ -37,7 +37,7 @@
       return undefined;
     }
     return $page.url.pathname.includes(route.path) ? 'page' : undefined;
-  };
+  });
 
   onMount(async () => {
     if (browser && $page) {
@@ -51,11 +51,11 @@
 </script>
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-900-token">
-  <svelte:fragment slot="lead">
+  {#snippet lead()}
     <a href="/" aria-current="page" data-testid="logo-home-link">
       <Logo class="mx-1" />
     </a>
-  </svelte:fragment>
+  {/snippet}
   <nav id="page-navigation">
     <ul>
       {#each $userRoutes as route}
@@ -67,7 +67,7 @@
       {/each}
     </ul>
   </nav>
-  <svelte:fragment slot="trail">
+  {#snippet trail()}
     <div id="user-session-avatar">
       {#if $user.privileges && $user.email && $isLoggedIn}
         <!-- Logout -->
@@ -88,7 +88,7 @@
             id="user-logout-btn"
             class="btn variant-ringed-primary"
             title="Logout"
-            on:click={() => logout(providerInstance, false)}>Logout</button
+            onclick={() => logout(providerInstance, false)}>Logout</button
           >
         </div>
       {:else}
@@ -97,11 +97,11 @@
           id="user-login-btn"
           title="Login"
           class="btn variant-ghost-primary hover:variant-filled-primary"
-          on:click={handleLogin}
+          onclick={handleLogin}
         >
           Login
         </button>
       {/if}
     </div>
-  </svelte:fragment>
+  {/snippet}
 </AppBar>

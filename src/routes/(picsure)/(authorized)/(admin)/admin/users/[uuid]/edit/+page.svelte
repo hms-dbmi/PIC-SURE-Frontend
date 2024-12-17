@@ -15,7 +15,7 @@
   const { roleList, loadRoles } = RoleStore;
   const { connections, loadConnections } = ConnectionsStore;
 
-  let user: ExtendedUser;
+  let user: ExtendedUser = $state();
 
   async function load() {
     await loadUsers();

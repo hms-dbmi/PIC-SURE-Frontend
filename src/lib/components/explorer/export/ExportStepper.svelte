@@ -1,3 +1,5 @@
+<!-- @migration-task Error while migrating Svelte code: can't migrate `let statusPromise: Promise<string>;` to `$state` because there's a variable named state.
+     Rename the variable and try again or migrate by hand. -->
 <script lang="ts">
   import * as api from '$lib/api';
   import { v4 as uuidv4 } from 'uuid';

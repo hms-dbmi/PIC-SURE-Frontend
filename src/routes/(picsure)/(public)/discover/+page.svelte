@@ -9,7 +9,7 @@
   const tourName = features.discoverFeautures.openTour;
 
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  let openTour: any = undefined;
+  let openTour: any = $state(undefined);
   if (tourName !== undefined && tourName in Tour) {
     openTour = Tour[tourName];
   }

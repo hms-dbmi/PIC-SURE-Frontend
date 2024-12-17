@@ -57,7 +57,7 @@
 
   let width = branding?.landing?.stats.length;
 
-  let hasError = false;
+  let hasError = $state(false);
 
   let statMap: Map<string, Promise<string>> = new Map();
   branding?.landing?.stats?.forEach((stat) => {

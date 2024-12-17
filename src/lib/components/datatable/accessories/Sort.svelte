@@ -1,15 +1,15 @@
+<!-- @migration-task Error while migrating Svelte code: Cannot split a chunk that has already been edited (10:18 – "on:click={() => handler.sort(orderBy)}") -->
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
 
-  export let handler: DataHandler;
-  export let orderBy: string;
+  let { class: className, handler, orderBy } = $props();
 
-  const sorted = handler.getSort();
+  const sorted = $derived(handler.getSort());
 </script>
 
 <th
   on:click={() => handler.sort(orderBy)}
-  class="cursor-pointer select-none align-bottom {$$props.class || ''}"
+  class="cursor-pointer select-none align-bottom {className || ''}"
 >
   <slot />
   {#if $sorted.identifier === orderBy}

@@ -9,7 +9,7 @@
   import { filters } from '$lib/stores/Filter';
   import { panelOpen } from '$lib/stores/SidePanel';
 
-  let failed = false;
+  let failed = $state(false);
   onMount(async () => {
     panelOpen.set(false);
 

@@ -4,7 +4,7 @@
   import Searchbox from '$lib/components/Searchbox.svelte';
   import Stats from '$lib/components/Stats.svelte';
   import { browser } from '$app/environment';
-  let searchTerm = '';
+  let searchTerm = $state('');
 
   const isUserLoggedIn = () => {
     if (browser) {

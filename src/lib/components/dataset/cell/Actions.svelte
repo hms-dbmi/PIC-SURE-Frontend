@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { stopPropagation } from 'svelte/legacy';
+
   import DataSetStore from '$lib/stores/Dataset';
 
-  export let data = { cell: '', row: { archived: false } };
-  let toggleButton: HTMLButtonElement;
+  let { data = { cell: '', row: { archived: false } } } = $props();
+  let toggleButton: HTMLButtonElement = $state();
 
   async function toggleArchive() {
     toggleButton.disabled = true;
@@ -12,15 +14,6 @@
 </script>
 
 {#if data.row.archived}
-  <!-- <button
-    disabled
-    data-testid={`dataset-action-view-${data.cell}`}
-    type="button"
-    title="View"
-    class="btn-icon-color"
-  >
-    <i class="fa-solid fa-circle-info fa-xl"></i>
-  </button> -->
   <button
     bind:this={toggleButton}
     data-testid={`dataset-action-restore-${data.cell}`}
@@ -28,20 +21,11 @@
     title="Restore"
     aria-label="Restore"
     class="btn-icon-color"
-    on:click|stopPropagation={toggleArchive}
+    onclick={stopPropagation(toggleArchive)}
   >
     <i class="fa-solid fa-trash-arrow-up fa-xl"></i>
   </button>
 {:else}
-  <!-- <button
-    data-testid={`dataset-action-view-${data.cell}`}
-    type="button"
-    title="View"
-    class="btn-icon-color"
-    on:click|stopPropagation={() => goto(`/dataset/${data.cell}`)}
-  >
-    <i class="fa-solid fa-circle-info fa-xl"></i>
-  </button> -->
   <button
     bind:this={toggleButton}
     data-testid={`dataset-action-archive-${data.cell}`}
@@ -49,7 +33,7 @@
     title="Delete"
     aria-label="Delete"
     class="btn-icon-color"
-    on:click|stopPropagation={toggleArchive}
+    onclick={stopPropagation(toggleArchive)}
   >
     <i class="fa-solid fa-trash fa-xl"></i>
   </button>

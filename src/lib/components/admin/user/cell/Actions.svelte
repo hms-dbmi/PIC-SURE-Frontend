@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { stopPropagation } from 'svelte/legacy';
+
   import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
   const toastStore = getToastStore();
@@ -14,7 +16,7 @@
   const { getRole } = RoleStore;
   const { getPrivilege } = PrivilegesStore;
 
-  export let data = { cell: '', row: { status: '', email: '' } };
+  let { data = { cell: '', row: { status: '', email: '' } } } = $props();
 
   async function userActivation(activate: boolean) {
     const user = await getUser(data.cell);
@@ -66,7 +68,7 @@
   title="View"
   aria-label="View"
   class="btn-icon-color"
-  on:click|stopPropagation={() => goto(`/admin/users/${data.cell}`)}
+  onclick={stopPropagation(() => goto(`/admin/users/${data.cell}`))}
 >
   <i class="fa-solid fa-circle-info fa-xl"></i>
 </button>
@@ -78,7 +80,7 @@
     title="Edit"
     aria-label="Edit"
     class="btn-icon-color"
-    on:click|stopPropagation={() => goto(`/admin/users/${data.cell}/edit`)}
+    onclick={stopPropagation(() => goto(`/admin/users/${data.cell}/edit`))}
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
   </button>
@@ -88,7 +90,7 @@
     title="Deactivate user"
     aria-label="Deactivate user"
     class="btn-icon-color"
-    on:click|stopPropagation={() => userActivation(false)}
+    onclick={stopPropagation(() => userActivation(false))}
   >
     <i class="fa-solid fa-trash fa-xl"></i>
   </button>
@@ -99,7 +101,7 @@
     title="Reactivate user"
     aria-label="Reactivate user"
     class="btn-icon-color"
-    on:click|stopPropagation={() => userActivation(true)}
+    onclick={stopPropagation(() => userActivation(true))}
   >
     <i class="fa-solid fa-trash-arrow-up fa-xl"></i>
   </button>

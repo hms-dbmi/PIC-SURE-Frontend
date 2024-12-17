@@ -26,7 +26,7 @@
           title="Edit"
           aria-label="Edit"
           class="btn-icon-color"
-          on:click={() => dispatch('edit', { snp })}
+          onclick={() => dispatch('edit', { snp })}
         >
           <i class="fa-solid fa-pen-to-square"></i>
         </button>
@@ -36,7 +36,7 @@
           title="Delete"
           aria-label="Delete"
           class="btn-icon-color"
-          on:click={() => dispatch('delete', { snp })}
+          onclick={() => dispatch('delete', { snp })}
         >
           <i class="fa-solid fa-trash"></i>
         </button>

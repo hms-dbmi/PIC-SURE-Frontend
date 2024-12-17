@@ -1,8 +1,12 @@
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
   import { DataHandler as RemoteDataHandler } from '@vincjo/datatables/remote';
-  export let handler: DataHandler | RemoteDataHandler;
-  let value: string;
+  interface Props {
+    handler: DataHandler | RemoteDataHandler;
+  }
+
+  let { handler }: Props = $props();
+  let value: string = $state();
 </script>
 
 <input
@@ -10,5 +14,5 @@
   type="search"
   placeholder="Search..."
   bind:value
-  on:input={() => handler.search(value)}
+  oninput={() => handler.search(value)}
 />

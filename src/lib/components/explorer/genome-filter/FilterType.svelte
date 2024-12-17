@@ -1,15 +1,16 @@
+<!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
   import { features } from '$lib/configuration';
   import { createEventDispatcher } from 'svelte';
   import { Option } from '$lib/models/GenomeFilter';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
 
-  export let active: Option = Option.None;
+  let { class: className, active = Option.None } = $props();
 
   const dispatch = createEventDispatcher<{ select: { option: Option } }>();
 </script>
 
-<div class="flex flex-row justify-center justify-items-center gap-16 {$$props.class ?? ''}">
+<div class="flex flex-row justify-center justify-items-center gap-16 {className ?? ''}">
   {#if features.enableGENEQuery}
     <CardButton
       data-testid="gene-variant-option"

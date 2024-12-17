@@ -1,7 +1,7 @@
 <script lang="ts">
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
 
-  export let data = { cell: '', row: {} };
+  let { data = { cell: '', row: {} } } = $props();
 </script>
 
 <div class="flex items-center">

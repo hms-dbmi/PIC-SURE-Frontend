@@ -11,6 +11,6 @@
   <Terms />
   <button
     class="btn variant-filled-primary hover:variant-filled-secondary mt-6 float-right"
-    on:click={() => modalStore.close()}>Accept</button
+    onclick={() => modalStore.close()}>Accept</button
   >
 </section>
