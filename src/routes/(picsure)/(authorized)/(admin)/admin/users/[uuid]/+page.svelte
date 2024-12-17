@@ -41,32 +41,40 @@ https://svelte.dev/e/node_invalid_placement -->
   {:then}
     <section id="role-view">
       <table class="table bg-transparent">
-        <tr>
-          <td>Id:</td>
-          <td>{user.uuid}</td>
-        </tr>
-        <tr>
-          <td>Email:</td>
-          <td>{user.email}</td>
-        </tr>
-        <tr>
-          <td>Active:</td>
-          <td>{user.active}</td>
-        </tr>
-        {#if user.subject}
+        <thead>
           <tr>
-            <td>Subject:</td>
-            <td>{user.subject}</td>
+            <th scope="col">Field</th>
+            <th scope="col">Value</th>
           </tr>
-        {/if}
-        <tr>
-          <td>Connection:</td>
-          <td>{typeof connection !== 'string' ? connection.label : user.connection}</td>
-        </tr>
-        <tr>
-          <td>Roles:</td>
-          <td>{roles.map((p) => p.name).join(', ')}</td>
-        </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Id:</th>
+            <td>{user.uuid}</td>
+          </tr>
+          <tr>
+            <th scope="row">Email:</th>
+            <td>{user.email}</td>
+          </tr>
+          <tr>
+            <th scope="row">Active:</th>
+            <td>{user.active}</td>
+          </tr>
+          {#if user.subject}
+            <tr>
+              <th scope="row">Subject:</th>
+              <td>{user.subject}</td>
+            </tr>
+          {/if}
+          <tr>
+            <th scope="row">Connection:</th>
+            <td>{typeof connection !== 'string' ? connection.label : user.connection}</td>
+          </tr>
+          <tr>
+            <th scope="row">Roles:</th>
+            <td>{roles.map((p) => p.name).join(', ')}</td>
+          </tr>
+        </tbody>
       </table>
     </section>
   {:catch}
