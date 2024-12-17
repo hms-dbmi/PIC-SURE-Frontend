@@ -12,10 +12,18 @@ https://svelte.dev/e/node_invalid_placement -->
 
 <section id="detail-summary-container" class="m-3">
   <table class="table bg-transparent">
-    <tr>
-      <td>Dataset ID:</td>
-      <td data-testid="dataset-summary-uuid">{queryId}</td>
-    </tr>
+    <thead>
+      <tr>
+        <th scope="col">Field</th>
+        <th scope="col">Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row">Dataset ID:</th>
+        <td data-testid="dataset-summary-uuid">{queryId}</td>
+      </tr>
+    </tbody>
   </table>
 </section>
 
