@@ -6,8 +6,8 @@
 </script>
 
 <div
-  class="flex flex-col {$$restProps.class ?? ''}"
-  data-testid={$$restProps['data-testid'] || title.replaceAll(' ', '-').toLowerCase()}
+  class="flex flex-col {$$props.class ?? ''}"
+  data-testid={$$props['data-testid'] || title.replaceAll(' ', '-').toLowerCase()}
 >
   <div class="relative rounded-t-2xl bg-primary-300-600-token p-4 items-center flex">
     {#if required}<span class="absolute top-0 left-1 p-1 text-error-500-400-token text-xs"

@@ -26,7 +26,7 @@
 <button
   type="button"
   data-testid={testId}
-  class={$$restProps.class ?? 'btn variant-filled-primary m-1'}
+  class={$$props.class ?? 'btn variant-filled-primary m-1'}
   on:click={() => login(redirectTo, provider.type)}
 >
   {#if imageSrc}

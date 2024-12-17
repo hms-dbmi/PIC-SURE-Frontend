@@ -17,14 +17,14 @@
   }
 
   $: btnStyle = `btn btn-sm h-fit variant-${variant}-${color} ${variant !== 'filled' ? `hover:variant-filled-${color}` : ``} text-lg`;
-  const testid = $$restProps['data-testid'] || name.replaceAll(' ', '-').toLowerCase() + '-btn';
+  const testid = $$props['data-testid'] || name.replaceAll(' ', '-').toLowerCase() + '-btn';
 </script>
 
 {#if href}
   <a
     data-testid={testid}
     aria-disabled={disabled}
-    class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {$$restProps.class || ''}"
+    class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {$$props.class || ''}"
     rel={disabled ? 'nofollow' : ''}
     {href}
   >
@@ -36,7 +36,7 @@
   <button
     data-testid={testid}
     type="button"
-    class="{btnStyle} disabled:opacity-75 {$$restProps.class || ''}"
+    class="{btnStyle} disabled:opacity-75 {$$props.class || ''}"
     on:click={onClick}
     {disabled}
   >

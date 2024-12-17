@@ -6,7 +6,7 @@
   export let width: number = 0;
   export let unit: string = 'rem';
 
-  const finalClass = `colors ${$$restProps.class ?? ''}`;
+  const finalClass = `colors ${$$props.class ?? ''}`;
   const src = branding.logo.src;
   const alt = branding.logo.alt;
 

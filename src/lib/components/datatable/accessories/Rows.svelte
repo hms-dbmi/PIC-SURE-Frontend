@@ -13,7 +13,7 @@
   };
 </script>
 
-<aside class={$$restProps.class ?? ''}>
+<aside class={$$props.class ?? ''}>
   <label class="flex place-items-center"
     >Show
     <select
