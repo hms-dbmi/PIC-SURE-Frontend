@@ -2,9 +2,15 @@
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
   import { DataHandler as RemoteHander } from '@vincjo/datatables/remote';
-  export let handler: DataHandler | RemoteHander;
-  export let options: number[] = [5, 10, 20, 50];
-  $: rowsPerPage = handler.getRowsPerPage();
+  
+  let { 
+    class: className,
+    handler,
+    options = [5, 10, 20, 50]
+  } = $props();
+
+  const rowsPerPage = $derived(handler.getRowsPerPage());
+  
   const setRowsPerPage = () => {
     handler.setPage(1);
     if (handler instanceof RemoteHander) {
@@ -13,7 +19,7 @@
   };
 </script>
 
-<aside class={$$props.class ?? ''}>
+<aside class={className ?? ''}>
   <label class="flex place-items-center"
     >Show
     <select

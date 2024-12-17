@@ -2,11 +2,14 @@
 <script lang="ts">
   import { branding } from '$lib/configuration';
 
-  export let height: number = 0;
-  export let width: number = 0;
-  export let unit: string = 'rem';
+  let { 
+    class: className,
+    height = 0,
+    width = 0,
+    unit = 'rem'
+  } = $props();
 
-  const finalClass = `colors ${$$props.class ?? ''}`;
+  const finalClass = `colors ${className ?? ''}`;
   const src = branding.logo.src;
   const alt = branding.logo.alt;
 

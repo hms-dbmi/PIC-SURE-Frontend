@@ -2,13 +2,16 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
 
-  export let href: string = '';
-
-  export let angle: 'right' | 'left' = 'left';
-  export let variant = 'filled';
-  export let color = 'primary';
-  export let disabled = false;
-  export let name: string = '';
+  let { 
+    class: className,
+    'data-testid': testId,
+    href = '',
+    angle = 'left',
+    variant = 'filled',
+    color = 'primary',
+    disabled = false,
+    name = ''
+  } = $props();
 
   const dispatch = createEventDispatcher();
 
@@ -16,15 +19,20 @@
     dispatch('click', event);
   }
 
-  $: btnStyle = `btn btn-sm h-fit variant-${variant}-${color} ${variant !== 'filled' ? `hover:variant-filled-${color}` : ``} text-lg`;
-  const testid = $$props['data-testid'] || name.replaceAll(' ', '-').toLowerCase() + '-btn';
+  const btnStyle = $derived(
+    `btn btn-sm h-fit variant-${variant}-${color} ${
+      variant !== 'filled' ? `hover:variant-filled-${color}` : ''
+    } text-lg`
+  );
+  
+  const finalTestId = $derived(testId || name.replaceAll(' ', '-').toLowerCase() + '-btn');
 </script>
 
 {#if href}
   <a
-    data-testid={testid}
+    data-testid={finalTestId}
     aria-disabled={disabled}
-    class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {$$props.class || ''}"
+    class="{btnStyle} &[aria-disabled='true']:opacity-75 {className || ''}"
     rel={disabled ? 'nofollow' : ''}
     {href}
   >
@@ -34,9 +42,9 @@
   </a>
 {:else}
   <button
-    data-testid={testid}
+    data-testid={finalTestId}
     type="button"
-    class="{btnStyle} disabled:opacity-75 {$$props.class || ''}"
+    class="{btnStyle} disabled:opacity-75 {className || ''}"
     on:click={onClick}
     {disabled}
   >

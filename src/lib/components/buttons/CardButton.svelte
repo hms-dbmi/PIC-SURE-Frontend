@@ -3,13 +3,17 @@
   import { createEventDispatcher } from 'svelte';
   const dispatch = createEventDispatcher();
 
-  export let title: string;
-  export let icon: string = '';
-  export let href: string = '';
-  export let subtitle: string = '';
-  export let size: 'sm' | 'md' | 'lg' | 'other' = 'lg';
-  export let disabled: boolean = false;
-  export let active: boolean = false;
+  let { 
+    class: className, 
+    'data-testid': testId,
+    title,
+    icon = '',
+    href = '',
+    subtitle = '',
+    size = 'lg',
+    disabled = false,
+    active = false
+  } = $props();
 
   function onClick(event: MouseEvent) {
     dispatch('click', event);
@@ -19,12 +23,12 @@
 {#if href}
   <a
     {href}
-    data-testid={$$props['data-testid']}
+    data-testid={testId}
     aria-disabled={disabled || undefined}
     target={href.startsWith('/') ? undefined : '_blank'}
     class:variant-filled-primary={active}
     class:variant-ringed-primary={!active}
-    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {$$props.class ?? ''}"
+    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {className ?? ''}"
     rel={disabled ? 'nofollow' : undefined}
     tabindex="0"
   >
@@ -34,11 +38,11 @@
   </a>
 {:else}
   <button
-    data-testid={$$props['data-testid']}
+    data-testid={testId}
     type="button"
     class:variant-filled-primary={active}
     class:variant-ringed-primary={!active}
-    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {$$props.class ?? ''}"
+    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {className ?? ''}"
     on:click={onClick}
     {disabled}
   >

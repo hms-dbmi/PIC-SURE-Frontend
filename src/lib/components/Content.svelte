@@ -5,13 +5,9 @@
   import { goto } from '$app/navigation';
   import { fly } from 'svelte/transition';
 
-  export let title: string = '';
-  export let subtitle: string = '';
-  export let backUrl: string = '';
-  export let backAction: () => void = () => {};
-  export let backTitle: string = 'Back';
-  export let full = false;
-  export let transition = false;
+  const { class: className, title = '', subtitle = '', backUrl = '', 
+    backAction = () => {}, backTitle = 'Back', full = false, 
+    transition = false } = $props();
 
   function onBack() {
     backAction();
@@ -20,7 +16,7 @@
 </script>
 
 <section
-  class={`main-content ${full ? 'w-full' : ''} ${$$props.class ?? ''}`}
+  class={`main-content ${full ? 'w-full' : ''} ${className ?? ''}`}
   in:fly={{ duration: 300, x: transition ? '100%' : '0' }}
 >
   {#if backUrl}<AngleButton name="back" variant="ghost" on:click={onBack}>{backTitle}</AngleButton

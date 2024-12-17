@@ -4,29 +4,30 @@
   import type { AuthData } from '$lib/models/AuthProvider';
   import { resetSearch } from '$lib/stores/Search';
 
-  export let buttonText = 'Log In';
-  export let redirectTo = '/';
-  export let provider: AuthData;
-  export let helpText: string;
-  $: testId = `login-button-${provider.name?.toLowerCase()}`;
+  let { 
+    class: className,
+    buttonText = 'Log In',
+    redirectTo = '/',
+    provider,
+    helpText
+  } = $props();
 
-  let login = async (redirectTo: string, providerType: string) => {
+  const testId = $derived(`login-button-${provider.name?.toLowerCase()}`);
+
+  const login = async (redirectTo: string, providerType: string) => {
     let instance = await createInstance(provider);
     instance.login(redirectTo, providerType).then(() => {
       resetSearch();
     });
   };
 
-  let imageSrc: string | undefined = undefined;
-  if (provider.imagesrc) {
-    imageSrc = './' + provider.imagesrc;
-  }
+  const imageSrc = $derived(provider.imagesrc ? './' + provider.imagesrc : undefined);
 </script>
 
 <button
   type="button"
   data-testid={testId}
-  class={$$props.class ?? 'btn variant-filled-primary m-1'}
+  class={className ?? 'btn variant-filled-primary m-1'}
   on:click={() => login(redirectTo, provider.type)}
 >
   {#if imageSrc}
