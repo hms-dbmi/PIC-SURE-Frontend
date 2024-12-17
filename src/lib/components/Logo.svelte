@@ -10,8 +10,7 @@
   const src = branding.logo.src;
   const alt = branding.logo.alt;
 
-  // If width or height is set, scale the image or svg to the larger size
-  $: imgSize =
+  const imgSize = $derived(
     !width && !height
       ? { width: src ? 'auto' : undefined, height: src ? 'auto' : undefined }
       : (width && !height) || (width && height && width > height)
@@ -22,7 +21,8 @@
         : {
             width: (src ? 'auto' : ((height / 180) * 1010).toFixed(2)) + unit,
             height: height + unit,
-          };
+          }
+  );
 </script>
 
 <!-- TODO: Add real SVG Code here -->
