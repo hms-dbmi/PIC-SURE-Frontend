@@ -20,7 +20,7 @@
 </script>
 
 <section
-  class={`main-content ${full ? 'w-full' : ''} ${$$props.class ?? ''}`}
+  class={`main-content ${full ? 'w-full' : ''} ${$$restProps.class ?? ''}`}
   in:fly={{ duration: 300, x: transition ? '100%' : '0' }}
 >
   {#if backUrl}<AngleButton name="back" variant="ghost" on:click={onBack}>{backTitle}</AngleButton

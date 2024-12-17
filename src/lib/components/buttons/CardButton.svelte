@@ -19,12 +19,12 @@
 {#if href}
   <a
     {href}
-    data-testid={$$props['data-testid']}
+    data-testid={$$restProps['data-testid']}
     aria-disabled={disabled || undefined}
     target={href.startsWith('/') ? undefined : '_blank'}
     class:variant-filled-primary={active}
     class:variant-ringed-primary={!active}
-    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {$$props.class ?? ''}"
+    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {$$restProps.class ?? ''}"
     rel={disabled ? 'nofollow' : undefined}
     tabindex="0"
   >
@@ -34,11 +34,11 @@
   </a>
 {:else}
   <button
-    data-testid={$$props['data-testid']}
+    data-testid={$$restProps['data-testid']}
     type="button"
     class:variant-filled-primary={active}
     class:variant-ringed-primary={!active}
-    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {$$props.class ?? ''}"
+    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {$$restProps.class ?? ''}"
     on:click={onClick}
     {disabled}
   >

@@ -36,7 +36,7 @@
   $: isActive = (step: number) => step === $state.current;
 </script>
 
-<div class="stepper space-y-4 {$$props.class ?? ''}" data-testid="stepper">
+<div class="stepper space-y-4 {$$restProps.class ?? ''}" data-testid="stepper">
   {#if $state.total}
     <header
       class="stepper-header flex items-center border-t mt-[15px] mb-7 border-surface-400-500-token gap-4"

@@ -10,7 +10,7 @@
   const dispatch = createEventDispatcher<{ select: { option: Option } }>();
 </script>
 
-<div class="flex flex-row justify-center justify-items-center gap-16 {$$props.class ?? ''}">
+<div class="flex flex-row justify-center justify-items-center gap-16 {$$restProps.class ?? ''}">
   {#if features.enableGENEQuery}
     <CardButton
       data-testid="gene-variant-option"

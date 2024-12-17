@@ -36,7 +36,7 @@
     type="button"
     data-testid={buttonId}
     title={text}
-    class="ml-4 text-black-600 hover:text-primary-600 {$$props.class || ''}"
+    class="ml-4 text-black-600 hover:text-primary-600 {$$restProps.class || ''}"
     on:click|stopPropagation={updateButton}
     use:clipboard={itemToCopy}
     use:popup={{
@@ -60,7 +60,7 @@
     type="button"
     data-testid={buttonId}
     title={text}
-    class="ml-4 btn {$$props.class || ''}"
+    class="ml-4 btn {$$restProps.class || ''}"
     on:click|stopPropagation={updateButton}
     use:clipboard={itemToCopy}>{text}</button
   >

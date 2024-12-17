@@ -10,7 +10,7 @@
 
 <th
   on:click={() => handler.sort(orderBy)}
-  class="cursor-pointer select-none align-bottom {$$props.class || ''}"
+  class="cursor-pointer select-none align-bottom {$$restProps.class || ''}"
 >
   <slot />
   {#if $sorted.identifier === orderBy}
