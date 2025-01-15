@@ -50,10 +50,17 @@ function clearSessionTokenIfExpired() {
   }
 }
 
+const isUserLoggedIn = () => {
+  if (browser) {
+    return !!localStorage.getItem('token');
+  }
+  return false;
+};
+
 export const userRoutes: Readable<Route[]> = derived(user, ($user) => {
   const userPrivileges: string[] = $user?.privileges || [];
 
-  if (userPrivileges.length === 0) {
+  if (userPrivileges.length === 0 || !isUserLoggedIn()) {
     // Public routes for non-logged in user
     return routes.filter((route) => !route.privilege);
   }
