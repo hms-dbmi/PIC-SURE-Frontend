@@ -1,4 +1,4 @@
-import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
+import { get, writable, derived, type Writable, type Readable, readable } from 'svelte/store';
 import { browser } from '$app/environment';
 import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
@@ -11,6 +11,7 @@ import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/stores';
 
 export const user: Writable<User> = writable(restoreUser());
+export const loggedInStatus: Readable<boolean> = readable(isUserLoggedIn());
 
 user.subscribe((user: User) => {
   if (browser) {
@@ -50,17 +51,17 @@ function clearSessionTokenIfExpired() {
   }
 }
 
-const isUserLoggedIn = () => {
+function isUserLoggedIn() {
   if (browser) {
     return !!localStorage.getItem('token');
   }
   return false;
 };
 
-export const userRoutes: Readable<Route[]> = derived(user, ($user) => {
+export const userRoutes: Readable<Route[]> = derived([user, loggedInStatus], ([$user, $loggedInStatus]) => {
   const userPrivileges: string[] = $user?.privileges || [];
 
-  if (userPrivileges.length === 0 || !isUserLoggedIn()) {
+  if (userPrivileges.length === 0 || !$loggedInStatus) {
     // Public routes for non-logged in user
     return routes.filter((route) => !route.privilege);
   }
