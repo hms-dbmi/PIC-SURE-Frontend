@@ -106,8 +106,9 @@
       tabindex="0"
       role="button"
       onclick={stopPropagation(preventDefault(toggleCardBody))}
-      onkeydown={stopPropagation(preventDefault((e) =>
-        (e.key === 'Enter' || e.key === ' ') && toggleCardBody))}
+      onkeydown={stopPropagation(
+        preventDefault((e) => (e.key === 'Enter' || e.key === ' ') && toggleCardBody),
+      )}
     >
       {filter.variableName}
     </div>

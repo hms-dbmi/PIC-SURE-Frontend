@@ -19,7 +19,7 @@
     show = true,
     inline = false,
     active = false,
-    children
+    children,
   }: Props = $props();
 </script>
 

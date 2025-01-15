@@ -5,7 +5,11 @@
     searchTerm?: string;
   }
 
-  let { placeholder = 'Search...', search = () => {}, searchTerm = $bindable('') }: Props = $props();
+  let {
+    placeholder = 'Search...',
+    search = () => {},
+    searchTerm = $bindable(''),
+  }: Props = $props();
 </script>
 
 <div class="flex w-full">

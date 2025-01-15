@@ -6,7 +6,6 @@
   let skipIntro = $derived($modalStore[0]?.meta?.skipIntro || false);
   let keyboardInstructions = $derived($modalStore[0]?.meta?.keyboardInstructions || true);
 
-  
   interface Props {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     tourConfig: any;

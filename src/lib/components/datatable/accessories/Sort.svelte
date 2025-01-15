@@ -2,11 +2,7 @@
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
 
-  let { 
-    class: className,
-    handler,
-    orderBy
-  } = $props();
+  let { class: className, handler, orderBy } = $props();
 
   const sorted = $derived(handler.getSort());
 </script>

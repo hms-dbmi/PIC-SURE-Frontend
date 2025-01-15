@@ -2,7 +2,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
 
-  let { 
+  let {
     class: className,
     'data-testid': testId,
     href = '',
@@ -10,7 +10,7 @@
     variant = 'filled',
     color = 'primary',
     disabled = false,
-    name = ''
+    name = '',
   } = $props();
 
   const dispatch = createEventDispatcher();
@@ -22,9 +22,9 @@
   const btnStyle = $derived(
     `btn btn-sm h-fit variant-${variant}-${color} ${
       variant !== 'filled' ? `hover:variant-filled-${color}` : ''
-    } text-lg`
+    } text-lg`,
   );
-  
+
   const finalTestId = $derived(testId || name.replaceAll(' ', '-').toLowerCase() + '-btn');
 </script>
 

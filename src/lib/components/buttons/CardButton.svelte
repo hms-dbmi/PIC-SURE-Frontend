@@ -3,8 +3,8 @@
   import { createEventDispatcher } from 'svelte';
   const dispatch = createEventDispatcher();
 
-  let { 
-    class: className, 
+  let {
+    class: className,
     'data-testid': testId,
     title,
     icon = '',
@@ -12,7 +12,7 @@
     subtitle = '',
     size = 'lg',
     disabled = false,
-    active = false
+    active = false,
   } = $props();
 
   function onClick(event: MouseEvent) {

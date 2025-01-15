@@ -53,16 +53,13 @@
   });
 
   let dropdownPath = $state('');
-  
 </script>
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-900-token">
   {#snippet lead()}
-  
-      <a href="/" aria-current="page" data-testid="logo-home-link">
-        <Logo class="mx-1" />
-      </a>
-    
+    <a href="/" aria-current="page" data-testid="logo-home-link">
+      <Logo class="mx-1" />
+    </a>
   {/snippet}
   <nav id="page-navigation">
     <ul>
@@ -115,42 +112,40 @@
     </ul>
   </nav>
   {#snippet trail()}
-  
-      <div id="user-session-avatar">
-        {#if $user.privileges && $user.email}
-          <!-- Logout -->
-          <button id="user-session-popout" use:popup={logoutClick}>
-            <span
-              class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ghost-primary hover:variant-ghost-secondary w-12 rounded-full text-2xl"
-            >
-              {$user.email[0].toUpperCase()}
-              <span class="sr-only">Logout user {$user.email}</span>
-            </span>
-          </button>
-          <div
-            class="card p-6 variant-surface border-surface-100-800-token text-center"
-            data-popup="logoutClick"
+    <div id="user-session-avatar">
+      {#if $user.privileges && $user.email}
+        <!-- Logout -->
+        <button id="user-session-popout" use:popup={logoutClick}>
+          <span
+            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ghost-primary hover:variant-ghost-secondary w-12 rounded-full text-2xl"
           >
-            <p class="pb-6">{$user.email}</p>
-            <button
-              id="user-logout-btn"
-              class="btn variant-ringed-primary"
-              title="Logout"
-              onclick={() => logout(providerInstance, false)}>Logout</button
-            >
-          </div>
-        {:else}
-          <!-- Login -->
+            {$user.email[0].toUpperCase()}
+            <span class="sr-only">Logout user {$user.email}</span>
+          </span>
+        </button>
+        <div
+          class="card p-6 variant-surface border-surface-100-800-token text-center"
+          data-popup="logoutClick"
+        >
+          <p class="pb-6">{$user.email}</p>
           <button
-            id="user-login-btn"
-            title="Login"
-            class="btn variant-ghost-primary hover:variant-filled-primary"
-            onclick={handleLogin}
+            id="user-logout-btn"
+            class="btn variant-ringed-primary"
+            title="Logout"
+            onclick={() => logout(providerInstance, false)}>Logout</button
           >
-            Login
-          </button>
-        {/if}
-      </div>
-    
+        </div>
+      {:else}
+        <!-- Login -->
+        <button
+          id="user-login-btn"
+          title="Login"
+          class="btn variant-ghost-primary hover:variant-filled-primary"
+          onclick={handleLogin}
+        >
+          Login
+        </button>
+      {/if}
+    </div>
   {/snippet}
 </AppBar>

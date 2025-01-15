@@ -7,7 +7,7 @@
   import Edit from '$lib/components/explorer/genome-filter/SNP/Edit.svelte';
   import Summary from '$lib/components/explorer/genome-filter/SNP/Summary.svelte';
   interface Props {
-    [key: string]: any
+    [key: string]: any;
   }
 
   let { ...props }: Props = $props();
@@ -45,14 +45,12 @@
   </Panel>
   <Panel title="Summary of Selected Filters">
     {#snippet action()}
-      
-        <button
-          class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
-          disabled={$selectedSNPs.length === 0}
-          onclick={clearSnpFilters}>Clear</button
-        >
-      
-      {/snippet}
+      <button
+        class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
+        disabled={$selectedSNPs.length === 0}
+        onclick={clearSnpFilters}>Clear</button
+      >
+    {/snippet}
     <Summary on:edit={onEdit} on:delete={onDelete} />
   </Panel>
 </div>

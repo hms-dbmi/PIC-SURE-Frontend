@@ -115,29 +115,27 @@
           search={true}
         >
           {#snippet tableActions()}
-                      
-              <div class="flex-auto flex items-end justify-between">
-                {#if $count > 0}
-                  <div data-testid="variant-count" class="">
-                    <p>{$count} variants found</p>
-                  </div>
-                {/if}
-                {#if settings.variantExplorer.type === ExportType.Full}
-                  <div class="">
-                    <label class="flex items-center space-x-2">
-                      <input
-                        class="checkbox"
-                        type="checkbox"
-                        bind:checked={aggregateCheckbox}
-                        onclick={aggregateChange}
-                      />
-                      <p>Aggregate data</p>
-                    </label>
-                  </div>
-                {/if}
-              </div>
-            
-                      {/snippet}
+            <div class="flex-auto flex items-end justify-between">
+              {#if $count > 0}
+                <div data-testid="variant-count" class="">
+                  <p>{$count} variants found</p>
+                </div>
+              {/if}
+              {#if settings.variantExplorer.type === ExportType.Full}
+                <div class="">
+                  <label class="flex items-center space-x-2">
+                    <input
+                      class="checkbox"
+                      type="checkbox"
+                      bind:checked={aggregateCheckbox}
+                      onclick={aggregateChange}
+                    />
+                    <p>Aggregate data</p>
+                  </label>
+                </div>
+              {/if}
+            </div>
+          {/snippet}
         </Datatable>
       {:else}
         <div data-testid="variant-count" class="flex-none w-full">{$count} variants found</div>

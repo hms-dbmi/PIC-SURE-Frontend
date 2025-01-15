@@ -17,7 +17,7 @@
     onCancel = $bindable(() => modalStore.close()),
     onConfirm = $bindable(),
     cancelText = $bindable('Cancel'),
-    confirmText = $bindable('Accept')
+    confirmText = $bindable('Accept'),
   }: Props = $props();
 
   onMount(() => {
@@ -46,9 +46,8 @@
       class="btn variant-ghost-surface hover:variant-filled-surface mt-6"
       onclick={() => onCancel()}>{cancelText}</button
     >
-    <button
-      class="btn variant-filled hover:variant-filled-primary mt-6"
-      onclick={() => onConfirm()}>{confirmText}</button
+    <button class="btn variant-filled hover:variant-filled-primary mt-6" onclick={() => onConfirm()}
+      >{confirmText}</button
     >
   </div>
 </div>

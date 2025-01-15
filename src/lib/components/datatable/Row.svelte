@@ -29,16 +29,17 @@
     row = {},
     tableName = '',
     isClickable = false,
-    rowClickHandler = () => {}
+    rowClickHandler = () => {},
   }: Props = $props();
 
   function onClick(row: Indexable) {
     setActiveRow({ row: row.conceptPath || row.dataset_id, table: tableName });
     rowClickHandler(row);
   }
-  let active =
-    $derived($activeTable === tableName &&
-    ($activeRow === row?.conceptPath || $activeRow === row.dataset_id));
+  let active = $derived(
+    $activeTable === tableName &&
+      ($activeRow === row?.conceptPath || $activeRow === row.dataset_id),
+  );
 </script>
 
 <tr
@@ -51,9 +52,7 @@
     <td id="row-{index.toString()}-col-{colIndex.toString()}">
       {#if cellOverides[column.dataElement]}
         {@const SvelteComponent = cellOverides[column.dataElement]}
-        <SvelteComponent
-          data={{ index, row, cell: row[column.dataElement] }}
-        />
+        <SvelteComponent data={{ index, row, cell: row[column.dataElement] }} />
       {:else}
         {row[column.dataElement] ? row[column.dataElement] : ''}
       {/if}

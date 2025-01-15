@@ -1,11 +1,11 @@
 <!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
-  let { 
-    class: className, 
+  let {
+    class: className,
     'data-testid': testId,
     title = '',
     subtitle = '',
-    required = false
+    required = false,
   } = $props();
 </script>
 

@@ -28,11 +28,13 @@
   import { addFilter, getFiltersByType } from '$lib/stores/Filter';
 
   let edit = $page.url.searchParams.get('edit') || '';
-  let selectedOption: Option = $state((() => {
-    if (features.enableGENEQuery && !features.enableSNPQuery) return Option.Genomic;
-    if (!features.enableGENEQuery && features.enableSNPQuery) return Option.SNP;
-    return ['snp', 'genomic'].includes(edit) ? (edit as Option) : Option.None;
-  })());
+  let selectedOption: Option = $state(
+    (() => {
+      if (features.enableGENEQuery && !features.enableSNPQuery) return Option.Genomic;
+      if (!features.enableGENEQuery && features.enableSNPQuery) return Option.SNP;
+      return ['snp', 'genomic'].includes(edit) ? (edit as Option) : Option.None;
+    })(),
+  );
 
   function clearFilters() {
     clearGeneFilters();
@@ -64,9 +66,10 @@
     populateExistingFilters();
   }
 
-  let canComplete =
-    $derived((selectedOption === Option.Genomic && $selectedGenes.length > 0) ||
-    (selectedOption === Option.SNP && $selectedSNPs.length > 0));
+  let canComplete = $derived(
+    (selectedOption === Option.Genomic && $selectedGenes.length > 0) ||
+      (selectedOption === Option.SNP && $selectedSNPs.length > 0),
+  );
 </script>
 
 <svelte:head>

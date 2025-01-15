@@ -11,8 +11,6 @@
   import type { Column } from '$lib/models/Tables';
   import ExpandableRow from '$lib/components/datatable/Row.svelte';
 
-  
-  
   interface Props {
     // Parameters
     tableName: string;
@@ -46,7 +44,7 @@
     rowClickHandler = () => {},
     isClickable = false,
     data = [],
-    tableActions
+    tableActions,
   }: Props = $props();
 
   let handler = $derived(new DataHandler(data, { rowsPerPage: defaultRowsPerPage }));
@@ -56,9 +54,7 @@
 <div class="space-y-1">
   {#if title || search || tableActions}
     <header
-      class="flex items-center {title || tableActions
-        ? 'justify-between'
-        : 'justify-end'} gap-4"
+      class="flex items-center {title || tableActions ? 'justify-between' : 'justify-end'} gap-4"
     >
       {#if title}
         <div class="flex-auto">

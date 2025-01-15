@@ -5,10 +5,7 @@
   import { Option } from '$lib/models/GenomeFilter';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
 
-  let { 
-    class: className,
-    active = Option.None 
-  } = $props();
+  let { class: className, active = Option.None } = $props();
 
   const dispatch = createEventDispatcher<{ select: { option: Option } }>();
 </script>

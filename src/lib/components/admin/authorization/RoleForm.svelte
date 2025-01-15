@@ -21,10 +21,12 @@
   let name = $state(role ? role.name : '');
   let description = $state(role ? role.description : '');
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let privileges = $state(privilegeList.map(([_name, uuid]) => ({
-    uuid,
-    checked: role ? role.privileges.includes(uuid) : false,
-  })));
+  let privileges = $state(
+    privilegeList.map(([_name, uuid]) => ({
+      uuid,
+      checked: role ? role.privileges.includes(uuid) : false,
+    })),
+  );
 
   async function saveRole() {
     let newRole: Role = {

@@ -29,6 +29,40 @@
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = $state(Promise.resolve(0));
   let isOpenAccess = $state($page.url.pathname.includes('/discover'));
 
+  let suffix = $state('');
+
+  let hasFilterOrExport = $derived(
+    $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
+  );
+  let showExportButton = $derived(
+    features.explorer.allowExport &&
+      !isOpenAccess &&
+      totalPatients !== ERROR_VALUE &&
+      totalPatients !== 0 &&
+      hasFilterOrExport,
+  );
+
+  let showExplorerDistributions = $derived(
+    !isOpenAccess &&
+      features.explorer.distributionExplorer &&
+      $filters.length !== 0 &&
+      !$filters.every((filter) => filter.filterType === 'genomic' || filter.filterType === 'snp'),
+  );
+
+  let showDiscoverDistributions = $derived(
+    isOpenAccess && features.discoverFeautures.distributionExplorer && $filters.length !== 0,
+  );
+
+  let showVariantExplorer = $derived(
+    !isOpenAccess && features.explorer.variantExplorer && $hasGenomicFilter,
+  );
+
+  let showToolSuite = $derived(
+    totalPatients !== 0 &&
+      ($filters.length !== 0 || $exports.length !== 0) &&
+      (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer),
+  );
+
   async function getCount() {
     suffix = '';
     let request: QueryRequestInterface = getQueryRequest(
@@ -91,33 +125,6 @@
       },
     });
   }
-
-  let suffix = $state('');
-  
-  let hasFilterOrExport =
-    $derived($filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0));
-  let showExportButton =
-    $derived(features.explorer.allowExport &&
-    !isOpenAccess &&
-    totalPatients !== ERROR_VALUE &&
-    totalPatients !== 0 &&
-    hasFilterOrExport);
-
-  let showExplorerDistributions =
-    $derived(!isOpenAccess &&
-    features.explorer.distributionExplorer &&
-    $filters.length !== 0 &&
-    !$filters.every((filter) => filter.filterType === 'genomic' || filter.filterType === 'snp'));
-
-  let showDiscoverDistributions =
-    $derived(isOpenAccess && features.discoverFeautures.distributionExplorer && $filters.length !== 0);
-
-  let showVariantExplorer = $derived(!isOpenAccess && features.explorer.variantExplorer && $hasGenomicFilter);
-
-  let showToolSuite =
-    $derived(totalPatients !== 0 &&
-    ($filters.length !== 0 || $exports.length !== 0) &&
-    (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer));
 
   onMount(async () => {
     unsubFilters = filters.subscribe(() => {

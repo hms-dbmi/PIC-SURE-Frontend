@@ -10,7 +10,7 @@
 
   import { selectedGenes, clearGeneFilters } from '$lib/stores/GeneFilter';
   interface Props {
-    [key: string]: any
+    [key: string]: any;
   }
 
   let { ...props }: Props = $props();
@@ -29,14 +29,12 @@
     required={true}
   >
     {#snippet action()}
-      
-        <button
-          data-testid="clear-selected-genes-btn"
-          class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
-          onclick={clearSelectedGenes}>Clear</button
-        >
-      
-      {/snippet}
+      <button
+        data-testid="clear-selected-genes-btn"
+        class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
+        onclick={clearSelectedGenes}>Clear</button
+      >
+    {/snippet}
     <Genes />
   </Panel>
   <Panel
@@ -44,30 +42,24 @@
     subtitle="The calculated consequence is based on VEP annotation."
   >
     {#snippet help()}
-      
-        <HelpInfoPopup id="cons-help-popup" text={helpText.consequence} />
-      
-      {/snippet}
+      <HelpInfoPopup id="cons-help-popup" text={helpText.consequence} />
+    {/snippet}
     <Consequence />
   </Panel>
   <Panel title="Select Variant Frequency">
     {#snippet help()}
-      
-        <HelpInfoPopup id="freq-help-popup" text={helpText.frequency} />
-      
-      {/snippet}
+      <HelpInfoPopup id="freq-help-popup" text={helpText.frequency} />
+    {/snippet}
     <Frequency />
   </Panel>
   <Panel title="Summary of Selected Filters" class="col-span-3">
     {#snippet action()}
-      
-        <button
-          data-testid="clear-gene-filters-btn"
-          class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
-          onclick={clearGeneFilters}>Clear</button
-        >
-      
-      {/snippet}
+      <button
+        data-testid="clear-gene-filters-btn"
+        class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
+        onclick={clearGeneFilters}>Clear</button
+      >
+    {/snippet}
     <Summary />
   </Panel>
 </div>

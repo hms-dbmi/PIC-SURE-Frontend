@@ -38,7 +38,9 @@
     }
   }
   let isOpenAccess = $derived($page.url.pathname.includes('/discover'));
-  let isExported = $derived($exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath));
+  let isExported = $derived(
+    $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath),
+  );
   let shouldDisableFilter = $derived(isOpenAccess && !data.row.allowFiltering);
 </script>
 

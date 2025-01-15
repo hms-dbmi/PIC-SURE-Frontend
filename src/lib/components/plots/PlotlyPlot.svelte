@@ -12,13 +12,7 @@
     newPlot: PlotlyNewPlot;
   }
 
-  let {
-    index,
-    data,
-    meta,
-    layout,
-    newPlot
-  }: Props = $props();
+  let { index, data, meta, layout, newPlot }: Props = $props();
 
   const screenReaderText = meta.isCategorical
     ? 'Column chart showing the visualization of '

@@ -5,9 +5,16 @@
   import { goto } from '$app/navigation';
   import { fly } from 'svelte/transition';
 
-  const { class: className, title = '', subtitle = '', backUrl = '', 
-    backAction = () => {}, backTitle = 'Back', full = false, 
-    transition = false } = $props();
+  const {
+    class: className,
+    title = '',
+    subtitle = '',
+    backUrl = '',
+    backAction = () => {},
+    backTitle = 'Back',
+    full = false,
+    transition = false,
+  } = $props();
 
   function onBack() {
     backAction();

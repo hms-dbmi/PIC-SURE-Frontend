@@ -18,14 +18,12 @@
     facetCategory,
     facets = facetCategory.facets,
     numFacetsToShow = 5,
-    shouldShowSearchBar = facets?.length > numFacetsToShow
+    shouldShowSearchBar = facets?.length > numFacetsToShow,
   }: Props = $props();
 
   const anyFacetNot0 = facets?.some((facet) => facet.count > 0);
   let textFilterValue: string = $state();
   let moreThanTenFacets = $state(facets?.length > numFacetsToShow);
-
-
 
   function isIndeterminate(facet: Facet): boolean {
     const atLeastOneChildSelected =
@@ -127,12 +125,13 @@
     }
     return facetsToDisplay;
   }
-  let facetsToDisplay =
-    $derived((facets || textFilterValue || moreThanTenFacets || $selectedFacets || facetCategory) &&
-    getFacetsToDisplay());
-  let selectedFacetsChips = $derived($selectedFacets.filter(
-    (facet) => facet?.categoryRef?.name === facetCategory?.name,
-  ));
+  let facetsToDisplay = $derived(
+    (facets || textFilterValue || moreThanTenFacets || $selectedFacets || facetCategory) &&
+      getFacetsToDisplay(),
+  );
+  let selectedFacetsChips = $derived(
+    $selectedFacets.filter((facet) => facet?.categoryRef?.name === facetCategory?.name),
+  );
 </script>
 
 <AccordionItem class="card space-y-2" open={anyFacetNot0}>
@@ -140,33 +139,31 @@
     {facetCategory.display}
   {/snippet}
   {#snippet content()}
-  
-      <div class="flex flex-col">
-        {#if shouldShowSearchBar}
-          <input
-            class="text-sm"
-            type="search"
-            placeholder={'Filter ' + facetCategory.display}
-            name="facet-fitler"
-            id={facetCategory.name + '-filter'}
-            bind:value={textFilterValue}
-          />
-        {/if}
-        {#each facetsToDisplay as facet}
-          <FacetItem {facet} {facetCategory} facetParent={undefined} {textFilterValue} />
-        {/each}
-        {#if facets?.length > numFacetsToShow && !textFilterValue}
-          <button
-            data-testId="show-more-facets"
-            class="show-more w-fit mx-auto my-1"
-            onclick={() => (moreThanTenFacets = !moreThanTenFacets)}
-          >
-            {moreThanTenFacets ? 'Show More' : 'Show Less'}
-            <i class="ml-1 fa-solid {moreThanTenFacets ? 'fa-angle-down' : 'fa-angle-up'}"></i>
-          </button>
-        {/if}
-      </div>
-    
+    <div class="flex flex-col">
+      {#if shouldShowSearchBar}
+        <input
+          class="text-sm"
+          type="search"
+          placeholder={'Filter ' + facetCategory.display}
+          name="facet-fitler"
+          id={facetCategory.name + '-filter'}
+          bind:value={textFilterValue}
+        />
+      {/if}
+      {#each facetsToDisplay as facet}
+        <FacetItem {facet} {facetCategory} facetParent={undefined} {textFilterValue} />
+      {/each}
+      {#if facets?.length > numFacetsToShow && !textFilterValue}
+        <button
+          data-testId="show-more-facets"
+          class="show-more w-fit mx-auto my-1"
+          onclick={() => (moreThanTenFacets = !moreThanTenFacets)}
+        >
+          {moreThanTenFacets ? 'Show More' : 'Show Less'}
+          <i class="ml-1 fa-solid {moreThanTenFacets ? 'fa-angle-down' : 'fa-angle-up'}"></i>
+        </button>
+      {/if}
+    </div>
   {/snippet}
 </AccordionItem>
 <div class="m-1 p-1 max-w">

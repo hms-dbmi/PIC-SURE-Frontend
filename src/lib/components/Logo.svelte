@@ -2,12 +2,7 @@
 <script lang="ts">
   import { branding } from '$lib/configuration';
 
-  let { 
-    class: className,
-    height = 0,
-    width = 0,
-    unit = 'rem'
-  } = $props();
+  let { class: className, height = 0, width = 0, unit = 'rem' } = $props();
 
   const finalClass = `colors ${className ?? ''}`;
   const src = branding.logo.src;
@@ -24,7 +19,7 @@
         : {
             width: (src ? 'auto' : ((height / 180) * 1010).toFixed(2)) + unit,
             height: height + unit,
-          }
+          },
   );
 </script>
 

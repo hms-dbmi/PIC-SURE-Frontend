@@ -28,10 +28,12 @@
   let connection = $state(user ? user.connection : '');
   let active = $state(user ? user.active : true);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let roles = $state(roleList.map(([_name, uuid]) => ({
-    uuid,
-    checked: user ? user.roles.includes(uuid) : false,
-  })));
+  let roles = $state(
+    roleList.map(([_name, uuid]) => ({
+      uuid,
+      checked: user ? user.roles.includes(uuid) : false,
+    })),
+  );
 
   async function saveUser() {
     const generalMetadata = JSON.parse(user?.generalMetadata || '{"email":""}');

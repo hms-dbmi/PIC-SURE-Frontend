@@ -2,15 +2,11 @@
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
   import { DataHandler as RemoteHander } from '@vincjo/datatables/remote';
-  
-  let { 
-    class: className,
-    handler,
-    options = [5, 10, 20, 50]
-  } = $props();
+
+  let { class: className, handler, options = [5, 10, 20, 50] } = $props();
 
   const rowsPerPage = $derived(handler.getRowsPerPage());
-  
+
   const setRowsPerPage = () => {
     handler.setPage(1);
     if (handler instanceof RemoteHander) {

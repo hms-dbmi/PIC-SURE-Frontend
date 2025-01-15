@@ -49,20 +49,18 @@
       <Tab bind:group={tabSet} name="python" value={0}>Python</Tab>
       <Tab bind:group={tabSet} name="r" value={1}>R</Tab>
       {#snippet panel()}
-          
-          {#if tabSet === 0}
-            <CodeBlock
-              language="python"
-              lineNumbers={true}
-              buttonCopied="Copied!"
-              code={codeBlocks?.bdcPythonAPI || 'Code not set'}
-            ></CodeBlock>
-          {:else if tabSet === 1}
-            <CodeBlock language="r" lineNumbers={true} code={codeBlocks?.bdcRAPI || 'Code not set'}
-            ></CodeBlock>
-          {/if}
-        
-          {/snippet}
+        {#if tabSet === 0}
+          <CodeBlock
+            language="python"
+            lineNumbers={true}
+            buttonCopied="Copied!"
+            code={codeBlocks?.bdcPythonAPI || 'Code not set'}
+          ></CodeBlock>
+        {:else if tabSet === 1}
+          <CodeBlock language="r" lineNumbers={true} code={codeBlocks?.bdcRAPI || 'Code not set'}
+          ></CodeBlock>
+        {/if}
+      {/snippet}
     </TabGroup>
   </section>
   <section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">

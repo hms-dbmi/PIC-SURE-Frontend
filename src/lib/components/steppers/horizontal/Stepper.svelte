@@ -5,11 +5,8 @@
   import { state } from '$lib/stores/Stepper';
   import type { StepperEvent } from '$lib/models/Stepper';
 
-  let { 
-    class: className, 
-    buttonCompleteLabel = ''
-  } = $props();
-  
+  let { class: className, buttonCompleteLabel = '' } = $props();
+
   setContext('buttonCompleteLabel', buttonCompleteLabel);
   setContext('state', state);
 

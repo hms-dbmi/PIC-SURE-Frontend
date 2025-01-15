@@ -58,10 +58,11 @@
     document.body.classList.add('started');
   });
 
-  let showSidebar =
-    $derived(($page.url.pathname.includes('/explorer') || $page.url.pathname.includes('/discover')) &&
-    !$page.url.pathname.includes('/export') &&
-    !$page.url.pathname.includes('/distributions'));
+  let showSidebar = $derived(
+    ($page.url.pathname.includes('/explorer') || $page.url.pathname.includes('/discover')) &&
+      !$page.url.pathname.includes('/export') &&
+      !$page.url.pathname.includes('/distributions'),
+  );
 
   beforeNavigate(({ to, cancel }) => {
     if (
@@ -89,24 +90,18 @@
 </Drawer>
 <AppShell>
   {#snippet header()}
-  
-      <Navigation />
-    
+    <Navigation />
   {/snippet}
   {#snippet sidebarRight()}
-  
-      {#if showSidebar}
-        <div id="right-panel-container" class={'flex'}>
-          <SidePanel />
-        </div>
-      {/if}
-    
+    {#if showSidebar}
+      <div id="right-panel-container" class={'flex'}>
+        <SidePanel />
+      </div>
+    {/if}
   {/snippet}
   {@render children?.()}
   {#snippet pageFooter()}
-  
-      <Footer />
-    
+    <Footer />
   {/snippet}
 </AppShell>
 

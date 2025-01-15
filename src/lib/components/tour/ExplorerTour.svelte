@@ -1,5 +1,4 @@
 <script lang="ts">
-  
   import { getModalStore, type ModalComponent } from '@skeletonlabs/skeleton';
 
   import { driver, type DriverHook, type DriveStep } from 'driver.js';

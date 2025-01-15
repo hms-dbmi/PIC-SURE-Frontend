@@ -42,7 +42,7 @@
     cellOverides = {},
     rowClickHandler = () => {},
     isClickable = false,
-    tableActions
+    tableActions,
   }: Props = $props();
   let rows = handler.getRows();
 
@@ -66,9 +66,7 @@
 <div class="space-y-1">
   {#if title || searchable || tableActions}
     <header
-      class="flex items-center {title || tableActions
-        ? 'justify-between'
-        : 'justify-end'} gap-4"
+      class="flex items-center {title || tableActions ? 'justify-between' : 'justify-end'} gap-4"
     >
       {#if title}
         <div class="flex-auto">

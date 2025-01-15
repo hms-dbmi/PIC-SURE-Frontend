@@ -17,7 +17,7 @@
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
-  
+
   interface Props {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     tourConfig: any;
@@ -31,7 +31,7 @@
   let searchInput = $state($page.url.searchParams.get('search') || $searchTerm || '');
   const tableName = 'ExplorerTable';
   let tourEnabled = $state(true);
-  
+
   let isOpenAccess = $derived($page.url.pathname.includes('/discover'));
 
   const additionalColumns = branding.explorePage.additionalColumns || [];

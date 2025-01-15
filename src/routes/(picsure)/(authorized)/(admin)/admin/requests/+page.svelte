@@ -51,9 +51,10 @@
     show: !$queryError && !!$queryId && !!$approved,
     active: !$queryError && !!$queryId && !!$approved,
   });
-  let sendEnabled =
-    $derived(($dataType.genomic && $status?.genomic === UploadStatus.Unsent) ||
-    ($dataType.phenotypic && $status?.phenotypic === UploadStatus.Unsent));
+  let sendEnabled = $derived(
+    ($dataType.genomic && $status?.genomic === UploadStatus.Unsent) ||
+      ($dataType.phenotypic && $status?.phenotypic === UploadStatus.Unsent),
+  );
 
   // Status icons
   function statusIcon(status: UploadStatus) {
@@ -207,12 +208,10 @@
     <Grid columns={3}>
       <GridCell title="Data Storage Location">
         {#snippet help()}
-              
-            <button data-testid="data-loc-modal-btn" onclick={dataLocationModal}>
-              <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
-            </button>
-          
-              {/snippet}
+          <button data-testid="data-loc-modal-btn" onclick={dataLocationModal}>
+            <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
+          </button>
+        {/snippet}
         <select
           data-testid="selected-site"
           class="select"
@@ -226,12 +225,10 @@
       </GridCell>
       <GridCell title="Select &amp; Send Data">
         {#snippet help()}
-              
-            <button data-testid="data-type-modal-btn" onclick={dataTypeModal}>
-              <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
-            </button>
-          
-              {/snippet}
+          <button data-testid="data-type-modal-btn" onclick={dataTypeModal}>
+            <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
+          </button>
+        {/snippet}
         <label class="flex items-center space-x-2 my-2">
           <input
             type="checkbox"
@@ -262,19 +259,17 @@
       </GridCell>
       <GridCell title="Status">
         {#snippet help()}
-              
-            <button
-              type="button"
-              data-testid="status-refresh-btn"
-              title="Refresh"
-              class="text-primary-500 disabled:text-secondary-500"
-              onclick={refreshStatus}
-            >
-              <i class="fa-solid fa-arrows-rotate fa-sm"></i>
-              <span class="sr-only">Refresh</span>
-            </button>
-          
-              {/snippet}
+          <button
+            type="button"
+            data-testid="status-refresh-btn"
+            title="Refresh"
+            class="text-primary-500 disabled:text-secondary-500"
+            onclick={refreshStatus}
+          >
+            <i class="fa-solid fa-arrows-rotate fa-sm"></i>
+            <span class="sr-only">Refresh</span>
+          </button>
+        {/snippet}
         <div class="flex space-x-2 my-2 align-top">
           <i class={`${statusInfo.phenotypic.icon} flex-none`}></i>
           <p class="text-left flex-auto">

@@ -5,8 +5,6 @@
 
   import AngleButton from '$lib/components/buttons/AngleButton.svelte';
 
-
-
   interface Props {
     locked?: boolean;
     buttonCompleteLabel?: string;
@@ -28,7 +26,7 @@
     onComplete = getContext('onComplete'),
     header,
     children,
-    navigation
+    navigation,
   }: Props = $props();
 
   // Register step on init (keep these paired)

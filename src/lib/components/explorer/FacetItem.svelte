@@ -12,12 +12,7 @@
     textFilterValue: string | undefined;
   }
 
-  let {
-    facet = $bindable(),
-    facetCategory,
-    facetParent,
-    textFilterValue
-  }: Props = $props();
+  let { facet = $bindable(), facetCategory, facetParent, textFilterValue }: Props = $props();
 
   if (facetParent) {
     facet.parentRef = {
@@ -79,30 +74,32 @@
   });
 
   let checked = $derived(checkedState(facet.name) === 'true');
-  let facetsToDisplay = $derived(facet.children
-    ? [
-        ...facet.children
-          .filter((child) => {
-            const matchesFilter =
-              !textFilterValue ||
-              child.display.toLowerCase().includes(textFilterValue.toLowerCase()) ||
-              child.name.toLowerCase().includes(textFilterValue.toLowerCase()) ||
-              child.description?.toLowerCase().includes(textFilterValue.toLowerCase());
-            return matchesFilter && $selectedFacets.some((f) => f.name === child.name);
-          })
-          .sort((a, b) => (b.count || 0) - (a.count || 0)),
-        ...facet.children
-          .filter((child) => {
-            const matchesFilter =
-              !textFilterValue ||
-              child.display.toLowerCase().includes(textFilterValue.toLowerCase()) ||
-              child.name.toLowerCase().includes(textFilterValue.toLowerCase()) ||
-              child.description?.toLowerCase().includes(textFilterValue.toLowerCase());
-            return matchesFilter && !$selectedFacets.some((f) => f.name === child.name);
-          })
-          .sort((a, b) => (b.count || 0) - (a.count || 0)),
-      ]
-    : []);
+  let facetsToDisplay = $derived(
+    facet.children
+      ? [
+          ...facet.children
+            .filter((child) => {
+              const matchesFilter =
+                !textFilterValue ||
+                child.display.toLowerCase().includes(textFilterValue.toLowerCase()) ||
+                child.name.toLowerCase().includes(textFilterValue.toLowerCase()) ||
+                child.description?.toLowerCase().includes(textFilterValue.toLowerCase());
+              return matchesFilter && $selectedFacets.some((f) => f.name === child.name);
+            })
+            .sort((a, b) => (b.count || 0) - (a.count || 0)),
+          ...facet.children
+            .filter((child) => {
+              const matchesFilter =
+                !textFilterValue ||
+                child.display.toLowerCase().includes(textFilterValue.toLowerCase()) ||
+                child.name.toLowerCase().includes(textFilterValue.toLowerCase()) ||
+                child.description?.toLowerCase().includes(textFilterValue.toLowerCase());
+              return matchesFilter && !$selectedFacets.some((f) => f.name === child.name);
+            })
+            .sort((a, b) => (b.count || 0) - (a.count || 0)),
+        ]
+      : [],
+  );
 </script>
 
 <label data-testId={`facet-${facet.name}-label`} for={facet.name} class="m-1">

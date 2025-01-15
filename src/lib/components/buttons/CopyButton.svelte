@@ -2,15 +2,15 @@
 <script lang="ts">
   import { popup, clipboard } from '@skeletonlabs/skeleton';
 
-  let { 
-    class: className, 
+  let {
+    class: className,
     'data-testid': testId,
     itemToCopy,
     text = 'Copy',
     altText = 'Copied!',
     useIcon = false,
     icon = 'fa-regular fa-copy',
-    altIcon = 'fa-regular fa-square-check'
+    altIcon = 'fa-regular fa-square-check',
   } = $props();
 
   let buttonId = testId || 'copy-btn';

@@ -22,7 +22,6 @@
   let refreshButtonDisabled = $state(false);
   let refreshButtonText = $state('Refresh');
 
-
   function checkIfExpired() {
     if (!expires || expires === 0) {
       return 'unknown';

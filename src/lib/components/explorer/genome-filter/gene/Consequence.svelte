@@ -22,7 +22,7 @@
       >
         <p>{severity.key}</p>
         <!-- @migration-task: migrate this slot by hand, `children` would shadow a prop on the parent component -->
-  <svelte:fragment slot="children">
+        <svelte:fragment slot="children">
           {#each severity.children as child, cIndex}
             <TreeViewItem
               bind:this={severityChildren[sIndex][cIndex]}

@@ -4,13 +4,7 @@
   import type { AuthData } from '$lib/models/AuthProvider';
   import { resetSearch } from '$lib/stores/Search';
 
-  let { 
-    class: className,
-    buttonText = 'Log In',
-    redirectTo = '/',
-    provider,
-    helpText
-  } = $props();
+  let { class: className, buttonText = 'Log In', redirectTo = '/', provider, helpText } = $props();
 
   const testId = $derived(`login-button-${provider.name?.toLowerCase()}`);
 

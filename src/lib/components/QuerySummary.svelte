@@ -1,6 +1,6 @@
 <script lang="ts">
   // TODO: use query type instead of any
-  
+
   interface Props {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     query?: any;

@@ -25,7 +25,7 @@
     showClearAll = true,
     showSelectAll = true,
     allOptionsLoaded = false,
-    allOptions = undefined
+    allOptions = undefined,
   }: Props = $props();
 
   let currentlyLoadingSelected: boolean = $state(false);
@@ -33,12 +33,11 @@
   let selectedOptionsContainer: HTMLElement = $state();
   let allSelectedOptionsLoaded: boolean = $state(false);
 
-  const dispatch = createEventDispatcher<{ scroll: { search: string } }>();
+  interface ScrollEvent {
+    search: string;
+  }
 
-
-
-
-
+  const dispatch = $event<ScrollEvent>('scroll');
 
   function shouldLoadMore(element: HTMLElement, allLoaded: boolean) {
     const scrollTop = element.scrollTop;
@@ -104,12 +103,12 @@
     return option.replaceAll(' ', '-').toLowerCase();
   }
   let infiniteScroll = $derived(allOptions === undefined);
-  let totalAvailableOptions = $derived(infiniteScroll
-    ? Infinity
-    : (allOptions?.length || 0) - selectedOptions.length);
-  let allUnselectedOptionsLoaded = $derived(infiniteScroll
-    ? allOptionsLoaded
-    : unselectedOptions.length >= totalAvailableOptions);
+  let totalAvailableOptions = $derived(
+    infiniteScroll ? Infinity : (allOptions?.length || 0) - selectedOptions.length,
+  );
+  let allUnselectedOptionsLoaded = $derived(
+    infiniteScroll ? allOptionsLoaded : unselectedOptions.length >= totalAvailableOptions,
+  );
   let displayedSelectedOptions = $derived(selectedOptions.slice(0, selectedOptionEndLocation));
   run(() => {
     allSelectedOptionsLoaded = infiniteScroll

@@ -13,14 +13,18 @@
 
   let { showSitemap = branding?.footer?.showSitemap || false }: Props = $props();
 
-  let hideSitemap =
-    $derived(!showSitemap ||
-    branding?.footer?.excludeSitemapOn?.find((hide) => $page.url.pathname.includes(hide)));
+  let hideSitemap = $derived(
+    !showSitemap ||
+      branding?.footer?.excludeSitemapOn?.find((hide) => $page.url.pathname.includes(hide)),
+  );
 
-  let sitemap = $derived(branding?.sitemap?.map((section) => ({
-    ...section,
-    show: !section.privilege || ($user.privileges && $user.privileges.includes(section.privilege)),
-  })));
+  let sitemap = $derived(
+    branding?.sitemap?.map((section) => ({
+      ...section,
+      show:
+        !section.privilege || ($user.privileges && $user.privileges.includes(section.privilege)),
+    })),
+  );
 
   function openTermsModal() {
     modalStore.trigger({
