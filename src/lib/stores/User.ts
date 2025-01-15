@@ -57,7 +57,7 @@ function createLocalStorageStore(key: string, initialValue: boolean) {
 }
 
 export const tokenStatus: Writable<boolean> = createLocalStorageStore('token', false);
-export const loggedInStatus: Readable<boolean> = derived(tokenStatus, $tokenStatus => $tokenStatus);
+export const isLoggedIn: Readable<boolean> = derived(tokenStatus, $tokenStatus => $tokenStatus);
 
 function restoreUser() {
   if (browser && localStorage.getItem('user')) {
@@ -87,10 +87,10 @@ function clearSessionTokenIfExpired() {
   }
 }
 
-export const userRoutes: Readable<Route[]> = derived([user, loggedInStatus], ([$user, $loggedInStatus]) => {
+export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user, $isLoggedIn]) => {
   const userPrivileges: string[] = $user?.privileges || [];
 
-  if (userPrivileges.length === 0 || !$loggedInStatus) {
+  if (userPrivileges.length === 0 || !$isLoggedIn) {
     // Public routes for non-logged in user
     return routes.filter((route) => !route.privilege);
   }
