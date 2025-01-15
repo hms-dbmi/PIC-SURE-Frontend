@@ -1,4 +1,4 @@
-import { get, writable, derived, type Writable, type Readable, readable } from 'svelte/store';
+import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/environment';
 import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
@@ -11,7 +11,6 @@ import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/stores';
 
 export const user: Writable<User> = writable(restoreUser());
-export const loggedInStatus: Readable<boolean> = readable(isUserLoggedIn());
 
 user.subscribe((user: User) => {
   if (browser) {
@@ -22,6 +21,43 @@ user.subscribe((user: User) => {
     localStorage.setItem('user', JSON.stringify(userCopy));
   }
 });
+
+// Create a store that syncs with localStorage
+function createLocalStorageStore(key: string, initialValue: boolean) {
+  const store = writable(browser ? !!localStorage.getItem(key) : initialValue);
+  
+  if (browser) {
+    // Update store when localStorage changes in other tabs
+    window.addEventListener('storage', (event) => {
+      if (event.key === key) {
+        store.set(!!event.newValue);
+      }
+    });
+
+    // Update store when localStorage changes in current tab
+    const originalSetItem = localStorage.setItem;
+    const originalRemoveItem = localStorage.removeItem;
+
+    localStorage.setItem = function(key: string, value: string) {
+      if (key === 'token') {
+        store.set(!!value);
+      }
+      originalSetItem.apply(this, [key, value]);
+    };
+
+    localStorage.removeItem = function(key: string) {
+      if (key === 'token') {
+        store.set(false);
+      }
+      originalRemoveItem.apply(this, [key]);
+    };
+  }
+
+  return store;
+}
+
+export const tokenStatus: Writable<boolean> = createLocalStorageStore('token', false);
+export const loggedInStatus: Readable<boolean> = derived(tokenStatus, $tokenStatus => $tokenStatus);
 
 function restoreUser() {
   if (browser && localStorage.getItem('user')) {
@@ -50,13 +86,6 @@ function clearSessionTokenIfExpired() {
     }
   }
 }
-
-function isUserLoggedIn() {
-  if (browser) {
-    return !!localStorage.getItem('token');
-  }
-  return false;
-};
 
 export const userRoutes: Readable<Route[]> = derived([user, loggedInStatus], ([$user, $loggedInStatus]) => {
   const userPrivileges: string[] = $user?.privileges || [];
