@@ -453,13 +453,22 @@
           on:click={() => selectExportType('DATAFRAME')}
         ></CardButton>
         <CardButton
-          data-testid="csv-export-option"
-          title="Export as PFB"
-          subtitle="Export data in Portable Format for Biomedical Data file format"
-          size="other"
-          class="card variant-ringed-primary"
-          active={activeType === 'DATAFRAME_PFB'}
-          on:click={() => selectExportType('DATAFRAME_PFB')}
+                data-testid="csv-export-option"
+                title="Export as PFB"
+                subtitle="Export data in Portable Format for Biomedical Data file format"
+                size="other"
+                class="card variant-ringed-primary"
+                active={activeType === 'DATAFRAME_PFB'}
+                on:click={() => selectExportType('DATAFRAME_PFB')}
+        ></CardButton>
+        <CardButton
+                data-testid="csv-export-option"
+                title="Export as PFB Conditional"
+                subtitle="Export data in Portable Format for Biomedical Data file format"
+                size="other"
+                class="card variant-ringed-primary"
+                active={activeType === 'DATAFRAME_PFB'}
+                on:click={() => selectExportType('DATAFRAME_PFB')}
         ></CardButton>
       </div>
     </section>
