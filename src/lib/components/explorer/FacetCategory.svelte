@@ -165,7 +165,11 @@
       <span class="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
         {facet.display}
       </span>
-      <button class="chip-close ml-1 flex-shrink-0" on:click={() => updateFacets([facet])}>
+      <button
+        class="chip-close ml-1 flex-shrink-0"
+        aria-label="Remove Facet"
+        on:click={() => updateFacets([facet])}
+      >
         <i class="fa-solid fa-times hover:text-secondary-500"></i>
       </button>
     </span>

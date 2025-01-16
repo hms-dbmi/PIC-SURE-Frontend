@@ -111,11 +111,6 @@
 </div>
 
 <style>
-  .pic-sure-table-compact tbody td:not(.expandable-component) {
-    padding-top: 0.75rem !important;
-    padding-bottom: 0.75rem !important;
-  }
-
   table thead th {
     font-weight: normal !important;
   }

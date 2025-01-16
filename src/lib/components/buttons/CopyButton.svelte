@@ -51,7 +51,7 @@
       data-popup={buttonId}
     >
       {altText}
-      <div class="arrow variant-filled-surface" />
+      <div class="arrow variant-filled-surface"></div>
     </div>
   </button>
 {:else}

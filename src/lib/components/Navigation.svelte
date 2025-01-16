@@ -2,7 +2,7 @@
   import { AppBar, popup, type PopupSettings } from '@skeletonlabs/skeleton';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { user, userRoutes, logout } from '$lib/stores/User';
+  import { user, userRoutes, isLoggedIn, logout } from '$lib/stores/User';
   import type { Route } from '$lib/models/Route';
   import Logo from '$lib/components/Logo.svelte';
   import type AuthData from '$lib/models/AuthProvider.ts';
@@ -113,7 +113,7 @@
   </nav>
   <svelte:fragment slot="trail">
     <div id="user-session-avatar">
-      {#if $user.privileges && $user.email}
+      {#if $user.privileges && $user.email && $isLoggedIn}
         <!-- Logout -->
         <button id="user-session-popout" use:popup={logoutClick}>
           <span
