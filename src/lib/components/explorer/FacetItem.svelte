@@ -100,6 +100,7 @@
     <button
       type="button"
       class="arrow-button"
+      aria-label="Toggle Facet {open ? 'open' : 'closed'}"
       data-testId={`facet-${facet.name}-arrow`}
       on:click={toggleOpen}
     >

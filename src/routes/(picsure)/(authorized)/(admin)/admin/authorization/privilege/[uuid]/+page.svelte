@@ -37,46 +37,50 @@
   {:then}
     <section id="privilege-view" class="m-3">
       <table class="table bg-transparent">
-        <tr>
-          <td>ID:</td>
-          <td>{privilege.uuid}</td>
-        </tr>
-        <tr>
-          <td>Name:</td>
-          <td>{privilege.name}</td>
-        </tr>
-        <tr>
-          <td>Description:</td>
-          <td>{privilege.description}</td>
-        </tr>
-        <tr>
-          {#if typeof application !== 'string'}
-            <td class="align-top">Application:</td>
-            <td
-              ><table class="table bg-transparent">
-                <tr>
-                  <td>ID:</td>
-                  <td>{application.uuid}</td>
-                </tr>
-                <tr>
-                  <td>Name:</td>
-                  <td>{application.name}</td>
-                </tr>
-                <tr>
-                  <td>Description:</td>
-                  <td>{application.description}</td>
-                </tr>
-                <tr>
-                  <td>Enabled:</td>
-                  <td>{application.enable ? 'Yes' : 'No'}</td>
-                </tr>
-              </table></td
-            >
-          {:else}
-            <td>Application:</td>
-            <td>none</td>
-          {/if}
-        </tr>
+        <tbody>
+          <tr>
+            <td>ID:</td>
+            <td>{privilege.uuid}</td>
+          </tr>
+          <tr>
+            <td>Name:</td>
+            <td>{privilege.name}</td>
+          </tr>
+          <tr>
+            <td>Description:</td>
+            <td>{privilege.description}</td>
+          </tr>
+          <tr>
+            {#if typeof application !== 'string'}
+              <td class="align-top">Application:</td>
+              <td
+                ><table class="table bg-transparent">
+                  <tbody>
+                    <tr>
+                      <td>ID:</td>
+                      <td>{application.uuid}</td>
+                    </tr>
+                    <tr>
+                      <td>Name:</td>
+                      <td>{application.name}</td>
+                    </tr>
+                    <tr>
+                      <td>Description:</td>
+                      <td>{application.description}</td>
+                    </tr>
+                    <tr>
+                      <td>Enabled:</td>
+                      <td>{application.enable ? 'Yes' : 'No'}</td>
+                    </tr>
+                  </tbody>
+                </table></td
+              >
+            {:else}
+              <td>Application:</td>
+              <td>none</td>
+            {/if}
+          </tr>
+        </tbody>
       </table>
     </section>
   {:catch}

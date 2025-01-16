@@ -21,7 +21,7 @@
       data-popup={id}
     >
       {text}
-      <div class="arrow variant-filled-surface" />
+      <div class="arrow variant-filled-surface"></div>
     </div>
   </div>
 {/if}

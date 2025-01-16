@@ -25,7 +25,7 @@ user.subscribe((user: User) => {
 // Create a store that syncs with localStorage
 function createLocalStorageStore(key: string, initialValue: boolean) {
   const store = writable(browser ? !!localStorage.getItem(key) : initialValue);
-  
+
   if (browser) {
     // Update store when localStorage changes in other tabs
     window.addEventListener('storage', (event) => {
@@ -38,14 +38,14 @@ function createLocalStorageStore(key: string, initialValue: boolean) {
     const originalSetItem = localStorage.setItem;
     const originalRemoveItem = localStorage.removeItem;
 
-    localStorage.setItem = function(key: string, value: string) {
+    localStorage.setItem = function (key: string, value: string) {
       if (key === 'token') {
         store.set(!!value);
       }
       originalSetItem.apply(this, [key, value]);
     };
 
-    localStorage.removeItem = function(key: string) {
+    localStorage.removeItem = function (key: string) {
       if (key === 'token') {
         store.set(false);
       }
@@ -57,7 +57,7 @@ function createLocalStorageStore(key: string, initialValue: boolean) {
 }
 
 export const tokenStatus: Writable<boolean> = createLocalStorageStore('token', false);
-export const isLoggedIn: Readable<boolean> = derived(tokenStatus, $tokenStatus => $tokenStatus);
+export const isLoggedIn: Readable<boolean> = derived(tokenStatus, ($tokenStatus) => $tokenStatus);
 
 function restoreUser() {
   if (browser && localStorage.getItem('user')) {

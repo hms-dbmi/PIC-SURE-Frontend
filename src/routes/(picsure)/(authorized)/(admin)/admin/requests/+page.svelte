@@ -207,7 +207,11 @@
     <Grid columns={3}>
       <GridCell title="Data Storage Location">
         <svelte:fragment slot="help">
-          <button data-testid="data-loc-modal-btn" on:click={dataLocationModal}>
+          <button
+            data-testid="data-loc-modal-btn"
+            aria-label="Open Data Location Modal"
+            on:click={dataLocationModal}
+          >
             <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
           </button>
         </svelte:fragment>
@@ -224,7 +228,11 @@
       </GridCell>
       <GridCell title="Select &amp; Send Data">
         <svelte:fragment slot="help">
-          <button data-testid="data-type-modal-btn" on:click={dataTypeModal}>
+          <button
+            data-testid="data-type-modal-btn"
+            aria-label="Open Data Type Modal"
+            on:click={dataTypeModal}
+          >
             <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
           </button>
         </svelte:fragment>
