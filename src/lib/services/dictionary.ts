@@ -93,24 +93,24 @@ export async function updateFacetsFromSearch(
 
 // Adds references to parent and category
 function processFacetResults(response: DictionaryFacetResult[]) {
-  response.forEach(category => {
-    category.facets.forEach(facet => {
+  response.forEach((category) => {
+    category.facets.forEach((facet) => {
       facet.categoryRef = {
         name: category.name,
         display: category.display,
-        description: category.description
+        description: category.description,
       };
       if (facet.children?.length) {
-        facet.children.forEach(child => {
+        facet.children.forEach((child) => {
           child.categoryRef = {
-            name: category.name, 
+            name: category.name,
             display: category.display,
-            description: category.description
+            description: category.description,
           };
           child.parentRef = {
             name: facet.name,
-            display: facet.display, 
-            description: facet.description
+            display: facet.display,
+            description: facet.description,
           };
         });
       }
