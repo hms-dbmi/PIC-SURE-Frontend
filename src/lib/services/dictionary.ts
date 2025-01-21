@@ -83,11 +83,39 @@ export async function updateFacetsFromSearch(
     if (facets.length === 0 && search.length === 0) {
       initializeHiddenFacets(response);
     }
+    processFacetResults(response);
     return response;
   } catch (error) {
     console.error('Failed to update facets from search:', error);
     throw error;
   }
+}
+
+// Adds references to parent and category
+function processFacetResults(response: DictionaryFacetResult[]) {
+  response.forEach((category) => {
+    category.facets.forEach((facet) => {
+      facet.categoryRef = {
+        name: category.name,
+        display: category.display,
+        description: category.description,
+      };
+      if (facet.children?.length) {
+        facet.children.forEach((child) => {
+          child.categoryRef = {
+            name: category.name,
+            display: category.display,
+            description: category.description,
+          };
+          child.parentRef = {
+            name: facet.name,
+            display: facet.display,
+            description: facet.description,
+          };
+        });
+      }
+    });
+  });
 }
 
 export async function getConceptDetails(

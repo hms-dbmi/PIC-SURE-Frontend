@@ -141,7 +141,7 @@
         />
       {/if}
       {#each facetsToDisplay as facet}
-        <FacetItem {facet} {facetCategory} facetParent={undefined} {textFilterValue} />
+        <FacetItem {facet} {facetCategory} {textFilterValue} />
       {/each}
       {#if facets?.length > numFacetsToShow && !textFilterValue}
         <button
