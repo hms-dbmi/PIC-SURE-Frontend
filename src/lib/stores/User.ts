@@ -22,6 +22,43 @@ user.subscribe((user: User) => {
   }
 });
 
+// Create a store that syncs with localStorage
+function createLocalStorageStore(key: string, initialValue: boolean) {
+  const store = writable(browser ? !!localStorage.getItem(key) : initialValue);
+
+  if (browser) {
+    // Update store when localStorage changes in other tabs
+    window.addEventListener('storage', (event) => {
+      if (event.key === key) {
+        store.set(!!event.newValue);
+      }
+    });
+
+    // Update store when localStorage changes in current tab
+    const originalSetItem = localStorage.setItem;
+    const originalRemoveItem = localStorage.removeItem;
+
+    localStorage.setItem = function (key: string, value: string) {
+      if (key === 'token') {
+        store.set(!!value);
+      }
+      originalSetItem.apply(this, [key, value]);
+    };
+
+    localStorage.removeItem = function (key: string) {
+      if (key === 'token') {
+        store.set(false);
+      }
+      originalRemoveItem.apply(this, [key]);
+    };
+  }
+
+  return store;
+}
+
+export const tokenStatus: Writable<boolean> = createLocalStorageStore('token', false);
+export const isLoggedIn: Readable<boolean> = derived(tokenStatus, ($tokenStatus) => $tokenStatus);
+
 function restoreUser() {
   if (browser && localStorage.getItem('user')) {
     clearSessionTokenIfExpired();
@@ -50,10 +87,10 @@ function clearSessionTokenIfExpired() {
   }
 }
 
-export const userRoutes: Readable<Route[]> = derived(user, ($user) => {
+export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user, $isLoggedIn]) => {
   const userPrivileges: string[] = $user?.privileges || [];
 
-  if (userPrivileges.length === 0) {
+  if (userPrivileges.length === 0 || !$isLoggedIn) {
     // Public routes for non-logged in user
     return routes.filter((route) => !route.privilege);
   }

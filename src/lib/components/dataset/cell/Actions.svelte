@@ -26,6 +26,7 @@
     data-testid={`dataset-action-restore-${data.cell}`}
     type="button"
     title="Restore"
+    aria-label="Restore"
     class="btn-icon-color"
     on:click|stopPropagation={toggleArchive}
   >
@@ -46,6 +47,7 @@
     data-testid={`dataset-action-archive-${data.cell}`}
     type="button"
     title="Delete"
+    aria-label="Delete"
     class="btn-icon-color"
     on:click|stopPropagation={toggleArchive}
   >

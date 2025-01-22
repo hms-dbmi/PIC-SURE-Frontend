@@ -6,24 +6,7 @@
 
   export let facet: Facet;
   export let facetCategory: DictionaryFacetResult;
-  export let facetParent: Facet | undefined;
   export let textFilterValue: string | undefined;
-
-  if (facetParent) {
-    facet.parentRef = {
-      name: facetParent.name,
-      display: facetParent.display,
-      description: facetParent.description,
-    };
-  }
-
-  if (facetCategory) {
-    facet.categoryRef = {
-      name: facetCategory.name,
-      display: facetCategory.display,
-      description: facetCategory.description,
-    };
-  }
 
   let open = false;
 
@@ -100,6 +83,7 @@
     <button
       type="button"
       class="arrow-button"
+      aria-label="Toggle Facet {open ? 'open' : 'closed'}"
       data-testId={`facet-${facet.name}-arrow`}
       on:click={toggleOpen}
     >
@@ -124,7 +108,7 @@
 {#if open && facetsToDisplay !== undefined && facetsToDisplay?.length > 0}
   <div class="flex flex-col ml-4" data-testId={`facet-${facet.name}-children`}>
     {#each facetsToDisplay as child}
-      <svelte:self facet={child} {facetCategory} facetParent={facet} {textFilterValue} />
+      <svelte:self facet={child} {facetCategory} {textFilterValue} />
     {/each}
   </div>
 {/if}

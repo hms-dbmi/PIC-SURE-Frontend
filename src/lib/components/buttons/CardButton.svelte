@@ -27,7 +27,7 @@
     rel={disabled ? 'nofollow' : undefined}
     tabindex="0"
   >
-    {#if icon}<i class="icon {icon}" />{/if}
+    {#if icon}<i class="icon {icon}"></i>{/if}
     <div class="title">{title}</div>
     {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
   </a>
@@ -41,7 +41,7 @@
     on:click={onClick}
     {disabled}
   >
-    {#if icon}<i class="icon {icon}" />{/if}
+    {#if icon}<i class="icon {icon}"></i>{/if}
     <div class="title">{title}</div>
     {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
   </button>

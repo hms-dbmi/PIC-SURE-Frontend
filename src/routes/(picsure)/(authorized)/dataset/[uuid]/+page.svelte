@@ -32,14 +32,16 @@
     <section id="detail-summary-container" class="m-3">
       <h2 class="text-left my-1">Dataset ID Summary</h2>
       <table class="table bg-transparent">
-        <tr>
-          <td>Dataset ID Name:</td>
-          <td data-testid="dataset-summary-name">{dataset.name}</td>
-        </tr>
-        <tr>
-          <td>Dataset ID:</td>
-          <td data-testid="dataset-summary-uuid">{dataset.uuid}</td>
-        </tr>
+        <tbody>
+          <tr>
+            <td>Dataset ID Name:</td>
+            <td data-testid="dataset-summary-name">{dataset.name}</td>
+          </tr>
+          <tr>
+            <td>Dataset ID:</td>
+            <td data-testid="dataset-summary-uuid">{dataset.uuid}</td>
+          </tr>
+        </tbody>
       </table>
     </section>
     <QuerySummary query={dataset.query} />
