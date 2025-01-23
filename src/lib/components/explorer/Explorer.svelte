@@ -90,6 +90,14 @@
     goto(searchInput ? `${path}?search=${searchInput}` : `${path}`, { replaceState: true });
   }
 
+  function  resetSearch() {
+    searchInput = '';
+    searchTerm.set('');
+    error.set('');
+    tourEnabled = true;
+    goto(isOpenAccess ? '/discover' : '/explorer');
+  }
+
   onDestroy(() => {
     unsubSelectedFacets && unsubSelectedFacets();
     unsubSearchTerm && unsubSearchTerm();
@@ -118,14 +126,7 @@
           class="btn variant-ghost-error hover:variant-filled-error"
           aria-label="You are on the reset button"
           disabled={!searchInput && $selectedFacets.length === 0}
-          on:click={() => {
-            searchInput = '';
-            searchTerm.set('');
-            error.set('');
-            selectedFacets.set([]);
-            tourEnabled = true;
-            goto(isOpenAccess ? '/discover' : '/explorer');
-          }}
+          on:click={resetSearch}
         >
           Reset
         </button>
