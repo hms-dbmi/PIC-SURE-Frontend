@@ -119,11 +119,10 @@
 
   async function download(): Promise<void> {
     try {
-      const res = await api.post(`picsure/query/${datasetId}/result`, {});
-      const responseDataUrl = URL.createObjectURL(new Blob([res], { type: 'octet/stream' }));
+      const signedUirl = await getSignedUrl();
       if (browser) {
         const link = document.createElement('a');
-        link.href = responseDataUrl;
+        link.href = signedUirl;
         if (query.query.expectedResultType === 'DATAFRAME') {
           link.download = 'pic-sure-data.csv';
         } else if (query.query.expectedResultType === 'DATAFRAME_PFB') {
