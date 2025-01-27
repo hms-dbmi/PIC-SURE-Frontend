@@ -19,5 +19,8 @@ RUN mkdir -p /usr/local/apache2/logs/ssl_mutex
 
 ENV NODE_ENV=development
 WORKDIR /app
+RUN mkdir -p logs
+COPY . .
+RUN npm i
 COPY supervisord-local.conf /etc/supervisor/conf.d/supervisord.conf
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
