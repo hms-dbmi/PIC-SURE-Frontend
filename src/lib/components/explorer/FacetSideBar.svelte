@@ -47,15 +47,6 @@
   });
 </script>
 
-<style>
-    .radial-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-    }
-</style>
-
 {#await facetsPromise}
   <div class="radial-container">
     <ProgressRadial width="w-10" />
@@ -79,3 +70,12 @@
     <p>Please wait a moment, refresh the page, and try again.</p>
   </ErrorAlert>
 {/await}
+
+<style>
+  .radial-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+  }
+</style>
