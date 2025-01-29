@@ -90,7 +90,7 @@
     goto(searchInput ? `${path}?search=${searchInput}` : `${path}`, { replaceState: true });
   }
 
-  function  resetSearch() {
+  function resetSearch() {
     searchInput = '';
     searchTerm.set('');
     error.set('');
