@@ -16,7 +16,12 @@ const config: PlaywrightTestConfig = {
   projects: [
     {
       name: 'chromium',
-      use: { browserName: 'chromium' },
+      use: {
+        browserName: 'chromium',
+        contextOptions: {
+          permissions: ['clipboard-read', 'clipboard-write'],
+        },
+      },
     },
     {
       name: 'firefox',
@@ -28,7 +33,6 @@ const config: PlaywrightTestConfig = {
     },
   ],
   use: {
-    permissions: ['clipboard'],
     launchOptions: {
       slowMo: 200,
     },
