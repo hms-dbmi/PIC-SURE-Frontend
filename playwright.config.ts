@@ -28,7 +28,7 @@ const config: PlaywrightTestConfig = {
     },
   ],
   use: {
-    permissions: ['clipboard-read', 'clipboard-write'],
+    permissions: ['clipboard'],
     launchOptions: {
       slowMo: 200,
     },
