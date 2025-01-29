@@ -10,10 +10,12 @@
 
 <section id="detail-summary-container" class="m-3">
   <table class="table bg-transparent">
-    <tr>
-      <td>Dataset ID:</td>
-      <td data-testid="dataset-summary-uuid">{queryId}</td>
-    </tr>
+    <tbody>
+      <tr>
+        <td>Dataset ID:</td>
+        <td data-testid="dataset-summary-uuid">{queryId}</td>
+      </tr>
+    </tbody>
   </table>
 </section>
 

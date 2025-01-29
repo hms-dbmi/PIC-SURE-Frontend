@@ -35,22 +35,24 @@
   {:then}
     <section id="role-view">
       <table class="table bg-transparent">
-        <tr>
-          <td>ID:</td>
-          <td>{role.uuid}</td>
-        </tr>
-        <tr>
-          <td>Name:</td>
-          <td>{role.name}</td>
-        </tr>
-        <tr>
-          <td>Description:</td>
-          <td>{role.description}</td>
-        </tr>
-        <tr>
-          <td>Privileges:</td>
-          <td>{privileges.map((p) => p.name).join(', ')}</td>
-        </tr>
+        <tbody>
+          <tr>
+            <td>ID:</td>
+            <td>{role.uuid}</td>
+          </tr>
+          <tr>
+            <td>Name:</td>
+            <td>{role.name}</td>
+          </tr>
+          <tr>
+            <td>Description:</td>
+            <td>{role.description}</td>
+          </tr>
+          <tr>
+            <td>Privileges:</td>
+            <td>{privileges.map((p) => p.name).join(', ')}</td>
+          </tr>
+        </tbody>
       </table>
     </section>
   {:catch}

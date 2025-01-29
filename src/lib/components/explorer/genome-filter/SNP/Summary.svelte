@@ -24,6 +24,7 @@
           type="button"
           data-testid={`snp-edit-btn-${snp.search}`}
           title="Edit"
+          aria-label="Edit"
           class="btn-icon-color"
           on:click={() => dispatch('edit', { snp })}
         >
@@ -33,6 +34,7 @@
           type="button"
           data-testid={`snp-delete-btn-${snp.search}`}
           title="Delete"
+          aria-label="Delete"
           class="btn-icon-color"
           on:click={() => dispatch('delete', { snp })}
         >

@@ -39,32 +39,34 @@
   {:then}
     <section id="role-view">
       <table class="table bg-transparent">
-        <tr>
-          <td>Id:</td>
-          <td>{user.uuid}</td>
-        </tr>
-        <tr>
-          <td>Email:</td>
-          <td>{user.email}</td>
-        </tr>
-        <tr>
-          <td>Active:</td>
-          <td>{user.active}</td>
-        </tr>
-        {#if user.subject}
+        <tbody>
           <tr>
-            <td>Subject:</td>
-            <td>{user.subject}</td>
+            <td>Id:</td>
+            <td>{user.uuid}</td>
           </tr>
-        {/if}
-        <tr>
-          <td>Connection:</td>
-          <td>{typeof connection !== 'string' ? connection.label : user.connection}</td>
-        </tr>
-        <tr>
-          <td>Roles:</td>
-          <td>{roles.map((p) => p.name).join(', ')}</td>
-        </tr>
+          <tr>
+            <td>Email:</td>
+            <td>{user.email}</td>
+          </tr>
+          <tr>
+            <td>Active:</td>
+            <td>{user.active}</td>
+          </tr>
+          {#if user.subject}
+            <tr>
+              <td>Subject:</td>
+              <td>{user.subject}</td>
+            </tr>
+          {/if}
+          <tr>
+            <td>Connection:</td>
+            <td>{typeof connection !== 'string' ? connection.label : user.connection}</td>
+          </tr>
+          <tr>
+            <td>Roles:</td>
+            <td>{roles.map((p) => p.name).join(', ')}</td>
+          </tr>
+        </tbody>
       </table>
     </section>
   {:catch}

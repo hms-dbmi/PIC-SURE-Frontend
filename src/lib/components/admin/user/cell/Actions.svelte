@@ -64,6 +64,7 @@
   data-testid={`user-view-btn-${data.cell}`}
   type="button"
   title="View"
+  aria-label="View"
   class="btn-icon-color"
   on:click|stopPropagation={() => goto(`/admin/users/${data.cell}`)}
 >
@@ -75,6 +76,7 @@
     data-testid={`user-edit-btn-${data.cell}`}
     type="button"
     title="Edit"
+    aria-label="Edit"
     class="btn-icon-color"
     on:click|stopPropagation={() => goto(`/admin/users/${data.cell}/edit`)}
   >
@@ -84,6 +86,7 @@
     data-testid={`user-deactivate-btn-${data.cell}`}
     type="button"
     title="Deactivate user"
+    aria-label="Deactivate user"
     class="btn-icon-color"
     on:click|stopPropagation={() => userActivation(false)}
   >
@@ -94,6 +97,7 @@
     data-testid={`user-activate-btn-${data.cell}`}
     type="button"
     title="Reactivate user"
+    aria-label="Reactivate user"
     class="btn-icon-color"
     on:click|stopPropagation={() => userActivation(true)}
   >

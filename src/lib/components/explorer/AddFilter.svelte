@@ -202,6 +202,7 @@
       <button
         class="btn btn-icon variant-filled-primary m-1"
         data-testid="add-filter"
+        aria-label="Add Filter"
         on:click={addNewFilter}
         disabled={data.type === 'Categorical' && valuesSelected.length === 0}
       >
