@@ -94,6 +94,7 @@
     searchInput = '';
     searchTerm.set('');
     error.set('');
+    selectedFacets.set([]);
     tourEnabled = true;
     goto(isOpenAccess ? '/discover' : '/explorer');
   }

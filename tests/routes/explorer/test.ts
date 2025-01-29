@@ -83,6 +83,14 @@ test.describe('explorer', () => {
     await expect(page.locator('#search-bar')).toBeVisible();
     await expect(page.locator('#facet-side-bar')).toBeVisible();
   });
+  test('Can search with empty search bar', async ({ page }) => {
+    // Given
+    await page.goto('/explorer');
+
+    // Then
+    await expect(page.locator('#search-bar')).toBeVisible();
+    await expect(page.locator('#search-button')).not.toBeDisabled();
+  });
   test('Has filters, and searchbar when a search is from the landing page', async ({ page }) => {
     // Given
     await page.goto('/');
