@@ -4,6 +4,9 @@ import { defineConfig } from 'vite';
 
 export default () => {
   return defineConfig({
+    server: {
+      allowedHosts: ['.harvard.edu'],
+    },
     plugins: [sveltekit(), purgeCss()],
     build: {
       rollupOptions: {
