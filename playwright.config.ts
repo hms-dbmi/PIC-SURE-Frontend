@@ -12,6 +12,21 @@ const config: PlaywrightTestConfig = {
   testDir: 'tests',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
   reporter: [['list'], ['html']],
+  retries: 3,
+  projects: [
+    {
+      name: 'chromium',
+      use: { browserName: 'chromium' },
+    },
+    {
+      name: 'firefox',
+      use: { browserName: 'firefox' },
+    },
+    {
+      name: 'webkit',
+      use: { browserName: 'webkit' },
+    },
+  ],
   use: {
     permissions: ['clipboard-read', 'clipboard-write'],
     launchOptions: {
