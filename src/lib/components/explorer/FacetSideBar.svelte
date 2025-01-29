@@ -48,7 +48,9 @@
 </script>
 
 {#await facetsPromise}
-  <ProgressRadial />
+  <div class="radial-container">
+    <ProgressRadial width="w-10" />
+  </div>
 {:then newFacets}
   {#if newFacets?.length > 0}
     <Accordion rounded="rounded-container-token">
@@ -68,3 +70,12 @@
     <p>Please wait a moment, refresh the page, and try again.</p>
   </ErrorAlert>
 {/await}
+
+<style>
+  .radial-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+  }
+</style>
