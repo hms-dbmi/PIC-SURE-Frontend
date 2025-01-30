@@ -97,7 +97,7 @@
     name={facet.name}
     value={facet}
     {checked}
-    disabled={facet.count === 0}
+    disabled={facet.count === 0 && !checked}
     aria-checked={checked}
     on:click={onClick}
   />
