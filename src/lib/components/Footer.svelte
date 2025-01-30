@@ -50,7 +50,9 @@
 <footer id="main-footer" class="flex relative">
   <ul>
     {#if features.termsOfService}
-      <li><button class="hover:underline" on:click={openTermsModal}>Terms of Service</button></li>
+      <li>
+        <button class="hover:underline text-xs" on:click={openTermsModal}>Terms of Service</button>
+      </li>
     {/if}
     {#each branding?.footer?.links as link}
       <li>
