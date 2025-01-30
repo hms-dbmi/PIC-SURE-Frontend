@@ -16,7 +16,6 @@
     {placeholder}
     bind:value={searchTerm}
     on:keydown={(e) => e.key === 'Enter' && search()}
-    required
   />
   <button
     id="search-button"
