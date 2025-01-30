@@ -16,14 +16,12 @@
     {placeholder}
     bind:value={searchTerm}
     on:keydown={(e) => e.key === 'Enter' && search()}
-    required
   />
   <button
     id="search-button"
     class="btn variant-filled-primary search-button"
     aria-label="Search"
     title="Search"
-    disabled={!searchTerm}
     on:click={search}
   >
     <i class="fas fa-search"></i>
