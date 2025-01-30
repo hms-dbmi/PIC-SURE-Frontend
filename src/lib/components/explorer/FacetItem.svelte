@@ -92,12 +92,11 @@
   {/if}
   <input
     type="checkbox"
-    class={`&[aria-disabled=“true”]:opacity-75 ${checkedState(facet.name)}`}
+    class={`&[aria-disabled=“true”]:opacity-75`}
     id={facet.name}
     name={facet.name}
     value={facet}
     {checked}
-    disabled={facet.count === 0}
     aria-checked={checked}
     on:click={onClick}
   />
