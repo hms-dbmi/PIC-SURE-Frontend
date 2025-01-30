@@ -141,6 +141,7 @@ export const features: Indexable = {
   dashboard: import.meta.env?.VITE_DASHBOARD === 'true',
   dashboardDrawer: import.meta.env?.VITE_DASHBOARD_DRAWER === 'true',
   confirmDownload: import.meta.env?.VITE_CONFIRM_DOWNLOAD === 'true',
+  termsOfService: import.meta.env?.VITE_ENABLE_TOS === 'true',
 };
 
 export const settings: Indexable = {

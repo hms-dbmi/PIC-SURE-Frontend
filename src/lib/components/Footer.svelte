@@ -3,7 +3,7 @@
   const modalStore = getModalStore();
 
   import { page } from '$app/stores';
-  import { branding } from '$lib/configuration';
+  import { branding, features } from '$lib/configuration';
   import { user } from '$lib/stores/User';
 
   import TermsModal from '$lib/components/modals/TermsModal.svelte';
@@ -49,7 +49,7 @@
 {/if}
 <footer id="main-footer" class="flex relative">
   <ul>
-    {#if branding?.footer?.showTerms}
+    {#if features.termsOfService}
       <li><button class="hover:underline" on:click={openTermsModal}>Terms of Service</button></li>
     {/if}
     {#each branding?.footer?.links as link}
