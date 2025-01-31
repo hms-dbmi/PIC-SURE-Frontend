@@ -40,7 +40,7 @@
     </TabGroup>
   </section>
   <section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
-    {#each branding.apiPage.cards as card}
+    {#each branding.analysisConfig.cards as card}
       <a
         href={card.link}
         target={card.link.startsWith('http') ? '_blank' : '_self'}

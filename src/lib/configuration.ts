@@ -4,7 +4,6 @@ import type { ExpectedResultType } from './models/query/Query';
 import * as configJson from './assets/configuration.json' assert { type: 'json' };
 import { ExportType } from './models/Variant';
 import type {
-  ApiPageConfig,
   ExplorePageConfig,
   FooterConfig,
   HelpConfig,
@@ -41,7 +40,6 @@ export const branding: Branding = {
   },
   sitemap: [] as SiteMapConfig[],
   footer: {} as FooterConfig,
-  apiPage: {} as ApiPageConfig,
   explorePage: {
     tourSearchTerm: import.meta.env?.EXPLORE_TOUR_SEARCH_TERM || 'age',
   } as ExplorePageConfig,
@@ -54,7 +52,6 @@ export const branding: Branding = {
 
 export const initializeBranding = () => {
   branding.applicationName = configJson.applicationName;
-  branding.apiPage = configJson.apiPage;
   branding.explorePage = { ...branding.explorePage, ...configJson.explorePage };
   branding.landing = configJson.landing;
   branding.login = configJson.login;
