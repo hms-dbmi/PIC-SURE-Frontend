@@ -1,13 +1,13 @@
 import './shims.js';
-import fs$1 from 'node:fs';
-import path from 'node:path';
-import * as fs from 'fs';
-import { readdirSync, statSync } from 'fs';
-import { resolve, join, normalize } from 'path';
-import * as qs from 'querystring';
+import * as fs from 'node:fs';
+import fs__default, { readdirSync, statSync, createReadStream } from 'node:fs';
+import path, { resolve, join, normalize } from 'node:path';
+import process from 'node:process';
+import * as qs from 'node:querystring';
 import { fileURLToPath } from 'node:url';
+import { Readable } from 'node:stream';
 import { Server } from './server/index.js';
-import { manifest, prerendered } from './server/manifest.js';
+import { manifest, prerendered, base } from './server/manifest.js';
 import { env } from './env.js';
 
 function totalist(dir, callback, pre='') {
@@ -38,7 +38,7 @@ function totalist(dir, callback, pre='') {
  * @param {Request} req
  * @returns {ParsedURL|void}
  */
-function parse$1(req) {
+function parse(req) {
 	let raw = req.url;
 	if (raw == null) return;
 
@@ -666,7 +666,7 @@ function sirv (dir, opts={}) {
 
 	return function (req, res, next) {
 		let extns = [''];
-		let pathname = parse$1(req).pathname;
+		let pathname = parse(req).pathname;
 		let val = req.headers['accept-encoding'] || '';
 		if (gzips && val.includes('gzip')) extns.unshift(...gzips);
 		if (brots && /(br|brotli)/i.test(val)) extns.unshift(...brots);
@@ -696,230 +696,240 @@ function sirv (dir, opts={}) {
 
 var setCookie = {exports: {}};
 
-var defaultParseOptions = {
-  decodeValues: true,
-  map: false,
-  silent: false,
-};
+var hasRequiredSetCookie;
 
-function isNonEmptyString(str) {
-  return typeof str === "string" && !!str.trim();
+function requireSetCookie () {
+	if (hasRequiredSetCookie) return setCookie.exports;
+	hasRequiredSetCookie = 1;
+
+	var defaultParseOptions = {
+	  decodeValues: true,
+	  map: false,
+	  silent: false,
+	};
+
+	function isNonEmptyString(str) {
+	  return typeof str === "string" && !!str.trim();
+	}
+
+	function parseString(setCookieValue, options) {
+	  var parts = setCookieValue.split(";").filter(isNonEmptyString);
+
+	  var nameValuePairStr = parts.shift();
+	  var parsed = parseNameValuePair(nameValuePairStr);
+	  var name = parsed.name;
+	  var value = parsed.value;
+
+	  options = options
+	    ? Object.assign({}, defaultParseOptions, options)
+	    : defaultParseOptions;
+
+	  try {
+	    value = options.decodeValues ? decodeURIComponent(value) : value; // decode cookie value
+	  } catch (e) {
+	    console.error(
+	      "set-cookie-parser encountered an error while decoding a cookie with value '" +
+	        value +
+	        "'. Set options.decodeValues to false to disable this feature.",
+	      e
+	    );
+	  }
+
+	  var cookie = {
+	    name: name,
+	    value: value,
+	  };
+
+	  parts.forEach(function (part) {
+	    var sides = part.split("=");
+	    var key = sides.shift().trimLeft().toLowerCase();
+	    var value = sides.join("=");
+	    if (key === "expires") {
+	      cookie.expires = new Date(value);
+	    } else if (key === "max-age") {
+	      cookie.maxAge = parseInt(value, 10);
+	    } else if (key === "secure") {
+	      cookie.secure = true;
+	    } else if (key === "httponly") {
+	      cookie.httpOnly = true;
+	    } else if (key === "samesite") {
+	      cookie.sameSite = value;
+	    } else {
+	      cookie[key] = value;
+	    }
+	  });
+
+	  return cookie;
+	}
+
+	function parseNameValuePair(nameValuePairStr) {
+	  // Parses name-value-pair according to rfc6265bis draft
+
+	  var name = "";
+	  var value = "";
+	  var nameValueArr = nameValuePairStr.split("=");
+	  if (nameValueArr.length > 1) {
+	    name = nameValueArr.shift();
+	    value = nameValueArr.join("="); // everything after the first =, joined by a "=" if there was more than one part
+	  } else {
+	    value = nameValuePairStr;
+	  }
+
+	  return { name: name, value: value };
+	}
+
+	function parse(input, options) {
+	  options = options
+	    ? Object.assign({}, defaultParseOptions, options)
+	    : defaultParseOptions;
+
+	  if (!input) {
+	    if (!options.map) {
+	      return [];
+	    } else {
+	      return {};
+	    }
+	  }
+
+	  if (input.headers) {
+	    if (typeof input.headers.getSetCookie === "function") {
+	      // for fetch responses - they combine headers of the same type in the headers array,
+	      // but getSetCookie returns an uncombined array
+	      input = input.headers.getSetCookie();
+	    } else if (input.headers["set-cookie"]) {
+	      // fast-path for node.js (which automatically normalizes header names to lower-case
+	      input = input.headers["set-cookie"];
+	    } else {
+	      // slow-path for other environments - see #25
+	      var sch =
+	        input.headers[
+	          Object.keys(input.headers).find(function (key) {
+	            return key.toLowerCase() === "set-cookie";
+	          })
+	        ];
+	      // warn if called on a request-like object with a cookie header rather than a set-cookie header - see #34, 36
+	      if (!sch && input.headers.cookie && !options.silent) {
+	        console.warn(
+	          "Warning: set-cookie-parser appears to have been called on a request object. It is designed to parse Set-Cookie headers from responses, not Cookie headers from requests. Set the option {silent: true} to suppress this warning."
+	        );
+	      }
+	      input = sch;
+	    }
+	  }
+	  if (!Array.isArray(input)) {
+	    input = [input];
+	  }
+
+	  options = options
+	    ? Object.assign({}, defaultParseOptions, options)
+	    : defaultParseOptions;
+
+	  if (!options.map) {
+	    return input.filter(isNonEmptyString).map(function (str) {
+	      return parseString(str, options);
+	    });
+	  } else {
+	    var cookies = {};
+	    return input.filter(isNonEmptyString).reduce(function (cookies, str) {
+	      var cookie = parseString(str, options);
+	      cookies[cookie.name] = cookie;
+	      return cookies;
+	    }, cookies);
+	  }
+	}
+
+	/*
+	  Set-Cookie header field-values are sometimes comma joined in one string. This splits them without choking on commas
+	  that are within a single set-cookie field-value, such as in the Expires portion.
+
+	  This is uncommon, but explicitly allowed - see https://tools.ietf.org/html/rfc2616#section-4.2
+	  Node.js does this for every header *except* set-cookie - see https://github.com/nodejs/node/blob/d5e363b77ebaf1caf67cd7528224b651c86815c1/lib/_http_incoming.js#L128
+	  React Native's fetch does this for *every* header, including set-cookie.
+
+	  Based on: https://github.com/google/j2objc/commit/16820fdbc8f76ca0c33472810ce0cb03d20efe25
+	  Credits to: https://github.com/tomball for original and https://github.com/chrusart for JavaScript implementation
+	*/
+	function splitCookiesString(cookiesString) {
+	  if (Array.isArray(cookiesString)) {
+	    return cookiesString;
+	  }
+	  if (typeof cookiesString !== "string") {
+	    return [];
+	  }
+
+	  var cookiesStrings = [];
+	  var pos = 0;
+	  var start;
+	  var ch;
+	  var lastComma;
+	  var nextStart;
+	  var cookiesSeparatorFound;
+
+	  function skipWhitespace() {
+	    while (pos < cookiesString.length && /\s/.test(cookiesString.charAt(pos))) {
+	      pos += 1;
+	    }
+	    return pos < cookiesString.length;
+	  }
+
+	  function notSpecialChar() {
+	    ch = cookiesString.charAt(pos);
+
+	    return ch !== "=" && ch !== ";" && ch !== ",";
+	  }
+
+	  while (pos < cookiesString.length) {
+	    start = pos;
+	    cookiesSeparatorFound = false;
+
+	    while (skipWhitespace()) {
+	      ch = cookiesString.charAt(pos);
+	      if (ch === ",") {
+	        // ',' is a cookie separator if we have later first '=', not ';' or ','
+	        lastComma = pos;
+	        pos += 1;
+
+	        skipWhitespace();
+	        nextStart = pos;
+
+	        while (pos < cookiesString.length && notSpecialChar()) {
+	          pos += 1;
+	        }
+
+	        // currently special character
+	        if (pos < cookiesString.length && cookiesString.charAt(pos) === "=") {
+	          // we found cookies separator
+	          cookiesSeparatorFound = true;
+	          // pos is inside the next cookie, so back up and return it.
+	          pos = nextStart;
+	          cookiesStrings.push(cookiesString.substring(start, lastComma));
+	          start = pos;
+	        } else {
+	          // in param ',' or param separator ';',
+	          // we continue from that comma
+	          pos = lastComma + 1;
+	        }
+	      } else {
+	        pos += 1;
+	      }
+	    }
+
+	    if (!cookiesSeparatorFound || pos >= cookiesString.length) {
+	      cookiesStrings.push(cookiesString.substring(start, cookiesString.length));
+	    }
+	  }
+
+	  return cookiesStrings;
+	}
+
+	setCookie.exports = parse;
+	setCookie.exports.parse = parse;
+	setCookie.exports.parseString = parseString;
+	setCookie.exports.splitCookiesString = splitCookiesString;
+	return setCookie.exports;
 }
 
-function parseString(setCookieValue, options) {
-  var parts = setCookieValue.split(";").filter(isNonEmptyString);
-
-  var nameValuePairStr = parts.shift();
-  var parsed = parseNameValuePair(nameValuePairStr);
-  var name = parsed.name;
-  var value = parsed.value;
-
-  options = options
-    ? Object.assign({}, defaultParseOptions, options)
-    : defaultParseOptions;
-
-  try {
-    value = options.decodeValues ? decodeURIComponent(value) : value; // decode cookie value
-  } catch (e) {
-    console.error(
-      "set-cookie-parser encountered an error while decoding a cookie with value '" +
-        value +
-        "'. Set options.decodeValues to false to disable this feature.",
-      e
-    );
-  }
-
-  var cookie = {
-    name: name,
-    value: value,
-  };
-
-  parts.forEach(function (part) {
-    var sides = part.split("=");
-    var key = sides.shift().trimLeft().toLowerCase();
-    var value = sides.join("=");
-    if (key === "expires") {
-      cookie.expires = new Date(value);
-    } else if (key === "max-age") {
-      cookie.maxAge = parseInt(value, 10);
-    } else if (key === "secure") {
-      cookie.secure = true;
-    } else if (key === "httponly") {
-      cookie.httpOnly = true;
-    } else if (key === "samesite") {
-      cookie.sameSite = value;
-    } else {
-      cookie[key] = value;
-    }
-  });
-
-  return cookie;
-}
-
-function parseNameValuePair(nameValuePairStr) {
-  // Parses name-value-pair according to rfc6265bis draft
-
-  var name = "";
-  var value = "";
-  var nameValueArr = nameValuePairStr.split("=");
-  if (nameValueArr.length > 1) {
-    name = nameValueArr.shift();
-    value = nameValueArr.join("="); // everything after the first =, joined by a "=" if there was more than one part
-  } else {
-    value = nameValuePairStr;
-  }
-
-  return { name: name, value: value };
-}
-
-function parse(input, options) {
-  options = options
-    ? Object.assign({}, defaultParseOptions, options)
-    : defaultParseOptions;
-
-  if (!input) {
-    if (!options.map) {
-      return [];
-    } else {
-      return {};
-    }
-  }
-
-  if (input.headers) {
-    if (typeof input.headers.getSetCookie === "function") {
-      // for fetch responses - they combine headers of the same type in the headers array,
-      // but getSetCookie returns an uncombined array
-      input = input.headers.getSetCookie();
-    } else if (input.headers["set-cookie"]) {
-      // fast-path for node.js (which automatically normalizes header names to lower-case
-      input = input.headers["set-cookie"];
-    } else {
-      // slow-path for other environments - see #25
-      var sch =
-        input.headers[
-          Object.keys(input.headers).find(function (key) {
-            return key.toLowerCase() === "set-cookie";
-          })
-        ];
-      // warn if called on a request-like object with a cookie header rather than a set-cookie header - see #34, 36
-      if (!sch && input.headers.cookie && !options.silent) {
-        console.warn(
-          "Warning: set-cookie-parser appears to have been called on a request object. It is designed to parse Set-Cookie headers from responses, not Cookie headers from requests. Set the option {silent: true} to suppress this warning."
-        );
-      }
-      input = sch;
-    }
-  }
-  if (!Array.isArray(input)) {
-    input = [input];
-  }
-
-  options = options
-    ? Object.assign({}, defaultParseOptions, options)
-    : defaultParseOptions;
-
-  if (!options.map) {
-    return input.filter(isNonEmptyString).map(function (str) {
-      return parseString(str, options);
-    });
-  } else {
-    var cookies = {};
-    return input.filter(isNonEmptyString).reduce(function (cookies, str) {
-      var cookie = parseString(str, options);
-      cookies[cookie.name] = cookie;
-      return cookies;
-    }, cookies);
-  }
-}
-
-/*
-  Set-Cookie header field-values are sometimes comma joined in one string. This splits them without choking on commas
-  that are within a single set-cookie field-value, such as in the Expires portion.
-
-  This is uncommon, but explicitly allowed - see https://tools.ietf.org/html/rfc2616#section-4.2
-  Node.js does this for every header *except* set-cookie - see https://github.com/nodejs/node/blob/d5e363b77ebaf1caf67cd7528224b651c86815c1/lib/_http_incoming.js#L128
-  React Native's fetch does this for *every* header, including set-cookie.
-
-  Based on: https://github.com/google/j2objc/commit/16820fdbc8f76ca0c33472810ce0cb03d20efe25
-  Credits to: https://github.com/tomball for original and https://github.com/chrusart for JavaScript implementation
-*/
-function splitCookiesString(cookiesString) {
-  if (Array.isArray(cookiesString)) {
-    return cookiesString;
-  }
-  if (typeof cookiesString !== "string") {
-    return [];
-  }
-
-  var cookiesStrings = [];
-  var pos = 0;
-  var start;
-  var ch;
-  var lastComma;
-  var nextStart;
-  var cookiesSeparatorFound;
-
-  function skipWhitespace() {
-    while (pos < cookiesString.length && /\s/.test(cookiesString.charAt(pos))) {
-      pos += 1;
-    }
-    return pos < cookiesString.length;
-  }
-
-  function notSpecialChar() {
-    ch = cookiesString.charAt(pos);
-
-    return ch !== "=" && ch !== ";" && ch !== ",";
-  }
-
-  while (pos < cookiesString.length) {
-    start = pos;
-    cookiesSeparatorFound = false;
-
-    while (skipWhitespace()) {
-      ch = cookiesString.charAt(pos);
-      if (ch === ",") {
-        // ',' is a cookie separator if we have later first '=', not ';' or ','
-        lastComma = pos;
-        pos += 1;
-
-        skipWhitespace();
-        nextStart = pos;
-
-        while (pos < cookiesString.length && notSpecialChar()) {
-          pos += 1;
-        }
-
-        // currently special character
-        if (pos < cookiesString.length && cookiesString.charAt(pos) === "=") {
-          // we found cookies separator
-          cookiesSeparatorFound = true;
-          // pos is inside the next cookie, so back up and return it.
-          pos = nextStart;
-          cookiesStrings.push(cookiesString.substring(start, lastComma));
-          start = pos;
-        } else {
-          // in param ',' or param separator ';',
-          // we continue from that comma
-          pos = lastComma + 1;
-        }
-      } else {
-        pos += 1;
-      }
-    }
-
-    if (!cookiesSeparatorFound || pos >= cookiesString.length) {
-      cookiesStrings.push(cookiesString.substring(start, cookiesString.length));
-    }
-  }
-
-  return cookiesStrings;
-}
-
-setCookie.exports = parse;
-setCookie.exports.parse = parse;
-setCookie.exports.parseString = parseString;
-var splitCookiesString_1 = setCookie.exports.splitCookiesString = splitCookiesString;
+var setCookieExports = /*@__PURE__*/ requireSetCookie();
 
 /**
  * An error that was thrown from within the SvelteKit runtime that is not fatal and doesn't result in a 500, such as a 404.
@@ -972,11 +982,15 @@ function get_raw_body(req, body_size_limit) {
 	return new ReadableStream({
 		start(controller) {
 			if (body_size_limit !== undefined && content_length > body_size_limit) {
-				const error = new SvelteKitError(
-					413,
-					'Payload Too Large',
-					`Content-length of ${content_length} exceeds limit of ${body_size_limit} bytes.`
-				);
+				let message = `Content-length of ${content_length} exceeds limit of ${body_size_limit} bytes.`;
+
+				if (body_size_limit === 0) {
+					// https://github.com/sveltejs/kit/pull/11589
+					// TODO this exists to aid migration — remove in a future version
+					message += ' To disable body size limits, specify Infinity rather than 0.';
+				}
+
+				const error = new SvelteKitError(413, 'Payload Too Large', message);
 
 				controller.error(error);
 				return;
@@ -1035,13 +1049,32 @@ function get_raw_body(req, body_size_limit) {
  * }} options
  * @returns {Promise<Request>}
  */
+// TODO 3.0 make the signature synchronous?
+// eslint-disable-next-line @typescript-eslint/require-await
 async function getRequest({ request, base, bodySizeLimit }) {
+	let headers = /** @type {Record<string, string>} */ (request.headers);
+	if (request.httpVersionMajor >= 2) {
+		// the Request constructor rejects headers with ':' in the name
+		headers = Object.assign({}, headers);
+		// https://www.rfc-editor.org/rfc/rfc9113.html#section-8.3.1-2.3.5
+		if (headers[':authority']) {
+			headers.host = headers[':authority'];
+		}
+		delete headers[':authority'];
+		delete headers[':method'];
+		delete headers[':path'];
+		delete headers[':scheme'];
+	}
+
 	return new Request(base + request.url, {
 		// @ts-expect-error
 		duplex: 'half',
 		method: request.method,
-		headers: /** @type {Record<string, string>} */ (request.headers),
-		body: get_raw_body(request, bodySizeLimit)
+		headers: Object.entries(headers),
+		body:
+			request.method === 'GET' || request.method === 'HEAD'
+				? undefined
+				: get_raw_body(request, bodySizeLimit)
 	});
 }
 
@@ -1050,13 +1083,15 @@ async function getRequest({ request, base, bodySizeLimit }) {
  * @param {Response} response
  * @returns {Promise<void>}
  */
+// TODO 3.0 make the signature synchronous?
+// eslint-disable-next-line @typescript-eslint/require-await
 async function setResponse(res, response) {
 	for (const [key, value] of response.headers) {
 		try {
 			res.setHeader(
 				key,
 				key === 'set-cookie'
-					? splitCookiesString_1(
+					? setCookieExports.splitCookiesString(
 							// This is absurd but necessary, TODO: investigate why
 							/** @type {string}*/ (response.headers.get(key))
 						)
@@ -1124,19 +1159,56 @@ async function setResponse(res, response) {
 	}
 }
 
+/**
+ * Converts a file on disk to a readable stream
+ * @param {string} file
+ * @returns {ReadableStream}
+ * @since 2.4.0
+ */
+function createReadableStream(file) {
+	return /** @type {ReadableStream} */ (Readable.toWeb(createReadStream(file)));
+}
+
 /* global "" */
 
 const server = new Server(manifest);
-await server.init({ env: process.env });
+
 const origin = env('ORIGIN', undefined);
 const xff_depth = parseInt(env('XFF_DEPTH', '1'));
 const address_header = env('ADDRESS_HEADER', '').toLowerCase();
 const protocol_header = env('PROTOCOL_HEADER', '').toLowerCase();
 const host_header = env('HOST_HEADER', 'host').toLowerCase();
 const port_header = env('PORT_HEADER', '').toLowerCase();
-const body_size_limit = parseInt(env('BODY_SIZE_LIMIT', '524288')) || undefined;
+
+/**
+ * @param {string} bytes
+ */
+function parse_body_size_limit(bytes) {
+	const multiplier =
+		{
+			K: 1024,
+			M: 1024 * 1024,
+			G: 1024 * 1024 * 1024
+		}[bytes[bytes.length - 1]?.toUpperCase()] ?? 1;
+	return Number(multiplier != 1 ? bytes.substring(0, bytes.length - 1) : bytes) * multiplier;
+}
+
+const body_size_limit = parse_body_size_limit(env('BODY_SIZE_LIMIT', '512K'));
+
+if (isNaN(body_size_limit)) {
+	throw new Error(
+		`Invalid BODY_SIZE_LIMIT: '${env('BODY_SIZE_LIMIT')}'. Please provide a numeric value.`
+	);
+}
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
+
+const asset_dir = `${dir}/client${base}`;
+
+await server.init({
+	env: process.env,
+	read: (file) => createReadableStream(`${asset_dir}/${file}`)
+});
 
 /**
  * @param {string} path
@@ -1144,7 +1216,7 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
  */
 function serve(path, client = false) {
 	return (
-		fs$1.existsSync(path) &&
+		fs__default.existsSync(path) &&
 		sirv(path, {
 			etag: true,
 			gzip: true,
@@ -1167,7 +1239,7 @@ function serve_prerendered() {
 	const handler = serve(path.join(dir, 'prerendered'));
 
 	return (req, res, next) => {
-		let { pathname, search, query } = parse$1(req);
+		let { pathname, search, query } = parse(req);
 
 		try {
 			pathname = decodeURIComponent(pathname);
@@ -1203,7 +1275,7 @@ const ssr = async (req, res) => {
 		});
 	} catch {
 		res.statusCode = 400;
-		res.end('Invalid request body');
+		res.end('Bad Request');
 		return;
 	}
 
