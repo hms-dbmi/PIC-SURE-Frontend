@@ -13,6 +13,7 @@ import type {
   LoginConfig,
   SiteMapConfig,
   PrivacyConfig,
+  AnalysisConfig,
 } from './types';
 
 export interface Branding {
@@ -29,6 +30,7 @@ export interface Branding {
   login: LoginConfig;
   help: HelpConfig;
   privacyPolicy: PrivacyConfig;
+  analysisConfig: AnalysisConfig;
 }
 
 export const branding: Branding = {
@@ -47,6 +49,7 @@ export const branding: Branding = {
   login: {} as LoginConfig,
   help: {} as HelpConfig,
   privacyPolicy: {} as PrivacyConfig,
+  analysisConfig: {} as AnalysisConfig,
 };
 
 export const initializeBranding = () => {
@@ -59,6 +62,7 @@ export const initializeBranding = () => {
   branding.footer = configJson.footer;
   branding.sitemap = configJson.sitemap as SiteMapConfig[];
   branding.privacyPolicy = configJson.privacyPolicy;
+  branding.analysisConfig = configJson.analysisPage;
 };
 
 export const routes: Route[] = [

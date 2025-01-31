@@ -121,6 +121,12 @@
     ],
     "stats": ["Variables", "Participants", "Data Sources"]
   },
+  "analysisPage": {
+    "instructions": {
+      "connection": "To connect to the PIC-SURE Application Programming Interface (API), you will need your personal access token. Copy your token and save as a text file called \"token.txt\" in the working directory of your chosen analysis workspace.",
+      "execution": "To start your analysis, copy and execute the following code in your preferred analysis environment to connect to the PIC-SURE API. Note that you will need your personal access token to complete the connection."
+    }
+  },
   "login": {
     "description": "Where searching for, filtering on, and analyzing data is made simple.",
     "showSiteName": false,

@@ -88,3 +88,10 @@ export interface PrivacyConfig {
   content: string;
   url: string;
 }
+
+export interface AnalysisConfig {
+  instructions: {
+    connection: string;
+    execution: string;
+  };
+}
