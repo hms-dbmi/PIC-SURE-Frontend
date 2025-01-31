@@ -68,6 +68,11 @@ export function put(path: string, data: any, headers?: any) {
 async function handleResponse(res: Response) {
   if (res.ok || res.status === 422) {
     refreshToken(res);
+    const contentType = res.headers.get('Content-Type') || '';
+    if (contentType.includes('application/octet-stream')) {
+      return await res.arrayBuffer();
+    }
+
     const text = await res.text();
     try {
       return JSON.parse(text);
