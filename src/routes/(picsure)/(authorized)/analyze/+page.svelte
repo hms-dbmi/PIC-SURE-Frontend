@@ -18,9 +18,11 @@
       The PIC-SURE Application Programming Interface (API) can be used in an analysis environment of
       your choice. This API is available in both Python and R coding languages.
     </p>
-    <p>{branding.analysisConfig.instructions.connection}</p>
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+    <p>{@html branding.analysisConfig.instructions.connection}</p>
     <div class="flex justify-center"><UserToken /></div>
-    <p>{branding.analysisConfig.instructions.execution}</p>
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+    <p>{@html branding.analysisConfig.instructions.execution}</p>
     <TabGroup class="card p-4">
       <Tab bind:group={tabSet} name="python" value={0}>Python</Tab>
       <Tab bind:group={tabSet} name="r" value={1}>R</Tab>
