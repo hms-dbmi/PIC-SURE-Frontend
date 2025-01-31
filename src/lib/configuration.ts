@@ -110,6 +110,11 @@ export const routes: Route[] = [
   { path: '/help', text: 'Help' },
 ];
 
+export const environment = {
+  platform: import.meta.env?.VITE_PLATFORM || 'PLATFORM_NOT_SET',
+  env: import.meta.env?.VITE_ENV || 'ENV_NOT_SET',
+};
+
 export const features: Indexable = {
   explorer: {
     allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
