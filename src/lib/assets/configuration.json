@@ -52,15 +52,6 @@
       }
     ]
   },
-  "apiPage": {
-    "cards": [
-      {
-        "header": "Setting Up the PIC-SURE API",
-        "body": "Step-by-step instructions to get started using the PIC-SURE API",
-        "link": "/analyze/example"
-      }
-    ]
-  },
   "explorePage": {
     "additionalColumns": [
       {
@@ -119,6 +110,19 @@
       }
     ],
     "stats": ["Variables", "Participants", "Data Sources"]
+  },
+  "analysisPage": {
+    "cards": [
+      {
+        "header": "Setting Up the PIC-SURE API",
+        "body": "Step-by-step instructions to get started using the PIC-SURE API",
+        "link": "/analyze/example"
+      }
+    ],
+    "instructions": {
+      "connection": "To connect to the PIC-SURE Application Programming Interface (API), you will need your personal access token. Copy your token and save as a text file called \"token.txt\" in the working directory of your chosen analysis workspace.",
+      "execution": "To start your analysis, copy and execute the following code in your preferred analysis environment to connect to the PIC-SURE API. Note that you will need your personal access token to complete the connection."
+    }
   },
   "login": {
     "description": "Where searching for, filtering on, and analyzing data is made simple.",

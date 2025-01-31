@@ -18,33 +18,11 @@
       The PIC-SURE Application Programming Interface (API) can be used in an analysis environment of
       your choice. This API is available in both Python and R coding languages.
     </p>
-    <p>
-      To connect to the PIC-SURE Application Programming Interface (API), you will need your
-      personal access token. Copy your token and save as a text file called “token.txt” in the
-      working directory of your chosen analysis workspace, such as <a
-        href="https://platform.sb.biodatacatalyst.nhlbi.nih.gov/home"
-        target="_blank"
-        title="BioData Catalyst Powered by Seven
-      Bridges"
-        class="anchor font-bold">BioData Catalyst Powered by Seven Bridges</a
-      >
-      or
-      <a
-        href="https://terra.biodatacatalyst.nhlbi.nih.gov/#workspaces"
-        target="_blank"
-        title="BioData Catalyst Powered by Terra"
-        class="anchor font-bold">BioData Catalyst Powered by Terra</a
-      >.
-    </p>
-    <div class="flex justify-center">
-      <UserToken />
-    </div>
-    <p>
-      To start your analysis, copy and execute the following code in an analysis environment, such
-      as BioData Catalyst Powered by Seven Bridges or BioData Catalyst Powered by Terra, to connect
-      to the PIC-SURE API. Note that you will need your personal access token to complete the
-      connection.
-    </p>
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+    <p>{@html branding.analysisConfig.instructions.connection}</p>
+    <div class="flex justify-center"><UserToken /></div>
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+    <p>{@html branding.analysisConfig.instructions.execution}</p>
     <TabGroup class="card p-4">
       <Tab bind:group={tabSet} name="python" value={0}>Python</Tab>
       <Tab bind:group={tabSet} name="r" value={1}>R</Tab>
@@ -64,7 +42,7 @@
     </TabGroup>
   </section>
   <section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
-    {#each branding.apiPage.cards as card}
+    {#each branding.analysisConfig.cards as card}
       <a
         href={card.link}
         target={card.link.startsWith('http') ? '_blank' : '_self'}

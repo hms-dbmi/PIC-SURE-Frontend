@@ -4,7 +4,6 @@ import type { ExpectedResultType } from './models/query/Query';
 import * as configJson from './assets/configuration.json' assert { type: 'json' };
 import { ExportType } from './models/Variant';
 import type {
-  ApiPageConfig,
   ExplorePageConfig,
   FooterConfig,
   HelpConfig,
@@ -13,6 +12,7 @@ import type {
   LoginConfig,
   SiteMapConfig,
   PrivacyConfig,
+  AnalysisConfig,
 } from './types';
 
 export interface Branding {
@@ -29,6 +29,7 @@ export interface Branding {
   login: LoginConfig;
   help: HelpConfig;
   privacyPolicy: PrivacyConfig;
+  analysisConfig: AnalysisConfig;
 }
 
 export const branding: Branding = {
@@ -39,7 +40,6 @@ export const branding: Branding = {
   },
   sitemap: [] as SiteMapConfig[],
   footer: {} as FooterConfig,
-  apiPage: {} as ApiPageConfig,
   explorePage: {
     tourSearchTerm: import.meta.env?.EXPLORE_TOUR_SEARCH_TERM || 'age',
   } as ExplorePageConfig,
@@ -47,11 +47,11 @@ export const branding: Branding = {
   login: {} as LoginConfig,
   help: {} as HelpConfig,
   privacyPolicy: {} as PrivacyConfig,
+  analysisConfig: {} as AnalysisConfig,
 };
 
 export const initializeBranding = () => {
   branding.applicationName = configJson.applicationName;
-  branding.apiPage = configJson.apiPage;
   branding.explorePage = { ...branding.explorePage, ...configJson.explorePage };
   branding.landing = configJson.landing;
   branding.login = configJson.login;
@@ -59,6 +59,7 @@ export const initializeBranding = () => {
   branding.footer = configJson.footer;
   branding.sitemap = configJson.sitemap as SiteMapConfig[];
   branding.privacyPolicy = configJson.privacyPolicy;
+  branding.analysisConfig = configJson.analysisPage;
 };
 
 export const routes: Route[] = [

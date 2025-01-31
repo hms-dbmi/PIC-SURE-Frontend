@@ -29,14 +29,6 @@ export interface FooterConfig {
   }>;
 }
 
-export interface ApiPageConfig {
-  cards: Array<{
-    header: string;
-    body: string;
-    link: string;
-  }>;
-}
-
 export interface ExplorePageConfig {
   additionalColumns: Column[];
   tourSearchTerm: string;
@@ -86,4 +78,16 @@ export interface PrivacyConfig {
   title: string;
   content: string;
   url: string;
+}
+
+export interface AnalysisConfig {
+  cards: Array<{
+    header: string;
+    body: string;
+    link: string;
+  }>;
+  instructions: {
+    connection: string;
+    execution: string;
+  };
 }
