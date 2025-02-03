@@ -16,7 +16,7 @@ export async function loadConnections() {
   loaded.set(true);
 }
 
-async function getConnection(uuid: string) {
+export async function getConnection(uuid: string) {
   const store = get(connections);
   const connection = store.find((r) => r.uuid === uuid);
   if (connection) {

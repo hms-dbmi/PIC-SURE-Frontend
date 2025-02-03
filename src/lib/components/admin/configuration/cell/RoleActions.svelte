@@ -41,16 +41,6 @@
 
 <div class="w-20 min-w-20">
   <button
-    data-testid={`role-view-btn-${data.cell}`}
-    type="button"
-    title="View"
-    class="btn-icon-color"
-    on:click|stopPropagation={() => goto(`/admin/configuration/role/${data.cell}`)}
-  >
-    <i class="fa-solid fa-circle-info fa-xl"></i>
-    <span class="sr-only">View Role</span>
-  </button>
-  <button
     data-testid={`role-edit-btn-${data.cell}`}
     type="button"
     title="Edit"

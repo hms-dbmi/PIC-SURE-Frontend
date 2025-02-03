@@ -6,10 +6,10 @@ import * as api from '$lib/api';
 const PRIV_PATH = 'psama/privilege';
 
 const loaded = writable(false);
-const privileges: Writable<Privilege[]> = writable([]);
-const privilegeList = derived(privileges, ($p) => $p.map((p) => [p.name, p.uuid || '']), []);
+export const privileges: Writable<Privilege[]> = writable([]);
+export const privilegeList = derived(privileges, ($p) => $p.map((p) => [p.name, p.uuid || '']), []);
 
-async function loadPrivileges() {
+export async function loadPrivileges() {
   if (get(loaded)) return;
 
   const res = await api.get(PRIV_PATH);
@@ -17,7 +17,7 @@ async function loadPrivileges() {
   loaded.set(true);
 }
 
-async function getPrivilege(uuid: string) {
+export async function getPrivilege(uuid: string) {
   const store: Privilege[] = get(privileges);
   const privilege = store.find((p) => p.uuid === uuid);
   if (privilege) {
@@ -28,7 +28,7 @@ async function getPrivilege(uuid: string) {
   return mapPrivilege(res);
 }
 
-async function addPrivilege(privilege: Privilege) {
+export async function addPrivilege(privilege: Privilege) {
   const res = await api.post(PRIV_PATH, [
     {
       ...privilege,
@@ -42,7 +42,7 @@ async function addPrivilege(privilege: Privilege) {
   privileges.set(store);
 }
 
-async function updatePrivilege(privilege: Privilege) {
+export async function updatePrivilege(privilege: Privilege) {
   const res = await api.put(PRIV_PATH, [
     {
       ...privilege,
@@ -61,7 +61,7 @@ async function updatePrivilege(privilege: Privilege) {
   privileges.set(store);
 }
 
-async function deletePrivilege(uuid: string) {
+export async function deletePrivilege(uuid: string) {
   await api.del(`${PRIV_PATH}/${uuid}`);
 
   const store: Privilege[] = get(privileges);
