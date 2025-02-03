@@ -4,23 +4,23 @@
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
-  import PrivilegeForm from '$lib/components/admin/authorization/PrivilegeForm.svelte';
+  import RoleForm from '$lib/components/admin/configuration/RoleForm.svelte';
 
-  import ApplicationStore from '$lib/stores/Application';
-  const { applicationList, loadApplications } = ApplicationStore;
+  import PrivilegesStore from '$lib/stores/Privileges';
+  const { privilegeList, loadPrivileges } = PrivilegesStore;
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | New Privilege</title>
+  <title>{branding.applicationName} | New Role</title>
 </svelte:head>
 
-<Content title="New Privilege" backUrl="/admin/authorization" backTitle="Back to Authorization">
-  {#await loadApplications()}
+<Content title="New Role" backUrl="/admin/configuration" backTitle="Back to Authorization">
+  {#await loadPrivileges()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />
   {:then}
-    <section id="privilege-new">
-      <PrivilegeForm applicationList={$applicationList} />
+    <section id="role-new">
+      <RoleForm privilegeList={$privilegeList} />
     </section>
   {:catch}
     <ErrorAlert title="API Error">

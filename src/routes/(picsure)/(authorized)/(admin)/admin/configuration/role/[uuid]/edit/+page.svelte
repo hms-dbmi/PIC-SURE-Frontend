@@ -5,7 +5,7 @@
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
-  import RoleForm from '$lib/components/admin/authorization/RoleForm.svelte';
+  import RoleForm from '$lib/components/admin/configuration/RoleForm.svelte';
 
   import type { Role } from '$lib/models/Role';
   import RolesStore from '$lib/stores/Roles';
@@ -26,7 +26,7 @@
   <title>{branding.applicationName} | Edit Role</title>
 </svelte:head>
 
-<Content title="Edit Role" backUrl="/admin/authorization" backTitle="Back to Authorization">
+<Content title="Edit Role" backUrl="/admin/configuration" backTitle="Back to Authorization">
   {#await load()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />

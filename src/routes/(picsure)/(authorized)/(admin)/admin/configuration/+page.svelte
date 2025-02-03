@@ -8,9 +8,9 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
-  import RoleActions from '$lib/components/admin/authorization/cell/RoleActions.svelte';
-  import PrivilegeActions from '$lib/components/admin/authorization/cell/PrivilegeActions.svelte';
-  import Application from '$lib/components/admin/authorization/cell/Application.svelte';
+  import RoleActions from '$lib/components/admin/configuration/cell/RoleActions.svelte';
+  import PrivilegeActions from '$lib/components/admin/configuration/cell/PrivilegeActions.svelte';
+  import Application from '$lib/components/admin/configuration/cell/Application.svelte';
 
   import PrivilegesStore from '$lib/stores/Privileges';
   import RolesStore from '$lib/stores/Roles';
@@ -49,7 +49,7 @@
 
   const rowClickHandler = (path: string) => (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(`/admin/authorization/${path}/${uuid}`);
+    goto(`/admin/configuration/${path}/${uuid}`);
   };
   const roleRowCLick = rowClickHandler('role');
   const privilegeRowClick = rowClickHandler('privilege');
@@ -71,7 +71,7 @@
           <a
             data-testid="add-role"
             class="btn variant-ghost-primary hover:variant-filled-primary"
-            href="/admin/authorization/role/new"
+            href="/admin/configuration/role/new"
           >
             &plus; Add Role
           </a>
@@ -94,7 +94,7 @@
           <a
             data-testid="add-privilege"
             class="btn variant-ghost-primary hover:variant-filled-primary"
-            href="/admin/authorization/privilege/new"
+            href="/admin/configuration/privilege/new"
           >
             &plus; Add Privilege
           </a>

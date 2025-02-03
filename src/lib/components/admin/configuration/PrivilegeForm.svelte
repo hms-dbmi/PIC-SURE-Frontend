@@ -33,7 +33,7 @@
         message: `Successfully saved ${newPrivilege ? 'new privilege' : 'privilege'} '${name}'`,
         background: 'variant-filled-success',
       });
-      goto('/admin/authorization');
+      goto('/admin/configuration');
     } catch (error) {
       console.error(error);
       toastStore.trigger({
@@ -86,7 +86,7 @@
   <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
     Save
   </button>
-  <a href="/admin/authorization" class="btn variant-ghost-secondary hover:variant-filled-secondary">
+  <a href="/admin/configuration" class="btn variant-ghost-secondary hover:variant-filled-secondary">
     Cancel
   </a>
 </form>

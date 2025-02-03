@@ -95,17 +95,9 @@ export const routes: Route[] = [
     feature: 'dataRequests',
   },
   {
-    path: '/admin',
+    path: '/admin/configuration',
     text: 'Configuration',
     privilege: [PicsurePrivileges.SUPER],
-    children: [
-      { path: '/admin/authorization', text: 'Authorization', privilege: [PicsurePrivileges.SUPER] },
-      {
-        path: '/admin/authentication',
-        text: 'Authentication',
-        privilege: [PicsurePrivileges.SUPER],
-      },
-    ],
   },
   { path: '/admin/users', text: 'Manage Users', privilege: [PicsurePrivileges.ADMIN] },
   { path: '/help', text: 'Help' },
