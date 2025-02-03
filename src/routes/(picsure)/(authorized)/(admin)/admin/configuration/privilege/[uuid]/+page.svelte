@@ -30,7 +30,7 @@
   <title>{branding.applicationName} | Privilege Summary</title>
 </svelte:head>
 
-<Content title="Privilege Summary" backUrl="/admin/configuration" backTitle="Back to Authorization">
+<Content title="Privilege Summary" backUrl="/admin/configuration" backTitle="Back to Configuration">
   {#await load()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />
