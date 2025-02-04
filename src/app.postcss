@@ -323,13 +323,16 @@ nav#page-navigation li .nav-dropdown a:focus {
   @apply variant-filled-success;
 }
 
-#user-token #token {
-  @apply input;
+.input-border {
   overflow: auto;
   overflow-wrap: break-word;
   word-wrap: break-word;
   padding: 0.5em;
   border-radius: var(--theme-rounded-container);
+}
+
+#user-token #token {
+  @apply input input-border;
 }
 
 .btn-xs {

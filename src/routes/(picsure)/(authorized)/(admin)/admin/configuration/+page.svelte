@@ -13,7 +13,7 @@
   import ConnectionActions from '$lib/components/admin/configuration/cell/ConnectionActions.svelte';
   import Application from '$lib/components/admin/configuration/cell/Application.svelte';
 
-  import { privileges, loadPrivileges } from '$lib/stores/Privileges';
+  import Privileges, { privileges, loadPrivileges } from '$lib/stores/Privileges';
   import { roles, loadRoles } from '$lib/stores/Roles';
   import { loadApplications } from '$lib/stores/Application';
   import { connections, loadConnections } from '$lib/stores/Connections';
@@ -51,11 +51,9 @@
     overrides: { uuid: ConnectionActions },
   };
 
-  async function load() {
-    await loadRoles();
+  async function loadAppsAndPriv() {
     await loadPrivileges();
     await loadApplications();
-    await loadConnections();
   }
 
   const rowClickHandler = (path: string) => (row: Indexable) => {
@@ -72,12 +70,11 @@
 </svelte:head>
 
 <Content title="Configuration">
-  {#await load()}
-    <h3 class="text-left">Loading</h3>
-    <ProgressBar animIndeterminate="anim-progress-bar" />
-  {:then}
-    <div id="role-table" class="mb-10">
-      <h2>Roles Management</h2>
+  <div id="role-table" class="mb-10">
+    <h2>Roles Management</h2>
+    {#await loadRoles()}
+      <ProgressBar animIndeterminate="anim-progress-bar" />
+    {:then}
       <div class="flex gap-4 my-6">
         <div class="flex-auto">
           <a
@@ -98,9 +95,17 @@
         rowClickHandler={roleRowCLick}
         isClickable={true}
       />
-    </div>
-    <div id="privilege-table" class="mb-10">
-      <h2>Privileges Management</h2>
+    {:catch}
+      <ErrorAlert title="API Error">
+        <p>Something went wrong when sending your request for roles.</p>
+      </ErrorAlert>
+    {/await}
+  </div>
+  <div id="privilege-table" class="mb-10">
+    <h2>Privileges Management</h2>
+    {#await loadAppsAndPriv()}
+      <ProgressBar animIndeterminate="anim-progress-bar" />
+    {:then}
       <div class="flex gap-4 my-6">
         <div class="flex-auto">
           <a
@@ -121,9 +126,17 @@
         rowClickHandler={privilegeRowClick}
         isClickable={true}
       />
-    </div>
-    <div id="connection-table" class="mb-10">
-      <h2>Connection Management</h2>
+    {:catch}
+      <ErrorAlert title="API Error">
+        <p>Something went wrong when sending your request for priviledges and applications.</p>
+      </ErrorAlert>
+    {/await}
+  </div>
+  <div id="connection-table" class="mb-10">
+    <h2>Connection Management</h2>
+    {#await loadConnections()}
+      <ProgressBar animIndeterminate="anim-progress-bar" />
+    {:then}
       <div class="flex gap-4 my-6">
         <div class="flex-auto">
           <a
@@ -144,10 +157,10 @@
         rowClickHandler={connectionRowClick}
         isClickable={true}
       />
-    </div>
-  {:catch}
-    <ErrorAlert title="API Error">
-      <p>Something went wrong when sending your request.</p>
-    </ErrorAlert>
-  {/await}
+    {:catch}
+      <ErrorAlert title="API Error">
+        <p>Something went wrong when sending your request for connections.</p>
+      </ErrorAlert>
+    {/await}
+  </div>
 </Content>

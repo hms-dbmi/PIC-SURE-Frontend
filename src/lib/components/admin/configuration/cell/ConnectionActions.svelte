@@ -5,9 +5,6 @@
 
   import { goto } from '$app/navigation';
 
-  // import RolesStore from '$lib/stores/Roles';
-  // const { deleteRole } = RolesStore;
-
   export let data = { cell: '', row: { name: '' } };
 
   function deleteModal() {
@@ -22,7 +19,7 @@
         if (!confirm) return;
 
         try {
-          // await deleteRole(data.cell);
+          // TODO: delete connection
           toastStore.trigger({
             message: `Successfully deleted connection '${name}'`,
             background: 'variant-filled-success',
