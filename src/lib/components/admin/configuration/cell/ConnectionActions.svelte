@@ -5,29 +5,31 @@
 
   import { goto } from '$app/navigation';
 
-  export let data = { cell: '', row: { name: '' } };
+  import { deleteConnection } from '$lib/stores/Connections';
+
+  export let data = { cell: '', row: { label: '' } };
 
   function deleteModal() {
-    const name = data.row.name;
+    const label = data.row.label;
     modalStore.trigger({
       type: 'confirm',
       title: 'Delete Connection?',
-      body: `Are you sure you want to delete connection '${name}'?`,
+      body: `Are you sure you want to delete connection '${label}'?`,
       buttonTextConfirm: 'Yes',
       buttonTextCancel: 'No',
       response: async (confirm: boolean) => {
         if (!confirm) return;
 
         try {
-          // TODO: delete connection
+          await deleteConnection(data.cell);
           toastStore.trigger({
-            message: `Successfully deleted connection '${name}'`,
+            message: `Successfully deleted connection '${label}'`,
             background: 'variant-filled-success',
           });
         } catch (error) {
           console.error(error);
           toastStore.trigger({
-            message: `An error occured while deleting connection '${name}'`,
+            message: `An error occured while deleting connection '${label}'`,
             background: 'variant-filled-error',
           });
         }

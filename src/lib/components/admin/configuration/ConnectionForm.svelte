@@ -4,24 +4,19 @@
   const toastStore = getToastStore();
 
   import type { Connection } from '$lib/models/Connection';
+  import { addConnection, updateConnection } from '$lib/stores/Connections';
 
-  export let connection: Connection = {
-    uuid: '',
-    id: '',
-    label: '',
-    subPrefix: '',
-    requiredFields: '',
-  };
+  export let connection: Connection | undefined = undefined;
 
-  let label: string = connection.label;
-  let id: string = connection.id;
-  let subPrefix: string = connection.subPrefix;
-  let requiredFields: string = connection.requiredFields;
+  let label: string = connection?.label || '';
+  let id: string = connection?.id || '';
+  let subPrefix: string = connection?.subPrefix || '';
+  let requiredFields: string = connection?.requiredFields || '';
   let validationError: boolean = false;
 
-  function saveConnection() {
+  async function saveConnection() {
     try {
-      JSON.parse(requiredFields);
+      requiredFields !== '' && JSON.parse(requiredFields);
       validationError = false;
     } catch (_) {
       validationError = true;
@@ -29,7 +24,6 @@
     }
 
     let newConnection: Connection = {
-      ...connection,
       id,
       label,
       requiredFields,
@@ -37,9 +31,10 @@
     };
     try {
       if (connection) {
-        // TODO: update connection
+        newConnection = { ...newConnection, uuid: connection.uuid };
+        await updateConnection(newConnection);
       } else {
-        // TODO: new connection
+        await addConnection(newConnection);
       }
       toastStore.trigger({
         message: `Successfully saved ${newConnection ? 'new connection' : 'connection'} '${label}'`,
@@ -58,15 +53,23 @@
   }
 </script>
 
+<p class="mb-3 text-center">
+  For details on how to set up a Connection, please refer to the
+  <a
+    href="https://pic-sure.gitbook.io/pic-sure-developer-guide/configuring-pic-sure/all-in-one-authentication-configuration#additional-authentication-configuration-option-s"
+    target="_blank"
+    class="anchor">PIC-SURE developer guide</a
+  >.
+</p>
 <form on:submit|preventDefault={saveConnection}>
   <div class="grid gap-4 my-3">
-    {#if connection.uuid}
+    {#if connection?.uuid}
       <label class="label">
         <span>UUID:</span>
         <input
           type="text"
           class="input"
-          bind:value={connection.uuid}
+          value={connection?.uuid}
           disabled={true}
           minlength="1"
           maxlength="255"
@@ -92,9 +95,9 @@
         maxlength="255"
       />
     </label>
-    <label class="label required">
+    <label class="label">
       <span>Required Fields:</span>
-      <textarea required class="w-full input input-border" bind:value={requiredFields} />
+      <textarea class="w-full input input-border" bind:value={requiredFields} />
     </label>
     {#if validationError}
       <aside class="alert variant-ghost-error mt-0">

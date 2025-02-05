@@ -1,5 +1,5 @@
 export interface Connection {
-  uuid: string;
+  uuid?: string;
   id: string;
   label: string;
   subPrefix: string;
