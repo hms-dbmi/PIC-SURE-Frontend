@@ -3,28 +3,35 @@
   import { getToastStore } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
 
-  import { textInput } from '$lib/utilities/Validation';
-
   import { type Role } from '$lib/models/Role';
-  import RolesStore from '$lib/stores/Roles';
-  const { addRole, updateRole } = RolesStore;
+  import { PicsurePrivileges } from '$lib/models/Privilege';
+  import { addRole, updateRole } from '$lib/stores/Roles';
 
   export let role: Role | undefined = undefined;
   export let privilegeList: string[][];
 
   let name = role ? role.name : '';
   let description = role ? role.description : '';
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let privileges = privilegeList.map(([_name, uuid]) => ({
     uuid,
-    checked: role ? role.privileges.includes(uuid) : false,
+    checked: role ? role.privileges.includes(uuid) : PicsurePrivileges.QUERY === _name,
   }));
+  let validationError: string = '';
 
   async function saveRole() {
+    const selectedPrivileges = privileges.filter((priv) => priv.checked).map((priv) => priv.uuid);
+
+    if (selectedPrivileges.length === 0) {
+      validationError = 'At least one privilege must be selected.';
+      return;
+    } else {
+      validationError = '';
+    }
+
     let newRole: Role = {
       name,
       description,
-      privileges: privileges.filter((priv) => priv.checked).map((priv) => priv.uuid),
+      privileges: selectedPrivileges,
     };
     try {
       if (role) {
@@ -48,18 +55,24 @@
   }
 </script>
 
-<form on:submit|preventDefault={saveRole}>
+<form on:submit|preventDefault={saveRole} class="grid gap-4 my-3">
+  {#if role?.uuid}
+    <label class="label">
+      <span>UUID:</span>
+      <input
+        type="text"
+        class="input"
+        value={role?.uuid}
+        disabled={true}
+        minlength="1"
+        maxlength="255"
+      />
+    </label>
+  {/if}
+
   <label class="label required">
     <span>Name:</span>
-    <input
-      type="text"
-      bind:value={name}
-      class="input"
-      required
-      pattern={textInput}
-      minlength="1"
-      maxlength="255"
-    />
+    <input type="text" bind:value={name} class="input" required minlength="1" maxlength="255" />
   </label>
 
   <label class="label required">
@@ -69,7 +82,6 @@
       bind:value={description}
       class="input"
       required
-      pattern={textInput}
       minlength="1"
       maxlength="255"
     />
@@ -85,20 +97,29 @@
     {/each}
   </fieldset>
 
-  <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
-    Save
-  </button>
-  <a href="/admin/configuration" class="btn variant-ghost-secondary hover:variant-filled-secondary">
-    Cancel
-  </a>
-</form>
+  {#if validationError}
+    <aside class="alert variant-ghost-error">
+      <div class="alert-message">
+        <p>{validationError}</p>
+      </div>
+      <div class="alert-actions">
+        <button on:click={() => (validationError = '')}>
+          <i class="fa-solid fa-xmark"></i>
+          <span class="sr-only">Close</span>
+        </button>
+      </div>
+    </aside>
+  {/if}
 
-<style>
-  label,
-  fieldset {
-    margin: 0.5em 0;
-  }
-  fieldset label {
-    margin: 0;
-  }
-</style>
+  <div>
+    <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
+      Save
+    </button>
+    <a
+      href="/admin/configuration"
+      class="btn variant-ghost-secondary hover:variant-filled-secondary"
+    >
+      Cancel
+    </a>
+  </div>
+</form>

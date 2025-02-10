@@ -133,7 +133,7 @@
     {/await}
   </div>
   <div id="connection-table" class="mb-10">
-    <h2>Connection Management</h2>
+    <h2>Connections Management</h2>
     {#await loadConnections()}
       <ProgressBar animIndeterminate="anim-progress-bar" />
     {:then}

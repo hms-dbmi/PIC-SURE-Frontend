@@ -3,11 +3,8 @@
   import { getToastStore } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
 
-  import { textInput } from '$lib/utilities/Validation';
-
   import type { Privilege } from '$lib/models/Privilege';
-  import PrivilegesStore from '$lib/stores/Privileges';
-  const { addPrivilege, updatePrivilege } = PrivilegesStore;
+  import { addPrivilege, updatePrivilege } from '$lib/stores/Privileges';
 
   export let privilege: Privilege | undefined = undefined;
   export let applicationList: string[][];
@@ -46,18 +43,24 @@
   }
 </script>
 
-<form on:submit|preventDefault={savePrivilege}>
+<form on:submit|preventDefault={savePrivilege} class="grid gap-4 my-3">
+  {#if privilege?.uuid}
+    <label class="label">
+      <span>UUID:</span>
+      <input
+        type="text"
+        class="input"
+        value={privilege?.uuid}
+        disabled={true}
+        minlength="1"
+        maxlength="255"
+      />
+    </label>
+  {/if}
+
   <label class="label required">
     <span>Name:</span>
-    <input
-      type="text"
-      bind:value={name}
-      class="input"
-      required
-      pattern={textInput}
-      minlength="1"
-      maxlength="255"
-    />
+    <input type="text" bind:value={name} class="input" required minlength="1" maxlength="255" />
   </label>
 
   <label class="label required">
@@ -67,7 +70,6 @@
       bind:value={description}
       class="input"
       required
-      pattern={textInput}
       minlength="1"
       maxlength="255"
     />
@@ -76,19 +78,24 @@
   <label class="label required">
     <span>Application:</span>
     <select class="select" bind:value={application} required>
-      <option selected={!privilege || !privilege.application} disabled value>none</option>
+      <option value="" disabled>Select an application</option>
       {#each applicationList as [name, uuid]}
-        <option value={uuid} selected={privilege && privilege.application === uuid}>{name}</option>
+        <option value={uuid}>{name}</option>
       {/each}
     </select>
   </label>
 
-  <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
-    Save
-  </button>
-  <a href="/admin/configuration" class="btn variant-ghost-secondary hover:variant-filled-secondary">
-    Cancel
-  </a>
+  <div>
+    <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
+      Save
+    </button>
+    <a
+      href="/admin/configuration"
+      class="btn variant-ghost-secondary hover:variant-filled-secondary"
+    >
+      Cancel
+    </a>
+  </div>
 </form>
 
 <style>

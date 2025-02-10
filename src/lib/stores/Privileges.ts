@@ -35,7 +35,7 @@ export async function addPrivilege(privilege: Privilege) {
       application: { uuid: privilege.application },
     },
   ]);
-  const newPriv = mapPrivilege(res.content[0]);
+  const newPriv = mapPrivilege(res[0]);
 
   const store: Privilege[] = get(privileges);
   store.push(newPriv);
@@ -43,20 +43,19 @@ export async function addPrivilege(privilege: Privilege) {
 }
 
 export async function updatePrivilege(privilege: Privilege) {
-  const res = await api.put(PRIV_PATH, [
+  await api.put(PRIV_PATH, [
     {
       ...privilege,
       application: { uuid: privilege.application },
     },
   ]);
-  const newPriv = mapPrivilege(res.content[0]);
 
   const store: Privilege[] = get(privileges);
-  const privIndex: number = store.findIndex((p) => p.uuid === newPriv.uuid);
+  const privIndex: number = store.findIndex((p) => p.uuid === privilege.uuid);
   if (privIndex === -1) {
-    store.push(newPriv);
+    store.push(privilege);
   } else {
-    store[privIndex] = newPriv;
+    store[privIndex] = privilege;
   }
   privileges.set(store);
 }

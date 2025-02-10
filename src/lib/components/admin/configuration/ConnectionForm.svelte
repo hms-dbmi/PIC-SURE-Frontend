@@ -12,14 +12,14 @@
   let id: string = connection?.id || '';
   let subPrefix: string = connection?.subPrefix || '';
   let requiredFields: string = connection?.requiredFields || '';
-  let validationError: boolean = false;
+  let validationError: string = '';
 
   async function saveConnection() {
     try {
       requiredFields !== '' && JSON.parse(requiredFields);
-      validationError = false;
+      validationError = '';
     } catch (_) {
-      validationError = true;
+      validationError = 'The provided JSON has a syntax error.';
       return;
     }
 
@@ -61,59 +61,64 @@
     class="anchor">PIC-SURE developer guide</a
   >.
 </p>
-<form on:submit|preventDefault={saveConnection}>
-  <div class="grid gap-4 my-3">
-    {#if connection?.uuid}
-      <label class="label">
-        <span>UUID:</span>
-        <input
-          type="text"
-          class="input"
-          value={connection?.uuid}
-          disabled={true}
-          minlength="1"
-          maxlength="255"
-        />
-      </label>
-    {/if}
-    <label class="label required">
-      <span>Label:</span>
-      <input type="text" bind:value={label} class="input" required minlength="1" maxlength="255" />
-    </label>
-    <label class="label required">
-      <span>ID:</span>
-      <input type="text" bind:value={id} class="input" required minlength="1" maxlength="255" />
-    </label>
-    <label class="label required">
-      <span>Sub Prefix:</span>
+
+<form on:submit|preventDefault={saveConnection} class="grid gap-4 my-3">
+  {#if connection?.uuid}
+    <label class="label">
+      <span>UUID:</span>
       <input
         type="text"
-        bind:value={subPrefix}
         class="input"
-        required
+        value={connection?.uuid}
+        disabled={true}
         minlength="1"
         maxlength="255"
       />
     </label>
-    <label class="label">
-      <span>Required Fields:</span>
-      <textarea class="w-full input input-border" bind:value={requiredFields} />
-    </label>
-    {#if validationError}
-      <aside class="alert variant-ghost-error mt-0">
-        <div class="alert-message">
-          <p>The provided JSON has a syntax error.</p>
-        </div>
-        <div class="alert-actions">
-          <button on:click={() => (validationError = false)}>
-            <i class="fa-solid fa-xmark"></i>
-            <span class="sr-only">Close</span>
-          </button>
-        </div>
-      </aside>
-    {/if}
-  </div>
-  <div class="my-3">
+  {/if}
+
+  <label class="label required">
+    <span>Label:</span>
+    <input type="text" bind:value={label} class="input" required minlength="1" maxlength="255" />
+  </label>
+
+  <label class="label required">
+    <span>ID:</span>
+    <input type="text" bind:value={id} class="input" required minlength="1" maxlength="255" />
+  </label>
+
+  <label class="label required">
+    <span>Sub Prefix:</span>
+    <input
+      type="text"
+      bind:value={subPrefix}
+      class="input"
+      required
+      minlength="1"
+      maxlength="255"
+    />
+  </label>
+
+  <label class="label">
+    <span>Required Fields:</span>
+    <textarea class="w-full input input-border" bind:value={requiredFields} />
+  </label>
+
+  {#if validationError}
+    <aside class="alert variant-ghost-error">
+      <div class="alert-message">
+        <p>{validationError}</p>
+      </div>
+      <div class="alert-actions">
+        <button on:click={() => (validationError = '')}>
+          <i class="fa-solid fa-xmark"></i>
+          <span class="sr-only">Close</span>
+        </button>
+      </div>
+    </aside>
+  {/if}
+
+  <div>
     <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
       Save
     </button>
