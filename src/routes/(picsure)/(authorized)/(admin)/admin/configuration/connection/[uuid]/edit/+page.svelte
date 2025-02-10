@@ -1,19 +1,19 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { ProgressBar } from '@skeletonlabs/skeleton';
+  
+  import { branding } from '$lib/configuration';
 
   import { type Connection } from '$lib/models/Connection';
+  import { getConnection } from '$lib/stores/Connections';
 
-  import { branding } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ConnectionForm from '$lib/components/admin/configuration/ConnectionForm.svelte';
-  import { loadConnections, getConnection } from '$lib/stores/Connections';
 
   let connection: Connection;
 
   async function load() {
-    await loadConnections();
     connection = await getConnection($page.params.uuid);
   }
 </script>

@@ -27,16 +27,14 @@
         await addPrivilege(newPrivilege);
       }
       toastStore.trigger({
-        message: `Successfully saved ${newPrivilege ? 'new privilege' : 'privilege'} '${name}'`,
+        message: `Successfully saved ${newPrivilege && 'new '}privilege '${name}'`,
         background: 'variant-filled-success',
       });
       goto('/admin/configuration');
     } catch (error) {
       console.error(error);
       toastStore.trigger({
-        message: `An error occured while saving ${
-          newPrivilege ? 'new privilege' : 'privilege'
-        } '${name}'`,
+        message: `An error occured while saving ${newPrivilege && 'new '}privilege '${name}'`,
         background: 'variant-filled-error',
       });
     }
@@ -47,14 +45,7 @@
   {#if privilege?.uuid}
     <label class="label">
       <span>UUID:</span>
-      <input
-        type="text"
-        class="input"
-        value={privilege?.uuid}
-        disabled={true}
-        minlength="1"
-        maxlength="255"
-      />
+      <input type="text" class="input" value={privilege?.uuid} disabled={true} />
     </label>
   {/if}
 

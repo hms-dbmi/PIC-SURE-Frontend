@@ -5,6 +5,7 @@
 
   import type { Indexable } from '$lib/types';
   import { branding } from '$lib/configuration';
+  
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
@@ -13,7 +14,7 @@
   import ConnectionActions from '$lib/components/admin/configuration/cell/ConnectionActions.svelte';
   import Application from '$lib/components/admin/configuration/cell/Application.svelte';
 
-  import Privileges, { privileges, loadPrivileges } from '$lib/stores/Privileges';
+  import { privileges, loadPrivileges } from '$lib/stores/Privileges';
   import { roles, loadRoles } from '$lib/stores/Roles';
   import { loadApplications } from '$lib/stores/Application';
   import { connections, loadConnections } from '$lib/stores/Connections';

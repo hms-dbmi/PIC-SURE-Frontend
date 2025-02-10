@@ -5,11 +5,11 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Connection Configuration</title>
+  <title>{branding.applicationName} | New Connection</title>
 </svelte:head>
 
-<Content title="Add Connection" backUrl="/admin/configuration" backTitle="Back to Configuration">
-  <section id="role-new">
+<Content title="New Connection" backUrl="/admin/configuration" backTitle="Back to Configuration">
+  <section id="connection-new">
     <ConnectionForm />
   </section>
 </Content>

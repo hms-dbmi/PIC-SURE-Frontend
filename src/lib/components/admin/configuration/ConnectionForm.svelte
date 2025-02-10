@@ -37,16 +37,14 @@
         await addConnection(newConnection);
       }
       toastStore.trigger({
-        message: `Successfully saved ${newConnection ? 'new connection' : 'connection'} '${label}'`,
+        message: `Successfully saved ${newConnection && 'new '}connection '${label}'`,
         background: 'variant-filled-success',
       });
       goto('/admin/configuration');
     } catch (error) {
       console.error(error);
       toastStore.trigger({
-        message: `An error occured while saving ${
-          newConnection ? 'new connection' : 'connection'
-        } '${label}'`,
+        message: `An error occured while saving ${newConnection && 'new '}connection '${label}'`,
         background: 'variant-filled-error',
       });
     }
@@ -66,14 +64,7 @@
   {#if connection?.uuid}
     <label class="label">
       <span>UUID:</span>
-      <input
-        type="text"
-        class="input"
-        value={connection?.uuid}
-        disabled={true}
-        minlength="1"
-        maxlength="255"
-      />
+      <input type="text" class="input" value={connection?.uuid} disabled={true} />
     </label>
   {/if}
 

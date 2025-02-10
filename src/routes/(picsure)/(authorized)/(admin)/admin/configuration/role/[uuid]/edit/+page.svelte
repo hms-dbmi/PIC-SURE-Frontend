@@ -8,15 +8,12 @@
   import RoleForm from '$lib/components/admin/configuration/RoleForm.svelte';
 
   import type { Role } from '$lib/models/Role';
-  import RolesStore from '$lib/stores/Roles';
-  import PrivilegesStore from '$lib/stores/Privileges';
-  const { loadRoles, getRole } = RolesStore;
-  const { privilegeList, loadPrivileges } = PrivilegesStore;
+  import { getRole } from '$lib/stores/Roles';
+  import { privilegeList, loadPrivileges } from '$lib/stores/Privileges';
 
   let role: Role;
 
   async function load() {
-    await loadRoles();
     role = await getRole($page.params.uuid);
     await loadPrivileges();
   }

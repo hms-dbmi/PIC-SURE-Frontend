@@ -41,14 +41,14 @@
         await addRole(newRole);
       }
       toastStore.trigger({
-        message: `Successfully saved ${newRole ? 'new role' : 'role'} '${name}'`,
+        message: `Successfully saved ${newRole && 'new '}role '${name}'`,
         background: 'variant-filled-success',
       });
       goto('/admin/configuration');
     } catch (error) {
       console.error(error);
       toastStore.trigger({
-        message: `An error occured while saving ${newRole ? 'new role' : 'role'} '${name}'`,
+        message: `An error occured while saving ${newRole && 'new '}role '${name}'`,
         background: 'variant-filled-error',
       });
     }
@@ -59,14 +59,7 @@
   {#if role?.uuid}
     <label class="label">
       <span>UUID:</span>
-      <input
-        type="text"
-        class="input"
-        value={role?.uuid}
-        disabled={true}
-        minlength="1"
-        maxlength="255"
-      />
+      <input type="text" class="input" value={role?.uuid} disabled={true} />
     </label>
   {/if}
 
@@ -88,7 +81,7 @@
   </label>
 
   <fieldset data-testid="privilege-checkboxes">
-    <legend>Privileges:</legend>
+    <legend class="required"><span>Privileges:</span></legend>
     {#each privilegeList as [name], index}
       <label class="flex items-center space-x-2">
         <input class="checkbox" type="checkbox" bind:checked={privileges[index].checked} />

@@ -17,9 +17,13 @@ export async function loadConnections() {
 }
 
 export async function getConnection(uuid: string) {
-  const store = get(connections);
+  let store = get(connections);
   if (store.length === 0) {
+    // Connections GET endpoint does not use the uuid but instead uses the
+    // connectionid. Until this is fixed, we'll pull in all connections and
+    // then search the list by uuid.
     await loadConnections();
+    store = get(connections);
   }
 
   const connection = store.find((r) => r.uuid === uuid);

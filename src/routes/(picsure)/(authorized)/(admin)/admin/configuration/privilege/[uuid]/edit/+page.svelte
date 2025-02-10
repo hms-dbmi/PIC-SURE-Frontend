@@ -7,17 +7,13 @@
   import Content from '$lib/components/Content.svelte';
   import PrivilegeForm from '$lib/components/admin/configuration/PrivilegeForm.svelte';
 
-  import PrivilegesStore from '$lib/stores/Privileges';
-  import ApplicationStore from '$lib/stores/Application';
   import type { Privilege } from '$lib/models/Privilege';
-
-  const { loadPrivileges, getPrivilege } = PrivilegesStore;
-  const { applicationList, loadApplications } = ApplicationStore;
+  import { getPrivilege } from '$lib/stores/Privileges';
+  import { applicationList, loadApplications } from '$lib/stores/Application';
 
   let privilege: Privilege;
 
   async function load() {
-    await loadPrivileges();
     privilege = await getPrivilege($page.params.uuid);
     await loadApplications();
   }
