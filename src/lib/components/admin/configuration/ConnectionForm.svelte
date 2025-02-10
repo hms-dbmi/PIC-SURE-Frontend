@@ -96,7 +96,7 @@
   </label>
 
   {#if validationError}
-    <aside class="alert variant-ghost-error">
+    <aside data-testid="validation-error" class="alert variant-ghost-error">
       <div class="alert-message">
         <p>{validationError}</p>
       </div>

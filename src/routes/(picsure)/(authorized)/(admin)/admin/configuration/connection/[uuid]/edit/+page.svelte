@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import { ProgressBar } from '@skeletonlabs/skeleton';
-  
+
   import { branding } from '$lib/configuration';
 
   import { type Connection } from '$lib/models/Connection';

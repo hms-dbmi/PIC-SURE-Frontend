@@ -5,7 +5,7 @@
 
   import type { Indexable } from '$lib/types';
   import { branding } from '$lib/configuration';
-  
+
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
