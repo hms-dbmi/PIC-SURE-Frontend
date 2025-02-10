@@ -939,7 +939,7 @@ const _privileges = {
   },
   pr3: {
     uuid: 'p3456',
-    name: 'PIC_SURE_ANY_QUERY',
+    name: 'any',
     description: 'any priv',
     queryScope: '[]',
     application: _application.app1,
