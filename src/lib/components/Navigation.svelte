@@ -12,9 +12,6 @@
   import { onMount } from 'svelte';
   let providerData: AuthData;
   let providerInstance: AuthProvider | undefined = undefined;
-  function setDropdown(path: string) {
-    dropdownPath = path;
-  }
 
   function getId({ path, id }: { path: string; id?: string; text: string }) {
     return `nav-link` + (id ? `-` + id : path.replaceAll('/', '-'));
@@ -51,8 +48,6 @@
       }
     }
   });
-
-  $: dropdownPath = '';
 </script>
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-900-token">
@@ -65,12 +60,7 @@
     <ul>
       {#each $userRoutes as route}
         <li>
-          <a
-            class="nav-link"
-            id={getId(route)}
-            href={route.path}
-            on:focus={() => setDropdown('')}
-            aria-current={currentPage(route)}
+          <a class="nav-link" id={getId(route)} href={route.path} aria-current={currentPage(route)}
             >{route.text}
           </a>
         </li>

@@ -11,6 +11,7 @@
 
   let name = role ? role.name : '';
   let description = role ? role.description : '';
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let privileges = privilegeList.map(([_name, uuid]) => ({
     uuid,
     checked: role ? role.privileges.includes(uuid) : false,
