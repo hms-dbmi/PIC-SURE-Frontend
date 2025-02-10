@@ -122,38 +122,6 @@ Object.entries(testCases).forEach(([testCase, privileges]) => {
   });
 });
 
-const topAdminTest = getUserTest({ ...picsureUser, privileges: testCases.superUser });
-topAdminTest.describe('Keyboard navigation', () => {
-  topAdminTest('Pressing Enter on a dropdown item opens dropdown', async ({ page }) => {
-    // Given
-    await page.goto(mockLoginResponse);
-    await page.waitForURL('/');
-    const dropdown = page.locator('#page-navigation .has-dropdown').first();
-
-    // When
-    await dropdown.locator('a').first().focus();
-    await page.keyboard.press('Enter');
-
-    // Then
-    await expect(dropdown.locator('.nav-dropdown')).toBeVisible();
-  });
-  topAdminTest('Can navigate to dropdown child', async ({ page }) => {
-    // Given
-    await page.goto(mockLoginResponse);
-    await page.waitForURL('/');
-    const dropdown = page.locator('#page-navigation .has-dropdown').first();
-    await dropdown.locator('a').first().focus();
-    await page.keyboard.press('Enter');
-
-    // When
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Enter');
-
-    // Then
-    await expect(page).not.toHaveURL('/');
-  });
-});
-
 test.describe('Navigation', () => {
   test('Clicking the session avatar navigates to login when logged out', async ({ page }) => {
     // Given

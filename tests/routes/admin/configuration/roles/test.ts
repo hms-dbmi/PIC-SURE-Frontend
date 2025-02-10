@@ -13,8 +13,6 @@ const validationText = {
   option: 'Please select an item in the list.',
 };
 
-const PICSURE_QUERY_PRIV = 'PIC_SURE_ANY_QUERY';
-
 test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, '*/**/psama/role', mockRoles);
   await mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges);
@@ -57,7 +55,7 @@ test('Role form has pre-populated priviledges', async ({ page }) => {
   // Then
   await expect(checkboxes).toBeVisible();
 });
-test('Role form cancel button navigates back to authorization page', async ({ page }) => {
+test('Role form cancel button navigates back to configuration page', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/role/new');
 
@@ -68,7 +66,7 @@ test('Role form cancel button navigates back to authorization page', async ({ pa
   await page.waitForURL('**/admin/configuration');
   await expect(page.url()).toContain('/admin/configuration');
 });
-test('Role form returns to authorization page with success message', async ({ page }) => {
+test('Role form returns to configuration page with success message', async ({ page }) => {
   // Given
   const newRole = {
     name: 'coconut',
@@ -140,20 +138,12 @@ test('Role form enforces required at least one selected privilege', async ({ pag
   // When
   await page.getByLabel('Name').fill('coconut');
   await page.getByLabel('Description').fill('something');
-  await page.getByLabel(PICSURE_QUERY_PRIV).click(); // uncheck to create unselected state
   await page.getByRole('button', { name: 'Save' }).click();
 
   // Then
   await expect(page.getByTestId('validation-error')).toBeVisible();
 });
-test('Role form selects PIC-SURE default privilege on new role', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration/role/new');
-
-  // Then
-  await expect(page.getByLabel(PICSURE_QUERY_PRIV)).toBeChecked();
-});
-test('Clicking row takes user to view role form', async ({ page }) => {
+test('Clicking row takes user to edit role form', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
 

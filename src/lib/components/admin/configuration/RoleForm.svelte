@@ -4,7 +4,6 @@
   const toastStore = getToastStore();
 
   import { type Role } from '$lib/models/Role';
-  import { PicsurePrivileges } from '$lib/models/Privilege';
   import { addRole, updateRole } from '$lib/stores/Roles';
 
   export let role: Role | undefined = undefined;
@@ -14,7 +13,7 @@
   let description = role ? role.description : '';
   let privileges = privilegeList.map(([_name, uuid]) => ({
     uuid,
-    checked: role ? role.privileges.includes(uuid) : PicsurePrivileges.QUERY === _name,
+    checked: role ? role.privileges.includes(uuid) : false,
   }));
   let validationError: string = '';
 

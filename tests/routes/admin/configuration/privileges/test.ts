@@ -52,7 +52,7 @@ test('Privileges form has pre-populated applications', async ({ page }) => {
   // Then
   await expect(page.getByLabel('Application').getByRole('option')).toHaveCount(mockApps.length + 1);
 });
-test('Privileges form cancel button navigates back to authorization page', async ({ page }) => {
+test('Privileges form cancel button navigates back to configuration page', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/privilege/new');
 
@@ -63,7 +63,7 @@ test('Privileges form cancel button navigates back to authorization page', async
   await page.waitForURL('**/admin/configuration');
   await expect(page.url()).toContain('/admin/configuration');
 });
-test('Privileges form returns to authorization page with success message', async ({ page }) => {
+test('Privileges form returns to configuration page with success message', async ({ page }) => {
   // Given
   const newPriv = {
     name: 'coconut',
@@ -145,7 +145,7 @@ test('Privileges form enforces application selection', async ({ page }) => {
     .evaluate((element: HTMLSelectElement) => element.validationMessage);
   await expect(noOption).toContain(validationText.option);
 });
-test('Clicking row takes user to view priviledge form', async ({ page }) => {
+test('Clicking row takes user to edit priviledge form', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
 
