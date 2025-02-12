@@ -1,5 +1,5 @@
 import { expect, type Route, type Page } from '@playwright/test';
-import { test, mockApiSuccess, unauthedTest } from '../../custom-context';
+import { test, mockApiSuccess } from '../../custom-context';
 import {
   searchResults as mockSearchResults,
   searchResultPath,
@@ -37,6 +37,8 @@ const mockStatsRoutesSuccess = new Map<string, string>([
 ]);
 
 test.describe('Landing page', () => {
+  test.use({ storageState: '.playwright/.auth/generalUser.json' });
+
   test.describe('Search', () => {
     test('Has expected search to go to explorer', async ({ page }) => {
       // Given
@@ -150,15 +152,17 @@ test.describe('Landing page', () => {
   });
 });
 
-unauthedTest.describe('Logged Out Landing', () => {
+test.describe('Logged Out Landing', () => {
+  test.use({ storageState: '.playwright/.auth/unauthenticated.json' });
+
   loggedOutActions.forEach(({ description, icon, url, title }) => {
-    unauthedTest(`Has expected action of description: ${description}`, async ({ page }) => {
+    test(`Has expected action of description: ${description}`, async ({ page }) => {
       // Given
       await page.goto('/');
       // Then
       await expect(page.getByText(description, { exact: true })).toBeVisible();
     });
-    unauthedTest(`Has expected icon of: ${icon}`, async ({ page }) => {
+    test(`Has expected icon of: ${icon}`, async ({ page }) => {
       // Given
       await page.goto('/');
       // Then
@@ -167,7 +171,7 @@ unauthedTest.describe('Logged Out Landing', () => {
       await expect(iconElement).toBeVisible();
       await expect(iconElement).toHaveClass(pattern);
     });
-    unauthedTest(`Button "${description}"'s click leads to ${url}`, async ({ page }) => {
+    test(`Button "${description}"'s click leads to ${url}`, async ({ page }) => {
       // Given
       await mockApiSuccess(page, '*/**/picsure/dataset/named', mockDatasets);
       await page.goto('/');

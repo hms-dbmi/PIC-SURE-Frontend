@@ -2,6 +2,8 @@ import { expect } from '@playwright/test';
 import { test, mockApiSuccess, mockApiFail } from '../../custom-context';
 import { datasets as mockData } from '../../mock-data';
 
+test.use({ storageState: '.playwright/.auth/generalUser.json' });
+
 test.describe('dataset', () => {
   test('Shows active datasets table', async ({ page }) => {
     // Given

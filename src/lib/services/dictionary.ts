@@ -143,8 +143,8 @@ function addConsents(request: DictionarySearchRequest) {
   const queryTemplate = get(user)?.queryTemplate;
   if (queryTemplate) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filters = queryTemplate.categoryFilters as any;
-    const consents = filters['\\_consents\\'] as string[];
+    const filters = (queryTemplate.categoryFilters as any) || {};
+    const consents = (filters['\\_consents\\'] as string[]) || [];
     request.consents = consents;
   }
   return request;

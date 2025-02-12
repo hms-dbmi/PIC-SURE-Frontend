@@ -12,6 +12,8 @@ import {
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
+test.use({ storageState: '.playwright/.auth/generalUser.json' });
+
 test.describe('OptionaSelectionList', () => {
   // TODO: Some feartures will be hidden in the future. Cannot use nth.
   // TODO: Test infinite scroll
@@ -21,7 +23,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -34,7 +36,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -49,7 +51,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -73,7 +75,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -93,7 +95,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -122,7 +124,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
     const dataValues = mockData.content[0].values || [];
 
     // When
@@ -155,7 +157,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
     const dataValues = mockData.content[2].values || [];
 
     // When
@@ -189,7 +191,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
     await clickNthFilterIcon(page);
     const component = page.getByTestId('optional-selection-list');
     const optionContainer = component.locator('#options-container');
@@ -219,7 +221,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -320,7 +322,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);

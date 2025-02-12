@@ -17,6 +17,11 @@ const config: PlaywrightTestConfig = {
   retries: 3,
   projects: [
     {
+      name: 'setup',
+      testMatch: 'setup.ts',
+      use: { browserName: 'chromium' },
+    },
+    {
       name: 'chromium',
       use: {
         browserName: 'chromium',
@@ -24,14 +29,17 @@ const config: PlaywrightTestConfig = {
           permissions: ['clipboard-read', 'clipboard-write'],
         },
       },
+      dependencies: ['setup'],
     },
     {
       name: 'firefox',
       use: { browserName: 'firefox' },
+      dependencies: ['setup'],
     },
     {
       name: 'webkit',
       use: { browserName: 'webkit' },
+      dependencies: ['setup'],
     },
   ],
   use: {

@@ -102,6 +102,13 @@ export const picsureUser: User = {
   queryTemplate: mockQueryTemplate,
 };
 
+export const userTypes = {
+  generalUser: [PicsurePrivileges.QUERY],
+  adminUser: [PicsurePrivileges.QUERY, PicsurePrivileges.ADMIN],
+  superUser: [PicsurePrivileges.QUERY, PicsurePrivileges.SUPER],
+  dataUser: [PicsurePrivileges.QUERY, PicsurePrivileges.DATA_ADMIN],
+};
+
 export const crossCountSyncResponseInital = {
   results: {
     phenotypes: {

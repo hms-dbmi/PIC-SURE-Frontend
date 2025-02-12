@@ -1,0 +1,18 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:4173",
+      "localStorage": [
+        {
+          "name": "consentMode",
+          "value": "{\"ad_storage\":\"denied\",\"analytics_storage\":\"granted\",\"personalization_storage\":\"granted\",\"ad_personalization\":\"denied\",\"ad_data\":\"denied\",\"ad_user_data\":\"denied\"}"
+        },
+        {
+          "name": "user",
+          "value": "{}"
+        }
+      ]
+    }
+  ]
+}

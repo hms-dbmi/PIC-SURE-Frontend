@@ -13,7 +13,7 @@
     "format": "prettier --write .",
     "test:integration": "playwright test --retries=3",
     "test:unit": "vitest run",
-    "playwright": "playwright test --ui"
+    "playwright": "playwright test --ui > /dev/null 2>&1 &"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
