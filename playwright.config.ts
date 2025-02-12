@@ -8,6 +8,8 @@ const config: PlaywrightTestConfig = {
   webServer: {
     command: 'npm run build && npm run preview',
     port: 4173,
+    stdout: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
+    stderr: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
   },
   testDir: 'tests',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
