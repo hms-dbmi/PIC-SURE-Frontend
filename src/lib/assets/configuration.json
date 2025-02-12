@@ -2,17 +2,12 @@
   "applicationName": "PIC‑SURE",
   "sitemap": [
     {
-      "category": "Configuration",
-      "privilege": "SUPER_ADMIN",
-      "links": [
-        { "title": "Authorization", "url": "/admin/authorization" },
-        { "title": "Authentication", "url": "/admin/authentication" }
-      ]
-    },
-    {
       "category": "Administration",
       "privilege": "ADMIN",
-      "links": [{ "title": "Manage Users", "url": "/admin/users" }]
+      "links": [
+        { "title": "Manage Users", "url": "/admin/users" },
+        { "title": "Configuration", "url": "/admin/configuration" }
+      ]
     },
     {
       "category": "Use PIC-SURE",

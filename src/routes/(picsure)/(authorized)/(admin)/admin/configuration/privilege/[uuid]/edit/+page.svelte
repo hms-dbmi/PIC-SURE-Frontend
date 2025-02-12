@@ -5,19 +5,15 @@
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
-  import PrivilegeForm from '$lib/components/admin/authorization/PrivilegeForm.svelte';
+  import PrivilegeForm from '$lib/components/admin/configuration/PrivilegeForm.svelte';
 
-  import PrivilegesStore from '$lib/stores/Privileges';
-  import ApplicationStore from '$lib/stores/Application';
   import type { Privilege } from '$lib/models/Privilege';
-
-  const { loadPrivileges, getPrivilege } = PrivilegesStore;
-  const { applicationList, loadApplications } = ApplicationStore;
+  import { getPrivilege } from '$lib/stores/Privileges';
+  import { applicationList, loadApplications } from '$lib/stores/Application';
 
   let privilege: Privilege;
 
   async function load() {
-    await loadPrivileges();
     privilege = await getPrivilege($page.params.uuid);
     await loadApplications();
   }
@@ -27,7 +23,7 @@
   <title>{branding.applicationName} | Edit Privilege</title>
 </svelte:head>
 
-<Content title="Edit Privilege" backUrl="/admin/authorization" backTitle="Back to Authorization">
+<Content title="Edit Privilege" backUrl="/admin/configuration" backTitle="Back to Configuration">
   {#await load()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />

@@ -6,10 +6,10 @@ import * as api from '$lib/api';
 const APP_URL = 'psama/application';
 
 const loaded = writable(false);
-const applications: Writable<Application[]> = writable([]);
-const applicationList = derived(applications, ($a) => $a.map((a) => [a.name, a.uuid]), []);
+export const applications: Writable<Application[]> = writable([]);
+export const applicationList = derived(applications, ($a) => $a.map((a) => [a.name, a.uuid]), []);
 
-async function loadApplications() {
+export async function loadApplications() {
   if (get(loaded)) return;
 
   const res = await api.get(APP_URL);
@@ -17,7 +17,7 @@ async function loadApplications() {
   loaded.set(true);
 }
 
-function getApplication(uuid: string) {
+export function getApplication(uuid: string) {
   const store: Application[] = get(applications);
   return store.find((a) => a.uuid === uuid);
 }

@@ -6,10 +6,10 @@ import * as api from '$lib/api';
 const PRIV_PATH = 'psama/privilege';
 
 const loaded = writable(false);
-const privileges: Writable<Privilege[]> = writable([]);
-const privilegeList = derived(privileges, ($p) => $p.map((p) => [p.name, p.uuid || '']), []);
+export const privileges: Writable<Privilege[]> = writable([]);
+export const privilegeList = derived(privileges, ($p) => $p.map((p) => [p.name, p.uuid || '']), []);
 
-async function loadPrivileges() {
+export async function loadPrivileges() {
   if (get(loaded)) return;
 
   const res = await api.get(PRIV_PATH);
@@ -17,7 +17,7 @@ async function loadPrivileges() {
   loaded.set(true);
 }
 
-async function getPrivilege(uuid: string) {
+export async function getPrivilege(uuid: string) {
   const store: Privilege[] = get(privileges);
   const privilege = store.find((p) => p.uuid === uuid);
   if (privilege) {
@@ -28,40 +28,39 @@ async function getPrivilege(uuid: string) {
   return mapPrivilege(res);
 }
 
-async function addPrivilege(privilege: Privilege) {
+export async function addPrivilege(privilege: Privilege) {
   const res = await api.post(PRIV_PATH, [
     {
       ...privilege,
       application: { uuid: privilege.application },
     },
   ]);
-  const newPriv = mapPrivilege(res.content[0]);
+  const newPriv = mapPrivilege(res[0]);
 
   const store: Privilege[] = get(privileges);
   store.push(newPriv);
   privileges.set(store);
 }
 
-async function updatePrivilege(privilege: Privilege) {
-  const res = await api.put(PRIV_PATH, [
+export async function updatePrivilege(privilege: Privilege) {
+  await api.put(PRIV_PATH, [
     {
       ...privilege,
       application: { uuid: privilege.application },
     },
   ]);
-  const newPriv = mapPrivilege(res.content[0]);
 
   const store: Privilege[] = get(privileges);
-  const privIndex: number = store.findIndex((p) => p.uuid === newPriv.uuid);
+  const privIndex: number = store.findIndex((p) => p.uuid === privilege.uuid);
   if (privIndex === -1) {
-    store.push(newPriv);
+    store.push(privilege);
   } else {
-    store[privIndex] = newPriv;
+    store[privIndex] = privilege;
   }
   privileges.set(store);
 }
 
-async function deletePrivilege(uuid: string) {
+export async function deletePrivilege(uuid: string) {
   await api.del(`${PRIV_PATH}/${uuid}`);
 
   const store: Privilege[] = get(privileges);

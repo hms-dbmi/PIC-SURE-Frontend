@@ -90,7 +90,6 @@ async function handleResponse(res: Response) {
       sessionStorage.removeItem('filters');
     }
     logout(undefined, false);
-    return;
   }
 
   throw error(res.status as NumericRange<400, 599>, await res.text());

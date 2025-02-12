@@ -6,10 +6,10 @@ import * as api from '$lib/api';
 const ROLE_PATH = 'psama/role';
 
 const loaded = writable(false);
-const roles: Writable<Role[]> = writable([]);
-const roleList = derived(roles, ($r) => $r.map((r) => [r.name, r.uuid || '']), []);
+export const roles: Writable<Role[]> = writable([]);
+export const roleList = derived(roles, ($r) => $r.map((r) => [r.name, r.uuid || '']), []);
 
-async function loadRoles() {
+export async function loadRoles() {
   if (get(loaded)) return;
 
   const res = await api.get(ROLE_PATH);
@@ -17,7 +17,7 @@ async function loadRoles() {
   loaded.set(true);
 }
 
-async function getRole(uuid: string) {
+export async function getRole(uuid: string) {
   const store: Role[] = get(roles);
   const role = store.find((r) => r.uuid === uuid);
   if (role) {
@@ -28,7 +28,7 @@ async function getRole(uuid: string) {
   return mapRole(res);
 }
 
-async function addRole(role: Role) {
+export async function addRole(role: Role) {
   const res = await api.post(ROLE_PATH, [
     {
       ...role,
@@ -42,7 +42,7 @@ async function addRole(role: Role) {
   roles.set(store);
 }
 
-async function updateRole(role: Role) {
+export async function updateRole(role: Role) {
   const res = await api.put(ROLE_PATH, [
     {
       ...role,
@@ -61,7 +61,7 @@ async function updateRole(role: Role) {
   roles.set(store);
 }
 
-async function deleteRole(uuid: string) {
+export async function deleteRole(uuid: string) {
   await api.del(`${ROLE_PATH}/${uuid}`);
 
   const store: Role[] = get(roles);

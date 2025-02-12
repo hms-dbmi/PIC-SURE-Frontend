@@ -4,7 +4,7 @@
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
-  import PrivilegeForm from '$lib/components/admin/authorization/PrivilegeForm.svelte';
+  import PrivilegeForm from '$lib/components/admin/configuration/PrivilegeForm.svelte';
 
   import ApplicationStore from '$lib/stores/Application';
   const { applicationList, loadApplications } = ApplicationStore;
@@ -14,7 +14,7 @@
   <title>{branding.applicationName} | New Privilege</title>
 </svelte:head>
 
-<Content title="New Privilege" backUrl="/admin/authorization" backTitle="Back to Authorization">
+<Content title="New Privilege" backUrl="/admin/configuration" backTitle="Back to Configuration">
   {#await loadApplications()}
     <h3 class="text-left">Loading</h3>
     <ProgressBar animIndeterminate="anim-progress-bar" />

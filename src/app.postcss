@@ -323,13 +323,16 @@ nav#page-navigation li .nav-dropdown a:focus {
   @apply variant-filled-success;
 }
 
-#user-token #token {
-  @apply input;
+.input-border {
   overflow: auto;
   overflow-wrap: break-word;
   word-wrap: break-word;
   padding: 0.5em;
   border-radius: var(--theme-rounded-container);
+}
+
+#user-token #token {
+  @apply input input-border;
 }
 
 .btn-xs {
@@ -345,13 +348,14 @@ nav#page-navigation li .nav-dropdown a:focus {
   border-radius: 0.75rem;
 }
 
-.label.required span:after {
+.required span:after {
   content: ' *';
   display: inline;
   @apply text-error-500-400-token;
 }
 
 input.required:invalid,
+label.required input:invalid,
 .label.required input:invalid {
   @apply text-error-500-400-token;
 }
