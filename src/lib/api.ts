@@ -83,6 +83,7 @@ async function handleResponse(res: Response) {
     browser &&
       sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
     logout(undefined, true);
+    return;
   } else if (res.status === 403) {
     if (browser) {
       sessionStorage.removeItem('logout-reason');
