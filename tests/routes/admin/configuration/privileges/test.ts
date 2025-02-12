@@ -9,8 +9,8 @@ import {
 } from '../../../../mock-data';
 
 const validationText = {
-  empty: 'Please fill out this field.',
-  option: 'Please select an item in the list.',
+  empty: /([Pp]lease )?[Ff]ill out this field.?/,
+  option: /([Pp]lease )?[Ss]elect an item in the list.?/,
 };
 
 test.beforeEach(async ({ page }) => {
@@ -112,7 +112,7 @@ test('Privileges form enforces required name length', async ({ page }) => {
   const empty = await page
     .getByLabel('Name')
     .evaluate((element: HTMLInputElement) => element.validationMessage);
-  await expect(empty).toContain(validationText.empty);
+  await expect(empty).toMatch(validationText.empty);
 });
 test('Privileges form enforces required description length', async ({ page }) => {
   // Given
@@ -128,7 +128,7 @@ test('Privileges form enforces required description length', async ({ page }) =>
   const empty = await page
     .getByLabel('Description')
     .evaluate((element: HTMLInputElement) => element.validationMessage);
-  await expect(empty).toContain(validationText.empty);
+  await expect(empty).toMatch(validationText.empty);
 });
 test('Privileges form enforces application selection', async ({ page }) => {
   // Given
@@ -143,7 +143,7 @@ test('Privileges form enforces application selection', async ({ page }) => {
   const noOption = await page
     .getByLabel('Application')
     .evaluate((element: HTMLSelectElement) => element.validationMessage);
-  await expect(noOption).toContain(validationText.option);
+  await expect(noOption).toMatch(validationText.option);
 });
 test('Clicking row takes user to edit priviledge form', async ({ page }) => {
   // Given
