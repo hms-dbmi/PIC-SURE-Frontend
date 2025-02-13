@@ -48,11 +48,14 @@
     ]
   },
   "explorePage": {
-    "additionalColumns": [
+    "columns": [
       {
-        "dataElement": "dataset",
-        "label": "Study",
-        "sort": false
+        "label": "Dataset",
+        "dataElement": "studyAcronym"
+      },
+      {
+        "label": "Variable Name",
+        "dataElement": "name"
       }
     ],
     "tourSearchIntro": "PIC-SURE Search allows you to search for variable level data.",
