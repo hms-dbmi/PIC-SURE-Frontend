@@ -1,4 +1,4 @@
-import { picsureUser, mockLoginResponse } from './mock-data';
+import { picsureUser, mockToken } from './mock-data';
 import { test, mockApiSuccess } from './custom-context';
 import { userTypes } from './mock-data';
 
@@ -10,6 +10,11 @@ const userFile = (user: string) => `tests/.auth/${user}.json`;
 Object.entries(userTypes).forEach(async ([user, privileges]) => {
   test(`authenticate as ${user}`, async ({ page }) => {
     const userData = { ...picsureUser, privileges };
+    const mockLoginResponse =
+      '/login/loading/#access_token=' +
+      mockToken +
+      '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G';
+
     await mockApiSuccess(page, '*/**/psama/authentication', userData);
     await mockApiSuccess(page, '*/**/psama/authentication/auth0', userData);
     await mockApiSuccess(page, '*/**/psama/authentication/fence', userData);
