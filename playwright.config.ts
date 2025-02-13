@@ -8,12 +8,33 @@ const config: PlaywrightTestConfig = {
   webServer: {
     command: 'npm run build && npm run preview',
     port: 4173,
+    stdout: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
+    stderr: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
   },
   testDir: 'tests',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
   reporter: [['list'], ['html']],
+  retries: 3,
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        browserName: 'chromium',
+        contextOptions: {
+          permissions: ['clipboard-read', 'clipboard-write'],
+        },
+      },
+    },
+    {
+      name: 'firefox',
+      use: { browserName: 'firefox' },
+    },
+    {
+      name: 'webkit',
+      use: { browserName: 'webkit' },
+    },
+  ],
   use: {
-    permissions: ['clipboard-read', 'clipboard-write'],
     launchOptions: {
       slowMo: 200,
     },

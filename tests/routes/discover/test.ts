@@ -92,7 +92,6 @@ test.describe('Discover', () => {
     const tableBody = page.locator('tbody');
     const firstRow = tableBody.locator('tr').nth(6);
     const filterIcon = firstRow.locator('td').last().locator('button').nth(1);
-    console.log(filterIcon);
 
     // Then
     await expect(filterIcon).toBeVisible();
@@ -110,7 +109,6 @@ test.describe('Discover', () => {
     const tableBody = page.locator('tbody');
     const firstRow = tableBody.locator('tr').nth(5);
     const filterIcon = firstRow.locator('td').last().locator('button').nth(1);
-    console.log(filterIcon);
 
     // Then
     await expect(filterIcon).toBeVisible();

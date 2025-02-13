@@ -7,8 +7,8 @@ import {
 } from '../../../mock-data';
 
 const validationText = {
-  invalidEmail: "Please include an '@' in the email address.",
-  option: 'Please select an item in the list.',
+  invalidEmail: /([Pp]lease )?([Ee]nter|[Ii]nclude) an ('@' in the )?email address.?/,
+  option: /([Pp]lease )?[Ss]elect an item in the list.?/,
 };
 
 // TODO: Add api specific tests when api data is implemented
@@ -131,7 +131,7 @@ test.describe('users', () => {
     const invalid = await page
       .getByLabel('Email')
       .evaluate((element: HTMLInputElement) => element.validationMessage);
-    await expect(invalid).toContain(validationText.invalidEmail);
+    await expect(invalid).toMatch(validationText.invalidEmail);
   });
   test('User form enforces connection selection', async ({ page }) => {
     // Given
@@ -145,7 +145,7 @@ test.describe('users', () => {
     const noOption = await page
       .getByLabel('Connection')
       .evaluate((element: HTMLSelectElement) => element.validationMessage);
-    await expect(noOption).toContain(validationText.option);
+    await expect(noOption).toMatch(validationText.option);
   });
   test('View row icon takes user to view privilege form', async ({ page }) => {
     // Given

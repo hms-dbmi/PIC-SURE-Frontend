@@ -9,6 +9,8 @@ import {
 const dummyUuid = '6d405d0f-8243-4494-8bd3-8820cd33d836';
 const dummyDate = '2024-01-01';
 
+const validateUUIDMessage = /([Pp]lease )?[Mm]atch the requested format.?/;
+
 test.describe('data requests', () => {
   test.beforeEach(async ({ context }) => {
     await mockApiSuccess(context, '*/**/picsure/proxy/uploader/sites', mockSites);
@@ -39,7 +41,7 @@ test.describe('data requests', () => {
       const invalid = await page
         .getByLabel('Dataset Id')
         .evaluate((element: HTMLInputElement) => element.validationMessage);
-      await expect(invalid).toContain('Please match the requested format.');
+      await expect(invalid).toMatch(validateUUIDMessage);
     });
     test('Should not advance to step 2 when api status request fails', async ({ page }) => {
       // Given

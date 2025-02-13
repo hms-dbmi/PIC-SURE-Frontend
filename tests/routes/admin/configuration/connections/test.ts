@@ -9,8 +9,7 @@ import {
 } from '../../../../mock-data';
 
 const validationText = {
-  empty: 'Please fill out this field.',
-  option: 'Please select an item in the list.',
+  empty: /([Pp]lease )?[Ff]ill out this field.?/,
 };
 
 test.beforeEach(async ({ page }) => {
@@ -43,7 +42,7 @@ test('Add connection button takes user to new connection page', async ({ page })
 
   // Then
   await page.waitForURL('**/admin/configuration/connection/new');
-  await expect(page.url()).toContain('admin/configuration/connection/new');
+  expect(page.url()).toContain('admin/configuration/connection/new');
 });
 test('Connection form cancel button navigates back to configuration page', async ({ page }) => {
   // Given
@@ -54,7 +53,7 @@ test('Connection form cancel button navigates back to configuration page', async
 
   // Then
   await page.waitForURL('**/admin/configuration');
-  await expect(page.url()).toContain('/admin/configuration');
+  expect(page.url()).toContain('/admin/configuration');
 });
 test('Connection form returns to configuration page with success message', async ({ page }) => {
   // Given
@@ -77,7 +76,7 @@ test('Connection form returns to configuration page with success message', async
   // Then
   await page.waitForURL('**/admin/configuration');
   await expect(page.locator('.snackbar-wrapper .variant-filled-success')).toBeVisible();
-  await expect(page.url()).toContain('/admin/configuration');
+  expect(page.url()).toContain('/admin/configuration');
 });
 test('Connection form returns error message on api fail', async ({ page }) => {
   // Given
@@ -107,7 +106,7 @@ test('Connection form enforces required Label min length', async ({ page }) => {
   const empty = await page
     .getByLabel('Label')
     .evaluate((element: HTMLInputElement) => element.validationMessage);
-  await expect(empty).toContain(validationText.empty);
+  expect(empty).toMatch(validationText.empty);
 });
 test('Connection form enforces required ID min length', async ({ page }) => {
   // Given
@@ -123,7 +122,7 @@ test('Connection form enforces required ID min length', async ({ page }) => {
   const empty = await page
     .getByLabel('ID')
     .evaluate((element: HTMLInputElement) => element.validationMessage);
-  await expect(empty).toContain(validationText.empty);
+  expect(empty).toMatch(validationText.empty);
 });
 test('Connection form enforces required Sub Prefix min length', async ({ page }) => {
   // Given
@@ -139,7 +138,7 @@ test('Connection form enforces required Sub Prefix min length', async ({ page })
   const empty = await page
     .getByLabel('Sub Prefix')
     .evaluate((element: HTMLInputElement) => element.validationMessage);
-  await expect(empty).toContain(validationText.empty);
+  expect(empty).toMatch(validationText.empty);
 });
 test('Connection form returns a validation error when JSON is not valid', async ({ page }) => {
   // Given
@@ -164,9 +163,7 @@ test('Clicking row takes user to edit connection form', async ({ page }) => {
 
   // Then
   await page.waitForURL(`**/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
-  await expect(page.url()).toContain(
-    `/admin/configuration/connection/${mockConnections[0].uuid}/edit`,
-  );
+  expect(page.url()).toContain(`/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
 });
 test('Edit row icon takes user to edit connection form', async ({ page }) => {
   // Given
@@ -177,9 +174,7 @@ test('Edit row icon takes user to edit connection form', async ({ page }) => {
 
   // Then
   await page.waitForURL(`**/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
-  await expect(page.url()).toContain(
-    `/admin/configuration/connection/${mockConnections[0].uuid}/edit`,
-  );
+  expect(page.url()).toContain(`/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
 });
 test('Edit connection form has pre-populated values', async ({ page }) => {
   const connection = mockConnections[0];

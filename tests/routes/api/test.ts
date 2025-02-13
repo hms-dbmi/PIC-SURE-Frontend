@@ -15,7 +15,6 @@ test.describe('API page', () => {
     await mockApiSuccess(context, '*/**/psama/role', mockRoles);
   });
   test('Has expected error message', async ({ page }) => {
-    console.log(branding);
     // Given
     await mockApiFail(page, '*/**/psama/user/me?hasToken', 'accessdenied');
     await page.goto('/analyze');

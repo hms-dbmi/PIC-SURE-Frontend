@@ -65,7 +65,7 @@ userTest.describe('Explorer for authenticated users', () => {
 
     // Then
     await expect(page.locator('#facet-side-bar')).toBeVisible();
-    expect(
+    await expect(
       page
         .getByTestId('accordion-item')
         .first()
@@ -161,8 +161,8 @@ test.describe('explorer', () => {
         await page.goto('/explorer?search=somedata');
 
         // When
-        await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
+        await expect(tableBody).toBeVisible();
         const firstRow = tableBody.locator('tr').first();
         await expect(firstRow).toBeVisible();
         await firstRow.click();
@@ -398,7 +398,7 @@ test.describe('explorer', () => {
 
         // Then
         const firstItemText: string = await firstItem.textContent();
-        expect(await firstItemText?.trim()).toBe(detailResponseCat.values[0]);
+        expect(firstItemText?.trim()).toBe(detailResponseCat.values[0]);
         // Close the filter panel
         clickNthFilterIcon(page);
 
@@ -433,7 +433,7 @@ test.describe('explorer', () => {
 
         // Then
         const firstItemText: string = await firstItem.textContent();
-        expect(await firstItemText?.trim()).toBe(detailResponseCat.values[0]);
+        expect(firstItemText?.trim()).toBe(detailResponseCat.values[0]);
         // Close the filter panel
         clickNthFilterIcon(page);
 

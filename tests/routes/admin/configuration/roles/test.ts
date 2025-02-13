@@ -9,8 +9,7 @@ import {
 } from '../../../../mock-data';
 
 const validationText = {
-  empty: 'Please fill out this field.',
-  option: 'Please select an item in the list.',
+  empty: /([Pp]lease )?[Ff]ill out this field.?/,
 };
 
 test.beforeEach(async ({ page }) => {
@@ -114,7 +113,7 @@ test('Role form enforces required name length', async ({ page }) => {
   const empty = await page
     .getByLabel('Name')
     .evaluate((element: HTMLInputElement) => element.validationMessage);
-  await expect(empty).toContain(validationText.empty);
+  await expect(empty).toMatch(validationText.empty);
 });
 test('Role form enforces required description length', async ({ page }) => {
   // Given
@@ -129,7 +128,7 @@ test('Role form enforces required description length', async ({ page }) => {
   const empty = await page
     .getByLabel('Description')
     .evaluate((element: HTMLInputElement) => element.validationMessage);
-  await expect(empty).toContain(validationText.empty);
+  await expect(empty).toMatch(validationText.empty);
 });
 test('Role form enforces required at least one selected privilege', async ({ page }) => {
   // Given

@@ -48,7 +48,6 @@ test('Tour Finishes', async ({ page }) => {
     throw new Error('Step count not found');
   }
   const stepCountInt = parseInt(stepCount.split(' ')[2]) || 0;
-  console.log('Step count:', stepCountInt);
   for (let i = 0; i < stepCountInt + 1; i++) {
     // +1 to account for the Done button
     await page.keyboard.press('ArrowRight');

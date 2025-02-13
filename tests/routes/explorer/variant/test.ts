@@ -47,6 +47,8 @@ userTest.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] },
       await page.waitForURL('/explorer');
       await mockSyncAPI(page, successResults);
       await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
+      // open the sidebar to reduce locator time on result panel items during testing
+      await page.locator('#results-panel-toggle').click();
       await page.getByTestId('genomic-filter-btn').click();
       await page.getByTestId('gene-variant-option').click();
       await page.locator('#options-container').getByLabel(geneValues.results[0]).click();
@@ -55,13 +57,11 @@ userTest.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] },
     });
     userTest('Adds variant explorer button to gene results', async ({ page }) => {
       // Then
-      await expect(
-        page.locator('#results-panel').getByTestId('variant-explorer-btn'),
-      ).toBeEnabled();
+      await expect(page.getByTestId('variant-explorer-btn')).toBeEnabled();
     });
     userTest('Displays variant count', async ({ page }) => {
       // When
-      await page.locator('#results-panel').getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('variant-explorer-btn').click();
 
       // Then
       await expect(page).toHaveURL('/explorer/variant');
@@ -69,7 +69,7 @@ userTest.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] },
     });
     userTest('Loads variant data table', async ({ page }) => {
       // When
-      await page.locator('#results-panel').getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('variant-explorer-btn').click();
 
       // Then
       await expect(page).toHaveURL('/explorer/variant');
@@ -77,7 +77,7 @@ userTest.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] },
     });
     userTest('Can download variant data', async ({ page }) => {
       // Given
-      await page.locator('#results-panel').getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('variant-explorer-btn').click();
 
       // When
       const [download] = await Promise.all([
@@ -97,7 +97,7 @@ userTest.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] },
           data: { count: 0, message: 'Query ran successfully' },
         },
       });
-      await page.locator('#results-panel').getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('variant-explorer-btn').click();
 
       // Then
       await expect(page).toHaveURL('/explorer/variant');
@@ -111,7 +111,7 @@ userTest.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] },
       });
 
       // When
-      await page.locator('#results-panel').getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('variant-explorer-btn').click();
 
       // Then
       await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
@@ -124,7 +124,7 @@ userTest.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] },
       });
 
       // When
-      await page.locator('#results-panel').getByTestId('variant-explorer-btn').click();
+      await page.getByTestId('variant-explorer-btn').click();
 
       // Then
       await expect(page).toHaveURL('/explorer/variant');
