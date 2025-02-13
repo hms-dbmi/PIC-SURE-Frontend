@@ -15,7 +15,7 @@ const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
-test.use({ storageState: '.playwright/.auth/generalUser.json' });
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 
 test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);

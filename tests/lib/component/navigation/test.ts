@@ -1,15 +1,14 @@
 import { expect } from '@playwright/test';
 import { test } from '../../../custom-context';
-import { picsureUser } from '../../../mock-data';
+import { picsureUser, userTypes } from '../../../mock-data';
 import { routes } from '../../../../src/lib/configuration';
 import { PicsurePrivileges } from '../../../../src/lib/models/Privilege';
 import type { Route } from '../../../../src/lib/models/Route';
-import { userTypes } from '../../../mock-data';
 
 // TODO: This should probably be moved to a component test, not an e2e/integration test.
 
 test.describe('Public Routes Navigation', () => {
-  test.use({ storageState: '.playwright/.auth/unauthenticated.json' });
+  test.use({ storageState: 'tests/.auth/unauthenticated.json' });
   routes
     .filter((route) => route.privilege === undefined)
     .forEach((route, _index, routes) => {
@@ -37,7 +36,7 @@ test.describe('Public Routes Navigation', () => {
 });
 
 test.describe('Any logged in user', () => {
-  test.use({ storageState: '.playwright/.auth/generalUser.json' });
+  test.use({ storageState: 'tests/.auth/generalUser.json' });
 
   test('Session avatar should reflect correct user initial after login', async ({ page }) => {
     // Given
@@ -86,7 +85,7 @@ Object.entries(userTypes).forEach(([userType, privileges]) => {
   );
 
   test.describe(`${userType} Navigation`, () => {
-    test.use({ storageState: `.playwright/.auth/${userType}.json` });
+    test.use({ storageState: `tests/.auth/${userType}.json` });
 
     testRoutes
       .filter((route) => !route.children)

@@ -3,7 +3,7 @@ import { test, mockApiSuccess } from '../../custom-context';
 
 import { mockDashboard } from '../../mock-data';
 
-test.use({ storageState: '.playwright/.auth/generalUser.json' });
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 
 test.describe('Dashboard page', () => {
   test.beforeEach(async ({ page }) => {

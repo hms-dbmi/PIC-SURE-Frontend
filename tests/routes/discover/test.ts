@@ -12,7 +12,7 @@ import {
   crossCountSyncResponseLessThan10,
 } from '../../mock-data';
 
-test.use({ storageState: '.playwright/.auth/unauthenticated.json' });
+test.use({ storageState: 'tests/.auth/unauthenticated.json' });
 
 test.beforeEach(async ({ page }) => {
   await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));

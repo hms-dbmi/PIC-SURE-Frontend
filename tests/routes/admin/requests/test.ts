@@ -11,7 +11,7 @@ const dummyDate = '2024-01-01';
 
 const validateUUIDMessage = /([Pp]lease )?[Mm]atch the requested format.?/;
 
-test.use({ storageState: '.playwright/.auth/generalUser.json' });
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 
 test.describe('data requests', () => {
   test.beforeEach(async ({ context }) => {

@@ -17,7 +17,7 @@ const invalidSnp = 'chr17, 35269878,,A';
 const snpError =
   'Please check that value matches: chromosome (chr#), position, reference allele, variant allele.';
 
-test.use({ storageState: '.playwright/.auth/generalUser.json' });
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 
 test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);

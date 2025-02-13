@@ -10,7 +10,7 @@ import {
 
 const MAX_FACETS_TO_SHOW = 5;
 
-test.use({ storageState: '.playwright/.auth/generalUser.json' });
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 
 test.describe('Facet Side Bar', () => {
   test('Facet Side Bar is shown after loading', async ({ page }) => {
@@ -21,7 +21,7 @@ test.describe('Facet Side Bar', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     //When
     const facetSideBar = page.locator('#facet-side-bar');
 
@@ -32,7 +32,7 @@ test.describe('Facet Side Bar', () => {
     await page.route(searchResultPath, async (route: Route) =>
       route.fulfill({ json: searchResults }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     const errorAlert = page.getByTestId('error-alert');
     //When
@@ -53,7 +53,7 @@ test.describe('Facet Side Bar', () => {
     );
 
     //When
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
     const accordionDiv = facetSideBar.getByTestId('accordion');
@@ -78,7 +78,7 @@ test.describe('Facet Side Bar', () => {
     );
 
     //When
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
     const accordionDiv = facetSideBar.getByTestId('accordion');
@@ -104,7 +104,7 @@ test.describe('Facet Categories', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
 
     //When
     const facetCategoryElement = page.locator('.accordion-summary').first();
@@ -121,7 +121,7 @@ test.describe('Facet Categories', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
@@ -149,7 +149,7 @@ test.describe('Facet Categories', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
@@ -175,7 +175,7 @@ test.describe('Facet Categories', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
@@ -202,7 +202,7 @@ test.describe('Facet Categories', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
@@ -229,7 +229,7 @@ test.describe('Facet Categories', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
@@ -258,7 +258,7 @@ test.describe('Facet Categories', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
@@ -279,7 +279,7 @@ test.describe('Facet Categories', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
@@ -304,7 +304,7 @@ test.describe('Facet Categories', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
@@ -326,7 +326,7 @@ test.describe('Facet Categories', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
@@ -355,7 +355,7 @@ test.describe('Facet Categories', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     await expect(facetSideBar).toBeVisible();
 
@@ -387,7 +387,7 @@ test.describe('Facet & search', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const firstCheckName = facetsResponse[0].facets[0].name;
     const facetCheckBox = page.locator('input#' + firstCheckName);
     await expect(facetCheckBox).toBeVisible();
@@ -407,7 +407,7 @@ test.describe('Facet & search', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const firstCheckName = facetsResponse[0].facets[0].name;
     const facetCheckBox = page.locator('input#' + firstCheckName);
     await expect(facetCheckBox).toBeVisible();
@@ -427,7 +427,7 @@ test.describe('Facet & search', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const firstCheckName = facetsResponse[0].facets[0].name;
     const facetCheckBox = page.locator('input#' + firstCheckName);
     await facetCheckBox.click(); // to Included state
@@ -447,7 +447,7 @@ test.describe('Facet & search', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const firstCheckName = facetsResponse[0].facets[0].name;
     const facetCheckBox = page.locator('input#' + firstCheckName);
     await facetCheckBox.click(); // to Included state
@@ -469,7 +469,7 @@ test.describe('Facet & search', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
     const firstCheckName = facetsResponse[0].facets[0].name;
     const facetCheckBox = page.locator('input#' + firstCheckName);
     await facetCheckBox.click(); // to Included state
@@ -489,7 +489,7 @@ test.describe('Facet & search', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
 
     //When
     const firstCheckName = facetsResponse[0].facets[0].name;
@@ -516,7 +516,7 @@ test.describe('Facet & search', () => {
         ],
       }),
     );
-    await page.goto('/explorer', { waitUntil: 'commit' });
+    await page.goto('/explorer');
     await page.route(searchResultPath, async (route: Route) =>
       route.fulfill({
         json: {
@@ -566,7 +566,7 @@ test.describe('Nested Facets', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: nestedFacetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
 
     // When
     const nestedCategory = page.getByText('Nested Category');
@@ -584,7 +584,7 @@ test.describe('Nested Facets', () => {
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: nestedFacetsResponse }),
     );
-    await page.goto('/explorer?search=age', { waitUntil: 'commit' });
+    await page.goto('/explorer?search=age');
 
     // When
     const nestedFacetArrow = page.getByTestId('facet-nested_facet-arrow');

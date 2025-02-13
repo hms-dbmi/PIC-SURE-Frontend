@@ -68,7 +68,7 @@ test.describe('Google consent', () => {
 });
 
 test.describe('Login page', () => {
-  test.use({ storageState: '.playwright/.auth/generalUser.json' });
+  test.use({ storageState: 'tests/.auth/generalUser.json' });
 
   const enabledProviders = Object.keys(process.env)
     .filter((key) => key.startsWith(PROVIDER_PREFIX) && process.env[key] === 'true')

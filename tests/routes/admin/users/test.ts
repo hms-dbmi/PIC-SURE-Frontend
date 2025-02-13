@@ -11,7 +11,7 @@ const validationText = {
   option: /([Pp]lease )?[Ss]elect an item in the list.?/,
 };
 
-test.use({ storageState: '.playwright/.auth/superUser.json' });
+test.use({ storageState: 'tests/.auth/superUser.json' });
 
 // TODO: Add api specific tests when api data is implemented
 test.describe('users', () => {

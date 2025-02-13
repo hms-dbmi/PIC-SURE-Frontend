@@ -12,7 +12,7 @@ import {
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
-test.use({ storageState: '.playwright/.auth/generalUser.json' });
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 
 test.describe('OptionaSelectionList', () => {
   // TODO: Some feartures will be hidden in the future. Cannot use nth.

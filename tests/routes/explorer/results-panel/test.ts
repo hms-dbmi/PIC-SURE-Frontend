@@ -11,7 +11,7 @@ import {
 
 const countResultPath = '*/**/picsure/query/sync';
 
-test.use({ storageState: '.playwright/.auth/generalUser.json' });
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 
 test.describe('Results Panel', () => {
   test('Result panel bar and button shows', async ({ page }) => {

@@ -15,6 +15,7 @@ const config: PlaywrightTestConfig = {
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
   reporter: [['list'], ['html']],
   retries: 3,
+  fullyParallel: true,
   projects: [
     {
       name: 'setup',

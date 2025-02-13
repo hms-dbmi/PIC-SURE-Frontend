@@ -30,9 +30,9 @@ function mockSyncAPI(context: BrowserContext | Page, resultMap: Results) {
   });
 }
 
-test.use({ storageState: '.playwright/.auth/generalUser.json' });
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 
-test.describe('variant explorer', { tag: ['@feature', '@variantExplorer'] }, () => {
+test.describe('variant explorer', () => {
   test.describe('Genetic filter applied', () => {
     test.beforeEach(async ({ page }) => {
       // Add genomic filter steps

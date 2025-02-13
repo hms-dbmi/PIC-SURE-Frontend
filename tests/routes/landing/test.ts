@@ -37,7 +37,7 @@ const mockStatsRoutesSuccess = new Map<string, string>([
 ]);
 
 test.describe('Landing page', () => {
-  test.use({ storageState: '.playwright/.auth/generalUser.json' });
+  test.use({ storageState: 'tests/.auth/generalUser.json' });
 
   test.describe('Search', () => {
     test('Has expected search to go to explorer', async ({ page }) => {
@@ -153,7 +153,7 @@ test.describe('Landing page', () => {
 });
 
 test.describe('Logged Out Landing', () => {
-  test.use({ storageState: '.playwright/.auth/unauthenticated.json' });
+  test.use({ storageState: 'tests/.auth/unauthenticated.json' });
 
   loggedOutActions.forEach(({ description, icon, url, title }) => {
     test(`Has expected action of description: ${description}`, async ({ page }) => {

@@ -7,7 +7,7 @@ import {
   facetResultPath,
 } from '../../../mock-data';
 
-test.use({ storageState: '.playwright/.auth/generalUser.json' });
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 
 test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, facetResultPath, facetsResponse);

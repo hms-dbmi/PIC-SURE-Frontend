@@ -13,4 +13,4 @@ package-lock.json
 yarn.lock
 
 playwright-report
-.playwright
+tests/.auth

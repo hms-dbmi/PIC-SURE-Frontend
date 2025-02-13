@@ -16,7 +16,7 @@ import {
 import { type SearchResult } from '../../../src/lib/models/Search';
 import { createCategoricalFilter, createNumericFilter } from '../../../src/lib/models/Filter';
 
-test.use({ storageState: '.playwright/.auth/generalUser.json' });
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 
 test.beforeEach(async ({ page }) => {
   await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
