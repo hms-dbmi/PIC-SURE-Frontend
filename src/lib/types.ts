@@ -30,7 +30,7 @@ export interface FooterConfig {
 }
 
 export interface ExplorePageConfig {
-  additionalColumns: Column[];
+  columns: Column[];
   tourSearchTerm: string;
   tourSearchIntro: string;
   totalPatientsText: string;

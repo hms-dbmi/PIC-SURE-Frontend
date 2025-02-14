@@ -28,12 +28,10 @@
   $: tourEnabled = true;
   $: isOpenAccess = $page.url.pathname.includes('/discover');
 
-  const additionalColumns = branding.explorePage.additionalColumns || [];
+  const tableColumns = branding.explorePage.columns || [];
 
   const columns: Column[] = [
-    ...additionalColumns,
-    { dataElement: 'display', label: 'Variable Name', sort: false },
-    { dataElement: 'description', label: 'Variable Description', sort: false },
+    ...tableColumns,
     { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
   ];
   const cellOverides = {
