@@ -9,6 +9,8 @@ import {
   conceptsDetailPath,
 } from '../../../mock-data';
 
+test.use({ storageState: 'tests/.auth/generalUser.json' });
+
 test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/concepts*', detailResponseCat);

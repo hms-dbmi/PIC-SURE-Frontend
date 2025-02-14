@@ -12,6 +12,8 @@ const validationText = {
   empty: /([Pp]lease )?[Ff]ill out this field.?/,
 };
 
+test.use({ storageState: 'tests/.auth/superUser.json' });
+
 test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, '*/**/psama/role', mockRoles);
   await mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges);

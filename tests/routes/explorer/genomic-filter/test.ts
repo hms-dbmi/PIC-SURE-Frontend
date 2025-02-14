@@ -1,5 +1,18 @@
 import { expect } from '@playwright/test';
-import { test } from '../../../custom-context';
+import { test, mockApiSuccess } from '../../../custom-context';
+import {
+  searchResults,
+  facetsResponse,
+  searchResultPath,
+  facetResultPath,
+} from '../../../mock-data';
+
+test.use({ storageState: 'tests/.auth/generalUser.json' });
+
+test.beforeEach(async ({ page }) => {
+  await mockApiSuccess(page, facetResultPath, facetsResponse);
+  await mockApiSuccess(page, searchResultPath, searchResults);
+});
 
 test('Clicking the Genomic filter button navigates to genomic filter page', async ({ page }) => {
   // Given

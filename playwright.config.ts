@@ -15,7 +15,13 @@ const config: PlaywrightTestConfig = {
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
   reporter: [['list'], ['html']],
   retries: 3,
+  fullyParallel: true,
   projects: [
+    {
+      name: 'setup',
+      testMatch: 'setup.ts',
+      use: { browserName: 'chromium' },
+    },
     {
       name: 'chromium',
       use: {
@@ -24,14 +30,17 @@ const config: PlaywrightTestConfig = {
           permissions: ['clipboard-read', 'clipboard-write'],
         },
       },
+      dependencies: ['setup'],
     },
     {
       name: 'firefox',
       use: { browserName: 'firefox' },
+      dependencies: ['setup'],
     },
     {
       name: 'webkit',
       use: { browserName: 'webkit' },
+      dependencies: ['setup'],
     },
   ],
   use: {

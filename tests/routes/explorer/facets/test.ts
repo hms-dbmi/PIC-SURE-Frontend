@@ -10,6 +10,8 @@ import {
 
 const MAX_FACETS_TO_SHOW = 5;
 
+test.use({ storageState: 'tests/.auth/generalUser.json' });
+
 test.describe('Facet Side Bar', () => {
   test('Facet Side Bar is shown after loading', async ({ page }) => {
     // Given

@@ -13,6 +13,8 @@ const validationText = {
   option: /([Pp]lease )?[Ss]elect an item in the list.?/,
 };
 
+test.use({ storageState: 'tests/.auth/superUser.json' });
+
 test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, '*/**/psama/role', mockRoles);
   await mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges);
