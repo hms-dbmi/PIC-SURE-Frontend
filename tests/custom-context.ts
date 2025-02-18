@@ -1,9 +1,24 @@
 import { test as base, type Route, type BrowserContext, type Page } from '@playwright/test';
 import type { TestInfo } from '@playwright/test';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function mockApiSuccess(context: BrowserContext | Page, path: string, json: any) {
   return context.route(path, async (route: Route) => route.fulfill({ json }));
+}
+
+export function mockApiSuccessByMethod(
+  context: BrowserContext | Page,
+  path: string,
+  method: string,
+  json: any,
+) {
+  return context.route(path, async (route: Route) => {
+    if (route.request().method() === method) {
+      await route.fulfill({ json });
+      return;
+    }
+    await route.fallback();
+  });
 }
 
 export function mockApiFail(

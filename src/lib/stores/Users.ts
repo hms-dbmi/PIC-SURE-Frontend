@@ -1,5 +1,5 @@
 import { get, writable, type Writable } from 'svelte/store';
-import { mapExtendedUser, type ExtendedUser } from '../models/User';
+import { mapExtendedUser, type ExtendedUser, type UserRequest, type User } from '../models/User';
 
 import * as api from '$lib/api';
 
@@ -11,36 +11,44 @@ export const users: Writable<ExtendedUser[]> = writable([]);
 export async function loadUsers() {
   if (get(loaded)) return;
 
-  const res = await api.get(USER_URL);
+  const res: User[] = await api.get(USER_URL);
   users.set(res.map(mapExtendedUser));
   loaded.set(true);
 }
 
-async function getUser(uuid: string) {
+export async function getUser(uuid: string) {
   const store: ExtendedUser[] = get(users);
   const user = store.find((u) => u.uuid === uuid);
   if (user) {
     return user;
   }
 
-  const res = await api.get(`${USER_URL}/${uuid}`);
+  const res: User = await api.get(`${USER_URL}/${uuid}`);
   return mapExtendedUser(res);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function addUser(user: any) {
-  const res = await api.post(USER_URL, [user]);
-  const newRole = mapExtendedUser(res.content[0]);
+export async function getUserByEmailAndConnection(email: string, connection: string) {
+  let store: ExtendedUser[] = get(users);
+  if (store.length === 0) {
+    await loadUsers();
+    store = get(users);
+  }
+
+  return store.find((u) => u.email === email && u.connection === connection);
+}
+
+export async function addUser(user: UserRequest) {
+  const res: User[] = await api.post(USER_URL, [user]);
+  const newUser: ExtendedUser = mapExtendedUser(res[0]);
 
   const store: ExtendedUser[] = get(users);
-  store.push(newRole);
+  store.push(newUser);
   users.set(store);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function updateUser(user: any) {
-  const res = await api.put(USER_URL, [user]);
-  const newUser = mapExtendedUser(res.content[0]);
+export async function updateUser(user: UserRequest) {
+  const res: User[] = await api.put(USER_URL, [user]);
+  const newUser: ExtendedUser = mapExtendedUser(res[0]);
 
   const store: ExtendedUser[] = get(users);
   const roleIndex: number = store.findIndex((r) => r.uuid === newUser.uuid);
