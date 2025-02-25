@@ -24,7 +24,7 @@
 
   async function loadPlotData() {
     const query = getQueryRequest(!isOpenAccess, resources.visualization);
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
 
     await api
       .post(SYNC_URL, {

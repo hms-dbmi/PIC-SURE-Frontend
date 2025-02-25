@@ -28,7 +28,7 @@ function fetchDashboard(): Promise<DashboardResp> {
 
 function isUserLoggedIn() {
   if (browser) {
-    return !!localStorage.getItem('token');
+    return !!sessionStorage.getItem('token');
   }
   return false;
 }

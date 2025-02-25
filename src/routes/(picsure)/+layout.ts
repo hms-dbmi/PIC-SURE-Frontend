@@ -8,7 +8,7 @@ export const load: LayoutLoad = ({ url }) => {
   if (
     !features.login.open &&
     browser &&
-    (!localStorage.getItem('token') || isTokenExpired(localStorage.getItem('token') || ''))
+    (!sessionStorage.getItem('token') || isTokenExpired(sessionStorage.getItem('token') || ''))
   ) {
     user.set({});
     throw redirect(302, `/login?redirectTo=${url.pathname}`);

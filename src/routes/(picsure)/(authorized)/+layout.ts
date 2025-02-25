@@ -7,7 +7,7 @@ export const prerender = false;
 
 export const load: LayoutLoad = ({ url }) => {
   if (browser) {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token || token.trim() === '') {
       throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
     }

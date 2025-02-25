@@ -34,7 +34,7 @@ async function send({
   }
 
   if (browser) {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       opts.headers['Authorization'] = `${BEARER}${token}`;
       opts.headers['request-source'] = 'Authorized';
