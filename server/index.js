@@ -1,8 +1,7 @@
-import { B as BROWSER } from './chunks/false-CRHihH2U.js';
 import { s as setContext } from './chunks/lifecycle-DtuISP6h.js';
 import { c as create_ssr_component, v as validate_component, m as missing_component } from './chunks/ssr-BRJpAXVH.js';
 import { a as afterUpdate, h as has_data_suffix, s as strip_data_suffix, d as decode_pathname, b as decode_params, n as normalize_path, c as disable_search, e as add_data_suffix, m as make_trackable, r as resolve } from './chunks/exports-kR70XCWV.js';
-import { H as HttpError, j as json, t as text, R as Redirect, S as SvelteKitError, A as ActionFailure } from './chunks/index-DzcLzHBX.js';
+import { H as HttpError, j as json, t as text, R as Redirect, S as SvelteKitError, A as ActionFailure } from './chunks/index-CvuFLVuQ.js';
 import { r as readable, w as writable } from './chunks/index2-BVONNh3m.js';
 
 let base = "";
@@ -233,14 +232,14 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "1iir6fn"
+  version_hash: "nepqie"
 };
 async function get_hooks() {
   let handle;
   let handleFetch;
   let handleError;
   let init;
-  ({ handle, handleFetch, handleError, init } = await import('./chunks/hooks.server-Bf3R7dgU.js'));
+  ({ handle, handleFetch, handleError, init } = await import('./chunks/hooks.server-DPH3bR6z.js'));
   let reroute;
   let transport;
   return {
@@ -1503,6 +1502,7 @@ function requireSetCookie () {
 
 var setCookieExports = /*@__PURE__*/ requireSetCookie();
 
+const BROWSER = false;
 const SVELTE_KIT_ASSETS = "/_svelte_kit_assets";
 const ENDPOINT_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"];
 const PAGE_METHODS = ["GET", "POST", "HEAD"];
