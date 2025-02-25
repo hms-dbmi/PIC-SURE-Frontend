@@ -18,16 +18,16 @@ user.subscribe((user: User) => {
     const userCopy: User = { ...user };
     // We don't want to save the long term token in local storage
     userCopy.token = undefined;
-    localStorage.setItem('user', JSON.stringify(userCopy));
+    sessionStorage.setItem('user', JSON.stringify(userCopy));
   }
 });
 
-// Create a store that syncs with localStorage
-function createLocalStorageStore(key: string, initialValue: boolean) {
-  const store = writable(browser ? !!localStorage.getItem(key) : initialValue);
+// Create a store that syncs with sessionStorage
+function createSessionStorageStore(key: string, initialValue: boolean) {
+  const store = writable(browser ? !!sessionStorage.getItem(key) : initialValue);
 
   if (browser) {
-    // Update store when localStorage changes in other tabs
+    // Update store when sessionStorage changes in other tabs
     window.addEventListener('storage', (event) => {
       if (event.key === key) {
         store.set(!!event.newValue);
@@ -39,23 +39,23 @@ function createLocalStorageStore(key: string, initialValue: boolean) {
 }
 
 export function setToken(token: string) {
-  localStorage.setItem('token', token);
+  sessionStorage.setItem('token', token);
   tokenStatus.set(!!tokenStatus);
 }
 
 export function removeToken() {
-  localStorage.removeItem('token');
+  sessionStorage.removeItem('token');
   tokenStatus.set(false);
 }
 
-export const tokenStatus: Writable<boolean> = createLocalStorageStore('token', false);
+export const tokenStatus: Writable<boolean> = createSessionStorageStore('token', false);
 export const isLoggedIn: Readable<boolean> = derived(tokenStatus, ($tokenStatus) => $tokenStatus);
 
 function restoreUser() {
-  if (browser && localStorage.getItem('user')) {
+  if (browser && sessionStorage.getItem('user')) {
     clearSessionTokenIfExpired();
     try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const user = JSON.parse(sessionStorage.getItem('user') || '{}');
       if (!user || Object.keys(user).length === 0) {
         return {};
       }
@@ -71,7 +71,7 @@ function restoreUser() {
 
 function clearSessionTokenIfExpired() {
   if (browser) {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token && isTokenExpired(token)) {
       console.log('Clearing expired token from local storage.');
       removeToken();
@@ -166,7 +166,7 @@ export async function login(token: string) {
 
 export async function logout(authProvider?: AuthProvider, redirect = false) {
   if (browser) {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       api.get('/psama/logout').catch((error) => {
         console.error('Error logging out: ' + error);
