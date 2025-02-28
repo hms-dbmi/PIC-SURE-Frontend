@@ -56,9 +56,8 @@
     <table
       id="{tableName}-table"
       data-testid="{tableName}-table"
-      class="table table-{tableAuto ? 'auto' : 'fixed'} table-hover align-middle {fullWidth
-        ? 'w-max'
-        : ''} {$$props.class ?? ''}"
+      class="table table-{tableAuto ? 'auto' : 'fixed'} table-hover align-middle
+        {fullWidth ? 'w-max' : ''} {$$props.class ?? ''}"
     >
       <thead>
         <tr class={stickyHeader ? 'sticky-header' : ''}>

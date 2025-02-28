@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { getToastStore } from '@skeletonlabs/skeleton';
+  import { getToastStore, SlideToggle } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
 
   import type { ExtendedUser, UserRequest } from '$lib/models/User';
@@ -58,7 +58,7 @@
         const findUser = await getUserByEmailAndConnection(email, connection);
         if (findUser) {
           toastStore.trigger({
-            message: 'Cannot add a user that already exists.',
+            message: 'Cannot add a user and connection pair that already exists.',
             background: 'variant-filled-error',
           });
           return;
@@ -83,26 +83,37 @@
 </script>
 
 <form on:submit|preventDefault={saveUser} class="grid gap-4 my-3">
-  <label class="flex items-center space-x-2">
-    <input class="checkbox" type="checkbox" bind:checked={active} />
-    <p>Active</p>
-  </label>
+  <SlideToggle name="Active" size="sm" active="bg-success-500" label="Status" bind:checked={active}>
+    {active ? 'Active' : 'Inactive'}
+  </SlideToggle>
 
   {#if user?.uuid}
     <label class="label">
       <span>UUID:</span>
-      <input type="text" class="input" value={user?.uuid} disabled={true} />
+      <input type="text" class="input" value={user?.uuid} disabled />
+    </label>
+    <label class="label">
+      <span>Subject:</span>
+      <input type="text" class="input" value={user?.subject} disabled />
     </label>
   {/if}
 
-  <label class="label required">
+  <label class="label {user?.email ?? 'required'}">
     <span>Email:</span>
-    <input type="email" bind:value={email} class="input" required minlength="1" maxlength="255" />
+    <input
+      type="email"
+      bind:value={email}
+      class="input"
+      required
+      disabled={!!user?.email}
+      minlength="1"
+      maxlength="255"
+    />
   </label>
 
-  <label class="label required">
+  <label class="label {user?.email ?? 'required'}">
     <span>Connection:</span>
-    <select class="select" bind:value={connection} required>
+    <select class="select" bind:value={connection} required disabled={!!user?.connection}>
       <option selected={!user || !user.connection} disabled value>none</option>
       {#each connections as connection}
         <option value={connection.uuid} selected={user && user.connection === connection.uuid}
@@ -113,7 +124,7 @@
   </label>
 
   <fieldset data-testid="privilege-checkboxes">
-    <legend>Roles:</legend>
+    <legend class="required">Roles:</legend>
     {#each roleList as [name], index}
       <label class="flex items-center space-x-2">
         <input class="checkbox" type="checkbox" bind:checked={roles[index].checked} />
