@@ -26,9 +26,3 @@
     on:input={filter}
   />
 </th>
-
-<style>
-  th {
-    font-weight: normal !important;
-  }
-</style>
