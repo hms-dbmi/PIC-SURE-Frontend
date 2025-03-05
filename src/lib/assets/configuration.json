@@ -107,7 +107,21 @@
         "showIfLoggedIn": false
       }
     ],
-    "stats": ["Variables", "Participants", "Data Sources"]
+    "stats": [
+      {
+        "key": "query:blank",
+        "label": "Participants"
+      },
+      {
+        "key": "dict:concepts",
+        "label": "Variables"
+      },
+      {
+        "key": "dict:facets:dataset_id",
+        "label": "Data Sources"
+      }
+    ],
+    "statFields": {}
   },
   "analysisPage": {
     "cards": [

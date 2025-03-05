@@ -9,10 +9,10 @@ import { page } from '$app/stores';
 import { get, writable, type Writable } from 'svelte/store';
 import { user } from '$lib/stores/User';
 
-const dictionaryUrl = 'picsure/proxy/dictionary-api/';
-const searchUrl = 'picsure/proxy/dictionary-api/concepts';
-const conceptDetailUrl = 'picsure/proxy/dictionary-api/concepts/detail/';
-const datasetDetailUrl = 'picsure/proxy/dictionary-api/dashboard-drawer/';
+const DICT_URL = 'picsure/proxy/dictionary-api/';
+const CONCEPT_URL = 'picsure/proxy/dictionary-api/concepts';
+const CONCEPT_DETAIL_URL = 'picsure/proxy/dictionary-api/concepts/detail/';
+const DATASET_DETAIL_URL = 'picsure/proxy/dictionary-api/dashboard-drawer/';
 
 export type FacetSkeleton = {
   [facetCategory: string]: string[];
@@ -45,7 +45,7 @@ export function searchDictionary(
     request = addConsents(request);
   }
   return api.post(
-    `${searchUrl}?page_number=${pageable.pageNumber}&page_size=${pageable.pageSize}`,
+    `${CONCEPT_URL}?page_number=${pageable.pageNumber}&page_size=${pageable.pageSize}`,
     request,
   );
 }
@@ -79,7 +79,7 @@ export async function updateFacetsFromSearch(
   }
 
   try {
-    const response: DictionaryFacetResult[] = await api.post(`${dictionaryUrl}facets/`, request);
+    const response: DictionaryFacetResult[] = await api.post(`${DICT_URL}facets/`, request);
     if (facets.length === 0 && search.length === 0) {
       initializeHiddenFacets(response);
     }
@@ -122,7 +122,7 @@ export async function getConceptDetails(
   conceptPath: string,
   dataset: string,
 ): Promise<SearchResult> {
-  const url = `${conceptDetailUrl}${dataset}`;
+  const url = `${CONCEPT_DETAIL_URL}${dataset}`;
   const rawConceptPath = String.raw`${conceptPath.replace(/\\\\/g, '\\')}`;
 
   if (dictonaryCacheMap.has(rawConceptPath)) {
@@ -155,17 +155,20 @@ export async function getConceptCount(isOpenAccess = false) {
   if (!isOpenAccess) {
     request = addConsents(request);
   }
-  const res = await api.post(`${searchUrl}?page_number=1&page_size=1`, request);
-  return res.totalElements as number;
+  const res: DictionaryConceptResult = await api.post(
+    `${CONCEPT_URL}?page_number=1&page_size=1`,
+    request,
+  );
+  return res.totalElements || Promise.reject('total not found');
 }
 
-export async function getStudiesCount(isOpenAccess = false) {
+export async function getFacetCategoryCount(isOpenAccess = false, category: string) {
   let request: DictionarySearchRequest = { facets: [], search: '', consents: [] };
   if (!isOpenAccess) {
     request = addConsents(request);
   }
-  const res: DictionaryFacetResult[] = await api.post(`${dictionaryUrl}facets/`, request);
-  const facetCat = res.find((facetCat) => facetCat.name === 'dataset_id');
+  const res: DictionaryFacetResult[] = await api.post(`${DICT_URL}facets/`, request);
+  const facetCat = res.find((facetCat) => facetCat.name === category);
   if (!facetCat) {
     return 0;
   }
@@ -177,5 +180,5 @@ export async function getStudiesCount(isOpenAccess = false) {
 }
 
 export async function getDatasetDetails(datasetId: string) {
-  return api.get(`${datasetDetailUrl}${datasetId}`);
+  return api.get(`${DATASET_DETAIL_URL}${datasetId}`);
 }
