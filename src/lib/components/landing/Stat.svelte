@@ -13,7 +13,7 @@
   // @html explanation is passed down from a static file
 </script>
 
-<div data-testid="data-summary-{authString}" class="flex flex-col items-center">
+<div data-testid="data-summary-{authString}" class="w-full flex flex-col items-center">
   <div class="w-2/4">
     {@html description}
   </div>
