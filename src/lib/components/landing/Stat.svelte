@@ -37,7 +37,7 @@
               value={undefined}
             />
           {:then value}
-            <strong class="p-1 mb-3">{value}</strong>
+            <strong class="p-1 mb-3">{value && value.toLocaleString()}</strong>
           {:catch}
             <i class="fa-solid fa-circle-exclamation p-1 mb-4 mt-1"></i>
           {/await}
