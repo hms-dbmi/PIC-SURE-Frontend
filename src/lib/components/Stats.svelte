@@ -12,7 +12,7 @@
 <section class="flex flex-col items-center w-full p-4 bg-surface-300-600-token">
   <h2 class="m-4">Data Summary</h2>
 
-  {#if features.login.open}
+  {#if features.login.open && $authStats.length > 0}
     <Stat stats={authStats} auth={true} description={branding?.landing?.authExplanation} />
   {/if}
 
