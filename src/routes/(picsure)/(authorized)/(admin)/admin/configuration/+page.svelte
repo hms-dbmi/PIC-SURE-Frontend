@@ -24,7 +24,7 @@
     columns: [
       { dataElement: 'name', label: 'Name', sort: true },
       { dataElement: 'description', label: 'Description', sort: true },
-      { dataElement: 'uuid', label: 'Actions' },
+      { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
     ],
     overrides: { uuid: RoleActions },
   };
@@ -34,7 +34,7 @@
       { dataElement: 'name', label: 'Name', sort: true },
       { dataElement: 'description', label: 'Description', sort: true },
       { dataElement: 'application', label: 'Application Name', sort: true },
-      { dataElement: 'uuid', label: 'Actions' },
+      { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
     ],
     overrides: {
       uuid: PrivilegeActions,
@@ -48,7 +48,7 @@
       { dataElement: 'id', label: 'ID', sort: true },
       { dataElement: 'subPrefix', label: 'Sub prefix', sort: true },
       { dataElement: 'requiredFields', label: 'Required fields', sort: true },
-      { dataElement: 'uuid', label: 'Actions' },
+      { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
     ],
     overrides: {
       uuid: ConnectionActions,

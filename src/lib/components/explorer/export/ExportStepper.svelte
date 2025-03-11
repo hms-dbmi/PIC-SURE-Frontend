@@ -50,7 +50,7 @@
   const columns = [
     { dataElement: 'variableName', label: 'Variable Name', sort: true },
     { dataElement: 'description', label: 'Variable Description', sort: true },
-    { dataElement: 'type', label: 'Type', sort: true },
+    { dataElement: 'type', label: 'Type', sort: true, class: 'text-center' },
   ];
 
   onMount(async () => {
