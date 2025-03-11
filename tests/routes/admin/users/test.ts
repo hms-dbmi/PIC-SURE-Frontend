@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess, mockApiFail } from '../../../custom-context';
+import { test, mockApiSuccess, mockApiSuccessByMethod, mockApiFail } from '../../../custom-context';
 import {
   users as mockUsers,
   connections as mockConns,
@@ -90,7 +90,7 @@ test.describe('users', () => {
       connection: mockConns[0],
       roles: [mockRoles[0]],
     };
-    await mockApiSuccess(page, '*/**/psama/user', { content: [newUser] });
+    await mockApiSuccessByMethod(page, '*/**/psama/user', 'POST', [newUser]);
     await page.goto('/admin/users/new');
 
     // When
@@ -120,7 +120,7 @@ test.describe('users', () => {
     // Then
     await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
   });
-  test('Role form enforces required email format', async ({ page }) => {
+  test('User form enforces required email format', async ({ page }) => {
     // Given
     await page.goto('/admin/users/new');
 
@@ -149,18 +149,20 @@ test.describe('users', () => {
       .evaluate((element: HTMLSelectElement) => element.validationMessage);
     await expect(noOption).toMatch(validationText.option);
   });
-  test('View row icon takes user to view privilege form', async ({ page }) => {
+  test('User form enforces adding unique email and connection', async ({ page }) => {
     // Given
-    await page.goto('/admin/users');
+    await page.goto('/admin/users/new');
 
     // When
-    await page.getByTestId(`user-view-btn-${mockUsers[0].uuid}`).click();
+    await page.getByLabel('Email').fill(mockUsers[0].email);
+    await page.getByLabel('Connection').selectOption(mockUsers[0].connection.label);
+    await page.getByLabel(mockRoles[0].name).check();
+    await page.getByRole('button', { name: 'Save' }).click();
 
     // Then
-    await page.waitForURL(`**/admin/users/${mockUsers[0].uuid}`);
-    await expect(page.url()).toContain(`/admin/users/${mockUsers[0].uuid}`);
+    await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
   });
-  test('Clicking row takes user to view priviledge form', async ({ page }) => {
+  test('Clicking row takes user to edit priviledge form', async ({ page }) => {
     // Given
     await page.goto('/admin/users');
 
@@ -171,8 +173,8 @@ test.describe('users', () => {
       .click();
 
     // Then
-    await page.waitForURL(`**/admin/users/${mockUsers[0].uuid}`);
-    await expect(page.url()).toContain(`/admin/users/${mockUsers[0].uuid}`);
+    await page.waitForURL(`**/admin/users/${mockUsers[0].uuid}/edit`);
+    await expect(page.url()).toContain(`/admin/users/${mockUsers[0].uuid}/edit`);
   });
   test('Edit row icon takes user to edit privilege form', async ({ page }) => {
     // Given

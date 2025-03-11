@@ -75,7 +75,7 @@
 
   const rowClickHandler = (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(`/admin/users/${uuid}`);
+    goto(`/admin/users/${uuid}/edit`);
   };
 </script>
 
