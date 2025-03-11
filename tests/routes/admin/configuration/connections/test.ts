@@ -51,7 +51,7 @@ test('Connection form cancel button navigates back to configuration page', async
   await page.goto('/admin/configuration/connection/new');
 
   // When
-  await page.getByText('Cancel', { exact: true }).click();
+  await page.getByTestId('connection-cancel-btn').click();
 
   // Then
   await page.waitForURL('**/admin/configuration');
@@ -59,21 +59,21 @@ test('Connection form cancel button navigates back to configuration page', async
 });
 test('Connection form returns to configuration page with success message', async ({ page }) => {
   // Given
+  const requiredField = { label: 'hot', id: 'lava' };
   const newConenction = {
     label: 'bananas',
     id: 'chocolate',
     subprefix: 'chocolate-bananas',
-    requiredFields: '["a field"]',
+    requiredFields: JSON.stringify([requiredField]),
   };
   await page.goto('/admin/configuration/connection/new');
   await mockApiSuccess(page, '*/**/psama/connection', { message: '', content: [newConenction] });
 
   // When
-  await page.getByLabel('Label').fill(newConenction.label);
-  await page.getByLabel('ID').fill(newConenction.id);
+  await page.getByLabel('Label').first().fill(newConenction.label);
+  await page.getByLabel('ID').first().fill(newConenction.id);
   await page.getByLabel('Sub Prefix').fill(newConenction.subprefix);
-  await page.getByLabel('Required Fields').fill(newConenction.requiredFields);
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByTestId('connection-save-btn').click();
 
   // Then
   await page.waitForURL('**/admin/configuration');
@@ -86,10 +86,10 @@ test('Connection form returns error message on api fail', async ({ page }) => {
   await page.goto('/admin/configuration/connection/new');
 
   // When
-  await page.getByLabel('Label').fill('bananas');
-  await page.getByLabel('ID').fill('chocolate');
+  await page.getByLabel('Label').first().fill('bananas');
+  await page.getByLabel('ID').first().fill('chocolate');
   await page.getByLabel('Sub Prefix').fill('chocolate-bananas');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByTestId('connection-save-btn').click();
 
   // Then
   await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
@@ -99,14 +99,15 @@ test('Connection form enforces required Label min length', async ({ page }) => {
   await page.goto('/admin/configuration/connection/new');
 
   // When
-  await page.getByLabel('Label').fill('');
-  await page.getByLabel('ID').fill('chocolate');
+  await page.getByLabel('Label').first().fill('');
+  await page.getByLabel('ID').first().fill('chocolate');
   await page.getByLabel('Sub Prefix').fill('chocolate-bananas');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByTestId('connection-save-btn').click();
 
   // Then
   const empty = await page
     .getByLabel('Label')
+    .first()
     .evaluate((element: HTMLInputElement) => element.validationMessage);
   expect(empty).toMatch(validationText.empty);
 });
@@ -115,14 +116,15 @@ test('Connection form enforces required ID min length', async ({ page }) => {
   await page.goto('/admin/configuration/connection/new');
 
   // When
-  await page.getByLabel('Label').fill('banana');
-  await page.getByLabel('ID').fill('');
+  await page.getByLabel('Label').first().fill('banana');
+  await page.getByLabel('ID').first().fill('');
   await page.getByLabel('Sub Prefix').fill('chocolate-bananas');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByTestId('connection-save-btn').click();
 
   // Then
   const empty = await page
     .getByLabel('ID')
+    .first()
     .evaluate((element: HTMLInputElement) => element.validationMessage);
   expect(empty).toMatch(validationText.empty);
 });
@@ -131,30 +133,16 @@ test('Connection form enforces required Sub Prefix min length', async ({ page })
   await page.goto('/admin/configuration/connection/new');
 
   // When
-  await page.getByLabel('Label').fill('banana');
-  await page.getByLabel('ID').fill('chocolate');
+  await page.getByLabel('Label').first().fill('banana');
+  await page.getByLabel('ID').first().fill('chocolate');
   await page.getByLabel('Sub Prefix').fill('');
-  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByTestId('connection-save-btn').click();
 
   // Then
   const empty = await page
     .getByLabel('Sub Prefix')
     .evaluate((element: HTMLInputElement) => element.validationMessage);
   expect(empty).toMatch(validationText.empty);
-});
-test('Connection form returns a validation error when JSON is not valid', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration/connection/new');
-
-  // When
-  await page.getByLabel('Label').fill('banana');
-  await page.getByLabel('ID').fill('chocolate');
-  await page.getByLabel('Sub Prefix').fill('chocolate-bananas');
-  await page.getByLabel('Required Fields').fill('?>');
-  await page.getByRole('button', { name: 'Save' }).click();
-
-  // Then
-  await expect(page.getByTestId('validation-error')).toBeVisible();
 });
 test('Clicking row takes user to edit connection form', async ({ page }) => {
   // Given
@@ -180,15 +168,21 @@ test('Edit row icon takes user to edit connection form', async ({ page }) => {
 });
 test('Edit connection form has pre-populated values', async ({ page }) => {
   const connection = mockConnections[0];
+  const requiredField = JSON.parse(connection.requiredFields)[0];
 
   // Given
   await page.goto(`/admin/configuration/connection/${connection.uuid}/edit`);
 
   // Then
-  await expect(page.getByLabel('Label')).toHaveValue(connection.label);
-  await expect(page.getByLabel('ID:', { exact: true })).toHaveValue(connection.id);
+  await expect(page.getByLabel('Label').first()).toHaveValue(connection.label);
+  await expect(page.getByLabel('ID:', { exact: true }).first()).toHaveValue(connection.id);
   await expect(page.getByLabel('Sub Prefix')).toHaveValue(connection.subPrefix);
-  await expect(page.getByLabel('Required Fields')).toHaveValue(connection.requiredFields);
+  await expect(
+    page.getByTestId(`required-field-row-${requiredField.id}`).getByLabel('Label'),
+  ).toHaveValue(requiredField.label);
+  await expect(
+    page.getByTestId(`required-field-row-${requiredField.id}`).getByLabel('ID'),
+  ).toHaveValue(requiredField.id);
 });
 test('Delete row icon asks users to confirm or cancel', async ({ page }) => {
   // Given
@@ -223,4 +217,151 @@ test('Delete gives error message on api failure', async ({ page }) => {
 
   // Then
   await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
+});
+
+test.describe('Required Fields', () => {
+  const requiredField = { label: 'hot', id: 'lava' };
+  // test('', async ({ page }) => {});
+  test('Save button is disabled when label is empty', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration/connection/new');
+
+    // When
+    await page.getByTestId('required-field-row-new').getByLabel('Label').fill(requiredField.label);
+
+    // Then
+    await expect(
+      page.getByTestId('required-field-row-new').getByTestId('required-field-save-btn'),
+    ).toBeDisabled();
+  });
+  test('Save button is disabled when id is empty', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration/connection/new');
+
+    // When
+    await page.getByTestId('required-field-row-new').getByLabel('ID').fill(requiredField.id);
+
+    // Then
+    await expect(
+      page.getByTestId('required-field-row-new').getByTestId('required-field-save-btn'),
+    ).toBeDisabled();
+  });
+  test('Save button is enabled when label and id are filled', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration/connection/new');
+
+    // When
+    await page.getByTestId('required-field-row-new').getByLabel('Label').fill(requiredField.label);
+    await page.getByTestId('required-field-row-new').getByLabel('ID').fill(requiredField.id);
+
+    // Then
+    await expect(
+      page.getByTestId('required-field-row-new').getByTestId('required-field-save-btn'),
+    ).not.toBeDisabled();
+  });
+  test('Reset button is hidden when field has not been given', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration/connection/new');
+
+    // Then
+    await expect(
+      page.getByTestId('required-field-row-new').getByTestId('required-field-reset-btn'),
+    ).not.toBeVisible();
+  });
+  test('Reset button is visible when field has been given', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration/connection/new');
+
+    // When
+    await page.getByTestId('required-field-row-new').getByLabel('Label').fill(requiredField.label);
+
+    // Then
+    await expect(
+      page.getByTestId('required-field-row-new').getByTestId('required-field-reset-btn'),
+    ).toBeVisible();
+  });
+  test('Edit cancel button is available when field has not changed', async ({ page }) => {
+    const field = JSON.parse(mockConnections[0].requiredFields)[0];
+    // Given
+    await page.goto(`/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
+
+    // When
+    await page
+      .getByTestId(`required-field-row-${field.id}`)
+      .getByTestId('required-field-edit-btn')
+      .click();
+
+    // Then
+    await expect(page.getByTestId('required-field-cancel-btn')).toBeVisible();
+  });
+  test('Edit reset button is available when field has changed', async ({ page }) => {
+    const oldField = JSON.parse(mockConnections[0].requiredFields)[0];
+
+    // Given
+    await page.goto(`/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
+
+    // When
+    await page.getByTestId('required-field-edit-btn').click();
+    await page
+      .getByTestId(`required-field-row-${oldField.id}`)
+      .getByLabel('Label')
+      .fill(requiredField.label);
+
+    // Then
+    await expect(
+      page.getByTestId(`required-field-row-${oldField.id}`).getByTestId('required-field-reset-btn'),
+    ).toBeVisible();
+  });
+  test('New button adds empty new row', async ({ page }) => {
+    // Given
+    await page.goto(`/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
+
+    // When
+    await page.getByTestId('required-field-new-btn').click();
+
+    // Then
+    await expect(page.getByTestId('required-field-row-new')).toBeVisible();
+  });
+  test('Deleting new field removes new field row', async ({ page }) => {
+    // Given
+    await page.goto(`/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
+
+    // When
+    await page.getByTestId('required-field-new-btn').click();
+    await page
+      .getByTestId('required-field-row-new')
+      .getByTestId('required-field-delete-btn')
+      .click();
+  });
+  test('Deleting existing field removes field row', async ({ page }) => {
+    const oldField = JSON.parse(mockConnections[0].requiredFields)[0];
+
+    // Given
+    await page.goto(`/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
+
+    // When
+    await page
+      .getByTestId(`required-field-row-${oldField.id}`)
+      .getByTestId('required-field-delete-btn')
+      .click();
+
+    // Then
+    await expect(page.getByTestId(`required-field-row-${oldField.id}`)).not.toBeVisible();
+  });
+  test('A notice appears when two identical id values are added', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration/connection/new');
+    await page.getByTestId('required-field-row-new').getByLabel('Label').fill(requiredField.label);
+    await page.getByTestId('required-field-row-new').getByLabel('ID').fill(requiredField.id);
+    await page.getByTestId('required-field-row-new').getByTestId('required-field-save-btn').click();
+
+    //When
+    await page.getByTestId('required-field-new-btn').click();
+    await page.getByTestId('required-field-row-new').getByLabel('Label').fill('a different label');
+    await page.getByTestId('required-field-row-new').getByLabel('ID').fill(requiredField.id);
+    await page.getByTestId('required-field-row-new').getByTestId('required-field-save-btn').click();
+
+    // Then
+    await expect(page.getByTestId('validation-warn')).toBeVisible();
+  });
 });
