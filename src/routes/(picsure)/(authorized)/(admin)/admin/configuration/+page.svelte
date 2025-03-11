@@ -13,6 +13,7 @@
   import PrivilegeActions from '$lib/components/admin/configuration/cell/PrivilegeActions.svelte';
   import ConnectionActions from '$lib/components/admin/configuration/cell/ConnectionActions.svelte';
   import Application from '$lib/components/admin/configuration/cell/Application.svelte';
+  import RequiredFields from '$lib/components/admin/configuration/cell/RequiredFields.svelte';
 
   import { privileges, loadPrivileges } from '$lib/stores/Privileges';
   import { roles, loadRoles } from '$lib/stores/Roles';
@@ -49,7 +50,10 @@
       { dataElement: 'requiredFields', label: 'Required fields', sort: true },
       { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
     ],
-    overrides: { uuid: ConnectionActions },
+    overrides: {
+      uuid: ConnectionActions,
+      requiredFields: RequiredFields,
+    },
   };
 
   async function loadAppsAndPriv() {
