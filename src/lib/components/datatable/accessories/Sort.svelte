@@ -9,7 +9,7 @@
 
 <th
   on:click={() => handler.sort(orderBy)}
-  class="cursor-pointer select-none align-bottom {$$props.class || ''}"
+  class="cursor-pointer select-none align-bottom {$$props.class ?? ''}"
 >
   <slot />
   {#if $sorted.identifier === orderBy}
@@ -22,9 +22,3 @@
     &updownarrow;
   {/if}
 </th>
-
-<style>
-  th {
-    font-weight: normal !important;
-  }
-</style>

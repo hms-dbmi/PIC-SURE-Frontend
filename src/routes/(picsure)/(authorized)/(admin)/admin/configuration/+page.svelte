@@ -13,6 +13,7 @@
   import PrivilegeActions from '$lib/components/admin/configuration/cell/PrivilegeActions.svelte';
   import ConnectionActions from '$lib/components/admin/configuration/cell/ConnectionActions.svelte';
   import Application from '$lib/components/admin/configuration/cell/Application.svelte';
+  import RequiredFields from '$lib/components/admin/configuration/cell/RequiredFields.svelte';
 
   import { privileges, loadPrivileges } from '$lib/stores/Privileges';
   import { roles, loadRoles } from '$lib/stores/Roles';
@@ -23,7 +24,7 @@
     columns: [
       { dataElement: 'name', label: 'Name', sort: true },
       { dataElement: 'description', label: 'Description', sort: true },
-      { dataElement: 'uuid', label: 'Actions' },
+      { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
     ],
     overrides: { uuid: RoleActions },
   };
@@ -33,7 +34,7 @@
       { dataElement: 'name', label: 'Name', sort: true },
       { dataElement: 'description', label: 'Description', sort: true },
       { dataElement: 'application', label: 'Application Name', sort: true },
-      { dataElement: 'uuid', label: 'Actions' },
+      { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
     ],
     overrides: {
       uuid: PrivilegeActions,
@@ -47,9 +48,12 @@
       { dataElement: 'id', label: 'ID', sort: true },
       { dataElement: 'subPrefix', label: 'Sub prefix', sort: true },
       { dataElement: 'requiredFields', label: 'Required fields', sort: true },
-      { dataElement: 'uuid', label: 'Actions' },
+      { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
     ],
-    overrides: { uuid: ConnectionActions },
+    overrides: {
+      uuid: ConnectionActions,
+      requiredFields: RequiredFields,
+    },
   };
 
   async function loadAppsAndPriv() {

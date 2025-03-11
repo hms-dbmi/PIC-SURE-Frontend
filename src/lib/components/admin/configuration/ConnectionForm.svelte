@@ -6,23 +6,21 @@
   import type { Connection } from '$lib/models/Connection';
   import { addConnection, updateConnection } from '$lib/stores/Connections';
 
+  import RequiredFieldsList from './RequiredFieldsList.svelte';
+
   export let connection: Connection | undefined = undefined;
 
   let label: string = connection?.label || '';
   let id: string = connection?.id || '';
   let subPrefix: string = connection?.subPrefix || '';
-  let requiredFields: string = connection?.requiredFields || '';
-  let validationError: string = '';
+  let requiredFields: string = connection?.requiredFields || '[]';
+
+  type JSONEvent = { detail: { json: string } };
+  function updateRequiredFields(event: JSONEvent) {
+    requiredFields = event.detail.json;
+  }
 
   async function saveConnection() {
-    try {
-      requiredFields !== '' && JSON.parse(requiredFields);
-      validationError = '';
-    } catch (_) {
-      validationError = 'The provided JSON has a syntax error.';
-      return;
-    }
-
     let newConnection: Connection = {
       id,
       label,
@@ -90,31 +88,19 @@
     />
   </label>
 
-  <label class="label">
-    <span>Required Fields:</span>
-    <textarea class="w-full input input-border" bind:value={requiredFields} />
-  </label>
-
-  {#if validationError}
-    <aside data-testid="validation-error" class="alert variant-ghost-error">
-      <div class="alert-message">
-        <p>{validationError}</p>
-      </div>
-      <div class="alert-actions">
-        <button on:click={() => (validationError = '')}>
-          <i class="fa-solid fa-xmark"></i>
-          <span class="sr-only">Close</span>
-        </button>
-      </div>
-    </aside>
-  {/if}
+  <RequiredFieldsList fields={requiredFields} on:update={updateRequiredFields} />
 
   <div>
-    <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
+    <button
+      type="submit"
+      data-testid="connection-save-btn"
+      class="btn variant-ghost-primary hover:variant-filled-primary"
+    >
       Save
     </button>
     <a
       href="/admin/configuration"
+      data-testid="connection-cancel-btn"
       class="btn variant-ghost-secondary hover:variant-filled-secondary"
     >
       Cancel

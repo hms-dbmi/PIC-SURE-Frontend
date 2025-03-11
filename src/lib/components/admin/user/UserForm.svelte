@@ -1,87 +1,119 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { getToastStore } from '@skeletonlabs/skeleton';
+  import { getToastStore, SlideToggle } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
 
-  import { type ExtendedUser } from '$lib/models/User';
-  import { type Connection } from '$lib/models/Connection';
-  import UsersStore from '$lib/stores/Users';
-  import ConnectionStore from '$lib/stores/Connections';
-  import RoleStore from '$lib/stores/Roles';
-  import PrivilegesStore from '$lib/stores/Privileges';
-  const { addUser, updateUser } = UsersStore;
-  const { getConnection } = ConnectionStore;
-  const { getRole } = RoleStore;
-  const { getPrivilege } = PrivilegesStore;
+  import type { ExtendedUser, UserRequest } from '$lib/models/User';
+  import type { Connection } from '$lib/models/Connection';
+
+  import { addUser, updateUser, getUserByEmailAndConnection } from '$lib/stores/Users';
+  import { getConnection } from '$lib/stores/Connections';
+  import { getRole } from '$lib/stores/Roles';
+  import { getPrivilege } from '$lib/stores/Privileges';
 
   export let user: ExtendedUser | undefined = undefined;
   export let roleList: string[][];
   export let connections: Connection[];
 
-  let email = user ? user.email : '';
-  let connection = user ? user.connection : '';
-  let active = user ? user.active : true;
+  let email: string = user && user.email ? user.email : '';
+  let connection: string = user && user.connection ? user.connection : '';
+  let active: boolean = user ? user.active : true;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let roles = roleList.map(([_name, uuid]) => ({
     uuid,
     checked: user ? user.roles.includes(uuid) : false,
   }));
+  let validationError: string = '';
 
   async function saveUser() {
+    const selectedRoles = roles.filter((role) => role.checked);
+    if (selectedRoles.length === 0) {
+      validationError = 'At least one role must be selected.';
+      return;
+    } else {
+      validationError = '';
+    }
+
     const generalMetadata = JSON.parse(user?.generalMetadata || '{"email":""}');
     generalMetadata.email = email;
 
-    let newUser = {
+    let newUser: UserRequest = {
       email,
       connection: await getConnection(connection),
       generalMetadata: JSON.stringify(generalMetadata),
       active,
       roles: await Promise.all(
-        roles
-          .filter((role) => role.checked)
-          .map((role) =>
-            getRole(role.uuid).then((role) => ({
-              ...role,
-              privileges: role.privileges.map((uuid: string) => getPrivilege(uuid)),
-            })),
-          ),
+        selectedRoles.map((role) =>
+          getRole(role.uuid).then((role) => ({
+            ...role,
+            privileges: role.privileges.map((uuid: string) => getPrivilege(uuid)),
+          })),
+        ),
       ),
     };
     try {
       if (user) {
         await updateUser({ ...newUser, uuid: user.uuid });
       } else {
+        const findUser = await getUserByEmailAndConnection(email, connection);
+        if (findUser) {
+          toastStore.trigger({
+            message: 'Cannot add a user and connection pair that already exists.',
+            background: 'variant-filled-error',
+          });
+          return;
+        }
+
         await addUser(newUser);
       }
+
       toastStore.trigger({
-        message: `Successfully saved ${newUser ? 'new user' : 'user'} '${email}'`,
+        message: `Successfully saved ${user ? '' : 'new '}user '${email}'`,
         background: 'variant-filled-success',
       });
       goto('/admin/users');
     } catch (error) {
       console.error(error);
       toastStore.trigger({
-        message: `An error occured while saving ${newUser ? 'new user' : 'user'} '${email}'`,
+        message: `An error occured while saving ${user ? '' : 'new '}user '${email}'`,
         background: 'variant-filled-error',
       });
     }
   }
 </script>
 
-<form on:submit|preventDefault={saveUser}>
-  <label class="flex items-center space-x-2">
-    <input class="checkbox" type="checkbox" bind:checked={active} />
-    <p>Active</p>
-  </label>
+<form on:submit|preventDefault={saveUser} class="grid gap-4 my-3">
+  <SlideToggle name="Active" size="sm" active="bg-success-500" label="Status" bind:checked={active}>
+    {active ? 'Active' : 'Inactive'}
+  </SlideToggle>
 
-  <label class="label required">
+  {#if user?.uuid}
+    <label class="label">
+      <span>UUID:</span>
+      <input type="text" class="input" value={user?.uuid} disabled />
+    </label>
+    <label class="label">
+      <span>Subject:</span>
+      <input type="text" class="input" value={user?.subject} disabled />
+    </label>
+  {/if}
+
+  <label class="label {user?.email ?? 'required'}">
     <span>Email:</span>
-    <input type="email" bind:value={email} class="input" required minlength="1" maxlength="255" />
+    <input
+      type="email"
+      bind:value={email}
+      class="input"
+      required
+      disabled={!!user?.email}
+      minlength="1"
+      maxlength="255"
+    />
   </label>
 
-  <label class="label required">
+  <label class="label {user?.email ?? 'required'}">
     <span>Connection:</span>
-    <select class="select" bind:value={connection} required>
+    <select class="select" bind:value={connection} required disabled={!!user?.connection}>
       <option selected={!user || !user.connection} disabled value>none</option>
       {#each connections as connection}
         <option value={connection.uuid} selected={user && user.connection === connection.uuid}
@@ -92,7 +124,7 @@
   </label>
 
   <fieldset data-testid="privilege-checkboxes">
-    <legend>Roles:</legend>
+    <legend class="required">Roles:</legend>
     {#each roleList as [name], index}
       <label class="flex items-center space-x-2">
         <input class="checkbox" type="checkbox" bind:checked={roles[index].checked} />
@@ -101,20 +133,26 @@
     {/each}
   </fieldset>
 
-  <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
-    Save
-  </button>
-  <a href="/admin/users" class="btn variant-ghost-secondary hover:variant-filled-secondary">
-    Cancel
-  </a>
-</form>
+  {#if validationError}
+    <aside data-testid="validation-error" class="alert variant-ghost-error">
+      <div class="alert-message">
+        <p>{validationError}</p>
+      </div>
+      <div class="alert-actions">
+        <button on:click={() => (validationError = '')}>
+          <i class="fa-solid fa-xmark"></i>
+          <span class="sr-only">Close</span>
+        </button>
+      </div>
+    </aside>
+  {/if}
 
-<style>
-  label,
-  fieldset {
-    margin: 0.5em 0;
-  }
-  fieldset label {
-    margin: 0;
-  }
-</style>
+  <div>
+    <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
+      Save
+    </button>
+    <a href="/admin/users" class="btn variant-ghost-secondary hover:variant-filled-secondary">
+      Cancel
+    </a>
+  </div>
+</form>

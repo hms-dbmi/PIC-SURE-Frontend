@@ -5,14 +5,10 @@
 
   import { goto } from '$app/navigation';
 
-  import UsersStore from '$lib/stores/Users';
-  import ConnectionStore from '$lib/stores/Connections';
-  import RoleStore from '$lib/stores/Roles';
-  import PrivilegesStore from '$lib/stores/Privileges';
-  const { getUser, updateUser } = UsersStore;
-  const { getConnection } = ConnectionStore;
-  const { getRole } = RoleStore;
-  const { getPrivilege } = PrivilegesStore;
+  import { getUser, updateUser } from '$lib/stores/Users';
+  import { getConnection } from '$lib/stores/Connections';
+  import { getRole } from '$lib/stores/Roles';
+  import { getPrivilege } from '$lib/stores/Privileges';
 
   export let data = { cell: '', row: { status: '', email: '' } };
 
@@ -43,13 +39,13 @@
         try {
           await updateUser(newUser);
           toastStore.trigger({
-            message: `Successfully ${activate ? 'activated' : 'deactivated'} user '${user.email}'`,
+            message: `Successfully ${activate ? 'r' : 'd'}eactivated user '${user.email}'`,
             background: 'variant-filled-success',
           });
         } catch (error) {
           console.error(error);
           toastStore.trigger({
-            message: `An error occured while ${activate ? 'activating' : 'deactivating'} user '${
+            message: `An error occured while ${activate ? 'r' : 'd'}eactivating user '${
               user.email
             }'`,
             background: 'variant-filled-error',
@@ -59,17 +55,6 @@
     });
   }
 </script>
-
-<button
-  data-testid={`user-view-btn-${data.cell}`}
-  type="button"
-  title="View"
-  aria-label="View"
-  class="btn-icon-color"
-  on:click|stopPropagation={() => goto(`/admin/users/${data.cell}`)}
->
-  <i class="fa-solid fa-circle-info fa-xl"></i>
-</button>
 
 {#if data.row.status === 'Active'}
   <button
