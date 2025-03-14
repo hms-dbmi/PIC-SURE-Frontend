@@ -23,7 +23,6 @@ export interface Branding {
   };
   sitemap: SiteMapConfig[];
   footer: FooterConfig;
-  apiPage: ApiPageConfig;
   explorePage: ExplorePageConfig;
   landing: LandingConfig;
   login: LoginConfig;

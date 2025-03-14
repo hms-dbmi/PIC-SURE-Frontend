@@ -4,6 +4,7 @@ import { type SNP } from '$lib/models/GenomeFilter';
 export type ExpectedResultType =
   | 'COUNT'
   | 'CROSS_COUNT'
+  | 'OBSERVATION_CROSS_COUNT'
   | 'DATAFRAME'
   | 'DATAFRAME_PFB'
   | 'DATAFRAME_TIMESERIES'

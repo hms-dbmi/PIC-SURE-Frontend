@@ -69,6 +69,13 @@ function restoreUser() {
   return {};
 }
 
+export function isUserLoggedIn() {
+  if (browser) {
+    return !!localStorage.getItem('token');
+  }
+  return false;
+}
+
 function clearSessionTokenIfExpired() {
   if (browser) {
     const token = localStorage.getItem('token');

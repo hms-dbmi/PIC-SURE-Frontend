@@ -40,6 +40,19 @@ export interface ExplorePageConfig {
   confirmDownloadMessage: string;
 }
 
+export interface LandingStat {
+  key: string;
+  label: string;
+  value?: Promise<number> | number;
+  auth?: boolean;
+}
+
+export interface StatField {
+  label: string;
+  id: string;
+  conceptPath: string;
+}
+
 export interface LandingConfig {
   searchPlaceholder: string;
   explanation: string;
@@ -53,7 +66,8 @@ export interface LandingConfig {
     isOpen: boolean;
     showIfLoggedIn: boolean;
   }>;
-  stats: string[];
+  stats: LandingStat[];
+  statFields: { [key: string]: StatField[] };
 }
 
 export interface LoginConfig {

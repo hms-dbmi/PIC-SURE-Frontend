@@ -56,20 +56,20 @@ export function getQueryRequest(
 }
 
 export function getBlankQueryRequest(
-  addConsents = true,
-  resourceUUID = resources.hpds,
+  isOpenAccess = false,
   expectedResultType: ExpectedResultType = 'COUNT',
 ): QueryRequestInterface {
+  const resourceUUID = isOpenAccess ? resources.openHPDS : resources.hpds;
   let query: Query = new Query();
 
-  if (features.useQueryTemplate && addConsents) {
+  if (features.useQueryTemplate && !isOpenAccess) {
     const queryTemplate: QueryInterface = get(user).queryTemplate as QueryInterface;
     if (queryTemplate) {
       query = new Query(structuredClone(queryTemplate));
     }
   }
 
-  if (features.requireConsents && addConsents) {
+  if (features.requireConsents && !isOpenAccess) {
     query = updateConsentFilters(query);
   }
 

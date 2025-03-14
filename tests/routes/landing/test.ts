@@ -1,5 +1,5 @@
-import { expect, type Route, type Page } from '@playwright/test';
-import { test, mockApiSuccess } from '../../custom-context';
+import { expect } from '@playwright/test';
+import { test, mockApiSuccess, mockApiFail } from '../../custom-context';
 import {
   searchResults as mockSearchResults,
   searchResultPath,
@@ -17,24 +17,13 @@ const loggedOutActions = branding?.landing?.actions?.filter(
   (action) => !action.showIfLoggedIn || action.isOpen,
 );
 
-const HPDS = process.env.VITE_RESOURCE_HPDS;
-
-const mockStatsRoutesFail: { [key: string]: (context: Page) => Promise<void> } = {
-  Participants: (context: Page) =>
-    context.route('*/**/picsure/query/sync', (route: Route) => route.abort('failed')),
-  Variables: (context: Page) =>
-    context.route(`*/**/picsure/search/${HPDS}`, (route: Route) => route.abort('failed')),
-  'Data Sources': (context: Page) =>
-    context.route('*/**/picsure/proxy/dictionary-api/facets/', (route: Route) =>
-      route.abort('failed'),
-    ),
-};
-
-const mockStatsRoutesSuccess = new Map<string, string>([
-  ['Participants', '1000'],
-  ['Variables', searchResults.totalElements.toLocaleString()],
-  ['Data Sources', facetsResponse[1].facets.length.toLocaleString()],
-]);
+interface MockLandingStat {
+  key: string;
+  route: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  api: any;
+  value: string;
+}
 
 test.describe('Landing page', () => {
   test.use({ storageState: 'tests/.auth/generalUser.json' });
@@ -62,49 +51,77 @@ test.describe('Landing page', () => {
     });
   });
   test.describe('Stats', () => {
-    branding?.landing?.stats?.forEach((stat) => {
-      test(`Has expected stat of ${stat}`, async ({ page }) => {
-        // Given
-        mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets/', facetsResponse);
-        mockApiSuccess(
+    const stats: MockLandingStat[] = [
+      { key: 'query:blank', route: '*/**/picsure/query/sync', api: '88', value: '88' },
+      {
+        key: 'query:genomic',
+        route: '*/**/picsure/query/sync',
+        api: { 'some-genome': 4 },
+        value: '4',
+      },
+      {
+        key: 'query:biosample',
+        route: '*/**/picsure/query/sync',
+        api: { 'some-sample': 12 },
+        value: '12',
+      },
+      { key: 'query:consent', route: '*/**/picsure/query/sync', api: '50', value: '50' },
+      {
+        key: 'dict:concepts',
+        route: '*/**/picsure/proxy/dictionary-api/concepts?page_number=1&page_size=1',
+        api: searchResults,
+        value: searchResults.totalElements.toLocaleString(),
+      },
+      {
+        key: 'dict:facets:dataset_id',
+        route: '*/**/picsure/proxy/dictionary-api/facets/',
+        api: facetsResponse,
+        value: facetsResponse[1].facets.length.toLocaleString(),
+      },
+    ];
+    const notFound: MockLandingStat = {
+      key: 'not-found',
+      route: '*/**',
+      api: undefined,
+      value: '-',
+    };
+
+    branding?.landing?.stats
+      ?.filter((stat) => stat.key !== 'hardcoded')
+      .forEach((stat) => {
+        const mockStat: MockLandingStat = stats.find((s) => s.key === stat.key) || notFound;
+        const testID = `value-open-${stat.key}-${stat.label}`;
+
+        test(`Has expected stat of ${stat.label}`, async ({ page }) => {
+          // Given
+          await mockApiSuccess(page, mockStat.route, mockStat.api);
+          await page.goto('/');
+
+          // Then
+          await expect(
+            page.getByTestId('data-summary-open').getByText(stat.label, { exact: true }),
+          ).toBeVisible();
+        });
+        test(`Has expected stat value for ${stat.label}`, async ({ page }) => {
+          // Given
+          await mockApiSuccess(page, mockStat.route, mockStat.api);
+          await page.goto('/');
+
+          // Then
+          await expect(page.getByTestId(testID)).toHaveText(mockStat.value);
+        });
+        test(`Should display error message if api returns error for ${stat.label}`, async ({
           page,
-          '*/**/picsure/proxy/dictionary-api/concepts?page_number=1&page_size=1',
-          searchResults,
-        );
-        mockApiSuccess(page, '*/**/picsure/query/sync', '1000');
-        await page.goto('/');
+        }) => {
+          // Given
+          await mockApiFail(page, mockStat.route, 'failed');
+          await page.goto('/');
 
-        // Then
-        await expect(page.getByText(stat, { exact: true })).toBeVisible();
+          // Then
+          await expect(page.getByTestId(testID).locator('i.fa-circle-exclamation')).toBeVisible();
+          await expect(page.locator('#landing-errors')).toBeVisible();
+        });
       });
-      test(`Has expected stat value for ${stat}`, async ({ page }) => {
-        // Given
-        mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets/', facetsResponse);
-        mockApiSuccess(
-          page,
-          '*/**/picsure/proxy/dictionary-api/concepts?page_number=1&page_size=1',
-          searchResults,
-        );
-        mockApiSuccess(page, '*/**/picsure/query/sync', '1000');
-        await page.goto('/');
-
-        // Then
-        await expect(page.getByTestId(`value-${stat}`)).toHaveText(
-          mockStatsRoutesSuccess.get(stat) || '-',
-        );
-      });
-      test(`Should display error message if api returns error for ${stat}`, async ({ page }) => {
-        // Given
-        await mockStatsRoutesFail[stat](page);
-        await page.goto('/');
-
-        // Then
-        await expect(
-          page.getByTestId(`value-${stat}`).locator('i.fa-circle-exclamation'),
-        ).toBeVisible();
-        await expect(page.locator('#landing-errors')).toBeVisible();
-      });
-    });
   });
   test.describe('Actions', () => {
     loggedInActions.forEach(({ description, icon, url, title }) => {
