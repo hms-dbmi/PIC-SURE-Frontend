@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { branding, features } from '$lib/configuration';
+  import { branding } from '$lib/configuration';
   import { stats, authStats, hasError, loadStats } from '$lib/stores/Stats';
 
   import Stat from './landing/Stat.svelte';
@@ -12,11 +12,13 @@
 <section class="flex flex-col items-center w-full p-4 bg-surface-300-600-token">
   <h2 class="m-4">Data Summary</h2>
 
-  {#if features.login.open && $authStats.length > 0}
+  {#if $authStats.length > 0}
     <Stat stats={authStats} auth={true} description={branding?.landing?.authExplanation} />
   {/if}
 
-  <Stat {stats} description={branding?.landing?.explanation} />
+  {#if $stats.length > 0}
+    <Stat {stats} description={branding?.landing?.explanation} />
+  {/if}
 
   {#if $hasError}
     <div

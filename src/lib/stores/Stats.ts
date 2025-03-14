@@ -91,11 +91,11 @@ export async function loadStats() {
       const authUsers = stat?.auth === undefined ? true : stat.auth;
       const openUsers = stat?.auth === undefined ? true : !stat.auth;
 
-      if (authUsers && features.login.open && isUserLoggedIn()) {
+      if (authUsers && isUserLoggedIn()) {
         statList.push({ ...stat, auth: true, value: apiMap[stat.key](false, stat) });
       }
 
-      if (openUsers) {
+      if (features.login.open && openUsers) {
         statList.push({ ...stat, auth: false, value: apiMap[stat.key](true, stat) });
       }
 
