@@ -81,7 +81,7 @@
   </label>
 
   <fieldset data-testid="privilege-checkboxes">
-    <legend class="required"><span>Privileges:</span></legend>
+    <legend class="required">Privileges:</legend>
     {#each privilegeList as [name], index}
       <label class="flex items-center space-x-2">
         <input class="checkbox" type="checkbox" bind:checked={privileges[index].checked} />
