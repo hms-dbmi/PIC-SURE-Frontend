@@ -14,6 +14,7 @@ test.use({ storageState: 'tests/.auth/generalUser.json' });
 test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/concepts*', detailResponseCat);
+  await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
 });
 
 test('Explorer tour button opens instruction modal', async ({ page }) => {

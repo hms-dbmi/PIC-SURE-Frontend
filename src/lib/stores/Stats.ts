@@ -4,7 +4,7 @@ import * as api from '$lib/api';
 import type { LandingStat, StatField } from '$lib/types';
 import type { ExpectedResultType } from '$lib/models/query/Query';
 import { getBlankQueryRequest } from '$lib/QueryBuilder';
-import { getFacetCategoryCount, getConceptCount } from '$lib/services/dictionary';
+import { getFacetCategoryCount, getConceptCount } from '$lib/stores/Dictionary';
 import { isUserLoggedIn } from '$lib/stores/User';
 import { branding, features } from '$lib/configuration';
 

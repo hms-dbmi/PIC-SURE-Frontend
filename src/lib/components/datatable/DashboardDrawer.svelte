@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getDrawerStore } from '@skeletonlabs/skeleton';
-  import { getDatasetDetails } from '$lib/services/dictionary';
+  import { getDatasetDetails } from '$lib/stores/Dictionary';
   import type { DashboardRow } from '$lib/stores/Dashboard';
   import { ProgressRadial } from '@skeletonlabs/skeleton';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';

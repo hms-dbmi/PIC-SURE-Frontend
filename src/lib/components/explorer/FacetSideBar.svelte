@@ -1,18 +1,13 @@
 <script lang="ts">
   import { Accordion, ProgressRadial } from '@skeletonlabs/skeleton';
-  import SearchStore from '$lib/stores/Search';
-  import { updateFacetsFromSearch } from '$lib/services/dictionary';
-  import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
-  import ErrorAlert from '../ErrorAlert.svelte';
-  import type { Facet } from '$lib/models/Search';
-  import FacetCategory from './FacetCategory.svelte';
-  import { onDestroy, onMount } from 'svelte';
-  import type { Unsubscriber } from 'svelte/store';
-  let { searchTerm, selectedFacets } = SearchStore;
 
-  let facetsPromise: Promise<DictionaryFacetResult[]>;
-  let unsubSearchTerm: Unsubscriber;
-  let unsubSelectedFacets: Unsubscriber;
+  import type { Facet } from '$lib/models/Search';
+  import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
+  import { selectedFacets } from '$lib/stores/Search';
+  import { facetsPromise } from '$lib/stores/Dictionary';
+
+  import ErrorAlert from '../ErrorAlert.svelte';
+  import FacetCategory from './FacetCategory.svelte';
 
   function recreateFacetCategories(): DictionaryFacetResult[] {
     let facetsToShow: DictionaryFacetResult[] = [];
@@ -31,23 +26,9 @@
     });
     return facetsToShow;
   }
-
-  onMount(() => {
-    unsubSearchTerm = searchTerm.subscribe(() => {
-      facetsPromise = updateFacetsFromSearch($searchTerm, $selectedFacets);
-    });
-    unsubSelectedFacets = selectedFacets.subscribe(() => {
-      facetsPromise = updateFacetsFromSearch($searchTerm, $selectedFacets);
-    });
-  });
-
-  onDestroy(() => {
-    unsubSearchTerm && unsubSearchTerm();
-    unsubSelectedFacets && unsubSelectedFacets();
-  });
 </script>
 
-{#await facetsPromise}
+{#await $facetsPromise}
   <div class="radial-container">
     <ProgressRadial width="w-10" />
   </div>

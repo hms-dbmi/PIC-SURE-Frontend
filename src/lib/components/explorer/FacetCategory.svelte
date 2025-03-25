@@ -2,7 +2,7 @@
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
   import { AccordionItem } from '@skeletonlabs/skeleton';
   import SearchStore from '$lib/stores/Search';
-  import { hiddenFacets } from '$lib/services/dictionary';
+  import { hiddenFacets } from '$lib/stores/Dictionary';
   import FacetItem from './FacetItem.svelte';
   import type { Facet } from '$lib/models/Search';
   let { updateFacets, selectedFacets } = SearchStore;

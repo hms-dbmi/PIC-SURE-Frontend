@@ -11,7 +11,7 @@
     createNumericFilter,
     createRequiredFilter,
   } from '$lib/models/Filter';
-  import { getConceptDetails } from '$lib/services/dictionary';
+  import { getConceptDetails } from '$lib/stores/Dictionary';
 
   const modalStore = getModalStore();
   const toastStore = getToastStore();
