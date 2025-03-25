@@ -18,12 +18,12 @@ export const tableHandler: DataHandler<SearchResult> = new DataHandler([] as Sea
 export const tour: Writable<boolean> = writable(true);
 export const error: Writable<string> = writable('');
 
-selectedFacets.subscribe((data) => {
+selectedFacets.subscribe(() => {
   tableHandler.setPage(1);
   tableHandler.invalidate();
 });
 
-searchTerm.subscribe((data) => {
+searchTerm.subscribe(() => {
   tableHandler.setPage(1);
   tableHandler.invalidate();
 });
