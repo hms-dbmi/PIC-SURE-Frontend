@@ -99,10 +99,11 @@ export const picsureUser: User = {
 };
 
 export const userTypes = {
-  generalUser: [PicsurePrivileges.QUERY],
-  adminUser: [PicsurePrivileges.QUERY, PicsurePrivileges.ADMIN],
-  superUser: [PicsurePrivileges.QUERY, PicsurePrivileges.SUPER],
-  dataUser: [PicsurePrivileges.QUERY, PicsurePrivileges.DATA_ADMIN],
+  generalUser: { privileges: [PicsurePrivileges.QUERY] },
+  noScopeUser: { privileges: [PicsurePrivileges.QUERY], queryScopes: undefined },
+  adminUser: { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.ADMIN] },
+  superUser: { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.SUPER] },
+  dataUser: { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.DATA_ADMIN] },
 };
 
 export const crossCountSyncResponseInital = {
@@ -283,6 +284,20 @@ export const searchResults = {
       children: null,
       meta: null,
       type: 'Categorical',
+    },
+    {
+      conceptPath: '\\phs009\\west\\',
+      name: 'WESTERN',
+      display: 'West',
+      dataset: 'phs009',
+      studyAcronym: 'Test direction',
+      allowFiltering: true,
+      description: 'A specific direction',
+      children: null,
+      min: 0,
+      max: 25,
+      meta: null,
+      type: 'Continuous',
     },
   ],
   number: 0,

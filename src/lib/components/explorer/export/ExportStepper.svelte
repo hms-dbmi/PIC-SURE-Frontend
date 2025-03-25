@@ -31,6 +31,7 @@
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
   export let rows: ExportRowInterface[] = [];
+  export let activeType: ExpectedResultType = 'DATAFRAME';
 
   const modalStore = getModalStore();
   const toastStore = getToastStore();
@@ -224,7 +225,6 @@
     }
   }
 
-  export let activeType: ExpectedResultType;
   function selectExportType(exportType: ExpectedResultType) {
     query.query.expectedResultType = exportType;
     activeType = exportType;

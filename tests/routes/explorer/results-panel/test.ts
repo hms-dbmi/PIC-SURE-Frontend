@@ -8,6 +8,7 @@ import {
   facetResultPath,
   facetsResponse,
 } from '../../../mock-data';
+import { getOption } from '../../../utils';
 
 const countResultPath = '*/**/picsure/query/sync';
 
@@ -212,12 +213,3 @@ test.describe('Results Panel', () => {
     await expect(page.getByText('No filters added')).toBeVisible();
   });
 });
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const getOption = async (page: any, optionIndex = 0) => {
-  const component = page.getByTestId('optional-selection-list');
-  const optionContainer = component.locator('#options-container');
-  await expect(optionContainer).toBeVisible();
-  const options = await optionContainer.getByRole('listitem').all();
-  return options[optionIndex];
-};

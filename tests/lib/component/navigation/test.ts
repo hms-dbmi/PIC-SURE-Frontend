@@ -79,9 +79,11 @@ test.describe('Any logged in user', () => {
   });
 });
 
-Object.entries(userTypes).forEach(([userType, privileges]) => {
+Object.entries(userTypes).forEach(([userType, userData]) => {
   const testRoutes = routes.filter((route: Route) =>
-    route.privilege ? privileges.includes(route.privilege as unknown as PicsurePrivileges) : true,
+    route.privilege
+      ? userData.privileges.includes(route.privilege as unknown as PicsurePrivileges)
+      : true,
   );
 
   test.describe(`${userType} Navigation`, () => {
