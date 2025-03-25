@@ -1,15 +1,20 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
-  import { DataHandler, type State } from '@vincjo/datatables/remote';
-  import { type Unsubscriber, writable } from 'svelte/store';
+  import { onMount } from 'svelte';
 
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
 
-  import type { Column } from '$lib/models/Tables';
-  import type { SearchResult } from '$lib/models/Search';
   import { branding, features } from '$lib/configuration';
-  import SearchStore from '$lib/stores/Search';
+  import type { Column } from '$lib/models/Tables';
+  import {
+    searchTerm,
+    selectedFacets,
+    tableHandler as handler,
+    error,
+    tour,
+    resetSearch,
+    loading as isLoading,
+  } from '$lib/stores/Search';
 
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
   import SearchDatatable from '$lib/components/datatable/RemoteTable.svelte';
@@ -20,84 +25,39 @@
   /* eslint-disable @typescript-eslint/no-explicit-any */
   export let tourConfig: any;
 
-  const isLoading = writable(false);
-
-  let { searchTerm, search, selectedFacets, error } = SearchStore;
   let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
   const tableName = 'ExplorerTable';
-  $: tourEnabled = true;
-  $: isOpenAccess = $page.url.pathname.includes('/discover');
-
   const tableColumns = branding.explorePage.columns || [];
-
   const columns: Column[] = [
     ...tableColumns,
     { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
   ];
-  const cellOverides = {
-    id: Actions,
-  };
+  const cellOverides = { id: Actions };
 
-  const handler = new DataHandler([] as SearchResult[], { rowsPerPage: 10 });
-  handler.onChange(async (state: State) => {
-    doDisableTour();
-    isLoading.set(true);
-    try {
-      return await search($searchTerm, $selectedFacets, state);
-    } catch (e) {
-      return [];
-    } finally {
-      isLoading.set(false);
-    }
-  });
+  $: isOpenAccess = $page.url.pathname.includes('/discover');
+  $: path = isOpenAccess ? '/discover' : '/explorer';
 
-  let unsubSelectedFacets: Unsubscriber;
-  let unsubSearchTerm: Unsubscriber;
-
-  onMount(() => {
-    unsubSelectedFacets = selectedFacets.subscribe(() => {
-      handler.setPage(1);
-      handler.invalidate();
-    });
-
-    unsubSearchTerm = searchTerm.subscribe(() => {
-      handler.setPage(1);
-      handler.invalidate();
-    });
-
-    if (searchInput) {
-      searchTerm.set(searchInput);
-    }
-  });
-
-  function doDisableTour() {
-    if (tourEnabled && (searchInput || ($selectedFacets && $selectedFacets.length > 0))) {
-      tourEnabled = false;
-    }
-  }
-
-  function updateSearch() {
-    if ($error) {
-      error.set('');
-      searchTerm.set('');
-    }
+  function update() {
+    if ($error) error.set('');
     searchTerm.set(searchInput);
-    const path = isOpenAccess ? '/discover' : '/explorer';
+
     goto(searchInput ? `${path}?search=${searchInput}` : `${path}`, { replaceState: true });
   }
 
-  function resetSearch() {
+  function reset() {
+    resetSearch();
     searchInput = '';
-    searchTerm.set('');
-    error.set('');
-    selectedFacets.set([]);
-    tourEnabled = true;
-    goto(isOpenAccess ? '/discover' : '/explorer');
+
+    goto(path);
   }
 
-  onDestroy(() => {
-    unsubSelectedFacets && unsubSelectedFacets();
-    unsubSearchTerm && unsubSearchTerm();
+  onMount(() => {
+    if (searchInput && searchInput !== $searchTerm) {
+      searchTerm.set(searchInput);
+    } else {
+      // reload table and facets
+      handler.invalidate();
+    }
   });
 </script>
 
@@ -108,7 +68,7 @@
   <div id="search-results-col" class="flex-auto">
     <div id="search-bar" class="flex gap-2 mb-6">
       <div class="flex-auto">
-        <Searchbox bind:searchTerm={searchInput} search={updateSearch} />
+        <Searchbox bind:searchTerm={searchInput} search={update} />
       </div>
       <div class="flex-none">
         {#if !isOpenAccess && (features.enableGENEQuery || features.enableSNPQuery)}
@@ -123,7 +83,7 @@
           class="btn variant-ghost-error hover:variant-filled-error"
           aria-label="You are on the reset button"
           disabled={!searchInput && $selectedFacets.length === 0}
-          on:click={resetSearch}
+          on:click={reset}
         >
           Reset
         </button>
@@ -136,7 +96,7 @@
     {:else if $searchTerm || $selectedFacets.length > 0}
       <SearchDatatable {tableName} {handler} {columns} {cellOverides} {isLoading} />
     {/if}
-    {#if features.explorer.enableTour && tourEnabled}
+    {#if features.explorer.enableTour && $tour}
       <div id="explorer-tour" class="text-center mt-4">
         <ExplorerTour {tourConfig} />
       </div>

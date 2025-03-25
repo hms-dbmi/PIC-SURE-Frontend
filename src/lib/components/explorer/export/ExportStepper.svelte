@@ -25,7 +25,7 @@
   import { getModalStore, type ModalSettings, getToastStore } from '@skeletonlabs/skeleton';
   import Confirmation from '$lib/components/modals/Confirmation.svelte';
   import { branding, features, settings, resources } from '$lib/configuration';
-  import { searchDictionary } from '$lib/services/dictionary';
+  import { searchDictionary } from '$lib/stores/Dictionary';
   import type { ExportInterface } from '$lib/models/Export';
   import { onMount } from 'svelte';
   export let query: QueryRequestInterface;

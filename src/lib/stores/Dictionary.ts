@@ -1,3 +1,7 @@
+import { get, writable, type Writable } from 'svelte/store';
+
+import { page } from '$app/stores';
+
 import * as api from '$lib/api';
 import type { Facet, SearchResult } from '$lib/models/Search';
 import type {
@@ -5,9 +9,8 @@ import type {
   DictionaryFacetResult,
 } from '$lib/models/api/DictionaryResponses';
 import type { Pageable } from '$lib/models/api/Pageable';
-import { page } from '$app/stores';
-import { get, writable, type Writable } from 'svelte/store';
 import { user } from '$lib/stores/User';
+import { searchTerm, selectedFacets } from '$lib/stores/Search';
 
 const DICT_URL = 'picsure/proxy/dictionary-api/';
 const CONCEPT_URL = 'picsure/proxy/dictionary-api/concepts';
@@ -18,6 +21,9 @@ export type FacetSkeleton = {
   [facetCategory: string]: string[];
 };
 export const hiddenFacets: Writable<FacetSkeleton> = writable({});
+export const facetsPromise: Writable<Promise<DictionaryFacetResult[]>> = writable(
+  Promise.resolve([]),
+);
 
 const dictonaryCacheMap = new Map<string, SearchResult>();
 
@@ -69,10 +75,9 @@ function initializeHiddenFacets(response: DictionaryFacetResult[]) {
   hiddenFacets.set(facetsWithZeroConcepts);
 }
 
-export async function updateFacetsFromSearch(
-  search: string,
-  facets: Facet[],
-): Promise<DictionaryFacetResult[]> {
+export async function updateFacetsFromSearch(): Promise<DictionaryFacetResult[]> {
+  const search = get(searchTerm);
+  const facets = get(selectedFacets);
   let request: DictionarySearchRequest = { facets: facets, search: search };
   if (!get(page).url.pathname.includes('/discover')) {
     request = addConsents(request);
@@ -80,9 +85,7 @@ export async function updateFacetsFromSearch(
 
   try {
     const response: DictionaryFacetResult[] = await api.post(`${DICT_URL}facets/`, request);
-    if (facets.length === 0 && search.length === 0) {
-      initializeHiddenFacets(response);
-    }
+    initializeHiddenFacets(response);
     processFacetResults(response);
     return response;
   } catch (error) {

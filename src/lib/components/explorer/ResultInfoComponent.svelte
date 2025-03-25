@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
-  import { getConceptDetails } from '$lib/services/dictionary';
+  import { getConceptDetails } from '$lib/stores/Dictionary';
   import { ProgressRadial } from '@skeletonlabs/skeleton';
 
   export let data: SearchResult;
