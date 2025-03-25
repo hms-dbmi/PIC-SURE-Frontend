@@ -96,7 +96,7 @@
     {:else if $searchTerm || $selectedFacets.length > 0}
       <SearchDatatable {tableName} {handler} {columns} {cellOverides} {isLoading} />
     {/if}
-    {#if features.explorer.enableTour && tour}
+    {#if features.explorer.enableTour && $tour}
       <div id="explorer-tour" class="text-center mt-4">
         <ExplorerTour {tourConfig} />
       </div>
