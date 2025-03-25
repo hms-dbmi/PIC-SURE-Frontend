@@ -14,7 +14,7 @@ export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
 );
 
 export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$user, $filters]) => {
-  if ($filters.length === 0) return false;
+  if ($filters.length === 0 || !$user?.queryScopes) return false;
 
   return $filters.some((filter) => {
     let filterDataset = filter.dataset || '';

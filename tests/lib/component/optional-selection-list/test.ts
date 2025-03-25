@@ -9,6 +9,7 @@ import {
   geneValues,
   geneValuesPage2,
 } from '../../../mock-data';
+import { getOption, clickNthFilterIcon } from '../../../utils';
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
@@ -357,25 +358,6 @@ test.describe('OptionaSelectionList', () => {
     await expect(lastVisibleSelectedOption).toHaveText(/Option \d+/);
   });
 });
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const getOption = async (page: any, optionIndex = 0) => {
-  const component = page.getByTestId('optional-selection-list');
-  const optionContainer = component.locator('#options-container');
-  await expect(optionContainer).toBeVisible();
-  const options = await optionContainer.getByRole('listitem').all();
-  return options[optionIndex];
-};
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const clickNthFilterIcon = async (page: any, rowIndex = 0) => {
-  await expect(page.locator('tbody')).toBeVisible();
-  const tableBody = page.locator('tbody');
-  const firstRow = tableBody.locator('tr').nth(rowIndex);
-  const filterIcon = firstRow.locator('td').last().locator('button').nth(1);
-  await expect(filterIcon).toBeVisible();
-  await filterIcon.click();
-};
 
 function getId(option: string) {
   return option.replaceAll(' ', '-').toLowerCase();

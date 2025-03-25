@@ -1,15 +1,14 @@
-import { picsureUser, mockToken } from './mock-data';
+import { picsureUser, mockToken, userTypes } from './mock-data';
 import { test, mockApiSuccess } from './custom-context';
-import { userTypes } from './mock-data';
 
 // Creates authenticated user contexts for tests using method noted at
 // https://playwright.dev/docs/auth
 
 const userFile = (user: string) => `tests/.auth/${user}.json`;
 
-Object.entries(userTypes).forEach(async ([user, privileges]) => {
+Object.entries(userTypes).forEach(async ([user, userVariation]) => {
   test(`authenticate as ${user}`, async ({ page }) => {
-    const userData = { ...picsureUser, privileges };
+    const userData = { ...picsureUser, ...userVariation };
     const mockLoginResponse =
       '/login/loading/#access_token=' +
       mockToken +
