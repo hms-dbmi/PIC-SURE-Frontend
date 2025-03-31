@@ -232,14 +232,14 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "nepqie"
+  version_hash: "6lj8ex"
 };
 async function get_hooks() {
   let handle;
   let handleFetch;
   let handleError;
   let init;
-  ({ handle, handleFetch, handleError, init } = await import('./chunks/hooks.server-DPH3bR6z.js'));
+  ({ handle, handleFetch, handleError, init } = await import('./chunks/hooks.server-BlHqA2Sg.js'));
   let reroute;
   let transport;
   return {
