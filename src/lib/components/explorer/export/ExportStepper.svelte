@@ -31,7 +31,7 @@
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
   export let rows: ExportRowInterface[] = [];
-  export let activeType: ExpectedResultType = 'DATAFRAME';
+  export let activeType: ExpectedResultType;
 
   const modalStore = getModalStore();
   const toastStore = getToastStore();
