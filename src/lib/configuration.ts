@@ -105,6 +105,7 @@ export const routes: Route[] = [
 export const features: Indexable = {
   explorer: {
     allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
+    allowDownload: import.meta.env?.VITE_ALLOW_DOWNLOAD !== 'false',
     exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
     exportResultType: (import.meta.env?.VITE_EXPORT_RESULT_TYPE ||
       'DATAFRAME') as ExpectedResultType,
