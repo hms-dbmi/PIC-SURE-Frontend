@@ -194,9 +194,9 @@
       retry: "Something's taking longer than usual. We are still working on it...",
     };
 
-    function requestUpdate(method: () => Promise<void | DataSetResponse>, retry: number) {
-      processingMessage = retry === 1 ? statetext.initial : statetext.retry;
-      if (retry === 1) {
+    function requestUpdate(method: () => Promise<void | DataSetResponse>, retry: boolean = true) {
+      processingMessage = retry ? statetext.initial : statetext.retry;
+      if (retry) {
         interval = setInterval(() => {
           processingMessage = statetext.waiting;
         }, PROMISE_WAIT_INTERVAL * 1000);
@@ -204,8 +204,8 @@
       datasetPromise = method()
         .finally(() => clearInterval(interval))
         .catch((err) => {
-          if (retry === 1) {
-            requestUpdate(method, 0);
+          if (retry) {
+            requestUpdate(method, false);
           } else {
             throw err;
           }
@@ -215,17 +215,15 @@
     try {
       query.query.fields = $exports.map((exp) => exp.conceptPath);
       datasetId = '';
-      requestUpdate(
-        () =>
-          api.post('picsure/query', query).then((res: DataSetResponse) => {
-            datasetId = res?.picsureResultId || 'Error';
-          }),
-        1,
+      requestUpdate(() =>
+        api.post('picsure/query', query).then((res: DataSetResponse) => {
+          datasetId = res.picsureResultId || 'Error';
+        }),
       );
       await datasetPromise;
     } catch (error) {
       $state.current--;
-      console.error('Error in handleFirstStep', error);
+      console.error('Error in submitQuery', error);
       throw error;
     }
   }
@@ -542,8 +540,8 @@
                   <div>{processingMessage}</div>
                 {:then}
                   <div id="dataset-id" class="mr-4">{datasetId}</div>
-                {:catch err}
-                  <div>Error {err}</div>
+                {:catch}
+                  <div>An error occurred while getting the dataset ID. Please try again later.</div>
                 {/await}
               </div>
             </div>
