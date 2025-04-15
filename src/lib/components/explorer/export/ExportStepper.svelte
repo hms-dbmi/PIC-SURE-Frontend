@@ -35,6 +35,12 @@
   export let showTreeStep = false;
   export let rows: ExportRowInterface[] = [];
   export let activeType: ExpectedResultType;
+  
+  // Auto select csv export when pfb feature is disabled.
+  if(!features.Explorer.enablePfbExport){
+    query.query.expectedResultType === 'DATAFRAME';
+    activeType = 'DATAFRAME';
+  }
 
   interface DataSetResponse {
     picsureResultId?: string;
@@ -256,16 +262,6 @@
     return 'ERROR';
   }
 
-  async function getSignedUrl() {
-    const path = 'picsure/query/' + datasetId + '/signed-url';
-    try {
-      const res = await api.post(path, query);
-      return res.signedUrl;
-    } catch (error) {
-      console.error('Error in getSignedUrl', error);
-    }
-  }
-
   function selectExportType(exportType: ExpectedResultType) {
     query.query.expectedResultType = exportType;
     activeType = exportType;
@@ -374,13 +370,22 @@
     }
   }
 
-  async function exportToTerra() {
+  async function exportSignedToUrl(url?: string) {
+    async function getSignedUrl() {
+      const path = 'picsure/query/' + datasetId + '/signed-url';
+      try {
+        const res = await api.post(path, query);
+        return res.signedUrl;
+      } catch (error) {
+        console.error('Error in getSignedUrl', error);
+      }
+    }
+    if(!url) return;
     exportLoading = true;
     let signedUrl = await getSignedUrl();
-    window.open(
-      'https://terra.biodatacatalyst.nhlbi.nih.gov/#import-data?format=pfb&url=' +
-        encodeURIComponent(signedUrl),
-    );
+    if(signedUrl){
+      window.open(url + encodeURIComponent(signedUrl));
+    }
     exportLoading = false;
   }
 </script>
@@ -475,32 +480,34 @@
       </section>
     </Step>
   {/if}
-  <Step locked={activeType === undefined}>
-    <svelte:fragment slot="header">Review and Save Dataset:</svelte:fragment>
-    <section class="flex flex-col w-full h-full items-center">
-      <Summary />
-      <div class="grid gap-10 grid-cols-2">
-        <CardButton
-          data-testid="csv-export-option"
-          title="Export as Data Frame or CSV"
-          subtitle="Export data as a Python or R data frame or a comma-separated values file"
-          size="other"
-          class="card variant-ringed-primary"
-          active={activeType === 'DATAFRAME'}
-          on:click={() => selectExportType('DATAFRAME')}
-        ></CardButton>
-        <CardButton
-          data-testid="csv-export-option"
-          title="Export as PFB"
-          subtitle="Export data in Portable Format for Biomedical Data file format"
-          size="other"
-          class="card variant-ringed-primary"
-          active={activeType === 'DATAFRAME_PFB'}
-          on:click={() => selectExportType('DATAFRAME_PFB')}
-        ></CardButton>
-      </div>
-    </section>
-  </Step>
+  {#if features.Explorer.enablePfbExport}
+    <Step locked={activeType === undefined}>
+      <svelte:fragment slot="header">Review and Save Dataset:</svelte:fragment>
+      <section class="flex flex-col w-full h-full items-center">
+        <Summary />
+        <div class="grid gap-10 grid-cols-2">
+          <CardButton
+            data-testid="csv-export-option"
+            title="Export as Data Frame or CSV"
+            subtitle="Export data as a Python or R data frame or a comma-separated values file"
+            size="other"
+            class="card variant-ringed-primary"
+            active={activeType === 'DATAFRAME'}
+            on:click={() => selectExportType('DATAFRAME')}
+          ></CardButton>
+          <CardButton
+            data-testid="csv-export-option"
+            title="Export as PFB"
+            subtitle="Export data in Portable Format for Biomedical Data file format"
+            size="other"
+            class="card variant-ringed-primary"
+            active={activeType === 'DATAFRAME_PFB'}
+            on:click={() => selectExportType('DATAFRAME_PFB')}
+          ></CardButton>
+        </div>
+      </section>
+    </Step>
+  {/if}
   <Step locked={!datasetNameInput || datasetNameInput.length < 2 || !datasetId}>
     <svelte:fragment slot="header">Save Dataset ID:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
@@ -615,18 +622,20 @@
                   </div>
                 {/if}
               </section>
-            {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
+            {:else if query.query.expectedResultType === 'DATAFRAME_PFB' && features.explorer.enablePfbExport}
               <section class="flex flex-col gap-8 place-items-center">
                 <div class="flex justify-center mt-4">
                   Select an option below to export your selected data in PFB format.
                 </div>
-                {#if features.explorer.enableTerraExport}
-                  <button
-                    disabled={exportLoading}
-                    class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary"
-                    on:click={() => exportToTerra()}
-                    ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Terra</button
-                  >
+                {#if branding.explorePage?.pfbExportUrls && branding.explorePage.pfbExportUrls.length > 0}
+                  {#each branding.explorePage.pfbExportUrls as exportLink}
+                    <button
+                      disabled={exportLoading}
+                      class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary"
+                      on:click={() => exportSignedToUrl(exportLink.url)}
+                      ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to {exportLink.title}</button
+                    >
+                  {/each}
                 {/if}
                 <button
                   class="flex-initial w-64 btn variant-filled-primary"
