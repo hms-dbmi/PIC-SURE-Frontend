@@ -3,7 +3,6 @@
   import UserToken from '$lib/components/UserToken.svelte';
   import { branding } from '$lib/configuration';
   import { CodeBlock, Tab, TabGroup } from '@skeletonlabs/skeleton';
-  import codeBlocks from '$lib/assets/codeBlocks.json';
 
   let tabSet: number = 0;
 </script>
@@ -32,10 +31,13 @@
             language="python"
             lineNumbers={true}
             buttonCopied="Copied!"
-            code={codeBlocks?.bdcPythonAPI || 'Code not set'}
+            code={branding.explorePage.codeBlocks.PythonAPI || 'Code not set'}
           ></CodeBlock>
         {:else if tabSet === 1}
-          <CodeBlock language="r" lineNumbers={true} code={codeBlocks?.bdcRAPI || 'Code not set'}
+          <CodeBlock
+            language="r"
+            lineNumbers={true}
+            code={branding.explorePage.codeBlocks.RAPI || 'Code not set'}
           ></CodeBlock>
         {/if}
       </svelte:fragment>
@@ -46,7 +48,7 @@
       <a
         href={card.link}
         target={card.link.startsWith('http') ? '_blank' : '_self'}
-        class="pic-sure-info-card p-4 basis-2/4"
+        class="p-4 basis-2/4 max-w-sm min-h-48 mb-8"
       >
         <div class="card card-hover">
           <header class="card-header flex flex-col items-center">
@@ -64,11 +66,3 @@
     {/each}
   </section>
 </Content>
-
-<style>
-  a.pic-sure-info-card {
-    max-width: 25rem;
-    min-height: 18rem;
-    margin: 0 8px;
-  }
-</style>

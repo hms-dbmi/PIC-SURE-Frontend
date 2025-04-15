@@ -1,42 +1,59 @@
 <script lang="ts">
-  import * as api from '$lib/api';
+  import { onMount } from 'svelte';
+  import { CodeBlock, ProgressRadial, Tab, TabGroup } from '@skeletonlabs/skeleton';
+  import { getModalStore, type ModalSettings, getToastStore } from '@skeletonlabs/skeleton';
   import { v4 as uuidv4 } from 'uuid';
+
+  import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
+
+  import * as api from '$lib/api';
+  import { branding, features, settings, resources } from '$lib/configuration';
+
+  import type { ExportRowInterface } from '$lib/models/ExportRow';
+  import type { QueryRequestInterface } from '$lib/models/api/Request';
+  import type { DatasetError } from '$lib/models/Dataset';
+  import type { ExportInterface } from '$lib/models/Export';
+  import { Query, type ExpectedResultType } from '$lib/models/query/Query.ts';
+  import { state } from '$lib/stores/Stepper';
+  import { exports, addExports, removeExports } from '$lib/stores/Export';
+  import { filters, totalParticipants } from '$lib/stores/Filter';
+  import { searchDictionary } from '$lib/stores/Dictionary';
+  import { createDatasetName } from '$lib/services/datasets';
+
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
-  import Summary from './Summary.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
-  import type { ExportRowInterface } from '$lib/models/ExportRow';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import { CodeBlock, ProgressRadial, Tab, TabGroup } from '@skeletonlabs/skeleton';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import ExportStore from '$lib/stores/Export';
-  import { filters, totalParticipants } from '$lib/stores/Filter';
-  let { exports, addExports, removeExports } = ExportStore;
-  import { state } from '$lib/stores/Stepper';
-  import { goto } from '$app/navigation';
-  import { type DatasetError } from '$lib/models/Dataset';
-  import { createDatasetName } from '$lib/services/datasets';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
-  import { Query, type ExpectedResultType } from '$lib/models/query/Query.ts';
-  import codeBlocks from '$lib/assets/codeBlocks.json';
-  import { getModalStore, type ModalSettings, getToastStore } from '@skeletonlabs/skeleton';
   import Confirmation from '$lib/components/modals/Confirmation.svelte';
-  import { branding, features, settings, resources } from '$lib/configuration';
-  import { searchDictionary } from '$lib/stores/Dictionary';
-  import type { ExportInterface } from '$lib/models/Export';
-  import { onMount } from 'svelte';
+  import Summary from './Summary.svelte';
+
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
   export let rows: ExportRowInterface[] = [];
   export let activeType: ExpectedResultType;
 
+  interface DataSetResponse {
+    picsureResultId?: string;
+  }
+
+  const MAX_DATA_POINTS_FOR_EXPORT = settings.maxDataPointsForExport || 1000000;
   const modalStore = getModalStore();
   const toastStore = getToastStore();
+  const PROMISE_WAIT_INTERVAL = 7;
+
+  const columns = [
+    { dataElement: 'variableName', label: 'Variable Name', sort: true },
+    { dataElement: 'description', label: 'Variable Description', sort: true },
+    { dataElement: 'type', label: 'Type', sort: true, class: 'text-center' },
+  ];
+
   let statusPromise: Promise<string>;
   let preparePromise: Promise<void>;
+  let datasetPromise: Promise<void | DataSetResponse>;
   let datasetNameInput: string = '';
   let picsureResultId: string = '';
   let lockDownload = true;
@@ -45,14 +62,12 @@
   let lastExports: ExportRowInterface[] = [];
   let loadingSampleIds = false;
   let checkingSampleIds = false;
+  let tabSet: number = 0;
+
   $: datasetId = '';
-  $: canDownload = true;
+  $: processingMessage = '';
   $: apiExport = false;
-  const columns = [
-    { dataElement: 'variableName', label: 'Variable Name', sort: true },
-    { dataElement: 'description', label: 'Variable Description', sort: true },
-    { dataElement: 'type', label: 'Type', sort: true, class: 'text-center' },
-  ];
+  $: exportLoading = false;
 
   onMount(async () => {
     const exportedSampleIds = $exports.filter((e: ExportInterface) =>
@@ -86,8 +101,6 @@
       sampleIds = false;
     }
   });
-
-  const MAX_DATA_POINTS_FOR_EXPORT = settings.maxDataPointsForExport || 1000000;
 
   function openConfirmationModal() {
     const onConfirm = async () => {
@@ -138,6 +151,7 @@
       console.error('Error in onCompleteHandler', error);
     }
   }
+
   function onNextHandler(e: CustomEvent): void {
     if (e.detail.step === 0 && !showTreeStep) {
       // nothing needs to be done here
@@ -167,22 +181,49 @@
       });
     }
   }
-  function onStepHandler(e: Event): void {
-    console.log('event:next', e);
-  }
-  function onBackHandler(e: Event): void {
+
+  function onBackHandler(): void {
     error = '';
-    console.log('event:next', e);
   }
 
   async function submitQuery(): Promise<void> {
+    let interval: NodeJS.Timeout;
+    const statetext = {
+      initial: 'Creating dataset ID...',
+      waiting: 'Hang tight. We are still working on it...',
+      retry: "Something's taking longer than usual. We are still working on it...",
+    };
+
+    function requestUpdate(method: () => Promise<void | DataSetResponse>, retry: boolean = true) {
+      processingMessage = retry ? statetext.initial : statetext.retry;
+      if (retry) {
+        interval = setInterval(() => {
+          processingMessage = statetext.waiting;
+        }, PROMISE_WAIT_INTERVAL * 1000);
+      }
+      datasetPromise = method()
+        .finally(() => clearInterval(interval))
+        .catch((err) => {
+          if (retry) {
+            requestUpdate(method, false);
+          } else {
+            throw err;
+          }
+        });
+    }
+
     try {
       query.query.fields = $exports.map((exp) => exp.conceptPath);
-      const res = await api.post('picsure/query', query);
-      datasetId = res.picsureResultId;
+      datasetId = '';
+      requestUpdate(() =>
+        api.post('picsure/query', query).then((res: DataSetResponse) => {
+          datasetId = res.picsureResultId || 'Error';
+        }),
+      );
+      await datasetPromise;
     } catch (error) {
       $state.current--;
-      console.error('Error in handleFirstStep', error);
+      console.error('Error in submitQuery', error);
       throw error;
     }
   }
@@ -233,9 +274,6 @@
   function onComplete() {
     goto('/explorer');
   }
-
-  let tabSet: number = 0;
-  $: exportLoading = false;
 
   function dataLimitExceeded(): boolean {
     let participantCount: number =
@@ -351,7 +389,6 @@
   class="w-full h-full m-8"
   on:complete={onComplete}
   on:next={onNextHandler}
-  on:step={onStepHandler}
   on:back={onBackHandler}
   buttonCompleteLabel="Done"
 >
@@ -401,7 +438,7 @@
                   {:else}
                     <input
                       type="checkbox"
-                      class="mr-1 &[aria-disabled=“true”]:opacity-75"
+                      class="input mr-1 &[aria-disabled=“true”]:opacity-75"
                       data-testid="sample-ids-checkbox"
                       id="sample-ids-checkbox"
                       bind:checked={sampleIds}
@@ -464,7 +501,7 @@
       </div>
     </section>
   </Step>
-  <Step locked={!datasetNameInput || datasetNameInput.length < 2}>
+  <Step locked={!datasetNameInput || datasetNameInput.length < 2 || !datasetId}>
     <svelte:fragment slot="header">Save Dataset ID:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
       <Summary />
@@ -489,7 +526,7 @@
               <input
                 type="text"
                 id="dataset-name"
-                class="w-80"
+                class="input w-80"
                 placeholder="Enter a name"
                 bind:value={datasetNameInput}
                 required
@@ -498,7 +535,14 @@
             <div class="flex items-center m-2">
               <div class="flex items-center">
                 <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
-                <div id="dataset-id">{datasetId}</div>
+                {#await datasetPromise}
+                  <ProgressRadial width="w-4" />
+                  <div>{processingMessage}</div>
+                {:then}
+                  <div id="dataset-id" class="mr-4">{datasetId}</div>
+                {:catch}
+                  <div>An error occurred while getting the dataset ID. Please try again later.</div>
+                {/await}
               </div>
             </div>
           </div>
@@ -510,7 +554,7 @@
     <svelte:fragment slot="header">Start Analysis:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
       <div class="flex justify-center">
-        {#if canDownload}
+        {#if features.explorer.allowDownload}
           {#await statusPromise}
             <div class="flex justify-center items-center">
               <ProgressRadial width="w-4" />
@@ -519,13 +563,7 @@
           {:then}
             {#if query.query.expectedResultType === 'DATAFRAME'}
               <section class="flex flex-col gap-8">
-                <p class="mt-4">
-                  To export data and start your analysis, copy and paste the following code in an
-                  analysis workspace, such as BioData Catalyst Powered by Seven Bridges or BioData
-                  Catalyst Powered by Terra, to connect to PIC-SURE and save the data frame or
-                  download the file. Note that you will need your personal access token to complete
-                  the connection to PIC-SURE with code.
-                </p>
+                <p class="mt-4">{branding.explorePage.analysisExportText}</p>
                 <TabGroup class="card p-4">
                   <Tab bind:group={tabSet} name="python" value={0}>Python</Tab>
                   <Tab bind:group={tabSet} name="r" value={1}>R</Tab>
@@ -536,77 +574,65 @@
                         language="python"
                         lineNumbers={true}
                         buttonCopied="Copied!"
-                        code={codeBlocks?.bdcPythonExport?.replace('{{queryId}}', datasetId) ||
-                          'Code not set'}
-                      ></CodeBlock>
+                        code={branding.explorePage.codeBlocks.PythonExport.replace(
+                          '{{queryId}}',
+                          datasetId,
+                        ) || 'Code not set'}
+                      />
                     {:else if tabSet === 1}
                       <CodeBlock
                         language="r"
                         lineNumbers={true}
-                        code={codeBlocks?.bdcRExport?.replace('{{queryId}}', datasetId) ||
-                          'Code not set'}
-                      ></CodeBlock>
+                        buttonCopied="Copied!"
+                        code={branding.explorePage.codeBlocks.RExport.replace(
+                          '{{queryId}}',
+                          datasetId,
+                        ) || 'Code not set'}
+                      />
                     {:else if tabSet === 2}
-                      <div>
-                        <button
-                          class="btn variant-filled-primary"
-                          on:click={() =>
-                            features.confirmDownload ? openConfirmationModal() : download()}
-                          ><i class="fa-solid fa-download mr-1"></i>Download as CSV</button
-                        >
-                      </div>
+                      <button
+                        class="btn variant-filled-primary"
+                        on:click={() =>
+                          features.confirmDownload ? openConfirmationModal() : download()}
+                        ><i class="fa-solid fa-download mr-1"></i>Download as CSV</button
+                      >
                     {/if}
                   </svelte:fragment>
                 </TabGroup>
-                <p>
-                  Copy your personal access token and save as a text file called “token.txt” in the
-                  same working directory to execute the code above.
-                </p>
+                <p>{branding.explorePage.goTo.instructions}</p>
                 <div class="flex justify-center">
                   <UserToken />
                 </div>
-                <div class="flex justify-center">
-                  <a
-                    class="btn variant-ghost-primary m-2 hover:variant-filled-primary"
-                    href="https://platform.sb.biodatacatalyst.nhlbi.nih.gov/u/biodatacatalyst/data-export-from-the-pic-sure-ui"
-                    target="_blank">Go to Seven Bridges</a
-                  >
-                  <a
-                    class="btn variant-ghost-primary m-2 hover:variant-filled-primary"
-                    href="https://terra.biodatacatalyst.nhlbi.nih.gov/"
-                    target="_blank">Go to Terra</a
-                  >
-                </div>
+                {#if branding.explorePage.goTo.links.length > 0}
+                  <div class="flex justify-center">
+                    {#each branding.explorePage.goTo.links as link}
+                      <a
+                        class="btn variant-ghost-primary m-2 hover:variant-filled-primary"
+                        href={link.url}
+                        target={link.newTab ? '_blank' : '_self'}>{link.title}</a
+                      >
+                    {/each}
+                  </div>
+                {/if}
               </section>
             {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
-              <section class="flex flex-col gap-8">
+              <section class="flex flex-col gap-8 place-items-center">
                 <div class="flex justify-center mt-4">
                   Select an option below to export your selected data in PFB format.
                 </div>
                 {#if features.explorer.enableTerraExport}
-                  <div class="grid grid-cols-3">
-                    <div></div>
-                    <div>
-                      <button
-                        disabled={exportLoading}
-                        class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary"
-                        on:click={() => exportToTerra()}
-                        ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Terra</button
-                      >
-                    </div>
-                  </div>
+                  <button
+                    disabled={exportLoading}
+                    class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary"
+                    on:click={() => exportToTerra()}
+                    ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Terra</button
+                  >
                 {/if}
-                <div class="grid grid-cols-3">
-                  <div></div>
-                  <div>
-                    <button
-                      class="flex-initial w-64 btn variant-filled-primary"
-                      on:click={() =>
-                        features.confirmDownload ? openConfirmationModal() : download()}
-                      ><i class="fa-solid fa-download"></i>Download as PFB</button
-                    >
-                  </div>
-                </div>
+                <button
+                  class="flex-initial w-64 btn variant-filled-primary"
+                  on:click={() => (features.confirmDownload ? openConfirmationModal() : download())}
+                  ><i class="fa-solid fa-download"></i>Download as PFB</button
+                >
               </section>
             {/if}
           {:catch e}
@@ -643,9 +669,3 @@
     </section>
   </Step>
 </Stepper>
-
-<style>
-  input[type='text'] {
-    border-radius: var(--theme-rounded-base);
-  }
-</style>

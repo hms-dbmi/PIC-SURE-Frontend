@@ -1,5 +1,11 @@
 import type { Column } from './models/Tables';
 
+interface Link {
+  title: string;
+  url: string;
+  newTab?: boolean;
+}
+
 export type Indexable = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
@@ -12,23 +18,21 @@ export interface Indexed<T> {
 export interface SiteMapConfig {
   category: string;
   privilege: string;
-  links: Array<{
-    title: string;
-    url: string;
-    newTab?: boolean;
-  }>;
+  links: Array<Link>;
 }
 
 export interface FooterConfig {
   showSitemap: boolean;
   excludeSitemapOn: string[];
-  links: Array<{
-    title: string;
-    url: string;
-    newTab?: boolean;
-  }>;
+  links: Array<Link>;
 }
 
+interface CodeBlock {
+  PythonExport: string;
+  RExport: string;
+  PythonAPI: string;
+  RAPI: string;
+}
 export interface ExplorePageConfig {
   columns: Column[];
   tourSearchTerm: string;
@@ -36,8 +40,14 @@ export interface ExplorePageConfig {
   totalPatientsText: string;
   queryErrorText: string;
   filterErrorText: string;
+  analysisExportText: string;
   confirmDownloadTitle: string;
   confirmDownloadMessage: string;
+  codeBlocks: CodeBlock;
+  goTo: {
+    instructions: string;
+    links: Array<Link>;
+  };
 }
 
 export interface LandingStat {

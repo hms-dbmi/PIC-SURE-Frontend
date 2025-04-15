@@ -2,9 +2,9 @@ import { get, writable, type Writable } from 'svelte/store';
 
 import type { ExportInterface } from '$lib/models/Export';
 
-const exports: Writable<ExportInterface[]> = writable([]);
+export const exports: Writable<ExportInterface[]> = writable([]);
 
-function addExport(exportedField: ExportInterface) {
+export function addExport(exportedField: ExportInterface) {
   const currentExports = get(exports);
   if (currentExports.some((e: ExportInterface) => e.conceptPath === exportedField.conceptPath)) {
     return;
@@ -13,7 +13,7 @@ function addExport(exportedField: ExportInterface) {
   return exportedField;
 }
 
-function addExports(exportedFields: ExportInterface[]) {
+export function addExports(exportedFields: ExportInterface[]) {
   const currentExports = get(exports);
   const newExports = exportedFields.filter(
     (e: ExportInterface) =>
@@ -22,7 +22,7 @@ function addExports(exportedFields: ExportInterface[]) {
   exports.set([...currentExports, ...newExports]);
 }
 
-function removeExport(uuid: string) {
+export function removeExport(uuid: string) {
   const currentExports = get(exports);
   exports.set(
     currentExports.filter((e: ExportInterface) =>
@@ -31,7 +31,7 @@ function removeExport(uuid: string) {
   );
 }
 
-function removeExports(exportsToRemove: ExportInterface[]) {
+export function removeExports(exportsToRemove: ExportInterface[]) {
   const currentExports = get(exports);
   exports.set(
     currentExports.filter(
