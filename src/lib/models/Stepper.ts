@@ -3,13 +3,22 @@ import type { EventDispatcher } from 'svelte';
 export interface StepperState {
   current: number;
   total: number;
+  stepMap: string[];
+}
+
+interface StepAction {
+  step: number;
+  name: string;
+  state: StepperState;
 }
 
 export type StepperButton = 'submit' | 'reset' | 'button';
+
 export type StepperEvent = {
-  next: { step: number; state: StepperState };
-  step: { step: number; state: StepperState };
-  back: { step: number; state: StepperState };
-  complete: { step: number; state: StepperState };
+  next: StepAction;
+  step: StepAction;
+  back: StepAction;
+  complete: StepAction;
 };
+
 export type StepperEventDispatcher = EventDispatcher<StepperEvent>;

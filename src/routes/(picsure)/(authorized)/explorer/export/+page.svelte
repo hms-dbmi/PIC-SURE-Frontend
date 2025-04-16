@@ -109,7 +109,7 @@
       exportRows.push(parentStudyRow);
     }
   }
-  state.set({ current: 0, total: 0 });
+  state.set({ ...$state, current: 0, total: 0 });
 </script>
 
 <Content
