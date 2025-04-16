@@ -35,9 +35,9 @@
   export let showTreeStep = false;
   export let rows: ExportRowInterface[] = [];
   export let activeType: ExpectedResultType;
-  
+
   // Auto select csv export when pfb feature is disabled.
-  if(!features.Explorer.enablePfbExport){
+  if (!features.Explorer.enablePfbExport) {
     query.query.expectedResultType === 'DATAFRAME';
     activeType = 'DATAFRAME';
   }
@@ -380,10 +380,10 @@
         console.error('Error in getSignedUrl', error);
       }
     }
-    if(!url) return;
+    if (!url) return;
     exportLoading = true;
     let signedUrl = await getSignedUrl();
-    if(signedUrl){
+    if (signedUrl) {
       window.open(url + encodeURIComponent(signedUrl));
     }
     exportLoading = false;

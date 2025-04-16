@@ -107,7 +107,8 @@ export const features: Indexable = {
     allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
     allowDownload: import.meta.env?.VITE_ALLOW_DOWNLOAD !== 'false', // default true
     exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
-    exportResultType: (import.meta.env?.VITE_EXPORT_RESULT_TYPE || 'DATAFRAME') as ExpectedResultType,
+    exportResultType: (import.meta.env?.VITE_EXPORT_RESULT_TYPE ||
+      'DATAFRAME') as ExpectedResultType,
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
     enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
