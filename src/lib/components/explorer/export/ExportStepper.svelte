@@ -12,7 +12,7 @@
 
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import type { DatasetError } from '$lib/models/Dataset';
+  import type { DataSet } from '$lib/models/Dataset';
   import type { ExportInterface } from '$lib/models/Export';
   import { Query, type ExpectedResultType } from '$lib/models/query/Query.ts';
   import { state } from '$lib/stores/Stepper';
@@ -25,7 +25,6 @@
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
-  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Confirmation from '$lib/components/modals/Confirmation.svelte';
@@ -34,7 +33,6 @@
   export let query: QueryRequestInterface;
   export let showTreeStep = false;
   export let rows: ExportRowInterface[] = [];
-  export let activeType: ExpectedResultType;
 
   interface DataSetResponse {
     picsureResultId?: string;
@@ -51,13 +49,14 @@
     { dataElement: 'type', label: 'Type', sort: true, class: 'text-center' },
   ];
 
-  let statusPromise: Promise<string>;
+  let activeType: ExpectedResultType;
+  let statusPromise: Promise<unknown>;
   let preparePromise: Promise<void>;
-  let datasetPromise: Promise<void | DataSetResponse>;
+  let datasetIdPromise: Promise<void | DataSetResponse>;
+  let saveDatasetPromise: Promise<DataSet>;
   let datasetNameInput: string = '';
   let picsureResultId: string = '';
   let lockDownload = true;
-  let error: string = '';
   let sampleIds = false;
   let lastExports: ExportRowInterface[] = [];
   let loadingSampleIds = false;
@@ -66,8 +65,13 @@
 
   $: datasetId = '';
   $: processingMessage = '';
-  $: apiExport = false;
   $: exportLoading = false;
+
+  // Auto select csv export when pfb feature is disabled.
+  if (!features.explorer.enablePfbExport) {
+    query.query.expectedResultType === 'DATAFRAME';
+    activeType = 'DATAFRAME';
+  }
 
   onMount(async () => {
     const exportedSampleIds = $exports.filter((e: ExportInterface) =>
@@ -152,38 +156,23 @@
     }
   }
 
-  function onNextHandler(e: CustomEvent): void {
-    if (e.detail.step === 0 && !showTreeStep) {
-      // nothing needs to be done here
-      return;
-    }
-    if (e.detail.step === 1 && showTreeStep) {
-      //TODO: Load tree
-    } else if ((e.detail.step === 1 && !showTreeStep) || (showTreeStep && e.detail.step === 2)) {
+  async function onNextHandler(e: CustomEvent): Promise<void> {
+    const lastStepName = $state.stepMap[$state.current - 1] || '';
+    const stepName = e.detail.name;
+
+    // nothing needs to be on review step
+    if (stepName === 'review') return;
+
+    if (lastStepName === 'review') {
       preparePromise = submitQuery();
-    } else if ((e.detail.step === 2 && !showTreeStep) || (showTreeStep && e.detail.step === 3)) {
-      createNamedDataset();
     }
-    if (e.detail.state.total - 1 === e.detail.step + 1) {
-      statusPromise = new Promise((resolve, reject) => {
-        const interval = setInterval(async () => {
-          const status = await checkExportStatus(picsureResultId);
-          if (status === 'ERROR') {
-            lockDownload = true;
-            clearInterval(interval);
-            reject(status);
-          } else if (!['PENDING', 'RUNNING', 'QUEUED'].includes(status)) {
-            lockDownload = false;
-            clearInterval(interval);
-            resolve(status);
-          }
-        }, 2000);
+
+    if (stepName === 'start') {
+      saveDatasetPromise = createDatasetName(datasetId, datasetNameInput).then((data: DataSet) => {
+        statusPromise = checkExportStatus(picsureResultId);
+        return data;
       });
     }
-  }
-
-  function onBackHandler(): void {
-    error = '';
   }
 
   async function submitQuery(): Promise<void> {
@@ -201,7 +190,7 @@
           processingMessage = statetext.waiting;
         }, PROMISE_WAIT_INTERVAL * 1000);
       }
-      datasetPromise = method()
+      datasetIdPromise = method()
         .finally(() => clearInterval(interval))
         .catch((err) => {
           if (retry) {
@@ -220,7 +209,7 @@
           datasetId = res.picsureResultId || 'Error';
         }),
       );
-      await datasetPromise;
+      await datasetIdPromise;
     } catch (error) {
       $state.current--;
       console.error('Error in submitQuery', error);
@@ -228,42 +217,18 @@
     }
   }
 
-  async function createNamedDataset() {
-    try {
-      await createDatasetName(datasetId, datasetNameInput);
-    } catch (err) {
-      if (err instanceof Object) {
-        const errObj = err as DatasetError;
-        error = errObj?.message?.message || 'Error Creating Named Dataset';
-      } else {
-        error = String(err) || 'Error Creating Named Dataset';
-      }
-      $state.current--;
-      console.error('Error in createNamedDataset', err);
-    }
-  }
-
-  async function checkExportStatus(lastPicsureResultId?: string) {
-    let statusId = lastPicsureResultId ? lastPicsureResultId : datasetId;
-    const path = 'picsure/query/' + statusId + '/status';
-    try {
-      const res = await api.post(path, query);
-      picsureResultId = res.picsureResultId;
-      return res.status;
-    } catch (error) {
-      console.error('Error in checkExportStatus', error); //TODO handle errors
-    }
-    return 'ERROR';
-  }
-
-  async function getSignedUrl() {
-    const path = 'picsure/query/' + datasetId + '/signed-url';
-    try {
-      const res = await api.post(path, query);
-      return res.signedUrl;
-    } catch (error) {
-      console.error('Error in getSignedUrl', error);
-    }
+  function checkExportStatus(lastPicsureResultId?: string) {
+    const statusId = lastPicsureResultId || datasetId;
+    return api
+      .post('picsure/query/' + statusId + '/status', query)
+      .then((res: { picsureResultId: string; status: string }) => {
+        if (res.status === 'ERROR') {
+          lockDownload = true;
+          return Promise.reject(res.status);
+        }
+        picsureResultId = res.picsureResultId;
+        lockDownload = false;
+      });
   }
 
   function selectExportType(exportType: ExpectedResultType) {
@@ -374,13 +339,22 @@
     }
   }
 
-  async function exportToTerra() {
+  async function exportSignedToUrl(url?: string) {
+    async function getSignedUrl() {
+      const path = 'picsure/query/' + datasetId + '/signed-url';
+      try {
+        const res = await api.post(path, query);
+        return res.signedUrl;
+      } catch (error) {
+        console.error('Error in getSignedUrl', error);
+      }
+    }
+    if (!url) return;
     exportLoading = true;
     let signedUrl = await getSignedUrl();
-    window.open(
-      'https://terra.biodatacatalyst.nhlbi.nih.gov/#import-data?format=pfb&url=' +
-        encodeURIComponent(signedUrl),
-    );
+    if (signedUrl) {
+      window.open(url + encodeURIComponent(signedUrl));
+    }
     exportLoading = false;
   }
 </script>
@@ -389,10 +363,9 @@
   class="w-full h-full m-8"
   on:complete={onComplete}
   on:next={onNextHandler}
-  on:back={onBackHandler}
   buttonCompleteLabel="Done"
 >
-  <Step locked={dataLimitExceeded()}>
+  <Step name="review" locked={dataLimitExceeded()}>
     <svelte:fragment slot="header">Review Cohort Details:</svelte:fragment>
     <div id="first-step-container" class="flex flex-col w-full h-full items-center">
       <Summary />
@@ -460,7 +433,7 @@
     </div>
   </Step>
   {#if showTreeStep}
-    <Step>
+    <Step name="select-variables">
       <svelte:fragment slot="header">Finalize Data:</svelte:fragment>
       <section class="flex flex-col w-full h-full items-center">
         <Summary />
@@ -475,33 +448,35 @@
       </section>
     </Step>
   {/if}
-  <Step locked={activeType === undefined}>
-    <svelte:fragment slot="header">Review and Save Dataset:</svelte:fragment>
-    <section class="flex flex-col w-full h-full items-center">
-      <Summary />
-      <div class="grid gap-10 grid-cols-2">
-        <CardButton
-          data-testid="csv-export-option"
-          title="Export as Data Frame or CSV"
-          subtitle="Export data as a Python or R data frame or a comma-separated values file"
-          size="other"
-          class="card variant-ringed-primary"
-          active={activeType === 'DATAFRAME'}
-          on:click={() => selectExportType('DATAFRAME')}
-        ></CardButton>
-        <CardButton
-          data-testid="csv-export-option"
-          title="Export as PFB"
-          subtitle="Export data in Portable Format for Biomedical Data file format"
-          size="other"
-          class="card variant-ringed-primary"
-          active={activeType === 'DATAFRAME_PFB'}
-          on:click={() => selectExportType('DATAFRAME_PFB')}
-        ></CardButton>
-      </div>
-    </section>
-  </Step>
-  <Step locked={!datasetNameInput || datasetNameInput.length < 2 || !datasetId}>
+  {#if features.explorer.enablePfbExport}
+    <Step name="select-type" locked={activeType === undefined}>
+      <svelte:fragment slot="header">Review and Save Dataset:</svelte:fragment>
+      <section class="flex flex-col w-full h-full items-center">
+        <Summary />
+        <div class="grid gap-10 grid-cols-2">
+          <CardButton
+            data-testid="csv-export-option"
+            title="Export as Data Frame or CSV"
+            subtitle="Export data as a Python or R data frame or a comma-separated values file"
+            size="other"
+            class="card variant-ringed-primary"
+            active={activeType === 'DATAFRAME'}
+            on:click={() => selectExportType('DATAFRAME')}
+          ></CardButton>
+          <CardButton
+            data-testid="csv-export-option"
+            title="Export as PFB"
+            subtitle="Export data in Portable Format for Biomedical Data file format"
+            size="other"
+            class="card variant-ringed-primary"
+            active={activeType === 'DATAFRAME_PFB'}
+            on:click={() => selectExportType('DATAFRAME_PFB')}
+          ></CardButton>
+        </div>
+      </section>
+    </Step>
+  {/if}
+  <Step name="save-dataset" locked={!datasetNameInput || datasetNameInput.length < 2 || !datasetId}>
     <svelte:fragment slot="header">Save Dataset ID:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
       <Summary />
@@ -512,13 +487,6 @@
           your Dataset IDs.
         </header>
         <hr />
-        {#if error}
-          <div class="w-full h-full m-2">
-            <ErrorAlert title="Error">
-              {error}
-            </ErrorAlert>
-          </div>
-        {/if}
         <div class="card-body p-4 flex flex-col justify-center items-center">
           <div>
             <div class="flex items-center m-2">
@@ -535,7 +503,7 @@
             <div class="flex items-center m-2">
               <div class="flex items-center">
                 <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
-                {#await datasetPromise}
+                {#await datasetIdPromise}
                   <ProgressRadial width="w-4" />
                   <div>{processingMessage}</div>
                 {:then}
@@ -550,11 +518,16 @@
       </div>
     </section>
   </Step>
-  <Step locked={lockDownload}>
+  <Step name="start" locked={lockDownload}>
     <svelte:fragment slot="header">Start Analysis:</svelte:fragment>
     <section class="flex flex-col w-full h-full items-center">
-      <div class="flex justify-center">
-        {#if features.explorer.allowDownload}
+      {#await saveDatasetPromise}
+        <div class="flex justify-center items-center">
+          <ProgressRadial width="w-4" />
+          <div>Saving your dataset...</div>
+        </div>
+      {:then}
+        <div class="flex justify-center">
           {#await statusPromise}
             <div class="flex justify-center items-center">
               <ProgressRadial width="w-4" />
@@ -567,7 +540,9 @@
                 <TabGroup class="card p-4">
                   <Tab bind:group={tabSet} name="python" value={0}>Python</Tab>
                   <Tab bind:group={tabSet} name="r" value={1}>R</Tab>
-                  <Tab bind:group={tabSet} name="download" value={2}>Download</Tab>
+                  {#if features.explorer.allowDownload}
+                    <Tab bind:group={tabSet} name="download" value={2}>Download</Tab>
+                  {/if}
                   <svelte:fragment slot="panel">
                     {#if tabSet === 0}
                       <CodeBlock
@@ -589,7 +564,7 @@
                           datasetId,
                         ) || 'Code not set'}
                       />
-                    {:else if tabSet === 2}
+                    {:else if features.explorer.allowDownload && tabSet === 2}
                       <button
                         class="btn variant-filled-primary"
                         on:click={() =>
@@ -615,18 +590,20 @@
                   </div>
                 {/if}
               </section>
-            {:else if query.query.expectedResultType === 'DATAFRAME_PFB'}
+            {:else if query.query.expectedResultType === 'DATAFRAME_PFB' && features.explorer.enablePfbExport}
               <section class="flex flex-col gap-8 place-items-center">
                 <div class="flex justify-center mt-4">
                   Select an option below to export your selected data in PFB format.
                 </div>
-                {#if features.explorer.enableTerraExport}
-                  <button
-                    disabled={exportLoading}
-                    class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary"
-                    on:click={() => exportToTerra()}
-                    ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to Terra</button
-                  >
+                {#if branding.explorePage?.pfbExportUrls && branding.explorePage.pfbExportUrls.length > 0}
+                  {#each branding.explorePage.pfbExportUrls as exportLink}
+                    <button
+                      disabled={exportLoading}
+                      class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary"
+                      on:click={() => exportSignedToUrl(exportLink.url)}
+                      ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to {exportLink.title}</button
+                    >
+                  {/each}
                 {/if}
                 <button
                   class="flex-initial w-64 btn variant-filled-primary"
@@ -644,28 +621,15 @@
               <div class="hidden">{e}</div>
             </div>
           {/await}
-        {/if}
-      </div>
-      {#if apiExport}
-        <div class="flex flex-col justify-center items-center">
-          <div class="flex justify-center">
-            Use your personal access token and the dataset ID to export your participant-level
-            cohort data using the PIC-SURE API.
-          </div>
-          <UserToken />
-          <div class="flex items-center m-4">
-            <div class="flex items-center">
-              <label for="dataset-id" class="font-bold ml-4 mr-2">Dataset ID:</label>
-              <div id="dataset-id" class="mr-4">{datasetId}</div>
-              <CopyButton itemToCopy={datasetId} />
-            </div>
-          </div>
-          <p>
-            Navigate to the <a class="anchor" href="/api">API page</a> to view examples and learn more
-            about the PIC-SURE API.
-          </p>
         </div>
-      {/if}
+      {:catch}
+        <div class="flex justify-center">
+          <ErrorAlert
+            title="An error occurred while saving your dataset. Please try again. If this problem persists, please
+            contact an administrator."
+          />
+        </div>
+      {/await}
     </section>
   </Step>
 </Stepper>

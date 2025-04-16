@@ -105,7 +105,7 @@ export const routes: Route[] = [
 export const features: Indexable = {
   explorer: {
     allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
-    allowDownload: import.meta.env?.VITE_ALLOW_DOWNLOAD !== 'false',
+    allowDownload: import.meta.env?.VITE_ALLOW_DOWNLOAD !== 'false', // default true
     exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
     exportResultType: (import.meta.env?.VITE_EXPORT_RESULT_TYPE ||
       'DATAFRAME') as ExpectedResultType,
@@ -114,7 +114,7 @@ export const features: Indexable = {
     enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
     authTour: import.meta.env?.VITE_AUTH_TOUR_NAME ?? 'NHANES-Auth',
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
-    enableTerraExport: import.meta.env?.VITE_ENABLE_TERRA_EXPORT === 'true',
+    enablePfbExport: import.meta.env?.VITE_DOWNLOAD_AS_PFB !== 'false', // default true
     enableSampleIdCheckbox: import.meta.env?.VITE_ENABLE_SAMPLE_ID_CHECKBOX === 'true',
   },
   login: {
@@ -127,7 +127,7 @@ export const features: Indexable = {
   useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
   discover: import.meta.env?.VITE_DISCOVER === 'true',
   discoverFeautures: {
-    enableTour: import.meta.env?.EXPLORER_TOUR !== 'false',
+    enableTour: import.meta.env?.EXPLORER_TOUR !== 'false', // default true
     openTour: import.meta.env?.VITE_OPEN_TOUR_NAME ?? 'BDC-Open',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
   },

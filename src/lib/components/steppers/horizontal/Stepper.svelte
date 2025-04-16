@@ -16,17 +16,19 @@
     await new Promise((resolve) => setTimeout(resolve));
 
     if (locked) return;
-    dispatch('next', { step: $state.current, state: $state });
-    $state.current++;
+    const newStep = $state.current + 1;
+    dispatch('next', { step: $state.current, name: $state.stepMap[newStep], state: $state });
+    $state.current = newStep;
   }
   function onBack() {
-    dispatch('back', { step: $state.current, state: $state });
-    $state.current = $state.current === 1 ? 0 : $state.current - 1;
+    const newStep = $state.current === 1 ? 0 : $state.current - 1;
+    dispatch('back', { step: $state.current, name: $state.stepMap[newStep], state: $state });
+    $state.current = newStep;
   }
   function onComplete(stepIndex: number, locked: boolean) {
     if (locked) return;
 
-    dispatch('complete', { step: stepIndex, state: $state });
+    dispatch('complete', { step: stepIndex, name: $state.stepMap[stepIndex], state: $state });
   }
   setContext('onBack', onBack);
   setContext('onNext', onNext);
@@ -48,6 +50,7 @@
           class:flex-1={isActive(step)}
         >
           <span
+            data-testid="step-{$state.stepMap[step]}"
             class="badge text-sm {isActive(step)
               ? 'variant-filled-primary'
               : 'variant-filled-surface'}">{isActive(step) ? `Step ${step + 1}` : step + 1}</span

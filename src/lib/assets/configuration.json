@@ -74,7 +74,8 @@
     "goTo": {
       "instructions": "Copy your personal access token and save as a text file called \"token.txt\" in the same working directory to execute the code above.",
       "links": []
-    }
+    },
+    "pfbExportUrls": []
   },
   "landing": {
     "searchPlaceholder": "Search terms or variables of interest…",

@@ -48,6 +48,7 @@ export interface ExplorePageConfig {
     instructions: string;
     links: Array<Link>;
   };
+  pfbExportUrls?: Link[];
 }
 
 export interface LandingStat {
