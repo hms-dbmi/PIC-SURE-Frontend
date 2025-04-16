@@ -83,15 +83,6 @@
     "authExplanation": "The <a class=\"anchor\" href=\"https://www.cdc.gov/nchs/nhanes/index.htm\" target=\"_blank\">National Health and Nutrition Examination Survey (NHANES)</a> dataset is designed to assess the health and nutritional status of adults and children in the United States",
     "actions": [
       {
-        "title": "Discover",
-        "description": "Discover studies in BioData Catalyst by searching for terms, applying filters, and retrieving aggregate counts",
-        "icon": "fa-regular fa-compass",
-        "url": "/discover",
-        "btnText": "Start Discovering",
-        "isOpen": true,
-        "showIfLoggedIn": true
-      },
-      {
         "title": "Explore",
         "description": "Explore data, apply filters, and build cohorts",
         "icon": "fa-solid fa-magnifying-glass",
@@ -108,15 +99,6 @@
         "btnText": "Prepare for Analysis",
         "isOpen": false,
         "showIfLoggedIn": true
-      },
-      {
-        "title": "Login",
-        "description": "Log In to explore participant-level data, save datasets, and kickstart your research analysis",
-        "icon": "fa-solid fa-user",
-        "url": "/login",
-        "btnText": "Go to Login",
-        "isOpen": true,
-        "showIfLoggedIn": false
       }
     ],
     "stats": [
