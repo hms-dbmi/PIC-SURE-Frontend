@@ -16,14 +16,16 @@
     await new Promise((resolve) => setTimeout(resolve));
 
     if (locked) return;
-    const newStep = $state.current + 1;
-    dispatch('next', { step: $state.current, name: $state.stepMap[newStep], state: $state });
-    $state.current = newStep;
+    const step = $state.current + 1;
+    const name = $state.stepMap[step];
+    dispatch('next', { step, name, state: $state });
+    $state.current = step;
   }
   function onBack() {
-    const newStep = $state.current === 1 ? 0 : $state.current - 1;
-    dispatch('back', { step: $state.current, name: $state.stepMap[newStep], state: $state });
-    $state.current = newStep;
+    const step = $state.current === 0 ? 0 : $state.current - 1;
+    const name = $state.stepMap[step];
+    dispatch('back', { step, name, state: $state });
+    $state.current = step;
   }
   function onComplete(stepIndex: number, locked: boolean) {
     if (locked) return;

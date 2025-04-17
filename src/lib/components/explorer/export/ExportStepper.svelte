@@ -157,7 +157,7 @@
   }
 
   async function onNextHandler(e: CustomEvent): Promise<void> {
-    const lastStepName = $state.stepMap[$state.current - 1] || '';
+    const lastStepName = $state.stepMap[e.detail.step - 1] || 'review';
     const stepName = e.detail.name;
 
     // nothing needs to be on review step
