@@ -51,7 +51,7 @@
     "columns": [
       {
         "label": "Dataset",
-        "dataElement": "studyAcronym"
+        "dataElement": "dataset"
       },
       {
         "label": "Variable Name",
