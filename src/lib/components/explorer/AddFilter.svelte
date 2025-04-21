@@ -56,8 +56,14 @@
           unselectedOptions = unselectedOptions.slice(0, pageSize);
         }
       } else if (existingFilter.filterType === 'numeric') {
-        minFormValue = existingFilter.min !== undefined && existingFilter.min !== null ? existingFilter.min.toString() : '';
-        maxFormValue = existingFilter.max !== undefined && existingFilter.max !== null ? existingFilter.max.toString() : '';
+        minFormValue =
+          existingFilter.min !== undefined && existingFilter.min !== null
+            ? existingFilter.min.toString()
+            : '';
+        maxFormValue =
+          existingFilter.max !== undefined && existingFilter.max !== null
+            ? existingFilter.max.toString()
+            : '';
       }
     } else if (data?.type === 'Categorical') {
       try {
