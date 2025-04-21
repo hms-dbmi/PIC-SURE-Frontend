@@ -56,8 +56,8 @@
           unselectedOptions = unselectedOptions.slice(0, pageSize);
         }
       } else if (existingFilter.filterType === 'numeric') {
-        minFormValue = existingFilter.min || '';
-        maxFormValue = existingFilter.max || '';
+        minFormValue = existingFilter.min !== undefined && existingFilter.min !== null ? existingFilter.min.toString() : '';
+        maxFormValue = existingFilter.max !== undefined && existingFilter.max !== null ? existingFilter.max.toString() : '';
       }
     } else if (data?.type === 'Categorical') {
       try {
@@ -76,8 +76,8 @@
         });
       }
     }
-    min = data.min ? data.min.toString() : '';
-    max = data.max ? data.max.toString() : '';
+    min = data.min !== undefined && data.min !== null ? data.min.toString() : '';
+    max = data.max !== undefined && data.max !== null ? data.max.toString() : '';
   });
 
   function addNewFilter() {
