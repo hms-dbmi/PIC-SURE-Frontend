@@ -1,14 +1,19 @@
 <script lang="ts">
+  import FacetItem from './FacetItem.svelte';
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
   import type { Facet } from '$lib/models/Search';
   import SearchStore from '$lib/stores/Search';
   let { updateFacets, selectedFacets } = SearchStore;
 
-  export let facet: Facet;
-  export let facetCategory: DictionaryFacetResult;
-  export let textFilterValue: string | undefined;
+  interface Props {
+    facet: Facet;
+    facetCategory: DictionaryFacetResult;
+    textFilterValue: string | undefined;
+  }
 
-  let open = false;
+  let { facet, facetCategory, textFilterValue }: Props = $props();
+
+  let open = $state(false);
 
   function toggleOpen() {
     open = !open;
@@ -32,7 +37,7 @@
     }
   }
 
-  $: checkedState = (facetToCheck: string) => {
+  let checkedState = $derived((facetToCheck: string) => {
     const atLeastOneChildSelected =
       facet.children &&
       facet.children.some((child) => $selectedFacets.some((f) => f.name === child.name));
@@ -49,33 +54,35 @@
     if (isSelected) return 'true';
     if (isIndeterminate) return 'indeterminate';
     return 'false';
-  };
+  });
 
-  $: checked = checkedState(facet.name) === 'true';
-  $: facetsToDisplay = facet.children
-    ? [
-        ...facet.children
-          .filter((child) => {
-            const matchesFilter =
-              !textFilterValue ||
-              child.display.toLowerCase().includes(textFilterValue.toLowerCase()) ||
-              child.name.toLowerCase().includes(textFilterValue.toLowerCase()) ||
-              child.description?.toLowerCase().includes(textFilterValue.toLowerCase());
-            return matchesFilter && $selectedFacets.some((f) => f.name === child.name);
-          })
-          .sort((a, b) => (b.count || 0) - (a.count || 0)),
-        ...facet.children
-          .filter((child) => {
-            const matchesFilter =
-              !textFilterValue ||
-              child.display.toLowerCase().includes(textFilterValue.toLowerCase()) ||
-              child.name.toLowerCase().includes(textFilterValue.toLowerCase()) ||
-              child.description?.toLowerCase().includes(textFilterValue.toLowerCase());
-            return matchesFilter && !$selectedFacets.some((f) => f.name === child.name);
-          })
-          .sort((a, b) => (b.count || 0) - (a.count || 0)),
-      ]
-    : [];
+  let checked = $derived(checkedState(facet.name) === 'true');
+  let facetsToDisplay = $derived(
+    facet.children
+      ? [
+          ...facet.children
+            .filter((child) => {
+              const matchesFilter =
+                !textFilterValue ||
+                child.display.toLowerCase().includes(textFilterValue.toLowerCase()) ||
+                child.name.toLowerCase().includes(textFilterValue.toLowerCase()) ||
+                child.description?.toLowerCase().includes(textFilterValue.toLowerCase());
+              return matchesFilter && $selectedFacets.some((f) => f.name === child.name);
+            })
+            .sort((a, b) => (b.count || 0) - (a.count || 0)),
+          ...facet.children
+            .filter((child) => {
+              const matchesFilter =
+                !textFilterValue ||
+                child.display.toLowerCase().includes(textFilterValue.toLowerCase()) ||
+                child.name.toLowerCase().includes(textFilterValue.toLowerCase()) ||
+                child.description?.toLowerCase().includes(textFilterValue.toLowerCase());
+              return matchesFilter && !$selectedFacets.some((f) => f.name === child.name);
+            })
+            .sort((a, b) => (b.count || 0) - (a.count || 0)),
+        ]
+      : [],
+  );
 </script>
 
 <label data-testId={`facet-${facet.name}-label`} for={facet.name} class="m-1">
@@ -85,7 +92,7 @@
       class="arrow-button"
       aria-label="Toggle Facet {open ? 'open' : 'closed'}"
       data-testId={`facet-${facet.name}-arrow`}
-      on:click={toggleOpen}
+      onclick={toggleOpen}
     >
       <i class="fa-solid {open ? 'fa-angle-down' : 'fa-angle-right'}"></i>
     </button>
@@ -99,7 +106,7 @@
     {checked}
     disabled={facet.count === 0 && !checked}
     aria-checked={checked}
-    on:click={onClick}
+    onclick={onClick}
   />
   <span class:opacity-75={facet.count === 0}
     >{`${facet.display} (${facet.count?.toLocaleString()})`}</span
@@ -108,7 +115,7 @@
 {#if open && facetsToDisplay !== undefined && facetsToDisplay?.length > 0}
   <div class="flex flex-col ml-4" data-testId={`facet-${facet.name}-children`}>
     {#each facetsToDisplay as child}
-      <svelte:self facet={child} {facetCategory} {textFilterValue} />
+      <FacetItem facet={child} {facetCategory} {textFilterValue} />
     {/each}
   </div>
 {/if}

@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { stopPropagation } from 'svelte/legacy';
+
   import DataSetStore from '$lib/stores/Dataset';
 
-  export let data = { cell: '', row: { archived: false } };
-  let toggleButton: HTMLButtonElement;
+  let { data = { cell: '', row: { archived: false } } } = $props();
+  let toggleButton: HTMLButtonElement = $state();
 
   async function toggleArchive() {
     toggleButton.disabled = true;
@@ -28,7 +30,7 @@
     title="Restore"
     aria-label="Restore"
     class="btn-icon-color"
-    on:click|stopPropagation={toggleArchive}
+    onclick={stopPropagation(toggleArchive)}
   >
     <i class="fa-solid fa-trash-arrow-up fa-xl"></i>
   </button>
@@ -49,7 +51,7 @@
     title="Delete"
     aria-label="Delete"
     class="btn-icon-color"
-    on:click|stopPropagation={toggleArchive}
+    onclick={stopPropagation(toggleArchive)}
   >
     <i class="fa-solid fa-trash fa-xl"></i>
   </button>

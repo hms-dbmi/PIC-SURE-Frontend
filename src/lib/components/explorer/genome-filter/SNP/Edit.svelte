@@ -2,10 +2,14 @@
   import { createEventDispatcher } from 'svelte';
   import { Genotype, type SNP } from '$lib/models/GenomeFilter';
 
-  export let snp: SNP;
+  interface Props {
+    snp: SNP;
+  }
+
+  let { snp }: Props = $props();
 
   const dispatch = createEventDispatcher<{ save: { snp: SNP } }>();
-  let constraint: string = snp.constraint;
+  let constraint: string = $state(snp.constraint);
 
   function save() {
     dispatch('save', { snp: { search: snp.search, constraint } });
@@ -25,7 +29,7 @@
   aria-label="Save SNP"
   data-testid="snp-save-btn"
   class="btn btn-sm variant-filled-primary text-lg disabled:opacity-75"
-  on:click={save}
+  onclick={save}
   disabled={constraint === ''}
 >
   Save SNP

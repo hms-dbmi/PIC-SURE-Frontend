@@ -1,3 +1,4 @@
+<!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
   import { DataHandler as RemoteHander } from '@vincjo/datatables/remote';

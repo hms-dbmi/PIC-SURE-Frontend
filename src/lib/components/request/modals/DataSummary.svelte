@@ -4,8 +4,8 @@
 
   import QuerySummary from '$lib/components/QuerySummary.svelte';
 
-  $: queryId = $modalStore[0]?.meta.queryId;
-  $: query = $modalStore[0]?.meta.query;
+  let queryId = $derived($modalStore[0]?.meta.queryId);
+  let query = $derived($modalStore[0]?.meta.query);
 </script>
 
 <section id="detail-summary-container" class="m-3">

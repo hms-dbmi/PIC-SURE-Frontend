@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import { goto } from '$app/navigation';
   import { getToastStore, SlideToggle } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
@@ -11,19 +13,25 @@
   import { getRole } from '$lib/stores/Roles';
   import { getPrivilege } from '$lib/stores/Privileges';
 
-  export let user: ExtendedUser | undefined = undefined;
-  export let roleList: string[][];
-  export let connections: Connection[];
+  interface Props {
+    user?: ExtendedUser | undefined;
+    roleList: string[][];
+    connections: Connection[];
+  }
 
-  let email: string = user && user.email ? user.email : '';
-  let connection: string = user && user.connection ? user.connection : '';
-  let active: boolean = user ? user.active : true;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let roles = roleList.map(([_name, uuid]) => ({
-    uuid,
-    checked: user ? user.roles.includes(uuid) : false,
-  }));
-  let validationError: string = '';
+  let { user = undefined, roleList, connections }: Props = $props();
+
+  let email: string = $state(user && user.email ? user.email : '');
+  let connection: string = $state(user && user.connection ? user.connection : '');
+  let active: boolean = $state(user ? user.active : true);
+  let roles = $state(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    roleList.map(([_name, uuid]) => ({
+      uuid,
+      checked: user ? user.roles.includes(uuid) : false,
+    })),
+  );
+  let validationError: string = $state('');
 
   async function saveUser() {
     const selectedRoles = roles.filter((role) => role.checked);
@@ -82,7 +90,7 @@
   }
 </script>
 
-<form on:submit|preventDefault={saveUser} class="grid gap-4 my-3">
+<form onsubmit={preventDefault(saveUser)} class="grid gap-4 my-3">
   <SlideToggle name="Active" size="sm" active="bg-success-500" label="Status" bind:checked={active}>
     {active ? 'Active' : 'Inactive'}
   </SlideToggle>
@@ -139,7 +147,7 @@
         <p>{validationError}</p>
       </div>
       <div class="alert-actions">
-        <button on:click={() => (validationError = '')}>
+        <button onclick={() => (validationError = '')}>
           <i class="fa-solid fa-xmark"></i>
           <span class="sr-only">Close</span>
         </button>

@@ -7,19 +7,26 @@
   import { addRole, updateRole } from '$lib/stores/Roles';
   import { isTopAdmin } from '$lib/stores/User';
 
-  export let role: Role | undefined = undefined;
-  export let privilegeList: string[][];
+  interface Props {
+    role?: Role | undefined;
+    privilegeList: string[][];
+  }
 
-  let name = role ? role.name : '';
-  let description = role ? role.description : '';
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let privileges = privilegeList.map(([_name, uuid]) => ({
-    uuid,
-    checked: role ? role.privileges.includes(uuid) : false,
-  }));
-  let validationError: string = '';
+  let { role = undefined, privilegeList }: Props = $props();
 
-  async function saveRole() {
+  let name = $state(role ? role.name : '');
+  let description = $state(role ? role.description : '');
+  let privileges = $state(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    privilegeList.map(([_name, uuid]) => ({
+      uuid,
+      checked: role ? role.privileges.includes(uuid) : false,
+    })),
+  );
+  let validationError: string = $state('');
+
+  async function saveRole(event: Event) {
+    event.preventDefault();
     const selectedPrivileges = privileges.filter((priv) => priv.checked).map((priv) => priv.uuid);
 
     if (selectedPrivileges.length === 0) {
@@ -56,7 +63,7 @@
   }
 </script>
 
-<form on:submit|preventDefault={saveRole} class="grid gap-4 my-3">
+<form onsubmit={saveRole} class="grid gap-4 my-3">
   <fieldset data-testid="role-form" disabled={!$isTopAdmin}>
     {#if role?.uuid}
       <label class="label">
@@ -92,19 +99,19 @@
       {/each}
     </fieldset>
 
-    {#if validationError}
-      <aside data-testid="validation-error" class="alert variant-ghost-error">
-        <div class="alert-message">
-          <p>{validationError}</p>
-        </div>
-        <div class="alert-actions">
-          <button on:click={() => (validationError = '')}>
-            <i class="fa-solid fa-xmark"></i>
-            <span class="sr-only">Close</span>
-          </button>
-        </div>
-      </aside>
-    {/if}
+  {#if validationError}
+    <aside data-testid="validation-error" class="alert variant-ghost-error">
+      <div class="alert-message">
+        <p>{validationError}</p>
+      </div>
+      <div class="alert-actions">
+        <button on:click={() => (validationError = '')}>
+          <i class="fa-solid fa-xmark"></i>
+          <span class="sr-only">Close</span>
+        </button>
+      </div>
+    </aside>
+  {/if}
 
     <div>
       <button

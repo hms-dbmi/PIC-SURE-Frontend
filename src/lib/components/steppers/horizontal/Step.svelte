@@ -6,15 +6,31 @@
   import type { StepperState } from '$lib/models/Stepper';
   import AngleButton from '$lib/components/buttons/AngleButton.svelte';
 
-  export let name: string;
-  export let locked = false;
-  export let buttonCompleteLabel: string = getContext('buttonCompleteLabel');
+  interface Props {
+    name: string;
+    locked?: boolean;
+    buttonCompleteLabel?: string;
+    state?: Writable<StepperState>;
+    onNext?: (locked: boolean) => void;
+    onBack?: () => void;
+    onComplete?: (stepIndex: number, locked: boolean) => void;
+    header?: import('svelte').Snippet;
+    children?: import('svelte').Snippet;
+    navigation?: import('svelte').Snippet;
+  }
 
-  export let state: Writable<StepperState> = getContext('state');
-
-  export let onNext: (locked: boolean) => void = getContext('onNext');
-  export let onBack: () => void = getContext('onBack');
-  export let onComplete: (stepIndex: number, locked: boolean) => void = getContext('onComplete');
+  let {
+    name,
+    locked = false,
+    buttonCompleteLabel = getContext('buttonCompleteLabel'),
+    state = getContext('state'),
+    onNext = getContext('onNext'),
+    onBack = getContext('onBack'),
+    onComplete = getContext('onComplete'),
+    header,
+    children,
+    navigation,
+  }: Props = $props();
 
   // Register step on init (keep these paired)
   const stepIndex = $state.total;
@@ -30,10 +46,10 @@
 {#if stepIndex === $state.current}
   <div class="step space-y-4" data-testid="step-{stepIndex + 1}">
     <header class="step-header text-2xl font-bold">
-      <slot name="header" />
+      {@render header?.()}
     </header>
     <div class="step-content space-y-4 px-2">
-      <slot>(Step {stepIndex + 1} Content)</slot>
+      {#if children}{@render children()}{:else}(Step {stepIndex + 1} Content){/if}
     </div>
     {#if $state.total > 1}
       <div
@@ -41,9 +57,9 @@
         in:fade={{ duration: 100 }}
         out:fade={{ duration: 100 }}
       >
-        {#if $$slots.navigation}
+        {#if navigation}
           <div class="step-navigation-slot">
-            <slot name="navigation" />
+            {@render navigation?.()}
           </div>
         {:else if stepIndex !== 0}
           <AngleButton on:click={() => onBack()} disabled={$state.current === 0}>Back</AngleButton>

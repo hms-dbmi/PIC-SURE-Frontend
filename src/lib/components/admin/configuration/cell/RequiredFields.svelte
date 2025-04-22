@@ -1,7 +1,11 @@
 <script lang="ts">
   import { parseFieldsFromJSON } from '$lib/models/Connection';
-  export let data: { cell: string } = { cell: '[]' };
-  $: fields = parseFieldsFromJSON(data.cell);
+  interface Props {
+    data?: { cell: string };
+  }
+
+  let { data = { cell: '[]' } }: Props = $props();
+  let fields = $derived(parseFieldsFromJSON(data.cell));
 </script>
 
 {#each fields as field, index (index)}

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { stopPropagation } from 'svelte/legacy';
+
   import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
   const toastStore = getToastStore();
@@ -9,9 +11,15 @@
   import PrivilegesStore from '$lib/stores/Privileges';
   const { deletePrivilege } = PrivilegesStore;
 
-  export let data = { cell: '', row: { name: '' } };
+  let { data = { cell: '', row: { name: '' } } } = $props();
 
-  function deleteModal() {
+  function editPrivilege(event: Event){
+    event.stopPropagation();
+    goto(`/admin/configuration/privilege/${data.cell}/edit`);
+  }
+
+  function deleteModal(event: Event){
+    event.stopPropagation();
     const name = data.row.name;
     modalStore.trigger({
       type: 'confirm',
@@ -54,8 +62,7 @@
     type="button"
     title="Edit"
     class="btn-icon-color"
-    disabled={!$isTopAdmin}
-    on:click|stopPropagation={() => goto(`/admin/configuration/privilege/${data.cell}/edit`)}
+    onclick={editPrivilege}
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
     <span class="sr-only">Edit</span>
@@ -65,8 +72,7 @@
     type="button"
     title="Delete"
     class="btn-icon-color"
-    disabled={!$isTopAdmin}
-    on:click|stopPropagation={deleteModal}
+    onclick={deleteModal}
   >
     <i class="fa-solid fa-trash fa-xl"></i>
     <span class="sr-only">Delete</span>

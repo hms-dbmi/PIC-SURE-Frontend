@@ -22,10 +22,15 @@
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  export let tourConfig: any;
 
-  let searchInput = $page.url.searchParams.get('search') || $searchTerm || '';
+  interface Props {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    tourConfig: any;
+  }
+
+  let { tourConfig }: Props = $props();
+
+  let searchInput = $state($page.url.searchParams.get('search') || $searchTerm || '');
   const tableName = 'ExplorerTable';
   const tableColumns = branding.explorePage.columns || [];
   const columns: Column[] = [
@@ -34,8 +39,8 @@
   ];
   const cellOverides = { id: Actions };
 
-  $: isOpenAccess = $page.url.pathname.includes('/discover');
-  $: path = isOpenAccess ? '/discover' : '/explorer';
+  let isOpenAccess = $derived($page.url.pathname.includes('/discover'));
+  let path = $derived(isOpenAccess ? '/discover' : '/explorer');
 
   function update() {
     if ($error) error.set('');
@@ -83,7 +88,7 @@
           class="btn variant-ghost-error hover:variant-filled-error"
           aria-label="You are on the reset button"
           disabled={!searchInput && $selectedFacets.length === 0}
-          on:click={reset}
+          onclick={reset}
         >
           Reset
         </button>

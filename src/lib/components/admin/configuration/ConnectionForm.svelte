@@ -9,19 +9,24 @@
 
   import RequiredFieldsList from './RequiredFieldsList.svelte';
 
-  export let connection: Connection | undefined = undefined;
+  interface Props {
+    connection?: Connection | undefined;
+  }
 
-  let label: string = connection?.label || '';
-  let id: string = connection?.id || '';
-  let subPrefix: string = connection?.subPrefix || '';
-  let requiredFields: string = connection?.requiredFields || '[]';
+  let { connection = undefined }: Props = $props();
+
+  let label: string = $state(connection?.label || '');
+  let id: string = $state(connection?.id || '');
+  let subPrefix: string = $state(connection?.subPrefix || '');
+  let requiredFields: string = $state(connection?.requiredFields || '[]');
 
   type JSONEvent = { detail: { json: string } };
   function updateRequiredFields(event: JSONEvent) {
     requiredFields = event.detail.json;
   }
 
-  async function saveConnection() {
+  async function saveConnection(event: Event) {
+    event.preventDefault();
     let newConnection: Connection = {
       id,
       label,
@@ -59,7 +64,7 @@
   >.
 </p>
 
-<form on:submit|preventDefault={saveConnection} class="grid gap-4 my-3">
+<form onsubmit={saveConnection} class="grid gap-4 my-3">
   <fieldset data-testid="connection-form" disabled={!$isTopAdmin}>
     {#if connection?.uuid}
       <label class="label">

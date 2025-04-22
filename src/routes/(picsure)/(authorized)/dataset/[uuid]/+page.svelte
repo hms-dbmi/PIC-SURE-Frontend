@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ProgressBar } from '@skeletonlabs/skeleton';
 
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
 
   import type { DataSet } from '$lib/models/Dataset';
   import DataSetStore from '$lib/stores/Dataset';
@@ -13,10 +13,10 @@
 
   const { getDataset } = DataSetStore;
 
-  let dataset: DataSet;
+  let dataset: DataSet = $state();
 
   async function loadDataset() {
-    dataset = await getDataset($page.params.uuid);
+    dataset = await getDataset(page.params.uuid);
   }
 </script>
 
@@ -47,7 +47,7 @@
     <QuerySummary query={dataset.query} />
   {:catch}
     <ErrorAlert title="API Error">
-      <p>An error occured while retrieving dataset {$page.params.uuid}.</p>
+      <p>An error occured while retrieving dataset {page.params.uuid}.</p>
     </ErrorAlert>
   {/await}
 </Content>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { ProgressRadial } from '@skeletonlabs/skeleton';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
@@ -9,7 +9,7 @@
   import { filters } from '$lib/stores/Filter';
   import { panelOpen } from '$lib/stores/SidePanel';
 
-  let failed = false;
+  let failed = $state(false);
   onMount(async () => {
     panelOpen.set(false);
 
@@ -24,7 +24,7 @@
     }
     redirectTo = !redirectTo ? '/' : redirectTo;
     // Retrives the providers from the server's AuthProviderRegistry created via hooks.server.ts
-    const provider = $page.data?.providers.find((p: AuthProvider) => p.type === providerType);
+    const provider = page.data?.providers.find((p: AuthProvider) => p.type === providerType);
     if (!provider) {
       failed = true;
     }
@@ -33,9 +33,9 @@
       goto('/login/error');
     }
     const providerInstance = await createInstance(provider);
-    let hashParts = $page.url.hash?.split('&') || [];
-    if ($page.url.search.startsWith('?')) {
-      hashParts = $page.url.search.substring(1).split('&') || [];
+    let hashParts = page.url.hash?.split('&') || [];
+    if (page.url.search.startsWith('?')) {
+      hashParts = page.url.search.substring(1).split('&') || [];
     }
 
     failed = await providerInstance.authenticate(hashParts);

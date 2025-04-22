@@ -7,14 +7,19 @@
   import { addPrivilege, updatePrivilege } from '$lib/stores/Privileges';
   import { isTopAdmin } from '$lib/stores/User';
 
-  export let privilege: Privilege | undefined = undefined;
-  export let applicationList: string[][];
+  interface Props {
+    privilege?: Privilege | undefined;
+    applicationList: string[][];
+  }
 
-  let name = privilege ? privilege.name : '';
-  let description = privilege ? privilege.description : '';
-  let application = privilege ? privilege.application : '';
+  let { privilege = undefined, applicationList }: Props = $props();
 
-  async function savePrivilege() {
+  let name = $state(privilege ? privilege.name : '');
+  let description = $state(privilege ? privilege.description : '');
+  let application = $state(privilege ? privilege.application : '');
+
+  async function savePrivilege(event: Event) {
+    event.preventDefault();
     let newPrivilege: Privilege = {
       name,
       description,
@@ -42,7 +47,7 @@
   }
 </script>
 
-<form on:submit|preventDefault={savePrivilege} class="grid gap-4 my-3">
+<form onsubmit={savePrivilege} class="grid gap-4 my-3">
   <fieldset data-testid="privilege-form" disabled={!$isTopAdmin}>
     {#if privilege?.uuid}
       <label class="label">

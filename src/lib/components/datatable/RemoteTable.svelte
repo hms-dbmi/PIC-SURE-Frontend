@@ -15,17 +15,35 @@
   import { ProgressRadial } from '@skeletonlabs/skeleton';
   import type { Writable } from 'svelte/store';
 
-  export let tableName: string = 'ExplorerTable';
-  export let handler: DataHandler;
-  export let isLoading: Writable<boolean>;
-  export let searchable = false;
-  export let title = '';
-  export let fullWidth: boolean = false;
-  export let options: number[] = [5, 10, 20, 50, 100];
-  export let columns: Column[] = [];
-  export let cellOverides: Indexable = {};
-  export let rowClickHandler: (row: Indexable) => void = () => {};
-  export let isClickable: boolean = false;
+  interface Props {
+    tableName?: string;
+    handler: DataHandler;
+    isLoading: Writable<boolean>;
+    searchable?: boolean;
+    title?: string;
+    fullWidth?: boolean;
+    options?: number[];
+    columns?: Column[];
+    cellOverides?: Indexable;
+    rowClickHandler?: (row: Indexable) => void;
+    isClickable?: boolean;
+    tableActions?: import('svelte').Snippet;
+  }
+
+  let {
+    tableName = 'ExplorerTable',
+    handler,
+    isLoading,
+    searchable = false,
+    title = '',
+    fullWidth = false,
+    options = [5, 10, 20, 50, 100],
+    columns = [],
+    cellOverides = {},
+    rowClickHandler = () => {},
+    isClickable = false,
+    tableActions,
+  }: Props = $props();
   let rows = handler.getRows();
 
   onMount(() => {
@@ -46,18 +64,16 @@
 </script>
 
 <div class="space-y-1">
-  {#if title || searchable || $$slots.tableActions}
+  {#if title || searchable || tableActions}
     <header
-      class="flex items-center {title || $$slots.tableActions
-        ? 'justify-between'
-        : 'justify-end'} gap-4"
+      class="flex items-center {title || tableActions ? 'justify-between' : 'justify-end'} gap-4"
     >
       {#if title}
         <div class="flex-auto">
           <h2 class="my-2">{title}</h2>
         </div>
       {/if}
-      <slot name="tableActions" />
+      {@render tableActions?.()}
       {#if searchable}
         <div class="flex-none">
           <Search {handler} />

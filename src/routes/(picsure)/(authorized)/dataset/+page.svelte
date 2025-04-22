@@ -24,7 +24,7 @@
 
   let { active, archived, loadDatasets } = DataSetStore;
 
-  let displayArchived = false;
+  let displayArchived = $state(false);
 
   const rowClickHandler = () => {
     console.error('Function not implemented.');
@@ -63,7 +63,7 @@
       data-testid="dataset-toggle-archive"
       type="button"
       class="btn bg-secondary-500 text-on-secondary-token"
-      on:click={() => (displayArchived = !displayArchived)}
+      onclick={() => (displayArchived = !displayArchived)}
       >{displayArchived ? 'Hide' : 'Show'} deleted datasets</button
     >
   {:catch}

@@ -6,17 +6,23 @@
   import { type RequiredField, parseFieldsFromJSON } from '$lib/models/Connection';
   import RequiredFieldRow from './RequiredFieldRow.svelte';
 
-  export let fields: string = '[]';
+  interface Props {
+    fields?: string;
+  }
 
-  $: fieldList = parseFieldsFromJSON(fields);
-  $: enableNewField = fieldList.length === 0 || !$isTopAdmin;
-  $: duplicates = fieldList.filter((checkField) => {
-    return (
-      fieldList
-        .filter((field) => field !== checkField)
-        .filter((field) => field.id === checkField.id).length > 0
-    );
-  });
+  let { fields = '[]' }: Props = $props();
+
+  let fieldList = $derived(parseFieldsFromJSON(fields));
+  let enableNewField = $derived(fieldList.length === 0 || !$isTopAdmin);
+  let duplicates = $derived(
+    fieldList.filter((checkField) => {
+      return (
+        fieldList
+          .filter((field) => field !== checkField)
+          .filter((field) => field.id === checkField.id).length > 0
+      );
+    }),
+  );
 
   type SaveRequiredFieldEvent = { detail: { previous: RequiredField; current: RequiredField } };
   type RequiredFieldEvent = { detail: RequiredField };
@@ -62,9 +68,10 @@
       class="text-primary-600-300-token hover:text-secondary-600-300-token"
       aria-label="Add New Field"
       title="Add New Field"
+      aria-label="Add New Field"
       data-testid="required-field-new-btn"
       disabled={enableNewField}
-      on:click={() => (enableNewField = !enableNewField)}
+      onclick={() => (enableNewField = !enableNewField)}
     >
       <i class="fa-solid fa-square-plus fa-xl {enableNewField ? 'opacity-50' : ''}"></i>
     </button>
