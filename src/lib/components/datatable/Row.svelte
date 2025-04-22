@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { stopPropagation } from 'svelte/legacy';
-
   import { slide } from 'svelte/transition';
   import type { Column } from '$lib/models/Tables';
   import type { Indexable } from '$lib/types';
@@ -44,7 +42,7 @@
 
 <tr
   id="row-{index.toString()}"
-  onclick={stopPropagation(() => onClick(row))}
+  onclick={() => onClick(row)}
   class={isClickable ? 'cursor-pointer' : ''}
   tabindex={isClickable ? 0 : -1}
 >

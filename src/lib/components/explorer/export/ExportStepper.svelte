@@ -1,5 +1,3 @@
-<!-- @migration-task Error while migrating Svelte code: can't migrate `let activeType: ExpectedResultType;` to `$state` because there's a variable named state.
-     Rename the variable and try again or migrate by hand. -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import { CodeBlock, ProgressRadial, Tab, TabGroup } from '@skeletonlabs/skeleton';
@@ -17,7 +15,7 @@
   import type { DataSet } from '$lib/models/Dataset';
   import type { ExportInterface } from '$lib/models/Export';
   import { Query, type ExpectedResultType } from '$lib/models/query/Query.ts';
-  import { state } from '$lib/stores/Stepper';
+  import { stepperState } from '$lib/stores/Stepper';
   import { exports, addExports, removeExports } from '$lib/stores/Export';
   import { filters, totalParticipants } from '$lib/stores/Filter';
   import { searchDictionary } from '$lib/stores/Dictionary';
@@ -32,9 +30,15 @@
   import Confirmation from '$lib/components/modals/Confirmation.svelte';
   import Summary from './Summary.svelte';
 
-  export let query: QueryRequestInterface;
-  export let showTreeStep = false;
-  export let rows: ExportRowInterface[] = [];
+  interface Props {
+    query: QueryRequestInterface;
+    showTreeStep?: boolean;
+    rows?: ExportRowInterface[];
+  }
+
+  const { query, showTreeStep = false, rows = [] }: Props = $props();
+
+  let activeRows: ExportRowInterface[] = $state(rows);
 
   interface DataSetResponse {
     picsureResultId?: string;
@@ -51,23 +55,23 @@
     { dataElement: 'type', label: 'Type', sort: true, class: 'text-center' },
   ];
 
-  let activeType: ExpectedResultType;
-  let statusPromise: Promise<unknown>;
-  let preparePromise: Promise<void>;
-  let datasetIdPromise: Promise<void | DataSetResponse>;
-  let saveDatasetPromise: Promise<DataSet>;
-  let datasetNameInput: string = '';
-  let picsureResultId: string = '';
-  let lockDownload = true;
-  let sampleIds = false;
-  let lastExports: ExportRowInterface[] = [];
-  let loadingSampleIds = false;
-  let checkingSampleIds = false;
-  let tabSet: number = 0;
+  let activeType: ExpectedResultType | undefined = $state(undefined);
+  let statusPromise: Promise<unknown> = $state(Promise.resolve());
+  let preparePromise: Promise<void> = $state(Promise.resolve());
+  let datasetIdPromise: Promise<void | DataSetResponse> = $state(Promise.resolve());
+  let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
+  let datasetNameInput: string = $state('');
+  let picsureResultId: string = $state('');
+  let lockDownload = $state(true);
+  let sampleIds = $state(false);
+  let lastExports: ExportRowInterface[] = $state([]);
+  let loadingSampleIds = $state(false);
+  let checkingSampleIds = $state(false);
+  let tabSet: number = $state(0);
 
-  $: datasetId = '';
-  $: processingMessage = '';
-  $: exportLoading = false;
+  let datasetId: string = $state('');
+  let processingMessage: string = $state('');
+  let exportLoading: boolean = $state(false);
 
   onMount(async () => {
     const exportedSampleIds = $exports.filter((e: ExportInterface) =>
@@ -157,9 +161,7 @@
     }
   }
 
-  async function onNextHandler(e: CustomEvent): Promise<void> {
-    const stepName = e.detail.name;
-
+  async function onNextHandler(_step: number, stepName: string): Promise<void> {
     // nothing needs to be on review step
     if (stepName === 'review') return;
 
@@ -212,7 +214,7 @@
       );
       await datasetIdPromise;
     } catch (error) {
-      $state.current--;
+      $stepperState.current--;
       console.error('Error in submitQuery', error);
       throw error;
     }
@@ -285,7 +287,9 @@
           (e) => e.ref,
         ) as ExportInterface[];
         removeExports(exportsToRemove || []);
-        rows = rows.filter((r) => !lastExports.some((le) => le.variableId === r.variableId));
+        activeRows = activeRows.filter(
+          (r) => !lastExports.some((le) => le.variableId === r.variableId),
+        );
         return;
       }
 
@@ -316,8 +320,8 @@
           }) as ExportRowInterface,
       );
       //Remove duplicates
-      rows = Array.from(
-        [...rows, ...newRows]
+      activeRows = Array.from(
+        [...activeRows, ...newRows]
           .reduce((map, row) => map.set(row.variableId, row), new Map())
           .values(),
       );
@@ -357,12 +361,12 @@
 
 <Stepper
   class="w-full h-full m-8"
-  on:complete={onComplete}
-  on:next={onNextHandler}
+  oncomplete={onComplete}
+  onnext={onNextHandler}
   buttonCompleteLabel="Done"
 >
   <Step name="review" locked={dataLimitExceeded()}>
-    <svelte:fragment slot="header">Review Cohort Details:</svelte:fragment>
+    {#snippet header()}Review Cohort Details:{/snippet}
     <div id="first-step-container" class="flex flex-col w-full h-full items-center">
       <Summary />
       <section class="w-full">
@@ -378,7 +382,7 @@
               </p>
             </div>
             <div class="alert-actions dark">
-              <button class="btn variant-filled" on:click={() => onComplete()}>Back</button>
+              <button class="btn variant-filled" onclick={onComplete}>Back</button>
             </div>
           </aside>
         {:else}
@@ -394,7 +398,7 @@
             </div>
           {/await}
           {#if !loadingSampleIds}
-            <Datatable tableName="ExportSummary" data={rows} {columns} />
+            <Datatable tableName="ExportSummary" data={activeRows} {columns} />
             {#if features.explorer.enableSampleIdCheckbox}
               <div>
                 <label
@@ -411,7 +415,7 @@
                       data-testid="sample-ids-checkbox"
                       id="sample-ids-checkbox"
                       bind:checked={sampleIds}
-                      on:change={toggleSampleIds}
+                      onchange={toggleSampleIds}
                     />
                   {/if}
                   <span>Include sample identifiers</span>
@@ -430,7 +434,7 @@
   </Step>
   {#if showTreeStep}
     <Step name="select-variables">
-      <svelte:fragment slot="header">Finalize Data:</svelte:fragment>
+      {#snippet header()}Finalize Data:{/snippet}
       <section class="flex flex-col w-full h-full items-center">
         <Summary />
         <div class="w-full h-full m-2 card p-4">
@@ -446,7 +450,7 @@
   {/if}
   {#if features.explorer.enablePfbExport}
     <Step name="select-type" locked={activeType === undefined}>
-      <svelte:fragment slot="header">Review and Save Dataset:</svelte:fragment>
+      {#snippet header()}Review and Save Dataset:{/snippet}
       <section class="flex flex-col w-full h-full items-center">
         <Summary />
         <div class="grid gap-10 grid-cols-2">
@@ -457,7 +461,7 @@
             size="other"
             class="card variant-ringed-primary"
             active={activeType === 'DATAFRAME'}
-            on:click={() => (activeType = 'DATAFRAME')}
+            onclick={() => (activeType = 'DATAFRAME')}
           ></CardButton>
           <CardButton
             data-testid="pfb-export-option"
@@ -466,14 +470,14 @@
             size="other"
             class="card variant-ringed-primary"
             active={activeType === 'DATAFRAME_PFB'}
-            on:click={() => (activeType = 'DATAFRAME_PFB')}
+            onclick={() => (activeType = 'DATAFRAME_PFB')}
           ></CardButton>
         </div>
       </section>
     </Step>
   {/if}
   <Step name="save-dataset" locked={!datasetNameInput || datasetNameInput.length < 2 || !datasetId}>
-    <svelte:fragment slot="header">Save Dataset ID:</svelte:fragment>
+    {#snippet header()}Save Dataset ID:{/snippet}
     <section class="flex flex-col w-full h-full items-center">
       <Summary />
       <div class="w-full h-full m-2 card p-4">
@@ -515,7 +519,7 @@
     </section>
   </Step>
   <Step name="start" locked={lockDownload}>
-    <svelte:fragment slot="header">Start Analysis:</svelte:fragment>
+    {#snippet header()}Start Analysis:{/snippet}
     <section class="flex flex-col w-full h-full items-center">
       {#await saveDatasetPromise}
         <div class="flex justify-center items-center">
@@ -539,7 +543,7 @@
                   {#if features.explorer.allowDownload}
                     <Tab bind:group={tabSet} name="download" value={2}>Download</Tab>
                   {/if}
-                  <svelte:fragment slot="panel">
+                  {#snippet panel()}
                     {#if tabSet === 0}
                       <CodeBlock
                         language="python"
@@ -563,12 +567,12 @@
                     {:else if features.explorer.allowDownload && tabSet === 2}
                       <button
                         class="btn variant-filled-primary"
-                        on:click={() =>
+                        onclick={() =>
                           features.confirmDownload ? openConfirmationModal() : download()}
                         ><i class="fa-solid fa-download mr-1"></i>Download as CSV</button
                       >
                     {/if}
-                  </svelte:fragment>
+                  {/snippet}
                 </TabGroup>
                 <p>{branding.explorePage.goTo.instructions}</p>
                 <div class="flex justify-center">
@@ -596,14 +600,14 @@
                     <button
                       disabled={exportLoading}
                       class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary"
-                      on:click={() => exportSignedToUrl(exportLink.url)}
+                      onclick={() => exportSignedToUrl(exportLink.url)}
                       ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to {exportLink.title}</button
                     >
                   {/each}
                 {/if}
                 <button
                   class="flex-initial w-64 btn variant-filled-primary"
-                  on:click={() => (features.confirmDownload ? openConfirmationModal() : download())}
+                  onclick={() => (features.confirmDownload ? openConfirmationModal() : download())}
                   ><i class="fa-solid fa-download"></i>Download as PFB</button
                 >
               </section>

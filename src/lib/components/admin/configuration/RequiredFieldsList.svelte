@@ -1,16 +1,15 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  const dispatch = createEventDispatcher<{ update: { json: string } }>();
-  import { isTopAdmin } from '$lib/stores/User';
-
   import { type RequiredField, parseFieldsFromJSON } from '$lib/models/Connection';
+  import { isTopAdmin } from '$lib/stores/User';
+  
   import RequiredFieldRow from './RequiredFieldRow.svelte';
 
   interface Props {
     fields?: string;
+    onupdate?: (json: string) => void;
   }
 
-  let { fields = '[]' }: Props = $props();
+  let { fields = '[]', onupdate = () => {} }: Props = $props();
 
   let fieldList = $derived(parseFieldsFromJSON(fields));
   let enableNewField = $derived(fieldList.length === 0 || !$isTopAdmin);
@@ -24,38 +23,33 @@
     }),
   );
 
-  type SaveRequiredFieldEvent = { detail: { previous: RequiredField; current: RequiredField } };
-  type RequiredFieldEvent = { detail: RequiredField };
-
   function hasDuplicate(checkField: RequiredField) {
     return !!duplicates.find((field) => field === checkField);
   }
 
   function updateFields(fields: RequiredField[]) {
-    dispatch('update', { json: JSON.stringify(fields) });
+    onupdate(JSON.stringify(fields));
   }
 
-  function saveField(event: SaveRequiredFieldEvent) {
+  function saveField(previous: RequiredField, current: RequiredField) {
     const newFields = [...fieldList];
-    if (event.detail.previous.label === '' || event.detail.previous.id === '') {
-      newFields.push(event.detail.current);
+    if (previous.label === '' || previous.id === '') {
+      newFields.push(current);
       enableNewField = false;
     } else {
       const fieldIndex: number = newFields.findIndex(
-        (f) => f.label === event.detail.previous.label && f.id === event.detail.previous.id,
+        (f) => f.label === previous.label && f.id === previous.id,
       );
       if (fieldIndex > -1) {
-        newFields[fieldIndex] = event.detail.current;
+        newFields[fieldIndex] = current;
       }
     }
 
     updateFields(newFields);
   }
 
-  function deleteField(event: RequiredFieldEvent) {
-    const newFields = fieldList.filter(
-      (f) => f.label !== event.detail.label || f.id !== event.detail.id,
-    );
+  function deleteField(field: RequiredField) {
+    const newFields = fieldList.filter((f) => f.label !== field.label || f.id !== field.id);
     updateFields(newFields);
   }
 </script>
@@ -78,15 +72,15 @@
   </legend>
 
   {#if enableNewField}
-    <RequiredFieldRow on:save={saveField} on:delete={() => (enableNewField = false)} />
+    <RequiredFieldRow onsave={saveField} ondelete={() => (enableNewField = false)} />
   {/if}
 
   {#each fieldList as field, index (`${index}-${field.label}-${field.id}`)}
     <RequiredFieldRow
       duplicate={hasDuplicate(field)}
       {field}
-      on:save={saveField}
-      on:delete={deleteField}
+      onsave={saveField}
+      ondelete={deleteField}
     />
   {/each}
 

@@ -1,18 +1,19 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  const dispatch = createEventDispatcher<{
-    delete: RequiredField;
-    save: { previous: RequiredField; current: RequiredField };
-  }>();
-
   import type { RequiredField } from '$lib/models/Connection';
 
   interface Props {
     field?: RequiredField;
     duplicate?: boolean;
+    onsave?: (previous: RequiredField, current: RequiredField) => void;
+    ondelete?: (field: RequiredField) => void;
   }
 
-  let { field = { label: '', id: '' }, duplicate = false }: Props = $props();
+  let {
+    field = { label: '', id: '' },
+    duplicate = false,
+    onsave = () => {},
+    ondelete = () => {},
+  }: Props = $props();
 
   let label: string = $state(field.label);
   let id: string = $state(field.id);
@@ -23,14 +24,14 @@
 
   const saveField = () => {
     const currentField = { label, id };
-    dispatch('save', { previous: field, current: currentField });
+    onsave(field, currentField);
     edit = false;
   };
   const resetField = () => {
     label = field.label;
     id = field.id;
   };
-  const deleteField = () => dispatch('delete', { label, id });
+  const deleteField = () => ondelete({ label, id });
   const toggleEdit = () => (edit = !edit);
 </script>
 

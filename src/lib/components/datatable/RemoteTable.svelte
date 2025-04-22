@@ -44,7 +44,7 @@
     isClickable = false,
     tableActions,
   }: Props = $props();
-  let rows = handler.getRows();
+  let rows = $derived(handler.getRows());
 
   onMount(() => {
     setComponentRegistry(

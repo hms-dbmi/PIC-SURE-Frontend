@@ -1,4 +1,3 @@
-<!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
   import { DataHandler } from '@vincjo/datatables';
 
@@ -13,39 +12,60 @@
   import ExpandableRow from '$lib/components/datatable/Row.svelte';
 
   // Parameters
-  export let tableName: string;
-  export let search = false;
-  export let title = '';
-  export let fullWidth: boolean = false;
-  export let tableAuto: boolean = true;
-  export let options: number[] = [5, 10, 20, 50, 100];
-  export let defaultRowsPerPage = 10;
-  export let columns: Column[] = [];
-  export let cellOverides: Indexable = {};
-  export let stickyHeader = false;
-  export let showPagination = true;
-  export let rowClickHandler: (row: Indexable) => void = () => {};
-  export let isClickable: boolean = false;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  export let data: any = []; //TODO: Fix this type
+  interface Props {
+    tableName: string;
+    search?: boolean;
+    title?: string;
+    fullWidth?: boolean;
+    tableAuto?: boolean;
+    options?: number[];
+    defaultRowsPerPage?: number;
+    columns?: Column[];
+    cellOverides?: Indexable;
+    stickyHeader?: boolean;
+    showPagination?: boolean;
+    isClickable?: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data?: any;
+    class?: string;
+    rowClickHandler?: (row: Indexable) => void;
+    tableActions?: import('svelte').Snippet;
+  }
 
-  $: handler = new DataHandler(data, { rowsPerPage: defaultRowsPerPage });
-  $: rows = handler.getRows();
+  const {
+    tableName,
+    search = false,
+    title = '',
+    fullWidth = false,
+    tableAuto = true,
+    options = [5, 10, 20, 50, 100],
+    defaultRowsPerPage = 10,
+    columns = [],
+    cellOverides = {},
+    stickyHeader = false,
+    showPagination = true,
+    isClickable = false,
+    data = [],
+    class: className = '',
+    rowClickHandler = () => {},
+    tableActions,
+  }: Props = $props();
+
+  const handler = new DataHandler(data, { rowsPerPage: defaultRowsPerPage });
+  let rows = $derived(handler.getRows());
 </script>
 
 <div class="space-y-1">
-  {#if title || search || $$slots.tableActions}
+  {#if title || search || tableActions}
     <header
-      class="flex items-center {title || $$slots.tableActions
-        ? 'justify-between'
-        : 'justify-end'} gap-4"
+      class="flex items-center {title || tableActions ? 'justify-between' : 'justify-end'} gap-4"
     >
       {#if title}
         <div class="flex-auto">
           <h2 class="my-2">{title}</h2>
         </div>
       {/if}
-      <slot name="tableActions" />
+      {@render tableActions?.()}
       {#if search}
         <div class="flex-none">
           <Search {handler} />
@@ -58,7 +78,7 @@
       id="{tableName}-table"
       data-testid="{tableName}-table"
       class="table table-{tableAuto ? 'auto' : 'fixed'} table-hover align-middle
-        {fullWidth ? 'w-max' : ''} {$$props.class ?? ''}"
+        {fullWidth ? 'w-max' : ''} {className}"
     >
       <thead>
         <tr class={stickyHeader ? 'sticky-header' : ''}>

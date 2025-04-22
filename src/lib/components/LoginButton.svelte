@@ -1,14 +1,27 @@
-<!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
   import { createInstance } from '$lib/AuthProviderRegistry';
   import type { AuthData } from '$lib/models/AuthProvider';
   import { resetSearch } from '$lib/stores/Search';
 
-  export let buttonText = 'Log In';
-  export let redirectTo = '/';
-  export let provider: AuthData;
-  export let helpText: string;
-  $: testId = `login-button-${provider.name?.toLowerCase()}`;
+  interface Props {
+    provider: AuthData;
+    helpText: string;
+    buttonText?: string;
+    redirectTo?: string;
+    class?: string;
+  }
+
+  const {
+    provider,
+    helpText,
+    buttonText = 'Log In',
+    redirectTo = '/',
+    class: className = '',
+  }: Props = $props();
+
+  const testId = `login-button-${provider.name?.toLowerCase()}`;
+
+  let imageSrc: string | undefined = $state(undefined);
 
   let login = async (redirectTo: string, providerType: string) => {
     let instance = await createInstance(provider);
@@ -16,8 +29,7 @@
       resetSearch();
     });
   };
-
-  let imageSrc: string | undefined = undefined;
+  
   if (provider.imagesrc) {
     imageSrc = './' + provider.imagesrc;
   }
@@ -26,8 +38,8 @@
 <button
   type="button"
   data-testid={testId}
-  class={$$props.class ?? 'btn variant-filled-primary m-1'}
-  on:click={() => login(redirectTo, provider.type)}
+  class={className ?? 'btn variant-filled-primary m-1'}
+  onclick={() => login(redirectTo, provider.type)}
 >
   {#if imageSrc}
     <img src={imageSrc} alt={provider.imageAlt} class="mr-2 h-8" />

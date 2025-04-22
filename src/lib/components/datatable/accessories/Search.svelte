@@ -6,7 +6,7 @@
   }
 
   let { handler }: Props = $props();
-  let value: string = $state();
+  let value: string = $state('');
 </script>
 
 <input

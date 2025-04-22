@@ -1,13 +1,32 @@
-<!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
-  export let title: string = '';
-  export let subtitle: string = '';
-  export let required: boolean = false;
+  import type { Snippet } from 'svelte';
+
+  interface Props {
+    title?: string;
+    subtitle?: string;
+    required?: boolean;
+    'data-testid': string;
+    class?: string;
+    action?: Snippet;
+    help?: Snippet;
+    children?: Snippet;
+  }
+
+  const {
+    title = '',
+    subtitle = '',
+    required = false,
+    'data-testid': testid = '',
+    class: className = '',
+    action,
+    help,
+    children,
+  }: Props = $props();
 </script>
 
 <div
-  class="flex flex-col {$$props.class ?? ''}"
-  data-testid={$$props['data-testid'] || title.replaceAll(' ', '-').toLowerCase()}
+  class="flex flex-col {className}"
+  data-testid={testid || title.replaceAll(' ', '-').toLowerCase()}
 >
   <div class="relative rounded-t-2xl bg-primary-300-600-token p-4 items-center flex">
     {#if required}<span class="absolute top-0 left-1 p-1 text-error-500-400-token text-xs"
@@ -17,10 +36,10 @@
       <div class="font-bold">{title}</div>
       {#if subtitle}<div>{subtitle}</div>{/if}
     </div>
-    {#if $$slots.action}<span class="flex-none ml-1"><slot name="action" /></span>{/if}
-    {#if $$slots.help}<span class="flex-none ml-1"><slot name="help" /></span>{/if}
+    {#if action}<span class="flex-none ml-1">{@render action()}</span>{/if}
+    {#if help}<span class="flex-none ml-1">{@render help()}</span>{/if}
   </div>
   <div class="h-full p-2 border rounded-b-2xl border-surface-300-600-token">
-    <slot />
+    {@render children?.()}
   </div>
 </div>

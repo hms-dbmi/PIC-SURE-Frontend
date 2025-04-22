@@ -1,32 +1,48 @@
-<!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
   import { popup, clipboard } from '@skeletonlabs/skeleton';
 
-  export let itemToCopy: string;
+  interface Props {
+    itemToCopy: string;
+    text?: string;
+    altText?: string;
+    useIcon?: boolean;
+    icon?: string;
+    altIcon?: string;
+    'data-testid'?: string;
+    class?: string;
+  }
 
-  export let text: string = 'Copy';
-  export let altText: string = 'Copied!';
-  export let useIcon: boolean = false;
-  export let icon: string = 'fa-regular fa-copy';
-  export let altIcon: string = 'fa-regular fa-square-check';
+  const {
+    itemToCopy,
+    text = 'Copy',
+    altText = 'Copied!',
+    useIcon = false,
+    icon = 'fa-regular fa-copy',
+    altIcon = 'fa-regular fa-square-check',
+    'data-testid': testid = '',
+    class: className = '',
+  }: Props = $props();
 
-  let buttonId = $$props['data-testid'] || 'copy-btn';
+  let buttonId = testid || 'copy-btn';
   let timer: ReturnType<typeof setTimeout>;
+  let activeIcon: string = $state(icon);
+  let activeButtonText: string = $state(text);
 
   function debounce(method: () => void) {
     clearTimeout(timer);
     timer = setTimeout(method, 4500);
   }
 
-  function updateButton() {
+  function updateButton(event: Event) {
+    event.stopPropagation();
     if (useIcon) {
       const iconText = icon;
-      debounce(() => (icon = iconText));
-      icon = altIcon;
+      debounce(() => (activeIcon = iconText));
+      activeIcon = altIcon;
     } else {
       const btnText = text;
-      debounce(() => (text = btnText));
-      text = altText;
+      debounce(() => (activeButtonText = btnText));
+      activeButtonText = altText;
     }
   }
 </script>
@@ -35,9 +51,9 @@
   <button
     type="button"
     data-testid={buttonId}
-    title={text}
-    class="ml-4 text-black-600 hover:text-primary-600 {$$props.class || ''}"
-    on:click|stopPropagation={updateButton}
+    title={activeButtonText}
+    class="ml-4 text-black-600 hover:text-primary-600 {className}"
+    onclick={updateButton}
     use:clipboard={itemToCopy}
     use:popup={{
       event: 'click',
@@ -45,7 +61,7 @@
       placement: 'top',
     }}
   >
-    <i class="fa-xl {icon}"></i>
+    <i class="fa-xl {activeIcon}"></i>
     <div
       data-testid="{buttonId}-popup"
       class="rounded p-4 max-w-md shadow-2xl variant-filled-surface text-on-primary"
@@ -59,9 +75,9 @@
   <button
     type="button"
     data-testid={buttonId}
-    title={text}
-    class="ml-4 btn {$$props.class || ''}"
-    on:click|stopPropagation={updateButton}
-    use:clipboard={itemToCopy}>{text}</button
+    title={activeButtonText}
+    class="ml-4 btn {className}"
+    onclick={updateButton}
+    use:clipboard={itemToCopy}>{activeButtonText}</button
   >
 {/if}

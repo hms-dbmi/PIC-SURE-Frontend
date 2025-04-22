@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { stopPropagation } from 'svelte/legacy';
-
   import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
   const toastStore = getToastStore();

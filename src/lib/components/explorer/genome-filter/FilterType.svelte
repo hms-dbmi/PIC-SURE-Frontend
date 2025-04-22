@@ -1,16 +1,18 @@
-<!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
   import { features } from '$lib/configuration';
-  import { createEventDispatcher } from 'svelte';
   import { Option } from '$lib/models/GenomeFilter';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
 
-  export let active: Option = Option.None;
+  interface Props {
+    active?: Option;
+    class?: string;
+    onselect?: (option: Option) => void;
+  }
 
-  const dispatch = createEventDispatcher<{ select: { option: Option } }>();
+  const { active = Option.None, class: className = '', onselect = () => {} }: Props = $props();
 </script>
 
-<div class="flex flex-row justify-center justify-items-center gap-16 {$$props.class ?? ''}">
+<div class="flex flex-row justify-center justify-items-center gap-16 {className ?? ''}">
   {#if features.enableGENEQuery}
     <CardButton
       data-testid="gene-variant-option"
@@ -19,7 +21,7 @@
       size="other"
       class="w-1/4 h-20 min-h-20 variant-ringed-primary"
       active={active === Option.Genomic}
-      on:click={() => dispatch('select', { option: Option.Genomic })}
+      onclick={() => onselect(Option.Genomic)}
     />
   {/if}
   {#if features.enableSNPQuery}
@@ -30,7 +32,7 @@
       size="other"
       class="w-1/4 h-20 min-h-20 variant-ringed-primary"
       active={active === Option.SNP}
-      on:click={() => dispatch('select', { option: Option.SNP })}
+      onclick={() => onselect(Option.SNP)}
     />
   {/if}
   {#if !features.enableGENEQuery && !features.enableSNPQuery}

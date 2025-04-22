@@ -13,7 +13,17 @@
 
   const { getDataset } = DataSetStore;
 
-  let dataset: DataSet = $state();
+  let dataset: DataSet = $state({
+    uuid: '',
+    user: '',
+    name: '',
+    archived: false,
+    metadata: {},
+    query: {},
+    queryId: '',
+    startTime: '',
+    rawStartTime: 0,
+  });
 
   async function loadDataset() {
     dataset = await getDataset(page.params.uuid);

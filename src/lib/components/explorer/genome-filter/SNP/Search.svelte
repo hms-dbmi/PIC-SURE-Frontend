@@ -1,17 +1,23 @@
-<!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import { ProgressRadial, getToastStore } from '@skeletonlabs/skeleton';
   import type { SNP } from '$lib/models/GenomeFilter';
   import { getSNPCounts } from '$lib/stores/SNPFilter';
 
-  export let search: string = '';
+  const {
+    search = '',
+    disabled = false,
+    onvalid = () => {},
+  }: {
+    search?: string;
+    disabled?: boolean;
+    onvalid?: (snp: SNP) => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher<{ valid: { snp: SNP } }>();
   const validSnp = /^\w+,\d+,(A|T|C|G)+,(A|T|C|G)+$/;
   let searchElement: HTMLInputElement;
-  let warn: boolean = false;
-  let searching: boolean = false;
+  let warn: boolean = $state(false);
+  let searching: boolean = $state(false);
+  let searchStringElement: string = $state(search);
   const toastStore = getToastStore();
 
   function setInvalid() {
@@ -28,10 +34,13 @@
     warn = false;
   }
 
-  $: search && removeInvalid(); // remove warnings on search value change.
+  $effect(() => {
+    // remove warnings on search value change.
+    searchStringElement && removeInvalid();
+  });
 
   async function searchSnp() {
-    if (!validSnp.test(search)) {
+    if (!validSnp.test(searchStringElement)) {
       setInvalid();
       return;
     } else {
@@ -40,9 +49,9 @@
 
     searching = true;
     try {
-      const valid = (await getSNPCounts({ search, constraint: '' })) > 0;
+      const valid = (await getSNPCounts({ search: searchStringElement, constraint: '' })) > 0;
       if (valid) {
-        dispatch('valid', { snp: { search, constraint: '' } });
+        onvalid({ search: searchStringElement, constraint: '' });
       } else {
         warn = true;
       }
@@ -70,17 +79,17 @@
     class="input"
     placeholder="chromosome (chr#), position, reference allele, variant allele"
     data-testid="snp-search-box"
-    disabled={$$props.disabled}
+    {disabled}
     bind:this={searchElement}
-    bind:value={search}
-    on:input={removeInvalid}
+    bind:value={searchStringElement}
+    oninput={removeInvalid}
   />
   <button
     type="button"
     data-testid="snp-search-btn"
     class="btn btn-sm variant-filled-primary text-lg disabled:opacity-75"
-    on:click={searchSnp}
-    disabled={$$props.disabled || !search || searching}
+    onclick={searchSnp}
+    disabled={disabled || !search || searching}
   >
     Search
     {#if searching}

@@ -1,30 +1,40 @@
-<!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  const dispatch = createEventDispatcher();
-
-  export let title: string;
-  export let icon: string = '';
-  export let href: string = '';
-  export let subtitle: string = '';
-  export let size: 'sm' | 'md' | 'lg' | 'other' = 'lg';
-  export let disabled: boolean = false;
-  export let active: boolean = false;
-
-  function onClick(event: MouseEvent) {
-    dispatch('click', event);
+  interface Props {
+    title: string;
+    icon?: string;
+    href?: string;
+    subtitle?: string;
+    size?: 'sm' | 'md' | 'lg' | 'other';
+    disabled?: boolean;
+    active?: boolean;
+    'data-testid'?: string;
+    class?: string;
+    onclick?: () => void;
   }
+
+  const {
+    title,
+    icon = '',
+    href = '',
+    subtitle = '',
+    size = 'lg',
+    disabled = false,
+    active = false,
+    'data-testid': testid = '',
+    class: className = '',
+    onclick = () => {},
+  }: Props = $props();
 </script>
 
 {#if href}
   <a
     {href}
-    data-testid={$$props['data-testid']}
+    data-testid={testid}
     aria-disabled={disabled || undefined}
     target={href.startsWith('/') ? undefined : '_blank'}
     class:variant-filled-primary={active}
     class:variant-ringed-primary={!active}
-    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {$$props.class ?? ''}"
+    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {className}"
     rel={disabled ? 'nofollow' : undefined}
     tabindex="0"
   >
@@ -34,12 +44,12 @@
   </a>
 {:else}
   <button
-    data-testid={$$props['data-testid']}
+    data-testid={testid}
     type="button"
     class:variant-filled-primary={active}
     class:variant-ringed-primary={!active}
-    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {$$props.class ?? ''}"
-    on:click={onClick}
+    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {className}"
+    {onclick}
     {disabled}
   >
     {#if icon}<i class="icon {icon}"></i>{/if}

@@ -61,8 +61,8 @@
 
   onMount(populateExistingFilters);
 
-  function onSelectFilterType(event: { detail: { option: Option } }) {
-    selectedOption = event.detail.option;
+  function onSelectFilterType(option: Option) {
+    selectedOption = option;
     populateExistingFilters();
   }
 
@@ -85,7 +85,7 @@
   transition={true}
 >
   {#if features.enableGENEQuery && features.enableSNPQuery}
-    <FilterType class="my-4" on:select={onSelectFilterType} active={selectedOption} />
+    <FilterType class="my-4" onselect={onSelectFilterType} active={selectedOption} />
   {/if}
   {#if selectedOption !== Option.None}
     {#if selectedOption === Option.Genomic}

@@ -2,11 +2,9 @@
   import { TreeView, TreeViewItem } from '@skeletonlabs/skeleton';
 
   import variantData from '$lib/components/explorer/genome-filter/variant-data.json';
-
   import { selectedConsequence } from '$lib/stores/GeneFilter';
 
   let severityChildren: TreeViewItem[][] = $state(variantData.map(() => []));
-
   const intersection = (A: string[], B: string[]) => A.some((a: string) => B.includes(a));
 </script>
 
@@ -17,23 +15,19 @@
         bind:group={$selectedConsequence}
         name="severity"
         value={severity.key}
-        children={severityChildren[sIndex]}
         open={intersection($selectedConsequence, severity.children)}
       >
         <p>{severity.key}</p>
-        <!-- @migration-task: migrate this slot by hand, `children` would shadow a prop on the parent component -->
-        <svelte:fragment slot="children">
-          {#each severity.children as child, cIndex}
-            <TreeViewItem
-              bind:this={severityChildren[sIndex][cIndex]}
-              bind:group={$selectedConsequence}
-              name={severity.key}
-              value={child}
-            >
-              <p>{child}</p>
-            </TreeViewItem>
-          {/each}
-        </svelte:fragment>
+        {#each severity.children as child, cIndex}
+          <TreeViewItem
+            bind:this={severityChildren[sIndex][cIndex]}
+            bind:group={$selectedConsequence}
+            name={severity.key}
+            value={child}
+          >
+            <p>{child}</p>
+          </TreeViewItem>
+        {/each}
       </TreeViewItem>
     {/each}
   </TreeView>

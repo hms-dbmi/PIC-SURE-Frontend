@@ -77,6 +77,6 @@
     bind:selectedOptions={$selectedGenes}
     bind:currentlyLoading={loading}
     {allOptionsLoaded}
-    on:scroll={(event) => getGeneValues(event.detail.search)}
+    onscroll={getGeneValues}
   />
 </div>

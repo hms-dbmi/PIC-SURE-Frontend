@@ -49,7 +49,7 @@
     </button>
   </div>
   {#if $panelOpen}
-    <ResultsPanel on:openPanel={openPanel} />
+    <ResultsPanel />
   {/if}
 </div>
 

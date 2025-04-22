@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -15,7 +13,7 @@
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
-  let account = $state('');
+  let account = $state($user?.email || 'There was an error retrieving your account.');
   let placeHolderToken =
     '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
   let revealed = $state(false);
@@ -81,9 +79,6 @@
   let revealButtonText = $derived(revealed ? 'Hide' : 'Reveal');
   let expires = $derived($user && $user.token ? extractExperationDate($user.token) : 0);
   let badge = $derived(expires && checkIfExpired());
-  run(() => {
-    account = $user?.email || 'There was an error retrieving your account.';
-  });
 </script>
 
 <div id="user-token-container">

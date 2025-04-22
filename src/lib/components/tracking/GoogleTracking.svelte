@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { run } from 'svelte/legacy';
-
   import { onMount } from 'svelte';
   import { gtag } from 'gtagjs';
   import { branding, settings } from '$lib/configuration';
@@ -11,7 +9,7 @@
   let googleAnalyticsID = settings.google.analytics;
   let googleConsentVisible = $state(false);
 
-  run(() => {
+  $effect(() => {
     if (
       googleAnalyticsID &&
       browser &&
