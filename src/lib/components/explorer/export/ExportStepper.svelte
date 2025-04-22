@@ -67,12 +67,6 @@
   $: processingMessage = '';
   $: exportLoading = false;
 
-  // Auto select csv export when pfb feature is disabled.
-  if (!features.explorer.enablePfbExport) {
-    query.query.expectedResultType === 'DATAFRAME';
-    activeType = 'DATAFRAME';
-  }
-
   onMount(async () => {
     const exportedSampleIds = $exports.filter((e: ExportInterface) =>
       e.conceptPath.includes('SAMPLE_ID'),
@@ -103,6 +97,11 @@
       }
     } else {
       sampleIds = false;
+    }
+
+    // Auto select csv export when pfb feature is disabled.
+    if (!features.explorer.enablePfbExport) {
+      activeType = 'DATAFRAME';
     }
   });
 
@@ -157,13 +156,12 @@
   }
 
   async function onNextHandler(e: CustomEvent): Promise<void> {
-    const lastStepName = $state.stepMap[e.detail.step - 1] || 'review';
     const stepName = e.detail.name;
 
     // nothing needs to be on review step
     if (stepName === 'review') return;
 
-    if (lastStepName === 'review') {
+    if (stepName === 'save-dataset') {
       preparePromise = submitQuery();
     }
 
@@ -203,6 +201,7 @@
 
     try {
       query.query.fields = $exports.map((exp) => exp.conceptPath);
+      query.query.expectedResultType = activeType;
       datasetId = '';
       requestUpdate(() =>
         api.post('picsure/query', query).then((res: DataSetResponse) => {
@@ -229,11 +228,6 @@
         picsureResultId = res.picsureResultId;
         lockDownload = false;
       });
-  }
-
-  function selectExportType(exportType: ExpectedResultType) {
-    query.query.expectedResultType = exportType;
-    activeType = exportType;
   }
 
   function onComplete() {
@@ -461,7 +455,7 @@
             size="other"
             class="card variant-ringed-primary"
             active={activeType === 'DATAFRAME'}
-            on:click={() => selectExportType('DATAFRAME')}
+            on:click={() => (activeType = 'DATAFRAME')}
           ></CardButton>
           <CardButton
             data-testid="csv-export-option"
@@ -470,7 +464,7 @@
             size="other"
             class="card variant-ringed-primary"
             active={activeType === 'DATAFRAME_PFB'}
-            on:click={() => selectExportType('DATAFRAME_PFB')}
+            on:click={() => (activeType = 'DATAFRAME_PFB')}
           ></CardButton>
         </div>
       </section>
