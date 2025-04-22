@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { ProgressBar } from '@skeletonlabs/skeleton';
 
   import { branding } from '$lib/configuration';
@@ -11,10 +11,10 @@
   import { getPrivilege } from '$lib/stores/Privileges';
   import { applicationList, loadApplications } from '$lib/stores/Application';
 
-  let privilege: Privilege;
+  let privilege: Privilege = $state();
 
   async function load() {
-    privilege = await getPrivilege($page.params.uuid);
+    privilege = await getPrivilege(page.params.uuid);
     await loadApplications();
   }
 </script>
@@ -33,7 +33,7 @@
     </section>
   {:catch}
     <ErrorAlert title="API Error">
-      <p>An error occured while retrieving dataset {$page.params.uuid}.</p>
+      <p>An error occured while retrieving dataset {page.params.uuid}.</p>
     </ErrorAlert>
   {/await}
 </Content>

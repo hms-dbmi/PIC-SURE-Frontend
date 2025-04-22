@@ -10,6 +10,8 @@
 
   import { selectedGenes, clearGeneFilters } from '$lib/stores/GeneFilter';
 
+  let { ...props }: { class: string } = $props();
+
   function clearSelectedGenes() {
     selectedGenes.set([]);
   }
@@ -17,44 +19,44 @@
   const helpText = branding?.help?.popups?.genomicFilter;
 </script>
 
-<div id="gene-search" class="grid grid-col-3 gap-3 {$$props.class || ''}">
+<div id="gene-search" class="grid grid-col-3 gap-3 {props.class || ''}">
   <Panel
     title="Search for Gene with Variant"
     subtitle="Use the official gene symbol."
     required={true}
   >
-    <svelte:fragment slot="action">
+    {#snippet action()}
       <button
         data-testid="clear-selected-genes-btn"
         class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
-        on:click={clearSelectedGenes}>Clear</button
+        onclick={clearSelectedGenes}>Clear</button
       >
-    </svelte:fragment>
+    {/snippet}
     <Genes />
   </Panel>
   <Panel
     title="Select Calculated Consequence"
     subtitle="The calculated consequence is based on VEP annotation."
   >
-    <svelte:fragment slot="help">
+    {#snippet help()}
       <HelpInfoPopup id="cons-help-popup" text={helpText.consequence} />
-    </svelte:fragment>
+    {/snippet}
     <Consequence />
   </Panel>
   <Panel title="Select Variant Frequency">
-    <svelte:fragment slot="help">
+    {#snippet help()}
       <HelpInfoPopup id="freq-help-popup" text={helpText.frequency} />
-    </svelte:fragment>
+    {/snippet}
     <Frequency />
   </Panel>
   <Panel title="Summary of Selected Filters" class="col-span-3">
-    <svelte:fragment slot="action">
+    {#snippet action()}
       <button
         data-testid="clear-gene-filters-btn"
         class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
-        on:click={clearGeneFilters}>Clear</button
+        onclick={clearGeneFilters}>Clear</button
       >
-    </svelte:fragment>
+    {/snippet}
     <Summary />
   </Panel>
 </div>

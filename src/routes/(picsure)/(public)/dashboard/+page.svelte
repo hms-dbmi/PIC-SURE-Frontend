@@ -23,9 +23,9 @@
   let unsubColumns: Unsubscriber;
   let unsubRows: Unsubscriber;
 
-  let currentColumns: Column[] = [];
+  let currentColumns: Column[] = $state([]);
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  let currentRows: DashboardRow[] = [];
+  let currentRows: DashboardRow[] = $state([]);
 
   const cellOverides = {
     additional_info_link: DashboardLink,

@@ -7,8 +7,10 @@
   import Edit from '$lib/components/explorer/genome-filter/SNP/Edit.svelte';
   import Summary from '$lib/components/explorer/genome-filter/SNP/Summary.svelte';
 
+  let { class: className = '' }: { class: string } = $props();
+
   type SNPEvent = { detail: { snp: SNP } };
-  let snp: SNP = { search: '', constraint: '' };
+  let snp: SNP = $state({ search: '', constraint: '' });
 
   function onValid(e: SNPEvent) {
     snp = e.detail.snp;
@@ -28,7 +30,7 @@
   }
 </script>
 
-<div id="snp-search" class="grid grid-col-1 gap-3 {$$props.class || ''}">
+<div id="snp-search" class="grid grid-col-1 gap-3 {className}">
   <Panel title="Search for Genomic Variants">
     <Search disabled={snp.search} search={snp.search} on:valid={onValid} />
     {#if snp.search}
@@ -39,13 +41,13 @@
     {/if}
   </Panel>
   <Panel title="Summary of Selected Filters">
-    <svelte:fragment slot="action">
+    {#snippet action()}
       <button
         class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
         disabled={$selectedSNPs.length === 0}
-        on:click={clearSnpFilters}>Clear</button
+        onclick={clearSnpFilters}>Clear</button
       >
-    </svelte:fragment>
+    {/snippet}
     <Summary on:edit={onEdit} on:delete={onDelete} />
   </Panel>
 </div>

@@ -28,11 +28,13 @@
   import { addFilter, getFiltersByType } from '$lib/stores/Filter';
 
   let edit = $page.url.searchParams.get('edit') || '';
-  let selectedOption: Option = (() => {
-    if (features.enableGENEQuery && !features.enableSNPQuery) return Option.Genomic;
-    if (!features.enableGENEQuery && features.enableSNPQuery) return Option.SNP;
-    return ['snp', 'genomic'].includes(edit) ? (edit as Option) : Option.None;
-  })();
+  let selectedOption: Option = $state(
+    (() => {
+      if (features.enableGENEQuery && !features.enableSNPQuery) return Option.Genomic;
+      if (!features.enableGENEQuery && features.enableSNPQuery) return Option.SNP;
+      return ['snp', 'genomic'].includes(edit) ? (edit as Option) : Option.None;
+    })(),
+  );
 
   function clearFilters() {
     clearGeneFilters();
@@ -64,9 +66,10 @@
     populateExistingFilters();
   }
 
-  $: canComplete =
+  let canComplete = $derived(
     (selectedOption === Option.Genomic && $selectedGenes.length > 0) ||
-    (selectedOption === Option.SNP && $selectedSNPs.length > 0);
+      (selectedOption === Option.SNP && $selectedSNPs.length > 0),
+  );
 </script>
 
 <svelte:head>
@@ -96,7 +99,7 @@
           data-testid="save-filter-btn"
           type="button"
           class="btn btn-sm variant-filled-primary text-lg disabled:opacity-75"
-          on:click={onComplete}
+          onclick={onComplete}
           disabled={!canComplete}
         >
           Save Filter <i class="fa-solid fa-plus ml-3"></i>
@@ -113,7 +116,7 @@
             : selectedOption === Option.Genomic
               ? 'A gene is required'
               : 'A SNP is required'}
-          on:click={onComplete}
+          onclick={onComplete}
           disabled={!canComplete}
         >
           Add Filter <i class="fa-solid fa-plus ml-3"></i>

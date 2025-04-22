@@ -3,9 +3,9 @@
   import { getModalStore } from '@skeletonlabs/skeleton';
 
   const identity = () => {};
-  $: message = $modalStore[0]?.meta.message || '';
-  $: backTo = $modalStore[0]?.meta.backTo || '';
-  $: resetQuery = $modalStore[0]?.meta.resetQuery || identity;
+  let message = $derived($modalStore[0]?.meta.message || '');
+  let backTo = $derived($modalStore[0]?.meta.backTo || '');
+  let resetQuery = $derived($modalStore[0]?.meta.resetQuery || identity);
 
   const modalStore = getModalStore();
   function closedModal() {
@@ -37,10 +37,10 @@
       <p>Would you like to remove the invalid filters or go back to {backTo}?</p>
       <div>
         <div class="dark">
-          <button class="btn variant-ringed hover:variant-filled-warning" on:click={reset}
+          <button class="btn variant-ringed hover:variant-filled-warning" onclick={reset}
             >Remove Invalid Filters</button
           >
-          <button class="btn variant-ringed hover:variant-filled-warning" on:click={goBack}
+          <button class="btn variant-ringed hover:variant-filled-warning" onclick={goBack}
             >Back to {backTo}</button
           >
         </div>

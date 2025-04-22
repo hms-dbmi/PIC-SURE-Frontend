@@ -1,3 +1,4 @@
+<!-- @migration-task Error while migrating Svelte code: Cannot split a chunk that has already been edited (10:18 – "on:click={() => handler.sort(orderBy)}") -->
 <script lang="ts">
   import type { DataHandler } from '@vincjo/datatables';
 

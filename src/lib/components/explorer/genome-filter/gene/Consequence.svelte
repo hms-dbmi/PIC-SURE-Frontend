@@ -5,7 +5,7 @@
 
   import { selectedConsequence } from '$lib/stores/GeneFilter';
 
-  let severityChildren: TreeViewItem[][] = variantData.map(() => []);
+  let severityChildren: TreeViewItem[][] = $state(variantData.map(() => []));
 
   const intersection = (A: string[], B: string[]) => A.some((a: string) => B.includes(a));
 </script>
@@ -21,6 +21,7 @@
         open={intersection($selectedConsequence, severity.children)}
       >
         <p>{severity.key}</p>
+        <!-- @migration-task: migrate this slot by hand, `children` would shadow a prop on the parent component -->
         <svelte:fragment slot="children">
           {#each severity.children as child, cIndex}
             <TreeViewItem

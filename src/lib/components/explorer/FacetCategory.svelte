@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
+  import type { Facet } from '$lib/models/Search';
   import { AccordionItem } from '@skeletonlabs/skeleton';
   import SearchStore from '$lib/stores/Search';
   import { hiddenFacets } from '$lib/stores/Dictionary';
@@ -7,18 +8,28 @@
   import type { Facet } from '$lib/models/Search';
   let { updateFacets, selectedFacets } = SearchStore;
 
-  export let facetCategory: DictionaryFacetResult;
-  export let facets = facetCategory.facets;
-  export let numFacetsToShow: number = 5;
+  interface Props {
+    facetCategory: DictionaryFacetResult;
+    facets?: Facet;
+    numFacetsToShow?: number;
+    shouldShowSearchBar?: boolean;
+  }
+
+  let {
+    facetCategory,
+    facets = facetCategory.facets,
+    numFacetsToShow = 5,
+    shouldShowSearchBar = facets?.length > numFacetsToShow,
+  }: Props = $props();
 
   let filteredHiddenFacets = facets.filter(
     (f) => !($hiddenFacets[facetCategory.name] || []).includes(f.name),
   );
   const anyFacetNot0 = filteredHiddenFacets?.some((facet) => facet.count > 0);
-  let textFilterValue: string;
+  let textFilterValue: string = $state('');
 
   export let shouldShowSearchBar: boolean = filteredHiddenFacets?.length > numFacetsToShow;
-  let moreThanNumFacetsToShow = filteredHiddenFacets?.length > numFacetsToShow;
+  let moreThanNumFacetsToShow = $state(filteredHiddenFacets?.length > numFacetsToShow);
 
   $: facetsToDisplay =
     (facets || textFilterValue || moreThanNumFacetsToShow || $selectedFacets || facetCategory) &&
@@ -127,11 +138,20 @@
     }
     return facetsToDisplay;
   }
+  let facetsToDisplay = $derived(
+    (facets || textFilterValue || moreThanTenFacets || $selectedFacets || facetCategory) &&
+      getFacetsToDisplay(),
+  );
+  let selectedFacetsChips = $derived(
+    $selectedFacets.filter((facet) => facet?.categoryRef?.name === facetCategory?.name),
+  );
 </script>
 
 <AccordionItem class="card space-y-2" open={anyFacetNot0}>
-  <svelte:fragment slot="summary">{facetCategory.display}</svelte:fragment>
-  <svelte:fragment slot="content">
+  {#snippet summary()}
+    {facetCategory.display}
+  {/snippet}
+  {#snippet content()}
     <div class="flex flex-col">
       {#if shouldShowSearchBar}
         <input
@@ -150,14 +170,14 @@
         <button
           data-testId="show-more-facets"
           class="show-more w-fit mx-auto my-1"
-          on:click={() => (moreThanNumFacetsToShow = !moreThanNumFacetsToShow)}
+          onclick={() => (moreThanNumFacetsToShow = !moreThanNumFacetsToShow)}
         >
           {moreThanNumFacetsToShow ? 'Show More' : 'Show Less'}
           <i class="ml-1 fa-solid {moreThanNumFacetsToShow ? 'fa-angle-down' : 'fa-angle-up'}"></i>
         </button>
       {/if}
     </div>
-  </svelte:fragment>
+  {/snippet}
 </AccordionItem>
 <div class="m-1 p-1 max-w">
   {#each selectedFacetsChips as facet}
@@ -171,7 +191,7 @@
       <button
         class="chip-close ml-1 flex-shrink-0"
         aria-label="Remove Facet"
-        on:click={() => updateFacets([facet])}
+        onclick={() => updateFacets([facet])}
       >
         <i class="fa-solid fa-times hover:text-secondary-500"></i>
       </button>

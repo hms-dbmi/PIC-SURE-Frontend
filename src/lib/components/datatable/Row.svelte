@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { stopPropagation } from 'svelte/legacy';
+
   import { slide } from 'svelte/transition';
   import type { Column } from '$lib/models/Tables';
   import type { Indexable } from '$lib/types';
@@ -10,26 +12,39 @@
     setActiveRow,
   } from '$lib/stores/ExpandableRow';
 
-  export let cellOverides: Indexable = {};
-  export let columns: Column[] = [];
-  export let index: number = -2;
-  export let row: Indexable = {};
-  export let tableName: string = '';
-  export let isClickable: boolean = false;
-  export let rowClickHandler: (row: Indexable) => void = () => {};
+  interface Props {
+    cellOverides?: Indexable;
+    columns?: Column[];
+    index?: number;
+    row?: Indexable;
+    tableName?: string;
+    isClickable?: boolean;
+    rowClickHandler?: (row: Indexable) => void;
+  }
+
+  let {
+    cellOverides = {},
+    columns = [],
+    index = -2,
+    row = {},
+    tableName = '',
+    isClickable = false,
+    rowClickHandler = () => {},
+  }: Props = $props();
 
   function onClick(row: Indexable) {
     setActiveRow({ row: row.conceptPath || row.dataset_id, table: tableName });
     rowClickHandler(row);
   }
-  $: active =
+  let active = $derived(
     $activeTable === tableName &&
-    ($activeRow === row?.conceptPath || $activeRow === row.dataset_id);
+      ($activeRow === row?.conceptPath || $activeRow === row.dataset_id),
+  );
 </script>
 
 <tr
   id="row-{index.toString()}"
-  on:click|stopPropagation={() => onClick(row)}
+  onclick={stopPropagation(() => onClick(row))}
   class={isClickable ? 'cursor-pointer' : ''}
   tabindex={isClickable ? 0 : -1}
 >
@@ -39,10 +54,8 @@
       class={column?.class?.includes('text-center') ? 'text-center' : ''}
     >
       {#if cellOverides[column.dataElement]}
-        <svelte:component
-          this={cellOverides[column.dataElement]}
-          data={{ index, row, cell: row[column.dataElement] }}
-        />
+        {@const SvelteComponent = cellOverides[column.dataElement]}
+        <SvelteComponent data={{ index, row, cell: row[column.dataElement] }} />
       {:else}
         {row[column.dataElement] ? row[column.dataElement] : ''}
       {/if}
@@ -55,7 +68,8 @@
     <td colspan={columns.length}>
       <div transition:slide={{ axis: 'y' }}>
         {#if $activeComponent}
-          <svelte:component this={$activeComponent} data={row} />
+          {@const SvelteComponent_1 = $activeComponent}
+          <SvelteComponent_1 data={row} />
         {/if}
       </div>
     </td>

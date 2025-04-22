@@ -4,10 +4,14 @@
 
   import type { LandingStat } from '$lib/types';
 
-  export let stats: Readable<LandingStat[]>;
-  export let description: string;
-  export let auth: boolean = false;
-  $: authString = auth ? 'auth' : 'open';
+  interface Props {
+    stats: Readable<LandingStat[]>;
+    description: string;
+    auth?: boolean;
+  }
+
+  let { stats, description, auth = false }: Props = $props();
+  let authString = $derived(auth ? 'auth' : 'open');
 
   /* eslint-disable svelte/no-at-html-tags */
   // @html explanation is passed down from a static file

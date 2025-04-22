@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { ProgressBar } from '@skeletonlabs/skeleton';
 
   import { branding } from '$lib/configuration';
@@ -11,10 +11,10 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ConnectionForm from '$lib/components/admin/configuration/ConnectionForm.svelte';
 
-  let connection: Connection;
+  let connection: Connection = $state();
 
   async function load() {
-    connection = await getConnection($page.params.uuid);
+    connection = await getConnection(page.params.uuid);
   }
 </script>
 
@@ -32,7 +32,7 @@
     </section>
   {:catch}
     <ErrorAlert title="API Error">
-      <p>An error occured while retrieving dataset {$page.params.uuid}.</p>
+      <p>An error occured while retrieving dataset {page.params.uuid}.</p>
     </ErrorAlert>
   {/await}
 </Content>

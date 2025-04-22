@@ -7,15 +7,19 @@
 
   import type { RequiredField } from '$lib/models/Connection';
 
-  export let field: RequiredField = { label: '', id: '' };
-  export let duplicate: boolean = false;
+  interface Props {
+    field?: RequiredField;
+    duplicate?: boolean;
+  }
 
-  let label: string = field.label;
-  let id: string = field.id;
+  let { field = { label: '', id: '' }, duplicate = false }: Props = $props();
 
-  $: dirtyForm = field.id !== id || field.label !== label;
+  let label: string = $state(field.label);
+  let id: string = $state(field.id);
+
+  let dirtyForm = $derived(field.id !== id || field.label !== label);
   const newField: boolean = field.label === '' || field.id === '';
-  let edit: boolean = newField;
+  let edit: boolean = $state(newField);
 
   const saveField = () => {
     const currentField = { label, id };
@@ -65,7 +69,7 @@
         data-testid="required-field-save-btn"
         class="btn-icon-color"
         disabled={!label || !id || !dirtyForm}
-        on:click={saveField}
+        onclick={saveField}
       >
         <i class="fa-solid fa-floppy-disk fa-xl"></i>
         <span class="sr-only">Save</span>
@@ -76,7 +80,7 @@
           title="Reset and cancel"
           class="btn-icon-color"
           data-testid="required-field-reset-btn"
-          on:click={resetField}
+          onclick={resetField}
         >
           <i class="fa-solid fa-arrow-rotate-right fa-xl"></i>
           <span class="sr-only">Reset and cancel</span>
@@ -87,7 +91,7 @@
           title="Cancel"
           class="btn-icon-color"
           data-testid="required-field-cancel-btn"
-          on:click={toggleEdit}
+          onclick={toggleEdit}
         >
           <i class="fa-solid fa-ban fa-xl"></i>
           <span class="sr-only">Cancel</span>
@@ -99,7 +103,7 @@
         title="Edit"
         class="btn-icon-color"
         data-testid="required-field-edit-btn"
-        on:click={toggleEdit}
+        onclick={toggleEdit}
       >
         <i class="fa-solid fa-pen fa-xl"></i>
         <span class="sr-only">Edit</span>
@@ -110,7 +114,7 @@
       title="Delete"
       class="btn-icon-color"
       data-testid="required-field-delete-btn"
-      on:click={deleteField}
+      onclick={deleteField}
     >
       <i class="fa-solid fa-trash fa-xl"></i>
       <span class="sr-only">Delete</span>

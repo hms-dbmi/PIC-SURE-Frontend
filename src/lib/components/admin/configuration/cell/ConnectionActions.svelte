@@ -8,9 +8,15 @@
 
   import { deleteConnection } from '$lib/stores/Connections';
 
-  export let data = { cell: '', row: { label: '' } };
+  let { data = { cell: '', row: { label: '' } } } = $props();
 
-  function deleteModal() {
+  function editConnection(event: Event){
+    event.stopPropagation();
+    goto(`/admin/configuration/connection/${data.cell}/edit`);
+  }
+
+  function deleteModal(event: Event) {
+    event.stopImmediatePropagation();
     const label = data.row.label;
     modalStore.trigger({
       type: 'confirm',
@@ -53,7 +59,7 @@
     title="Edit"
     class="btn-icon-color"
     disabled={!$isTopAdmin}
-    on:click|stopPropagation={() => goto(`/admin/configuration/connection/${data.cell}/edit`)}
+    onclick={editConnection}
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
     <span class="sr-only">Edit</span>
@@ -63,8 +69,7 @@
     type="button"
     title="Delete"
     class="btn-icon-color"
-    disabled={!$isTopAdmin}
-    on:click|stopPropagation={deleteModal}
+    onclick={deleteModal}
   >
     <i class="fa-solid fa-trash fa-xl"></i>
     <span class="sr-only">Delete</span>

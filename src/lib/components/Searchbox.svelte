@@ -1,7 +1,15 @@
 <script lang="ts">
-  export let placeholder = 'Search...';
-  export let search: () => void = () => {};
-  export let searchTerm = '';
+  interface Props {
+    placeholder?: string;
+    search?: () => void;
+    searchTerm?: string;
+  }
+
+  let {
+    placeholder = 'Search...',
+    search = () => {},
+    searchTerm = $bindable(''),
+  }: Props = $props();
 </script>
 
 <div class="flex w-full">
@@ -15,14 +23,14 @@
     title="Type search terms here, use enter or the search button to submit search"
     {placeholder}
     bind:value={searchTerm}
-    on:keydown={(e) => e.key === 'Enter' && search()}
+    onkeydown={(e) => e.key === 'Enter' && search()}
   />
   <button
     id="search-button"
     class="btn variant-filled-primary search-button"
     aria-label="Search"
     title="Search"
-    on:click={search}
+    onclick={search}
   >
     <i class="fas fa-search"></i>
   </button>

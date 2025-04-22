@@ -38,6 +38,11 @@
   import python from 'highlight.js/lib/languages/python';
   import { storeHighlightJs } from '@skeletonlabs/skeleton';
   import 'highlight.js/styles/obsidian.css';
+  interface Props {
+    children?: import('svelte').Snippet;
+  }
+
+  let { children }: Props = $props();
 
   const modalStore = getModalStore();
   const drawerStore = getDrawerStore();
@@ -64,10 +69,11 @@
     document.body.classList.add('started');
   });
 
-  $: showSidebar =
+  let showSidebar = $derived(
     ($page.url.pathname.includes('/explorer') || $page.url.pathname.includes('/discover')) &&
-    !$page.url.pathname.includes('/export') &&
-    !$page.url.pathname.includes('/distributions');
+      !$page.url.pathname.includes('/export') &&
+      !$page.url.pathname.includes('/distributions'),
+  );
 
   beforeNavigate(({ to, cancel }) => {
     const notAuthorized = to?.url.pathname.includes('/explore') && $hasInvalidFilter;
@@ -120,20 +126,20 @@
   {/if}
 </Drawer>
 <AppShell>
-  <svelte:fragment slot="header">
+  {#snippet header()}
     <Navigation />
-  </svelte:fragment>
-  <svelte:fragment slot="sidebarRight">
+  {/snippet}
+  {#snippet sidebarRight()}
     {#if showSidebar}
       <div id="right-panel-container" class={'flex'}>
         <SidePanel />
       </div>
     {/if}
-  </svelte:fragment>
-  <slot />
-  <svelte:fragment slot="pageFooter">
+  {/snippet}
+  {@render children?.()}
+  {#snippet pageFooter()}
     <Footer />
-  </svelte:fragment>
+  {/snippet}
 </AppShell>
 
 <style>

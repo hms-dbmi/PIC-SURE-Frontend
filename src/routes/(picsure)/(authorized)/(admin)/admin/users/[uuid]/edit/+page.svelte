@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { ProgressBar } from '@skeletonlabs/skeleton';
 
   import { branding } from '$lib/configuration';
@@ -15,11 +15,11 @@
   const { roleList, loadRoles } = RoleStore;
   const { connections, loadConnections } = ConnectionsStore;
 
-  let user: ExtendedUser;
+  let user: ExtendedUser = $state();
 
   async function load() {
     await loadUsers();
-    user = await getUser($page.params.uuid);
+    user = await getUser(page.params.uuid);
     await loadRoles();
     await loadConnections();
   }
@@ -39,7 +39,7 @@
     </section>
   {:catch}
     <ErrorAlert title="API Error">
-      <p>An error occured while retrieving dataset {$page.params.uuid}.</p>
+      <p>An error occured while retrieving dataset {page.params.uuid}.</p>
     </ErrorAlert>
   {/await}
 </Content>

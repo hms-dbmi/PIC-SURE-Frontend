@@ -4,7 +4,11 @@
   import ExportStore from '$lib/stores/Export';
   const { removeExport } = ExportStore;
 
-  export let variable: ExportInterface;
+  interface Props {
+    variable: ExportInterface;
+  }
+
+  let { variable }: Props = $props();
   const remove = function () {
     removeExport(variable.id);
   };
@@ -25,7 +29,7 @@
       title="Remove Export"
       class="btn-icon-color"
       aria-label="Remove Export"
-      on:click={remove}
+      onclick={remove}
     >
       <i class="fa-solid fa-times-circle"></i>
     </button>
