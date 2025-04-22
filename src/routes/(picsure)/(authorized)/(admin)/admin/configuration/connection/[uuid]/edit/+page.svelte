@@ -11,7 +11,12 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ConnectionForm from '$lib/components/admin/configuration/ConnectionForm.svelte';
 
-  let connection: Connection = $state();
+  let connection: Connection = $state({
+    id: '',
+    label: '',
+    subPrefix: '',
+    requiredFields: '',
+  });
 
   async function load() {
     connection = await getConnection(page.params.uuid);

@@ -1,7 +1,4 @@
 <script lang="ts">
-  import { run, preventDefault } from 'svelte/legacy';
-
-  import { createEventDispatcher } from 'svelte';
   import { ProgressRadial } from '@skeletonlabs/skeleton';
 
   let searchInput: string = $state('');
@@ -15,25 +12,25 @@
     showSelectAll?: boolean;
     allOptionsLoaded?: boolean;
     allOptions?: string[] | undefined;
+    onscroll?: (search: string) => void;
   }
 
   let {
     unselectedOptions = $bindable([]),
     selectedOptions = $bindable([]),
     selectedOptionEndLocation = $bindable(20),
-    currentlyLoading = false,
+    currentlyLoading = $bindable(false),
     showClearAll = true,
     showSelectAll = true,
     allOptionsLoaded = false,
     allOptions = undefined,
+    onscroll = () => {},
   }: Props = $props();
 
   let currentlyLoadingSelected: boolean = $state(false);
-  let unselectedOptionsContainer: HTMLElement = $state();
-  let selectedOptionsContainer: HTMLElement = $state();
+  let unselectedOptionsContainer: HTMLElement = $state() as HTMLElement;
+  let selectedOptionsContainer: HTMLElement = $state() as HTMLElement;
   let allSelectedOptionsLoaded: boolean = $state(false);
-
-  const dispatch = createEventDispatcher<{ scroll: { search: string } }>();
 
   function shouldLoadMore(element: HTMLElement, allLoaded: boolean) {
     const scrollTop = element.scrollTop;
@@ -49,7 +46,7 @@
       !currentlyLoading &&
       shouldLoadMore(unselectedOptionsContainer, allUnselectedOptionsLoaded)
     ) {
-      dispatch('scroll', { search: searchInput });
+      onscroll(searchInput);
     }
   }
 
@@ -63,18 +60,24 @@
   }
 
   function onSearch() {
-    dispatch('scroll', { search: searchInput });
+    onscroll(searchInput);
     unselectedOptionsContainer.scrollTop = 0;
   }
 
   function onSelect(option: string) {
-    unselectedOptions = unselectedOptions.filter((o) => o !== option);
-    selectedOptions = [...selectedOptions, option].sort();
+    return (event: Event) => {
+      event.preventDefault();
+      unselectedOptions = unselectedOptions.filter((o) => o !== option);
+      selectedOptions = [...selectedOptions, option].sort();
+    };
   }
 
   function onUnselect(option: string) {
-    selectedOptions = selectedOptions.filter((o) => o !== option);
-    unselectedOptions = [option, ...unselectedOptions];
+    return (event: Event) => {
+      event.preventDefault();
+      selectedOptions = selectedOptions.filter((o) => o !== option);
+      unselectedOptions = [option, ...unselectedOptions];
+    };
   }
 
   function clearSelectedOptions() {
@@ -106,7 +109,7 @@
     infiniteScroll ? allOptionsLoaded : unselectedOptions.length >= totalAvailableOptions,
   );
   let displayedSelectedOptions = $derived(selectedOptions.slice(0, selectedOptionEndLocation));
-  run(() => {
+  $effect(() => {
     allSelectedOptionsLoaded = infiniteScroll
       ? allSelectedOptionsLoaded
       : displayedSelectedOptions.length >= selectedOptions.length;
@@ -150,7 +153,7 @@
               type="checkbox"
               value={option}
               class="mr-1 float-left"
-              onclick={preventDefault(() => onSelect(option))}
+              onclick={onSelect(option)}
             />
             {option}
           </label>
@@ -192,7 +195,7 @@
               type="checkbox"
               class="mr-1"
               value={option}
-              onclick={preventDefault(() => onUnselect(option))}
+              onclick={onUnselect(option)}
               checked
             />
             {option}

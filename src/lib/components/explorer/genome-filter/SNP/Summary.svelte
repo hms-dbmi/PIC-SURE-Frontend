@@ -1,9 +1,14 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import { GenotypeMap, type SNP } from '$lib/models/GenomeFilter';
   import { selectedSNPs } from '$lib/stores/SNPFilter';
 
-  const dispatch = createEventDispatcher<{ edit: { snp: SNP }; delete: { snp: SNP } }>();
+  const {
+    onedit = () => {},
+    ondelete = () => {},
+  }: {
+    onedit?: (snp: SNP) => void;
+    ondelete?: (snp: SNP) => void;
+  } = $props();
 </script>
 
 <div class="flex items-center justify-center">
@@ -26,7 +31,7 @@
           title="Edit"
           aria-label="Edit"
           class="btn-icon-color"
-          onclick={() => dispatch('edit', { snp })}
+          onclick={() => onedit(snp)}
         >
           <i class="fa-solid fa-pen-to-square"></i>
         </button>
@@ -36,7 +41,7 @@
           title="Delete"
           aria-label="Delete"
           class="btn-icon-color"
-          onclick={() => dispatch('delete', { snp })}
+          onclick={() => ondelete(snp)}
         >
           <i class="fa-solid fa-trash"></i>
         </button>

@@ -16,9 +16,14 @@
   const { getRole } = RolesStore;
   const { getConnection } = ConnectionStore;
 
-  let user: ExtendedUser = $state();
-  let roles: Role[] = $state();
-  let connection: Connection | string = $state();
+  let user: ExtendedUser = $state({
+    connection: '',
+    generalMetadata: '',
+    active: false,
+    roles: [],
+  });
+  let roles: Role[] = $state([]);
+  let connection: Connection | string = $state('');
 
   async function load() {
     await loadUsers();

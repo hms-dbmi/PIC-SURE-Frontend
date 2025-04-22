@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { stopPropagation } from 'svelte/legacy';
-
   let { data = { row: { additional_info_link: '', consentGranted: false } } } = $props();
   let link = data.row.additional_info_link as string;
   let consentGranted = data.row.consentGranted;
@@ -12,7 +10,6 @@
   <a
     href={link || '#'}
     title={link ? 'More Info' : 'Link not available'}
-    onclick={stopPropagation((e) => !link && e.preventDefault())}
     class="btn variant-ghost-primary hover:variant-filled-primary{!link
       ? ' opacity-50 cursor-not-allowed'
       : ''}"

@@ -1,7 +1,4 @@
 <script lang="ts">
-  import { createBubbler, stopPropagation } from 'svelte/legacy';
-
-  const bubble = createBubbler();
   import { getDrawerStore } from '@skeletonlabs/skeleton';
   import { getDatasetDetails } from '$lib/stores/Dictionary';
   import type { DashboardRow } from '$lib/stores/Dashboard';
@@ -64,7 +61,6 @@
     <div class="flex justify-center items-center mb-4">
       <a
         href={link || '#'}
-        onclick={stopPropagation(bubble('click'))}
         class="btn variant-ghost-primary hover:variant-filled-primary"
         target="_blank">More Info</a
       >

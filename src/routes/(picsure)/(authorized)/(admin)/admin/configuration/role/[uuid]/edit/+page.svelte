@@ -11,7 +11,11 @@
   import { getRole } from '$lib/stores/Roles';
   import { privilegeList, loadPrivileges } from '$lib/stores/Privileges';
 
-  let role: Role = $state();
+  let role: Role = $state({
+    name: '',
+    description: '',
+    privileges: [],
+  });
 
   async function load() {
     role = await getRole(page.params.uuid);

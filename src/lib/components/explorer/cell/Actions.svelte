@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { stopPropagation } from 'svelte/legacy';
-
   import type { SearchResult } from '$lib/models/Search';
   import { activeTable, expandableComponents, setActiveRow } from '$lib/stores/ExpandableRow';
   import type { ExportInterface } from '$lib/models/Export';
@@ -16,8 +14,10 @@
     display: data.row.display,
     conceptPath: data.row.conceptPath,
   } as ExportInterface);
+
   function updateActiveRow(component: string) {
-    return () => {
+    return (event: Event) => {
+      event.stopPropagation();
       setActiveRow({
         row: data.row.conceptPath,
         component: $expandableComponents[component],
@@ -44,12 +44,7 @@
   let shouldDisableFilter = $derived(isOpenAccess && !data.row.allowFiltering);
 </script>
 
-<button
-  type="button"
-  title="Information"
-  class="btn-icon-color"
-  onclick={stopPropagation(insertInfoContent)}
->
+<button type="button" title="Information" class="btn-icon-color" onclick={insertInfoContent}>
   <i class="fa-solid fa-circle-info fa-xl"></i>
   <span class="sr-only">View Information</span>
 </button>
@@ -58,7 +53,7 @@
   title={shouldDisableFilter ? 'Filtering is not available for this variable' : 'Filter'}
   class="btn-icon-color"
   disabled={shouldDisableFilter}
-  onclick={stopPropagation(insertFilterContent)}
+  onclick={insertFilterContent}
 >
   <i class="fa-solid fa-filter fa-xl"></i>
   <span class="sr-only"
@@ -70,7 +65,7 @@
     type="button"
     title="Data Hierarchy"
     class="btn-icon-color"
-    onclick={stopPropagation(insertHierarchyContent)}
+    onclick={insertHierarchyContent}
   >
     <i class="fa-solid fa-sitemap fa-xl"></i>
     <span class="sr-only">View Data Hierarchy</span>
@@ -81,7 +76,7 @@
     type="button"
     title={isExported ? 'Remove from Analysis' : 'Add for Analysis'}
     class="btn-icon-color"
-    onclick={stopPropagation(insertExportContent)}
+    onclick={insertExportContent}
   >
     {#if isExported}
       <i class="fa-regular fa-square-check fa-xl"></i>

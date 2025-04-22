@@ -9,34 +9,34 @@
 
   let { class: className = '' }: { class: string } = $props();
 
-  type SNPEvent = { detail: { snp: SNP } };
-  let snp: SNP = $state({ search: '', constraint: '' });
+  const defaultSnp: SNP = { search: '', constraint: '' };
+  let snp: SNP = $state(defaultSnp);
 
-  function onValid(e: SNPEvent) {
-    snp = e.detail.snp;
+  function onValid(snpItem: SNP) {
+    snp = snpItem;
   }
 
-  function onSave(e: SNPEvent) {
-    saveSNP(e.detail.snp);
-    snp = { search: '', constraint: '' };
+  function onSave(snpItem: SNP) {
+    saveSNP(snpItem);
+    snp = defaultSnp;
   }
 
-  function onEdit(e: SNPEvent) {
-    snp = e.detail.snp;
+  function onEdit(snpItem: SNP) {
+    snp = snpItem;
   }
 
-  function onDelete(e: SNPEvent) {
-    deleteSNP(e.detail.snp);
+  function onDelete(snpItem: SNP) {
+    deleteSNP(snpItem);
   }
 </script>
 
 <div id="snp-search" class="grid grid-col-1 gap-3 {className}">
   <Panel title="Search for Genomic Variants">
-    <Search disabled={snp.search} search={snp.search} on:valid={onValid} />
+    <Search disabled={snp.search} search={snp.search} onvalid={onValid} />
     {#if snp.search}
       <hr />
       <div class="flex gap-2 items-center justify-center my-8">
-        <Edit {snp} on:save={onSave} />
+        <Edit {snp} onsave={onSave} />
       </div>
     {/if}
   </Panel>
@@ -48,6 +48,6 @@
         onclick={clearSnpFilters}>Clear</button
       >
     {/snippet}
-    <Summary on:edit={onEdit} on:delete={onDelete} />
+    <Summary onedit={onEdit} ondelete={onDelete} />
   </Panel>
 </div>

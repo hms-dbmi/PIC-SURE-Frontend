@@ -1,17 +1,20 @@
-<!-- @migration-task Error while migrating Svelte code: $$props is used together with named props in a way that cannot be automatically migrated. -->
 <script lang="ts">
   import { branding } from '$lib/configuration';
 
-  export let height: number = 0;
-  export let width: number = 0;
-  export let unit: string = 'rem';
+  interface Props {
+    height?: number;
+    width?: number;
+    unit?: string;
+    class?: string;
+  }
 
-  const finalClass = `colors ${$$props.class ?? ''}`;
+  const { height = 0, width = 0, unit = 'rem', class: className = '' }: Props = $props();
+
   const src = branding.logo.src;
   const alt = branding.logo.alt;
 
   // If width or height is set, scale the image or svg to the larger size
-  $: imgSize =
+  const imgSize =
     !width && !height
       ? { width: src ? 'auto' : undefined, height: src ? 'auto' : undefined }
       : (width && !height) || (width && height && width > height)
@@ -31,14 +34,14 @@
     {src}
     {alt}
     data-testid="nav-logo"
-    class={finalClass}
+    class="colors {className}"
     height={imgSize.height}
     width={imgSize.width}
   />
 {:else}
   <svg
     data-testid="nav-logo"
-    class={finalClass}
+    class="colors {className}"
     style={[imgSize.width && 'width:' + imgSize.width, imgSize.height && 'height:' + imgSize.height]
       .filter((x) => x)
       .join(';')}

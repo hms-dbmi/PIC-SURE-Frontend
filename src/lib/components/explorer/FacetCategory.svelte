@@ -5,38 +5,32 @@
   import SearchStore from '$lib/stores/Search';
   import { hiddenFacets } from '$lib/stores/Dictionary';
   import FacetItem from './FacetItem.svelte';
-  import type { Facet } from '$lib/models/Search';
   let { updateFacets, selectedFacets } = SearchStore;
 
   interface Props {
     facetCategory: DictionaryFacetResult;
-    facets?: Facet;
+    facets?: Facet[];
     numFacetsToShow?: number;
-    shouldShowSearchBar?: boolean;
   }
 
   let {
     facetCategory,
     facets = facetCategory.facets,
     numFacetsToShow = 5,
-    shouldShowSearchBar = facets?.length > numFacetsToShow,
   }: Props = $props();
 
-  let filteredHiddenFacets = facets.filter(
-    (f) => !($hiddenFacets[facetCategory.name] || []).includes(f.name),
-  );
-  const anyFacetNot0 = filteredHiddenFacets?.some((facet) => facet.count > 0);
+  let filteredHiddenFacets = $state(facets.filter((f) => !($hiddenFacets[facetCategory.name] || []).includes(f.name)));
   let textFilterValue: string = $state('');
 
-  export let shouldShowSearchBar: boolean = filteredHiddenFacets?.length > numFacetsToShow;
-  let moreThanNumFacetsToShow = $state(filteredHiddenFacets?.length > numFacetsToShow);
-
-  $: facetsToDisplay =
+  let anyFacetNot0 = $derived(filteredHiddenFacets?.some((facet) => facet.count > 0));
+  let shouldShowSearchBar: boolean = $derived(filteredHiddenFacets?.length > numFacetsToShow);
+  let moreThanNumFacetsToShow = $derived(filteredHiddenFacets?.length > numFacetsToShow);
+  let facetsToDisplay = $derived(
     (facets || textFilterValue || moreThanNumFacetsToShow || $selectedFacets || facetCategory) &&
-    getFacetsToDisplay();
-
-  $: selectedFacetsChips = $selectedFacets.filter(
-    (facet) => facet?.categoryRef?.name === facetCategory?.name,
+    getFacetsToDisplay()
+  );
+  let selectedFacetsChips = $derived(
+    $selectedFacets.filter((facet) => facet?.categoryRef?.name === facetCategory?.name)
   );
 
   function isIndeterminate(facet: Facet): boolean {
@@ -138,13 +132,6 @@
     }
     return facetsToDisplay;
   }
-  let facetsToDisplay = $derived(
-    (facets || textFilterValue || moreThanTenFacets || $selectedFacets || facetCategory) &&
-      getFacetsToDisplay(),
-  );
-  let selectedFacetsChips = $derived(
-    $selectedFacets.filter((facet) => facet?.categoryRef?.name === facetCategory?.name),
-  );
 </script>
 
 <AccordionItem class="card space-y-2" open={anyFacetNot0}>

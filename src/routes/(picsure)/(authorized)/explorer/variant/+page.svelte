@@ -25,7 +25,7 @@
   import type { Unsubscriber } from 'svelte/store';
   import { getQueryRequest } from '$lib/QueryBuilder';
 
-  let loading: Promise<void> = $state();
+  let loading: Promise<void> = $state(Promise.resolve());
   let unsubVariantError: Unsubscriber;
   let aggregateCheckbox: boolean = $state(settings.variantExplorer.type === ExportType.Full);
   let queryRequest: QueryRequestInterface;

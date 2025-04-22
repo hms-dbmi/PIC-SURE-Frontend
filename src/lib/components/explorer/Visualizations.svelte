@@ -18,7 +18,7 @@
   const toastStore = getToastStore();
 
   let plotValues: PlotValues[] = $state([]);
-  let newPlot: PlotlyNewPlot = $state();
+  let newPlot: PlotlyNewPlot = $state() as PlotlyNewPlot;
   let loading = $state(true);
 
   const isOpenAccess = $page.url.pathname.includes('/discover');

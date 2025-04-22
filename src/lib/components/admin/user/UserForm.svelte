@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { preventDefault } from 'svelte/legacy';
-
   import { goto } from '$app/navigation';
   import { getToastStore, SlideToggle } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
@@ -33,7 +31,8 @@
   );
   let validationError: string = $state('');
 
-  async function saveUser() {
+  async function saveUser(event: Event) {
+    event.preventDefault();
     const selectedRoles = roles.filter((role) => role.checked);
     if (selectedRoles.length === 0) {
       validationError = 'At least one role must be selected.';
@@ -90,7 +89,7 @@
   }
 </script>
 
-<form onsubmit={preventDefault(saveUser)} class="grid gap-4 my-3">
+<form onsubmit={saveUser} class="grid gap-4 my-3">
   <SlideToggle name="Active" size="sm" active="bg-success-500" label="Status" bind:checked={active}>
     {active ? 'Active' : 'Inactive'}
   </SlideToggle>

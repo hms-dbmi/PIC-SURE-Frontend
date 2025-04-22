@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getContext, onDestroy } from 'svelte';
+  import { getContext, onDestroy, type Snippet } from 'svelte';
   import { fade } from 'svelte/transition';
   import type { Writable } from 'svelte/store';
 
@@ -9,49 +9,37 @@
   interface Props {
     name: string;
     locked?: boolean;
-    buttonCompleteLabel?: string;
-    state?: Writable<StepperState>;
-    onNext?: (locked: boolean) => void;
-    onBack?: () => void;
-    onComplete?: (stepIndex: number, locked: boolean) => void;
-    header?: import('svelte').Snippet;
-    children?: import('svelte').Snippet;
-    navigation?: import('svelte').Snippet;
+    header?: Snippet;
+    children?: Snippet;
+    navigation?: Snippet;
   }
 
-  let {
-    name,
-    locked = false,
-    buttonCompleteLabel = getContext('buttonCompleteLabel'),
-    state = getContext('state'),
-    onNext = getContext('onNext'),
-    onBack = getContext('onBack'),
-    onComplete = getContext('onComplete'),
-    header,
-    children,
-    navigation,
-  }: Props = $props();
+  const { name, locked = false, header, children, navigation }: Props = $props();
+
+  const buttonCompleteLabel: string = getContext('buttonCompleteLabel');
+  const stepperState: Writable<StepperState> = getContext('StepperState');
+  const onNext: (locked: boolean) => void = getContext('onNext');
+  const onBack: () => void = getContext('onBack');
+  const onComplete: (stepIndex: number, locked: boolean) => void = getContext('onComplete');
 
   // Register step on init (keep these paired)
-  const stepIndex = $state.total;
-  $state.stepMap = [...$state.stepMap, name];
-  $state.total++;
+  const stepIndex = $stepperState.total;
+  $stepperState.stepMap = [...$stepperState.stepMap, name];
+  $stepperState.total++;
 
   onDestroy(() => {
-    $state.total--;
-    $state.stepMap = $state.stepMap.filter((item) => item !== name);
+    $stepperState.total--;
+    $stepperState.stepMap = $stepperState.stepMap.filter((item) => item !== name);
   });
 </script>
 
-{#if stepIndex === $state.current}
+{#if stepIndex === $stepperState.current}
   <div class="step space-y-4" data-testid="step-{stepIndex + 1}">
-    <header class="step-header text-2xl font-bold">
-      {@render header?.()}
-    </header>
+    {#if header}<header class="step-header text-2xl font-bold">{@render header()}</header>{/if}
     <div class="step-content space-y-4 px-2">
       {#if children}{@render children()}{:else}(Step {stepIndex + 1} Content){/if}
     </div>
-    {#if $state.total > 1}
+    {#if $stepperState.total > 1}
       <div
         class="step-navigation flex justify-between gap-4"
         in:fade={{ duration: 100 }}
@@ -59,20 +47,20 @@
       >
         {#if navigation}
           <div class="step-navigation-slot">
-            {@render navigation?.()}
+            {@render navigation()}
           </div>
         {:else if stepIndex !== 0}
-          <AngleButton on:click={() => onBack()} disabled={$state.current === 0}>Back</AngleButton>
+          <AngleButton onclick={onBack} disabled={$stepperState.current === 0}>Back</AngleButton>
         {:else}
           <div></div>
         {/if}
-        {#if stepIndex < $state.total - 1}
+        {#if stepIndex < $stepperState.total - 1}
           <AngleButton
             name="next"
             angle="right"
             variant="filled"
             disabled={locked}
-            on:click={() => onNext(locked)}>Next</AngleButton
+            onclick={() => onNext(locked)}>Next</AngleButton
           >
         {:else}
           <AngleButton
@@ -80,7 +68,7 @@
             angle="right"
             variant="filled"
             disabled={locked}
-            on:click={() => onComplete(stepIndex, locked)}
+            onclick={() => onComplete(stepIndex, locked)}
             >{buttonCompleteLabel || 'Complete'}</AngleButton
           >
         {/if}

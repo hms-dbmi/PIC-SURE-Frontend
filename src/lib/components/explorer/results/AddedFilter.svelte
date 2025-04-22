@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { preventDefault, stopPropagation } from 'svelte/legacy';
-
   import { elasticInOut } from 'svelte/easing';
   import { fade, scale, slide } from 'svelte/transition';
   import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
@@ -83,7 +81,9 @@
     return filter.searchResult?.studyAcronym || filter.searchResult?.dataset || '';
   };
 
-  const toggleCardBody = function () {
+  const toggleCardBody = function (event: Event) {
+    event.stopPropagation();
+    event.preventDefault();
     open = !open;
     carot = open ? 'fa-caret-down' : 'fa-caret-up';
   };
@@ -105,10 +105,8 @@
       class="flex-auto variable"
       tabindex="0"
       role="button"
-      onclick={stopPropagation(preventDefault(toggleCardBody))}
-      onkeydown={stopPropagation(
-        preventDefault((e) => (e.key === 'Enter' || e.key === ' ') && toggleCardBody),
-      )}
+      onclick={toggleCardBody}
+      onkeydown={(e: KeyboardEvent) => (e.key === 'Enter' || e.key === ' ') && toggleCardBody(e)}
     >
       {filter.variableName}
     </div>

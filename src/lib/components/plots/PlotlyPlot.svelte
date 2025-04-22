@@ -18,7 +18,7 @@
     ? 'Column chart showing the visualization of '
     : 'Histogram showing the visualization of ';
 
-  let plotContainer: Root = $state();
+  let plotContainer: Root = $state('');
 
   onMount(async () => {
     newPlot(plotContainer, data, layout, {

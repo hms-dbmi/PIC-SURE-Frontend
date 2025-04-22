@@ -3,7 +3,7 @@
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import { filters } from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
-  import { state } from '$lib/stores/Stepper';
+  import { stepperState } from '$lib/stores/Stepper';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import Content from '$lib/components/Content.svelte';
   import { getQueryRequest } from '$lib/QueryBuilder';
@@ -109,14 +109,14 @@
       exportRows.push(parentStudyRow);
     }
   }
-  state.set({ ...$state, current: 0, total: 0 });
+  stepperState.set({ ...$stepperState, current: 0, total: 0 });
 </script>
 
 <Content
   backUrl="/explorer"
   backTitle="Back to Explore"
   backAction={() => {
-    $state.current = 0;
+    $stepperState.current = 0;
   }}
   title="Export Data for Research Analysis"
 >

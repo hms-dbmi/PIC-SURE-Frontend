@@ -22,19 +22,19 @@
 
   let { data = $bindable() }: Props = $props();
 
-  let max: string = $state();
-  let min: string = $state();
-  let minFormValue: string = $state();
-  let maxFormValue: string = $state();
+  let max: string = $state('');
+  let min: string = $state('');
+  let minFormValue: string = $state('');
+  let maxFormValue: string = $state('');
   let pageSize = 20;
   let unselectedOptions: string[] = $state([]);
   let selectedOptions: string[] = $state([]);
   let startLocation = pageSize;
   let lastSearchTerm = '';
   let loading = $state(false);
-  let display: string = $state();
-  let description: string = $state();
-  let studyDisplay: string = $state();
+  let display: string = $state('');
+  let description: string = $state('');
+  let studyDisplay: string = $state('');
 
   onMount(async () => {
     if ($modalStore[0]?.meta.existingFilter) {
@@ -178,7 +178,7 @@
             bind:selectedOptions
             bind:currentlyLoading={loading}
             allOptions={data?.values}
-            on:scroll={(event) => getNextValues(event.detail.search)}
+            onscroll={getNextValues}
           />
         </div>
       {:else if data?.type === 'Continuous'}

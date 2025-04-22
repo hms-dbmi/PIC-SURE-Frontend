@@ -5,25 +5,25 @@
   interface Props {
     handler: DataHandler | RemoteDataHandler;
     filterBy: string;
-    class: string;
+    class?: string;
   }
 
-  let { ...props }: Props = $props();
+  const { handler, filterBy, class: className = '' }: Props = $props();
   let timeout: ReturnType<typeof setTimeout>;
 
-  let value: string = $state();
+  let value: string = $state('');
   const filter = () => {
-    props.handler.filter(value, props.filterBy);
-    if (props.handler instanceof RemoteDataHandler) {
+    handler.filter(value, filterBy);
+    if (handler instanceof RemoteDataHandler) {
       clearTimeout(timeout);
       timeout = setTimeout(() => {
-        props.handler.invalidate();
+        handler.invalidate();
       }, 400);
     }
   };
 </script>
 
-<th class={props.class ?? ''}>
+<th class={className}>
   <input
     class="input text-sm w-full"
     type="text"

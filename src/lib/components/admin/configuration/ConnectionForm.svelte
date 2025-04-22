@@ -20,9 +20,8 @@
   let subPrefix: string = $state(connection?.subPrefix || '');
   let requiredFields: string = $state(connection?.requiredFields || '[]');
 
-  type JSONEvent = { detail: { json: string } };
-  function updateRequiredFields(event: JSONEvent) {
-    requiredFields = event.detail.json;
+  function updateRequiredFields(json: string) {
+    requiredFields = json;
   }
 
   async function saveConnection(event: Event) {
@@ -95,7 +94,7 @@
       />
     </label>
 
-    <RequiredFieldsList fields={requiredFields} on:update={updateRequiredFields} />
+  <RequiredFieldsList fields={requiredFields} onupdate={updateRequiredFields} />
 
     <div>
       <button

@@ -29,7 +29,7 @@
     }
   });
 
-  let selected: string = $state();
+  let selected: string = $state('');
 
   let selectedProvider = $derived(
     selected
