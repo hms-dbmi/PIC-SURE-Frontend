@@ -9,7 +9,7 @@
   import { filters, hasGenomicFilter, clearFilters, totalParticipants } from '$lib/stores/Filter';
   import ExportStore from '$lib/stores/Export';
   import * as api from '$lib/api';
-  import { ProgressRadial, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
   import { elasticInOut } from 'svelte/easing';
   import { onDestroy, onMount, tick } from 'svelte';
   import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
@@ -61,14 +61,14 @@
       if ($filters.length !== 0) {
         toastStore.trigger({
           message: branding?.explorePage?.filterErrorText,
-          background: 'variant-filled-error',
+          background: 'preset-filled-error-500',
           autohide: false,
           hoverable: true,
         });
       } else {
         toastStore.trigger({
           message: branding?.explorePage?.queryErrorText,
-          background: 'variant-filled-error',
+          background: 'preset-filled-error-500',
         });
       }
       totalPatients = ERROR_VALUE;
@@ -163,7 +163,7 @@
 >
   <div class="flex flex-col items-center mt-2">
     {#await triggerRefreshCount}
-      <ProgressRadial width="w-6" />
+      <ProgressRing width="w-6" />
     {:then}
       <span id="result-count" class="text-4xl">
         {#if totalPatients === ERROR_VALUE}
@@ -186,7 +186,7 @@
       <button
         id="export-data-button"
         type="button"
-        class="btn variant-filled-primary"
+        class="btn preset-filled-primary-500"
         onclick={() => goto('/explorer/export')}
         transition:scale={{ easing: elasticInOut }}
       >

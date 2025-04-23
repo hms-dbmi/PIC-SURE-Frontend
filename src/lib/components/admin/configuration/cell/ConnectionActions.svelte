@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
   const toastStore = getToastStore();
   import { isTopAdmin } from '$lib/stores/User';
@@ -31,19 +30,19 @@
           await deleteConnection(data.cell);
           toastStore.trigger({
             message: `Successfully deleted connection '${label}'`,
-            background: 'variant-filled-success',
+            background: 'preset-filled-success-500',
           });
         } catch (error: unknown) {
           console.error(error);
           if ((error as { status?: number })?.status === 409) {
             toastStore.trigger({
               message: `Cannot delete connection '${label}' as it is still in use by an application or user`,
-              background: 'variant-filled-error',
+              background: 'preset-filled-error-500',
             });
           } else {
             toastStore.trigger({
               message: `An unknown error occured while deleting connection '${label}'`,
-              background: 'variant-filled-error',
+              background: 'preset-filled-error-500',
             });
           }
         }

@@ -12,7 +12,7 @@
   import RowsPerPage from '$lib/components/datatable/accessories/Rows.svelte';
   import RowCount from '$lib/components/datatable/accessories/Count.svelte';
   import Pagination from '$lib/components/datatable/accessories/Pagination.svelte';
-  import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
   import type { Writable } from 'svelte/store';
 
   interface Props {
@@ -84,7 +84,7 @@
   <table
     id="{tableName}-table"
     data-testid="{tableName}-table"
-    class="table table-auto table-hover align-middle {fullWidth ? 'w-max' : ''}"
+    class="table table-auto align-middle {fullWidth ? 'w-max' : ''}"
   >
     <thead style="border-color: revert;">
       <tr>
@@ -110,7 +110,7 @@
         <tr>
           <td colspan={columns.length} class="text-center py-8">
             <div class="flex justify-center items-center">
-              <ProgressRadial width="w-12" />
+              <ProgressRing width="w-12" />
             </div>
           </td>
         </tr>

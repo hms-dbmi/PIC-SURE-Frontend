@@ -9,7 +9,7 @@
 </script>
 
 {#each fields as field, index (index)}
-  <span class="badge variant-ghost-surface font-normal m-1"
+  <span class="badge preset-tonal-surface border border-surface-500 font-normal m-1"
     ><span class="font-bold">{field.label}</span>:{field.id}</span
   >
 {/each}

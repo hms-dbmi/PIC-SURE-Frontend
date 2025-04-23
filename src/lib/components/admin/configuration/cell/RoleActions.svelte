@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
   const toastStore = getToastStore();
   import { isTopAdmin } from '$lib/stores/User';
@@ -32,20 +31,20 @@
           await deleteRole(data.cell);
           toastStore.trigger({
             message: `Successfully deleted role '${name}'`,
-            background: 'variant-filled-success',
+            background: 'preset-filled-success-500',
           });
         } catch (error: unknown) {
           console.error(error);
           if ((error as { status?: number })?.status === 409) {
             toastStore.trigger({
               message: `Cannot delete role '${name}' as it is still in use by a user`,
-              background: 'variant-filled-error',
+              background: 'preset-filled-error-500',
             });
           } else {
             console.error(error);
             toastStore.trigger({
               message: `An unknown error occured while deleting role '${name}'`,
-              background: 'variant-filled-error',
+              background: 'preset-filled-error-500',
             });
           }
         }

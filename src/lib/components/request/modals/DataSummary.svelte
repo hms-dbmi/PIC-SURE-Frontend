@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { getModalStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
 
   import QuerySummary from '$lib/components/QuerySummary.svelte';

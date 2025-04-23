@@ -46,9 +46,9 @@
     {#each actionsToDisplay as { title, description, icon, url, btnText }}
       <div class="flex flex-col items-center w-1/{actionsToDisplay?.length || 3}">
         <div class="text-3xl my-1">{title}</div>
-        <i class="text-[5rem] my-3 text-secondary-500-400-token {icon}"></i>
+        <i class="text-[5rem] my-3 text-secondary-600-400 {icon}"></i>
         <div class="subtitle my-3">{description}</div>
-        <a data-testid="landing-action-{title}-btn" href={url} class="btn variant-filled-primary"
+        <a data-testid="landing-action-{title}-btn" href={url} class="btn preset-filled-primary-500"
           >{btnText}</a
         >
       </div>

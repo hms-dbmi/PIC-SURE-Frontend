@@ -32,8 +32,8 @@
     data-testid={testid}
     aria-disabled={disabled || undefined}
     target={href.startsWith('/') ? undefined : '_blank'}
-    class:variant-filled-primary={active}
-    class:variant-ringed-primary={!active}
+    class:preset-filled-primary-500={active}
+    class:preset-outlined-primary-500={!active}
     class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {className}"
     rel={disabled ? 'nofollow' : undefined}
     tabindex="0"
@@ -46,8 +46,8 @@
   <button
     data-testid={testid}
     type="button"
-    class:variant-filled-primary={active}
-    class:variant-ringed-primary={!active}
+    class:preset-filled-primary-500={active}
+    class:preset-outlined-primary-500={!active}
     class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {className}"
     {onclick}
     {disabled}

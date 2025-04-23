@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import type { Unsubscriber } from 'svelte/store';
 
-  import { ProgressBar } from '@skeletonlabs/skeleton';
+  import { Progress } from '@skeletonlabs/skeleton-svelte';
 
   import { branding, features } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
@@ -13,9 +13,6 @@
 
   import type { Column } from '$lib/models/Tables';
   import type { DashboardRow } from '$lib/stores/Dashboard';
-
-  import { getDrawerStore } from '@skeletonlabs/skeleton';
-
   const drawerStore = getDrawerStore();
 
   const tableName = 'ExplorerTable';
@@ -59,7 +56,7 @@
 <Content title="Data Dashboard" class="content-center" full={true}>
   <section id="data-container" class="">
     {#await dataLoadPromise}
-      <ProgressBar animIndeterminate="anim-progress-bar" />
+      <Progress animIndeterminate="anim-progress-bar" />
     {:then}
       <Datatable
         {tableName}

@@ -1,7 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getModalStore } from '@skeletonlabs/skeleton';
-
   const modalStore = getModalStore();
 
   interface Props {
@@ -43,11 +41,12 @@
   <p>{message}</p>
   <div class="flex justify-end gap-4">
     <button
-      class="btn variant-ghost-surface hover:variant-filled-surface mt-6"
-      onclick={() => onCancel()}>{cancelText}</button
+      class="btn preset-tonal-surface border border-surface-500 hover:preset-filled-surface-500 mt-6"
+      onclick={onCancel}>{cancelText}</button
     >
-    <button class="btn variant-filled hover:variant-filled-primary mt-6" onclick={() => onConfirm()}
-      >{confirmText}</button
+    <button
+      class="btn preset-filled hover:preset-filled-primary-500 mt-6"
+      onclick={onConfirm}>{confirmText}</button
     >
   </div>
 </div>

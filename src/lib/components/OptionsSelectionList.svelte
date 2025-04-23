@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
 
   let searchInput: string = $state('');
 
@@ -130,7 +130,7 @@
       {#if showSelectAll}
         <button
           id="select-all"
-          class="btn variant-ringed-surface hover:variant-filled-primary ml-2 text-sm"
+          class="btn preset-outlined-surface-500 hover:preset-filled-primary-500 ml-2 text-sm"
           disabled={unselectedOptions.length === 0}
           onclick={selectAllOptions}>Select All</button
         >
@@ -146,7 +146,7 @@
         {#each unselectedOptions as option}
           <label
             id="option-{getID(option)}"
-            class="p-1 m-1 cursor-pointer hover:variant-soft-surface hover:rounded-md"
+            class="p-1 m-1 cursor-pointer hover:preset-tonal-surface hover:rounded-md"
             role="listitem"
           >
             <input
@@ -160,7 +160,7 @@
         {/each}
         {#if currentlyLoading}
           <div class="flex justify-center">
-            <ProgressRadial width="w-5" meter="stroke-primary-500" track="stroke-primary-500/30" />
+            <ProgressRing width="w-5" meter="stroke-primary-500" track="stroke-primary-500/30" />
           </div>
         {/if}
       </div>
@@ -172,7 +172,7 @@
       {#if showClearAll}
         <button
           id="clear"
-          class="btn variant-ringed-surface hover:variant-filled-primary ml-2 text-sm"
+          class="btn preset-outlined-surface-500 hover:preset-filled-primary-500 ml-2 text-sm"
           onclick={clearSelectedOptions}
           disabled={selectedOptions.length === 0}>Clear</button
         >
@@ -188,7 +188,7 @@
         {#each displayedSelectedOptions as option (option)}
           <label
             id="option-{getID(option)}"
-            class="p-1 m-1 hover:variant-soft-surface hover:rounded-md cursor-pointer"
+            class="p-1 m-1 hover:preset-tonal-surface hover:rounded-md cursor-pointer"
             role="listitem"
           >
             <input
@@ -203,7 +203,7 @@
         {/each}
         {#if currentlyLoadingSelected}
           <div class="flex justify-center">
-            <ProgressRadial width="w-5" meter="stroke-primary-500" track="stroke-primary-500/30" />
+            <ProgressRing width="w-5" meter="stroke-primary-500" track="stroke-primary-500/30" />
           </div>
         {/if}
       </div>

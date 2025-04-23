@@ -11,11 +11,11 @@
   <section id="info-cards" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-8">
     {#each branding?.help?.links as link}
       <CardButton
-        class="variant-ringed-primary"
+        class="preset-outlined-primary-500"
         href={link.url}
         title={link.title}
         subtitle={link.description}
-        icon="{link.icon} text-primary-500-400-token"
+        icon="{link.icon} text-primary-600-400"
       />
     {/each}
   </section>

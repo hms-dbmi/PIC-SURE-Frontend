@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
   import type { Facet } from '$lib/models/Search';
-  import { AccordionItem } from '@skeletonlabs/skeleton';
+  import { Accordion } from '@skeletonlabs/skeleton-svelte';
   import SearchStore from '$lib/stores/Search';
   import { hiddenFacets } from '$lib/stores/Dictionary';
   import FacetItem from './FacetItem.svelte';
@@ -134,7 +134,7 @@
   }
 </script>
 
-<AccordionItem class="card space-y-2" open={anyFacetNot0}>
+<Accordion.Item class="card space-y-2" open={anyFacetNot0}>
   {#snippet summary()}
     {facetCategory.display}
   {/snippet}
@@ -165,11 +165,11 @@
       {/if}
     </div>
   {/snippet}
-</AccordionItem>
+</Accordion.Item>
 <div class="m-1 p-1 max-w">
   {#each selectedFacetsChips as facet}
     <span
-      class="badge relative z-10 variant-ringed-primary m-1 p-2 flex items-center box-border w-full max-w-full overflow-hidden"
+      class="badge relative z-10 preset-outlined-primary-500 m-1 p-2 flex items-center box-border w-full max-w-full overflow-hidden"
       id={facet.name}
     >
       <span class="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">

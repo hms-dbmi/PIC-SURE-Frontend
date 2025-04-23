@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { getModalStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
 
   // Ideally, this should be a value from the database that has timestamps, author, etc.
@@ -10,7 +9,7 @@
 <section id="terms-of-service">
   <Terms />
   <button
-    class="btn variant-filled-primary hover:variant-filled-secondary mt-6 float-right"
+    class="btn preset-filled-primary-500 hover:preset-filled-secondary-500 mt-6 float-right"
     onclick={() => modalStore.close()}>Accept</button
   >
 </section>

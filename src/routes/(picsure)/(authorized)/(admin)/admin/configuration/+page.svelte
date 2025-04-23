@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ProgressBar } from '@skeletonlabs/skeleton';
+  import { Progress } from '@skeletonlabs/skeleton-svelte';
 
   import { goto } from '$app/navigation';
 
@@ -87,18 +87,18 @@
   <div id="role-table" class="mb-10">
     <h2>Roles Management</h2>
     {#await loadRoles()}
-      <ProgressBar animIndeterminate="anim-progress-bar" />
+      <Progress animIndeterminate="anim-progress-bar" />
     {:then}
       <div class="flex gap-4 my-6">
         <div class="flex-auto">
           <a
             data-testid="add-role"
-            class="btn variant-ghost-primary hover:variant-filled-primary {!$isTopAdmin
+            class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
               ? 'opacity-50 pointer-events-none'
               : ''}"
             href="/admin/configuration/role/new"
           >
-            &plus; Add Role
+            + Add Role
           </a>
         </div>
       </div>
@@ -120,18 +120,18 @@
   <div id="privilege-table" class="mb-10">
     <h2>Privileges Management</h2>
     {#await loadAppsAndPriv()}
-      <ProgressBar animIndeterminate="anim-progress-bar" />
+      <Progress animIndeterminate="anim-progress-bar" />
     {:then}
       <div class="flex gap-4 my-6">
         <div class="flex-auto">
           <a
             data-testid="add-privilege"
-            class="btn variant-ghost-primary hover:variant-filled-primary {!$isTopAdmin
+            class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
               ? 'opacity-50 pointer-events-none'
               : ''}"
             href="/admin/configuration/privilege/new"
           >
-            &plus; Add Privilege
+            + Add Privilege
           </a>
         </div>
       </div>
@@ -153,18 +153,18 @@
   <div id="connection-table" class="mb-10">
     <h2>Connections Management</h2>
     {#await loadConnections()}
-      <ProgressBar animIndeterminate="anim-progress-bar" />
+      <Progress animIndeterminate="anim-progress-bar" />
     {:then}
       <div class="flex gap-4 my-6">
         <div class="flex-auto">
           <a
             data-testid="add-connection"
-            class="btn variant-ghost-primary hover:variant-filled-primary {!$isTopAdmin
+            class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
               ? 'opacity-50 pointer-events-none'
               : ''}"
             href="/admin/configuration/connection/new"
           >
-            &plus; Add Connection
+            + Add Connection
           </a>
         </div>
       </div>

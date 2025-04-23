@@ -28,7 +28,7 @@
     {#snippet action()}
       <button
         data-testid="clear-selected-genes-btn"
-        class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
+        class="btn btn-xs preset-outlined-surface-500 hover:preset-tonal-primary border border-primary-500"
         onclick={clearSelectedGenes}>Clear</button
       >
     {/snippet}
@@ -53,7 +53,7 @@
     {#snippet action()}
       <button
         data-testid="clear-gene-filters-btn"
-        class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
+        class="btn btn-xs preset-outlined-surface-500 hover:preset-tonal-primary border border-primary-500"
         onclick={clearGeneFilters}>Clear</button
       >
     {/snippet}

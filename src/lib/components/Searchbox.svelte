@@ -27,7 +27,7 @@
   />
   <button
     id="search-button"
-    class="btn variant-filled-primary search-button"
+    class="btn preset-filled-primary-500 search-button"
     aria-label="Search"
     title="Search"
     onclick={search}

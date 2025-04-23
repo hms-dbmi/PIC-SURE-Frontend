@@ -54,15 +54,14 @@
   }
 </script>
 
-<fieldset class="border border-surface-300-600-token">
+<fieldset class="border border-surface-300-700">
   <legend class="px-2 ml-2">
     Required Fields:
     <button
       type="button"
-      class="text-primary-600-300-token hover:text-secondary-600-300-token"
+      class="text-primary-700-300 hover:text-secondary-700-300"
       aria-label="Add New Field"
       title="Add New Field"
-      aria-label="Add New Field"
       data-testid="required-field-new-btn"
       disabled={enableNewField}
       onclick={() => (enableNewField = !enableNewField)}
@@ -85,7 +84,10 @@
   {/each}
 
   {#if duplicates.length > 0}
-    <aside data-testid="validation-warn" class="alert variant-ghost-warning m-2">
+    <aside
+      data-testid="validation-warn"
+      class="alert preset-tonal-warning border border-warning-500 m-2"
+    >
       <i class="fa-solid fa-triangle-exclamation"></i>
       <div class="alert-message">
         <p>Fields with the same ID may not function properly.</p>

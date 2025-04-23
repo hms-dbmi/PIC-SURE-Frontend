@@ -1,6 +1,6 @@
 <script lang="ts">
   import { derived, readable, type Readable } from 'svelte/store';
-  import { ProgressBar } from '@skeletonlabs/skeleton';
+  import { Progress } from '@skeletonlabs/skeleton-svelte';
 
   import { goto } from '$app/navigation';
 
@@ -85,16 +85,16 @@
 <Content title="Manage Users">
   {#await load()}
     <h3 class="text-left">Loading</h3>
-    <ProgressBar animIndeterminate="anim-progress-bar" />
+    <Progress animIndeterminate="anim-progress-bar" />
   {:then}
     <div class="flex gap-4 mb-6">
       <div class="flex-auto">
         <a
           data-testid="add-user-btn"
-          class="btn variant-ghost-primary hover:variant-filled-primary"
+          class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
           href="/admin/users/new"
         >
-          &plus; Add User
+          + Add User
         </a>
       </div>
     </div>

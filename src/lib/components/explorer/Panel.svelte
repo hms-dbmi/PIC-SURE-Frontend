@@ -28,8 +28,8 @@
   class="flex flex-col {className}"
   data-testid={testid || title.replaceAll(' ', '-').toLowerCase()}
 >
-  <div class="relative rounded-t-2xl bg-primary-300-600-token p-4 items-center flex">
-    {#if required}<span class="absolute top-0 left-1 p-1 text-error-500-400-token text-xs"
+  <div class="relative rounded-t-2xl bg-primary-300-700 p-4 items-center flex">
+    {#if required}<span class="absolute top-0 left-1 p-1 text-error-600-400 text-xs"
         >* Required</span
       >{/if}
     <div class="flex-auto text-center">
@@ -39,7 +39,7 @@
     {#if action}<span class="flex-none ml-1">{@render action()}</span>{/if}
     {#if help}<span class="flex-none ml-1">{@render help()}</span>{/if}
   </div>
-  <div class="h-full p-2 border rounded-b-2xl border-surface-300-600-token">
+  <div class="h-full p-2 border rounded-b-2xl border-surface-300-700">
     {@render children?.()}
   </div>
 </div>

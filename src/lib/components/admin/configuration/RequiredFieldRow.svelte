@@ -36,7 +36,7 @@
 </script>
 
 <div
-  class="flex gap-4 p-3 odd:bg-surface-100-800-token even:bg-surface-50-900-token"
+  class="flex gap-4 p-3 odd:bg-surface-100-900 even:bg-surface-50-950"
   data-testid={`required-field-row-${field.id ? field.id : 'new'}`}
 >
   <label class="label flex-1">
@@ -57,7 +57,7 @@
       bind:value={id}
       disabled={!edit}
       class="input {duplicate &&
-        'variant-ghost-warning border-warning-500-400-token focus:border-warning-700-200-token'}"
+        'preset-tonal-warning border border-warning-500 border-warning-600-400 focus:border-warning-800-200'}"
       minlength="1"
       maxlength="255"
     />

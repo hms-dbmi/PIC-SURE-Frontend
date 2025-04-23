@@ -1,7 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getToastStore } from '@skeletonlabs/skeleton';
-
   import * as api from '$lib/api';
   import { resources } from '$lib/configuration';
   import { selectedGenes } from '$lib/stores/GeneFilter';
@@ -57,7 +55,7 @@
       console.error(error);
       toastStore.trigger({
         message: 'An error occurred while loading genes list.',
-        background: 'variant-filled-error',
+        background: 'preset-filled-error-500',
       });
     } finally {
       loading = false;

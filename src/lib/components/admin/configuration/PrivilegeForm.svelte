@@ -1,6 +1,5 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { getToastStore } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
 
   import type { Privilege } from '$lib/models/Privilege';
@@ -34,14 +33,14 @@
       }
       toastStore.trigger({
         message: `Successfully saved ${newPrivilege && 'new '}privilege '${name}'`,
-        background: 'variant-filled-success',
+        background: 'preset-filled-success-500',
       });
       goto('/admin/configuration');
     } catch (error) {
       console.error(error);
       toastStore.trigger({
         message: `An error occured while saving ${newPrivilege && 'new '}privilege '${name}'`,
-        background: 'variant-filled-error',
+        background: 'preset-filled-error-500',
       });
     }
   }
@@ -83,22 +82,22 @@
       </select>
     </label>
 
-    <div>
-      <button
-        type="submit"
-        data-testid="privilege-save-btn"
-        class="btn variant-ghost-primary hover:variant-filled-primary"
-      >
-        Save
-      </button>
-      <a
-        href="/admin/configuration"
-        data-testid="privilege-cancel-btn"
-        class="btn variant-ghost-secondary hover:variant-filled-secondary"
-      >
-        Cancel
-      </a>
-    </div>
+  <div>
+    <button
+      type="submit"
+      data-testid="privilege-save-btn"
+      class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+    >
+      Save
+    </button>
+    <a
+      href="/admin/configuration"
+      data-testid="privilege-cancel-btn"
+      class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
+    >
+      Cancel
+    </a>
+  </div>
   </fieldset>
 </form>
 

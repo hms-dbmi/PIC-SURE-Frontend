@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
@@ -62,21 +61,21 @@
       [
         {
           progress: [UploadStatus.Uploaded],
-          icon: 'fa-regular fa-circle-check text-success-500-400-token',
+          icon: 'fa-regular fa-circle-check text-success-600-400',
           label: 'Upload Successful',
         },
         {
           progress: [UploadStatus.Queued, UploadStatus.Querying, UploadStatus.Uploading],
-          icon: 'fa-regular fa-paper-plane text-tertiary-500-400-token',
+          icon: 'fa-regular fa-paper-plane text-tertiary-600-400',
           label: 'Uploading...',
         },
         {
           progress: [UploadStatus.Error, UploadStatus.Unknown],
-          icon: 'fa-solid fa-circle-xmark text-error-500-400-token',
+          icon: 'fa-solid fa-circle-xmark text-error-600-400',
           label: 'Upload Failed',
         },
       ].find(({ progress }) => progress.includes(status)) || {
-        icon: 'fa-regular fa-circle-xmark text-primary-500-400-token',
+        icon: 'fa-regular fa-circle-xmark text-primary-600-400',
         label: 'Unsent',
       }
     );
@@ -144,7 +143,7 @@
         if (error) {
           toastStore.trigger({
             message: error,
-            background: 'variant-filled-error',
+            background: 'preset-filled-error-500',
           });
         }
       }),
@@ -182,7 +181,7 @@
         <div>
           <button
             data-testid="data-request-btn"
-            class="text-primary-700-200-token hover:text-secondary-700-200-token inline-block mt-4"
+            class="text-primary-800-200 hover:text-secondary-800-200 inline-block mt-4"
             onclick={dataSummaryModal}
           >
             <i class="fa-regular fa-2xl fa-file-pdf"></i>
@@ -227,7 +226,7 @@
           {/each}
         </select>
       </GridCell>
-      <GridCell title="Select &amp; Send Data">
+      <GridCell title="Select & Send Data">
         {#snippet help()}
           <button
             data-testid="data-type-modal-btn"
@@ -260,7 +259,7 @@
         <button
           type="button"
           data-testid="send-data-btn"
-          class="btn variant-ringed-success hover:variant-ghost-success"
+          class="btn preset-outlined-success-500 hover:preset-tonal-success border border-success-500"
           disabled={!sendEnabled}
           onclick={sendDataModal}>Send Data</button
         >
@@ -299,7 +298,7 @@
     <button
       type="button"
       data-testid="reset-btn"
-      class="btn variant-ghost-secondary float-right"
+      class="btn preset-tonal-secondary border border-secondary-500 float-right"
       onclick={reset}>Reset</button
     >
   {/if}

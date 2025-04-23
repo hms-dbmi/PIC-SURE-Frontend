@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ProgressBar } from '@skeletonlabs/skeleton';
+  import { Progress } from '@skeletonlabs/skeleton-svelte';
 
   import type { Indexable } from '$lib/types';
   import DataSetStore from '$lib/stores/Dataset';
@@ -40,7 +40,7 @@
 <Content title="Manage Datasets">
   {#await loadDatasets()}
     <h3 class="text-left">Loading</h3>
-    <ProgressBar animIndeterminate="anim-progress-bar" />
+    <Progress animIndeterminate="anim-progress-bar" />
   {:then}
     <Datatable
       tableName="ActiveDatasets"
@@ -62,7 +62,7 @@
     <button
       data-testid="dataset-toggle-archive"
       type="button"
-      class="btn bg-secondary-500 text-on-secondary-token"
+      class="btn bg-secondary-500 text-secondary-contrast-500"
       onclick={() => (displayArchived = !displayArchived)}
       >{displayArchived ? 'Hide' : 'Show'} deleted datasets</button
     >

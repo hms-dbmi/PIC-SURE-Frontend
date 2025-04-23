@@ -10,7 +10,7 @@
   <a
     href={link || '#'}
     title={link ? 'More Info' : 'Link not available'}
-    class="btn variant-ghost-primary hover:variant-filled-primary{!link
+    class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500{!link
       ? ' opacity-50 cursor-not-allowed'
       : ''}"
     target="_blank">More Info</a

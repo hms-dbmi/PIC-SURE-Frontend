@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Readable } from 'svelte/store';
-  import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
 
   import type { LandingStat } from '$lib/types';
 
@@ -28,13 +28,13 @@
       : 'w-1/2'}"
   >
     {#each $stats as stat (`${authString}-${stat.key}-${stat.label}`)}
-      <div class="p-4 not-last:border-r border-surface-400-500-token">
+      <div class="p-4 not-last:border-r border-surface-500">
         <div
           data-testid="value-{authString}-{stat.key}-{stat.label}"
           class="flex flex-col justify-center items-center text-2xl"
         >
           {#await stat.value}
-            <ProgressRadial
+            <ProgressRing
               width="w-10"
               meter="stroke-surface-50 dark:stroke-surface-900"
               track="stroke-secondary-500/30"

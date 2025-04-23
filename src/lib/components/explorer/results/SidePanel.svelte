@@ -39,7 +39,7 @@
       type="button"
       id="results-panel-toggle"
       title="{$panelOpen ? 'Hide' : 'Show'} Results"
-      class="btn-icon btn-icon-sm variant-ghost-primary hover:variant-filled-primary"
+      class="btn-icon btn-icon-sm preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
       aria-label="Toggle Results Panel"
       onclick={() => {
         panelOpen.update((value) => !value);

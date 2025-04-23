@@ -109,7 +109,7 @@
     class="fixed"
     style="left: 5%; bottom: 60px; z-index: 1000; width: 90%"
   >
-    <div class="bg-surface-50-900-token p-4 rounded-container-token shadow-2xl">
+    <div class="bg-surface-50-950 p-4 rounded-container shadow-2xl">
       <div class="flex flex-row justify-between items-center">
         <div class="flex items center">
           <p>
@@ -124,12 +124,12 @@
         <div class="flex flex-col justify-center">
           <button
             data-testid="acceptGoogleConsent"
-            class="btn variant-filled-primary mt-1 mb-1"
+            class="btn preset-filled-primary-500 mt-1 mb-1"
             onclick={() => setUsersGoogleConsent(true)}>Accept</button
           >
           <button
             data-testid="rejectGoogleConsent"
-            class="btn variant-ghost-primary mt-1 mb-1 self-center"
+            class="btn preset-tonal-primary border border-primary-500 mt-1 mb-1 self-center"
             onclick={() => setUsersGoogleConsent(false)}>Reject</button
           >
         </div>

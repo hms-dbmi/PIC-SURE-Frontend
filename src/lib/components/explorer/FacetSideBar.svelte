@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Accordion, ProgressRadial } from '@skeletonlabs/skeleton';
+  import { Accordion, ProgressRing } from '@skeletonlabs/skeleton-svelte';
 
   import type { Facet } from '$lib/models/Search';
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
@@ -30,11 +30,11 @@
 
 {#await $facetsPromise}
   <div class="radial-container">
-    <ProgressRadial width="w-10" />
+    <ProgressRing width="w-10" />
   </div>
 {:then newFacets}
   {#if newFacets?.length > 0}
-    <Accordion rounded="rounded-container-token">
+    <Accordion rounded="rounded-container">
       {#each newFacets as facetCategory}
         <FacetCategory {facetCategory} />
       {/each}
