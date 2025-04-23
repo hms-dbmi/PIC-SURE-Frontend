@@ -7,10 +7,10 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
     try {
       const response = await fetch(url.pathname);
       if (response.status === 404) {
-        throw redirect(302, '/');
+        redirect(302, '/');
       }
     } catch (error) {
-      throw redirect(302, '/');
+      redirect(302, '/');
     }
   }
 };
