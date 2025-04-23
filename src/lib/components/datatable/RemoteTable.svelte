@@ -90,13 +90,13 @@
       <tr>
         {#each columns as column}
           {#if column.sort}
-            <Th {handler} orderBy={column.dataElement} class={`!bg-primary-300 ${column.class}`}
+            <Th {handler} orderBy={column.dataElement} class={`bg-primary-300! ${column.class}`}
               >{column.label}</Th
             >
           {:else if column.filter}
             <ThFilter
               {handler}
-              class={`!bg-primary-300 ${column.class}`}
+              class={`bg-primary-300! ${column.class}`}
               filterBy={column.dataElement}
             />
           {:else}

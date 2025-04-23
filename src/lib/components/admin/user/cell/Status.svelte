@@ -3,6 +3,6 @@
 </script>
 
 <span
-  class={`badge last:p-1 rounded variant-filled-${data.cell === 'Active' ? 'success' : 'error'}`}
+  class={`badge last:p-1 rounded-sm variant-filled-${data.cell === 'Active' ? 'success' : 'error'}`}
   >{data.cell}</span
 >

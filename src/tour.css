@@ -7,34 +7,34 @@
   }
 
   .driver-popover-title {
-    @apply text-2xl font-bold my-3;
+    @reference text-2xl font-bold my-3;
   }
 
   @media (min-width: 768px) {
     .driver-popover-title {
-      @apply text-2xl font-bold;
+      @reference text-2xl font-bold;
     }
   }
 
   .driver-popover-navigation-btns {
-    @apply ml-4;
+    @reference ml-4;
   }
 
   .driver-popover-navigation-btns button {
-    @apply btn btn-sm variant-filled-primary;
+    @reference btn btn-sm variant-filled-primary;
     text-shadow: unset;
   }
 
   .driver-popover-navigation-btns button:hover {
-    @apply variant-filled-secondary;
+    @reference variant-filled-secondary;
   }
 
   .driver-popover-close-btn {
-    @apply text-surface-600-300-token text-2xl;
+    @reference text-surface-600-300-token text-2xl;
   }
 
   .driver-popover-close-btn:hover {
-    @apply text-primary-400-500-token;
+    @reference text-primary-400-500-token;
   }
 
   .fa-classic,

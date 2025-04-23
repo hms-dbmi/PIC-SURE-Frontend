@@ -176,7 +176,7 @@
         {facet.display}
       </span>
       <button
-        class="chip-close ml-1 flex-shrink-0"
+        class="chip-close ml-1 shrink-0"
         aria-label="Remove Facet"
         onclick={() => updateFacets([facet])}
       >
@@ -188,6 +188,6 @@
 
 <style lang="postcss">
   .show-more {
-    @apply btn btn-sm variant-outline rounded-container-token;
+    @reference btn btn-sm variant-outline rounded-container-token;
   }
 </style>

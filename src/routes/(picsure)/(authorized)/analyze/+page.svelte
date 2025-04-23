@@ -53,7 +53,7 @@
         <div class="card card-hover">
           <header class="card-header flex flex-col items-center">
             <h4 class="my-1" data-testid={card.header}>{card.header}</h4>
-            <hr class="!border-t-2" />
+            <hr class="border-t-2!" />
           </header>
           <section class="p-4 whitespace-pre-wrap flex flex-col" data-testid={card.body}>
             <div>{card.body}</div>

@@ -4,7 +4,7 @@
 
 <div class="overflow-auto flex">
   <div
-    class="border rounded border-surface-400-500-token flex flex-col items-center justify-center w-3/15 p-2"
+    class="border rounded-sm border-surface-400-500-token flex flex-col items-center justify-center w-3/15 p-2"
   >
     <span class="font-bold">Geneomic Region: </span>
     <div id="selected-variant" class="text-center break-words">
@@ -21,7 +21,7 @@
   </div>
   <div class="font-bold flex items-center justify-center w-1/15">AND</div>
   <div
-    class="border rounded border-surface-400-500-token flex flex-col items-center justify-center w-3/15 p-2"
+    class="border rounded-sm border-surface-400-500-token flex flex-col items-center justify-center w-3/15 p-2"
   >
     <span class="font-bold">Calculated Consequence:</span>
     <div id="selected-consequence" class="text-center break-words">
@@ -38,7 +38,7 @@
   </div>
   <div class="font-bold flex items-center justify-center w-1/15">AND</div>
   <div
-    class="border rounded border-surface-400-500-token flex flex-col items-center justify-center w-3/15 p-2"
+    class="border rounded-sm border-surface-400-500-token flex flex-col items-center justify-center w-3/15 p-2"
   >
     <span class="font-bold">Variant Frequency: </span>
     <div id="selected-frequency" class="text-center break-words">

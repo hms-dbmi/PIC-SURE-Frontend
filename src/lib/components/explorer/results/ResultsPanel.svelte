@@ -195,7 +195,7 @@
     </div>
   {/if}
   <div id="export-filters" class="flex flex-col items-center mt-7 w-80">
-    <hr class="!border-t-2" />
+    <hr class="border-t-2!" />
     <div class="flex content-center mt-7">
       <h5 class="text-xl flex-auto mr-2">Filtered Data Summary</h5>
       {#if hasFilterOrExport}
@@ -233,7 +233,7 @@
   </div>
   {#if showToolSuite}
     <div class="flex flex-col items-center mt-7">
-      <hr class="!border-t-2" />
+      <hr class="border-t-2!" />
       <h5 class="text-center text-xl mt-7">Tool Suite</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
         {#if showExplorerDistributions}

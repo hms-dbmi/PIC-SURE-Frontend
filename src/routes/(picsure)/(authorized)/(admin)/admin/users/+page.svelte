@@ -35,7 +35,7 @@
 
   const columns = [
     { dataElement: 'email', label: 'Username', sort: true, class: 'w-1/3' },
-    { dataElement: 'roles', label: 'Role(s)', sort: true, class: '!normal-case' },
+    { dataElement: 'roles', label: 'Role(s)', sort: true, class: 'normal-case!' },
     { dataElement: 'status', label: 'Status', sort: true, class: 'w-24 text-center' },
     { dataElement: 'uuid', label: 'Actions', sort: false, class: 'w-24 text-center' },
   ];

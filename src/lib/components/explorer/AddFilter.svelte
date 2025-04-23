@@ -183,7 +183,7 @@
         </div>
       {:else if data?.type === 'Continuous'}
         <div class="card p-3 m-1 w-full">
-          <section class="card-body flex flex-grow gap-4" data-testid="numerical-filter">
+          <section class="card-body flex grow gap-4" data-testid="numerical-filter">
             <label class="flex-auto flex-col">
               <span>Min: {min}</span>
               <input

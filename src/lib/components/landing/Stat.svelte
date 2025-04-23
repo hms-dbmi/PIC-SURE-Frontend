@@ -28,7 +28,7 @@
       : 'w-1/2'}"
   >
     {#each $stats as stat (`${authString}-${stat.key}-${stat.label}`)}
-      <div class="p-4 [&:not(:last-child)]:border-r border-surface-400-500-token">
+      <div class="p-4 not-last:border-r border-surface-400-500-token">
         <div
           data-testid="value-{authString}-{stat.key}-{stat.label}"
           class="flex flex-col justify-center items-center text-2xl"
