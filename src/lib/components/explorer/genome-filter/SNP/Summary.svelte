@@ -19,7 +19,7 @@
     {#if index !== 0}
       <div class="font-bold flex items-center justify-center p-6">AND</div>
     {/if}
-    <div class="border rounded border-surface-300-600-token p-3 flex gap-4">
+    <div class="border rounded-sm border-surface-300-600-token p-3 flex gap-4">
       <div class="flex-auto">
         <div class="text-surface-600-300-token font-bold">{snp.search}:</div>
         <div class="text-surface-500-400-token">{GenotypeMap[snp.constraint]}</div>

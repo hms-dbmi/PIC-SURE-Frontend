@@ -76,6 +76,6 @@
 
 <style lang="postcss">
   p {
-    @apply my-3;
+    @reference my-3;
   }
 </style>

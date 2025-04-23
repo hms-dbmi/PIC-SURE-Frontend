@@ -21,7 +21,7 @@
     ></i>
     <div
       data-testid="{id}-content"
-      class="rounded p-4 max-w-md shadow-2xl variant-filled-surface text-on-primary"
+      class="rounded-sm p-4 max-w-md shadow-2xl variant-filled-surface text-on-primary"
       data-popup={id}
     >
       {text}
