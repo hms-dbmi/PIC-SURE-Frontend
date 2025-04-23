@@ -1,4 +1,3 @@
-import { purgeCss } from 'vite-plugin-tailwind-purgecss';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
@@ -7,7 +6,7 @@ export default () => {
     server: {
       allowedHosts: ['.harvard.edu'],
     },
-    plugins: [sveltekit(), purgeCss()],
+    plugins: [sveltekit()],
     build: {
       rollupOptions: {
         maxParallelFileOps: 10,
