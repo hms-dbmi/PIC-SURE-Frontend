@@ -92,7 +92,7 @@ async function handleResponse(res: Response) {
     logout(undefined, false);
   }
 
-  throw error(res.status as NumericRange<400, 599>, await res.text());
+  error(res.status as NumericRange<400, 599>, await res.text());
 }
 
 function refreshToken(res: Response) {

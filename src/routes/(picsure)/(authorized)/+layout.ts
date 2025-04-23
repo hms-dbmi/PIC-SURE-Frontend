@@ -9,15 +9,15 @@ export const load: LayoutLoad = ({ url }) => {
   if (browser) {
     const token = localStorage.getItem('token');
     if (!token || token.trim() === '') {
-      throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
+      redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
     }
     try {
       if (isTokenExpired(token)) {
-        throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
+        redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
       }
     } catch (error) {
       console.error('Error checking token expiration:', error);
-      throw redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
+      redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
     }
   }
 };

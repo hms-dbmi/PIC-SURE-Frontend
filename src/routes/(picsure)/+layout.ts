@@ -11,6 +11,6 @@ export const load: LayoutLoad = ({ url }) => {
     (!localStorage.getItem('token') || isTokenExpired(localStorage.getItem('token') || ''))
   ) {
     user.set({});
-    throw redirect(302, `/login?redirectTo=${url.pathname}`);
+    redirect(302, `/login?redirectTo=${url.pathname}`);
   }
 };
