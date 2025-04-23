@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { ProgressBar } from '@skeletonlabs/skeleton';
+  import { Progress } from '@skeletonlabs/skeleton-svelte';
 
   import { branding } from '$lib/configuration';
 
@@ -30,7 +30,7 @@
 <Content title="Edit Connection" backUrl="/admin/configuration" backTitle="Back to Configuration">
   {#await load()}
     <h3 class="text-left">Loading</h3>
-    <ProgressBar animIndeterminate="anim-progress-bar" />
+    <Progress animIndeterminate="anim-progress-bar" />
   {:then}
     <section id="connection-edit">
       <ConnectionForm {connection} />

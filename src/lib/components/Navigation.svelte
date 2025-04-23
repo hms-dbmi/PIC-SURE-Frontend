@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AppBar, popup, type PopupSettings } from '@skeletonlabs/skeleton';
+  import { AppBar, type PopupSettings } from '@skeletonlabs/skeleton-svelte';
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { user, userRoutes, isLoggedIn, logout } from '$lib/stores/User';
@@ -50,7 +50,7 @@
   });
 </script>
 
-<AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-900-token">
+<AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-950">
   {#snippet lead()}
     <a href="/" aria-current="page" data-testid="logo-home-link">
       <Logo class="mx-1" />
@@ -73,20 +73,20 @@
         <!-- Logout -->
         <button id="user-session-popout" use:popup={logoutClick}>
           <span
-            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate variant-ghost-primary hover:variant-ghost-secondary w-12 rounded-full text-2xl"
+            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate preset-tonal-primary border border-primary-500 hover:preset-tonal-secondary border border-secondary-500 w-12 rounded-full text-2xl"
           >
             {$user.email[0].toUpperCase()}
             <span class="sr-only">Logout user {$user.email}</span>
           </span>
         </button>
         <div
-          class="card p-6 variant-surface border-surface-100-800-token text-center"
+          class="card p-6 variant-surface border-surface-100-900 text-center"
           data-popup="logoutClick"
         >
           <p class="pb-6">{$user.email}</p>
           <button
             id="user-logout-btn"
-            class="btn variant-ringed-primary"
+            class="btn preset-outlined-primary-500"
             title="Logout"
             onclick={() => logout(providerInstance, false)}>Logout</button
           >
@@ -96,7 +96,7 @@
         <button
           id="user-login-btn"
           title="Login"
-          class="btn variant-ghost-primary hover:variant-filled-primary"
+          class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
           onclick={handleLogin}
         >
           Login

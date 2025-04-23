@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getModalStore, getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import {
@@ -52,7 +52,7 @@
       toastStore.trigger({
         message:
           'An error occured while parsing your token. Please try again later. If this problem persists, please contact an administrator.',
-        background: 'variant-filled-error',
+        background: 'preset-filled-error-500',
       });
       return 0; //TODO: Handle errors
     }
@@ -64,7 +64,7 @@
       toastStore.trigger({
         message:
           'An error occured while refreshing your token. Please try again later. If this problem persists, please contact an administrator.',
-        background: 'variant-filled-error',
+        background: 'preset-filled-error-500',
       });
       refreshButtonText = 'Error';
     });
@@ -83,9 +83,9 @@
 
 <div id="user-token-container">
   {#await getUser(true, true)}
-    <ProgressRadial width="w-10" value={undefined} />
+    <ProgressRing width="w-10" value={undefined} />
   {:then}
-    <div id="user-token" class="card variant-filled-sureface">
+    <div id="user-token" class="card preset-filled-sureface-500">
       <header class="card-header"><h4>Personal Access Token</h4></header>
       <section class="p-4 grid grid-cols-2 gap-y-2 items-center">
         <label for="account">Account:</label>
@@ -109,17 +109,17 @@
       <footer class="card-footer mt-2">
         <CopyButton
           itemToCopy={$user.token || ''}
-          class="variant-ghost-primary hover:variant-filled-primary"
+          class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
         />
         <button
           id="refresh-button"
-          class="btn variant-ghost-primary hover:variant-filled-primary"
+          class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
           onclick={confirmRefreshToken}
           disabled={refreshButtonDisabled}>{refreshButtonText}</button
         >
         <button
           id="reveal-button"
-          class="btn variant-ghost-primary hover:variant-filled-primary"
+          class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
           onclick={revealToken}>{revealButtonText}</button
         >
       </footer>

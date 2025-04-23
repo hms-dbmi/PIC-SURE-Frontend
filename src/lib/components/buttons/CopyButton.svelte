@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { popup, clipboard } from '@skeletonlabs/skeleton';
-
   interface Props {
     itemToCopy: string;
     text?: string;
@@ -64,11 +62,11 @@
     <i class="fa-xl {activeIcon}"></i>
     <div
       data-testid="{buttonId}-popup"
-      class="rounded-sm p-4 max-w-md shadow-2xl variant-filled-surface text-on-primary"
+      class="rounded-sm p-4 max-w-md shadow-2xl preset-filled-surface-500 text-on-primary"
       data-popup={buttonId}
     >
       {altText}
-      <div class="arrow variant-filled-surface"></div>
+      <div class="arrow preset-filled-surface-500"></div>
     </div>
   </button>
 {:else}

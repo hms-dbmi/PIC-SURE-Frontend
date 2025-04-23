@@ -43,7 +43,7 @@
   <Panel title="Summary of Selected Filters">
     {#snippet action()}
       <button
-        class="btn btn-xs variant-ringed-surface hover:variant-ghost-primary"
+        class="btn btn-xs preset-outlined-surface-500 hover:preset-tonal-primary border border-primary-500"
         disabled={$selectedSNPs.length === 0}
         onclick={clearSnpFilters}>Clear</button
       >

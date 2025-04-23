@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { getModalStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
 
   import { browser } from '$app/environment';
@@ -46,7 +45,7 @@
     <button
       type="button"
       data-testid="send-data-modal-confirm-btn"
-      class="btn variant-ringed-primary hover:variant-ghost-primary"
+      class="btn preset-outlined-primary-500 hover:preset-tonal-primary border border-primary-500"
       onclick={close}
     >
       Okay, got it!

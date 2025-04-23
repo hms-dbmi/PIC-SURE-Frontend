@@ -3,7 +3,7 @@
   import OptionsSelectionList from '../OptionsSelectionList.svelte';
   import { addFilter } from '$lib/stores/Filter';
   import { activeRow } from '$lib/stores/ExpandableRow';
-  import { ProgressRadial, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
+  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
   import { onMount } from 'svelte';
   import type { Filter } from '$lib/models/Filter';
   import {
@@ -82,7 +82,7 @@
         console.error(e);
         toastStore.trigger({
           message: 'An error occured while loading the filter. Please try again later.',
-          background: 'variant-filled-error',
+          background: 'preset-filled-error-500',
         });
       }
     }
@@ -144,7 +144,7 @@
       console.error(error);
       toastStore.trigger({
         message: 'An error occurred while loading more options. Please try again later.',
-        background: 'variant-filled-error',
+        background: 'preset-filled-error-500',
       });
     }
     loading = false;
@@ -169,7 +169,7 @@
   {/if}
   <div class="flex justify-between" data-testid="filter-component">
     {#if !data}
-      <ProgressRadial width="w-10" value={undefined} />
+      <ProgressRing width="w-10" value={undefined} />
     {:else}
       {#if data?.type === 'Categorical'}
         <div data-testid="categoical-filter" class="w-full">
@@ -210,7 +210,7 @@
         </div>
       {/if}
       <button
-        class="btn btn-icon variant-filled-primary m-1"
+        class="btn btn-icon preset-filled-primary-500 m-1"
         data-testid="add-filter"
         aria-label="Add Filter"
         onclick={addNewFilter}

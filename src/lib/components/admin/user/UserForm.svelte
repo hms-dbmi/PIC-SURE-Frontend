@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { getToastStore, SlideToggle } from '@skeletonlabs/skeleton';
+  import { Switch } from '@skeletonlabs/skeleton-svelte';
   const toastStore = getToastStore();
 
   import type { ExtendedUser, UserRequest } from '$lib/models/User';
@@ -66,7 +66,7 @@
         if (findUser) {
           toastStore.trigger({
             message: 'Cannot add a user and connection pair that already exists.',
-            background: 'variant-filled-error',
+            background: 'preset-filled-error-500',
           });
           return;
         }
@@ -76,23 +76,23 @@
 
       toastStore.trigger({
         message: `Successfully saved ${user ? '' : 'new '}user '${email}'`,
-        background: 'variant-filled-success',
+        background: 'preset-filled-success-500',
       });
       goto('/admin/users');
     } catch (error) {
       console.error(error);
       toastStore.trigger({
         message: `An error occured while saving ${user ? '' : 'new '}user '${email}'`,
-        background: 'variant-filled-error',
+        background: 'preset-filled-error-500',
       });
     }
   }
 </script>
 
 <form onsubmit={saveUser} class="grid gap-4 my-3">
-  <SlideToggle name="Active" size="sm" active="bg-success-500" label="Status" bind:checked={active}>
+  <Switch name="Active" size="sm" active="bg-success-500" label="Status" bind:checked={active}>
     {active ? 'Active' : 'Inactive'}
-  </SlideToggle>
+  </Switch>
 
   {#if user?.uuid}
     <label class="label">
@@ -141,7 +141,7 @@
   </fieldset>
 
   {#if validationError}
-    <aside data-testid="validation-error" class="alert variant-ghost-error">
+    <aside data-testid="validation-error" class="alert preset-tonal-error border border-error-500">
       <div class="alert-message">
         <p>{validationError}</p>
       </div>
@@ -155,10 +155,16 @@
   {/if}
 
   <div>
-    <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
+    <button
+      type="submit"
+      class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+    >
       Save
     </button>
-    <a href="/admin/users" class="btn variant-ghost-secondary hover:variant-filled-secondary">
+    <a
+      href="/admin/users"
+      class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
+    >
       Cancel
     </a>
   </div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ProgressRadial, getToastStore } from '@skeletonlabs/skeleton';
+  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
   import type { SNP } from '$lib/models/GenomeFilter';
   import { getSNPCounts } from '$lib/stores/SNPFilter';
 
@@ -87,13 +87,13 @@
   <button
     type="button"
     data-testid="snp-search-btn"
-    class="btn btn-sm variant-filled-primary text-lg disabled:opacity-75"
+    class="btn btn-sm preset-filled-primary-500 text-lg disabled:opacity-75"
     onclick={searchSnp}
     disabled={disabled || !search || searching}
   >
     Search
     {#if searching}
-      <ProgressRadial
+      <ProgressRing
         value={undefined}
         width="w-4"
         meter="stroke-primary-100  dark:stroke-secondary-400"
@@ -104,7 +104,7 @@
   </button>
 </div>
 {#if warn}
-  <aside class="alert variant-ghost-error">
+  <aside class="alert preset-tonal-error border border-error-500">
     <div class="alert-message">
       <p>
         We couldn't find any results for your search term. Please check to ensure the information

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { elasticInOut } from 'svelte/easing';
   import { fade, scale, slide } from 'svelte/transition';
-  import { getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+  import { type ModalSettings } from '@skeletonlabs/skeleton-svelte';
 
   import { goto } from '$app/navigation';
 
@@ -35,7 +35,7 @@
         type: 'component',
         title: 'Edit Filter',
         component: 'modalWrapper',
-        modalClasses: 'bg-surface-100-800-token p-4 block',
+        modalClasses: 'bg-surface-100-900 p-4 block',
         meta: { existingFilter: filter, component: AddFilter },
         response: (r: string) => {
           console.log(r);

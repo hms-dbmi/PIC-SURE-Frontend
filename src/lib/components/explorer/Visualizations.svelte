@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getToastStore, ProgressRadial } from '@skeletonlabs/skeleton';
+  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
   import { onMount } from 'svelte';
   import { resources } from '$lib/configuration';
   import * as api from '$lib/api';
@@ -44,7 +44,7 @@
         toastStore.trigger({
           message:
             'An error occured while parsing your token. Please try again later. If this problem persists, please contact an administrator.',
-          background: 'variant-filled-error',
+          background: 'preset-filled-error-500',
         });
       })
       .finally(() => {
@@ -65,7 +65,7 @@
 </p>
 <div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
   {#if loading}
-    <ProgressRadial />
+    <ProgressRing />
   {:else if plotValues.length}
     {#each plotValues as { data, layout, meta }, index}
       <PlotlyPlot {index} {data} {layout} {meta} {newPlot} />

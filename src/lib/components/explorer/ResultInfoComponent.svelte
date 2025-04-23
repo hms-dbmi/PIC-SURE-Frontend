@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
   import { getConceptDetails } from '$lib/stores/Dictionary';
-  import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
 
   interface Props {
     data: SearchResult;
@@ -16,7 +16,7 @@
   <div class="card-body">
     {#await detailPromise}
       <div class="flex justify-center w-full">
-        <ProgressRadial />
+        <ProgressRing />
       </div>
     {:then searchResultDetail}
       <section data-testid="variable-info" class="flex flex-col w-3/4 p-4">

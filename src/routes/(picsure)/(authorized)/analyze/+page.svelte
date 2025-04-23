@@ -2,7 +2,7 @@
   import Content from '$lib/components/Content.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
   import { branding } from '$lib/configuration';
-  import { CodeBlock, Tab, TabGroup } from '@skeletonlabs/skeleton';
+  import { Tab, Tabs } from '@skeletonlabs/skeleton-svelte';
 
   let tabSet: number = $state(0);
 </script>
@@ -22,7 +22,7 @@
     <div class="flex justify-center"><UserToken /></div>
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
     <p>{@html branding.analysisConfig.instructions.execution}</p>
-    <TabGroup class="card p-4">
+    <Tabs class="card p-4">
       <Tab bind:group={tabSet} name="python" value={0}>Python</Tab>
       <Tab bind:group={tabSet} name="r" value={1}>R</Tab>
       {#snippet panel()}
@@ -41,7 +41,7 @@
           ></CodeBlock>
         {/if}
       {/snippet}
-    </TabGroup>
+    </Tabs>
   </section>
   <section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
     {#each branding.analysisConfig.cards as card}
@@ -58,7 +58,7 @@
           <section class="p-4 whitespace-pre-wrap flex flex-col" data-testid={card.body}>
             <div>{card.body}</div>
             <div class="flex justify-center">
-              <div class="btn variant-filled-primary mt-3 w-fit">Learn More</div>
+              <div class="btn preset-filled-primary-500 mt-3 w-fit">Learn More</div>
             </div>
           </section>
         </div>

@@ -13,11 +13,13 @@
   <p class="m-1">If the problem persists contact an administrator.</p>
 
   <div class="flex flex-col justify-between mt-5">
-    <a class="btn variant-filled-primary m-1" href="/login"
+    <a class="btn preset-filled-primary-500 m-1" href="/login"
       >Back to Login <i class="fa-solid fa-arrow-right ml-3"></i></a
     >
-    <a class="btn variant-ghost-primary m-1" target="_blank" href={branding.login.contactLink}
-      >Contact Administrator</a
+    <a
+      class="btn preset-tonal-primary border border-primary-500 m-1"
+      target="_blank"
+      href={branding.login.contactLink}>Contact Administrator</a
     >
   </div>
 </section>

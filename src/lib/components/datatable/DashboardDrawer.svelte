@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { getDrawerStore } from '@skeletonlabs/skeleton';
   import { getDatasetDetails } from '$lib/stores/Dictionary';
   import type { DashboardRow } from '$lib/stores/Dashboard';
-  import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   const drawerStore = getDrawerStore();
 
@@ -29,7 +28,7 @@
 <hr class="m-4 border-t-2 border-gray-200" />
 {#await getDataset()}
   <div class="flex justify-center items-center h-full">
-    <ProgressRadial />
+    <ProgressRing />
   </div>
 {:then details}
   <ul data-testid="drawer-details" class="m-4 p-4">
@@ -61,7 +60,7 @@
     <div class="flex justify-center items-center mb-4">
       <a
         href={link || '#'}
-        class="btn variant-ghost-primary hover:variant-filled-primary"
+        class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
         target="_blank">More Info</a
       >
     </div>

@@ -1,15 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import {
-    AppShell,
-    Modal,
-    Toast,
-    Drawer,
-    storePopup,
-    type ModalComponent,
-    getModalStore,
-    getDrawerStore,
-  } from '@skeletonlabs/skeleton';
+  import { type ModalComponent, ToastProvider } from '@skeletonlabs/skeleton-svelte';
   import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
   import { page } from '$app/stores';
   import { goto, beforeNavigate } from '$app/navigation';
@@ -36,7 +27,6 @@
   import hljs from 'highlight.js/lib/core';
   import R from 'highlight.js/lib/languages/r';
   import python from 'highlight.js/lib/languages/python';
-  import { storeHighlightJs } from '@skeletonlabs/skeleton';
   import 'highlight.js/styles/obsidian.css';
   interface Props {
     children?: import('svelte').Snippet;
@@ -60,8 +50,8 @@
     filterWarning: { ref: FilterWarning },
   };
   let modalProps: Record<string, unknown> = {
-    buttonPositive: 'variant-filled-primary',
-    buttonNeutral: 'variant-ghost-primary',
+    buttonPositive: 'preset-filled-primary-500',
+    buttonNeutral: 'preset-tonal-primary border border-primary-500',
     components: modalComponentRegistry,
   };
 
@@ -118,7 +108,7 @@
   });
 </script>
 
-<Toast position="t" />
+<ToastProvider position="t" />
 <Modal {...modalProps} />
 <Drawer position="right" width="w-1/2" rounded-sm="rounded-none">
   {#if $drawerStore.id === 'dashboard-drawer'}

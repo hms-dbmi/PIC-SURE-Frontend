@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ProgressRadial, getModalStore } from '@skeletonlabs/skeleton';
+  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
   const modalStore = getModalStore();
 
   let started: boolean = $state(false);
@@ -25,12 +25,12 @@
       data-testid="modal-loading"
       class="w-full h-full flex flex-col justify-center items-center"
     >
-      <ProgressRadial width="w-20" value={undefined} />
+      <ProgressRing width="w-20" value={undefined} />
     </section>
   {:else}
     <section data-testid="modal" class="card p-4 w-modal shadow-xl space-y-4">
       <header data-testid="modal-wrapper-header" class="text-2xl font-bold">
-        <button class="float-right" onclick={modalStore.close}>&times;</button>
+        <button class="float-right" onclick={modalStore.close}>×</button>
       </header>
       <strong>{tourConfig?.title}</strong>
       {#if keyboardInstructions}
@@ -43,13 +43,13 @@
         <button
           data-testid="close-explorer-tour-btn"
           type="button"
-          class="btn btn-sm variant-ghost-error text-lg"
+          class="btn btn-sm preset-tonal-error border border-error-500 text-lg"
           onclick={modalStore.close}>Cancel</button
         >
         <button
           data-testid="start-explorer-tour-btn"
           type="button"
-          class="btn btn-sm variant-filled-primary text-lg"
+          class="btn btn-sm preset-filled-primary-500 text-lg"
           onclick={startTour}>Start Tour</button
         >
       </div>

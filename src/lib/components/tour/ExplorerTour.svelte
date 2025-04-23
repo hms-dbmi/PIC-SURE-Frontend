@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getModalStore, type ModalComponent } from '@skeletonlabs/skeleton';
+  import { type ModalComponent } from '@skeletonlabs/skeleton-svelte';
 
   import { driver, type DriverHook, type DriveStep } from 'driver.js';
   import 'driver.js/dist/driver.css';
@@ -235,7 +235,7 @@
   type="button"
   data-testid="explorer-tour-btn"
   id="tourBtn"
-  class="btn variant-filled-secondary"
+  class="btn preset-filled-secondary-500"
   onclick={startTour}
   >Take a Tour
 </button>

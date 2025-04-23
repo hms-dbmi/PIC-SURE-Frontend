@@ -36,7 +36,9 @@
       <div class="flex-none pt-1">
         <span
           class={`avatar flex aspect-square justify-center items-center overflow-hidden isolate w-8 rounded-full text-xl ${
-            active ? 'variant-ghost-primary' : 'variant-ringed-primary'
+            active
+              ? 'preset-tonal-primary border border-primary-500'
+              : 'preset-outlined-primary-500'
           }`}>{step}</span
         >
       </div>
@@ -44,7 +46,7 @@
       {#if inline}<div class="flex-auto">{@render children?.()}</div>{/if}
     </div>
     {#if !inline && !collapsed}
-      <div class="border rounded-md border-surface-500-400-token ml-4 p-1">
+      <div class="border rounded-md border-surface-600-400 ml-4 p-1">
         {@render children?.()}
       </div>
     {/if}

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { ProgressBar } from '@skeletonlabs/skeleton';
+  import { Progress } from '@skeletonlabs/skeleton-svelte';
   import { branding } from '$lib/configuration';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -40,7 +40,7 @@
 <Content title="User Summary" backUrl="/admin/users" backTitle="Back to Users">
   {#await load()}
     <h3 class="text-left">Loading</h3>
-    <ProgressBar animIndeterminate="anim-progress-bar" />
+    <Progress animIndeterminate="anim-progress-bar" />
   {:then}
     <section id="role-view">
       <table class="table bg-transparent">

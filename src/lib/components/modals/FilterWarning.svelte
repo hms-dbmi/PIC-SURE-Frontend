@@ -1,7 +1,5 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { getModalStore } from '@skeletonlabs/skeleton';
-
   const identity = () => {};
   let message = $derived($modalStore[0]?.meta.message || '');
   let backTo = $derived($modalStore[0]?.meta.backTo || '');
@@ -26,9 +24,9 @@
 
 <section
   id="discover-error-container"
-  class="flex gap-9 justify-center bg-surface-200 rounded-container-token"
+  class="flex gap-9 justify-center bg-surface-200 rounded-container"
 >
-  <aside data-testid="warning-alert" class="alert variant-ghost-warning">
+  <aside data-testid="warning-alert" class="alert preset-tonal-warning border border-warning-500">
     <i class="fa-solid fa-triangle-exclamation text-4xl" aria-hidden="true"></i>
     <div class="alert-message">
       <h3 class="h3 text-left">
@@ -37,10 +35,10 @@
       <p>Would you like to remove the invalid filters or go back to {backTo}?</p>
       <div>
         <div class="dark">
-          <button class="btn variant-ringed hover:variant-filled-warning" onclick={reset}
+          <button class="btn preset-outlined hover:preset-filled-warning-500" onclick={reset}
             >Remove Invalid Filters</button
           >
-          <button class="btn variant-ringed hover:variant-filled-warning" onclick={goBack}
+          <button class="btn preset-outlined hover:preset-filled-warning-500" onclick={goBack}
             >Back to {backTo}</button
           >
         </div>

@@ -38,7 +38,7 @@
 <button
   type="button"
   data-testid={testId}
-  class={className ?? 'btn variant-filled-primary m-1'}
+  class={className ?? 'btn preset-filled-primary-500 m-1'}
   onclick={() => login(redirectTo, provider.type)}
 >
   {#if imageSrc}

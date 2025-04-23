@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
   const toastStore = getToastStore();
 
@@ -47,7 +46,7 @@
             await updateUser(newUser);
             toastStore.trigger({
               message: `Successfully ${activate ? 'r' : 'd'}eactivated user '${user.email}'`,
-              background: 'variant-filled-success',
+              background: 'preset-filled-success-500',
             });
           } catch (error) {
             console.error(error);
@@ -55,7 +54,7 @@
               message: `An error occured while ${activate ? 'r' : 'd'}eactivating user '${
                 user.email
               }'`,
-              background: 'variant-filled-error',
+              background: 'preset-filled-error-500',
             });
           }
         },

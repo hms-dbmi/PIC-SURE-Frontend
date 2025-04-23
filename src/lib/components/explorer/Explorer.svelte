@@ -79,13 +79,13 @@
         {#if !isOpenAccess && (features.enableGENEQuery || features.enableSNPQuery)}
           <a
             data-testid="genomic-filter-btn"
-            class="btn variant-ghost-primary hover:variant-filled-primary"
+            class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
             href="/explorer/genome-filter">Genomic Filtering</a
           >
         {/if}
         <button
           type="button"
-          class="btn variant-ghost-error hover:variant-filled-error"
+          class="btn preset-tonal-error border border-error-500 hover:preset-filled-error-500"
           aria-label="You are on the reset button"
           disabled={!searchInput && $selectedFacets.length === 0}
           onclick={reset}

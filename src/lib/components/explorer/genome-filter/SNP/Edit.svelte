@@ -18,7 +18,7 @@
   type="button"
   aria-label="Save SNP"
   data-testid="snp-save-btn"
-  class="btn btn-sm variant-filled-primary text-lg disabled:opacity-75"
+  class="btn btn-sm preset-filled-primary-500 text-lg disabled:opacity-75"
   onclick={() => onsave({ search: snp.search, constraint })}
   disabled={constraint === ''}
 >

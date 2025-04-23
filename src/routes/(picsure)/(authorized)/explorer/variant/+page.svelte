@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import { ProgressBar, getToastStore } from '@skeletonlabs/skeleton';
+  import { Progress } from '@skeletonlabs/skeleton-svelte';
   const toastStore = getToastStore();
 
   import { goto } from '$app/navigation';
@@ -50,7 +50,7 @@
         if (error) {
           toastStore.trigger({
             message: error,
-            background: 'variant-filled-error',
+            background: 'preset-filled-error-500',
           });
         }
       });
@@ -58,7 +58,7 @@
     } else {
       toastStore.trigger({
         message: 'No query provided. Please add a genomic filter to explore variant data.',
-        background: 'variant-filled-error',
+        background: 'preset-filled-error-500',
       });
       goto('/explorer');
     }
@@ -78,7 +78,7 @@
   <div>
     <a
       data-testid="variant-download-btn"
-      class="btn variant-ghost-primary mt-8 mr-6 float-right"
+      class="btn preset-tonal-primary border border-primary-500 mt-8 mr-6 float-right"
       href={$downloadUrl}
       download="variantData.tsv">Download Variant{aggregateCheckbox ? ' (Aggregate)' : ''} Data</a
     >
@@ -92,10 +92,10 @@
         <div data-testid="variant-count" class="flex-none w-full">{$count} variants found</div>
       {/if}
       <h3 class="text-left">Loading</h3>
-      <ProgressBar animIndeterminate="anim-progress-bar" />
+      <Progress animIndeterminate="anim-progress-bar" />
     {:then}
       {#if $count > settings.variantExplorer.maxCount}
-        <aside class="alert variant-filled-warning">
+        <aside class="alert preset-filled-warning-500">
           <i class="fa-solid fa-triangle-exclamation text-4xl"></i>
           <div class="alert-message">
             <p>

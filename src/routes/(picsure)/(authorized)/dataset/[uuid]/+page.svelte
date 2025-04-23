@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ProgressBar } from '@skeletonlabs/skeleton';
+  import { Progress } from '@skeletonlabs/skeleton-svelte';
 
   import { page } from '$app/state';
 
@@ -37,7 +37,7 @@
 <Content title="View Dataset" backUrl="/dataset" backTitle="Back to Datasets">
   {#await loadDataset()}
     <h3 class="text-left">Loading</h3>
-    <ProgressBar animIndeterminate="anim-progress-bar" />
+    <Progress animIndeterminate="anim-progress-bar" />
   {:then}
     <section id="detail-summary-container" class="m-3">
       <h2 class="text-left my-1">Dataset ID Summary</h2>

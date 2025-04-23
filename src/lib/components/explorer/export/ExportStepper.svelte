@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { CodeBlock, ProgressRadial, Tab, TabGroup } from '@skeletonlabs/skeleton';
-  import { getModalStore, type ModalSettings, getToastStore } from '@skeletonlabs/skeleton';
+  import { Tab, ProgressRing, Tabs } from '@skeletonlabs/skeleton-svelte';
+  import { type ModalSettings } from '@skeletonlabs/skeleton-svelte';
   import { v4 as uuidv4 } from 'uuid';
 
   import { goto } from '$app/navigation';
@@ -123,7 +123,7 @@
       type: 'component',
       title: branding.explorePage.confirmDownloadTitle || 'Are you sure you want to download data?',
       component: 'modalWrapper',
-      modalClasses: 'bg-surface-100-800-token p-4 block',
+      modalClasses: 'bg-surface-100-900 p-4 block',
       meta: {
         component: Confirmation,
         message:
@@ -331,7 +331,7 @@
       toastStore.trigger({
         message:
           'We were unable to fetch the sample IDs for your selected data. Please try again later.',
-        background: 'variant-ghost-error',
+        background: 'preset-tonal-error border border-error-500',
       });
       sampleIds = false;
     } finally {
@@ -371,7 +371,7 @@
       <Summary />
       <section class="w-full">
         {#if dataLimitExceeded()}
-          <aside class="alert variant-filled-error">
+          <aside class="alert preset-filled-error-500">
             <div><i class="fa-solid fa-triangle-exclamation text-4xl"></i></div>
             <div class="alert-message">
               <h3 class="h3">Warning</h3>
@@ -382,12 +382,12 @@
               </p>
             </div>
             <div class="alert-actions dark">
-              <button class="btn variant-filled" onclick={onComplete}>Back</button>
+              <button class="btn preset-filled" onclick={onComplete}>Back</button>
             </div>
           </aside>
         {:else}
           {#await preparePromise}
-            <ProgressRadial width="w-4" />
+            <ProgressRing width="w-4" />
             <div>Preparing your dataset...</div>
           {:catch}
             <div class="flex justify-center mb-4">
@@ -407,7 +407,7 @@
                   data-testid="sample-ids-label"
                 >
                   {#if checkingSampleIds}
-                    <ProgressRadial width="w-4" />
+                    <ProgressRing width="w-4" />
                   {:else}
                     <input
                       type="checkbox"
@@ -424,7 +424,7 @@
             {/if}
           {:else}
             <div class="flex justify-center items-center">
-              <ProgressRadial width="w-4" />
+              <ProgressRing width="w-4" />
               <div>Loading sample IDs...</div>
             </div>
           {/if}
@@ -459,7 +459,7 @@
             title="Export as Data Frame or CSV"
             subtitle="Export data as a Python or R data frame or a comma-separated values file"
             size="other"
-            class="card variant-ringed-primary"
+            class="card preset-outlined-primary-500"
             active={activeType === 'DATAFRAME'}
             onclick={() => (activeType = 'DATAFRAME')}
           ></CardButton>
@@ -468,7 +468,7 @@
             title="Export as PFB"
             subtitle="Export data in Portable Format for Biomedical Data file format"
             size="other"
-            class="card variant-ringed-primary"
+            class="card preset-outlined-primary-500"
             active={activeType === 'DATAFRAME_PFB'}
             onclick={() => (activeType = 'DATAFRAME_PFB')}
           ></CardButton>
@@ -504,7 +504,7 @@
               <div class="flex items-center">
                 <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
                 {#await datasetIdPromise}
-                  <ProgressRadial width="w-4" />
+                  <ProgressRing width="w-4" />
                   <div>{processingMessage}</div>
                 {:then}
                   <div id="dataset-id" class="mr-4">{datasetId}</div>
@@ -523,21 +523,21 @@
     <section class="flex flex-col w-full h-full items-center">
       {#await saveDatasetPromise}
         <div class="flex justify-center items-center">
-          <ProgressRadial width="w-4" />
+          <ProgressRing width="w-4" />
           <div>Saving your dataset...</div>
         </div>
       {:then}
         <div class="flex justify-center">
           {#await statusPromise}
             <div class="flex justify-center items-center">
-              <ProgressRadial width="w-4" />
+              <ProgressRing width="w-4" />
               <div>Preparing your dataset...</div>
             </div>
           {:then}
             {#if query.query.expectedResultType === 'DATAFRAME'}
               <section class="flex flex-col gap-8">
                 <p class="mt-4">{branding.explorePage.analysisExportText}</p>
-                <TabGroup class="card p-4">
+                <Tabs class="card p-4">
                   <Tab bind:group={tabSet} name="python" value={0}>Python</Tab>
                   <Tab bind:group={tabSet} name="r" value={1}>R</Tab>
                   {#if features.explorer.allowDownload}
@@ -566,14 +566,14 @@
                       />
                     {:else if features.explorer.allowDownload && tabSet === 2}
                       <button
-                        class="btn variant-filled-primary"
+                        class="btn preset-filled-primary-500"
                         onclick={() =>
                           features.confirmDownload ? openConfirmationModal() : download()}
                         ><i class="fa-solid fa-download mr-1"></i>Download as CSV</button
                       >
                     {/if}
                   {/snippet}
-                </TabGroup>
+                </Tabs>
                 <p>{branding.explorePage.goTo.instructions}</p>
                 <div class="flex justify-center">
                   <UserToken />
@@ -582,7 +582,7 @@
                   <div class="flex justify-center">
                     {#each branding.explorePage.goTo.links as link}
                       <a
-                        class="btn variant-ghost-primary m-2 hover:variant-filled-primary"
+                        class="btn preset-tonal-primary border border-primary-500 m-2 hover:preset-filled-primary-500"
                         href={link.url}
                         target={link.newTab ? '_blank' : '_self'}>{link.title}</a
                       >
@@ -599,14 +599,14 @@
                   {#each branding.explorePage.pfbExportUrls as exportLink}
                     <button
                       disabled={exportLoading}
-                      class="flex-initial w-64 btn variant-filled-primary disabled:variant-ghost-primary"
+                      class="flex-initial w-64 btn preset-filled-primary-500 disabled:preset-tonal-primary border border-primary-500"
                       onclick={() => exportSignedToUrl(exportLink.url)}
                       ><i class="fa-solid fa-arrow-up-right-from-square"></i>Export to {exportLink.title}</button
                     >
                   {/each}
                 {/if}
                 <button
-                  class="flex-initial w-64 btn variant-filled-primary"
+                  class="flex-initial w-64 btn preset-filled-primary-500"
                   onclick={() => (features.confirmDownload ? openConfirmationModal() : download())}
                   ><i class="fa-solid fa-download"></i>Download as PFB</button
                 >

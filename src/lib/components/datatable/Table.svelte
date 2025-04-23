@@ -77,7 +77,7 @@
     <table
       id="{tableName}-table"
       data-testid="{tableName}-table"
-      class="table table-{tableAuto ? 'auto' : 'fixed'} table-hover align-middle
+      class="table table-{tableAuto ? 'auto' : 'fixed'}  align-middle
         {fullWidth ? 'w-max' : ''} {className}"
     >
       <thead>

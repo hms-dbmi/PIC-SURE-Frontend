@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { popup } from '@skeletonlabs/skeleton';
-
   interface Props {
     text?: string;
     id?: string;
@@ -12,7 +10,7 @@
 {#if text}
   <div data-testid={id}>
     <i
-      class="fa-solid fa-circle-question text-primary-700-200-token hover:text-secondary-700-200-token cursor-pointer"
+      class="fa-solid fa-circle-question text-primary-800-200 hover:text-secondary-800-200 cursor-pointer"
       use:popup={{
         event: 'click',
         target: id,
@@ -21,11 +19,11 @@
     ></i>
     <div
       data-testid="{id}-content"
-      class="rounded-sm p-4 max-w-md shadow-2xl variant-filled-surface text-on-primary"
+      class="rounded-sm p-4 max-w-md shadow-2xl preset-filled-surface-500 text-on-primary"
       data-popup={id}
     >
       {text}
-      <div class="arrow variant-filled-surface"></div>
+      <div class="arrow preset-filled-surface-500"></div>
     </div>
   </div>
 {/if}
