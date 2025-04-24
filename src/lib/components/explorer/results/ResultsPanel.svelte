@@ -12,7 +12,7 @@
   import { ProgressRadial, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   import { elasticInOut } from 'svelte/easing';
   import { onDestroy, onMount } from 'svelte';
-  import { afterNavigate, goto } from '$app/navigation';
+  import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
   import type { Unsubscriber } from 'svelte/store';
   import { getQueryRequest } from '$lib/QueryBuilder';
   import { loadAllConcepts } from '$lib/services/hpds';
@@ -119,17 +119,21 @@
     (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer);
 
   onMount(async () => {
-    unsubFilters = filters.subscribe(() => {
-      triggerRefreshCount = getCount();
-    });
+    triggerRefreshCount = getCount();
   });
 
   afterNavigate(async () => {
     isOpenAccess = $page.url.pathname.includes('/discover');
     const isExplorer = $page.url.pathname.includes('/explorer');
     if (isExplorer || isOpenAccess) {
-      triggerRefreshCount = getCount();
+      unsubFilters = filters.subscribe(() => {
+        triggerRefreshCount = getCount();
+      });
     }
+  });
+
+  beforeNavigate(() => {
+    unsubFilters && unsubFilters();
   });
 
   onDestroy(() => {
