@@ -9,10 +9,6 @@ export const mockToken =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6OTYwOTU3Mjk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.M1W7a3jQNoHQxAUwfj3sDqyVtNH_DkRdzsIF3prIYQA';
 export const mockExpiredToken =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6MTYxMjE2NDk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.kzaW-ZkhCPlTgdGQQAz_CA1ZB80PpZ5aiRa2lj46hbw';
-export const mockLoginResponse =
-  '/login/loading/#access_token=' +
-  mockToken +
-  '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G';
 
 export const datasets = [
   {
@@ -100,6 +96,14 @@ export const picsureUser: User = {
   token: mockToken,
   acceptedTOS: true,
   queryTemplate: mockQueryTemplate,
+};
+
+export const userTypes = {
+  generalUser: { privileges: [PicsurePrivileges.QUERY] },
+  noScopeUser: { privileges: [PicsurePrivileges.QUERY], queryScopes: undefined },
+  adminUser: { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.ADMIN] },
+  superUser: { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.SUPER] },
+  dataUser: { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.DATA_ADMIN] },
 };
 
 export const crossCountSyncResponseInital = {
@@ -280,6 +284,20 @@ export const searchResults = {
       children: null,
       meta: null,
       type: 'Categorical',
+    },
+    {
+      conceptPath: '\\phs009\\west\\',
+      name: 'WESTERN',
+      display: 'West',
+      dataset: 'phs009',
+      studyAcronym: 'Test direction',
+      allowFiltering: true,
+      description: 'A specific direction',
+      children: null,
+      min: 0,
+      max: 25,
+      meta: null,
+      type: 'Continuous',
     },
   ],
   number: 0,

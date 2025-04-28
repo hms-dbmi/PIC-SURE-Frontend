@@ -1,5 +1,5 @@
-import { expect, type Route } from '@playwright/test';
-import { test } from '../../custom-context';
+import { expect } from '@playwright/test';
+import { test, mockApiSuccess } from '../../custom-context';
 import {
   facetResultPath,
   facetsResponse,
@@ -11,128 +11,93 @@ import {
   crossCountSyncResponsePlus3,
   crossCountSyncResponseLessThan10,
 } from '../../mock-data';
+import { getOption, nthFilterIcon, clickNthFilterIcon } from '../../utils';
+
+test.use({ storageState: 'tests/.auth/unauthenticated.json' });
 
 test.beforeEach(async ({ page }) => {
-  await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-  await page.route(facetResultPath, async (route: Route) =>
-    route.fulfill({ json: facetsResponse }),
+  await mockApiSuccess(page, searchResultPath, mockData);
+  await mockApiSuccess(page, facetResultPath, facetsResponse);
+});
+
+test('Has filters, and searchbar', async ({ page }) => {
+  // Given
+  await page.goto('/discover');
+
+  // Then
+  await expect(page.locator('#search-bar')).toBeVisible();
+  await expect(page.locator('#facet-side-bar')).toBeVisible();
+});
+test('Discover can display ±3', async ({ page }) => {
+  // Given
+  await mockApiSuccess(
+    page,
+    `${conceptsDetailPath}${detailResponseCat.dataset}`,
+    detailResponseCat,
+  );
+  await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
+  await mockApiSuccess(page, '*/**/picsure/query/sync', crossCountSyncResponsePlus3);
+  await page.goto('/discover?search=somedata');
+
+  // When
+  await clickNthFilterIcon(page);
+  const firstItem = await getOption(page);
+  await firstItem.click();
+  const addFilterButton = page.getByTestId('add-filter');
+  await addFilterButton.click();
+  const resultArray = crossCountSyncResponsePlus3['\\_studies_consents\\'].split(' ');
+  const resultCount = parseInt(resultArray[0]) || 0;
+  const suffix = resultArray[1];
+
+  // Then
+  await expect(page.locator('#results-panel')).toBeVisible();
+  await expect(page.locator('#result-count')).toHaveText(
+    `${resultCount?.toLocaleString()} ${suffix}`,
   );
 });
+test('Discover can display < 10', async ({ page }) => {
+  // Given
+  await mockApiSuccess(
+    page,
+    `${conceptsDetailPath}${detailResponseCat.dataset}`,
+    detailResponseCat,
+  );
+  await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
+  await mockApiSuccess(page, '*/**/picsure/query/sync', crossCountSyncResponseLessThan10);
+  await page.goto('/discover?search=somedata');
 
-test.describe('Discover', () => {
-  test('Has filters, and searchbar', async ({ page }) => {
-    // Given
-    await page.goto('/discover');
+  // When
+  await clickNthFilterIcon(page);
+  const firstItem = await getOption(page);
+  await firstItem.click();
+  const addFilterButton = page.getByTestId('add-filter');
+  await addFilterButton.click();
 
-    // Then
-    await expect(page.locator('#search-bar')).toBeVisible();
-    await expect(page.locator('#facet-side-bar')).toBeVisible();
-  });
-  test('Discover can display ±3', async ({ page }) => {
-    // Given
-    await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
-      route.fulfill({ json: detailResponseCat }),
-    );
-    await page.route(`*/**/picsure/search/2`, async (route: Route) =>
-      route.fulfill({ json: crossCountSyncResponseInital }),
-    );
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ json: crossCountSyncResponsePlus3 }),
-    );
-    await page.goto('/discover?search=somedata');
-    // When
-    await clickNthFilterIcon(page);
-    const firstItem = await getOption(page);
-    await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
-    await addFilterButton.click();
-    const resultArray = crossCountSyncResponsePlus3['\\_studies_consents\\'].split(' ');
-    const resultCount = parseInt(resultArray[0]) || 0;
-    const suffix = resultArray[1];
-
-    // Then
-    await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(page.locator('#result-count')).toHaveText(
-      `${resultCount?.toLocaleString()} ${suffix}`,
-    );
-  });
-  test('Discover can display < 10', async ({ page }) => {
-    // Given
-    await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
-      route.fulfill({ json: detailResponseCat }),
-    );
-    await page.route(`*/**/picsure/search/2`, async (route: Route) =>
-      route.fulfill({ json: crossCountSyncResponseInital }),
-    );
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ json: crossCountSyncResponseLessThan10 }),
-    );
-    await page.goto('/discover?search=somedata');
-
-    // When
-    await clickNthFilterIcon(page);
-    const firstItem = await getOption(page);
-    await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
-    await addFilterButton.click();
-
-    // Then
-    await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(page.locator('#result-count')).toHaveText('< 10');
-  });
-  test('Search results with allowFiltering false are not filterable', async ({ page }) => {
-    // Given
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
-    await page.goto('/discover?search=somedata');
-
-    // When
-    await expect(page.locator('tbody')).toBeVisible();
-    const tableBody = page.locator('tbody');
-    const firstRow = tableBody.locator('tr').nth(6);
-    const filterIcon = firstRow.locator('td').last().locator('button').nth(1);
-    console.log(filterIcon);
-
-    // Then
-    await expect(filterIcon).toBeVisible();
-    await expect(filterIcon).toBeDisabled();
-  });
-  test('Search results with allowFiltering true are filterable', async ({ page }) => {
-    // Given
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
-    await page.goto('/discover?search=somedata');
-
-    // When
-    await expect(page.locator('tbody')).toBeVisible();
-    const tableBody = page.locator('tbody');
-    const firstRow = tableBody.locator('tr').nth(5);
-    const filterIcon = firstRow.locator('td').last().locator('button').nth(1);
-    console.log(filterIcon);
-
-    // Then
-    await expect(filterIcon).toBeVisible();
-    await expect(filterIcon).not.toBeDisabled();
-  });
+  // Then
+  await expect(page.locator('#results-panel')).toBeVisible();
+  await expect(page.locator('#result-count')).toHaveText('< 10');
 });
+test('Search results with allowFiltering false are not filterable', async ({ page }) => {
+  // Given
+  await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+  await page.goto('/discover?search=somedata');
 
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-const getOption = async (page: any, optionIndex = 0) => {
-  const component = page.getByTestId('optional-selection-list');
-  const optionContainer = component.locator('#options-container');
-  await expect(optionContainer).toBeVisible();
-  const options = await optionContainer.getByRole('listitem').all();
-  return options[optionIndex];
-};
+  // When
+  const filterIcon = await nthFilterIcon(page, 6);
 
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-const clickNthFilterIcon = async (page: any, rowIndex = 0) => {
-  await expect(page.locator('tbody')).toBeVisible();
-  const tableBody = page.locator('tbody');
-  const firstRow = tableBody.locator('tr').nth(rowIndex);
-  const filterIcon = firstRow.locator('td').last().locator('button').nth(1);
+  // Then
   await expect(filterIcon).toBeVisible();
-  await filterIcon.click();
-};
+  await expect(filterIcon).toBeDisabled();
+});
+test('Search results with allowFiltering true are filterable', async ({ page }) => {
+  // Given
+  await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+  await page.goto('/discover?search=somedata');
+
+  // When
+  const filterIcon = await nthFilterIcon(page, 5);
+
+  // Then
+  await expect(filterIcon).toBeVisible();
+  await expect(filterIcon).not.toBeDisabled();
+});

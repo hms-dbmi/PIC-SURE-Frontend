@@ -8,8 +8,11 @@ import {
   facetResultPath,
   facetsResponse,
 } from '../../../mock-data';
+import { getOption } from '../../../utils';
 
 const countResultPath = '*/**/picsure/query/sync';
+
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 
 test.describe('Results Panel', () => {
   test('Result panel bar and button shows', async ({ page }) => {
@@ -58,7 +61,7 @@ test.describe('Results Panel', () => {
       detailResponseCat,
     );
     await mockApiFail(page, countResultPath, 'failed');
-    await page.locator('#row-0-col-3 button[title=Filter]').click();
+    await page.locator('#row-0 button[title=Filter]').click();
     await page.locator('#options-container label:nth-child(1)').click();
     await page.getByTestId('add-filter').click();
 
@@ -150,7 +153,7 @@ test.describe('Results Panel', () => {
       detailResponseCat,
     );
     await mockApiFail(page, countResultPath, 'failed');
-    await page.locator('#row-0-col-3 button[title=Filter]').click();
+    await page.locator('#row-0 button[title=Filter]').click();
     await page.locator('#options-container label:nth-child(1)').click();
     await page.getByTestId('add-filter').click();
 
@@ -210,12 +213,3 @@ test.describe('Results Panel', () => {
     await expect(page.getByText('No filters added')).toBeVisible();
   });
 });
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const getOption = async (page: any, optionIndex = 0) => {
-  const component = page.getByTestId('optional-selection-list');
-  const optionContainer = component.locator('#options-container');
-  await expect(optionContainer).toBeVisible();
-  const options = await optionContainer.getByRole('listitem').all();
-  return options[optionIndex];
-};

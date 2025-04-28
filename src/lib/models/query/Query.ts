@@ -4,6 +4,7 @@ import { type SNP } from '$lib/models/GenomeFilter';
 export type ExpectedResultType =
   | 'COUNT'
   | 'CROSS_COUNT'
+  | 'OBSERVATION_CROSS_COUNT'
   | 'DATAFRAME'
   | 'DATAFRAME_PFB'
   | 'DATAFRAME_TIMESERIES'
@@ -103,6 +104,10 @@ export class Query implements QueryInterface {
 
   addRequiredField(field: string) {
     this.requiredFields.push(field);
+  }
+
+  addField(field: string) {
+    this.fields.push(field);
   }
 
   addAnyRecordOf(field: string) {

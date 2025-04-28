@@ -33,27 +33,19 @@ function createLocalStorageStore(key: string, initialValue: boolean) {
         store.set(!!event.newValue);
       }
     });
-
-    // Update store when localStorage changes in current tab
-    const originalSetItem = localStorage.setItem;
-    const originalRemoveItem = localStorage.removeItem;
-
-    localStorage.setItem = function (key: string, value: string) {
-      if (key === 'token') {
-        store.set(!!value);
-      }
-      originalSetItem.apply(this, [key, value]);
-    };
-
-    localStorage.removeItem = function (key: string) {
-      if (key === 'token') {
-        store.set(false);
-      }
-      originalRemoveItem.apply(this, [key]);
-    };
   }
 
   return store;
+}
+
+export function setToken(token: string) {
+  localStorage.setItem('token', token);
+  tokenStatus.set(!!tokenStatus);
+}
+
+export function removeToken() {
+  localStorage.removeItem('token');
+  tokenStatus.set(false);
 }
 
 export const tokenStatus: Writable<boolean> = createLocalStorageStore('token', false);
@@ -77,12 +69,19 @@ function restoreUser() {
   return {};
 }
 
+export function isUserLoggedIn() {
+  if (browser) {
+    return !!localStorage.getItem('token');
+  }
+  return false;
+}
+
 function clearSessionTokenIfExpired() {
   if (browser) {
     const token = localStorage.getItem('token');
     if (token && isTokenExpired(token)) {
       console.log('Clearing expired token from local storage.');
-      localStorage.removeItem('token');
+      removeToken();
     }
   }
 }
@@ -161,7 +160,7 @@ export async function getQueryTemplate(): Promise<QueryInterface> {
 
 export async function login(token: string) {
   if (browser && token) {
-    localStorage.setItem('token', token);
+    setToken(token);
     await getUser(true, false);
     if (features.useQueryTemplate) {
       const queryTemplate = await getQueryTemplate();
@@ -179,7 +178,7 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
       api.get('/psama/logout').catch((error) => {
         console.error('Error logging out: ' + error);
       });
-      localStorage.removeItem('token');
+      removeToken();
     }
   }
 

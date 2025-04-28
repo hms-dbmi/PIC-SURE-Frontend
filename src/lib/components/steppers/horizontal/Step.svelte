@@ -3,12 +3,14 @@
   import { fade } from 'svelte/transition';
   import type { Writable } from 'svelte/store';
 
+  import type { StepperState } from '$lib/models/Stepper';
   import AngleButton from '$lib/components/buttons/AngleButton.svelte';
 
+  export let name: string;
   export let locked = false;
   export let buttonCompleteLabel: string = getContext('buttonCompleteLabel');
 
-  export let state: Writable<{ current: number; total: number }> = getContext('state');
+  export let state: Writable<StepperState> = getContext('state');
 
   export let onNext: (locked: boolean) => void = getContext('onNext');
   export let onBack: () => void = getContext('onBack');
@@ -16,10 +18,12 @@
 
   // Register step on init (keep these paired)
   const stepIndex = $state.total;
+  $state.stepMap = [...$state.stepMap, name];
   $state.total++;
 
   onDestroy(() => {
     $state.total--;
+    $state.stepMap = $state.stepMap.filter((item) => item !== name);
   });
 </script>
 

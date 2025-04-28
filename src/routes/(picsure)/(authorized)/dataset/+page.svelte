@@ -14,7 +14,7 @@
     { dataElement: 'name', label: 'Dataset ID Name' },
     { dataElement: 'startTime', label: 'Created' },
     { dataElement: 'queryId', label: 'Dataset ID' },
-    { dataElement: 'uuid', label: 'Actions' },
+    { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
   ];
 
   const cellOverides: Indexable = {

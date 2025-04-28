@@ -1,26 +1,62 @@
 import { get, writable, type Writable } from 'svelte/store';
+import { DataHandler, type State } from '@vincjo/datatables/remote';
+
 import { type Facet, type SearchResult } from '$lib/models/Search';
 import type { DictionaryConceptResult } from '$lib/models/api/DictionaryResponses';
-import type { State } from '@vincjo/datatables/remote';
-import { searchDictionary } from '$lib/services/dictionary';
+import { searchDictionary } from '$lib/stores/Dictionary';
+import { updateFacetsFromSearch, facetsPromise } from '$lib/stores/Dictionary';
 
-export const loading: Writable<Promise<DictionaryConceptResult | undefined>> = writable(
+export const loading: Writable<boolean> = writable(false);
+export const searchPromise: Writable<Promise<DictionaryConceptResult | undefined>> = writable(
   Promise.resolve(undefined),
 );
 export const searchTerm: Writable<string> = writable('');
 export const selectedFacets: Writable<Facet[]> = writable([]);
+export const tableHandler: DataHandler<SearchResult> = new DataHandler([] as SearchResult[], {
+  rowsPerPage: 10,
+});
+export const tour: Writable<boolean> = writable(true);
 export const error: Writable<string> = writable('');
 
-async function search(searchTerm: string, facets: Facet[], state?: State): Promise<SearchResult[]> {
-  if (!searchTerm && (!facets || !facets.length)) {
+selectedFacets.subscribe(() => {
+  tableHandler.setPage(1);
+  tableHandler.invalidate();
+});
+
+searchTerm.subscribe(() => {
+  tableHandler.setPage(1);
+  tableHandler.invalidate();
+});
+
+tableHandler.onChange(async (state: State) => {
+  const term = get(searchTerm);
+  const facets = get(selectedFacets);
+  loading.set(true);
+  if (get(tour) && (term || facets.length > 0)) {
+    tour.set(false);
+  }
+  try {
+    facetsPromise.set(updateFacetsFromSearch());
+    return await search(state);
+  } catch (e) {
+    return [];
+  } finally {
+    loading.set(false);
+  }
+});
+
+export async function search(state?: State): Promise<SearchResult[]> {
+  const facets = get(selectedFacets);
+  const term = get(searchTerm);
+  if (!term && !facets.length) {
     state?.setTotalRows(0);
     return [];
   }
-  const search = searchDictionary(searchTerm.trim(), facets, {
+  const search = searchDictionary(term.trim(), facets, {
     pageNumber: state?.pageNumber ? state?.pageNumber - 1 : 0,
     pageSize: state?.rowsPerPage,
   });
-  loading.set(search);
+  searchPromise.set(search);
   const response = await search.catch((e) => {
     console.error(e);
     state?.setTotalRows(0);
@@ -29,6 +65,7 @@ async function search(searchTerm: string, facets: Facet[], state?: State): Promi
     );
     throw e;
   });
+
   if (!response) {
     error.set(
       'An error occurred while searching. If the problem persists, please contact an administrator.',
@@ -56,6 +93,7 @@ export function resetSearch() {
   searchTerm.set('');
   selectedFacets.set([]);
   error.set('');
+  tour.set(true);
 }
 
 export default {

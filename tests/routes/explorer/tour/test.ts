@@ -9,9 +9,12 @@ import {
   conceptsDetailPath,
 } from '../../../mock-data';
 
+test.use({ storageState: 'tests/.auth/generalUser.json' });
+
 test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/concepts*', detailResponseCat);
+  await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
 });
 
 test('Explorer tour button opens instruction modal', async ({ page }) => {
@@ -48,7 +51,6 @@ test('Tour Finishes', async ({ page }) => {
     throw new Error('Step count not found');
   }
   const stepCountInt = parseInt(stepCount.split(' ')[2]) || 0;
-  console.log('Step count:', stepCountInt);
   for (let i = 0; i < stepCountInt + 1; i++) {
     // +1 to account for the Done button
     await page.keyboard.press('ArrowRight');

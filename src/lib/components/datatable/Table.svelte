@@ -16,6 +16,7 @@
   export let search = false;
   export let title = '';
   export let fullWidth: boolean = false;
+  export let tableAuto: boolean = true;
   export let options: number[] = [5, 10, 20, 50, 100];
   export let defaultRowsPerPage = 10;
   export let columns: Column[] = [];
@@ -55,7 +56,8 @@
     <table
       id="{tableName}-table"
       data-testid="{tableName}-table"
-      class="table table-auto table-hover align-middle {fullWidth ? 'w-max' : ''}"
+      class="table table-{tableAuto ? 'auto' : 'fixed'} table-hover align-middle
+        {fullWidth ? 'w-max' : ''} {$$props.class ?? ''}"
     >
       <thead>
         <tr class={stickyHeader ? 'sticky-header' : ''}>
@@ -63,7 +65,7 @@
             {#if column.sort}
               <ThSort
                 {handler}
-                class={`bg-primary-300 ${column.class}`}
+                class={`bg-primary-300 ${column.class ?? ''}`}
                 orderBy={column.dataElement}
               >
                 {column.label}
@@ -71,11 +73,11 @@
             {:else if column.filter}
               <ThFilter
                 {handler}
-                class={`bg-primary-300 ${column.class}`}
+                class={`bg-primary-300 ${column.class ?? ''}`}
                 filterBy={column.dataElement}
               />
             {:else}
-              <th class={`bg-primary-300 ${column.class}`}>{column.label}</th>
+              <th class={`bg-primary-300 ${column.class ?? ''}`}>{column.label}</th>
             {/if}
           {/each}
         </tr>
@@ -109,14 +111,3 @@
     {/if}
   </footer>
 </div>
-
-<style>
-  table thead th {
-    font-weight: normal !important;
-  }
-
-  .sticky-header th {
-    position: sticky;
-    top: 0;
-  }
-</style>

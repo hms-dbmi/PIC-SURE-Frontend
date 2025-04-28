@@ -4,7 +4,6 @@ import type { ExpectedResultType } from './models/query/Query';
 import * as configJson from './assets/configuration.json' assert { type: 'json' };
 import { ExportType } from './models/Variant';
 import type {
-  ApiPageConfig,
   ExplorePageConfig,
   FooterConfig,
   HelpConfig,
@@ -13,6 +12,7 @@ import type {
   LoginConfig,
   SiteMapConfig,
   PrivacyConfig,
+  AnalysisConfig,
 } from './types';
 
 export interface Branding {
@@ -23,12 +23,12 @@ export interface Branding {
   };
   sitemap: SiteMapConfig[];
   footer: FooterConfig;
-  apiPage: ApiPageConfig;
   explorePage: ExplorePageConfig;
   landing: LandingConfig;
   login: LoginConfig;
   help: HelpConfig;
   privacyPolicy: PrivacyConfig;
+  analysisConfig: AnalysisConfig;
 }
 
 export const branding: Branding = {
@@ -39,7 +39,6 @@ export const branding: Branding = {
   },
   sitemap: [] as SiteMapConfig[],
   footer: {} as FooterConfig,
-  apiPage: {} as ApiPageConfig,
   explorePage: {
     tourSearchTerm: import.meta.env?.EXPLORE_TOUR_SEARCH_TERM || 'age',
   } as ExplorePageConfig,
@@ -47,11 +46,11 @@ export const branding: Branding = {
   login: {} as LoginConfig,
   help: {} as HelpConfig,
   privacyPolicy: {} as PrivacyConfig,
+  analysisConfig: {} as AnalysisConfig,
 };
 
 export const initializeBranding = () => {
   branding.applicationName = configJson.applicationName;
-  branding.apiPage = configJson.apiPage;
   branding.explorePage = { ...branding.explorePage, ...configJson.explorePage };
   branding.landing = configJson.landing;
   branding.login = configJson.login;
@@ -59,6 +58,7 @@ export const initializeBranding = () => {
   branding.footer = configJson.footer;
   branding.sitemap = configJson.sitemap as SiteMapConfig[];
   branding.privacyPolicy = configJson.privacyPolicy;
+  branding.analysisConfig = configJson.analysisPage;
 };
 
 export const routes: Route[] = [
@@ -94,17 +94,9 @@ export const routes: Route[] = [
     feature: 'dataRequests',
   },
   {
-    path: '/admin',
+    path: '/admin/configuration',
     text: 'Configuration',
     privilege: [PicsurePrivileges.SUPER],
-    children: [
-      { path: '/admin/authorization', text: 'Authorization', privilege: [PicsurePrivileges.SUPER] },
-      {
-        path: '/admin/authentication',
-        text: 'Authentication',
-        privilege: [PicsurePrivileges.SUPER],
-      },
-    ],
   },
   { path: '/admin/users', text: 'Manage Users', privilege: [PicsurePrivileges.ADMIN] },
   { path: '/help', text: 'Help' },
@@ -118,6 +110,7 @@ export const environment = {
 export const features: Indexable = {
   explorer: {
     allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
+    allowDownload: import.meta.env?.VITE_ALLOW_DOWNLOAD !== 'false', // default true
     exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
     exportResultType: (import.meta.env?.VITE_EXPORT_RESULT_TYPE ||
       'DATAFRAME') as ExpectedResultType,
@@ -126,7 +119,7 @@ export const features: Indexable = {
     enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
     authTour: import.meta.env?.VITE_AUTH_TOUR_NAME ?? 'NHANES-Auth',
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
-    enableTerraExport: import.meta.env?.VITE_ENABLE_TERRA_EXPORT === 'true',
+    enablePfbExport: import.meta.env?.VITE_DOWNLOAD_AS_PFB !== 'false', // default true
     enableSampleIdCheckbox: import.meta.env?.VITE_ENABLE_SAMPLE_ID_CHECKBOX === 'true',
   },
   login: {
@@ -139,13 +132,14 @@ export const features: Indexable = {
   useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
   discover: import.meta.env?.VITE_DISCOVER === 'true',
   discoverFeautures: {
-    enableTour: import.meta.env?.EXPLORER_TOUR !== 'false',
+    enableTour: import.meta.env?.EXPLORER_TOUR !== 'false', // default true
     openTour: import.meta.env?.VITE_OPEN_TOUR_NAME ?? 'BDC-Open',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
   },
   dashboard: import.meta.env?.VITE_DASHBOARD === 'true',
   dashboardDrawer: import.meta.env?.VITE_DASHBOARD_DRAWER === 'true',
   confirmDownload: import.meta.env?.VITE_CONFIRM_DOWNLOAD === 'true',
+  termsOfService: import.meta.env?.VITE_ENABLE_TOS === 'true',
 };
 
 export const settings: Indexable = {

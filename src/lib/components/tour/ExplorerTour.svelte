@@ -7,7 +7,7 @@
   import 'driver.js/dist/driver.css';
   import '../../../tour.postcss';
 
-  import { searchTerm, selectedFacets, loading } from '$lib/stores/Search';
+  import { searchTerm, selectedFacets, searchPromise } from '$lib/stores/Search';
   import { clearFilters } from '$lib/stores/Filter';
   import { clearExports } from '$lib/stores/Export';
 
@@ -216,7 +216,7 @@
         searchBox.dispatchEvent(new Event('input'));
         searchBox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
 
-        await $loading
+        await $searchPromise
           .then(() => {
             modalStore.close();
             tourDriver.drive();

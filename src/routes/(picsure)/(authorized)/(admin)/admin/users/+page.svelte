@@ -34,10 +34,10 @@
   let usersByConnection: Readable<Connection[]> = readable([]);
 
   const columns = [
-    { dataElement: 'email', label: 'Username', sort: true },
+    { dataElement: 'email', label: 'Username', sort: true, class: 'w-1/3' },
     { dataElement: 'roles', label: 'Role(s)', sort: true, class: '!normal-case' },
-    { dataElement: 'status', label: 'Status', sort: true },
-    { dataElement: 'uuid', label: 'Actions', sort: false },
+    { dataElement: 'status', label: 'Status', sort: true, class: 'w-24 text-center' },
+    { dataElement: 'uuid', label: 'Actions', sort: false, class: 'w-24 text-center' },
   ];
 
   const cellOverides = {
@@ -75,7 +75,7 @@
 
   const rowClickHandler = (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(`/admin/users/${uuid}`);
+    goto(`/admin/users/${uuid}/edit`);
   };
 </script>
 
@@ -110,6 +110,7 @@
           title={connection.label}
           {rowClickHandler}
           isClickable={true}
+          tableAuto={false}
         />
       </div>
     {/each}

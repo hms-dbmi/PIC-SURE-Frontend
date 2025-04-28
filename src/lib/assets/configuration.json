@@ -2,17 +2,12 @@
   "applicationName": "PIC‑SURE",
   "sitemap": [
     {
-      "category": "Configuration",
-      "privilege": "SUPER_ADMIN",
-      "links": [
-        { "title": "Authorization", "url": "/admin/authorization" },
-        { "title": "Authentication", "url": "/admin/authentication" }
-      ]
-    },
-    {
       "category": "Administration",
       "privilege": "ADMIN",
-      "links": [{ "title": "Manage Users", "url": "/admin/users" }]
+      "links": [
+        { "title": "Manage Users", "url": "/admin/users" },
+        { "title": "Configuration", "url": "/admin/configuration" }
+      ]
     },
     {
       "category": "Use PIC-SURE",
@@ -37,7 +32,6 @@
     }
   ],
   "footer": {
-    "showTerms": true,
     "showSitemap": true,
     "excludeSitemapOn": ["/explorer", "/discover"],
     "links": [
@@ -53,44 +47,41 @@
       }
     ]
   },
-  "apiPage": {
-    "cards": [
-      {
-        "header": "Setting Up the PIC-SURE API",
-        "body": "Step-by-step instructions to get started using the PIC-SURE API",
-        "link": "/analyze/example"
-      }
-    ]
-  },
   "explorePage": {
-    "additionalColumns": [
+    "columns": [
       {
-        "dataElement": "dataset",
-        "label": "Study",
-        "sort": false
+        "label": "Dataset",
+        "dataElement": "dataset"
+      },
+      {
+        "label": "Variable Name",
+        "dataElement": "name"
       }
     ],
     "tourSearchIntro": "PIC-SURE Search allows you to search for variable level data.",
     "totalPatientsText": "Filtered Participants",
     "queryErrorText": "There was an error with your query. If this persists, please contact you PIC-SURE admin.",
     "filterErrorText": "There was an error when adding the filter to the query. Please remove your most recent filter and try again. If this error persists, please contact us by filling out the form at <a class=\"anchor\" href=\"https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5\" target=\"_blank\" class=\"underline\">Avillach Lab Software Requests</a>. We will respond to your request as soon as we can.",
+    "analysisExportText": "To export data and start your analysis, use the following code to connect to PIC-SURE and save the dataframe or download the file. Note that you will need your personal access token to complete the connection to PIC-SURE with code.",
     "confirmDownloadTitle": "Are you sure you want to download data?",
-    "confirmDownloadMessage": "This action will download the data to your local machine. Are you sure you want to proceed?"
+    "confirmDownloadMessage": "This action will download the data to your local machine. Are you sure you want to proceed?",
+    "codeBlocks": {
+      "PythonExport": "# Requires python 3.7 or later\nimport sys\nimport pandas as pd\nimport matplotlib.pyplot as plt\n!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-adapter-hpds.git\n!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-client.git\n\nimport PicSureHpdsLib\nimport PicSureClient\n\nPICSURE_network_URL = \"https://nhanes.hms.harvard.edu/picsure\"\n\ntoken_file = \"token.txt\"\nwith open(token_file, \"r\") as f:\n\t\tmy_token = f.read()\n\nconnection = PicSureClient.Client.connect(url = PICSURE_network_URL, token = my_token)\n\nqueryID = \"{{queryId}}\"\n\nresults = resource.retrieveQueryResults(queryID)\nfrom io import StringIO\ndf_UI = pd.read_csv(StringIO(results), low_memory=False)",
+      "RExport": "# Requires R 3.4 or later\ninstall.packages(\"devtools\")\n\ndevtools::install_github(\"hms-dbmi/pic-sure-r-adapter-hpds\", ref=\"main\", force=T, quiet=FALSE)\nlibrary(dplyr)\n\nPICSURE_network_URL = \"https://nhanes.hms.harvard.edu/picsure\"\ntoken_file <- \"token.txt\"\ntoken <- scan(token_file, what = \"character\")\nsession <- picsure::bdc.initializeSession(PICSURE_network_URL, token)\nsession <- picsure::bdc.setResource(session = session)\n\nqueryID <- \"{{queryId}}\"\n\nresults <- picsure::getResultByQueryUUID(session, queryID)",
+      "PythonAPI": "# Requires python 3.6 or later\nimport sys\nimport pandas as pd\nimport matplotlib.pyplot as plt\n# BDC Powered by Terra users uncomment the following line to specify package install location\n# sys.path.insert(0, r\"/home/jupyter/.local/lib/python3.7/site-packages\")\n!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-client.git\n!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-adapter-hpds.git\n!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-biodatacatalyst-python-adapter-hpds.git\nimport PicSureClient\nimport PicSureBdcAdapter\n# Set up connection to PIC-SURE API\nPICSURE_network_URL = \"https://picsure.biodatacatalyst.nhlbi.nih.gov/picsure\"\ntoken_file = \"token.txt\"\n\nwith open(token_file, \"r\") as f:\n    my_token = f.read()\n\nbdc = PicSureBdcAdapter.Adapter(PICSURE_network_URL, my_token)",
+      "RAPI": "# Requires R 3.4 or later\n### Uncomment this code if you are not using the PIC-SURE environment in *BDC-Seven Bridges*, or if you do not have all the necessary dependencies installed.\n#install.packages(\"devtools\")\nSys.setenv(TAR = \"/bin/tar\")\noptions(unzip = \"internal\")\ndevtools::install_github(\"hms-dbmi/pic-sure-r-adapter-hpds\", ref=\"main\", force=T, quiet=FALSE)\nlibrary(dplyr)\nPICSURE_network_URL = \"https://picsure.biodatacatalyst.nhlbi.nih.gov/picsure\"\ntoken_file <- \"token.txt\"\ntoken <- scan(token_file, what = \"character\")\nsession <- picsure::bdc.initializeSession(PICSURE_network_URL, token)\nsession <- picsure::bdc.setResource(session = session,  resourceName = \"AUTH\")"
+    },
+    "goTo": {
+      "instructions": "Copy your personal access token and save as a text file called \"token.txt\" in the same working directory to execute the code above.",
+      "links": []
+    },
+    "pfbExportUrls": []
   },
   "landing": {
     "searchPlaceholder": "Search terms or variables of interest…",
     "explanation": "The <a class=\"anchor\" href=\"https://www.cdc.gov/nchs/nhanes/index.htm\" target=\"_blank\">National Health and Nutrition Examination Survey (NHANES)</a> dataset is designed to assess the health and nutritional status of adults and children in the United States",
     "authExplanation": "The <a class=\"anchor\" href=\"https://www.cdc.gov/nchs/nhanes/index.htm\" target=\"_blank\">National Health and Nutrition Examination Survey (NHANES)</a> dataset is designed to assess the health and nutritional status of adults and children in the United States",
     "actions": [
-      {
-        "title": "Discover",
-        "description": "Discover studies in BioData Catalyst by searching for terms, applying filters, and retrieving aggregate counts",
-        "icon": "fa-regular fa-compass",
-        "url": "/discover",
-        "btnText": "Start Discovering",
-        "isOpen": true,
-        "showIfLoggedIn": true
-      },
       {
         "title": "Explore",
         "description": "Explore data, apply filters, and build cohorts",
@@ -108,18 +99,36 @@
         "btnText": "Prepare for Analysis",
         "isOpen": false,
         "showIfLoggedIn": true
-      },
-      {
-        "title": "Login",
-        "description": "Log In to explore participant-level data, save datasets, and kickstart your research analysis",
-        "icon": "fa-solid fa-user",
-        "url": "/login",
-        "btnText": "Go to Login",
-        "isOpen": true,
-        "showIfLoggedIn": false
       }
     ],
-    "stats": ["Variables", "Participants", "Data Sources"]
+    "stats": [
+      {
+        "key": "query:blank",
+        "label": "Participants"
+      },
+      {
+        "key": "dict:concepts",
+        "label": "Variables"
+      },
+      {
+        "key": "dict:facets:dataset_id",
+        "label": "Data Sources"
+      }
+    ],
+    "statFields": {}
+  },
+  "analysisPage": {
+    "cards": [
+      {
+        "header": "Setting Up the PIC-SURE API",
+        "body": "Step-by-step instructions to get started using the PIC-SURE API",
+        "link": "/analyze/example"
+      }
+    ],
+    "instructions": {
+      "connection": "To connect to the PIC-SURE Application Programming Interface (API), you will need your personal access token. Copy your token and save as a text file called \"token.txt\" in the working directory of your chosen analysis workspace.",
+      "execution": "To start your analysis, copy and execute the following code in your preferred analysis environment to connect to the PIC-SURE API. Note that you will need your personal access token to complete the connection."
+    }
   },
   "login": {
     "description": "Where searching for, filtering on, and analyzing data is made simple.",
@@ -152,7 +161,7 @@
         "title": "PIC-SURE",
         "description": "Check out the PIC-SURE website for information.",
         "icon": "fa-solid fa-circle-info fa-4x",
-        "url": "https://pic-sure.org/"
+        "url": "https://avillach-lab.hms.harvard.edu/pic-sure"
       }
     ],
     "popups": {

@@ -3,7 +3,6 @@
   import UserToken from '$lib/components/UserToken.svelte';
   import { branding } from '$lib/configuration';
   import { CodeBlock, Tab, TabGroup } from '@skeletonlabs/skeleton';
-  import codeBlocks from '$lib/assets/codeBlocks.json';
 
   let tabSet: number = 0;
 </script>
@@ -18,33 +17,11 @@
       The PIC-SURE Application Programming Interface (API) can be used in an analysis environment of
       your choice. This API is available in both Python and R coding languages.
     </p>
-    <p>
-      To connect to the PIC-SURE Application Programming Interface (API), you will need your
-      personal access token. Copy your token and save as a text file called “token.txt” in the
-      working directory of your chosen analysis workspace, such as <a
-        href="https://platform.sb.biodatacatalyst.nhlbi.nih.gov/home"
-        target="_blank"
-        title="BioData Catalyst Powered by Seven
-      Bridges"
-        class="anchor font-bold">BioData Catalyst Powered by Seven Bridges</a
-      >
-      or
-      <a
-        href="https://terra.biodatacatalyst.nhlbi.nih.gov/#workspaces"
-        target="_blank"
-        title="BioData Catalyst Powered by Terra"
-        class="anchor font-bold">BioData Catalyst Powered by Terra</a
-      >.
-    </p>
-    <div class="flex justify-center">
-      <UserToken />
-    </div>
-    <p>
-      To start your analysis, copy and execute the following code in an analysis environment, such
-      as BioData Catalyst Powered by Seven Bridges or BioData Catalyst Powered by Terra, to connect
-      to the PIC-SURE API. Note that you will need your personal access token to complete the
-      connection.
-    </p>
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+    <p>{@html branding.analysisConfig.instructions.connection}</p>
+    <div class="flex justify-center"><UserToken /></div>
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+    <p>{@html branding.analysisConfig.instructions.execution}</p>
     <TabGroup class="card p-4">
       <Tab bind:group={tabSet} name="python" value={0}>Python</Tab>
       <Tab bind:group={tabSet} name="r" value={1}>R</Tab>
@@ -54,21 +31,24 @@
             language="python"
             lineNumbers={true}
             buttonCopied="Copied!"
-            code={codeBlocks?.bdcPythonAPI || 'Code not set'}
+            code={branding.explorePage.codeBlocks.PythonAPI || 'Code not set'}
           ></CodeBlock>
         {:else if tabSet === 1}
-          <CodeBlock language="r" lineNumbers={true} code={codeBlocks?.bdcRAPI || 'Code not set'}
+          <CodeBlock
+            language="r"
+            lineNumbers={true}
+            code={branding.explorePage.codeBlocks.RAPI || 'Code not set'}
           ></CodeBlock>
         {/if}
       </svelte:fragment>
     </TabGroup>
   </section>
   <section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
-    {#each branding.apiPage.cards as card}
+    {#each branding.analysisConfig.cards as card}
       <a
         href={card.link}
         target={card.link.startsWith('http') ? '_blank' : '_self'}
-        class="pic-sure-info-card p-4 basis-2/4"
+        class="p-4 basis-2/4 max-w-sm min-h-48 mb-8"
       >
         <div class="card card-hover">
           <header class="card-header flex flex-col items-center">
@@ -86,11 +66,3 @@
     {/each}
   </section>
 </Content>
-
-<style>
-  a.pic-sure-info-card {
-    max-width: 25rem;
-    min-height: 18rem;
-    margin: 0 8px;
-  }
-</style>

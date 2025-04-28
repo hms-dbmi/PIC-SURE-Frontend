@@ -1,5 +1,11 @@
 import type { Column } from './models/Tables';
 
+interface Link {
+  title: string;
+  url: string;
+  newTab?: boolean;
+}
+
 export type Indexable = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
@@ -12,41 +18,50 @@ export interface Indexed<T> {
 export interface SiteMapConfig {
   category: string;
   privilege: string;
-  links: Array<{
-    title: string;
-    url: string;
-    newTab?: boolean;
-  }>;
+  links: Array<Link>;
 }
 
 export interface FooterConfig {
   showSitemap: boolean;
-  showTerms?: boolean;
   excludeSitemapOn: string[];
-  links: Array<{
-    title: string;
-    url: string;
-    newTab?: boolean;
-  }>;
+  links: Array<Link>;
 }
 
-export interface ApiPageConfig {
-  cards: Array<{
-    header: string;
-    body: string;
-    link: string;
-  }>;
+interface CodeBlock {
+  PythonExport: string;
+  RExport: string;
+  PythonAPI: string;
+  RAPI: string;
 }
-
 export interface ExplorePageConfig {
-  additionalColumns: Column[];
+  columns: Column[];
   tourSearchTerm: string;
   tourSearchIntro: string;
   totalPatientsText: string;
   queryErrorText: string;
   filterErrorText: string;
+  analysisExportText: string;
   confirmDownloadTitle: string;
   confirmDownloadMessage: string;
+  codeBlocks: CodeBlock;
+  goTo: {
+    instructions: string;
+    links: Array<Link>;
+  };
+  pfbExportUrls?: Link[];
+}
+
+export interface LandingStat {
+  key: string;
+  label: string;
+  value?: Promise<number> | number;
+  auth?: boolean;
+}
+
+export interface StatField {
+  label: string;
+  id: string;
+  conceptPath: string;
 }
 
 export interface LandingConfig {
@@ -62,7 +77,8 @@ export interface LandingConfig {
     isOpen: boolean;
     showIfLoggedIn: boolean;
   }>;
-  stats: string[];
+  stats: LandingStat[];
+  statFields: { [key: string]: StatField[] };
 }
 
 export interface LoginConfig {
@@ -87,4 +103,16 @@ export interface PrivacyConfig {
   title: string;
   content: string;
   url: string;
+}
+
+export interface AnalysisConfig {
+  cards: Array<{
+    header: string;
+    body: string;
+    link: string;
+  }>;
+  instructions: {
+    connection: string;
+    execution: string;
+  };
 }

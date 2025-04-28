@@ -34,7 +34,10 @@
   tabindex={isClickable ? 0 : -1}
 >
   {#each columns as column, colIndex}
-    <td id="row-{index.toString()}-col-{colIndex.toString()}">
+    <td
+      id="row-{index.toString()}-col-{colIndex.toString()}"
+      class={column?.class?.includes('text-center') ? 'text-center' : ''}
+    >
       {#if cellOverides[column.dataElement]}
         <svelte:component
           this={cellOverides[column.dataElement]}
@@ -58,13 +61,3 @@
     </td>
   </tr>
 {/if}
-
-<style>
-  .expandable-row {
-    background-color: rgb(var(--color-surface-300)) !important;
-  }
-
-  tr:not(.expandable-row) td:last-child {
-    text-align: center;
-  }
-</style>

@@ -1,3 +1,6 @@
+import type { Role } from '$lib/models/Role';
+import type { Connection } from '$lib/models/Connection';
+
 import type { QueryInterface } from './query/Query';
 
 export interface User {
@@ -23,7 +26,14 @@ export interface OktaUser extends User {
   readonly oktaIdToken: string;
 }
 
-// TODO: Replace metadata nad query types
+export interface UserRequest extends User {
+  connection?: Connection;
+  generalMetadata: string;
+  active: boolean;
+  roles?: Role[];
+}
+
+// TODO: Replace metadata and query types
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function mapExtendedUser(data: any) {
   return {

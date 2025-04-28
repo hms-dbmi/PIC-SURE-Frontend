@@ -9,8 +9,11 @@ import {
   geneValues,
   geneValuesPage2,
 } from '../../../mock-data';
+import { getOption, clickNthFilterIcon } from '../../../utils';
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
+
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 
 test.describe('OptionaSelectionList', () => {
   // TODO: Some feartures will be hidden in the future. Cannot use nth.
@@ -21,7 +24,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -34,7 +37,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -49,7 +52,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -73,7 +76,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -93,7 +96,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -122,7 +125,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
     const dataValues = mockData.content[0].values || [];
 
     // When
@@ -155,7 +158,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
     const dataValues = mockData.content[2].values || [];
 
     // When
@@ -189,7 +192,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
     await clickNthFilterIcon(page);
     const component = page.getByTestId('optional-selection-list');
     const optionContainer = component.locator('#options-container');
@@ -219,7 +222,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -320,7 +323,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
-    await page.goto('/explorer?search=somedata');
+    await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
@@ -355,25 +358,6 @@ test.describe('OptionaSelectionList', () => {
     await expect(lastVisibleSelectedOption).toHaveText(/Option \d+/);
   });
 });
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const getOption = async (page: any, optionIndex = 0) => {
-  const component = page.getByTestId('optional-selection-list');
-  const optionContainer = component.locator('#options-container');
-  await expect(optionContainer).toBeVisible();
-  const options = await optionContainer.getByRole('listitem').all();
-  return options[optionIndex];
-};
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const clickNthFilterIcon = async (page: any, rowIndex = 0) => {
-  await expect(page.locator('tbody')).toBeVisible();
-  const tableBody = page.locator('tbody');
-  const firstRow = tableBody.locator('tr').nth(rowIndex);
-  const filterIcon = firstRow.locator('td').last().locator('button').nth(1);
-  await expect(filterIcon).toBeVisible();
-  await filterIcon.click();
-};
 
 function getId(option: string) {
   return option.replaceAll(' ', '-').toLowerCase();

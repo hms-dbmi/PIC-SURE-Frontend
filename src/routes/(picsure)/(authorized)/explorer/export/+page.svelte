@@ -42,6 +42,7 @@
         name: '_Patient ID',
         dataset: '',
         display: 'Patient ID',
+        studyAcronym: '',
         description: 'Patient identifier.',
         type: 'Categorical',
         allowFiltering: true,
@@ -66,6 +67,7 @@
           name: '_TOPMed Study Accession with Subject ID',
           dataset: 'TOPMed',
           display: 'TOPMed Study Accession with Subject ID',
+          studyAcronym: 'TOPMed',
           description: 'TOPMed study accession number and subject identifier.',
           type: 'Categorical',
           allowFiltering: true,
@@ -90,6 +92,7 @@
           name: '_Parent Study Accession with Subject ID',
           dataset: '',
           display: 'Parent Study Accession with Subject ID',
+          studyAcronym: '',
           description: 'Parent study accession number and subject identifier.',
           type: 'Categorical',
           allowFiltering: true,
@@ -106,7 +109,7 @@
       exportRows.push(parentStudyRow);
     }
   }
-  state.set({ current: 0, total: 0 });
+  state.set({ ...$state, current: 0, total: 0 });
 </script>
 
 <Content

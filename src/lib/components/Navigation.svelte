@@ -12,9 +12,6 @@
   import { onMount } from 'svelte';
   let providerData: AuthData;
   let providerInstance: AuthProvider | undefined = undefined;
-  function setDropdown(path: string) {
-    dropdownPath = path;
-  }
 
   function getId({ path, id }: { path: string; id?: string; text: string }) {
     return `nav-link` + (id ? `-` + id : path.replaceAll('/', '-'));
@@ -51,8 +48,6 @@
       }
     }
   });
-
-  $: dropdownPath = '';
 </script>
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-900-token">
@@ -64,50 +59,11 @@
   <nav id="page-navigation">
     <ul>
       {#each $userRoutes as route}
-        {#if route.children && route.children.length > 0}
-          <li
-            class={`has-dropdown ${dropdownPath === route.path ? 'open' : ''}`}
-            on:mouseenter={() => setDropdown(route.path)}
-            on:mouseleave={() => setDropdown('')}
-            on:focus={() => setDropdown(route.path)}
-            on:blur={() => setDropdown('')}
-          >
-            <a
-              class="nav-link"
-              id={getId(route)}
-              href={route.path}
-              on:click={(e) => e.preventDefault()}
-              on:keydown={(e) => e.key === 'Enter' && setDropdown(dropdownPath ? '' : route.path)}
-              aria-expanded={dropdownPath === route.path}
-              aria-current={currentPage(route)}>{route.text}</a
-            >
-            <ul
-              class="nav-dropdown"
-              style:visibility={dropdownPath === route.path ? 'visible' : 'hidden'}
-            >
-              {#each route.children as child}
-                <li>
-                  <a
-                    class="no-underline"
-                    href={child.path}
-                    on:keydown={(e) => e.key === 'Enter' && setDropdown('')}>{child.text}</a
-                  >
-                </li>
-              {/each}
-            </ul>
-          </li>
-        {:else}
-          <li>
-            <a
-              class="nav-link"
-              id={getId(route)}
-              href={route.path}
-              on:focus={() => setDropdown('')}
-              aria-current={currentPage(route)}
-              >{route.text}
-            </a>
-          </li>
-        {/if}
+        <li>
+          <a class="nav-link" id={getId(route)} href={route.path} aria-current={currentPage(route)}
+            >{route.text}
+          </a>
+        </li>
       {/each}
     </ul>
   </nav>
