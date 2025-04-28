@@ -106,6 +106,10 @@ export class Query implements QueryInterface {
     this.requiredFields.push(field);
   }
 
+  addField(field: string) {
+    this.fields.push(field);
+  }
+
   addAnyRecordOf(field: string) {
     this.anyRecordOf.push(field);
   }

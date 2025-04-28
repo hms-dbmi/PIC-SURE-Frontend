@@ -4,7 +4,9 @@ import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/User';
 import { filters, hasGenomicFilter } from '$lib/stores/Filter';
+import { exports } from '$lib/stores/Export';
 import type { Filter } from '$lib/models/Filter';
+import type { ExportInterface } from '$lib/models/Export.ts';
 
 const harmonizedPath = '\\DCC Harmonized data set';
 const harmonizedConsentPath = '\\_harmonized_consent\\';
@@ -40,6 +42,12 @@ export function getQueryRequest(
       });
     } else if (filter.filterType === 'snp') {
       query.addSnpFilter(filter.snpValues);
+    }
+  });
+
+  (get(exports) as ExportInterface[]).forEach((exportedField) => {
+    if (exportedField.conceptPath) {
+      query.addField(exportedField.conceptPath);
     }
   });
 
