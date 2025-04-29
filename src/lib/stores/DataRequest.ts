@@ -1,5 +1,4 @@
-import { get, writable, type Writable } from 'svelte/store';
-import type { Unsubscriber } from 'svelte/motion';
+import { get, writable, type Writable, type Unsubscriber } from 'svelte/store';
 
 import * as api from '$lib/api';
 import type { Status, Sites, Metadata, DataType } from '$lib/models/DataRequest';

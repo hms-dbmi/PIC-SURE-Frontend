@@ -45,7 +45,7 @@ test('Add privilege button takes user to new privilege page', async ({ page }) =
 
   // Then
   await page.waitForURL('**/admin/configuration/privilege/new');
-  await expect(page.url()).toContain('admin/configuration/privilege/new');
+  expect(page.url()).toContain('admin/configuration/privilege/new');
 });
 test('Privileges form has pre-populated applications', async ({ page }) => {
   // Given
@@ -63,7 +63,7 @@ test('Privileges form cancel button navigates back to configuration page', async
 
   // Then
   await page.waitForURL('**/admin/configuration');
-  await expect(page.url()).toContain('/admin/configuration');
+  expect(page.url()).toContain('/admin/configuration');
 });
 test('Privileges form returns to configuration page with success message', async ({ page }) => {
   // Given
@@ -83,8 +83,10 @@ test('Privileges form returns to configuration page with success message', async
 
   // Then
   await page.waitForURL('**/admin/configuration');
-  await expect(page.locator('.snackbar-wrapper .variant-filled-success')).toBeVisible();
-  await expect(page.url()).toContain('/admin/configuration');
+  const toast = page.getByTestId('toast-root');
+  await expect(toast).toBeVisible();
+  await expect(toast).toHaveAttribute('data-type', 'success');
+  expect(page.url()).toContain('/admin/configuration');
 });
 test('Privileges form returns error message on api fail', async ({ page }) => {
   // Given
@@ -98,7 +100,9 @@ test('Privileges form returns error message on api fail', async ({ page }) => {
   await page.getByRole('button', { name: 'Save' }).click();
 
   // Then
-  await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
+  const toast = page.getByTestId('toast-root');
+  await expect(toast).toBeVisible();
+  await expect(toast).toHaveAttribute('data-type', 'error');
 });
 test('Privileges form enforces required name length', async ({ page }) => {
   // Given
@@ -114,7 +118,7 @@ test('Privileges form enforces required name length', async ({ page }) => {
   const empty = await page
     .getByLabel('Name')
     .evaluate((element: HTMLInputElement) => element.validationMessage);
-  await expect(empty).toMatch(validationText.empty);
+  expect(empty).toMatch(validationText.empty);
 });
 test('Privileges form enforces required description length', async ({ page }) => {
   // Given
@@ -130,7 +134,7 @@ test('Privileges form enforces required description length', async ({ page }) =>
   const empty = await page
     .getByLabel('Description')
     .evaluate((element: HTMLInputElement) => element.validationMessage);
-  await expect(empty).toMatch(validationText.empty);
+  expect(empty).toMatch(validationText.empty);
 });
 test('Privileges form enforces application selection', async ({ page }) => {
   // Given
@@ -145,7 +149,7 @@ test('Privileges form enforces application selection', async ({ page }) => {
   const noOption = await page
     .getByLabel('Application')
     .evaluate((element: HTMLSelectElement) => element.validationMessage);
-  await expect(noOption).toMatch(validationText.option);
+  expect(noOption).toMatch(validationText.option);
 });
 test('Clicking row takes user to edit priviledge form', async ({ page }) => {
   // Given
@@ -156,22 +160,18 @@ test('Clicking row takes user to edit priviledge form', async ({ page }) => {
 
   // Then
   await page.waitForURL(`**/admin/configuration/privilege/${mockPrivileges[0].uuid}/edit`);
-  await expect(page.url()).toContain(
-    `/admin/configuration/privilege/${mockPrivileges[0].uuid}/edit`,
-  );
+  expect(page.url()).toContain(`/admin/configuration/privilege/${mockPrivileges[0].uuid}/edit`);
 });
 test('Edit row icon takes user to edit privilege form', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
 
   // When
-  await page.getByTestId(`privilege-edit-btn-${mockPrivileges[0].uuid}`).click();
+  await page.getByTestId(`privilege-${mockPrivileges[0].uuid}-edit-btn`).click();
 
   // Then
   await page.waitForURL(`**/admin/configuration/privilege/${mockPrivileges[0].uuid}/edit`);
-  await expect(page.url()).toContain(
-    `/admin/configuration/privilege/${mockPrivileges[0].uuid}/edit`,
-  );
+  expect(page.url()).toContain(`/admin/configuration/privilege/${mockPrivileges[0].uuid}/edit`);
 });
 test('Edit privilege form has pre-populated values', async ({ page }) => {
   // Given
@@ -184,38 +184,48 @@ test('Edit privilege form has pre-populated values', async ({ page }) => {
   await expect(page.getByLabel('Application')).toHaveValue(mockApps[0].uuid);
 });
 test('Delete row icon asks users to confirm or cancel', async ({ page }) => {
+  const modalId = `privilege-${mockPrivileges[0].uuid}-delete`;
+
   // Given
   await page.goto('/admin/configuration');
 
   // When
-  await page.getByTestId(`privilege-delete-btn-${mockPrivileges[0].uuid}`).click();
+  await page.getByTestId(modalId + '-btn').click();
 
   // Then
-  await expect(page.getByTestId('modal')).toBeVisible();
+  await expect(page.getByTestId(modalId)).toBeVisible();
 });
 test('Delete gives success message', async ({ page }) => {
+  const modalId = `privilege-${mockPrivileges[0].uuid}-delete`;
+
   // Given
   await page.goto('/admin/configuration');
   await mockApiSuccess(page, `*/**/psama/privilege/${mockPrivileges[0].uuid}`, {});
 
   // When
-  await page.getByTestId(`privilege-delete-btn-${mockPrivileges[0].uuid}`).click();
-  await page.getByTestId('modal').getByRole('button', { name: 'Yes' }).click();
+  await page.getByTestId(modalId + '-btn').click();
+  await page.getByTestId(modalId).getByRole('button', { name: 'Yes' }).click();
 
   // Then
-  await expect(page.locator('.snackbar-wrapper .variant-filled-success')).toBeVisible();
+  const toast = page.getByTestId('toast-root');
+  await expect(toast).toBeVisible();
+  await expect(toast).toHaveAttribute('data-type', 'success');
 });
 test('Delete gives error message on api failure', async ({ page }) => {
+  const modalId = `privilege-${mockPrivileges[0].uuid}-delete`;
+
   // Given
   await page.goto('/admin/configuration');
   await mockApiFail(page, `*/**/psama/privilege/${mockPrivileges[0].uuid}`, 'failed');
 
   // When
-  await page.getByTestId(`privilege-delete-btn-${mockPrivileges[0].uuid}`).click();
-  await page.getByTestId('modal').getByRole('button', { name: 'Yes' }).click();
+  await page.getByTestId(modalId + '-btn').click();
+  await page.getByTestId(modalId).getByRole('button', { name: 'Yes' }).click();
 
   // Then
-  await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
+  const toast = page.getByTestId('toast-root');
+  await expect(toast).toBeVisible();
+  await expect(toast).toHaveAttribute('data-type', 'error');
 });
 
 test.describe('Admin on Configuration page', () => {
@@ -227,12 +237,12 @@ test.describe('Admin on Configuration page', () => {
     // Then
     // Check that all edit buttons are disabled
     for (const privilege of mockPrivileges) {
-      await expect(page.getByTestId(`privilege-edit-btn-${privilege.uuid}`)).toBeDisabled();
+      await expect(page.getByTestId(`privilege-${privilege.uuid}-edit-btn`)).toBeDisabled();
     }
 
     // Check that all delete buttons are disabled
     for (const privilege of mockPrivileges) {
-      await expect(page.getByTestId(`privilege-delete-btn-${privilege.uuid}`)).toBeDisabled();
+      await expect(page.getByTestId(`privilege-${privilege.uuid}-delete-btn`)).toBeDisabled();
     }
     // Check that add privilege button is disabled
     await expect(page.getByTestId('add-privilege')).toHaveClass(/opacity-50 pointer-events-none/);

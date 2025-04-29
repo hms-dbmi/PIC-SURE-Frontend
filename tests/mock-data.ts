@@ -646,7 +646,7 @@ export const facetResponseWithZeroCount = [
 export const facetsResponse = [
   {
     name: 'study_ids_dataset_ids',
-    display: 'Study IDs/Dataset IDs',
+    display: 'Study IDs',
     description: '',
     facets: [
       {
@@ -770,7 +770,7 @@ export const facetsResponse = [
   },
   {
     name: 'dataset_id',
-    display: 'Study IDs/Dataset IDs',
+    display: 'Dataset IDs',
     description: '',
     facets: [
       {

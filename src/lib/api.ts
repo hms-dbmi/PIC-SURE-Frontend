@@ -44,7 +44,13 @@ async function send({
     }
   }
 
-  const res = await fetch(`${window.location.origin}/${path}`, opts);
+  const ORIGIN = import.meta.env?.VITE_ORIGIN
+    ? import.meta.env?.VITE_ORIGIN
+    : browser
+      ? window?.location?.origin
+      : '';
+
+  const res = await fetch(`${ORIGIN}/${path}`, opts);
 
   return await handleResponse(res);
 }

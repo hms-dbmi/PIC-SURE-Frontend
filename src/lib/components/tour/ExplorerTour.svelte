@@ -1,24 +1,24 @@
 <script lang="ts">
-  import { type ModalComponent } from '@skeletonlabs/skeleton-svelte';
-
   import { driver, type DriverHook, type DriveStep } from 'driver.js';
   import 'driver.js/dist/driver.css';
-  import '../../../tour.postcss';
+  import '../../../styles/tour.css';
 
   import { searchTerm, selectedFacets, searchPromise } from '$lib/stores/Search';
   import { clearFilters } from '$lib/stores/Filter';
   import { clearExports } from '$lib/stores/Export';
 
-  import TourModal from '$lib/components/tour/TourModal.svelte';
-  interface Props {
+  import Modal from '$lib/components/Modal.svelte';
+  import Loading from '../Loading.svelte';
+
+  let {
+    tourConfig,
+  }: {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     tourConfig: any;
-  }
+  } = $props();
 
-  let { tourConfig }: Props = $props();
-
-  const modalStore = getModalStore();
-  const tourComponent: ModalComponent = { ref: TourModal, props: { tourConfig } };
+  let started: boolean = $state(false);
+  let openModal: boolean = $state(false);
 
   const disablePrevious = () => {};
 
@@ -179,7 +179,7 @@
   const tourDriver = driver({
     showProgress: true,
     popoverClass: 'picsure-theme',
-    overlayColor: 'rgb(var(--color-surface-400) / .7)',
+    overlayColor: 'var(--color-surface-400)',
     // Although we're not using the previous button, this would be it's custom text
     // prevBtnText: '<i class="fa-solid fa-arrow-left mr-1"></i> Previous',
     nextBtnText: 'Next <i class="fa-solid fa-arrow-right ml-1"></i>',
@@ -204,38 +204,55 @@
   });
 
   async function startTour() {
-    modalStore.trigger({
-      type: 'component',
-      component: tourComponent,
-      buttonTextConfirm: 'Start Tour',
-      response: async (start: boolean) => {
-        if (!start) return;
+    started = true;
+    openDrawer();
+    resetSearch();
 
-        resetSearch();
-        openDrawer();
+    // Load search in bg then start tour
+    const searchBox = document.querySelector('#explorer-search-box') as HTMLInputElement;
+    searchBox.value = tourConfig.searchTerm;
+    $searchTerm = tourConfig.searchTerm;
 
-        // Load search in bg then start tour
-        const searchBox = document.querySelector('#explorer-search-box') as HTMLInputElement;
-        searchBox.value = tourConfig.searchTerm;
-        searchBox.dispatchEvent(new Event('input'));
-        searchBox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-
-        await $searchPromise
-          .then(() => {
-            modalStore.close();
-            tourDriver.drive();
-          })
-          .catch(() => console.error('API returned error during tour.'));
-      },
-    });
+    await $searchPromise
+      .then(() => tourDriver.drive())
+      .catch(() => console.error('API returned error during tour.'));
   }
 </script>
 
+<Modal
+  bind:open={openModal}
+  title={tourConfig?.title}
+  confirmText="Start Tour"
+  onconfirm={startTour}
+  withDefault={false}
+>
+  {#if started}
+    <Loading ring size="large" />
+  {:else}
+    <p>
+      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+      {@html tourConfig?.description}
+    </p>
+    <footer class="modal-footer flex justify-end space-x-2 mt-6">
+      <button
+        type="button"
+        class="btn border preset-tonal-primary hover:preset-filled-primary-500"
+        onclick={() => (openModal = false)}>Cancel</button
+      >
+      <button type="button" class="btn preset-filled-primary-500" onclick={startTour}
+        >Start Tour</button
+      >
+    </footer>
+  {/if}
+</Modal>
 <button
   type="button"
   data-testid="explorer-tour-btn"
   id="tourBtn"
   class="btn preset-filled-secondary-500"
-  onclick={startTour}
+  onclick={() => {
+    started = false;
+    openModal = true;
+  }}
   >Take a Tour
 </button>

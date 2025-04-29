@@ -1,6 +1,5 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { Progress } from '@skeletonlabs/skeleton-svelte';
 
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -10,6 +9,7 @@
   import type { Privilege } from '$lib/models/Privilege';
   import { getPrivilege } from '$lib/stores/Privileges';
   import { applicationList, loadApplications } from '$lib/stores/Application';
+  import Loading from '$lib/components/Loading.svelte';
 
   let privilege: Privilege = $state({
     name: '',
@@ -29,15 +29,14 @@
 
 <Content title="Edit Privilege" backUrl="/admin/configuration" backTitle="Back to Configuration">
   {#await load()}
-    <h3 class="text-left">Loading</h3>
-    <Progress animIndeterminate="anim-progress-bar" />
+    <Loading />
   {:then}
     <section id="privilege-edit">
       <PrivilegeForm applicationList={$applicationList} {privilege} />
     </section>
   {:catch}
     <ErrorAlert title="API Error">
-      <p>An error occured while retrieving dataset {page.params.uuid}.</p>
+      An error occured while retrieving dataset {page.params.uuid}.
     </ErrorAlert>
   {/await}
 </Content>

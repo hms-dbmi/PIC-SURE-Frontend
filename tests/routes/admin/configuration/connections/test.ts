@@ -77,7 +77,9 @@ test('Connection form returns to configuration page with success message', async
 
   // Then
   await page.waitForURL('**/admin/configuration');
-  await expect(page.locator('.snackbar-wrapper .variant-filled-success')).toBeVisible();
+  const toast = page.getByTestId('toast-root');
+  await expect(toast).toBeVisible();
+  await expect(toast).toHaveAttribute('data-type', 'success');
   expect(page.url()).toContain('/admin/configuration');
 });
 test('Connection form returns error message on api fail', async ({ page }) => {
@@ -92,7 +94,9 @@ test('Connection form returns error message on api fail', async ({ page }) => {
   await page.getByTestId('connection-save-btn').click();
 
   // Then
-  await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
+  const toast = page.getByTestId('toast-root');
+  await expect(toast).toBeVisible();
+  await expect(toast).toHaveAttribute('data-type', 'error');
 });
 test('Connection form enforces required Label min length', async ({ page }) => {
   // Given
@@ -160,7 +164,7 @@ test('Edit row icon takes user to edit connection form', async ({ page }) => {
   await page.goto('/admin/configuration');
 
   // When
-  await page.getByTestId(`connection-edit-btn-${mockConnections[0].uuid}`).click();
+  await page.getByTestId(`connection-${mockConnections[0].uuid}-edit-btn`).click();
 
   // Then
   await page.waitForURL(`**/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
@@ -185,38 +189,48 @@ test('Edit connection form has pre-populated values', async ({ page }) => {
   ).toHaveValue(requiredField.id);
 });
 test('Delete row icon asks users to confirm or cancel', async ({ page }) => {
+  const modalId = `connection-${mockConnections[0].uuid}-delete`;
+
   // Given
   await page.goto('/admin/configuration');
 
   // When
-  await page.getByTestId(`connection-delete-btn-${mockConnections[0].uuid}`).click();
+  await page.getByTestId(modalId + '-btn').click();
 
   // Then
-  await expect(page.getByTestId('modal')).toBeVisible();
+  await expect(page.getByTestId(modalId)).toBeVisible();
 });
 test('Delete gives success message', async ({ page }) => {
+  const modalId = `connection-${mockConnections[0].uuid}-delete`;
+
   // Given
   await page.goto('/admin/configuration');
   await mockApiSuccess(page, `*/**/psama/connection/${mockConnections[0].id}`, {});
 
   // When
-  await page.getByTestId(`connection-delete-btn-${mockConnections[0].uuid}`).click();
-  await page.getByTestId('modal').getByRole('button', { name: 'Yes' }).click();
+  await page.getByTestId(modalId + '-btn').click();
+  await page.getByTestId(modalId).getByRole('button', { name: 'Yes' }).click();
 
   // Then
-  await expect(page.locator('.snackbar-wrapper .variant-filled-success')).toBeVisible();
+  const toast = page.getByTestId('toast-root');
+  await expect(toast).toBeVisible();
+  await expect(toast).toHaveAttribute('data-type', 'success');
 });
 test('Delete gives error message on api failure', async ({ page }) => {
+  const modalId = `connection-${mockConnections[0].uuid}-delete`;
+
   // Given
   await page.goto('/admin/configuration');
   await mockApiFail(page, `*/**/psama/connection/${mockConnections[0].id}`, 'failed');
 
   // When
-  await page.getByTestId(`connection-delete-btn-${mockConnections[0].uuid}`).click();
-  await page.getByTestId('modal').getByRole('button', { name: 'Yes' }).click();
+  await page.getByTestId(modalId + '-btn').click();
+  await page.getByTestId(modalId).getByRole('button', { name: 'Yes' }).click();
 
   // Then
-  await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
+  const toast = page.getByTestId('toast-root');
+  await expect(toast).toBeVisible();
+  await expect(toast).toHaveAttribute('data-type', 'error');
 });
 
 test.describe('Required Fields', () => {
@@ -375,12 +389,12 @@ test.describe('Admin on Configuration page', () => {
     // Then
     // Check that all edit buttons are disabled
     for (const connection of mockConnections) {
-      await expect(page.getByTestId(`connection-edit-btn-${connection.uuid}`)).toBeDisabled();
+      await expect(page.getByTestId(`connection-${connection.uuid}-edit-btn`)).toBeDisabled();
     }
 
     // Check that all delete buttons are disabled
     for (const connection of mockConnections) {
-      await expect(page.getByTestId(`connection-delete-btn-${connection.uuid}`)).toBeDisabled();
+      await expect(page.getByTestId(`connection-${connection.uuid}-delete-btn`)).toBeDisabled();
     }
     // Check that add connection button is disabled
     await expect(page.getByTestId('add-connection')).toHaveClass(/opacity-50 pointer-events-none/);

@@ -3,10 +3,9 @@
   import * as api from '$lib/api';
   import { resources } from '$lib/configuration';
   import { selectedGenes } from '$lib/stores/GeneFilter';
+  import { toaster } from '$lib/toaster';
 
   import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
-
-  const toastStore = getToastStore();
 
   let allGenes: string[] = $state([]);
   let unselectedGenes = $derived(
@@ -53,10 +52,7 @@
       allOptionsLoaded = newGenes.length < pageSize;
     } catch (error) {
       console.error(error);
-      toastStore.trigger({
-        message: 'An error occurred while loading genes list.',
-        background: 'preset-filled-error-500',
-      });
+      toaster.error({ title: 'An error occurred while loading genes list.' });
     } finally {
       loading = false;
     }

@@ -1,18 +1,15 @@
 <script lang="ts">
-  import type { DataHandler } from '@vincjo/datatables';
-  import type { DataHandler as RemoteHander } from '@vincjo/datatables/remote';
-  interface Props {
-    handler: DataHandler | RemoteHander;
-  }
+  import { TableHandler } from '@vincjo/datatables/server';
 
-  let { handler }: Props = $props();
-  const rowCount = handler.getRowCount();
+  let { handler }: { handler: TableHandler } = $props();
+
+  let { start, end, total } = $derived(handler.rowCount);
 </script>
 
 <aside class="text-sm leading-8 mr-6">
-  {#if $rowCount?.total > 0}
-    <b>{$rowCount.start}</b>
-    - <b>{$rowCount.end}</b>
-    / <b>{$rowCount.total}</b>
+  {#if total > 0}
+    <b>{start}</b>
+    - <b>{end}</b>
+    / <b>{total}</b>
   {/if}
 </aside>

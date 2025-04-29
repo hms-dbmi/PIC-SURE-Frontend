@@ -59,14 +59,13 @@ test.describe('Facet Side Bar', () => {
     await expect(facetSideBar).toBeVisible();
     const accordionDiv = facetSideBar.getByTestId('accordion');
     await expect(accordionDiv).toBeVisible();
-    const facetCategoryElement = await facetSideBar.locator('.accordion-summary').all();
+    const facetCategoryElement = await facetSideBar.getByTestId('accordion-item').all();
     expect(facetCategoryElement).toHaveLength(facetsResponse.length);
 
     // Then
-    for (let i = 0; i < facetCategoryElement.length; i++) {
-      const facetCategory = facetCategoryElement[i];
-      const categoryDisplayName = (await facetCategory.textContent()) || '';
-      expect(categoryDisplayName).toBe(facetsResponse[i].display);
+    const checkboxes = page.getByTestId('accordion-item').nth(1).locator('label');
+    for (let i = 0; i < facetsResponse[1].facets.length; i++) {
+      await expect(checkboxes.nth(i)).toContainText(facetsResponse[1].facets[i].display);
     }
   });
   test('Facet Side Bar categories are all open', async ({ page }) => {
@@ -84,14 +83,16 @@ test.describe('Facet Side Bar', () => {
     await expect(facetSideBar).toBeVisible();
     const accordionDiv = facetSideBar.getByTestId('accordion');
     await expect(accordionDiv).toBeVisible();
-    const facetCategoryElement = await page.locator('.accordion-summary').all();
+    const facetCategoryElement = await facetSideBar.getByTestId('accordion-item').all();
     expect(facetCategoryElement).toHaveLength(facetsResponse.length);
 
     // Then
     for (let i = 0; i < facetCategoryElement.length; i++) {
-      const facetCategory = facetCategoryElement[i];
-      const categoryDisplayName = (await facetCategory.textContent()) || '';
-      expect(categoryDisplayName).toBe(facetsResponse[i].display);
+      const facetCount = facetsResponse[i].facets.reduce((sum, facet) => sum + facet.count, 0);
+      await expect(facetCategoryElement[i]).toHaveAttribute(
+        'data-state',
+        facetCount > 0 ? 'open' : 'closed',
+      );
     }
   });
 });
@@ -108,7 +109,11 @@ test.describe('Facet Categories', () => {
     await page.goto('/explorer?search=age');
 
     //When
-    const facetCategoryElement = page.locator('.accordion-summary').first();
+    const facetCategoryElement = page
+      .getByTestId('accordion-item')
+      .nth(0)
+      .getByRole('button')
+      .getByTestId('accordion-control');
 
     // Then
     await expect(facetCategoryElement).toBeVisible();
@@ -128,7 +133,7 @@ test.describe('Facet Categories', () => {
 
     for (let i = 0; i < facetsResponse.length; i++) {
       //When
-      const facetList = page.locator('.accordion-panel').nth(i);
+      const facetList = page.getByTestId('accordion-item').nth(i);
       const facetItems = await facetList.locator('label').all();
       const numFacets = facetsResponse[i].facets.length;
       // Then
@@ -156,7 +161,7 @@ test.describe('Facet Categories', () => {
 
     for (let i = 0; i < facetsResponse.length; i++) {
       //When
-      const facetList = page.locator('.accordion-panel').nth(i);
+      const facetList = page.getByTestId('accordion-item').nth(i);
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
@@ -204,14 +209,14 @@ test.describe('Facet Categories', () => {
 
     for (let i = 0; i < facetsResponse.length; i++) {
       //When
-      const facetList = page.locator('.accordion-panel').nth(i);
+      const facetList = page.getByTestId('accordion-item').nth(i);
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
         const moreButton = facetList.getByTestId('show-more-facets');
         await expect(moreButton).toBeVisible();
         await moreButton.click();
-        const facetItems = await page.locator('.accordion-panel').nth(i).locator('label').all();
+        const facetItems = await page.getByTestId('accordion-item').nth(i).locator('label').all();
         const facetsToExpect = facetsResponse[i].facets.filter((facet) => facet.count > 0);
         expect(facetItems).toHaveLength(facetsToExpect.length);
       }
@@ -231,7 +236,7 @@ test.describe('Facet Categories', () => {
 
     for (let i = 0; i < facetsResponse.length; i++) {
       //When
-      const facetList = page.locator('.accordion-panel').nth(i);
+      const facetList = page.getByTestId('accordion-item').nth(i);
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
@@ -258,7 +263,7 @@ test.describe('Facet Categories', () => {
 
     for (let i = 0; i < facetsResponse.length; i++) {
       //When
-      const facetList = page.locator('.accordion-panel').nth(i);
+      const facetList = page.getByTestId('accordion-item').nth(i);
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
@@ -267,7 +272,7 @@ test.describe('Facet Categories', () => {
         await moreButton.click();
         await expect(moreButton).toHaveText('Show Less');
         await moreButton.click();
-        const facetItems = await page.locator('.accordion-panel').nth(i).locator('label').all();
+        const facetItems = await page.getByTestId('accordion-item').nth(i).locator('label').all();
         expect(facetItems).toHaveLength(MAX_FACETS_TO_SHOW);
         await expect(moreButton).toHaveText('Show More');
       }
@@ -286,13 +291,13 @@ test.describe('Facet Categories', () => {
     await expect(facetSideBar).toBeVisible();
 
     //When
-    const firstAccordian = page.getByTestId('accordion-item').first();
-    const facetList = firstAccordian.locator('.accordion-panel').first();
-    const facetCategoryHeader = firstAccordian.locator('.accordion-summary');
+    const facetCategory = page.getByTestId('accordion-item').first();
+    const facetPanel = facetCategory.getByTestId('accordion-panel');
+    const facetCategoryHeader = facetCategory.getByRole('button').getByTestId('accordion-control');
     await facetCategoryHeader.click();
 
     // Then
-    await expect(facetList).not.toBeVisible();
+    await expect(facetPanel).not.toBeVisible();
   });
   test('Clicking a closed facet category header opens the category', async ({ page }) => {
     // Given
@@ -307,15 +312,15 @@ test.describe('Facet Categories', () => {
     await expect(facetSideBar).toBeVisible();
 
     //When
-    const firstAccordian = page.getByTestId('accordion-item').first();
-    const facetList = firstAccordian.locator('.accordion-panel').first();
-    const facetCategoryHeader = firstAccordian.locator('.accordion-summary');
+    const facetCategory = page.getByTestId('accordion-item').first();
+    const facetPanel = facetCategory.getByTestId('accordion-panel');
+    const facetCategoryHeader = facetCategory.getByRole('button').getByTestId('accordion-control');
     await facetCategoryHeader.click();
-    await expect(facetList).not.toBeVisible();
+    await expect(facetPanel).not.toBeVisible();
     await facetCategoryHeader.click();
 
     // Then
-    await expect(facetList).toBeVisible();
+    await expect(facetPanel).toBeVisible();
   });
   test(`Facet category has search input when facets are more than ${MAX_FACETS_TO_SHOW}`, async ({
     page,
@@ -333,7 +338,7 @@ test.describe('Facet Categories', () => {
 
     // When
     for (let i = 0; i < facetsResponse.length; i++) {
-      const facetList = page.locator('.accordion-panel').nth(i);
+      const facetList = page.getByTestId('accordion-item').nth(i);
       const numFacets = facetsResponse[i].facets.length;
       if (numFacets > MAX_FACETS_TO_SHOW) {
         const searchInput = facetList.locator('input[type="search"]');
@@ -355,7 +360,7 @@ test.describe('Facet Categories', () => {
 
     // When
     for (let i = 0; i < facetsResponse.length; i++) {
-      const facetList = page.locator('.accordion-panel').nth(i);
+      const facetList = page.getByTestId('accordion-item').nth(i);
       const numFacets = facetsResponse[i].facets.length;
       if (numFacets > MAX_FACETS_TO_SHOW) {
         const searchInput = facetList.locator('input[type="search"]');
@@ -384,7 +389,7 @@ test.describe('Facet Categories', () => {
 
     // When
     for (let i = 0; i < facetsResponse.length; i++) {
-      const facetList = page.locator('.accordion-panel').nth(i);
+      const facetList = page.getByTestId('accordion-item').nth(i);
       const numFacets = facetsResponse[i].facets.length;
       if (numFacets > MAX_FACETS_TO_SHOW) {
         const searchInput = facetList.locator('input[type="search"]');

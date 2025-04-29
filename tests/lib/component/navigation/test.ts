@@ -44,7 +44,7 @@ test.describe('Any logged in user', () => {
 
     // Then
     await expect(page.locator('#user-session-avatar')).toContainText(
-      `${picsureUser.email?.charAt(0)?.toUpperCase()} Logout`,
+      (picsureUser as { email: string }).email.charAt(0).toUpperCase(),
     );
   });
   test('Session avatar should not have user initial after logout', async ({ page }) => {
@@ -52,7 +52,7 @@ test.describe('Any logged in user', () => {
     await page.goto('/');
 
     // When
-    const popoutButton = page.locator('#user-session-popout');
+    const popoutButton = page.locator('#user-session-avatar');
     await popoutButton.click();
 
     const logoutButton = page.locator('#user-logout-btn');
@@ -68,7 +68,7 @@ test.describe('Any logged in user', () => {
     await page.goto('/');
 
     // When
-    const popoutButton = page.locator('#user-session-popout');
+    const popoutButton = page.locator('#user-session-avatar');
     await popoutButton.click();
 
     const logoutButton = page.locator('#user-logout-btn');

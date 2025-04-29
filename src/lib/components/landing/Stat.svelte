@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { Readable } from 'svelte/store';
-  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
 
   import type { LandingStat } from '$lib/types';
+  import Loading from '../Loading.svelte';
 
   interface Props {
     stats: Readable<LandingStat[]>;
@@ -34,12 +34,7 @@
           class="flex flex-col justify-center items-center text-2xl"
         >
           {#await stat.value}
-            <ProgressRing
-              width="w-10"
-              meter="stroke-surface-50 dark:stroke-surface-900"
-              track="stroke-secondary-500/30"
-              value={undefined}
-            />
+            <Loading ring size="mini" />
           {:then value}
             <strong class="p-1 mb-3">{value && value.toLocaleString()}</strong>
           {:catch}

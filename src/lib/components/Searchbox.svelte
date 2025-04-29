@@ -12,7 +12,7 @@
   }: Props = $props();
 </script>
 
-<div class="flex w-full">
+<div class="flex w-full h-full">
   <input
     type="search"
     autocomplete="off"
@@ -38,6 +38,7 @@
 
 <style>
   .search-box {
+    border-radius: 9999px;
     border-top-right-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
     margin-right: 0% !important;

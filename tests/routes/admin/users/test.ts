@@ -60,7 +60,7 @@ test.describe('users', () => {
 
     // Then
     await page.waitForURL('**/admin/users/new');
-    await expect(page.url()).toContain('admin/users/new');
+    expect(page.url()).toContain('admin/users/new');
   });
   test('User form has pre-populated roles', async ({ page }) => {
     // Given
@@ -81,7 +81,7 @@ test.describe('users', () => {
 
     // Then
     await page.waitForURL('**/admin/users');
-    await expect(page.url()).toContain('/admin/users');
+    expect(page.url()).toContain('/admin/users');
   });
   test('User form returns to users page with success message', async ({ page }) => {
     // Given
@@ -102,8 +102,10 @@ test.describe('users', () => {
 
     // Then
     await page.waitForURL('**/admin/users');
-    await expect(page.locator('.snackbar-wrapper .variant-filled-success')).toBeVisible();
-    await expect(page.url()).toContain('/admin/users');
+    const toast = page.getByTestId('toast-root');
+    await expect(toast).toBeVisible();
+    await expect(toast).toHaveAttribute('data-type', 'success');
+    expect(page.url()).toContain('/admin/users');
   });
   test('User form returns error message on api fail', async ({ page }) => {
     // Given
@@ -118,7 +120,9 @@ test.describe('users', () => {
     await page.getByRole('button', { name: 'Save' }).click();
 
     // Then
-    await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
+    const toast = page.getByTestId('toast-root');
+    await expect(toast).toBeVisible();
+    await expect(toast).toHaveAttribute('data-type', 'error');
   });
   test('User form enforces required email format', async ({ page }) => {
     // Given
@@ -133,7 +137,7 @@ test.describe('users', () => {
     const invalid = await page
       .getByLabel('Email')
       .evaluate((element: HTMLInputElement) => element.validationMessage);
-    await expect(invalid).toMatch(validationText.invalidEmail);
+    expect(invalid).toMatch(validationText.invalidEmail);
   });
   test('User form enforces connection selection', async ({ page }) => {
     // Given
@@ -147,7 +151,7 @@ test.describe('users', () => {
     const noOption = await page
       .getByLabel('Connection')
       .evaluate((element: HTMLSelectElement) => element.validationMessage);
-    await expect(noOption).toMatch(validationText.option);
+    expect(noOption).toMatch(validationText.option);
   });
   test('User form enforces adding unique email and connection', async ({ page }) => {
     // Given
@@ -160,7 +164,9 @@ test.describe('users', () => {
     await page.getByRole('button', { name: 'Save' }).click();
 
     // Then
-    await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
+    const toast = page.getByTestId('toast-root');
+    await expect(toast).toBeVisible();
+    await expect(toast).toHaveAttribute('data-type', 'error');
   });
   test('Clicking row takes user to edit priviledge form', async ({ page }) => {
     // Given
@@ -174,17 +180,17 @@ test.describe('users', () => {
 
     // Then
     await page.waitForURL(`**/admin/users/${mockUsers[0].uuid}/edit`);
-    await expect(page.url()).toContain(`/admin/users/${mockUsers[0].uuid}/edit`);
+    expect(page.url()).toContain(`/admin/users/${mockUsers[0].uuid}/edit`);
   });
   test('Edit row icon takes user to edit privilege form', async ({ page }) => {
     // Given
     await page.goto('/admin/users');
 
     // When
-    await page.getByTestId(`user-edit-btn-${mockUsers[0].uuid}`).click();
+    await page.getByTestId(`user-${mockUsers[0].uuid}-edit-btn`).click();
 
     // Then
     await page.waitForURL(`**/admin/users/${mockUsers[0].uuid}/edit`);
-    await expect(page.url()).toContain(`/admin/users/${mockUsers[0].uuid}/edit`);
+    expect(page.url()).toContain(`/admin/users/${mockUsers[0].uuid}/edit`);
   });
 });

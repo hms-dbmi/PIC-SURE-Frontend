@@ -1,34 +1,32 @@
 <script lang="ts">
-  import type { DataHandler } from '@vincjo/datatables';
-  import { DataHandler as RemoteDataHandler } from '@vincjo/datatables/remote';
+  import { TableHandler } from '@vincjo/datatables/server';
 
   interface Props {
-    handler: DataHandler | RemoteDataHandler;
+    handler: TableHandler;
     filterBy: string;
     class?: string;
   }
 
-  const { handler, filterBy, class: className = '' }: Props = $props();
+  let { handler, filterBy, class: className = '' }: Props = $props();
+
+  const filter = handler.createFilter(filterBy);
   let timeout: ReturnType<typeof setTimeout>;
 
-  let value: string = $state('');
-  const filter = () => {
-    handler.filter(value, filterBy);
-    if (handler instanceof RemoteDataHandler) {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        handler.invalidate();
-      }, 400);
-    }
+  const setFilter = () => {
+    filter.set();
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      handler.invalidate();
+    }, 400);
   };
 </script>
 
 <th class={className}>
   <input
-    class="input text-sm w-full"
     type="text"
+    class="input text-sm w-full"
     placeholder="Filter"
-    bind:value
-    oninput={filter}
+    bind:value={filter.value}
+    oninput={setFilter}
   />
 </th>

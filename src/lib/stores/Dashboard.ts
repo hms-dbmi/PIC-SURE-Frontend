@@ -11,6 +11,7 @@ export const columns: Writable<Column[]> = writable([]);
 
 export type DashboardRow = Record<string, string | number | boolean | null>;
 export const rows: Writable<DashboardRow[]> = writable([]);
+export const activeRow: Writable<DashboardRow> = writable({});
 
 export type DashboardColumn = {
   label: string;

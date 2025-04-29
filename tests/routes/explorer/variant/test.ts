@@ -78,7 +78,7 @@ test.describe('variant explorer', () => {
       ]);
 
       // Then
-      await expect(download.suggestedFilename()).toBe('variantData.tsv');
+      expect(download.suggestedFilename()).toBe('variantData.tsv');
     });
     test("Displays count, even if it's 0", async ({ page }) => {
       // When
@@ -106,7 +106,9 @@ test.describe('variant explorer', () => {
       await page.getByTestId('variant-explorer-btn').click();
 
       // Then
-      await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
+      const toast = page.getByTestId('toast-root');
+      await expect(toast).toBeVisible();
+      await expect(toast).toHaveAttribute('data-type', 'error');
     });
     test('Error occurs during variant retrieval', async ({ page }) => {
       // Given
@@ -120,7 +122,9 @@ test.describe('variant explorer', () => {
 
       // Then
       await expect(page).toHaveURL('/explorer/variant');
-      await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
+      const toast = page.getByTestId('toast-root');
+      await expect(toast).toBeVisible();
+      await expect(toast).toHaveAttribute('data-type', 'error');
     });
   });
   test('Display notice when no query exists', async ({ page }) => {
@@ -130,6 +134,8 @@ test.describe('variant explorer', () => {
 
     // Then
     await expect(page).toHaveURL('/explorer');
-    await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
+    const toast = page.getByTestId('toast-root');
+    await expect(toast).toBeVisible();
+    await expect(toast).toHaveAttribute('data-type', 'error');
   });
 });

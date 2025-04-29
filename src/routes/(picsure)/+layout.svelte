@@ -1,59 +1,29 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { type ModalComponent, ToastProvider } from '@skeletonlabs/skeleton-svelte';
-  import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
+  import { onMount, type Snippet } from 'svelte';
   import { page } from '$app/stores';
-  import { goto, beforeNavigate } from '$app/navigation';
+  import { beforeNavigate } from '$app/navigation';
 
-  import { panelOpen } from '$lib/stores/SidePanel.ts';
+  import { Toaster } from '@skeletonlabs/skeleton-svelte';
+  import { toaster } from '$lib/toaster';
+
   import {
     hasInvalidFilter,
     hasGenomicFilter,
     hasUnallowedFilter,
-    removeGenomicFilters,
-    removeUnallowedFilters,
-    removeInvalidFilters,
+    filterWarning,
   } from '$lib/stores/Filter.ts';
 
+  import Shell from '$lib/components/Shell.svelte';
   import Navigation from '$lib/components/Navigation.svelte';
   import SidePanel from '$lib/components/explorer/results/SidePanel.svelte';
-  import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
   import Footer from '$lib/components/Footer.svelte';
-  import ModalWrapper from '$lib/components/modals/ModalWrapper.svelte';
-  import DashboardDrawer from '$lib/components/datatable/DashboardDrawer.svelte';
-  import FilterWarning from '$lib/components/modals/FilterWarning.svelte';
+  import Drawer from '$lib/components/Drawer.svelte';
+  import DashboardDrawer from '$lib/components/dashboard/DashboardDrawer.svelte';
+  import Modal from '$lib/components/Modal.svelte';
+  import FilterWarning from '$lib/components/explorer/FilterWarning.svelte';
 
-  // Highlight.js
-  import hljs from 'highlight.js/lib/core';
-  import R from 'highlight.js/lib/languages/r';
-  import python from 'highlight.js/lib/languages/python';
-  import 'highlight.js/styles/obsidian.css';
-  interface Props {
-    children?: import('svelte').Snippet;
-  }
-
-  let { children }: Props = $props();
-
-  const modalStore = getModalStore();
-  const drawerStore = getDrawerStore();
-
-  hljs.registerLanguage('python', python);
-  hljs.registerLanguage('r', R);
-  storeHighlightJs.set(hljs);
-
-  storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
-
-  // Registered list of Components for Modals
-  const modalComponentRegistry: Record<string, ModalComponent> = {
-    stepper: { ref: ExportStepper },
-    modalWrapper: { ref: ModalWrapper },
-    filterWarning: { ref: FilterWarning },
-  };
-  let modalProps: Record<string, unknown> = {
-    buttonPositive: 'preset-filled-primary-500',
-    buttonNeutral: 'preset-tonal-primary border border-primary-500',
-    components: modalComponentRegistry,
-  };
+  let { children }: { children?: Snippet } = $props();
+  let modalOpen: boolean = $state(false);
 
   onMount(() => {
     document.body.classList.add('started');
@@ -71,57 +41,29 @@
       to?.url.pathname.includes('/discover') && ($hasGenomicFilter || $hasUnallowedFilter);
 
     if (stigmatizing || notAuthorized) {
-      let meta = {};
-      if (stigmatizing) {
-        meta = {
-          message:
-            'Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover',
-          backTo: 'Explore',
-          resetQuery: () => {
-            panelOpen.set(false);
-            removeGenomicFilters();
-            removeUnallowedFilters();
-            goto(`/discover`);
-          },
-        };
-      }
-      if (notAuthorized) {
-        meta = {
-          message:
-            'You are not authorized to access the data in Explore based on your selected filters.',
-          backTo: 'Discover',
-          resetQuery: () => {
-            panelOpen.set(false);
-            removeInvalidFilters();
-            goto(`/explorer`);
-          },
-        };
-      }
+      if (stigmatizing) $filterWarning = 'stigmatizing';
+      else if (notAuthorized) $filterWarning = 'notAuthorized';
 
       cancel();
-      modalStore.trigger({
-        type: 'component',
-        component: 'filterWarning',
-        meta,
-      });
+      modalOpen = true;
     }
   });
 </script>
 
-<ToastProvider position="t" />
-<Modal {...modalProps} />
-<Drawer position="right" width="w-1/2" rounded-sm="rounded-none">
-  {#if $drawerStore.id === 'dashboard-drawer'}
-    <DashboardDrawer />
-  {/if}
+<Toaster {toaster} />
+<Modal data-testid="sendfilter-warning" open={modalOpen} withDefault={false}>
+  <FilterWarning />
+</Modal>
+<Drawer position="right" width="w-1/2">
+  <DashboardDrawer />
 </Drawer>
-<AppShell>
+<Shell>
   {#snippet header()}
     <Navigation />
   {/snippet}
   {#snippet sidebarRight()}
     {#if showSidebar}
-      <div id="right-panel-container" class={'flex'}>
+      <div id="sidebar-right" class="flex overflow-auto">
         <SidePanel />
       </div>
     {/if}
@@ -130,10 +72,4 @@
   {#snippet pageFooter()}
     <Footer />
   {/snippet}
-</AppShell>
-
-<style>
-  #right-panel-container {
-    height: 100%;
-  }
-</style>
+</Shell>

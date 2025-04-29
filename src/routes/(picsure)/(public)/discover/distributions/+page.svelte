@@ -8,11 +8,6 @@
   <title>{branding.applicationName} | Distributions</title>
 </svelte:head>
 
-<Content
-  full={true}
-  backUrl="/discover"
-  backTitle="Back to Discover"
-  title="Variable Distributions"
->
+<Content full backUrl="/discover" backTitle="Back to Discover" title="Variable Distributions">
   <Visualizations />
 </Content>

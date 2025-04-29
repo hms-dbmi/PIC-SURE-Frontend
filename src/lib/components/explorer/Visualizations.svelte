@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
   import { onMount } from 'svelte';
   import { resources } from '$lib/configuration';
   import * as api from '$lib/api';
@@ -12,10 +11,10 @@
   } from '$lib/utilities/Plotly';
   import { getQueryRequest } from '$lib/QueryBuilder';
   import { page } from '$app/stores';
+  import { toaster } from '$lib/toaster';
+  import Loading from '../Loading.svelte';
 
   const SYNC_URL = '/picsure/query/sync';
-
-  const toastStore = getToastStore();
 
   let plotValues: PlotValues[] = $state([]);
   let newPlot: PlotlyNewPlot = $state() as PlotlyNewPlot;
@@ -41,10 +40,9 @@
       })
       .catch((error) => {
         console.error('Viusalzation failed with query: ' + JSON.stringify(query), error);
-        toastStore.trigger({
-          message:
+        toaster.error({
+          description:
             'An error occured while parsing your token. Please try again later. If this problem persists, please contact an administrator.',
-          background: 'preset-filled-error-500',
         });
       })
       .finally(() => {
@@ -65,7 +63,7 @@
 </p>
 <div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
   {#if loading}
-    <ProgressRing />
+    <Loading ring size="medium" />
   {:else if plotValues.length}
     {#each plotValues as { data, layout, meta }, index}
       <PlotlyPlot {index} {data} {layout} {meta} {newPlot} />

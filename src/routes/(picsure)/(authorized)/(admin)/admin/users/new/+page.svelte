@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { Progress } from '@skeletonlabs/skeleton-svelte';
-
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
@@ -8,6 +6,8 @@
 
   import RoleStore from '$lib/stores/Roles';
   import ConnectionsStore from '$lib/stores/Connections';
+  import Loading from '$lib/components/Loading.svelte';
+
   const { roleList, loadRoles } = RoleStore;
   const { connections, loadConnections } = ConnectionsStore;
 
@@ -23,15 +23,12 @@
 
 <Content title="New User" backUrl="/admin/users" backTitle="Back to Users">
   {#await load()}
-    <h3 class="text-left">Loading</h3>
-    <Progress animIndeterminate="anim-progress-bar" />
+    <Loading />
   {:then}
     <section id="user-new">
       <UserForm connections={$connections} roleList={$roleList} />
     </section>
   {:catch}
-    <ErrorAlert title="API Error">
-      <p>Something went wrong when sending your request.</p>
-    </ErrorAlert>
+    <ErrorAlert title="API Error">Something went wrong when sending your request.</ErrorAlert>
   {/await}
 </Content>

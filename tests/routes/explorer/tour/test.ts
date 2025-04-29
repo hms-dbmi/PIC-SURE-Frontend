@@ -26,7 +26,7 @@ test('Explorer tour button opens instruction modal', async ({ page }) => {
   await page.getByTestId('explorer-tour-btn').click();
 
   // The
-  await expect(page.getByTestId('modal')).toBeVisible();
+  await expect(page.locator('#modal-component')).toBeVisible();
 });
 test('Tour Finishes', async ({ page }) => {
   // Given
@@ -39,7 +39,7 @@ test('Tour Finishes', async ({ page }) => {
   );
   await page.goto('/explorer');
   await page.getByTestId('explorer-tour-btn').click();
-  await page.getByTestId('start-explorer-tour-btn').click();
+  await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
 
   // When
   const stepCount = await page
@@ -66,7 +66,7 @@ test('Explorer tour starts from modal', async ({ page }) => {
   await page.getByTestId('explorer-tour-btn').click();
 
   // When
-  await page.getByTestId('start-explorer-tour-btn').click();
+  await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
 
   // Then
   await expect(page.locator('#driver-popover-content')).toBeVisible();
@@ -75,7 +75,7 @@ test('Escape key closes tour', async ({ page }) => {
   // Given
   await page.goto('/explorer');
   await page.getByTestId('explorer-tour-btn').click();
-  await page.getByTestId('start-explorer-tour-btn').click();
+  await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
 
   // When
   await page.keyboard.press('Escape');

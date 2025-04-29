@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
+  import Loading from './Loading.svelte';
 
   let searchInput: string = $state('');
 
@@ -117,7 +117,7 @@
 </script>
 
 <div data-testid="optional-selection-list" class="flex w-full">
-  <div class="flex flex-1 flex-col h-full p-3 m-1 card">
+  <div class="flex flex-1 flex-col h-full p-3 m-1 card bg-surface-100 rounded-xl">
     <header class="flex pb-1">
       <input
         class="input text-sm"
@@ -146,7 +146,7 @@
         {#each unselectedOptions as option}
           <label
             id="option-{getID(option)}"
-            class="p-1 m-1 cursor-pointer hover:preset-tonal-surface hover:rounded-md"
+            class="p-1 m-1 block cursor-pointer hover:preset-tonal-surface hover:rounded-md"
             role="listitem"
           >
             <input
@@ -159,14 +159,12 @@
           </label>
         {/each}
         {#if currentlyLoading}
-          <div class="flex justify-center">
-            <ProgressRing width="w-5" meter="stroke-primary-500" track="stroke-primary-500/30" />
-          </div>
+          <Loading ring size="small" />
         {/if}
       </div>
     </section>
   </div>
-  <div class="flex flex-1 flex-col h-full p-3 m-1 card">
+  <div class="flex flex-1 flex-col h-full p-3 m-1 card bg-surface-100 rounded-xl">
     <header class="flex justify-between pb-1">
       <div class="py-2">Selected:</div>
       {#if showClearAll}
@@ -188,7 +186,7 @@
         {#each displayedSelectedOptions as option (option)}
           <label
             id="option-{getID(option)}"
-            class="p-1 m-1 hover:preset-tonal-surface hover:rounded-md cursor-pointer"
+            class="p-1 m-1 block hover:preset-tonal-surface hover:rounded-md cursor-pointer"
             role="listitem"
           >
             <input
@@ -202,9 +200,7 @@
           </label>
         {/each}
         {#if currentlyLoadingSelected}
-          <div class="flex justify-center">
-            <ProgressRing width="w-5" meter="stroke-primary-500" track="stroke-primary-500/30" />
-          </div>
+          <Loading />
         {/if}
       </div>
     </section>
@@ -213,7 +209,7 @@
 
 <style>
   .scrollbar-color {
-    scrollbar-color: rgba(var(--color-surface-300)) rgb(var(--color-surface-100));
+    scrollbar-color: var(--color-surface-300) var(--color-surface-100);
   }
   .h-25vh {
     height: 25vh;

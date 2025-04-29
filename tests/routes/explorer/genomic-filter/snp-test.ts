@@ -44,7 +44,6 @@ test('Search box enforces valid snp format', async ({ page }) => {
 
   // When
   await page.getByTestId('snp-search-box').fill(invalidSnp);
-  await page.getByTestId('snp-search-btn').click();
 
   // Then
   const message = await page

@@ -2,7 +2,7 @@
   import { branding } from '$lib/configuration';
   import { goto } from '$app/navigation';
   import Searchbox from '$lib/components/Searchbox.svelte';
-  import Stats from '$lib/components/Stats.svelte';
+  import Stats from '$lib/components/landing/Stats.svelte';
   import { browser } from '$app/environment';
   let searchTerm = $state('');
 

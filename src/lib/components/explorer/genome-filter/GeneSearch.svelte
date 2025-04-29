@@ -20,11 +20,7 @@
 </script>
 
 <div id="gene-search" class="grid grid-col-3 gap-3 {props.class || ''}">
-  <Panel
-    title="Search for Gene with Variant"
-    subtitle="Use the official gene symbol."
-    required={true}
-  >
+  <Panel title="Search for Gene with Variant" subtitle="Use the official gene symbol." required>
     {#snippet action()}
       <button
         data-testid="clear-selected-genes-btn"

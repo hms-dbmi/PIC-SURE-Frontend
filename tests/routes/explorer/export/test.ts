@@ -99,7 +99,7 @@ async function checkStepRenderedCorrectly(
   // Check that the step header is rendered with correct text and number
   const stepHeader = page.locator('div.stepper-header-step').nth(stepNumber - 1);
   const step = stepHeader.locator('span');
-  await expect(step).toHaveClass(/variant-filled-primary/);
+  await expect(step).toHaveClass(/preset-filled-primary-500/);
   await expect(page.locator('header.step-header')).toHaveText(headerText);
 
   // Check that the summary section is rendered if expected
@@ -125,7 +125,7 @@ test.describe('Export Page', () => {
     await page.goto('/explorer/export');
     await expect(page).toHaveURL('/explorer/export');
     await expect(page.locator('h1')).toHaveText('Export Data for Research Analysis');
-    await expect(page.locator('button.variant-filled-primary')).toHaveText('Learn How');
+    await expect(page.getByRole('button', { name: 'Learn How' })).toBeVisible();
     await expect(page.getByTestId('back-btn')).toBeVisible();
   });
 
@@ -179,14 +179,14 @@ test.describe('Export Page', () => {
     const pfbExportOption = page.getByTestId('pfb-export-option');
     await expect(csvExportOption).toBeVisible();
     await expect(pfbExportOption).toBeVisible();
-    await expect(csvExportOption).toHaveClass(/variant-ringed-primary/);
-    await expect(pfbExportOption).toHaveClass(/variant-ringed-primary/);
+    await expect(csvExportOption).toHaveClass(/preset-outlined-primary-500/);
+    await expect(pfbExportOption).toHaveClass(/preset-outlined-primary-500/);
     await pfbExportOption.click();
-    await expect(csvExportOption).toHaveClass(/variant-ringed-primary/);
-    await expect(pfbExportOption).toHaveClass(/variant-filled-primary/);
+    await expect(csvExportOption).toHaveClass(/preset-outlined-primary-500/);
+    await expect(pfbExportOption).toHaveClass(/preset-filled-primary-500/);
     await csvExportOption.click();
-    await expect(csvExportOption).toHaveClass(/variant-filled-primary/);
-    await expect(pfbExportOption).toHaveClass(/variant-ringed-primary/);
+    await expect(csvExportOption).toHaveClass(/preset-filled-primary-500/);
+    await expect(pfbExportOption).toHaveClass(/preset-outlined-primary-500/);
     await expect(nextButton).not.toBeDisabled();
     await mockApiSuccess(page, `*/**/picsure/query`, newDatasetResponse);
     await nextButton.click();
@@ -209,16 +209,16 @@ test.describe('Export Page', () => {
 
     // Start Analysis
     await checkStepRenderedCorrectly(page, 4, 'Start Analysis:', false, 'Done', false);
-    const tabGroup = page.getByTestId('tab-group');
-    const codeBlock = tabGroup.getByTestId('codeblock');
+    const tabGroup = page.getByTestId('tabs-list');
+    const codeBlock = page.getByTestId('tabs-panel').locator('.code-block').first();
     await expect(tabGroup).toBeVisible();
     await expect(codeBlock).toBeVisible();
     await expect(codeBlock).toContainText('python');
-    const tab = tabGroup.getByTestId('tab').nth(2);
+    const tab = tabGroup.getByTestId('tabs-control').nth(2);
     await expect(tab).toBeVisible();
     await expect(tab).toHaveText('Download');
     await tab.click();
-    const downloadButton = page.locator('button').filter({ hasText: 'Download as CSV' });
+    const downloadButton = page.getByRole('button', { name:'Download as CSV' });
     await expect(downloadButton).toBeVisible();
     await expect(downloadButton).toBeEnabled();
     const userToken = page.locator('div#user-token');

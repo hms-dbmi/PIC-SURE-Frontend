@@ -1,23 +1,17 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
   import { getConceptDetails } from '$lib/stores/Dictionary';
-  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
+  import Loading from '$lib/components/Loading.svelte';
 
-  interface Props {
-    data: SearchResult;
-  }
-
-  let { data }: Props = $props();
+  let { data = {} as SearchResult }: { data?: SearchResult } = $props();
 
   let detailPromise = getConceptDetails(data.conceptPath, data.dataset);
 </script>
 
-<div class="card min-h-60 p-4">
+<div class="card bg-surface-100 min-h-60 p-4">
   <div class="card-body">
     {#await detailPromise}
-      <div class="flex justify-center w-full">
-        <ProgressRing />
-      </div>
+      <Loading ring size="medium" />
     {:then searchResultDetail}
       <section data-testid="variable-info" class="flex flex-col w-3/4 p-4">
         <h3 class="text-primary-500">Variable Information</h3>

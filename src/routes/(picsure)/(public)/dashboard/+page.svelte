@@ -2,18 +2,18 @@
   import { onDestroy, onMount } from 'svelte';
   import type { Unsubscriber } from 'svelte/store';
 
-  import { Progress } from '@skeletonlabs/skeleton-svelte';
-
   import { branding, features } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
-  import DashboardLink from '$lib/components/datatable/DashboardLink.svelte';
+  import DashboardLink from '$lib/components/dashboard/DashboardLink.svelte';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 
   import { columns, loadDashboardData, rows } from '$lib/stores/Dashboard.ts';
 
   import type { Column } from '$lib/models/Tables';
-  import type { DashboardRow } from '$lib/stores/Dashboard';
-  const drawerStore = getDrawerStore();
+  import { type DashboardRow, activeRow } from '$lib/stores/Dashboard';
+  import { open } from '$lib/stores/Drawer';
+  import Loading from '$lib/components/Loading.svelte';
 
   const tableName = 'ExplorerTable';
 
@@ -43,20 +43,18 @@
   });
 
   function rowClickHandler(row: DashboardRow) {
-    drawerStore.open({
-      id: 'dashboard-drawer',
-      meta: { row },
-    });
+    $activeRow = row;
+    $open = true;
   }
 </script>
 
 <svelte:head>
   <title>{branding.applicationName}</title>
 </svelte:head>
-<Content title="Data Dashboard" class="content-center" full={true}>
+<Content title="Data Dashboard" class="content-center" full>
   <section id="data-container" class="">
     {#await dataLoadPromise}
-      <Progress animIndeterminate="anim-progress-bar" />
+      <Loading />
     {:then}
       <Datatable
         {tableName}
@@ -66,10 +64,14 @@
         defaultRowsPerPage={currentRows.length}
         search={false}
         showPagination={false}
-        stickyHeader={true}
+        stickyHeader
         rowClickHandler={features.dashboardDrawer ? rowClickHandler : undefined}
         isClickable={features.dashboardDrawer}
       />
+    {:catch}
+      <ErrorAlert title="An Error Occured">
+        We're having trouble fetching the data dashboard items right now. Please try again later.
+      </ErrorAlert>
     {/await}
   </section>
 </Content>

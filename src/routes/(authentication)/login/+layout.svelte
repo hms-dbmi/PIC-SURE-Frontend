@@ -1,10 +1,14 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { Toaster } from '@skeletonlabs/skeleton-svelte';
+  import { toaster } from '$lib/toaster';
+
   import { user } from '$lib/stores/User';
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
+
   import Footer from '$lib/components/Footer.svelte';
   import Dots from '$lib/components/Dots.svelte';
-  import { ToastProvider } from '@skeletonlabs/skeleton-svelte';
+
   interface Props {
     children?: import('svelte').Snippet;
   }
@@ -18,7 +22,7 @@
   });
 </script>
 
-<ToastProvider position="t" />
+<Toaster {toaster} />
 <div class="w-full full-height">
   <Dots class="top-dots" />
   {@render children?.()}

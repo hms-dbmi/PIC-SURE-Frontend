@@ -1,10 +1,10 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
+  import { toaster } from '$lib/toaster';
   import type { SearchResult } from '$lib/models/Search';
-  import OptionsSelectionList from '../OptionsSelectionList.svelte';
   import { addFilter } from '$lib/stores/Filter';
   import { activeRow } from '$lib/stores/ExpandableRow';
-  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
-  import { onMount } from 'svelte';
   import type { Filter } from '$lib/models/Filter';
   import {
     createCategoricalFilter,
@@ -12,15 +12,18 @@
     createRequiredFilter,
   } from '$lib/models/Filter';
   import { getConceptDetails } from '$lib/stores/Dictionary';
+  import { panelOpen } from '$lib/stores/SidePanel';
 
-  const modalStore = getModalStore();
-  const toastStore = getToastStore();
+  import Loading from '../Loading.svelte';
+  import OptionsSelectionList from '../OptionsSelectionList.svelte';
 
   interface Props {
-    data: SearchResult;
+    data?: SearchResult;
+    existingFilter?: Filter;
+    onclose?: () => void;
   }
 
-  let { data = $bindable() }: Props = $props();
+  let { data = {} as SearchResult, existingFilter, onclose = () => {} }: Props = $props();
 
   let max: string = $state('');
   let min: string = $state('');
@@ -37,9 +40,7 @@
   let studyDisplay: string = $state('');
 
   onMount(async () => {
-    if ($modalStore[0]?.meta.existingFilter) {
-      const existingFilter: Filter = $modalStore[0]?.meta.existingFilter;
-      data = $modalStore[0]?.meta.existingFilter.searchResult;
+    if (existingFilter) {
       display = data?.display || '';
       description = data?.description || '';
       studyDisplay =
@@ -80,9 +81,8 @@
         }
       } catch (e) {
         console.error(e);
-        toastStore.trigger({
-          message: 'An error occured while loading the filter. Please try again later.',
-          background: 'preset-filled-error-500',
+        toaster.error({
+          title: 'An error occured while loading the filter. Please try again later.',
         });
       }
     }
@@ -109,9 +109,8 @@
 
   function finish() {
     $activeRow = '';
-    if ($modalStore[0]) {
-      modalStore.close();
-    }
+    $panelOpen = true;
+    onclose();
   }
 
   function getNextValues(search: string = '') {
@@ -142,9 +141,8 @@
       startLocation = endLocation;
     } catch (error) {
       console.error(error);
-      toastStore.trigger({
-        message: 'An error occurred while loading more options. Please try again later.',
-        background: 'preset-filled-error-500',
+      toaster.error({
+        title: 'An error occurred while loading more options. Please try again later.',
       });
     }
     loading = false;
@@ -169,7 +167,7 @@
   {/if}
   <div class="flex justify-between" data-testid="filter-component">
     {#if !data}
-      <ProgressRing width="w-10" value={undefined} />
+      <Loading ring size="medium" />
     {:else}
       {#if data?.type === 'Categorical'}
         <div data-testid="categoical-filter" class="w-full">
@@ -182,7 +180,7 @@
           />
         </div>
       {:else if data?.type === 'Continuous'}
-        <div class="card p-3 m-1 w-full">
+        <div class="card bg-surface-100 p-3 m-1 w-full">
           <section class="card-body flex grow gap-4" data-testid="numerical-filter">
             <label class="flex-auto flex-col">
               <span>Min: {min}</span>

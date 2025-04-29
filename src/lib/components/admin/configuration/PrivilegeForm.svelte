@@ -1,10 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  const toastStore = getToastStore();
 
   import type { Privilege } from '$lib/models/Privilege';
   import { addPrivilege, updatePrivilege } from '$lib/stores/Privileges';
   import { isTopAdmin } from '$lib/stores/User';
+  import { toaster } from '$lib/toaster';
 
   interface Props {
     privilege?: Privilege | undefined;
@@ -31,23 +31,21 @@
       } else {
         await addPrivilege(newPrivilege);
       }
-      toastStore.trigger({
-        message: `Successfully saved ${newPrivilege && 'new '}privilege '${name}'`,
-        background: 'preset-filled-success-500',
+      toaster.success({
+        title: `Successfully saved ${newPrivilege && 'new '}privilege '${name}'`,
       });
       goto('/admin/configuration');
     } catch (error) {
       console.error(error);
-      toastStore.trigger({
-        message: `An error occured while saving ${newPrivilege && 'new '}privilege '${name}'`,
-        background: 'preset-filled-error-500',
+      toaster.error({
+        title: `An error occured while saving ${newPrivilege && 'new '}privilege '${name}'`,
       });
     }
   }
 </script>
 
-<form onsubmit={savePrivilege} class="grid gap-4 my-3">
-  <fieldset data-testid="privilege-form" disabled={!$isTopAdmin}>
+<form onsubmit={savePrivilege}>
+  <fieldset data-testid="privilege-form" class="grid gap-4 my-3" disabled={!$isTopAdmin}>
     {#if privilege?.uuid}
       <label class="label">
         <span>UUID:</span>
@@ -82,22 +80,22 @@
       </select>
     </label>
 
-  <div>
-    <button
-      type="submit"
-      data-testid="privilege-save-btn"
-      class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-    >
-      Save
-    </button>
-    <a
-      href="/admin/configuration"
-      data-testid="privilege-cancel-btn"
-      class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
-    >
-      Cancel
-    </a>
-  </div>
+    <div class="mt-2">
+      <button
+        type="submit"
+        data-testid="privilege-save-btn"
+        class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+      >
+        Save
+      </button>
+      <a
+        href="/admin/configuration"
+        data-testid="privilege-cancel-btn"
+        class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
+      >
+        Cancel
+      </a>
+    </div>
   </fieldset>
 </form>
 

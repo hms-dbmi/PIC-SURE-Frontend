@@ -1,39 +1,34 @@
 <script lang="ts">
-  import type { DataHandler } from '@vincjo/datatables';
-  import { DataHandler as RemoteHander } from '@vincjo/datatables/remote';
-  interface Props {
-    handler: DataHandler | RemoteHander;
-  }
+  import { TableHandler } from '@vincjo/datatables/server';
 
-  let { handler }: Props = $props();
-  const pageNumber = handler.getPageNumber();
-  const pageCount = handler.getPageCount();
-  const pages = handler.getPages({ ellipsis: true });
-  const setPage = (value: 'previous' | 'next' | number) => {
+  let { handler }: { handler: TableHandler } = $props();
+
+  const setPage = (value: 'previous' | 'next' | 'last' | number) => {
     handler.setPage(value);
-    if (handler instanceof RemoteHander) {
-      handler.invalidate();
-    }
+    handler.invalidate();
   };
 </script>
 
-<!-- Desktop buttons -->
-<section class="btn-group-custom h-10 hidden lg:block">
-  {#if $pages !== undefined}
-    <button type="button" disabled={$pageNumber === 1} onclick={() => setPage('previous')}>
+<section class="-custom h-10 hidden lg:block">
+  {#if handler.pagesWithEllipsis !== undefined}
+    <button type="button" disabled={handler.currentPage === 1} onclick={() => setPage('previous')}>
       ←
     </button>
-    {#each $pages as page}
+    {#each handler.pagesWithEllipsis as page}
       <button
         type="button"
-        class:active={$pageNumber === page}
+        class:active={handler.currentPage === page}
         class:ellipse={page === null}
         onclick={() => setPage(page)}
       >
         {page ?? '...'}
       </button>
     {/each}
-    <button type="button" disabled={$pageNumber === $pageCount} onclick={() => setPage('next')}>
+    <button
+      type="button"
+      disabled={handler.currentPage === handler.pages.length}
+      onclick={() => setPage('next')}
+    >
       →
     </button>
   {/if}

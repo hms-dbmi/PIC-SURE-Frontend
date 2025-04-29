@@ -469,7 +469,7 @@ test.describe('Add Filters', () => {
     await edit.click();
 
     // Then
-    const modal = page.getByTestId('modal-component');
+    const modal = page.locator('#modal-component');
     await expect(modal).toBeVisible();
     await expect(modal.getByTestId('modal-wrapper-header')).toContainText('Edit Filter');
   });
@@ -494,7 +494,7 @@ test.describe('Add Filters', () => {
     const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.conceptPath}`);
     const edit = firstAddedFilter.locator('button').first();
     await edit.click();
-    const modal = page.getByTestId('modal-component');
+    const modal = page.locator('#modal-component');
     const selectedOptionContainer = modal.locator('#selected-options-container');
     const selectedOptions = await selectedOptionContainer.getByRole('listitem').all();
     const firstSelectedOption = selectedOptions[0];
@@ -523,7 +523,7 @@ test.describe('Add Filters', () => {
     const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.conceptPath}`);
     const edit = firstAddedFilter.locator('button').first();
     await edit.click();
-    const modal = page.getByTestId('modal-component');
+    const modal = page.locator('#modal-component');
     const variableInfo = modal.locator('.variable-info');
 
     // Then
@@ -556,7 +556,7 @@ test.describe('Add Filters', () => {
     const firstValueString = await firstAddedFilter.locator('section').innerText();
     const edit = firstAddedFilter.locator('button').first();
     await edit.click();
-    const modal = page.getByTestId('modal-component');
+    const modal = page.locator('#modal-component');
     const selectedOptionContainer = modal.locator('#selected-options-container');
     const firstUnslectedOption = await getOption(modal);
     await firstUnslectedOption.click();

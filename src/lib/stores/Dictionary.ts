@@ -24,6 +24,7 @@ export const hiddenFacets: Writable<FacetSkeleton> = writable({});
 export const facetsPromise: Writable<Promise<DictionaryFacetResult[]>> = writable(
   Promise.resolve([]),
 );
+export const openFacets: Writable<string[]> = writable([]);
 
 const dictonaryCacheMap = new Map<string, SearchResult>();
 
@@ -90,6 +91,10 @@ export async function updateFacetsFromSearch(): Promise<DictionaryFacetResult[]>
     const response: DictionaryFacetResult[] = await api.post(`${DICT_URL}facets/`, request);
     initializeHiddenFacets(response);
     processFacetResults(response);
+    const nonZero = response
+      .map((category) => (category.facets.some((facet) => facet.count > 0) ? category.name : ''))
+      .filter((c) => c);
+    openFacets.set(nonZero);
     return response;
   } catch (error) {
     console.error('Failed to update facets from search:', error);

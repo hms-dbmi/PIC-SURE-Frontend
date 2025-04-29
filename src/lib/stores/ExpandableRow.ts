@@ -1,20 +1,28 @@
-import type { SvelteComponent } from 'svelte';
+import type { Component } from 'svelte';
 import { get, writable, type Writable } from 'svelte/store';
+
+import AddFilterComponent from '$lib/components/explorer/AddFilter.svelte';
+import ResultInfoComponent from '$lib/components/explorer/ResultInfoComponent.svelte';
+import HierarchyComponent from '$lib/components/explorer/HierarchyComponent.svelte';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ComponentObject = Component<any, any, string>;
+
+const components: { [key: string]: () => ComponentObject } = {
+  filter: () => AddFilterComponent,
+  info: () => ResultInfoComponent,
+  hierarchy: () => HierarchyComponent,
+};
 
 export const activeTable: Writable<string> = writable('');
 export const activeRow: Writable<string> = writable('');
-export const expandableComponents: Writable<Record<string, typeof SvelteComponent>> = writable({});
-export const defaultComponent: Writable<typeof SvelteComponent | undefined> = writable();
-export const activeComponent: Writable<typeof SvelteComponent | undefined> = writable();
+export const defaultComponent: Writable<ComponentObject | undefined> = writable(components.info());
+export const activeComponent: Writable<ComponentObject | undefined> = writable(components.info());
 
-export function setActiveRow(options: {
-  row: string;
-  component?: typeof SvelteComponent;
-  table?: string;
-}) {
-  const { row, table, component } = options;
+export function setActiveRow(options: { row: string; component?: string; table?: string }) {
+  const { row, table, component: componentName } = options;
   const sameRow = get(activeRow) === row;
-  const sameComponent = !component || get(activeComponent) === component;
+  const sameComponent = !componentName || get(activeComponent) === components[componentName]();
   const sameTable = !table || get(activeTable) === table;
 
   if (sameRow && sameComponent && sameTable) {
@@ -23,20 +31,6 @@ export function setActiveRow(options: {
   } else {
     activeRow.set(row);
     table && activeTable.set(table);
-    component && activeComponent.set(component);
+    componentName && activeComponent.set(components[componentName]());
   }
-}
-
-// TODO: Bug? Why not typeof SvelteComponent?
-export function setComponentRegistry(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  registry: Record<string, new (...args: any[]) => SvelteComponent>,
-  component?: string,
-  table?: string,
-) {
-  activeTable.set(table ? table : '');
-  activeRow.set('');
-  expandableComponents.set(registry);
-  defaultComponent.set(component ? registry[component] : undefined);
-  activeComponent.set(component ? registry[component] : undefined);
 }

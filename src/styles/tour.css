@@ -1,40 +1,42 @@
-.driver-popover.picsure-theme {
-  background-color: rgb(var(--color-surface-50));
-  color: rgba(var(--theme-font-color-base));
+@reference "./app.css";
+
+.driver-popover {
+  background-color: var(--color-surface-50);
+  color: var(--base-font-color);
 
   .driver-popover-arrow {
-    border-left-color: rgb(var(--color-surface-50));
+    border-left-color: var(--color-surface-50);
   }
 
   .driver-popover-title {
-    @reference text-2xl font-bold my-3;
+    @apply text-2xl font-bold my-3;
   }
 
   @media (min-width: 768px) {
     .driver-popover-title {
-      @reference text-2xl font-bold;
+      @apply text-2xl font-bold;
     }
   }
 
   .driver-popover-navigation-btns {
-    @reference ml-4;
+    @apply ml-4;
   }
 
   .driver-popover-navigation-btns button {
-    @reference btn btn-sm variant-filled-primary;
     text-shadow: unset;
+    @apply btn btn-sm preset-filled-primary-500;
   }
 
   .driver-popover-navigation-btns button:hover {
-    @reference variant-filled-secondary;
+    @apply preset-filled-secondary-500;
   }
 
   .driver-popover-close-btn {
-    @reference text-surface-600-300-token text-2xl;
+    @apply text-surface-600-400 text-2xl;
   }
 
   .driver-popover-close-btn:hover {
-    @reference text-primary-400-500-token;
+    @apply text-primary-400-600;
   }
 
   .fa-classic,
@@ -48,10 +50,10 @@
 }
 
 .dark .driver-popover.picsure-theme {
-  background-color: rgb(var(--color-surface-900));
-  color: rgba(var(--theme-font-color-dark));
+  background-color: var(--color-surface-900);
+  color: var(--base-font-color-dark);
 
   .driver-popover-arrow {
-    border-left-color: rgb(var(--color-surface-900));
+    border-left-color: var(--color-surface-900);
   }
 }

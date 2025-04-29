@@ -1,6 +1,5 @@
 <script lang="ts">
   import { derived, readable, type Readable } from 'svelte/store';
-  import { Progress } from '@skeletonlabs/skeleton-svelte';
 
   import { goto } from '$app/navigation';
 
@@ -15,6 +14,8 @@
   import UsersStore from '$lib/stores/Users';
   import RolesStore from '$lib/stores/Roles';
   import ConnectionStore from '$lib/stores/Connections';
+  import Loading from '$lib/components/Loading.svelte';
+
   let { users, loadUsers } = UsersStore;
   let { connections, loadConnections } = ConnectionStore;
   let { roles, loadRoles } = RolesStore;
@@ -83,10 +84,7 @@
   <title>{branding.applicationName} | Manage Users</title>
 </svelte:head>
 <Content title="Manage Users">
-  {#await load()}
-    <h3 class="text-left">Loading</h3>
-    <Progress animIndeterminate="anim-progress-bar" />
-  {:then}
+  {#await load()}<Loading />{:then}
     <div class="flex gap-4 mb-6">
       <div class="flex-auto">
         <a
@@ -105,18 +103,16 @@
           data={connection.users}
           {columns}
           {cellOverides}
-          search={true}
+          search
           defaultRowsPerPage={10}
           title={connection.label}
           {rowClickHandler}
-          isClickable={true}
+          isClickable
           tableAuto={false}
         />
       </div>
     {/each}
   {:catch}
-    <ErrorAlert title="API Error">
-      <p>Something went wrong when sending your request.</p>
-    </ErrorAlert>
+    <ErrorAlert title="API Error">Something went wrong when sending your request.</ErrorAlert>
   {/await}
 </Content>

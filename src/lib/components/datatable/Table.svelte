@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { DataHandler } from '@vincjo/datatables';
+  import { TableHandler } from '@vincjo/datatables/server';
 
   import ThSort from './accessories/Sort.svelte';
   import ThFilter from './accessories/Filter.svelte';
@@ -25,6 +25,7 @@
     stickyHeader?: boolean;
     showPagination?: boolean;
     isClickable?: boolean;
+    expandable?: boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data?: any;
     class?: string;
@@ -32,7 +33,7 @@
     tableActions?: import('svelte').Snippet;
   }
 
-  const {
+  let {
     tableName,
     search = false,
     title = '',
@@ -45,14 +46,14 @@
     stickyHeader = false,
     showPagination = true,
     isClickable = false,
+    expandable = false,
     data = [],
     class: className = '',
     rowClickHandler = () => {},
     tableActions,
   }: Props = $props();
 
-  const handler = new DataHandler(data, { rowsPerPage: defaultRowsPerPage });
-  let rows = $derived(handler.getRows());
+  const handler = $derived(new TableHandler(data, { rowsPerPage: defaultRowsPerPage }));
 </script>
 
 <div class="space-y-1">
@@ -77,8 +78,9 @@
     <table
       id="{tableName}-table"
       data-testid="{tableName}-table"
-      class="table table-{tableAuto ? 'auto' : 'fixed'}  align-middle
-        {fullWidth ? 'w-max' : ''} {className}"
+      class="table table-{tableAuto ? 'auto' : 'fixed'} {className}"
+      class:w-max={fullWidth}
+      class:clickable={isClickable}
     >
       <thead>
         <tr class={stickyHeader ? 'sticky-header' : ''}>
@@ -104,8 +106,8 @@
         </tr>
       </thead>
       <tbody>
-        {#if $rows.length > 0}
-          {#each $rows as row, i}
+        {#if handler.rows.length > 0}
+          {#each handler.rows as row, i}
             <ExpandableRow
               {tableName}
               {cellOverides}
@@ -114,6 +116,7 @@
               {row}
               {rowClickHandler}
               {isClickable}
+              {expandable}
             />
           {/each}
         {:else}

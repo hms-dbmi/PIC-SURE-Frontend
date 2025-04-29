@@ -1,77 +1,66 @@
 <script lang="ts">
-  const modalStore = getModalStore();
-  const toastStore = getToastStore();
-  import { isTopAdmin } from '$lib/stores/User';
-
   import { goto } from '$app/navigation';
 
-  import PrivilegesStore from '$lib/stores/Privileges';
-  const { deletePrivilege } = PrivilegesStore;
+  import { isTopAdmin } from '$lib/stores/User';
+  import { toaster } from '$lib/toaster';
+  import { deletePrivilege } from '$lib/stores/Privileges';
+  import Modal from '$lib/components/Modal.svelte';
 
-  let { data = { cell: '', row: { name: '' } } } = $props();
+  const { data = { cell: '', row: { name: '' } } } = $props();
 
-  function editPrivilege(event: Event){
+  function editPrivilege(event: Event) {
     event.stopPropagation();
     goto(`/admin/configuration/privilege/${data.cell}/edit`);
   }
 
-  function deleteModal(event: Event){
-    event.stopPropagation();
-    const name = data.row.name;
-    modalStore.trigger({
-      type: 'confirm',
-      title: 'Delete Privilege?',
-      body: `Are you sure you want to delete privilege '${name}'?`,
-      buttonTextConfirm: 'Yes',
-      buttonTextCancel: 'No',
-      response: async (confirm: boolean) => {
-        if (!confirm || !$isTopAdmin) return;
-
-        try {
-          await deletePrivilege(data.cell);
-          toastStore.trigger({
-            message: `Successfully deleted privilege '${name}'`,
-            background: 'preset-filled-success-500',
-          });
-        } catch (error: unknown) {
-          console.error(error);
-          if ((error as { status?: number })?.status === 409) {
-            toastStore.trigger({
-              message: `Cannot delete privilege '${name}' as it is still in use by a role`,
-              background: 'preset-filled-error-500',
-            });
-          } else {
-            console.error(error);
-            toastStore.trigger({
-              message: `An unknown error occured while deleting privilege '${name}'`,
-              background: 'preset-filled-error-500',
-            });
-          }
-        }
-      },
-    });
+  async function deleteRow() {
+    if (!$isTopAdmin) return;
+    try {
+      await deletePrivilege(data.cell);
+      toaster.success({
+        title: `Successfully deleted privilege '${data.row.name}'`,
+      });
+    } catch (error) {
+      console.error(error);
+      if ((error as { status?: number })?.status === 409) {
+        toaster.error({
+          title: `Cannot delete privilege '${name}' as it is still in use by a role`,
+        });
+      } else {
+        toaster.error({
+          title: `An unknown error occured while deleting privilege '${name}'`,
+        });
+      }
+    }
   }
 </script>
 
 <div class="w-20 min-w-20">
   <button
-    data-testid={`privilege-edit-btn-${data.cell}`}
+    data-testid={`privilege-${data.cell}-edit-btn`}
     type="button"
     title="Edit"
     class="btn-icon-color"
+    disabled={!$isTopAdmin}
     onclick={editPrivilege}
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
     <span class="sr-only">Edit</span>
   </button>
-  <button
-    data-testid={`privilege-delete-btn-${data.cell}`}
-    type="button"
-    title="Delete"
-    class="btn-icon-color"
-    onclick={deleteModal}
+  <Modal
+    data-testid="privilege-{data.cell}-delete"
+    title="Delete Privilege?"
+    confirmText="Yes"
+    cancelText="No"
+    disabled={!$isTopAdmin}
+    onconfirm={deleteRow}
+    triggerBase="btn-icon-color"
+    withDefault
   >
-    <i class="fa-solid fa-trash fa-xl"></i>
-    <span class="sr-only">Delete</span>
-  </button>
+    {#snippet trigger()}
+      <i class="fa-solid fa-trash fa-xl"></i>
+      <span class="sr-only">Delete</span>
+    {/snippet}
+    Are you sure you want to delete privilege '{data.row.name}'?
+  </Modal>
 </div>

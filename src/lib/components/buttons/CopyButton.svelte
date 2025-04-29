@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Popover from '$lib/components/Popover.svelte';
+  import { debounce } from '$lib/utilities/Forms';
+
   interface Props {
     itemToCopy: string;
     text?: string;
@@ -21,61 +24,36 @@
     class: className = '',
   }: Props = $props();
 
-  let buttonId = testid || 'copy-btn';
-  let timer: ReturnType<typeof setTimeout>;
   let activeIcon: string = $state(icon);
   let activeButtonText: string = $state(text);
 
-  function debounce(method: () => void) {
-    clearTimeout(timer);
-    timer = setTimeout(method, 4500);
-  }
-
-  function updateButton(event: Event) {
-    event.stopPropagation();
+  function updateButton() {
     if (useIcon) {
       const iconText = icon;
-      debounce(() => (activeIcon = iconText));
+      debounce(() => (activeIcon = iconText), 4500)();
       activeIcon = altIcon;
     } else {
       const btnText = text;
-      debounce(() => (activeButtonText = btnText));
+      debounce(() => (activeButtonText = btnText), 4500)();
       activeButtonText = altText;
     }
+    navigator.clipboard.writeText(itemToCopy);
   }
 </script>
 
-{#if useIcon}
-  <button
-    type="button"
-    data-testid={buttonId}
-    title={activeButtonText}
-    class="ml-4 text-black-600 hover:text-primary-600 {className}"
-    onclick={updateButton}
-    use:clipboard={itemToCopy}
-    use:popup={{
-      event: 'click',
-      target: buttonId,
-      placement: 'top',
-    }}
-  >
-    <i class="fa-xl {activeIcon}"></i>
-    <div
-      data-testid="{buttonId}-popup"
-      class="rounded-sm p-4 max-w-md shadow-2xl preset-filled-surface-500 text-on-primary"
-      data-popup={buttonId}
-    >
-      {altText}
-      <div class="arrow preset-filled-surface-500"></div>
-    </div>
-  </button>
-{:else}
-  <button
-    type="button"
-    data-testid={buttonId}
-    title={activeButtonText}
-    class="ml-4 btn {className}"
-    onclick={updateButton}
-    use:clipboard={itemToCopy}>{activeButtonText}</button
-  >
-{/if}
+<Popover
+  data-testid={testid || 'copy'}
+  triggerStyle="ml-4 {useIcon ? 'text-black-600 hover:text-primary-600' : 'btn'} {className}"
+  onengage={updateButton}
+  color="secondary"
+  placement="bottom"
+>
+  {#snippet trigger()}
+    {#if useIcon}
+      <i class="fa-xl {activeIcon}"></i>
+    {:else}
+      {activeButtonText}
+    {/if}
+  {/snippet}
+  {altText}
+</Popover>

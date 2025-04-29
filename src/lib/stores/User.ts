@@ -138,16 +138,16 @@ export async function getUser(force?: boolean, hasToken = false) {
   }
 }
 
-export async function refreshLongTermToken() {
-  const newLongTermToken = await api
+export function refreshLongTermToken() {
+  return api
     .get('psama/user/me/refresh_long_term_token')
     .then((response: { userLongTermToken: string }) => {
       if (!response.userLongTermToken) {
         throw new Error('No user token was returned.');
       }
+      user.set({ ...get(user), token: response.userLongTermToken });
       return response.userLongTermToken;
     });
-  user.set({ ...get(user), token: newLongTermToken });
 }
 
 export async function getQueryTemplate(): Promise<QueryInterface> {

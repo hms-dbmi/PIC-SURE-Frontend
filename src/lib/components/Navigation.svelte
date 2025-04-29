@@ -1,27 +1,26 @@
 <script lang="ts">
-  import { AppBar, type PopupSettings } from '@skeletonlabs/skeleton-svelte';
+  import { onMount } from 'svelte';
+  import { AppBar, Avatar } from '@skeletonlabs/skeleton-svelte';
+
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
+
+  import { createInstance } from '$lib/AuthProviderRegistry.ts';
   import { user, userRoutes, isLoggedIn, logout } from '$lib/stores/User';
   import type { Route } from '$lib/models/Route';
-  import Logo from '$lib/components/Logo.svelte';
   import type AuthData from '$lib/models/AuthProvider.ts';
   import type AuthProvider from '$lib/models/AuthProvider.ts';
-  import { browser } from '$app/environment';
-  import { createInstance } from '$lib/AuthProviderRegistry.ts';
-  import { onMount } from 'svelte';
+
+  import Logo from '$lib/components/Logo.svelte';
+  import Popover from '$lib/components/Popover.svelte';
+
   let providerData: AuthData;
   let providerInstance: AuthProvider | undefined = $state(undefined);
 
   function getId({ path, id }: { path: string; id?: string; text: string }) {
     return `nav-link` + (id ? `-` + id : path.replaceAll('/', '-'));
   }
-
-  const logoutClick: PopupSettings = {
-    event: 'click',
-    target: 'logoutClick',
-    placement: 'bottom',
-  };
 
   function handleLogin() {
     goto(`/login?redirectTo=${$page.url.pathname}`);
@@ -50,9 +49,9 @@
   });
 </script>
 
-<AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-950">
+<AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-950" toolbarClasses="flex-none z-10">
   {#snippet lead()}
-    <a href="/" aria-current="page" data-testid="logo-home-link">
+    <a href="/" aria-current="page" data-testid="logo-home-link" class="content-center">
       <Logo class="mx-1" />
     </a>
   {/snippet}
@@ -68,21 +67,20 @@
     </ul>
   </nav>
   {#snippet trail()}
-    <div id="user-session-avatar">
-      {#if $user.privileges && $user.email && $isLoggedIn}
+    <div id="user-session-avatar" class="content-center">
+      {#if $user && $user.privileges && $user.email && $isLoggedIn}
         <!-- Logout -->
-        <button id="user-session-popout" use:popup={logoutClick}>
-          <span
-            class="avatar flex aspect-square justify-center items-center overflow-hidden isolate preset-tonal-primary border border-primary-500 hover:preset-tonal-secondary border border-secondary-500 w-12 rounded-full text-2xl"
-          >
-            {$user.email[0].toUpperCase()}
-            <span class="sr-only">Logout user {$user.email}</span>
-          </span>
-        </button>
-        <div
-          class="card p-6 variant-surface border-surface-100-900 text-center"
-          data-popup="logoutClick"
-        >
+        <Popover>
+          {#snippet trigger()}
+            <Avatar
+              name={($user.email || '').toUpperCase()}
+              background="preset-tonal-primary hover:preset-tonal-secondary"
+              border="border hover:border-primary-400"
+              font="text-2xl"
+              size="size-12"
+              classes="m-3"
+            />
+          {/snippet}
           <p class="pb-6">{$user.email}</p>
           <button
             id="user-logout-btn"
@@ -90,7 +88,7 @@
             title="Logout"
             onclick={() => logout(providerInstance, false)}>Logout</button
           >
-        </div>
+        </Popover>
       {:else}
         <!-- Login -->
         <button

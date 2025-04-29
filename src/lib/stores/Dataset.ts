@@ -3,18 +3,20 @@ import { get, writable, derived, type Readable, type Writable } from 'svelte/sto
 import { mapDataset, type DataSet } from '$lib/models/Dataset';
 import * as api from '$lib/api';
 
-const datasets: Writable<DataSet[]> = writable([]);
-const active: Readable<DataSet[]> = derived(datasets, ($ds) =>
+export const datasets: Writable<DataSet[]> = writable([]);
+export const active: Readable<DataSet[]> = derived(datasets, ($ds) =>
   $ds.filter((ds) => !ds.archived).sort((a, b) => b.rawStartTime - a.rawStartTime),
 );
-const archived: Readable<DataSet[]> = derived(datasets, ($ds) => $ds.filter((ds) => ds.archived));
+export const archived: Readable<DataSet[]> = derived(datasets, ($ds) =>
+  $ds.filter((ds) => ds.archived),
+);
 
-async function loadDatasets() {
+export async function loadDatasets() {
   const res = await api.get('picsure/dataset/named');
   datasets.set(res.map(mapDataset));
 }
 
-async function toggleArchived(uuid: string) {
+export async function toggleArchived(uuid: string) {
   const store: DataSet[] = get(datasets);
   const datasetIndex: number = store.findIndex((ds) => ds.uuid === uuid);
   if (datasetIndex === -1) {
@@ -32,7 +34,7 @@ async function toggleArchived(uuid: string) {
   datasets.set(store);
 }
 
-async function getDataset(uuid: string) {
+export async function getDataset(uuid: string) {
   const store: DataSet[] = get(datasets);
   const datasetIndex: number = store.findIndex((ds) => ds.uuid === uuid);
   if (datasetIndex > -1) {

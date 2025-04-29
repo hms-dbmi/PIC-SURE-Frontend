@@ -96,10 +96,18 @@
     </div>
     {#if $error}
       <ErrorAlert title="Sorry, we could not retrieve your search results." color="secondary">
-        <p>{$error}</p>
+        {$error}
       </ErrorAlert>
     {:else if $searchTerm || $selectedFacets.length > 0}
-      <SearchDatatable {tableName} {handler} {columns} {cellOverides} {isLoading} />
+      <SearchDatatable
+        isClickable
+        {tableName}
+        {handler}
+        {columns}
+        {cellOverides}
+        {isLoading}
+        expandable
+      />
     {/if}
     {#if features.explorer.enableTour && $tour}
       <div id="explorer-tour" class="text-center mt-4">

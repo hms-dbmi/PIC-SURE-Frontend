@@ -1,13 +1,14 @@
 <script lang="ts">
-  import { Accordion, ProgressRing } from '@skeletonlabs/skeleton-svelte';
+  import { Accordion } from '@skeletonlabs/skeleton-svelte';
 
   import type { Facet } from '$lib/models/Search';
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
   import { selectedFacets } from '$lib/stores/Search';
-  import { facetsPromise } from '$lib/stores/Dictionary';
+  import { facetsPromise, openFacets } from '$lib/stores/Dictionary';
 
   import ErrorAlert from '../ErrorAlert.svelte';
   import FacetCategory from './FacetCategory.svelte';
+  import Loading from '../Loading.svelte';
 
   function recreateFacetCategories(): DictionaryFacetResult[] {
     let facetsToShow: DictionaryFacetResult[] = [];
@@ -29,18 +30,20 @@
 </script>
 
 {#await $facetsPromise}
-  <div class="radial-container">
-    <ProgressRing width="w-10" />
-  </div>
+  <Loading ring size="medium" />
 {:then newFacets}
   {#if newFacets?.length > 0}
-    <Accordion rounded="rounded-container">
+    <Accordion multiple value={$openFacets} onValueChange={(e) => ($openFacets = e.value)}>
+      {#snippet iconOpen()}<i class="fa-solid fa-angle-up"></i>{/snippet}
+      {#snippet iconClosed()}<i class="fa-solid fa-angle-down"></i>{/snippet}
       {#each newFacets as facetCategory}
         <FacetCategory {facetCategory} />
       {/each}
     </Accordion>
   {:else}
-    <Accordion>
+    <Accordion multiple value={$openFacets} onValueChange={(e) => ($openFacets = e.value)}>
+      {#snippet iconOpen()}<i class="fa-solid fa-angle-up"></i>{/snippet}
+      {#snippet iconClosed()}<i class="fa-solid fa-angle-down"></i>{/snippet}
       {#each recreateFacetCategories() as facetCategory}
         <FacetCategory {facetCategory} />
       {/each}
@@ -48,15 +51,6 @@
   {/if}
 {:catch}
   <ErrorAlert title="Something went wrong loading your search options." color="secondary">
-    <p>Please wait a moment, refresh the page, and try again.</p>
+    Please wait a moment, refresh the page, and try again.
   </ErrorAlert>
 {/await}
-
-<style>
-  .radial-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-  }
-</style>

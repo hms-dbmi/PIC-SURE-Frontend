@@ -76,7 +76,7 @@
         >
           <span
             data-testid="step-{$stepperState.stepMap[step]}"
-            class="badge text-sm {isActive(step)
+            class="badge rounded-2xl text-sm {isActive(step)
               ? 'preset-filled-primary-500'
               : 'preset-filled-surface-500'}">{isActive(step) ? `Step ${step + 1}` : step + 1}</span
           >
