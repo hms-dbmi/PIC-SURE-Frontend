@@ -15,7 +15,7 @@
   const {
     href = '',
     angle = 'left',
-    variant = 'filled',
+    variant = 'tonal',
     color = 'primary',
     disabled = false,
     name = '',
@@ -25,7 +25,7 @@
     children,
   }: Props = $props();
 
-  const btnStyle = `btn btn-sm h-fit variant-${variant}-${color} ${variant !== 'filled' ? `hover:variant-filled-${color}` : ''} text-lg`;
+  const btnStyle = `btn btn-sm h-fit border preset-${variant}-${color} hover:preset-filled-${color}-500 text-lg`;
   const clean_testid = testid || name.replaceAll(' ', '-').toLowerCase() + '-btn';
 </script>
 

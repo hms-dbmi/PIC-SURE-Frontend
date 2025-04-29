@@ -1,16 +1,12 @@
 @import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+
 @import '@skeletonlabs/skeleton';
 @import '@skeletonlabs/skeleton/optional/presets';
 
-/*
-  Add your theme import for your theme: "picsure-theme" here
-*/
-@source "../node_modules/@skeletonlabs/skeleton-svelte/dist";
+@source '../../node_modules/@skeletonlabs/skeleton-svelte/dist';
 
-@plugin '@tailwindcss/forms';
-@plugin '@tailwindcss/typography';
-
-@source '../node_modules/@skeletonlabs/skeleton/dist/**/*.{html,js,svelte,ts}';
+@import './theme.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -22,22 +18,22 @@
   If we ever want to remove these styles, we need to add an explicit border
   color utility to any element that depends on these defaults.
 */
-@layer base {
+/* @layer base {
   *,
   ::after,
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+    border-color: var(--color-surface-200, currentcolor);
   }
-}
+} */
 
 @layer utilities {
 }
 
 html,
 body {
-  @reference h-full overflow-hidden;
+  @apply h-full overflow-hidden;
 }
 
 .monospace {
@@ -56,25 +52,63 @@ body {
 
 input[type='search'] {
   width: 100%;
-  box-sizing: border-box;
-  @reference input;
+  /* border-radius: var(--radius-base);
+  font-size: var(--base-font-size); */
+  @apply input;
 }
 
 input[type='checkbox'] {
-  @reference checkbox;
+  @apply checkbox bg-surface-50-950;
 }
 
 select {
-  @reference select;
+  @apply select;
+}
+
+hr {
+  @apply hr;
+}
+
+p {
+  margin: 1rem;
+}
+
+.code-block pre {
+  @apply rounded-container p-4;
+
+  code {
+    counter-reset: headerCounter;
+    @apply block whitespace-pre-wrap;
+
+    span.line {
+      position: relative;
+      counter-increment: headerCounter;
+    }
+
+    span.line::before {
+      display: inline;
+      content: counter(headerCounter, decimal);
+      margin-right: 1.5rem;
+      color: var(--color-surface-800);
+    }
+  }
+}
+
+.w-modal {
+  width: 100%;
+  max-width: 640px;
+}
+
+.popover {
+  width: max-content;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  @apply rounded-sm p-4 max-w-md shadow-2xl;
 }
 
 @media print {
-  .app-bar #page-navigation {
-    display: none;
-  }
-  .main-content {
-    width: 100%;
-  }
   h1,
   h2,
   h3,
@@ -88,28 +122,52 @@ select {
     height: auto !important;
     overflow: auto !important;
   }
+
+  .main-content,
+  div:has(.main-content) {
+    width: 100%;
+    max-width: 100%;
+    margin: inherit 0;
+    padding: 0;
+    overflow: visible;
+    overflow-wrap: break-word;
+    position: static;
+    float: none;
+    display: block;
+  }
+
+  #appShell div:has(nav#page-navigation),
+  #appShell div:has(div#user-session-avatar) {
+    display: none;
+  }
+
+  #page-footer {
+    display: none;
+  }
+
+  header:has(#nav-logo) {
+    border: none !important;
+    content: center;
+  }
+
   body.overflow-hidden,
-  .app-shell.overflow-hidden,
-  .app-shell div.overflow-hidden {
+  #appShell.overflow-hidden,
+  #appShell div.overflow-hidden {
     overflow: auto !important;
   }
   body.h-full,
-  .app-shell.h-full,
-  .app-shell div.h-full {
+  #appShell.h-full,
+  #appShell div.h-full {
     height: auto !important;
   }
 }
 
 #sidebar-right {
-  border-left: 2px solid rgba(var(--color-surface-500));
+  height: 100%;
+  border-left: 2px solid var(--color-surface-500);
 }
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  @reference my-1;
+#appShell > header {
+  border-bottom: 2px solid var(--color-surface-500);
 }
 
 h1,
@@ -160,11 +218,7 @@ ul.primary-list {
 }
 ol.primary-list li::marker,
 ul.primary-list li::marker {
-  color: rgba(var(--color-primary-500));
-}
-
-.anchor {
-  @reference text-primary-700-200-token;
+  color: var(--color-primary-500);
 }
 
 /* Loading progress bar animation */
@@ -184,8 +238,21 @@ ul.primary-list li::marker {
   }
 }
 
+.table {
+  width: 100%;
+  table-layout: auto;
+  overflow: hidden;
+  background-color: var(--color-surface-100);
+  display: table;
+
+  @apply rounded-xl;
+}
+
 .table thead th {
   font-weight: normal !important;
+  background-color: var(--color-primary-100);
+  color: var(--base-font-color);
+  padding: 1rem;
 }
 
 .table thead.sticky-header th {
@@ -196,14 +263,16 @@ ul.primary-list li::marker {
 .table tbody td {
   font-size: 1rem;
   line-height: 1.25rem;
+  padding: 1rem;
 }
 
-.table tbody tr:nth-child(even) {
-  @reference bg-surface-700/20;
-}
-
+.table tbody tr:nth-child(even),
 .table tbody tr.expandable-row {
-  background-color: rgb(var(--color-surface-300)) !important;
+  background-color: var(--color-surface-200);
+}
+
+.table.clickable tbody tr:not(.expandable-row):hover {
+  background-color: var(--color-surface-300);
 }
 
 .table.align-middle tbody td {
@@ -211,22 +280,24 @@ ul.primary-list li::marker {
 }
 
 #nav-logo {
-  max-height: 80px;
+  width: 100%;
+  height: auto;
 }
 
 header .app-bar {
-  border-bottom: solid rgb(var(--color-surface-400)) 2px;
+  border-bottom: solid var(--color-surface-400) 2px;
 }
 
 #page-footer {
   border-style: solid;
-  border-top-width: 2px;
-  @reference bg-primary-100-800-token border-surface-400-500-token;
+  border-top-width: 1px;
+  @apply bg-primary-100-900 border-surface-400-600;
 }
 
 #main-footer {
   padding: 0.75rem;
-  @reference bg-primary-300-600-token;
+  margin-top: 0;
+  @apply bg-primary-400-600;
 }
 #main-footer ul {
   margin: 0 auto;
@@ -236,15 +307,15 @@ header .app-bar {
   display: inline;
   padding: 0 0.45rem;
   border-style: solid;
-  border-right-width: 2px;
-  @reference border-primary-400-500-token;
+  border-right-width: 1px;
+  @apply border-primary-400-600;
 }
 #main-footer ul li:last-child {
   border-right: none;
 }
 
 .key-focus {
-  border: 2px solid rgb(var(--color-surface-500)) !important;
+  border: 2px solid var(--color-surface-500) !important;
 }
 
 nav#page-navigation {
@@ -252,8 +323,8 @@ nav#page-navigation {
   flex-flow: row wrap;
   align-items: stretch;
   justify-content: flex-end;
-  padding: 0 0.6em;
-  margin: 0 -0.6em 0;
+  padding: 0 0.6rem;
+  margin: 0.6rem -0.6rem 0;
 }
 
 nav#page-navigation ul {
@@ -276,11 +347,11 @@ nav#page-navigation li a.nav-link {
   text-decoration: none;
   height: 2.75rem;
   width: 8rem;
-  @reference rounded-container-token;
+  @apply rounded-xl;
 }
 
 nav#page-navigation a.nav-link[aria-current='page'] {
-  @reference variant-filled-primary;
+  @apply preset-filled-primary-500;
 }
 
 nav#page-navigation a.nav-link:hover,
@@ -288,14 +359,14 @@ nav#page-navigation a.nav-link:active,
 nav#page-navigation a.nav-link:focus,
 nav#page-navigation li.open a.nav-link,
 nav#page-navigation a.nav-link.highlight {
-  @reference variant-filled-secondary;
+  @apply preset-filled-secondary-500;
 }
 
 nav#page-navigation li .nav-dropdown {
   position: absolute;
-  padding-bottom: var(--theme-rounded-container);
+  padding-bottom: var(--radius-container);
   width: 8rem;
-  @reference rounded-container-token bg-primary-300-600-token;
+  @apply rounded-container bg-primary-400-600;
 
   /* link top padding (from nav#page-navigation li: 0.4rem) + link height (from nav#page-navigation li a.nav-link: 2.75rem) */
   top: 3.15rem;
@@ -307,11 +378,11 @@ nav#page-navigation li .nav-dropdown li {
 }
 
 nav#page-navigation li.open > .nav-dropdown {
-  border-radius: 0 0 var(--theme-rounded-container) var(--theme-rounded-container);
+  border-radius: 0 0 var(--radius-container) var(--radius-container);
 }
 
 nav#page-navigation li.open a.nav-link {
-  border-radius: var(--theme-rounded-container) var(--theme-rounded-container) 0 0;
+  border-radius: var(--radius-container) var(--radius-container) 0 0;
 }
 
 nav#page-navigation li .nav-dropdown a {
@@ -322,17 +393,17 @@ nav#page-navigation li .nav-dropdown a {
 
 nav#page-navigation li .nav-dropdown a:hover,
 nav#page-navigation li .nav-dropdown a:focus {
-  @reference bg-secondary-300-600-token text-on-secondary-token;
+  @apply bg-secondary-400-600;
 }
 
 .help-text a {
-  @reference anchor;
+  @apply anchor;
 }
 
 #visualizations {
   .main-svg {
-    border-radius: var(--theme-rounded-container);
-    box-shadow: 0 0 2px 0px rgba(var(--color-surface-500));
+    border-radius: var(--radius-container);
+    box-shadow: 0 0 2px 0px var(--color-surface-500);
   }
   .modebar-group:last-child {
     background-color: transparent !important;
@@ -344,43 +415,47 @@ nav#page-navigation li .nav-dropdown a:focus {
 }
 
 .accordion-item button {
-  @reference bg-primary-300;
-  border-radius: var(--theme-rounded-container) var(--theme-rounded-container) 0 0;
+  @apply bg-primary-300;
+  border-radius: var(--radius-container) var(--radius-container) 0 0;
 }
 
 .accordion-item button[aria-expanded='false'] {
-  @reference rounded-container-token;
+  @apply rounded-container;
 }
 
 #user-token span.badge.expired {
-  @reference variant-filled-error;
+  @apply preset-filled-error-500;
 }
 
 #user-token span.badge.expiring {
-  @reference variant-filled-warning;
+  @apply preset-filled-warning-500;
 }
 
 #user-token span.badge.valid {
-  @reference variant-filled-success;
+  @apply preset-filled-success-500;
 }
 
-.input-border {
+.input-border,
+#user-token #token {
   overflow: auto;
   overflow-wrap: break-word;
   word-wrap: break-word;
   padding: 0.5em;
-  border-radius: var(--theme-rounded-container);
 }
 
 #user-token #token {
-  @reference input input-border;
+  @apply input;
+  border-radius: 1rem;
+}
+
+.btn {
+  border-radius: 9999px;
+  font-size: var(--base-font-size);
+  padding: 0.5rem 1.25rem;
 }
 
 .btn-xs {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
+  padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
   line-height: 1rem;
 }
@@ -393,13 +468,13 @@ nav#page-navigation li .nav-dropdown a:focus {
 legend.required:after {
   content: ' *';
   display: inline;
-  @reference text-error-500-400-token;
+  @apply text-error-500;
 }
 
 input.required:invalid,
 label.required input:invalid,
 .label.required input:invalid {
-  @reference text-error-500-400-token;
+  @apply text-error-500;
 }
 
 .top-dots {
@@ -418,28 +493,19 @@ label.required input:invalid,
 }
 
 .btn-icon-color {
-  color: rgba(var(--theme-font-color-base));
+  color: var(--base-font-color);
 
   &:hover {
-    @reference text-primary-600-300-token;
+    @apply text-primary-600-400;
   }
 
   &:disabled {
-    @reference text-surface-400;
+    @apply text-surface-400;
   }
 }
 
 .dark .btn-icon-color {
-  color: rgba(var(--theme-font-color-dark));
-}
-
-.dark .shadow-lg {
-  --tw-shadow: 0 10px 15px -3px rgb(var(--color-surface-50) / 0.1),
-    0 4px 6px -4px rgb(var(--color-surface-50) / 0.1);
-  --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color),
-    0 4px 6px -4px var(--tw-shadow-color);
-  box-shadow: var(--tw-ring-offset-shadow, 0 0 rgb(var(--color-surface-50))),
-    var(--tw-ring-shadow, 0 0 rgb(var(--color-surface-50))), var(--tw-shadow);
+  color: var(--base-font-color-dark);
 }
 
 .card-btn {
@@ -452,13 +518,11 @@ label.required input:invalid,
   text-align: center;
 
   padding: 1rem 0.5rem;
-  margin: 0.3rem;
+  margin: 1rem;
+  margin-bottom: 1.3rem;
+  border-radius: var(--radius-container);
 
-  @reference border border-surface-300-600-token rounded-container-token;
-
-  &:hover {
-    @reference scale-110 shadow-lg;
-  }
+  @apply border border-surface-400-600;
 
   .title {
     text-wrap: wrap;
@@ -471,6 +535,10 @@ label.required input:invalid,
     font-size: 1rem;
     line-height: 1.25rem;
   }
+}
+
+.card-btn:hover {
+  @apply scale-110 shadow-lg;
 }
 
 .card-btn-sm {
@@ -528,66 +596,31 @@ label.required input:invalid,
   }
 }
 
-/* === Button Groups - Horizontal === */
-/* Skeleton ships the btn-group class with a background color on hover, which can't 
-    be overriden, so we're using a custom btn-group and copying their other styles.
-    See: https://github.com/skeletonlabs/skeleton/blob/0791fcf916b3f96db3be6ee941b48564c39cbffb/packages/plugin/src/styles/components/buttons.css#L82-L111
-*/
-
-.btn-group-custom {
-  @reference variant-ghost-surface [&>*+*]:border-surface-500 inline-flex flex-row space-x-0 overflow-hidden rounded-token;
-  /* Safari: hover overflow fix for border radius */
-  isolation: isolate;
-}
-
-.btn-group-custom > * + * {
-  @reference border-t-0 border-l border-surface-500/20;
-}
-
-.btn-group-custom button,
-.btn-group-custom a {
-  @reference button-base-styles;
-  /* Reset Anchor Styles */
-  @reference no-underline! text-inherit!;
-}
-
-.btn-group-custom button:not(:disabled):hover,
-.btn-group-custom a:not(:disabled):hover {
-  @reference variant-soft-secondary;
-}
-
-.btn-group-custom button.active,
-.btn-group-custom a.active,
-.btn-group-custom button:not(:disabled):active,
-.btn-group-custom a:not(:disabled):active {
-  @reference variant-soft-primary;
-}
-
 #terms-of-service {
-  @reference mx-4;
+  @apply mx-4;
 
   .subtitle {
-    @reference text-base font-bold italic mb-4;
+    @apply font-bold italic mb-4;
   }
 
   h1 {
-    @reference h3;
+    @apply h3;
   }
 
   h2 {
-    @reference h4;
+    @apply h4;
   }
 
   h1,
   h2 {
-    @reference mt-4;
+    @apply mt-4;
   }
 
   ul {
-    @reference list-disc ml-8;
+    @apply list-disc ml-8;
   }
 
   a {
-    @reference anchor;
+    @apply anchor;
   }
 }

@@ -1,12 +1,11 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import { Progress } from '@skeletonlabs/skeleton-svelte';
-  const toastStore = getToastStore();
 
   import { goto } from '$app/navigation';
   import { branding, features, settings } from '$lib/configuration';
   import { ExportType } from '$lib/models/Variant';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
+  import { toaster } from '$lib/toaster';
 
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -24,6 +23,7 @@
   } from '$lib/stores/Variants';
   import type { Unsubscriber } from 'svelte/store';
   import { getQueryRequest } from '$lib/QueryBuilder';
+  import Loading from '$lib/components/Loading.svelte';
 
   let loading: Promise<void> = $state(Promise.resolve());
   let unsubVariantError: Unsubscriber;
@@ -48,17 +48,13 @@
     if (queryRequest.query.hasFilter()) {
       unsubVariantError = variantError.subscribe((error) => {
         if (error) {
-          toastStore.trigger({
-            message: error,
-            background: 'preset-filled-error-500',
-          });
+          toaster.error({ title: error });
         }
       });
       loading = getData();
     } else {
-      toastStore.trigger({
-        message: 'No query provided. Please add a genomic filter to explore variant data.',
-        background: 'preset-filled-error-500',
+      toaster.error({
+        title: 'No query provided. Please add a genomic filter to explore variant data.',
       });
       goto('/explorer');
     }
@@ -84,35 +80,28 @@
     >
   </div>
 {/if}
-<Content full={true} backUrl="/explorer" backTitle="Back to Explore">
+<Content full backUrl="/explorer" backTitle="Back to Explore">
   {#if features.explorer.variantExplorer}
     <h2 class="text-center clear-both">Variant Explorer</h2>
     {#await loading}
       {#if $count > 0}
         <div data-testid="variant-count" class="flex-none w-full">{$count} variants found</div>
       {/if}
-      <h3 class="text-left">Loading</h3>
-      <Progress animIndeterminate="anim-progress-bar" />
+      <Loading />
     {:then}
       {#if $count > settings.variantExplorer.maxCount}
-        <aside class="alert preset-filled-warning-500">
-          <i class="fa-solid fa-triangle-exclamation text-4xl"></i>
-          <div class="alert-message">
-            <p>
-              Too many variants! Found {$count}, but cannot display more than
-              {settings.variantExplorer.maxCount} variants.
-            </p>
-          </div>
-        </aside>
-        <p></p>
+        <ErrorAlert color="warning">
+          Too many variants! Found {$count}, but cannot display more than
+          {settings.variantExplorer.maxCount} variants.
+        </ErrorAlert>
       {:else if $count > 0 && $data.length > 0}
         <Datatable
           tableName="variant-explorer"
           data={$data}
           columns={$columns}
           defaultRowsPerPage={10}
-          fullWidth={true}
-          search={true}
+          fullWidth
+          search
         >
           {#snippet tableActions()}
             <div class="flex-auto flex items-end justify-between">
@@ -142,16 +131,14 @@
       {/if}
     {:catch error}
       <ErrorAlert title="Error">
-        <p>{error || 'An error occured while retrieving variant list.'}</p>
+        {error || 'An error occured while retrieving variant list.'}
       </ErrorAlert>
     {/await}
   {:else}
     <h3>Variant Explorer</h3>
     <ErrorAlert title="Error">
-      <p>
-        Variant explorer feature has not been enabled in this environment. Please contact an admin
-        if you have any questions.
-      </p>
+      Variant explorer feature has not been enabled in this environment. Please contact an admin if
+      you have any questions.
     </ErrorAlert>
   {/if}
 </Content>

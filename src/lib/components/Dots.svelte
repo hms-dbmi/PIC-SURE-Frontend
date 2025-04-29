@@ -1,10 +1,10 @@
 <script lang="ts">
-  let { ...props }: { class: string } = $props();
+  let { class: className = '' }: { class: string } = $props();
   let primaryCircle = $state('--color-primary-500');
   let secondaryCircle = $state('--color-secondary-500');
   let tertiaryCircle = $state('--color-tertiary-500');
-  let successCircle = $state('');
-  let errorCircle = $state('');
+  let successCircle = $state('--color-success-500');
+  let errorCircle = $state('--color-error-500');
   let useFiveColors = $state(false);
 
   const dotsColorsClass: string[] = (() => {
@@ -41,7 +41,7 @@
 </script>
 
 <svg
-  class={`${props.class ?? ''}`}
+  class={className}
   width="402px"
   height="373px"
   viewBox="0 0 402 373"
@@ -205,7 +205,7 @@
     <circle
       id="white-circle"
       stroke="var(--stroke-circle)"
-      fill={`rgb(var(${tertiaryCircle}))`}
+      fill="var({tertiaryCircle})"
       cx="17"
       cy="21"
       r="15.5"
@@ -213,7 +213,7 @@
     <circle
       id="white-circle"
       stroke="var(--stroke-circle)"
-      fill={`rgb(var(${tertiaryCircle}))`}
+      fill="var({tertiaryCircle})"
       cx="16"
       cy="261"
       r="15.5"
@@ -221,7 +221,7 @@
     <circle
       id="white-circle"
       stroke="var(--stroke-circle)"
-      fill={useFiveColors ? `rgb(var(${primaryCircle}))` : `rgb(var(${tertiaryCircle}))`}
+      fill="var({useFiveColors ? primaryCircle : tertiaryCircle})"
       cx="109"
       cy="109"
       r="15.5"
@@ -229,7 +229,7 @@
     <circle
       id="secondary-circle"
       stroke="var(--stroke-circle)"
-      fill={useFiveColors ? `rgb(var(${errorCircle}))` : `rgb(var(${secondaryCircle}))`}
+      fill="var({useFiveColors ? errorCircle : secondaryCircle})"
       cx="46"
       cy="94"
       r="15.5"
@@ -237,7 +237,7 @@
     <circle
       id="secondary-circle"
       stroke="var(--stroke-circle)"
-      fill={useFiveColors ? `rgb(var(${primaryCircle}))` : `rgb(var(${secondaryCircle}))`}
+      fill="var({useFiveColors ? primaryCircle : secondaryCircle})"
       cx="285"
       cy="95"
       r="15.5"
@@ -245,7 +245,7 @@
     <circle
       id="secondary-circle"
       stroke="var(--stroke-circle)"
-      fill={useFiveColors ? `rgb(var(${errorCircle}))` : `rgb(var(${secondaryCircle}))`}
+      fill="var({useFiveColors ? errorCircle : secondaryCircle})"
       cx="141"
       cy="230"
       r="15.5"
@@ -253,7 +253,7 @@
     <circle
       id="secondary-circle"
       stroke="var(--stroke-circle)"
-      fill={useFiveColors ? `rgb(var(${secondaryCircle}))` : `rgb(var(${secondaryCircle}))`}
+      fill="var({secondaryCircle})"
       cx="151"
       cy="16"
       r="15.5"
@@ -261,7 +261,7 @@
     <circle
       id="primary-circle"
       stroke="var(--stroke-circle)"
-      fill={useFiveColors ? `rgb(var(${successCircle}))` : `rgb(var(${primaryCircle}))`}
+      fill="var({useFiveColors ? successCircle : primaryCircle})"
       cx="55"
       cy="190"
       r="15.5"
@@ -269,7 +269,7 @@
     <circle
       id="primary-circle"
       stroke="var(--stroke-circle)"
-      fill={useFiveColors ? `rgb(var(${tertiaryCircle}))` : `rgb(var(${primaryCircle}))`}
+      fill="var({useFiveColors ? tertiaryCircle : primaryCircle})"
       cx="65"
       cy="357"
       r="15.5"
@@ -277,7 +277,7 @@
     <circle
       id="primary-circle"
       stroke="var(--stroke-circle)"
-      fill={useFiveColors ? `rgb(var(${tertiaryCircle}))` : `rgb(var(${primaryCircle}))`}
+      fill="var({useFiveColors ? tertiaryCircle : primaryCircle})"
       cx="157"
       cy="125"
       r="15.5"
@@ -285,7 +285,7 @@
     <circle
       id="primary-circle"
       stroke="var(--stroke-circle)"
-      fill={useFiveColors ? `rgb(var(${successCircle}))` : `rgb(var(${primaryCircle}))`}
+      fill="var({useFiveColors ? successCircle : primaryCircle})"
       cx="92"
       cy="44"
       r="15.5"
@@ -293,28 +293,10 @@
     <circle
       id="primary-circle"
       stroke="var(--stroke-circle)"
-      fill={useFiveColors ? `rgb(var(${successCircle}))` : `rgb(var(${primaryCircle}))`}
+      fill="var({useFiveColors ? successCircle : primaryCircle})"
       cx="386"
       cy="23"
       r="15.5"
     ></circle>
   </g>
 </svg>
-
-<style>
-  .dots-colors {
-    --primary-circle: rgb(var(--color-primary-500));
-    --secondary-circle: rgb(var(--color-secondary-500));
-    --tertiary-circle: rgb(var(--color-surface-700));
-    --stroke-circle: rgb(var(--color-surface-200));
-  }
-
-  .five-dots-colors {
-    --tertiary-circle: rgb(var(--color-tertiary-500));
-    --secondary-circle: rgb(var(--color-secondary-500));
-    --primary-circle: rgb(var(--color-primary-500));
-    --success-circle: rgb(var(--color-success-500));
-    --error-circle: rgb(var(--color-error-500));
-    --stroke-circle: rgb(var(--color-surface-200));
-  }
-</style>

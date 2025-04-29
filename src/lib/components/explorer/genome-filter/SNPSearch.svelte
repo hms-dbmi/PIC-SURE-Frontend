@@ -12,31 +12,31 @@
   const defaultSnp: SNP = { search: '', constraint: '' };
   let snp: SNP = $state(defaultSnp);
 
-  function onValid(snpItem: SNP) {
+  function onvalid(snpItem: SNP) {
     snp = snpItem;
   }
 
-  function onSave(snpItem: SNP) {
+  function onsave(snpItem: SNP) {
     saveSNP(snpItem);
     snp = defaultSnp;
   }
 
-  function onEdit(snpItem: SNP) {
+  function onedit(snpItem: SNP) {
     snp = snpItem;
   }
 
-  function onDelete(snpItem: SNP) {
+  function ondelete(snpItem: SNP) {
     deleteSNP(snpItem);
   }
 </script>
 
-<div id="snp-search" class="grid grid-col-1 gap-3 {className}">
+<div id="snp-search" class="grid grid-col-1 gap-3 {className || ''}">
   <Panel title="Search for Genomic Variants">
-    <Search disabled={snp.search} search={snp.search} onvalid={onValid} />
+    <Search disabled={!!snp.search} search={snp.search} {onvalid} />
     {#if snp.search}
       <hr />
       <div class="flex gap-2 items-center justify-center my-8">
-        <Edit {snp} onsave={onSave} />
+        <Edit {snp} {onsave} />
       </div>
     {/if}
   </Panel>
@@ -48,6 +48,6 @@
         onclick={clearSnpFilters}>Clear</button
       >
     {/snippet}
-    <Summary onedit={onEdit} ondelete={onDelete} />
+    <Summary {onedit} {ondelete} />
   </Panel>
 </div>

@@ -2,13 +2,7 @@
   import { slide } from 'svelte/transition';
   import type { Column } from '$lib/models/Tables';
   import type { Indexable } from '$lib/types';
-  import {
-    activeTable,
-    activeRow,
-    expandableComponents,
-    activeComponent,
-    setActiveRow,
-  } from '$lib/stores/ExpandableRow';
+  import { activeTable, activeRow, activeComponent, setActiveRow } from '$lib/stores/ExpandableRow';
 
   interface Props {
     cellOverides?: Indexable;
@@ -17,6 +11,7 @@
     row?: Indexable;
     tableName?: string;
     isClickable?: boolean;
+    expandable?: boolean;
     rowClickHandler?: (row: Indexable) => void;
   }
 
@@ -27,6 +22,7 @@
     row = {},
     tableName = '',
     isClickable = false,
+    expandable = false,
     rowClickHandler = () => {},
   }: Props = $props();
 
@@ -53,7 +49,7 @@
     >
       {#if cellOverides[column.dataElement]}
         {@const SvelteComponent = cellOverides[column.dataElement]}
-        <SvelteComponent data={{ index, row, cell: row[column.dataElement] }} />
+        <SvelteComponent data={{ tableName, index, row, cell: row[column.dataElement] }} />
       {:else}
         {row[column.dataElement] ? row[column.dataElement] : ''}
       {/if}
@@ -61,13 +57,13 @@
   {/each}
 </tr>
 
-{#if active && Object.keys($expandableComponents).length > 0}
+{#if expandable && active && !!$activeRow}
   <tr id="active-row-{index.toString()}" class="expandable-row">
     <td colspan={columns.length}>
       <div transition:slide={{ axis: 'y' }}>
         {#if $activeComponent}
-          {@const SvelteComponent_1 = $activeComponent}
-          <SvelteComponent_1 data={row} />
+          {@const SvelteComponent = $activeComponent}
+          <SvelteComponent data={row} />
         {/if}
       </div>
     </td>

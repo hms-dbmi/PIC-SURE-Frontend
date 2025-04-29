@@ -1,71 +1,56 @@
 <script lang="ts">
-  const modalStore = getModalStore();
-  const toastStore = getToastStore();
-
   import { goto } from '$app/navigation';
 
+  import { toaster } from '$lib/toaster';
   import { getUser, updateUser } from '$lib/stores/Users';
   import { getConnection } from '$lib/stores/Connections';
   import { getRole } from '$lib/stores/Roles';
   import { getPrivilege } from '$lib/stores/Privileges';
 
+  import Modal from '$lib/components/Modal.svelte';
+
   let { data = { cell: '', row: { status: '', email: '' } } } = $props();
+  const active = $derived(data.row.status === 'Active');
 
   function edit(event: Event) {
     event.stopPropagation();
     goto(`/admin/users/${data.cell}/edit`);
   }
 
-  function userActivation(activate: boolean) {
-    return async (event: Event) => {
-      event.stopPropagation();
-      const user = await getUser(data.cell);
+  async function toggleActivate(active: boolean) {
+    const user = await getUser(data.cell);
+    if (!user) return;
 
-      modalStore.trigger({
-        type: 'confirm',
-        title: `${activate ? 'R' : 'D'}eactivate User?`,
-        body: `Are you sure you want to ${activate ? 'r' : 'd'}eactiveate user '${user.email}'?`,
-        buttonTextConfirm: activate ? 'Reactivate' : 'Deactivate',
-        response: async (confirm: boolean) => {
-          if (!confirm) return;
+    const connection = await getConnection(user.connection);
+    const roles = await Promise.all(
+      user.roles.map((uuid: string) =>
+        getRole(uuid).then((role) => ({
+          ...role,
+          privileges: role.privileges.map((uuid: string) => getPrivilege(uuid)),
+        })),
+      ),
+    );
 
-          let newUser = {
-            ...user,
-            active: activate,
-            connection: await getConnection(user.connection),
-            roles: await Promise.all(
-              user.roles.map((uuid: string) =>
-                getRole(uuid).then((role) => ({
-                  ...role,
-                  privileges: role.privileges.map((uuid: string) => getPrivilege(uuid)),
-                })),
-              ),
-            ),
-          };
-          try {
-            await updateUser(newUser);
-            toastStore.trigger({
-              message: `Successfully ${activate ? 'r' : 'd'}eactivated user '${user.email}'`,
-              background: 'preset-filled-success-500',
-            });
-          } catch (error) {
-            console.error(error);
-            toastStore.trigger({
-              message: `An error occured while ${activate ? 'r' : 'd'}eactivating user '${
-                user.email
-              }'`,
-              background: 'preset-filled-error-500',
-            });
-          }
-        },
+    if (!(user && connection && roles.length > 0)) return;
+
+    let newUser = { ...user, active, connection, roles };
+    try {
+      await updateUser(newUser);
+      toaster.success({
+        title: `Successfully ${active ? 'r' : 'd'}eactivated user '${newUser.email}'`,
       });
-    };
+    } catch (error) {
+      console.error(error);
+      toaster.error({
+        title: `An error occured while ${active ? 'r' : 'd'}eactivating user '${user.email}'`,
+      });
+    }
   }
 </script>
 
-{#if data.row.status === 'Active'}
+{#if active}
   <button
-    data-testid={`user-edit-btn-${data.cell}`}
+    data-testid="user-{data.cell}-edit-btn"
     type="button"
     title="Edit"
     aria-label="Edit"
@@ -74,25 +59,24 @@
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
   </button>
-  <button
-    data-testid={`user-deactivate-btn-${data.cell}`}
-    type="button"
-    title="Deactivate user"
-    aria-label="Deactivate user"
-    class="btn-icon-color"
-    onclick={userActivation(false)}
-  >
-    <i class="fa-solid fa-trash fa-xl"></i>
-  </button>
-{:else}
-  <button
-    data-testid={`user-activate-btn-${data.cell}`}
-    type="button"
-    title="Reactivate user"
-    aria-label="Reactivate user"
-    class="btn-icon-color"
-    onclick={userActivation(true)}
-  >
-    <i class="fa-solid fa-trash-arrow-up fa-xl"></i>
-  </button>
 {/if}
+<Modal
+  data-testid="user-{data.cell}-{active ? 'D' : 'R'}eactivate-btn"
+  title="{active ? 'D' : 'R'}eactivate User?"
+  confirmText="{active ? 'D' : 'R'}eactivate"
+  onconfirm={() => toggleActivate(!active)}
+  withDefault
+>
+  {#snippet trigger()}
+    <button
+      data-testid="user-{active ? 'd' : 'r'}eactivate-btn-{data.cell}"
+      type="button"
+      title="{active ? 'D' : 'R'}eactivate user"
+      aria-label="{active ? 'D' : 'R'}eactivate user"
+      class="btn-icon-color"
+    >
+      <i class="fa-solid fa-trash{active ? '' : '-arrow-up'} fa-xl"></i>
+    </button>
+  {/snippet}
+  Are you sure you want to {active ? 'd' : 'r'}eactiveate user '{data.row.email}'?
+</Modal>

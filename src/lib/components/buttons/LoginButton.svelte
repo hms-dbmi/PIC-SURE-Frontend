@@ -29,7 +29,7 @@
       resetSearch();
     });
   };
-  
+
   if (provider.imagesrc) {
     imageSrc = './' + provider.imagesrc;
   }

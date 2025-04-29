@@ -1,27 +1,30 @@
 <script lang="ts">
+  import { v4 as uuidv4 } from 'uuid';
+  import { page } from '$app/stores';
+
   import type { SearchResult } from '$lib/models/Search';
-  import { activeTable, expandableComponents, setActiveRow } from '$lib/stores/ExpandableRow';
+  import { setActiveRow } from '$lib/stores/ExpandableRow';
   import type { ExportInterface } from '$lib/models/Export';
   import ExportStore from '$lib/stores/Export';
-  import { v4 as uuidv4 } from 'uuid';
+  import { panelOpen } from '$lib/stores/SidePanel';
   import { features } from '$lib/configuration';
-  import { page } from '$app/stores';
+
   let { exports, addExport, removeExport } = ExportStore;
   let { data = {} as SearchResult } = $props();
   let exportItem = $derived({
     id: uuidv4(),
     searchResult: data.row,
-    display: data.row.display,
+    display: data.row.display || data.row.name,
     conceptPath: data.row.conceptPath,
   } as ExportInterface);
 
-  function updateActiveRow(component: string) {
+  function updateActiveRow(componentName: string) {
     return (event: Event) => {
       event.stopPropagation();
       setActiveRow({
         row: data.row.conceptPath,
-        component: $expandableComponents[component],
-        table: $activeTable,
+        component: componentName,
+        table: data?.tableName,
       });
     };
   }
@@ -30,11 +33,13 @@
   const insertFilterContent = updateActiveRow('filter');
   const insertHierarchyContent = updateActiveRow('hierarchy');
 
-  function insertExportContent() {
+  function insertExportContent(e: Event) {
+    e.stopPropagation();
     if ($exports.includes(exportItem)) {
       removeExport(exportItem.id);
     } else {
       addExport(exportItem);
+      $panelOpen = true;
     }
   }
   let isOpenAccess = $derived($page.url.pathname.includes('/discover'));

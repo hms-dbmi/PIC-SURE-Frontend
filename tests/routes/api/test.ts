@@ -30,7 +30,7 @@ test.describe('API page', () => {
     await expect(errorAlert).toBeVisible();
   });
 
-  branding?.apiPage?.cards?.forEach((card: { header: string; body: string }) => {
+  branding?.analysisConfig?.cards?.forEach((card: { header: string; body: string }) => {
     test(`Has expect card, ${card.header} from branding`, async ({ page }) => {
       // Given
       await page.goto('/analyze');
@@ -63,8 +63,9 @@ test.describe('API page', () => {
     // Then
     await expect(expires).toBeVisible();
     await expect(badge).toBeVisible();
-    expect(await badge.innerText()).toBe('EXPIRED');
-    expect(await expires.innerText()).toContain('Mon Feb 01 2021');
+
+    await expect(badge).toHaveText('EXPIRED');
+    await expect(expires).toContainText('Mon Feb 01 2021');
   });
   test(`User account matches expected email of ${picsureUser.email}`, async ({ page }) => {
     // Given
@@ -75,7 +76,7 @@ test.describe('API page', () => {
 
     // Then
     await expect(userEmail).toBeVisible();
-    expect(await userEmail.innerText()).toBe(picsureUser.email);
+    await expect(userEmail).toHaveText(picsureUser.email || '');
   });
   test('Token is hidden by default', async ({ page }) => {
     // Given
@@ -94,8 +95,8 @@ test.describe('API page', () => {
 
     // When
     const copyButton = page.getByTestId('copy-btn');
-    const refeshButton = page.locator('#refresh-button');
-    const revealButton = page.locator('#reveal-button');
+    const refeshButton = page.getByTestId('refresh-btn');
+    const revealButton = page.getByTestId('reveal-btn');
 
     // Then
     await expect(copyButton).toBeVisible();
@@ -111,13 +112,13 @@ test.describe('API page', () => {
 
     // Then
     await expect(copyButton).toBeVisible();
-    expect((await copyButton.innerHTML()).toString()).toBe('Copy');
+    await expect(copyButton).toContainText('Copy');
 
     // When
     await copyButton.click();
 
     // Then
-    expect((await copyButton.innerHTML()).toString()).toBe('Copied!');
+    await expect(copyButton).toContainText('Copied!');
     //expect(await page.evaluate(() => navigator.clipboard.readText())).toEqual(mockUser.token);
   });
   test('Token is visible when reveal button is clicked', async ({ page }) => {
@@ -125,7 +126,7 @@ test.describe('API page', () => {
     await page.goto('/analyze');
 
     // When
-    const revealButton = page.locator('#reveal-button');
+    const revealButton = page.getByTestId('reveal-btn');
     await revealButton.click();
     const userToken = page.locator('#token');
 
@@ -138,7 +139,7 @@ test.describe('API page', () => {
     await page.goto('/analyze');
 
     // When
-    const revealButton = page.locator('#reveal-button');
+    const revealButton = page.getByTestId('reveal-btn');
     await revealButton.click();
 
     // Then
@@ -149,7 +150,7 @@ test.describe('API page', () => {
     await page.goto('/analyze');
 
     // When
-    const refreshButton = page.locator('#refresh-button');
+    const refreshButton = page.getByTestId('refresh-btn');
     const userToken = page.locator('#token');
     await refreshButton.click();
 
@@ -160,40 +161,38 @@ test.describe('API page', () => {
     page,
   }) => {
     // Given
-    await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
-      userLongTermToken: 'new longterm token',
-    });
     await page.goto('/analyze');
+    const newToken = 'new longterm token';
+    await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
+      userLongTermToken: newToken,
+    });
+    const revealButton = page.getByTestId('reveal-btn');
+    await revealButton.click();
 
     // When
-    const userToken = page.locator('#token');
-    const refreshButton = page.locator('#refresh-button');
+    const refreshButton = page.getByTestId('refresh-btn');
     const expires = page.locator('#expires');
     await refreshButton.click();
     // Confirm Modal pops up
     const confrimButton = page.locator('button:has-text("Confirm")');
     await confrimButton.click();
-    // Confirm Modal closes and now reveal new token
-    const revealButton = page.locator('#reveal-button');
-    await revealButton.click();
 
     // Then
     await expect(refreshButton).toHaveText('Refreshed!');
     await expect(refreshButton).toBeDisabled();
-    expect(await userToken.innerText()).not.toBe(placeHolderDots);
-    expect(await userToken.innerText()).toBe('new longterm token');
-    expect(await expires.innerText()).not.toContain('Mon Feb 01 2021');
+
+    const userToken = page.locator('#token');
+    await expect(userToken).not.toHaveText(placeHolderDots);
+    await expect(userToken).toHaveText(newToken);
+    await expect(expires).toContainText('Mon Feb 01 2021');
   });
   test('Canceling confirm modal does nothing to user', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
-      userLongTermToken: 'new longterm token',
-    });
     await page.goto('/analyze');
 
     // When
     const userToken = page.locator('#token');
-    const refreshButton = page.locator('#refresh-button');
+    const refreshButton = page.getByTestId('refresh-btn');
     const expires = page.locator('#expires');
     await refreshButton.click();
     // Confirm Modal pops up

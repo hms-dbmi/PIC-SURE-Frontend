@@ -24,6 +24,8 @@
     class: className = '',
     onclick = () => {},
   }: Props = $props();
+
+  const cardClasses = `card card-btn ${size !== 'other' ? 'card-btn-' + size : ''} ${className} hover:scale-110 hover:shadow-lg`;
 </script>
 
 {#if href}
@@ -32,9 +34,9 @@
     data-testid={testid}
     aria-disabled={disabled || undefined}
     target={href.startsWith('/') ? undefined : '_blank'}
+    class={cardClasses}
     class:preset-filled-primary-500={active}
     class:preset-outlined-primary-500={!active}
-    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {className}"
     rel={disabled ? 'nofollow' : undefined}
     tabindex="0"
   >
@@ -46,9 +48,9 @@
   <button
     data-testid={testid}
     type="button"
+    class={cardClasses}
     class:preset-filled-primary-500={active}
     class:preset-outlined-primary-500={!active}
-    class="card-btn {size !== 'other' ? 'card-btn-' + size : ''} {className}"
     {onclick}
     {disabled}
   >

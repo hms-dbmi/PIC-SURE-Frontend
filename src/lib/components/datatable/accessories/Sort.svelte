@@ -1,33 +1,26 @@
 <script lang="ts">
-  import type { DataHandler } from '@vincjo/datatables';
+  import { TableHandler } from '@vincjo/datatables/server';
 
-  const {
+  let {
     handler,
     orderBy,
     class: className = '',
     children,
   }: {
-    handler: DataHandler;
+    handler: TableHandler;
     orderBy: string;
     class?: string;
     children?: import('svelte').Snippet;
   } = $props();
 
-  const sorted = handler.getSort();
+  const sort = handler.createSort(orderBy);
 </script>
 
 <th
-  onclick={() => handler.sort(orderBy)}
   class="cursor-pointer select-none align-bottom {className}"
+  class:active={sort.isActive}
+  onclick={sort.set}
 >
   {@render children?.()}
-  {#if $sorted.identifier === orderBy}
-    {#if $sorted.direction === 'asc'}
-      ↓
-    {:else if $sorted.direction === 'desc'}
-      ↑
-    {/if}
-  {:else}
-    ↕
-  {/if}
+  <span class:asc={sort.direction === 'asc'} class:desc={sort.direction === 'desc'}></span>
 </th>

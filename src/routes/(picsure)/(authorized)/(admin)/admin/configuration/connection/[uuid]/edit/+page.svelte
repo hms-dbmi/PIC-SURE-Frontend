@@ -1,6 +1,5 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { Progress } from '@skeletonlabs/skeleton-svelte';
 
   import { branding } from '$lib/configuration';
 
@@ -10,6 +9,7 @@
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ConnectionForm from '$lib/components/admin/configuration/ConnectionForm.svelte';
+  import Loading from '$lib/components/Loading.svelte';
 
   let connection: Connection = $state({
     id: '',
@@ -29,15 +29,14 @@
 
 <Content title="Edit Connection" backUrl="/admin/configuration" backTitle="Back to Configuration">
   {#await load()}
-    <h3 class="text-left">Loading</h3>
-    <Progress animIndeterminate="anim-progress-bar" />
+    <Loading />
   {:then}
     <section id="connection-edit">
       <ConnectionForm {connection} />
     </section>
   {:catch}
     <ErrorAlert title="API Error">
-      <p>An error occured while retrieving dataset {page.params.uuid}.</p>
+      An error occured while retrieving dataset {page.params.uuid}.
     </ErrorAlert>
   {/await}
 </Content>

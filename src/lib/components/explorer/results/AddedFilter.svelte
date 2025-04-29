@@ -1,27 +1,23 @@
 <script lang="ts">
   import { elasticInOut } from 'svelte/easing';
   import { fade, scale, slide } from 'svelte/transition';
-  import { type ModalSettings } from '@skeletonlabs/skeleton-svelte';
 
   import { goto } from '$app/navigation';
 
   import { Option } from '$lib/models/GenomeFilter';
   import type { Filter } from '$lib/models/Filter';
-  import { removeFilter } from '$lib/stores/Filter';
+  import { removeFilter, activeFilter, activeSearch } from '$lib/stores/Filter';
   import { populateFromGeneFilter } from '$lib/stores/GeneFilter';
   import { populateFromSNPFilter } from '$lib/stores/SNPFilter';
 
+  import Modal from '$lib/components/Modal.svelte';
   import AddFilter from '$lib/components/explorer/AddFilter.svelte';
 
-  const modalStore = getModalStore();
-
-  interface Props {
-    filter: Filter;
-  }
-
-  let { filter }: Props = $props();
+  let { filter }: { filter: Filter } = $props();
   let open = $state(false);
   let carot = $state('fa-caret-up');
+  const genomicFilter = $derived(['genomic', 'snp'].includes(filter.filterType));
+  let filterModal: boolean = $state(false);
 
   function editFilter() {
     if (filter.filterType === 'genomic') {
@@ -31,17 +27,8 @@
       populateFromSNPFilter(filter);
       goto('/explorer/genome-filter?edit=' + Option.SNP);
     } else {
-      const modal: ModalSettings = {
-        type: 'component',
-        title: 'Edit Filter',
-        component: 'modalWrapper',
-        modalClasses: 'bg-surface-100-900 p-4 block',
-        meta: { existingFilter: filter, component: AddFilter },
-        response: (r: string) => {
-          console.log(r);
-        },
-      };
-      modalStore.trigger(modal);
+      $activeFilter = filter;
+      $activeSearch = filter.searchResult;
     }
   }
 
@@ -95,7 +82,7 @@
 
 <div
   id={filter.uuid}
-  class="flex flex-col card p-1 m-1"
+  class="flex flex-col card bg-surface-100 p-1 m-1"
   in:scale={{ easing: elasticInOut }}
   out:fade={{ duration: 300 }}
   data-testid="added-filter-{filter.id}"
@@ -111,15 +98,34 @@
       {filter.variableName}
     </div>
     <div class="actions">
-      <button
-        type="button"
-        title="Edit Filter"
-        class="bg-initial text-black-500 hover:text-primary-600"
-        onclick={editFilter}
-      >
-        <i class="fa-solid fa-pen-to-square"></i>
-        <span class="sr-only">Edit Filter</span>
-      </button>
+      {#if genomicFilter}
+        <button
+          type="button"
+          title="Edit Filter"
+          class="bg-initial text-black-500 hover:text-primary-600"
+          onclick={editFilter}
+        >
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span class="sr-only">Edit Filter</span>
+        </button>
+      {:else}
+        <Modal
+          bind:open={filterModal}
+          title="Edit Filter"
+          triggerBase="bg-initial text-black-500 hover:text-primary-600"
+          withDefault={false}
+        >
+          {#snippet trigger()}
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span class="sr-only">Edit Filter</span>
+          {/snippet}
+          <AddFilter
+            data={filter.searchResult}
+            existingFilter={filter}
+            onclose={() => (filterModal = false)}
+          />
+        </Modal>
+      {/if}
       <button
         type="button"
         title="Remove Filter"

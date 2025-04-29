@@ -1,16 +1,19 @@
 <script lang="ts">
-  const modalStore = getModalStore();
-
   import { page } from '$app/stores';
   import { branding, features } from '$lib/configuration';
   import { user } from '$lib/stores/User';
 
-  import TermsModal from '$lib/components/modals/TermsModal.svelte';
-  interface Props {
-    showSitemap?: boolean;
-  }
+  import Modal from '$lib/components/Modal.svelte';
 
-  let { showSitemap = branding?.footer?.showSitemap || false }: Props = $props();
+  // Ideally, this should be a value from the database that has timestamps, author, etc.
+  // For now, the easiest place to find and update the html used here is in the src folder.
+  import Terms from '../../terms.svelte';
+
+  let {
+    showSitemap = branding?.footer?.showSitemap || false,
+  }: {
+    showSitemap?: boolean;
+  } = $props();
 
   let hideSitemap = $derived(
     !showSitemap ||
@@ -25,13 +28,7 @@
     })),
   );
 
-  function openTermsModal() {
-    modalStore.trigger({
-      type: 'component',
-      component: 'modalWrapper',
-      meta: { component: TermsModal, width: 'w-3/4' },
-    });
-  }
+  let modalOpen = $state(false);
 </script>
 
 {#if !hideSitemap && branding?.sitemap?.length > 0}
@@ -54,11 +51,27 @@
     </div>
   </div>
 {/if}
-<footer id="main-footer" class="flex relative">
+<footer id="main-footer" class="flex relativem mt-4">
   <ul>
     {#if features.termsOfService}
       <li>
-        <button class="hover:underline text-xs" onclick={openTermsModal}>Terms of Service</button>
+        <Modal
+          bind:open={modalOpen}
+          width="w-3/4"
+          height="h-full"
+          withDefault={false}
+          footerButtons={false}
+          triggerBase="hover:underline text-xs"
+        >
+          {#snippet trigger()}Terms of Service{/snippet}
+          <div id="terms-of-service"><Terms /></div>
+          <div class="text-right">
+            <button
+              class="btn preset-filled-primary-500 hover:preset-filled-secondary-500"
+              onclick={() => (modalOpen = false)}>Accept</button
+            >
+          </div>
+        </Modal>
       </li>
     {/if}
     {#each branding?.footer?.links as link}
@@ -71,7 +84,7 @@
   </ul>
 </footer>
 
-<style lang="postcss">
+<style>
   #sitemap-footer {
     padding: 0.5em 0 0;
     margin: 0 auto;

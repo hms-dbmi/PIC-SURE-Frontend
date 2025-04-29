@@ -126,7 +126,7 @@
     background-size: 100% 100%;
     background-repeat: no-repeat;
     background-position: center;
-    background-color: rgb(var(--color-primary-500));
+    background-color: var(--color-primary-500);
   }
 
   .arrow-button {

@@ -1,5 +1,6 @@
 import { get, writable, type Writable } from 'svelte/store';
-import { DataHandler, type State } from '@vincjo/datatables/remote';
+
+import { TableHandler, type State } from '@vincjo/datatables/server';
 
 import { type Facet, type SearchResult } from '$lib/models/Search';
 import type { DictionaryConceptResult } from '$lib/models/api/DictionaryResponses';
@@ -12,7 +13,7 @@ export const searchPromise: Writable<Promise<DictionaryConceptResult | undefined
 );
 export const searchTerm: Writable<string> = writable('');
 export const selectedFacets: Writable<Facet[]> = writable([]);
-export const tableHandler: DataHandler<SearchResult> = new DataHandler([] as SearchResult[], {
+export const tableHandler: TableHandler = new TableHandler([] as SearchResult[], {
   rowsPerPage: 10,
 });
 export const tour: Writable<boolean> = writable(true);
@@ -20,15 +21,13 @@ export const error: Writable<string> = writable('');
 
 selectedFacets.subscribe(() => {
   tableHandler.setPage(1);
-  tableHandler.invalidate();
 });
 
 searchTerm.subscribe(() => {
   tableHandler.setPage(1);
-  tableHandler.invalidate();
 });
 
-tableHandler.onChange(async (state: State) => {
+tableHandler.load(async (state: State) => {
   const term = get(searchTerm);
   const facets = get(selectedFacets);
   loading.set(true);
@@ -45,33 +44,31 @@ tableHandler.onChange(async (state: State) => {
   }
 });
 
-export async function search(state?: State): Promise<SearchResult[]> {
+export async function search(state: State): Promise<SearchResult[]> {
+  const errorText =
+    'An error occurred while searching. If the problem persists, please contact an administrator.';
   const facets = get(selectedFacets);
   const term = get(searchTerm);
   if (!term && !facets.length) {
-    state?.setTotalRows(0);
+    state.setTotalRows(0);
     return [];
   }
   const search = searchDictionary(term.trim(), facets, {
-    pageNumber: state?.pageNumber ? state?.pageNumber - 1 : 0,
-    pageSize: state?.rowsPerPage,
+    pageNumber: state.currentPage - 1,
+    pageSize: state.rowsPerPage,
   });
   searchPromise.set(search);
   const response = await search.catch((e) => {
     console.error(e);
-    state?.setTotalRows(0);
-    error.set(
-      'An error occurred while searching. If the problem persists, please contact an administrator.',
-    );
+    state.setTotalRows(0);
+    error.set(errorText);
     throw e;
   });
 
   if (!response) {
-    error.set(
-      'An error occurred while searching. If the problem persists, please contact an administrator.',
-    );
+    error.set(errorText);
   }
-  state?.setTotalRows(response?.totalElements ?? 0);
+  state.setTotalRows(response?.totalElements ?? 0);
   return response?.content ?? [];
 }
 

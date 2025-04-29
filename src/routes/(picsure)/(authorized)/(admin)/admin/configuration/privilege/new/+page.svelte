@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { Progress } from '@skeletonlabs/skeleton-svelte';
-
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import PrivilegeForm from '$lib/components/admin/configuration/PrivilegeForm.svelte';
 
   import ApplicationStore from '$lib/stores/Application';
+  import Loading from '$lib/components/Loading.svelte';
+
   const { applicationList, loadApplications } = ApplicationStore;
 </script>
 
@@ -16,15 +16,12 @@
 
 <Content title="New Privilege" backUrl="/admin/configuration" backTitle="Back to Configuration">
   {#await loadApplications()}
-    <h3 class="text-left">Loading</h3>
-    <Progress animIndeterminate="anim-progress-bar" />
+    <Loading />
   {:then}
     <section id="privilege-new">
       <PrivilegeForm applicationList={$applicationList} />
     </section>
   {:catch}
-    <ErrorAlert title="API Error">
-      <p>Something went wrong when sending your request.</p>
-    </ErrorAlert>
+    <ErrorAlert title="API Error">Something went wrong when sending your request.</ErrorAlert>
   {/await}
 </Content>

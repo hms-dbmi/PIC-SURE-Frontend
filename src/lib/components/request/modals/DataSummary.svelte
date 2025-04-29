@@ -1,10 +1,10 @@
 <script lang="ts">
-  const modalStore = getModalStore();
+  import { metadata } from '$lib/stores/DataRequest';
 
   import QuerySummary from '$lib/components/QuerySummary.svelte';
 
-  let queryId = $derived($modalStore[0]?.meta.queryId);
-  let query = $derived($modalStore[0]?.meta.query);
+  let queryId = $derived($metadata?.picsureResultId || '');
+  let query = $derived($metadata?.resultMetadata.queryJson.query || {});
 </script>
 
 <section id="detail-summary-container" class="m-3">

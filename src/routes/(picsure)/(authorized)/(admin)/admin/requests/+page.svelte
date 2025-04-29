@@ -1,21 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  const modalStore = getModalStore();
-  const toastStore = getToastStore();
-
-  import { browser } from '$app/environment';
 
   import { branding } from '$lib/configuration';
-  import { uuidInput } from '$lib/utilities/Validation';
+  import { uuidInput, debounce } from '$lib/utilities/Forms';
+  import { toaster } from '$lib/toaster';
+
   import Content from '$lib/components/Content.svelte';
   import Step from '$lib/components/steppers/vertical/Step.svelte';
   import Grid from '$lib/components/request/Grid.svelte';
   import GridCell from '$lib/components/request/GridCell.svelte';
-
+  import DataSummary from '$lib/components/request/modals/DataSummary.svelte';
+  import DataLocModal from '$lib/components/request/modals/DataLocModal.svelte';
   import DataTypeModal from '$lib/components/request/modals/DataTypeModal.svelte';
   import SendDataModal from '$lib/components/request/modals/SendDataModal.svelte';
-  import DataLocModal from '$lib/components/request/modals/DataLocModal.svelte';
-  import DataSummary from '$lib/components/request/modals/DataSummary.svelte';
+  import Modal from '$lib/components/Modal.svelte';
 
   import { UploadStatus } from '$lib/models/DataRequest';
   import {
@@ -28,10 +26,8 @@
     selectedSite,
     status,
     reset,
-    sendData,
     refreshStatus,
     loadSites,
-    metadata,
     loadSubscriptions,
     unloadSubscribers,
     unsubscribers,
@@ -54,6 +50,11 @@
     ($dataType.genomic && $status?.genomic === UploadStatus.Unsent) ||
       ($dataType.phenotypic && $status?.phenotypic === UploadStatus.Unsent),
   );
+  let modalOpen = $state({
+    summary: false,
+    location: false,
+    type: false,
+  });
 
   // Status icons
   function statusIcon(status: UploadStatus) {
@@ -85,66 +86,12 @@
     phenotypic: statusIcon($status?.phenotypic || UploadStatus.Unsent),
   });
 
-  // Modals
-  function dataSummaryModal() {
-    modalStore.trigger({
-      type: 'component',
-      title: 'Data Request Summary',
-      component: 'modalWrapper',
-      meta: {
-        component: DataSummary,
-        queryId: $metadata?.picsureResultId || '',
-        query: $metadata?.resultMetadata.queryJson.query || {},
-      },
-    });
-  }
-
-  function dataLocationModal() {
-    modalStore.trigger({
-      type: 'component',
-      title: 'Data Storage Location',
-      component: 'modalWrapper',
-      meta: { component: DataLocModal },
-    });
-  }
-
-  function dataTypeModal() {
-    modalStore.trigger({
-      type: 'component',
-      title: 'Data Types',
-      component: 'modalWrapper',
-      meta: { component: DataTypeModal },
-    });
-  }
-
-  async function sendDataModal() {
-    let prompt = true;
-    if (browser) {
-      const savedPrompt = localStorage.getItem('dataRequest-sendData-displayPrompt') || 'yes';
-      prompt = savedPrompt !== 'no';
-    }
-    if (prompt) {
-      modalStore.trigger({
-        type: 'component',
-        title: '',
-        modalClasses: 'w-96',
-        component: 'modalWrapper',
-        meta: { component: SendDataModal, sendData },
-      });
-    } else {
-      await sendData();
-    }
-  }
-
   onMount(() => {
     loadSubscriptions();
     unsubscribers.push(
       error.subscribe((error) => {
         if (error) {
-          toastStore.trigger({
-            message: error,
-            background: 'preset-filled-error-500',
-          });
+          toaster.error({ title: error });
         }
       }),
     );
@@ -156,6 +103,8 @@
       unloadSubscribers();
     };
   });
+
+  let datasetId: string = $state('');
 </script>
 
 <svelte:head>
@@ -163,13 +112,14 @@
 </svelte:head>
 
 <Content title="Data Requests">
-  <Step step={1} title="Search for Dataset Request ID" inline={true} active={search.active}>
+  <Step step={1} title="Search for Dataset Request ID" inline active={search.active}>
     <label class="inline label required">
       <span class="sr-only">Dataset Id:</span>
       <input
         class="input w-3/4"
         placeholder="001234567-89ab-cdef-fedc-98765432100"
-        bind:value={$queryId}
+        bind:value={datasetId}
+        onkeyup={debounce(() => ($queryId = datasetId), 500)}
         pattern={uuidInput}
         disabled={!search.active}
       />
@@ -179,14 +129,18 @@
     <Grid columns={2}>
       <GridCell title="View Dataset Information">
         <div>
-          <button
-            data-testid="data-request-btn"
-            class="text-primary-800-200 hover:text-secondary-800-200 inline-block mt-4"
-            onclick={dataSummaryModal}
+          <Modal
+            title="Data Request Summary"
+            data-testid="data-request"
+            open={modalOpen.summary}
+            withDefault={false}
           >
-            <i class="fa-regular fa-2xl fa-file-pdf"></i>
-            <span>Data Request Summary</span>
-          </button>
+            {#snippet trigger()}
+              <i class="fa-regular fa-2xl fa-file-pdf"></i>
+              <span>Data Request Summary</span>
+            {/snippet}
+            <DataSummary />
+          </Modal>
         </div>
       </GridCell>
       <GridCell title="Data Request Approval">
@@ -207,13 +161,17 @@
     <Grid columns={3}>
       <GridCell title="Data Storage Location">
         {#snippet help()}
-          <button
-            data-testid="data-loc-modal-btn"
-            aria-label="Open Data Location Modal"
-            onclick={dataLocationModal}
+          <Modal
+            title="Data Storage Location"
+            data-testid="data-loc-modal"
+            open={modalOpen.location}
+            withDefault={false}
           >
-            <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
-          </button>
+            {#snippet trigger()}
+              <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
+            {/snippet}
+            <DataLocModal />
+          </Modal>
         {/snippet}
         <select
           data-testid="selected-site"
@@ -228,13 +186,17 @@
       </GridCell>
       <GridCell title="Select & Send Data">
         {#snippet help()}
-          <button
-            data-testid="data-type-modal-btn"
-            aria-label="Open Data Type Modal"
-            onclick={dataTypeModal}
+          <Modal
+            title="Data Types"
+            data-testid="data-type-modal"
+            open={modalOpen.type}
+            withDefault={false}
           >
-            <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
-          </button>
+            {#snippet trigger()}
+              <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
+            {/snippet}
+            <DataTypeModal />
+          </Modal>
         {/snippet}
         <label class="flex items-center space-x-2 my-2">
           <input
@@ -244,7 +206,7 @@
             disabled={$status?.phenotypic !== UploadStatus.Unsent}
             bind:checked={$dataType.phenotypic}
           />
-          <p>Phenotypic Data</p>
+          <div>Phenotypic Data</div>
         </label>
         <label class="flex space-x-2 my-2 align-top">
           <input
@@ -254,15 +216,9 @@
             disabled={$status?.genomic !== UploadStatus.Unsent}
             bind:checked={$dataType.genomic}
           />
-          <p class="text-left flex-auto">Annotated variant data for selected genes</p>
+          <div class="text-left flex-auto">Annotated variant data for selected genes</div>
         </label>
-        <button
-          type="button"
-          data-testid="send-data-btn"
-          class="btn preset-outlined-success-500 hover:preset-tonal-success border border-success-500"
-          disabled={!sendEnabled}
-          onclick={sendDataModal}>Send Data</button
-        >
+        <SendDataModal {sendEnabled} />
       </GridCell>
       <GridCell title="Status">
         {#snippet help()}
@@ -279,17 +235,17 @@
         {/snippet}
         <div class="flex space-x-2 my-2 align-top">
           <i class={`${statusInfo.phenotypic.icon} flex-none`}></i>
-          <p class="text-left flex-auto">
+          <div class="text-left flex-auto">
             Phenotypic Data: <span data-testid="status-pheno">{statusInfo.phenotypic.label}</span>
-          </p>
+          </div>
         </div>
         <div class="flex space-x-2 my-2 align-top">
           <i class={`${statusInfo.genomic.icon} flex-none`}></i>
-          <p class="text-left flex-auto">
+          <div class="text-left flex-auto">
             Annotated variant data for selected genes: <span data-testid="status-geno"
               >{statusInfo.genomic.label}</span
             >
-          </p>
+          </div>
         </div>
       </GridCell>
     </Grid>

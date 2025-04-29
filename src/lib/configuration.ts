@@ -115,7 +115,7 @@ export const routes: Route[] = [
   {
     path: '/admin/configuration',
     text: 'Configuration',
-    privilege: [PicsurePrivileges.SUPER],
+    privilege: [PicsurePrivileges.SUPER, PicsurePrivileges.ADMIN],
   },
   { path: '/admin/users', text: 'Manage Users', privilege: [PicsurePrivileges.ADMIN] },
   { path: '/help', text: 'Help' },

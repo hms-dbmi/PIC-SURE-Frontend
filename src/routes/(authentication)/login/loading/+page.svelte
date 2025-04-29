@@ -1,6 +1,5 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import type AuthProvider from '$lib/models/AuthProvider';
@@ -8,6 +7,7 @@
   import { browser } from '$app/environment';
   import { filters } from '$lib/stores/Filter';
   import { panelOpen } from '$lib/stores/SidePanel';
+  import Loading from '$lib/components/Loading.svelte';
 
   let failed = $state(false);
   onMount(async () => {
@@ -55,7 +55,6 @@
 
 <section class="w-full h-full flex flex-col justify-center items-center">
   {#if !failed}
-    <h1 class="m-10">Logging you in...</h1>
-    <ProgressRing width="w-20" />
+    <Loading ring size="large" label="Logging you in" />
   {/if}
 </section>

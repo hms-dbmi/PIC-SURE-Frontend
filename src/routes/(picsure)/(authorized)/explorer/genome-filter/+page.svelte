@@ -26,6 +26,7 @@
     populateFromSNPFilter,
   } from '$lib/stores/SNPFilter';
   import { addFilter, getFiltersByType } from '$lib/stores/Filter';
+  import { panelOpen } from '$lib/stores/SidePanel';
 
   let edit = $page.url.searchParams.get('edit') || '';
   let selectedOption: Option = $state(
@@ -46,6 +47,7 @@
       selectedOption === Option.Genomic ? generateGenomicFilter() : generateSNPFilter();
     addFilter(filter);
     clearFilters();
+    $panelOpen = true;
     goto('/explorer');
   }
 
@@ -77,12 +79,12 @@
 </svelte:head>
 
 <Content
-  full={true}
+  full
   title="Genomic Filtering"
   backUrl="/explorer"
   backAction={clearFilters}
   backTitle="Back to Explore"
-  transition={true}
+  transition
 >
   {#if features.enableGENEQuery && features.enableSNPQuery}
     <FilterType class="my-4" onselect={onSelectFilterType} active={selectedOption} />

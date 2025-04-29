@@ -4,7 +4,7 @@
 </script>
 
 <Content backUrl="/analyze" title="Analyze Example">
-  <div class="w-full flex flex-col items-center mb-8">
+  <div class="w-full items-center mb-8">
     <div>
       <h3>
         Follow these steps to start using the PIC-SURE Application Programming Interface (API) to
@@ -75,6 +75,8 @@
 </Content>
 
 <style lang="postcss">
+  @reference "../../../../../styles/app.css";
+
   p {
     @reference my-3;
   }

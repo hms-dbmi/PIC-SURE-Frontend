@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Tab, ProgressRing, Tabs } from '@skeletonlabs/skeleton-svelte';
-  import { type ModalSettings } from '@skeletonlabs/skeleton-svelte';
+  import { Tabs } from '@skeletonlabs/skeleton-svelte';
   import { v4 as uuidv4 } from 'uuid';
 
   import { goto } from '$app/navigation';
@@ -19,6 +18,7 @@
   import { exports, addExports, removeExports } from '$lib/stores/Export';
   import { filters, totalParticipants } from '$lib/stores/Filter';
   import { searchDictionary } from '$lib/stores/Dictionary';
+  import { toaster } from '$lib/toaster';
   import { createDatasetName } from '$lib/services/datasets';
 
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
@@ -27,8 +27,10 @@
   import UserToken from '$lib/components/UserToken.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
-  import Confirmation from '$lib/components/modals/Confirmation.svelte';
-  import Summary from './Summary.svelte';
+  import Summary from '$lib/components/explorer/export/Summary.svelte';
+  import Modal from '$lib/components/Modal.svelte';
+  import CodeBlock from '$lib/components/CodeBlock.svelte';
+  import Loading from '$lib/components/Loading.svelte';
 
   interface Props {
     query: QueryRequestInterface;
@@ -45,8 +47,6 @@
   }
 
   const MAX_DATA_POINTS_FOR_EXPORT = settings.maxDataPointsForExport || 1000000;
-  const modalStore = getModalStore();
-  const toastStore = getToastStore();
   const PROMISE_WAIT_INTERVAL = 7;
 
   const columns = [
@@ -67,7 +67,8 @@
   let lastExports: ExportRowInterface[] = $state([]);
   let loadingSampleIds = $state(false);
   let checkingSampleIds = $state(false);
-  let tabSet: number = $state(0);
+  let tabSet: string = $state('Python');
+  let modalOpen: boolean = $state(false);
 
   let datasetId: string = $state('');
   let processingMessage: string = $state('');
@@ -83,7 +84,9 @@
       if (genomicConcepts.length > 0) {
         // Find sample IDs that match genomic concepts
         const matchingSampleIds = exportedSampleIds.filter((sampleId) =>
-          genomicConcepts.some((concept) => concept.conceptPath === sampleId.conceptPath),
+          genomicConcepts.some(
+            (concept: { conceptPath: string }) => concept.conceptPath === sampleId.conceptPath,
+          ),
         );
         sampleIds = matchingSampleIds.length === genomicConcepts.length;
         checkingSampleIds = false;
@@ -110,35 +113,6 @@
       activeType = 'DATAFRAME';
     }
   });
-
-  function openConfirmationModal() {
-    const onConfirm = async () => {
-      await download();
-      modalStore.close();
-    };
-    const onCancel = () => {
-      modalStore.close();
-    };
-    const modal: ModalSettings = {
-      type: 'component',
-      title: branding.explorePage.confirmDownloadTitle || 'Are you sure you want to download data?',
-      component: 'modalWrapper',
-      modalClasses: 'bg-surface-100-900 p-4 block',
-      meta: {
-        component: Confirmation,
-        message:
-          branding.explorePage.confirmDownloadMessage ||
-          'This action will download the data to your local machine. Are you sure you want to proceed?',
-        onConfirm,
-        onCancel,
-        confirmText: 'Download',
-      },
-      response: (r: string) => {
-        console.log(r);
-      },
-    };
-    modalStore.trigger(modal);
-  }
 
   async function download(): Promise<void> {
     try {
@@ -205,7 +179,7 @@
 
     try {
       query.query.fields = $exports.map((exp) => exp.conceptPath);
-      query.query.expectedResultType = activeType;
+      query.query.expectedResultType = activeType || 'DATAFRAME';
       datasetId = '';
       requestUpdate(() =>
         api.post('picsure/query', query).then((res: DataSetResponse) => {
@@ -328,10 +302,9 @@
       lastExports = newRows;
     } catch (error) {
       console.error('Error in toggleSampleIds', error);
-      toastStore.trigger({
-        message:
+      toaster.error({
+        description:
           'We were unable to fetch the sample IDs for your selected data. Please try again later.',
-        background: 'preset-tonal-error border border-error-500',
       });
       sampleIds = false;
     } finally {
@@ -359,6 +332,17 @@
   }
 </script>
 
+<Modal
+  bind:open={modalOpen}
+  title={branding.explorePage.confirmDownloadTitle || 'Are you sure you want to download data?'}
+  withDefault
+  confirmText="Download"
+  cancelText="Cancel"
+  onconfirm={() => download()}
+>
+  {branding.explorePage.confirmDownloadMessage ||
+    'This action will download the data to your local machine. Are you sure you want to proceed?'}
+</Modal>
 <Stepper
   class="w-full h-full m-8"
   oncomplete={onComplete}
@@ -371,24 +355,19 @@
       <Summary />
       <section class="w-full">
         {#if dataLimitExceeded()}
-          <aside class="alert preset-filled-error-500">
-            <div><i class="fa-solid fa-triangle-exclamation text-4xl"></i></div>
-            <div class="alert-message">
-              <h3 class="h3">Warning</h3>
-              <p>
-                Warning: Your selected data exceeds 1,000,000 estimated data points, which is too
-                large to export. Please reduce the data selection or the number of selected
-                participants.
-              </p>
-            </div>
-            <div class="alert-actions dark">
-              <button class="btn preset-filled" onclick={onComplete}>Back</button>
-            </div>
-          </aside>
+          <ErrorAlert
+            data-testid="landing-error"
+            title="Warning"
+            color="warning"
+            closeText="Back"
+            onclose={onComplete}
+          >
+            Warning: Your selected data exceeds 1,000,000 estimated data points, which is too large
+            to export. Please reduce the data selection or the number of selected participants.
+          </ErrorAlert>
         {:else}
           {#await preparePromise}
-            <ProgressRing width="w-4" />
-            <div>Preparing your dataset...</div>
+            <Loading ring label="Preparing" />
           {:catch}
             <div class="flex justify-center mb-4">
               <ErrorAlert
@@ -407,7 +386,7 @@
                   data-testid="sample-ids-label"
                 >
                   {#if checkingSampleIds}
-                    <ProgressRing width="w-4" />
+                    <Loading ring />
                   {:else}
                     <input
                       type="checkbox"
@@ -423,10 +402,7 @@
               </div>
             {/if}
           {:else}
-            <div class="flex justify-center items-center">
-              <ProgressRing width="w-4" />
-              <div>Loading sample IDs...</div>
-            </div>
+            <Loading ring label="Loading sample IDs" />
           {/if}
         {/if}
       </section>
@@ -459,7 +435,6 @@
             title="Export as Data Frame or CSV"
             subtitle="Export data as a Python or R data frame or a comma-separated values file"
             size="other"
-            class="card preset-outlined-primary-500"
             active={activeType === 'DATAFRAME'}
             onclick={() => (activeType = 'DATAFRAME')}
           ></CardButton>
@@ -468,7 +443,6 @@
             title="Export as PFB"
             subtitle="Export data in Portable Format for Biomedical Data file format"
             size="other"
-            class="card preset-outlined-primary-500"
             active={activeType === 'DATAFRAME_PFB'}
             onclick={() => (activeType = 'DATAFRAME_PFB')}
           ></CardButton>
@@ -504,8 +478,7 @@
               <div class="flex items-center">
                 <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
                 {#await datasetIdPromise}
-                  <ProgressRing width="w-4" />
-                  <div>{processingMessage}</div>
+                  <Loading ring size="micro" label={processingMessage} />
                 {:then}
                   <div id="dataset-id" class="mr-4">{datasetId}</div>
                 {:catch}
@@ -522,55 +495,51 @@
     {#snippet header()}Start Analysis:{/snippet}
     <section class="flex flex-col w-full h-full items-center">
       {#await saveDatasetPromise}
-        <div class="flex justify-center items-center">
-          <ProgressRing width="w-4" />
-          <div>Saving your dataset...</div>
-        </div>
+        <Loading ring size="medium" label="Saving" />
       {:then}
         <div class="flex justify-center">
           {#await statusPromise}
-            <div class="flex justify-center items-center">
-              <ProgressRing width="w-4" />
-              <div>Preparing your dataset...</div>
-            </div>
+            <Loading ring size="medium" label="Preparing" />
           {:then}
             {#if query.query.expectedResultType === 'DATAFRAME'}
               <section class="flex flex-col gap-8">
                 <p class="mt-4">{branding.explorePage.analysisExportText}</p>
-                <Tabs class="card p-4">
-                  <Tab bind:group={tabSet} name="python" value={0}>Python</Tab>
-                  <Tab bind:group={tabSet} name="r" value={1}>R</Tab>
-                  {#if features.explorer.allowDownload}
-                    <Tab bind:group={tabSet} name="download" value={2}>Download</Tab>
-                  {/if}
-                  {#snippet panel()}
-                    {#if tabSet === 0}
+                <Tabs value={tabSet} onValueChange={(e) => (tabSet = e.value)}>
+                  {#snippet list()}
+                    <Tabs.Control value="Python">Python</Tabs.Control>
+                    <Tabs.Control value="R">R</Tabs.Control>
+                    {#if features.explorer.allowDownload}
+                      <Tabs.Control value="Download">Download</Tabs.Control>
+                    {/if}
+                  {/snippet}
+                  {#snippet content()}
+                    <Tabs.Panel value="Python">
                       <CodeBlock
-                        language="python"
-                        lineNumbers={true}
-                        buttonCopied="Copied!"
+                        lang="python"
                         code={branding.explorePage.codeBlocks.PythonExport.replace(
                           '{{queryId}}',
                           datasetId,
                         ) || 'Code not set'}
                       />
-                    {:else if tabSet === 1}
+                    </Tabs.Panel>
+                    <Tabs.Panel value="R">
                       <CodeBlock
-                        language="r"
-                        lineNumbers={true}
-                        buttonCopied="Copied!"
+                        lang="r"
                         code={branding.explorePage.codeBlocks.RExport.replace(
                           '{{queryId}}',
                           datasetId,
                         ) || 'Code not set'}
                       />
-                    {:else if features.explorer.allowDownload && tabSet === 2}
-                      <button
-                        class="btn preset-filled-primary-500"
-                        onclick={() =>
-                          features.confirmDownload ? openConfirmationModal() : download()}
-                        ><i class="fa-solid fa-download mr-1"></i>Download as CSV</button
-                      >
+                    </Tabs.Panel>
+                    {#if features.explorer.allowDownload}
+                      <Tabs.Panel value="Download">
+                        <button
+                          class="btn preset-filled-primary-500"
+                          onclick={() =>
+                            features.confirmDownload ? (modalOpen = true) : download()}
+                          ><i class="fa-solid fa-download mr-1"></i>Download as CSV</button
+                        >
+                      </Tabs.Panel>
                     {/if}
                   {/snippet}
                 </Tabs>
@@ -607,7 +576,7 @@
                 {/if}
                 <button
                   class="flex-initial w-64 btn preset-filled-primary-500"
-                  onclick={() => (features.confirmDownload ? openConfirmationModal() : download())}
+                  onclick={() => (features.confirmDownload ? (modalOpen = true) : download())}
                   ><i class="fa-solid fa-download"></i>Download as PFB</button
                 >
               </section>

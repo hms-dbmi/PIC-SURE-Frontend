@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { Progress } from '@skeletonlabs/skeleton-svelte';
-
   import type { Indexable } from '$lib/types';
-  import DataSetStore from '$lib/stores/Dataset';
+  import { branding } from '$lib/configuration';
+  import { active, archived, loadDatasets } from '$lib/stores/Dataset';
+
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/Table.svelte';
   import CopyButtonCell from '$lib/components/dataset/cell/CopyButtonCell.svelte';
   import Actions from '$lib/components/dataset/cell/Actions.svelte';
-  import { branding } from '$lib/configuration';
+  import Loading from '$lib/components/Loading.svelte';
 
   const columns = [
     { dataElement: 'name', label: 'Dataset ID Name' },
@@ -22,15 +22,7 @@
     uuid: Actions,
   };
 
-  let { active, archived, loadDatasets } = DataSetStore;
-
   let displayArchived = $state(false);
-
-  const rowClickHandler = () => {
-    console.error('Function not implemented.');
-    // const uuid = row?.uuid;
-    // goto(`/dataset/${uuid}`);
-  };
 </script>
 
 <svelte:head>
@@ -39,8 +31,7 @@
 
 <Content title="Manage Datasets">
   {#await loadDatasets()}
-    <h3 class="text-left">Loading</h3>
-    <Progress animIndeterminate="anim-progress-bar" />
+    <Loading />
   {:then}
     <Datatable
       tableName="ActiveDatasets"
@@ -48,7 +39,6 @@
       data={$active}
       {columns}
       {cellOverides}
-      {rowClickHandler}
     />
     {#if displayArchived}
       <Datatable
@@ -67,8 +57,6 @@
       >{displayArchived ? 'Hide' : 'Show'} deleted datasets</button
     >
   {:catch}
-    <ErrorAlert title="API Error">
-      <p>Something went wrong when sending your request.</p>
-    </ErrorAlert>
+    <ErrorAlert title="API Error">Something went wrong when sending your request.</ErrorAlert>
   {/await}
 </Content>

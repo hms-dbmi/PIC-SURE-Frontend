@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
   import type { SNP } from '$lib/models/GenomeFilter';
   import { getSNPCounts } from '$lib/stores/SNPFilter';
+
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import Loading from '$lib/components/Loading.svelte';
 
   const {
     search = '',
@@ -13,12 +15,20 @@
     onvalid?: (snp: SNP) => void;
   } = $props();
 
-  const validSnp = /^\w+,\d+,(A|T|C|G)+,(A|T|C|G)+$/;
+  const validSnpPattern = /^\w+,\d+,(A|T|C|G)+,(A|T|C|G)+$/;
   let searchElement: HTMLInputElement;
   let warn: boolean = $state(false);
   let searching: boolean = $state(false);
   let searchStringElement: string = $state(search);
-  const toastStore = getToastStore();
+  let validSNPString: boolean = $derived(validSnpPattern.test(searchStringElement));
+  $effect(() => {
+    if (searchStringElement && !validSNPString) {
+      setInvalid();
+      return;
+    } else {
+      removeInvalid();
+    }
+  });
 
   function setInvalid() {
     searchElement.classList.add('required');
@@ -34,36 +44,19 @@
     warn = false;
   }
 
-  $effect(() => {
-    // remove warnings on search value change.
-    searchStringElement && removeInvalid();
-  });
-
   async function searchSnp() {
-    if (!validSnp.test(searchStringElement)) {
-      setInvalid();
-      return;
-    } else {
-      removeInvalid();
-    }
-
     searching = true;
+    let valid: boolean;
     try {
-      const valid = (await getSNPCounts({ search: searchStringElement, constraint: '' })) > 0;
-      if (valid) {
-        onvalid({ search: searchStringElement, constraint: '' });
-      } else {
-        warn = true;
-      }
-    } catch (err) {
-      console.error('SNP search error:', err);
-      toastStore.trigger({
-        message: 'An error occurred while searching for SNP data. Please try again later.',
-        background: 'variant-filled-error',
-        timeout: 5000,
-      });
-    } finally {
-      searching = false;
+      valid = (await getSNPCounts({ search: searchStringElement, constraint: '' })) > 0;
+    } catch (_e) {
+      valid = false;
+    }
+    searching = false;
+    if (valid) {
+      onvalid({ search: searchStringElement, constraint: '' });
+    } else {
+      warn = true;
     }
   }
 </script>
@@ -82,34 +75,24 @@
     {disabled}
     bind:this={searchElement}
     bind:value={searchStringElement}
-    oninput={removeInvalid}
+    onkeydown={removeInvalid}
   />
   <button
     type="button"
     data-testid="snp-search-btn"
     class="btn btn-sm preset-filled-primary-500 text-lg disabled:opacity-75"
     onclick={searchSnp}
-    disabled={disabled || !search || searching}
+    disabled={disabled || !validSNPString || searching}
   >
     Search
     {#if searching}
-      <ProgressRing
-        value={undefined}
-        width="w-4"
-        meter="stroke-primary-100  dark:stroke-secondary-400"
-        track="stroke-surface-900/100"
-        class="ml-2"
-      />
+      <Loading ring size="micro" color="white" />
     {/if}
   </button>
 </div>
 {#if warn}
-  <aside class="alert preset-tonal-error border border-error-500">
-    <div class="alert-message">
-      <p>
-        We couldn't find any results for your search term. Please check to ensure the information
-        you have entered is correct or try a different search.
-      </p>
-    </div>
-  </aside>
+  <ErrorAlert>
+    We couldn't find any results for your search term. Please check to ensure the information you
+    have entered is correct or try a different search.
+  </ErrorAlert>
 {/if}

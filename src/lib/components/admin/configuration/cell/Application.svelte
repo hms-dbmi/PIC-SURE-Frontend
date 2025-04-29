@@ -1,12 +1,7 @@
 <script lang="ts">
-  import ApplicationStore from '$lib/stores/Application';
-  const { getApplication } = ApplicationStore;
+  import { getApplication } from '$lib/stores/Application';
 
-  interface Props {
-    data: { cell: '' };
-  }
-
-  let { data }: Props = $props();
+  let { data }: { data: { cell: '' } } = $props();
 </script>
 
-{data.cell ? getApplication(data.cell).name : 'none'}
+{data.cell ? getApplication(data.cell)?.name : 'none'}

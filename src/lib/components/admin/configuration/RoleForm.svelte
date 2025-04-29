@@ -1,10 +1,11 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  const toastStore = getToastStore();
 
   import { type Role } from '$lib/models/Role';
   import { addRole, updateRole } from '$lib/stores/Roles';
   import { isTopAdmin } from '$lib/stores/User';
+  import { toaster } from '$lib/toaster';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 
   interface Props {
     role?: Role | undefined;
@@ -47,23 +48,21 @@
       } else {
         await addRole(newRole);
       }
-      toastStore.trigger({
-        message: `Successfully saved ${newRole && 'new '}role '${name}'`,
-        background: 'preset-filled-success-500',
+      toaster.success({
+        title: `Successfully saved ${newRole && 'new '}role '${name}'`,
       });
       goto('/admin/configuration');
     } catch (error) {
       console.error(error);
-      toastStore.trigger({
-        message: `An error occured while saving ${newRole && 'new '}role '${name}'`,
-        background: 'preset-filled-error-500',
+      toaster.error({
+        title: `An error occured while saving ${newRole && 'new '}role '${name}'`,
       });
     }
   }
 </script>
 
-<form onsubmit={saveRole} class="grid gap-4 my-3">
-  <fieldset data-testid="role-form" disabled={!$isTopAdmin}>
+<form onsubmit={saveRole}>
+  <fieldset data-testid="role-form" class="grid gap-4 my-3" disabled={!$isTopAdmin}>
     {#if role?.uuid}
       <label class="label">
         <span>UUID:</span>
@@ -93,40 +92,32 @@
       {#each privilegeList as [name], index}
         <label class="flex items-center space-x-2">
           <input class="checkbox" type="checkbox" bind:checked={privileges[index].checked} />
-          <p>{name}</p>
+          <div>{name}</div>
         </label>
       {/each}
     </fieldset>
 
-  {#if validationError}
-    <aside data-testid="validation-error" class="alert preset-tonal-error border border-error-500">
-      <div class="alert-message">
-        <p>{validationError}</p>
-      </div>
-      <div class="alert-actions">
-        <button on:click={() => (validationError = '')}>
-          <i class="fa-solid fa-xmark"></i>
-          <span class="sr-only">Close</span>
-        </button>
-      </div>
-    </aside>
-  {/if}
+    {#if validationError}
+      <ErrorAlert data-testid="validation-error" onclose={() => (validationError = '')}>
+        {validationError}
+      </ErrorAlert>
+    {/if}
 
-  <div>
-    <button
-      type="submit"
-      data-testid="role-save-btn"
-      class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-    >
-      Save
-    </button>
-    <a
-      href="/admin/configuration"
-      data-testid="role-cancel-btn"
-      class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
-    >
-      Cancel
-    </a>
-  </div>
+    <div class="mt-2">
+      <button
+        type="submit"
+        data-testid="role-save-btn"
+        class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+      >
+        Save
+      </button>
+      <a
+        href="/admin/configuration"
+        data-testid="role-cancel-btn"
+        class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
+      >
+        Cancel
+      </a>
+    </div>
   </fieldset>
 </form>

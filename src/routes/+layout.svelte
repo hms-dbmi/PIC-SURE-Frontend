@@ -1,34 +1,14 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
   import '@fortawesome/fontawesome-free/css/all.min.css';
-  import '../app.postcss';
+  import '../styles/app.css';
   import { initializeBranding } from '$lib/configuration';
   import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
-  import { settings } from '$lib/configuration';
-  interface Props {
-    children?: import('svelte').Snippet;
-  }
 
-  let { children }: Props = $props();
+  let { children }: { children?: Snippet } = $props();
 
-  let googleTag = settings.google.tagManager;
-
-  initializeStores();
   initializeBranding();
 </script>
-
-<!-- Google Tag Manager (noscript) -->
-{#if googleTag}
-  <noscript>
-    <iframe
-      src="https://www.googletagmanager.com/ns.html?id={googleTag}"
-      title="googleTagManger"
-      height="0"
-      width="0"
-      style="display:none;visibility:hidden"
-    ></iframe>
-  </noscript>
-  <!-- End Google Tag Manager (noscript) -->
-{/if}
 
 <main class="w-full h-full">
   {@render children?.()}

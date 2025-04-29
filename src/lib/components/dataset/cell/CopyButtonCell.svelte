@@ -6,5 +6,5 @@
 
 <div class="flex items-center">
   <span class="monospace">{data.cell}</span>
-  <CopyButton data-testid="{data.cell}-copy-btn" useIcon={true} itemToCopy={data.cell} />
+  <CopyButton data-testid="{data.cell}-copy" useIcon itemToCopy={data.cell} />
 </div>

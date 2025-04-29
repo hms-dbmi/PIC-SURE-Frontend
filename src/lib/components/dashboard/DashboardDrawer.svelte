@@ -1,13 +1,12 @@
 <script lang="ts">
   import { getDatasetDetails } from '$lib/stores/Dictionary';
-  import type { DashboardRow } from '$lib/stores/Dashboard';
-  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
+  import { activeRow } from '$lib/stores/Dashboard';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  const drawerStore = getDrawerStore();
+  import Loading from '../Loading.svelte';
 
-  const datasetId = (($drawerStore.meta.row as DashboardRow)?.dataset_id as string) || '';
-  const title = (($drawerStore.meta.row as DashboardRow)?.name as string) || '';
-  const link = (($drawerStore.meta.row as DashboardRow)?.additional_info_link as string) || '';
+  const datasetId = ($activeRow?.dataset_id as string) || '';
+  const title = ($activeRow?.name as string) || '';
+  const link = ($activeRow?.additional_info_link as string) || '';
 
   async function getDataset() {
     const details = await getDatasetDetails(datasetId);
@@ -25,11 +24,9 @@
 {#if title}
   <h2 data-testid="drawer-title" class="text-2xl font-bold ml-4">{title}</h2>
 {/if}
-<hr class="m-4 border-t-2 border-gray-200" />
+<hr />
 {#await getDataset()}
-  <div class="flex justify-center items-center h-full">
-    <ProgressRing />
-  </div>
+  <Loading ring size="medium" />
 {:then details}
   <ul data-testid="drawer-details" class="m-4 p-4">
     {#each Object.entries(details) as [key, value]}
@@ -61,14 +58,13 @@
       <a
         href={link || '#'}
         class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-        target="_blank">More Info</a
+        target="_blank"
+        onclick={(e) => e.stopPropagation()}>More Info</a
       >
     </div>
   {/if}
 {:catch}
-  <div class="flex justify-center items-center">
-    <ErrorAlert title="An Error Occured">
-      <p>We're having trouble fetching the dataset details right now. Please try again later.</p>
-    </ErrorAlert>
-  </div>
+  <ErrorAlert title="An Error Occured">
+    We're having trouble fetching the dataset details right now. Please try again later.
+  </ErrorAlert>
 {/await}

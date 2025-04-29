@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { Progress } from '@skeletonlabs/skeleton-svelte';
-
   import { goto } from '$app/navigation';
 
   import type { Indexable } from '$lib/types';
@@ -20,6 +18,8 @@
   import { loadApplications } from '$lib/stores/Application';
   import { connections, loadConnections } from '$lib/stores/Connections';
   import { isTopAdmin } from '$lib/stores/User';
+
+  import Loading from '$lib/components/Loading.svelte';
 
   const roleTable = {
     columns: [
@@ -87,7 +87,7 @@
   <div id="role-table" class="mb-10">
     <h2>Roles Management</h2>
     {#await loadRoles()}
-      <Progress animIndeterminate="anim-progress-bar" />
+      <Loading />
     {:then}
       <div class="flex gap-4 my-6">
         <div class="flex-auto">
@@ -109,18 +109,18 @@
         cellOverides={roleTable.overrides}
         defaultRowsPerPage={10}
         rowClickHandler={roleRowCLick}
-        isClickable={true}
+        isClickable
       />
     {:catch}
       <ErrorAlert title="API Error">
-        <p>Something went wrong when sending your request for roles.</p>
+        Something went wrong when sending your request for roles.
       </ErrorAlert>
     {/await}
   </div>
   <div id="privilege-table" class="mb-10">
     <h2>Privileges Management</h2>
     {#await loadAppsAndPriv()}
-      <Progress animIndeterminate="anim-progress-bar" />
+      <Loading />
     {:then}
       <div class="flex gap-4 my-6">
         <div class="flex-auto">
@@ -142,18 +142,18 @@
         cellOverides={privilegesTable.overrides}
         defaultRowsPerPage={10}
         rowClickHandler={privilegeRowClick}
-        isClickable={true}
+        isClickable
       />
     {:catch}
       <ErrorAlert title="API Error">
-        <p>Something went wrong when sending your request for priviledges and applications.</p>
+        Something went wrong when sending your request for priviledges and applications.
       </ErrorAlert>
     {/await}
   </div>
   <div id="connection-table" class="mb-10">
     <h2>Connections Management</h2>
     {#await loadConnections()}
-      <Progress animIndeterminate="anim-progress-bar" />
+      <Loading />
     {:then}
       <div class="flex gap-4 my-6">
         <div class="flex-auto">
@@ -175,11 +175,11 @@
         cellOverides={connectionTable.overrides}
         defaultRowsPerPage={10}
         rowClickHandler={connectionRowClick}
-        isClickable={true}
+        isClickable
       />
     {:catch}
       <ErrorAlert title="API Error">
-        <p>Something went wrong when sending your request for connections.</p>
+        Something went wrong when sending your request for connections.
       </ErrorAlert>
     {/await}
   </div>

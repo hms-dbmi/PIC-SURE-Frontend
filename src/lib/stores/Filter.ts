@@ -1,6 +1,7 @@
 import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
 
 import type { Filter } from '$lib/models/Filter';
+import type { SearchResult } from '$lib/models/Search';
 import { browser } from '$app/environment';
 import { user } from './User';
 
@@ -30,6 +31,11 @@ export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$u
     return !isValidFilter;
   });
 });
+
+// modal data
+export const activeFilter: Writable<Filter | undefined> = writable();
+export const activeSearch: Writable<SearchResult | undefined> = writable();
+export const filterWarning: Writable<string | undefined> = writable();
 
 filters.subscribe((f) => {
   if (browser) {

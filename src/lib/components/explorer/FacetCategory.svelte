@@ -13,24 +13,21 @@
     numFacetsToShow?: number;
   }
 
-  let {
-    facetCategory,
-    facets = facetCategory.facets,
-    numFacetsToShow = 5,
-  }: Props = $props();
+  let { facetCategory, facets = facetCategory.facets, numFacetsToShow = 5 }: Props = $props();
 
-  let filteredHiddenFacets = $state(facets.filter((f) => !($hiddenFacets[facetCategory.name] || []).includes(f.name)));
+  let filteredHiddenFacets = $state(
+    facets.filter((f) => !($hiddenFacets[facetCategory.name] || []).includes(f.name)),
+  );
   let textFilterValue: string = $state('');
 
-  let anyFacetNot0 = $derived(filteredHiddenFacets?.some((facet) => facet.count > 0));
   let shouldShowSearchBar: boolean = $derived(filteredHiddenFacets?.length > numFacetsToShow);
   let moreThanNumFacetsToShow = $derived(filteredHiddenFacets?.length > numFacetsToShow);
   let facetsToDisplay = $derived(
     (facets || textFilterValue || moreThanNumFacetsToShow || $selectedFacets || facetCategory) &&
-    getFacetsToDisplay()
+      getFacetsToDisplay(),
   );
   let selectedFacetsChips = $derived(
-    $selectedFacets.filter((facet) => facet?.categoryRef?.name === facetCategory?.name)
+    $selectedFacets.filter((facet) => facet?.categoryRef?.name === facetCategory?.name),
   );
 
   function isIndeterminate(facet: Facet): boolean {
@@ -134,11 +131,18 @@
   }
 </script>
 
-<Accordion.Item class="card space-y-2" open={anyFacetNot0}>
-  {#snippet summary()}
+<Accordion.Item
+  value={facetCategory.name}
+  headingLevel={6}
+  controlRounded="rounded-t-xl aria-expanded:rounded-b-none rounded-b-xl"
+  controlClasses="h6 bg-primary-100-900 hover:bg-secondary-200-800"
+  panelClasses="bg-surface-100"
+  panelRounded="rounded-b-xl"
+>
+  {#snippet control()}
     {facetCategory.display}
   {/snippet}
-  {#snippet content()}
+  {#snippet panel()}
     <div class="flex flex-col">
       {#if shouldShowSearchBar}
         <input
@@ -187,7 +191,9 @@
 </div>
 
 <style lang="postcss">
+  @reference "../../../styles/app.css";
+
   .show-more {
-    @reference btn btn-sm variant-outline rounded-container-token;
+    @apply btn btn-sm preset-outlined-primary-500 rounded-container;
   }
 </style>

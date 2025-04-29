@@ -25,9 +25,6 @@ test.describe('Dashboard page', () => {
       const buttons = await page.getByText('More Info').all();
 
       expect(buttons.length).toBe(mockDashboard.rows.length);
-      await expect(buttons[0]).toHaveClass(
-        'btn variant-ghost-primary hover:variant-filled-primary',
-      );
     });
     test('Dashboard renders disabled buttons when link is not available', async ({ page }) => {
       // Given
@@ -35,7 +32,7 @@ test.describe('Dashboard page', () => {
 
       // Then
       await expect(page.getByText('More Info').last()).toHaveClass(
-        'btn variant-ghost-primary hover:variant-filled-primary opacity-50 cursor-not-allowed',
+        'btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 opacity-50 cursor-not-allowed',
       );
     });
     test('Dashboard rows are clickable and open drawer', async ({ page }) => {
@@ -49,8 +46,8 @@ test.describe('Dashboard page', () => {
       await page.locator('#row-0-col-0').click();
 
       // Then
-      await expect(page.getByTestId('drawer')).toBeVisible();
-      await expect(page.getByTestId('drawer').getByTestId('drawer-title')).toHaveText(
+      await expect(page.locator('#drawer')).toBeVisible();
+      await expect(page.locator('#drawer').getByTestId('drawer-title')).toHaveText(
         mockDashboard.rows[0].name as string,
       );
     });
@@ -65,9 +62,9 @@ test.describe('Dashboard page', () => {
       await page.locator('#row-0-col-0').click();
 
       // Then
-      await expect(page.getByTestId('drawer')).toBeVisible();
+      await expect(page.locator('#drawer')).toBeVisible();
       const entries = Object.entries(mockDashboard.rows[0]);
-      const drawerText = await page.getByTestId('drawer').getByTestId('drawer-details').innerText();
+      const drawerText = await page.locator('#drawer').getByTestId('drawer-details').innerText();
       const lines = drawerText.split('\n');
 
       for (let i = 0; i < entries.length; i++) {

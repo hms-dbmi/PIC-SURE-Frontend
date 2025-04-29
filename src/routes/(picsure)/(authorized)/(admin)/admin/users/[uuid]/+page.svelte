@@ -1,6 +1,5 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { Progress } from '@skeletonlabs/skeleton-svelte';
   import { branding } from '$lib/configuration';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -12,6 +11,8 @@
   import UsersStore from '$lib/stores/Users';
   import RolesStore from '$lib/stores/Roles';
   import ConnectionStore from '$lib/stores/Connections';
+  import Loading from '$lib/components/Loading.svelte';
+
   const { loadUsers, getUser } = UsersStore;
   const { getRole } = RolesStore;
   const { getConnection } = ConnectionStore;
@@ -39,8 +40,7 @@
 
 <Content title="User Summary" backUrl="/admin/users" backTitle="Back to Users">
   {#await load()}
-    <h3 class="text-left">Loading</h3>
-    <Progress animIndeterminate="anim-progress-bar" />
+    <Loading />
   {:then}
     <section id="role-view">
       <table class="table bg-transparent">
@@ -76,7 +76,7 @@
     </section>
   {:catch}
     <ErrorAlert title="API Error">
-      <p>An error occured while retrieving dataset {page.params.uuid}.</p>
+      An error occured while retrieving dataset {page.params.uuid}.
     </ErrorAlert>
   {/await}
 </Content>

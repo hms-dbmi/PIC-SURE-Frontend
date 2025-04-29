@@ -68,7 +68,7 @@ test.describe('Results Panel', () => {
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
     await expect(page.locator('#result-count')).toHaveText('N/A');
-    await expect(page.getByTestId('snackbar-wrapper')).toBeVisible();
+    await expect(page.getByTestId('toast-message')).toBeVisible();
   });
   test('Result panel shows N/A icon and generic error on open with no filters', async ({
     page,
@@ -85,7 +85,7 @@ test.describe('Results Panel', () => {
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
     await expect(page.locator('#result-count')).toHaveText('N/A');
-    await expect(page.getByTestId('snackbar-wrapper')).toBeVisible();
+    await expect(page.getByTestId('toast-message')).toBeVisible();
   });
   test('Result panel shows the correct number of results', async ({ page }) => {
     // Given
@@ -207,7 +207,7 @@ test.describe('Results Panel', () => {
 
     // When
     await page.getByTestId('clear-all-results-btn').click();
-    await page.getByTestId('modal').getByRole('button', { name: 'Yes' }).click();
+    await page.locator('#modal-component').getByRole('button', { name: 'Yes' }).click();
 
     // Then
     await expect(page.getByText('No filters added')).toBeVisible();

@@ -1,16 +1,14 @@
 <script lang="ts">
-  import type { DataHandler } from '@vincjo/datatables';
-  import { DataHandler as RemoteHander } from '@vincjo/datatables/remote';
+  import { TableHandler as RemoteHander } from '@vincjo/datatables/server';
 
   interface Props {
-    handler: DataHandler | RemoteHander;
+    handler: RemoteHander;
     options?: number[];
     class?: string;
   }
 
-  const { handler, options = [5, 10, 20, 50], class: className = '' }: Props = $props();
+  let { handler, options = [5, 10, 20, 50], class: className = '' }: Props = $props();
 
-  let rowsPerPage = $derived(handler.getRowsPerPage());
   const setRowsPerPage = () => {
     handler.setPage(1);
     if (handler instanceof RemoteHander) {
@@ -26,7 +24,7 @@
       id="row-count-select"
       class="select ml-2"
       aria-label="Rows per page"
-      bind:value={$rowsPerPage}
+      bind:value={handler.rowsPerPage}
       onchange={setRowsPerPage}
     >
       {#each options as option}

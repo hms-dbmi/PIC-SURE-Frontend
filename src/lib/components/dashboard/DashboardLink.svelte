@@ -10,9 +10,10 @@
   <a
     href={link || '#'}
     title={link ? 'More Info' : 'Link not available'}
-    class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500{!link
-      ? ' opacity-50 cursor-not-allowed'
+    class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!link
+      ? 'opacity-50 cursor-not-allowed'
       : ''}"
-    target="_blank">More Info</a
+    target="_blank"
+    onclick={(e) => e.stopPropagation()}>More Info</a
   >
 {/if}

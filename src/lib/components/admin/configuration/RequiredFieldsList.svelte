@@ -1,8 +1,9 @@
 <script lang="ts">
   import { type RequiredField, parseFieldsFromJSON } from '$lib/models/Connection';
   import { isTopAdmin } from '$lib/stores/User';
-  
+
   import RequiredFieldRow from './RequiredFieldRow.svelte';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 
   interface Props {
     fields?: string;
@@ -84,14 +85,8 @@
   {/each}
 
   {#if duplicates.length > 0}
-    <aside
-      data-testid="validation-warn"
-      class="alert preset-tonal-warning border border-warning-500 m-2"
-    >
-      <i class="fa-solid fa-triangle-exclamation"></i>
-      <div class="alert-message">
-        <p>Fields with the same ID may not function properly.</p>
-      </div>
-    </aside>
+    <ErrorAlert data-testid="validation-warn" color="warning">
+      Fields with the same ID may not function properly.
+    </ErrorAlert>
   {/if}
 </fieldset>

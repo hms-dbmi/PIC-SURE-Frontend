@@ -1,12 +1,12 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  const toastStore = getToastStore();
 
   import type { Connection } from '$lib/models/Connection';
   import { addConnection, updateConnection } from '$lib/stores/Connections';
   import { isTopAdmin } from '$lib/stores/User';
+  import { toaster } from '$lib/toaster';
 
-  import RequiredFieldsList from './RequiredFieldsList.svelte';
+  import RequiredFieldsList from '$lib/components/admin/configuration/RequiredFieldsList.svelte';
 
   interface Props {
     connection?: Connection | undefined;
@@ -38,16 +38,14 @@
       } else {
         await addConnection(newConnection);
       }
-      toastStore.trigger({
-        message: `Successfully saved ${newConnection && 'new '}connection '${label}'`,
-        background: 'preset-filled-success-500',
+      toaster.success({
+        title: `Successfully saved ${newConnection && 'new '}connection '${label}'`,
       });
       goto('/admin/configuration');
     } catch (error) {
       console.error(error);
-      toastStore.trigger({
-        message: `An error occured while saving ${newConnection && 'new '}connection '${label}'`,
-        background: 'preset-filled-error-500',
+      toaster.error({
+        title: `An error occured while saving ${newConnection && 'new '}connection '${label}'`,
       });
     }
   }
@@ -62,8 +60,8 @@
   >.
 </p>
 
-<form onsubmit={saveConnection} class="grid gap-4 my-3">
-  <fieldset data-testid="connection-form" disabled={!$isTopAdmin}>
+<form onsubmit={saveConnection}>
+  <fieldset data-testid="connection-form" class="grid gap-4 my-3" disabled={!$isTopAdmin}>
     {#if connection?.uuid}
       <label class="label">
         <span>UUID:</span>
@@ -93,23 +91,23 @@
       />
     </label>
 
-  <RequiredFieldsList fields={requiredFields} onupdate={updateRequiredFields} />
+    <RequiredFieldsList fields={requiredFields} onupdate={updateRequiredFields} />
 
-  <div>
-    <button
-      type="submit"
-      data-testid="connection-save-btn"
-      class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-    >
-      Save
-    </button>
-    <a
-      href="/admin/configuration"
-      data-testid="connection-cancel-btn"
-      class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
-    >
-      Cancel
-    </a>
-  </div>
+    <div class="mt-2">
+      <button
+        type="submit"
+        data-testid="connection-save-btn"
+        class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+      >
+        Save
+      </button>
+      <a
+        href="/admin/configuration"
+        data-testid="connection-cancel-btn"
+        class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
+      >
+        Cancel
+      </a>
+    </div>
   </fieldset>
 </form>

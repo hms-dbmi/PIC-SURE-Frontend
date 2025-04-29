@@ -5,7 +5,7 @@
     title?: string;
     subtitle?: string;
     required?: boolean;
-    'data-testid': string;
+    'data-testid'?: string;
     class?: string;
     action?: Snippet;
     help?: Snippet;

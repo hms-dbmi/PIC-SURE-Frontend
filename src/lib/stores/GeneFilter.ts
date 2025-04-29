@@ -34,3 +34,12 @@ export function clearGeneFilters() {
   selectedFrequency.set([]);
   selectedConsequence.set([]);
 }
+
+export function addConsquence(consequence: string) {
+  selectedConsequence.set([...get(selectedConsequence), consequence]);
+}
+
+export function removeConsequence(consequence: string) {
+  const filtered = get(selectedConsequence).filter((cons) => cons !== consequence);
+  selectedConsequence.set(filtered);
+}

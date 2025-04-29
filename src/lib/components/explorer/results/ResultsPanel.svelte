@@ -1,26 +1,27 @@
 <script lang="ts">
-  import { branding, features, resources } from '$lib/configuration';
-  import { slide, scale } from 'svelte/transition';
-  import { page } from '$app/stores';
-  import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
-  import CardButton from '$lib/components/buttons/CardButton.svelte';
-  import { filters, hasGenomicFilter, clearFilters, totalParticipants } from '$lib/stores/Filter';
-  import ExportStore from '$lib/stores/Export';
-  import * as api from '$lib/api';
-  import { ProgressRing } from '@skeletonlabs/skeleton-svelte';
-  import { elasticInOut } from 'svelte/easing';
   import { onDestroy, onMount, tick } from 'svelte';
-  import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
+  import { elasticInOut } from 'svelte/easing';
   import type { Unsubscriber } from 'svelte/store';
+  import { slide, scale } from 'svelte/transition';
+
+  import { page } from '$app/stores';
+  import { afterNavigate, goto, beforeNavigate } from '$app/navigation';
+
+  import * as api from '$lib/api';
+  import { branding, features, resources } from '$lib/configuration';
   import { getQueryRequest } from '$lib/QueryBuilder';
   import { loadAllConcepts } from '$lib/services/hpds';
 
-  const { exports, clearExports } = ExportStore;
+  import type { QueryRequestInterface } from '$lib/models/api/Request';
+  import { filters, hasGenomicFilter, clearFilters, totalParticipants } from '$lib/stores/Filter';
+  import { exports, clearExports } from '$lib/stores/Export';
+  import { toaster } from '$lib/toaster';
 
-  const modalStore = getModalStore();
-  const toastStore = getToastStore();
+  import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
+  import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
+  import CardButton from '$lib/components/buttons/CardButton.svelte';
+  import Modal from '$lib/components/Modal.svelte';
+  import Loading from '$lib/components/Loading.svelte';
 
   const ERROR_VALUE = 'N/A';
 
@@ -28,6 +29,7 @@
   let totalPatients: string | number | typeof ERROR_VALUE = $state(0);
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = $state(Promise.resolve(0));
   let isOpenAccess = $state($page.url.pathname.includes('/discover'));
+  let modalOpen: boolean = $state(false);
 
   async function getCount() {
     suffix = '';
@@ -59,39 +61,14 @@
       return count;
     } catch (error) {
       if ($filters.length !== 0) {
-        toastStore.trigger({
-          message: branding?.explorePage?.filterErrorText,
-          background: 'preset-filled-error-500',
-          autohide: false,
-          hoverable: true,
-        });
+        toaster.error({ description: branding?.explorePage?.filterErrorText, closable: false });
       } else {
-        toastStore.trigger({
-          message: branding?.explorePage?.queryErrorText,
-          background: 'preset-filled-error-500',
-        });
+        toaster.error({ title: branding?.explorePage?.queryErrorText });
       }
       totalPatients = ERROR_VALUE;
       return 0;
     }
   }
-
-  function clearFiltersModal() {
-    modalStore.trigger({
-      type: 'confirm',
-      title: 'Clear All Filters',
-      body: 'Are you sure you want to clear all filters?',
-      buttonTextConfirm: 'Yes',
-      buttonTextCancel: 'No',
-      response: (yes: boolean) => {
-        if (yes) {
-          clearFilters();
-          clearExports();
-        }
-      },
-    });
-  }
-
   let suffix = $state('');
 
   let hasFilterOrExport = $derived(
@@ -156,6 +133,19 @@
   });
 </script>
 
+<Modal
+  bind:open={modalOpen}
+  title="Clear All Filters"
+  withDefault
+  confirmText="Yes"
+  cancelText="No"
+  onconfirm={() => {
+    clearFilters();
+    clearExports();
+  }}
+>
+  Are you sure you want to clear all filters?
+</Modal>
 <section
   id="results-panel"
   class="flex flex-col items-center pt-8 pr-10 w-64"
@@ -163,7 +153,7 @@
 >
   <div class="flex flex-col items-center mt-2">
     {#await triggerRefreshCount}
-      <ProgressRing width="w-6" />
+      <Loading ring />
     {:then}
       <span id="result-count" class="text-4xl">
         {#if totalPatients === ERROR_VALUE}
@@ -195,14 +185,14 @@
     </div>
   {/if}
   <div id="export-filters" class="flex flex-col items-center mt-7 w-80">
-    <hr class="border-t-2!" />
+    <hr />
     <div class="flex content-center mt-7">
-      <h5 class="text-xl flex-auto mr-2">Filtered Data Summary</h5>
+      <h5 class="text-xl flex-auto mr-2 mb-2">Filtered Data Summary</h5>
       {#if hasFilterOrExport}
         <button
           data-testid="clear-all-results-btn"
           class="anchor text-sm flex-none"
-          onclick={clearFiltersModal}>Reset</button
+          onclick={() => (modalOpen = true)}>Reset</button
         >
       {/if}
     </div>
@@ -233,7 +223,7 @@
   </div>
   {#if showToolSuite}
     <div class="flex flex-col items-center mt-7">
-      <hr class="border-t-2!" />
+      <hr />
       <h5 class="text-center text-xl mt-7">Tool Suite</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
         {#if showExplorerDistributions}

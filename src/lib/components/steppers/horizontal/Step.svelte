@@ -59,6 +59,7 @@
             name="next"
             angle="right"
             variant="filled"
+            color="primary-500"
             disabled={locked}
             onclick={() => onNext(locked)}>Next</AngleButton
           >
@@ -67,6 +68,7 @@
             name={buttonCompleteLabel || 'complete'}
             angle="right"
             variant="filled"
+            color="primary-500"
             disabled={locked}
             onclick={() => onComplete(stepIndex, locked)}
             >{buttonCompleteLabel || 'Complete'}</AngleButton

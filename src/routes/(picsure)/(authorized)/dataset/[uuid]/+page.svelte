@@ -1,19 +1,16 @@
 <script lang="ts">
-  import { Progress } from '@skeletonlabs/skeleton-svelte';
-
   import { page } from '$app/state';
 
   import type { DataSet } from '$lib/models/Dataset';
-  import DataSetStore from '$lib/stores/Dataset';
+  import { getDataset } from '$lib/stores/Dataset';
   import { branding } from '$lib/configuration';
 
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import QuerySummary from '$lib/components/QuerySummary.svelte';
+  import Loading from '$lib/components/Loading.svelte';
 
-  const { getDataset } = DataSetStore;
-
-  let dataset: DataSet = $state({
+  let dataset: DataSet | undefined = $state({
     uuid: '',
     user: '',
     name: '',
@@ -36,8 +33,7 @@
 
 <Content title="View Dataset" backUrl="/dataset" backTitle="Back to Datasets">
   {#await loadDataset()}
-    <h3 class="text-left">Loading</h3>
-    <Progress animIndeterminate="anim-progress-bar" />
+    <Loading />
   {:then}
     <section id="detail-summary-container" class="m-3">
       <h2 class="text-left my-1">Dataset ID Summary</h2>
@@ -45,19 +41,19 @@
         <tbody>
           <tr>
             <td>Dataset ID Name:</td>
-            <td data-testid="dataset-summary-name">{dataset.name}</td>
+            <td data-testid="dataset-summary-name">{dataset?.name}</td>
           </tr>
           <tr>
             <td>Dataset ID:</td>
-            <td data-testid="dataset-summary-uuid">{dataset.uuid}</td>
+            <td data-testid="dataset-summary-uuid">{dataset?.uuid}</td>
           </tr>
         </tbody>
       </table>
     </section>
-    <QuerySummary query={dataset.query} />
+    <QuerySummary query={dataset?.query} />
   {:catch}
     <ErrorAlert title="API Error">
-      <p>An error occured while retrieving dataset {page.params.uuid}.</p>
+      An error occured while retrieving dataset {page.params.uuid}.
     </ErrorAlert>
   {/await}
 </Content>

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { Switch } from '@skeletonlabs/skeleton-svelte';
-  const toastStore = getToastStore();
 
   import type { ExtendedUser, UserRequest } from '$lib/models/User';
   import type { Connection } from '$lib/models/Connection';
@@ -10,6 +9,9 @@
   import { getConnection } from '$lib/stores/Connections';
   import { getRole } from '$lib/stores/Roles';
   import { getPrivilege } from '$lib/stores/Privileges';
+  import { toaster } from '$lib/toaster';
+
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 
   interface Props {
     user?: ExtendedUser | undefined;
@@ -64,9 +66,8 @@
       } else {
         const findUser = await getUserByEmailAndConnection(email, connection);
         if (findUser) {
-          toastStore.trigger({
-            message: 'Cannot add a user and connection pair that already exists.',
-            background: 'preset-filled-error-500',
+          toaster.error({
+            title: 'Cannot add a user and connection pair that already exists.',
           });
           return;
         }
@@ -74,98 +75,96 @@
         await addUser(newUser);
       }
 
-      toastStore.trigger({
-        message: `Successfully saved ${user ? '' : 'new '}user '${email}'`,
-        background: 'preset-filled-success-500',
+      toaster.success({
+        title: `Successfully saved ${user ? '' : 'new '}user '${email}'`,
       });
       goto('/admin/users');
     } catch (error) {
       console.error(error);
-      toastStore.trigger({
-        message: `An error occured while saving ${user ? '' : 'new '}user '${email}'`,
-        background: 'preset-filled-error-500',
+      toaster.error({
+        title: `An error occured while saving ${user ? '' : 'new '}user '${email}'`,
       });
     }
   }
 </script>
 
-<form onsubmit={saveUser} class="grid gap-4 my-3">
-  <Switch name="Active" size="sm" active="bg-success-500" label="Status" bind:checked={active}>
-    {active ? 'Active' : 'Inactive'}
-  </Switch>
+<form onsubmit={saveUser}>
+  <fieldset data-testid="user-form" class="grid gap-4 my-3">
+    <Switch
+      name="Active"
+      controlActive="bg-success-500"
+      label="Status"
+      checked={active}
+      onCheckedChange={() => (active = !active)}
+    >
+      {active ? 'Active' : 'Inactive'}
+    </Switch>
 
-  {#if user?.uuid}
-    <label class="label">
-      <span>UUID:</span>
-      <input type="text" class="input" value={user?.uuid} disabled />
-    </label>
-    <label class="label">
-      <span>Subject:</span>
-      <input type="text" class="input" value={user?.subject} disabled />
-    </label>
-  {/if}
-
-  <label class="label {user?.email ?? 'required'}">
-    <span>Email:</span>
-    <input
-      type="email"
-      bind:value={email}
-      class="input"
-      required
-      disabled={!!user?.email}
-      minlength="1"
-      maxlength="255"
-    />
-  </label>
-
-  <label class="label {user?.email ?? 'required'}">
-    <span>Connection:</span>
-    <select class="select" bind:value={connection} required disabled={!!user?.connection}>
-      <option selected={!user || !user.connection} disabled value>none</option>
-      {#each connections as connection}
-        <option value={connection.uuid} selected={user && user.connection === connection.uuid}
-          >{connection.label}</option
-        >
-      {/each}
-    </select>
-  </label>
-
-  <fieldset data-testid="privilege-checkboxes">
-    <legend class="required">Roles:</legend>
-    {#each roleList as [name], index}
-      <label class="flex items-center space-x-2">
-        <input class="checkbox" type="checkbox" bind:checked={roles[index].checked} />
-        <p>{name}</p>
+    {#if user?.uuid}
+      <label class="label">
+        <span>UUID:</span>
+        <input type="text" class="input" value={user?.uuid} disabled />
       </label>
-    {/each}
+      <label class="label">
+        <span>Subject:</span>
+        <input type="text" class="input" value={user?.subject} disabled />
+      </label>
+    {/if}
+
+    <label class="label {user?.email ?? 'required'}">
+      <span>Email:</span>
+      <input
+        type="email"
+        bind:value={email}
+        class="input"
+        required
+        disabled={!!user?.email}
+        minlength="1"
+        maxlength="255"
+      />
+    </label>
+
+    <label class="label {user?.email ?? 'required'}">
+      <span>Connection:</span>
+      <select class="select" bind:value={connection} required disabled={!!user?.connection}>
+        <option selected={!user || !user.connection} disabled value>none</option>
+        {#each connections as connection}
+          <option value={connection.uuid} selected={user && user.connection === connection.uuid}
+            >{connection.label}</option
+          >
+        {/each}
+      </select>
+    </label>
+
+    <fieldset data-testid="privilege-checkboxes">
+      <legend class="required">Roles:</legend>
+      {#each roleList as [name], index}
+        <label class="flex items-center space-x-2">
+          <input class="checkbox" type="checkbox" bind:checked={roles[index].checked} />
+          <div>{name}</div>
+        </label>
+      {/each}
+    </fieldset>
+
+    {#if validationError}
+      <ErrorAlert data-testid="validation-error" onclose={() => (validationError = '')}>
+        {validationError}
+      </ErrorAlert>
+    {/if}
+
+    <div class="mt-2">
+      <button
+        type="submit"
+        class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+      >
+        Save
+      </button>
+      <a
+        href="/admin/users"
+        class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
+      >
+        Cancel
+      </a>
+    </div>
   </fieldset>
-
-  {#if validationError}
-    <aside data-testid="validation-error" class="alert preset-tonal-error border border-error-500">
-      <div class="alert-message">
-        <p>{validationError}</p>
-      </div>
-      <div class="alert-actions">
-        <button onclick={() => (validationError = '')}>
-          <i class="fa-solid fa-xmark"></i>
-          <span class="sr-only">Close</span>
-        </button>
-      </div>
-    </aside>
-  {/if}
-
-  <div>
-    <button
-      type="submit"
-      class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-    >
-      Save
-    </button>
-    <a
-      href="/admin/users"
-      class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
-    >
-      Cancel
-    </a>
-  </div>
 </form>

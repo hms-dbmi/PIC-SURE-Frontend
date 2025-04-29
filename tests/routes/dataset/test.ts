@@ -46,7 +46,7 @@ test.describe('dataset', () => {
     await copyBtn.click();
 
     // Then
-    await expect(page.getByTestId(`${mockData[0].query.uuid}-copy-btn-popup`)).toBeVisible();
+    await expect(page.getByTestId(`${mockData[0].query.uuid}-copy`)).toBeVisible();
   });
   test('Archive button press moves item to archived', async ({ page }) => {
     // Given
@@ -86,32 +86,6 @@ test.describe('dataset', () => {
     // Then
     await expect(page.getByText(mockData[1].query.uuid, { exact: true })).toBeVisible();
   });
-  // TODO: Add back when feature is implemented
-  // test('View button should route to view page', async ({ page }) => {
-  //   // Given
-  //   await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
-  //   await page.goto('/dataset');
-
-  //   // When
-  //   const viewButton = page.getByTestId(`dataset-action-view-${mockData[0].uuid}`);
-  //   await viewButton.click();
-
-  //   // Then
-  //   await page.waitForURL(`**/dataset/${mockData[0].uuid}`);
-  //   await expect(page.url()).toContain(`/dataset/${mockData[0].uuid}`);
-  // });
-  // test('Clicking row takes user to view dataset page', async ({ page }) => {
-  //   // Given
-  //   await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
-  //   await page.goto('/dataset');
-
-  //   // When
-  //   await page.locator(`table tbody tr`).first().click();
-
-  //   // Then
-  //   await page.waitForURL(`**/dataset/${mockData[0].uuid}`);
-  //   await expect(page.url()).toContain(`/dataset/${mockData[0].uuid}`);
-  // });
   test('Error message on api error', async ({ page }) => {
     // Given
     await mockApiFail(page, '*/**/picsure/dataset/named', 'accessdenied');

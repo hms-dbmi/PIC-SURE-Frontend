@@ -19,7 +19,7 @@
       title="Variants by gene name"
       subtitle="Ex: Rare BRCA1 variants with high severity"
       size="other"
-      class="w-1/4 h-20 min-h-20 preset-outlined-primary-500"
+      class="w-1/4 h-20 min-h-20"
       active={active === Option.Genomic}
       onclick={() => onselect(Option.Genomic)}
     />
@@ -30,7 +30,7 @@
       title="Specific SNPs"
       subtitle="Ex: chr5,148481541,T,A"
       size="other"
-      class="w-1/4 h-20 min-h-20 preset-outlined-primary-500"
+      class="w-1/4 h-20 min-h-20"
       active={active === Option.SNP}
       onclick={() => onselect(Option.SNP)}
     />
