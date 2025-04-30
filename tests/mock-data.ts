@@ -35,6 +35,37 @@ export const datasets = [
   },
 ];
 
+export const newDatasetResponse = {
+  "status": "QUEUED",
+  "resourceID": HPDS,
+  "resourceStatus": "PENDING",
+  "picsureResultId": "11111111-1111-1111-1111-111111111111",
+  "resourceResultId": "22222222-2222-2222-2222-222222222222", 
+  "resultMetadata": {
+      "picsureQueryId": "33333333-3333-3333-3333-333333333333"
+  },
+  "sizeInBytes": 0,
+  "startTime": 1746109996083,
+  "duration": 0,
+  "expiration": 0
+}
+
+export const availableDatasetResponse = {
+  "status": "AVAILABLE",
+  "resourceID": HPDS,
+  "resourceStatus": "SUCCESS",
+  "picsureResultId": "11111111-1111-1111-1111-111111111111",
+  "resourceResultId": "22222222-2222-2222-2222-222222222222",
+  "resultMetadata": {
+      "picsureQueryId": "33333333-3333-3333-3333-333333333333"
+  },
+  "sizeInBytes": 1127,
+  "startTime": 1746057600000,
+  "duration": 258,
+  "expiration": 0
+}
+
+
 export const mockDashboard: DashboardResp = {
   columns: [
     { label: 'Name', dataElement: 'name' },
@@ -141,6 +172,8 @@ export const crossCountSyncResponseLessThan10 = {
 
 export const searchResultPath =
   '*/**/picsure/proxy/dictionary-api/concepts?page_number=0&page_size=10';
+export const searchResultPathForSampleIds =
+  '*/**/picsure/proxy/dictionary-api/concepts?page_number=0&page_size=10000';
 export const facetResultPath = '*/**/picsure/proxy/dictionary-api/facets/';
 export const conceptsDetailPath = '*/**/picsure/proxy/dictionary-api/concepts/detail/'; // + name
 
