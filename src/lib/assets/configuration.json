@@ -79,8 +79,8 @@
   },
   "landing": {
     "searchPlaceholder": "Search terms or variables of interest…",
-    "explanation": "The <a class=\"anchor\" href=\"https://www.cdc.gov/nchs/nhanes/index.htm\" target=\"_blank\">National Health and Nutrition Examination Survey (NHANES)</a> dataset is designed to assess the health and nutritional status of adults and children in the United States",
-    "authExplanation": "The <a class=\"anchor\" href=\"https://www.cdc.gov/nchs/nhanes/index.htm\" target=\"_blank\">National Health and Nutrition Examination Survey (NHANES)</a> dataset is designed to assess the health and nutritional status of adults and children in the United States",
+    "explanation": "Available data includes the National Health and Nutrition Examination Survey (NHANES), Synthea, and 1000 Genomes.",
+    "authExplanation": "Available data includes the National Health and Nutrition Examination Survey (NHANES), Synthea, and 1000 Genomes.",
     "actions": [
       {
         "title": "Discover",
