@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import {
     AppShell,
     Modal,
@@ -81,12 +81,13 @@
           message:
             'Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover',
           backTo: 'Explore',
-          resetQuery: () => {
-            panelOpen.set(false);
-            removeGenomicFilters();
-            removeUnallowedFilters();
-            goto(`/discover`);
-          },
+            resetQuery: async () => {
+                panelOpen.set(false);
+                await tick();
+                removeGenomicFilters();
+                removeUnallowedFilters();
+                await goto(`/discover`);
+            },
         };
       }
       if (notAuthorized) {
@@ -94,10 +95,11 @@
           message:
             'You are not authorized to access the data in Explore based on your selected filters.',
           backTo: 'Discover',
-          resetQuery: () => {
+          resetQuery: async () => {
             panelOpen.set(false);
+            await tick();
             removeInvalidFilters();
-            goto(`/explorer`);
+            await goto(`/explorer`);
           },
         };
       }
