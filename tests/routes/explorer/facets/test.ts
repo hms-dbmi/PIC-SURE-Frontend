@@ -6,6 +6,7 @@ import {
   searchResultPath,
   facetResultPath,
   nestedFacetsResponse,
+  facetsResponseToTestZeroCount,
 } from '../../../mock-data';
 
 const MAX_FACETS_TO_SHOW = 5;
@@ -165,6 +166,28 @@ test.describe('Facet Categories', () => {
         await expect(moreButton).toHaveText('Show More');
         await expect(moreButtonIcon).toHaveClass(/fa-angle-down/);
       }
+    }
+  });
+  test(`If facet category has less than ${MAX_FACETS_TO_SHOW} facets then we don't show the more button`, async ({
+    page,
+  }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: facetsResponseToTestZeroCount }),
+    );
+    await page.goto('/explorer?search=age');
+    const facetSideBar = page.locator('#facet-side-bar');
+    await expect(facetSideBar).toBeVisible();
+
+    for (let i = 0; i < facetsResponseToTestZeroCount.length; i++) {
+      //When
+      const facetList = page.locator('.accordion-panel').nth(i);
+      // Then
+      const moreButton = facetList.getByTestId('show-more-facets');
+      await expect(moreButton).not.toBeVisible();
     }
   });
   test(`Clicking Show More shows more`, async ({ page }) => {
@@ -595,5 +618,80 @@ test.describe('Nested Facets', () => {
     await expect(nestedFacetChildren).toBeVisible();
     await nestedFacetArrow.click();
     await expect(nestedFacetChildren).not.toBeVisible();
+  });
+});
+test.describe('Hidden Facets', () => {
+  test('Facets with zero counts are not displayed', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: facetsResponseToTestZeroCount }),
+    );
+    await page.goto('/explorer?search=age');
+    const facetSideBar = page.locator('#facet-side-bar');
+    await expect(facetSideBar).toBeVisible();
+
+    //When
+    const studyCategoryPanel = page.locator('.accordion-panel').first();
+
+    // Then - Verify that facets with count=0 are not shown
+    for (const facet of facetsResponseToTestZeroCount[0].facets) {
+      if (facet.count === 0) {
+        const facetCheckBox = studyCategoryPanel.locator(`#${facet.name}`);
+        await expect(facetCheckBox).not.toBeVisible();
+      } else {
+        const facetCheckBox = studyCategoryPanel.locator(`#${facet.name}`);
+        await expect(facetCheckBox).toBeVisible();
+      }
+    }
+  });
+  test('Hidden facets are correctly identified when facets are updated', async ({ page }) => {
+    // Given - Start with facets that have non-zero counts
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: facetsResponse }),
+    );
+    await page.goto('/explorer?search=age');
+
+    // When - Perform a search that returns facets with zero counts
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: facetsResponseToTestZeroCount }),
+    );
+    await page.getByTestId('search-box').fill('new search term');
+    await page.locator('#search-button').click();
+
+    // Then - Zero count facets from the second response should be hidden
+    const studyCategoryPanel = page.locator('.accordion-panel').first();
+    for (const facet of facetsResponseToTestZeroCount[0].facets) {
+      if (facet.count === 0) {
+        const facetCheckBox = studyCategoryPanel.locator(`#${facet.name}`);
+        await expect(facetCheckBox).not.toBeVisible();
+      }
+    }
+  });
+  test('Empty category is still displayed but with no facets', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: facetsResponseToTestZeroCount }),
+    );
+    await page.goto('/explorer?search=age');
+
+    // When - Find the "Empty Category" section
+    const emptyCategory = page.locator('.accordion-summary:has-text("Empty Category")');
+
+    // Then - Category should exist but its panel should have no facets
+    await expect(emptyCategory).toBeVisible();
+    await emptyCategory.click();
+
+    const emptyPanel = emptyCategory.locator('xpath=..').locator('.accordion-panel');
+    const facetsInEmptyPanel = await emptyPanel.locator('label').all();
+    expect(facetsInEmptyPanel).toHaveLength(0);
   });
 });
