@@ -69,6 +69,17 @@
     !$page.url.pathname.includes('/export') &&
     !$page.url.pathname.includes('/distributions');
 
+  const waitForPanelToClose = () =>
+    new Promise<void>((resolve) => {
+      const unsubscribe = panelOpen.subscribe((val) => {
+        if (!val) {
+          unsubscribe();
+          // wait an extra tick to ensure DOM updates
+          tick().then(resolve);
+        }
+      });
+    });
+
   beforeNavigate(({ to, cancel }) => {
     const notAuthorized = to?.url.pathname.includes('/explore') && $hasInvalidFilter;
     const stigmatizing =
@@ -81,13 +92,13 @@
           message:
             'Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover',
           backTo: 'Explore',
-            resetQuery: async () => {
-                panelOpen.set(false);
-                await tick();
-                removeGenomicFilters();
-                removeUnallowedFilters();
-                await goto(`/discover`);
-            },
+          resetQuery: async () => {
+            panelOpen.set(false);
+            await waitForPanelToClose();
+            removeGenomicFilters();
+            removeUnallowedFilters();
+            await goto(`/discover`);
+          },
         };
       }
       if (notAuthorized) {
@@ -97,7 +108,7 @@
           backTo: 'Discover',
           resetQuery: async () => {
             panelOpen.set(false);
-            await tick();
+            await waitForPanelToClose();
             removeInvalidFilters();
             await goto(`/explorer`);
           },
@@ -139,7 +150,7 @@
 </AppShell>
 
 <style>
-  #right-panel-container {
-    height: 100%;
-  }
+    #right-panel-container {
+        height: 100%;
+    }
 </style>
