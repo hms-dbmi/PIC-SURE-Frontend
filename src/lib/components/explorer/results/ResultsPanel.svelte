@@ -119,7 +119,9 @@
     (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer);
 
   onMount(async () => {
-    triggerRefreshCount = getCount();
+    unsubFilters = filters.subscribe(() => {
+      triggerRefreshCount = getCount();
+    });
   });
 
   afterNavigate(async () => {
