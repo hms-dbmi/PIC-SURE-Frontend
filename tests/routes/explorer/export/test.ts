@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
-import { test, mockApiFail, mockApiSuccess } from '../../../custom-context';
+import { test, mockApiSuccess } from '../../../custom-context';
 import {
   conceptsDetailPath,
   detailResponseCat,
@@ -11,12 +11,10 @@ import {
   facetsResponse,
   geneValues,
   newDatasetResponse,
-  datasets as mockDatasets,
   availableDatasetResponse,
   picsureUser,
 } from '../../../mock-data';
 import { getOption } from '../../../utils';
-
 
 const countResultPath = '*/**/picsure/query/sync';
 const HPDS = process.env.VITE_RESOURCE_HPDS;
@@ -26,23 +24,26 @@ const standardIdentifiers = [
   {
     name: 'Patient ID',
     description: 'Patient identifier.',
-    type: 'Categorical'
+    type: 'Categorical',
   },
   {
     name: 'TOPMed Study Accession with Subject ID',
     description: 'TOPMed study accession number and subject identifier.',
-    type: 'Categorical'
+    type: 'Categorical',
   },
   {
     name: 'Parent Study Accession with Subject ID',
     description: 'Parent study accession number and subject identifier.',
-    type: 'Categorical'
-  }
+    type: 'Categorical',
+  },
 ];
 
 test.use({ storageState: 'tests/.auth/generalUser.json' });
 
-async function setupExportPageAndAddFilterAndExport(page: Page, includeGenomicFilter: boolean = false) {
+async function setupExportPageAndAddFilterAndExport(
+  page: Page,
+  includeGenomicFilter: boolean = false,
+) {
   await mockApiSuccess(
     page,
     `${conceptsDetailPath}${detailResponseCat.dataset}`,
@@ -81,13 +82,20 @@ async function setupExportPageAndAddFilterAndExport(page: Page, includeGenomicFi
     await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
     await page.getByTestId('add-filter-btn').click();
   }
-  
+
   const exportForAnalysisButton = page.locator('button#export-data-button');
   await expect(exportForAnalysisButton).toBeVisible();
   await exportForAnalysisButton.click();
 }
 
-async function checkStepRenderedCorrectly(page: Page, stepNumber: number, headerText: string, nextStepDisabled: boolean = false, nextStepButtonText: string = 'Next', showSummary: boolean = true) {
+async function checkStepRenderedCorrectly(
+  page: Page,
+  stepNumber: number,
+  headerText: string,
+  nextStepDisabled: boolean = false,
+  nextStepButtonText: string = 'Next',
+  showSummary: boolean = true,
+) {
   // Check that the step header is rendered with correct text and number
   const stepHeader = page.locator('div.stepper-header-step').nth(stepNumber - 1);
   const step = stepHeader.locator('span');
@@ -130,26 +138,28 @@ test.describe('Export Page', () => {
     await setupExportPageAndAddFilterAndExport(page);
     await expect(page).toHaveURL('/explorer/export');
     await expect(page.locator('header.step-header')).toHaveText('Review Cohort Details:');
-    
+
     // Verify the table body is visible
     const tableBody = page.locator('tbody');
     await expect(tableBody).toBeVisible();
-    
+
     // Verify first row content (filter) using detailResponseCat
     await expect(page.locator('#row-0-col-0')).toHaveText(detailResponseCat.display);
     await expect(page.locator('#row-0-col-1')).toHaveText(detailResponseCat.description);
     await expect(page.locator('#row-0-col-2')).toHaveText(detailResponseCat.type);
-    
+
     // Verify second row content (export) using detailResponseCatSameDataset
     await expect(page.locator('#row-1-col-0')).toHaveText(detailResponseCatSameDataset.display);
     await expect(page.locator('#row-1-col-1')).toHaveText(detailResponseCatSameDataset.description);
     await expect(page.locator('#row-1-col-2')).toHaveText(detailResponseCatSameDataset.type);
-    
+
     // Verify standard identifiers
     for (let i = 0; i < standardIdentifiers.length; i++) {
       const rowIndex = i + 2; // Standard identifiers start at row 2
       await expect(page.locator(`#row-${rowIndex}-col-0`)).toHaveText(standardIdentifiers[i].name);
-      await expect(page.locator(`#row-${rowIndex}-col-1`)).toHaveText(standardIdentifiers[i].description);
+      await expect(page.locator(`#row-${rowIndex}-col-1`)).toHaveText(
+        standardIdentifiers[i].description,
+      );
       await expect(page.locator(`#row-${rowIndex}-col-2`)).toHaveText(standardIdentifiers[i].type);
     }
   });
@@ -189,7 +199,11 @@ test.describe('Export Page', () => {
     await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
     await expect(nextButton).not.toBeDisabled();
     await mockApiSuccess(page, `*/**/picsure/dataset/named`, newDatasetResponse);
-    await mockApiSuccess(page, `*/**/picsure/query/${newDatasetResponse.picsureResultId}/status`, availableDatasetResponse);
+    await mockApiSuccess(
+      page,
+      `*/**/picsure/query/${newDatasetResponse.picsureResultId}/status`,
+      availableDatasetResponse,
+    );
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
     await nextButton.click();
 
