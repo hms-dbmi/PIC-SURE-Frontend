@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
+  import { onMount } from 'svelte';
   import {
     AppShell,
     Modal,
@@ -69,17 +69,6 @@
     !$page.url.pathname.includes('/export') &&
     !$page.url.pathname.includes('/distributions');
 
-  const waitForPanelToClose = () =>
-    new Promise<void>((resolve) => {
-      const unsubscribe = panelOpen.subscribe((val) => {
-        if (!val) {
-          unsubscribe();
-          // wait an extra tick to ensure DOM updates
-          tick().then(resolve);
-        }
-      });
-    });
-
   beforeNavigate(({ to, cancel }) => {
     const notAuthorized = to?.url.pathname.includes('/explore') && $hasInvalidFilter;
     const stigmatizing =
@@ -92,12 +81,18 @@
           message:
             'Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover',
           backTo: 'Explore',
-          resetQuery: async () => {
+          resetQuery: () => {
             panelOpen.set(false);
-            await waitForPanelToClose();
             removeGenomicFilters();
             removeUnallowedFilters();
-            await goto(`/discover`);
+            // Use requestAnimationFrame to ensure filter changes are fully processed
+            // This gives more time for subscriptions to complete their work
+            requestAnimationFrame(() => {
+              // Add another requestAnimationFrame to ensure we're in a stable state
+              requestAnimationFrame(() => {
+                goto(`/discover`);
+              });
+            });
           },
         };
       }
@@ -108,9 +103,15 @@
           backTo: 'Discover',
           resetQuery: async () => {
             panelOpen.set(false);
-            await waitForPanelToClose();
             removeInvalidFilters();
-            await goto(`/explorer`);
+            // Use requestAnimationFrame to ensure filter changes are fully processed
+            // This gives more time for subscriptions to complete their work
+            requestAnimationFrame(() => {
+              // Add another requestAnimationFrame to ensure we're in a stable state
+              requestAnimationFrame(() => {
+                goto(`/explorer`);
+              });
+            });
           },
         };
       }
