@@ -11,8 +11,8 @@
   import * as api from '$lib/api';
   import { ProgressRadial, getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   import { elasticInOut } from 'svelte/easing';
-  import { onDestroy, onMount } from 'svelte';
-  import { afterNavigate, goto } from '$app/navigation';
+  import { onDestroy, onMount, tick } from 'svelte';
+  import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
   import type { Unsubscriber } from 'svelte/store';
   import { getQueryRequest } from '$lib/QueryBuilder';
   import { loadAllConcepts } from '$lib/services/hpds';
@@ -125,11 +125,22 @@
   });
 
   afterNavigate(async () => {
+    if (unsubFilters) {
+      unsubFilters();
+    }
+
     isOpenAccess = $page.url.pathname.includes('/discover');
     const isExplorer = $page.url.pathname.includes('/explorer');
     if (isExplorer || isOpenAccess) {
-      triggerRefreshCount = getCount();
+      await tick();
+      unsubFilters = filters.subscribe(() => {
+        triggerRefreshCount = getCount();
+      });
     }
+  });
+
+  beforeNavigate(() => {
+    unsubFilters && unsubFilters();
   });
 
   onDestroy(() => {
