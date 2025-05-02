@@ -85,14 +85,7 @@
             panelOpen.set(false);
             removeGenomicFilters();
             removeUnallowedFilters();
-            // Use requestAnimationFrame to ensure filter changes are fully processed
-            // This gives more time for subscriptions to complete their work
-            requestAnimationFrame(() => {
-              // Add another requestAnimationFrame to ensure we're in a stable state
-              requestAnimationFrame(() => {
-                goto(`/discover`);
-              });
-            });
+            goto(`/discover`);
           },
         };
       }
@@ -104,14 +97,7 @@
           resetQuery: async () => {
             panelOpen.set(false);
             removeInvalidFilters();
-            // Use requestAnimationFrame to ensure filter changes are fully processed
-            // This gives more time for subscriptions to complete their work
-            requestAnimationFrame(() => {
-              // Add another requestAnimationFrame to ensure we're in a stable state
-              requestAnimationFrame(() => {
-                goto(`/explorer`);
-              });
-            });
+            goto(`/explorer`);
           },
         };
       }

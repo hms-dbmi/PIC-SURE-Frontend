@@ -13,16 +13,22 @@ async function send({
   path,
   data,
   headers,
+  signal,
 }: {
   method: string;
   path: string;
   data?: any; //TODO: Change this
   headers?: any;
+  signal?: AbortSignal;
 }) {
-  const opts: { method: string; headers: { [key: string]: string }; body?: string } = {
+  const opts: { method: string; headers: { [key: string]: string }; body?: string; signal?: AbortSignal } = {
     method,
     headers: {},
   };
+
+  if (signal) {
+    opts.signal = signal;
+  }
 
   if (data) {
     opts.headers['Content-Type'] = 'application/json';
@@ -49,20 +55,20 @@ async function send({
   return await handleResponse(res);
 }
 
-export function get(path: string, headers?: any) {
-  return send({ method: 'GET', path, headers });
+export function get(path: string, headers?: any, signal?: AbortSignal) {
+  return send({ method: 'GET', path, headers, signal });
 }
 
-export function del(path: string, headers?: any) {
-  return send({ method: 'DELETE', path, headers });
+export function del(path: string, headers?: any, signal?: AbortSignal) {
+  return send({ method: 'DELETE', path, headers, signal });
 }
 
-export function post(path: string, data: any, headers?: any) {
-  return send({ method: 'POST', path, data, headers });
+export function post(path: string, data: any, headers?: any, signal?: AbortSignal) {
+  return send({ method: 'POST', path, data, headers, signal });
 }
 
-export function put(path: string, data: any, headers?: any) {
-  return send({ method: 'PUT', path, data, headers });
+export function put(path: string, data: any, headers?: any, signal?: AbortSignal) {
+  return send({ method: 'PUT', path, data, headers, signal });
 }
 
 async function handleResponse(res: Response) {

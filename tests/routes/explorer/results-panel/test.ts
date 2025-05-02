@@ -60,9 +60,9 @@ test.describe('Results Panel', () => {
       `${conceptsDetailPath}${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiFail(page, countResultPath, 'failed');
     await page.locator('#row-0 button[title=Filter]').click();
     await page.locator('#options-container label:nth-child(1)').click();
+    await mockApiFail(page, countResultPath, 'failed');
     await page.getByTestId('add-filter').click();
 
     // Then

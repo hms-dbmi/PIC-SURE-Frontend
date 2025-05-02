@@ -28,9 +28,20 @@
   let totalPatients: string | number | typeof ERROR_VALUE = 0;
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = Promise.resolve(0);
   let isOpenAccess = $page.url.pathname.includes('/discover');
+  let currentAbortController: AbortController | null = null;
 
   async function getCount() {
     suffix = '';
+
+    // Cancel any previous request
+    if (currentAbortController) {
+      currentAbortController.abort();
+    }
+
+    // Create a new AbortController for this request
+    currentAbortController = new AbortController();
+    const signal = currentAbortController.signal;
+
     let request: QueryRequestInterface = getQueryRequest(
       !isOpenAccess,
       isOpenAccess ? resources.openHPDS : resources.hpds,
@@ -41,7 +52,9 @@
         const concepts = await loadAllConcepts();
         request.query.setCrossCountFields(concepts);
       }
-      const count = await api.post('picsure/query/sync', request);
+
+      const count = await api.post('picsure/query/sync', request, undefined, signal);
+
       if (isOpenAccess) {
         let openTotalPatients = String(count['\\_studies_consents\\']);
         if (openTotalPatients.includes(' \u00B1')) {
@@ -58,6 +71,11 @@
       }
       return count;
     } catch (error) {
+      // If the request was aborted, just return without showing an error
+      if (error instanceof Error && error.name === 'AbortError') {
+        return 0;
+      }
+
       if ($filters.length !== 0) {
         toastStore.trigger({
           message: branding?.explorePage?.filterErrorText,
@@ -119,6 +137,11 @@
     (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer);
 
   onMount(async () => {
+    // Cancel any in-flight requests (just in case)
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = null;
+    }
     unsubFilters = filters.subscribe(() => {
       triggerRefreshCount = getCount();
     });
@@ -128,6 +151,11 @@
     isOpenAccess = $page.url.pathname.includes('/discover');
     const isExplorer = $page.url.pathname.includes('/explorer');
     if (isExplorer || isOpenAccess) {
+      // Cancel any in-flight requests
+      if (currentAbortController) {
+        currentAbortController.abort();
+        currentAbortController = null;
+      }
       unsubFilters = filters.subscribe(() => {
         triggerRefreshCount = getCount();
       });
@@ -135,10 +163,20 @@
   });
 
   beforeNavigate(() => {
+    // Cancel any in-flight requests
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = null;
+    }
     unsubFilters && unsubFilters();
   });
 
   onDestroy(() => {
+    // Cancel any in-flight requests
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = null;
+    }
     unsubFilters && unsubFilters();
   });
 </script>
