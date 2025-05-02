@@ -70,7 +70,10 @@ function initializeHiddenFacets(response: DictionaryFacetResult[]) {
       prev[cur.name] = cur.values;
       return prev;
     }, {} as FacetSkeleton);
-  console.log('Found the following facets that should be hidden: {}', facetsWithZeroConcepts);
+  console.debug(
+    'Found the following facets that should be hidden:',
+    JSON.stringify(facetsWithZeroConcepts),
+  );
 
   hiddenFacets.set(facetsWithZeroConcepts);
 }

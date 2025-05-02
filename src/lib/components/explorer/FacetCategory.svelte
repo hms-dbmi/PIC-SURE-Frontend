@@ -10,14 +10,18 @@
   export let facetCategory: DictionaryFacetResult;
   export let facets = facetCategory.facets;
   export let numFacetsToShow: number = 5;
-  export let shouldShowSearchBar: boolean = facets?.length > numFacetsToShow;
 
-  const anyFacetNot0 = facets?.some((facet) => facet.count > 0);
+  let filteredHiddenFacets = facets.filter(
+    (f) => !($hiddenFacets[facetCategory.name] || []).includes(f.name),
+  );
+  const anyFacetNot0 = filteredHiddenFacets?.some((facet) => facet.count > 0);
   let textFilterValue: string;
-  let moreThanTenFacets = facets?.length > numFacetsToShow;
+
+  export let shouldShowSearchBar: boolean = filteredHiddenFacets?.length > numFacetsToShow;
+  let moreThanNumFacetsToShow = filteredHiddenFacets?.length > numFacetsToShow;
 
   $: facetsToDisplay =
-    (facets || textFilterValue || moreThanTenFacets || $selectedFacets || facetCategory) &&
+    (facets || textFilterValue || moreThanNumFacetsToShow || $selectedFacets || facetCategory) &&
     getFacetsToDisplay();
 
   $: selectedFacetsChips = $selectedFacets.filter(
@@ -44,8 +48,7 @@
   }
 
   function getFacetsToDisplay() {
-    const hiddenFacetsForCategory = $hiddenFacets[facetCategory.name] || [];
-    let facetsToDisplay = facets.filter((f) => !hiddenFacetsForCategory.includes(f.name));
+    let facetsToDisplay = filteredHiddenFacets;
 
     const selectedFacetsMap = new Map($selectedFacets.map((facet) => [facet.name, facet]));
     const indeterminateFacets = facetsToDisplay.filter(isIndeterminate);
@@ -118,7 +121,7 @@
 
         return facetMatches || childrenMatch;
       });
-    } else if (moreThanTenFacets) {
+    } else if (moreThanNumFacetsToShow) {
       // Only show the first n facets
       facetsToDisplay = facetsToDisplay.slice(0, numFacetsToShow);
     }
@@ -143,14 +146,14 @@
       {#each facetsToDisplay as facet}
         <FacetItem {facet} {facetCategory} {textFilterValue} />
       {/each}
-      {#if facets?.length > numFacetsToShow && !textFilterValue}
+      {#if filteredHiddenFacets?.length > numFacetsToShow && !textFilterValue}
         <button
           data-testId="show-more-facets"
           class="show-more w-fit mx-auto my-1"
-          on:click={() => (moreThanTenFacets = !moreThanTenFacets)}
+          on:click={() => (moreThanNumFacetsToShow = !moreThanNumFacetsToShow)}
         >
-          {moreThanTenFacets ? 'Show More' : 'Show Less'}
-          <i class="ml-1 fa-solid {moreThanTenFacets ? 'fa-angle-down' : 'fa-angle-up'}"></i>
+          {moreThanNumFacetsToShow ? 'Show More' : 'Show Less'}
+          <i class="ml-1 fa-solid {moreThanNumFacetsToShow ? 'fa-angle-down' : 'fa-angle-up'}"></i>
         </button>
       {/if}
     </div>

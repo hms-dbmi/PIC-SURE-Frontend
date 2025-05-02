@@ -35,6 +35,36 @@ export const datasets = [
   },
 ];
 
+export const newDatasetResponse = {
+  status: 'QUEUED',
+  resourceID: HPDS,
+  resourceStatus: 'PENDING',
+  picsureResultId: '11111111-1111-1111-1111-111111111111',
+  resourceResultId: '22222222-2222-2222-2222-222222222222',
+  resultMetadata: {
+    picsureQueryId: '33333333-3333-3333-3333-333333333333',
+  },
+  sizeInBytes: 0,
+  startTime: 1746109996083,
+  duration: 0,
+  expiration: 0,
+};
+
+export const availableDatasetResponse = {
+  status: 'AVAILABLE',
+  resourceID: HPDS,
+  resourceStatus: 'SUCCESS',
+  picsureResultId: '11111111-1111-1111-1111-111111111111',
+  resourceResultId: '22222222-2222-2222-2222-222222222222',
+  resultMetadata: {
+    picsureQueryId: '33333333-3333-3333-3333-333333333333',
+  },
+  sizeInBytes: 1127,
+  startTime: 1746057600000,
+  duration: 258,
+  expiration: 0,
+};
+
 export const mockDashboard: DashboardResp = {
   columns: [
     { label: 'Name', dataElement: 'name' },
@@ -141,6 +171,8 @@ export const crossCountSyncResponseLessThan10 = {
 
 export const searchResultPath =
   '*/**/picsure/proxy/dictionary-api/concepts?page_number=0&page_size=10';
+export const searchResultPathForSampleIds =
+  '*/**/picsure/proxy/dictionary-api/concepts?page_number=0&page_size=10000';
 export const facetResultPath = '*/**/picsure/proxy/dictionary-api/facets/';
 export const conceptsDetailPath = '*/**/picsure/proxy/dictionary-api/concepts/detail/'; // + name
 
@@ -721,6 +753,226 @@ export const facetsResponse = [
         display: 'Study Display 9',
         description: 'study9 full name',
         count: 1,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+      {
+        name: 'Empty',
+        display: 'Empty',
+        description: 'Empty',
+        count: 0,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+    ],
+  },
+  {
+    name: 'dataset_id',
+    display: 'Study IDs/Dataset IDs',
+    description: '',
+    facets: [
+      {
+        name: 'Test For Landing',
+        display: 'Test',
+        description: 'dataset_id study',
+        count: 1,
+        children: null,
+        category: 'dataset_id',
+        meta: null,
+      },
+      {
+        name: 'Test For Landing 2',
+        display: 'Test 2',
+        description: 'dataset_id study',
+        count: 1,
+        children: null,
+        category: 'dataset_id',
+        meta: null,
+      },
+    ],
+  },
+  {
+    name: 'another_category_name',
+    display: 'Another Category Name',
+    description: 'Hello World',
+    facets: [
+      {
+        name: 'facet1',
+        display: 'Facet 1',
+        description: 'facet1 full name',
+        count: 1,
+        children: null,
+        category: 'another_category_name',
+        meta: null,
+      },
+      {
+        name: 'facet2',
+        display: 'Facet 2',
+        description: 'facet2 full name',
+        count: 4,
+        children: null,
+        category: 'another_category_name',
+        meta: null,
+      },
+      {
+        name: 'facet3',
+        display: 'This is a really long facet name for testing',
+        description: 'facet3 full name',
+        count: 1,
+        children: null,
+        category: 'another_category_name',
+        meta: null,
+      },
+    ],
+  },
+  {
+    name: 'another_category_name_empty',
+    display: 'Empty Category',
+    description: 'Hello World',
+    facets: [
+      {
+        name: 'facet1',
+        display: 'Facet 1',
+        description: 'facet1 full name',
+        count: 0,
+        children: null,
+        category: 'another_category_name_empty',
+        meta: null,
+      },
+      {
+        name: 'facet2',
+        display: 'Facet 2',
+        description: 'facet2 full name',
+        count: 0,
+        children: null,
+        category: 'another_category_name_empty',
+        meta: null,
+      },
+      {
+        name: 'facet3',
+        display: 'This is a really long facet name for testing',
+        description: 'facet3 full name',
+        count: 0,
+        children: null,
+        category: 'another_category_name_empty',
+        meta: null,
+      },
+    ],
+  },
+];
+
+export const facetsResponseToTestZeroCount = [
+  {
+    name: 'study_ids_dataset_ids',
+    display: 'Study IDs/Dataset IDs',
+    description: '',
+    facets: [
+      {
+        name: 'study2',
+        display: 'National Health and Nutrition Examination Survey',
+        description: 'study2 full name',
+        count: 1,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+      {
+        name: 'phs002715',
+        display: 'NSRR CFS',
+        description: 'NSRR CFS full name',
+        count: 1,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+      {
+        name: 'phs000284',
+        display: 'CFS',
+        description: 'CFS full name',
+        count: 1,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+      {
+        name: 'phs002385',
+        display: 'HCT_for_SCD',
+        description: 'HCT_for_SCD full name',
+        count: 1,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+      {
+        name: 'study1',
+        display: 'Study Display 1',
+        description: 'study1 full name',
+        count: 0,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+      {
+        name: 'study3',
+        display: 'Study Display 3',
+        description: 'study3 full name',
+        count: 0,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+      {
+        name: 'study4',
+        display: 'Study Display 4',
+        description: 'study4 full name',
+        count: 0,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+      {
+        name: 'study5',
+        display: 'Study Display 5',
+        description: 'study5 full name',
+        count: 0,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+      {
+        name: 'study6',
+        display: 'Study Display 6',
+        description: 'study6 full name',
+        count: 0,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+      {
+        name: 'study7',
+        display: 'Study Display 7',
+        description: 'study7 full name',
+        count: 0,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+      {
+        name: 'study8',
+        display: 'Study Display 8',
+        description: 'study8 full name',
+        count: 0,
+        children: null,
+        category: 'study_ids_dataset_ids',
+        meta: null,
+      },
+      {
+        name: 'study9',
+        display: 'Study Display 9',
+        description: 'study9 full name',
+        count: 0,
         children: null,
         category: 'study_ids_dataset_ids',
         meta: null,
