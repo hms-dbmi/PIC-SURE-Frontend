@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { ProgressRadial } from '@skeletonlabs/skeleton';
+  import { ProgressRadial, getToastStore } from '@skeletonlabs/skeleton';
   import type { SNP } from '$lib/models/GenomeFilter';
   import { getSNPCounts } from '$lib/stores/SNPFilter';
 
@@ -11,6 +11,7 @@
   let searchElement: HTMLInputElement;
   let warn: boolean = false;
   let searching: boolean = false;
+  const toastStore = getToastStore();
 
   function setInvalid() {
     searchElement.classList.add('required');
@@ -37,12 +38,22 @@
     }
 
     searching = true;
-    const valid = (await getSNPCounts({ search, constraint: '' })) > 0;
-    searching = false;
-    if (valid) {
-      dispatch('valid', { snp: { search, constraint: '' } });
-    } else {
-      warn = true;
+    try {
+      const valid = (await getSNPCounts({ search, constraint: '' })) > 0;
+      if (valid) {
+        dispatch('valid', { snp: { search, constraint: '' } });
+      } else {
+        warn = true;
+      }
+    } catch (err) {
+      console.error('SNP search error:', err);
+      toastStore.trigger({
+        message: 'An error occurred while searching for SNP data. Please try again later.',
+        background: 'variant-filled-error',
+        timeout: 5000,
+      });
+    } finally {
+      searching = false;
     }
   }
 </script>
