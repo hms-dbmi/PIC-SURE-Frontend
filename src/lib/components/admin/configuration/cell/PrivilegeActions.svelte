@@ -27,12 +27,19 @@
             message: `Successfully deleted privilege '${name}'`,
             background: 'variant-filled-success',
           });
-        } catch (error) {
-          console.error(error);
-          toastStore.trigger({
-            message: `An error occured while deleting privilege '${name}'`,
-            background: 'variant-filled-error',
-          });
+        } catch (error: any) {
+          if (error?.status === 409) {
+            toastStore.trigger({
+              message: `Cannot delete privilege '${name}' as it is still in use by a role`,
+              background: 'variant-filled-error',
+            });
+          } else {
+            console.error(error);
+            toastStore.trigger({
+              message: `An unknown error occured while deleting privilege '${name}'`,
+              background: 'variant-filled-error',
+            });
+          }
         }
       },
     });

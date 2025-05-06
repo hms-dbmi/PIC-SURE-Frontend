@@ -26,12 +26,19 @@
             message: `Successfully deleted connection '${label}'`,
             background: 'variant-filled-success',
           });
-        } catch (error) {
+        } catch (error: any) {
           console.error(error);
-          toastStore.trigger({
-            message: `An error occured while deleting connection '${label}'`,
-            background: 'variant-filled-error',
-          });
+          if (error?.status === 409) {
+            toastStore.trigger({
+              message: `Cannot delete connection '${label}' as it is still in use by an application or user`,
+              background: 'variant-filled-error',
+            });
+          } else {
+            toastStore.trigger({
+              message: `An unknown error occured while deleting connection '${label}'`,
+              background: 'variant-filled-error',
+            });
+          }
         }
       },
     });
