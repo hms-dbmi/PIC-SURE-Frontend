@@ -12,7 +12,7 @@ export default () => {
       rollupOptions: {
         maxParallelFileOps: 10,
       },
-      sourcemap: true,
+      sourcemap: false,
     },
   });
 };
