@@ -26,7 +26,7 @@ export async function getSNPCounts(check: SNP) {
   const searchQuery = getQueryRequest(true);
   searchQuery.query.addCategoryFilter(check.search, [Genotype.Heterozygous, Genotype.Homozygous]);
   searchQuery.query = updateConsentFilters(searchQuery.query);
-  const response: number = await api.post('/picsure/query/sync', searchQuery.query);
+  const response: number = await api.post('/picsure/query/sync', searchQuery);
   return response;
 }
 
