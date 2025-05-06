@@ -26,9 +26,9 @@
             message: `Successfully deleted connection '${label}'`,
             background: 'variant-filled-success',
           });
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error(error);
-          if (error?.status === 409) {
+          if ((error as { status?: number })?.status === 409) {
             toastStore.trigger({
               message: `Cannot delete connection '${label}' as it is still in use by an application or user`,
               background: 'variant-filled-error',

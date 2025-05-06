@@ -27,8 +27,9 @@
             message: `Successfully deleted role '${name}'`,
             background: 'variant-filled-success',
           });
-        } catch (error: any) {  
-          if (error?.status === 409) {
+        } catch (error: unknown) {
+          console.error(error);
+          if ((error as { status?: number })?.status === 409) {
             toastStore.trigger({
               message: `Cannot delete role '${name}' as it is still in use by a user`,
               background: 'variant-filled-error',
