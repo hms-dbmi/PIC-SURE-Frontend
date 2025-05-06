@@ -1,3 +1,4 @@
+import { B as BROWSER } from './chunks/false-CRHihH2U.js';
 import { s as setContext } from './chunks/lifecycle-DtuISP6h.js';
 import { c as create_ssr_component, v as validate_component, m as missing_component } from './chunks/ssr-BRJpAXVH.js';
 import { a as afterUpdate, h as has_data_suffix, s as strip_data_suffix, d as decode_pathname, b as decode_params, n as normalize_path, c as disable_search, e as add_data_suffix, m as make_trackable, r as resolve } from './chunks/exports-kR70XCWV.js';
@@ -232,14 +233,14 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "m3sdzn"
+  version_hash: "yh89jw"
 };
 async function get_hooks() {
   let handle;
   let handleFetch;
   let handleError;
   let init;
-  ({ handle, handleFetch, handleError, init } = await import('./chunks/hooks.server-BbZBc7-r.js'));
+  ({ handle, handleFetch, handleError, init } = await import('./chunks/hooks.server-B9QEVt2C.js'));
   let reroute;
   let transport;
   return {
@@ -1502,7 +1503,6 @@ function requireSetCookie () {
 
 var setCookieExports = /*@__PURE__*/ requireSetCookie();
 
-const BROWSER = false;
 const SVELTE_KIT_ASSETS = "/_svelte_kit_assets";
 const ENDPOINT_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"];
 const PAGE_METHODS = ["GET", "POST", "HEAD"];
