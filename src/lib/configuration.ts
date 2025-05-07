@@ -15,9 +15,12 @@ import type {
   AnalysisConfig,
 } from './types';
 
-export const PROJECT_HOSTNAME = typeof window !== 'undefined'
-  ? `${window.location.origin}/picsure`
-  : import.meta.env?.VITE_PROJECT_HOSTNAME ? `https://${import.meta.env?.VITE_PROJECT_HOSTNAME}/picsure` : 'https://nhanes.hms.harvard.edu/picsure';
+export const PROJECT_HOSTNAME =
+  typeof window !== 'undefined'
+    ? `${window.location.origin}/picsure`
+    : import.meta.env?.VITE_PROJECT_HOSTNAME
+      ? `https://${import.meta.env?.VITE_PROJECT_HOSTNAME}/picsure`
+      : 'https://nhanes.hms.harvard.edu/picsure';
 
 export interface Branding {
   applicationName: string;
@@ -55,19 +58,19 @@ export const branding: Branding = {
 
 export const initializeBranding = () => {
   branding.applicationName = configJson.applicationName;
-  
+
   // Replace URLs in code blocks before assigning
   const codeBlocks = { ...configJson.explorePage.codeBlocks };
-  Object.keys(codeBlocks).forEach(key => {
+  Object.keys(codeBlocks).forEach((key) => {
     if (typeof codeBlocks[key] === 'string') {
       codeBlocks[key] = codeBlocks[key].replace('{{PICSURE_NETWORK_URL}}', PROJECT_HOSTNAME);
     }
   });
-  
-  branding.explorePage = { 
-    ...branding.explorePage, 
+
+  branding.explorePage = {
+    ...branding.explorePage,
     ...configJson.explorePage,
-    codeBlocks 
+    codeBlocks,
   };
   branding.landing = configJson.landing;
   branding.login = configJson.login;
