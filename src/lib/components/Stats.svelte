@@ -9,7 +9,7 @@
   onMount(() => loadStats());
 </script>
 
-<section class="flex flex-col items-center w-full p-4 bg-surface-300-600-token">
+<section class="flex flex-col items-center w-full mt-auto p-4 bg-surface-300-600-token">
   <h2 class="m-4">Data Summary</h2>
 
   {#if $authStats.length > 0}
