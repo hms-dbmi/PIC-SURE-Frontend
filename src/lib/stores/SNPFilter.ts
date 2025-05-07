@@ -21,13 +21,16 @@ export function clearSnpFilters() {
 }
 
 export async function getSNPCounts(check: SNP) {
-  // Search for results with Heterozygous or Homozygous variants. If there are none, then we know that this
-  // snp isn't set anywhere and the user doesn't need to include or exclude it.
-  const searchQuery = getQueryRequest(true);
-  searchQuery.query.addCategoryFilter(check.search, [Genotype.Heterozygous, Genotype.Homozygous]);
-  searchQuery.query = updateConsentFilters(searchQuery.query);
-  const response: number = await api.post('/picsure/query/sync', searchQuery.query);
-  return response;
+  try {
+    const searchQuery = getQueryRequest(true);
+    searchQuery.query.addCategoryFilter(check.search, [Genotype.Heterozygous, Genotype.Homozygous]);
+    searchQuery.query = updateConsentFilters(searchQuery.query);
+    const response: number = await api.post('/picsure/query/sync', searchQuery);
+    return response;
+  } catch (error) {
+    console.error('Error fetching SNP counts:', error);
+    throw error;
+  }
 }
 
 export function saveSNP(newSNP: SNP) {
