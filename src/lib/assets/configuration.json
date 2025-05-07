@@ -27,7 +27,11 @@
           "url": "https://www.youtube.com/@pic-sure446/featured",
           "newTab": true
         },
-        { "title": "About", "url": "https://avillach-lab.hms.harvard.edu/pic-sure/", "newTab": true }
+        {
+          "title": "About",
+          "url": "https://avillach-lab.hms.harvard.edu/pic-sure/",
+          "newTab": true
+        }
       ]
     }
   ],
