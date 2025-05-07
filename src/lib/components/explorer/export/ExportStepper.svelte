@@ -458,7 +458,7 @@
             on:click={() => (activeType = 'DATAFRAME')}
           ></CardButton>
           <CardButton
-            data-testid="csv-export-option"
+            data-testid="pfb-export-option"
             title="Export as PFB"
             subtitle="Export data in Portable Format for Biomedical Data file format"
             size="other"
