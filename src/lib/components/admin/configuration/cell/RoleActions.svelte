@@ -27,12 +27,20 @@
             message: `Successfully deleted role '${name}'`,
             background: 'variant-filled-success',
           });
-        } catch (error) {
+        } catch (error: unknown) {
           console.error(error);
-          toastStore.trigger({
-            message: `An error occured while deleting role '${name}'`,
-            background: 'variant-filled-error',
-          });
+          if ((error as { status?: number })?.status === 409) {
+            toastStore.trigger({
+              message: `Cannot delete role '${name}' as it is still in use by a user`,
+              background: 'variant-filled-error',
+            });
+          } else {
+            console.error(error);
+            toastStore.trigger({
+              message: `An unknown error occured while deleting role '${name}'`,
+              background: 'variant-filled-error',
+            });
+          }
         }
       },
     });
