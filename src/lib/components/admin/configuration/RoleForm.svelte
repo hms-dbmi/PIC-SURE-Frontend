@@ -2,9 +2,12 @@
   import { goto } from '$app/navigation';
   import { getToastStore } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
+  import { isTopAdmin } from '$lib/stores/User';
 
   import { type Role } from '$lib/models/Role';
   import { addRole, updateRole } from '$lib/stores/Roles';
+  
+  import ConfigForm from '$lib/components/ConfigForm.svelte';
 
   export let role: Role | undefined = undefined;
   export let privilegeList: string[][];
@@ -34,6 +37,7 @@
       privileges: selectedPrivileges,
     };
     try {
+      if (!isTopAdmin) throw new Error('You are not authorized to save a role. Please contact your administrator.');
       if (role) {
         newRole = { ...newRole, uuid: role.uuid };
         await updateRole(newRole);
@@ -55,7 +59,7 @@
   }
 </script>
 
-<form on:submit|preventDefault={saveRole} class="grid gap-4 my-3">
+<ConfigForm id="role-form" onSubmit={saveRole} class="grid gap-4 my-3" disabled={!isTopAdmin}>
   {#if role?.uuid}
     <label class="label">
       <span>UUID:</span>
@@ -105,14 +109,19 @@
   {/if}
 
   <div>
-    <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
+    <button
+      type="submit"
+      data-testid="role-save-btn"
+      class="btn variant-ghost-primary hover:variant-filled-primary"
+    >
       Save
     </button>
     <a
       href="/admin/configuration"
+      data-testid="role-cancel-btn"
       class="btn variant-ghost-secondary hover:variant-filled-secondary"
     >
       Cancel
     </a>
   </div>
-</form>
+</ConfigForm>

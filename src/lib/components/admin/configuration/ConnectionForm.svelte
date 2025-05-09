@@ -2,12 +2,13 @@
   import { goto } from '$app/navigation';
   import { getToastStore } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
+  import { isTopAdmin } from '$lib/stores/User';
 
   import type { Connection } from '$lib/models/Connection';
   import { addConnection, updateConnection } from '$lib/stores/Connections';
 
   import RequiredFieldsList from './RequiredFieldsList.svelte';
-
+  import ConfigForm from '$lib/components/ConfigForm.svelte';
   export let connection: Connection | undefined = undefined;
 
   let label: string = connection?.label || '';
@@ -28,6 +29,7 @@
       subPrefix,
     };
     try {
+      if (!isTopAdmin) throw new Error('You are not authorized to save a connection. Please contact your administrator.');
       if (connection) {
         newConnection = { ...newConnection, uuid: connection.uuid };
         await updateConnection(newConnection);
@@ -58,7 +60,7 @@
   >.
 </p>
 
-<form on:submit|preventDefault={saveConnection} class="grid gap-4 my-3">
+<ConfigForm id="connection-form" onSubmit={saveConnection} class="grid gap-4 my-3" disabled={!isTopAdmin}>
   {#if connection?.uuid}
     <label class="label">
       <span>UUID:</span>
@@ -106,4 +108,4 @@
       Cancel
     </a>
   </div>
-</form>
+</ConfigForm>

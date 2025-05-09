@@ -2,9 +2,12 @@
   import { goto } from '$app/navigation';
   import { getToastStore } from '@skeletonlabs/skeleton';
   const toastStore = getToastStore();
+  import { isTopAdmin } from '$lib/stores/User';
 
   import type { Privilege } from '$lib/models/Privilege';
   import { addPrivilege, updatePrivilege } from '$lib/stores/Privileges';
+  
+  import ConfigForm from '$lib/components/ConfigForm.svelte';
 
   export let privilege: Privilege | undefined = undefined;
   export let applicationList: string[][];
@@ -20,6 +23,7 @@
       application,
     };
     try {
+      if (!isTopAdmin) throw new Error('You are not authorized to save a privilege. Please contact your administrator.');
       if (privilege) {
         newPrivilege = { ...newPrivilege, uuid: privilege.uuid };
         await updatePrivilege(newPrivilege);
@@ -41,7 +45,7 @@
   }
 </script>
 
-<form on:submit|preventDefault={savePrivilege} class="grid gap-4 my-3">
+<ConfigForm id="privilege-form" onSubmit={savePrivilege} class="grid gap-4 my-3" disabled={!isTopAdmin}>
   {#if privilege?.uuid}
     <label class="label">
       <span>UUID:</span>
@@ -77,17 +81,22 @@
   </label>
 
   <div>
-    <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
+    <button
+      type="submit" 
+      data-testid="privilege-save-btn"
+      class="btn variant-ghost-primary hover:variant-filled-primary"
+    >
       Save
     </button>
     <a
       href="/admin/configuration"
+      data-testid="privilege-cancel-btn"
       class="btn variant-ghost-secondary hover:variant-filled-secondary"
     >
       Cancel
     </a>
   </div>
-</form>
+</ConfigForm>
 
 <style>
   label {
