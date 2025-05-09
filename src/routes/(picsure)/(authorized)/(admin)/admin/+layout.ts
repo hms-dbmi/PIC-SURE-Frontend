@@ -11,7 +11,7 @@ export const load: LayoutLoad = () => {
   if (browser) {
     const userPrivileges = get(user)?.privileges || [];
     if (
-      !$isTopAdmin &&
+      !get(isTopAdmin) &&
       !userPrivileges.includes(PicsurePrivileges.ADMIN)
     ) {
       throw redirect(302, '/');
