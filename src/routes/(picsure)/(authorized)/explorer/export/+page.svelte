@@ -17,7 +17,7 @@
       ref: exp,
       selected: true,
       variableId: exp.conceptPath,
-      variableName: exp.display || exp.searchResult?.display,
+      variableName: exp.display || exp.searchResult?.display || exp.searchResult?.name,
       description: exp.searchResult?.description,
       type: exp.searchResult?.type,
     };
