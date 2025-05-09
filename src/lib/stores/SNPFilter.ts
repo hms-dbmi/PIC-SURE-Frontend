@@ -3,7 +3,7 @@ import { get, writable, type Writable } from 'svelte/store';
 import * as api from '$lib/api';
 import { Genotype, type SNP } from '$lib/models/GenomeFilter';
 import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter';
-import { getQueryRequest, updateConsentFilters } from '$lib/QueryBuilder';
+import { getBlankQueryRequest, updateConsentFilters } from '$lib/QueryBuilder';
 
 export const selectedSNPs: Writable<SNP[]> = writable([]);
 
@@ -22,7 +22,7 @@ export function clearSnpFilters() {
 
 export async function getSNPCounts(check: SNP) {
   try {
-    const searchQuery = getQueryRequest(true);
+    const searchQuery = getBlankQueryRequest(false);
     searchQuery.query.addCategoryFilter(check.search, [Genotype.Heterozygous, Genotype.Homozygous]);
     searchQuery.query = updateConsentFilters(searchQuery.query);
     const response: number = await api.post('/picsure/query/sync', searchQuery);
