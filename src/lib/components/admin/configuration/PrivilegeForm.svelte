@@ -47,7 +47,7 @@
     {#if privilege?.uuid}
       <label class="label">
         <span>UUID:</span>
-        <input type="text" class="input" value={privilege?.uuid} disabled={true} />
+        <input type="text" class="input" value={privilege?.uuid} readonly={true} />
       </label>
     {/if}
 

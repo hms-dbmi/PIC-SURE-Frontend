@@ -61,7 +61,7 @@
     {#if role?.uuid}
       <label class="label">
         <span>UUID:</span>
-        <input type="text" class="input" value={role?.uuid} disabled={true} />
+        <input type="text" class="input" value={role?.uuid} readonly={true} />
       </label>
     {/if}
 

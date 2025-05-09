@@ -59,6 +59,7 @@
     <button
       type="button"
       class="text-primary-600-300-token hover:text-secondary-600-300-token"
+      aria-label="Add New Field"
       title="Add New Field"
       data-testid="required-field-new-btn"
       disabled={enableNewField}

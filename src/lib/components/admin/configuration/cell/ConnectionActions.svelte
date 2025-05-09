@@ -19,7 +19,7 @@
       buttonTextConfirm: 'Yes',
       buttonTextCancel: 'No',
       response: async (confirm: boolean) => {
-        if (!confirm || !isTopAdmin) return;
+        if (!confirm || !$isTopAdmin) return;
 
         try {
           await deleteConnection(data.cell);
@@ -52,7 +52,7 @@
     type="button"
     title="Edit"
     class="btn-icon-color"
-    disabled={!isTopAdmin}
+    disabled={!$isTopAdmin}
     on:click|stopPropagation={() => goto(`/admin/configuration/connection/${data.cell}/edit`)}
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
@@ -63,7 +63,7 @@
     type="button"
     title="Delete"
     class="btn-icon-color"
-    disabled={!isTopAdmin}
+    disabled={!$isTopAdmin}
     on:click|stopPropagation={deleteModal}
   >
     <i class="fa-solid fa-trash fa-xl"></i>

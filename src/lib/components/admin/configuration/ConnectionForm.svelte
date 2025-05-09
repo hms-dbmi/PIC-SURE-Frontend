@@ -64,7 +64,7 @@
     {#if connection?.uuid}
       <label class="label">
         <span>UUID:</span>
-        <input type="text" class="input" value={connection?.uuid} disabled={true} />
+        <input type="text" class="input" value={connection?.uuid} readonly={true} />
       </label>
     {/if}
 
