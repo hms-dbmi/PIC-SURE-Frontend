@@ -62,7 +62,7 @@
   Enter the following information into the search bar: chromosome, position, reference allele,
   variant allele.
 </p>
-<p class="text-center font-bold my-6"><em class="font-bold">Example:</em> chr17,35269878,G,A</p>
+<p class="text-center font-bold my-6"><em class="font-bold">Example:</em> chr5,148481541,T,A</p>
 <div class="flex gap-2 mx-auto my-8 w-1/2">
   <input
     type="search"

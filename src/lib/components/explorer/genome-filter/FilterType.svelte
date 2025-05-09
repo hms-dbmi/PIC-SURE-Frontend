@@ -25,7 +25,7 @@
     <CardButton
       data-testid="snp-option"
       title="Specific SNPs"
-      subtitle="Ex: chr17,35269878,G,A"
+      subtitle="Ex: chr5,148481541,T,A"
       size="other"
       class="w-1/4 h-20 min-h-20 variant-ringed-primary"
       active={active === Option.SNP}

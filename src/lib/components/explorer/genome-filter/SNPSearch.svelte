@@ -29,7 +29,7 @@
 </script>
 
 <div id="snp-search" class="grid grid-col-1 gap-3 {$$props.class || ''}">
-  <Panel title="Search for Genomic Variants using rsIDs">
+  <Panel title="Search for Genomic Variants">
     <Search disabled={snp.search} search={snp.search} on:valid={onValid} />
     {#if snp.search}
       <hr />
