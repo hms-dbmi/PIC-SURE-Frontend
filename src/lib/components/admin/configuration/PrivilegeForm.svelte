@@ -43,7 +43,7 @@
 </script>
 
 <form on:submit|preventDefault={savePrivilege} class="grid gap-4 my-3">
-  <fieldset disabled={!$isTopAdmin}>
+  <fieldset data-testid="privilege-form" disabled={!$isTopAdmin}>
     {#if privilege?.uuid}
       <label class="label">
         <span>UUID:</span>
@@ -79,11 +79,15 @@
     </label>
 
     <div>
-      <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
+      <button 
+        type="submit" 
+        data-testid="privilege-save-btn"
+        class="btn variant-ghost-primary hover:variant-filled-primary">
         Save
       </button>
       <a
         href="/admin/configuration"
+        data-testid="privilege-cancel-btn"
         class="btn variant-ghost-secondary hover:variant-filled-secondary"
       >
         Cancel

@@ -365,3 +365,42 @@ test.describe('Required Fields', () => {
     await expect(page.getByTestId('validation-warn')).toBeVisible();
   });
 });
+
+test.describe('Admin on Configuration page', () => {
+  test.use({ storageState: 'tests/.auth/adminUser.json' });
+  test('Action and add button(s) are disabled when not top admin', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration');
+
+    // Then
+    // Check that all edit buttons are disabled
+    for (const connection of mockConnections) {
+      await expect(page.getByTestId(`connection-edit-btn-${connection.uuid}`)).toBeDisabled();
+    }
+    
+    // Check that all delete buttons are disabled
+    for (const connection of mockConnections) {
+      await expect(page.getByTestId(`connection-delete-btn-${connection.uuid}`)).toBeDisabled();
+    }
+    // Check that add connection button is disabled
+    await expect(page.getByTestId('add-connection')).toHaveClass(/opacity-50 pointer-events-none/);
+  });
+  test('Error alert is visible when not top admin', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration');
+    // Then
+    await expect(page.getByTestId('error-alert')).toBeVisible();
+  });
+  test('Can still navigate to edit page but its actions and inputs are disabled', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration');
+    // When
+    await page.locator('#connection-table table tbody tr').first().click();
+    // Then
+    await expect(page.getByTestId('connection-form')).toBeVisible();
+    await expect(page.getByTestId('connection-form')).toHaveAttribute('disabled', '');
+    await expect(page.getByTestId('required-field-new-btn')).toBeDisabled();
+    await expect(page.getByTestId('connection-save-btn')).toBeDisabled();
+    await expect(page.getByTestId('connection-cancel-btn')).not.toBeDisabled();
+  });
+});

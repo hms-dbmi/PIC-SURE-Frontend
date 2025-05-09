@@ -57,7 +57,7 @@
 </script>
 
 <form on:submit|preventDefault={saveRole} class="grid gap-4 my-3">
-  <fieldset disabled={!$isTopAdmin}>
+  <fieldset data-testid="role-form" disabled={!$isTopAdmin}>
     {#if role?.uuid}
       <label class="label">
         <span>UUID:</span>
@@ -107,11 +107,15 @@
     {/if}
 
     <div>
-      <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
+      <button 
+        type="submit" 
+        data-testid="role-save-btn"
+        class="btn variant-ghost-primary hover:variant-filled-primary">
         Save
       </button>
       <a
         href="/admin/configuration"
+        data-testid="role-cancel-btn"
         class="btn variant-ghost-secondary hover:variant-filled-secondary"
       >
         Cancel

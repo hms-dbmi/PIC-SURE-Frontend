@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   const dispatch = createEventDispatcher<{ update: { json: string } }>();
+  import { isTopAdmin } from '$lib/stores/User';
 
   import { type RequiredField, parseFieldsFromJSON } from '$lib/models/Connection';
   import RequiredFieldRow from './RequiredFieldRow.svelte';
@@ -8,7 +9,7 @@
   export let fields: string = '[]';
 
   $: fieldList = parseFieldsFromJSON(fields);
-  $: enableNewField = fieldList.length === 0;
+  $: enableNewField = fieldList.length === 0 || !$isTopAdmin;
   $: duplicates = fieldList.filter((checkField) => {
     return (
       fieldList

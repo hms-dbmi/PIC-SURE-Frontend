@@ -60,7 +60,7 @@
 </p>
 
 <form on:submit|preventDefault={saveConnection} class="grid gap-4 my-3">
-  <fieldset disabled={!$isTopAdmin}>
+  <fieldset data-testid="connection-form" disabled={!$isTopAdmin}>
     {#if connection?.uuid}
       <label class="label">
         <span>UUID:</span>

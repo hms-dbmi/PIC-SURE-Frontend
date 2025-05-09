@@ -217,3 +217,41 @@ test('Delete gives error message on api failure', async ({ page }) => {
   // Then
   await expect(page.locator('.snackbar-wrapper .variant-filled-error')).toBeVisible();
 });
+
+test.describe('Admin on Configuration page', () => {
+  test.use({ storageState: 'tests/.auth/adminUser.json' });
+  test('Action and add button(s) are disabled when not top admin', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration');
+
+    // Then
+    // Check that all edit buttons are disabled
+    for (const privilege of mockPrivileges) {
+      await expect(page.getByTestId(`privilege-edit-btn-${privilege.uuid}`)).toBeDisabled();
+    }
+    
+    // Check that all delete buttons are disabled
+    for (const privilege of mockPrivileges) {
+      await expect(page.getByTestId(`privilege-delete-btn-${privilege.uuid}`)).toBeDisabled();
+    }
+    // Check that add privilege button is disabled
+    await expect(page.getByTestId('add-privilege')).toHaveClass(/opacity-50 pointer-events-none/);
+  });
+  test('Error alert is visible when not top admin', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration');
+    // Then
+    await expect(page.getByTestId('error-alert')).toBeVisible();
+  });
+  test('Can still navigate to edit page but its actions and inputs are disabled', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration');
+    // When
+    await page.locator('#privilege-table table tbody tr').first().click();
+    // Then
+    await expect(page.getByTestId('privilege-form')).toBeVisible();
+    await expect(page.getByTestId('privilege-form')).toHaveAttribute('disabled', '');
+    await expect(page.getByTestId('privilege-save-btn')).toBeDisabled();
+    await expect(page.getByTestId('privilege-cancel-btn')).not.toBeDisabled();
+  });
+});
