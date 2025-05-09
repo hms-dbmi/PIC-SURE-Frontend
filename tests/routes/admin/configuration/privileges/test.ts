@@ -229,7 +229,7 @@ test.describe('Admin on Configuration page', () => {
     for (const privilege of mockPrivileges) {
       await expect(page.getByTestId(`privilege-edit-btn-${privilege.uuid}`)).toBeDisabled();
     }
-    
+
     // Check that all delete buttons are disabled
     for (const privilege of mockPrivileges) {
       await expect(page.getByTestId(`privilege-delete-btn-${privilege.uuid}`)).toBeDisabled();
@@ -243,7 +243,9 @@ test.describe('Admin on Configuration page', () => {
     // Then
     await expect(page.getByTestId('error-alert')).toBeVisible();
   });
-  test('Can still navigate to edit page but its actions and inputs are disabled', async ({ page }) => {
+  test('Can still navigate to edit page but its actions and inputs are disabled', async ({
+    page,
+  }) => {
     // Given
     await page.goto('/admin/configuration');
     // When

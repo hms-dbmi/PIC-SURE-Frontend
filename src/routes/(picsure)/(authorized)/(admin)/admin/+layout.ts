@@ -10,10 +10,7 @@ export const prerender = false;
 export const load: LayoutLoad = () => {
   if (browser) {
     const userPrivileges = get(user)?.privileges || [];
-    if (
-      !get(isTopAdmin) &&
-      !userPrivileges.includes(PicsurePrivileges.ADMIN)
-    ) {
+    if (!get(isTopAdmin) && !userPrivileges.includes(PicsurePrivileges.ADMIN)) {
       throw redirect(302, '/');
     }
   }

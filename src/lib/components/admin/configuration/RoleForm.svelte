@@ -107,10 +107,11 @@
     {/if}
 
     <div>
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         data-testid="role-save-btn"
-        class="btn variant-ghost-primary hover:variant-filled-primary">
+        class="btn variant-ghost-primary hover:variant-filled-primary"
+      >
         Save
       </button>
       <a
