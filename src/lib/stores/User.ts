@@ -94,7 +94,7 @@ export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user
 
   if (userPrivileges.length === 0 || !$isLoggedIn) {
     // Public routes for non-logged in user
-    return routes.filter((route) => !route.privilege);
+    return routes.filter((route) => !route.privilege || (route.path === '/explorer' && features.explorer));
   }
 
   function featureRoutes(routeList: Route[]): Route[] {
