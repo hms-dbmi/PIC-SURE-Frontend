@@ -19,6 +19,7 @@
   import { roles, loadRoles } from '$lib/stores/Roles';
   import { loadApplications } from '$lib/stores/Application';
   import { connections, loadConnections } from '$lib/stores/Connections';
+  import { isTopAdmin } from '$lib/stores/User';
 
   const roleTable = {
     columns: [
@@ -75,6 +76,14 @@
 </svelte:head>
 
 <Content title="Configuration">
+  {#if !$isTopAdmin}
+    <ErrorAlert title="Top Administrator Only" color="warning">
+      <p>
+        Configurations are READ ONLY for admin users. Please contact your administrator to make
+        changes.
+      </p>
+    </ErrorAlert>
+  {/if}
   <div id="role-table" class="mb-10">
     <h2>Roles Management</h2>
     {#await loadRoles()}
@@ -84,7 +93,9 @@
         <div class="flex-auto">
           <a
             data-testid="add-role"
-            class="btn variant-ghost-primary hover:variant-filled-primary"
+            class="btn variant-ghost-primary hover:variant-filled-primary {!$isTopAdmin
+              ? 'opacity-50 pointer-events-none'
+              : ''}"
             href="/admin/configuration/role/new"
           >
             &plus; Add Role
@@ -115,7 +126,9 @@
         <div class="flex-auto">
           <a
             data-testid="add-privilege"
-            class="btn variant-ghost-primary hover:variant-filled-primary"
+            class="btn variant-ghost-primary hover:variant-filled-primary {!$isTopAdmin
+              ? 'opacity-50 pointer-events-none'
+              : ''}"
             href="/admin/configuration/privilege/new"
           >
             &plus; Add Privilege
@@ -146,7 +159,9 @@
         <div class="flex-auto">
           <a
             data-testid="add-connection"
-            class="btn variant-ghost-primary hover:variant-filled-primary"
+            class="btn variant-ghost-primary hover:variant-filled-primary {!$isTopAdmin
+              ? 'opacity-50 pointer-events-none'
+              : ''}"
             href="/admin/configuration/connection/new"
           >
             &plus; Add Connection

@@ -5,6 +5,7 @@
 
   import type { Connection } from '$lib/models/Connection';
   import { addConnection, updateConnection } from '$lib/stores/Connections';
+  import { isTopAdmin } from '$lib/stores/User';
 
   import RequiredFieldsList from './RequiredFieldsList.svelte';
 
@@ -59,51 +60,53 @@
 </p>
 
 <form on:submit|preventDefault={saveConnection} class="grid gap-4 my-3">
-  {#if connection?.uuid}
-    <label class="label">
-      <span>UUID:</span>
-      <input type="text" class="input" value={connection?.uuid} disabled={true} />
+  <fieldset data-testid="connection-form" disabled={!$isTopAdmin}>
+    {#if connection?.uuid}
+      <label class="label">
+        <span>UUID:</span>
+        <input type="text" class="input" value={connection?.uuid} readonly={true} />
+      </label>
+    {/if}
+
+    <label class="label required">
+      <span>Label:</span>
+      <input type="text" bind:value={label} class="input" required minlength="1" maxlength="255" />
     </label>
-  {/if}
 
-  <label class="label required">
-    <span>Label:</span>
-    <input type="text" bind:value={label} class="input" required minlength="1" maxlength="255" />
-  </label>
+    <label class="label required">
+      <span>ID:</span>
+      <input type="text" bind:value={id} class="input" required minlength="1" maxlength="255" />
+    </label>
 
-  <label class="label required">
-    <span>ID:</span>
-    <input type="text" bind:value={id} class="input" required minlength="1" maxlength="255" />
-  </label>
+    <label class="label required">
+      <span>Sub Prefix:</span>
+      <input
+        type="text"
+        bind:value={subPrefix}
+        class="input"
+        required
+        minlength="1"
+        maxlength="255"
+      />
+    </label>
 
-  <label class="label required">
-    <span>Sub Prefix:</span>
-    <input
-      type="text"
-      bind:value={subPrefix}
-      class="input"
-      required
-      minlength="1"
-      maxlength="255"
-    />
-  </label>
+    <RequiredFieldsList fields={requiredFields} on:update={updateRequiredFields} />
 
-  <RequiredFieldsList fields={requiredFields} on:update={updateRequiredFields} />
-
-  <div>
-    <button
-      type="submit"
-      data-testid="connection-save-btn"
-      class="btn variant-ghost-primary hover:variant-filled-primary"
-    >
-      Save
-    </button>
-    <a
-      href="/admin/configuration"
-      data-testid="connection-cancel-btn"
-      class="btn variant-ghost-secondary hover:variant-filled-secondary"
-    >
-      Cancel
-    </a>
-  </div>
+    <div>
+      <button
+        type="submit"
+        data-testid="connection-save-btn"
+        class="btn variant-ghost-primary hover:variant-filled-primary"
+      >
+        Save
+      </button>
+      <a
+        href="/admin/configuration"
+        data-testid="connection-cancel-btn"
+        class="btn variant-ghost-secondary hover:variant-filled-secondary"
+      >
+        Cancel
+      </a>
+    </div>
+  </fieldset>
 </form>

@@ -5,6 +5,7 @@
 
   import { type Role } from '$lib/models/Role';
   import { addRole, updateRole } from '$lib/stores/Roles';
+  import { isTopAdmin } from '$lib/stores/User';
 
   export let role: Role | undefined = undefined;
   export let privilegeList: string[][];
@@ -56,63 +57,70 @@
 </script>
 
 <form on:submit|preventDefault={saveRole} class="grid gap-4 my-3">
-  {#if role?.uuid}
-    <label class="label">
-      <span>UUID:</span>
-      <input type="text" class="input" value={role?.uuid} disabled={true} />
-    </label>
-  {/if}
-
-  <label class="label required">
-    <span>Name:</span>
-    <input type="text" bind:value={name} class="input" required minlength="1" maxlength="255" />
-  </label>
-
-  <label class="label required">
-    <span>Description:</span>
-    <input
-      type="text"
-      bind:value={description}
-      class="input"
-      required
-      minlength="1"
-      maxlength="255"
-    />
-  </label>
-
-  <fieldset data-testid="privilege-checkboxes">
-    <legend class="required">Privileges:</legend>
-    {#each privilegeList as [name], index}
-      <label class="flex items-center space-x-2">
-        <input class="checkbox" type="checkbox" bind:checked={privileges[index].checked} />
-        <p>{name}</p>
+  <fieldset data-testid="role-form" disabled={!$isTopAdmin}>
+    {#if role?.uuid}
+      <label class="label">
+        <span>UUID:</span>
+        <input type="text" class="input" value={role?.uuid} readonly={true} />
       </label>
-    {/each}
+    {/if}
+
+    <label class="label required">
+      <span>Name:</span>
+      <input type="text" bind:value={name} class="input" required minlength="1" maxlength="255" />
+    </label>
+
+    <label class="label required">
+      <span>Description:</span>
+      <input
+        type="text"
+        bind:value={description}
+        class="input"
+        required
+        minlength="1"
+        maxlength="255"
+      />
+    </label>
+
+    <fieldset data-testid="privilege-checkboxes">
+      <legend class="required">Privileges:</legend>
+      {#each privilegeList as [name], index}
+        <label class="flex items-center space-x-2">
+          <input class="checkbox" type="checkbox" bind:checked={privileges[index].checked} />
+          <p>{name}</p>
+        </label>
+      {/each}
+    </fieldset>
+
+    {#if validationError}
+      <aside data-testid="validation-error" class="alert variant-ghost-error">
+        <div class="alert-message">
+          <p>{validationError}</p>
+        </div>
+        <div class="alert-actions">
+          <button on:click={() => (validationError = '')}>
+            <i class="fa-solid fa-xmark"></i>
+            <span class="sr-only">Close</span>
+          </button>
+        </div>
+      </aside>
+    {/if}
+
+    <div>
+      <button
+        type="submit"
+        data-testid="role-save-btn"
+        class="btn variant-ghost-primary hover:variant-filled-primary"
+      >
+        Save
+      </button>
+      <a
+        href="/admin/configuration"
+        data-testid="role-cancel-btn"
+        class="btn variant-ghost-secondary hover:variant-filled-secondary"
+      >
+        Cancel
+      </a>
+    </div>
   </fieldset>
-
-  {#if validationError}
-    <aside data-testid="validation-error" class="alert variant-ghost-error">
-      <div class="alert-message">
-        <p>{validationError}</p>
-      </div>
-      <div class="alert-actions">
-        <button on:click={() => (validationError = '')}>
-          <i class="fa-solid fa-xmark"></i>
-          <span class="sr-only">Close</span>
-        </button>
-      </div>
-    </aside>
-  {/if}
-
-  <div>
-    <button type="submit" class="btn variant-ghost-primary hover:variant-filled-primary">
-      Save
-    </button>
-    <a
-      href="/admin/configuration"
-      class="btn variant-ghost-secondary hover:variant-filled-secondary"
-    >
-      Cancel
-    </a>
-  </div>
 </form>

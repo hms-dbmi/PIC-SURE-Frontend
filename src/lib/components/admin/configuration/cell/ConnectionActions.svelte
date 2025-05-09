@@ -2,6 +2,7 @@
   import { getModalStore, getToastStore } from '@skeletonlabs/skeleton';
   const modalStore = getModalStore();
   const toastStore = getToastStore();
+  import { isTopAdmin } from '$lib/stores/User';
 
   import { goto } from '$app/navigation';
 
@@ -18,7 +19,7 @@
       buttonTextConfirm: 'Yes',
       buttonTextCancel: 'No',
       response: async (confirm: boolean) => {
-        if (!confirm) return;
+        if (!confirm || !$isTopAdmin) return;
 
         try {
           await deleteConnection(data.cell);
@@ -51,6 +52,7 @@
     type="button"
     title="Edit"
     class="btn-icon-color"
+    disabled={!$isTopAdmin}
     on:click|stopPropagation={() => goto(`/admin/configuration/connection/${data.cell}/edit`)}
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
@@ -61,6 +63,7 @@
     type="button"
     title="Delete"
     class="btn-icon-color"
+    disabled={!$isTopAdmin}
     on:click|stopPropagation={deleteModal}
   >
     <i class="fa-solid fa-trash fa-xl"></i>

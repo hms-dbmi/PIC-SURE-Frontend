@@ -11,6 +11,9 @@ import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/stores';
 
 export const user: Writable<User> = writable(restoreUser());
+export const isTopAdmin = derived(user, ($user: User) => {
+  return $user?.privileges?.includes(PicsurePrivileges.SUPER);
+});
 
 user.subscribe((user: User) => {
   if (browser) {
