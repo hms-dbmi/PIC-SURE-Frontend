@@ -66,7 +66,7 @@
       disabled={enableNewField}
       on:click={() => (enableNewField = !enableNewField)}
     >
-      <i class="fa-solid fa-square-plus fa-xl"></i>
+      <i class="fa-solid fa-square-plus fa-xl {enableNewField ? 'opacity-50' : ''}"></i>
     </button>
   </legend>
 
