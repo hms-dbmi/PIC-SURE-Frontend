@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess } from '../../custom-context';
-import { picsureUser, roles as mockRoles, mockExpiredToken } from '../../../tests/mock-data';
+import { picsureUser, roles as mockRoles, mockExpiredToken, mockToken } from '../../../tests/mock-data';
 import type { Branding } from '../../../src/lib/configuration';
 import * as config from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
 //TypeScript is confused by the JSON import so I am fxing it here
@@ -162,7 +162,7 @@ test.describe('API page', () => {
   }) => {
     // Given
     await page.goto('/analyze');
-    const newToken = 'new longterm token';
+    const newToken = mockToken;
     await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
       userLongTermToken: newToken,
     });
@@ -180,11 +180,11 @@ test.describe('API page', () => {
     // Then
     await expect(refreshButton).toHaveText('Refreshed!');
     await expect(refreshButton).toBeDisabled();
-
+    
     const userToken = page.locator('#token');
     await expect(userToken).not.toHaveText(placeHolderDots);
     await expect(userToken).toHaveText(newToken);
-    await expect(expires).toContainText('Mon Feb 01 2021');
+    await expect(expires).toContainText('Tue Jul 07 2274');
   });
   test('Canceling confirm modal does nothing to user', async ({ page }) => {
     // Given
