@@ -218,7 +218,7 @@ test.describe('Export Page', () => {
     await expect(tab).toBeVisible();
     await expect(tab).toHaveText('Download');
     await tab.click();
-    const downloadButton = page.getByRole('button', { name:'Download as CSV' });
+    const downloadButton = page.getByRole('button', { name: 'Download as CSV' });
     await expect(downloadButton).toBeVisible();
     await expect(downloadButton).toBeEnabled();
     const userToken = page.locator('div#user-token');

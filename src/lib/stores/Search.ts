@@ -6,6 +6,7 @@ import { type Facet, type SearchResult } from '$lib/models/Search';
 import type { DictionaryConceptResult } from '$lib/models/api/DictionaryResponses';
 import { searchDictionary } from '$lib/stores/Dictionary';
 import { updateFacetsFromSearch, facetsPromise } from '$lib/stores/Dictionary';
+import { getDefaultRows } from '$lib/components/datatable/stores';
 
 export const loading: Writable<boolean> = writable(false);
 export const searchPromise: Writable<Promise<DictionaryConceptResult | undefined>> = writable(
@@ -14,7 +15,7 @@ export const searchPromise: Writable<Promise<DictionaryConceptResult | undefined
 export const searchTerm: Writable<string> = writable('');
 export const selectedFacets: Writable<Facet[]> = writable([]);
 export const tableHandler: TableHandler = new TableHandler([] as SearchResult[], {
-  rowsPerPage: 10,
+  rowsPerPage: getDefaultRows('ExplorerTable'),
 });
 export const tour: Writable<boolean> = writable(true);
 export const error: Writable<string> = writable('');

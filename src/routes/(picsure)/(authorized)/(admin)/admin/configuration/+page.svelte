@@ -6,7 +6,7 @@
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
-  import Datatable from '$lib/components/datatable/Table.svelte';
+  import Datatable from '$lib/components/datatable/StaticTable.svelte';
   import RoleActions from '$lib/components/admin/configuration/cell/RoleActions.svelte';
   import PrivilegeActions from '$lib/components/admin/configuration/cell/PrivilegeActions.svelte';
   import ConnectionActions from '$lib/components/admin/configuration/cell/ConnectionActions.svelte';
@@ -48,7 +48,7 @@
       { dataElement: 'label', label: 'Label', sort: true },
       { dataElement: 'id', label: 'ID', sort: true },
       { dataElement: 'subPrefix', label: 'Sub prefix', sort: true },
-      { dataElement: 'requiredFields', label: 'Required fields', sort: true },
+      { dataElement: 'requiredFields', label: 'Required fields' },
       { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
     ],
     overrides: {
@@ -107,7 +107,6 @@
         data={$roles}
         columns={roleTable.columns}
         cellOverides={roleTable.overrides}
-        defaultRowsPerPage={10}
         rowClickHandler={roleRowCLick}
         isClickable
       />
@@ -140,7 +139,6 @@
         data={$privileges}
         columns={privilegesTable.columns}
         cellOverides={privilegesTable.overrides}
-        defaultRowsPerPage={10}
         rowClickHandler={privilegeRowClick}
         isClickable
       />
@@ -173,7 +171,6 @@
         data={$connections}
         columns={connectionTable.columns}
         cellOverides={connectionTable.overrides}
-        defaultRowsPerPage={10}
         rowClickHandler={connectionRowClick}
         isClickable
       />

@@ -5,7 +5,7 @@
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
-  import Datatable from '$lib/components/datatable/Table.svelte';
+  import Datatable from '$lib/components/datatable/StaticTable.svelte';
   import CopyButtonCell from '$lib/components/dataset/cell/CopyButtonCell.svelte';
   import Actions from '$lib/components/dataset/cell/Actions.svelte';
   import Loading from '$lib/components/Loading.svelte';

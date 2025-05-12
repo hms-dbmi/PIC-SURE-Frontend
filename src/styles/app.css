@@ -596,6 +596,28 @@ label.required input:invalid,
   }
 }
 
+.pagination {
+  @apply gap-0;
+}
+
+.pagination button {
+  font-size: var(--base-font-size);
+  padding: 0.27rem 0.75rem;
+  @apply bg-surface-50 disabled:bg-surface-50 hover:bg-secondary-50 border-surface-300 border-y-1 rounded-none border-y-1 disabled:opacity-100 disabled:text-surface-300;
+}
+
+.pagination button.active:not(disabled) {
+  @apply bg-primary-50;
+}
+
+.pagination button:first-child {
+  @apply rounded-l-xl border-y-1 border-l-1;
+}
+
+.pagination button:last-child {
+  @apply rounded-r-xl border-y-1 border-r-1;
+}
+
 #terms-of-service {
   @apply mx-4;
 

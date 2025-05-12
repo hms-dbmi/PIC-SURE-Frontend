@@ -4,13 +4,13 @@
 
   import { branding, features } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
-  import Datatable from '$lib/components/datatable/Table.svelte';
+  import Datatable from '$lib/components/datatable/StaticTable.svelte';
   import DashboardLink from '$lib/components/dashboard/DashboardLink.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 
   import { columns, loadDashboardData, rows } from '$lib/stores/Dashboard.ts';
 
-  import type { Column } from '$lib/models/Tables';
+  import type { Column } from '$lib/components/datatable/types';
   import { type DashboardRow, activeRow } from '$lib/stores/Dashboard';
   import { open } from '$lib/stores/Drawer';
   import Loading from '$lib/components/Loading.svelte';
@@ -61,9 +61,8 @@
         data={currentRows}
         columns={currentColumns}
         {cellOverides}
-        defaultRowsPerPage={currentRows.length}
-        search={false}
         showPagination={false}
+        searchable={false}
         stickyHeader
         rowClickHandler={features.dashboardDrawer ? rowClickHandler : undefined}
         isClickable={features.dashboardDrawer}
