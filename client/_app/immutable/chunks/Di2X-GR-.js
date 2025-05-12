@@ -1,0 +1,62 @@
+var n=(a=>(a.QUERY="PIC_SURE_ANY_QUERY",a.ADMIN="ADMIN",a.DATA_ADMIN="DATA_ADMIN",a.SUPER="SUPER_ADMIN",a))(n||{}),r=(a=>(a.AUTHORIZED_ACCESS="AUTHORIZED_ACCESS",a.OPEN="MANAGED_PRIV_OPEN_ACCESS",a.NAMED_DATASET="MANUAL_PRIV_NAMED_DATASET",a.PRIV_MANAGED="PRIV_MANAGED_",a.DICTIONARY="MANAGED_PRIV_DICTIONARY",a))(r||{});function y(a){var o;return{...a,application:((o=a.application)==null?void 0:o.uuid)||""}}const i="PIC‑SURE",c=[{category:"Administration",privilege:"ADMIN",links:[{title:"Manage Users",url:"/admin/users"},{title:"Configuration",url:"/admin/configuration"}]},{category:"Use PIC-SURE",privilege:"PIC_SURE_ANY_QUERY",links:[{title:"Explore",url:"/explorer"},{title:"Analyze",url:"/analyze"},{title:"Manage Datasets",url:"/dataset"}]},{category:"Help",links:[{title:"User Guide",url:"https://pic-sure.gitbook.io/pic-sure",newTab:!0},{title:"Videos",url:"https://www.youtube.com/@pic-sure446/featured",newTab:!0},{title:"About",url:"https://avillach-lab.hms.harvard.edu/pic-sure/",newTab:!0}]}],u={showSitemap:!0,excludeSitemapOn:["/explorer","/discover"],links:[{title:"Privacy Policy",url:"https://pic-sure.gitbook.io/pic-sure/privacy-policy",newTab:!0},{title:"Contact Us",url:"https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5",newTab:!0}]},t={columns:[{label:"Dataset",dataElement:"dataset"},{label:"Variable Name",dataElement:"name"}],tourSearchIntro:"PIC-SURE Search allows you to search for variable level data.",totalPatientsText:"Filtered Participants",queryErrorText:"There was an error with your query. If this persists, please contact you PIC-SURE admin.",filterErrorText:'There was an error when adding the filter to the query. Please remove your most recent filter and try again. If this error persists, please contact us by filling out the form at <a class="anchor" href="https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5" target="_blank" class="underline">Avillach Lab Software Requests</a>. We will respond to your request as soon as we can.',analysisExportText:"To export data and start your analysis, use the following code to connect to PIC-SURE and save the dataframe or download the file. Note that you will need your personal access token to complete the connection to PIC-SURE with code.",confirmDownloadTitle:"Are you sure you want to download data?",confirmDownloadMessage:"This action will download the data to your local machine. Are you sure you want to proceed?",codeBlocks:{PythonExport:`# Requires python 3.7 or later
+import sys
+import pandas as pd
+import matplotlib.pyplot as plt
+!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-adapter-hpds.git
+!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-client.git
+
+import PicSureHpdsLib
+import PicSureClient
+
+PICSURE_network_URL = "{{PICSURE_NETWORK_URL}}"
+
+token_file = "token.txt"
+with open(token_file, "r") as f:
+		my_token = f.read()
+
+connection = PicSureClient.Client.connect(url = PICSURE_network_URL, token = my_token)
+
+queryID = "{{queryId}}"
+
+results = resource.retrieveQueryResults(queryID)
+from io import StringIO
+df_UI = pd.read_csv(StringIO(results), low_memory=False)`,RExport:`# Requires R 3.4 or later
+install.packages("devtools")
+
+devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", ref="main", force=T, quiet=FALSE)
+library(dplyr)
+
+PICSURE_network_URL = "{{PICSURE_NETWORK_URL}}"
+token_file <- "token.txt"
+token <- scan(token_file, what = "character")
+session <- picsure::bdc.initializeSession(PICSURE_network_URL, token)
+session <- picsure::bdc.setResource(session = session)
+
+queryID <- "{{queryId}}"
+
+results <- picsure::getResultByQueryUUID(session, queryID)`,PythonAPI:`# Requires python 3.7 or later
+import sys
+import pandas as pd
+import matplotlib.pyplot as plt
+!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-adapter-hpds.git
+!{sys.executable} -m pip install --upgrade --force-reinstall git+https://github.com/hms-dbmi/pic-sure-python-client.git
+
+import PicSureHpdsLib
+import PicSureClient
+
+PICSURE_network_URL = "{{PICSURE_NETWORK_URL}}"
+
+token_file = "token.txt"
+with open(token_file, "r") as f:
+    my_token = f.read()
+
+connection = PicSureClient.Client.connect(url = PICSURE_network_URL, token = my_token)`,RAPI:`# Requires R 3.4 or later
+install.packages("devtools")
+devtools::install_github("hms-dbmi/pic-sure-r-adapter-hpds", ref="main", force=T, quiet=FALSE)
+library(dplyr)
+
+PICSURE_network_URL = "{{PICSURE_NETWORK_URL}}"
+token_file <- "token.txt"
+token <- scan(token_file, what = "character")
+session <- picsure::bdc.initializeSession(PICSURE_network_URL, token)
+session <- picsure::bdc.setResource(session = session)`},goTo:{instructions:'Copy your personal access token and save as a text file called "token.txt" in the same working directory to execute the code above.',links:[]},pfbExportUrls:[]},E={searchPlaceholder:"Search terms or variables of interest…",explanation:"Available data includes the National Health and Nutrition Examination Survey (NHANES), Synthea, and 1000 Genomes.",authExplanation:"Available data includes the National Health and Nutrition Examination Survey (NHANES), Synthea, and 1000 Genomes.",actions:[{title:"Explore",description:"Explore data, apply filters, and build cohorts",icon:"fa-solid fa-magnifying-glass",url:"/explorer",btnText:"Start Exploring",isOpen:!1,showIfLoggedIn:!0},{title:"Prepare for Analysis",description:"Use the PIC-SURE API to prepare data for analysis",icon:"fa-solid fa-chart-line",url:"/analyze",btnText:"Prepare for Analysis",isOpen:!1,showIfLoggedIn:!0}],stats:[{key:"query:blank",label:"Participants"},{key:"dict:concepts",label:"Variables"},{key:"dict:facets:dataset_id",label:"Data Sources"}],statFields:{}},d={cards:[{header:"Setting Up the PIC-SURE API",body:"Step-by-step instructions to get started using the PIC-SURE API",link:"/analyze/example"}],instructions:{connection:'To connect to the PIC-SURE Application Programming Interface (API), you will need your personal access token. Copy your token and save as a text file called "token.txt" in the working directory of your chosen analysis workspace.',execution:"To start your analysis, copy and execute the following code in your preferred analysis environment to connect to the PIC-SURE API. Note that you will need your personal access token to complete the connection."}},p={description:"Where searching for, filtering on, and analyzing data is made simple.",showSiteName:!1,openPicsureLink:"/",openPicsureLinkText:"Explore without Login",contactLink:"https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5"},h={links:[{title:"User Guide",description:"Complete user manual for seamless navigation and utilization.",icon:"fa-solid fa-book fa-4x",url:"https://pic-sure.gitbook.io/pic-sure"},{title:"Video Library",description:"Example 'how-to' video demonstrations.",icon:"fa-solid fa-circle-play fa-4x",url:"https://www.youtube.com/@pic-sure446/featured"},{title:"Request Help",description:"Need help? Submit a service desk ticket, we are here to help!",icon:"fa-solid fa-handshake fa-4x",url:"https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5"},{title:"PIC-SURE",description:"Check out the PIC-SURE website for information.",icon:"fa-solid fa-circle-info fa-4x",url:"https://avillach-lab.hms.harvard.edu/pic-sure"}],popups:{genomicFilter:{frequency:"The variant allele frequency in gnomAD combined population as discrete text categories. Possible values: Novel (variant not in gnomAD database), Rare (variant frequency less than 1%), Common (variant frequency greater than or equal to 1%).",consequence:"A standardized term from the Sequence Ontology (http://www.sequenceontology.org) to describe the calculated consequence of a variant. The severity for the calculated consequence of a variant on a gene has possible values HIGH (frameshift, splice disrupting, or truncating variants), MEDIUM (non-frameshift insertions or deletions, variants altering protein sequencing without affecting its length) or LOW (other coding variants including synonymous variants)."}}},R={title:"Privacy Policy",content:"This is the privacy policy for the PIC-SURE application.",url:"https://pic-sure.gitbook.io/pic-sure/privacy-policy"};var l=(a=>(a.Full="full",a.Aggregate="aggregate",a))(l||{});const e={BASE_URL:"./",DEV:!1,MODE:"production",PROD:!0,SSR:!1},I=typeof window<"u"?`${window.location.origin}/picsure`:e!=null&&e.VITE_PROJECT_HOSTNAME?`https://${e==null?void 0:e.VITE_PROJECT_HOSTNAME}/picsure`:"https://nhanes.hms.harvard.edu/picsure",s={applicationName:"PIC‑SURE",logo:{alt:(e==null?void 0:e.VITE_LOGO_ALT)||"PIC‑SURE",src:(e==null?void 0:e.VITE_LOGO)||""},sitemap:[],footer:{},explorePage:{tourSearchTerm:(e==null?void 0:e.EXPLORE_TOUR_SEARCH_TERM)||"age"},landing:{},login:{},help:{},privacyPolicy:{},analysisConfig:{}},A=()=>{s.applicationName=i;const a={...t.codeBlocks};Object.keys(a).forEach(o=>{typeof a[o]=="string"&&(a[o]=a[o].replace("{{PICSURE_NETWORK_URL}}",I))}),s.explorePage={...s.explorePage,...t,codeBlocks:a},s.landing=E,s.login=p,s.help=h,s.footer=u,s.sitemap=c,s.privacyPolicy=R,s.analysisConfig=d},T=[{path:"/dashboard",text:"Data Dashboard",feature:"dashboard"},{path:"/discover",text:"Discover",feature:"discover"},{path:"/explorer",text:"Explore",privilege:[n.QUERY,r.AUTHORIZED_ACCESS]},{path:"/analyze",text:"Prepare for Analysis",privilege:[n.QUERY,r.AUTHORIZED_ACCESS]},{path:"/dataset",text:"Manage Datasets",privilege:[n.QUERY,r.NAMED_DATASET]},{path:"/admin/requests",text:"Data Requests",privilege:[n.DATA_ADMIN],feature:"dataRequests"},{path:"/admin/configuration",text:"Configuration",privilege:[n.SUPER]},{path:"/admin/users",text:"Manage Users",privilege:[n.ADMIN]},{path:"/help",text:"Help"}],f={explorer:{allowExport:(e==null?void 0:e.VITE_ALLOW_EXPORT)==="true",allowDownload:(e==null?void 0:e.VITE_ALLOW_DOWNLOAD)!=="false",exportsEnableExport:(e==null?void 0:e.VITE_ALLOW_EXPORT_ENABLED)==="true",variantExplorer:(e==null?void 0:e.VITE_VARIANT_EXPLORER)==="true",distributionExplorer:(e==null?void 0:e.VITE_DIST_EXPLORER)==="true",enableTour:e!=null&&e.EXPLORER_TOUR?(e==null?void 0:e.EXPLORE_TOUR)==="true":!0,authTour:(e==null?void 0:e.VITE_AUTH_TOUR_NAME)??"NHANES-Auth",enableHierarchy:(e==null?void 0:e.VITE_ENABLE_HIERARCHY)==="true",enablePfbExport:(e==null?void 0:e.VITE_DOWNLOAD_AS_PFB)!=="false",enableSampleIdCheckbox:(e==null?void 0:e.VITE_ENABLE_SAMPLE_ID_CHECKBOX)==="true"},login:{open:(e==null?void 0:e.VITE_OPEN)==="true"},dataRequests:(e==null?void 0:e.VITE_DATA_REQUESTS)==="true",enableSNPQuery:(e==null?void 0:e.VITE_ENABLE_SNP_QUERY)==="true",enableGENEQuery:(e==null?void 0:e.VITE_ENABLE_GENE_QUERY)==="true",requireConsents:(e==null?void 0:e.VITE_REQUIRE_CONSENTS)==="true",useQueryTemplate:(e==null?void 0:e.VITE_USE_QUERY_TEMPLATE)==="true",discover:(e==null?void 0:e.VITE_DISCOVER)==="true",discoverFeautures:{enableTour:(e==null?void 0:e.EXPLORER_TOUR)!=="false",openTour:(e==null?void 0:e.VITE_OPEN_TOUR_NAME)??"BDC-Open",distributionExplorer:(e==null?void 0:e.VITE_DIST_EXPLORER)==="true"},dashboard:(e==null?void 0:e.VITE_DASHBOARD)==="true",dashboardDrawer:(e==null?void 0:e.VITE_DASHBOARD_DRAWER)==="true",confirmDownload:(e==null?void 0:e.VITE_CONFIRM_DOWNLOAD)==="true",termsOfService:(e==null?void 0:e.VITE_ENABLE_TOS)==="true"},g={variantExplorer:{type:(e==null?void 0:e.VITE_VARIANT_EXPLORER_TYPE)||l.Aggregate,maxCount:parseInt((e==null?void 0:e.VITE_VARIANT_EXPLORER_MAX_COUNT)||1e4),excludeColumns:JSON.parse((e==null?void 0:e.VITE_VARIANT_EXPLORER_EXCLUDE_COLUMNS)||"[]")},distributionExplorer:{graphColors:JSON.parse((e==null?void 0:e.VITE_DIST_EXPLORER_GRAPH_COLORS)||'["#328FFF", "#675AFF", "#FFBC35"]')},google:{analytics:(e==null?void 0:e.VITE_GOOGLE_ANALYTICS_ID)||"",tagManager:(e==null?void 0:e.VITE_GOOGLE_TAG_MANAGER_ID)||""},maxDataPointsForExport:parseInt((e==null?void 0:e.VITE_MAX_DATA_POINTS_FOR_EXPORT)||1e6)},S={hpds:(e==null?void 0:e.VITE_RESOURCE_HPDS)||"",openHPDS:(e==null?void 0:e.VITE_RESOURCE_OPEN_HPDS)||"",visualization:(e==null?void 0:e.VITE_RESOURCE_VIZ)||"",application:(e==null?void 0:e.VITE_RESOURCE_APP)||"",aggregate:(e==null?void 0:e.VITE_RESOURCE_AGGREGATE)||""},P={auth0Tenant:(e==null?void 0:e.VITE_AUTH0_TENANT)||"avillachlab"};export{r as B,l as E,n as P,S as a,s as b,P as c,f,A as i,y as m,T as r,g as s};
