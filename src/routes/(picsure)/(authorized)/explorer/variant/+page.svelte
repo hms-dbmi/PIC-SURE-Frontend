@@ -9,7 +9,7 @@
 
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Datatable from '$lib/components/datatable/Table.svelte';
+  import Datatable from '$lib/components/datatable/StaticTable.svelte';
 
   import {
     count,
@@ -99,9 +99,8 @@
           tableName="variant-explorer"
           data={$data}
           columns={$columns}
-          defaultRowsPerPage={10}
           fullWidth
-          search
+          searchable
         >
           {#snippet tableActions()}
             <div class="flex-auto flex items-end justify-between">

@@ -5,7 +5,7 @@
   import { goto } from '$app/navigation';
 
   import { branding, features } from '$lib/configuration';
-  import type { Column } from '$lib/models/Tables';
+  import type { Column } from '$lib/components/datatable/types';
   import {
     searchTerm,
     selectedFacets,
@@ -105,7 +105,7 @@
         {handler}
         {columns}
         {cellOverides}
-        {isLoading}
+        isLoading={$isLoading}
         expandable
       />
     {/if}

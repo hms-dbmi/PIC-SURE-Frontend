@@ -23,7 +23,7 @@
 
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
-  import Datatable from '$lib/components/datatable/Table.svelte';
+  import Datatable from '$lib/components/datatable/StaticTable.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';

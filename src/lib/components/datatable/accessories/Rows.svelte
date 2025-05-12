@@ -1,17 +1,22 @@
 <script lang="ts">
-  import { TableHandler as RemoteHander } from '@vincjo/datatables/server';
+  import { TableHandler } from '@vincjo/datatables';
+  import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
+
+  import { setDefaultRows } from '../stores';
 
   interface Props {
-    handler: RemoteHander;
+    tableName: string;
+    handler: TableHandler | RemoteTableHandler;
     options?: number[];
     class?: string;
   }
 
-  let { handler, options = [5, 10, 20, 50], class: className = '' }: Props = $props();
+  let { tableName, handler, options = [5, 10, 20, 50], class: className = '' }: Props = $props();
 
   const setRowsPerPage = () => {
+    setDefaultRows(tableName, handler.rowsPerPage);
     handler.setPage(1);
-    if (handler instanceof RemoteHander) {
+    if (handler instanceof RemoteTableHandler) {
       handler.invalidate();
     }
   };
@@ -22,7 +27,7 @@
     >Show
     <select
       id="row-count-select"
-      class="select ml-2"
+      class="select ml-2 rounded-xl"
       aria-label="Rows per page"
       bind:value={handler.rowsPerPage}
       onchange={setRowsPerPage}

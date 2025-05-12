@@ -7,7 +7,7 @@
   import { branding } from '$lib/configuration';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
-  import Datatable from '$lib/components/datatable/Table.svelte';
+  import Datatable from '$lib/components/datatable/StaticTable.svelte';
   import Actions from '$lib/components/admin/user/cell/Actions.svelte';
   import Status from '$lib/components/admin/user/cell/Status.svelte';
 
@@ -99,15 +99,14 @@
     {#each $usersByConnection as connection}
       <div id={`user-table-${connection.label.replaceAll(' ', '_')}`} class="mb-10">
         <Datatable
-          tableName="Users"
+          tableName="Users-{connection.label}"
           data={connection.users}
           {columns}
           {cellOverides}
-          search
-          defaultRowsPerPage={10}
           title={connection.label}
           {rowClickHandler}
           isClickable
+          searchable
           tableAuto={false}
         />
       </div>

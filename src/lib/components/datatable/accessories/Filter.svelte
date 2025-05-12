@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { TableHandler } from '@vincjo/datatables/server';
+  import { TableHandler } from '@vincjo/datatables';
+  import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
 
   interface Props {
-    handler: TableHandler;
+    handler: TableHandler | RemoteTableHandler;
     filterBy: string;
     class?: string;
   }
@@ -14,10 +15,12 @@
 
   const setFilter = () => {
     filter.set();
-    clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      handler.invalidate();
-    }, 400);
+    if (handler instanceof RemoteTableHandler) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        handler.invalidate();
+      }, 400);
+    }
   };
 </script>
 

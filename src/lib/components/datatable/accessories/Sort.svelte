@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { TableHandler } from '@vincjo/datatables/server';
+  import { TableHandler } from '@vincjo/datatables';
+  import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
 
   let {
     handler,
@@ -7,7 +8,7 @@
     class: className = '',
     children,
   }: {
-    handler: TableHandler;
+    handler: TableHandler | RemoteTableHandler;
     orderBy: string;
     class?: string;
     children?: import('svelte').Snippet;
@@ -19,8 +20,16 @@
 <th
   class="cursor-pointer select-none align-bottom {className}"
   class:active={sort.isActive}
-  onclick={sort.set}
+  onclick={() => sort.set()}
 >
   {@render children?.()}
-  <span class:asc={sort.direction === 'asc'} class:desc={sort.direction === 'desc'}></span>
+  {#if sort.isActive}
+    {#if sort.direction === 'asc'}
+      <i class="fa-solid fa-sort-up"></i>
+    {:else}
+      <i class="fa-solid fa-sort-down"></i>
+    {/if}
+  {:else}
+    <i class="fa-solid fa-sort"></i>
+  {/if}
 </th>

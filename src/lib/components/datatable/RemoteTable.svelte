@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { TableHandler } from '@vincjo/datatables/server';
-  import type { Indexable } from '$lib/types';
-  import type { Column } from '$lib/models/Tables';
+  import { TableHandler } from '@vincjo/datatables';
+  import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
+
+  import type { TableProps } from './types';
+
   import ExpandableRow from '$lib/components/datatable/Row.svelte';
   import ThFilter from '$lib/components/datatable/accessories/Filter.svelte';
   import ThSort from '$lib/components/datatable/accessories/Sort.svelte';
@@ -9,40 +11,41 @@
   import RowCount from '$lib/components/datatable/accessories/Count.svelte';
   import Pagination from '$lib/components/datatable/accessories/Pagination.svelte';
   import Search from '$lib/components/datatable/accessories/Search.svelte';
-  import type { Writable } from 'svelte/store';
-  import Loading from '../Loading.svelte';
+  import Loading from '$lib/components/Loading.svelte';
 
-  interface Props {
-    tableName?: string;
-    handler: TableHandler;
-    isLoading: Writable<boolean>;
-    searchable?: boolean;
-    title?: string;
-    fullWidth?: boolean;
-    options?: number[];
-    columns?: Column[];
-    cellOverides?: Indexable;
-    rowClickHandler?: (row: Indexable) => void;
-    isClickable?: boolean;
-    expandable?: boolean;
-    tableActions?: import('svelte').Snippet;
+  interface Props extends TableProps {
+    handler: TableHandler | RemoteTableHandler;
   }
 
   let {
-    tableName = 'ExplorerTable',
+    tableName,
     handler,
-    isLoading,
+    isLoading = $bindable(false),
     searchable = false,
     title = '',
     fullWidth = false,
     options = [5, 10, 20, 50, 100],
     columns = [],
     cellOverides = {},
-    rowClickHandler = () => {},
+    tableAuto = true,
+    stickyHeader = false,
+    showPagination = true,
+    class: className = '',
     isClickable = false,
     expandable = false,
+    rowClickHandler = () => {},
     tableActions,
   }: Props = $props();
+
+  $effect(() => {
+    if (showPagination) return;
+
+    if (handler instanceof TableHandler) {
+      handler.setRowsPerPage(handler.allRows.length);
+    } else {
+      handler.setRowsPerPage(handler.totalRows);
+    }
+  });
 </script>
 
 <div class="table-wrap space-y-1">
@@ -66,15 +69,15 @@
   <table
     id="{tableName}-table"
     data-testid="{tableName}-table"
-    class="table table-auto align-middle"
+    class="table table-{tableAuto ? 'auto' : 'fixed'} {className}"
     class:w-max={fullWidth}
     class:clickable={isClickable}
   >
     <thead>
-      <tr>
+      <tr class:sticky-header={stickyHeader}>
         {#each columns as column}
           {#if column.sort}
-            <ThSort {handler} orderBy={column.dataElement} class={`bg-primary-300! ${column.class}`}
+            <ThSort {handler} orderBy={column.dataElement} class={column.class}
               >{column.label}</ThSort
             >
           {:else if column.filter}
@@ -86,7 +89,7 @@
       </tr>
     </thead>
     <tbody>
-      {#if $isLoading}
+      {#if isLoading}
         <tr>
           <td colspan={columns.length} class="text-center py-8">
             <div class="flex justify-center items-center">
@@ -112,13 +115,15 @@
       {/if}
     </tbody>
   </table>
-  <footer class="flex justify-between mt-1">
-    <RowCount {handler} />
-    <div class="flex justify-end gap-4">
-      <RowsPerPage {handler} {options} />
-      <Pagination {handler} />
-    </div>
-  </footer>
+  {#if showPagination}
+    <footer class="flex justify-between mt-1">
+      <RowCount {handler} />
+      <div class="flex justify-end gap-4">
+        <RowsPerPage {tableName} {handler} {options} />
+        <Pagination {handler} />
+      </div>
+    </footer>
+  {/if}
 </div>
 
 <style>
