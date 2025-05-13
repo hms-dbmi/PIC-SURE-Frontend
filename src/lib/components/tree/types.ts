@@ -15,3 +15,11 @@ export interface TreeNodeInterface {
   toggleSelected: () => void;
   toggleOpen: () => void;
 }
+
+export interface NodeInterface {
+  name: string;
+  value: string;
+  children: NodeInterface[];
+  open: boolean;
+  selected: boolean;
+}

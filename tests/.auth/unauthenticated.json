@@ -11,6 +11,10 @@
         {
           "name": "user",
           "value": "{}"
+        },
+        {
+          "name": "datatableSettings",
+          "value": "undefined"
         }
       ]
     }

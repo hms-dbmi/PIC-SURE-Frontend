@@ -73,7 +73,7 @@ export async function search(state: State): Promise<SearchResult[]> {
   return response?.content ?? [];
 }
 
-async function updateFacets(facetsToUpdate: Facet[]) {
+export async function updateFacets(facetsToUpdate: Facet[]) {
   const currentFacets = get(selectedFacets);
   facetsToUpdate.forEach((facet) => {
     const facetIndex = currentFacets.findIndex((f) => f.name === facet.name);

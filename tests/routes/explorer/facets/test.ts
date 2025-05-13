@@ -189,7 +189,7 @@ test.describe('Facet Categories', () => {
 
     for (let i = 0; i < facetsResponseToTestZeroCount.length; i++) {
       //When
-      const facetList = page.locator('.accordion-panel').nth(i);
+      const facetList = page.getByTestId('accordion-item').nth(i);
       // Then
       const moreButton = facetList.getByTestId('show-more-facets');
       await expect(moreButton).not.toBeVisible();
@@ -369,8 +369,7 @@ test.describe('Facet Categories', () => {
         await expect(searchInput).toHaveValue('Study Display');
         const facetItems = await facetList.locator('label').all();
         for (const facetItem of facetItems) {
-          const facetItemText = await facetItem.textContent();
-          expect(facetItemText).toContain('Study Display');
+          expect(facetItem).toContainText('Study Display');
         }
       }
     }
@@ -398,8 +397,7 @@ test.describe('Facet Categories', () => {
         await expect(searchInput).toHaveValue('NSRR CFS full name');
         const facetItems = await facetList.locator('label').all();
         facetItems.forEach(async (facetItem) => {
-          const facetItemText = await facetItem.textContent();
-          expect(facetItemText).toContain('NSRR CFS');
+          expect(facetItem).toContainText('NSRR CFS');
         });
       }
     }
@@ -639,7 +637,7 @@ test.describe('Hidden Facets', () => {
     await expect(facetSideBar).toBeVisible();
 
     //When
-    const studyCategoryPanel = page.locator('.accordion-panel').first();
+    const studyCategoryPanel = page.getByTestId('accordion-item').first();
 
     // Then - Verify that facets with count=0 are not shown
     for (const facet of facetsResponseToTestZeroCount[0].facets) {
@@ -670,7 +668,7 @@ test.describe('Hidden Facets', () => {
     await page.locator('#search-button').click();
 
     // Then - Zero count facets from the second response should be hidden
-    const studyCategoryPanel = page.locator('.accordion-panel').first();
+    const studyCategoryPanel = page.getByTestId('accordion-item').first();
     for (const facet of facetsResponseToTestZeroCount[0].facets) {
       if (facet.count === 0) {
         const facetCheckBox = studyCategoryPanel.locator(`#${facet.name}`);
@@ -689,13 +687,13 @@ test.describe('Hidden Facets', () => {
     await page.goto('/explorer?search=age');
 
     // When - Find the "Empty Category" section
-    const emptyCategory = page.locator('.accordion-summary:has-text("Empty Category")');
+    const emptyCategory = page.getByTestId('accordion-item').getByText('Empty Category');
 
     // Then - Category should exist but its panel should have no facets
     await expect(emptyCategory).toBeVisible();
     await emptyCategory.click();
 
-    const emptyPanel = emptyCategory.locator('xpath=..').locator('.accordion-panel');
+    const emptyPanel = emptyCategory.locator('xpath=..').getByTestId('accordion-item');
     const facetsInEmptyPanel = await emptyPanel.locator('label').all();
     expect(facetsInEmptyPanel).toHaveLength(0);
   });
