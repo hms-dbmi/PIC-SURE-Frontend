@@ -24,11 +24,11 @@
       console.error(error);
       if ((error as { status?: number })?.status === 409) {
         toaster.error({
-          title: `Cannot delete privilege '${name}' as it is still in use by a role`,
+          title: `Cannot delete privilege '${data.row.name}' as it is still in use by a role`,
         });
       } else {
         toaster.error({
-          title: `An unknown error occured while deleting privilege '${name}'`,
+          title: `An unknown error occured while deleting privilege '${data.row.name}'`,
         });
       }
     }

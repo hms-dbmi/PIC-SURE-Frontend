@@ -24,11 +24,11 @@
       console.error(error);
       if ((error as { status?: number })?.status === 409) {
         toaster.error({
-          title: `Cannot delete role '${name}' as it is still in use by a user`,
+          title: `Cannot delete role '${data.row.name}' as it is still in use by a user`,
         });
       } else {
         toaster.error({
-          title: `An unknown error occured while deleting role '${name}'`,
+          title: `An unknown error occured while deleting role '${data.row.name}'`,
         });
       }
     }
