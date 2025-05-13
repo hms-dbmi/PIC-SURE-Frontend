@@ -172,10 +172,10 @@
     </div>
   {/snippet}
 </Accordion.Item>
-<div class="m-1 p-1 max-w">
+<div class="mb-2">
   {#each selectedFacetsChips as facet}
     <span
-      class="badge relative z-10 preset-outlined-primary-500 m-1 p-2 flex items-center box-border w-full max-w-full overflow-hidden"
+      class="badge relative z-10 preset-outlined-surface-500 my-1 py-2 flex items-center box-border w-full max-w-full overflow-hidden"
       id={facet.name}
     >
       <span class="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
@@ -196,6 +196,6 @@
   @reference "../../../styles/app.css";
 
   .show-more {
-    @apply btn btn-sm preset-outlined-primary-500 rounded-container;
+    @apply btn btn-sm preset-outlined-surface-500 rounded-container;
   }
 </style>

@@ -22,7 +22,8 @@
     return `nav-link` + (id ? `-` + id : path.replaceAll('/', '-'));
   }
 
-  function handleLogin() {
+  function handleLogin(e: Event) {
+    e.stopImmediatePropagation();
     goto(`/login?redirectTo=${$page.url.pathname}`);
   }
 

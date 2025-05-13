@@ -13,7 +13,6 @@ const defaultRows: Writable<DefaultRowsMap> = writable(restoreSettings());
 defaultRows.subscribe((rows: DefaultRowsMap) => {
   if (browser) {
     localStorage.setItem(SETTING_NAME, JSON.stringify(rows));
-    console.log('updating default rows', rows);
   }
 });
 
@@ -24,9 +23,9 @@ function restoreSettings() {
     } catch (e) {
       console.error('restoring user datatable settings failed');
       localStorage.setItem(SETTING_NAME, '{}');
-      return {};
     }
   }
+  return {};
 }
 
 export function getDefaultRows(tableName?: string) {

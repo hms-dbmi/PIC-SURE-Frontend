@@ -31,6 +31,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
   import Loading from '$lib/components/Loading.svelte';
+  import TabItem from '$lib/components/TabItem.svelte';
 
   interface Props {
     query: QueryRequestInterface;
@@ -508,10 +509,10 @@
                 <p class="mt-4">{branding.explorePage.analysisExportText}</p>
                 <Tabs value={tabSet} onValueChange={(e: { value: string }) => (tabSet = e.value)}>
                   {#snippet list()}
-                    <Tabs.Control value="Python">Python</Tabs.Control>
-                    <Tabs.Control value="R">R</Tabs.Control>
+                    <TabItem bind:group={tabSet} value="Python">Python</TabItem>
+                    <TabItem bind:group={tabSet} value="R">R</TabItem>
                     {#if features.explorer.allowDownload}
-                      <Tabs.Control value="Download">Download</Tabs.Control>
+                      <TabItem bind:group={tabSet} value="Download">Download</TabItem>
                     {/if}
                   {/snippet}
                   {#snippet content()}

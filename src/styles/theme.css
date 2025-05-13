@@ -27,8 +27,8 @@
   --anchor-text-decoration-active: none;
   --anchor-text-decoration-focus: none;
   --spacing: 0.25rem;
-  --radius-base: 0.25rem;
-  --radius-container: 0.25rem;
+  --radius-base: var(--radius-xl);
+  --radius-container: var(--radius-xl);
   --default-border-width: 1px;
   --default-divide-width: 1px;
   --default-ring-width: 1px;
@@ -233,8 +233,8 @@
   --anchor-text-decoration-active: none;
   --anchor-text-decoration-focus: none;
   --spacing: 0.25rem;
-  --radius-base: 0.25rem;
-  --radius-container: 0.25rem;
+  --radius-base: var(--radius-xl);
+  --radius-container: var(--radius-xl);
   --default-border-width: 1px;
   --default-divide-width: 1px;
   --default-ring-width: 1px;
@@ -439,8 +439,8 @@
   --anchor-text-decoration-active: none;
   --anchor-text-decoration-focus: none;
   --spacing: 0.25rem;
-  --radius-base: 0.25rem;
-  --radius-container: 0.25rem;
+  --radius-base: var(--radius-xl);
+  --radius-container: var(--radius-xl);
   --default-border-width: 1px;
   --default-divide-width: 1px;
   --default-ring-width: 1px;
