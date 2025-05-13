@@ -19,7 +19,7 @@
     try {
       await deleteConnection(data.cell);
       toaster.success({
-        title: `Successfully deleted connection '${data.row.label}'`,
+        title: `Successfully deleted connection '${label}'`,
       });
     } catch (error) {
       console.error(error);

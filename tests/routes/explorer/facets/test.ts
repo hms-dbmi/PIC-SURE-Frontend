@@ -369,7 +369,8 @@ test.describe('Facet Categories', () => {
         await expect(searchInput).toHaveValue('Study Display');
         const facetItems = await facetList.locator('label').all();
         for (const facetItem of facetItems) {
-          expect(facetItem).toContainText('Study Display');
+          const facetItemText = await facetItem.textContent();
+          expect(facetItemText).toContain('Study Display');
         }
       }
     }
@@ -397,7 +398,8 @@ test.describe('Facet Categories', () => {
         await expect(searchInput).toHaveValue('NSRR CFS full name');
         const facetItems = await facetList.locator('label').all();
         facetItems.forEach(async (facetItem) => {
-          expect(facetItem).toContainText('NSRR CFS');
+          const facetItemText = await facetItem.textContent();
+          expect(facetItemText).toContain('NSRR CFS');
         });
       }
     }
