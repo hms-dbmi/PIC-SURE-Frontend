@@ -436,7 +436,6 @@ nav#page-navigation li .nav-dropdown a:focus {
 
 #user-token #token {
   @apply input;
-  border-radius: 1rem;
 }
 
 .btn {

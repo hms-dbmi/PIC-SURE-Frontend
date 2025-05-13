@@ -39,7 +39,10 @@
   type="button"
   data-testid={testId}
   class={className ?? 'btn preset-filled-primary-500 m-1'}
-  onclick={() => login(redirectTo, provider.type)}
+  onclick={(e: Event) => {
+    e.stopImmediatePropagation();
+    login(redirectTo, provider.type);
+  }}
 >
   {#if imageSrc}
     <img src={imageSrc} alt={provider.imageAlt} class="mr-2 h-8" />

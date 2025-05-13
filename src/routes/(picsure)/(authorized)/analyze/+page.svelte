@@ -5,6 +5,7 @@
   import Content from '$lib/components/Content.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
+  import TabItem from '$lib/components/TabItem.svelte';
 
   let tabSet: string = $state('Python');
 </script>
@@ -26,8 +27,8 @@
     <p>{@html branding.analysisConfig.instructions.execution}</p>
     <Tabs value={tabSet} onValueChange={(e) => (tabSet = e.value)}>
       {#snippet list()}
-        <Tabs.Control value="Python">Python</Tabs.Control>
-        <Tabs.Control value="R">R</Tabs.Control>
+        <TabItem bind:group={tabSet} value="Python">Python</TabItem>
+        <TabItem bind:group={tabSet} value="R">R</TabItem>
       {/snippet}
       {#snippet content()}
         <Tabs.Panel value="Python">
