@@ -1,6 +1,6 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
-  import type { Column } from '$lib/models/Tables';
+  import type { Column } from '$lib/components/datatable/types';
   import type { Indexable } from '$lib/types';
   import { activeTable, activeRow, activeComponent, setActiveRow } from '$lib/stores/ExpandableRow';
 

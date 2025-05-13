@@ -1,11 +1,12 @@
 <script lang="ts">
+  import { Accordion } from '@skeletonlabs/skeleton-svelte';
+
   import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
   import type { Facet } from '$lib/models/Search';
-  import { Accordion } from '@skeletonlabs/skeleton-svelte';
-  import SearchStore from '$lib/stores/Search';
+  import { updateFacets, selectedFacets } from '$lib/stores/Search';
   import { hiddenFacets } from '$lib/stores/Dictionary';
+
   import FacetItem from './FacetItem.svelte';
-  let { updateFacets, selectedFacets } = SearchStore;
 
   interface Props {
     facetCategory: DictionaryFacetResult;
@@ -15,15 +16,16 @@
 
   let { facetCategory, facets = facetCategory.facets, numFacetsToShow = 5 }: Props = $props();
 
-  let filteredHiddenFacets = $state(
+  let textFilterValue: string = $state('');
+  let showMore: boolean = $state(false);
+
+  let filteredHiddenFacets = $derived(
     facets.filter((f) => !($hiddenFacets[facetCategory.name] || []).includes(f.name)),
   );
-  let textFilterValue: string = $state('');
+  let overShowLimit = $derived(filteredHiddenFacets.length > numFacetsToShow);
 
-  let shouldShowSearchBar: boolean = $derived(filteredHiddenFacets?.length > numFacetsToShow);
-  let moreThanNumFacetsToShow = $derived(filteredHiddenFacets?.length > numFacetsToShow);
   let facetsToDisplay = $derived(
-    (facets || textFilterValue || moreThanNumFacetsToShow || $selectedFacets || facetCategory) &&
+    (facets || textFilterValue || showMore || $selectedFacets || facetCategory) &&
       getFacetsToDisplay(),
   );
   let selectedFacetsChips = $derived(
@@ -50,7 +52,7 @@
   }
 
   function getFacetsToDisplay() {
-    let facetsToDisplay = filteredHiddenFacets;
+    let facetsToDisplay = [...filteredHiddenFacets];
 
     const selectedFacetsMap = new Map($selectedFacets.map((facet) => [facet.name, facet]));
     const indeterminateFacets = facetsToDisplay.filter(isIndeterminate);
@@ -123,7 +125,7 @@
 
         return facetMatches || childrenMatch;
       });
-    } else if (moreThanNumFacetsToShow) {
+    } else if (!showMore) {
       // Only show the first n facets
       facetsToDisplay = facetsToDisplay.slice(0, numFacetsToShow);
     }
@@ -144,7 +146,7 @@
   {/snippet}
   {#snippet panel()}
     <div class="flex flex-col">
-      {#if shouldShowSearchBar}
+      {#if overShowLimit}
         <input
           class="text-sm"
           type="search"
@@ -157,14 +159,14 @@
       {#each facetsToDisplay as facet}
         <FacetItem {facet} {facetCategory} {textFilterValue} />
       {/each}
-      {#if filteredHiddenFacets?.length > numFacetsToShow && !textFilterValue}
+      {#if overShowLimit && !textFilterValue}
         <button
           data-testId="show-more-facets"
           class="show-more w-fit mx-auto my-1"
-          onclick={() => (moreThanNumFacetsToShow = !moreThanNumFacetsToShow)}
+          onclick={() => (showMore = !showMore)}
         >
-          {moreThanNumFacetsToShow ? 'Show More' : 'Show Less'}
-          <i class="ml-1 fa-solid {moreThanNumFacetsToShow ? 'fa-angle-down' : 'fa-angle-up'}"></i>
+          {showMore ? 'Show Less' : 'Show More'}
+          <i class="ml-1 fa-solid fa-angle-{showMore ? 'up' : 'down'}"></i>
         </button>
       {/if}
     </div>

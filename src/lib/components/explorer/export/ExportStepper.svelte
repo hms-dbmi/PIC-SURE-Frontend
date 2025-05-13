@@ -330,6 +330,8 @@
     }
     exportLoading = false;
   }
+
+  $inspect(tabSet);
 </script>
 
 <Modal
@@ -504,7 +506,7 @@
             {#if query.query.expectedResultType === 'DATAFRAME'}
               <section class="flex flex-col gap-8">
                 <p class="mt-4">{branding.explorePage.analysisExportText}</p>
-                <Tabs value={tabSet} onValueChange={(e) => (tabSet = e.value)}>
+                <Tabs value={tabSet} onValueChange={(e: { value: string }) => (tabSet = e.value)}>
                   {#snippet list()}
                     <Tabs.Control value="Python">Python</Tabs.Control>
                     <Tabs.Control value="R">R</Tabs.Control>

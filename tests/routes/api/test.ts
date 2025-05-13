@@ -1,6 +1,11 @@
 import { expect } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess } from '../../custom-context';
-import { picsureUser, roles as mockRoles, mockExpiredToken, mockToken } from '../../../tests/mock-data';
+import {
+  picsureUser,
+  roles as mockRoles,
+  mockExpiredToken,
+  mockToken,
+} from '../../../tests/mock-data';
 import type { Branding } from '../../../src/lib/configuration';
 import * as config from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
 //TypeScript is confused by the JSON import so I am fxing it here
@@ -180,7 +185,7 @@ test.describe('API page', () => {
     // Then
     await expect(refreshButton).toHaveText('Refreshed!');
     await expect(refreshButton).toBeDisabled();
-    
+
     const userToken = page.locator('#token');
     await expect(userToken).not.toHaveText(placeHolderDots);
     await expect(userToken).toHaveText(newToken);

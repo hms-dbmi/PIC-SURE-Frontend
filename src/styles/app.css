@@ -414,15 +414,6 @@ nav#page-navigation li .nav-dropdown a:focus {
   font-size: 1.5rem;
 }
 
-.accordion-item button {
-  @apply bg-primary-300;
-  border-radius: var(--radius-container) var(--radius-container) 0 0;
-}
-
-.accordion-item button[aria-expanded='false'] {
-  @apply rounded-container;
-}
-
 #user-token span.badge.expired {
   @apply preset-filled-error-500;
 }

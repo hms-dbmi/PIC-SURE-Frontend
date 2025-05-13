@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { TreeNodeInterface } from '$lib/models/TreeNode';
+  import type { TreeNodeInterface } from '$lib/components/tree/types';
   import TreeNode from './TreeNode.svelte';
 
   const { node }: { node: TreeNodeInterface } = $props();
@@ -19,6 +19,8 @@
   >
     <button
       id="tree-item-btn:{node.name}-{node.value}"
+      data-testid="tree-item-btn:{node.name}-{node.value}"
+      title={!node.isLeaf ? `${node.open ? 'Close' : 'Open'} node` : undefined}
       name={node.name}
       type="button"
       class="m-1 ml-2"
@@ -33,6 +35,7 @@
     </button>
     <input
       id="checkbox:{node.name}-{node.value}"
+      data-testid="checkbox:{node.name}-{node.value}"
       class="checkbox tree-item-checkbox mr-1"
       type="checkbox"
       name={node.name}
