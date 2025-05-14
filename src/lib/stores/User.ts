@@ -15,16 +15,6 @@ export const isTopAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.SUPER);
 });
 
-user.subscribe((user: User) => {
-  if (browser) {
-    clearSessionTokenIfExpired();
-    const userCopy: User = { ...user };
-    // We don't want to save the long term token in local storage
-    userCopy.token = undefined;
-    localStorage.setItem('user', JSON.stringify(userCopy));
-  }
-});
-
 // Create a store that syncs with localStorage
 function createLocalStorageStore(key: string, initialValue: boolean) {
   const store = writable(browser ? !!localStorage.getItem(key) : initialValue);
@@ -41,18 +31,28 @@ function createLocalStorageStore(key: string, initialValue: boolean) {
   return store;
 }
 
+export const tokenStatus: Writable<boolean> = createLocalStorageStore('token', false);
+export const isLoggedIn: Readable<boolean> = derived(tokenStatus, ($tokenStatus) => $tokenStatus);
+
+user.subscribe((user: User) => {
+  if (browser) {
+    clearSessionTokenIfExpired();
+    const userCopy: User = { ...user };
+    // We don't want to save the long term token in local storage
+    userCopy.token = undefined;
+    localStorage.setItem('user', JSON.stringify(userCopy));
+  }
+});
+
 export function setToken(token: string) {
   localStorage.setItem('token', token);
-  tokenStatus.set(!!tokenStatus);
+  tokenStatus.set(true);
 }
 
 export function removeToken() {
   localStorage.removeItem('token');
   tokenStatus.set(false);
 }
-
-export const tokenStatus: Writable<boolean> = createLocalStorageStore('token', false);
-export const isLoggedIn: Readable<boolean> = derived(tokenStatus, ($tokenStatus) => $tokenStatus);
 
 function restoreUser() {
   if (browser && localStorage.getItem('user')) {
