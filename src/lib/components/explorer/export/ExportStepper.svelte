@@ -338,6 +338,7 @@
 <Modal
   bind:open={modalOpen}
   title={branding.explorePage.confirmDownloadTitle || 'Are you sure you want to download data?'}
+  width="w-1/2"
   withDefault
   confirmText="Download"
   cancelText="Cancel"
