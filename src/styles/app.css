@@ -279,11 +279,6 @@ ul.primary-list li::marker {
   vertical-align: middle;
 }
 
-#nav-logo {
-  width: 100%;
-  height: auto;
-}
-
 header .app-bar {
   border-bottom: solid var(--color-surface-400) 2px;
 }

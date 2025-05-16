@@ -8,7 +8,7 @@
     class?: string;
   }
 
-  const { height, width, unit = 'em', class: className = '' }: Props = $props();
+  const { height, width, unit = 'rem', class: className = '' }: Props = $props();
 
   const src = branding.logo.src;
   const alt = branding.logo.alt;
@@ -26,26 +26,23 @@
             width: (src ? 'auto' : (((height || 0) / 180) * 1010).toFixed(2)) + unit,
             height: height + unit,
           };
+
+  const sizeStyle = [
+    imgSize.width && 'width:' + imgSize.width,
+    imgSize.height && 'height:' + imgSize.height,
+  ]
+    .filter((x) => x)
+    .join(';');
 </script>
 
 {#if src}
-  <img
-    {src}
-    {alt}
-    id="nav-logo"
-    data-testid="nav-logo"
-    class={className}
-    height={imgSize.height}
-    width={imgSize.width}
-  />
+  <img {src} {alt} id="nav-logo" data-testid="nav-logo" class={className} style={sizeStyle} />
 {:else}
   <svg
     data-testid="nav-logo"
     class={className}
     id="nav-logo"
-    style={[imgSize.width && 'width:' + imgSize.width, imgSize.height && 'height:' + imgSize.height]
-      .filter((x) => x)
-      .join(';')}
+    style={sizeStyle}
     version="1.1"
     viewBox="0 0 1010 180"
     xmlns="http://www.w3.org/2000/svg"
