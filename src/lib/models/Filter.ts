@@ -2,8 +2,15 @@ import { v4 as uuidv4 } from 'uuid';
 
 import type { SearchResult } from './Search';
 import { GenotypeMap, type SNP } from './GenomeFilter';
-
-type FilterType = 'Categorical' | 'numeric' | 'required' | 'datatable' | 'genomic' | 'snp' | 'auto';
+type FilterType =
+  | 'Categorical'
+  | 'AnyRecordOf'
+  | 'numeric'
+  | 'required'
+  | 'datatable'
+  | 'genomic'
+  | 'snp'
+  | 'auto';
 type DisplayType = 'any' | 'anyRecordOf' | 'restrict' | 'lessThan' | 'greaterThan' | 'between';
 
 export interface FilterInterface {
@@ -45,11 +52,17 @@ export interface SnpFilterInterface extends FilterInterface {
   snpValues: SNP[];
 }
 
+export interface AnyRecordOfFilterInterface extends FilterInterface {
+  filterType: 'AnyRecordOf';
+  concepts: string[];
+}
+
 export type Filter =
   | CategoricalFilterInterface
   | NumericFilterInterface
   | GenomicFilterInterface
-  | SnpFilterInterface;
+  | SnpFilterInterface
+  | AnyRecordOfFilterInterface;
 
 export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
   const filter: Filter = {
@@ -83,14 +96,22 @@ export function createRequiredFilter(searchResult: SearchResult) {
   return filter;
 }
 
-export function createAnyRecordOfFilter(searchResult: SearchResult, values?: string[]) {
-  const filter: Filter = {
+function getAllConceptPaths(results: SearchResult[]): string[] {
+  return results.flatMap((result) => [
+    result.conceptPath,
+    ...(result.children || []).flatMap((child) => getAllConceptPaths([child])),
+  ]);
+}
+
+export function createAnyRecordOfFilter(searchResult: SearchResult, treeResult: SearchResult) {
+  const conceptPaths = getAllConceptPaths(treeResult?.children || []);
+  const filter: AnyRecordOfFilterInterface = {
     uuid: uuidv4(),
     id: searchResult.conceptPath,
-    filterType: 'Categorical',
+    concepts: conceptPaths,
+    filterType: 'AnyRecordOf',
     displayType: 'anyRecordOf',
     searchResult: searchResult,
-    categoryValues: values || [],
     variableName: searchResult.display || searchResult.name,
     description: searchResult.description,
     allowFiltering: searchResult.allowFiltering,

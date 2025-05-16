@@ -18,6 +18,7 @@ export interface QueryInterface {
   numericFilters: object;
   requiredFields: string[];
   anyRecordOf: string[];
+  anyRecordOfMulti: string[][];
   crossCountFields?: string[];
   variantInfoFilters: VariantInfoFilters[];
   expectedResultType: ExpectedResultType | ExpectedResultType[];
@@ -43,6 +44,7 @@ export class Query implements QueryInterface {
   numericFilters: object;
   requiredFields: string[];
   anyRecordOf: string[];
+  anyRecordOfMulti: string[][];
   fields: string[];
   crossCountFields?: string[];
   variantInfoFilters: VariantInfoFilters[];
@@ -53,6 +55,7 @@ export class Query implements QueryInterface {
     this.numericFilters = newQuery?.numericFilters || {};
     this.requiredFields = newQuery?.requiredFields || [];
     this.anyRecordOf = newQuery?.anyRecordOf || [];
+    this.anyRecordOfMulti = newQuery?.anyRecordOfMulti || [];
     this.crossCountFields = newQuery?.crossCountFields || undefined;
     this.fields = newQuery?.fields || [];
     const variantInfoFilter = newQuery?.variantInfoFilters?.[0] || {
@@ -88,6 +91,10 @@ export class Query implements QueryInterface {
       Variant_consequence_calculated: filter.Variant_consequence_calculated,
       Variant_frequency_as_text: filter.Variant_frequency_as_text,
     };
+  }
+
+  addAnyRecordOfMulti(field: Array<string>) {
+    this.anyRecordOfMulti.push(field);
   }
 
   setCrossCountFields(fields: string[]) {

@@ -14,8 +14,8 @@
   import { getConceptDetails } from '$lib/stores/Dictionary';
   import { panelOpen } from '$lib/stores/SidePanel';
 
-  import Loading from '../Loading.svelte';
-  import OptionsSelectionList from '../OptionsSelectionList.svelte';
+  import Loading from '$lib/components/Loading.svelte';
+  import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
 
   interface Props {
     data?: SearchResult;
