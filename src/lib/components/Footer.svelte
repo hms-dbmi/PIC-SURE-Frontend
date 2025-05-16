@@ -61,7 +61,7 @@
           height="h-full"
           withDefault={false}
           footerButtons={false}
-          triggerBase="hover:underline text-xs"
+          triggerBase="hover:underline text-[0.74rem]"
         >
           {#snippet trigger()}Terms of Service{/snippet}
           <div id="terms-of-service"><Terms /></div>
@@ -76,8 +76,10 @@
     {/if}
     {#each branding?.footer?.links as link}
       <li>
-        <a class="hover:underline text-xs" target={link.newTab ? '_blank' : '_self'} href={link.url}
-          >{link.title}</a
+        <a
+          class="hover:underline text-[0.74rem]"
+          target={link.newTab ? '_blank' : '_self'}
+          href={link.url}>{link.title}</a
         >
       </li>
     {/each}
