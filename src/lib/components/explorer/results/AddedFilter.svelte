@@ -43,6 +43,8 @@
       } else {
         return filter.description;
       }
+    } else if (filter.filterType === 'AnyRecordOf') {
+      return 'Restricting to children of the selected value.';
     } else if (filter.filterType === 'numeric') {
       switch (filter.displayType) {
         case 'any':
