@@ -152,7 +152,7 @@
         <i class="fa-solid fa-times-circle"></i>
         <span class="sr-only">Remove Filter</span>
       </button>
-      {#if anyRecordOfFilter}
+      {#if !anyRecordOfFilter}
         <button
           type="button"
           title="See details"
