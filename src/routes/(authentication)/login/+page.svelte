@@ -48,7 +48,7 @@
 >
   <div id="title-box" class="flex flex-col items-center text-center mb-8 max-w-3/4">
     <h1 data-testid="login-title" class="mb-6 w-full flex gap-2 items-center justify-center">
-      <Logo class="flex-none" height={2} />
+      <Logo class="flex-none" height={7.5} />
     </h1>
     <p data-testid="login-description" class="text-2xl">{description}</p>
   </div>
@@ -62,7 +62,7 @@
         {/if}
       </header>
       <div class="flex flex-col items-center justify-center">
-        <div id="main-logins" class="grid grid-cols-1 gap-4 w-full">
+        <div id="main-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
           {#if providers?.length === 0}
             <ErrorAlert>
               No main authentication providers are registered. Please add them to your
@@ -88,7 +88,7 @@
                 provider={selectedProvider}
                 {redirectTo}
                 helpText={selectedProvider.helptext}
-                class="btn preset-outline-primary m-1 mt-2 w-full"
+                class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 w-full"
               />
             {/if}
           {:else}
@@ -98,7 +98,7 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn preset-outline-primary text-primary-500 w-full"
+                class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 w-full"
               />
             {/each}
           {/if}
@@ -106,22 +106,24 @@
         {#if features.login.open}
           <a
             href={branding?.login?.openPicsureLink || '/'}
-            class="btn preset-outline-primary hover:preset-filled-primary-500 text-primary-500 m-1 mt-2 w-full mb-1"
+            class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 mb-4 w-full"
             >{openPicsureLinkText}</a
           >
         {/if}
         {#await $page.data?.altProviders}
           <Loading ring />
         {:then altProviders}
-          {#each altProviders as provider}
-            <LoginButton
-              buttonText={provider.description || provider.name}
-              {provider}
-              {redirectTo}
-              helpText={provider.helptext}
-              class="btn preset-outline-tertiary hover:preset-filled-tertiary-500 m-1 w-full last:mb-4"
-            />
-          {/each}
+          <div id="alt-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
+            {#each altProviders as provider}
+              <LoginButton
+                buttonText={provider.description || provider.name}
+                {provider}
+                {redirectTo}
+                helpText={provider.helptext}
+                class="btn preset-outlined-tertiary-500 text-tertiary-500 hover:preset-filled-tertiary-500 w-full"
+              />
+            {/each}
+          </div>
         {/await}
       </div>
     </div>

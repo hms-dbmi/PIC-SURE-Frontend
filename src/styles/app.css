@@ -279,11 +279,6 @@ ul.primary-list li::marker {
   vertical-align: middle;
 }
 
-#nav-logo {
-  width: 100%;
-  height: auto;
-}
-
 header .app-bar {
   border-bottom: solid var(--color-surface-400) 2px;
 }
@@ -291,18 +286,33 @@ header .app-bar {
 #page-footer {
   border-style: solid;
   border-top-width: 1px;
-  @apply bg-primary-100-900 border-surface-400-600;
+  @apply border-surface-400-600;
+}
+
+#sitemap-footer {
+  padding: 0.5em 0 0;
+  margin: 0 auto;
+  text-align: center;
+  padding: 1em 15%;
+  @apply bg-primary-50-950;
+}
+
+#sitemap-footer ul {
+  text-align: left;
+  margin: 0 2em;
 }
 
 #main-footer {
   padding: 0.75rem;
   margin-top: 0;
-  @apply bg-primary-400-600;
+  @apply preset-filled-primary-100-900;
 }
+
 #main-footer ul {
   margin: 0 auto;
   text-align: center;
 }
+
 #main-footer ul li {
   display: inline;
   padding: 0 0.45rem;
