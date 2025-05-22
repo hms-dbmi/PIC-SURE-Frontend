@@ -30,9 +30,11 @@
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = $state(Promise.resolve(0));
   let isOpenAccess = $state($page.url.pathname.includes('/discover'));
   let modalOpen: boolean = $state(false);
+  let currentRequestID = 0;
 
   async function getCount() {
     suffix = '';
+    const requestID = ++currentRequestID;
     let request: QueryRequestInterface = getQueryRequest(
       !isOpenAccess,
       isOpenAccess ? resources.openHPDS : resources.hpds,
@@ -44,6 +46,9 @@
         request.query.setCrossCountFields(concepts);
       }
       const count = await api.post('picsure/query/sync', request);
+      if (requestID !== currentRequestID) {
+        return 0;
+      }
       if (isOpenAccess) {
         let openTotalPatients = String(count['\\_studies_consents\\']);
         if (openTotalPatients.includes(' \u00B1')) {
