@@ -33,6 +33,8 @@
 
   async function getCount() {
     suffix = '';
+    // This line is necessary despite using $state because of potential race conditions during navigation
+    isOpenAccess = $page.url.pathname.includes('/discover');
     let request: QueryRequestInterface = getQueryRequest(
       !isOpenAccess,
       isOpenAccess ? resources.openHPDS : resources.hpds,
