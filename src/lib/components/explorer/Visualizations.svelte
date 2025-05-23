@@ -52,7 +52,7 @@
   onMount(async () => {
     // Plotly cannot be imported normally, and must be pulled into the already rendered page.
     // Instead of loading it in each plot component, I'm passing down it's newPlot method.
-    const Plotly = await import('plotly.js-dist-min');
+    const Plotly = await import('plotly.js-basic-dist-min');
     newPlot = Plotly.newPlot;
     await loadPlotData();
   });

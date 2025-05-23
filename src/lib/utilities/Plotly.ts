@@ -142,7 +142,9 @@ export function createCategoryPlot(inData: CategoricalPlotData): PlotValues {
   ];
 
   const layout: Partial<Layout> = {
-    title: title,
+    title: {
+      text: title,
+    },
     width: inData.chartWidth || 500,
     height: inData.chartHeight || 600,
     hovermode: false,
@@ -150,11 +152,15 @@ export function createCategoryPlot(inData: CategoricalPlotData): PlotValues {
       family: 'Nunito Sans, sans-serif',
     },
     xaxis: {
-      title: inData.xaxisName,
+      title: {
+        text: inData.xaxisName,
+      },
       automargin: true,
     },
     yaxis: {
-      title: inData.yaxisName,
+      title: {
+        text: inData.yaxisName,
+      },
       automargin: true,
     },
     barmode: 'stack',
@@ -243,7 +249,9 @@ export function createContinuousPlot(inData: ContinuousPlotData): PlotValues {
   ];
 
   const layout: Partial<Layout> = {
-    title: title,
+    title: {
+      text: title,
+    },
     width: inData.chartWidth || 500,
     height: inData.chartHeight || 600,
     autosize: false,
@@ -253,11 +261,15 @@ export function createContinuousPlot(inData: ContinuousPlotData): PlotValues {
       family: 'Nunito Sans, sans-serif',
     },
     xaxis: {
-      title: inData.xaxisName,
+      title: {
+        text: inData.xaxisName,
+      },
       automargin: true,
     },
     yaxis: {
-      title: inData.yaxisName,
+      title: {
+        text: inData.yaxisName,
+      },
       automargin: true,
     },
     barmode: 'stack',
