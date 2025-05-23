@@ -13,8 +13,8 @@ import { user } from '$lib/stores/User';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
 
 const DICT_URL = 'picsure/proxy/dictionary-api/';
-const CONCEPT_URL = 'picsure/proxy/dictionary-api/concepts';
-const CONCEPT_DETAIL_URL = 'picsure/proxy/dictionary-api/concepts/detail/';
+const CONCEPT_URL = `${DICT_URL}concepts`;
+const CONCEPT_DETAIL_URL = `${CONCEPT_URL}/detail/`;
 const DATASET_DETAIL_URL = 'picsure/proxy/dictionary-api/dashboard-drawer/';
 
 export type FacetSkeleton = {
@@ -192,4 +192,13 @@ export async function getFacetCategoryCount(isOpenAccess = false, category: stri
 
 export async function getDatasetDetails(datasetId: string) {
   return api.get(`${DATASET_DETAIL_URL}${datasetId}`);
+}
+
+export async function getConceptTree(
+  dataset: string,
+  depth: number,
+  conceptPath: string,
+): Promise<SearchResult> {
+  const url = `${CONCEPT_URL}/tree/${dataset}?depth=${depth}`;
+  return api.post(url, conceptPath);
 }

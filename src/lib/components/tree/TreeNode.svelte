@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { TreeNodeInterface } from '$lib/components/tree/types';
-  import TreeNode from './TreeNode.svelte';
+  import TreeNode from '$lib/components/tree/TreeNode.svelte';
 
   const { node }: { node: TreeNodeInterface } = $props();
 </script>
