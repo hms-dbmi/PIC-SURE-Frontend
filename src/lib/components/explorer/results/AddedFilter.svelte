@@ -104,10 +104,10 @@
         {filter.variableName}
       </div>
     {:else}
-      <Modal bind:open={anyRecordOfModal} title="View Variables in Filter" withDefault={false}>
+      <Modal bind:open={anyRecordOfModal} title="View Variables in Filter" data-testid={`any-record-of-filter-modal-${filter.id}`} withDefault={false}>
         {#snippet trigger()}
-          <div class="p-4">
-            {(filter as AnyRecordOfFilterInterface)?.concepts?.length} variable(s) in {filter.variableName}
+          <div class="text-left">
+            {(filter as AnyRecordOfFilterInterface)?.concepts?.length} variable(s) in {filter.searchResult?.display || filter.searchResult?.name || filter.variableName}
             category
           </div>
         {/snippet}

@@ -58,12 +58,12 @@
     let filter: Filter;
     const searchResult: SearchResult = {
       conceptPath: selectedNode,
-      display: `Any Record of ${selectedNode}`,
+      display: selectedNode.split('\\').filter(Boolean).pop() || selectedNode,
       name: selectedNode,
       allowFiltering: true,
       dataset: data.dataset,
       studyAcronym: data.studyAcronym,
-      description: data.description,
+      description: `Any Record of ${selectedNode}`,
       meta: data.meta,
       study: data.study,
       table: data.table,
