@@ -143,6 +143,7 @@ export const features: Indexable = {
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
   useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
   discover: import.meta.env?.VITE_DISCOVER === 'true',
+  explorer: import.meta.env?.VITE_EXPLORER == 'true', // Opens explorer to logged in users
   discoverFeautures: {
     enableTour: import.meta.env?.EXPLORER_TOUR !== 'false', // default true
     openTour: import.meta.env?.VITE_OPEN_TOUR_NAME ?? 'BDC-Open',
