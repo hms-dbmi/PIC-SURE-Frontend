@@ -6,12 +6,12 @@
 
 <div>
   <header>
-    <h2>
+    <h1 class="text-2xl font-bold">
       Variables in {filter.variableName} category
-    </h2>
-    <h3>
+    </h1>
+    <h2 class="text-lg font-normal">
       {`${(filter as AnyRecordOfFilterInterface)?.concepts?.length} variable(s) in ${filter.variableName} category`}
-    </h3>
+    </h2>
   </header>
   {#if filter.filterType === 'AnyRecordOf'}
     {#each filter.concepts as concept}
