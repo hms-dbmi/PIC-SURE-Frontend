@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { SNP } from '$lib/models/GenomeFilter';
   import { getSNPCounts } from '$lib/stores/SNPFilter';
+  import { branding } from '$lib/configuration';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
@@ -15,6 +16,7 @@
     onvalid?: (snp: SNP) => void;
   } = $props();
 
+  const genomeBuild = branding.genomic?.defaultGenomeBuild || 'GRCh38';
   const validSnpPattern = /^\w+,\d+,(A|T|C|G)+,(A|T|C|G)+$/;
   let searchElement: HTMLInputElement;
   let warn: boolean = $state(false);
@@ -62,8 +64,16 @@
 </script>
 
 <p class="text-center">
-  Enter the following information into the search bar: chromosome, position, reference allele,
-  variant allele.
+  Enter the following information into the search bar using genome build {genomeBuild}: chromosome,
+  position, reference allele, variant allele.
+</p>
+<p class="text-center">
+  If you have the rsID of the variant, you can use the <a
+    href="https://www.ncbi.nlm.nih.gov/snp/"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="anchor">dbSNP database</a
+  > to find the genomic coordinates.
 </p>
 <p class="text-center font-bold my-6"><em class="font-bold">Example:</em> chr5,148481541,T,A</p>
 <div class="flex gap-2 mx-auto my-8 w-1/2">
