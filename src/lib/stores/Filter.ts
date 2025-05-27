@@ -8,7 +8,7 @@ import { user } from './User';
 export const filters: Writable<Filter[]> = writable(restoreFilters());
 export const totalParticipants: Writable<number | string> = writable(0);
 export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
-  $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic') : false,
+  $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic' || filter.filterType === 'snp') : false,
 );
 export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => !filter.allowFiltering) : false,
