@@ -1,6 +1,6 @@
 import { expect, type Route, type BrowserContext, type Page } from '@playwright/test';
 import { mockApiSuccess, test } from '../../../custom-context';
-import { geneValues, variantDataAggregate, variantDataFull } from '../../../mock-data';
+import { geneValues, variantDataAggregate, variantDataFull, variantDataSNP} from '../../../mock-data';
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
@@ -137,5 +137,69 @@ test.describe('variant explorer', () => {
     const toast = page.getByTestId('toast-root');
     await expect(toast).toBeVisible();
     await expect(toast).toHaveAttribute('data-type', 'error');
+  });
+  test.describe('SNP filter applied', () => {
+    test.beforeEach(async ({ page }) => {
+      // Add genomic filter steps
+      await page.goto('/explorer');
+      await mockSyncAPI(page, successResults);
+      await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
+      // open the sidebar to reduce locator time on result panel items during testing
+      await page.locator('#results-panel-toggle').click();
+      await page.getByTestId('genomic-filter-btn').click();
+      await page.getByTestId('snp-option').click();
+      await page.getByTestId('snp-search-box').fill('chr5,148481541,T,A');
+      await page.getByTestId('snp-search-btn').click();
+      await page.getByTestId('snp-constraint').selectOption('Heterozygous');
+      await page.getByTestId('snp-save-btn').click();
+      await page.getByTestId('add-filter-btn').click();
+    });
+    test('Adds variant explorer button to SNP results', async ({ page }) => {
+      // Then
+      await expect(page.getByTestId('variant-explorer-btn')).toBeEnabled();
+    });
+    test('Displays variant count', async ({ page }) => {
+      // Given
+      await mockSyncAPI(page, {
+        ...successResults,
+        VARIANT_COUNT_FOR_QUERY: { pass: true, data: { count: 1, message: 'Query ran successfully' } },
+        AGGREGATE_VCF_EXCERPT: { pass: true, data: variantDataSNP },
+      });
+
+      // When
+      await page.getByTestId('variant-explorer-btn').click();
+
+      // Then
+      await expect(page).toHaveURL('/explorer/variant');
+      await expect(page.getByTestId('variant-count')).toContainText('1');
+    });
+    test('Loads variant data table', async ({ page }) => {
+      // When
+      await mockSyncAPI(page, {
+        ...successResults,
+        AGGREGATE_VCF_EXCERPT: { pass: true, data: variantDataSNP },
+      });
+
+      await page.getByTestId('variant-explorer-btn').click();
+
+      // Then
+      await expect(page).toHaveURL('/explorer/variant');
+      await expect(page.getByTestId('variant-explorer-table')).toBeVisible();
+    });
+    test('Can download variant data', async ({ page }) => {
+      // Given
+      await mockSyncAPI(page, {
+        ...successResults,
+        AGGREGATE_VCF_EXCERPT: { pass: true, data: variantDataSNP },
+      });
+
+      await page.getByTestId('variant-explorer-btn').click();
+
+      // When
+      const [download] = await Promise.all([
+        page.waitForEvent('download'),
+        page.getByTestId('variant-download-btn').click(),
+      ]);
+    });
   });
 });
