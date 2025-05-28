@@ -4,6 +4,7 @@ import { type Role, mapRole } from '$lib/models/Role';
 import * as api from '$lib/api';
 
 const ROLE_PATH = 'psama/role';
+const MANUAL_ROLE_PATH = 'psama/studyAccess';
 
 const loaded = writable(false);
 export const roles: Writable<Role[]> = writable([]);
@@ -72,6 +73,18 @@ export async function deleteRole(uuid: string) {
   }
 }
 
+export async function addManualRole(studyId: string) {
+  const res = await api.post(MANUAL_ROLE_PATH, {
+    studyId
+  });
+  if (res.status !== 200) {
+    throw new Error('Failed to add manual role');
+  }
+  const newRole: Role = mapRole(res.content[0]);
+  const store: Role[] = get(roles);
+  store.push(newRole);
+  return newRole;
+}
 export default {
   subscribe: roles.subscribe,
   roles,
