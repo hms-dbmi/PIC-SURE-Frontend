@@ -1,7 +1,6 @@
 <script lang="ts">
   import { branding } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
-  import Loading from '$lib/components/Loading.svelte';
   import { isAdmin } from '$lib/stores/User';
   import { toaster } from '$lib/toaster';
   import { addManualRole } from '$lib/stores/Roles';
@@ -11,7 +10,6 @@
   let isSubmitting = $state(false);
 
   $effect(() => {
-    // Clear form after successful submission
     if (!isSubmitting) {
       studyId = '';
       consentCode = '';
@@ -23,10 +21,10 @@
     if (isSubmitting) return;
     
     isSubmitting = true;
-    let studyToSend = !consentCode ? studyId : studyId + "." + consentCode;
+    let studyToSend = !consentCode ? studyId : studyId + consentCode;
     const encodedStudyId = encodeURI(studyToSend);
     
-    if (encodeURI(studyId) !== studyId) {
+    if (encodedStudyId !== studyId) {
       toaster.error({
         title: 'Error: study-identifier contains invalid characters',
       });
@@ -60,7 +58,7 @@
   <form onsubmit={createRole}>
     <fieldset data-testid="manual-role-form" class="grid gap-4 my-3" disabled={!$isAdmin || isSubmitting}>
       <label class="label required">
-        <span>Study with Consent Code (e.g. phs001514.c1):</span>
+        <span>Study with Consent Code (e.g. phs001514):</span>
         <input 
           type="text" 
           bind:value={studyId} 
@@ -82,11 +80,11 @@
           minlength="1" 
           maxlength="255"
           pattern="(\.c\d+)?"
-          title="Consent code must be in format .c followed by numbers (e.g. .c1, .c23) or empty"
+          title="Consent code must be empty or a .c followed by numbers (e.g. .c1, .c23)"
         />
       </label>
       <button 
-        class="btn btn-primary" 
+        class="btn preset-filled-primary-500" 
         type="submit"
         disabled={isSubmitting}
       >
