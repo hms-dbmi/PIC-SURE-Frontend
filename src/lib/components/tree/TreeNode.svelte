@@ -47,7 +47,7 @@
     />
     <label
       for="{node.isLeaf ? 'checkbox:' : 'tree-item-btn:'}{node.name}-{node.value}"
-      class="w-full">{node.name}</label
+      class="w-full">{node.value}</label
     >
   </summary>
   <div class="tree-item-children ml-4" data-testid="tree-item-children:{node.name}" role="group">
