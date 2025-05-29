@@ -3,7 +3,6 @@
   import TreeNode from '$lib/components/tree/TreeNode.svelte';
 
   const { node }: { node: TreeNodeInterface } = $props();
-  console.log(node);
 </script>
 
 <details
