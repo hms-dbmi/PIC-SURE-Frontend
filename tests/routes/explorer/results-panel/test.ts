@@ -219,13 +219,17 @@ test.describe('Results Panel', () => {
       await mockApiSuccess(page, facetResultPath, facetsResponse);
       await mockApiSuccess(page, searchResultPath, mockData);
       await mockApiSuccess(page, countResultPath, '9999');
-      await mockApiSuccess(page, `${conceptTreePath}${mockData.content[0].dataset}?depth=100`, mockDataWithChildren);
+      await mockApiSuccess(
+        page,
+        `${conceptTreePath}${mockData.content[0].dataset}?depth=100`,
+        mockDataWithChildren,
+      );
 
       await page.goto('/explorer?search=somedata');
-  
+
       const tableBody = page.locator('tbody');
       await expect(tableBody).toBeVisible();
-  
+
       const firstRow = tableBody.locator('tr').nth(0);
       const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
       await hierarchyButton.click();
@@ -235,24 +239,34 @@ test.describe('Results Panel', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
     });
-    test('Adding an any record of filter adds the filter to the results panel', async ({ page }) => {
+    test('Adding an any record of filter adds the filter to the results panel', async ({
+      page,
+    }) => {
       await expect(page.locator('#results-panel')).toBeVisible();
       await expect(page.getByTestId(/^any-record-of-filter-modal-.*$/)).toBeVisible();
     });
-    test('Adding an any record of filter adds the correct number of variables to the filter', async ({ page }) => {
+    test('Adding an any record of filter adds the correct number of variables to the filter', async ({
+      page,
+    }) => {
       await expect(page.locator('#results-panel')).toBeVisible();
-      await expect(page.getByTestId(/^any-record-of-filter-modal-.*$/)).toHaveText(`${mockDataWithChildren.children.length} variable(s) in disease category`);
+      await expect(page.getByTestId(/^any-record-of-filter-modal-.*$/)).toHaveText(
+        `${mockDataWithChildren.children.length} variable(s) in disease category`,
+      );
     });
     test('Clicking the Any Record of filter button opens the modal', async ({ page }) => {
       const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
       await addedFilter.click();
       await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
     });
-    test('Clicking the Any Record of filter modal has the correct number of variables', async ({ page }) => {
+    test('Clicking the Any Record of filter modal has the correct number of variables', async ({
+      page,
+    }) => {
       const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
       await addedFilter.click();
       await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
-      await expect(page.getByTestId('any-record-of-filter-modal').locator('header').locator('h1')).toHaveText(`${mockDataWithChildren.children.length} variable(s) in disease category`);
+      await expect(
+        page.getByTestId('any-record-of-filter-modal').locator('header').locator('h1'),
+      ).toHaveText(`${mockDataWithChildren.children.length} variable(s) in disease category`);
     });
     test('Clicking the Any Record of filter modal has the correct variables', async ({ page }) => {
       const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
@@ -269,5 +283,5 @@ test.describe('Results Panel', () => {
       await page.getByTestId('modal-close-button').click();
       await expect(page.getByTestId('any-record-of-filter-modal')).not.toBeVisible();
     });
-  })
+  });
 });
