@@ -21,7 +21,7 @@
     if (isSubmitting) return;
     
     isSubmitting = true;
-    let studyToSend = !consentCode ? studyId : studyId + consentCode;
+    let studyToSend = !consentCode ? studyId : studyId + '.' + consentCode;
     const encodedStudyId = encodeURI(studyToSend);
     
     if (encodedStudyId !== studyToSend) {
@@ -34,9 +34,9 @@
 
     try {
       const newRole = await addManualRole(encodedStudyId);
-      if (newRole) {
+      if (newRole.status === 200) {
         toaster.success({
-          title: `Role "${newRole.name}" added successfully`,
+          title: `Role added successfully`,
         });
       }
     } catch (error) {
@@ -55,7 +55,7 @@
 </svelte:head>
 
 <Content title="Manual Role">
-  <form onsubmit={createRole}>
+  <form onsubmit={createRole} class="flex flex-col items-center m-8">
     <fieldset data-testid="manual-role-form" class="grid gap-4 my-3" disabled={!$isAdmin || isSubmitting}>
       <label class="label required">
         <span>Study with Consent Code (e.g. phs001514):</span>
@@ -71,25 +71,26 @@
         />
       </label>
       <label class="label">
-        <span>Consent Code:</span>
+        <span>Consent Code (optional, .c followed by numbers):</span>
         <input 
           type="text" 
           bind:value={consentCode} 
           class="input" 
-          required 
           minlength="1" 
           maxlength="255"
-          pattern="(\.c\d+)?"
-          title="Consent code must be empty or a .c followed by numbers (e.g. .c1, .c23)"
+          pattern="(\c\d+)?"
+          title="Consent code must be empty or a c followed by numbers (e.g. c1, c23)"
         />
       </label>
-      <button 
-        class="btn preset-filled-primary-500" 
-        type="submit"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? 'Adding Role...' : 'Add Role'}
-      </button>
+      <div class="flex flex-row justify-center"> 
+        <button 
+          class="btn preset-filled-primary-500 max-w-fit" 
+          type="submit"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Adding Role...' : 'Add Role'}
+        </button>
+      </div>
     </fieldset>
   </form>
 </Content>

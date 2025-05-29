@@ -78,10 +78,7 @@ export async function addManualRole(studyId: string) {
   if (res.status !== 200) {
     throw new Error('Failed to add manual role');
   }
-  const newRole: Role = mapRole(res.content[0]);
-  const store: Role[] = get(roles);
-  store.push(newRole);
-  return newRole;
+  return res;
 }
 export default {
   subscribe: roles.subscribe,
