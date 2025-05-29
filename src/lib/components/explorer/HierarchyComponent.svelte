@@ -14,7 +14,7 @@
   }
 
   const ENSURE_MAX_DEPTH = 100;
-  let { data = {} as SearchResult }: Props = $props();
+  let { data = {} as SearchResult, onclose = () => {} }: Props = $props();
   let conceptNodes = $state(
     data.conceptPath.split('\\').reduce((acc, node, index, array) => {
       if (index === 0 && node === '') return acc;
@@ -58,11 +58,13 @@
     let filter: Filter;
     const searchResult: SearchResult = {
       conceptPath: selectedNode,
+      display: selectedNode.split('\\').filter(Boolean).pop() || selectedNode,
       display: `Any Record of ${selectedNode}`,
       name: selectedNode,
       allowFiltering: true,
       dataset: data.dataset,
       studyAcronym: data.studyAcronym,
+      description: `Any Record of ${selectedNode}`,
       description: data.description,
       meta: data.meta,
       study: data.study,

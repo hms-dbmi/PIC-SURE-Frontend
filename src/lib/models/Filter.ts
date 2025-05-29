@@ -112,7 +112,7 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, treeResult: 
     filterType: 'AnyRecordOf',
     displayType: 'anyRecordOf',
     searchResult: searchResult,
-    variableName: searchResult.display || searchResult.name,
+    variableName: searchResult.name || searchResult.display || searchResult.conceptPath,
     description: searchResult.description,
     allowFiltering: searchResult.allowFiltering,
     dataset: searchResult.dataset,

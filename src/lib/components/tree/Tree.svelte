@@ -6,10 +6,12 @@
     nodes = [],
     onselect = () => {},
     onunselect = () => {},
+    fullWidth = false,
   }: {
     nodes: NodeInterface[];
     onselect?: (value: string) => void;
     onunselect?: (value: string) => void;
+    fullWidth: boolean;
   } = $props();
 
   class TreeNode implements TreeNodeInterface {
@@ -103,7 +105,7 @@
   let treeNodes: TreeNode[] = $state(nodes.map(mapNodeToTree));
 </script>
 
-<div class="overflow-auto h-[350.75px]" role="tree">
+<div class="overflow-auto h-[350.75px] {fullWidth ? 'w-full' : ''}">
   {#each treeNodes as treeNode}
     <TreeNodeComponent node={treeNode} />
   {/each}

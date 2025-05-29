@@ -5,19 +5,22 @@
   import { goto } from '$app/navigation';
 
   import { Option } from '$lib/models/GenomeFilter';
-  import type { Filter } from '$lib/models/Filter';
+  import type { Filter, AnyRecordOfFilterInterface } from '$lib/models/Filter';
   import { removeFilter, activeFilter, activeSearch } from '$lib/stores/Filter';
   import { populateFromGeneFilter } from '$lib/stores/GeneFilter';
   import { populateFromSNPFilter } from '$lib/stores/SNPFilter';
 
   import Modal from '$lib/components/Modal.svelte';
   import AddFilter from '$lib/components/explorer/AddFilter.svelte';
+  import ViewAnyRecordOfFilter from '$lib/components/explorer/ViewAnyRecordOfFilter.svelte';
 
   let { filter }: { filter: Filter } = $props();
   let open = $state(false);
   let carot = $state('fa-caret-up');
   const genomicFilter = $derived(['genomic', 'snp'].includes(filter.filterType));
+  const anyRecordOfFilter = $derived(filter.filterType === 'AnyRecordOf');
   let filterModal: boolean = $state(false);
+  let anyRecordOfModal: boolean = $state(false);
 
   function editFilter() {
     if (filter.filterType === 'genomic') {
@@ -90,15 +93,35 @@
   data-testid="added-filter-{filter.id}"
 >
   <header class="card-header p-1 flex">
-    <div
-      class="flex-auto variable"
-      tabindex="0"
-      role="button"
-      onclick={toggleCardBody}
-      onkeydown={(e: KeyboardEvent) => (e.key === 'Enter' || e.key === ' ') && toggleCardBody(e)}
-    >
-      {filter.variableName}
-    </div>
+    {#if !anyRecordOfFilter}
+      <div
+        class="flex-auto variable"
+        tabindex="0"
+        role="button"
+        onclick={toggleCardBody}
+        onkeydown={(e: KeyboardEvent) => (e.key === 'Enter' || e.key === ' ') && toggleCardBody(e)}
+      >
+        {filter.variableName}
+      </div>
+    {:else}
+      <Modal
+        bind:open={anyRecordOfModal}
+        title="View Variables in Filter"
+        data-testid={`any-record-of-filter-modal-${filter.id}`}
+        withDefault={false}
+      >
+        {#snippet trigger()}
+          <div class="text-left">
+            {(filter as AnyRecordOfFilterInterface)?.concepts?.length} variable(s) in {filter
+              .searchResult?.display ||
+              filter.searchResult?.name ||
+              filter.variableName}
+            category
+          </div>
+        {/snippet}
+        <ViewAnyRecordOfFilter {filter} />
+      </Modal>
+    {/if}
     <div class="actions">
       {#if genomicFilter}
         <button
@@ -110,7 +133,7 @@
           <i class="fa-solid fa-pen-to-square"></i>
           <span class="sr-only">Edit Filter</span>
         </button>
-      {:else}
+      {:else if !anyRecordOfFilter}
         <Modal
           bind:open={filterModal}
           title="Edit Filter"
@@ -137,15 +160,17 @@
         <i class="fa-solid fa-times-circle"></i>
         <span class="sr-only">Remove Filter</span>
       </button>
-      <button
-        type="button"
-        title="See details"
-        class="bg-initial text-black-500 hover:text-primary-600"
-        onclick={toggleCardBody}
-      >
-        <i class="fa-solid {carot}"></i>
-        <span class="sr-only">See details</span>
-      </button>
+      {#if !anyRecordOfFilter}
+        <button
+          type="button"
+          title="See details"
+          class="bg-initial text-black-500 hover:text-primary-600"
+          onclick={toggleCardBody}
+        >
+          <i class="fa-solid {carot}"></i>
+          <span class="sr-only">See details</span>
+        </button>
+      {/if}
     </div>
   </header>
   {#if open}
