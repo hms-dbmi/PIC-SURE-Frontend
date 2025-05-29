@@ -594,7 +594,6 @@ test.describe('Explorer for authenticated users', () => {
         const firstRow = tableBody.locator('tr').first();
         const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
         await hierarchyButton.click();
-
       });
       test('Hierarchy component shows when action button clicked', async ({ page }) => {
         // When
@@ -602,7 +601,9 @@ test.describe('Explorer for authenticated users', () => {
         // Then
         await expect(page.getByTestId('hierarchy-component')).toBeVisible();
       });
-      test('Hierarchy component is not visible when action button is clicked again', async ({ page }) => {
+      test('Hierarchy component is not visible when action button is clicked again', async ({
+        page,
+      }) => {
         // When
         await expect(page.getByTestId('hierarchy-component')).toBeVisible();
         const tableBody = page.locator('tbody');
@@ -619,7 +620,7 @@ test.describe('Explorer for authenticated users', () => {
         const rowData = mockData.content[0];
         const hierarchyComponent = page.getByTestId('hierarchy-component');
         const treeItems = await hierarchyComponent.locator('details').all();
-        const conceptPathItems = rowData.conceptPath.split('\\').filter(item => item !== '');
+        const conceptPathItems = rowData.conceptPath.split('\\').filter((item) => item !== '');
         for (let i = 0; i < conceptPathItems.length; i++) {
           const treeItem = treeItems[i];
           const treeItemText = await treeItem.locator('> summary label').textContent();
@@ -631,9 +632,13 @@ test.describe('Explorer for authenticated users', () => {
         await expect(page.getByTestId('hierarchy-component')).toBeVisible();
         await expect(page.getByTestId('tree-item:SOMEDATA-\\SOMEDATA\\')).toBeVisible();
       });
-      test('Hierarchy component\'s last item is the only one selected', async ({ page }) => {
+      test("Hierarchy component's last item is the only one selected", async ({ page }) => {
         // Then
-        let allRadioButtons = await page.locator('details').locator('summary').locator('input').all();
+        const allRadioButtons = await page
+          .locator('details')
+          .locator('summary')
+          .locator('input')
+          .all();
         for (let i = 0; i < allRadioButtons.length - 1; i++) {
           if (i === allRadioButtons.length) {
             await expect(allRadioButtons[i]).toBeChecked();
@@ -642,9 +647,13 @@ test.describe('Explorer for authenticated users', () => {
           }
         }
       });
-      test('Hierarchy component\'s last radio buttons are selectable', async ({ page }) => {
+      test("Hierarchy component's last radio buttons are selectable", async ({ page }) => {
         // Then
-        let allRadioButtons = await page.locator('details').locator('summary').locator('input').all();
+        const allRadioButtons = await page
+          .locator('details')
+          .locator('summary')
+          .locator('input')
+          .all();
         for (let i = 0; i < allRadioButtons.length; i++) {
           await allRadioButtons[i].click();
           await expect(allRadioButtons[i]).toBeChecked();
