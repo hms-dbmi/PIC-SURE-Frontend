@@ -59,11 +59,13 @@
     const searchResult: SearchResult = {
       conceptPath: selectedNode,
       display: selectedNode.split('\\').filter(Boolean).pop() || selectedNode,
+      display: `Any Record of ${selectedNode}`,
       name: selectedNode,
       allowFiltering: true,
       dataset: data.dataset,
       studyAcronym: data.studyAcronym,
       description: `Any Record of ${selectedNode}`,
+      description: data.description,
       meta: data.meta,
       study: data.study,
       table: data.table,

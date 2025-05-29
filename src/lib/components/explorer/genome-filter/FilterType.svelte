@@ -27,7 +27,7 @@
   {#if features.enableSNPQuery}
     <CardButton
       data-testid="snp-option"
-      title="Specific SNPs"
+      title="Specific Variants"
       subtitle="Ex: chr5,148481541,T,A"
       size="other"
       class="w-1/4 h-20 min-h-20"

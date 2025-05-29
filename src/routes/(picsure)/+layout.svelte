@@ -19,11 +19,10 @@
   import Footer from '$lib/components/Footer.svelte';
   import Drawer from '$lib/components/Drawer.svelte';
   import DashboardDrawer from '$lib/components/dashboard/DashboardDrawer.svelte';
-  import Modal from '$lib/components/Modal.svelte';
   import FilterWarning from '$lib/components/explorer/FilterWarning.svelte';
 
   let { children }: { children?: Snippet } = $props();
-  let modalOpen: boolean = $state(false);
+  let filterWarningModal: boolean = $state(false);
 
   onMount(() => {
     document.body.classList.add('started');
@@ -45,15 +44,13 @@
       else if (notAuthorized) $filterWarning = 'notAuthorized';
 
       cancel();
-      modalOpen = true;
+      filterWarningModal = true;
     }
   });
 </script>
 
 <Toaster {toaster} />
-<Modal data-testid="sendfilter-warning" open={modalOpen} withDefault={false}>
-  <FilterWarning />
-</Modal>
+<FilterWarning bind:open={filterWarningModal} />
 <Drawer position="right" width="w-1/2">
   <DashboardDrawer />
 </Drawer>

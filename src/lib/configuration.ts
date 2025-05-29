@@ -35,6 +35,9 @@ export interface Branding {
   help: HelpConfig;
   privacyPolicy: PrivacyConfig;
   analysisConfig: AnalysisConfig;
+  genomic?: {
+    defaultGenomeBuild: string;
+  };
 }
 
 export const branding: Branding = {
@@ -78,6 +81,7 @@ export const initializeBranding = () => {
   branding.sitemap = configJson.sitemap as SiteMapConfig[];
   branding.privacyPolicy = configJson.privacyPolicy;
   branding.analysisConfig = configJson.analysisPage;
+  branding.genomic = configJson.genomic;
 };
 
 export const routes: Route[] = [
