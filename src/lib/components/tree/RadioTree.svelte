@@ -65,7 +65,7 @@
   let treeNodes: RadioNode[] = $state(nodes.map(mapNodeToTree));
 </script>
 
-<div class="overflow-auto {fullWidth ? 'w-full' : ''}">
+<div class="{fullWidth ? 'w-full' : ''}">
   {#each treeNodes as treeNode, index}
     <RadioTreeNode node={treeNode} {index} isRoot={index === 0} />
   {/each}
