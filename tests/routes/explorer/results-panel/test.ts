@@ -212,4 +212,27 @@ test.describe('Results Panel', () => {
     // Then
     await expect(page.getByText('No filters added')).toBeVisible();
   });
+  test('Adding an any record of filter adds the filter to the results panel', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+
+    const expectedRowIds = mockData.content.map((row) => row.conceptPath);
+    const tableBody = page.locator('tbody');
+    await expect(tableBody).toBeVisible();
+
+    const firstRow = tableBody.locator('tr').nth(0);
+    const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
+    await hierarchyButton.click();
+    await expect(page.getByTestId('hierarchy-component')).toBeVisible();
+    const secondItem = page.locator('details').nth(1).locator('> summary label');
+    console.log(secondItem);
+    await secondItem.click();
+    const addFilterButton = page.getByTestId('add-filter');
+    console.log(addFilterButton);
+    await addFilterButton.click();
+    await expect(page.getByTestId(`added-filter-${expectedRowIds[0]}`)).toBeVisible();
+  });
 });

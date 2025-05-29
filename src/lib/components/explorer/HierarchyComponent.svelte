@@ -14,7 +14,7 @@
   }
 
   const ENSURE_MAX_DEPTH = 100;
-  let { data = {} as SearchResult }: Props = $props();
+  let { data = {} as SearchResult, onclose = () => {} }: Props = $props();
   let conceptNodes = $state(
     data.conceptPath.split('\\').reduce((acc, node, index, array) => {
       if (index === 0 && node === '') return acc;
