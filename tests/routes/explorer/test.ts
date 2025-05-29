@@ -583,27 +583,74 @@ test.describe('Explorer for authenticated users', () => {
         ).toBeVisible();
       });
     });
-    // TODO: Renable Hierarchy action tests when feature is implemented
-    // test.describe('Hierarchy Actions', () => {
-    //   test('Hierarchy component shows when action button clicked', async ({ page }) => {
-    //     // Given
+    test.describe('Hierarchy Actions', () => {
+      test.beforeEach(async ({ page }) => {
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+        // When
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
+        await hierarchyButton.click();
 
-    //     await page.route('*/**/picsure/query/sync', async (route: Route) =>
-    //       route.fulfill({ body: '9999' }),
-    //     );
-    //     await page.goto('/explorer?search=somedata');
+      });
+      test('Hierarchy component shows when action button clicked', async ({ page }) => {
+        // When
+        await expect(page.locator('tbody')).toBeVisible();
+        // Then
+        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
+      });
+      test('Hierarchy component is not visible when action button is clicked again', async ({ page }) => {
+        // When
+        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr').first();
+        const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
+        await hierarchyButton.click();
+        // Then
+        await expect(page.getByTestId('hierarchy-component')).not.toBeVisible();
+      });
+      test('Hierarchy component data is expected', async ({ page }) => {
+        // Then
+        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
 
-    //     // When
-    //     await expect(page.locator('tbody')).toBeVisible();
-    //     const tableBody = page.locator('tbody');
-    //     const firstRow = tableBody.locator('tr').first();
-    //     const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
-    //     await hierarchyButton.click();
-
-    //     // Then
-    //     await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-    //   });
-    // });
+        const rowData = mockData.content[0];
+        const hierarchyComponent = page.getByTestId('hierarchy-component');
+        const treeItems = await hierarchyComponent.locator('details').all();
+        const conceptPathItems = rowData.conceptPath.split('\\').filter(item => item !== '');
+        for (let i = 0; i < conceptPathItems.length; i++) {
+          const treeItem = treeItems[i];
+          const treeItemText = await treeItem.locator('> summary label').textContent();
+          expect(treeItemText).toContain(conceptPathItems[i]);
+        }
+      });
+      test('Hierarchy component has a hierarchy', async ({ page }) => {
+        // Then
+        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
+        await expect(page.getByTestId('tree-item:SOMEDATA-\\SOMEDATA\\')).toBeVisible();
+      });
+      test('Hierarchy component\'s last item is the only one selected', async ({ page }) => {
+        // Then
+        let allRadioButtons = await page.locator('details').locator('summary').locator('input').all();
+        for (let i = 0; i < allRadioButtons.length - 1; i++) {
+          if (i === allRadioButtons.length) {
+            await expect(allRadioButtons[i]).toBeChecked();
+          } else {
+            await expect(allRadioButtons[i]).not.toBeChecked();
+          }
+        }
+      });
+      test('Hierarchy component\'s last radio buttons are selectable', async ({ page }) => {
+        // Then
+        let allRadioButtons = await page.locator('details').locator('summary').locator('input').all();
+        for (let i = 0; i < allRadioButtons.length; i++) {
+          await allRadioButtons[i].click();
+          await expect(allRadioButtons[i]).toBeChecked();
+        }
+      });
+    });
   });
 });
 
