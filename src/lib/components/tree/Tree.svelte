@@ -12,7 +12,6 @@
     onunselect?: (value: string) => void;
   } = $props();
 
-  // Runes mode things like $state can only work in a svelte component
   class TreeNode implements TreeNodeInterface {
     name: string = '';
     value: string = '';
