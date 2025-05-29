@@ -74,9 +74,7 @@ export async function deleteRole(uuid: string) {
 }
 
 export async function addManualRole(studyId: string) {
-  const res = await api.post(MANUAL_ROLE_PATH, {
-    studyId
-  });
+  const res = await api.post(MANUAL_ROLE_PATH, studyId);
   if (res.status !== 200) {
     throw new Error('Failed to add manual role');
   }
