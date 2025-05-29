@@ -24,7 +24,7 @@
     let studyToSend = !consentCode ? studyId : studyId + consentCode;
     const encodedStudyId = encodeURI(studyToSend);
     
-    if (encodedStudyId !== studyId) {
+    if (encodedStudyId !== studyToSend) {
       toaster.error({
         title: 'Error: study-identifier contains invalid characters',
       });
