@@ -23,3 +23,20 @@ export interface NodeInterface {
   open: boolean;
   selected: boolean;
 }
+
+export interface RadioNodeInterface {
+  name: string;
+  value: string;
+  selected: boolean;
+  disabled: boolean;
+  children: RadioNodeInterface[];
+  isLeaf: boolean;
+  select: () => void;
+}
+
+export interface RadioNodeData {
+  name: string;
+  value: string;
+  children: RadioNodeData[];
+  selected: boolean;
+}

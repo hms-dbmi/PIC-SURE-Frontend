@@ -175,6 +175,7 @@ export const searchResultPathForSampleIds =
   '*/**/picsure/proxy/dictionary-api/concepts?page_number=0&page_size=10000';
 export const facetResultPath = '*/**/picsure/proxy/dictionary-api/facets/';
 export const conceptsDetailPath = '*/**/picsure/proxy/dictionary-api/concepts/detail/'; // + name
+export const conceptTreePath = '*/**/picsure/proxy/dictionary-api/concepts/tree/'; // + name
 
 export const searchRequest = { facets: [], search: 'age' };
 
@@ -339,6 +340,33 @@ export const searchResults = {
     empty: true,
   },
   empty: false,
+};
+
+export const mockDataWithChildren = {
+  conceptPath: '\\SOMEDATA\\questionnaire\\disease\\',
+  name: 'disease',
+  display: 'Disease',
+  dataset: 'test_data_set',
+  allowFiltering: true,
+  studyAcronym: 'TDS',
+  description: 'Disease',
+  values: ['Yes', 'No', "Don't know"],
+  children: [
+    {
+      conceptPath: '\\SOMEDATA\\questionnaire\\disease\\Any family with heart attack?\\',
+      name: 'heart_test',
+      display: 'Any family with heart attack?',
+      dataset: 'test_data_set',
+      allowFiltering: true,
+      description: 'Do you have a history of heart attack? Including extended family?',
+      values: ['Yes', 'No', "Don't know"],
+      children: [],
+      meta: null,
+      type: 'Categorical',
+    },
+  ],
+  meta: null,
+  type: 'Categorical',
 };
 
 export const tourSearchResults = {

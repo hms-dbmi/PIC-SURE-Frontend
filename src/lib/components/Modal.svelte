@@ -81,6 +81,7 @@
       >
         {#if title}{title}{/if}
         {#if closeable}<button
+            data-testid="modal-close-button"
             class="hover:text-secondary-500"
             class:float-right={title}
             onclick={modalClose}>×</button

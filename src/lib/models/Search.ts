@@ -26,7 +26,7 @@ export type SearchResult = Indexable & {
   meta?: Record<string, string> | null;
   table?: SearchResult | null;
   study?: SearchResult | null;
-  type: 'Categorical' | 'Continuous';
+  type: 'Categorical' | 'Continuous' | 'AnyRecordOf';
   allowFiltering: boolean;
-  children?: SearchResult | null;
+  children?: SearchResult[] | null;
 };

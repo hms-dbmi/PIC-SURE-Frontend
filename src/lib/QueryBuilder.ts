@@ -25,7 +25,7 @@ export function getQueryRequest(
     }
   }
 
-  (get(filters) as Filter[]).forEach((filter) => {
+  (get(filters) as Filter[]).forEach((filter: Filter) => {
     if (filter.filterType === 'Categorical') {
       if (filter.displayType === 'restrict') {
         query.addCategoryFilter(filter.id, filter.categoryValues);
@@ -42,6 +42,8 @@ export function getQueryRequest(
       });
     } else if (filter.filterType === 'snp') {
       query.addSnpFilter(filter.snpValues);
+    } else if (filter.filterType === 'AnyRecordOf') {
+      query.addAnyRecordOfMulti(filter.concepts);
     }
   });
 
