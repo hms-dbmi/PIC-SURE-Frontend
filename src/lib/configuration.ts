@@ -119,7 +119,13 @@ export const routes: Route[] = [
   {
     path: '/admin/configuration',
     text: 'Configuration',
-    privilege: [PicsurePrivileges.SUPER, PicsurePrivileges.ADMIN],
+    privilege: [PicsurePrivileges.SUPER],
+  },
+  {
+    path: '/admin/manual-role',
+    text: 'Manual Role',
+    privilege: [PicsurePrivileges.ADMIN],
+    feature: 'manualRole',
   },
   { path: '/admin/users', text: 'Manage Users', privilege: [PicsurePrivileges.ADMIN] },
   { path: '/help', text: 'Help' },
@@ -142,6 +148,7 @@ export const features: Indexable = {
     open: import.meta.env?.VITE_OPEN === 'true',
   },
   dataRequests: import.meta.env?.VITE_DATA_REQUESTS === 'true',
+  manualRole: import.meta.env?.VITE_MANUAL_ROLE === 'true',
   enableSNPQuery: import.meta.env?.VITE_ENABLE_SNP_QUERY === 'true',
   enableGENEQuery: import.meta.env?.VITE_ENABLE_GENE_QUERY === 'true',
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
