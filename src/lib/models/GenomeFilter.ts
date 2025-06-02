@@ -20,5 +20,5 @@ export const GenotypeMap: Indexable = {
   '1/1': 'Homozygous',
   '1/1,0/1': 'Heterozygous or Homozygous',
   '0/1,1/1': 'Heterozygous or Homozygous',
-  '0/0': 'Excluded',
+  // '0/0': 'Excluded', add back once HPDS accepts it
 };
