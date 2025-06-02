@@ -23,7 +23,7 @@ export function setActiveRow(options: {
   } else {
     activeRow.set(row);
     table && activeTable.set(table);
-    component && activeComponent.set(component);
+    component ? activeComponent.set(component) : activeComponent.set(get(defaultComponent));
   }
 }
 
