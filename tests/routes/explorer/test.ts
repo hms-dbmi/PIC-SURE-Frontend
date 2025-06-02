@@ -98,6 +98,12 @@ test.describe('Explorer for authenticated users', () => {
   });
   test.describe('Search row actions', () => {
     // TODO: Some feartures will be hidden in the future. Cannot use nth.
+    test.beforeEach(async ({ page }) => {
+      await page.route(
+        '*/**/picsure/proxy/dictionary-api/concepts/detail/' + mockData.content[0].dataset,
+        async (route: Route) => route.fulfill({ json: detailResponseCat }),
+      );
+    });
     test.describe('Info Actions', () => {
       test('Clicking a row opens info panel', async ({ page }) => {
         // Given
@@ -114,7 +120,10 @@ test.describe('Explorer for authenticated users', () => {
         await firstRow.click();
 
         // Then
-        const infoPanel = tableBody.locator('tr.expandable-row').first();
+        const infoPanel = tableBody
+          .locator('tr.expandable-row')
+          .first()
+          .getByTestId('variable-info');
         await expect(infoPanel).toBeVisible();
       });
       test('Clicking the row again closes the info panel', async ({ page }) => {
@@ -133,7 +142,10 @@ test.describe('Explorer for authenticated users', () => {
         await firstRow.click();
 
         // Then
-        const infoPanel = tableBody.locator('tr.expandable-row').first();
+        const infoPanel = tableBody
+          .locator('tr.expandable-row')
+          .first()
+          .getByTestId('variable-info');
         await expect(infoPanel).toBeVisible();
 
         // Then
@@ -157,7 +169,10 @@ test.describe('Explorer for authenticated users', () => {
         await infoIcon.click();
 
         // Then
-        const infoPanel = tableBody.locator('tr.expandable-row').first();
+        const infoPanel = tableBody
+          .locator('tr.expandable-row')
+          .first()
+          .getByTestId('variable-info');
         await expect(infoPanel).toBeVisible();
 
         // Then
@@ -171,10 +186,6 @@ test.describe('Explorer for authenticated users', () => {
 
         await page.route('*/**/picsure/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
-        );
-        await page.route(
-          '*/**/picsure/proxy/dictionary-api/concepts/detail/' + mockData.content[0].dataset,
-          async (route: Route) => route.fulfill({ json: detailResponseCat }),
         );
         await page.goto('/explorer?search=somedata');
 
@@ -218,6 +229,29 @@ test.describe('Explorer for authenticated users', () => {
         await expect(
           infoPanel.getByText('Study Accession: ' + detailResponseCat.study.ref),
         ).toBeVisible();
+      });
+      test('Clicking a filter button opens the filter panel & then clicking another row opens the info panel', async ({
+        page,
+      }) => {
+        // Given
+        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+
+        // When
+        const tableBody = page.locator('tbody');
+        await clickNthFilterIcon(page);
+        const filterPanel = tableBody.getByTestId('filter-component');
+        await expect(filterPanel).toBeVisible();
+        const thirdRow = tableBody.locator('tr').nth(2); // need 2 because expandable row is 1
+        await expect(thirdRow).toBeVisible();
+        await thirdRow.click();
+
+        // Then
+        const infoPanel = tableBody.locator('tr.expandable-row').getByTestId('variable-info');
+        await expect(infoPanel).toBeVisible();
+        await expect(filterPanel).not.toBeVisible();
       });
     });
     test.describe('Filter Actions', () => {

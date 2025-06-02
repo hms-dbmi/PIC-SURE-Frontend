@@ -10,14 +10,6 @@ import type { QueryInterface } from '$lib/models/query/Query';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/stores';
 
-export const user: Writable<User> = writable(restoreUser());
-export const isTopAdmin = derived(user, ($user: User) => {
-  return $user?.privileges?.includes(PicsurePrivileges.SUPER);
-});
-export const isAdmin = derived(user, ($user: User) => {
-  return $user?.privileges?.includes(PicsurePrivileges.ADMIN);
-});
-
 // Create a store that syncs with localStorage
 function createLocalStorageStore(key: string, initialValue: boolean) {
   const store = writable(browser ? !!localStorage.getItem(key) : initialValue);
@@ -34,7 +26,16 @@ function createLocalStorageStore(key: string, initialValue: boolean) {
   return store;
 }
 
+// Initialize tokenStatus first, before any other operations
 export const tokenStatus: Writable<boolean> = createLocalStorageStore('token', false);
+export const user: Writable<User> = writable(restoreUser());
+export const isTopAdmin = derived(user, ($user: User) => {
+  return $user?.privileges?.includes(PicsurePrivileges.SUPER);
+});
+export const isAdmin = derived(user, ($user: User) => {
+  return $user?.privileges?.includes(PicsurePrivileges.ADMIN);
+});
+
 export const isLoggedIn: Readable<boolean> = derived(tokenStatus, ($tokenStatus) => $tokenStatus);
 
 user.subscribe((user: User) => {
