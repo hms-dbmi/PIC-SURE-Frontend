@@ -130,8 +130,8 @@ test.describe('Summary Panel', () => {
   });
   test('Editing snp with new constraint selection updates summary', async ({ page }) => {
     // Given
-    const secondConstraint = 'Exclude variant';
-    const secondConstraintLabel = 'Excluded';
+    const secondConstraint = 'Homozygous';
+    const secondConstraintLabel = 'Homozygous';
     await page.getByTestId('snp-save-btn').click();
 
     // When
@@ -221,8 +221,8 @@ test('Clicking edit filter button in results panel returns to snp filter with co
 });
 test('Editing filter from results panel updates results panel on save', async ({ page }) => {
   // Given
-  const secondConstraint = 'Exclude variant';
-  const secondConstraintLabel = 'Excluded';
+  const secondConstraint = 'Homozygous';
+  const secondConstraintLabel = 'Homozygous';
   await page.goto('/explorer');
   await page.getByTestId('genomic-filter-btn').click();
   await page.getByTestId('snp-option').click();

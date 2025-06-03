@@ -12,7 +12,7 @@
   <option value={Genotype.Heterozygous}>Heterozygous</option>
   <option value={Genotype.Homozygous}>Homozygous</option>
   <option value={Genotype.HeterozygousOrHomozygous}>Heterozygous or homozygous</option>
-  <option value={Genotype.Neither}>Exclude variant</option>
+  <!-- <option value={Genotype.Neither}>Exclude variant</option> -->
 </select>
 <button
   type="button"
