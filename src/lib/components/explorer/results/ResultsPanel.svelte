@@ -79,6 +79,7 @@
   let hasFilterOrExport = $derived(
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
   );
+  
   let showExportButton = $derived(
     features.explorer.allowExport &&
       !isOpenAccess &&
@@ -87,15 +88,26 @@
       hasFilterOrExport,
   );
 
+  let hasValidDistributionFilters = $derived(
+    $filters.length !== 0 &&
+      !$filters.every(
+        (filter) =>
+          filter.filterType === 'genomic' ||
+          filter.filterType === 'snp' ||
+          filter.filterType === 'AnyRecordOf',
+      ),
+  );
+
   let showExplorerDistributions = $derived(
     !isOpenAccess &&
       features.explorer.distributionExplorer &&
-      $filters.length !== 0 &&
-      !$filters.every((filter) => filter.filterType === 'genomic' || filter.filterType === 'snp'),
+      hasValidDistributionFilters,
   );
 
   let showDiscoverDistributions = $derived(
-    isOpenAccess && features.discoverFeautures.distributionExplorer && $filters.length !== 0,
+    isOpenAccess &&
+      features.discoverFeautures.distributionExplorer &&
+      hasValidDistributionFilters,
   );
 
   let showVariantExplorer = $derived(
