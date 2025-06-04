@@ -79,7 +79,7 @@
   let hasFilterOrExport = $derived(
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
   );
-  
+
   let showExportButton = $derived(
     features.explorer.allowExport &&
       !isOpenAccess &&
@@ -99,15 +99,11 @@
   );
 
   let showExplorerDistributions = $derived(
-    !isOpenAccess &&
-      features.explorer.distributionExplorer &&
-      hasValidDistributionFilters,
+    !isOpenAccess && features.explorer.distributionExplorer && hasValidDistributionFilters,
   );
 
   let showDiscoverDistributions = $derived(
-    isOpenAccess &&
-      features.discoverFeautures.distributionExplorer &&
-      hasValidDistributionFilters,
+    isOpenAccess && features.discoverFeautures.distributionExplorer && hasValidDistributionFilters,
   );
 
   let showVariantExplorer = $derived(

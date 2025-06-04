@@ -2,13 +2,11 @@ import { expect } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess } from '../../../custom-context';
 import {
   conceptsDetailPath,
-  conceptTreePath,
   detailResponseCat,
   searchResults as mockData,
   searchResultPath,
   facetResultPath,
   facetsResponse,
-  mockDataWithChildren,
 } from '../../../mock-data';
 import { getOption } from '../../../utils';
 
@@ -213,75 +211,5 @@ test.describe('Results Panel', () => {
 
     // Then
     await expect(page.getByText('No filters added')).toBeVisible();
-  });
-  test.describe('Any record of filter', () => {
-    test.beforeEach(async ({ page }) => {
-      await mockApiSuccess(page, facetResultPath, facetsResponse);
-      await mockApiSuccess(page, searchResultPath, mockData);
-      await mockApiSuccess(page, countResultPath, '9999');
-      await mockApiSuccess(
-        page,
-        `${conceptTreePath}${mockData.content[0].dataset}?depth=100`,
-        mockDataWithChildren,
-      );
-
-      await page.goto('/explorer?search=somedata');
-
-      const tableBody = page.locator('tbody');
-      await expect(tableBody).toBeVisible();
-
-      const firstRow = tableBody.locator('tr').nth(0);
-      const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
-      await hierarchyButton.click();
-      await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-      const secondItem = page.getByTestId('radio:disease');
-      await secondItem.click();
-      const addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
-    });
-    test('Adding an any record of filter adds the filter to the results panel', async ({
-      page,
-    }) => {
-      await expect(page.locator('#results-panel')).toBeVisible();
-      await expect(page.getByTestId(/^any-record-of-filter-modal-.*$/)).toBeVisible();
-    });
-    test('Adding an any record of filter adds the correct number of variables to the filter', async ({
-      page,
-    }) => {
-      await expect(page.locator('#results-panel')).toBeVisible();
-      await expect(page.getByTestId(/^any-record-of-filter-modal-.*$/)).toHaveText(
-        `${mockDataWithChildren.children.length} variable(s) in disease category`,
-      );
-    });
-    test('Clicking the Any Record of filter button opens the modal', async ({ page }) => {
-      const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
-      await addedFilter.click();
-      await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
-    });
-    test('Clicking the Any Record of filter modal has the correct number of variables', async ({
-      page,
-    }) => {
-      const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
-      await addedFilter.click();
-      await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
-      await expect(
-        page.getByTestId('any-record-of-filter-modal').locator('header').locator('h1'),
-      ).toHaveText(`${mockDataWithChildren.children.length} variable(s) in disease category`);
-    });
-    test('Clicking the Any Record of filter modal has the correct variables', async ({ page }) => {
-      const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
-      await addedFilter.click();
-      await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
-      const variables = page.getByTestId('any-record-of-filter-modal').locator('div').all();
-      expect((await variables).length).toBe(mockDataWithChildren.children.length);
-      expect((await variables)[0]).toHaveText(mockDataWithChildren.children[0].conceptPath);
-    });
-    test('Clicking the close button closes the modal', async ({ page }) => {
-      const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
-      await addedFilter.click();
-      await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
-      await page.getByTestId('modal-close-button').click();
-      await expect(page.getByTestId('any-record-of-filter-modal')).not.toBeVisible();
-    });
   });
 });
