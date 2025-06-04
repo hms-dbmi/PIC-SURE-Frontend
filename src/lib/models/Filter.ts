@@ -55,6 +55,7 @@ export interface SnpFilterInterface extends FilterInterface {
 export interface AnyRecordOfFilterInterface extends FilterInterface {
   filterType: 'AnyRecordOf';
   concepts: string[];
+  joinType: 'and' | 'or';
 }
 
 export type Filter =
@@ -116,6 +117,7 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, treeResult: 
     description: searchResult.description,
     allowFiltering: searchResult.allowFiltering,
     dataset: searchResult.dataset,
+    joinType: 'and',
   };
   return filter;
 }

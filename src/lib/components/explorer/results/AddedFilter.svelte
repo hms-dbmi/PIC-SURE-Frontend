@@ -6,7 +6,7 @@
 
   import { Option } from '$lib/models/GenomeFilter';
   import type { Filter, AnyRecordOfFilterInterface } from '$lib/models/Filter';
-  import { removeFilter, activeFilter, activeSearch } from '$lib/stores/Filter';
+  import { removeFilter, activeFilter, activeSearch, filters } from '$lib/stores/Filter';
   import { populateFromGeneFilter } from '$lib/stores/GeneFilter';
   import { populateFromSNPFilter } from '$lib/stores/SNPFilter';
 

@@ -14,6 +14,7 @@
 
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import { filters, hasGenomicFilter, clearFilters, totalParticipants } from '$lib/stores/Filter';
+  import type { AnyRecordOfFilterInterface, Filter } from '$lib/models/Filter';
   import { exports, clearExports } from '$lib/stores/Export';
   import { toaster } from '$lib/toaster';
 
@@ -22,7 +23,7 @@
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import Loading from '$lib/components/Loading.svelte';
-
+  import BooleanSelect from '$lib/components/explorer/results/BooleanSelect.svelte';
   const ERROR_VALUE = 'N/A';
 
   let unsubFilters: Unsubscriber;
@@ -31,6 +32,50 @@
   let isOpenAccess = $state($page.url.pathname.includes('/discover'));
   let modalOpen: boolean = $state(false);
   let currentRequestID = 0;
+
+  const mergeAnyRecordOfFilters = (filters: Filter[]) => {
+    const anyRecordOfFilters = filters.filter(f => f.filterType === 'AnyRecordOf');
+    const otherFilters = filters.filter(f => f.filterType !== 'AnyRecordOf');
+    
+    const mergedFilters = anyRecordOfFilters.reduce((acc: Filter[], filter, index) => {
+      if (index % 2 === 0) {
+        const nextFilter = anyRecordOfFilters[index + 1];
+        if (nextFilter && (filter as AnyRecordOfFilterInterface).joinType === 'or') {
+          // Merge concepts
+          const mergedFilter = {
+            ...filter,
+            concepts: [
+              ...(filter as AnyRecordOfFilterInterface).concepts,
+              ...(nextFilter as AnyRecordOfFilterInterface).concepts
+            ]
+          };
+          acc.push(mergedFilter);
+        } else {
+          acc.push(filter);
+          if (nextFilter) acc.push(nextFilter);
+        }
+      }
+      return acc;
+    }, []);
+
+    return [...otherFilters, ...mergedFilters];
+  };
+
+  const handleJoinTypeChange = (filter: Filter, value: 'and' | 'or') => {
+    (filter as AnyRecordOfFilterInterface).joinType = value;
+    if (value === 'or') {
+      const mergedFilters = mergeAnyRecordOfFilters($filters);
+      filters.set(mergedFilters);
+    }
+  };
+
+  const shouldShowJoinType = (filter: Filter) =>
+    filter.filterType === 'AnyRecordOf' &&
+    $filters
+      .filter((filter) => filter.filterType === 'AnyRecordOf')
+      .findIndex((f) => f.uuid === filter.uuid) %
+      2 ===
+      0;
 
   async function getCount() {
     suffix = '';
@@ -211,6 +256,12 @@
         <section class="py-1">
           {#each $filters as filter}
             <FilterComponent {filter} />
+            {#if shouldShowJoinType(filter)}
+              <BooleanSelect
+                value={(filter as AnyRecordOfFilterInterface).joinType}
+                onChange={(value) => handleJoinTypeChange(filter, value)}
+              />
+            {/if}
           {/each}
         </section>
       </div>
