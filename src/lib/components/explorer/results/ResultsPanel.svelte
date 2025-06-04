@@ -24,6 +24,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import BooleanSelect from '$lib/components/explorer/results/BooleanSelect.svelte';
+  import MergedFilter from '$lib/components/explorer/results/MergedFilter.svelte';
   const ERROR_VALUE = 'N/A';
 
   let unsubFilters: Unsubscriber;
@@ -255,12 +256,18 @@
         {/if}
         <section class="py-1">
           {#each $filters as filter}
-            <FilterComponent {filter} />
-            {#if shouldShowJoinType(filter)}
-              <BooleanSelect
-                value={(filter as AnyRecordOfFilterInterface).joinType}
-                onChange={(value) => handleJoinTypeChange(filter, value)}
-              />
+            {#if filter.filterType === 'AnyRecordOf'}
+              {@const anyRecordOfFilters = [
+                $filters.find(f => f.uuid === filter.uuid),
+                $filters.find(f => f.uuid === filter.uuid + 1)
+              ].filter((f): f is AnyRecordOfFilterInterface => 
+                f !== undefined && f.filterType === 'AnyRecordOf'
+              )}
+              {#if anyRecordOfFilters.length > 0}
+                <MergedFilter filters={anyRecordOfFilters} />
+              {/if}
+            {:else}
+              <FilterComponent {filter} />
             {/if}
           {/each}
         </section>
