@@ -47,7 +47,7 @@
     return currentNode;
   }
 
-  let selectedNode = $state(conceptNodes[conceptNodes.length - 1]);
+  let selectedNode = $state(data.conceptPath);
 
   async function addSelection() {
     const treeResult: SearchResult = await getConceptTree(
