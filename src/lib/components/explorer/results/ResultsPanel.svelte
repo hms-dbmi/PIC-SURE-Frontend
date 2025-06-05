@@ -245,7 +245,7 @@
         {#if $filters.length !== 0}
           <header class="text-left ml-1">Filters</header>
         {/if}
-        <section class="py-1">
+        <section class="flex flex-col gap-2 py-1 w-full justify-center">
           {#each $filters as filter}
             {#if filter.displayType === 'merged'}
               <MergedFilter filter={filter as MergableFilterInterface} />
