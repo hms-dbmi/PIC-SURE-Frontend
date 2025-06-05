@@ -140,9 +140,9 @@
     }
   });
 
-  const offerMergeOption = () => {
+  const offerMergeOption = (isLastFilter: boolean) => {
     if ($filters.length > 1 && $filters.slice(-2).every(filter => filter.filterType === 'AnyRecordOf' && filter.displayType !== 'merged')) {
-      return true;
+      return !isLastFilter;
     }
     return false;
   }
@@ -162,8 +162,8 @@
       mergedFilter2: filter2,
       concepts: [...filter1.concepts, ...filter2.concepts],
     }
-    removeFilter(filter1.id);
-    removeFilter(filter2.id);
+    removeFilter(filter1.uuid);
+    removeFilter(filter2.uuid);
     addFilter(newFilter);
   }
   beforeNavigate(() => {
@@ -246,13 +246,13 @@
           <header class="text-left ml-1">Filters</header>
         {/if}
         <section class="flex flex-col gap-2 py-1 w-full justify-center">
-          {#each $filters as filter}
+          {#each $filters as filter, index}
             {#if filter.displayType === 'merged'}
               <MergedFilter filter={filter as MergableFilterInterface} />
             {:else}
               <FilterComponent {filter} />
             {/if}
-            {#if offerMergeOption() && filter.filterType === 'AnyRecordOf' && filter.displayType !== 'merged'}
+            {#if offerMergeOption(index === $filters.length - 1) && filter.filterType === 'AnyRecordOf' && filter.displayType !== 'merged'}
               <BooleanSelect 
                 value={(filter as MergableFilterInterface).joinType || JoinTypes.AND} 
                 onChange={(value) => onChange(value, filter)} 

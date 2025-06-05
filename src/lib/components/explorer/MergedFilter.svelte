@@ -40,7 +40,18 @@
 <Modal class="flex flex-col card bg-surface-100 p-1 m-1" bind:open>
   {#snippet trigger()}
     <div class="flex flex-col card bg-surface-100 p-1 m-1 w-full justify-center">
-      {`${(filter.mergedFilter1 as MergableFilterInterface)?.concepts?.length} variable(s) in ${filter.mergedFilter1?.searchResult?.display || filter.mergedFilter1?.searchResult?.name || filter.mergedFilter1?.variableName} category`}
+      <div class="flex flex-row justify-between">
+        {`${(filter.mergedFilter1 as MergableFilterInterface)?.concepts?.length} variable(s) in ${filter.mergedFilter1?.searchResult?.display || filter.mergedFilter1?.searchResult?.name || filter.mergedFilter1?.variableName} category`}
+        <button
+          type="button"
+          title="Remove Filter"
+          class="bg-initial text-black-500 hover:text-primary-600"
+          onclick={() => removeFilter(filter.uuid)}
+        >
+          <i class="fa-solid fa-times-circle"></i>
+          <span class="sr-only">Remove Filter</span>
+        </button>
+      </div>
       <BooleanSelect value={joinType} onChange={onChange} />
       {`${(filter.mergedFilter2 as MergableFilterInterface)?.concepts?.length} variable(s) in ${filter.mergedFilter2?.searchResult?.display || filter.mergedFilter2?.searchResult?.name || filter.mergedFilter2?.variableName} category`}
     </div>
