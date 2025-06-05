@@ -1,5 +1,15 @@
 {
   "applicationName": "PIC‑SURE",
+  "statFields": {},
+  "results": {
+    "participantsStatKey": "query:patientCount",
+    "stats": [
+      {
+        "key": "query:patientCount",
+        "label": "Filtered Participants"
+      }
+    ]
+  },
   "sitemap": [
     {
       "category": "Administration",
@@ -119,8 +129,7 @@
         "key": "dict:facets:dataset_id",
         "label": "Data Sources"
       }
-    ],
-    "statFields": {}
+    ]
   },
   "analysisPage": {
     "api": {

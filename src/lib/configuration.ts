@@ -8,8 +8,10 @@ import type {
   HelpConfig,
   Indexable,
   LandingConfig,
+  ResultsConfig,
   LoginConfig,
   SiteMapConfig,
+  StatField,
   PrivacyConfig,
   AnalysisConfig,
   CollaborateConfig,
@@ -28,10 +30,12 @@ export interface Branding {
     alt: string;
     src: string;
   };
+  statFields: { [key: string]: StatField[] };
   sitemap: SiteMapConfig[];
   footer: FooterConfig;
   explorePage: ExplorePageConfig;
   landing: LandingConfig;
+  results: ResultsConfig;
   login: LoginConfig;
   help: HelpConfig;
   privacyPolicy: PrivacyConfig;
@@ -44,6 +48,7 @@ export interface Branding {
 
 export const branding: Branding = {
   applicationName: 'PIC‑SURE',
+  statFields: {} as { [key: string]: StatField[] },
   logo: {
     alt: import.meta.env?.VITE_LOGO_ALT || 'PIC‑SURE',
     src: import.meta.env?.VITE_LOGO || '',
@@ -54,6 +59,7 @@ export const branding: Branding = {
     tourSearchTerm: import.meta.env?.EXPLORE_TOUR_SEARCH_TERM || 'age',
   } as ExplorePageConfig,
   landing: {} as LandingConfig,
+  results: {} as ResultsConfig,
   login: {} as LoginConfig,
   help: {} as HelpConfig,
   privacyPolicy: {} as PrivacyConfig,
@@ -79,7 +85,9 @@ export const initializeBranding = () => {
     ...configJson.explorePage,
     codeBlocks,
   };
+  branding.statFields = configJson.statFields;
   branding.landing = configJson.landing;
+  branding.results = configJson.results;
   branding.login = configJson.login;
   branding.help = configJson.help;
   branding.footer = configJson.footer;
@@ -151,6 +159,7 @@ export const routes: Route[] = [
 ];
 
 export const features: Indexable = {
+  federated: import.meta.env?.VITE_FEDERATED === 'true',
   explorer: {
     allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
     allowDownload: import.meta.env?.VITE_ALLOW_DOWNLOAD !== 'false', // default true
@@ -162,6 +171,7 @@ export const features: Indexable = {
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
     enablePfbExport: import.meta.env?.VITE_DOWNLOAD_AS_PFB !== 'false', // default true
     enableSampleIdCheckbox: import.meta.env?.VITE_ENABLE_SAMPLE_ID_CHECKBOX === 'true',
+    enableCohortDetails: import.meta.env?.VITE_ENABLE_COHORT_DETAILS === 'true',
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
@@ -185,6 +195,7 @@ export const features: Indexable = {
   dashboardDrawer: import.meta.env?.VITE_DASHBOARD_DRAWER === 'true',
   confirmDownload: import.meta.env?.VITE_CONFIRM_DOWNLOAD === 'true',
   termsOfService: import.meta.env?.VITE_ENABLE_TOS === 'true',
+  showResultPanel: import.meta.env?.VITE_RESULTPANEL_OPEN_BY_DEFAULT === 'true',
 };
 
 export const settings: Indexable = {

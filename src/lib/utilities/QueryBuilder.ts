@@ -67,9 +67,9 @@ export function getQueryRequest(
 
 export function getBlankQueryRequest(
   isOpenAccess = false,
+  resourceUUID = resources.hpds,
   expectedResultType: ExpectedResultType = 'COUNT',
 ): QueryRequestInterface {
-  const resourceUUID = isOpenAccess ? resources.openHPDS : resources.hpds;
   let query: Query = new Query();
 
   if (features.useQueryTemplate && !isOpenAccess) {
