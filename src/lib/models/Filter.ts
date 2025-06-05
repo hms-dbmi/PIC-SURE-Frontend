@@ -11,7 +11,12 @@ type FilterType =
   | 'genomic'
   | 'snp'
   | 'auto';
-type DisplayType = 'any' | 'anyRecordOf' | 'restrict' | 'lessThan' | 'greaterThan' | 'between';
+export type DisplayType = 'any' | 'anyRecordOf' | 'restrict' | 'lessThan' | 'greaterThan' | 'between' | 'merged' | 'unmerged';
+
+export enum JoinTypes {
+  AND = 'and',
+  OR = 'or',
+}
 
 export interface FilterInterface {
   uuid: string;
@@ -57,12 +62,19 @@ export interface AnyRecordOfFilterInterface extends FilterInterface {
   concepts: string[];
 }
 
+export interface MergableFilterInterface extends AnyRecordOfFilterInterface {
+  joinType?: JoinTypes;
+  mergedFilter1?: AnyRecordOfFilterInterface;
+  mergedFilter2?: AnyRecordOfFilterInterface;
+}
+
 export type Filter =
   | CategoricalFilterInterface
   | NumericFilterInterface
   | GenomicFilterInterface
   | SnpFilterInterface
-  | AnyRecordOfFilterInterface;
+  | AnyRecordOfFilterInterface
+  | MergableFilterInterface;
 
 export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
   const filter: Filter = {

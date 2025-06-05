@@ -13,7 +13,7 @@
   import { loadAllConcepts } from '$lib/services/hpds';
 
   import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import { filters, hasGenomicFilter, clearFilters, totalParticipants } from '$lib/stores/Filter';
+  import { filters, hasGenomicFilter, clearFilters, totalParticipants, removeFilter, addFilter } from '$lib/stores/Filter';
   import { exports, clearExports } from '$lib/stores/Export';
   import { toaster } from '$lib/toaster';
 
@@ -22,7 +22,10 @@
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import Loading from '$lib/components/Loading.svelte';
-
+  import BooleanSelect from '$lib/components/explorer/BooleanSelect.svelte';
+  import MergedFilter from '$lib/components/explorer/MergedFilter.svelte';
+  import { JoinTypes, type MergableFilterInterface, type AnyRecordOfFilterInterface } from '$lib/models/Filter';
+  
   const ERROR_VALUE = 'N/A';
 
   let unsubFilters: Unsubscriber;
@@ -137,6 +140,31 @@
     }
   });
 
+  const offerMergeOption = () => {
+    if ($filters.length > 1 && $filters.slice(-2).every(filter => filter.filterType === 'AnyRecordOf' && filter.displayType !== 'merged')) {
+      return true;
+    }
+    return false;
+  }
+
+  const onChange = (value: JoinTypes, filter1: MergableFilterInterface) => {
+    const filter2 = $filters.find(filter => filter.id !== filter1.id && filter.filterType === 'AnyRecordOf' && filter.displayType !== 'merged');
+    if (!filter2) return;
+    createMergableFilter(filter1, filter2 as AnyRecordOfFilterInterface);
+  }
+
+  const createMergableFilter = (filter1: AnyRecordOfFilterInterface, filter2: AnyRecordOfFilterInterface) => {
+    const newFilter: MergableFilterInterface = {
+      ...filter1,
+      joinType: JoinTypes.OR,
+      displayType: 'merged',
+      mergedFilter1: filter1,
+      mergedFilter2: filter2,
+    }
+    removeFilter(filter1.id);
+    removeFilter(filter2.id);
+    addFilter(newFilter);
+  }
   beforeNavigate(() => {
     unsubFilters && unsubFilters();
   });
@@ -218,7 +246,17 @@
         {/if}
         <section class="py-1">
           {#each $filters as filter}
-            <FilterComponent {filter} />
+            {#if filter.displayType === 'merged'}
+              <MergedFilter filter={filter as MergableFilterInterface} />
+            {:else}
+              <FilterComponent {filter} />
+            {/if}
+            {#if offerMergeOption() && filter.filterType === 'AnyRecordOf'}
+              <BooleanSelect 
+                value={(filter as MergableFilterInterface).joinType || JoinTypes.AND} 
+                onChange={(value) => onChange(value, filter)} 
+              />
+            {/if}
           {/each}
         </section>
       </div>
