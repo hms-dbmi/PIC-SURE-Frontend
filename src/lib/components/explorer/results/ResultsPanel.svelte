@@ -160,6 +160,7 @@
       displayType: 'merged',
       mergedFilter1: filter1,
       mergedFilter2: filter2,
+      concepts: [...filter1.concepts, ...filter2.concepts],
     }
     removeFilter(filter1.id);
     removeFilter(filter2.id);
