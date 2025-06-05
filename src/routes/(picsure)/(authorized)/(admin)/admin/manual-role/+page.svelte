@@ -75,7 +75,7 @@
         />
       </label>
       <label class="label">
-        <span>Consent Code (optional, .c followed by numbers):</span>
+        <span>Consent Code (optional, c followed by numbers):</span>
         <input
           type="text"
           bind:value={consentCode}
