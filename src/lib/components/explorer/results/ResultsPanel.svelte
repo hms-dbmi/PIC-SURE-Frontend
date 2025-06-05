@@ -210,6 +210,16 @@
             active={page.url.pathname.includes('explorer/variant')}
           />
         {/if}
+        {#if showCohortDetails}
+          <CardButton
+            href="/explorer/cohort"
+            data-testid="cohort-details-btn"
+            title="Cohort Details"
+            icon="fa-solid fa-users"
+            size="md"
+            active={page.url.pathname.includes('explorer/cohort')}
+          />
+        {/if}
       </div>
     </div>
   {/if}

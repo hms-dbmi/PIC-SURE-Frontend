@@ -12,6 +12,7 @@ import type {
   LoginConfig,
   SiteMapConfig,
   CodeBlockConfig,
+  StatField,
   PrivacyConfig,
   AnalysisConfig,
   CollaborateConfig,
@@ -202,7 +203,7 @@ export const features: Indexable = {
   dashboardDrawer: import.meta.env?.VITE_DASHBOARD_DRAWER === 'true',
   confirmDownload: import.meta.env?.VITE_CONFIRM_DOWNLOAD === 'true',
   termsOfService: import.meta.env?.VITE_ENABLE_TOS === 'true',
-  enforceTermsOfService: import.meta.env?.VITE_ENFORCE_TOS_ACCEPT === 'true',
+  enforceTermsOfService: import.meta.env?.VITE_ENFORCE_TOS_ACCEPT === 'true'
 };
 
 export const settings: Indexable = {
