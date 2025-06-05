@@ -3,7 +3,7 @@ import { get, writable, type Writable } from 'svelte/store';
 import * as api from '$lib/api';
 import { Genotype, type SNP } from '$lib/models/GenomeFilter';
 import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter';
-import { getBlankQueryRequest, updateConsentFilters } from '$lib/QueryBuilder';
+import { getBlankQueryRequest, updateConsentFilters } from '$lib/utilities/QueryBuilder';
 
 export const selectedSNPs: Writable<SNP[]> = writable([]);
 

@@ -7,15 +7,11 @@
   import { page } from '$app/stores';
   import { afterNavigate, goto, beforeNavigate } from '$app/navigation';
 
-  import * as api from '$lib/api';
   import { branding, features, resources } from '$lib/configuration';
-  import { getQueryRequest } from '$lib/QueryBuilder';
-  import { loadAllConcepts } from '$lib/services/hpds';
 
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import { filters, hasGenomicFilter, clearFilters, totalParticipants } from '$lib/stores/Filter';
+  import { filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
+  import { getPatientCount, type PatientCount } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
-  import { toaster } from '$lib/toaster';
 
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
@@ -26,55 +22,11 @@
   const ERROR_VALUE = 'N/A';
 
   let unsubFilters: Unsubscriber;
-  let totalPatients: string | number | typeof ERROR_VALUE = $state(0);
-  let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = $state(Promise.resolve(0));
+  let totalPatients: PatientCount = $state(0);
+  let patientSuffix = $state('');
+  let triggerRefreshCount: Promise<void | { suffix: string, count: PatientCount }> = $state(Promise.resolve({ suffix: '', count: 0 }));
   let isOpenAccess = $state($page.url.pathname.includes('/discover'));
   let modalOpen: boolean = $state(false);
-  let currentRequestID = 0;
-
-  async function getCount() {
-    suffix = '';
-    const requestID = ++currentRequestID;
-    let request: QueryRequestInterface = getQueryRequest(
-      !isOpenAccess,
-      isOpenAccess ? resources.openHPDS : resources.hpds,
-      isOpenAccess ? 'CROSS_COUNT' : 'COUNT',
-    );
-    try {
-      if (isOpenAccess) {
-        const concepts = await loadAllConcepts();
-        request.query.setCrossCountFields(concepts);
-      }
-      const count = await api.post('picsure/query/sync', request);
-      if (requestID !== currentRequestID) {
-        return 0;
-      }
-      if (isOpenAccess) {
-        let openTotalPatients = String(count['\\_studies_consents\\']);
-        if (openTotalPatients.includes(' \u00B1')) {
-          totalPatients = parseInt(openTotalPatients.split(' ')[0]);
-          suffix = openTotalPatients.split(' ')[1];
-          totalParticipants.set(totalPatients);
-        } else {
-          totalPatients = openTotalPatients;
-          totalParticipants.set(openTotalPatients);
-        }
-      } else {
-        totalParticipants.set(count);
-        totalPatients = count;
-      }
-      return count;
-    } catch (error) {
-      if ($filters.length !== 0) {
-        toaster.error({ description: branding?.explorePage?.filterErrorText, closable: false });
-      } else {
-        toaster.error({ title: branding?.explorePage?.queryErrorText });
-      }
-      totalPatients = ERROR_VALUE;
-      return 0;
-    }
-  }
-  let suffix = $state('');
 
   let hasFilterOrExport = $derived(
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
@@ -83,7 +35,7 @@
   let showExportButton = $derived(
     features.explorer.allowExport &&
       !isOpenAccess &&
-      totalPatients !== ERROR_VALUE &&
+      totalPatients + "" !== ERROR_VALUE &&
       totalPatients !== 0 &&
       hasFilterOrExport,
   );
@@ -116,10 +68,18 @@
       (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer),
   );
 
+  function countSubscriber() {
+    const resource = isOpenAccess ? resources.openHPDS : resources.hpds;
+    const type = isOpenAccess ? 'CROSS_COUNT' : 'COUNT';
+    triggerRefreshCount = getPatientCount(isOpenAccess, resource, type)
+      .then(({ suffix, count }) => {
+        totalPatients = count;
+        patientSuffix = suffix;
+      });
+  }
+
   onMount(async () => {
-    unsubFilters = filters.subscribe(() => {
-      triggerRefreshCount = getCount();
-    });
+    unsubFilters = filters.subscribe(countSubscriber);
   });
 
   afterNavigate(async () => {
@@ -131,9 +91,7 @@
     const isExplorer = $page.url.pathname.includes('/explorer');
     if (isExplorer || isOpenAccess) {
       await tick();
-      unsubFilters = filters.subscribe(() => {
-        triggerRefreshCount = getCount();
-      });
+      unsubFilters = filters.subscribe(countSubscriber);
     }
   });
 
@@ -173,7 +131,7 @@
           <i class="fa-solid fa-triangle-exclamation"></i>
           <span class="sr-only">{ERROR_VALUE}</span>
         {:else}
-          {totalPatients?.toLocaleString()} {suffix || ''}
+          {totalPatients?.toLocaleString()} {patientSuffix || ''}
         {/if}
       </span>
     {:catch}
