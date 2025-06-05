@@ -252,7 +252,7 @@
             {:else}
               <FilterComponent {filter} />
             {/if}
-            {#if offerMergeOption() && filter.filterType === 'AnyRecordOf'}
+            {#if offerMergeOption() && filter.filterType === 'AnyRecordOf' && filter.displayType !== 'merged'}
               <BooleanSelect 
                 value={(filter as MergableFilterInterface).joinType || JoinTypes.AND} 
                 onChange={(value) => onChange(value, filter)} 
