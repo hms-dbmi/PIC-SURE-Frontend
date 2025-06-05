@@ -43,10 +43,11 @@ export function searchDictionary(
   facets: Facet[],
   pageable: Pageable,
 ): Promise<DictionaryConceptResult> {
-  let request: DictionarySearchRequest = { facets, search: searchTerm };
-  if (!page.url.pathname.includes('/discover')) {
-    request = addConsents(request);
-  }
+  const request: DictionarySearchRequest = dictionaryRequest(
+    page.url.pathname.includes('/discover'),
+  );
+  request.facets = facets;
+  request.search = searchTerm;
   return api.post(
     `${Picsure.Concepts}?page_number=${pageable.pageNumber}&page_size=${pageable.pageSize}`,
     request,
@@ -76,12 +77,11 @@ function initializeHiddenFacets(response: DictionaryFacetResult[]) {
 }
 
 export async function updateFacetsFromSearch(): Promise<DictionaryFacetResult[]> {
-  const search = get(searchTerm);
-  const facets = get(selectedFacets);
-  let request: DictionarySearchRequest = { facets: facets, search: search };
-  if (!page.url.pathname.includes('/discover')) {
-    request = addConsents(request);
-  }
+  const request: DictionarySearchRequest = dictionaryRequest(
+    page.url.pathname.includes('/discover'),
+  );
+  request.facets = get(selectedFacets);
+  request.search = get(searchTerm);
 
   try {
     const response: DictionaryFacetResult[] = await api.post(Picsure.Facets, request);
@@ -146,22 +146,22 @@ export async function getConceptDetails(
   return response;
 }
 
-function addConsents(request: DictionarySearchRequest) {
-  const queryTemplate = get(user)?.queryTemplate;
-  if (queryTemplate) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filters = (queryTemplate.categoryFilters as any) || {};
-    const consents = (filters['\\_consents\\'] as string[]) || [];
-    request.consents = consents;
+function dictionaryRequest(isOpenAccess: boolean = false) {
+  const request: DictionarySearchRequest = { facets: [], search: '', consents: [] };
+  if (!isOpenAccess) {
+    const queryTemplate = get(user)?.queryTemplate;
+    if (queryTemplate) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const filters = (queryTemplate.categoryFilters as any) || {};
+      const consents = (filters['\\_consents\\'] as string[]) || [];
+      request.consents = consents;
+    }
   }
   return request;
 }
 
 export async function getConceptCount(isOpenAccess = false) {
-  let request: DictionarySearchRequest = { facets: [], search: '', consents: [] };
-  if (!isOpenAccess) {
-    request = addConsents(request);
-  }
+  const request: DictionarySearchRequest = dictionaryRequest(isOpenAccess);
   const res: DictionaryConceptResult = await api.post(
     `${Picsure.Concepts}?page_number=1&page_size=1`,
     request,
@@ -170,10 +170,7 @@ export async function getConceptCount(isOpenAccess = false) {
 }
 
 export async function getFacetCategoryCount(isOpenAccess = false, category: string) {
-  let request: DictionarySearchRequest = { facets: [], search: '', consents: [] };
-  if (!isOpenAccess) {
-    request = addConsents(request);
-  }
+  const request: DictionarySearchRequest = dictionaryRequest(isOpenAccess);
   const res: DictionaryFacetResult[] = await api.post(Picsure.Facets, request);
   const facetCat = res.find((facetCat) => facetCat.name === category);
   if (!facetCat) {

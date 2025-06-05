@@ -9,7 +9,7 @@
     createContinuousPlot,
     createCategoryPlot,
   } from '$lib/utilities/Plotly';
-  import { getQueryRequest } from '$lib/QueryBuilder';
+  import { getQueryRequest } from '$lib/utilities/QueryBuilder';
   import { page } from '$app/state';
   import { toaster } from '$lib/toaster';
   import Loading from '$lib/components/Loading.svelte';

@@ -22,7 +22,7 @@
     variantError,
   } from '$lib/stores/Variants';
   import type { Unsubscriber } from 'svelte/store';
-  import { getQueryRequest } from '$lib/QueryBuilder';
+  import { getQueryRequest } from '$lib/utilities/QueryBuilder';
   import Loading from '$lib/components/Loading.svelte';
 
   let loading: Promise<void> = $state(Promise.resolve());

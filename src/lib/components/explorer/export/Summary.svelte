@@ -1,6 +1,7 @@
 <script lang="ts">
   import ExportStore from '$lib/stores/Export';
-  import { filters, totalParticipants } from '$lib/stores/Filter';
+  import { filters } from '$lib/stores/Filter';
+  import { totalParticipants } from '$lib/stores/ResultStore';
   let { exports } = ExportStore;
 
   let participantsCount = $derived($totalParticipants);
