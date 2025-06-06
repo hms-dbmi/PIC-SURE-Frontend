@@ -13,7 +13,7 @@
 </script>
 
 <section class="pagination flex gap-0" aria-label="pagination">
-  {#if handler.pagesWithEllipsis !== undefined}
+  {#if handler.pagesWithEllipsis !== undefined || handler.pages !== undefined}
     <button
       type="button"
       aria-label="Previous"
