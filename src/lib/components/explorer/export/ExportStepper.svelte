@@ -394,7 +394,7 @@
                   {:else}
                     <input
                       type="checkbox"
-                      class="input mr-1 &[aria-disabled=“true”]:opacity-75"
+                      class="mr-1 &[aria-disabled=“true”]:opacity-75"
                       data-testid="sample-ids-checkbox"
                       id="sample-ids-checkbox"
                       bind:checked={sampleIds}
@@ -406,7 +406,7 @@
               </div>
             {/if}
           {:else}
-            <Loading ring label="Loading sample IDs" />
+            <Loading ring size="micro" label="Loading sample IDs" />
           {/if}
         {/if}
       </section>
