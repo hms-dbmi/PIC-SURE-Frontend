@@ -7,7 +7,7 @@
 </script>
 
 <span class="mr-4">{snp.search}</span>
-<select class="select w-96" data-testid="snp-constraint" required bind:value={constraint}>
+<select class="select !w-96" data-testid="snp-constraint" required bind:value={constraint}>
   <option selected disabled value>Select Genotype</option>
   <option value={Genotype.Heterozygous}>Heterozygous</option>
   <option value={Genotype.Homozygous}>Homozygous</option>
