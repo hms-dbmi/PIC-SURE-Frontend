@@ -55,17 +55,19 @@
   const warning: Warning = $derived(filterWarnings[$filterWarning || 'undefined']);
 
   function goBack() {
+    const back = warning.back;
     filterWarning.set(undefined);
-    goto(warning.back);
     open = false;
+    goto(back);
   }
 
   function reset() {
+    const path = warning.path;
     warning.resetQuery();
     panelOpen.set(false);
     filterWarning.set(undefined);
-    goto(warning.path);
     open = false;
+    goto(path);
   }
 </script>
 
