@@ -5,8 +5,10 @@
 
 <Content backUrl="/analyze" title={`Analyze with ${branding.analysisConfig.analysis.platform}`}>
   <div class="flex flex-col gap-4 w-full items-center mb-8">
-      {@html branding.analysisConfig.analysis.introduction}
-      {@html branding.analysisConfig.analysis.access}
-      {@html branding.analysisConfig.analysis.examples}
+    <!-- eslint-disable svelte/no-at-html-tags -->
+    {@html branding.analysisConfig.analysis.introduction}
+    {@html branding.analysisConfig.analysis.access}
+    {@html branding.analysisConfig.analysis.examples}
+    <!-- eslint-enable svelte/no-at-html-tags -->
   </div>
 </Content>

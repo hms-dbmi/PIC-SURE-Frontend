@@ -24,7 +24,10 @@
     branding?.sitemap?.map((section) => ({
       ...section,
       show:
-        (!section.privilege || ($user.privileges && $user.privileges.includes(section.privilege))) && (section.feature && features[section.feature as keyof typeof features]),
+        (!section.privilege ||
+          ($user.privileges && $user.privileges.includes(section.privilege))) &&
+        section.feature &&
+        features[section.feature as keyof typeof features],
     })),
   );
 
@@ -41,8 +44,10 @@
             {#each section.links as link}
               {#if link.feature && features[link.feature as keyof typeof features]}
                 <li class="text-center">
-                  <a target={link.newTab ? '_blank' : '_self'} href={link.url} class="hover:underline"
-                    >{link.title}</a
+                  <a
+                    target={link.newTab ? '_blank' : '_self'}
+                    href={link.url}
+                    class="hover:underline">{link.title}</a
                   >
                 </li>
               {/if}

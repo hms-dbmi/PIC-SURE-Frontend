@@ -65,7 +65,9 @@ export const initializeBranding = () => {
   const codeBlocks = { ...configJson.explorePage.codeBlocks };
   Object.keys(codeBlocks).forEach((key) => {
     if (typeof codeBlocks[key as keyof typeof codeBlocks] === 'string') {
-      codeBlocks[key as keyof typeof codeBlocks] = codeBlocks[key as keyof typeof codeBlocks].replace('{{PICSURE_NETWORK_URL}}', PROJECT_HOSTNAME);
+      codeBlocks[key as keyof typeof codeBlocks] = codeBlocks[
+        key as keyof typeof codeBlocks
+      ].replace('{{PICSURE_NETWORK_URL}}', PROJECT_HOSTNAME);
     }
   });
 
