@@ -21,10 +21,10 @@
       your choice. This API is available in both Python and R coding languages.
     </p>
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    <p>{@html branding.analysisConfig.instructions.connection}</p>
+    <p>{@html branding.analysisConfig.api.instructions.connection}</p>
     <div class="flex justify-center"><UserToken /></div>
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    <p>{@html branding.analysisConfig.instructions.execution}</p>
+    <p>{@html branding.analysisConfig.api.instructions.execution}</p>
     <Tabs value={tabSet} onValueChange={(e) => (tabSet = e.value)}>
       {#snippet list()}
         <TabItem bind:group={tabSet} value="Python">Python</TabItem>
@@ -44,7 +44,7 @@
     </Tabs>
   </section>
   <section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
-    {#each branding.analysisConfig.cards as card}
+    {#each branding.analysisConfig.api.cards as card}
       <a
         href={card.link}
         target={card.link.startsWith('http') ? '_blank' : '_self'}
