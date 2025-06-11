@@ -14,7 +14,8 @@
       "privilege": "PIC_SURE_ANY_QUERY",
       "links": [
         { "title": "Explore", "url": "/explorer" },
-        { "title": "Analyze", "url": "/analyze" },
+        { "title": "Analyze", "url": "/analyze/api", "feature": "analyzeApi" },
+        { "title": "Analyze", "url": "/analyze/analysis", "feature": "analyzeAnalysis" },
         { "title": "Manage Datasets", "url": "/dataset" }
       ]
     },
@@ -122,16 +123,24 @@
     "statFields": {}
   },
   "analysisPage": {
-    "cards": [
-      {
-        "header": "Setting Up the PIC-SURE API",
-        "body": "Step-by-step instructions to get started using the PIC-SURE API",
-        "link": "/analyze/example"
+    "api": {
+      "cards": [
+        {
+          "header": "Setting Up the PIC-SURE API",
+          "body": "Step-by-step instructions to get started using the PIC-SURE API",
+          "link": "/analyze/example"
+        }
+      ],
+      "instructions": {
+        "connection": "To connect to the PIC-SURE Application Programming Interface (API), you will need your personal access token. Copy your token and save as a text file called \"token.txt\" in the working directory of your chosen analysis workspace.",
+        "execution": "To start your analysis, copy and execute the following code in your preferred analysis environment to connect to the PIC-SURE API. Note that you will need your personal access token to complete the connection."
       }
-    ],
-    "instructions": {
-      "connection": "To connect to the PIC-SURE Application Programming Interface (API), you will need your personal access token. Copy your token and save as a text file called \"token.txt\" in the working directory of your chosen analysis workspace.",
-      "execution": "To start your analysis, copy and execute the following code in your preferred analysis environment to connect to the PIC-SURE API. Note that you will need your personal access token to complete the connection."
+    },
+    "analysis": {
+      "platform": "Service Workbench",
+      "introduction": "<section id=\"introduction\"><h2>Introduction to Service Workbench</h2><p>After you have identified patients for research using the <a class=\"anchor\" href=\"/explorer\">Cohort Builder</a>, found collaborators from other <a class=\"anchor\" href=\"/collaborate\">GIC sites</a>, submitted the <a class=\"anchor\" target=\"_blank\" href=\"https://redcap.tch.harvard.edu/redcap_edc/surveys/?s=EWYX8X8XX77TTWFR\">RedCap Request Form</a> for accessing data, and received approval from each site’s Sample and Data Access Committee (SDAC), you are ready to begin analysis. You can access and analyze patient-level data using Service Workbench.</p> <p>Service Workbench (SWB) is an open-source cloud computing platform from Amazon Web Services (AWS). This platform provides secure, repeatable, and federated control of access to data, tooling, and computing power. This allows you to easily access any cloud workspace from a catalog of pre-configured environments, leverage all AWS AI/ML and native security controls, and collaborate with researchers from other sites through a simple web application.</p></section>",
+      "access": "<section id=\"access\" style=\"display: flex; flex-direction: column; align-items: center;\"><h2 style=\"align-self: normal;\">Accessing Service Workbench</h2><p style=\"align-self: baseline;\">First, ensure that you are connected to your institution’s virtual private network (VPN). Then, you can navigate to the GIC Service Workbench and log in with your institutional email address.</p><a class=\"btn preset-filled-primary-500 hover:preset-outlined-primary-500\" style=\"width: fit-content;\" target=\"_blank\" href=\"https://www.service-workbench.childrens.harvard.edu/\">Go to GIC Service Workbench</a><p style=\"align-self: baseline;\"> For additional information about Service Workbench and setting up your computing workspace, you can refer to the <a class=\"anchor\" target=\"_blank\" href=\"https://pic-sure.gitbook.io/genomic-information-commons/user-journey/5.-data-analysis-service-workbench/\">Genomic Information Commons documentation</a>.</p></section>",
+      "examples": "<section id=\"examples\"><h2 style=\"align-self: baseline;\">Example Code and Training Videos</h2><p>Publicly available example code has been created to help you get started on your analysis, available on the <a class=\"anchor\" target=\"_blank\" href=\"https://github.com/hms-dbmi/Access-to-Data-and-Compute-using-Service-Workbench\">Access to Data and Compute using Service Workbench GitHub repository</a>, with example notebooks called “Investigating EHR data in PIC-SURE” in R and Python; for instructions on importing these into Service Workbench, refer to the <a class=\"anchor\" target=\"_blank\" href=\"https://pic-sure.gitbook.io/genomic-information-commons/user-journey/5.-data-analysis-service-workbench/example-code-and-analyses/\">GIC Service Workbench documentation</a>.</p><p>There are also tutorial videos that describe each step in the notebooks in more detail. You can find these here:</p><ul class=\"list-inside list-disc space-y-2 ml-8\"><li><a class=\"anchor\" target=\"_blank\" href=\"https://youtu.be/FvKYGyP285A\">Brief introduction to EHR data from PIC-SURE in R</a></li><li><a class=\"anchor\" target=\"_blank\" href=\"https://youtu.be/bEd1EZxxPcg\">Brief introduction to EHR data from PIC-SURE in Python</a></li><li><a class=\"anchor\" target=\"_blank\" href=\"https://youtu.be/4Yqg0v9ySrE\">Extended examples for EHR data from PIC-SURE in R</a></li><li><a class=\"anchor\" target=\"_blank\" href=\"https://youtu.be/vGAlklsB5g8\">Extended examples for EHR data from PIC-SURE in Python</a></li></ul></section>"
     }
   },
   "login": {
