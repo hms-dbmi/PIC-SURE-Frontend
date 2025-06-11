@@ -41,7 +41,7 @@
           <ul class="basis-1/8">
             <li class="font-bold text-center">{section.category}</li>
             {#each section.links as link}
-              {#if !link.feature || features[link.feature as keyof typeof features]}
+              {#if !link.feature || features[link.feature]}
                 <li class="text-center">
                   <a
                     target={link.newTab ? '_blank' : '_self'}

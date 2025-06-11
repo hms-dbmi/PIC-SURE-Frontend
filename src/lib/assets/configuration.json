@@ -100,7 +100,7 @@
         "title": "Prepare for Analysis",
         "description": "Use the PIC-SURE API to prepare data for analysis",
         "icon": "fa-solid fa-chart-line",
-        "url": "/analyze",
+        "url": "/analyze/api",
         "btnText": "Prepare for Analysis",
         "isOpen": false,
         "showIfLoggedIn": true
@@ -128,7 +128,7 @@
         {
           "header": "Setting Up the PIC-SURE API",
           "body": "Step-by-step instructions to get started using the PIC-SURE API",
-          "link": "/analyze/example"
+          "link": "/analyze/api/example"
         }
       ],
       "instructions": {
@@ -142,6 +142,32 @@
       "access": "<section id=\"access\" style=\"display: flex; flex-direction: column; align-items: center;\"><h2 style=\"align-self: normal;\">Accessing Service Workbench</h2><p style=\"align-self: baseline;\">First, ensure that you are connected to your institution’s virtual private network (VPN). Then, you can navigate to the GIC Service Workbench and log in with your institutional email address.</p><a class=\"btn preset-filled-primary-500 hover:preset-outlined-primary-500\" style=\"width: fit-content;\" target=\"_blank\" href=\"https://www.service-workbench.childrens.harvard.edu/\">Go to GIC Service Workbench</a><p style=\"align-self: baseline;\"> For additional information about Service Workbench and setting up your computing workspace, you can refer to the <a class=\"anchor\" target=\"_blank\" href=\"https://pic-sure.gitbook.io/genomic-information-commons/user-journey/5.-data-analysis-service-workbench/\">Genomic Information Commons documentation</a>.</p></section>",
       "examples": "<section id=\"examples\"><h2 style=\"align-self: baseline;\">Example Code and Training Videos</h2><p>Publicly available example code has been created to help you get started on your analysis, available on the <a class=\"anchor\" target=\"_blank\" href=\"https://github.com/hms-dbmi/Access-to-Data-and-Compute-using-Service-Workbench\">Access to Data and Compute using Service Workbench GitHub repository</a>, with example notebooks called “Investigating EHR data in PIC-SURE” in R and Python; for instructions on importing these into Service Workbench, refer to the <a class=\"anchor\" target=\"_blank\" href=\"https://pic-sure.gitbook.io/genomic-information-commons/user-journey/5.-data-analysis-service-workbench/example-code-and-analyses/\">GIC Service Workbench documentation</a>.</p><p>There are also tutorial videos that describe each step in the notebooks in more detail. You can find these here:</p><ul class=\"list-inside list-disc space-y-2 ml-8\"><li><a class=\"anchor\" target=\"_blank\" href=\"https://youtu.be/FvKYGyP285A\">Brief introduction to EHR data from PIC-SURE in R</a></li><li><a class=\"anchor\" target=\"_blank\" href=\"https://youtu.be/bEd1EZxxPcg\">Brief introduction to EHR data from PIC-SURE in Python</a></li><li><a class=\"anchor\" target=\"_blank\" href=\"https://youtu.be/4Yqg0v9ySrE\">Extended examples for EHR data from PIC-SURE in R</a></li><li><a class=\"anchor\" target=\"_blank\" href=\"https://youtu.be/vGAlklsB5g8\">Extended examples for EHR data from PIC-SURE in Python</a></li></ul></section>"
     }
+  },
+  "collaboratePage": {
+    "steps": [
+      {
+        "label": "Build Patient Cohort",
+        "icon": "fa-search",
+        "path": "/explorer"
+      },
+      {
+        "label": "Find Collaborators",
+        "icon": "fa-handshake",
+        "path": "/collaborate"
+      },
+      {
+        "label": "Request Access to Data",
+        "icon": "fa-database",
+        "path": "/data-requests"
+      },
+      {
+        "label": "Analyze with Service Workbench",
+        "icon": "fa-chart-line",
+        "path": "/analyze/analysis"
+      }
+    ],
+    "introduction": "<section id=\"introduction\"><h2>Expand Access with Collaborators</h2><p>Once you have defined your patient cohort using the Cohort Builder (link to page here), you will see which sites have data that match these criteria. To gain access to patient-level data from other GIC network institutions, the Principal Investigator (PI) must identify and engage co-PIs at the other site.</p><p>For example, a researcher from Boston Children's Hospital (BCH) created a cohort and would like to collaborate with the Children's Hospital of Philadelphia (CHOP), which has patients that match their research criteria. The BCH PI would find a collaborating PI at CHOP to access the CHOP patient-level data.</p></section>",
+    "findCollaborators": "<section id=\"find-collaborators\"><h2>Resources to Find Collaborators</h2><p>You can search for collaborators from the GIC network using the associated faculty listings:</p><ul class=\"list-inside list-disc space-y-2 ml-8\"><li><a class=\"anchor\" href=\"https://connects.catalyst.harvard.edu/Profiles/search/\">Boston Children's Hospital / Harvard Medical School</a></li><li><a class=\"anchor\" href=\"https://www.cincinnatichildrens.org/search/find-researcher\">Cincinnati Children's Hospital Medical Center</a></li><li><a class=\"anchor\" href=\"https://www.research.chop.edu/people/directory\">Children's Hospital of Philadelphia</a></li><li>St. Louis Children's Hospital / <a class=\"anchor\" href=\"https://profiles.wustl.edu/\">Washington University at St. Louis</a></li><li><a class=\"anchor\" href=\"https://www.chp.edu/research/areas\">University of Pittsburgh Medical Center</a></li><li><a class=\"anchor\" href=\"https://www.lebonheur.org/research/\">Le Bonheur Children's Hospital at the University of Tennessee Health Science Center</a></li></ul><p>Additionally, you can email <a class=\"anchor\" href=\"mailto:GIC-contact@chip.org\">GIC-contact@chip.org</a> for assistance in identifying a collaborator.</p></section>"
   },
   "login": {
     "description": "Where searching for, filtering on, and analyzing data is made simple.",

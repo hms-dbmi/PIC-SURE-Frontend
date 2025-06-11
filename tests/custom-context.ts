@@ -43,17 +43,6 @@ export function mockApiFail(
   return context.route(path, (route: Route) => route.abort(message));
 }
 
-export const test = base.extend({
-  context: async ({ context }, use) => {
-    await context.addInitScript(() => {
-      sessionStorage.setItem('type', 'AUTH0');
-      sessionStorage.setItem('redirect', '/');
-    });
-
-    use(context);
-  },
-});
-
 async function screenshotOnFailure({ page }: { page: Page }, testInfo: TestInfo) {
   if (testInfo.status !== testInfo.expectedStatus) {
     // Get a unique place for the screenshot.
@@ -69,4 +58,18 @@ async function screenshotOnFailure({ page }: { page: Page }, testInfo: TestInfo)
   }
 }
 
-test.afterEach(screenshotOnFailure);
+export const test = base.extend({
+  context: async ({ context }, use) => {
+    await context.addInitScript(() => {
+      sessionStorage.setItem('type', 'AUTH0');
+      sessionStorage.setItem('redirect', '/');
+    });
+
+    use(context);
+  },
+  page: async ({ page }, use, testInfo) => {
+    await use(page);
+    // Take screenshot on failure
+    await screenshotOnFailure({ page }, testInfo);
+  },
+});

@@ -126,3 +126,16 @@ export interface AnalysisConfig {
     examples: string;
   };
 }
+
+export interface Step {
+  label: string;
+  icon: string;
+  description?: string;
+  path?: string;
+}
+
+export interface CollaborateConfig {
+  steps: Step[];
+  introduction: string;
+  findCollaborators: string;
+}

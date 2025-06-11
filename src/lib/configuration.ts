@@ -12,6 +12,7 @@ import type {
   SiteMapConfig,
   PrivacyConfig,
   AnalysisConfig,
+  CollaborateConfig,
 } from './types';
 
 export const PROJECT_HOSTNAME =
@@ -35,6 +36,7 @@ export interface Branding {
   help: HelpConfig;
   privacyPolicy: PrivacyConfig;
   analysisConfig: AnalysisConfig;
+  collaborateConfig: CollaborateConfig;
   genomic?: {
     defaultGenomeBuild: string;
   };
@@ -56,6 +58,7 @@ export const branding: Branding = {
   help: {} as HelpConfig,
   privacyPolicy: {} as PrivacyConfig,
   analysisConfig: {} as AnalysisConfig,
+  collaborateConfig: {} as CollaborateConfig,
 };
 
 export const initializeBranding = () => {
@@ -83,6 +86,7 @@ export const initializeBranding = () => {
   branding.sitemap = configJson.sitemap as SiteMapConfig[];
   branding.privacyPolicy = configJson.privacyPolicy;
   branding.analysisConfig = configJson.analysisPage;
+  branding.collaborateConfig = configJson.collaboratePage as CollaborateConfig;
   branding.genomic = configJson.genomic;
 };
 
@@ -113,6 +117,12 @@ export const routes: Route[] = [
     text: 'Analyze',
     privilege: [PicsurePrivileges.QUERY],
     feature: 'analyzeAnalysis',
+  },
+  {
+    path: '/collaborate',
+    text: 'Collaborate',
+    feature: 'collaborate',
+    privilege: [PicsurePrivileges.QUERY],
   },
   {
     path: '/dataset',
@@ -165,6 +175,7 @@ export const features: Indexable = {
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
   useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
   discover: import.meta.env?.VITE_DISCOVER === 'true',
+  collaborate: import.meta.env?.VITE_COLLABORATE === 'true',
   discoverFeautures: {
     enableTour: import.meta.env?.EXPLORER_TOUR !== 'false', // default true
     openTour: import.meta.env?.VITE_OPEN_TOUR_NAME ?? 'BDC-Open',
