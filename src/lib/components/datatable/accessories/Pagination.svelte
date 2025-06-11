@@ -6,9 +6,6 @@
 
   const setPage = (value: 'previous' | 'next' | 'last' | number) => {
     handler.setPage(value);
-    if (handler instanceof RemoteTableHandler) {
-      handler.invalidate();
-    }
   };
 </script>
 

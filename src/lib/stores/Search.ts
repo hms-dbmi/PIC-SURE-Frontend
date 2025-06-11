@@ -19,6 +19,8 @@ export const tableHandler: TableHandler = new TableHandler([] as SearchResult[],
 });
 export const tour: Writable<boolean> = writable(true);
 export const error: Writable<string> = writable('');
+export const previousPage: Writable<number> = writable(1);
+export const previousRowsPerPage: Writable<number> = writable(getDefaultRows('ExplorerTable'));
 
 selectedFacets.subscribe(() => {
   tableHandler.setPage(1);
@@ -36,7 +38,12 @@ tableHandler.load(async (state: State) => {
     tour.set(false);
   }
   try {
-    facetsPromise.set(updateFacetsFromSearch());
+    if (get(previousPage) !== state.currentPage || get(previousRowsPerPage) !== state.rowsPerPage) {
+      previousPage.set(state.currentPage);
+      previousRowsPerPage.set(state.rowsPerPage);
+    } else {
+      facetsPromise.set(updateFacetsFromSearch());
+    }
     return await search(state);
   } catch (e) {
     return [];

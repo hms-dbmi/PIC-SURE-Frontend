@@ -16,9 +16,6 @@
   const setRowsPerPage = () => {
     setDefaultRows(tableName, handler.rowsPerPage);
     handler.setPage(1);
-    if (handler instanceof RemoteTableHandler) {
-      handler.invalidate();
-    }
   };
 </script>
 
