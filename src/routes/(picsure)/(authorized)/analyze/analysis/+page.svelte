@@ -3,7 +3,7 @@
   import { branding } from '$lib/configuration';
 </script>
 
-<Content backUrl="/analyze" title={`Analyze with ${branding.analysisConfig.analysis.platform}`}>
+<Content title={`Analyze with ${branding.analysisConfig.analysis.platform}`}>
   <div class="flex flex-col gap-4 w-full items-center mb-8">
     <!-- eslint-disable svelte/no-at-html-tags -->
     {@html branding.analysisConfig.analysis.introduction}
