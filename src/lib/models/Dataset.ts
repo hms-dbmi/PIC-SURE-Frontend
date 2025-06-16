@@ -1,4 +1,5 @@
 import type { Indexable } from '$lib/types';
+import type { Query } from './query/Query';
 
 // TODO: Replace metadata nad query types
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -8,7 +9,7 @@ export type DataSet = Indexable & {
   name: string;
   archived: boolean;
   metadata: any;
-  query: any;
+  query: Query;
   queryId: string;
   federated?: any;
   startTime: string;

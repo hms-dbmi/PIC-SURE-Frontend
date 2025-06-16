@@ -4,7 +4,7 @@
   import type { DataSet } from '$lib/models/Dataset';
   import { getDataset } from '$lib/stores/Dataset';
   import { branding } from '$lib/configuration';
-
+  import { Query } from '$lib/models/query/Query';
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import QuerySummary from '$lib/components/QuerySummary.svelte';
@@ -16,7 +16,7 @@
     name: '',
     archived: false,
     metadata: {},
-    query: {},
+    query: new Query(),
     queryId: '',
     startTime: '',
     rawStartTime: 0,
