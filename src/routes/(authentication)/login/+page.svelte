@@ -29,8 +29,7 @@
       }
     }
   });
-
-  let selected: string = $state('');
+  let selected: string = $state($page.data?.providers?.length > 0 ? $page.data?.providers[0].name : '');
 
   let selectedProvider = $derived(
     selected
@@ -75,7 +74,7 @@
             </ErrorAlert>
           {/if}
           {#if providers.length > 3}
-            <select bind:value={selected}>
+            <select id="login-select" class="select !w-fit" bind:value={selected}>
               {#each providers as provider}
                 <option class="capitalize" value={provider.name}
                   >{provider.description || provider.name}</option
@@ -120,7 +119,7 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn preset-outlined-tertiary-500 text-tertiary-500 hover:preset-filled-tertiary-500 w-full"
+                class="btn preset-outlined-secondary-500 text-secondary-500 hover:preset-filled-secondary-500 w-full"
               />
             {/each}
           </div>
