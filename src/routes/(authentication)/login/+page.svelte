@@ -29,7 +29,9 @@
       }
     }
   });
-  let selected: string = $state($page.data?.providers?.length > 0 ? $page.data?.providers[0].name : '');
+  let selected: string = $state(
+    $page.data?.providers?.length > 0 ? $page.data?.providers[0].name : '',
+  );
 
   let selectedProvider = $derived(
     selected
