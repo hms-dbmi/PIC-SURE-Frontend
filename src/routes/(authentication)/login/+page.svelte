@@ -89,7 +89,7 @@
                 provider={selectedProvider}
                 {redirectTo}
                 helpText={selectedProvider.helptext}
-                class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 w-full"
+                class="btn preset-filled-primary-500 w-full"
               />
             {/if}
           {:else}
@@ -99,7 +99,7 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 w-full"
+                class="btn preset-filled-primary-500 w-full"
               />
             {/each}
           {/if}
@@ -107,7 +107,7 @@
         {#if features.login.open}
           <a
             href={branding?.login?.openPicsureLink || '/'}
-            class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 mb-4 w-full"
+            class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-5 mb-4 w-full"
             >{openPicsureLinkText}</a
           >
         {/if}
@@ -121,7 +121,7 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn preset-outlined-secondary-500 text-secondary-500 hover:preset-filled-secondary-500 w-full"
+                class="btn preset-outlined-secondary-500 text-secondary-500 hover:preset-filled-secondary-500 hover:text-primary-500 w-full"
               />
             {/each}
           </div>
