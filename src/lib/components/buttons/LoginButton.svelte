@@ -47,7 +47,7 @@
   {#if imageSrc}
     <img src={imageSrc} alt={provider.imageAlt} class="mr-2 h-8" />
   {/if}
-  {buttonText}
+  <span>{buttonText}</span>
 </button>
 
 {#if helpText && !provider.alt}
