@@ -1,8 +1,7 @@
 import { error, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
 import { browser } from '$app/environment';
-import { get as getStore } from 'svelte/store';
-import { page } from '$app/stores';
+import { page } from '$app/state';
 
 const BEARER = 'Bearer ';
 
@@ -39,7 +38,7 @@ async function send({
       opts.headers['Authorization'] = `${BEARER}${token}`;
       opts.headers['request-source'] = 'Authorized';
     }
-    if (getStore(page).url.pathname.includes('/discover')) {
+    if (page.url.pathname.includes('/discover')) {
       opts.headers['request-source'] = 'Open';
     }
   }

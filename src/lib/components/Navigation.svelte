@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { AppBar, Avatar } from '@skeletonlabs/skeleton-svelte';
 
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
 
@@ -24,26 +24,26 @@
 
   function handleLogin(e: Event) {
     e.stopImmediatePropagation();
-    goto(`/login?redirectTo=${$page.url.pathname}`);
+    goto(`/login?redirectTo=${page.url.pathname}`);
   }
 
   let currentPage = $derived((route: Route) => {
     if (route.children) {
       for (const child of route.children) {
-        if ($page.url.pathname.includes(child.path)) {
+        if (page.url.pathname.includes(child.path)) {
           return 'page';
         }
       }
       return undefined;
     }
-    return $page.url.pathname.includes(route.path) ? 'page' : undefined;
+    return page.url.pathname.includes(route.path) ? 'page' : undefined;
   });
 
   onMount(async () => {
-    if (browser && $page) {
+    if (browser && page) {
       const providerType = sessionStorage.getItem('type');
       if (providerType) {
-        providerData = $page.data?.providers.find((p: AuthProvider) => p.type === providerType);
+        providerData = page.data?.providers.find((p: AuthProvider) => p.type === providerType);
         providerInstance = await createInstance(providerData);
       }
     }

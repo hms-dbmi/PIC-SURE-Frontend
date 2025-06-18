@@ -4,7 +4,7 @@
   import { branding, features } from '$lib/configuration';
 
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
 
   import Content from '$lib/components/Content.svelte';
   import FilterType from '$lib/components/explorer/genome-filter/FilterType.svelte';
@@ -28,7 +28,7 @@
   import { addFilter, getFiltersByType } from '$lib/stores/Filter';
   import { panelOpen } from '$lib/stores/SidePanel';
 
-  let edit = $page.url.searchParams.get('edit') || '';
+  let edit = page.url.searchParams.get('edit') || '';
   let selectedOption: Option = $state(
     (() => {
       if (features.enableGENEQuery && !features.enableSNPQuery) return Option.Genomic;

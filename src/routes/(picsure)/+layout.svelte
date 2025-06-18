@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { beforeNavigate } from '$app/navigation';
 
   import { Toaster } from '@skeletonlabs/skeleton-svelte';
@@ -29,9 +29,9 @@
   });
 
   let showSidebar = $derived(
-    ($page.url.pathname.includes('/explorer') || $page.url.pathname.includes('/discover')) &&
-      !$page.url.pathname.includes('/export') &&
-      !$page.url.pathname.includes('/distributions'),
+    (page.url.pathname.includes('/explorer') || page.url.pathname.includes('/discover')) &&
+      !page.url.pathname.includes('/export') &&
+      !page.url.pathname.includes('/distributions'),
   );
 
   beforeNavigate(({ to, cancel }) => {

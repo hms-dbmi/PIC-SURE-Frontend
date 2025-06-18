@@ -10,7 +10,7 @@
     createCategoryPlot,
   } from '$lib/utilities/Plotly';
   import { getQueryRequest } from '$lib/QueryBuilder';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { toaster } from '$lib/toaster';
   import Loading from '../Loading.svelte';
 
@@ -20,7 +20,7 @@
   let newPlot: PlotlyNewPlot = $state() as PlotlyNewPlot;
   let loading = $state(true);
 
-  const isOpenAccess = $page.url.pathname.includes('/discover');
+  const isOpenAccess = page.url.pathname.includes('/discover');
 
   async function loadPlotData() {
     const query = getQueryRequest(!isOpenAccess, resources.visualization);
