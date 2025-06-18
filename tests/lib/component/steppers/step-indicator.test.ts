@@ -4,7 +4,6 @@ import { picsureUser } from '../../../mock-data';
 
 test.use({ storageState: 'tests/.auth/generalUser.json' });
 test.describe('StepIndicator Component Integration', () => {
-
   test.beforeEach(async ({ page }) => {
     // Mock the necessary API endpoints
     await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);

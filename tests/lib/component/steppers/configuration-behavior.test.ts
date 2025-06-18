@@ -4,7 +4,6 @@ import { picsureUser } from '../../../mock-data';
 
 test.use({ storageState: 'tests/.auth/generalUser.json' });
 test.describe('CollaborateSteps Configuration Behavior', () => {
-
   test.beforeEach(async ({ page }) => {
     await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
   });
