@@ -5,11 +5,10 @@ import { settings } from '$lib/configuration';
 import type { Indexable } from '$lib/types';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { ExportType } from '$lib/models/Variant';
-import type { Column } from '$lib/models/Tables';
+import type { Column } from '$lib/components/datatable/types';
 
 import * as api from '$lib/api';
-
-const SYNC_URL = '/picsure/query/sync';
+import { Picsure } from '$lib/paths';
 
 export const count: Writable<number> = writable(0);
 export const columns: Writable<Column[]> = writable([]);
@@ -21,7 +20,7 @@ export const variantError: Writable<string> = writable('');
 export async function getVariantCount(request: QueryRequestInterface) {
   request.query.expectedResultType = 'VARIANT_COUNT_FOR_QUERY';
   const response = await api
-    .post(SYNC_URL, request)
+    .post(Picsure.QuerySync, request)
     .then((resp) => resp.count)
     .catch((error) => {
       console.error(error);
@@ -37,7 +36,7 @@ export async function getVariantCount(request: QueryRequestInterface) {
 export async function getVariantData(request: QueryRequestInterface) {
   request.query.expectedResultType =
     get(dataExportType) === ExportType.Aggregate ? 'AGGREGATE_VCF_EXCERPT' : 'VCF_EXCERPT';
-  const response = await api.post(SYNC_URL, request).catch((error) => {
+  const response = await api.post(Picsure.QuerySync, request).catch((error) => {
     console.error(error);
     variantError.set(
       'An error occured while retrieving variant data. Please contact your PIC-SURE admin.',

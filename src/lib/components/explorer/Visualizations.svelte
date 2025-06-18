@@ -12,9 +12,8 @@
   import { getQueryRequest } from '$lib/QueryBuilder';
   import { page } from '$app/stores';
   import { toaster } from '$lib/toaster';
-  import Loading from '../Loading.svelte';
-
-  const SYNC_URL = '/picsure/query/sync';
+  import Loading from '$lib/components/Loading.svelte';
+  import { Picsure } from '$lib/paths';
 
   let plotValues: PlotValues[] = $state([]);
   let newPlot: PlotlyNewPlot = $state() as PlotlyNewPlot;
@@ -27,7 +26,7 @@
     const token = localStorage.getItem('token');
 
     await api
-      .post(SYNC_URL, {
+      .post(Picsure.QuerySync, {
         query: query.query,
         resourceUUID: resources.visualization,
         resourceCredentials: token ? { Authorization: 'Bearer ' + token } : {},

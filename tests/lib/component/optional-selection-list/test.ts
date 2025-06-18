@@ -90,7 +90,7 @@ test.describe('OptionaSelectionList', () => {
   test('Selected option moves to selected option', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
+    await page.route(`${conceptsDetailPath}/${detailResponseCat.dataset}`, async (route: Route) =>
       route.fulfill({ json: detailResponseCat }),
     );
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
@@ -119,7 +119,7 @@ test.describe('OptionaSelectionList', () => {
   test('Clicking select all button selects all options', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
+    await page.route(`${conceptsDetailPath}/${detailResponseCat.dataset}`, async (route: Route) =>
       route.fulfill({ json: detailResponseCat }),
     );
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
@@ -152,7 +152,7 @@ test.describe('OptionaSelectionList', () => {
   test('Clicking select all button selects all options in the data', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route(`${conceptsDetailPath}${detailResponseCat2.dataset}`, async (route: Route) =>
+    await page.route(`${conceptsDetailPath}/${detailResponseCat2.dataset}`, async (route: Route) =>
       route.fulfill({ json: detailResponseCat2 }),
     );
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
@@ -186,7 +186,7 @@ test.describe('OptionaSelectionList', () => {
   test('Clicking clears removes selected and repopulates the options', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
+    await page.route(`${conceptsDetailPath}/${detailResponseCat.dataset}`, async (route: Route) =>
       route.fulfill({ json: detailResponseCat }),
     );
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
@@ -216,7 +216,7 @@ test.describe('OptionaSelectionList', () => {
       values: Array.from({ length: 100 }, (_, i) => `Option ${i + 1}`),
     };
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route(`${conceptsDetailPath}${detailResponseCat2.dataset}`, async (route: Route) =>
+    await page.route(`${conceptsDetailPath}/${detailResponseCat2.dataset}`, async (route: Route) =>
       route.fulfill({ json: mockDataWithManyOptions }),
     );
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
@@ -259,7 +259,7 @@ test.describe('OptionaSelectionList', () => {
       values: Array.from({ length: 100 }, (_, i) => `Option ${i + 1}`),
     };
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route(`${conceptsDetailPath}${detailResponseCat2.dataset}`, async (route: Route) =>
+    await page.route(`${conceptsDetailPath}/${detailResponseCat2.dataset}`, async (route: Route) =>
       route.fulfill({ json: mockDataWithManyOptions }),
     );
     await page.route('*/**/picsure/query/sync', async (route: Route) =>
@@ -317,7 +317,7 @@ test.describe('OptionaSelectionList', () => {
       values: Array.from({ length: 100 }, (_, i) => `Option ${i + 1}`),
     };
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route(`${conceptsDetailPath}${detailResponseCat2.dataset}`, async (route: Route) =>
+    await page.route(`${conceptsDetailPath}/${detailResponseCat2.dataset}`, async (route: Route) =>
       route.fulfill({ json: mockDataWithManyOptions }),
     );
     await page.route('*/**/picsure/query/sync', async (route: Route) =>

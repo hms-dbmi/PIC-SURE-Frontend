@@ -8,6 +8,7 @@
 
   import * as api from '$lib/api';
   import { branding, features, settings, resources } from '$lib/configuration';
+  import { Picsure } from '$lib/paths';
 
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
@@ -117,7 +118,7 @@
 
   async function download(): Promise<void> {
     try {
-      const res = await api.post(`picsure/query/${datasetId}/result`, {});
+      const res = await api.post(`${Picsure.Query}/${datasetId}/result`, {});
       const responseDataUrl = URL.createObjectURL(new Blob([res], { type: 'octet/stream' }));
       if (browser) {
         const link = document.createElement('a');
@@ -183,7 +184,7 @@
       query.query.expectedResultType = activeType || 'DATAFRAME';
       datasetId = '';
       requestUpdate(() =>
-        api.post('picsure/query', query).then((res: DataSetResponse) => {
+        api.post(Picsure.Query, query).then((res: DataSetResponse) => {
           datasetId = res.picsureResultId || 'Error';
         }),
       );
@@ -198,7 +199,7 @@
   function checkExportStatus(lastPicsureResultId?: string) {
     const statusId = lastPicsureResultId || datasetId;
     return api
-      .post('picsure/query/' + statusId + '/status', query)
+      .post(`${Picsure.Query}/${statusId}/status`, query)
       .then((res: { picsureResultId: string; status: string }) => {
         if (res.status === 'ERROR') {
           lockDownload = true;
@@ -245,7 +246,7 @@
     const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
     crossCountQuery.setCrossCountFields(crossCountFields);
 
-    const crossCountResponse: Record<string, number> = await api.post('picsure/query/sync', {
+    const crossCountResponse: Record<string, number> = await api.post(Picsure.QuerySync, {
       query: crossCountQuery,
       resourceUUID: resources.hpds,
     });
@@ -315,7 +316,7 @@
 
   async function exportSignedToUrl(url?: string) {
     async function getSignedUrl() {
-      const path = 'picsure/query/' + datasetId + '/signed-url';
+      const path = `${Picsure.Query}/${datasetId}/signed-url`;
       try {
         const res = await api.post(path, query);
         return res.signedUrl;

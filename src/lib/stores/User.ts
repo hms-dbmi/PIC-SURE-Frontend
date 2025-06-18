@@ -5,6 +5,7 @@ import type { Route } from '$lib/models/Route';
 import type { User } from '$lib/models/User';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, features, resources } from '$lib/configuration';
+import { Psama } from '$lib/paths';
 import { goto } from '$app/navigation';
 import type { QueryInterface } from '$lib/models/query/Query';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
@@ -129,7 +130,7 @@ export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user
 
 export async function getUser(force?: boolean, hasToken = false) {
   if (force || !get(user)?.privileges || !get(user)?.token) {
-    const res: User = await api.get(`psama/user/me${hasToken ? '?hasToken' : ''}`);
+    const res: User = await api.get(`${Psama.User.Me}${hasToken ? '?hasToken' : ''}`);
     if (res.privileges && res.token) {
       for (const privilege of res.privileges) {
         if (privilege.includes(BDCPrivileges.PRIV_MANAGED)) {
@@ -143,20 +144,18 @@ export async function getUser(force?: boolean, hasToken = false) {
 }
 
 export function refreshLongTermToken() {
-  return api
-    .get('psama/user/me/refresh_long_term_token')
-    .then((response: { userLongTermToken: string }) => {
-      if (!response.userLongTermToken) {
-        throw new Error('No user token was returned.');
-      }
-      user.set({ ...get(user), token: response.userLongTermToken });
-      return response.userLongTermToken;
-    });
+  return api.get(Psama.User.Refresh).then((response: { userLongTermToken: string }) => {
+    if (!response.userLongTermToken) {
+      throw new Error('No user token was returned.');
+    }
+    user.set({ ...get(user), token: response.userLongTermToken });
+    return response.userLongTermToken;
+  });
 }
 
 export async function getQueryTemplate(): Promise<QueryInterface> {
   try {
-    const res = await api.get('psama/user/me/queryTemplate/' + resources.application);
+    const res = await api.get(Psama.User.Template + '/' + resources.application);
     const queryTemplate = JSON.parse(res.queryTemplate) as QueryInterface;
     return queryTemplate;
   } catch (error) {
@@ -182,7 +181,7 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
   if (browser) {
     const token = localStorage.getItem('token');
     if (token) {
-      api.get('/psama/logout').catch((error) => {
+      api.get(Psama.User.Logout).catch((error) => {
         console.error('Error logging out: ' + error);
       });
       removeToken();

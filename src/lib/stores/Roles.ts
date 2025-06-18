@@ -2,9 +2,7 @@ import { get, derived, writable, type Writable } from 'svelte/store';
 import { type Role, mapRole } from '$lib/models/Role';
 
 import * as api from '$lib/api';
-
-const ROLE_PATH = 'psama/role';
-const MANUAL_ROLE_PATH = 'psama/studyAccess';
+import { Psama } from '$lib/paths';
 
 const loaded = writable(false);
 export const roles: Writable<Role[]> = writable([]);
@@ -13,7 +11,7 @@ export const roleList = derived(roles, ($r) => $r.map((r) => [r.name, r.uuid || 
 export async function loadRoles() {
   if (get(loaded)) return;
 
-  const res = await api.get(ROLE_PATH);
+  const res = await api.get(Psama.Role);
   roles.set(res.map(mapRole));
   loaded.set(true);
 }
@@ -25,12 +23,12 @@ export async function getRole(uuid: string) {
     return role;
   }
 
-  const res = await api.get(`${ROLE_PATH}/${uuid}`);
+  const res = await api.get(`${Psama.Role}/${uuid}`);
   return mapRole(res);
 }
 
 export async function addRole(role: Role) {
-  const res = await api.post(ROLE_PATH, [
+  const res = await api.post(Psama.Role, [
     {
       ...role,
       privileges: role.privileges.map((p) => ({ uuid: p })),
@@ -44,7 +42,7 @@ export async function addRole(role: Role) {
 }
 
 export async function updateRole(role: Role) {
-  const res = await api.put(ROLE_PATH, [
+  const res = await api.put(Psama.Role, [
     {
       ...role,
       privileges: role.privileges.map((p) => ({ uuid: p })),
@@ -63,7 +61,7 @@ export async function updateRole(role: Role) {
 }
 
 export async function deleteRole(uuid: string) {
-  await api.del(`${ROLE_PATH}/${uuid}`);
+  await api.del(`${Psama.Role}/${uuid}`);
 
   const store: Role[] = get(roles);
   const roleIndex: number = store.findIndex((r) => r.uuid === uuid);
@@ -74,7 +72,7 @@ export async function deleteRole(uuid: string) {
 }
 
 export async function addManualRole(studyId: string) {
-  const res = await api.post(MANUAL_ROLE_PATH, studyId);
+  const res = await api.post(Psama.StudyAccess, studyId);
   if (res.status !== 200) {
     throw new Error('Failed to add manual role');
   }

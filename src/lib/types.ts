@@ -1,4 +1,4 @@
-import type { Column } from './models/Tables';
+import type { Column } from '$lib/components/datatable/types';
 
 interface Link {
   title: string;

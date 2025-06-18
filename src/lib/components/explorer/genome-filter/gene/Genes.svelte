@@ -4,6 +4,7 @@
   import { resources } from '$lib/configuration';
   import { selectedGenes } from '$lib/stores/GeneFilter';
   import { toaster } from '$lib/toaster';
+  import { Picsure } from '$lib/paths';
 
   import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
 
@@ -28,7 +29,7 @@
     loading = true;
     try {
       const response = await api.get(
-        `picsure/search/${resources.hpds}/values/?` +
+        `${Picsure.Search}/${resources.hpds}/values/?` +
           new URLSearchParams({
             genomicConceptPath: 'Gene_with_variant',
             query: search,

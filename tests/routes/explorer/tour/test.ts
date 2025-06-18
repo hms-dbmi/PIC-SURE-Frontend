@@ -34,7 +34,7 @@ test('Tour Finishes', async ({ page }) => {
   await page.route(facetResultPath, async (route: Route) =>
     route.fulfill({ json: facetsResponse }),
   );
-  await page.route(`${conceptsDetailPath}${detailResponseCat.dataset}`, async (route: Route) =>
+  await page.route(`${conceptsDetailPath}/${detailResponseCat.dataset}`, async (route: Route) =>
     route.fulfill({ json: detailResponseCat }),
   );
   await page.goto('/explorer');

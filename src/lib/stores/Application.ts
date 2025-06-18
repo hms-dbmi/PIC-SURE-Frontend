@@ -2,8 +2,7 @@ import { get, derived, writable, type Writable } from 'svelte/store';
 import { type Application } from '$lib/models/Applications';
 
 import * as api from '$lib/api';
-
-const APP_URL = 'psama/application';
+import { Psama } from '$lib/paths';
 
 const loaded = writable(false);
 export const applications: Writable<Application[]> = writable([]);
@@ -12,7 +11,7 @@ export const applicationList = derived(applications, ($a) => $a.map((a) => [a.na
 export async function loadApplications() {
   if (get(loaded)) return;
 
-  const res = await api.get(APP_URL);
+  const res = await api.get(Psama.Application);
   applications.set(res);
   loaded.set(true);
 }
