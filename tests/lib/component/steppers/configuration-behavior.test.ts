@@ -2,8 +2,8 @@ import { expect } from '@playwright/test';
 import { test, mockApiSuccess } from '../../../custom-context';
 import { picsureUser } from '../../../mock-data';
 
+test.use({ storageState: 'tests/.auth/generalUser.json' });
 test.describe('CollaborateSteps Configuration Behavior', () => {
-  test.use({ storageState: 'tests/.auth/generalUser.json' });
 
   test.beforeEach(async ({ page }) => {
     await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
