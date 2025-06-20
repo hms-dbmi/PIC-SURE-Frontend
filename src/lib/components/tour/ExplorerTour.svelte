@@ -225,6 +225,7 @@
   confirmText="Start Tour"
   onconfirm={startTour}
   withDefault={false}
+  width="w-1/3"
 >
   {#if started}
     <Loading ring size="large" />
