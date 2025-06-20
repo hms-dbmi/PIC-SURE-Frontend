@@ -86,7 +86,7 @@ export const initializeBranding = () => {
   branding.sitemap = configJson.sitemap as SiteMapConfig[];
   branding.privacyPolicy = configJson.privacyPolicy;
   branding.analysisConfig = configJson.analysisPage;
-  branding.collaborateConfig = configJson.collaboratePage as CollaborateConfig;
+  branding.collaborateConfig = configJson.collaboratePage;
   branding.genomic = configJson.genomic;
 };
 
