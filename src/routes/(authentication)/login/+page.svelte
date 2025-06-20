@@ -85,15 +85,15 @@
               {/each}
             </select>
             {#if selectedProvider}
-            <div in:scale={{ easing: elasticInOut }}>
-              <LoginButton
-                buttonText="Log In"
-                provider={selectedProvider}
-                {redirectTo}
-                helpText={selectedProvider?.helptext}
-                class="btn preset-filled-primary-500 w-full"
-              />
-            </div>
+              <div in:scale={{ easing: elasticInOut }}>
+                <LoginButton
+                  buttonText="Log In"
+                  provider={selectedProvider}
+                  {redirectTo}
+                  helpText={selectedProvider?.helptext}
+                  class="btn preset-filled-primary-500 w-full"
+                />
+              </div>
             {/if}
           {:else}
             {#each providers as provider}

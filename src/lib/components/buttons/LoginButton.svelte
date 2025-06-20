@@ -2,8 +2,6 @@
   import { createInstance } from '$lib/AuthProviderRegistry';
   import type { AuthData } from '$lib/models/AuthProvider';
   import { resetSearch } from '$lib/stores/Search';
-  import { elasticInOut } from 'svelte/easing';
-  import { scale } from 'svelte/transition';
 
   interface Props {
     provider: AuthData | undefined;
