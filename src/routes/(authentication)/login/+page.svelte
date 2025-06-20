@@ -85,15 +85,15 @@
               {/each}
             </select>
             {#if selectedProvider}
-            <div in:scale={{ easing: elasticInOut }}>
-              <LoginButton
-                buttonText="Log In"
-                provider={selectedProvider}
-                {redirectTo}
-                helpText={selectedProvider?.helptext}
-                class="btn preset-filled-primary-500 w-full"
-              />
-            </div>
+              <div in:scale={{ easing: elasticInOut }}>
+                <LoginButton
+                  buttonText="Log In"
+                  provider={selectedProvider}
+                  {redirectTo}
+                  helpText={selectedProvider?.helptext}
+                  class="btn preset-filled-primary-500 w-full"
+                />
+              </div>
             {/if}
           {:else}
             {#each providers as provider}
@@ -136,11 +136,11 @@
 
 <style>
   #login-select:invalid,
-  #login-select option[value=""]:checked {
+  #login-select option[value='']:checked {
     color: #6b7280; /* text-gray-500 equivalent */
   }
-  
-  #login-select option:not([value=""]) {
+
+  #login-select option:not([value='']) {
     color: inherit;
   }
 </style>
