@@ -383,7 +383,7 @@ test.describe('Explorer for authenticated users', () => {
       test('The dictionary details are different for the same dataset', async ({ page }) => {
         // Given
         await page.route(
-          `${conceptsDetailPath}${detailResponseCat.dataset}`,
+          `${conceptsDetailPath}/${detailResponseCat.dataset}`,
           async (route: Route) => route.fulfill({ json: detailResponseCat }),
         );
         await page.route('*/**/picsure/query/sync', async (route: Route) =>
@@ -403,7 +403,7 @@ test.describe('Explorer for authenticated users', () => {
 
         // Then Given
         await page.route(
-          `${conceptsDetailPath}${detailResponseCat.dataset}`,
+          `${conceptsDetailPath}/${detailResponseCat.dataset}`,
           async (route: Route) => route.fulfill({ json: detailResponseCatSameDataset }),
         );
         // When
@@ -418,7 +418,7 @@ test.describe('Explorer for authenticated users', () => {
         // Given
         // Given
         await page.route(
-          `${conceptsDetailPath}${detailResponseCat.dataset}`,
+          `${conceptsDetailPath}/${detailResponseCat.dataset}`,
           async (route: Route) => route.fulfill({ json: detailResponseCat }),
         );
         await page.route('*/**/picsure/query/sync', async (route: Route) =>
@@ -438,7 +438,7 @@ test.describe('Explorer for authenticated users', () => {
 
         // Then Given
         await page.route(
-          `${conceptsDetailPath}${detailResponseCat.dataset}`,
+          `${conceptsDetailPath}/${detailResponseCat.dataset}`,
           async (route: Route) => route.fulfill({ json: detailResponseCatSameDataset }),
         );
         // When
@@ -453,7 +453,7 @@ test.describe('Explorer for authenticated users', () => {
         // This should not be hit so I am putting detailResponseCat2 which is wrong
         await clickNthFilterIcon(page, 1);
         await page.route(
-          `${conceptsDetailPath}${detailResponseCat.dataset}`,
+          `${conceptsDetailPath}/${detailResponseCat.dataset}`,
           async (route: Route) => route.fulfill({ json: detailResponseCat2 }),
         );
 

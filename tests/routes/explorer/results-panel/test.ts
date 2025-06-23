@@ -57,7 +57,7 @@ test.describe('Results Panel', () => {
     // When
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiFail(page, countResultPath, 'failed');
@@ -149,7 +149,7 @@ test.describe('Results Panel', () => {
     // When
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiFail(page, countResultPath, 'failed');
@@ -179,7 +179,7 @@ test.describe('Results Panel', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, facetResultPath, facetsResponse);

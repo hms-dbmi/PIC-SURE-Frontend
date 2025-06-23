@@ -2,8 +2,7 @@ import { get, derived, writable, type Writable } from 'svelte/store';
 import { type Privilege, mapPrivilege } from '$lib/models/Privilege';
 
 import * as api from '$lib/api';
-
-const PRIV_PATH = 'psama/privilege';
+import { Psama } from '$lib/paths';
 
 const loaded = writable(false);
 export const privileges: Writable<Privilege[]> = writable([]);
@@ -12,7 +11,7 @@ export const privilegeList = derived(privileges, ($p) => $p.map((p) => [p.name, 
 export async function loadPrivileges() {
   if (get(loaded)) return;
 
-  const res = await api.get(PRIV_PATH);
+  const res = await api.get(Psama.Priviege);
   privileges.set(res.map(mapPrivilege));
   loaded.set(true);
 }
@@ -24,12 +23,12 @@ export async function getPrivilege(uuid: string) {
     return privilege;
   }
 
-  const res = await api.get(`${PRIV_PATH}/${uuid}`);
+  const res = await api.get(`${Psama.Priviege}/${uuid}`);
   return mapPrivilege(res);
 }
 
 export async function addPrivilege(privilege: Privilege) {
-  const res = await api.post(PRIV_PATH, [
+  const res = await api.post(Psama.Priviege, [
     {
       ...privilege,
       application: { uuid: privilege.application },
@@ -43,7 +42,7 @@ export async function addPrivilege(privilege: Privilege) {
 }
 
 export async function updatePrivilege(privilege: Privilege) {
-  await api.put(PRIV_PATH, [
+  await api.put(Psama.Priviege, [
     {
       ...privilege,
       application: { uuid: privilege.application },
@@ -61,7 +60,7 @@ export async function updatePrivilege(privilege: Privilege) {
 }
 
 export async function deletePrivilege(uuid: string) {
-  await api.del(`${PRIV_PATH}/${uuid}`);
+  await api.del(`${Psama.Priviege}/${uuid}`);
 
   const store: Privilege[] = get(privileges);
   const privIndex: number = store.findIndex((p) => p.uuid === uuid);

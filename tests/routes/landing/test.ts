@@ -74,7 +74,7 @@ test.describe('Landing page', () => {
       },
       {
         key: 'dict:facets:dataset_id',
-        route: '*/**/picsure/proxy/dictionary-api/facets/',
+        route: '*/**/picsure/proxy/dictionary-api/facets',
         api: facetsResponse,
         value: facetsResponse[1].facets.length.toLocaleString(),
       },

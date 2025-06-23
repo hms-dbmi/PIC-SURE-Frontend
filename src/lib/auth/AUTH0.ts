@@ -6,6 +6,7 @@ import type { User } from '$lib/models/User';
 import * as api from '$lib/api';
 import auth0 from 'auth0-js';
 import { auth } from '$lib/configuration';
+import { Psama } from '$lib/paths';
 
 interface Auth0Data extends AuthData {
   clientid: string;
@@ -32,7 +33,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
     if (browser && token) {
       const redirectURI = this.getRedirectURI();
       try {
-        const newUser: User = await api.post('psama/authentication/auth0', {
+        const newUser: User = await api.post(`${Psama.Auth}/auth0`, {
           access_token: token,
           redirectURI: redirectURI,
         });

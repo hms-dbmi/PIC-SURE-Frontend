@@ -1,13 +1,9 @@
 import { get, writable, type Writable, type Unsubscriber } from 'svelte/store';
 
 import * as api from '$lib/api';
+import { Picsure } from '$lib/paths';
 import type { Status, Sites, Metadata, DataType } from '$lib/models/DataRequest';
 import { UploadStatus } from '$lib/models/DataRequest';
-
-const QUERY_URL = 'picsure/query';
-const SITES_URL = 'picsure/proxy/uploader/sites';
-const STATUS_URL = 'picsure/proxy/uploader/status';
-const UPLOAD_URL = 'picsure/proxy/uploader/upload';
 
 const valid = {
   uuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
@@ -91,7 +87,7 @@ function updateStatus(response: any) {
 export async function refreshStatus() {
   const query = get(queryId);
   await api
-    .get(`${STATUS_URL}/${query}`)
+    .get(`${Picsure.Uploader.Status}/${query}`)
     .then(throwOnErrorValue)
     .then(updateStatus)
     .catch(setError('Error updating data request status.'));
@@ -108,7 +104,7 @@ export async function sendData() {
 
   const req = (type: 'Genomic' | 'Phenotypic') =>
     api
-      .post(`${UPLOAD_URL}/${site}?` + new URLSearchParams({ dataType: type }), {
+      .post(`${Picsure.Uploader.Upload}/${site}?` + new URLSearchParams({ dataType: type }), {
         ...meta.resultMetadata.queryJson.query,
         picSureId: query,
       })
@@ -128,7 +124,7 @@ export async function loadSites() {
   if (get(sites)) return;
 
   await api
-    .get(SITES_URL)
+    .get(Picsure.Uploader.Sites)
     .then(throwOnErrorValue)
     .then((resp) => {
       sites.set(resp);
@@ -143,12 +139,12 @@ export function loadSubscriptions() {
       if (!query) return;
 
       await api
-        .get(`${STATUS_URL}/${query}`)
+        .get(`${Picsure.Uploader.Status}/${query}`)
         .then(throwOnErrorValue)
         .then(updateStatus)
         .then(() =>
           api
-            .get(`${QUERY_URL}/${query}/metadata`)
+            .get(`${Picsure.Query}/${query}/metadata`)
             .then(throwOnErrorValue)
             .then(metadata.set)
             .catch(setError(`Metadata for ${query} could not be found.`, true)),
@@ -170,7 +166,9 @@ export function loadSubscriptions() {
 
       const query = get(queryId);
       await api
-        .get(`${STATUS_URL}/${query}/approve?` + new URLSearchParams({ date: approval }))
+        .get(
+          `${Picsure.Uploader.Status}/${query}/approve?` + new URLSearchParams({ date: approval }),
+        )
         .then(throwOnErrorValue)
         .then(updateStatus)
         .catch(setError(`Status for ${query} was not found.`));

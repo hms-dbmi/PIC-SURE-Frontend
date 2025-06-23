@@ -4,6 +4,7 @@ import { browser } from '$app/environment';
 import { login as UserLogin } from '$lib/stores/User';
 import * as api from '$lib/api';
 import type { User } from '$lib/models/User';
+import { Psama } from '$lib/paths';
 
 interface FenceData extends AuthData {
   uri: string;
@@ -32,7 +33,7 @@ class Fence extends AuthProvider implements FenceData {
       return true;
     }
     try {
-      const newUser: User = await api.post('psama/authentication/fence', { code });
+      const newUser: User = await api.post(`${Psama.Auth}/fence`, { code });
       if (newUser?.token) {
         await UserLogin(newUser.token);
         return false;

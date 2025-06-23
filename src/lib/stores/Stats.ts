@@ -1,14 +1,13 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 
 import * as api from '$lib/api';
+import { Picsure } from '$lib/paths';
 import type { LandingStat, StatField } from '$lib/types';
 import type { ExpectedResultType } from '$lib/models/query/Query';
 import { getBlankQueryRequest } from '$lib/QueryBuilder';
 import { getFacetCategoryCount, getConceptCount } from '$lib/stores/Dictionary';
 import { isUserLoggedIn } from '$lib/stores/User';
 import { branding, features } from '$lib/configuration';
-
-const QUERY_URL = 'picsure/query/sync';
 
 export const hasError: Writable<boolean> = writable(false);
 export const loaded: Writable<boolean> = writable(false);
@@ -35,7 +34,7 @@ function getCrossCounts(field: string, resultType: ExpectedResultType) {
 
   const request = getBlankQueryRequest(isUserLoggedIn(), resultType);
   request.query.setCrossCountFields(fields);
-  const result: Promise<CountMap> = api.post(QUERY_URL, request);
+  const result: Promise<CountMap> = api.post(Picsure.QuerySync, request);
   return result
     .then(rejectIfQueryError)
     .then((result: CountMap) =>
@@ -59,14 +58,14 @@ function getConsentCount() {
   Object.entries(categoryMap).forEach(([conceptPath, fieldList]) =>
     request.query.addCategoryFilter(conceptPath, fieldList),
   );
-  return api.post(QUERY_URL, request).then(rejectIfQueryError);
+  return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
 }
 
 const apiMap: { [key: string]: (openAccess: boolean, stat: LandingStat) => Promise<number> } = {
   'dict:facets:dataset_id': (openAccess) => getFacetCategoryCount(openAccess, 'dataset_id'),
   'dict:concepts': (openAccess) => getConceptCount(openAccess),
   'query:blank': (openAccess) =>
-    api.post(QUERY_URL, getBlankQueryRequest(openAccess)).then(rejectIfQueryError),
+    api.post(Picsure.QuerySync, getBlankQueryRequest(openAccess)).then(rejectIfQueryError),
   'query:biosample': () => getCrossCounts('biosample', 'OBSERVATION_CROSS_COUNT'),
   'query:genomic': () => getCrossCounts('genomic', 'CROSS_COUNT'),
   'query:consent': () => getConsentCount(),

@@ -43,7 +43,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -60,7 +60,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -80,7 +80,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -115,7 +115,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -155,7 +155,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -181,7 +181,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -210,7 +210,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -241,7 +241,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -269,7 +269,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${mockData.content[5].dataset}`,
+      `${conceptsDetailPath}/${mockData.content[5].dataset}`,
       detailResForAge,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -285,7 +285,7 @@ test.describe('Add Filters', () => {
 
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${mockData.content[5].dataset}`,
+      `${conceptsDetailPath}/${mockData.content[5].dataset}`,
       detailResForAge2,
     );
 
@@ -427,7 +427,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -455,7 +455,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -481,7 +481,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -511,7 +511,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -542,7 +542,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(
       page,
-      `${conceptsDetailPath}${detailResponseCat.dataset}`,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -591,7 +591,7 @@ test.describe('Any record of filter', () => {
     await mockApiSuccess(page, countResultPath, '9999');
     await mockApiSuccess(
       page,
-      `${conceptTreePath}${mockData.content[0].dataset}?depth=100`,
+      `${conceptTreePath}/${mockData.content[0].dataset}?depth=100`,
       mockDataWithChildren,
     );
 

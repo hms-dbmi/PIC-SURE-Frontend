@@ -1,6 +1,7 @@
 import { get, writable, type Writable } from 'svelte/store';
 
 import * as api from '$lib/api';
+import { Picsure } from '$lib/paths';
 import { Genotype, type SNP } from '$lib/models/GenomeFilter';
 import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter';
 import { getBlankQueryRequest, updateConsentFilters } from '$lib/QueryBuilder';
@@ -25,7 +26,7 @@ export async function getSNPCounts(check: SNP) {
     const searchQuery = getBlankQueryRequest(false);
     searchQuery.query.addCategoryFilter(check.search, [Genotype.Heterozygous, Genotype.Homozygous]);
     searchQuery.query = updateConsentFilters(searchQuery.query);
-    const response: number = await api.post('/picsure/query/sync', searchQuery);
+    const response: number = await api.post(Picsure.QuerySync, searchQuery);
     return response;
   } catch (error) {
     console.error('Error fetching SNP counts:', error);

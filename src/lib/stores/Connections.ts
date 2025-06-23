@@ -2,8 +2,7 @@ import { get, writable, type Writable } from 'svelte/store';
 import type { Connection } from '$lib/models/Connection';
 
 import * as api from '$lib/api';
-
-const CONN_PATH = 'psama/connection';
+import { Psama } from '$lib/paths';
 
 const loaded = writable(false);
 export const connections: Writable<Connection[]> = writable([]);
@@ -11,7 +10,7 @@ export const connections: Writable<Connection[]> = writable([]);
 export async function loadConnections() {
   if (get(loaded)) return;
 
-  const res = await api.get(CONN_PATH);
+  const res = await api.get(Psama.Connection);
   connections.set(res);
   loaded.set(true);
 }
@@ -36,7 +35,7 @@ export async function getConnection(uuid: string) {
 
 export async function addConnection(connection: Connection) {
   type AddConnectionResponse = { message: string; content: Connection[] };
-  const res: AddConnectionResponse = await api.post(CONN_PATH, [connection]);
+  const res: AddConnectionResponse = await api.post(Psama.Connection, [connection]);
   const newConnection = res.content[0];
 
   const store: Connection[] = get(connections);
@@ -45,7 +44,7 @@ export async function addConnection(connection: Connection) {
 }
 
 export async function updateConnection(connection: Connection) {
-  const res: Connection[] = await api.put(CONN_PATH, [connection]);
+  const res: Connection[] = await api.put(Psama.Connection, [connection]);
   const newConnection = res[0];
 
   const store: Connection[] = get(connections);
@@ -60,7 +59,7 @@ export async function updateConnection(connection: Connection) {
 
 export async function deleteConnection(uuid: string) {
   const connection: Connection = await getConnection(uuid);
-  await api.del(`${CONN_PATH}/${connection.id}`);
+  await api.del(`${Psama.Connection}/${connection.id}`);
 
   const store: Connection[] = get(connections);
   const conIndex: number = store.findIndex((c) => c.uuid === uuid);

@@ -2,6 +2,7 @@ import { get, writable, derived, type Readable, type Writable } from 'svelte/sto
 
 import { mapDataset, type DataSet } from '$lib/models/Dataset';
 import * as api from '$lib/api';
+import { Picsure } from '$lib/paths';
 
 export const datasets: Writable<DataSet[]> = writable([]);
 export const active: Readable<DataSet[]> = derived(datasets, ($ds) =>
@@ -12,7 +13,7 @@ export const archived: Readable<DataSet[]> = derived(datasets, ($ds) =>
 );
 
 export async function loadDatasets() {
-  const res = await api.get('picsure/dataset/named');
+  const res = await api.get(Picsure.NamedDataSet);
   datasets.set(res.map(mapDataset));
 }
 
@@ -29,7 +30,7 @@ export async function toggleArchived(uuid: string) {
     metadata: dataset?.metadata,
     archived: !dataset?.archived,
   };
-  const res = await api.put(`picsure/dataset/named/${uuid}`, request);
+  const res = await api.put(`${Picsure.NamedDataSet}/${uuid}`, request);
   store[datasetIndex] = mapDataset(res);
   datasets.set(store);
 }
@@ -41,7 +42,7 @@ export async function getDataset(uuid: string) {
     return store[datasetIndex];
   }
 
-  const res = await api.get(`picsure/dataset/named/${uuid}`);
+  const res = await api.get(`${Picsure.NamedDataSet}/${uuid}`);
   return mapDataset(res);
 }
 

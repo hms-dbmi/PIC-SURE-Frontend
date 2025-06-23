@@ -8,6 +8,7 @@
   import { afterNavigate, goto, beforeNavigate } from '$app/navigation';
 
   import * as api from '$lib/api';
+  import { Picsure } from '$lib/paths';
   import { branding, features, resources } from '$lib/configuration';
   import { getQueryRequest } from '$lib/QueryBuilder';
   import { loadAllConcepts } from '$lib/services/hpds';
@@ -45,7 +46,7 @@
         const concepts = await loadAllConcepts();
         request.query.setCrossCountFields(concepts);
       }
-      const count = await api.post('picsure/query/sync', request);
+      const count = await api.post(Picsure.QuerySync, request);
       if (requestID !== currentRequestID) {
         return 0;
       }

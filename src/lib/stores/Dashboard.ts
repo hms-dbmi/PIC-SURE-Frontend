@@ -1,7 +1,8 @@
 import { writable, type Writable } from 'svelte/store';
 
 import * as api from '$lib/api';
-import type { Column } from '$lib/models/Tables';
+import { Picsure } from '$lib/paths';
+import type { Column } from '$lib/components/datatable/types';
 import { user } from '$lib/stores/User';
 import { get } from 'svelte/store';
 import type { User } from '$lib/models/User';
@@ -24,7 +25,7 @@ export type DashboardResp = {
 };
 
 function fetchDashboard(): Promise<DashboardResp> {
-  return api.get('picsure/proxy/dictionary-api/dashboard');
+  return api.get(Picsure.Dashboard);
 }
 
 function isUserLoggedIn() {

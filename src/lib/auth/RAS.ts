@@ -4,6 +4,7 @@ import AuthProvider from '$lib/models/AuthProvider';
 import * as api from '$lib/api';
 import type { OktaUser } from '$lib/models/User';
 import { login as UserLogin } from '$lib/stores/User';
+import { Psama } from '$lib/paths';
 
 interface RasData extends AuthData {
   uri: string;
@@ -70,7 +71,7 @@ class RAS extends AuthProvider implements RasData {
     }
 
     try {
-      const newUser: OktaUser = await api.post('psama/authentication/ras', { code });
+      const newUser: OktaUser = await api.post(`${Psama.Auth}/ras`, { code });
       if (newUser?.token) {
         await UserLogin(newUser.token);
         newUser.oktaIdToken && localStorage.setItem('oktaIdToken', newUser.oktaIdToken);

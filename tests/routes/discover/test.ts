@@ -32,7 +32,7 @@ test('Discover can display ±3', async ({ page }) => {
   // Given
   await mockApiSuccess(
     page,
-    `${conceptsDetailPath}${detailResponseCat.dataset}`,
+    `${conceptsDetailPath}/${detailResponseCat.dataset}`,
     detailResponseCat,
   );
   await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
@@ -59,7 +59,7 @@ test('Discover can display < 10', async ({ page }) => {
   // Given
   await mockApiSuccess(
     page,
-    `${conceptsDetailPath}${detailResponseCat.dataset}`,
+    `${conceptsDetailPath}/${detailResponseCat.dataset}`,
     detailResponseCat,
   );
   await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
