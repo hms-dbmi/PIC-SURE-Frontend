@@ -86,8 +86,7 @@
         "popover": {
           "title": "Export Variable",
           "description": "Click the export icon to add a variable to your export without applying a filter.",
-          "onPrevClick": "disablePrevious",
-          "onNextClick": "clickElementThenNext"
+          "onPrevClick": "disablePrevious"
         }
       },
       {
