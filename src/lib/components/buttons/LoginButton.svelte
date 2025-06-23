@@ -56,7 +56,15 @@
     <div class="help-text">{@html helpText}</div>
   {/if}
 {:else}
-  <div>No provider</div>
+  <button
+    type="button"
+    disabled
+    class="btn preset-filled-primary-500 m-1 w-full"
+    title="No provider selected"
+    aria-label="No provider selected. Please select a provider from the dropdown menu above."
+  >
+    <span>Login</span>
+  </button>
 {/if}
 
 <style>

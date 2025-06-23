@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { fly, scale } from 'svelte/transition';
-  import { elasticInOut } from 'svelte/easing';
+  import { fly } from 'svelte/transition';
 
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
@@ -84,17 +83,13 @@
                 >
               {/each}
             </select>
-            {#if selectedProvider}
-              <div in:scale={{ easing: elasticInOut }}>
-                <LoginButton
-                  buttonText="Log In"
-                  provider={selectedProvider}
-                  {redirectTo}
-                  helpText={selectedProvider?.helptext}
-                  class="btn preset-filled-primary-500 w-full"
-                />
-              </div>
-            {/if}
+            <LoginButton
+              buttonText="Log In"
+              provider={selectedProvider}
+              {redirectTo}
+              helpText={selectedProvider?.helptext}
+              class="btn preset-filled-primary-500 w-full"
+            />
           {:else}
             {#each providers as provider}
               <LoginButton
@@ -137,7 +132,7 @@
 <style>
   #login-select:invalid,
   #login-select option[value='']:checked {
-    color: #6b7280; /* text-gray-500 equivalent */
+    color: var(--color-gray-500);
   }
 
   #login-select option:not([value='']) {
