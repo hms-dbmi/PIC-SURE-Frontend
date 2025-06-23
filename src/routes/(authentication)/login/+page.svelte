@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { fly } from 'svelte/transition';
+  import { fly, scale } from 'svelte/transition';
+  import { elasticInOut } from 'svelte/easing';
 
   import { page } from '$app/stores';
   import { browser } from '$app/environment';
@@ -29,11 +30,10 @@
       }
     }
   });
-
   let selected: string = $state('');
 
   let selectedProvider = $derived(
-    selected
+    selected && selected !== ''
       ? ($page.data?.providers?.find(
           (provider: AuthData) => provider.name === selected,
         ) as AuthData)
@@ -75,7 +75,9 @@
             </ErrorAlert>
           {/if}
           {#if providers.length > 3}
-            <select bind:value={selected}>
+            <select id="login-select" class="select !w-fit" bind:value={selected} required>
+              <!-- This is a workaround to make the placeholder show when the select is bound to an empty string -->
+              <option value="" disabled selected>Select a provider</option>
               {#each providers as provider}
                 <option class="capitalize" value={provider.name}
                   >{provider.description || provider.name}</option
@@ -83,13 +85,15 @@
               {/each}
             </select>
             {#if selectedProvider}
-              <LoginButton
-                buttonText="Log In"
-                provider={selectedProvider}
-                {redirectTo}
-                helpText={selectedProvider.helptext}
-                class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 w-full"
-              />
+              <div in:scale={{ easing: elasticInOut }}>
+                <LoginButton
+                  buttonText="Log In"
+                  provider={selectedProvider}
+                  {redirectTo}
+                  helpText={selectedProvider?.helptext}
+                  class="btn preset-filled-primary-500 w-full"
+                />
+              </div>
             {/if}
           {:else}
             {#each providers as provider}
@@ -98,7 +102,7 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 w-full"
+                class="btn preset-filled-primary-500 w-full"
               />
             {/each}
           {/if}
@@ -120,7 +124,7 @@
                 {provider}
                 {redirectTo}
                 helpText={provider.helptext}
-                class="btn preset-outlined-tertiary-500 text-tertiary-500 hover:preset-filled-tertiary-500 w-full"
+                class="btn-sm preset-outlined-secondary-500 text-secondary-500 hover:preset-filled-secondary-500 hover:text-primary-500 w-full"
               />
             {/each}
           </div>
@@ -129,3 +133,14 @@
     </div>
   {/await}
 </section>
+
+<style>
+  #login-select:invalid,
+  #login-select option[value='']:checked {
+    color: #6b7280; /* text-gray-500 equivalent */
+  }
+
+  #login-select option:not([value='']) {
+    color: inherit;
+  }
+</style>
