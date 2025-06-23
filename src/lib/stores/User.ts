@@ -8,7 +8,7 @@ import { routes, features, resources } from '$lib/configuration';
 import { goto } from '$app/navigation';
 import type { QueryInterface } from '$lib/models/query/Query';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
-import { page } from '$app/stores';
+import { page } from '$app/state';
 
 // Create a store that syncs with localStorage
 function createLocalStorageStore(key: string, initialValue: boolean) {
@@ -215,7 +215,7 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
 function handleLogout(redirect: boolean) {
   user.set({});
   if (redirect) {
-    goto(`/login?redirectTo=${encodeURIComponent(get(page).url.pathname)}`);
+    goto(`/login?redirectTo=${encodeURIComponent(page.url.pathname)}`);
   } else {
     goto('/login');
   }

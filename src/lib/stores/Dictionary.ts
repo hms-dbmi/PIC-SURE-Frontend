@@ -1,6 +1,6 @@
 import { get, writable, type Writable } from 'svelte/store';
 
-import { page } from '$app/stores';
+import { page } from '$app/state';
 
 import * as api from '$lib/api';
 import type { Facet, SearchResult } from '$lib/models/Search';
@@ -48,7 +48,7 @@ export function searchDictionary(
   pageable: Pageable,
 ): Promise<DictionaryConceptResult> {
   let request: DictionarySearchRequest = { facets, search: searchTerm };
-  if (!get(page).url.pathname.includes('/discover')) {
+  if (!page.url.pathname.includes('/discover')) {
     request = addConsents(request);
   }
   return api.post(
@@ -83,7 +83,7 @@ export async function updateFacetsFromSearch(): Promise<DictionaryFacetResult[]>
   const search = get(searchTerm);
   const facets = get(selectedFacets);
   let request: DictionarySearchRequest = { facets: facets, search: search };
-  if (!get(page).url.pathname.includes('/discover')) {
+  if (!page.url.pathname.includes('/discover')) {
     request = addConsents(request);
   }
 

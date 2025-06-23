@@ -1,6 +1,6 @@
 <script lang="ts">
   import { v4 as uuidv4 } from 'uuid';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
 
   import type { SearchResult } from '$lib/models/Search';
   import { setActiveRow } from '$lib/stores/ExpandableRow';
@@ -42,7 +42,7 @@
       $panelOpen = true;
     }
   }
-  let isOpenAccess = $derived($page.url.pathname.includes('/discover'));
+  let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
   let isExported = $derived(
     $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath),
   );

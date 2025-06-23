@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
   import { branding, features } from '$lib/configuration';
@@ -30,7 +30,7 @@
 
   let { tourConfig }: Props = $props();
 
-  let searchInput = $state($page.url.searchParams.get('search') || $searchTerm || '');
+  let searchInput = $state(page.url.searchParams.get('search') || $searchTerm || '');
   const tableName = 'ExplorerTable';
   const tableColumns = branding.explorePage.columns || [];
   const columns: Column[] = [
@@ -39,7 +39,7 @@
   ];
   const cellOverides = { id: Actions };
 
-  let isOpenAccess = $derived($page.url.pathname.includes('/discover'));
+  let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
   let path = $derived(isOpenAccess ? '/discover' : '/explorer');
 
   function update() {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { branding, features } from '$lib/configuration';
   import { user } from '$lib/stores/User';
 
@@ -17,7 +17,7 @@
 
   let hideSitemap = $derived(
     !showSitemap ||
-      branding?.footer?.excludeSitemapOn?.find((hide) => $page.url.pathname.includes(hide)),
+      branding?.footer?.excludeSitemapOn?.find((hide) => page.url.pathname.includes(hide)),
   );
 
   let sitemap = $derived(

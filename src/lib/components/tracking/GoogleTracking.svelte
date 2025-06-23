@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { branding, settings } from '$lib/configuration';
 
   type Acceptance = 'granted' | 'denied';
@@ -63,7 +63,7 @@
       gtag('js', new Date());
       gtag('config', googleAnalyticsID, {
         page_title: document.title,
-        page_path: $page.url.pathname,
+        page_path: page.url.pathname,
       });
     }
 

@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { fly } from 'svelte/transition';
 
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { browser } from '$app/environment';
 
   import { branding, features } from '$lib/configuration';
@@ -14,7 +14,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
 
-  const redirectTo = $page.url.searchParams.get('redirectTo') || '/';
+  const redirectTo = page.url.searchParams.get('redirectTo') || '/';
   const siteName = branding?.applicationName;
   const description = branding?.login.description;
   const openPicsureLinkText = branding?.login.openPicsureLinkText;
@@ -33,9 +33,7 @@
 
   let selectedProvider = $derived(
     selected && selected !== ''
-      ? ($page.data?.providers?.find(
-          (provider: AuthData) => provider.name === selected,
-        ) as AuthData)
+      ? (page.data?.providers?.find((provider: AuthData) => provider.name === selected) as AuthData)
       : undefined,
   );
 </script>
@@ -51,7 +49,7 @@
     </h1>
     <p data-testid="login-description" class="text-2xl">{description}</p>
   </div>
-  {#await $page.data?.providers}
+  {#await page.data?.providers}
     <Loading ring size="medium" />
   {:then providers}
     <div id="login-box" class="w-max mt-2">
@@ -109,7 +107,7 @@
             >{openPicsureLinkText}</a
           >
         {/if}
-        {#await $page.data?.altProviders}
+        {#await page.data?.altProviders}
           <Loading ring />
         {:then altProviders}
           <div id="alt-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">

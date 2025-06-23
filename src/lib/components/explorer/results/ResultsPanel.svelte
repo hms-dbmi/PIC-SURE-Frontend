@@ -4,7 +4,7 @@
   import type { Unsubscriber } from 'svelte/store';
   import { slide, scale } from 'svelte/transition';
 
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { afterNavigate, goto, beforeNavigate } from '$app/navigation';
 
   import * as api from '$lib/api';
@@ -28,7 +28,7 @@
   let unsubFilters: Unsubscriber;
   let totalPatients: string | number | typeof ERROR_VALUE = $state(0);
   let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = $state(Promise.resolve(0));
-  let isOpenAccess = $state($page.url.pathname.includes('/discover'));
+  let isOpenAccess = $state(page.url.pathname.includes('/discover'));
   let modalOpen: boolean = $state(false);
   let currentRequestID = 0;
 
@@ -127,8 +127,8 @@
       unsubFilters();
     }
 
-    isOpenAccess = $page.url.pathname.includes('/discover');
-    const isExplorer = $page.url.pathname.includes('/explorer');
+    isOpenAccess = page.url.pathname.includes('/discover');
+    const isExplorer = page.url.pathname.includes('/explorer');
     if (isExplorer || isOpenAccess) {
       await tick();
       unsubFilters = filters.subscribe(() => {
@@ -264,7 +264,7 @@
             title="Variant Explorer"
             icon="fa-solid fa-dna"
             size="md"
-            active={$page.url.pathname.includes('explorer/variant')}
+            active={page.url.pathname.includes('explorer/variant')}
           />
         {/if}
       </div>
