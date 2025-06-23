@@ -7,48 +7,49 @@ function __memo(fn) {
 return {
 	appDir: "_app",
 	appPath: "_app",
-	assets: new Set([".DS_Store","NIH_2013_logo_vertical_text_removed.svg","app-logo.png","bdc-favicon.png","bdc-logo.svg","favicon.ico","favicon.svg","fonts/AbrilFatface.ttf","gic-logo.svg"]),
+	assets: new Set([".DS_Store","NIH_2013_logo_vertical_text_removed.svg","app-logo.png","bch-logo.svg","bdc-favicon.png","bdc-logo.svg","favicon.ico","favicon.svg","fonts/AbrilFatface.ttf","gic-logo.svg"]),
 	mimeTypes: {".svg":"image/svg+xml",".png":"image/png",".ttf":"font/ttf"},
 	_: {
-		client: {"start":"_app/immutable/entry/start.DCtU9w2W.js","app":"_app/immutable/entry/app.DP3WtI9q.js","imports":["_app/immutable/entry/start.DCtU9w2W.js","_app/immutable/chunks/BMKj-mzl.js","_app/immutable/chunks/CDvIr29H.js","_app/immutable/entry/app.DP3WtI9q.js","_app/immutable/chunks/C1FmrZbK.js","_app/immutable/chunks/CDvIr29H.js","_app/immutable/chunks/ByE-_V18.js"],"stylesheets":[],"fonts":[],"uses_env_dynamic_public":false},
+		client: {start:"_app/immutable/entry/start.CNAcTgfA.js",app:"_app/immutable/entry/app.C60ThyA3.js",imports:["_app/immutable/entry/start.CNAcTgfA.js","_app/immutable/chunks/DNfOBMJV.js","_app/immutable/chunks/DpyMT7OB.js","_app/immutable/chunks/KPVYLOSR.js","_app/immutable/entry/app.C60ThyA3.js","_app/immutable/chunks/C1FmrZbK.js","_app/immutable/chunks/KPVYLOSR.js","_app/immutable/chunks/NtGCh5xy.js","_app/immutable/chunks/DKNWTM-D.js","_app/immutable/chunks/DpyMT7OB.js","_app/immutable/chunks/CDCmQmr-.js","_app/immutable/chunks/BgGYXS0j.js","_app/immutable/chunks/3gfQC4Jj.js","_app/immutable/chunks/CfrH0FQi.js","_app/immutable/chunks/B2Bg6RTa.js"],stylesheets:[],fonts:[],uses_env_dynamic_public:false},
 		nodes: [
-			__memo(() => import('./chunks/0-VQmLFlqP.js')),
-			__memo(() => import('./chunks/1-BWuEy2Oz.js')),
-			__memo(() => import('./chunks/2-CTmLT401.js')),
-			__memo(() => import('./chunks/3-BZ0P7Krv.js')),
-			__memo(() => import('./chunks/4-LXKq0rwi.js')),
-			__memo(() => import('./chunks/5-BCflFTGf.js')),
-			__memo(() => import('./chunks/6-B6VzWnQZ.js')),
-			__memo(() => import('./chunks/7-E2gaH2Qn.js')),
-			__memo(() => import('./chunks/8-BcPCaIeA.js')),
-			__memo(() => import('./chunks/9-DprifqkA.js')),
-			__memo(() => import('./chunks/10-DRW7IAfw.js')),
-			__memo(() => import('./chunks/11-CJmZtrHq.js')),
-			__memo(() => import('./chunks/12-d-iMxz6c.js')),
-			__memo(() => import('./chunks/13-Br0y0oJf.js')),
-			__memo(() => import('./chunks/14-dsaVrOPj.js')),
-			__memo(() => import('./chunks/15-CM69YIPg.js')),
-			__memo(() => import('./chunks/16-CNcrglT4.js')),
-			__memo(() => import('./chunks/17-AqUJCU1G.js')),
-			__memo(() => import('./chunks/18-C8VY-DH1.js')),
-			__memo(() => import('./chunks/19-BB6ajQcX.js')),
-			__memo(() => import('./chunks/20-Cx0Wr4md.js')),
-			__memo(() => import('./chunks/21-Duj1EtX7.js')),
-			__memo(() => import('./chunks/22-CIXOv-sF.js')),
-			__memo(() => import('./chunks/23-BPdbqj45.js')),
-			__memo(() => import('./chunks/24-C-soGkZj.js')),
-			__memo(() => import('./chunks/25-ZT3I2sxx.js')),
-			__memo(() => import('./chunks/26-B2_BSrug.js')),
-			__memo(() => import('./chunks/27-DQN6Md_c.js')),
-			__memo(() => import('./chunks/28-C8fvyG0s.js')),
-			__memo(() => import('./chunks/29-CHuXZDxZ.js')),
-			__memo(() => import('./chunks/30-IKnKsb9i.js')),
-			__memo(() => import('./chunks/31-CJz5Kcbz.js')),
-			__memo(() => import('./chunks/32-BKYOLoO3.js')),
-			__memo(() => import('./chunks/33-C7tIFTLf.js')),
-			__memo(() => import('./chunks/34-CsderH-v.js')),
-			__memo(() => import('./chunks/35-JRf42PX0.js')),
-			__memo(() => import('./chunks/36-AUn5r1Cf.js'))
+			__memo(() => import('./chunks/0-2Ku9kT14.js')),
+			__memo(() => import('./chunks/1-BIzEysIN.js')),
+			__memo(() => import('./chunks/2-CnFmFGgC.js')),
+			__memo(() => import('./chunks/3-BzYBkqpB.js')),
+			__memo(() => import('./chunks/4-CyVNc68w.js')),
+			__memo(() => import('./chunks/5-DDUYSdjh.js')),
+			__memo(() => import('./chunks/6-CpnmPbXP.js')),
+			__memo(() => import('./chunks/7-C6ptjiGB.js')),
+			__memo(() => import('./chunks/8--rEB5VaX.js')),
+			__memo(() => import('./chunks/9-Bs8cpQ5j.js')),
+			__memo(() => import('./chunks/10-Bflf7IHV.js')),
+			__memo(() => import('./chunks/11-BESPGJAX.js')),
+			__memo(() => import('./chunks/12-7qolmYpD.js')),
+			__memo(() => import('./chunks/13-DclQASaV.js')),
+			__memo(() => import('./chunks/14-BoujFAX8.js')),
+			__memo(() => import('./chunks/15-EXGAxmTr.js')),
+			__memo(() => import('./chunks/16-C-jcKhT4.js')),
+			__memo(() => import('./chunks/17-DPpYgCon.js')),
+			__memo(() => import('./chunks/18-ERHFXlWW.js')),
+			__memo(() => import('./chunks/19-CBL-jwh0.js')),
+			__memo(() => import('./chunks/20-BrGBh1Wa.js')),
+			__memo(() => import('./chunks/21-DiIOZKy3.js')),
+			__memo(() => import('./chunks/22-DBDuPcBH.js')),
+			__memo(() => import('./chunks/23-D-DZtdYB.js')),
+			__memo(() => import('./chunks/24-DBzXY9oV.js')),
+			__memo(() => import('./chunks/25-BOCY0xx5.js')),
+			__memo(() => import('./chunks/26-CiQGBpn3.js')),
+			__memo(() => import('./chunks/27-CGM8ao1P.js')),
+			__memo(() => import('./chunks/28-DgzAbtDL.js')),
+			__memo(() => import('./chunks/29-BwT8s1pJ.js')),
+			__memo(() => import('./chunks/30-DmlSFMGI.js')),
+			__memo(() => import('./chunks/31-BFscdOLd.js')),
+			__memo(() => import('./chunks/32-Do3rqW9s.js')),
+			__memo(() => import('./chunks/33-CllebcqQ.js')),
+			__memo(() => import('./chunks/34-Daynr6MY.js')),
+			__memo(() => import('./chunks/35-D7eTGGgF.js')),
+			__memo(() => import('./chunks/36-XQMcgIRU.js')),
+			__memo(() => import('./chunks/37-DZbn_JNw.js'))
 		],
 		routes: [
 			{
@@ -108,129 +109,136 @@ return {
 				endpoint: null
 			},
 			{
+				id: "/(picsure)/(authorized)/(admin)/admin/manual-role",
+				pattern: /^\/admin\/manual-role\/?$/,
+				params: [],
+				page: { layouts: [0,5,6,7,], errors: [1,,,,], leaf: 19 },
+				endpoint: null
+			},
+			{
 				id: "/(picsure)/(authorized)/(admin)/admin/requests",
 				pattern: /^\/admin\/requests\/?$/,
 				params: [],
-				page: { layouts: [0,5,6,7,], errors: [1,,,,], leaf: 19 },
+				page: { layouts: [0,5,6,7,], errors: [1,,,,], leaf: 20 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/(admin)/admin/users",
 				pattern: /^\/admin\/users\/?$/,
 				params: [],
-				page: { layouts: [0,5,6,7,], errors: [1,,,,], leaf: 20 },
+				page: { layouts: [0,5,6,7,], errors: [1,,,,], leaf: 21 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/(admin)/admin/users/new",
 				pattern: /^\/admin\/users\/new\/?$/,
 				params: [],
-				page: { layouts: [0,5,6,7,], errors: [1,,,,], leaf: 23 },
+				page: { layouts: [0,5,6,7,], errors: [1,,,,], leaf: 24 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/(admin)/admin/users/[uuid]",
 				pattern: /^\/admin\/users\/([^/]+?)\/?$/,
 				params: [{"name":"uuid","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,5,6,7,], errors: [1,,,,], leaf: 21 },
+				page: { layouts: [0,5,6,7,], errors: [1,,,,], leaf: 22 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/(admin)/admin/users/[uuid]/edit",
 				pattern: /^\/admin\/users\/([^/]+?)\/edit\/?$/,
 				params: [{"name":"uuid","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,5,6,7,], errors: [1,,,,], leaf: 22 },
+				page: { layouts: [0,5,6,7,], errors: [1,,,,], leaf: 23 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/analyze",
 				pattern: /^\/analyze\/?$/,
 				params: [],
-				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 24 },
+				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 25 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/analyze/example",
 				pattern: /^\/analyze\/example\/?$/,
 				params: [],
-				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 25 },
+				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 26 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(public)/dashboard",
 				pattern: /^\/dashboard\/?$/,
 				params: [],
-				page: { layouts: [0,5,], errors: [1,,], leaf: 33 },
+				page: { layouts: [0,5,], errors: [1,,], leaf: 34 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/dataset",
 				pattern: /^\/dataset\/?$/,
 				params: [],
-				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 26 },
+				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 27 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/dataset/[uuid]",
 				pattern: /^\/dataset\/([^/]+?)\/?$/,
 				params: [{"name":"uuid","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 27 },
+				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 28 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(public)/discover",
 				pattern: /^\/discover\/?$/,
 				params: [],
-				page: { layouts: [0,5,], errors: [1,,], leaf: 34 },
+				page: { layouts: [0,5,], errors: [1,,], leaf: 35 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(public)/discover/distributions",
 				pattern: /^\/discover\/distributions\/?$/,
 				params: [],
-				page: { layouts: [0,5,], errors: [1,,], leaf: 35 },
+				page: { layouts: [0,5,], errors: [1,,], leaf: 36 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/explorer",
 				pattern: /^\/explorer\/?$/,
 				params: [],
-				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 28 },
+				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 29 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/explorer/distributions",
 				pattern: /^\/explorer\/distributions\/?$/,
 				params: [],
-				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 29 },
+				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 30 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/explorer/export",
 				pattern: /^\/explorer\/export\/?$/,
 				params: [],
-				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 30 },
+				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 31 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/explorer/genome-filter",
 				pattern: /^\/explorer\/genome-filter\/?$/,
 				params: [],
-				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 31 },
+				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 32 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(authorized)/explorer/variant",
 				pattern: /^\/explorer\/variant\/?$/,
 				params: [],
-				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 32 },
+				page: { layouts: [0,5,6,], errors: [1,,,], leaf: 33 },
 				endpoint: null
 			},
 			{
 				id: "/(picsure)/(public)/help",
 				pattern: /^\/help\/?$/,
 				params: [],
-				page: { layouts: [0,5,], errors: [1,,], leaf: 36 },
+				page: { layouts: [0,5,], errors: [1,,], leaf: 37 },
 				endpoint: null
 			},
 			{
@@ -255,6 +263,7 @@ return {
 				endpoint: null
 			}
 		],
+		prerendered_routes: new Set([]),
 		matchers: async () => {
 			
 			return {  };
