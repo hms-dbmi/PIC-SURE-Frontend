@@ -3,7 +3,7 @@
 
   const {
     size = 'small',
-    ring = false,
+    ring = true,
     label = '',
     color = 'primary',
   }: {
