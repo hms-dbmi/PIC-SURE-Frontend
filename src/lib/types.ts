@@ -4,6 +4,7 @@ interface Link {
   title: string;
   url: string;
   newTab?: boolean;
+  feature?: string;
 }
 
 export type Indexable = {
@@ -17,6 +18,7 @@ export interface Indexed<T> {
 
 export interface SiteMapConfig {
   category: string;
+  feature?: string;
   privilege: string;
   links: Array<Link>;
 }
@@ -106,13 +108,34 @@ export interface PrivacyConfig {
 }
 
 export interface AnalysisConfig {
-  cards: Array<{
-    header: string;
-    body: string;
-    link: string;
-  }>;
-  instructions: {
-    connection: string;
-    execution: string;
+  api: {
+    cards: Array<{
+      header: string;
+      body: string;
+      link: string;
+    }>;
+    instructions: {
+      connection: string;
+      execution: string;
+    };
   };
+  analysis: {
+    platform: string;
+    introduction: string;
+    access: string;
+    examples: string;
+  };
+}
+
+export interface Step {
+  label: string;
+  icon: string;
+  description?: string;
+  path?: string;
+}
+
+export interface CollaborateConfig {
+  steps: Step[];
+  introduction: string;
+  findCollaborators: string;
 }

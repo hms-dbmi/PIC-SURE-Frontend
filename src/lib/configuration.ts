@@ -12,6 +12,7 @@ import type {
   SiteMapConfig,
   PrivacyConfig,
   AnalysisConfig,
+  CollaborateConfig,
 } from './types';
 
 export const PROJECT_HOSTNAME =
@@ -35,6 +36,7 @@ export interface Branding {
   help: HelpConfig;
   privacyPolicy: PrivacyConfig;
   analysisConfig: AnalysisConfig;
+  collaborateConfig: CollaborateConfig;
   genomic?: {
     defaultGenomeBuild: string;
   };
@@ -56,6 +58,7 @@ export const branding: Branding = {
   help: {} as HelpConfig,
   privacyPolicy: {} as PrivacyConfig,
   analysisConfig: {} as AnalysisConfig,
+  collaborateConfig: {} as CollaborateConfig,
 };
 
 export const initializeBranding = () => {
@@ -64,8 +67,10 @@ export const initializeBranding = () => {
   // Replace URLs in code blocks before assigning
   const codeBlocks = { ...configJson.explorePage.codeBlocks };
   Object.keys(codeBlocks).forEach((key) => {
-    if (typeof codeBlocks[key] === 'string') {
-      codeBlocks[key] = codeBlocks[key].replace('{{PICSURE_NETWORK_URL}}', PROJECT_HOSTNAME);
+    if (typeof codeBlocks[key as keyof typeof codeBlocks] === 'string') {
+      codeBlocks[key as keyof typeof codeBlocks] = codeBlocks[
+        key as keyof typeof codeBlocks
+      ].replace('{{PICSURE_NETWORK_URL}}', PROJECT_HOSTNAME);
     }
   });
 
@@ -81,6 +86,7 @@ export const initializeBranding = () => {
   branding.sitemap = configJson.sitemap as SiteMapConfig[];
   branding.privacyPolicy = configJson.privacyPolicy;
   branding.analysisConfig = configJson.analysisPage;
+  branding.collaborateConfig = configJson.collaboratePage;
   branding.genomic = configJson.genomic;
 };
 
@@ -101,9 +107,22 @@ export const routes: Route[] = [
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
   },
   {
-    path: '/analyze',
+    path: '/analyze/api',
     text: 'Prepare for Analysis',
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
+    feature: 'analyzeApi',
+  },
+  {
+    path: '/analyze/analysis',
+    text: 'Analyze',
+    privilege: [PicsurePrivileges.QUERY],
+    feature: 'analyzeAnalysis',
+  },
+  {
+    path: '/collaborate',
+    text: 'Collaborate',
+    feature: 'collaborate',
+    privilege: [PicsurePrivileges.QUERY],
   },
   {
     path: '/dataset',
@@ -138,7 +157,7 @@ export const features: Indexable = {
     exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
     variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
     distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
-    enableTour: import.meta.env?.EXPLORER_TOUR ? import.meta.env?.EXPLORE_TOUR === 'true' : true, // default to true unless set otherwise
+    enableTour: import.meta.env?.EXPLORER_TOUR !== 'false', // default true
     authTour: import.meta.env?.VITE_AUTH_TOUR_NAME ?? 'NHANES-Auth',
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
     enablePfbExport: import.meta.env?.VITE_DOWNLOAD_AS_PFB !== 'false', // default true
@@ -147,6 +166,8 @@ export const features: Indexable = {
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
   },
+  analyzeApi: import.meta.env?.VITE_ANALYZE_API !== 'false', // default true,
+  analyzeAnalysis: import.meta.env?.VITE_ANALYZE_ANALYSIS === 'true', // default false,
   dataRequests: import.meta.env?.VITE_DATA_REQUESTS === 'true',
   manualRole: import.meta.env?.VITE_MANUAL_ROLE === 'true',
   enableSNPQuery: import.meta.env?.VITE_ENABLE_SNP_QUERY === 'true',
@@ -154,6 +175,7 @@ export const features: Indexable = {
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
   useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
   discover: import.meta.env?.VITE_DISCOVER === 'true',
+  collaborate: import.meta.env?.VITE_COLLABORATE === 'true',
   discoverFeautures: {
     enableTour: import.meta.env?.EXPLORER_TOUR !== 'false', // default true
     openTour: import.meta.env?.VITE_OPEN_TOUR_NAME ?? 'BDC-Open',

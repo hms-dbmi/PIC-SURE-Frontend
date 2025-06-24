@@ -18,6 +18,8 @@ jobs:
         run: npm run lint
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
+      - name: Check Playwright versions
+        run: npm ls @playwright/test || true
       - name: Run Playwright tests
         run: npm test
       - uses: actions/upload-artifact@v4

@@ -75,7 +75,7 @@
 </Content>
 
 <style lang="postcss">
-  @reference "../../../../../styles/app.css";
+  @reference "../../../../../../styles/app.css";
 
   p {
     @reference my-3;
