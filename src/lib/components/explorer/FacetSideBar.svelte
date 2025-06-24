@@ -13,6 +13,17 @@
 
   let previousCategories = $state([] as PreviousCategoriesForPlaceholder[]);
 
+  $effect(() => {
+    $facetsPromise?.then((newFacets) => {
+      if (newFacets?.length > 0) {
+        previousCategories = newFacets.map(category => ({
+          numFacets: category.facets.length,
+          showSearchAndButton: category.facets.length > 5
+        }));
+      }
+    });
+  });
+
   function recreateFacetCategories(): DictionaryFacetResult[] {
     let facetsToShow: DictionaryFacetResult[] = [];
     $selectedFacets.forEach((facet: Facet) => {
@@ -36,13 +47,6 @@
   <FacetSidebarPlaceholder numCategories={2} fadeEffect previousCategories={previousCategories.length > 0 ? previousCategories : []} />
 {:then newFacets}
   {#if newFacets?.length > 0}
-    {(() => {
-      previousCategories = newFacets.map(category => ({
-        numFacets: category.facets.length,
-        showSearchAndButton: category.facets.length > 5
-      }));
-      return;
-    })()}
     <Accordion multiple value={$openFacets} onValueChange={(e) => ($openFacets = e.value)}>
       {#snippet iconOpen()}<i class="fa-solid fa-angle-up"></i>{/snippet}
       {#snippet iconClosed()}<i class="fa-solid fa-angle-down"></i>{/snippet}
