@@ -41,16 +41,14 @@ tableHandler.load(async (state: State) => {
   try {
     const pageChanged = get(previousPage) !== state.currentPage;
     const rowsChanged = get(previousRowsPerPage) !== state.rowsPerPage;
-    const searchTermUnchanged = get(previousSearchTerm) === term;
-    const isPaginationOnly = (pageChanged || rowsChanged) && searchTermUnchanged;
+    const searchTermChanged = get(previousSearchTerm) !== term;
+    const isPaginationOnly = (pageChanged || rowsChanged) && !searchTermChanged;
 
     if (isPaginationOnly) {
-      // Just pagination/display changes - update tracking variables only
       previousPage.set(state.currentPage);
       previousRowsPerPage.set(state.rowsPerPage);
       previousSearchTerm.set(term);
     } else {
-      // New search - update facets
       facetsPromise.set(updateFacetsFromSearch());
     }
     return await search(state);
