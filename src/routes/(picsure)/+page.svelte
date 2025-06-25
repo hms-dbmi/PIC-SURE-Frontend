@@ -39,10 +39,7 @@
   <section id="search-section" class="flex flex-col text-center items-center my-auto w-2/3">
     <Searchbox placeholder={branding?.landing?.searchPlaceholder} bind:searchTerm {search} />
   </section>
-  <section
-    id="actions-section"
-    class="flex flex-row justify-evenly items-center mb-auto w-2/3"
-  >
+  <section id="actions-section" class="flex flex-row justify-evenly items-center mb-auto w-2/3">
     {#each actionsToDisplay as { title, description, icon, url, btnText }}
       <div class="flex flex-col items-center w-1/{actionsToDisplay?.length || 3}">
         <div class="text-3xl my-1">{title}</div>
