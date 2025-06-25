@@ -280,5 +280,113 @@
         }
       }
     ]
+  },
+  "GIC-Common": {
+    "searchTerm": "cancer",
+    "title": "Welcome to GIC",
+    "description": "The Genomic Information Commons (GIC) Cohort Builder allows you to explore clinical, genomic, and biosample data from broadly consented cohorts across multiple sites of care. You can search variables, apply filters, and prepare to request access to patient-level data. When applying filters, patients are selected who meet those criteria. <br /><br />This tour demonstrates how to search, apply filters, and interpret results. Once the tour starts, you can click \"Next\" or use the arrow keys to navigate the tour. You can press any other key or click anywhere on the screen to escape the tour.",
+    "steps": [
+      {
+        "element": "#explorer-search-box",
+        "popover": {
+          "title": "Search",
+          "description": "Search clinical variables of interest. Here, the term \"cancer\" was used. Click anywhere to continue the tour.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#facet-side-bar",
+        "popover": {
+          "title": "Refine Search",
+          "description": "Use the options displayed here to further refine your search results using facets.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#ExplorerTable-table",
+        "popover": {
+          "title": "Search Results",
+          "description": "The search results are displayed in this area. Each row describes a different variable that matches your search term and/or facets.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#ExplorerTable-table #row-0",
+        "onHighlightStarted": "clickElement",
+        "popover": {
+          "title": "Variable Details",
+          "description": "To learn more about a variable, click on the row or click the information icon.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#ExplorerTable-table #active-row-0",
+        "popover": {
+          "title": "Variable Details",
+          "description": "This displays information about the variable, including dataset information and study information.",
+          "onPrevClick": "disablePrevious",
+          "onNextClick": "clickElementThenNext"
+        }
+      },
+      {
+        "element": "#row-0 button[title=\"Filter\"]",
+        "onHighlightStarted": "clickElement",
+        "popover": {
+          "title": "Apply Filters",
+          "description": "Click the filter icon to apply inclusion criteria to build your cohort.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#ExplorerTable-table .expandable-row",
+        "popover": {
+          "title": "Apply Filters",
+          "description": "You can add filters by selecting different values or specifying a numeric range here, then clicking the \"+\" button.",
+          "onPrevClick": "disablePrevious",
+          "onNextClick": "applyFilterThenNext"
+        }
+      },
+      {
+        "element": "#row-0 button[title=\"Data Hierarchy\"]",
+        "onHighlightStarted": "clickElement",
+        "popover": {
+          "title": "Variable Hierarchy",
+          "description": "Click the Variable Hierarchy icon to filter at different levels of the variable path.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#ExplorerTable-table .expandable-row",
+        "popover": {
+          "title": "Variable Hierarchy",
+          "description": "You can filter on different levels of the variable hierarchy by clicking a level here, then clicking the \"+\" button.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#row-0 button[title=\"Add for Analysis\"]",
+        "popover": {
+          "title": "Export Variable",
+          "description": "Click the export icon to add a variable to your export without applying a filter.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#sidebar-right",
+        "popover": {
+          "title": "Cohort Summary",
+          "description": "You can view the summary of the filtered cohort based on the applied variable filters. Additionally, you can also view the patient counts per site with varying biosample and genomic data types using the Cohort Details tool.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#nav-link-help",
+        "popover": {
+          "title": "Help Resources",
+          "description": "To learn more about PIC-SURE, please consult the <a href='https://pic-sure.gitbook.io/genomic-information-commons' class='anchor' target='_blank'>user guide</a> and <a href='Genomic Information Commons' class='anchor' target='_blank'>video</a> demonstrations. You can also find these resources on the help page.",
+          "onPrevClick": "disablePrevious"
+        }
+      }
+    ]
   }
 }
