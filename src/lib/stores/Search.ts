@@ -20,6 +20,7 @@ export const tableHandler: TableHandler = new TableHandler([] as SearchResult[],
 export const tour: Writable<boolean> = writable(true);
 export const error: Writable<string> = writable('');
 export const previousPage: Writable<number> = writable(1);
+export const previousSearchTerm: Writable<string> = writable('');
 export const previousRowsPerPage: Writable<number> = writable(getDefaultRows('ExplorerTable'));
 
 selectedFacets.subscribe(() => {
@@ -38,7 +39,13 @@ tableHandler.load(async (state: State) => {
     tour.set(false);
   }
   try {
-    if (get(previousPage) !== state.currentPage || get(previousRowsPerPage) !== state.rowsPerPage) {
+    const pageChanged = get(previousPage) !== state.currentPage;
+    const rowsChanged = get(previousRowsPerPage) !== state.rowsPerPage;
+    const searchTermChanged = get(previousSearchTerm) !== term;
+    const isPaginationOnly = (pageChanged || rowsChanged) && !searchTermChanged;
+    previousSearchTerm.set(term);
+
+    if (isPaginationOnly) {
       previousPage.set(state.currentPage);
       previousRowsPerPage.set(state.rowsPerPage);
     } else {
