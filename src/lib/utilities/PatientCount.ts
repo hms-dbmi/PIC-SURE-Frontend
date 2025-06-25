@@ -23,7 +23,7 @@ export function countResult(
   if (entries.length === 1) return entries[0];
 
   const parsed = entries.map(parseEntry);
-  const total = parsed.reduce((sum, { value }) => sum + value, 0);
+  const total = parsed.reduce((sum, { value }) => (value > 0 ? sum + value : sum), 0);
   const maxSuffix = Math.max(...parsed.map(({ suffix }) => suffix), 0);
 
   if (!asString) return total;
