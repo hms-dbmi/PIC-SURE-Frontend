@@ -4,7 +4,7 @@ import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import { Genotype, type SNP } from '$lib/models/GenomeFilter';
 import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter';
-import { getBlankQueryRequest, updateConsentFilters } from '$lib/QueryBuilder';
+import { getBlankQueryRequest, updateConsentFilters } from '$lib/utilities/QueryBuilder';
 
 export const selectedSNPs: Writable<SNP[]> = writable([]);
 
@@ -23,7 +23,7 @@ export function clearSnpFilters() {
 
 export async function getSNPCounts(check: SNP) {
   try {
-    const searchQuery = getBlankQueryRequest(false);
+    const searchQuery = getBlankQueryRequest();
     searchQuery.query.addCategoryFilter(check.search, [Genotype.Heterozygous, Genotype.Homozygous]);
     searchQuery.query = updateConsentFilters(searchQuery.query);
     const response: number = await api.post(Picsure.QuerySync, searchQuery);

@@ -1,5 +1,5 @@
 import { expect, type Route } from '@playwright/test';
-import { test } from '../../../custom-context';
+import { mockApiFail, test } from '../../../custom-context';
 import {
   searchResults,
   facetsResponse,
@@ -33,6 +33,7 @@ test.describe('Facet Side Bar', () => {
     await page.route(searchResultPath, async (route: Route) =>
       route.fulfill({ json: searchResults }),
     );
+    await mockApiFail(page, facetResultPath, 'aborted');
     await page.goto('/explorer?search=age');
     const facetSideBar = page.locator('#facet-side-bar');
     const errorAlert = page.getByTestId('error-alert');

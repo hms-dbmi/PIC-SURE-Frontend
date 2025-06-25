@@ -1,92 +1,36 @@
 <script lang="ts">
-  import { onDestroy, onMount, tick } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
   import type { Unsubscriber } from 'svelte/store';
   import { slide, scale } from 'svelte/transition';
 
   import { page } from '$app/state';
-  import { afterNavigate, goto, beforeNavigate } from '$app/navigation';
+  import { goto } from '$app/navigation';
 
-  import * as api from '$lib/api';
-  import { Picsure } from '$lib/paths';
-  import { branding, features, resources } from '$lib/configuration';
-  import { getQueryRequest } from '$lib/QueryBuilder';
-  import { loadAllConcepts } from '$lib/services/hpds';
+  import { features } from '$lib/configuration';
 
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import { filters, hasGenomicFilter, clearFilters, totalParticipants } from '$lib/stores/Filter';
+  import { filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
+  import { loadPatientCount, hasNonZeroResult } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
-  import { toaster } from '$lib/toaster';
 
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
-  import Loading from '$lib/components/Loading.svelte';
+  import Counts from '$lib/components/explorer/results/Counts.svelte';
 
-  const ERROR_VALUE = 'N/A';
-
-  let unsubFilters: Unsubscriber;
-  let totalPatients: string | number | typeof ERROR_VALUE = $state(0);
-  let triggerRefreshCount: Promise<number | typeof ERROR_VALUE> = $state(Promise.resolve(0));
-  let isOpenAccess = $state(page.url.pathname.includes('/discover'));
+  let unsubFilters: Unsubscriber | null = null;
+  let currentPage: string = page.url.pathname;
+  let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
+  let isExplorer = $derived(page.url.pathname.includes('/explorer'));
   let modalOpen: boolean = $state(false);
-  let currentRequestID = 0;
-
-  async function getCount() {
-    suffix = '';
-    const requestID = ++currentRequestID;
-    let request: QueryRequestInterface = getQueryRequest(
-      !isOpenAccess,
-      isOpenAccess ? resources.openHPDS : resources.hpds,
-      isOpenAccess ? 'CROSS_COUNT' : 'COUNT',
-    );
-    try {
-      if (isOpenAccess) {
-        const concepts = await loadAllConcepts();
-        request.query.setCrossCountFields(concepts);
-      }
-      const count = await api.post(Picsure.QuerySync, request);
-      if (requestID !== currentRequestID) {
-        return 0;
-      }
-      if (isOpenAccess) {
-        let openTotalPatients = String(count['\\_studies_consents\\']);
-        if (openTotalPatients.includes(' \u00B1')) {
-          totalPatients = parseInt(openTotalPatients.split(' ')[0]);
-          suffix = openTotalPatients.split(' ')[1];
-          totalParticipants.set(totalPatients);
-        } else {
-          totalPatients = openTotalPatients;
-          totalParticipants.set(openTotalPatients);
-        }
-      } else {
-        totalParticipants.set(count);
-        totalPatients = count;
-      }
-      return count;
-    } catch (error) {
-      if ($filters.length !== 0) {
-        toaster.error({ description: branding?.explorePage?.filterErrorText, closable: false });
-      } else {
-        toaster.error({ title: branding?.explorePage?.queryErrorText });
-      }
-      totalPatients = ERROR_VALUE;
-      return 0;
-    }
-  }
-  let suffix = $state('');
 
   let hasFilterOrExport = $derived(
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
   );
 
   let showExportButton = $derived(
-    features.explorer.allowExport &&
-      !isOpenAccess &&
-      totalPatients !== ERROR_VALUE &&
-      totalPatients !== 0 &&
-      hasFilterOrExport,
+    features.explorer.allowExport && !isOpenAccess && hasFilterOrExport && $hasNonZeroResult,
   );
 
   let hasValidDistributionFilters = $derived(
@@ -100,7 +44,7 @@
   );
 
   let showExplorerDistributions = $derived(
-    !isOpenAccess && features.explorer.distributionExplorer && hasValidDistributionFilters,
+    isExplorer && features.explorer.distributionExplorer && hasValidDistributionFilters,
   );
 
   let showDiscoverDistributions = $derived(
@@ -108,43 +52,45 @@
   );
 
   let showVariantExplorer = $derived(
-    !isOpenAccess && features.explorer.variantExplorer && $hasGenomicFilter,
+    isExplorer && features.explorer.variantExplorer && $hasGenomicFilter,
+  );
+
+  let showCohortDetails = $derived(
+    isExplorer && features.explorer.enableCohortDetails && $hasNonZeroResult,
   );
 
   let showToolSuite = $derived(
-    totalPatients !== 0 &&
-      ($filters.length !== 0 || $exports.length !== 0) &&
-      (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer),
+    ($filters.length !== 0 || $exports.length !== 0) &&
+      (showExplorerDistributions ||
+        showDiscoverDistributions ||
+        showVariantExplorer ||
+        showCohortDetails) &&
+      $hasNonZeroResult,
   );
 
-  onMount(async () => {
-    unsubFilters = filters.subscribe(() => {
-      triggerRefreshCount = getCount();
-    });
-  });
+  function subscribe() {
+    if (!unsubFilters) {
+      unsubFilters = filters.subscribe(() => loadPatientCount(isOpenAccess));
+    }
+  }
 
-  afterNavigate(async () => {
+  function unsubscribe() {
     if (unsubFilters) {
       unsubFilters();
+      unsubFilters = null;
     }
+  }
 
-    isOpenAccess = page.url.pathname.includes('/discover');
-    const isExplorer = page.url.pathname.includes('/explorer');
-    if (isExplorer || isOpenAccess) {
-      await tick();
-      unsubFilters = filters.subscribe(() => {
-        triggerRefreshCount = getCount();
-      });
+  $effect(() => {
+    if (currentPage !== page.url.pathname) {
+      currentPage = page.url.pathname;
+      unsubscribe();
+      subscribe();
     }
   });
 
-  beforeNavigate(() => {
-    unsubFilters && unsubFilters();
-  });
-
-  onDestroy(() => {
-    unsubFilters && unsubFilters();
-  });
+  onMount(subscribe);
+  onDestroy(unsubscribe);
 </script>
 
 <Modal
@@ -165,26 +111,7 @@
   class="flex flex-col items-center pt-8 pr-10 w-64"
   transition:slide={{ axis: 'x' }}
 >
-  <div class="flex flex-col items-center mt-2">
-    {#await triggerRefreshCount}
-      <Loading ring />
-    {:then}
-      <span id="result-count" class="text-4xl">
-        {#if totalPatients === ERROR_VALUE}
-          <i class="fa-solid fa-triangle-exclamation"></i>
-          <span class="sr-only">{ERROR_VALUE}</span>
-        {:else}
-          {totalPatients?.toLocaleString()} {suffix || ''}
-        {/if}
-      </span>
-    {:catch}
-      <span id="result-count" class="text-4xl">
-        <i class="fa-solid fa-triangle-exclamation"></i>
-        <span class="sr-only">{ERROR_VALUE}</span>
-      </span>
-    {/await}
-    <h4 class="text-center">{branding?.explorePage?.totalPatientsText}</h4>
-  </div>
+  <Counts />
   {#if showExportButton}
     <div class="h-11 mt-4">
       <button
@@ -266,6 +193,16 @@
             icon="fa-solid fa-dna"
             size="md"
             active={page.url.pathname.includes('explorer/variant')}
+          />
+        {/if}
+        {#if showCohortDetails}
+          <CardButton
+            href="/explorer/cohort"
+            data-testid="cohort-details-btn"
+            title="Cohort Details"
+            icon="fa-solid fa-users"
+            size="md"
+            active={page.url.pathname.includes('explorer/cohort')}
           />
         {/if}
       </div>
