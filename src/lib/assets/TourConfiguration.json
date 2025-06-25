@@ -341,7 +341,7 @@
         "element": "#ExplorerTable-table .expandable-row",
         "popover": {
           "title": "Apply Filters",
-          "description": "You can add filters by selecting different values or specifying a numeric range here, then clicking the "+" button.",
+          "description": "You can add filters by selecting different values or specifying a numeric range here, then clicking the \"+\" button.",
           "onPrevClick": "disablePrevious",
           "onNextClick": "applyFilterThenNext"
         }
