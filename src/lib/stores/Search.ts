@@ -43,11 +43,11 @@ tableHandler.load(async (state: State) => {
     const rowsChanged = get(previousRowsPerPage) !== state.rowsPerPage;
     const searchTermChanged = get(previousSearchTerm) !== term;
     const isPaginationOnly = (pageChanged || rowsChanged) && !searchTermChanged;
+    previousSearchTerm.set(term);
 
     if (isPaginationOnly) {
       previousPage.set(state.currentPage);
       previousRowsPerPage.set(state.rowsPerPage);
-      previousSearchTerm.set(term);
     } else {
       facetsPromise.set(updateFacetsFromSearch());
     }
