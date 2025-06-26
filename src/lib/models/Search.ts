@@ -11,6 +11,11 @@ export type Facet = Indexable & {
   parentRef?: ShallowFacetCategory;
 };
 
+export type PreviousCategoriesForPlaceholder = {
+  numFacets: number;
+  showSearchAndButton?: boolean;
+};
+
 export type ShallowFacetCategory = Pick<Facet, 'name' | 'display' | 'description'>;
 
 export type SearchResult = Indexable & {

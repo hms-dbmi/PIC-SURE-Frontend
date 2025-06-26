@@ -93,7 +93,7 @@
         <tr>
           <td colspan={columns.length} class="text-center py-8">
             <div class="flex justify-center items-center">
-              <Loading />
+              <Loading ring size="small" color="primary" />
             </div>
           </td>
         </tr>

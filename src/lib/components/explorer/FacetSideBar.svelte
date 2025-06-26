@@ -6,9 +6,23 @@
   import { selectedFacets } from '$lib/stores/Search';
   import { facetsPromise, openFacets } from '$lib/stores/Dictionary';
 
-  import ErrorAlert from '../ErrorAlert.svelte';
-  import FacetCategory from './FacetCategory.svelte';
-  import Loading from '../Loading.svelte';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import FacetCategory from '$lib/components/explorer/FacetCategory.svelte';
+  import FacetSidebarPlaceholder from '$lib/components/explorer/FacetSidebarPlaceholder.svelte';
+  import type { PreviousCategoriesForPlaceholder } from '$lib/models/Search';
+
+  let previousCategories = $state([] as PreviousCategoriesForPlaceholder[]);
+
+  $effect(() => {
+    $facetsPromise?.then((newFacets) => {
+      if (newFacets?.length > 0) {
+        previousCategories = newFacets.map((category) => ({
+          numFacets: category.facets.length,
+          showSearchAndButton: category.facets.length > 5,
+        }));
+      }
+    });
+  });
 
   function recreateFacetCategories(): DictionaryFacetResult[] {
     let facetsToShow: DictionaryFacetResult[] = [];
@@ -30,7 +44,11 @@
 </script>
 
 {#await $facetsPromise}
-  <Loading ring size="medium" />
+  <FacetSidebarPlaceholder
+    numCategories={2}
+    fadeEffect
+    previousCategories={previousCategories.length > 0 ? previousCategories : []}
+  />
 {:then newFacets}
   {#if newFacets?.length > 0}
     <Accordion multiple value={$openFacets} onValueChange={(e) => ($openFacets = e.value)}>
