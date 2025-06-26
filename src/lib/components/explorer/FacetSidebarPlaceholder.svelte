@@ -23,7 +23,7 @@
       />
     {/each}
   {:else}
-  <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
+    <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
     {#each Array(numberOfCategories) as _unused, i}
       <FacetPlaceholder
         numFacets={numFacets - i > 1 ? numFacets - i : 2}
