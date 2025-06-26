@@ -14,7 +14,7 @@ export type Facet = Indexable & {
 export type PreviousCategoriesForPlaceholder = {
   numFacets: number;
   showSearchAndButton?: boolean;
-}
+};
 
 export type ShallowFacetCategory = Pick<Facet, 'name' | 'display' | 'description'>;
 
