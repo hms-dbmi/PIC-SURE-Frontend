@@ -8,7 +8,8 @@
         "key": "query:patientCount",
         "label": "Filtered Participants"
       }
-    ]
+    ],
+    "cohortDescription": "Distribution of total patient counts across networked institutions."
   },
   "sitemap": [
     {

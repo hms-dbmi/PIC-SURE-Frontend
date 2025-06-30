@@ -8,6 +8,7 @@ import type { Facet, SearchResult } from '$lib/models/Search';
 import type {
   DictionaryConceptResult,
   DictionaryFacetResult,
+  DictionarySearchRequest,
 } from '$lib/models/api/DictionaryResponses';
 import type { Pageable } from '$lib/models/api/Pageable';
 import { user } from '$lib/stores/User';
@@ -23,12 +24,6 @@ export const facetsPromise: Writable<Promise<DictionaryFacetResult[]>> = writabl
 export const openFacets: Writable<string[]> = writable([]);
 
 const dictonaryCacheMap = new Map<string, SearchResult>();
-
-interface DictionarySearchRequest {
-  facets: Facet[];
-  search: string;
-  consents?: string[];
-}
 
 function cacheResult(key: string, value: SearchResult) {
   if (!key || !value) return;
@@ -146,7 +141,7 @@ export async function getConceptDetails(
   return response;
 }
 
-function dictionaryRequest(isOpenAccess: boolean = false) {
+export function dictionaryRequest(isOpenAccess: boolean = false) {
   const request: DictionarySearchRequest = { facets: [], search: '', consents: [] };
   if (!isOpenAccess) {
     const queryTemplate = get(user)?.queryTemplate;
@@ -158,29 +153,6 @@ function dictionaryRequest(isOpenAccess: boolean = false) {
     }
   }
   return request;
-}
-
-export async function getConceptCount(isOpenAccess = false) {
-  const request: DictionarySearchRequest = dictionaryRequest(isOpenAccess);
-  const res: DictionaryConceptResult = await api.post(
-    `${Picsure.Concepts}?page_number=1&page_size=1`,
-    request,
-  );
-  return res.totalElements || Promise.reject('total not found');
-}
-
-export async function getFacetCategoryCount(isOpenAccess = false, category: string) {
-  const request: DictionarySearchRequest = dictionaryRequest(isOpenAccess);
-  const res: DictionaryFacetResult[] = await api.post(Picsure.Facets, request);
-  const facetCat = res.find((facetCat) => facetCat.name === category);
-  if (!facetCat) {
-    return 0;
-  }
-  if (isOpenAccess) {
-    return facetCat.facets.length;
-  }
-  const facetsForUser = facetCat.facets.filter((facet) => facet.count > 0);
-  return facetsForUser.length;
 }
 
 export async function getDatasetDetails(datasetId: string) {
