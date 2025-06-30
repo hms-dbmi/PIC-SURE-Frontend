@@ -17,7 +17,6 @@ import type {
   AnalysisConfig,
   CollaborateConfig,
 } from './types';
-import type { StatField } from '$lib/models/Stat';
 
 export const PROJECT_HOSTNAME =
   typeof window !== 'undefined'
@@ -195,7 +194,6 @@ export const features: Indexable = {
   dashboardDrawer: import.meta.env?.VITE_DASHBOARD_DRAWER === 'true',
   confirmDownload: import.meta.env?.VITE_CONFIRM_DOWNLOAD === 'true',
   termsOfService: import.meta.env?.VITE_ENABLE_TOS === 'true',
-  showResultPanel: import.meta.env?.VITE_RESULTPANEL_OPEN_BY_DEFAULT === 'true',
 };
 
 export const settings: Indexable = {

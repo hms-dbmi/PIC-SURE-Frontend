@@ -43,7 +43,8 @@ export async function loadPatientCount(isOpenAccess: boolean) {
         if (get(filters).length !== 0) {
           toaster.error({ description: branding?.explorePage?.filterErrorText, closable: false });
         } else {
-          toaster.error({ title: branding?.explorePage?.queryErrorText });
+          // Cache if no rejected requests
+          requestCache.set(cacheKey, resultStats);
         }
       } else {
         // Cache if no rejected requests

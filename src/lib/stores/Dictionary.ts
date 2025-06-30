@@ -152,29 +152,6 @@ export function addConsents(request: DictionarySearchRequest) {
   return request;
 }
 
-export async function getConceptCount(isOpenAccess = false) {
-  const request: DictionarySearchRequest = dictionaryRequest(isOpenAccess);
-  const res: DictionaryConceptResult = await api.post(
-    `${Picsure.Concepts}?page_number=1&page_size=1`,
-    request,
-  );
-  return res.totalElements || Promise.reject('total not found');
-}
-
-export async function getFacetCategoryCount(isOpenAccess = false, category: string) {
-  const request: DictionarySearchRequest = dictionaryRequest(isOpenAccess);
-  const res: DictionaryFacetResult[] = await api.post(Picsure.Facets, request);
-  const facetCat = res.find((facetCat) => facetCat.name === category);
-  if (!facetCat) {
-    return 0;
-  }
-  if (isOpenAccess) {
-    return facetCat.facets.length;
-  }
-  const facetsForUser = facetCat.facets.filter((facet) => facet.count > 0);
-  return facetsForUser.length;
-}
-
 export async function getDatasetDetails(datasetId: string) {
   return api.get(`${Picsure.DashboardDrawer}/${datasetId}`);
 }
