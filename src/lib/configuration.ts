@@ -19,7 +19,6 @@ import type {
   DatasetRequestPageConfig,
   TermsOfServiceConfig,
 } from './types';
-import type { StatField } from '$lib/models/Stat';
 
 export const PROJECT_HOSTNAME =
   typeof window !== 'undefined'
