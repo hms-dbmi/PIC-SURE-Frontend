@@ -1,26 +1,29 @@
-import type { PatientCount, CountMap } from '$lib/types';
+import type { PatientCount, StatValue } from '$lib/models/Stat';
 
 const PLUS_MINUS = '\u00B1';
 
 function parseCount(count: PatientCount): { value: number; suffix: number } {
-  const [rawValue, rawSuffix] = String(count).split(PLUS_MINUS);
-  const value = parseInt(rawValue.replace(',', '')) || 0;
-  const suffix = parseInt(rawSuffix ?? '') || 0;
+  let value: number;
+  let suffix: number;
+  if (String(count).startsWith('<')) {
+    suffix = 3;
+    value = 0;
+  } else {
+    const [rawValue, rawSuffix] = String(count).split(PLUS_MINUS);
+    value = parseInt(rawValue.replace(',', '')) || 0;
+    suffix = parseInt(rawSuffix ?? '') || 0;
+  }
   return { value, suffix };
 }
 
-function normalizeCounts(countInput: CountMap | (PatientCount | undefined)[]): PatientCount[] {
-  const counts = Array.isArray(countInput) ? countInput : Object.values(countInput);
-  return counts.filter((x): x is PatientCount => x !== undefined);
+function normalizeCounts(countInput: StatValue[]): PatientCount[] {
+  return countInput.flatMap((x: StatValue) => (typeof x === 'object' ? Object.values(x) : x));
 }
 
-export function countResult(
-  results: CountMap | (PatientCount | undefined)[],
-  asString = true,
-): PatientCount {
+export function countResult(results: StatValue[], asString = true): PatientCount {
   const counts = normalizeCounts(results);
   if (counts.length === 0) return asString ? '0' : 0;
-  if (counts.length === 1) return counts[0];
+  if (counts.length === 1 && counts[0].toString().startsWith('<')) return counts[0];
 
   const parsed = counts.map(parseCount);
   const total = parsed.reduce((sum, { value }) => (value > 0 ? sum + value : sum), 0);

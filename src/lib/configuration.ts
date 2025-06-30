@@ -11,11 +11,12 @@ import type {
   ResultsConfig,
   LoginConfig,
   SiteMapConfig,
-  StatField,
+  CodeBlockConfig,
   PrivacyConfig,
   AnalysisConfig,
   CollaborateConfig,
 } from './types';
+import type { StatField } from '$lib/models/Stat';
 
 export const PROJECT_HOSTNAME =
   typeof window !== 'undefined'
@@ -71,12 +72,10 @@ export const initializeBranding = () => {
   branding.applicationName = configJson.applicationName;
 
   // Replace URLs in code blocks before assigning
-  const codeBlocks = { ...configJson.explorePage.codeBlocks };
-  Object.keys(codeBlocks).forEach((key) => {
-    if (typeof codeBlocks[key as keyof typeof codeBlocks] === 'string') {
-      codeBlocks[key as keyof typeof codeBlocks] = codeBlocks[
-        key as keyof typeof codeBlocks
-      ].replace('{{PICSURE_NETWORK_URL}}', PROJECT_HOSTNAME);
+  const codeBlocks: CodeBlockConfig = { ...configJson.explorePage.codeBlocks };
+  Object.keys(codeBlocks).forEach((key: string) => {
+    if (typeof codeBlocks[key] === 'string') {
+      codeBlocks[key] = codeBlocks[key].replace('{{PICSURE_NETWORK_URL}}', PROJECT_HOSTNAME);
     }
   });
 

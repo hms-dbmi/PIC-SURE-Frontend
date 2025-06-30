@@ -1,4 +1,5 @@
 import type { Column } from '$lib/components/datatable/types';
+import type { StatConfig } from './models/Stat';
 
 interface Link {
   title: string;
@@ -53,25 +54,6 @@ export interface ExplorePageConfig {
   pfbExportUrls?: Link[];
 }
 
-export type PatientCount = string | number;
-
-export interface CountMap {
-  [concept: string]: number;
-}
-
-export interface Stat {
-  key: string;
-  label: string;
-  value?: PatientCount | Promise<PatientCount>[];
-  auth?: boolean;
-}
-
-export interface StatField {
-  label: string;
-  id: string;
-  conceptPath: string;
-}
-
 export interface LandingConfig {
   searchPlaceholder: string;
   explanation: string;
@@ -85,12 +67,13 @@ export interface LandingConfig {
     isOpen: boolean;
     showIfLoggedIn: boolean;
   }>;
-  stats: Stat[];
+  stats: StatConfig[];
 }
 
 export interface ResultsConfig {
   totalStatKey: string;
-  stats: Stat[];
+  stats: StatConfig[];
+  cohortDescription: string;
 }
 
 export interface LoginConfig {
@@ -148,4 +131,11 @@ export interface CollaborateConfig {
   steps: Step[];
   introduction: string;
   findCollaborators: string;
+}
+
+export interface CodeBlockConfig extends Indexable {
+  PythonExport: string;
+  RExport: string;
+  PythonAPI: string;
+  RAPI: string;
 }

@@ -1,4 +1,4 @@
-import { get, writable, type Writable } from 'svelte/store';
+import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
 
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
@@ -28,8 +28,6 @@ const defaultResources: ResourceMap = {
   queryable: [],
 };
 
-export const resources: Writable<ResourceMap> = writable(defaultResources);
-
 interface ResourceResponse {
   uuid: string;
   name: string;
@@ -40,7 +38,21 @@ interface ResourceResponse {
   metadata: string;
 }
 
-export async function loadResources() {
+export const loading: Writable<Promise<void>> = writable(Promise.resolve());
+export const resources: Writable<ResourceMap> = writable(defaultResources);
+
+export function getQueryResources(isOpenAccess: boolean = false): QueryResource[] {
+  const _resources = get(resources);
+  return features.federated
+    ? _resources.queryable
+    : [
+        isOpenAccess
+          ? { name: 'hpdsOpen', uuid: _resources.hpdsOpen }
+          : { name: 'hpds', uuid: _resources.hpdsAuth },
+      ];
+}
+
+async function getResources() {
   if (get(resources).queryable.length > 0) return;
 
   const resourceMap: ResourceMap = defaultResources;
@@ -49,11 +61,15 @@ export async function loadResources() {
       .get(Picsure.Resources)
       .then((siteResources: ResourceResponse[]) => {
         resourceMap.queryable = siteResources
-          .filter(({ resourceRSPath }) => resourceRSPath.includes('passthru'))
+          .filter(({ hidden, resourceRSPath }) => !hidden && resourceRSPath.includes('passthru'))
           .map(({ name, uuid }) => ({ name, uuid }));
       })
       .catch(() => toaster.error({ description: 'Failed to load remote resource list.' }));
   }
   resources.set(resourceMap);
   console.debug('Resources', resourceMap);
+}
+
+export async function loadResources() {
+  loading.set(getResources());
 }

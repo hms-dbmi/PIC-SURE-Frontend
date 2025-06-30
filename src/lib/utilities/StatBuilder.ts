@@ -1,14 +1,28 @@
-import { get } from 'svelte/store';
 import * as api from '$lib/api';
 import { branding, features } from '$lib/configuration';
 import { Picsure } from '$lib/paths';
-import type { Stat, StatField, PatientCount, CountMap } from '$lib/types';
+
 import type { ExpectedResultType } from '$lib/models/query/Query';
-import type { QueryRequestInterface } from '$lib/models/api/Request';
+import type {
+  DictionaryConceptResult,
+  DictionaryFacetResult,
+  DictionarySearchRequest,
+} from '$lib/models/api/DictionaryResponses';
+import type {
+  StatConfig,
+  StatResult,
+  StatValue,
+  StatResultMap,
+  StatField,
+  PatientCount,
+  PatientCountMap,
+  RequestMapOptions,
+} from '$lib/models/Stat';
+
 import { loadAllConcepts } from '$lib/services/hpds';
-import { getFacetCategoryCount, getConceptCount } from '$lib/stores/Dictionary';
 import { isUserLoggedIn } from '$lib/stores/User';
-import { resources as resourceStore } from '$lib/stores/Resources';
+import { addConsents } from '$lib/stores/Dictionary';
+import { getQueryResources } from '$lib/stores/Resources';
 import { getBlankQueryRequest } from '$lib/utilities/QueryBuilder';
 import { getQueryRequest } from '$lib/utilities/QueryBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
@@ -18,174 +32,200 @@ function rejectIfQueryError(result: any) {
   return result?.errorType ? Promise.reject('api error') : result;
 }
 
-export function promiseList(stat: Stat): Promise<PatientCount>[] {
-  // You have to do this stuff to ensure a list of type Promise<PatientCount>[]
-  return Array.isArray(stat.value)
-    ? stat.value
-    : [Promise.resolve(stat.value !== undefined ? stat.value : 0)];
+export const StatPromise = {
+  list: (stat: StatResult): Promise<StatValue>[] => Object.values(stat.result),
+  rejected: (result: PromiseSettledResult<StatValue>) => result.status === 'rejected',
+  fullfiled: (result: PromiseSettledResult<StatValue>) => result.status === 'fulfilled',
+  valueOrZero: (result: PromiseSettledResult<StatValue>): StatValue =>
+    result.status === 'fulfilled' ? result.value : 0,
+};
+
+export function getStatFields(key: string): StatField[] {
+  const statFieldMap: { [key: string]: StatField[] } = {
+    _: [],
+    'query:biosample': branding?.statFields?.biosample || [],
+    'query:genomic': branding?.statFields?.genomic || [],
+    'query:consent': branding?.statFields?.consent || [],
+  };
+  const statKeys = Object.keys(statFieldMap);
+
+  return statFieldMap[statKeys.includes(key) ? key : '_'];
 }
 
-function blank(request: QueryRequestInterface): Promise<PatientCount> {
+function dictionaryRequest(isOpenAccess: boolean = false): DictionarySearchRequest {
+  const request: DictionarySearchRequest = { facets: [], search: '', consents: [] };
+  return !isOpenAccess ? addConsents(request) : request;
+}
+
+function getFacetCategoryCount(category: string) {
+  return function ({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
+    const request: DictionarySearchRequest = dictionaryRequest(isOpenAccess);
+    return api
+      .post(Picsure.Facets, request)
+      .then((res: DictionaryFacetResult[]) => {
+        const facetCat = res.find((facetCat) => facetCat.name === category);
+        if (!facetCat) {
+          return 0;
+        }
+        if (isOpenAccess) {
+          return facetCat.facets.length;
+        }
+        const facetsForUser = facetCat.facets.filter((facet) => facet.count > 0);
+        return facetsForUser.length;
+      })
+      .then(rejectIfQueryError);
+  };
+}
+
+function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
+  const request: DictionarySearchRequest = dictionaryRequest(isOpenAccess);
+  return api
+    .post(`${Picsure.Concepts}?page_number=1&page_size=1`, request)
+    .then((res: DictionaryConceptResult) => {
+      return res.totalElements || Promise.reject('total not found');
+    });
+}
+
+function blank({ request }: RequestMapOptions): Promise<PatientCount> {
   return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
 }
 
-async function getOpenCount(request: QueryRequestInterface): Promise<PatientCount> {
+function hardcoded({ stat }: RequestMapOptions) {
+  return Promise.resolve((stat?.value as PatientCount) || 0);
+}
+
+async function getOpenCount(options: RequestMapOptions): Promise<PatientCount> {
+  const request = { ...options.request };
   request.query.expectedResultType = 'CROSS_COUNT';
   const concepts = await loadAllConcepts();
   request.query.setCrossCountFields(concepts);
-  const count = await api.post(Picsure.QuerySync, request);
-
-  // All this below is to parse the number as an integer so we can add commas
-  const openPatients: PatientCount = String(count['\\_studies_consents\\']);
-  if (openPatients.includes(' \u00B1')) {
-    const [patients, suffix] = openPatients.split(' ');
-    return parseInt(patients).toLocaleString() + ' ' + suffix;
-  } else {
-    return Number.isInteger(openPatients) ? openPatients.toLocaleString() : openPatients;
-  }
+  return api
+    .post(Picsure.QuerySync, request)
+    .then(rejectIfQueryError)
+    .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }
 
-async function getAuthCount(request: QueryRequestInterface): Promise<PatientCount> {
+function getAuthCount(options: RequestMapOptions): Promise<PatientCount> {
+  const request = { ...options.request };
   request.query.expectedResultType = 'COUNT';
-  const count: PatientCount = await api.post(Picsure.QuerySync, request);
-
-  return count;
-}
-
-function patientCount(
-  isOpenAccess: boolean,
-  request: QueryRequestInterface,
-): Promise<PatientCount> {
-  return isOpenAccess ? getOpenCount(request) : getAuthCount(request);
-}
-
-function getCrossCounts(
-  field: string,
-  type: ExpectedResultType,
-  request: QueryRequestInterface,
-): Promise<PatientCount> {
-  const fields: string[] = branding?.statFields[field]?.map((field) => field.conceptPath) || [];
-  if (fields.length === 0) return Promise.reject(`${field} feilds were not configured`);
-
-  request.query.expectedResultType = type;
-  request.query.setCrossCountFields(fields);
-  const result: Promise<CountMap> = api.post(Picsure.QuerySync, request);
-  return result.then(rejectIfQueryError).then(countResult);
-}
-
-function getConsentCount(
-  type: ExpectedResultType,
-  request: QueryRequestInterface,
-): Promise<PatientCount> {
-  const fields: StatField[] = branding?.statFields['consent'] || [];
-  if (fields.length === 0) return Promise.reject('consent feilds were not configured');
-
-  const categoryMap = fields.reduce(
-    (map: { [key: string]: string[] }, field: StatField) => ({
-      ...map,
-      [field.conceptPath]: [...(map[field.conceptPath] || []), field.id],
-    }),
-    {},
-  );
-
-  request.query.expectedResultType = type;
-  Object.entries(categoryMap).forEach(([conceptPath, fieldList]) =>
-    request.query.addCategoryFilter(conceptPath, fieldList),
-  );
   return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
 }
 
-interface RequestMapOptions {
-  isOpenAccess: boolean;
-  stat: Stat;
-  request: QueryRequestInterface;
+function patientCount(options: RequestMapOptions): Promise<PatientCount> {
+  return options.isOpenAccess ? getOpenCount(options) : getAuthCount(options);
 }
 
-const requestMap: {
-  [key: string]: (options: RequestMapOptions) => Promise<PatientCount>;
-} = {
-  'dict:facets:dataset_id': ({ isOpenAccess }) => getFacetCategoryCount(isOpenAccess, 'dataset_id'),
-  'dict:concepts': ({ isOpenAccess }) => getConceptCount(isOpenAccess),
-  'query:blank': ({ request }) => blank(request),
-  'query:biosample': ({ request }) =>
-    getCrossCounts('biosample', 'OBSERVATION_CROSS_COUNT', request),
-  'query:genomic': ({ request }) => getCrossCounts('genomic', 'CROSS_COUNT', request),
-  'query:consent': ({ request }) => getConsentCount('COUNT', request),
-  'query:patientCount': ({ isOpenAccess, request }) => patientCount(isOpenAccess, request),
-  hardcoded: ({ stat }: RequestMapOptions) => Promise.resolve((stat?.value as PatientCount) || 0),
+function getCrossCounts(field: string, type: ExpectedResultType) {
+  return function (options: RequestMapOptions): Promise<PatientCountMap> {
+    const fields: string[] = getStatFields(field).map((f) => f.conceptPath);
+    if (fields.length === 0) return Promise.reject(`${field} feilds were not configured`);
+
+    const request = { ...options.request };
+    request.query.expectedResultType = type;
+    request.query.setCrossCountFields(fields);
+    return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
+  };
+}
+
+function getConsentCount(type: ExpectedResultType) {
+  return function (options: RequestMapOptions): Promise<PatientCount> {
+    const fields: StatField[] = getStatFields('query:consent');
+    if (fields.length === 0) return Promise.reject('consent feilds were not configured');
+
+    const categoryMap = fields.reduce(
+      (map: { [key: string]: string[] }, field: StatField) => ({
+        ...map,
+        [field.conceptPath]: [...(map[field.conceptPath] || []), field.id],
+      }),
+      {},
+    );
+
+    const request = { ...options.request };
+    request.query.expectedResultType = type;
+    Object.entries(categoryMap).forEach(([conceptPath, fieldList]) =>
+      request.query.addCategoryFilter(conceptPath, fieldList),
+    );
+    return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
+  };
+}
+
+const requestMap: { [key: string]: (options: RequestMapOptions) => Promise<StatValue> } = {
+  'dict:facets:dataset_id': getFacetCategoryCount('dataset_id'),
+  'dict:concepts': getConceptCount,
+  'query:blank': blank,
+  'query:biosample': getCrossCounts('query:biosample', 'OBSERVATION_CROSS_COUNT'),
+  'query:genomic': getCrossCounts('query:genomic', 'CROSS_COUNT'),
+  'query:consent': getConsentCount('COUNT'),
+  'query:patientCount': patientCount,
+  hardcoded,
 };
 
-export function getStatList(list: Stat[]): Stat[] {
+export function getStatList(list: StatConfig[]): StatResult[] {
+  const validStats = list.filter((stat) => !!requestMap[stat.key]);
+
   // No stats were configured - unexpected behavior
   if (list.length === 0) return [];
 
-  const resources = get(resourceStore);
-  return list
-    .filter((stat) => !!requestMap[stat.key]) // key exists in configured api requests
-    .reduce((list: Stat[], stat: Stat) => {
-      const statList = [...list];
-      // If auth is set to false in config, calculate the stat for not logged in users only
-      // Likewise, if auth is set to true in config, calculate the stat for logged in users only
-      // Otherwise, calculate the stat as if user is both logged in and not logged in
-      const authUsers = stat?.auth === undefined ? true : stat.auth;
-      const openUsers = stat?.auth === undefined ? true : !stat.auth;
+  return validStats.reduce((list: StatResult[], stat: StatConfig) => {
+    const statList = [...list];
+    // If auth is set to false in config, calculate the stat for not logged in users only
+    // Likewise, if auth is set to true in config, calculate the stat for logged in users only
+    // Otherwise, calculate the stat as if user is both logged in and not logged in
+    const authUsers = stat?.auth === undefined ? true : stat.auth;
+    const openUsers = stat?.auth === undefined ? true : !stat.auth;
 
-      const request = (isOpenAccess: boolean) => {
-        const resourceList = features.federated
-          ? resources.queryable.map(({ uuid }) => uuid)
-          : [isOpenAccess ? resources.hpdsOpen : resources.hpdsAuth];
-        return resourceList.map((uuid) =>
-          requestMap[stat.key]({
-            isOpenAccess,
-            stat,
-            request: getBlankQueryRequest(isUserLoggedIn(), uuid),
-          }),
-        );
-      };
-
-      if (authUsers && isUserLoggedIn()) {
-        statList.push({
-          ...stat,
-          auth: true,
-          value: request(false),
+    const request = (isOpenAccess: boolean) =>
+      getQueryResources(isOpenAccess).reduce((statMap: StatResultMap, { name, uuid }) => {
+        const newMap = { ...statMap };
+        newMap[name] = requestMap[stat.key]({
+          isOpenAccess,
+          stat,
+          request: getBlankQueryRequest(isUserLoggedIn(), uuid),
         });
-      }
+        return newMap;
+      }, {});
 
-      if (features.login.open && openUsers) {
-        statList.push({
-          ...stat,
-          auth: false,
-          value: request(true),
-        });
-      }
-
-      return statList;
-    }, []);
-}
-
-export function getResultList(isOpenAccess: boolean, list: Stat[]): Stat[] {
-  // No stats were configured - unexpected behavior
-  if (list.length === 0) return [];
-
-  const resources = get(resourceStore);
-  const resourceList = features.federated
-    ? resources.queryable.map(({ uuid }) => uuid)
-    : [isOpenAccess ? resources.hpdsOpen : resources.hpdsAuth];
-  return list
-    .filter((stat) => !!requestMap[stat.key]) // key exists in configured api requests
-    .reduce((list: Stat[], stat: Stat) => {
-      const statList = [...list];
+    if (authUsers && isUserLoggedIn()) {
       statList.push({
         ...stat,
-        auth: !isOpenAccess,
-        value: resourceList.map((uuid) =>
-          requestMap[stat.key]({
-            isOpenAccess,
-            stat,
-            request: getQueryRequest(isOpenAccess, uuid),
-          }),
-        ),
+        auth: true,
+        result: request(false),
       });
-      return statList;
-    }, []);
+    }
+
+    if (features.login.open && openUsers) {
+      statList.push({
+        ...stat,
+        auth: false,
+        result: request(true),
+      });
+    }
+
+    return statList;
+  }, []);
+}
+
+export function getResultList(isOpenAccess: boolean, list: StatConfig[]): StatResult[] {
+  const validStats = list.filter((stat) => !!requestMap[stat.key]);
+
+  // No stats were configured - unexpected behavior
+  if (validStats.length === 0) return [];
+
+  return validStats.reduce((list: StatResult[], stat: StatConfig) => {
+    const statList = [...list];
+    statList.push({
+      ...stat,
+      auth: !isOpenAccess,
+      result: getQueryResources(isOpenAccess).reduce((statMap: StatResultMap, { name, uuid }) => {
+        const newMap = { ...statMap };
+        newMap[name] = requestMap[stat.key]({
+          isOpenAccess,
+          stat,
+          request: getQueryRequest(isOpenAccess, uuid),
+        });
+        return newMap;
+      }, {}),
+    });
+    return statList;
+  }, []);
 }

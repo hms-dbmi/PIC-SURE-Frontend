@@ -48,7 +48,6 @@
       });
 
       this.selected = true;
-      console.log('selected', this.value);
       onselect(this.value);
     }
   }

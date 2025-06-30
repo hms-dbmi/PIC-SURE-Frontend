@@ -88,7 +88,11 @@
   // for loadPatientCount method, dropping the previous results and sending a new request.
   // (Subscriber method runs on initial subscription.)
   $effect(() => {
-    if (currentPage !== page.url.pathname) {
+    if (!page.url.pathname.startsWith(currentPage)) {
+      // if the current path doesn't start with the saved page path,
+      // then it's not a child page and we should reset subscribers.
+      // Example- valid:   /explorer -> /explorer/cohort
+      //          invalid: /explorer/cohort -> /discover (like a back button action)
       currentPage = page.url.pathname;
       unsubscribe();
       subscribe();

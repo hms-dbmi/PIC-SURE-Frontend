@@ -1,42 +1,67 @@
 import { get, writable, type Writable } from 'svelte/store';
 
-import type { Stat } from '$lib/types';
 import { toaster } from '$lib/toaster';
 import { branding } from '$lib/configuration';
-import { filters } from '$lib/stores/Filter';
-import { getResultList, promiseList } from '$lib/utilities/StatBuilder';
+import { getResultList, StatPromise } from '$lib/utilities/StatBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
-import { loadResources } from '$lib/stores/Resources';
 
+import type { StatResult, StatValue } from '$lib/models/Stat';
+import { filters } from '$lib/stores/Filter';
+import { searchTerm, selectedFacets } from '$lib/stores/Search';
+import { loading as resourcesPromise } from '$lib/stores/Resources';
+
+const CACHE_MAX_ENTRIES = 100;
+const requestCache: Map<string, StatResult[]> = new Map();
 export const hasNonZeroResult: Writable<boolean> = writable(false);
-export const resultCounts: Writable<Stat[]> = writable([]);
+export const resultCounts: Writable<StatResult[]> = writable([]);
+export const loading: Writable<Promise<void>> = writable(Promise.resolve());
 export const totalParticipants: Writable<number> = writable(0);
 
 export async function loadPatientCount(isOpenAccess: boolean) {
   try {
-    await loadResources();
-    const resultStats: Stat[] = getResultList(isOpenAccess, branding?.results?.stats || []);
+    if (requestCache.size >= CACHE_MAX_ENTRIES) {
+      requestCache.clear();
+    }
+
+    const cacheKey = JSON.stringify([
+      isOpenAccess,
+      get(searchTerm),
+      get(selectedFacets).map((facet) => facet.name),
+      get(filters).map((filter) => filter.id),
+    ]);
+    if (requestCache.has(cacheKey)) {
+      resultCounts.set(requestCache.get(cacheKey) as StatResult[]);
+      return;
+    }
+
+    await get(resourcesPromise);
+    const resultStats: StatResult[] = getResultList(isOpenAccess, branding?.results?.stats || []);
     resultCounts.set(resultStats);
-    Promise.allSettled(resultStats.flatMap(promiseList)).then((results) => {
-      if (results.some((result) => result.status === 'rejected')) {
+    Promise.allSettled(resultStats.flatMap(StatPromise.list)).then((results) => {
+      if (results.some(StatPromise.rejected)) {
         if (get(filters).length !== 0) {
           toaster.error({ description: branding?.explorePage?.filterErrorText, closable: false });
         } else {
           toaster.error({ title: branding?.explorePage?.queryErrorText });
         }
+      } else {
+        // Cache if no rejected requests
+        requestCache.set(cacheKey, resultStats);
       }
       hasNonZeroResult.set(
-        results.some((result) => result.status === 'fulfilled' && result.value !== 0),
+        results.some(
+          (result) => StatPromise.fullfiled(result) && `${countResult([result.value])}` !== '0',
+        ),
       );
     });
     const totalCount = resultStats.find((count) => count.key === branding?.results?.totalStatKey);
     if (totalCount) {
-      Promise.allSettled(promiseList(totalCount)).then((results) => {
-        const values = results
-          .filter((result) => result.status === 'fulfilled')
-          .map((result) => result.value);
-        totalParticipants.set(countResult(values, false) as number);
-      });
+      Promise.allSettled(StatPromise.list(totalCount)).then(
+        (results: PromiseSettledResult<StatValue>[]) => {
+          const values = results.filter(StatPromise.fullfiled).map(({ value }) => value);
+          totalParticipants.set(countResult(values, false) as number);
+        },
+      );
     }
   } catch (error) {
     console.error(error);

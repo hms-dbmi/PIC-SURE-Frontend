@@ -51,7 +51,7 @@ test('Discover can display ±3', async ({ page }) => {
 
   // Then
   await expect(page.locator('#results-panel')).toBeVisible();
-  await expect(page.locator('#result-count')).toHaveText(
+  await expect(page.locator('#result-count')).toContainText(
     `${resultCount?.toLocaleString()} ${suffix}`,
   );
 });
