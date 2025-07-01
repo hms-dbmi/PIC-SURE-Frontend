@@ -33,7 +33,7 @@ export async function loadPatientCount(isOpenAccess: boolean) {
     }),
   );
   const totalCount = resultStats.find(
-    (count) => count.key === branding.results.participantsStatKey,
+    (count) => count.key === branding?.results?.participantsStatKey,
   );
   if (totalCount) {
     Promise.allSettled(promiseList(totalCount)).then((results) => {
