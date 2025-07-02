@@ -7,7 +7,7 @@
 
   const ERROR_VALUE = 'N/A';
 
-  function countOrNothing(counts: PromiseSettledResult<PatientCount>[]) {
+  function countSettled(counts: PromiseSettledResult<PatientCount>[]) {
     return countResult(
       counts.filter((count) => count.status === 'fulfilled').map((count) => count.value),
     );
@@ -19,7 +19,7 @@
     {#await Promise.allSettled(promiseList(stat))}
       <Loading ring size="mini" />
     {:then counts}
-      {@const count: PatientCount = countOrNothing(counts)}
+      {@const count: PatientCount = countSettled(counts)}
       <span id="result-count" class="text-4xl">
         {#if counts.filter(({ status }) => status === 'fulfilled').length === 0}
           <i class="fa-solid fa-triangle-exclamation"></i>
