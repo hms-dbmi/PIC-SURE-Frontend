@@ -167,6 +167,16 @@
       <hr />
       <h5 class="text-center text-xl mt-7">Tool Suite</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
+        {#if showCohortDetails}
+          <CardButton
+            href="/explorer/cohort"
+            data-testid="cohort-details-btn"
+            title="Cohort Details"
+            icon="fa-solid fa-users"
+            size="md"
+            active={page.url.pathname.includes('explorer/cohort')}
+          />
+        {/if}
         {#if showExplorerDistributions}
           <CardButton
             href="/explorer/distributions"
@@ -193,16 +203,6 @@
             icon="fa-solid fa-dna"
             size="md"
             active={page.url.pathname.includes('explorer/variant')}
-          />
-        {/if}
-        {#if showCohortDetails}
-          <CardButton
-            href="/explorer/cohort"
-            data-testid="cohort-details-btn"
-            title="Cohort Details"
-            icon="fa-solid fa-users"
-            size="md"
-            active={page.url.pathname.includes('explorer/cohort')}
           />
         {/if}
       </div>
