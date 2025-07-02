@@ -12,7 +12,6 @@
   let failed = $state(false);
   onMount(async () => {
     panelOpen.set(false);
-
     let redirectTo = '/';
     let providerType: string | undefined | null;
     if (browser) {

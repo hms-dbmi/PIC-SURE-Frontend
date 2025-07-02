@@ -53,10 +53,16 @@ export interface ExplorePageConfig {
   pfbExportUrls?: Link[];
 }
 
-export interface LandingStat {
+export type PatientCount = string | number;
+
+export interface CountMap {
+  [concept: string]: number;
+}
+
+export interface Stat {
   key: string;
   label: string;
-  value?: Promise<number> | number;
+  value?: PatientCount | Promise<PatientCount>[];
   auth?: boolean;
 }
 
@@ -79,8 +85,12 @@ export interface LandingConfig {
     isOpen: boolean;
     showIfLoggedIn: boolean;
   }>;
-  stats: LandingStat[];
-  statFields: { [key: string]: StatField[] };
+  stats: Stat[];
+}
+
+export interface ResultsConfig {
+  totalStatKey: string;
+  stats: Stat[];
 }
 
 export interface LoginConfig {

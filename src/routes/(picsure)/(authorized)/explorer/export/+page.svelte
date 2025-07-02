@@ -6,7 +6,7 @@
   import { stepperState } from '$lib/stores/Stepper';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import Content from '$lib/components/Content.svelte';
-  import { getQueryRequest } from '$lib/QueryBuilder';
+  import { getQueryRequest } from '$lib/utilities/QueryBuilder';
   import type { ExportInterface } from '$lib/models/Export';
   import { features } from '$lib/configuration';
   let { exports } = ExportStore;

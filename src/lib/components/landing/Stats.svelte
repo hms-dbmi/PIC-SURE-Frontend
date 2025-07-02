@@ -2,12 +2,12 @@
   import { onMount } from 'svelte';
 
   import { branding } from '$lib/configuration';
-  import { stats, authStats, hasError, loadStats } from '$lib/stores/Stats';
+  import { stats, authStats, hasError, loadLandingStats } from '$lib/stores/Stats';
 
   import Stat from './Stat.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 
-  onMount(() => loadStats());
+  onMount(loadLandingStats);
 </script>
 
 <section class="flex flex-col items-center w-full p-4 bg-surface-100-900">

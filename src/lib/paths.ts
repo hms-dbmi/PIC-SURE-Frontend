@@ -14,7 +14,7 @@ export const Picsure = {
   Dictionary: DICT,
   Facets: `${DICT}/facets`,
   Search: 'picsure/search',
-  Sites: 'picsure/passthru/sites',
+  Resources: 'picsure/resource',
   Query: QUERY,
   QuerySync: `${QUERY}/sync`,
   Uploader: {

@@ -17,7 +17,8 @@
   import { Query, type ExpectedResultType } from '$lib/models/query/Query.ts';
   import { stepperState } from '$lib/stores/Stepper';
   import { exports, addExports, removeExports } from '$lib/stores/Export';
-  import { filters, totalParticipants } from '$lib/stores/Filter';
+  import { filters } from '$lib/stores/Filter';
+  import { totalParticipants } from '$lib/stores/ResultStore';
   import { searchDictionary } from '$lib/stores/Dictionary';
   import { toaster } from '$lib/toaster';
   import { createDatasetName } from '$lib/services/datasets';
