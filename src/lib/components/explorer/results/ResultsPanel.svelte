@@ -81,6 +81,12 @@
     }
   }
 
+  // The destroy/mount method is not called on page navigation if the page we're navigating to
+  // has this same component. This can cause requests that may be pending on one page
+  // to load on the next page. Example discover results displaying on explorer page.
+  // To fix this, we resubscribe on page navigation with the correct isOpenAccess flag
+  // for loadPatientCount method, dropping the previous results and sending a new request.
+  // (Subscriber method runs on initial subscription.)
   $effect(() => {
     if (currentPage !== page.url.pathname) {
       currentPage = page.url.pathname;
