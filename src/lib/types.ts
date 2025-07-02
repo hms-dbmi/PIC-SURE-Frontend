@@ -89,7 +89,7 @@ export interface LandingConfig {
 }
 
 export interface ResultsConfig {
-  participantsStatKey: string;
+  totalStatKey: string;
   stats: Stat[];
 }
 

@@ -2,7 +2,7 @@
   "applicationName": "PIC‑SURE",
   "statFields": {},
   "results": {
-    "participantsStatKey": "query:patientCount",
+    "totalStatKey": "query:patientCount",
     "stats": [
       {
         "key": "query:patientCount",
