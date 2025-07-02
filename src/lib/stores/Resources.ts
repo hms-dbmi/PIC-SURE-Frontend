@@ -16,7 +16,7 @@ export interface ResourceMap {
   aggregate: string;
   hpdsOpen: string;
   hpdsAuth: string;
-  query: QueryResource[];
+  queryable: QueryResource[];
 }
 
 const defaultResources: ResourceMap = {
@@ -25,7 +25,7 @@ const defaultResources: ResourceMap = {
   aggregate: (import.meta.env?.VITE_RESOURCE_AGGREGATE || '') as string,
   hpdsOpen: (import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '') as string,
   hpdsAuth: (import.meta.env?.VITE_RESOURCE_HPDS || '') as string,
-  query: [],
+  queryable: [],
 };
 
 export const resources: Writable<ResourceMap> = writable(defaultResources);
@@ -41,14 +41,14 @@ interface ResourceResponse {
 }
 
 export async function loadResources() {
-  if (get(resources).query.length > 0) return;
+  if (get(resources).queryable.length > 0) return;
 
   const resourceMap: ResourceMap = defaultResources;
   if (features.federated) {
     await api
       .get(Picsure.Resources)
       .then((siteResources: ResourceResponse[]) => {
-        resourceMap.query = siteResources
+        resourceMap.queryable = siteResources
           .filter(({ resourceRSPath }) => resourceRSPath.includes('passthru'))
           .map(({ name, uuid }) => ({ name, uuid }));
       })

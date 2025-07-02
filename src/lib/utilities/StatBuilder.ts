@@ -132,7 +132,7 @@ export function getStatList(list: Stat[]): Stat[] {
 
       const request = (isOpenAccess: boolean) => {
         const resourceList = features.federated
-          ? resources.query.map(({ uuid }) => uuid)
+          ? resources.queryable.map(({ uuid }) => uuid)
           : [isOpenAccess ? resources.hpdsOpen : resources.hpdsAuth];
         return resourceList.map((uuid) =>
           requestMap[stat.key]({
@@ -169,7 +169,7 @@ export function getResultList(isOpenAccess: boolean, list: Stat[]): Stat[] {
 
   const resources = get(resourceStore);
   const resourceList = features.federated
-    ? resources.query.map(({ uuid }) => uuid)
+    ? resources.queryable.map(({ uuid }) => uuid)
     : [isOpenAccess ? resources.hpdsOpen : resources.hpdsAuth];
   return list
     .filter((stat) => !!requestMap[stat.key]) // key exists in configured api requests
