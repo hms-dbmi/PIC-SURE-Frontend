@@ -2,27 +2,27 @@ import type { PatientCount, CountMap } from '$lib/types';
 
 const PLUS_MINUS = '\u00B1';
 
-function parseEntry(entry: PatientCount): { value: number; suffix: number } {
-  const [rawValue, rawSuffix] = String(entry).split(PLUS_MINUS);
+function parseCount(count: PatientCount): { value: number; suffix: number } {
+  const [rawValue, rawSuffix] = String(count).split(PLUS_MINUS);
   const value = parseInt(rawValue.replace(',', '')) || 0;
   const suffix = parseInt(rawSuffix ?? '') || 0;
   return { value, suffix };
 }
 
-function normalizeEntries(input: CountMap | (PatientCount | undefined)[]): PatientCount[] {
-  const values = Array.isArray(input) ? input : Object.values(input);
-  return values.filter((x): x is PatientCount => x !== undefined);
+function normalizeCounts(countInput: CountMap | (PatientCount | undefined)[]): PatientCount[] {
+  const counts = Array.isArray(countInput) ? countInput : Object.values(countInput);
+  return counts.filter((x): x is PatientCount => x !== undefined);
 }
 
 export function countResult(
-  result: CountMap | (PatientCount | undefined)[],
+  results: CountMap | (PatientCount | undefined)[],
   asString = true,
 ): PatientCount {
-  const entries = normalizeEntries(result);
-  if (entries.length === 0) return asString ? '0' : 0;
-  if (entries.length === 1) return entries[0];
+  const counts = normalizeCounts(results);
+  if (counts.length === 0) return asString ? '0' : 0;
+  if (counts.length === 1) return counts[0];
 
-  const parsed = entries.map(parseEntry);
+  const parsed = counts.map(parseCount);
   const total = parsed.reduce((sum, { value }) => (value > 0 ? sum + value : sum), 0);
   const maxSuffix = Math.max(...parsed.map(({ suffix }) => suffix), 0);
 
