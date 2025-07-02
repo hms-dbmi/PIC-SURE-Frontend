@@ -1,5 +1,6 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 
+import { toaster } from '$lib/toaster';
 import type { Stat } from '$lib/types';
 import { branding } from '$lib/configuration';
 import { getStatList, promiseList } from '$lib/utilities/StatBuilder';
@@ -14,15 +15,23 @@ export const authStats: Readable<Stat[]> = derived(statData, ($s) =>
 );
 
 export async function loadLandingStats() {
-  await loadResources();
-  loaded.set(false);
-  hasError.set(false);
-  const stats: Stat[] = getStatList(branding?.landing?.stats || []);
-  statData.set(stats);
-  Promise.allSettled(stats.flatMap(promiseList)).then((results) => {
-    if (results.some((result) => result.status === 'rejected')) {
-      hasError.set(true);
-    }
-    loaded.set(true);
-  });
+  try {
+    await loadResources();
+    loaded.set(false);
+    hasError.set(false);
+    const stats: Stat[] = getStatList(branding?.landing?.stats || []);
+    statData.set(stats);
+    Promise.allSettled(stats.flatMap(promiseList)).then((results) => {
+      if (results.some((result) => result.status === 'rejected')) {
+        hasError.set(true);
+      }
+      loaded.set(true);
+    });
+  } catch (error) {
+    console.error(error);
+    toaster.error({
+      title:
+        'An error occured while loading statistics. If this problem persists, please contact an administrator.',
+    });
+  }
 }
