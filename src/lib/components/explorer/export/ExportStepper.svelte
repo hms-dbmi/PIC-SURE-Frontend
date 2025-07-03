@@ -18,10 +18,12 @@
   import { stepperState } from '$lib/stores/Stepper';
   import { exports, addExports, removeExports } from '$lib/stores/Export';
   import { filters } from '$lib/stores/Filter';
-  import { totalParticipants } from '$lib/stores/ResultStore';
-  import { searchDictionary } from '$lib/stores/Dictionary';
+  import { totalParticipants, loadPatientCount } from '$lib/stores/ResultStore';
+  import { commonAreaUUID } from '$lib/stores/Dataset';
+  import { searchDictionary, getInitialTree, getConceptTree } from '$lib/stores/Dictionary';
   import { toaster } from '$lib/toaster';
   import { createDatasetName } from '$lib/services/datasets';
+  import type { PatientCount } from '$lib/models/Stat';
 
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
@@ -34,20 +36,28 @@
   import CodeBlock from '$lib/components/CodeBlock.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import TabItem from '$lib/components/TabItem.svelte';
+  import RemoteTree from '$lib/components/tree/RemoteTree.svelte';
+  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
 
   interface Props {
     query: QueryRequestInterface;
-    showTreeStep?: boolean;
     rows?: ExportRowInterface[];
   }
 
-  const { query, showTreeStep = false, rows = [] }: Props = $props();
+  const { query, rows = [] }: Props = $props();
 
   let activeRows: ExportRowInterface[] = $state(rows);
-
   interface DataSetResponse {
     picsureResultId?: string;
   }
+
+  const selectNode = (value: string) => {
+    console.log(value);
+  };
+
+  const unselectNode = (value: string) => {
+    console.log(value);
+  };
 
   const MAX_DATA_POINTS_FOR_EXPORT = settings.maxDataPointsForExport || 1000000;
   const PROMISE_WAIT_INTERVAL = 7;
@@ -74,13 +84,16 @@
   let modalOpen: boolean = $state(false);
 
   let datasetId: string = $state('');
+  let commonAreaDatasetId: string = $state('');
   let processingMessage: string = $state('');
   let exportLoading: boolean = $state(false);
+  let resultCountMap: Record<string, PatientCount> = $state({});
 
   onMount(async () => {
     const exportedSampleIds = $exports.filter((e: ExportInterface) =>
       e.conceptPath.includes('SAMPLE_ID'),
     );
+
     if (exportedSampleIds.length > 0) {
       checkingSampleIds = true;
       const genomicConcepts = await getGenomicConcepts();
@@ -115,6 +128,8 @@
     if (!features.explorer.enablePfbExport) {
       activeType = 'DATAFRAME';
     }
+    console.log('features.explorer.showTreeStep: ', features.explorer.showTreeStep);
+    console.log('features: ', features);
   });
 
   async function download(): Promise<void> {
@@ -184,10 +199,22 @@
       query.query.fields = $exports.map((exp) => exp.conceptPath);
       query.query.expectedResultType = activeType || 'DATAFRAME';
       datasetId = '';
-      requestUpdate(() =>
-        api.post(Picsure.Query, query).then((res: DataSetResponse) => {
-          datasetId = res.picsureResultId || 'Error';
-        }),
+      requestUpdate(() =>{
+        if (features.federated) {
+          const uuidQuery = structuredClone(query);
+          uuidQuery.resourceUUID = resources.queryIdGen;
+          return api.post(Picsure.Query, uuidQuery).then((res: DataSetResponse) => {
+            const commonAreaDatasetId = res.picsureResultId || undefined;
+            commonAreaUUID.set(commonAreaDatasetId);
+            query.query.commonAreaUUID = commonAreaDatasetId;
+            loadPatientCount(false);
+          });
+        } else {
+          return api.post(Picsure.Query, query).then((res: DataSetResponse) => {
+              datasetId = res.picsureResultId || 'Error';
+          });
+        }
+      },
       );
       await datasetIdPromise;
     } catch (error) {
@@ -334,6 +361,12 @@
     exportLoading = false;
   }
 
+  async function fetchChildren(conceptPath: string) {
+    const dataset = conceptPath.split('\\')[1];
+    const treeNodes = await getConceptTree(dataset, 1, conceptPath);
+    return treeNodes.children || [];
+  }
+
   $inspect(tabSet);
 </script>
 
@@ -353,7 +386,7 @@
   class="w-full h-full m-8"
   oncomplete={onComplete}
   onnext={onNextHandler}
-  buttonCompleteLabel="Done"
+  buttonCompleteLabel={features.explorer.enableRedcapExport ? 'Request Access' : 'Done'}
 >
   <Step name="review" locked={dataLimitExceeded()}>
     {#snippet header()}Review Cohort Details:{/snippet}
@@ -414,22 +447,26 @@
       </section>
     </div>
   </Step>
-  {#if showTreeStep}
-    <Step name="select-variables">
-      {#snippet header()}Finalize Data:{/snippet}
-      <section class="flex flex-col w-full h-full items-center">
-        <Summary />
-        <div class="w-full h-full m-2 card p-4">
-          <header class="card-header">
-            Select <strong>additional variables</strong> you would like to be included in your final
-            data export.
-          </header>
-          <hr />
-          <div class="card-body p-4">Tree Component Here</div>
+  <Step name="select-variables">
+    {#snippet header()}Finalize Data:{/snippet}
+    <section class="flex flex-col w-full h-full items-center">
+      <Summary />
+      <div class="w-full h-full m-2 card p-4">
+        <header class="card-header">
+          Select <strong>additional variables</strong> you would like to be included in your final
+          data export.
+        </header>
+        <hr />
+        <div class="card-body p-4">
+          {#await getInitialTree()}
+            <Loading ring size="small" />
+          {:then treeNodes}
+            <RemoteTree initialNodes={treeNodes} fetchChildren={fetchChildren} fullWidth={true} onselect={selectNode} onunselect={unselectNode} />
+          {/await}
         </div>
-      </section>
-    </Step>
-  {/if}
+      </div>
+    </section>
+  </Step>
   {#if features.explorer.enablePfbExport}
     <Step name="select-type" locked={activeType === undefined}>
       {#snippet header()}Review and Save Dataset:{/snippet}
@@ -497,6 +534,26 @@
       </div>
     </section>
   </Step>
+  {#if features.explorer.enableRedcapExport}
+  <Step name="redcap-export">
+    {#snippet header()}Request Access to Patient Level Data:{/snippet}
+    <section class="flex flex-col w-full h-full items-center">
+      <p>By clicking "Request Access" you will be taken to the externally linked Request Data and Biosamples RedCap form where you can submit your request for data and biosamples.</p>
+      <p class="mb-0">Before submitting the RedCap form, make sure you have:</p>
+      <ul class="list-disc list-inside">
+        <li>Selected all variables you would like to include in your export</li>
+        <li><a href="/collaborate" class="anchor">Identified collaborators</a> if using data from other institutions.</li>
+      </ul>
+      <div class="grid grid-cols-2 gap-2 items-center">
+        <label for="copyable-dataset-id" class="font-bold mr-2">Dataset ID:</label>
+        <span id="copyable-dataset-id" class="mr-2">{datasetId}</span>
+        <CopyButton itemToCopy={datasetId} />
+      </div>
+      <p>Once the request has been submitted, the local Sample and Data Access Committee will review and notify you of a decision via email.</p>
+      <p>Once approved, access to patient-level data will be provisioned in the GIC Service Workbench. To learn more about this, please refer to the <a href="/analyze" class="anchor">Analyze page</a>.</p>
+    </section>
+  </Step>
+  {:else}
   <Step name="start" locked={lockDownload}>
     {#snippet header()}Start Analysis:{/snippet}
     <section class="flex flex-col w-full h-full items-center">
@@ -607,4 +664,5 @@
       {/await}
     </section>
   </Step>
+  {/if}
 </Stepper>

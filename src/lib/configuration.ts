@@ -169,8 +169,10 @@ export const features: Indexable = {
     authTour: import.meta.env?.VITE_AUTH_TOUR_NAME ?? 'NHANES-Auth',
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
     enablePfbExport: import.meta.env?.VITE_DOWNLOAD_AS_PFB !== 'false', // default true
+    enableRedcapExport: import.meta.env?.VITE_ENABLE_REDCAP_EXPORT === 'true',
     enableSampleIdCheckbox: import.meta.env?.VITE_ENABLE_SAMPLE_ID_CHECKBOX === 'true',
     enableCohortDetails: import.meta.env?.VITE_ENABLE_COHORT_DETAILS === 'true',
+    showTreeStep: import.meta.env?.VITE_SHOW_TREE_STEP === 'true',
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
@@ -220,6 +222,7 @@ export const resources = {
   visualization: (import.meta.env?.VITE_RESOURCE_VIZ || '') as string,
   application: (import.meta.env?.VITE_RESOURCE_APP || '') as string,
   aggregate: (import.meta.env?.VITE_RESOURCE_AGGREGATE || '') as string,
+  queryIdGen: (import.meta.env?.VITE_RESOURCE_QUERY_ID_GEN || '') as string,
 };
 
 export const auth = {

@@ -22,6 +22,7 @@ export interface QueryInterface {
   crossCountFields?: string[];
   variantInfoFilters: VariantInfoFilters[];
   expectedResultType: ExpectedResultType | ExpectedResultType[];
+  commonAreaUUID?: string;
 }
 
 interface CategoryVariantInfoFilterInterface {
@@ -49,6 +50,7 @@ export class Query implements QueryInterface {
   crossCountFields?: string[];
   variantInfoFilters: VariantInfoFilters[];
   expectedResultType: ExpectedResultType | ExpectedResultType[];
+  commonAreaUUID?: string;
 
   constructor(newQuery?: QueryInterface) {
     this.categoryFilters = newQuery?.categoryFilters || {};
@@ -64,6 +66,7 @@ export class Query implements QueryInterface {
     };
     this.variantInfoFilters = [variantInfoFilter];
     this.expectedResultType = newQuery?.expectedResultType || 'COUNT';
+    this.commonAreaUUID = newQuery?.commonAreaUUID || undefined;
   }
 
   addCategoryFilter(key: string, value: string[]) {
