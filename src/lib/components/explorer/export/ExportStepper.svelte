@@ -239,7 +239,11 @@
   }
 
   function onComplete() {
-    goto('/explorer');
+    if (features.explorer.enableRedcapExport) {
+      window.open('https://redcap.tch.harvard.edu/redcap_edc/surveys/?s=EWYX8X8XX77TTWFR', '_blank');
+    } else {
+      goto('/explorer');
+    }
   }
 
   function dataLimitExceeded(): boolean {
