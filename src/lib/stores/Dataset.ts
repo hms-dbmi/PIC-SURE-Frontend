@@ -5,6 +5,8 @@ import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 
 export const datasets: Writable<DataSet[]> = writable([]);
+export const commonAreaUUID: Writable<string | undefined> = writable(undefined);
+export const federatedQueryStatuses: Writable<Record<string, string>> = writable({});
 export const active: Readable<DataSet[]> = derived(datasets, ($ds) =>
   $ds.filter((ds) => !ds.archived).sort((a, b) => b.rawStartTime - a.rawStartTime),
 );

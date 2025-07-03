@@ -11,7 +11,7 @@
     nodes: NodeInterface[];
     onselect?: (value: string) => void;
     onunselect?: (value: string) => void;
-    fullWidth: boolean;
+    fullWidth?: boolean;
   } = $props();
 
   class TreeNode implements TreeNodeInterface {
