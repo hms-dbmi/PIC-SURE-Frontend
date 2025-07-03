@@ -15,6 +15,10 @@ export type DataSet = Indexable & {
   rawStartTime: number;
 };
 
+export interface DataSetResponse {
+  picsureResultId?: string;
+}
+
 export interface DatasetError {
   message: Message;
 }

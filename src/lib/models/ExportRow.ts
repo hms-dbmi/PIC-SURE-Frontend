@@ -6,7 +6,7 @@ export interface ExportRowInterface {
   ref?: ExportInterface | Filter;
   selected?: boolean;
   variableId?: string;
-  variableName?: string;
+  name?: string;
   description?: string;
   type?: ExportType;
 }

@@ -17,7 +17,7 @@
       ref: exp,
       selected: true,
       variableId: exp.conceptPath,
-      variableName: exp.display || exp.searchResult?.display || exp.searchResult?.name,
+      name: exp.display || exp.searchResult?.display || exp.searchResult?.name,
       description: exp.searchResult?.description,
       type: exp.searchResult?.type,
     };
@@ -27,7 +27,7 @@
       ref: filter,
       selected: true,
       variableId: filter.id,
-      variableName: filter.searchResult?.display || filter.variableName,
+      name: filter.searchResult?.display || filter.variableName,
       description: filter.searchResult?.description,
       type: filter.searchResult?.type,
     };
@@ -52,7 +52,7 @@
       ref: patientIdExport,
       selected: true,
       variableId: patientIdExport.conceptPath,
-      variableName: patientIdExport.display || patientIdExport.searchResult?.name,
+      name: patientIdExport.display || patientIdExport.searchResult?.name,
       description: patientIdExport.searchResult?.description,
       type: patientIdExport.searchResult?.type,
     };
@@ -77,7 +77,7 @@
         ref: topmedExport,
         selected: true,
         variableId: topmedExport.conceptPath,
-        variableName: topmedExport.display || topmedExport.searchResult?.name,
+        name: topmedExport.display || topmedExport.searchResult?.name,
         description: topmedExport.searchResult?.description,
         type: topmedExport.searchResult?.type,
       };
@@ -102,7 +102,7 @@
         ref: parentStudyExport,
         selected: true,
         variableId: parentStudyExport.conceptPath,
-        variableName: parentStudyExport.display || parentStudyExport.searchResult?.name,
+        name: parentStudyExport.display || parentStudyExport.searchResult?.name,
         description: parentStudyExport.searchResult?.description,
         type: parentStudyExport.searchResult?.type,
       };

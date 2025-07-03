@@ -164,3 +164,8 @@ export async function getConceptTree(
   const url = `${Picsure.Concept.Tree}/${dataset}?depth=${depth}`;
   return api.post(url, conceptPath);
 }
+
+export async function getInitialTree(): Promise<SearchResult[]> {
+  const url = `${Picsure.Concept.Tree}`;
+  return api.get(url);
+}

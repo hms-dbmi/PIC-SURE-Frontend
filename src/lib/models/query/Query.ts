@@ -10,7 +10,8 @@ export type ExpectedResultType =
   | 'DATAFRAME_TIMESERIES'
   | 'AGGREGATE_VCF_EXCERPT'
   | 'VCF_EXCERPT'
-  | 'VARIANT_COUNT_FOR_QUERY';
+  | 'VARIANT_COUNT_FOR_QUERY'
+  | 'SECRET_ADMIN_DATAFRAME';
 
 export interface QueryInterface {
   fields: string[];
