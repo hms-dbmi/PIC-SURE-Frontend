@@ -214,14 +214,6 @@ export const settings: Indexable = {
   maxDataPointsForExport: parseInt(import.meta.env?.VITE_MAX_DATA_POINTS_FOR_EXPORT || 1000000),
 };
 
-export const resources = {
-  hpds: (import.meta.env?.VITE_RESOURCE_HPDS || '') as string,
-  openHPDS: (import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '') as string,
-  visualization: (import.meta.env?.VITE_RESOURCE_VIZ || '') as string,
-  application: (import.meta.env?.VITE_RESOURCE_APP || '') as string,
-  aggregate: (import.meta.env?.VITE_RESOURCE_AGGREGATE || '') as string,
-};
-
 export const auth = {
   auth0Tenant: import.meta.env?.VITE_AUTH0_TENANT || 'avillachlab',
 };
