@@ -3,7 +3,7 @@ import { get, writable, type Writable } from 'svelte/store';
 import { TableHandler, type State } from '@vincjo/datatables/server';
 
 import { type Facet, type SearchResult } from '$lib/models/Search';
-import type { DictionaryConceptResult } from '$lib/models/api/DictionaryResponses';
+import type { DictionaryConceptResult } from '$lib/models/api/Dictionary';
 import { searchDictionary } from '$lib/stores/Dictionary';
 import { updateFacetsFromSearch, facetsPromise } from '$lib/stores/Dictionary';
 import { getDefaultRows } from '$lib/components/datatable/stores';

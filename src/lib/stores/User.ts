@@ -4,12 +4,13 @@ import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
 import type { User } from '$lib/models/User';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
-import { routes, features, resources } from '$lib/configuration';
+import { routes, features } from '$lib/configuration';
 import { Psama } from '$lib/paths';
 import { goto } from '$app/navigation';
 import type { QueryInterface } from '$lib/models/query/Query';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/state';
+import { resources } from '$lib/stores/Resources';
 
 // Create a store that syncs with localStorage
 function createLocalStorageStore(key: string, initialValue: boolean) {
@@ -155,7 +156,7 @@ export function refreshLongTermToken() {
 
 export async function getQueryTemplate(): Promise<QueryInterface> {
   try {
-    const res = await api.get(Psama.User.Template + '/' + resources.application);
+    const res = await api.get(Psama.User.Template + '/' + get(resources).application);
     const queryTemplate = JSON.parse(res.queryTemplate) as QueryInterface;
     return queryTemplate;
   } catch (error) {

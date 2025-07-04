@@ -23,3 +23,9 @@ export interface DictionaryFacetResult {
   description: string;
   facets: Facet[];
 }
+
+export interface DictionarySearchRequest {
+  facets: Facet[];
+  search: string;
+  consents?: string[];
+}

@@ -8,7 +8,8 @@ import type { Facet, SearchResult } from '$lib/models/Search';
 import type {
   DictionaryConceptResult,
   DictionaryFacetResult,
-} from '$lib/models/api/DictionaryResponses';
+  DictionarySearchRequest,
+} from '$lib/models/api/Dictionary';
 import type { Pageable } from '$lib/models/api/Pageable';
 import { user } from '$lib/stores/User';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
@@ -23,12 +24,6 @@ export const facetsPromise: Writable<Promise<DictionaryFacetResult[]>> = writabl
 export const openFacets: Writable<string[]> = writable([]);
 
 const dictonaryCacheMap = new Map<string, SearchResult>();
-
-interface DictionarySearchRequest {
-  facets: Facet[];
-  search: string;
-  consents?: string[];
-}
 
 function cacheResult(key: string, value: SearchResult) {
   if (!key || !value) return;
@@ -146,7 +141,7 @@ export async function getConceptDetails(
   return response;
 }
 
-function addConsents(request: DictionarySearchRequest) {
+export function addConsents(request: DictionarySearchRequest) {
   const queryTemplate = get(user)?.queryTemplate;
   if (queryTemplate) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

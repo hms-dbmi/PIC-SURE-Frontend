@@ -7,8 +7,9 @@
   import { browser } from '$app/environment';
 
   import * as api from '$lib/api';
-  import { branding, features, settings, resources } from '$lib/configuration';
+  import { branding, features, settings } from '$lib/configuration';
   import { Picsure } from '$lib/paths';
+  import { toaster } from '$lib/toaster';
 
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
@@ -20,7 +21,7 @@
   import { filters } from '$lib/stores/Filter';
   import { totalParticipants } from '$lib/stores/ResultStore';
   import { searchDictionary } from '$lib/stores/Dictionary';
-  import { toaster } from '$lib/toaster';
+  import { resources } from '$lib/stores/Resources';
   import { createDatasetName } from '$lib/services/datasets';
 
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
@@ -249,7 +250,7 @@
 
     const crossCountResponse: Record<string, number> = await api.post(Picsure.QuerySync, {
       query: crossCountQuery,
-      resourceUUID: resources.hpds,
+      resourceUUID: $resources.hpdsAuth,
     });
 
     // Filter and return only concepts with counts > 0
