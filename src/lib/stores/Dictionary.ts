@@ -9,7 +9,7 @@ import type {
   DictionaryConceptResult,
   DictionaryFacetResult,
   DictionarySearchRequest,
-} from '$lib/models/api/DictionaryResponses';
+} from '$lib/models/api/Dictionary';
 import type { Pageable } from '$lib/models/api/Pageable';
 import { user } from '$lib/stores/User';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';

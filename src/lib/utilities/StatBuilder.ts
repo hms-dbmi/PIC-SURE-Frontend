@@ -7,7 +7,7 @@ import type {
   DictionaryConceptResult,
   DictionaryFacetResult,
   DictionarySearchRequest,
-} from '$lib/models/api/DictionaryResponses';
+} from '$lib/models/api/Dictionary';
 import type {
   StatConfig,
   StatResult,
