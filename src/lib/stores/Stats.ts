@@ -2,7 +2,7 @@ import { get, derived, writable, type Readable, type Writable } from 'svelte/sto
 
 import { toaster } from '$lib/toaster';
 import { branding } from '$lib/configuration';
-import { getStatList, StatPromise } from '$lib/utilities/StatBuilder';
+import { getValidStatList, populateStatRequests, StatPromise } from '$lib/utilities/StatBuilder';
 
 import type { StatResult } from '$lib/models/Stat';
 import { loading as resourcesPromise } from '$lib/stores/Resources';
@@ -16,17 +16,24 @@ export const stats: Readable<StatResult[]> = derived(statData, ($s) =>
 export const authStats: Readable<StatResult[]> = derived(statData, ($s) =>
   $s.filter((stat) => stat.auth),
 );
+let lastStatRequest: string = '';
 
 export async function loadLandingStats() {
   try {
-    if (get(statData).length > 0) {
+    const validStats = getValidStatList(branding?.landing?.stats || []);
+
+    // Rudmientary caching for when a user loads the page in open mode and then authenticates.
+    // Stat list will be different for open and auth - see getValidStatList method.
+    const thisStatRequest = validStats.map(({ auth, key }) => [auth, key].join(',')).join(';');
+    if (lastStatRequest === thisStatRequest) {
       return;
     }
+    lastStatRequest = thisStatRequest;
 
     await get(resourcesPromise);
     loaded.set(false);
     hasError.set(false);
-    const stats: StatResult[] = getStatList(branding?.landing?.stats || []);
+    const stats: StatResult[] = populateStatRequests(validStats);
     statData.set(stats);
     Promise.allSettled(stats.flatMap(StatPromise.list)).then((results) => {
       if (results.some(StatPromise.rejected)) {

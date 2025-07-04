@@ -160,7 +160,7 @@ const requestMap: { [key: string]: (options: RequestMapOptions) => Promise<StatV
   hardcoded,
 };
 
-export function getStatList(list: StatConfig[]): StatResult[] {
+export function getValidStatList(list: StatConfig[]): StatResult[] {
   const validStats = list.filter((stat) => !!requestMap[stat.key]);
 
   // No stats were configured - unexpected behavior
@@ -174,22 +174,11 @@ export function getStatList(list: StatConfig[]): StatResult[] {
     const authUsers = stat?.auth === undefined ? true : stat.auth;
     const openUsers = stat?.auth === undefined ? true : !stat.auth;
 
-    const request = (isOpenAccess: boolean) =>
-      getQueryResources(isOpenAccess).reduce((statMap: StatResultMap, { name, uuid }) => {
-        const newMap = { ...statMap };
-        newMap[name] = requestMap[stat.key]({
-          isOpenAccess,
-          stat,
-          request: getBlankQueryRequest(isUserLoggedIn(), uuid),
-        });
-        return newMap;
-      }, {});
-
     if (authUsers && isUserLoggedIn()) {
       statList.push({
         ...stat,
         auth: true,
-        result: request(false),
+        result: {},
       });
     }
 
@@ -197,12 +186,30 @@ export function getStatList(list: StatConfig[]): StatResult[] {
       statList.push({
         ...stat,
         auth: false,
-        result: request(true),
+        result: {},
       });
     }
 
     return statList;
   }, []);
+}
+
+export function populateStatRequests(validStats: StatResult[]): StatResult[] {
+  return validStats.map((stat: StatResult) => {
+    const isOpenAccess = !stat.auth;
+    return {
+      ...stat,
+      result: getQueryResources(isOpenAccess).reduce((statMap: StatResultMap, { name, uuid }) => {
+        const newMap = { ...statMap };
+        newMap[name] = requestMap[stat.key]({
+          isOpenAccess,
+          stat,
+          request: getBlankQueryRequest(isUserLoggedIn(), uuid),
+        });
+        return newMap;
+      }, {}),
+    };
+  });
 }
 
 export function getResultList(isOpenAccess: boolean, list: StatConfig[]): StatResult[] {
