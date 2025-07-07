@@ -11,11 +11,12 @@ import type {
   ResultsConfig,
   LoginConfig,
   SiteMapConfig,
-  StatField,
+  CodeBlockConfig,
   PrivacyConfig,
   AnalysisConfig,
   CollaborateConfig,
 } from './types';
+import type { StatField } from '$lib/models/Stat';
 
 export const PROJECT_HOSTNAME =
   typeof window !== 'undefined'
@@ -71,12 +72,10 @@ export const initializeBranding = () => {
   branding.applicationName = configJson.applicationName;
 
   // Replace URLs in code blocks before assigning
-  const codeBlocks = { ...configJson.explorePage.codeBlocks };
-  Object.keys(codeBlocks).forEach((key) => {
-    if (typeof codeBlocks[key as keyof typeof codeBlocks] === 'string') {
-      codeBlocks[key as keyof typeof codeBlocks] = codeBlocks[
-        key as keyof typeof codeBlocks
-      ].replace('{{PICSURE_NETWORK_URL}}', PROJECT_HOSTNAME);
+  const codeBlocks: CodeBlockConfig = { ...configJson.explorePage.codeBlocks };
+  Object.keys(codeBlocks).forEach((key: string) => {
+    if (typeof codeBlocks[key] === 'string') {
+      codeBlocks[key] = codeBlocks[key].replace('{{PICSURE_NETWORK_URL}}', PROJECT_HOSTNAME);
     }
   });
 
@@ -213,14 +212,6 @@ export const settings: Indexable = {
     tagManager: import.meta.env?.VITE_GOOGLE_TAG_MANAGER_ID || '',
   },
   maxDataPointsForExport: parseInt(import.meta.env?.VITE_MAX_DATA_POINTS_FOR_EXPORT || 1000000),
-};
-
-export const resources = {
-  hpds: (import.meta.env?.VITE_RESOURCE_HPDS || '') as string,
-  openHPDS: (import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '') as string,
-  visualization: (import.meta.env?.VITE_RESOURCE_VIZ || '') as string,
-  application: (import.meta.env?.VITE_RESOURCE_APP || '') as string,
-  aggregate: (import.meta.env?.VITE_RESOURCE_AGGREGATE || '') as string,
 };
 
 export const auth = {

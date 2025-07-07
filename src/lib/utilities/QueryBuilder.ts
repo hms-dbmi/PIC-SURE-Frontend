@@ -1,10 +1,11 @@
 import { Query, type ExpectedResultType, type QueryInterface } from '$lib/models/query/Query';
-import { features, resources } from '$lib/configuration';
+import { features } from '$lib/configuration';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/User';
 import { filters, hasGenomicFilter } from '$lib/stores/Filter';
 import { exports } from '$lib/stores/Export';
+import { resources } from '$lib/stores/Resources';
 import type { Filter } from '$lib/models/Filter';
 import type { ExportInterface } from '$lib/models/Export.ts';
 
@@ -14,7 +15,7 @@ const topmedConsentPath = '\\_topmed_consents\\';
 
 export function getQueryRequest(
   addConsents = true,
-  resourceUUID = resources.hpds,
+  resourceUUID = get(resources).hpdsAuth,
   expectedResultType: ExpectedResultType = 'COUNT',
 ): QueryRequestInterface {
   let query: Query = new Query();
@@ -67,7 +68,7 @@ export function getQueryRequest(
 
 export function getBlankQueryRequest(
   isOpenAccess = false,
-  resourceUUID = resources.hpds,
+  resourceUUID = get(resources).hpdsAuth,
   expectedResultType: ExpectedResultType = 'COUNT',
 ): QueryRequestInterface {
   let query: Query = new Query();

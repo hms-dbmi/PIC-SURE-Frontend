@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { resources } from '$lib/configuration';
   import * as api from '$lib/api';
   import PlotlyPlot from '$lib/components/plots/PlotlyPlot.svelte';
   import {
@@ -14,6 +13,7 @@
   import { toaster } from '$lib/toaster';
   import Loading from '$lib/components/Loading.svelte';
   import { Picsure } from '$lib/paths';
+  import { resources } from '$lib/stores/Resources';
 
   let plotValues: PlotValues[] = $state([]);
   let newPlot: PlotlyNewPlot = $state() as PlotlyNewPlot;
@@ -22,13 +22,13 @@
   const isOpenAccess = page.url.pathname.includes('/discover');
 
   async function loadPlotData() {
-    const query = getQueryRequest(!isOpenAccess, resources.visualization);
+    const query = getQueryRequest(!isOpenAccess, $resources.visualization);
     const token = localStorage.getItem('token');
 
     await api
       .post(Picsure.QuerySync, {
         query: query.query,
-        resourceUUID: resources.visualization,
+        resourceUUID: $resources.visualization,
         resourceCredentials: token ? { Authorization: 'Bearer ' + token } : {},
       })
       .then((resp) => {
