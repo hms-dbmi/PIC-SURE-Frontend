@@ -20,14 +20,12 @@
   import Drawer from '$lib/components/Drawer.svelte';
   import DashboardDrawer from '$lib/components/dashboard/DashboardDrawer.svelte';
   import FilterWarning from '$lib/components/explorer/FilterWarning.svelte';
-  import { loadResources } from '$lib/stores/Resources';
 
   let { children }: { children?: Snippet } = $props();
   let filterWarningModal: boolean = $state(false);
 
   onMount(() => {
     document.body.classList.add('started');
-    loadResources();
   });
 
   let showSidebar = $derived(
