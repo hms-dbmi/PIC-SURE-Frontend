@@ -21,21 +21,21 @@ test.describe('data requests', () => {
   test.describe('step 1', () => {
     test('Should load step 1 on landing', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
 
       // Then
       await expect(page.getByTestId('v-stepper-step-1')).toBeVisible();
     });
     test('Should be active step', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
 
       // Then
       await expect(page.getByTestId('v-stepper-step-1')).toHaveAttribute('aria-current', 'step');
     });
     test('Should validate uuid provided', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
 
       // When
       await page.getByLabel('Dataset Id').fill('cvfbfbd');
@@ -49,7 +49,7 @@ test.describe('data requests', () => {
     test('Should not advance to step 2 when api status request fails', async ({ page }) => {
       // Given
       await mockApiFail(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, 'failed');
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
@@ -61,7 +61,7 @@ test.describe('data requests', () => {
       // Given
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
       await mockApiFail(page, `*/**/picsure/query/${dummyUuid}/metadata`, 'failed');
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
@@ -72,7 +72,7 @@ test.describe('data requests', () => {
     test('Should populate error if status fails', async ({ page }) => {
       // Given
       await mockApiFail(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, 'failed');
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
@@ -85,7 +85,7 @@ test.describe('data requests', () => {
       // Given
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
       await mockApiFail(page, `*/**/picsure/query/${dummyUuid}/metadata`, 'failed');
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
@@ -102,7 +102,7 @@ test.describe('data requests', () => {
     });
     test('Should load step 2 when valid uuid provided', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
 
       // When
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
@@ -113,7 +113,7 @@ test.describe('data requests', () => {
     });
     test('Should be active step', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
@@ -123,7 +123,7 @@ test.describe('data requests', () => {
     });
     test('Should show data request summary modal', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
@@ -151,7 +151,7 @@ test.describe('data requests', () => {
     });
     test('Should load step 3 when approval date is provided', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
@@ -164,7 +164,7 @@ test.describe('data requests', () => {
     });
     test('Should be active step', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
@@ -176,7 +176,7 @@ test.describe('data requests', () => {
     });
     test('Should show Data Storage Location info modal', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await expect(page.getByTestId('v-stepper-step-2')).toBeVisible();
@@ -194,7 +194,7 @@ test.describe('data requests', () => {
     });
     test('Should pre-select home site in options', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -207,7 +207,7 @@ test.describe('data requests', () => {
     });
     test('Should show data types modal', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -222,7 +222,7 @@ test.describe('data requests', () => {
     });
     test('Should not allow send data button click if no data type selected', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -232,7 +232,7 @@ test.describe('data requests', () => {
     });
     test('Should allow send data button on geno or pheno data selection', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await expect(page.getByTestId('v-stepper-step-2')).toBeVisible();
@@ -244,7 +244,7 @@ test.describe('data requests', () => {
     });
     test('Should ask user to confirm on send data button press', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -260,7 +260,7 @@ test.describe('data requests', () => {
     });
     test('Should show default status Unsent', async ({ page }) => {
       // Given
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -280,7 +280,7 @@ test.describe('data requests', () => {
           phenotypic: 'Querying',
         },
       );
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -312,7 +312,7 @@ test.describe('data requests', () => {
           phenotypic: 'Querying',
         },
       );
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -350,7 +350,7 @@ test.describe('data requests', () => {
           genomic: 'Querying',
         },
       );
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -391,7 +391,7 @@ test.describe('data requests', () => {
           genomic: 'Querying',
         },
       );
-      await page.goto('/admin/requests');
+      await page.goto('/dataset/requests');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
@@ -417,7 +417,7 @@ test.describe('data requests', () => {
       genomic: 'Error',
     });
     await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
-    await page.goto('/admin/requests');
+    await page.goto('/dataset/requests');
 
     // When
     await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
@@ -445,7 +445,7 @@ test.describe('data requests', () => {
       genomic: 'Error',
     });
     await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
-    await page.goto('/admin/requests');
+    await page.goto('/dataset/requests');
     await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
     await page.waitForTimeout(debounceTime); // Wait for debounce
 

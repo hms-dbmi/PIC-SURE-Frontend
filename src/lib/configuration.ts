@@ -137,7 +137,7 @@ export const routes: Route[] = [
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.NAMED_DATASET],
   },
   {
-    path: '/admin/requests',
+    path: '/dataset/requests',
     text: 'Data Requests',
     privilege: [PicsurePrivileges.DATA_ADMIN],
     feature: 'dataRequests',
