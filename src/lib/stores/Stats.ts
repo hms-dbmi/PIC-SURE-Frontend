@@ -5,7 +5,7 @@ import { branding } from '$lib/configuration';
 import { getValidStatList, populateStatRequests, StatPromise } from '$lib/utilities/StatBuilder';
 
 import type { StatResult } from '$lib/models/Stat';
-import { loading as resourcesPromise } from '$lib/stores/Resources';
+import { loading as resourcesPromise, loadResources } from '$lib/stores/Resources';
 
 export const hasError: Writable<boolean> = writable(false);
 export const loaded: Writable<boolean> = writable(false);
@@ -19,6 +19,7 @@ export const authStats: Readable<StatResult[]> = derived(statData, ($s) =>
 let lastStatRequest: string = '';
 
 export async function loadLandingStats() {
+  loadResources();
   try {
     const validStats = getValidStatList(branding?.landing?.stats || []);
 
