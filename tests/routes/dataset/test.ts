@@ -8,7 +8,7 @@ test.describe('dataset', () => {
   test('Shows active datasets table', async ({ page }) => {
     // Given
     await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
-    await page.goto('/dataset');
+    await page.goto('/dataset/manage');
 
     // Then
     await expect(page.getByTestId('ActiveDatasets-table')).toBeVisible();
@@ -17,7 +17,7 @@ test.describe('dataset', () => {
   test('Should not show archived datasets table on page load', async ({ page }) => {
     // Given
     await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
-    await page.goto('/dataset');
+    await page.goto('/dataset/manage');
 
     // Then
     await expect(page.getByTestId('ArchivedDatasets-table')).not.toBeVisible();
@@ -26,7 +26,7 @@ test.describe('dataset', () => {
   test('Shows archived datasets on archive toggle button press', async ({ page }) => {
     // Given
     await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
-    await page.goto('/dataset');
+    await page.goto('/dataset/manage');
 
     // When
     const toggleButton = page.getByTestId('dataset-toggle-archive');
@@ -39,7 +39,7 @@ test.describe('dataset', () => {
   test('Copy button displays popup msg', async ({ page }) => {
     // Given
     await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
-    await page.goto('/dataset');
+    await page.goto('/dataset/manage');
 
     // When
     const copyBtn = page.getByTestId(`${mockData[0].query.uuid}-copy-btn`);
@@ -55,7 +55,7 @@ test.describe('dataset', () => {
       ...mockData[0],
       archived: true,
     });
-    await page.goto('/dataset');
+    await page.goto('/dataset/manage');
 
     // When
     const archiveButton = page.getByTestId(`dataset-action-archive-${mockData[0].uuid}`);
@@ -74,7 +74,7 @@ test.describe('dataset', () => {
       ...mockData[1],
       archived: false,
     });
-    await page.goto('/dataset');
+    await page.goto('/dataset/manage');
     const toggleButton = page.getByTestId('dataset-toggle-archive');
     await toggleButton.click();
 
@@ -89,7 +89,7 @@ test.describe('dataset', () => {
   test('Error message on api error', async ({ page }) => {
     // Given
     await mockApiFail(page, '*/**/picsure/dataset/named', 'accessdenied');
-    await page.goto('/dataset');
+    await page.goto('/dataset/manage');
 
     // Then
     await expect(page.getByTestId('error-alert')).toBeVisible();

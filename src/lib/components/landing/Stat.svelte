@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Readable } from 'svelte/store';
 
-  import type { StatConfig } from '$lib/types';
+  import type { StatConfig } from '$lib/models/Stat';
   import { StatPromise } from '$lib/utilities/StatBuilder';
   import { countResult } from '$lib/utilities/PatientCount';
   import Loading from '$lib/components/Loading.svelte';
@@ -16,6 +16,24 @@
   let authString = $derived(auth ? 'auth' : 'open');
   let width = $derived($stats.length > 4 ? 'w-full' : 'w-1/2');
 
+  // Define explicit grid classes so Tailwind can detect them
+  const gridClasses = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-2', 
+    3: 'grid-cols-3',
+    4: 'grid-cols-4',
+    5: 'grid-cols-5',
+    6: 'grid-cols-6',
+    7: 'grid-cols-7',
+    8: 'grid-cols-8',
+    9: 'grid-cols-9',
+    10: 'grid-cols-10',
+    11: 'grid-cols-11',
+    12: 'grid-cols-12'
+  };
+  
+  const gridClass = $derived(gridClasses[$stats.length as keyof typeof gridClasses] || 'grid-cols-1');
+
   /* eslint-disable svelte/no-at-html-tags */
   // @html explanation is passed down from a static file
 </script>
@@ -24,7 +42,7 @@
   <div class="w-2/4">
     {@html description}
   </div>
-  <div class="grid grid-cols-{$stats.length} grid-flow-col justify-center p-4 my-4 gap-y-9 {width}">
+  <div class="grid {gridClass} grid-flow-col justify-center p-4 my-4 gap-y-9 {width}">
     {#each $stats as stat (`${authString}-${stat.key}-${stat.label}`)}
       <div class="p-4 not-last:border-r border-surface-500">
         <div

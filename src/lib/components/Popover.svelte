@@ -8,6 +8,7 @@
     offset,
     useClick,
     useDismiss,
+    useHover,
     useFloating,
     useInteractions,
     useRole,
@@ -60,10 +61,11 @@
   });
 
   // Interactions
-  const role = useRole(floating.context);
+  const role = useRole(floating.context, { role: 'tooltip' });
+  const hover = useHover(floating.context, { move: false });
   const click = useClick(floating.context);
   const dismiss = useDismiss(floating.context);
-  const interactions = useInteractions([role, click, dismiss]);
+  const interactions = useInteractions([role, hover, click, dismiss]);
 </script>
 
 <button
@@ -78,7 +80,7 @@
   <div
     bind:this={floating.elements.floating}
     class="popover"
-    style="background-color: var(--color-{color}-200);{floating.floatingStyles}"
+    style="background-color: var(--color-{color}-100); opacity: 0.90;{floating.floatingStyles}"
     {...interactions.getFloatingProps()}
     data-testid={testid}
     transition:fade={{ duration: 200 }}

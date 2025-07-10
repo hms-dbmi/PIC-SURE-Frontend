@@ -30,7 +30,7 @@
   }
 </script>
 
-<div id="snp-search" class="grid grid-col-1 gap-3 {className || ''}">
+<div id="snp-search" class="grid grid-cols-1 gap-3 {className || ''}">
   <Panel title="Search for Genomic Variants">
     <Search disabled={!!snp.search} search={snp.search} {onvalid} />
     {#if snp.search}
@@ -38,7 +38,7 @@
       <div class="flex gap-2 items-center justify-center my-8">
         <Edit {snp} {onsave} />
       </div>
-    {/if}
+    {/if} 
   </Panel>
   <Panel title="Summary of Selected Filters">
     {#snippet action()}

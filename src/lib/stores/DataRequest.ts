@@ -64,7 +64,7 @@ function throwOnErrorValue(value: any) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function updateStatus(response: any) {
-  status.set(response);
+  status.set(response ?? UploadStatus.Unsent);
 
   const approval = get(approved);
   if (response.approved && approval !== response.approved) {
@@ -74,9 +74,10 @@ function updateStatus(response: any) {
   const siteList = get(sites);
   if (response.site) {
     selectedSite.set(response.site);
-  } else if (siteList?.homeSite) {
-    selectedSite.set(siteList.homeSite);
-  }
+  } 
+  // else if (siteList?.homeSite) {
+  //   selectedSite.set(siteList.homeSite);
+  // }
 
   dataType.set({
     genomic: !!response.genomic && response.genomic !== UploadStatus.Unsent,
@@ -128,7 +129,6 @@ export async function loadSites() {
     .then(throwOnErrorValue)
     .then((resp) => {
       sites.set(resp);
-      selectedSite.set(resp.homeSite);
     })
     .catch(setError('Error retrieving site list.'));
 }
