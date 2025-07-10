@@ -204,7 +204,7 @@ export function populateStatRequests(validStats: StatResult[]): StatResult[] {
         newMap[name] = requestMap[stat.key]({
           isOpenAccess,
           stat,
-          request: getBlankQueryRequest(isUserLoggedIn(), uuid),
+          request: getBlankQueryRequest(isOpenAccess, uuid),
         });
         return newMap;
       }, {}),
@@ -228,7 +228,7 @@ export function getResultList(isOpenAccess: boolean, list: StatConfig[]): StatRe
         newMap[name] = requestMap[stat.key]({
           isOpenAccess,
           stat,
-          request: getQueryRequest(isOpenAccess, uuid),
+          request: getQueryRequest(!isOpenAccess, uuid),
         });
         return newMap;
       }, {}),
