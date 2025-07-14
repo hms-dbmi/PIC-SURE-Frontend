@@ -22,7 +22,6 @@
   async function loadVariants() {
     await $resourcesPromise;
 
-    console.log('building variant results objects');
     variantResults = getQueryResources().map((resource) => {
       const queryRequest = getQueryRequest(true, resource.uuid);
       return {
@@ -32,7 +31,6 @@
         queryRequest,
       };
     });
-    tabGroup = variantResults[0].name;
   }
 
   function changeTabGroup(newTab: string) {
@@ -73,6 +71,7 @@
   onMount(() => {
     loadResources();
     loading = loadVariants().then(() => {
+      tabGroup = variantResults[0].name;
       variantResults[0].data = getVariantData(
         variantResults[0].exportType,
         variantResults[0].queryRequest,

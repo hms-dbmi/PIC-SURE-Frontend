@@ -28,10 +28,6 @@
   }
 </script>
 
-<svelte:head>
-  <title>{branding.applicationName} | Variant Explorer</title>
-</svelte:head>
-
 {#if data}
   {#await data}
     {#if count > 0}
@@ -87,7 +83,7 @@
         {/snippet}
       </Datatable>
     {:else}
-      <div data-testid="variant-count" class="flex-none w-full">{count} variants found</div>
+      <div data-testid="variant-count" class="flex-none w-full">{count.toLocaleString()} variants found</div>
     {/if}
   {:catch}
     <ErrorAlert title="Error">An error occured while retrieving variant list.</ErrorAlert>
