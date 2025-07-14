@@ -9,7 +9,7 @@ RUN npm run build
 RUN npm ci --omit dev
 
 # Step 2: Serve the app with httpd
-FROM httpd:2.4.63-alpine
+FROM httpd:2.4.64-alpine
 
 RUN apk add --update openssl sed nodejs supervisor
 
