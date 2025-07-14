@@ -14,6 +14,7 @@
     label: string;
     check: string;
     dirty: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     filter: FilterBuilder<any>;
   }
 

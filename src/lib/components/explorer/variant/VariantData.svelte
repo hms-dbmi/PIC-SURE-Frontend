@@ -12,7 +12,7 @@
     count,
     data = $bindable(),
     exportType = $bindable(),
-    onAggregateToggle = (_checked) => {},
+    onAggregateToggle = () => {},
   }: {
     count: number;
     data?: Promise<VariantData>;
@@ -89,7 +89,7 @@
     {:else}
       <div data-testid="variant-count" class="flex-none w-full">{count} variants found</div>
     {/if}
-  {:catch error}
+  {:catch}
     <ErrorAlert title="Error">An error occured while retrieving variant list.</ErrorAlert>
   {/await}
 {/if}
