@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding, settings } from '$lib/configuration';
+  import { settings } from '$lib/configuration';
 
   import { ExportType } from '$lib/models/Variant';
   import type { VariantData } from '$lib/models/Variant';
@@ -83,7 +83,9 @@
         {/snippet}
       </Datatable>
     {:else}
-      <div data-testid="variant-count" class="flex-none w-full">{count.toLocaleString()} variants found</div>
+      <div data-testid="variant-count" class="flex-none w-full">
+        {count.toLocaleString()} variants found
+      </div>
     {/if}
   {:catch}
     <ErrorAlert title="Error">An error occured while retrieving variant list.</ErrorAlert>
