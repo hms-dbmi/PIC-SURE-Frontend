@@ -5,7 +5,7 @@
   import { countResult } from '$lib/utilities/PatientCount';
   import { StatPromise, getStatFields } from '$lib/utilities/StatBuilder';
 
-  import type { StatResult, StatValue } from '$lib/models/Stat';
+  import type { PatientCount, StatResult, StatValue } from '$lib/models/Stat';
   import { resultCounts } from '$lib/stores/ResultStore';
   import { panelOpen } from '$lib/stores/SidePanel';
   import { getQueryResources } from '$lib/stores/Resources';
@@ -57,8 +57,10 @@
       rows.push({ style: styles.stat, values: [stat.label, statTotal, ...resourceTotals] });
 
       getStatFields(stat.key).forEach((field) => {
-        const fieldCount = (count: StatValue) =>
-          typeof count === 'object' ? count[field.conceptPath] || NO_DATA : count;
+        const fieldCount = (stat: StatValue): PatientCount => {
+          const count = typeof stat === 'object' ? stat[field.conceptPath] || NO_DATA : stat;
+          return `${count}` === '-1' ? NO_DATA : count;
+        };
 
         const fieldTotal: Promise<StatValue> = Promise.allSettled(StatPromise.list(stat)).then(
           (results) => countResult(results.map(StatPromise.valueOrZero).map(fieldCount)),

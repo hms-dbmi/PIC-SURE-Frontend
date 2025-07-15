@@ -28,7 +28,7 @@ export async function loadPatientCount(isOpenAccess: boolean) {
       isOpenAccess,
       get(searchTerm),
       get(selectedFacets).map((facet) => facet.name),
-      get(filters).map((filter) => filter.id),
+      get(filters).map(({ uuid }) => uuid),
     ]);
     if (requestCache.has(cacheKey)) {
       resultCounts.set(requestCache.get(cacheKey) as StatResult[]);
