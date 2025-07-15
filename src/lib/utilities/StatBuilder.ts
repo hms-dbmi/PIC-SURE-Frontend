@@ -41,15 +41,8 @@ export const StatPromise = {
 };
 
 export function getStatFields(key: string): StatField[] {
-  const statFieldMap: { [key: string]: StatField[] } = {
-    _: [],
-    'query:biosample': branding?.statFields?.biosample || [],
-    'query:genomic': branding?.statFields?.genomic || [],
-    'query:consent': branding?.statFields?.consent || [],
-  };
-  const statKeys = Object.keys(statFieldMap);
-
-  return statFieldMap[statKeys.includes(key) ? key : '_'];
+  const statKeys = branding?.statFields ? Object.keys(branding?.statFields) : [];
+  return statKeys.includes(key) ? branding?.statFields[key] : [];
 }
 
 function dictionaryRequest(isOpenAccess: boolean = false): DictionarySearchRequest {
