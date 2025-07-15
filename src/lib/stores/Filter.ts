@@ -47,9 +47,14 @@ filters.subscribe((f) => {
 
 function restoreFilters() {
   if (browser && sessionStorage.getItem('filters')) {
-    return JSON.parse(sessionStorage.getItem('filters') || '[]');
+    const oldFilters: Filter[] = JSON.parse(sessionStorage.getItem('filters') || '[]');
+    return oldFilters.map((filter) => ({ ...filter, uuid: filterUUID(filter) }));
   }
   return [];
+}
+
+function filterUUID(filter: Filter) {
+  return uuid.v5(JSON.stringify({ ...filter, uuid: undefined }), SESSION_NAMESPACE);
 }
 
 export function addFilter(filter: Filter) {
@@ -59,7 +64,7 @@ export function addFilter(filter: Filter) {
       currentFilters.splice(currentFilters.indexOf(f), 1);
     }
   });
-  filter.uuid = uuid.v5(JSON.stringify({ ...filter, uuid: undefined }), SESSION_NAMESPACE);
+  filter.uuid = filterUUID(filter);
   filters.set([...currentFilters, filter]);
   return filter;
 }
