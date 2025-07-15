@@ -82,7 +82,7 @@
 </script>
 
 {#await loading}
-  <Loading ring size="large" />
+  <Loading ring size="medium" />
 {:then}
   {#if variantResults.length > 1}
     <Tabs value={tabGroup} onValueChange={(e) => changeTabGroup(e.value)}>
