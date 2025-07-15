@@ -55,17 +55,18 @@
     const mil = 1000000;
     const thou = 1000;
 
-    let value: string = count.toString();
-    if (count > tril) {
-      value = (count / tril).toFixed(1) + 'T';
-    } else if (count > bil && count < tril) {
-      value = (count / bil).toFixed(1) + 'B';
-    } else if (count > mil && count < bil) {
-      value = (count / mil).toFixed(1) + 'M';
-    } else if (count > thou && count < mil) {
-      value = (count / thou).toFixed(1) + 'K';
+    const toFixed = (val: number, mod: number) =>
+      val % mod > 0 ? (val / mod).toFixed(1) : Math.round(val / mod);
+    if (count >= tril) {
+      return '~' + toFixed(count, tril) + 'T';
+    } else if (count >= bil) {
+      return '~' + toFixed(count, bil) + 'B';
+    } else if (count >= mil) {
+      return '~' + toFixed(count, mil) + 'M';
+    } else if (count >= thou) {
+      return '~' + toFixed(count, thou) + 'K';
     }
-    return count > thou ? '~' + value : value;
+    return count.toString();
   }
 
   onMount(() => {
