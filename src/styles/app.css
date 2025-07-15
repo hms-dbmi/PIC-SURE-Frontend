@@ -239,8 +239,6 @@ ul.primary-list li::marker {
 }
 
 .table {
-  width: 100%;
-  table-layout: auto;
   overflow: hidden;
   background-color: var(--color-surface-100);
   display: table;
