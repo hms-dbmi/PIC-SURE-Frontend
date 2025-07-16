@@ -53,7 +53,7 @@
   }
 </script>
 
-<div>
+<div class="inline">
   {#if !!trigger}
     <button
       data-testid="{testid}-btn"
