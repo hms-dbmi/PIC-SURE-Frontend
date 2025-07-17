@@ -383,7 +383,7 @@
         "element": "#nav-link-help",
         "popover": {
           "title": "Help Resources",
-          "description": "To learn more about PIC-SURE, please consult the <a href='https://pic-sure.gitbook.io/genomic-information-commons' class='anchor' target='_blank'>user guide</a> and <a href='Genomic Information Commons' class='anchor' target='_blank'>video</a> demonstrations. You can also find these resources on the help page.",
+          "description": "To learn more about PIC-SURE, please consult the <a href='https://pic-sure.gitbook.io/genomic-information-commons' class='anchor' target='_blank'>user guide</a> and <a href='https://www.youtube.com/playlist?list=PLJ6YccH8TEudynChXcDUKveAvqyK-N3SN' class='anchor' target='_blank'>video</a> demonstrations. You can also find these resources on the help page.",
           "onPrevClick": "disablePrevious"
         }
       }
