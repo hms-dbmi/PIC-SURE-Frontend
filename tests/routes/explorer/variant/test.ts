@@ -106,9 +106,8 @@ test.describe('variant explorer', () => {
       await page.getByTestId('variant-explorer-btn').click();
 
       // Then
-      const toast = page.getByTestId('toast-root');
-      await expect(toast).toBeVisible();
-      await expect(toast).toHaveAttribute('data-type', 'error');
+      await expect(page.getByTestId('error-alert')).toBeVisible();
+      await expect(page.getByTestId('error-alert')).toContainText('Error');
     });
     test('Error occurs during variant retrieval', async ({ page }) => {
       // Given
@@ -122,9 +121,8 @@ test.describe('variant explorer', () => {
 
       // Then
       await expect(page).toHaveURL('/explorer/variant');
-      const toast = page.getByTestId('toast-root');
-      await expect(toast).toBeVisible();
-      await expect(toast).toHaveAttribute('data-type', 'error');
+      await expect(page.getByTestId('error-alert')).toBeVisible();
+      await expect(page.getByTestId('error-alert')).toContainText('Error');
     });
   });
   test('Display notice when no query exists', async ({ page }) => {
