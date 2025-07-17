@@ -2,13 +2,13 @@
   "NHANES-Auth": {
     "searchTerm": "Age",
     "title": "Welcome to PIC-SURE",
-    "description": "PIC-SURE allows you to explore variables, apply filters, and prepare data for analysis. When applying filters, participants are selected that meet those criteria. <br /><br />This tour demonstrates how to search, apply filters, and interpret results using PIC-SURE. <br /><br />Once the tour starts, you can click anywhere to go to the next step. You can press the escape key to stop the tour at any point. You may also use the arrow keys, enter key, or the spacebar to navigate the tour.",
+    "description": "PIC-SURE allows you to explore variables, apply filters, and prepare data for analysis. When applying filters, participants are selected that meet those criteria. <br /><br />This tour demonstrates how to search, apply filters, and interpret results using PIC-SURE. <br /><br />Once the tour starts, you can press the escape key to stop the tour at any point. You may also use the arrow keys, enter key, or the spacebar to navigate the tour.",
     "steps": [
       {
         "element": "#explorer-search-box",
         "popover": {
           "title": "Search",
-          "description": "Search clinical variables of interest. Here, the term \"{{searchTerm}}\" was used to get all demographics-related results. Click anywhere to continue the tour.",
+          "description": "Search clinical variables of interest. Here, the term \"{{searchTerm}}\" was used to get all demographics-related results.",
           "onPrevClick": "disablePrevious"
         }
       },
@@ -290,7 +290,7 @@
         "element": "#explorer-search-box",
         "popover": {
           "title": "Search",
-          "description": "Search clinical variables of interest. Here, the term \"cancer\" was used. Click anywhere to continue the tour.",
+          "description": "Search clinical variables of interest. Here, the term \"cancer\" was used.",
           "onPrevClick": "disablePrevious"
         }
       },
