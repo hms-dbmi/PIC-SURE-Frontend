@@ -114,6 +114,12 @@ export const routes: Route[] = [
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
   },
   {
+    path: '/collaborate',
+    text: 'Collaborate',
+    feature: 'collaborate',
+    privilege: [PicsurePrivileges.QUERY],
+  },
+  {
     path: '/analyze/api',
     text: 'Prepare for Analysis',
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
@@ -124,12 +130,6 @@ export const routes: Route[] = [
     text: 'Analyze',
     privilege: [PicsurePrivileges.QUERY],
     feature: 'analyzeAnalysis',
-  },
-  {
-    path: '/collaborate',
-    text: 'Collaborate',
-    feature: 'collaborate',
-    privilege: [PicsurePrivileges.QUERY],
   },
   {
     path: '/dataset',
