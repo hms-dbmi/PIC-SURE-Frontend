@@ -73,6 +73,8 @@
     contentBase="card bg-surface-50-950 p-4 pb-6 space-4 shadow-xl overflow-auto max-w-screen {width} max-h-screen {height} {className}"
     backdropClasses="backdrop-blur-sm"
     ids={{ content: 'modal-component' }}
+    closeOnInteractOutside={closeable}
+    closeOnEscape={closeable}
   >
     {#snippet content()}
       <div data-testid={testid}>
@@ -89,7 +91,7 @@
             >{/if}
         </header>
         {#if withDefault}
-          <article class="modal-body max-h-[200px] overflow-hidden">
+          <article class="modal-body overflow-hidden">
             {@render children?.()}
           </article>
           {#if footerButtons}

@@ -14,7 +14,7 @@
         },
         {
           "name": "user",
-          "value": "{\"uuid\":\"1234\",\"email\":\"test@pic-sure.org\",\"privileges\":[\"PIC_SURE_ANY_QUERY\",\"SUPER_ADMIN\"],\"queryScopes\":[\"Gene_with_variant\",\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"acceptedTOS\":true,\"queryTemplate\":{}}"
+          "value": "{\"uuid\":\"1234\",\"email\":\"test@pic-sure.org\",\"privileges\":[\"PIC_SURE_ANY_QUERY\",\"SUPER_ADMIN\"],\"queryScopes\":[\"Gene_with_variant\",\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"acceptedTOS\":true,\"queryTemplate\":{\"categoryFilters\":{\"\\\\_consents\\\\\":[\"tutorial-biolincc_camp\",\"tutorial-biolincc_framingham\",\"tutorial-biolincc_digitalis\",\"open_access-1000Genomes\"],\"\\\\_topmed_consents\\\\\":[\"open_access-1000Genomes\"]},\"numericFilters\":{},\"requiredFields\":[],\"fields\":[\"\\\\_Topmed Study Accession with Subject ID\\\\\",\"\\\\_Parent Study Accession with Subject ID\\\\\"],\"variantInfoFilters\":[{\"categoryVariantInfoFilters\":{},\"numericVariantInfoFilters\":{}}],\"expectedResultType\":[\"COUNT\"]}}"
         },
         {
           "name": "datatableSettings",
