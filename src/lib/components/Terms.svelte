@@ -48,6 +48,8 @@
     }
   }
 
+  const closeModal = () => (modalOpen = false);
+
   onMount(loadTermsHTML);
 </script>
 
@@ -77,10 +79,18 @@
         type="button"
         data-testid="terms-close-btn"
         class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-        onclick={() => (modalOpen = false)}>Close</button
+        onclick={closeModal}>Close</button
       >
     {/if}
   </footer>
 {:catch}
-  <ErrorAlert>Could not load terms of service. Please contact an administrator.</ErrorAlert>
+  <ErrorAlert data-testid="terms-api-error"
+    >Could not load terms of service. Please contact an administrator.</ErrorAlert
+  >
+  <button
+    type="button"
+    data-testid="terms-close-btn"
+    class="btn border preset-tonal-primary hover:preset-filled-primary-500"
+    onclick={closeModal}>Close</button
+  >
 {/await}
