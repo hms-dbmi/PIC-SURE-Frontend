@@ -31,6 +31,7 @@
   let query: QueryInterface | undefined = $state(undefined);
   let approved: string | null = $state(null); // As a date string
   let requesterEmail: string | undefined = $state(undefined);
+  let datasetStorageLocation: string | undefined = $state(undefined);
   let selectedSite: string | undefined = $state(undefined);
   let isDataSent: boolean = $state(false);
   let isRefreshing: boolean = $state(false);
@@ -64,6 +65,7 @@
       if (metadata.resultMetadata.queryJson) {
         query = metadata.resultMetadata.queryJson.query as QueryInterface;
         requesterEmail = metadata.resultMetadata.queryJson.requesterEmail;
+        datasetStorageLocation = metadata.resultMetadata.queryJson.commonAreaUUID;
       }
     }
     return {
@@ -222,6 +224,12 @@
             <label class="label flex flex-row items-center gap-2" for="requester">
               <span class="font-bold">Requester:</span>
               <span>{requesterEmail}</span>
+            </label>
+          </div>
+          <div class="flex flex-row gap-2 mb-2">
+            <label class="label flex flex-row items-center gap-2" for="requester">
+              <span class="font-bold">Data Storage Location:</span>
+              <span>{datasetStorageLocation}</span>
             </label>
           </div>
           <Modal
