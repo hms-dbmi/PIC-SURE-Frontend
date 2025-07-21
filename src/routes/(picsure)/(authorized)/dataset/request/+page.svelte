@@ -1,127 +1,121 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-
   import { branding } from '$lib/configuration';
   import { uuidInput } from '$lib/utilities/Forms';
-  import { toaster } from '$lib/toaster';
+  import type { QueryInterface } from '$lib/models/query/Query';
+  import { type Status, type Metadata, type DataType } from '$lib/models/DataRequest';
+  import { searchForDataset, getDatasetStatus, approveDataset, loadSites, sites } from '$lib/services/datarequest';
 
   import Content from '$lib/components/Content.svelte';
-  import Step from '$lib/components/steppers/vertical/Step.svelte';
-  import Grid from '$lib/components/request/Grid.svelte';
-  import GridCell from '$lib/components/request/GridCell.svelte';
   import DataSummary from '$lib/components/request/modals/DataSummary.svelte';
   import DataLocModal from '$lib/components/request/modals/DataLocModal.svelte';
   import DataTypeModal from '$lib/components/request/modals/DataTypeModal.svelte';
-  import SendDataModal from '$lib/components/request/modals/SendDataModal.svelte';
-  import Modal from '$lib/components/Modal.svelte';
+  import Grid from '$lib/components/request/Grid.svelte';
+  import GridCell from '$lib/components/request/GridCell.svelte';
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
-
-  import { UploadStatus } from '$lib/models/DataRequest';
-  import {
-    queryId,
-    queryError,
-    metadata,
-    approved,
-    error,
-    dataType,
-    sites,
-    selectedSite,
-    status,
-    reset,
-    refreshStatus,
-    loadSites,
-    loadSubscriptions,
-    unloadSubscribers,
-    unsubscribers,
-  } from '$lib/stores/DataRequest';
-
-  // Steps
-  let search = $derived({
-    show: true,
-    active: $queryError || (!$queryId && !$approved),
-  });
-  let review = $derived({
-    show: !$queryError && !!$queryId,
-    active: !$queryError && !!$queryId && !$approved,
-    leadPi: ($metadata?.resultMetadata.queryJson.query as any)?.requesterEmail || 'Unknown',
-  });
-  let share = $derived({
-    show: !$queryError && !!$queryId && !!$approved,
-    active: !$queryError && !!$queryId && !!$approved,
-  });
-  let sendEnabled = $derived(
-    ($dataType.genomic && $status?.genomic === UploadStatus.Unsent) ||
-      ($dataType.phenotypic && $status?.phenotypic === UploadStatus.Unsent),
-  );
-  let modalOpen = $state({
-    summary: false,
-    location: false,
-    type: false,
-  });
-
-  // Status icons
-  function statusIcon(status: UploadStatus) {
-    return (
-      [
-        {
-          progress: [UploadStatus.Uploaded],
-          icon: 'fa-regular fa-circle-check text-success-600-400',
-          label: 'Upload Successful',
-        },
-        {
-          progress: [UploadStatus.Queued, UploadStatus.Querying, UploadStatus.Uploading],
-          icon: 'fa-regular fa-paper-plane text-tertiary-600-400',
-          label: 'Uploading...',
-        },
-        {
-          progress: [UploadStatus.Error, UploadStatus.Unknown],
-          icon: 'fa-solid fa-circle-xmark text-error-600-400',
-          label: 'Upload Failed',
-        },
-      ].find(({ progress }) => progress.includes(status)) || {
-        icon: 'fa-regular fa-circle-xmark text-primary-600-400',
-        label: 'Unsent',
-      }
-    );
-  }
-  let statusInfo = $derived({
-    genomic: statusIcon($status?.genomic || UploadStatus.Unsent),
-    phenotypic: statusIcon($status?.phenotypic || UploadStatus.Unsent),
-  });
-
-  onMount(() => {
-    loadSubscriptions();
-    unsubscribers.push(
-      error.subscribe((error) => {
-        if (error) {
-          toaster.error({ title: error });
-        }
-      }),
-    );
-    loadSites();
-
-    // Unmount
-    return () => {
-      reset();
-      unloadSubscribers();
-    };
-  });
+  import Loading from '$lib/components/Loading.svelte';
+  import Modal from '$lib/components/Modal.svelte';
+  import StatusIndicator from '$lib/components/request/StatusIndicator.svelte';
+  import SendDataModal from '$lib/components/request/modals/SendDataModal.svelte';
+  import Step from '$lib/components/steppers/vertical/Step.svelte';
 
   let datasetId: string = $state('');
-  $effect(() => {
-    console.log('UploadStatus: ', $status);
-    console.log('SelectedSite: ', $selectedSite);
+  let metadata: Metadata | undefined = $state(undefined);
+  let query: QueryInterface | undefined = $state(undefined);
+  let approved: string | null = $state(null); // As a date string
+  let requesterEmail: string | undefined = $state(undefined);
+  let selectedSite: string | undefined = $state(undefined);
+  let initialStatus: Status | undefined = $state(undefined);
+  let isDataSent: boolean = $state(false);
+  let isComplete: boolean = $state(false);
+  let isRefreshing = $state(false);
+  let refreshPromise: Promise<Status> | null = $state(null);
+  let dataType: DataType = $state({
+    genomic: false,
+    phenotypic: false,
+    patient: false,
+  });
+  const summaryModalOpen = $state(false);
+    
+  let isSearchActive = $derived(!datasetId || datasetId.trim() === '');
+  let isReviewActive = $derived(approved === null);
+  let enableCheckboxes = $derived(selectedSite !== undefined && selectedSite !== '');
+  let sendEnabled = $derived(enableCheckboxes && (dataType.phenotypic || dataType.genomic || dataType.patient));
+  
+  async function search() {
+    initialStatus = await getDatasetStatus(datasetId);
+    if (initialStatus && initialStatus.approved) {
+      approved = initialStatus.approved;
+    }
+    metadata = await searchForDataset(datasetId);
+    if (metadata && metadata.resultMetadata) {
+      if (metadata.resultMetadata.queryJson) {
+        query = metadata.resultMetadata.queryJson.query as QueryInterface;
+        requesterEmail = metadata.resultMetadata.queryJson.requesterEmail;
+      }
+    }
+    return {
+      approved,
+      metadata,
+      requesterEmail,
+    };
+  }
+
+  function refreshStatus() {
+    isRefreshing = true;
+    setTimeout(() => {
+      isRefreshing = false;
+    }, 1000);
+    try {
+      refreshPromise = getDatasetStatus(datasetId);
+      refreshPromise.then((status) => {
+      if (status) {
+        initialStatus = status;
+        }
+        return status;
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function approve() {
+    if (approved) {
+      return approveDataset(datasetId, approved);
+    }
+  }
+
+  function reset() {
+    datasetId = '';
+    approved = null;
+    metadata = undefined;
+    requesterEmail = undefined;
+    selectedSite = undefined;
+    dataType = {
+      genomic: false,
+      phenotypic: false,
+      patient: false,
+    };
+    isDataSent = false;
+    isComplete = false;
+  }
+
+  onMount(async () => {
+    await loadSites();
   });
 </script>
 
 <svelte:head>
   <title>{branding.applicationName} | Data Requests</title>
 </svelte:head>
-<!-- 002c990a-2441-4454-86cd-71b4fe34fbcf -->
+<!-- 094698d8-2c94-4435-8a99-c014ae34c595 -->
 <Content title="Data Requests">
-  <Step step={1} title="Search for Dataset Request ID" active={search.active} showLine>
+  <Step step={1} title="Search for Dataset Request ID" active={isSearchActive} showLine>
     <div class="flex flex-col items-center gap-3 mt-2 p-4 rounded bg-surface-100">
-      <p>This should have some text about what this id is and what it is used for, how to find it, etc.</p>
+      <p>
+        This should have some text about what this id is and what it is used for, how to find it,
+        etc.
+      </p>
       <div class="flex flex-row items-start gap-3">
         <label class="label required flex flex-row items-center w-fit" for="dataset-id">
           <span class="mr-2 font-bold">Dataset ID:</span>
@@ -131,44 +125,48 @@
             placeholder="001234567-89ab-cdef-fedc-98765432100"
             bind:value={datasetId}
             pattern={uuidInput}
-            disabled={!search.active}
+            disabled={!isSearchActive}
             required
           />
         </label>
         <button
           type="button"
           class="btn preset-filled-primary-500"
-          disabled={!search.active || !datasetId.trim()}
+          disabled={isSearchActive || !datasetId.trim()}
           data-testid="search-dataset-btn"
-          onclick={() => ($queryId = datasetId)}
+          onclick={search}
         >
           <span>Search</span>
         </button>
       </div>
     </div>
   </Step>
-  <Step step={2} title="Review Dataset Request" show={review.show} active={review.active}>
+  <Step step={2} title="Review Dataset Request" show={!!datasetId && metadata !== undefined} active={isReviewActive}>
     <div class="p-4 rounded bg-surface-100">
       <Grid columns={2}>
         <GridCell title="View Dataset Information">
           <div class="flex flex-row gap-2 mb-2">
-            <label class="label flex flex-row items-center gap-2" for="lead-pi">
-              <span class="font-bold">Lead PI:</span>
-              <span>{review.leadPi}</span>
+            <label class="label flex flex-row items-center gap-2" for="requester">
+              <span class="font-bold">Requester:</span>
+              <span>{requesterEmail}</span>
             </label>
           </div>
           <Modal
             title="Data Request Summary"
             data-testid="data-request"
-            open={modalOpen.summary}
+            open={summaryModalOpen}
             withDefault={false}
           >
             {#snippet trigger()}
-              <button type="button" data-testid="data-request-summary-btn" class="btn preset-filled-primary-500">
+              <button
+                type="button"
+                data-testid="data-request-summary-btn"
+                class="btn preset-filled-primary-500"
+              >
                 <span>View Data Request Summary</span>
               </button>
             {/snippet}
-            <DataSummary />
+            <DataSummary {metadata} />
           </Modal>
         </GridCell>
         <GridCell title="Data Request Approval">
@@ -178,15 +176,22 @@
               class="input bg-surface-50 w-48 mt-1"
               data-testid="data-approved-date"
               type="date"
-              bind:value={$approved}
-              disabled={!review.active}
+              bind:value={approved}
+              oninput={approve}
             />
           </label>
         </GridCell>
       </Grid>
     </div>
   </Step>
-  <Step step={3} title="Share Patient-Level Data" show={share.show} active={share.active} complete={statusInfo.phenotypic.label === UploadStatus.Uploaded || statusInfo.genomic.label === UploadStatus.Uploaded} isFinal={true}>
+  <Step
+    step={3}
+    title="Share Patient-Level Data"
+    show={approved !== null}
+    active={true}
+    complete={isComplete}
+    isFinal={true}
+  >
     <div class="p-4 rounded bg-surface-100">
       <Grid columns={3}>
         <GridCell title="Data Storage Location">
@@ -199,8 +204,8 @@
             id="selected-site"
             data-testid="selected-site"
             class="select bg-surface-50"
-            bind:value={$selectedSite}
-            disabled={!!$status?.site}
+            bind:value={selectedSite}
+            disabled={isDataSent}
             required
           >
             <option value="" disabled selected>Select a site</option>
@@ -211,25 +216,17 @@
         </GridCell>
         <GridCell title="Select & Send Data">
           {#snippet help()}
-            <Modal
-              title="Data Types"
-              data-testid="data-type-modal"
-              open={modalOpen.type}
-              withDefault={false}
-            >
-              {#snippet trigger()}
-                <i class="fa-regular fa-circle-question fa-sm text-primary-500"></i>
-              {/snippet}
+            <HelpInfoPopup text="Data Types" id="data-type-modal">
               <DataTypeModal />
-            </Modal>
+            </HelpInfoPopup>
           {/snippet}
           <label class="flex items-center space-x-2 my-2">
             <input
               type="checkbox"
               data-testid="data-pheno-checkbox"
               class="checkbox flex-none"
-              disabled={$status?.phenotypic !== UploadStatus.Unsent}
-              bind:checked={$dataType.phenotypic}
+              disabled={!enableCheckboxes}
+              bind:checked={dataType.phenotypic}
             />
             <div>Phenotypic Data</div>
           </label>
@@ -238,12 +235,22 @@
               type="checkbox"
               data-testid="data-geno-checkbox"
               class="checkbox flex-none"
-              disabled={$status?.genomic !== UploadStatus.Unsent}
-              bind:checked={$dataType.genomic}
+              disabled={!enableCheckboxes}
+              bind:checked={dataType.genomic}
             />
             <div class="text-left flex-auto">Annotated variant data for selected genes</div>
           </label>
-          <SendDataModal {sendEnabled} />
+          <label class="flex space-x-2 my-2 align-top">
+            <input
+              type="checkbox"
+              data-testid="data-patient-checkbox"
+              class="checkbox flex-none"
+              disabled={!enableCheckboxes}
+              bind:checked={dataType.patient}
+            />
+            <div class="text-left flex-auto">List of involved patients</div>
+          </label>
+          <SendDataModal {sendEnabled} {query} {selectedSite} {dataType} {datasetId} status={initialStatus} />
         </GridCell>
         <GridCell title="Status">
           {#snippet help()}
@@ -254,24 +261,32 @@
               class="text-primary-500 disabled:text-secondary-500"
               onclick={refreshStatus}
             >
-              <i class="fa-solid fa-arrows-rotate fa-sm"></i>
+              <i class="fa-solid fa-arrows-rotate fa-sm" class:spinning={isRefreshing}></i>
               <span class="sr-only">Refresh</span>
             </button>
           {/snippet}
-          <div class="flex space-x-2 my-2 align-top">
-            <i class={`${statusInfo.phenotypic.icon} flex-none`}></i>
-            <div class="text-left flex-auto">
-              Phenotypic Data: <span data-testid="status-pheno">{statusInfo.phenotypic.label}</span>
+          {#await refreshPromise}
+            <Loading ring />
+          {:then statusInfo}
+            <div class="flex space-x-2 my-2 align-top">
+              <StatusIndicator
+                status={statusInfo?.phenotypic}
+                label="Phenotypic Data"
+              />
             </div>
-          </div>
-          <div class="flex space-x-2 my-2 align-top">
-            <i class={`${statusInfo.genomic.icon} flex-none`}></i>
-            <div class="text-left flex-auto">
-              Annotated variant data for selected genes: <span data-testid="status-geno"
-                >{statusInfo.genomic.label}</span
-              >
+            <div class="flex space-x-2 my-2 align-top">
+              <StatusIndicator
+                status={statusInfo?.genomic}
+                label="Annotated variant data for selected genes"
+              />
             </div>
-          </div>
+            <div class="flex space-x-2 my-2 align-top">
+              <StatusIndicator
+                status={statusInfo?.patient}
+                label="List of involved patients"
+              />
+            </div>
+          {/await}
         </GridCell>
       </Grid>
     </div>
@@ -282,7 +297,7 @@
       data-testid="reset-btn"
       class="btn preset-tonal-secondary border border-secondary-500 mx-4"
       onclick={reset}
-      disabled={!review.show && !share.show}
+      disabled={!datasetId?.trim()}
     >
       Reset
     </button>
@@ -297,5 +312,15 @@
 
   #selected-site option:not([value='']) {
     color: inherit;
+  }
+
+  .spinning {
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(-180deg);
+    }
   }
 </style>

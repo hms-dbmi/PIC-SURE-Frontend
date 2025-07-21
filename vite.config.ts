@@ -20,6 +20,6 @@ export default defineConfig({
     rollupOptions: {
       maxParallelFileOps: 10,
     },
-    sourcemap: false,
+    sourcemap: true,
   },
 });

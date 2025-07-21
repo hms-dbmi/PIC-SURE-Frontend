@@ -1,13 +1,24 @@
 <script lang="ts">
-  import { sendData } from '$lib/stores/DataRequest';
+  import { sendData } from '$lib/services/datarequest';
+  import { Query, type QueryInterface } from '$lib/models/query/Query';
+  import { UploadStatus, type DataType, type Status } from '$lib/models/DataRequest';
 
   import { browser } from '$app/environment';
 
   import Modal from '$lib/components/Modal.svelte';
 
+  export type SendDataModalProps = {
+    sendEnabled: boolean;
+    query: QueryInterface | undefined;
+    selectedSite: string | undefined;
+    dataType: DataType;
+    datasetId: string | undefined;
+    status: Status | undefined;
+  };
+
   let disablePrompt = $state(false);
   let modalOpen: boolean = $state(false);
-  const { sendEnabled = false }: { sendEnabled?: boolean } = $props();
+  let { sendEnabled = $bindable(false), query = new Query(), selectedSite, dataType, datasetId, status = $bindable() }: SendDataModalProps = $props();
 
   async function close() {
     if (disablePrompt && browser) {
@@ -16,7 +27,12 @@
 
     modalOpen = false;
 
-    await sendData();
+    const dataTypesToSend: string[] = Object.entries(dataType)
+      .filter(([key, value]) => value)
+      .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
+    for (const dataType of dataTypesToSend) {
+      status = await sendData(query, selectedSite || '', dataType, datasetId || '');
+    }
   }
 </script>
 
@@ -25,14 +41,14 @@
   data-testid="send-data-btn"
   class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
   disabled={!sendEnabled}
-  onclick={disablePrompt ? sendData : () => (modalOpen = true)}>Send Data</button
+  onclick={disablePrompt ? () => close() : () => (modalOpen = true)}>Send Data</button
 >
 <Modal
   data-testid="send-data"
   open={modalOpen}
   disabled={!sendEnabled}
   withDefault={false}
-  onconfirm={sendData}
+    onconfirm={() => close()}
 >
   <p class="font-bold text-center mb-4">
     Sending data from PIC-SURE to Service Workbench could take several minutes.
