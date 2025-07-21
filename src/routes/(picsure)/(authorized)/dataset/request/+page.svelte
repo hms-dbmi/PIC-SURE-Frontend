@@ -4,7 +4,7 @@
   import { uuidInput } from '$lib/utilities/Forms';
   import type { QueryInterface } from '$lib/models/query/Query';
   import { type Status, type Metadata, type DataType } from '$lib/models/DataRequest';
-  import { searchForDataset, getDatasetStatus, approveDataset, loadSites, sites } from '$lib/services/datarequest';
+  import { searchForDataset, getDatasetStatus, approveDataset, sendData, loadSites, sites } from '$lib/services/datarequest';
 
   import Content from '$lib/components/Content.svelte';
   import DataSummary from '$lib/components/request/modals/DataSummary.svelte';
@@ -25,11 +25,11 @@
   let approved: string | null = $state(null); // As a date string
   let requesterEmail: string | undefined = $state(undefined);
   let selectedSite: string | undefined = $state(undefined);
-  let initialStatus: Status | undefined = $state(undefined);
   let isDataSent: boolean = $state(false);
   let isComplete: boolean = $state(false);
   let isRefreshing = $state(false);
-  let refreshPromise: Promise<Status> | null = $state(null);
+  let statusPromise: Promise<Status> | null = $state(null);
+  let updatedStatus: Promise<Status> | null = $state(null);
   let dataType: DataType = $state({
     genomic: false,
     phenotypic: false,
@@ -43,10 +43,13 @@
   let sendEnabled = $derived(enableCheckboxes && (dataType.phenotypic || dataType.genomic || dataType.patient));
   
   async function search() {
-    initialStatus = await getDatasetStatus(datasetId);
-    if (initialStatus && initialStatus.approved) {
-      approved = initialStatus.approved;
-    }
+    statusPromise = getDatasetStatus(datasetId).then((status) => {
+      if (status && status.approved) {
+        approved = status.approved;
+      }
+      return status;
+    });
+    
     metadata = await searchForDataset(datasetId);
     if (metadata && metadata.resultMetadata) {
       if (metadata.resultMetadata.queryJson) {
@@ -63,26 +66,56 @@
 
   function refreshStatus() {
     isRefreshing = true;
-    setTimeout(() => {
-      isRefreshing = false;
-    }, 1000);
-    try {
-      refreshPromise = getDatasetStatus(datasetId);
-      refreshPromise.then((status) => {
-      if (status) {
-        initialStatus = status;
-        }
+    
+    const minSpinTime = new Promise(resolve => setTimeout(resolve, 800));
+    
+    updatedStatus = Promise.all([
+      getDatasetStatus(datasetId),
+      minSpinTime
+    ])
+      .then(([status]) => {
+        statusPromise = updatedStatus; // Makes status refreshable
         return status;
+      })
+      .catch((error) => {
+        console.error('Failed to refresh status:', error);
+        throw error;
+      })
+      .finally(() => {
+        isRefreshing = false;
+        updatedStatus = null;
       });
-    } catch (error) {
-      console.error(error);
-    }
   }
 
   async function approve() {
     if (approved) {
       return approveDataset(datasetId, approved);
     }
+  }
+
+  async function handleSendData() {
+    if (!query) {
+      console.error('No query available for sending data');
+      return;
+    }
+
+    const dataTypesToSend: string[] = Object.entries(dataType)
+      .filter(([key, value]) => value)
+      .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
+
+      updatedStatus = (async () => {
+      let finalStatus: Status | null = null;
+      for (const type of dataTypesToSend) {
+        try {
+          finalStatus = await sendData(query, selectedSite || '', type, datasetId || '');
+        } catch (error) {
+          console.error('Failed to send data type:', type, error);
+          throw error;
+        }
+      }
+      statusPromise = updatedStatus; // Makes status refreshable
+      return finalStatus;
+    })();
   }
 
   function reset() {
@@ -98,6 +131,10 @@
     };
     isDataSent = false;
     isComplete = false;
+    statusPromise = null;
+    isRefreshing = false;
+    isReviewActive = false;
+    isSearchActive = true;
   }
 
   onMount(async () => {
@@ -108,7 +145,7 @@
 <svelte:head>
   <title>{branding.applicationName} | Data Requests</title>
 </svelte:head>
-<!-- 094698d8-2c94-4435-8a99-c014ae34c595 -->
+
 <Content title="Data Requests">
   <Step step={1} title="Search for Dataset Request ID" active={isSearchActive} showLine>
     <div class="flex flex-col items-center gap-3 mt-2 p-4 rounded bg-surface-100">
@@ -250,7 +287,7 @@
             />
             <div class="text-left flex-auto">List of involved patients</div>
           </label>
-          <SendDataModal {sendEnabled} {query} {selectedSite} {dataType} {datasetId} status={initialStatus} />
+          <SendDataModal {sendEnabled} onConfirm={handleSendData} />
         </GridCell>
         <GridCell title="Status">
           {#snippet help()}
@@ -265,7 +302,7 @@
               <span class="sr-only">Refresh</span>
             </button>
           {/snippet}
-          {#await refreshPromise}
+          {#await statusPromise}
             <Loading ring />
           {:then statusInfo}
             <div class="flex space-x-2 my-2 align-top">
@@ -286,6 +323,8 @@
                 label="List of involved patients"
               />
             </div>
+          {:catch error}
+            <div class="text-error-500">Failed to load status</div>
           {/await}
         </GridCell>
       </Grid>

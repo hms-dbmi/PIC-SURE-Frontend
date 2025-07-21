@@ -1,38 +1,32 @@
 <script lang="ts">
-  import { sendData } from '$lib/services/datarequest';
-  import { Query, type QueryInterface } from '$lib/models/query/Query';
-  import { UploadStatus, type DataType, type Status } from '$lib/models/DataRequest';
-
   import { browser } from '$app/environment';
-
   import Modal from '$lib/components/Modal.svelte';
 
   export type SendDataModalProps = {
     sendEnabled: boolean;
-    query: QueryInterface | undefined;
-    selectedSite: string | undefined;
-    dataType: DataType;
-    datasetId: string | undefined;
-    status: Status | undefined;
+    onConfirm?: () => void;
   };
 
   let disablePrompt = $state(false);
   let modalOpen: boolean = $state(false);
-  let { sendEnabled = $bindable(false), query = new Query(), selectedSite, dataType, datasetId, status = $bindable() }: SendDataModalProps = $props();
+  let { sendEnabled, onConfirm }: SendDataModalProps = $props();
 
-  async function close() {
+  function handleConfirm() {
     if (disablePrompt && browser) {
       localStorage.setItem('dataRequest-sendData-displayPrompt', 'no');
     }
-
+    
     modalOpen = false;
+    onConfirm?.();
+  }
 
-    const dataTypesToSend: string[] = Object.entries(dataType)
-      .filter(([key, value]) => value)
-      .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
-    for (const dataType of dataTypesToSend) {
-      status = await sendData(query, selectedSite || '', dataType, datasetId || '');
+  function openModal() {
+    // Check if user previously chose to skip the prompt
+    if (browser && localStorage.getItem('dataRequest-sendData-displayPrompt') === 'no') {
+      handleConfirm();
+      return;
     }
+    modalOpen = true;
   }
 </script>
 
@@ -41,14 +35,14 @@
   data-testid="send-data-btn"
   class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
   disabled={!sendEnabled}
-  onclick={disablePrompt ? () => close() : () => (modalOpen = true)}>Send Data</button
+  onclick={openModal}>Send Data</button
 >
 <Modal
   data-testid="send-data"
   open={modalOpen}
   disabled={!sendEnabled}
   withDefault={false}
-    onconfirm={() => close()}
+  onconfirm={handleConfirm}
 >
   <p class="font-bold text-center mb-4">
     Sending data from PIC-SURE to Service Workbench could take several minutes.
@@ -74,7 +68,7 @@
         type="button"
         data-testid="send-data-modal-confirm-btn"
         class="btn preset-filled-primary-500"
-        onclick={close}
+        onclick={handleConfirm}
       >
         Okay, got it!
       </button>
