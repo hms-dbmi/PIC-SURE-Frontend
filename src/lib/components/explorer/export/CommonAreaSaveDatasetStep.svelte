@@ -1,12 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { resources } from '$lib/configuration';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import { commonAreaUUID, federatedQueryStatuses } from '$lib/stores/Dataset';
   import { Picsure } from '$lib/paths';
   import * as api from '$lib/api';
-  import { getQueryResources } from '$lib/stores/Resources';
+  import { getQueryResources, loadResources, resources } from '$lib/stores/Resources';
   import Summary from './Summary.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import { Query } from '$lib/models/query/Query';
@@ -25,7 +24,7 @@
     const uuidQuery = new Query();
     const uuidQueryRequest: QueryRequestInterface = {
       query: uuidQuery,
-      resourceUUID: resources.queryIdGen,
+      resourceUUID: $resources.queryIdGen,
     };
     return api.post(Picsure.Query, uuidQueryRequest).then((res: { picsureResultId: string }) => {
       const commonAreaDatasetId = res.picsureResultId || undefined;
@@ -81,6 +80,7 @@
   }
 
   onMount(async () => {
+    await loadResources();
     loadingStatuses = true;
     await createCommonAreaUUID();
     datasetId = $commonAreaUUID || '';
