@@ -1,7 +1,6 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
-
   interface Props {
     step: number;
     title?: string;
@@ -38,17 +37,33 @@
       aria-current={active ? 'step' : false}
     >
       <div class="flex flex-col gap-2 items-center">
-        <span class="badge rounded-2xl text-sm preset-filled-primary-500 h-fit mb-2">Step {step}</span>
-        {#if showLine}
+        <button
+          onclick={() => {
+            collapsed = !collapsed;
+          }}
+        >
+          <span class="badge rounded-2xl text-sm preset-filled-primary-500 h-fit mb-2"
+            >Step {step}</span
+          >
+        </button>
+        {#if showLine && !collapsed}
           <div class="border border-surface-200 h-[72%]"></div>
         {/if}
         {#if showLine && isFinal}
-          <span class="badge rounded-2xl text-sm preset-filled-{complete ? 'primary' : 'surface'}-500 h-fit mb-2">Done</span>
+          <span
+            class="badge rounded-2xl text-sm preset-filled-{complete
+              ? 'primary'
+              : 'surface'}-500 h-fit mb-2">Done</span
+          >
         {/if}
       </div>
       <div class="flex-auto">
         {#if title}<h3 style="line-height: normal">{title}</h3>{/if}
-        {@render children?.()}
+        {#if !collapsed}
+          <div class="h-full" transition:slide={{ duration: 300, easing: quintOut, axis: 'y' }}>
+            {@render children?.()}
+          </div>
+        {/if}
       </div>
     </div>
   </div>

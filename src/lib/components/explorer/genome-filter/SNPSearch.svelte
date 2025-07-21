@@ -38,7 +38,7 @@
       <div class="flex gap-2 items-center justify-center my-8">
         <Edit {snp} {onsave} />
       </div>
-    {/if} 
+    {/if}
   </Panel>
   <Panel title="Summary of Selected Filters">
     {#snippet action()}

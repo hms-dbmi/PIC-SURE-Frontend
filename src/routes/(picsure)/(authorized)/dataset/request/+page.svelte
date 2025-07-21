@@ -3,8 +3,15 @@
   import { branding } from '$lib/configuration';
   import { uuidInput } from '$lib/utilities/Forms';
   import type { QueryInterface } from '$lib/models/query/Query';
-  import { type Status, type Metadata, type DataType } from '$lib/models/DataRequest';
-  import { searchForDataset, getDatasetStatus, approveDataset, sendData, loadSites, sites } from '$lib/services/datarequest';
+  import { type Status, type Metadata, type DataType, UploadStatus } from '$lib/models/DataRequest';
+  import {
+    searchForDataset,
+    getDatasetStatus,
+    approveDataset,
+    sendData,
+    loadSites,
+    sites,
+  } from '$lib/services/datarequest';
 
   import Content from '$lib/components/Content.svelte';
   import DataSummary from '$lib/components/request/modals/DataSummary.svelte';
@@ -26,8 +33,8 @@
   let requesterEmail: string | undefined = $state(undefined);
   let selectedSite: string | undefined = $state(undefined);
   let isDataSent: boolean = $state(false);
+  let isRefreshing: boolean = $state(false);
   let isComplete: boolean = $state(false);
-  let isRefreshing = $state(false);
   let statusPromise: Promise<Status> | null = $state(null);
   let updatedStatus: Promise<Status> | null = $state(null);
   let dataType: DataType = $state({
@@ -36,12 +43,14 @@
     patient: false,
   });
   const summaryModalOpen = $state(false);
-    
+
   let isSearchActive = $derived(!datasetId || datasetId.trim() === '');
   let isReviewActive = $derived(approved === null);
   let enableCheckboxes = $derived(selectedSite !== undefined && selectedSite !== '');
-  let sendEnabled = $derived(enableCheckboxes && (dataType.phenotypic || dataType.genomic || dataType.patient));
-  
+  let sendEnabled = $derived(
+    enableCheckboxes && (dataType.phenotypic || dataType.genomic || dataType.patient),
+  );
+
   async function search() {
     statusPromise = getDatasetStatus(datasetId).then((status) => {
       if (status && status.approved) {
@@ -49,7 +58,7 @@
       }
       return status;
     });
-    
+
     metadata = await searchForDataset(datasetId);
     if (metadata && metadata.resultMetadata) {
       if (metadata.resultMetadata.queryJson) {
@@ -66,13 +75,10 @@
 
   function refreshStatus() {
     isRefreshing = true;
-    
-    const minSpinTime = new Promise(resolve => setTimeout(resolve, 800));
-    
-    updatedStatus = Promise.all([
-      getDatasetStatus(datasetId),
-      minSpinTime
-    ])
+
+    const minSpinTime = new Promise((resolve) => setTimeout(resolve, 800));
+
+    updatedStatus = Promise.all([getDatasetStatus(datasetId), minSpinTime])
       .then(([status]) => {
         statusPromise = updatedStatus; // Makes status refreshable
         return status;
@@ -100,10 +106,10 @@
     }
 
     const dataTypesToSend: string[] = Object.entries(dataType)
-      .filter(([key, value]) => value)
+      .filter(([, value]) => value)
       .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
 
-      updatedStatus = (async () => {
+    updatedStatus = (async () => {
       let finalStatus: Status | null = null;
       for (const type of dataTypesToSend) {
         try {
@@ -136,6 +142,31 @@
     isReviewActive = false;
     isSearchActive = true;
   }
+
+  $effect(() => {
+    if (!statusPromise) {
+      isComplete = false;
+      return;
+    }
+
+    statusPromise
+      .then((status) => {
+        const selectedDataTypes = Object.entries(dataType)
+          .filter(([, value]) => value)
+          .map(([key]) => key as keyof Status);
+
+        isComplete =
+          !!status &&
+          selectedDataTypes.length > 0 &&
+          selectedDataTypes.every((type) => {
+            const uploadStatus = status[type];
+            return uploadStatus === UploadStatus.Uploaded || uploadStatus === UploadStatus.Error;
+          });
+      })
+      .catch(() => {
+        isComplete = false;
+      });
+  });
 
   onMount(async () => {
     await loadSites();
@@ -178,7 +209,12 @@
       </div>
     </div>
   </Step>
-  <Step step={2} title="Review Dataset Request" show={!!datasetId && metadata !== undefined} active={isReviewActive}>
+  <Step
+    step={2}
+    title="Review Dataset Request"
+    show={!!datasetId && metadata !== undefined}
+    active={isReviewActive}
+  >
     <div class="p-4 rounded bg-surface-100">
       <Grid columns={2}>
         <GridCell title="View Dataset Information">
@@ -305,25 +341,15 @@
           {#await statusPromise}
             <Loading ring />
           {:then statusInfo}
-            <div class="flex space-x-2 my-2 align-top">
-              <StatusIndicator
-                status={statusInfo?.phenotypic}
-                label="Phenotypic Data"
-              />
-            </div>
-            <div class="flex space-x-2 my-2 align-top">
+            <div class="flex flex-col gap-2">
+              <StatusIndicator status={statusInfo?.phenotypic} label="Phenotypic Data" />
               <StatusIndicator
                 status={statusInfo?.genomic}
                 label="Annotated variant data for selected genes"
               />
+              <StatusIndicator status={statusInfo?.patient} label="List of involved patients" />
             </div>
-            <div class="flex space-x-2 my-2 align-top">
-              <StatusIndicator
-                status={statusInfo?.patient}
-                label="List of involved patients"
-              />
-            </div>
-          {:catch error}
+          {:catch}
             <div class="text-error-500">Failed to load status</div>
           {/await}
         </GridCell>

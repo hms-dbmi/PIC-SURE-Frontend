@@ -19,7 +19,7 @@
   // Define explicit grid classes so Tailwind can detect them
   const gridClasses = {
     1: 'grid-cols-1',
-    2: 'grid-cols-2', 
+    2: 'grid-cols-2',
     3: 'grid-cols-3',
     4: 'grid-cols-4',
     5: 'grid-cols-5',
@@ -29,10 +29,12 @@
     9: 'grid-cols-9',
     10: 'grid-cols-10',
     11: 'grid-cols-11',
-    12: 'grid-cols-12'
+    12: 'grid-cols-12',
   };
-  
-  const gridClass = $derived(gridClasses[$stats.length as keyof typeof gridClasses] || 'grid-cols-1');
+
+  const gridClass = $derived(
+    gridClasses[$stats.length as keyof typeof gridClasses] || 'grid-cols-1',
+  );
 
   /* eslint-disable svelte/no-at-html-tags */
   // @html explanation is passed down from a static file

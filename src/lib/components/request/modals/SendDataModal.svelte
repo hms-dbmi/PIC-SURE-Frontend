@@ -15,7 +15,7 @@
     if (disablePrompt && browser) {
       localStorage.setItem('dataRequest-sendData-displayPrompt', 'no');
     }
-    
+
     modalOpen = false;
     onConfirm?.();
   }
