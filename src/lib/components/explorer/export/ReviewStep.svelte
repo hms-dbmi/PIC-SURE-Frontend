@@ -3,8 +3,7 @@
   import { onMount } from 'svelte';
   import { v4 as uuidv4 } from 'uuid';
 
-  import { branding, features, resources } from '$lib/configuration';
-  import { filters } from '$lib/stores/Filter';
+  import { branding, features } from '$lib/configuration';
   import { exports, addExports, removeExports } from '$lib/stores/Export';
   import type { ExportInterface } from '$lib/models/Export';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
@@ -13,6 +12,7 @@
   import * as api from '$lib/api';
   import { Picsure } from '$lib/paths';
   import { toaster } from '$lib/toaster';
+  import { resources, loadResources } from '$lib/stores/Resources';
 
   import Summary from './Summary.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -78,6 +78,7 @@
   });
 
   async function getGenomicConcepts() {
+    await loadResources();
     const concepts = await searchDictionary(
       '',
       [
@@ -104,7 +105,7 @@
 
     const crossCountResponse: Record<string, number> = await api.post(Picsure.QuerySync, {
       query: crossCountQuery,
-      resourceUUID: resources.hpds,
+      resourceUUID: $resources.hpdsAuth,
     });
 
     // Filter and return only concepts with counts > 0
