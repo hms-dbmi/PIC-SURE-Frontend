@@ -1,6 +1,17 @@
 import { expect, type Route, type BrowserContext, type Page } from '@playwright/test';
 import { mockApiSuccess, test } from '../../../custom-context';
-import { geneValues, variantDataAggregate, variantDataFull } from '../../../mock-data';
+import {
+  geneValues,
+  variantDataAggregate,
+  variantDataFull,
+  conceptsDetailPath,
+  detailResponseCat,
+  facetResultPath,
+  facetsResponse,
+  searchResults as mockData,
+  searchResultPath,
+} from '../../../mock-data';
+import { getOption, clickNthFilterIcon } from '../../../utils';
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
@@ -125,15 +136,32 @@ test.describe('variant explorer', () => {
       await expect(page.getByTestId('error-alert')).toContainText('Error');
     });
   });
-  test('Display notice when no query exists', async ({ page }) => {
+  test('Display notice when no genomic query exists', async ({ page }) => {
     // Given
-    mockSyncAPI(page, successResults);
+    await mockSyncAPI(page, successResults);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await page.goto('/explorer?search=somedata');
+
+    // has one pheno filter
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('add-filter');
+    await addFilterButton.click();
+    await expect(page.locator('#results-panel')).toBeVisible();
+
+    // When
     await page.goto('/explorer/variant');
 
     // Then
     await expect(page).toHaveURL('/explorer');
-    const toast = page.getByTestId('toast-root');
-    await expect(toast).toBeVisible();
-    await expect(toast).toHaveAttribute('data-type', 'error');
+    const toast = await page.getByTestId('toast-root').allInnerTexts();
+    expect(toast.find((msg) => msg.includes('No query provided'))).toBeTruthy();
   });
 });

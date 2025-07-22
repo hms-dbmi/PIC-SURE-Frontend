@@ -121,7 +121,7 @@ export class Query implements QueryInterface {
     this.anyRecordOf.push(field);
   }
 
-  hasFilter() {
+  hasGenomicFilter() {
     const Gene_with_variant =
       this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Gene_with_variant?.length || 0;
     const Variant_consequence_calculated =
@@ -130,13 +130,14 @@ export class Query implements QueryInterface {
     const Variant_frequency_as_text =
       this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Variant_frequency_as_text?.length ||
       0;
+    return Gene_with_variant + Variant_consequence_calculated + Variant_frequency_as_text;
+  }
 
+  hasFilter() {
     return (
       Object.keys(this.categoryFilters).length +
       Object.keys(this.numericFilters).length +
-      Gene_with_variant +
-      Variant_consequence_calculated +
-      Variant_frequency_as_text +
+      this.hasGenomicFilter() +
       this.requiredFields.length +
       this.anyRecordOf.length
     );
