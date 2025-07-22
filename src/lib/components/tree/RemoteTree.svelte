@@ -27,7 +27,7 @@
     children: RemoteTreeNodeClass[] = $state([]);
     loading: boolean = $state(false);
     error: string | null = $state(null);
-    isLeaf: boolean = false;
+    isLeaf: boolean = $state(false);
     childrenLoaded: boolean = $state(false);
 
     constructor(apiNode: SearchResult) {
@@ -71,11 +71,13 @@
           await this.loadChildren();
         }
         // Now select all children
-        this.children.forEach((child) => child.select());
+        if (this.children.length > 0) {
+          this.children.forEach((child) => child.select());
+        } else {
+          onselect(this.conceptPath);
+          this.selected = true;
+        }
         this.open = true;
-      } else {
-        this.selected = true;
-        onselect(this.conceptPath);
       }
     }
 
@@ -104,13 +106,11 @@
       if (this.isLeaf) return;
 
       if (!this.open) {
-        // Opening the node
         if (!this.childrenLoaded) {
           await this.loadChildren();
         }
         this.open = true;
       } else {
-        // Closing the node
         this.open = false;
       }
     }
