@@ -13,7 +13,7 @@
   import { getQueryRequest } from '$lib/utilities/QueryBuilder';
 
   onMount(() => {
-    if (!getQueryRequest(true).query.hasFilter()) {
+    if (!getQueryRequest(true).query.hasGenomicFilter()) {
       toaster.error({
         title: 'No query provided. Please add a genomic filter to explore variant data.',
       });
