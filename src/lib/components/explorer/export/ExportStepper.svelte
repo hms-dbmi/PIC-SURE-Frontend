@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
   import * as api from '$lib/api';
   import { branding, features, settings } from '$lib/configuration';
@@ -28,6 +29,7 @@
   import RedcapStep from './RedcapStep.svelte';
   import PfbExport from './PfbExport.svelte';
   import AnalysisPlatformLinks from './AnalysisPlatformLinks.svelte';
+  import { selectedConcepts } from '$lib/stores/TreeStepConcepts';
 
   interface Props {
     query: QueryRequestInterface;
@@ -69,6 +71,15 @@
   });
 
   async function onNextHandler(_step: number, stepName: string): Promise<void> {
+    const shouldAddConcepts =
+      features.explorer.showTreeStep &&
+      stepName === (features.federated ? 'save-dataset' : 'select-type');
+
+    if (shouldAddConcepts) {
+      $selectedConcepts.forEach((concept: string) => {
+        query.query.addField(concept);
+      });
+    }
     if (stepName === 'start') {
       saveDatasetPromise = createDatasetName(
         datasetId,
@@ -127,10 +138,12 @@
     {#snippet header()}Review Cohort Details:{/snippet}
     <ReviewStep {query} {rows} {preparePromise} dataLimitExceeded={dataLimitExceeded()} />
   </Step>
-  <Step name="select-variables">
-    {#snippet header()}Finalize Data:{/snippet}
-    <TreeStep {query} />
-  </Step>
+  {#if features.explorer.showTreeStep}
+    <Step name="select-variables">
+      {#snippet header()}Finalize Data:{/snippet}
+      <TreeStep />
+    </Step>
+  {/if}
   {#if features.explorer.enablePfbExport && !features.federated}
     <Step name="select-type" locked={activeType === undefined}>
       {#snippet header()}Review and Save Dataset:{/snippet}

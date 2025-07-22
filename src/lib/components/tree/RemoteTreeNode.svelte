@@ -33,7 +33,7 @@
         {#if node.loading}
           <i class="fa-solid fa-spinner fa-spin"></i>
         {:else}
-          <i class="fa-solid fa-angle-{node.open ? 'up' : 'down'}"></i>
+          <i class="fa-solid fa-angle-{node.open ? 'down' : 'right'}"></i>
         {/if}
       {:else}
         <i class="fa-solid fa-minus"></i>
