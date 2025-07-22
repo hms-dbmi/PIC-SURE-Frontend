@@ -1,5 +1,5 @@
-import { expect, type Route, type Page } from '@playwright/test';
-import { test, mockApiSuccess, mockApiFail } from '../../custom-context';
+import { expect } from '@playwright/test';
+import { test, mockApiSuccess, mockApiFail, mockHTMLBodySuccess } from '../../custom-context';
 import {
   searchResults as mockSearchResults,
   facetsResponse,
@@ -20,13 +20,7 @@ const Terms: { [key: string]: string } = { Root: '*/**/psama/tos' };
 Terms.Latest = Terms.Root + '/latest';
 Terms.Accept = Terms.Root + '/accept';
 
-const MODAL_DISMISS_TIMEOUT = 100;
-
 const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use this site.</p>';
-
-export function mockHTMLBody(context: Page, path: string, body: string) {
-  return context.route(path, async (route: Route) => route.fulfill({ body }));
-}
 
 test.describe('Not logged in', () => {
   test('Terms do not open when user is not logged in', async ({ page }) => {
@@ -34,34 +28,31 @@ test.describe('Not logged in', () => {
     await page.goto('/');
 
     // Then
-    expect(page.locator('#terms-of-service')).not.toBeVisible();
+    await expect(page.locator('#terms-of-service')).not.toBeVisible();
   });
   test('Terms link displays close button', async ({ page }) => {
     // Given
-    mockHTMLBody(page, Terms.Latest, mockTerms);
+    mockHTMLBodySuccess(page, Terms.Latest, mockTerms);
     await page.goto('/');
 
     // When
     await page.getByTestId('terms-of-service-btn').click();
-    await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
     // Then
-    expect(page.locator('#terms-of-service')).toBeVisible();
-    expect(page.getByTestId('modal-close-button')).toBeVisible();
+    await expect(page.locator('#terms-of-service')).toBeVisible();
+    await expect(page.getByTestId('modal-close-button')).toBeVisible();
   });
   test('Terms link opens dismissable modal', async ({ page }) => {
     // Given
-    mockHTMLBody(page, Terms.Latest, mockTerms);
+    mockHTMLBodySuccess(page, Terms.Latest, mockTerms);
     await page.goto('/');
     await page.getByTestId('terms-of-service-btn').click();
-    await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
     // When
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
     // Then
-    expect(page.locator('#terms-of-service')).not.toBeVisible();
+    await expect(page.locator('#terms-of-service')).not.toBeVisible();
   });
 });
 
@@ -74,7 +65,7 @@ test.describe('Logged in', () => {
     mockApiSuccess(page, '*/**/picsure/query/sync', 99);
     mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/concepts*', mockSearchResults);
     mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
-    mockHTMLBody(page, Terms.Latest, mockTerms);
+    mockHTMLBodySuccess(page, Terms.Latest, mockTerms);
     page.on('request', (request) => {
       if (request.url().includes('/psama/tos/latest')) {
         tosLatestRequest = true;
@@ -101,7 +92,7 @@ test.describe('Logged in', () => {
 
       // Then
       expect(tosLatestRequest).toBeTruthy();
-      expect(page.locator('#terms-of-service')).toBeVisible();
+      await expect(page.locator('#terms-of-service')).toBeVisible();
     });
     test('Modal does not allow user to dismiss it', async ({ page }) => {
       // Given
@@ -111,8 +102,8 @@ test.describe('Logged in', () => {
       await page.keyboard.press('Escape');
 
       // Then
-      expect(page.locator('#terms-of-service')).toBeVisible();
-      expect(page.getByTestId('modal-close-button')).not.toBeVisible();
+      await expect(page.locator('#terms-of-service')).toBeVisible();
+      await expect(page.getByTestId('modal-close-button')).not.toBeVisible();
     });
     test('Clicking the accept sends request', async ({ page }) => {
       // Given
@@ -121,15 +112,14 @@ test.describe('Logged in', () => {
 
       // When
       await page.getByTestId('terms-accept-btn').click();
-      await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
       // Then
       expect(tosAcceptRequest).toBeTruthy();
-      expect(page.locator('#terms-of-service')).not.toBeVisible({ timeout: 10000 });
+      await expect(page.locator('#terms-of-service')).not.toBeVisible({ timeout: 10000 });
     });
     test('Clicking the reject redirects the user', async ({ page }) => {
       // Given
-      mockHTMLBody(
+      mockHTMLBodySuccess(
         page,
         branding.termsOfService.rejectionUrl,
         '<h1>Some Rejection Information Page</h1>',
@@ -148,31 +138,26 @@ test.describe('Logged in', () => {
       mockApiSuccess(page, Terms.Accept, '');
       await page.goto('/');
       await page.getByTestId('terms-accept-btn').click();
-      await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
       // When
       await page.getByTestId('terms-of-service-btn').click();
-      await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
       // Then
-      expect(page.locator('#terms-of-service')).toBeVisible();
-      expect(page.getByTestId('modal-close-button')).toBeVisible();
+      await expect(page.locator('#terms-of-service')).toBeVisible();
+      await expect(page.getByTestId('modal-close-button')).toBeVisible();
     });
     test('TOS modal is dismissable after acceptance', async ({ page }) => {
       // Given
       mockApiSuccess(page, Terms.Accept, '');
       await page.goto('/');
       await page.getByTestId('terms-accept-btn').click();
-      await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
       await page.getByTestId('terms-of-service-btn').click();
-      await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
       // When
       await page.keyboard.press('Escape');
-      await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
       // Then
-      expect(page.locator('#terms-of-service')).not.toBeVisible();
+      await expect(page.locator('#terms-of-service')).not.toBeVisible();
     });
     test('Displays an error box when api fails', async ({ page }) => {
       // Given
@@ -182,8 +167,8 @@ test.describe('Logged in', () => {
       await page.goto('/');
 
       // Then
-      expect(page.getByTestId('terms-api-error')).toBeVisible();
-      expect(page.getByTestId('terms-close-btn')).toBeVisible();
+      await expect(page.getByTestId('terms-api-error')).toBeVisible();
+      await expect(page.getByTestId('terms-close-btn')).toBeVisible();
     });
   });
 
@@ -203,7 +188,7 @@ test.describe('Logged in', () => {
       await page.goto('/admin/configuration/terms/edit');
 
       // Then
-      expect(page.getByTestId('publish-terms-btn')).toBeDisabled();
+      await expect(page.getByTestId('publish-terms-btn')).toBeDisabled();
     });
     test('Commit button is enabeld on content change', async ({ page }) => {
       // Given
@@ -213,7 +198,7 @@ test.describe('Logged in', () => {
       await page.locator('#editor div.ql-editor').fill('Some new text');
 
       // Then
-      expect(page.getByTestId('publish-terms-btn')).toBeEnabled();
+      await expect(page.getByTestId('publish-terms-btn')).toBeEnabled();
     });
     test('Confirmation modal appears on commit', async ({ page }) => {
       // Given
@@ -224,41 +209,37 @@ test.describe('Logged in', () => {
       await page.getByTestId('publish-terms-btn').click();
 
       // Then
-      expect(page.getByTestId('publish-terms')).toBeVisible();
+      await expect(page.getByTestId('publish-terms')).toBeVisible();
     });
     test('Cancel button does not submit update', async ({ page }) => {
       // Given
       await page.goto('/admin/configuration/terms/edit');
       await page.locator('#editor div.ql-editor').fill('Some new text');
       await page.getByTestId('publish-terms-btn').click();
-      await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
       // When
       await page.getByText('Cancel', { exact: true }).click();
-      await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
       // Then
       expect(tosUpdateRequest).toBeFalsy();
-      expect(page.getByTestId('publish-terms')).not.toBeVisible();
+      await expect(page.getByTestId('publish-terms')).not.toBeVisible();
     });
     test('Confirm button submits updated terms, redirects, and success', async ({ page }) => {
       // Given
-      mockHTMLBody(page, Terms.Root, '');
+      mockHTMLBodySuccess(page, Terms.Root, '');
       await page.goto('/admin/configuration/terms/edit');
       await page.locator('#editor div.ql-editor').fill('Some new text');
       await page.getByTestId('publish-terms-btn').click();
-      await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
       // When
       await page.getByText('Confirm', { exact: true }).click();
-      await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
       // Then
       const toast = page.getByTestId('toast-root');
       await expect(toast).toBeVisible();
       await expect(toast).toHaveAttribute('data-type', 'success');
       expect(tosUpdateRequest).toBeTruthy();
-      expect(page.getByTestId('publish-terms')).not.toBeVisible();
+      await expect(page.getByTestId('publish-terms')).not.toBeVisible();
       await expect(page).toHaveURL(RegExp('/admin/configuration$'));
     });
     test('Confirm button with api failure gives error and stays on page', async ({ page }) => {
@@ -266,18 +247,16 @@ test.describe('Logged in', () => {
       await page.goto('/admin/configuration/terms/edit');
       await page.locator('#editor div.ql-editor').fill('Some new text');
       await page.getByTestId('publish-terms-btn').click();
-      await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
       // When
       await page.getByText('Confirm', { exact: true }).click();
-      await page.waitForTimeout(MODAL_DISMISS_TIMEOUT);
 
       // Then
       const toast = page.getByTestId('toast-root');
       await expect(toast).toBeVisible();
       await expect(toast).toHaveAttribute('data-type', 'error');
       expect(tosUpdateRequest).toBeTruthy();
-      expect(page.getByTestId('publish-terms')).not.toBeVisible();
+      await expect(page.getByTestId('publish-terms')).not.toBeVisible();
       await expect(page).toHaveURL(RegExp('/admin/configuration/terms/edit$'));
     });
   });
@@ -290,8 +269,8 @@ test.describe('Logged in', () => {
       await page.goto('/admin/configuration/terms/edit');
 
       // Then
-      expect(page.getByTestId('admin-warning')).toBeVisible();
-      expect(page.getByTestId('publish-terms-btn')).toBeDisabled();
+      await expect(page.getByTestId('admin-warning')).toBeVisible();
+      await expect(page.getByTestId('publish-terms-btn')).toBeDisabled();
     });
   });
 });
