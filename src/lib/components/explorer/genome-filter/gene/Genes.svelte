@@ -29,7 +29,7 @@
     loading = true;
     try {
       const response = await api.get(
-        `${Picsure.Search}/${$resources.hpdsAuth}/values/?` +
+        `${Picsure.Search}/${$resources.search}/values/?` +
           new URLSearchParams({
             genomicConceptPath: 'Gene_with_variant',
             query: search,
