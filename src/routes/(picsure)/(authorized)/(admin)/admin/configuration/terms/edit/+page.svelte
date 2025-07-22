@@ -27,7 +27,7 @@
 
   async function onCommit() {
     await api
-      .post(Psama.TOS + '/update', terms, { 'Content-Type': 'text/html; charset=utf-8' })
+      .post(Psama.TOS + '/update', terms, { 'Content-Type': 'text/html' })
       .then(() => {
         toaster.success({ description: 'Terms have been successfully published.' });
         goto('/admin/configuration');
