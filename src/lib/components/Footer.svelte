@@ -23,7 +23,7 @@
     })),
   );
 
-  let modalOpen = $state(features.enforceTermsOfService && !!$user.uuid && !$user.acceptedTOS);
+  let modalOpen = $state(features.enforceTermsOfService && $isLoggedIn && !$user.acceptedTOS);
 </script>
 
 {#if !hideSitemap && branding?.sitemap?.length > 0}
