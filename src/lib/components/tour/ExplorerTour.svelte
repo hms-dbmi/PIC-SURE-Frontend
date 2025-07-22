@@ -1,4 +1,5 @@
 <script lang="ts">
+  import DOMPurify from 'dompurify';
   import { driver, type DriverHook, type DriveStep } from 'driver.js';
   import 'driver.js/dist/driver.css';
   import '../../../styles/tour.css';
@@ -232,7 +233,7 @@
   {:else}
     <p>
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      {@html tourConfig?.description}
+      {@html DOMPurify.sanitize(tourConfig?.description)}
     </p>
     <footer class="modal-footer flex justify-end space-x-2 mt-6">
       <button
