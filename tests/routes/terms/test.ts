@@ -19,6 +19,7 @@ const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
 const Terms: { [key: string]: string } = { Root: '*/**/psama/tos' };
 Terms.Latest = Terms.Root + '/latest';
 Terms.Accept = Terms.Root + '/accept';
+Terms.Update = Terms.Root + '/update';
 
 const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use this site.</p>';
 
@@ -226,7 +227,7 @@ test.describe('Logged in', () => {
     });
     test('Confirm button submits updated terms, redirects, and success', async ({ page }) => {
       // Given
-      mockHTMLBodySuccess(page, Terms.Root, '');
+      mockHTMLBodySuccess(page, Terms.Update, '');
       await page.goto('/admin/configuration/terms/edit');
       await page.locator('#editor div.ql-editor').fill('Some new text');
       await page.getByTestId('publish-terms-btn').click();
