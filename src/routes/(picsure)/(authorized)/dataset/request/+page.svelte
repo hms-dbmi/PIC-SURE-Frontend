@@ -206,7 +206,7 @@
   <Step step={1} title="Search for Dataset ID" active={isSearchActive} showLine>
     <div class="flex flex-col items-center gap-3 mt-2 p-4 rounded bg-surface-100">
       <p>
-        {branding.datasetRequestPage.searchIntro || 'Search for a dataset request ID to continue.'}
+        {@html branding.datasetRequestPage.searchIntro || 'Search for a dataset request ID to continue.'}
       </p>
       <div class="flex flex-row items-start gap-3">
         <label class="label required flex flex-row items-center w-fit" for="dataset-id">
