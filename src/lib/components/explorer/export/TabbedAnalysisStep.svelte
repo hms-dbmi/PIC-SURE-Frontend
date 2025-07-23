@@ -13,7 +13,6 @@
 
   let { query, datasetId }: Props = $props();
   let tabSet: string = $state('Python');
-  $inspect(tabSet);
 </script>
 
 <Tabs value={tabSet} onValueChange={(e: { value: string }) => (tabSet = e.value)}>

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
   import * as api from '$lib/api';
   import { branding, features, settings } from '$lib/configuration';
@@ -45,9 +44,9 @@
   let datasetNameInput: string = $state('');
   let picsureResultId: string = $state('');
   let lockDownload = $state(true);
+  let saveable = $state(!features.federated);
 
   let datasetId: string = $state('');
-  let processingMessage: string = $state('');
 
   const showTabbedAnalysisStep = $derived(
     query.query.expectedResultType === 'DATAFRAME' && !features.explorer.enableRedcapExport,
@@ -66,8 +65,6 @@
     if (!features.explorer.enablePfbExport) {
       activeType = 'DATAFRAME';
     }
-    console.log('features.explorer.showTreeStep: ', features.explorer.showTreeStep);
-    console.log('features: ', features);
   });
 
   async function onNextHandler(_step: number, stepName: string): Promise<void> {
@@ -81,12 +78,20 @@
       });
     }
     if (stepName === 'start') {
+      if (features.explorer.enableRedcapExport) {
+        lockDownload = false;
+      }
       saveDatasetPromise = createDatasetName(
         datasetId,
         datasetNameInput,
-        federatedQueryStatuses ? Object.values(federatedQueryStatuses) : undefined,
+        Object.keys($federatedQueryStatuses).length > 0 ? Object.values($federatedQueryStatuses) : undefined,
       ).then((data: DataSet) => {
-        statusPromise = checkExportStatus(picsureResultId);
+        if (features.federated) {
+          statusPromise = Promise.resolve();
+          return data;
+        } else {
+          statusPromise = checkExportStatus(picsureResultId);
+        }
         return data;
       });
     }
@@ -114,6 +119,7 @@
         'https://redcap.tch.harvard.edu/redcap_edc/surveys/?s=EWYX8X8XX77TTWFR',
         '_blank',
       );
+      goto('/explorer');
     } else {
       goto('/explorer');
     }
@@ -150,65 +156,61 @@
       <TypeStep {activeType} />
     </Step>
   {/if}
-  <Step name="save-dataset" locked={!datasetNameInput || datasetNameInput.length < 2 || !datasetId}>
+  <Step name="save-dataset" locked={!datasetNameInput || datasetNameInput.length < 2 || !datasetId || !saveable}>
     {#snippet header()}Save Dataset ID:{/snippet}
     {#if features.federated}
-      <CommonAreaSaveDatasetStep {query} {datasetId} {datasetNameInput} />
+      <CommonAreaSaveDatasetStep {query} bind:datasetId bind:datasetNameInput bind:saveable />
     {:else}
-      <SaveDatasetStep {query} {datasetId} {datasetNameInput} {activeType} />
+      <SaveDatasetStep {query} {datasetId} bind:datasetNameInput {activeType} />
+    {/if}
+    {#if !saveable}
+      <Loading ring size="micro" label="Creating datasets to save..." />
     {/if}
   </Step>
-  {#if features.explorer.enableRedcapExport}
-    <Step name="redcap-export">
-      {#snippet header()}Request Access to Patient Level Data:{/snippet}
-      <RedcapStep {datasetId} />
-    </Step>
-  {:else}
-    <Step name="start" locked={lockDownload}>
-      {#snippet header()}Start Analysis:{/snippet}
-      <section class="flex flex-col w-full h-full items-center">
-        {#await saveDatasetPromise}
-          <Loading ring size="medium" label="Saving" />
+  <Step name="start" locked={lockDownload}>
+    {#snippet header()}Start Analysis:{/snippet}
+    <section class="flex flex-col w-full h-full items-center">
+      {#await saveDatasetPromise}
+        <Loading ring size="medium" label="Saving" />
+      {:then}
+        {#await statusPromise}
+          <Loading ring size="medium" label="Preparing" />
         {:then}
-          {#await statusPromise}
-            <Loading ring size="medium" label="Preparing" />
-          {:then}
-            <p class="mt-4">{branding.explorePage.analysisExportText}</p>
-            {#if showTabbedAnalysisStep}
-              <TabbedAnalysisStep {query} {datasetId} />
-            {:else if features.explorer.enableRedcapExport}
-              <RedcapStep {datasetId} />
-            {:else if showPfbExportStep}
-              <PfbExport {query} {datasetId} />
-            {/if}
-            {#if branding.explorePage.goTo.instructions && branding.explorePage.goTo.instructions.length > 0}
-              <p>{branding.explorePage.goTo.instructions}</p>
-            {/if}
-            {#if showUserToken}
-              <div class="flex justify-center">
-                <UserToken />
-              </div>
-            {/if}
-            <AnalysisPlatformLinks />
-          {:catch e}
+          <p class="mt-4">{branding.explorePage.analysisExportText}</p>
+          {#if showTabbedAnalysisStep}
+            <TabbedAnalysisStep {query} {datasetId} />
+          {:else if features.explorer.enableRedcapExport}
+            <RedcapStep {datasetId} />
+          {:else if showPfbExportStep}
+            <PfbExport {query} {datasetId} />
+          {/if}
+          {#if branding.explorePage.goTo.instructions && branding.explorePage.goTo.instructions.length > 0}
+            <p>{branding.explorePage.goTo.instructions}</p>
+          {/if}
+          {#if showUserToken}
             <div class="flex justify-center">
-              <ErrorAlert
-                title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
-              contact an administrator."
-              />
-              <div class="hidden">{e}</div>
+              <UserToken />
             </div>
-          {/await}
+          {/if}
+          <AnalysisPlatformLinks />
         {:catch e}
           <div class="flex justify-center">
             <ErrorAlert
-              title="An error occurred while saving your dataset. Please try again. If this problem persists, please
+              title="An error occurred while preparing your dataset. Please try again. If this problem persists, please
             contact an administrator."
             />
             <div class="hidden">{e}</div>
           </div>
         {/await}
-      </section>
-    </Step>
-  {/if}
+      {:catch e}
+        <div class="flex justify-center">
+          <ErrorAlert
+            title="An error occurred while saving your dataset. Please try again. If this problem persists, please
+          contact an administrator."
+          />
+          <div class="hidden">{e}</div>
+        </div>
+      {/await}
+    </section>
+  </Step>
 </Stepper>

@@ -40,9 +40,6 @@
   let checkingSampleIds = $state(false);
 
   onMount(async () => {
-    console.log('onMount', activeRows);
-    console.log('rows', rows);
-    console.log('columns', columns);
     const exportedSampleIds = $exports.filter((e: ExportInterface) =>
       e.conceptPath.includes('SAMPLE_ID'),
     );

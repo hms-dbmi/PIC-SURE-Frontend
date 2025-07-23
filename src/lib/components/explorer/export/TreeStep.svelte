@@ -17,7 +17,7 @@
       }
       return node.children.flatMap(getAllLeaves);
     }
-    
+
     const leaves = getAllLeaves(treeNodes);
     if (leaves.length === 1 && leaves[0].conceptPath === conceptPath) {
       return [];
@@ -33,8 +33,6 @@
   const unselectNode = (value: string) => {
     removeConcept(value);
   };
-
-  $inspect(selectedConcepts);
 </script>
 
 <section class="flex flex-col w-full h-full items-center">
