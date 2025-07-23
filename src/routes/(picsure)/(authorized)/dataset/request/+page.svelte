@@ -32,6 +32,8 @@
   let approved: string | null = $state(null); // As a date string
   let requesterEmail: string | undefined = $state(undefined);
   let datasetStorageLocation: string | undefined = $state(undefined);
+  let errorFromSearch: string | undefined = $state(undefined);
+  let errorFromApprove: string | undefined = $state(undefined);
   let selectedSite: string | undefined = $state(undefined);
   let isDataSent: boolean = $state(false);
   let isRefreshing: boolean = $state(false);
@@ -53,20 +55,36 @@
   );
 
   async function search() {
+    approved = null;
+    errorFromSearch = undefined;
+    try {
     statusPromise = getDatasetStatus(datasetId).then((status) => {
+      if (status === null || status === undefined || String(status) === '') {
+        errorFromSearch = "We couldn't find any matching results. Please check to ensure the information you have entered is correct or try searching for a different Dataset Request ID.";
+      }
       if (status && status.approved) {
         approved = status.approved;
       }
-      return status;
-    });
+        return status;
+      });
+    } catch (error) {
+      errorFromSearch = `Error searching for dataset: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    }
 
+    try {
     metadata = await searchForDataset(datasetId);
+    if (metadata === null || metadata === undefined) {
+      errorFromSearch = 'Dataset did not return any metadata';
+    }
     if (metadata && metadata.resultMetadata) {
       if (metadata.resultMetadata.queryJson) {
         query = metadata.resultMetadata.queryJson.query as QueryInterface;
         requesterEmail = metadata.resultMetadata.queryJson.requesterEmail;
         datasetStorageLocation = metadata.resultMetadata.queryJson.commonAreaUUID;
       }
+    }
+    } catch (error) {
+      errorFromSearch = `Error searching for dataset metadata: ${error instanceof Error ? error.message : 'Unknown error'}`;
     }
     return {
       approved,
@@ -96,8 +114,13 @@
   }
 
   async function approve() {
-    if (approved) {
-      return approveDataset(datasetId, approved);
+    errorFromApprove = undefined;
+    try {
+      if (approved) {
+        return approveDataset(datasetId, approved);
+      }
+    } catch (error) {
+      errorFromApprove = `Error approving dataset: ${error instanceof Error ? error.message : 'Unknown error'}`;
     }
   }
 
@@ -180,11 +203,10 @@
 </svelte:head>
 
 <Content title="Data Requests">
-  <Step step={1} title="Search for Dataset Request ID" active={isSearchActive} showLine>
+  <Step step={1} title="Search for Dataset ID" active={isSearchActive} showLine>
     <div class="flex flex-col items-center gap-3 mt-2 p-4 rounded bg-surface-100">
       <p>
-        This should have some text about what this id is and what it is used for, how to find it,
-        etc.
+        {branding.datasetRequestPage.searchIntro || 'Search for a dataset request ID to continue.'}
       </p>
       <div class="flex flex-row items-start gap-3">
         <label class="label required flex flex-row items-center w-fit" for="dataset-id">
@@ -209,6 +231,11 @@
           <span>Search</span>
         </button>
       </div>
+      {#if errorFromSearch}
+      <div class="flex flex-row items-center gap-3">
+        <p class="text-error-500">{errorFromSearch}</p>
+      </div>
+      {/if}
     </div>
   </Step>
   <Step
@@ -227,8 +254,8 @@
             </label>
           </div>
           <div class="flex flex-row gap-2 mb-2">
-            <label class="label flex flex-row items-center gap-2" for="requester">
-              <span class="font-bold">Data Storage Location:</span>
+            <label class="label" for="storage-location">
+              <span class="font-bold">Storage Location:</span>
               <span>{datasetStorageLocation}</span>
             </label>
           </div>
@@ -263,6 +290,11 @@
           </label>
         </GridCell>
       </Grid>
+      {#if errorFromApprove}
+        <div class="flex flex-row items-center gap-3">
+          <p class="text-error-500">{errorFromApprove}</p>
+        </div>
+      {/if}
     </div>
   </Step>
   <Step

@@ -76,6 +76,10 @@ export interface ResultsConfig {
   cohortDescription: string;
 }
 
+export interface DatasetRequestPageConfig {
+  searchIntro: string;
+}
+
 export interface LoginConfig {
   description: string;
   showSiteName: boolean;

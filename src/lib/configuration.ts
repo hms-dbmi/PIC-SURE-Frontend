@@ -15,6 +15,7 @@ import type {
   PrivacyConfig,
   AnalysisConfig,
   CollaborateConfig,
+  DatasetRequestPageConfig,
 } from './types';
 import type { StatField } from '$lib/models/Stat';
 
@@ -37,6 +38,7 @@ export interface Branding {
   explorePage: ExplorePageConfig;
   landing: LandingConfig;
   results: ResultsConfig;
+  datasetRequestPage: DatasetRequestPageConfig;
   login: LoginConfig;
   help: HelpConfig;
   privacyPolicy: PrivacyConfig;
@@ -60,6 +62,7 @@ export const branding: Branding = {
     tourSearchTerm: import.meta.env?.EXPLORE_TOUR_SEARCH_TERM || 'age',
   } as ExplorePageConfig,
   landing: {} as LandingConfig,
+  datasetRequestPage: {} as DatasetRequestPageConfig,
   results: {} as ResultsConfig,
   login: {} as LoginConfig,
   help: {} as HelpConfig,
@@ -87,6 +90,7 @@ export const initializeBranding = () => {
   branding.statFields = configJson.statFields;
   branding.landing = configJson.landing;
   branding.results = configJson.results;
+  branding.datasetRequestPage = configJson.datasetRequestPage;
   branding.login = configJson.login;
   branding.help = configJson.help;
   branding.footer = configJson.footer;
