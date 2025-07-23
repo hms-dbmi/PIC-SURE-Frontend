@@ -14,13 +14,18 @@
     query: QueryRequestInterface;
     datasetId: string;
     datasetNameInput: string;
+    saveable: boolean;
   }
 
-  let { query, datasetId, datasetNameInput = $bindable() }: Props = $props();
-  let loadingStatuses = $state(true);
+  let { query, datasetId = $bindable(), datasetNameInput = $bindable(), saveable = $bindable() }: Props = $props();
   let federatedQueryResponses: Record<string, string> = $state({});
+  let federatedQueryStatusesPromises: Promise<void>[] = $state([]);
 
   async function createCommonAreaUUID() {
+    if ($commonAreaUUID) {
+      datasetId = $commonAreaUUID;
+      return;
+    }
     const uuidQuery = new Query();
     const uuidQueryRequest: QueryRequestInterface = {
       query: uuidQuery,
@@ -29,6 +34,7 @@
     return api.post(Picsure.Query, uuidQueryRequest).then((res: { picsureResultId: string }) => {
       const commonAreaDatasetId = res.picsureResultId || undefined;
       commonAreaUUID.set(commonAreaDatasetId);
+      datasetId = commonAreaDatasetId || '';
       query.commonAreaUUID = commonAreaDatasetId;
     });
   }
@@ -81,22 +87,23 @@
 
   onMount(async () => {
     await loadResources();
-    loadingStatuses = true;
     await createCommonAreaUUID();
+    
     datasetId = $commonAreaUUID || '';
     await callInstituteNodes();
-    Object.entries(federatedQueryResponses).forEach(([resourceName, uuid]) => {
-      queryStatus(resourceName, uuid);
+    Object.entries(federatedQueryResponses).map(async ([resourceName, uuid]) => {
+      federatedQueryStatusesPromises.push(queryStatus(resourceName, uuid));
     });
-    loadingStatuses = false;
   });
 </script>
 
 <section class="flex flex-col w-full h-full items-center">
   <Summary />
-  {#if loadingStatuses}
-    <Loading ring />
-  {:else}
+  {#await Promise.all(federatedQueryStatusesPromises).then(() => {
+    saveable = true;
+  })}
+    <Loading ring size="medium" label="Preparing datasets..." />
+  {:then}
     <div class="w-full h-full m-2 card p-4">
       <header class="card-header">
         Common Area Save the information in your final data export by clicking the Save Dataset ID
@@ -130,5 +137,5 @@
         </div>
       </div>
     </div>
-  {/if}
+  {/await}
 </section>
