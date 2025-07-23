@@ -166,6 +166,8 @@
     isRefreshing = false;
     isReviewActive = false;
     isSearchActive = true;
+    errorFromSearch = undefined;
+    errorFromApprove = undefined;
   }
 
   $effect(() => {
@@ -316,6 +318,7 @@
           <select
             id="selected-site"
             data-testid="selected-site"
+            style="background-color: white;"
             class="select bg-surface-50"
             bind:value={selectedSite}
             disabled={isDataSent}
