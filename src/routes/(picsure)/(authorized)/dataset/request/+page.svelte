@@ -59,10 +59,10 @@
     errorFromSearch = undefined;
     searched = true;
     try {
-    statusPromise = getDatasetStatus(datasetId).then((status) => {
-      if (status && status.approved) {
-        approved = status.approved;
-      }
+      statusPromise = getDatasetStatus(datasetId).then((status) => {
+        if (status && status.approved) {
+          approved = status.approved;
+        }
         return status;
       });
     } catch (error) {
@@ -70,17 +70,18 @@
     }
 
     try {
-    metadata = await searchForDataset(datasetId);
-    if (metadata === null || metadata === undefined) {
-      errorFromSearch = "We couldn't find any matching results. Please check to ensure the information you have entered is correct or try searching for a different Dataset Request ID.";
-    }
-    if (metadata && metadata.resultMetadata) {
-      if (metadata.resultMetadata.queryJson) {
-        query = metadata.resultMetadata.queryJson.query as QueryInterface;
-        requesterEmail = metadata.resultMetadata.queryJson.requesterEmail;
-        datasetStorageLocation = metadata.resultMetadata.queryJson.commonAreaUUID;
+      metadata = await searchForDataset(datasetId);
+      if (metadata === null || metadata === undefined) {
+        errorFromSearch =
+          "We couldn't find any matching results. Please check to ensure the information you have entered is correct or try searching for a different Dataset Request ID.";
       }
-    }
+      if (metadata && metadata.resultMetadata) {
+        if (metadata.resultMetadata.queryJson) {
+          query = metadata.resultMetadata.queryJson.query as QueryInterface;
+          requesterEmail = metadata.resultMetadata.queryJson.requesterEmail;
+          datasetStorageLocation = metadata.resultMetadata.queryJson.commonAreaUUID;
+        }
+      }
     } catch (error) {
       errorFromSearch = `Error searching for dataset metadata: ${error instanceof Error ? error.message : 'Unknown error'}`;
     }
@@ -207,7 +208,9 @@
   <Step step={1} title="Search for Dataset ID" active={isSearchActive} showLine>
     <div class="flex flex-col items-center gap-3 mt-2 p-4 rounded bg-surface-100">
       <p>
-        {@html branding.datasetRequestPage.searchIntro || 'Search for a dataset request ID to continue.'}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+        {@html branding.datasetRequestPage.searchIntro ||
+          'Search for a dataset request ID to continue.'}
       </p>
       <div class="flex flex-row items-start gap-3">
         <label class="label required flex flex-row items-center w-fit" for="dataset-id">
@@ -233,9 +236,9 @@
         </button>
       </div>
       {#if errorFromSearch}
-      <div class="flex flex-row items-center gap-3">
-        <p class="text-error-500">{errorFromSearch}</p>
-      </div>
+        <div class="flex flex-row items-center gap-3">
+          <p class="text-error-500">{errorFromSearch}</p>
+        </div>
       {/if}
     </div>
   </Step>
