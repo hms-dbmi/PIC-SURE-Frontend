@@ -80,6 +80,7 @@
   <div
     bind:this={floating.elements.floating}
     class="popover"
+    aria-label={title || 'Help popover'}
     style="background-color: var(--color-{color}-100); opacity: 0.90;{floating.floatingStyles}"
     {...interactions.getFloatingProps()}
     data-testid={testid}

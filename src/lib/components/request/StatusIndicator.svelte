@@ -28,7 +28,7 @@
 </script>
 
 <div class="flex flex-row items-center gap-2">
-  <i class={`${getStatusIcon()} flex-none`}></i>
+  <i class={`${getStatusIcon()} flex-none`} title={status}></i>
   <span>{label}</span>
 </div>
 
