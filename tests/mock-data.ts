@@ -1384,6 +1384,9 @@ export const metadata = {
         expectedResultType: 'DATAFRAME',
       },
       resourceUUID: 'r1234',
+      requesterEmail: 'Example@example.com',
+      institutionOfOrigin: 'Unknown',
+      commonAreaUUID: '1234',
     },
   },
 };

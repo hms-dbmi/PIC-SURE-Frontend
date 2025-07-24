@@ -12,7 +12,7 @@ const debounceTime = 1020;
 
 const validateUUIDMessage = /([Pp]lease )?[Mm]atch the requested format.?/;
 
-test.use({ storageState: 'tests/.auth/adminUser.json' });
+test.use({ storageState: 'tests/.auth/dataUser.json' });
 
 test.describe('data requests', () => {
   test.beforeEach(async ({ context }) => {
@@ -21,21 +21,21 @@ test.describe('data requests', () => {
   test.describe('step 1', () => {
     test('Should load step 1 on landing', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
 
       // Then
       await expect(page.getByTestId('v-stepper-step-1')).toBeVisible();
     });
     test('Should be active step', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
 
       // Then
       await expect(page.getByTestId('v-stepper-step-1')).toHaveAttribute('aria-current', 'step');
     });
     test('Should validate uuid provided', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
 
       // When
       await page.getByLabel('Dataset Id').fill('cvfbfbd');
@@ -49,8 +49,9 @@ test.describe('data requests', () => {
     test('Should not advance to step 2 when api status request fails', async ({ page }) => {
       // Given
       await mockApiFail(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, 'failed');
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
       // Then
@@ -61,8 +62,9 @@ test.describe('data requests', () => {
       // Given
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
       await mockApiFail(page, `*/**/picsure/query/${dummyUuid}/metadata`, 'failed');
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
       // Then
@@ -72,27 +74,48 @@ test.describe('data requests', () => {
     test('Should populate error if status fails', async ({ page }) => {
       // Given
       await mockApiFail(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, 'failed');
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
-
-      // Then
-      const toast = page.getByTestId('toast-root');
-      await expect(toast).toBeVisible();
-      await expect(toast).toHaveAttribute('data-type', 'error');
     });
     test('Should populate error if metadata fails', async ({ page }) => {
       // Given
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
       await mockApiFail(page, `*/**/picsure/query/${dummyUuid}/metadata`, 'failed');
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
       // Then
-      const toast = page.getByTestId('toast-root');
-      await expect(toast).toBeVisible();
-      await expect(toast).toHaveAttribute('data-type', 'error');
+      await expect(page.getByTestId('error-from-search')).toBeVisible();
+    });
+    test('Should populate error if metadata fails with expected text', async ({ page }) => {
+      // Given
+      await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
+      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, {
+        status: 'UNSENT',
+        resourceID: 'abc',
+        resourceStatus: null,
+        picsureResultId: dummyUuid,
+        resourceResultId: dummyUuid,
+        resultMetadata: null,
+        sizeInBytes: 0,
+        startTime: 1752624000000,
+        duration: 0,
+        expiration: 0,
+      });
+      await page.goto('/dataset/request');
+      await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
+      await page.waitForTimeout(debounceTime); // Wait for debounce
+
+      // Then
+      await expect(page.getByTestId('error-from-search')).toBeVisible();
+      await expect(page.getByTestId('error-from-search')).toContainText(
+        "We couldn't find any matching results. Please check to ensure the information you have entered is correct or try searching for a different Dataset Request ID.",
+      );
     });
   });
   test.describe('step 2', () => {
@@ -102,10 +125,11 @@ test.describe('data requests', () => {
     });
     test('Should load step 2 when valid uuid provided', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
 
       // When
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
       // Then
@@ -113,8 +137,9 @@ test.describe('data requests', () => {
     });
     test('Should be active step', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
       // Then
@@ -123,8 +148,9 @@ test.describe('data requests', () => {
     });
     test('Should show data request summary modal', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
       // When
@@ -151,8 +177,9 @@ test.describe('data requests', () => {
     });
     test('Should load step 3 when approval date is provided', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
       // When
@@ -164,8 +191,9 @@ test.describe('data requests', () => {
     });
     test('Should be active step', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
 
       // When
@@ -176,54 +204,52 @@ test.describe('data requests', () => {
     });
     test('Should show Data Storage Location info modal', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await expect(page.getByTestId('v-stepper-step-2')).toBeVisible();
       await page.getByLabel('Date approved').fill(dummyDate);
 
       // When
-      await page.getByTestId('data-loc-modal-btn').click();
-
+      await page.getByTestId('data-loc-modal').click();
+      await page.waitForTimeout(debounceTime);
       // Then
-      const modal = page.locator('#modal-component');
-      await expect(modal).toBeVisible();
-      await expect(modal.getByTestId('modal-wrapper-header')).toContainText(
-        'Data Storage Location',
-      );
+      await expect(page.getByTestId('data-loc-modal-content')).toBeVisible();
     });
-    test('Should pre-select home site in options', async ({ page }) => {
+    test('Should show placeholder as default value', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
 
       // Then
-      await expect(page.getByTestId('selected-site')).toHaveValue(mockSites.homeSite);
+      await expect(page.getByTestId('selected-site')).toHaveValue('');
+      await expect(page.getByTestId('selected-site')).toContainText('Select a site');
       await expect(page.getByTestId('selected-site').getByRole('option')).toHaveCount(
-        mockSites.sites.length,
+        mockSites.sites.length + 1,
       );
     });
     test('Should show data types modal', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
 
       // When
-      await page.getByTestId('data-type-modal-btn').click();
-
+      await page.getByTestId('data-type-modal').click();
       // Then
-      const modal = page.locator('#modal-component');
-      await expect(modal).toBeVisible();
-      await expect(modal.getByTestId('modal-wrapper-header')).toContainText('Data Types');
+      await expect(page.getByTestId('data-type-modal-content')).toBeVisible();
     });
     test('Should not allow send data button click if no data type selected', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
 
@@ -232,11 +258,14 @@ test.describe('data requests', () => {
     });
     test('Should allow send data button on geno or pheno data selection', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await expect(page.getByTestId('v-stepper-step-2')).toBeVisible();
       await page.getByLabel('Date approved').fill(dummyDate);
+      await page.getByTestId('selected-site').click();
+      await page.getByTestId('selected-site').selectOption(mockSites.sites[0]);
 
       // Then
       await page.getByTestId('data-geno-checkbox').check();
@@ -244,13 +273,16 @@ test.describe('data requests', () => {
     });
     test('Should ask user to confirm on send data button press', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
-      await page.getByTestId('data-pheno-checkbox').check();
 
       // When
+      await page.getByTestId('selected-site').click();
+      await page.getByTestId('selected-site').selectOption(mockSites.sites[0]);
+      await page.getByTestId('data-pheno-checkbox').check();
       await page.getByTestId('send-data-btn').click();
 
       // Then
@@ -260,13 +292,16 @@ test.describe('data requests', () => {
     });
     test('Should show default status Unsent', async ({ page }) => {
       // Given
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
 
       // Then
-      await expect(page.getByTestId('status-pheno')).toContainText('Unsent');
+      await expect(
+        page.getByTestId('status-indicator-phenotypic-data').getByTestId('status-indicator-icon'),
+      ).toHaveAttribute('title', 'Unsent');
     });
     test('Should update values on status refresh', async ({ page }) => {
       // Given
@@ -280,10 +315,13 @@ test.describe('data requests', () => {
           phenotypic: 'Querying',
         },
       );
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
+      await page.getByTestId('selected-site').click();
+      await page.getByTestId('selected-site').selectOption(mockSites.sites[0]);
       await page.getByTestId('data-pheno-checkbox').check();
       await page.getByTestId('send-data-btn').click();
       await page.getByTestId('send-data-modal-confirm-btn').click();
@@ -296,7 +334,9 @@ test.describe('data requests', () => {
       await page.getByTestId('status-refresh-btn').click();
 
       // Then
-      await expect(page.getByTestId('status-pheno')).toContainText('Upload Successful');
+      await expect(
+        page.getByTestId('status-indicator-phenotypic-data').getByTestId('status-indicator-icon'),
+      ).toHaveAttribute('title', 'Uploaded');
     });
     test('Should allow send data button when new type selected on previous send', async ({
       page,
@@ -312,10 +352,13 @@ test.describe('data requests', () => {
           phenotypic: 'Querying',
         },
       );
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
+      await page.getByTestId('selected-site').click();
+      await page.getByTestId('selected-site').selectOption(mockSites.sites[0]);
       await page.getByTestId('data-pheno-checkbox').check();
       await page.getByTestId('send-data-btn').click();
       await page.getByTestId('send-data-remember-checkbox').check();
@@ -350,10 +393,13 @@ test.describe('data requests', () => {
           genomic: 'Querying',
         },
       );
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
+      await page.getByTestId('selected-site').click();
+      await page.getByTestId('selected-site').selectOption(mockSites.sites[0]);
       await page.getByTestId('data-pheno-checkbox').check();
       await page.getByTestId('send-data-btn').click();
       await page.getByTestId('send-data-remember-checkbox').check();
@@ -391,10 +437,13 @@ test.describe('data requests', () => {
           genomic: 'Querying',
         },
       );
-      await page.goto('/dataset/requests');
+      await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+      await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
       await page.getByLabel('Date approved').fill(dummyDate);
+      await page.getByTestId('selected-site').click();
+      await page.getByTestId('selected-site').selectOption(mockSites.sites[0]);
       await page.getByTestId('data-pheno-checkbox').check();
       await page.getByTestId('data-geno-checkbox').check();
 
@@ -417,10 +466,11 @@ test.describe('data requests', () => {
       genomic: 'Error',
     });
     await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
-    await page.goto('/dataset/requests');
+    await page.goto('/dataset/request');
 
     // When
     await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+    await page.getByTestId('search-dataset-btn').click();
     await page.waitForTimeout(debounceTime); // Wait for debounce
 
     // Then
@@ -428,13 +478,16 @@ test.describe('data requests', () => {
     await expect(page.getByTestId('v-stepper-step-1')).not.toHaveAttribute('aria-current', 'step');
     await expect(page.getByTestId('v-stepper-step-2')).toBeVisible();
     await expect(page.getByTestId('v-stepper-step-2')).not.toHaveAttribute('aria-current', 'step');
-    await expect(page.getByTestId('data-approved-date')).not.toBeEnabled();
     await expect(page.getByTestId('v-stepper-step-3')).toBeVisible();
     await expect(page.getByTestId('v-stepper-step-3')).toHaveAttribute('aria-current', 'step');
     await expect(page.getByTestId('selected-site')).toHaveValue(mockSites.sites[1]);
     await expect(page.getByTestId('data-geno-checkbox')).toBeChecked();
     await expect(page.getByTestId('send-data-btn')).not.toBeEnabled();
-    await expect(page.getByTestId('status-geno')).toContainText('Upload Failed');
+    await expect(
+      page
+        .getByTestId('status-indicator-annotated-variant-data-for-selected-genes')
+        .getByTestId('status-indicator-icon'),
+    ).toHaveAttribute('title', 'Error');
   });
   test('Should reset back to step 1 on reset button press', async ({ page }) => {
     // Given
@@ -445,8 +498,9 @@ test.describe('data requests', () => {
       genomic: 'Error',
     });
     await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
-    await page.goto('/dataset/requests');
+    await page.goto('/dataset/request');
     await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
+    await page.getByTestId('search-dataset-btn').click();
     await page.waitForTimeout(debounceTime); // Wait for debounce
 
     // When

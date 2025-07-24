@@ -46,13 +46,37 @@
     phenotypic: false,
     patient: false,
   });
+  let sentSelections: { site: string | undefined; dataType: DataType } | null = $state(null);
   const summaryModalOpen = $state(false);
   let isSearchActive = $derived(errorFromSearch || !searched);
   let isReviewActive = $derived(approved === null);
   let enableCheckboxes = $derived(selectedSite !== undefined && selectedSite !== '');
   let sendEnabled = $derived(
-    enableCheckboxes && (dataType.phenotypic || dataType.genomic || dataType.patient),
+    enableCheckboxes &&
+      (dataType.phenotypic || dataType.genomic || dataType.patient) &&
+      !isDataSent,
   );
+
+  function updateStateFromInitialStatus(status: Status) {
+    if (status) {
+      dataType = {
+        genomic: status.genomic !== undefined && status.genomic !== UploadStatus.Unsent,
+        phenotypic:
+          status.phenotypic !== undefined && status.phenotypic !== UploadStatus.Unsent,
+        patient: status.patient !== undefined && status.patient !== UploadStatus.Unsent,
+      };
+      if (
+        (status.genomic !== undefined && status.genomic !== UploadStatus.Unsent) ||
+        (status.phenotypic !== undefined && status.phenotypic !== UploadStatus.Unsent) ||
+        (status.patient !== undefined && status.patient !== UploadStatus.Unsent)
+      ) {
+        isDataSent = true;
+      }
+      statusPromise = Promise.resolve(status);
+      approved = status.approved;
+      selectedSite = status.site;
+    }
+  }
 
   async function search() {
     approved = null;
@@ -60,27 +84,25 @@
     searched = true;
     try {
       statusPromise = getDatasetStatus(datasetId).then((status) => {
-        if (status && status.approved) {
-          approved = status.approved;
-        }
+        updateStateFromInitialStatus(status);
         return status;
       });
     } catch (error) {
       errorFromSearch = `Error searching for dataset: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      return;
     }
 
     try {
       metadata = await searchForDataset(datasetId);
-      if (metadata === null || metadata === undefined) {
+      if (!metadata || !metadata.resultMetadata || !metadata.resultMetadata.queryJson) {
         errorFromSearch =
           "We couldn't find any matching results. Please check to ensure the information you have entered is correct or try searching for a different Dataset Request ID.";
+        return;
       }
-      if (metadata && metadata.resultMetadata) {
-        if (metadata.resultMetadata.queryJson) {
-          query = metadata.resultMetadata.queryJson.query as QueryInterface;
-          requesterEmail = metadata.resultMetadata.queryJson.requesterEmail;
-          datasetStorageLocation = metadata.resultMetadata.queryJson.commonAreaUUID;
-        }
+      if (metadata.resultMetadata.queryJson) {
+        query = metadata.resultMetadata.queryJson.query as QueryInterface;
+        requesterEmail = metadata.resultMetadata.queryJson.requesterEmail;
+        datasetStorageLocation = metadata.resultMetadata.queryJson.commonAreaUUID;
       }
     } catch (error) {
       errorFromSearch = `Error searching for dataset metadata: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -143,6 +165,12 @@
           throw error;
         }
       }
+      // Save the selections that were used for sending data
+      sentSelections = {
+        site: selectedSite,
+        dataType: { ...dataType },
+      };
+      isDataSent = true;
       statusPromise = updatedStatus; // Makes status refreshable
       return finalStatus;
     })();
@@ -168,6 +196,7 @@
     isSearchActive = true;
     errorFromSearch = undefined;
     errorFromApprove = undefined;
+    sentSelections = null;
   }
 
   $effect(() => {
@@ -193,6 +222,20 @@
       .catch(() => {
         isComplete = false;
       });
+  });
+
+  $effect(() => {
+    if (isDataSent && sentSelections) {
+      const selectionsChanged =
+        selectedSite !== sentSelections.site ||
+        dataType.genomic !== sentSelections.dataType.genomic ||
+        dataType.phenotypic !== sentSelections.dataType.phenotypic ||
+        dataType.patient !== sentSelections.dataType.patient;
+
+      if (selectionsChanged) {
+        isDataSent = false;
+      }
+    }
   });
 
   onMount(async () => {
@@ -237,7 +280,7 @@
       </div>
       {#if errorFromSearch}
         <div class="flex flex-row items-center gap-3">
-          <p class="text-error-500">{errorFromSearch}</p>
+          <p class="text-error-500" data-testid="error-from-search">{errorFromSearch}</p>
         </div>
       {/if}
     </div>
@@ -296,7 +339,7 @@
       </Grid>
       {#if errorFromApprove}
         <div class="flex flex-row items-center gap-3">
-          <p class="text-error-500">{errorFromApprove}</p>
+          <p class="text-error-500" data-testid="error-from-approve">{errorFromApprove}</p>
         </div>
       {/if}
     </div>
