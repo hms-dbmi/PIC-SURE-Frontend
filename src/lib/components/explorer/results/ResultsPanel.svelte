@@ -55,9 +55,7 @@
     isExplorer && features.explorer.variantExplorer && $hasGenomicFilter,
   );
 
-  let showCohortDetails = $derived(
-    isExplorer && features.explorer.enableCohortDetails && $hasNonZeroResult,
-  );
+  let showCohortDetails = $derived(isExplorer && features.explorer.enableCohortDetails);
 
   let showToolSuite = $derived(
     ($filters.length !== 0 || $exports.length !== 0) &&
