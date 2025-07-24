@@ -35,6 +35,7 @@
   let errorFromSearch: string | undefined = $state(undefined);
   let errorFromApprove: string | undefined = $state(undefined);
   let selectedSite: string | undefined = $state(undefined);
+  let searched: boolean = $state(false);
   let isDataSent: boolean = $state(false);
   let isRefreshing: boolean = $state(false);
   let isComplete: boolean = $state(false);
@@ -46,8 +47,7 @@
     patient: false,
   });
   const summaryModalOpen = $state(false);
-
-  let isSearchActive = $derived(!datasetId || datasetId.trim() === '');
+  let isSearchActive = $derived(errorFromSearch || !searched);
   let isReviewActive = $derived(approved === null);
   let enableCheckboxes = $derived(selectedSite !== undefined && selectedSite !== '');
   let sendEnabled = $derived(
@@ -57,11 +57,9 @@
   async function search() {
     approved = null;
     errorFromSearch = undefined;
+    searched = true;
     try {
     statusPromise = getDatasetStatus(datasetId).then((status) => {
-      if (status === null || status === undefined || String(status) === '') {
-        errorFromSearch = "We couldn't find any matching results. Please check to ensure the information you have entered is correct or try searching for a different Dataset Request ID.";
-      }
       if (status && status.approved) {
         approved = status.approved;
       }
@@ -74,7 +72,7 @@
     try {
     metadata = await searchForDataset(datasetId);
     if (metadata === null || metadata === undefined) {
-      errorFromSearch = 'Dataset did not return any metadata';
+      errorFromSearch = "We couldn't find any matching results. Please check to ensure the information you have entered is correct or try searching for a different Dataset Request ID.";
     }
     if (metadata && metadata.resultMetadata) {
       if (metadata.resultMetadata.queryJson) {
@@ -150,6 +148,7 @@
   }
 
   function reset() {
+    searched = false;
     datasetId = '';
     approved = null;
     metadata = undefined;
@@ -226,7 +225,7 @@
         <button
           type="button"
           class="btn preset-filled-primary-500"
-          disabled={isSearchActive || !datasetId.trim()}
+          disabled={!isSearchActive || !datasetId.trim()}
           data-testid="search-dataset-btn"
           onclick={search}
         >
@@ -384,7 +383,7 @@
           {#await statusPromise}
             <Loading ring />
           {:then statusInfo}
-            <div class="flex flex-col gap-2">
+            <div class="flex flex-col gap-2 text-left">
               <StatusIndicator status={statusInfo?.phenotypic} label="Phenotypic Data" />
               <StatusIndicator
                 status={statusInfo?.genomic}
