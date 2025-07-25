@@ -53,61 +53,63 @@
   }
 </script>
 
-{#if !!trigger}
-  <button
-    data-testid="{testid}-btn"
-    onclick={(e) => {
-      e.stopPropagation();
-      modalOpen = true;
-    }}
-    {disabled}
-    class={triggerBase}
+<div class="inline">
+  {#if !!trigger}
+    <button
+      data-testid="{testid}-btn"
+      onclick={(e) => {
+        e.stopPropagation();
+        modalOpen = true;
+      }}
+      {disabled}
+      class={triggerBase}
+    >
+      {@render trigger?.()}
+    </button>
+  {/if}
+  <Modal
+    open={modalOpen}
+    onOpenChange={(e) => (modalOpen = e.open)}
+    contentBase="card bg-surface-50-950 p-4 pb-6 space-4 shadow-xl overflow-auto max-w-screen {width} max-h-screen {height} {className}"
+    backdropClasses="backdrop-blur-sm"
+    ids={{ content: 'modal-component' }}
   >
-    {@render trigger?.()}
-  </button>
-{/if}
-<Modal
-  open={modalOpen}
-  onOpenChange={(e) => (modalOpen = e.open)}
-  contentBase="card bg-surface-50-950 p-4 pb-6 space-4 shadow-xl overflow-auto max-w-screen {width} max-h-screen {height} {className}"
-  backdropClasses="backdrop-blur-sm"
-  ids={{ content: 'modal-component' }}
->
-  {#snippet content()}
-    <div data-testid={testid}>
-      <header
-        data-testid="modal-wrapper-header"
-        class="text-2xl font-bold block {title ? '' : 'text-right'}"
-      >
-        {#if title}{title}{/if}
-        {#if closeable}<button
-            data-testid="modal-close-button"
-            class="hover:text-secondary-500"
-            class:float-right={title}
-            onclick={modalClose}>×</button
-          >{/if}
-      </header>
-      {#if withDefault}
-        <article class="modal-body max-h-[200px] overflow-hidden">
-          {@render children?.()}
-        </article>
-        {#if footerButtons}
-          <footer class="modal-footer flex justify-end space-x-2 mt-6">
-            <button
-              type="button"
-              class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-              onclick={modalClose}>{cancelText}</button
-            >
-            {#if onconfirm}<button
+    {#snippet content()}
+      <div data-testid={testid}>
+        <header
+          data-testid="modal-wrapper-header"
+          class="text-2xl font-bold block {title ? '' : 'text-right'}"
+        >
+          {#if title}{title}{/if}
+          {#if closeable}<button
+              data-testid="modal-close-button"
+              class="hover:text-secondary-500"
+              class:float-right={title}
+              onclick={modalClose}>×</button
+            >{/if}
+        </header>
+        {#if withDefault}
+          <article class="modal-body max-h-[200px] overflow-hidden">
+            {@render children?.()}
+          </article>
+          {#if footerButtons}
+            <footer class="modal-footer flex justify-end space-x-2 mt-6">
+              <button
                 type="button"
-                class="btn preset-filled-primary-500"
-                onclick={confirm}>{confirmText}</button
-              >{/if}
-          </footer>
+                class="btn border preset-tonal-primary hover:preset-filled-primary-500"
+                onclick={modalClose}>{cancelText}</button
+              >
+              {#if onconfirm}<button
+                  type="button"
+                  class="btn preset-filled-primary-500"
+                  onclick={confirm}>{confirmText}</button
+                >{/if}
+            </footer>
+          {/if}
+        {:else}
+          {@render children?.()}
         {/if}
-      {:else}
-        {@render children?.()}
-      {/if}
-    </div>
-  {/snippet}
-</Modal>
+      </div>
+    {/snippet}
+  </Modal>
+</div>

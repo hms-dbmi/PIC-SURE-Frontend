@@ -8,7 +8,7 @@ import { countResult } from '$lib/utilities/PatientCount';
 import type { StatResult, StatValue } from '$lib/models/Stat';
 import { filters } from '$lib/stores/Filter';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
-import { loading as resourcesPromise } from '$lib/stores/Resources';
+import { loading as resourcesPromise, loadResources } from '$lib/stores/Resources';
 
 const CACHE_MAX_ENTRIES = 100;
 const requestCache: Map<string, StatResult[]> = new Map();
@@ -18,6 +18,7 @@ export const loading: Writable<Promise<void>> = writable(Promise.resolve());
 export const totalParticipants: Writable<number> = writable(0);
 
 export async function loadPatientCount(isOpenAccess: boolean) {
+  loadResources();
   try {
     if (requestCache.size >= CACHE_MAX_ENTRIES) {
       requestCache.clear();
@@ -27,7 +28,7 @@ export async function loadPatientCount(isOpenAccess: boolean) {
       isOpenAccess,
       get(searchTerm),
       get(selectedFacets).map((facet) => facet.name),
-      get(filters).map((filter) => filter.id),
+      get(filters).map(({ uuid }) => uuid),
     ]);
     if (requestCache.has(cacheKey)) {
       resultCounts.set(requestCache.get(cacheKey) as StatResult[]);
