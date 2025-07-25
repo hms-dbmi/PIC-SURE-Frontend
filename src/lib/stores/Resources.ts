@@ -14,6 +14,7 @@ export interface ResourceMap {
   visualization: string;
   application: string;
   aggregate: string;
+  search: string;
   hpdsOpen: string;
   hpdsAuth: string;
   queryable: QueryResource[];
@@ -23,6 +24,9 @@ const defaultResources: ResourceMap = {
   visualization: (import.meta.env?.VITE_RESOURCE_VIZ || '') as string,
   application: (import.meta.env?.VITE_RESOURCE_APP || '') as string,
   aggregate: (import.meta.env?.VITE_RESOURCE_AGGREGATE || '') as string,
+  search: (import.meta.env?.VITE_RESOURCE_SEARCH ||
+    import.meta.env?.VITE_RESOURCE_HPDS ||
+    '') as string,
   hpdsOpen: (import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '') as string,
   hpdsAuth: (import.meta.env?.VITE_RESOURCE_HPDS || '') as string,
   queryable: [],
