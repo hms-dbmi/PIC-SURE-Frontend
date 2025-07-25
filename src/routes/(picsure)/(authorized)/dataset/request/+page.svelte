@@ -61,8 +61,7 @@
     if (status) {
       dataType = {
         genomic: status.genomic !== undefined && status.genomic !== UploadStatus.Unsent,
-        phenotypic:
-          status.phenotypic !== undefined && status.phenotypic !== UploadStatus.Unsent,
+        phenotypic: status.phenotypic !== undefined && status.phenotypic !== UploadStatus.Unsent,
         patient: status.patient !== undefined && status.patient !== UploadStatus.Unsent,
       };
       if (
