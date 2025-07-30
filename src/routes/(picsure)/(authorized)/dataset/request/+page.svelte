@@ -285,12 +285,7 @@
       {/if}
     </div>
   </Step>
-  <Step
-    step={2}
-    title="Review Dataset Request"
-    show={showStep2}
-    active={isReviewActive}
-  >
+  <Step step={2} title="Review Dataset Request" show={showStep2} active={isReviewActive}>
     <div class="p-4 rounded bg-surface-100">
       <Grid columns={2}>
         <GridCell title="View Dataset Information">
