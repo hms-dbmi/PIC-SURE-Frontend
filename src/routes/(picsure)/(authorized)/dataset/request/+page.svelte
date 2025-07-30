@@ -50,6 +50,7 @@
   const summaryModalOpen = $state(false);
   let isSearchActive = $derived(errorFromSearch || !searched);
   let isReviewActive = $derived(approved === null);
+  let showStep2 = $derived(!!datasetId && metadata !== undefined);
   let enableCheckboxes = $derived(selectedSite !== undefined && selectedSite !== '');
   let sendEnabled = $derived(
     enableCheckboxes &&
@@ -287,7 +288,7 @@
   <Step
     step={2}
     title="Review Dataset Request"
-    show={!!datasetId && metadata !== undefined}
+    show={showStep2}
     active={isReviewActive}
   >
     <div class="p-4 rounded bg-surface-100">
@@ -346,7 +347,7 @@
   <Step
     step={3}
     title="Share Patient-Level Data"
-    show={approved !== null}
+    show={showStep2 && approved !== null}
     active={true}
     complete={isComplete}
     isFinal={true}

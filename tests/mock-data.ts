@@ -109,6 +109,7 @@ const mockQueryTemplate: QueryInterface = {
   ],
   expectedResultType: 'COUNT',
   fields: [],
+  anyRecordOfMulti: [],
 };
 
 export const picsureUser: User = {
@@ -1360,7 +1361,7 @@ export const status = {
   genomic: 'Unsent',
   phenotypic: 'Unsent',
   queryId: '1234',
-  approved: '',
+  approved: null,
   site: '',
 };
 
