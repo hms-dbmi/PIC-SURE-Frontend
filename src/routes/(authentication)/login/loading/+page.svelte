@@ -2,42 +2,64 @@
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { features } from '$lib/configuration';
   import type AuthProvider from '$lib/models/AuthProvider';
   import { createInstance } from '$lib/AuthProviderRegistry';
   import { browser } from '$app/environment';
   import { filters } from '$lib/stores/Filter';
   import { panelOpen } from '$lib/stores/SidePanel';
   import Loading from '$lib/components/Loading.svelte';
+  import type { User } from '$lib/models/User';
+  import { login, setToken } from '$lib/stores/User';
 
-  let failed = $state(false);
-  onMount(async () => {
-    panelOpen.set(false);
+  async function attemptUserLogin() {
     let redirectTo = '/';
     let providerType: string | undefined | null;
     if (browser) {
       redirectTo = sessionStorage.getItem('redirect') || '/';
       providerType = sessionStorage.getItem('type');
     }
-    if (!providerType) {
-      failed = true;
-    }
-    redirectTo = !redirectTo ? '/' : redirectTo;
+
     // Retrives the providers from the server's AuthProviderRegistry created via hooks.server.ts
-    const provider = page.data?.providers.find((p: AuthProvider) => p.type === providerType);
+    const provider = providerType
+      ? page.data?.providers.find((p: AuthProvider) => p.type === providerType)
+      : undefined;
     if (!provider) {
-      failed = true;
+      throw new Error('Provider not found');
     }
-    if (!provider || failed) {
-      console.error('Provider not found');
-      goto('/login/error');
-    }
+
     const providerInstance = await createInstance(provider);
     let hashParts = page.url.hash?.split('&') || [];
     if (page.url.search.startsWith('?')) {
       hashParts = page.url.search.substring(1).split('&') || [];
     }
+    if (!hashParts || hashParts.length === 0) {
+      return new Error('Provider configuration error');
+    }
 
-    failed = await providerInstance.authenticate(hashParts);
+    await providerInstance.authenticate(hashParts).then((user: User | undefined) => {
+      if (!user || !user?.token) {
+        throw new Error('User not found');
+      }
+
+      // api returns as string
+      user.acceptedTOS = user.acceptedTOS + '' === 'true';
+      if (features.enforceTermsOfService && !user.acceptedTOS) {
+        setToken(user.token);
+        goto(redirectTo);
+      } else {
+        login(user.token).then(() => goto(redirectTo));
+      }
+    });
+  }
+
+  onMount(async () => {
+    panelOpen.set(false);
+    attemptUserLogin().catch((error) => {
+      console.error('Login Error: ', error);
+      goto('/login/error');
+      return;
+    });
 
     let filtersJson = sessionStorage.getItem('filters');
     if (filtersJson) {
@@ -47,13 +69,9 @@
       // storage to be re-written
       setTimeout(() => sessionStorage.setItem('filters', '[]'), 500);
     }
-
-    goto(failed ? '/login/error' : redirectTo);
   });
 </script>
 
 <section class="w-full h-full flex flex-col justify-center items-center">
-  {#if !failed}
-    <Loading ring size="large" label="Logging you in" />
-  {/if}
+  <Loading ring size="large" label="Logging you in" />
 </section>

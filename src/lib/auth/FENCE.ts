@@ -1,7 +1,6 @@
 import type { AuthData } from '$lib/models/AuthProvider';
 import AuthProvider from '$lib/models/AuthProvider';
 import { browser } from '$app/environment';
-import { login as UserLogin } from '$lib/stores/User';
 import * as api from '$lib/api';
 import type { User } from '$lib/models/User';
 import { Psama } from '$lib/paths';
@@ -24,26 +23,13 @@ class Fence extends AuthProvider implements FenceData {
     this.idp = data.idp;
   }
 
-  //TODO: create real return types
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  authenticate = async (hashParts: string[]): Promise<boolean> => {
+  authenticate = async (hashParts: string[]): Promise<User | undefined> => {
     const responseMap = this.getResponseMap(hashParts);
     const code = responseMap.get('code');
     if (!code) {
-      return true;
+      return undefined;
     }
-    try {
-      const newUser: User = await api.post(`${Psama.Auth}/fence`, { code });
-      if (newUser?.token) {
-        await UserLogin(newUser.token);
-        return false;
-      } else {
-        return true;
-      }
-    } catch (error) {
-      console.error('Login Error: ', error);
-      return true;
-    }
+    return await api.post(`${Psama.Auth}/fence`, { code });
   };
 
   login = async (redirectTo: string, type: string): Promise<void> => {

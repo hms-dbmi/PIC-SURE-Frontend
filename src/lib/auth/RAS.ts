@@ -3,7 +3,6 @@ import type { AuthData } from '$lib/models/AuthProvider';
 import AuthProvider from '$lib/models/AuthProvider';
 import * as api from '$lib/api';
 import type { OktaUser } from '$lib/models/User';
-import { login as UserLogin } from '$lib/stores/User';
 import { Psama } from '$lib/paths';
 
 interface RasData extends AuthData {
@@ -52,7 +51,7 @@ class RAS extends AuthProvider implements RasData {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  authenticate = async (hashParts: string[]): Promise<boolean> => {
+  authenticate = async (hashParts: string[]): Promise<OktaUser | undefined> => {
     const responseMap = this.getResponseMap(hashParts);
     const code = responseMap.get('code');
     const responseState = responseMap.get('state') || '';
@@ -67,22 +66,10 @@ class RAS extends AuthProvider implements RasData {
         ' localState: ',
         localState,
       );
-      return true;
+      return undefined;
     }
 
-    try {
-      const newUser: OktaUser = await api.post(`${Psama.Auth}/ras`, { code });
-      if (newUser?.token) {
-        await UserLogin(newUser.token);
-        newUser.oktaIdToken && localStorage.setItem('oktaIdToken', newUser.oktaIdToken);
-        return false;
-      } else {
-        return true;
-      }
-    } catch (error) {
-      console.error('Login Error: ', error);
-      return true;
-    }
+    return api.post(`${Psama.Auth}/ras`, { code });
   };
 
   login = async (redirectTo: string, type: string): Promise<void> => {

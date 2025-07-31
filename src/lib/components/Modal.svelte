@@ -12,6 +12,8 @@
     footerButtons?: boolean;
     cancelText?: string;
     confirmText?: string;
+    cancelClass?: string;
+    confirmClass?: string;
     disabled?: boolean;
     class?: string;
     triggerBase?: string;
@@ -32,6 +34,8 @@
     footerButtons = true,
     cancelText = 'Cancel',
     confirmText = 'Confirm',
+    cancelClass = 'border preset-tonal-primary hover:preset-filled-primary-500',
+    confirmClass = 'preset-filled-primary-500',
     disabled = false,
     class: className = '',
     triggerBase = '',
@@ -73,6 +77,8 @@
     contentBase="card bg-surface-50-950 p-4 pb-6 space-4 shadow-xl overflow-auto max-w-screen {width} max-h-screen {height} {className}"
     backdropClasses="backdrop-blur-sm"
     ids={{ content: 'modal-component' }}
+    closeOnInteractOutside={closeable}
+    closeOnEscape={closeable}
   >
     {#snippet content()}
       <div data-testid={testid}>
@@ -89,20 +95,16 @@
             >{/if}
         </header>
         {#if withDefault}
-          <article class="modal-body max-h-[200px] overflow-hidden">
+          <article class="modal-body overflow-hidden">
             {@render children?.()}
           </article>
           {#if footerButtons}
             <footer class="modal-footer flex justify-end space-x-2 mt-6">
-              <button
-                type="button"
-                class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-                onclick={modalClose}>{cancelText}</button
+              <button type="button" class="btn {cancelClass}" onclick={modalClose}
+                >{cancelText}</button
               >
-              {#if onconfirm}<button
-                  type="button"
-                  class="btn preset-filled-primary-500"
-                  onclick={confirm}>{confirmText}</button
+              {#if onconfirm}<button type="button" class="btn {confirmClass}" onclick={confirm}
+                  >{confirmText}</button
                 >{/if}
             </footer>
           {/if}

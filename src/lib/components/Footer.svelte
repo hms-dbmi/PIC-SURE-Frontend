@@ -1,19 +1,12 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { branding, features } from '$lib/configuration';
-  import { user } from '$lib/stores/User';
-
+  import { user, isLoggedIn } from '$lib/stores/User';
+  import Terms from '$lib/components/Terms.svelte';
   import Modal from '$lib/components/Modal.svelte';
 
-  // Ideally, this should be a value from the database that has timestamps, author, etc.
-  // For now, the easiest place to find and update the html used here is in the src folder.
-  import Terms from '../../terms.svelte';
-
-  let {
-    showSitemap = branding?.footer?.showSitemap || false,
-  }: {
-    showSitemap?: boolean;
-  } = $props();
+  let { showSitemap = branding?.footer?.showSitemap || false }: { showSitemap?: boolean } =
+    $props();
 
   let hideSitemap = $derived(
     !showSitemap ||
@@ -30,7 +23,7 @@
     })),
   );
 
-  let modalOpen = $state(false);
+  let modalOpen = $state(features.enforceTermsOfService && $isLoggedIn && !$user.acceptedTOS);
 </script>
 
 {#if !hideSitemap && branding?.sitemap?.length > 0}
@@ -63,20 +56,18 @@
       <li>
         <Modal
           bind:open={modalOpen}
+          data-testid="terms-of-service"
           width="w-3/4"
           height="h-full"
+          triggerBase="hover:underline text-[0.74rem]"
           withDefault={false}
           footerButtons={false}
-          triggerBase="hover:underline text-[0.74rem]"
+          closeable={!features.enforceTermsOfService ||
+            !$isLoggedIn ||
+            ($isLoggedIn && $user.acceptedTOS)}
         >
           {#snippet trigger()}Terms of Service{/snippet}
-          <div id="terms-of-service"><Terms /></div>
-          <div class="text-right">
-            <button
-              class="btn preset-filled-primary-500 hover:preset-filled-secondary-500"
-              onclick={() => (modalOpen = false)}>Accept</button
-            >
-          </div>
+          <Terms bind:modalOpen />
         </Modal>
       </li>
     {/if}
