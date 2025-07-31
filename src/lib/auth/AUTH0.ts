@@ -1,7 +1,6 @@
 import type { AuthData } from '$lib/models/AuthProvider';
 import AuthProvider from '$lib/models/AuthProvider';
 import { browser } from '$app/environment';
-import { login as UserLogin } from '$lib/stores/User';
 import type { User } from '$lib/models/User';
 import * as api from '$lib/api';
 import auth0 from 'auth0-js';
@@ -23,32 +22,17 @@ class Auth0 extends AuthProvider implements Auth0Data {
     this.connection = data.connection;
   }
 
-  //TODO: create real return types
-  authenticate = async (hashParts: string[]): Promise<boolean> => {
-    if (!hashParts || hashParts.length === 0) {
-      return true;
-    }
+  authenticate = async (hashParts: string[]): Promise<User | undefined> => {
     const responseMap = this.getResponseMap(hashParts);
     const token = responseMap.get('#access_token');
     if (browser && token) {
       const redirectURI = this.getRedirectURI();
-      try {
-        const newUser: User = await api.post(`${Psama.Auth}/auth0`, {
-          access_token: token,
-          redirectURI: redirectURI,
-        });
-        if (newUser?.token) {
-          await UserLogin(newUser.token);
-          return false;
-        } else {
-          return true;
-        }
-      } catch (error) {
-        console.error('Login Error: ', error);
-        return true;
-      }
+      return api.post(`${Psama.Auth}/auth0`, {
+        access_token: token,
+        redirectURI: redirectURI,
+      });
     }
-    return true;
+    return undefined;
   };
 
   login = async (redirectTo: string, type: string): Promise<void> => {

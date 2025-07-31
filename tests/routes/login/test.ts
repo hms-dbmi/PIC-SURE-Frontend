@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test } from '../../custom-context';
+import { test, mockHTMLBodySuccess } from '../../custom-context';
 import * as config from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
 import type { Branding } from '$lib/configuration';
 //TypeScript is confused by the JSON import so I am fxing it here
@@ -166,42 +166,29 @@ test.describe('Login page', () => {
     }
   });
   for (const providerName of enabledProviders) {
+    const providerUrl: { [key: string]: string | undefined } = {
+      AUTH0: 'https://avillachlab.auth0.com/',
+      RAS: process.env.VITE_AUTH_PROVIDER_MODULE_RAS_URI,
+      FENCE: process.env.VITE_AUTH_PROVIDER_MODULE_FENCE_URI,
+    };
     test(`Clicking the ${providerName} login button opens the idp login page`, async ({ page }) => {
+      const url = providerUrl[providerName];
+      if (!url) {
+        throw new Error(providerName + ' not set in .env');
+      }
+      const urlMatcher = RegExp('^' + url);
+
       // Given
+      mockHTMLBodySuccess(page, urlMatcher, '<h1>Some IDP Login Page</h1>');
       await page.goto('/login');
 
       // When
       const testId = `login-button-${providerName.toLowerCase()}`;
       const loginButton = page.getByTestId(testId);
       await loginButton.click();
+
       // Then
-      switch (providerName) {
-        case 'AUTH0': {
-          await expect(page).toHaveURL(/avillachlab.auth0.com/);
-          break;
-        }
-        case 'RAS': {
-          const rasUrl = process.env.VITE_AUTH_PROVIDER_MODULE_RAS_URI;
-          if (!rasUrl) {
-            throw new Error('RAS_URL not set in .env');
-          }
-          const rasUrlRegex = RegExp('^' + rasUrl);
-          await expect(page).toHaveURL(rasUrlRegex);
-          break;
-        }
-        case 'FENCE': {
-          const fenceUrl = process.env.VITE_AUTH_PROVIDER_MODULE_FENCE_URI;
-          if (!fenceUrl) {
-            throw new Error('FENCE_URL not set in .env');
-          }
-          const fenceUrlRegex = RegExp('^' + fenceUrl);
-          await expect(page).toHaveURL(fenceUrlRegex);
-          break;
-        }
-        default: {
-          throw new Error('Unknown provider');
-        }
-      }
+      await expect(page).toHaveURL(urlMatcher);
     });
   }
 });

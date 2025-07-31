@@ -33,6 +33,7 @@ export const Psama = {
   Priviege: 'psama/privilege',
   StudyAccess: 'psama/studyAccess',
   Role: 'psama/role',
+  TOS: 'psama/tos',
   Users: USER,
   User: {
     Logout: `${USER}/logout`,

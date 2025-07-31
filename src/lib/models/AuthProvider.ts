@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import type { Indexable } from '$lib/types';
+import type { User, OktaUser } from '$lib/models/User';
 
 export interface AuthData extends Indexable {
   name: string;
@@ -78,7 +79,7 @@ export default class AuthProvider implements AuthData {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  authenticate = async (hashParts: string[]): Promise<boolean> => {
+  authenticate = async (hashParts: string[]): Promise<User | OktaUser | undefined> => {
     throw new Error('Method not implemented.');
   };
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

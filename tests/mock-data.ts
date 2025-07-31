@@ -135,6 +135,7 @@ export const userTypes = {
   adminUser: { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.ADMIN] },
   superUser: { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.SUPER] },
   dataUser: { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.DATA_ADMIN] },
+  noTOS: { acceptedTOS: false },
 };
 
 export const crossCountSyncResponseInital = {

@@ -55,6 +55,10 @@ export function setToken(token: string) {
   tokenStatus.set(true);
 }
 
+export function getToken(): string {
+  return localStorage.getItem('token') || '';
+}
+
 export function removeToken() {
   localStorage.removeItem('token');
   tokenStatus.set(false);

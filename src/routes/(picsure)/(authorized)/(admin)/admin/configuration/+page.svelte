@@ -180,4 +180,11 @@
       </ErrorAlert>
     {/await}
   </div>
+  <div id="misc-configs">
+    <a
+      href="/admin/configuration/terms/edit"
+      class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+      >Update Terms of Service</a
+    >
+  </div>
 </Content>

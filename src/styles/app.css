@@ -653,6 +653,16 @@ label.required input:invalid,
     @apply list-disc ml-8;
   }
 
+  ol {
+    @apply list-[lower-roman] ml-8;
+  }
+
+  div,
+  ol,
+  ul {
+    @apply my-2;
+  }
+
   a {
     @apply anchor;
   }
