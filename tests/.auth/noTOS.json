@@ -14,7 +14,7 @@
         },
         {
           "name": "user",
-          "value": "{\"uuid\":\"1234\",\"email\":\"test@pic-sure.org\",\"privileges\":[\"PIC_SURE_ANY_QUERY\",\"MANAGED_PRIV_DICTIONARY\",\"AUTHORIZED_ACCESS\",\"MANAGED_PRIV_OPEN_ACCESS\",\"MANUAL_PRIV_NAMED_DATASET\"],\"queryScopes\":[\"Gene_with_variant\",\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"acceptedTOS\":false,\"queryTemplate\":{}}"
+          "value": "{}"
         },
         {
           "name": "datatableSettings",
