@@ -119,6 +119,7 @@ test.describe('Logged in', () => {
       await page.goto('/');
 
       // When
+      await expect(page.locator('#terms-of-service')).toBeVisible();
       await page.keyboard.press('Escape');
 
       // Then

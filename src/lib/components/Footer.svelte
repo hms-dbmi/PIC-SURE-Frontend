@@ -23,7 +23,12 @@
     })),
   );
 
-  let modalOpen = $state(features.enforceTermsOfService && $isLoggedIn && !$user.acceptedTOS);
+  let modalOpen: boolean = $state(
+    features.enforceTermsOfService && $isLoggedIn && !$user.acceptedTOS,
+  );
+  let modalClosable: boolean = $derived(
+    !features.enforceTermsOfService || !$isLoggedIn || ($isLoggedIn && !!$user?.acceptedTOS),
+  );
 </script>
 
 {#if !hideSitemap && branding?.sitemap?.length > 0}
@@ -62,9 +67,7 @@
           triggerBase="hover:underline text-[0.74rem]"
           withDefault={false}
           footerButtons={false}
-          closeable={!features.enforceTermsOfService ||
-            !$isLoggedIn ||
-            ($isLoggedIn && $user.acceptedTOS)}
+          closeable={modalClosable}
         >
           {#snippet trigger()}Terms of Service{/snippet}
           <Terms bind:modalOpen />

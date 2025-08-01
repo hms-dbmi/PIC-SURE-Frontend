@@ -23,7 +23,7 @@
     terms = api.get(Psama.TOS + '/latest', {}, false);
   }
 
-  function confirm() {
+  function accept() {
     if (browser) {
       api
         .post(Psama.TOS + '/accept', {})
@@ -43,7 +43,7 @@
     }
   }
 
-  function cancel() {
+  function reject() {
     if (browser) {
       logout().then(() => {
         if (branding.termsOfService.rejectionUrl) {
@@ -57,11 +57,11 @@
     }
   }
 
-  const closeModal = () => {
+  function close() {
     if (modalOpen !== undefined) {
       modalOpen = false;
     }
-  };
+  }
 
   onMount(loadTermsHTML);
 </script>
@@ -79,20 +79,20 @@
         type="button"
         data-testid="terms-reject-btn"
         class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-        onclick={cancel}>Reject</button
+        onclick={reject}>Reject</button
       >
       <button
         type="button"
         data-testid="terms-accept-btn"
         class="btn preset-filled-primary-500"
-        onclick={confirm}>Accept</button
+        onclick={accept}>Accept</button
       >
     {:else}
       <button
         type="button"
         data-testid="terms-close-btn"
         class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-        onclick={closeModal}>Close</button
+        onclick={close}>Close</button
       >
     {/if}
   </footer>
@@ -105,7 +105,7 @@
       type="button"
       data-testid="terms-close-btn"
       class="btn border preset-tonal-primary hover:preset-filled-primary-500"
-      onclick={closeModal}>Close</button
+      onclick={close}>Close</button
     >
   {/if}
 {/await}

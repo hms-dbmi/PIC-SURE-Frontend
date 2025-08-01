@@ -183,19 +183,23 @@ export async function login(token: string) {
 }
 
 export async function logout(authProvider?: AuthProvider, redirect = false) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function handleErrors(error: any) {
+    console.error('Error logging out: ' + error);
+    handleLogout(redirect);
+  }
+
   if (browser) {
     const token = localStorage.getItem('token');
     if (token) {
-      api.get(Psama.User.Logout).catch((error) => {
-        console.error('Error logging out: ' + error);
-      });
+      await api.get(Psama.User.Logout).catch(handleErrors);
       removeToken();
     }
   }
 
   // get the auth provider
   if (authProvider) {
-    authProvider
+    await authProvider
       .logout()
       .then((redirectURL) => {
         if (typeof redirectURL === 'string') {
@@ -203,14 +207,10 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
           location.replace(redirectURL);
         } else {
           // If no redirect is provided, go to the login page
-          console.error('Error logging out: ' + redirectURL);
-          handleLogout(redirect);
+          handleErrors(redirectURL);
         }
       })
-      .catch((error) => {
-        console.error('Error logging out: ' + error);
-        handleLogout(redirect);
-      });
+      .catch(handleErrors);
   } else {
     handleLogout(redirect);
   }
