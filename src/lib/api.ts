@@ -12,11 +12,13 @@ async function send({
   path,
   data,
   headers,
+  authenticated = true,
 }: {
   method: string;
   path: string;
   data?: any; //TODO: Change this
   headers?: any;
+  authenticated?: any;
 }) {
   const opts: { method: string; headers: { [key: string]: string }; body?: string } = {
     method,
@@ -32,7 +34,7 @@ async function send({
     opts.headers = { ...opts.headers, ...headers };
   }
 
-  if (browser) {
+  if (authenticated && browser) {
     const token = localStorage.getItem('token');
     if (token) {
       opts.headers['Authorization'] = `${BEARER}${token}`;
@@ -48,20 +50,20 @@ async function send({
   return await handleResponse(res);
 }
 
-export function get(path: string, headers?: any) {
-  return send({ method: 'GET', path, headers });
+export function get(path: string, headers?: any, authenticated?: boolean) {
+  return send({ method: 'GET', path, headers, authenticated });
 }
 
-export function del(path: string, headers?: any) {
-  return send({ method: 'DELETE', path, headers });
+export function del(path: string, headers?: any, authenticated?: boolean) {
+  return send({ method: 'DELETE', path, headers, authenticated });
 }
 
-export function post(path: string, data: any, headers?: any) {
-  return send({ method: 'POST', path, data, headers });
+export function post(path: string, data: any, headers?: any, authenticated?: boolean) {
+  return send({ method: 'POST', path, data, headers, authenticated });
 }
 
-export function put(path: string, data: any, headers?: any) {
-  return send({ method: 'PUT', path, data, headers });
+export function put(path: string, data: any, headers?: any, authenticated?: boolean) {
+  return send({ method: 'PUT', path, data, headers, authenticated });
 }
 
 async function handleResponse(res: Response) {
