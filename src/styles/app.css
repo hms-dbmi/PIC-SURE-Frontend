@@ -31,6 +31,10 @@
 @layer utilities {
 }
 
+:root {
+  --color-gic-blue: #338fff;
+}
+
 html,
 body {
   @apply h-full overflow-hidden;
