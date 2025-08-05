@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiFail, mockApiSuccess } from '../../../custom-context';
+import { test, mockApiSuccess } from '../../../custom-context';
 import { getOption, clickNthFilterIcon } from '../../../utils';
 
 import {
