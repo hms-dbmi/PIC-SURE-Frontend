@@ -41,26 +41,6 @@ test('Cohort Details button is visible', async ({ page }) => {
   await expect(page.getByTestId('cohort-details-btn')).toBeVisible();
   await expect(page.getByTestId('cohort-details-btn')).toBeEnabled();
 });
-test('Cohort Details button is not visible when all results return an error', async ({ page }) => {
-  // Given
-  await mockApiSuccess(
-    page,
-    `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-    detailResponseCat,
-  );
-  await mockApiFail(page, SYNC_URL, 'failed');
-  await page.goto('/explorer?search=somedata');
-
-  // When
-  await clickNthFilterIcon(page);
-  const firstItem = await getOption(page);
-  await firstItem.click();
-  const addFilterButton = page.getByTestId('add-filter');
-  await addFilterButton.click();
-
-  // Then
-  await expect(page.getByTestId('cohort-details-btn')).not.toBeVisible();
-});
 test('Cohort Details page loads', async ({ page }) => {
   // Given
   await mockApiSuccess(

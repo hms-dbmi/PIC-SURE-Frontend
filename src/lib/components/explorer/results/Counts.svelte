@@ -38,8 +38,7 @@
       {@const hasError = hasErrorInCounts(counts)}
       <span id="result-count">
         {#if counts.filter(StatPromise.fullfiled).length === 0}
-          <span class="sr-only">{ERROR_VALUE}</span>
-          <span class="text-4xl font-bold">{ERROR_VALUE}</span>
+        <span class="text-4xl font-bold">{ERROR_VALUE}</span>
         {:else}
           <div class="flex flex-row h-full">
             <span id="result-count-number" class="text-4xl">{count}</span>
