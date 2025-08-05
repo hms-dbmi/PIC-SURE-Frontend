@@ -58,12 +58,9 @@
   let showCohortDetails = $derived(isExplorer && features.explorer.enableCohortDetails);
 
   let showToolSuite = $derived(
-    ($filters.length !== 0 || $exports.length !== 0) &&
-      (showExplorerDistributions ||
-        showDiscoverDistributions ||
-        showVariantExplorer ||
-        showCohortDetails) &&
-      $hasNonZeroResult,
+    showCohortDetails ||
+      (($filters.length !== 0 || $exports.length !== 0) &&
+        (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer)),
   );
 
   function subscribe() {

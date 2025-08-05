@@ -4,6 +4,7 @@
     color?: string;
     solid?: boolean;
     icon?: boolean;
+    iconSize?: string;
     closeText?: string;
     'data-testid'?: string;
     onclose?: () => void;
@@ -15,6 +16,7 @@
     color = 'error',
     solid = false,
     icon = true,
+    iconSize = '4xl',
     closeText = 'Close',
     'data-testid': testid = 'error-alert',
     onclose,
@@ -28,7 +30,9 @@
     ? '-500'
     : ''} border border-{color}-500 py-2 px-3 m-2"
 >
-  {#if icon}<i class="fa-solid fa-circle-exclamation text-4xl content-center" aria-hidden="true"
+  {#if icon}<i
+      class="fa-solid fa-circle-exclamation text-{iconSize} content-center"
+      aria-hidden="true"
     ></i>{/if}
   <div class="alert-message content-center">
     {#if title}<h3 class="h3 text-left">{title}</h3>{/if}
