@@ -43,7 +43,7 @@
       }
 
       // api returns as string
-      user.acceptedTOS = user.acceptedTOS + '' === 'true';
+      user.acceptedTOS = String(user.acceptedTOS) === 'true';
       if (features.enforceTermsOfService && !user.acceptedTOS) {
         setToken(user.token);
         goto(redirectTo);
