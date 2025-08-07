@@ -3,7 +3,7 @@
   import UserToken from '$lib/components/UserToken.svelte';
 </script>
 
-<Content backUrl="/analyze" title="Analyze Example">
+<Content backUrl="/analyze/api" title="Analyze Example">
   <div class="w-full items-center mb-8">
     <div>
       <h3>
