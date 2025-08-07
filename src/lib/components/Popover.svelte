@@ -67,7 +67,7 @@
   // Interactions
   const role = useRole(floating.context, { role: 'tooltip' });
   const dismiss = useDismiss(floating.context);
-  let interactionsToUse = [role, dismiss]
+  let interactionsToUse = [role, dismiss];
 
   if (triggerTypes.includes('hover')) {
     const hover = useHover(floating.context, { move: false });
