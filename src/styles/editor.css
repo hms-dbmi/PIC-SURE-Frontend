@@ -1,0 +1,99 @@
+@reference "./app.css";
+
+.ql-container {
+  @apply whitespace-pre-wrap p-0;
+
+  ol {
+    @apply list-inside list-decimal py-3;
+  }
+
+  ul {
+    @apply list-inside list-disc py-3;
+  }
+
+  blockquote {
+    @apply bg-gray-50 border-l border-indigo-200 p-2;
+  }
+
+  pre {
+    @apply bg-gray-50 p-2 my-2 text-sm;
+  }
+}
+
+.ql-toolbar {
+  --toolbar-hover-bg: var(--color-secondary-100-900);
+  --toolbar-hover-text: var(--color-secondary-400-600);
+  --toolbar-hover-bgtext: var(--color-secondary-contrast-100-900);
+
+  --toolbar-active-bg: var(--color-primary-100-900);
+  --toolbar-active-text: var(--color-primary-400-600);
+  --toolbar-active-bgtext: var(--color-primary-contrast-100-900);
+
+  @apply !p-0 bg-white dark:bg-black;
+
+  button,
+  .ql-picker-label,
+  .ql-active,
+  .ql-picker-options .ql-picker-item {
+    @apply rounded-md mx-1;
+  }
+
+  .ql-picker-options .ql-picker-item.ql-selected {
+    color: var(--toolbar-active-text) !important;
+
+    .ql-fill {
+      fill: var(--toolbar-active-text) !important;
+    }
+    .ql-stroke {
+      stroke: var(--toolbar-active-text) !important;
+    }
+  }
+
+  .ql-active {
+    background-color: var(--toolbar-active-bg) !important;
+    color: var(--toolbar-active-bgtext) !important;
+
+    .ql-fill {
+      fill: var(--toolbar-active-bgtext) !important;
+    }
+    .ql-stroke {
+      stroke: var(--toolbar-active-bgtext) !important;
+    }
+  }
+
+  .ql-picker-options .ql-picker-item:hover {
+    color: var(--toolbar-hover-text) !important;
+
+    .ql-fill {
+      fill: var(--toolbar-hover-text) !important;
+    }
+    .ql-stroke {
+      stroke: var(--toolbar-hover-text) !important;
+    }
+  }
+
+  button:hover,
+  .ql-picker-label:hover {
+    background-color: var(--toolbar-hover-bg) !important;
+    color: var(--toolbar-hover-bgtext) !important;
+
+    .ql-fill {
+      fill: var(--toolbar-hover-bgtext) !important;
+    }
+    .ql-stroke {
+      stroke: var(--toolbar-hover-bgtext) !important;
+    }
+  }
+
+  .ql-formats {
+    @apply p-2 !mr-0;
+  }
+
+  .ql-formats:not(:last-child) {
+    @apply border-r-1 border-surface-200;
+  }
+
+  .ql-picker-item {
+    @apply p-1;
+  }
+}

@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
+  import DOMPurify from 'dompurify';
 
   import { branding } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
@@ -8,6 +10,13 @@
   import TabItem from '$lib/components/TabItem.svelte';
 
   let tabSet: string = $state('Python');
+  let connection: string = $state('');
+  let execution: string = $state('');
+
+  onMount(() => {
+    connection = DOMPurify.sanitize(branding.analysisConfig.api.instructions.connection);
+    execution = DOMPurify.sanitize(branding.analysisConfig.api.instructions.execution);
+  });
 </script>
 
 <svelte:head>
@@ -21,10 +30,10 @@
       your choice. This API is available in both Python and R coding languages.
     </p>
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    <p>{@html branding.analysisConfig.api.instructions.connection}</p>
+    <p>{@html connection}</p>
     <div class="flex justify-center"><UserToken /></div>
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    <p>{@html branding.analysisConfig.api.instructions.execution}</p>
+    <p>{@html execution}</p>
     <Tabs value={tabSet} onValueChange={(e) => (tabSet = e.value)}>
       {#snippet list()}
         <TabItem bind:group={tabSet} value="Python">Python</TabItem>

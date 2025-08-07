@@ -230,5 +230,8 @@
   },
   "genomic": {
     "defaultGenomeBuild": "GRCh38"
+  },
+  "termsOfService": {
+    "rejectionUrl": "https://avillach-lab.hms.harvard.edu/pic-sure"
   }
 }

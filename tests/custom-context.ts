@@ -43,6 +43,10 @@ export function mockApiFail(
   return context.route(path, (route: Route) => route.abort(message));
 }
 
+export function mockHTMLBodySuccess(context: Page, path: string | RegExp, body: string) {
+  return context.route(path, async (route: Route) => route.fulfill({ body }));
+}
+
 async function screenshotOnFailure({ page }: { page: Page }, testInfo: TestInfo) {
   if (testInfo.status !== testInfo.expectedStatus) {
     // Get a unique place for the screenshot.

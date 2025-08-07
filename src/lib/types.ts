@@ -143,3 +143,7 @@ export interface CodeBlockConfig extends Indexable {
   PythonAPI: string;
   RAPI: string;
 }
+
+export interface TermsOfServiceConfig {
+  rejectionUrl: string;
+}
