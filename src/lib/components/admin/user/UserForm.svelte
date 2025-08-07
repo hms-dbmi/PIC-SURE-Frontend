@@ -126,7 +126,7 @@
 
     <label class="label {user?.email ?? 'required'}">
       <span>Connection:</span>
-      <select class="select" bind:value={connection} required disabled={!!user?.connection}>
+      <select bind:value={connection} required disabled={!!user?.connection}>
         <option selected={!user || !user.connection} disabled value>none</option>
         {#each connections as connection}
           <option value={connection.uuid} selected={user && user.connection === connection.uuid}

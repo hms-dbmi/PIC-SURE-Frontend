@@ -24,7 +24,7 @@
     >Show
     <select
       id="row-count-select"
-      class="select ml-2 rounded-xl"
+      class="ml-2 rounded-xl"
       aria-label="Rows per page"
       bind:value={handler.rowsPerPage}
       onchange={setRowsPerPage}
