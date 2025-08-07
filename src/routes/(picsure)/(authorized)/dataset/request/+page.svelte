@@ -359,7 +359,6 @@
             id="selected-site"
             data-testid="selected-site"
             style="background-color: white;"
-            class="select bg-surface-50"
             aria-label="Select a site"
             bind:value={selectedSite}
             disabled={isDataSent}

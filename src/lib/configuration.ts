@@ -136,7 +136,7 @@ export const routes: Route[] = [
     feature: 'analyzeAnalysis',
   },
   {
-    path: '/dataset/manage',
+    path: '/dataset',
     text: 'Manage Datasets',
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.NAMED_DATASET],
   },

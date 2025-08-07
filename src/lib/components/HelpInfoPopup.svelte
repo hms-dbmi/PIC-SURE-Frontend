@@ -13,7 +13,7 @@
 
 {#if text || children}
   <div data-testid={id}>
-    <Popover data-testid="{id}-content">
+    <Popover data-testid="{id}-content" triggerTypes={['click', 'hover']}>
       {#snippet trigger()}
         <i class="fa-solid fa-circle-question text-primary-800-200 hover:text-secondary-800-200"
         ></i>

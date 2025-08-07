@@ -11,7 +11,7 @@
   function getStatusIcon() {
     switch (status) {
       case UploadStatus.Uploaded:
-        return 'fa-regular fa-circle-check text-success-600-400';
+        return 'fa-solid fa-circle-check text-success-600-400';
       case UploadStatus.Error:
         return 'fa-solid fa-xmark text-error-600-400';
       case UploadStatus.Unknown:

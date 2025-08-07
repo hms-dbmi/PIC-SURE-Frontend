@@ -58,7 +58,7 @@
     const back = warning.back;
     filterWarning.set(undefined);
     open = false;
-    goto(back);
+    goto(back, { keepFocus: false });
   }
 
   function reset() {
@@ -67,7 +67,7 @@
     panelOpen.set(false);
     filterWarning.set(undefined);
     open = false;
-    goto(path);
+    goto(path, { keepFocus: false });
   }
 </script>
 

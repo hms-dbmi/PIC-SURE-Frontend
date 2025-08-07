@@ -66,7 +66,7 @@ input[type='checkbox'] {
 
 select {
   @apply select;
-  padding: 0.5rem 1.25rem;
+  @apply py-2;
 }
 
 hr {
