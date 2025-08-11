@@ -33,22 +33,20 @@ function snpRequest(snp: SNP, resource: string): Promise<number> {
   return api.post(Picsure.QuerySync, searchQuery);
 }
 
-export async function getSNPCounts(check: SNP): Promise<number> {
+export async function getSNPCounts(check: SNP): Promise<{ count: number; errors: number }> {
   loadResources();
-  try {
-    await get(resourcesPromise);
-    const resources = getQueryResources();
-    const responses: Promise<number>[] = resources.map(({ uuid }) => snpRequest(check, uuid));
-    return Promise.allSettled(responses).then((results) =>
-      results
+  await get(resourcesPromise);
+  const resources = getQueryResources();
+  const responses: Promise<number>[] = resources.map(({ uuid }) => snpRequest(check, uuid));
+  return Promise.allSettled(responses)
+    .then((results) => ({
+      count: results
         .filter((result) => result.status === 'fulfilled')
         .map((result) => result.value || 0)
         .reduce((sum, value) => sum + value, 0),
-    );
-  } catch (error) {
-    console.error('Error fetching SNP counts:', error);
-    throw error;
-  }
+      errors: results.filter((result) => result.status !== 'fulfilled').length,
+    }))
+    .catch(() => ({ count: 0, errors: 1 }));
 }
 
 export function saveSNP(newSNP: SNP) {
