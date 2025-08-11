@@ -1,13 +1,14 @@
 <script lang="ts">
   import type { Readable } from 'svelte/store';
+  import DOMPurify from 'dompurify';
 
-  import type { StatConfig } from '$lib/models/Stat';
+  import type { StatResult } from '$lib/models/Stat';
   import { StatPromise } from '$lib/utilities/StatBuilder';
   import { countResult } from '$lib/utilities/PatientCount';
   import Loading from '$lib/components/Loading.svelte';
 
   interface Props {
-    stats: Readable<StatConfig[]>;
+    stats: Readable<StatResult[]>;
     description: string;
     auth?: boolean;
   }
@@ -35,14 +36,12 @@
   const gridClass = $derived(
     gridClasses[$stats.length as keyof typeof gridClasses] || 'grid-cols-1',
   );
-
-  /* eslint-disable svelte/no-at-html-tags */
-  // @html explanation is passed down from a static file
 </script>
 
 <div data-testid="data-summary-{authString}" class="w-full flex flex-col items-center">
   <div class="w-2/4">
-    {@html description}
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+    {@html DOMPurify.sanitize(description)}
   </div>
   <div class="grid {gridClass} grid-flow-col justify-center p-4 my-4 gap-y-9 {width}">
     {#each $stats as stat (`${authString}-${stat.key}-${stat.label}`)}

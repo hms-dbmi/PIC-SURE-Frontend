@@ -16,6 +16,7 @@ import type {
   AnalysisConfig,
   CollaborateConfig,
   DatasetRequestPageConfig,
+  TermsOfServiceConfig,
 } from './types';
 import type { StatField } from '$lib/models/Stat';
 
@@ -47,6 +48,7 @@ export interface Branding {
   genomic?: {
     defaultGenomeBuild: string;
   };
+  termsOfService: TermsOfServiceConfig;
 }
 
 export const branding: Branding = {
@@ -69,6 +71,7 @@ export const branding: Branding = {
   privacyPolicy: {} as PrivacyConfig,
   analysisConfig: {} as AnalysisConfig,
   collaborateConfig: {} as CollaborateConfig,
+  termsOfService: {} as TermsOfServiceConfig,
 };
 
 export const initializeBranding = () => {
@@ -99,6 +102,7 @@ export const initializeBranding = () => {
   branding.analysisConfig = configJson.analysisPage;
   branding.collaborateConfig = configJson.collaboratePage;
   branding.genomic = configJson.genomic;
+  branding.termsOfService = configJson.termsOfService;
 };
 
 export const routes: Route[] = [
@@ -198,6 +202,7 @@ export const features: Indexable = {
   dashboardDrawer: import.meta.env?.VITE_DASHBOARD_DRAWER === 'true',
   confirmDownload: import.meta.env?.VITE_CONFIRM_DOWNLOAD === 'true',
   termsOfService: import.meta.env?.VITE_ENABLE_TOS === 'true',
+  enforceTermsOfService: import.meta.env?.VITE_ENFORCE_TOS_ACCEPT === 'true',
 };
 
 export const settings: Indexable = {
