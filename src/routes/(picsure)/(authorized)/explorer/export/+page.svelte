@@ -9,6 +9,8 @@
   import { getQueryRequest } from '$lib/utilities/QueryBuilder';
   import type { ExportInterface } from '$lib/models/Export';
   import { features } from '$lib/configuration';
+  import { isUserLoggedIn } from '$lib/stores/User';
+  import { goto } from '$app/navigation';
   let { exports } = ExportStore;
 
   let queryRequest: QueryRequestInterface = getQueryRequest(true);
@@ -124,6 +126,18 @@
     <section class="flex justify-center items-center w-full h-full mt-8">
       <ExportStepper query={queryRequest} rows={[...filterRows, ...exportRows]} />
     </section>
+  {:else if !isUserLoggedIn()}
+  <div class="flex flex-col items-center justify-center m-8">
+    <p>You are not logged in. To export the data for your selected cohort, please log in.</p>
+    <div class="flex gap-4">
+      <button
+        class="btn preset-filled-primary-500 m-4"
+        onclick={() => {
+          goto('/login');
+        }}>Login</button
+      >
+    </div>
+  </div>
   {:else}
     <div class="flex flex-col items-center justify-center m-8">
       <p>No filters or exports have been created.</p>
@@ -131,7 +145,7 @@
         <button
           class="btn preset-filled-primary-500 m-4"
           onclick={() => {
-            alert('This would start the tour at some step');
+            goto('/explorer?startTour=true');
           }}>Learn How</button
         >
       </div>
