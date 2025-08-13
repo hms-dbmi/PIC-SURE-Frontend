@@ -130,7 +130,14 @@ export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user
         route.children ? { ...route, children: allowedRoutes(route.children) } : route,
       );
   }
-  return allowedRoutes(featured);
+  const finalRoutes = allowedRoutes(featured);
+  if (features.login.open && !isUserLoggedIn() && !features.discover) {
+    finalRoutes.push({
+      path: '/explorer',
+      text: 'Explore'
+    });
+  }
+  return finalRoutes;
 });
 
 export async function getUser(force?: boolean, hasToken = false) {
