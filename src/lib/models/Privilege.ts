@@ -8,6 +8,8 @@ export interface Privilege {
 
 // PIC-SURE & BDCPrivileges Privileges are used for authorization of functionalty rather than data access
 export enum PicsurePrivileges {
+  NAMED_DATASET = 'NAMED_DATASET',
+  API_ACCESS = 'API_ACCESS',
   QUERY = 'PIC_SURE_ANY_QUERY',
   ADMIN = 'ADMIN',
   DATA_ADMIN = 'DATA_ADMIN',

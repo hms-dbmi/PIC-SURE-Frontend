@@ -22,7 +22,7 @@
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
-
+  import { forOpenUsersOnly } from '$lib/stores/AccessState.svelte';
   interface Props {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     tourConfig: any;
@@ -39,8 +39,7 @@
   ];
   const cellOverides = { id: Actions };
 
-  let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
-  let path = $derived(isOpenAccess ? '/discover' : '/explorer');
+  let path = $derived(page.url.pathname.includes('/discover') ? '/discover' : '/explorer');
 
   function update() {
     if ($error) error.set('');
@@ -76,7 +75,7 @@
         <Searchbox bind:searchTerm={searchInput} search={update} />
       </div>
       <div class="flex-none">
-        {#if !isOpenAccess && (features.enableGENEQuery || features.enableSNPQuery)}
+        {#if !$forOpenUsersOnly && (features.enableGENEQuery || features.enableSNPQuery)}
           <a
             data-testid="genomic-filter-btn"
             class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
