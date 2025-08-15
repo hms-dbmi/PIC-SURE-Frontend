@@ -37,8 +37,7 @@ async function send({
     if (token) {
       opts.headers['Authorization'] = `${BEARER}${token}`;
       opts.headers['request-source'] = 'Authorized';
-    }
-    if (page.url.pathname.includes('/discover')) {
+    } else {
       opts.headers['request-source'] = 'Open';
     }
   }
