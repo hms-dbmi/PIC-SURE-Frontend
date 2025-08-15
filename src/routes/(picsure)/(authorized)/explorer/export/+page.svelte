@@ -11,6 +11,7 @@
   import { features } from '$lib/configuration';
   import { isUserLoggedIn } from '$lib/stores/User';
   import { goto } from '$app/navigation';
+  
   let { exports } = ExportStore;
 
   let queryRequest: QueryRequestInterface = getQueryRequest(true);
@@ -126,6 +127,18 @@
     <section class="flex justify-center items-center w-full h-full mt-8">
       <ExportStepper query={queryRequest} rows={[...filterRows, ...exportRows]} />
     </section>
+  {:else if !isUserLoggedIn()}
+  <div class="flex flex-col items-center justify-center m-8">
+    <p>You are not logged in. To export the data for your selected cohort, please log in.</p>
+    <div class="flex gap-4">
+      <button
+        class="btn preset-filled-primary-500 m-4"
+        onclick={() => {
+          goto('/login');
+        }}>Login</button
+      >
+    </div>
+  </div>
   {:else if !isUserLoggedIn()}
   <div class="flex flex-col items-center justify-center m-8">
     <p>You are not logged in. To export the data for your selected cohort, please log in.</p>
