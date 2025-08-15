@@ -38,6 +38,7 @@ export const isAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.ADMIN);
 });
 
+// TODO: Remove this store and use isUserLoggedIn instead
 export const isLoggedIn: Readable<boolean> = derived(tokenStatus, ($tokenStatus) => $tokenStatus);
 
 user.subscribe((user: User) => {
@@ -104,7 +105,14 @@ export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user
 
   if (userPrivileges.length === 0 || !$isLoggedIn) {
     // Public routes for non-logged in user
-    return routes.filter((route) => !route.privilege);
+    let openRoutes = featureRoutes(routes.filter((route) => !route.privilege));
+    if (features.login.open && !$isLoggedIn && !features.discover) {
+      openRoutes.push({
+        path: '/explorer',
+        text: 'Explore'
+      });
+    }
+    return openRoutes;
   }
 
   function featureRoutes(routeList: Route[]): Route[] {
@@ -131,12 +139,6 @@ export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user
       );
   }
   const finalRoutes = allowedRoutes(featured);
-  if (features.login.open && !isUserLoggedIn() && !features.discover) {
-    finalRoutes.push({
-      path: '/explorer',
-      text: 'Explore'
-    });
-  }
   return finalRoutes;
 });
 
