@@ -123,11 +123,7 @@
   }}
   title="Export Data for Research Analysis"
 >
-  {#if $exports.length > 0 || $filters.length > 0}
-    <section class="flex justify-center items-center w-full h-full mt-8">
-      <ExportStepper query={queryRequest} rows={[...filterRows, ...exportRows]} />
-    </section>
-  {:else if !isUserLoggedIn()}
+  {#if !isUserLoggedIn()}
     <div class="flex flex-col items-center justify-center m-8">
       <p>You are not logged in. To export the data for your selected cohort, please log in.</p>
       <div class="flex gap-4">
@@ -139,6 +135,10 @@
         >
       </div>
     </div>
+  {:else if $exports.length > 0 || $filters.length > 0}
+    <section class="flex justify-center items-center w-full h-full mt-8">
+      <ExportStepper query={queryRequest} rows={[...filterRows, ...exportRows]} />
+    </section>
   {:else}
     <div class="flex flex-col items-center justify-center m-8">
       <p>No filters or exports have been created.</p>
