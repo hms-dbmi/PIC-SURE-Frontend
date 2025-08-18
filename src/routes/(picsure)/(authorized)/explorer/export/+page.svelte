@@ -131,7 +131,7 @@
           class="btn preset-filled-primary-500 m-4"
           onclick={() => {
             goto('/login');
-          }}>Login</button
+          }}>Go to Login</button
         >
       </div>
     </div>

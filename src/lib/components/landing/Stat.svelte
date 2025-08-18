@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Readable } from 'svelte/store';
   import DOMPurify from 'dompurify';
+  import { browser } from '$app/environment';
 
   import type { StatResult } from '$lib/models/Stat';
   import { StatPromise } from '$lib/utilities/StatBuilder';
@@ -41,7 +42,7 @@
 <div data-testid="data-summary-{authString}" class="w-full flex flex-col items-center">
   <div class="w-2/4">
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    {@html DOMPurify.sanitize(description)}
+    {@html browser ? DOMPurify.sanitize(description) : description}
   </div>
   <div class="grid {gridClass} grid-flow-col justify-center p-4 my-4 gap-y-9 {width}">
     {#each $stats as stat (`${authString}-${stat.key}-${stat.label}`)}

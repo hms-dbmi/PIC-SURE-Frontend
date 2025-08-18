@@ -36,7 +36,7 @@ export const Psama = {
   TOS: 'psama/tos',
   Users: USER,
   User: {
-    Logout: `${USER}/logout`,
+    Logout: 'psama/logout',
     Me: `${USER}/me`,
     Template: `${USER}/me/queryTemplate`,
     Refresh: `${USER}/me/refresh_long_term_token`,
