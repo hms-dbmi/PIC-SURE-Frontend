@@ -9,14 +9,12 @@
     createCategoryPlot,
   } from '$lib/utilities/Plotly';
   import { getQueryRequest } from '$lib/utilities/QueryBuilder';
-  import { page } from '$app/state';
   import { toaster } from '$lib/toaster';
   import Loading from '$lib/components/Loading.svelte';
   import { Picsure } from '$lib/paths';
   import { resources } from '$lib/stores/Resources';
   import { useAuth } from '$lib/stores/AccessState.svelte';
 
-  
   let plotValues: PlotValues[] = $state([]);
   let newPlot: PlotlyNewPlot = $state() as PlotlyNewPlot;
   let loading = $state(true);

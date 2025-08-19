@@ -46,7 +46,9 @@
   );
 
   let showDiscoverDistributions = $derived(
-    $openUsersOnly && features.discoverFeautures.distributionExplorer && hasValidDistributionFilters,
+    $openUsersOnly &&
+      features.discoverFeautures.distributionExplorer &&
+      hasValidDistributionFilters,
   );
 
   let showVariantExplorer = $derived(

@@ -7,7 +7,8 @@ import { browser } from '$app/environment';
 export const useAuth = readable(!features.login.open || isUserLoggedIn());
 
 export const openUsersOnly = readable(
-  (browser && page.url.pathname.includes('/discover')) || (!isUserLoggedIn() && features.explorer.open),
+  (browser && page.url.pathname.includes('/discover')) ||
+    (!isUserLoggedIn() && features.explorer.open),
 );
 
 export const authorizedUsersOnly = readable(isUserLoggedIn() && !features.explorer.open);

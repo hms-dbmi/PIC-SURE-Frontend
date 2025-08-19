@@ -105,7 +105,7 @@ export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user
 
   if (userPrivileges.length === 0 || !$isLoggedIn) {
     // Public routes for non-logged in user
-    let openRoutes = featureRoutes(routes.filter((route) => !route.privilege));
+    const openRoutes = featureRoutes(routes.filter((route) => !route.privilege));
     if (features.login.open && !$isLoggedIn && !features.discover) {
       openRoutes.unshift({
         path: '/explorer',
