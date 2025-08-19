@@ -1,7 +1,6 @@
 import { error, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
 import { browser } from '$app/environment';
-import { page } from '$app/state';
 
 const BEARER = 'Bearer ';
 

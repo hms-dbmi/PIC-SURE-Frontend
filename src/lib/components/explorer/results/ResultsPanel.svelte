@@ -12,7 +12,7 @@
   import { filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
-
+  import { openUsersOnly, authorizedUsersOnly, useAuth } from '$lib/stores/AccessState.svelte';
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
@@ -21,8 +21,6 @@
 
   let unsubFilters: Unsubscriber | null = null;
   let currentPage: string = page.url.pathname;
-  let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
-  let isExplorer = $derived(page.url.pathname.includes('/explorer'));
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
@@ -30,7 +28,7 @@
   );
 
   let showExportButton = $derived(
-    features.explorer.allowExport && !isOpenAccess && hasFilterOrExport && $hasNonZeroResult,
+    features.explorer.allowExport && !$openUsersOnly && hasFilterOrExport && $hasNonZeroResult,
   );
 
   let hasValidDistributionFilters = $derived(
@@ -44,18 +42,18 @@
   );
 
   let showExplorerDistributions = $derived(
-    isExplorer && features.explorer.distributionExplorer && hasValidDistributionFilters,
+    $authorizedUsersOnly && features.explorer.distributionExplorer && hasValidDistributionFilters,
   );
 
   let showDiscoverDistributions = $derived(
-    isOpenAccess && features.discoverFeautures.distributionExplorer && hasValidDistributionFilters,
+    $openUsersOnly && features.discoverFeautures.distributionExplorer && hasValidDistributionFilters,
   );
 
   let showVariantExplorer = $derived(
-    isExplorer && features.explorer.variantExplorer && $hasGenomicFilter,
+    authorizedUsersOnly && features.explorer.variantExplorer && $hasGenomicFilter,
   );
 
-  let showCohortDetails = $derived(isExplorer && features.explorer.enableCohortDetails);
+  let showCohortDetails = $derived(authorizedUsersOnly && features.explorer.enableCohortDetails);
 
   let showToolSuite = $derived(
     showCohortDetails ||
@@ -65,7 +63,7 @@
 
   function subscribe() {
     if (!unsubFilters) {
-      unsubFilters = filters.subscribe(() => loadPatientCount(isOpenAccess));
+      unsubFilters = filters.subscribe(() => loadPatientCount($useAuth));
     }
   }
 

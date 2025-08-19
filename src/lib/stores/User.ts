@@ -109,7 +109,7 @@ export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user
     if (features.login.open && !$isLoggedIn && !features.discover) {
       openRoutes.unshift({
         path: '/explorer',
-        text: 'Explore'
+        text: 'Explore',
       });
     }
     return openRoutes;

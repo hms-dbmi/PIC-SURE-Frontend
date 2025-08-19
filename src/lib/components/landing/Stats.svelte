@@ -12,23 +12,25 @@
   const isStatsMatching = $derived(() => {
     if ($authStats.length === 0 || $stats.length === 0) return false;
 
-    const authStatsByKey = new Map($authStats.map(stat => [stat.key, stat]));
-    const publicStatsByKey = new Map($stats.map(stat => [stat.key, stat]));
-    
+    const authStatsByKey = new Map($authStats.map((stat) => [stat.key, stat]));
+    const publicStatsByKey = new Map($stats.map((stat) => [stat.key, stat]));
+
     for (const authStat of $authStats) {
       const matchingPublicStat = publicStatsByKey.get(authStat.key);
       if (!matchingPublicStat) return false;
       if (authStat.label !== matchingPublicStat.label) return false;
     }
-     
+
     for (const publicStat of $stats) {
       const matchingAuthStat = authStatsByKey.get(publicStat.key);
       if (!matchingAuthStat) return false;
     }
-    
+
     return true;
   });
-  const showPublicStats = $derived(($stats.length > 0 && !isStatsMatching) || $authStats.length === 0);
+  const showPublicStats = $derived(
+    ($stats.length > 0 && !isStatsMatching) || $authStats.length === 0,
+  );
 
   onMount(loadLandingStats);
 </script>
