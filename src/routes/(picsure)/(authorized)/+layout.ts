@@ -3,6 +3,8 @@ import { browser } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
 import { isTokenExpired } from '$lib/stores/User';
 
+export const prerender = false;
+
 export const load: LayoutLoad = ({ url }) => {
   if (browser) {
     const token = localStorage.getItem('token');
