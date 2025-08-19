@@ -7,13 +7,13 @@ export const useAuth = readable(() => {
   return !features.login.open || isUserLoggedIn();
 });
 
-export const forOpenUsersOnly = readable(() => {
+export const openUsersOnly = readable(() => {
   if (page.url.pathname.includes('/discover')) {
     return true;
   }
-  return !isUserLoggedIn() && features.isOpen && features.explorer.open;
+  return !isUserLoggedIn() && features.explorer.open;
 });
 
-export const forAuthorizedUsersOnly = readable(() => {
+export const authorizedUsersOnly = readable(() => {
   return isUserLoggedIn() && !features.explorer.open;
 });
