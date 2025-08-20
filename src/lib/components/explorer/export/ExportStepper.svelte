@@ -393,7 +393,7 @@
                   data-testid="sample-ids-label"
                 >
                   {#if checkingSampleIds}
-                    <Loading ring />
+                    <Loading size="micro" ring />
                   {:else}
                     <input
                       type="checkbox"
