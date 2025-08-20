@@ -2,7 +2,7 @@
   import { Accordion } from '@skeletonlabs/skeleton-svelte';
 
   import type { Facet } from '$lib/models/Search';
-  import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
+  import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
   import { selectedFacets } from '$lib/stores/Search';
   import { facetsPromise, openFacets } from '$lib/stores/Dictionary';
 

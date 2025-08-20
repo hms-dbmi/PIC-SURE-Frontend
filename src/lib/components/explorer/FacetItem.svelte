@@ -1,6 +1,6 @@
 <script lang="ts">
   import FacetItem from './FacetItem.svelte';
-  import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
+  import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
   import type { Facet } from '$lib/models/Search';
   import SearchStore from '$lib/stores/Search';
   let { updateFacets, selectedFacets } = SearchStore;
