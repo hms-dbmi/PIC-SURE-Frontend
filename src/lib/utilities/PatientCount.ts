@@ -10,7 +10,7 @@ function parseCount(count: PatientCount): { value: number; suffix: number } {
     value = 0;
   } else {
     const [rawValue, rawSuffix] = String(count).split(PLUS_MINUS);
-    value = parseInt(rawValue.replace(',', '')) || 0;
+    value = parseInt(rawValue.replaceAll(',', '')) || 0;
     suffix = parseInt(rawSuffix ?? '') || 0;
   }
   return { value, suffix };
@@ -32,6 +32,6 @@ export function countResult(results: StatValue[], asString = true): PatientCount
   if (!asString) return total;
 
   return maxSuffix > 0
-    ? `${total.toLocaleString()} ${PLUS_MINUS}${maxSuffix}`
+    ? `${total.toLocaleString()}${PLUS_MINUS}${maxSuffix}`
     : total.toLocaleString();
 }
