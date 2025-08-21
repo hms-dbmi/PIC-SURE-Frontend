@@ -20,7 +20,7 @@
   );
 
   function loadTermsHTML() {
-    terms = api.get(Psama.TOS + '/latest', {});
+    terms = api.get(Psama.TOS + '/latest', {}, false);
   }
 
   function accept() {
