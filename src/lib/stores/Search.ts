@@ -1,4 +1,4 @@
-import { get, writable, type Writable } from 'svelte/store';
+import { get, writable, type Unsubscriber, type Writable } from 'svelte/store';
 
 import { TableHandler, type State } from '@vincjo/datatables/server';
 
@@ -23,41 +23,50 @@ export const previousPage: Writable<number> = writable(1);
 export const previousSearchTerm: Writable<string> = writable('');
 export const previousRowsPerPage: Writable<number> = writable(getDefaultRows('ExplorerTable'));
 
-selectedFacets.subscribe(() => {
-  tableHandler.setPage(1);
-});
+const emptyFn = () => {};
+const subscribers: { [key: string]: Unsubscriber } = {
+  searchTerm: emptyFn,
+  selectedFacets: emptyFn,
+};
 
-searchTerm.subscribe(() => {
-  tableHandler.setPage(1);
-});
+export function initHandler() {
+  Object.values(subscribers).forEach((unsub) => unsub());
+  subscribers.selectedFacets = selectedFacets.subscribe(() => {
+    tableHandler.setPage(1);
+  });
 
-tableHandler.load(async (state: State) => {
-  const term = get(searchTerm);
-  const facets = get(selectedFacets);
-  loading.set(true);
-  if (get(tour) && (term || facets.length > 0)) {
-    tour.set(false);
-  }
-  try {
-    const pageChanged = get(previousPage) !== state.currentPage;
-    const rowsChanged = get(previousRowsPerPage) !== state.rowsPerPage;
-    const searchTermChanged = get(previousSearchTerm) !== term;
-    const isPaginationOnly = (pageChanged || rowsChanged) && !searchTermChanged;
-    previousSearchTerm.set(term);
+  subscribers.searchTerm = searchTerm.subscribe(() => {
+    tableHandler.setPage(1);
+  });
 
-    if (isPaginationOnly) {
-      previousPage.set(state.currentPage);
-      previousRowsPerPage.set(state.rowsPerPage);
-    } else {
-      facetsPromise.set(updateFacetsFromSearch());
+  tableHandler.load(async (state: State) => {
+    const term = get(searchTerm);
+    const facets = get(selectedFacets);
+    loading.set(true);
+    if (get(tour) && (term || facets.length > 0)) {
+      tour.set(false);
     }
-    return await search(state);
-  } catch (e) {
-    return [];
-  } finally {
-    loading.set(false);
-  }
-});
+    try {
+      const pageChanged = get(previousPage) !== state.currentPage;
+      const rowsChanged = get(previousRowsPerPage) !== state.rowsPerPage;
+      const searchTermChanged = get(previousSearchTerm) !== term;
+      const isPaginationOnly = (pageChanged || rowsChanged) && !searchTermChanged;
+      previousSearchTerm.set(term);
+
+      if (isPaginationOnly) {
+        previousPage.set(state.currentPage);
+        previousRowsPerPage.set(state.rowsPerPage);
+      } else {
+        facetsPromise.set(updateFacetsFromSearch());
+      }
+      return await search(state);
+    } catch (e) {
+      return [];
+    } finally {
+      loading.set(false);
+    }
+  });
+}
 
 export async function search(state: State): Promise<SearchResult[]> {
   const errorText =
