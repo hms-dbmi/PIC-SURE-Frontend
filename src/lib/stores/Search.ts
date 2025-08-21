@@ -24,18 +24,18 @@ export const previousSearchTerm: Writable<string> = writable('');
 export const previousRowsPerPage: Writable<number> = writable(getDefaultRows('ExplorerTable'));
 
 const emptyFn = () => {};
-const subscribers: { [key: string]: Unsubscriber } = {
+const unsubscribers: { [key: string]: Unsubscriber } = {
   searchTerm: emptyFn,
   selectedFacets: emptyFn,
 };
 
 export function initHandler() {
-  Object.values(subscribers).forEach((unsub) => unsub());
-  subscribers.selectedFacets = selectedFacets.subscribe(() => {
+  Object.values(unsubscribers).forEach((unsub) => unsub());
+  unsubscribers.selectedFacets = selectedFacets.subscribe(() => {
     tableHandler.setPage(1);
   });
 
-  subscribers.searchTerm = searchTerm.subscribe(() => {
+  unsubscribers.searchTerm = searchTerm.subscribe(() => {
     tableHandler.setPage(1);
   });
 
