@@ -4,6 +4,7 @@ import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import { resources } from '$lib/stores/Resources';
 import { resultCounts } from '$lib/stores/ResultStore';
+import { getBlankQueryRequest } from '$lib/utilities/QueryBuilder';
 import type { StudyCountsData } from '$lib/models/StudyCounts';
 
 export async function loadStudyCounts(isOpenAccess: boolean = false): Promise<StudyCountsData[]> {
@@ -33,17 +34,12 @@ export async function loadStudyCounts(isOpenAccess: boolean = false): Promise<St
   }
 }
 
-// Fallback method to make the API call if data isn't available in existing results
-async function loadStudyCountsFallback(isOpenAccess: boolean = false): Promise<StudyCountsData[]> {
+async function loadStudyCountsFallback(isOpenAccess: boolean = true): Promise<StudyCountsData[]> {
   try {
-    // This is the original implementation as a fallback
-    const response = await api.post(Picsure.QuerySync, {
-      query: {
-        expectedResultType: 'CROSS_COUNT',
-        setCrossCountFields: ['\\_studies_consents\\']
-      },
-      resourceUUID: isOpenAccess ? get(resources).hpdsOpen : get(resources).hpdsAuth
-    });
+    const request = getBlankQueryRequest(isOpenAccess, get(resources).hpdsOpen, 'CROSS_COUNT');
+    request.query.crossCountFields = ['\\_studies_consents\\'];
+
+    const response = await api.post(Picsure.QuerySync, request);
 
     if (!response) {
       throw new Error('No study data available');
