@@ -10,7 +10,7 @@
   import { features } from '$lib/configuration';
 
   import { filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
-  import { loadPatientCount, hasNonZeroResult } from '$lib/stores/ResultStore';
+  import { loadPatientCount, hasNonZeroResult, totalParticipants } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
@@ -57,8 +57,13 @@
 
   let showCohortDetails = $derived(isExplorer && features.explorer.enableCohortDetails);
 
+  let showParticipantCountByStudy = $derived(
+    isOpenAccess && $totalParticipants !== undefined && $totalParticipants > 0
+  );
+
   let showToolSuite = $derived(
     showCohortDetails ||
+      showParticipantCountByStudy ||
       (($filters.length !== 0 || $exports.length !== 0) &&
         (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer)),
   );
@@ -208,6 +213,19 @@
             icon="fa-solid fa-dna"
             size="md"
             active={page.url.pathname.includes('explorer/variant')}
+          />
+        {/if}
+        {#if showParticipantCountByStudy}
+          <CardButton
+            href="/discover/counts"
+            data-testid="participant-count-study-btn"
+            title="Participant Counts by Study"
+            icon="fa-solid fa-people-group"
+            size="md"
+            disabled={$totalParticipants < 10}
+            active={page.url.pathname === '/discover/counts'}
+            class={$totalParticipants < 10 ? 'cursor-not-allowed' : ''}
+            {...($totalParticipants < 10 && { 'aria-label': 'Cohort count is too small' })}
           />
         {/if}
       </div>
