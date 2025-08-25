@@ -104,7 +104,7 @@
     disabled={isLoading}
   >
     {#if isLoading}
-      <Loading size="micro" color="surface" />
+      <Loading size="micro" color="white" />
     {:else}
       <i class="fas fa-plus"></i>
     {/if}
