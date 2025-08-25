@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import DOMPurify from 'dompurify';
 
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
@@ -9,6 +8,7 @@
   import { Psama } from '$lib/paths';
   import { toaster } from '$lib/toaster';
   import { login, logout, user, isLoggedIn, getToken } from '$lib/stores/User';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
 
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -71,7 +71,7 @@
 {:then termsHTML}
   <div id="terms-of-service">
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    {@html DOMPurify.sanitize(termsHTML)}
+    {@html sanitizeHTML(termsHTML)}
   </div>
   <footer class="modal-footer flex justify-end space-x-2 mt-6">
     {#if enforceTerms}

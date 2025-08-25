@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
-  import DOMPurify from 'dompurify';
 
   import { branding } from '$lib/configuration';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
+
   import Content from '$lib/components/Content.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
@@ -14,8 +15,8 @@
   let execution: string = $state('');
 
   onMount(() => {
-    connection = DOMPurify.sanitize(branding.analysisConfig.api.instructions.connection);
-    execution = DOMPurify.sanitize(branding.analysisConfig.api.instructions.execution);
+    connection = sanitizeHTML(branding.analysisConfig.api.instructions.connection);
+    execution = sanitizeHTML(branding.analysisConfig.api.instructions.execution);
   });
 </script>
 

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import DOMPurify from 'dompurify';
 
   import { createInstance } from '$lib/AuthProviderRegistry';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
   import type { AuthData } from '$lib/models/AuthProvider';
   import { resetSearch } from '$lib/stores/Search';
 
@@ -37,7 +37,7 @@
     imageSrc = './' + provider.imagesrc;
   }
 
-  onMount(() => (help = DOMPurify.sanitize(helpText)));
+  onMount(() => (help = sanitizeHTML(helpText)));
 </script>
 
 {#if provider}
