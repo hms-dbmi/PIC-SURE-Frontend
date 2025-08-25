@@ -56,25 +56,25 @@
 
     isLoading = true;
     try {
-    const treeResult: SearchResult = await getConceptTree(
-      data.dataset,
-      ENSURE_MAX_DEPTH,
-      selectedNode,
-    );
-    let filter: Filter;
-    const searchResult: SearchResult = {
-      conceptPath: selectedNode,
-      display: selectedNode.split('\\').filter(Boolean).pop() || selectedNode,
-      name: selectedNode,
-      allowFiltering: true,
-      dataset: data.dataset,
-      studyAcronym: data.studyAcronym,
-      description: `Any Record of ${selectedNode}`,
-      meta: data.meta,
-      study: data.study,
-      table: data.table,
-      type: 'AnyRecordOf',
-    };
+      const treeResult: SearchResult = await getConceptTree(
+        data.dataset,
+        ENSURE_MAX_DEPTH,
+        selectedNode,
+      );
+      let filter: Filter;
+      const searchResult: SearchResult = {
+        conceptPath: selectedNode,
+        display: selectedNode.split('\\').filter(Boolean).pop() || selectedNode,
+        name: selectedNode,
+        allowFiltering: true,
+        dataset: data.dataset,
+        studyAcronym: data.studyAcronym,
+        description: `Any Record of ${selectedNode}`,
+        meta: data.meta,
+        study: data.study,
+        table: data.table,
+        type: 'AnyRecordOf',
+      };
       filter = createAnyRecordOfFilter(searchResult, treeResult);
       addFilter(filter);
       finish();
@@ -99,7 +99,7 @@
   <button
     class="btn btn-icon preset-filled-primary-500 m-1"
     data-testid="add-filter"
-    aria-label={isLoading ? "Adding Filter..." : "Add Filter"}
+    aria-label={isLoading ? 'Adding Filter...' : 'Add Filter'}
     onclick={addSelection}
     disabled={isLoading}
   >
