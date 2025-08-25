@@ -1,6 +1,4 @@
 <script lang="ts">
-  import DOMPurify from 'dompurify';
-
   import { goto } from '$app/navigation';
 
   import * as api from '$lib/api';
@@ -8,6 +6,7 @@
   import { branding } from '$lib/configuration';
   import { toaster } from '$lib/toaster';
   import { isTopAdmin } from '$lib/stores/User';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
 
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -62,7 +61,7 @@
       </ErrorAlert>
       <div id="terms-of-service" class="bg-white dark:bg-black border px-2">
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        {@html DOMPurify.sanitize(terms)}
+        {@html sanitizeHTML(terms)}
       </div>
     {:else}
       <Editor fontOptions bind:content={terms} />

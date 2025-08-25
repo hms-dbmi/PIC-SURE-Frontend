@@ -1,5 +1,4 @@
 <script lang="ts">
-  import DOMPurify from 'dompurify';
   import { driver, type DriverHook, type DriveStep } from 'driver.js';
   import 'driver.js/dist/driver.css';
   import '../../../styles/tour.css';
@@ -7,9 +6,10 @@
   import { searchTerm, selectedFacets, searchPromise } from '$lib/stores/Search';
   import { clearFilters } from '$lib/stores/Filter';
   import { clearExports } from '$lib/stores/Export';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
 
   import Modal from '$lib/components/Modal.svelte';
-  import Loading from '../Loading.svelte';
+  import Loading from '$lib/components/Loading.svelte';
 
   let {
     tourConfig,
@@ -233,7 +233,7 @@
   {:else}
     <p>
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      {@html DOMPurify.sanitize(tourConfig?.description)}
+      {@html sanitizeHTML(tourConfig?.description)}
     </p>
     <footer class="modal-footer flex justify-end space-x-2 mt-6">
       <button

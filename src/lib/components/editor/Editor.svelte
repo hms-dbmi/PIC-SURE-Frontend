@@ -1,10 +1,11 @@
 <script lang="ts">
-  import DOMPurify from 'dompurify';
   import { onMount } from 'svelte';
 
   import 'quill/dist/quill.core.css';
   import 'quill/dist/quill.snow.css';
   import '../../../styles/editor.css';
+
+  import { sanitizeHTML } from '$lib/utilities/HTML';
 
   let {
     content = $bindable(),
@@ -71,7 +72,7 @@
       'ql-size-large': 'text-lg',
       'ql-size-huge': 'text-xl',
     }).forEach(([from, to]) => (text = text.replaceAll(from, to)));
-    return DOMPurify.sanitize(text, { ADD_ATTR: ['target'] });
+    return sanitizeHTML(text, { ADD_ATTR: ['target'] });
   }
 
   onMount(async () => {

@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import DOMPurify from 'dompurify';
-  import Content from '$lib/components/Content.svelte';
+
   import { branding } from '$lib/configuration';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
+  import Content from '$lib/components/Content.svelte';
   import CollaborateSteps from '$lib/components/steppers/CollaborateSteps.svelte';
 
   let introduction: string = $state('');
@@ -10,9 +11,9 @@
   let examples: string = $state('');
 
   onMount(() => {
-    introduction = DOMPurify.sanitize(branding.analysisConfig.analysis.introduction);
-    access = DOMPurify.sanitize(branding.analysisConfig.analysis.access);
-    examples = DOMPurify.sanitize(branding.analysisConfig.analysis.examples);
+    introduction = sanitizeHTML(branding.analysisConfig.analysis.introduction);
+    access = sanitizeHTML(branding.analysisConfig.analysis.access);
+    examples = sanitizeHTML(branding.analysisConfig.analysis.examples);
   });
 </script>
 
