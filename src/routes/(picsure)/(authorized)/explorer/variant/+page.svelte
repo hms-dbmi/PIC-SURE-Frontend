@@ -3,7 +3,7 @@
 
   import { goto } from '$app/navigation';
   import { branding, features } from '$lib/configuration';
-  import { toaster } from '$lib/toaster';
+  import { isToastShowing, toaster } from '$lib/toaster';
 
   import { panelOpen } from '$lib/stores/SidePanel';
 
@@ -14,9 +14,13 @@
 
   onMount(() => {
     if (!getQueryRequest(true).query.hasGenomicFilter()) {
-      toaster.error({
-        title: 'No query provided. Please add a genomic filter to explore variant data.',
-      });
+      if (!isToastShowing('no-query')) {
+        toaster.error({
+          id: 'no-query',
+          title: 'No query provided. Please add a genomic filter to explore variant data.',
+          closable: true,
+        });
+      }
       goto('/explorer');
     } else {
       $panelOpen = false;
