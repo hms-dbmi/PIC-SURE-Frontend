@@ -6,7 +6,7 @@
   import { StatPromise } from '$lib/utilities/StatBuilder';
   import { countResult } from '$lib/utilities/PatientCount';
   import Loading from '$lib/components/Loading.svelte';
-
+  import { features } from '$lib/configuration';
   interface Props {
     stats: Readable<StatResult[]>;
     description: string;
@@ -43,9 +43,9 @@
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
     {@html DOMPurify.sanitize(description)}
   </div>
-  <div class="grid {gridClass} grid-flow-col justify-center p-4 my-4 gap-y-9 {width}">
+  <div class="grid {gridClass} grid-flow-col justify-center p-2 my-2 gap-y-9 {width}">
     {#each $stats as stat (`${authString}-${stat.key}-${stat.label}`)}
-      <div class="p-4 not-last:border-r border-surface-500">
+      <div class="p-2 not-last:border-r border-surface-500">
         <div
           data-testid="value-{authString}-{stat.key}-{stat.label}"
           class="flex flex-col justify-center items-center text-2xl"
@@ -56,7 +56,7 @@
             <strong class="p-1 mb-3">
               {countResult(counts.filter(StatPromise.fullfiled).map(({ value }) => value))}
             </strong>
-            {#if counts.some(StatPromise.rejected)}
+            {#if !features.federated && counts.some(StatPromise.rejected)}
               <i class="fa-solid fa-circle-exclamation p-1 mb-4 mt-1"></i>
             {/if}
           {/await}
