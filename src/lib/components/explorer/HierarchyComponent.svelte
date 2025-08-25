@@ -7,6 +7,7 @@
   import RadioTree from '$lib/components/tree/RadioTree.svelte';
   import { getConceptTree } from '$lib/stores/Dictionary';
   import { panelOpen } from '$lib/stores/SidePanel';
+  import Loading from '$lib/components/Loading.svelte';
 
   interface Props {
     data?: SearchResult;
@@ -48,8 +49,13 @@
   }
 
   let selectedNode = $state(data.conceptPath);
+  let isLoading = $state(false);
 
   async function addSelection() {
+    if (isLoading) return;
+
+    isLoading = true;
+    try {
     const treeResult: SearchResult = await getConceptTree(
       data.dataset,
       ENSURE_MAX_DEPTH,
@@ -69,9 +75,14 @@
       table: data.table,
       type: 'AnyRecordOf',
     };
-    filter = createAnyRecordOfFilter(searchResult, treeResult);
-    addFilter(filter);
-    finish();
+      filter = createAnyRecordOfFilter(searchResult, treeResult);
+      addFilter(filter);
+      finish();
+    } catch (error) {
+      console.error('Error adding selection:', error);
+    } finally {
+      isLoading = false;
+    }
   }
 
   function finish() {
@@ -88,9 +99,14 @@
   <button
     class="btn btn-icon preset-filled-primary-500 m-1"
     data-testid="add-filter"
-    aria-label="Add Filter"
+    aria-label={isLoading ? "Adding Filter..." : "Add Filter"}
     onclick={addSelection}
+    disabled={isLoading}
   >
-    <i class="fas fa-plus"></i>
+    {#if isLoading}
+      <Loading size="micro" color="surface" />
+    {:else}
+      <i class="fas fa-plus"></i>
+    {/if}
   </button>
 </div>
