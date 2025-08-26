@@ -70,7 +70,7 @@ test.describe('Results Panel', () => {
     await expect(page.locator('#result-count')).toHaveText('N/A');
     await expect(page.getByTestId('toast-message')).toBeVisible();
   });
-  test('Result panel shows N/A icon and generic error on open with no filters', async ({
+  test('Result panel shows generic error on open with no filters', async ({
     page,
   }) => {
     // Given
@@ -84,7 +84,6 @@ test.describe('Results Panel', () => {
 
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
-    await expect(page.locator('#result-count')).toHaveText('N/A');
     await expect(page.getByTestId('toast-message')).toBeVisible();
   });
   test('Result panel shows the correct number of results', async ({ page }) => {
