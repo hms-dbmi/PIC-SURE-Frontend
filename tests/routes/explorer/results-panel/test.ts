@@ -70,9 +70,7 @@ test.describe('Results Panel', () => {
     await expect(page.locator('#result-count')).toHaveText('N/A');
     await expect(page.getByTestId('toast-message')).toBeVisible();
   });
-  test('Result panel shows generic error on open with no filters', async ({
-    page,
-  }) => {
+  test('Result panel shows generic error on open with no filters', async ({ page }) => {
     // Given
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
