@@ -5,7 +5,7 @@ import { features } from '$lib/configuration';
 
 export const load: LayoutLoad = async ({ url, fetch }) => {
   if (browser) {
-    if (!features.login.open && !localStorage.getItem('token')) {
+    if (!features.login.open && !localStorage.getItem('token') && url.pathname !== '/login') {
       redirect(302, '/login');
     }
     try {
