@@ -136,7 +136,7 @@
   }
 
   let treeNodes: RemoteTreeNodeClass[] = $state(
-    initialNodes.map((node) => new RemoteTreeNodeClass(node)),
+    initialNodes?.map((node) => new RemoteTreeNodeClass(node)) ?? undefined,
   );
 </script>
 

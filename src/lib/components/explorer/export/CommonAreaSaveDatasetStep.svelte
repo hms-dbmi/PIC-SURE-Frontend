@@ -1,14 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-
   import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import { commonAreaUUID, federatedQueryStatuses } from '$lib/stores/Dataset';
-  import { Picsure } from '$lib/paths';
-  import * as api from '$lib/api';
-  import { getQueryResources, loadResources, resources } from '$lib/stores/Resources';
+  import { useFederatedQuery } from '$lib/services/useFederatedQueryState.svelte';
   import Summary from './Summary.svelte';
   import Loading from '$lib/components/Loading.svelte';
-  import { Query } from '$lib/models/query/Query';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 
   interface Props {
     query: QueryRequestInterface;
@@ -17,93 +13,48 @@
     saveable: boolean;
   }
 
-  let { query, datasetId = $bindable(), datasetNameInput = $bindable(), saveable = $bindable() }: Props = $props();
-  let federatedQueryResponses: Record<string, string> = $state({});
-  let federatedQueryStatusesPromises: Promise<void>[] = $state([]);
+  let {
+    query,
+    datasetId = $bindable(),
+    datasetNameInput = $bindable(),
+    saveable = $bindable(),
+  }: Props = $props();
 
-  async function createCommonAreaUUID() {
-    if ($commonAreaUUID) {
-      datasetId = $commonAreaUUID;
-      return;
-    }
-    const uuidQuery = new Query();
-    const uuidQueryRequest: QueryRequestInterface = {
-      query: uuidQuery,
-      resourceUUID: $resources.queryIdGen,
-    };
-    return api.post(Picsure.Query, uuidQueryRequest).then((res: { picsureResultId: string }) => {
-      const commonAreaDatasetId = res.picsureResultId || undefined;
-      commonAreaUUID.set(commonAreaDatasetId);
-      datasetId = commonAreaDatasetId || '';
-      query.commonAreaUUID = commonAreaDatasetId;
-    });
-  }
+  // Initialize the federated query composable
+  const federatedQuery = useFederatedQuery({
+    query,
+    onComplete: () => {
+      saveable = true;
+    },
+    onError: (error) => {
+      console.error('Federated query error:', error);
+    },
+  });
 
-  async function queryAsync(query: QueryRequestInterface) {
-    query.query.expectedResultType = 'COUNT';
-    query['@type'] = 'FederatedQueryRequest';
-    return api.post(`${Picsure.Query}?isInstitute=true`, query);
-  }
+  // Reactive assignments to keep props in sync
+  $effect(() => {
+    datasetId = federatedQuery.datasetId;
+  });
 
-  async function queryStatus(name: string, uuid: string) {
-    let interval = 0;
-    const queryFragment = `/${uuid}/status?isInstitute=true`;
-    const queryResponse: { status: string; responseText?: string } = await api.get(
-      `${Picsure.Query}${queryFragment}`,
-    );
-    if (!queryResponse.status) {
-      const serverMsg =
-        queryResponse && queryResponse.responseText
-          ? JSON.parse(queryResponse.responseText)?.message
-          : 'No Message';
-      const message = `There was an error preparing your query on ${name}.\nPlease try again later, if the problem persists please reach out to an admin.\nMessage from server: ${serverMsg}`;
-      console.dir(queryResponse);
-      $federatedQueryStatuses[name] = 'ERROR';
-      return;
-    } else if (
-      queryResponse.status &&
-      (queryResponse.status === 'AVAILABLE' ||
-        queryResponse.status === 'COMPLETE' ||
-        queryResponse.status === 'ERROR')
-    ) {
-      $federatedQueryStatuses[name] = queryResponse.status;
-      return;
-    }
-    $federatedQueryStatuses[name] = 'PENDING';
-    interval = Math.min(interval + 2000, 30000);
-    setTimeout(() => {
-      queryStatus(name, uuid);
-    }, interval);
-  }
+  $effect(() => {
+    saveable = federatedQuery.saveable;
+  });
 
-  async function callInstituteNodes() {
-    getQueryResources().forEach(async (resource) => {
-      const resourceQuery = structuredClone(query);
-      resourceQuery.resourceUUID = resource.uuid;
-      const queryResponse: { picsureResultId: string } = await queryAsync(resourceQuery);
-      federatedQueryResponses[resource.name] = queryResponse.picsureResultId;
-    });
-  }
-
-  onMount(async () => {
-    await loadResources();
-    await createCommonAreaUUID();
-    
-    datasetId = $commonAreaUUID || '';
-    await callInstituteNodes();
-    Object.entries(federatedQueryResponses).map(async ([resourceName, uuid]) => {
-      federatedQueryStatusesPromises.push(queryStatus(resourceName, uuid));
-    });
+  onMount(() => {
+    federatedQuery.initialize();
   });
 </script>
 
 <section class="flex flex-col w-full h-full items-center">
   <Summary />
-  {#await Promise.all(federatedQueryStatusesPromises).then(() => {
-    saveable = true;
-  })}
+
+  {#if federatedQuery.state.isLoading}
     <Loading ring size="medium" label="Preparing datasets..." />
-  {:then}
+  {:else if federatedQuery.state.error && Object.keys(federatedQuery.state.responses).length === 0}
+    <ErrorAlert title="Failed to prepare federated query">
+      {federatedQuery.state.error}
+    </ErrorAlert>
+  {:else}
     <div class="w-full h-full m-2 card p-4">
       <header class="card-header">
         Common Area Save the information in your final data export by clicking the Save Dataset ID
@@ -128,7 +79,7 @@
             <div class="flex items-center">
               <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
               {#if !datasetId}
-                <Loading ring size="micro" label="Saving dataset..." />
+                <Loading ring size="micro" label="Generating ID..." />
               {:else}
                 <div id="dataset-id" class="mr-4">{datasetId}</div>
               {/if}
@@ -137,5 +88,5 @@
         </div>
       </div>
     </div>
-  {/await}
+  {/if}
 </section>

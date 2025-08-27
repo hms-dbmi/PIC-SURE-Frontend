@@ -1,17 +1,18 @@
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import type { DataSet } from '$lib/models/Dataset';
+import type { FederatedResourceInfo } from '$lib/stores/Dataset';
 
 interface DatasetRequest {
   queryId: string;
   name: string;
-  metadata?: { saved: number; siteQueryIds: string[] };
+  metadata?: { saved: number; siteQueryIds: Omit<FederatedResourceInfo, 'status'>[] };
 }
 
 export async function createDatasetName(
   queryId: string,
   name: string,
-  siteQueryIds?: string[],
+  siteQueryIds?: Omit<FederatedResourceInfo, 'status'>[],
 ): Promise<DataSet> {
   if (name === '' && name.trim() === '') {
     throw 'Please input a Dataset ID name';

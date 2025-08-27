@@ -6,7 +6,7 @@
   import { totalParticipants, resultCounts, loadPatientCount } from '$lib/stores/ResultStore';
   import type { StatResultMap } from '$lib/models/Stat';
   import Loading from '$lib/components/Loading.svelte';
-  import { federatedQueryStatuses } from '$lib/stores/Dataset';
+  import { federatedQueryMap } from '$lib/stores/Dataset';
   let { exports } = ExportStore;
 
   let participantsCount = $derived($totalParticipants);
@@ -21,27 +21,28 @@
     switch (status) {
       case 'AVAILABLE':
       case 'COMPLETE':
+        return 'fa-solid fa-circle-check text-success-500';
       case 'ERROR':
-        return 'fa-solid fa-circle-check text-success-500';
+        return 'fa-solid fa-circle-xmark text-error-500';
+      case 'PENDING':
+        return 'fa-solid fa-clock text-warning-500';
       default:
-        return 'fa-solid fa-circle-check text-success-500';
+        return 'fa-solid fa-circle text-surface-500';
     }
   }
 
   let siteStatusIcons = $derived(
-    $federatedQueryStatuses
+    $federatedQueryMap
       ? Object.fromEntries(
-          Object.entries($federatedQueryStatuses).map(([siteName, status]) => [
+          Object.entries($federatedQueryMap).map(([siteName, info]) => [
             siteName,
-            getStatusIcon(status),
+            getStatusIcon(info?.status || ''),
           ]),
         )
       : {},
   );
 
   onMount(async () => {
-    if (!features.federated) return;
-
     if ($resultCounts.length === 0) {
       await loadPatientCount(false);
     }
@@ -50,6 +51,9 @@
     if (patientCountEntry) {
       resultCountMap = patientCountEntry.result;
     }
+  });
+  $effect(() => {
+    console.log('federatedQueryMap', $federatedQueryMap);
   });
 </script>
 
@@ -73,7 +77,7 @@
   </div>
 </div>
 
-{#if Object.keys($federatedQueryStatuses).length === 0 && Object.keys(resultCountMap).length > 0}
+{#if Object.keys($federatedQueryMap).length === 0 && Object.keys(resultCountMap).length > 0}
   <div id="site-indicators" class="grid grid-cols-3 gap-y-2 gap-x-6">
     {#each Object.entries(resultCountMap) as [siteName, value]}
       <div id="site-indicator">
@@ -92,12 +96,16 @@
   </div>
 {/if}
 
-{#if features.federated && $federatedQueryStatuses && Object.keys($federatedQueryStatuses).length > 0 && Object.keys(resultCountMap).length > 0}
+{#if features.federated && $federatedQueryMap && Object.keys($federatedQueryMap).length > 0}
   <div id="site-indicators" class="grid grid-cols-3 gap-y-2 gap-x-6">
-    {#each Object.entries($federatedQueryStatuses) as [siteName]}
+    {#each Object.entries($federatedQueryMap) as [siteName, info]}
       <div id="site-indicator">
-        <i class={siteStatusIcons[siteName]}></i>
-        <span id="site-indicator-label">{siteName}</span>
+        {#if info?.status === 'PENDING'}
+          <Loading size="micro" label={`${siteName}`} />
+        {:else}
+          <i class={siteStatusIcons[siteName]}></i>
+          <span id="site-indicator-label" class="uppercase">{siteName}</span>
+        {/if}
       </div>
     {/each}
   </div>
