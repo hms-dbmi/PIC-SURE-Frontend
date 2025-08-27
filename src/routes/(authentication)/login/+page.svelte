@@ -72,7 +72,7 @@
             </ErrorAlert>
           {/if}
           {#if providers.length > 3}
-            <select id="login-select" class="select !w-fit" bind:value={selected} required>
+            <select id="login-select" bind:value={selected} required>
               <!-- This is a workaround to make the placeholder show when the select is bound to an empty string -->
               <option value="" disabled selected>Select a provider</option>
               {#each providers as provider}

@@ -45,14 +45,40 @@ test('Discover can display ±3', async ({ page }) => {
   await firstItem.click();
   const addFilterButton = page.getByTestId('add-filter');
   await addFilterButton.click();
-  const resultArray = crossCountSyncResponsePlus3['\\_studies_consents\\'].split(' ');
-  const resultCount = parseInt(resultArray[0]) || 0;
-  const suffix = resultArray[1];
+  const raw = crossCountSyncResponsePlus3['\\_studies_consents\\'];
+  const match = raw.match(/^(\d[\d,]*)\s*±(\d+)$/);
+  const numeric = parseInt((match?.[1] || '0').replace(/,/g, '')) || 0;
+  const plusMinus = match?.[2] || '0';
 
   // Then
   await expect(page.locator('#results-panel')).toBeVisible();
   await expect(page.locator('#result-count')).toContainText(
-    `${resultCount?.toLocaleString()} ${suffix}`,
+    new RegExp(`^${numeric.toLocaleString()}\\s*±\\s*${plusMinus}\\s*$`),
+  );
+});
+test('Discover displays large number with ± and no space', async ({ page }) => {
+  // Given
+  await mockApiSuccess(
+    page,
+    `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+    detailResponseCat,
+  );
+  await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
+  const bigNumberSync = { '\\_studies_consents\\': '1477888±3' };
+  await mockApiSuccess(page, '*/**/picsure/query/sync', bigNumberSync);
+  await page.goto('/discover?search=somedata');
+
+  // When
+  await clickNthFilterIcon(page);
+  const firstItem = await getOption(page);
+  await firstItem.click();
+  const addFilterButton = page.getByTestId('add-filter');
+  await addFilterButton.click();
+
+  // Then
+  await expect(page.locator('#results-panel')).toBeVisible();
+  await expect(page.locator('#result-count')).toContainText(
+    new RegExp('^1,477,888\\s*±\\s*3\\s*$'),
   );
 });
 test('Discover can display < 10', async ({ page }) => {

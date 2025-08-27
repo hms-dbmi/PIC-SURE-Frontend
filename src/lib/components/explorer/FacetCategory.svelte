@@ -1,10 +1,11 @@
 <script lang="ts">
   import { Accordion } from '@skeletonlabs/skeleton-svelte';
-
-  import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
+  import { scale } from 'svelte/transition';
+  import { elasticInOut } from 'svelte/easing';
+  import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
   import type { Facet } from '$lib/models/Search';
   import { updateFacets, selectedFacets } from '$lib/stores/Search';
-  import { hiddenFacets } from '$lib/stores/Dictionary';
+  import { hiddenFacets, openFacets } from '$lib/stores/Dictionary';
 
   import FacetItem from './FacetItem.svelte';
 
@@ -172,25 +173,24 @@
     </div>
   {/snippet}
 </Accordion.Item>
-<div class="mb-2">
-  {#each selectedFacetsChips as facet}
-    <span
-      class="badge relative z-10 preset-outlined-surface-500 my-1 py-2 flex items-center box-border w-full max-w-full overflow-hidden"
-      id={facet.name}
-    >
-      <span class="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
-        {facet.display}
+{#if !$openFacets.includes(facetCategory.name)}
+  <div class="mb-2 flex flex-wrap gap-2" transition:scale={{ easing: elasticInOut }}>
+    {#each selectedFacetsChips as facet}
+      <span class="badge z-10 preset-outlined-surface-500 py-2 overflow-hidden" id={facet.name}>
+        <span class="overflow-hidden text-ellipsis whitespace-nowrap min-w-0">
+          {facet.display}
+        </span>
+        <button
+          class="chip-close ml-1 shrink-0"
+          aria-label="Remove Facet"
+          onclick={() => updateFacets([facet])}
+        >
+          <i class="fa-solid fa-times hover:text-secondary-500"></i>
+        </button>
       </span>
-      <button
-        class="chip-close ml-1 shrink-0"
-        aria-label="Remove Facet"
-        onclick={() => updateFacets([facet])}
-      >
-        <i class="fa-solid fa-times hover:text-secondary-500"></i>
-      </button>
-    </span>
-  {/each}
-</div>
+    {/each}
+  </div>
+{/if}
 
 <style lang="postcss">
   @reference "../../../styles/app.css";

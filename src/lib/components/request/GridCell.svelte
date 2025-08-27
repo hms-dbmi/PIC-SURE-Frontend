@@ -10,8 +10,8 @@
   let { title = '', help, children }: Props = $props();
 </script>
 
-<div class="text-center border-surface-600-400 px-4 my-3">
-  <div class="border-b border-primary-600-400 text-center mb-2">
+<div class="text-center p-4">
+  <div class="border-b border-surface-200 text-center mb-2 flex flex-row gap-2">
     {title}
     {@render help?.()}
   </div>

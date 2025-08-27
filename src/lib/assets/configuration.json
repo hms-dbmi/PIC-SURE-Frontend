@@ -179,6 +179,9 @@
     "introduction": "<section id=\"introduction\"><h2>Expand Access with Collaborators</h2><p>Once you have defined your patient cohort using the Cohort Builder (link to page here), you will see which sites have data that match these criteria. To gain access to patient-level data from other GIC network institutions, the Principal Investigator (PI) must identify and engage co-PIs at the other site.</p><p>For example, a researcher from Boston Children's Hospital (BCH) created a cohort and would like to collaborate with the Children's Hospital of Philadelphia (CHOP), which has patients that match their research criteria. The BCH PI would find a collaborating PI at CHOP to access the CHOP patient-level data.</p></section>",
     "findCollaborators": "<section id=\"find-collaborators\"><h2>Resources to Find Collaborators</h2><p>You can search for collaborators from the GIC network using the associated faculty listings:</p><ul class=\"list-inside list-disc space-y-2 ml-8\"><li><a class=\"anchor\" href=\"https://connects.catalyst.harvard.edu/Profiles/search/\">Boston Children's Hospital / Harvard Medical School</a></li><li><a class=\"anchor\" href=\"https://www.cincinnatichildrens.org/search/find-researcher\">Cincinnati Children's Hospital Medical Center</a></li><li><a class=\"anchor\" href=\"https://www.research.chop.edu/people/directory\">Children's Hospital of Philadelphia</a></li><li>St. Louis Children's Hospital / <a class=\"anchor\" href=\"https://profiles.wustl.edu/\">Washington University at St. Louis</a></li><li><a class=\"anchor\" href=\"https://www.chp.edu/research/areas\">University of Pittsburgh Medical Center</a></li><li><a class=\"anchor\" href=\"https://www.lebonheur.org/research/\">Le Bonheur Children's Hospital at the University of Tennessee Health Science Center</a></li></ul><p>Additionally, you can email <a class=\"anchor\" href=\"mailto:GIC-contact@chip.org\">GIC-contact@chip.org</a> for assistance in identifying a collaborator.</p></section>"
   },
+  "datasetRequestPage": {
+    "searchIntro": "The Dataset ID should be provided by the researcher in the <a class=\"anchor\" href=\"https://redcap.tch.harvard.edu/redcap_edc/surveys/?s=EWYX8X8XX77TTWFR\" target=\"_blank\" rel=\"noopener noreferrer\">RedCap Request Form</a>. After the Sample and Data Access Committee (SDAC) has approved the request, the Data Admin can send the data to the designated S3 bucket to enable the researcher to access and analyze the data using <a class=\"anchor\" href=\"https://www.service-workbench.childrens.harvard.edu/\" target=\"_blank\" rel=\"noopener noreferrer\">Service Workbench</a>."
+  },
   "login": {
     "description": "Where searching for, filtering on, and analyzing data is made simple.",
     "showSiteName": false,
@@ -227,5 +230,8 @@
   },
   "genomic": {
     "defaultGenomeBuild": "GRCh38"
+  },
+  "termsOfService": {
+    "rejectionUrl": "https://avillach-lab.hms.harvard.edu/pic-sure"
   }
 }

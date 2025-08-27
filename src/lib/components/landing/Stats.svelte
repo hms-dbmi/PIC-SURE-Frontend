@@ -10,8 +10,8 @@
   onMount(loadLandingStats);
 </script>
 
-<section class="flex flex-col items-center w-full p-4 bg-surface-100-900">
-  <h2 class="m-4">Data Summary</h2>
+<section class="flex flex-col items-center w-full p-4 my-3 bg-surface-100-900">
+  <h2 class="m-2">Data Summary</h2>
 
   {#if $authStats.length > 0}
     <Stat stats={authStats} auth description={branding?.landing?.authExplanation} />

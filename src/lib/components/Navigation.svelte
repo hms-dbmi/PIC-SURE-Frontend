@@ -82,13 +82,15 @@
               classes="m-3"
             />
           {/snippet}
-          <p class="pb-6">{$user.email}</p>
-          <button
-            id="user-logout-btn"
-            class="btn preset-outlined-primary-500"
-            title="Logout"
-            onclick={() => logout(providerInstance, false)}>Logout</button
-          >
+          <div class="flex flex-col items-center">
+            <p class="pb-6">{$user.email}</p>
+            <button
+              id="user-logout-btn"
+              class="btn preset-filled-primary-500 w-fit"
+              title="Logout"
+              onclick={() => logout(providerInstance, false)}>Logout</button
+            >
+          </div>
         </Popover>
       {:else}
         <!-- Login -->

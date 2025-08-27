@@ -31,6 +31,10 @@
 @layer utilities {
 }
 
+:root {
+  --color-gic-blue: #338fff;
+}
+
 html,
 body {
   @apply h-full overflow-hidden;
@@ -62,7 +66,7 @@ input[type='checkbox'] {
 
 select {
   @apply select;
-  padding: 0.5rem 1.25rem;
+  @apply py-2;
 }
 
 hr {
@@ -244,8 +248,6 @@ ul.primary-list li::marker {
 }
 
 .table {
-  width: 100%;
-  table-layout: auto;
   overflow: hidden;
   background-color: var(--color-surface-100);
   display: table;
@@ -654,6 +656,16 @@ label.required input:invalid,
 
   ul {
     @apply list-disc ml-8;
+  }
+
+  ol {
+    @apply list-[lower-roman] ml-8;
+  }
+
+  div,
+  ol,
+  ul {
+    @apply my-2;
   }
 
   a {

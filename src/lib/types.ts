@@ -76,6 +76,10 @@ export interface ResultsConfig {
   cohortDescription: string;
 }
 
+export interface DatasetRequestPageConfig {
+  searchIntro: string;
+}
+
 export interface LoginConfig {
   description: string;
   showSiteName: boolean;
@@ -138,4 +142,8 @@ export interface CodeBlockConfig extends Indexable {
   RExport: string;
   PythonAPI: string;
   RAPI: string;
+}
+
+export interface TermsOfServiceConfig {
+  rejectionUrl: string;
 }

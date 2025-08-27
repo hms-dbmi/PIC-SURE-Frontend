@@ -8,6 +8,8 @@
     offset,
     useClick,
     useDismiss,
+    useFocus,
+    useHover,
     useFloating,
     useInteractions,
     useRole,
@@ -15,11 +17,13 @@
   import { fade } from 'svelte/transition';
   import { shift, type Placement } from '@floating-ui/dom';
 
+  export type TriggerType = 'click' | 'hover' | 'focus' | 'manual';
   interface Props {
     open?: boolean;
     title?: string;
     message?: string;
     triggerStyle?: string;
+    triggerTypes?: string[];
     placement?: Placement;
     color?: string;
     'data-testid'?: string;
@@ -33,6 +37,7 @@
     title,
     message,
     triggerStyle = '',
+    triggerTypes = ['click'],
     placement = 'top',
     color = 'surface',
     'data-testid': testid = '',
@@ -60,10 +65,25 @@
   });
 
   // Interactions
-  const role = useRole(floating.context);
-  const click = useClick(floating.context);
+  const role = useRole(floating.context, { role: 'tooltip' });
   const dismiss = useDismiss(floating.context);
-  const interactions = useInteractions([role, click, dismiss]);
+  let interactionsToUse = [role, dismiss];
+
+  if (triggerTypes.includes('hover')) {
+    const hover = useHover(floating.context, { move: false });
+    interactionsToUse.push(hover);
+  }
+
+  if (triggerTypes.includes('click')) {
+    const click = useClick(floating.context);
+    interactionsToUse.push(click);
+  }
+
+  if (triggerTypes.includes('focus')) {
+    const focus = useFocus(floating.context);
+    interactionsToUse.push(focus);
+  }
+  const interactions = useInteractions(interactionsToUse);
 </script>
 
 <button
@@ -78,7 +98,8 @@
   <div
     bind:this={floating.elements.floating}
     class="popover"
-    style="background-color: var(--color-{color}-200);{floating.floatingStyles}"
+    aria-label={title || 'Help popover'}
+    style="background-color: var(--color-{color}-100); opacity: 0.90;{floating.floatingStyles}"
     {...interactions.getFloatingProps()}
     data-testid={testid}
     transition:fade={{ duration: 200 }}

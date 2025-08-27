@@ -1,6 +1,6 @@
 import type { QueryRequestInterface } from '$lib/models/api/Request';
 
-export type PatientCount = string | number;
+export type PatientCount = string | number | undefined;
 
 export interface PatientCountMap {
   [key: string]: PatientCount;

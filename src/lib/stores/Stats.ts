@@ -1,6 +1,6 @@
 import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
 
-import { toaster } from '$lib/toaster';
+import { isToastShowing, toaster } from '$lib/toaster';
 import { branding } from '$lib/configuration';
 import { getValidStatList, populateStatRequests, StatPromise } from '$lib/utilities/StatBuilder';
 
@@ -44,9 +44,13 @@ export async function loadLandingStats() {
     });
   } catch (error) {
     console.error(error);
-    toaster.error({
-      title:
-        'An error occured while loading statistics. If this problem persists, please contact an administrator.',
-    });
+    if (!isToastShowing('stats-error')) {
+      toaster.error({
+        id: 'stats-error',
+        title:
+          'An error occured while loading statistics. If this problem persists, please contact an administrator.',
+        closable: true,
+      });
+    }
   }
 }

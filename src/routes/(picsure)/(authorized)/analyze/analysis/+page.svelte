@@ -1,7 +1,20 @@
 <script lang="ts">
-  import Content from '$lib/components/Content.svelte';
+  import { onMount } from 'svelte';
+
   import { branding } from '$lib/configuration';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
+  import Content from '$lib/components/Content.svelte';
   import CollaborateSteps from '$lib/components/steppers/CollaborateSteps.svelte';
+
+  let introduction: string = $state('');
+  let access: string = $state('');
+  let examples: string = $state('');
+
+  onMount(() => {
+    introduction = sanitizeHTML(branding.analysisConfig.analysis.introduction);
+    access = sanitizeHTML(branding.analysisConfig.analysis.access);
+    examples = sanitizeHTML(branding.analysisConfig.analysis.examples);
+  });
 </script>
 
 <Content title={`Analyze with ${branding.analysisConfig.analysis.platform}`}>
@@ -10,9 +23,9 @@
   </section>
   <div class="flex flex-col gap-4 w-full items-center mb-8">
     <!-- eslint-disable svelte/no-at-html-tags -->
-    {@html branding.analysisConfig.analysis.introduction}
-    {@html branding.analysisConfig.analysis.access}
-    {@html branding.analysisConfig.analysis.examples}
+    {@html introduction}
+    {@html access}
+    {@html examples}
     <!-- eslint-enable svelte/no-at-html-tags -->
   </div>
 </Content>

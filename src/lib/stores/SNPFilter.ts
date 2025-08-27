@@ -4,6 +4,11 @@ import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import { Genotype, type SNP } from '$lib/models/GenomeFilter';
 import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter';
+import {
+  loading as resourcesPromise,
+  loadResources,
+  getQueryResources,
+} from '$lib/stores/Resources';
 import { getBlankQueryRequest, updateConsentFilters } from '$lib/utilities/QueryBuilder';
 
 export const selectedSNPs: Writable<SNP[]> = writable([]);
@@ -21,17 +26,27 @@ export function clearSnpFilters() {
   selectedSNPs.set([]);
 }
 
-export async function getSNPCounts(check: SNP) {
-  try {
-    const searchQuery = getBlankQueryRequest();
-    searchQuery.query.addCategoryFilter(check.search, [Genotype.Heterozygous, Genotype.Homozygous]);
-    searchQuery.query = updateConsentFilters(searchQuery.query);
-    const response: number = await api.post(Picsure.QuerySync, searchQuery);
-    return response;
-  } catch (error) {
-    console.error('Error fetching SNP counts:', error);
-    throw error;
-  }
+function snpRequest(snp: SNP, resource: string): Promise<number> {
+  const searchQuery = getBlankQueryRequest(false, resource);
+  searchQuery.query.addCategoryFilter(snp.search, [Genotype.Heterozygous, Genotype.Homozygous]);
+  searchQuery.query = updateConsentFilters(searchQuery.query);
+  return api.post(Picsure.QuerySync, searchQuery);
+}
+
+export async function getSNPCounts(check: SNP): Promise<{ count: number; errors: number }> {
+  loadResources();
+  await get(resourcesPromise);
+  const resources = getQueryResources();
+  const responses: Promise<number>[] = resources.map(({ uuid }) => snpRequest(check, uuid));
+  return Promise.allSettled(responses)
+    .then((results) => ({
+      count: results
+        .filter((result) => result.status === 'fulfilled')
+        .map((result) => result.value || 0)
+        .reduce((sum, value) => sum + value, 0),
+      errors: results.filter((result) => result.status !== 'fulfilled').length,
+    }))
+    .catch(() => ({ count: 0, errors: 1 }));
 }
 
 export function saveSNP(newSNP: SNP) {

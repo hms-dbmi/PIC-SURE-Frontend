@@ -10,6 +10,7 @@
     searchTerm,
     selectedFacets,
     tableHandler as handler,
+    initHandler,
     error,
     tour,
     resetSearch,
@@ -57,6 +58,7 @@
   }
 
   onMount(() => {
+    initHandler();
     if (searchInput && searchInput !== $searchTerm) {
       searchTerm.set(searchInput);
     } else {

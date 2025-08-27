@@ -134,7 +134,7 @@
       </footer>
     </div>
   {:catch}
-    <ErrorAlert>
+    <ErrorAlert color="warning">
       An error occured while to retrieving your account. If this problem persists, please contact an
       administrator.
     </ErrorAlert>

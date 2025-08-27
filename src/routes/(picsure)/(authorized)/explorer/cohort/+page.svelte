@@ -98,6 +98,13 @@
   {#await $resourcesPromise}
     <Loading ring size="large" />
   {:then}
+    <ul id="cohort-key" class="w-full flex text-center py-3">
+      <li class="flex-auto">"0" = Site returned zero results</li>
+      <li class="flex-auto">"-" = No data for that site</li>
+      <li class="flex-auto">
+        <i class="fa-solid fa-circle-xmark text-error-500"></i> = Site did not return results
+      </li>
+    </ul>
     <div class="table-wrap">
       <table class="table caption-bottom">
         <thead>
@@ -126,12 +133,5 @@
         </tbody>
       </table>
     </div>
-    <ul id="cohort-key" class="w-full flex text-center py-3">
-      <li class="flex-auto">"0" = Site returned zero results</li>
-      <li class="flex-auto">"-" = No data for that site</li>
-      <li class="flex-auto">
-        <i class="fa-solid fa-circle-xmark text-error-500"></i> = Site did not return results
-      </li>
-    </ul>
   {/await}
 </Content>

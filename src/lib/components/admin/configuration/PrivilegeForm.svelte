@@ -72,7 +72,7 @@
 
     <label class="label required">
       <span>Application:</span>
-      <select class="select" bind:value={application} required>
+      <select bind:value={application} required>
         <option value="" disabled>Select an application</option>
         {#each applicationList as [name, uuid]}
           <option value={uuid}>{name}</option>

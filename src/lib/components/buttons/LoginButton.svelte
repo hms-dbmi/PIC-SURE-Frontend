@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
   import { createInstance } from '$lib/AuthProviderRegistry';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
   import type { AuthData } from '$lib/models/AuthProvider';
   import { resetSearch } from '$lib/stores/Search';
 
@@ -20,8 +23,8 @@
   }: Props = $props();
 
   const testId = `login-button-${provider?.name?.toLowerCase()}`;
-
   let imageSrc: string | undefined = $state(undefined);
+  let help: string = $state('');
 
   let login = async (redirectTo: string, providerType: string) => {
     let instance = await createInstance(provider!);
@@ -33,6 +36,8 @@
   if (provider?.imagesrc) {
     imageSrc = './' + provider.imagesrc;
   }
+
+  onMount(() => (help = sanitizeHTML(helpText)));
 </script>
 
 {#if provider}
@@ -53,7 +58,7 @@
 
   {#if helpText && !provider?.alt}
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    <div class="help-text">{@html helpText}</div>
+    <div class="help-text">{@html help}</div>
   {/if}
 {:else}
   <button
