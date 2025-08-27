@@ -5,4 +5,7 @@ export interface QueryRequestInterface {
   query: Query;
   '@type'?: string;
   commonAreaUUID?: string;
+  institutionOfOrigin?: string;
+  requesterEmail?: string;
+  resourceCredentials?: Record<string, string>;
 }

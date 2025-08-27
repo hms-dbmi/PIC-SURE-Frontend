@@ -55,9 +55,7 @@
     isExplorer && features.explorer.variantExplorer && $hasGenomicFilter,
   );
 
-  let showCohortDetails = $derived(
-    isExplorer && features.explorer.enableCohortDetails && $hasNonZeroResult,
-  );
+  let showCohortDetails = $derived(isExplorer && features.explorer.enableCohortDetails);
 
   let showToolSuite = $derived(
     ($filters.length !== 0 || $exports.length !== 0) &&
@@ -213,16 +211,6 @@
             icon="fa-solid fa-dna"
             size="md"
             active={page.url.pathname.includes('explorer/variant')}
-          />
-        {/if}
-        {#if showCohortDetails}
-          <CardButton
-            href="/explorer/cohort"
-            data-testid="cohort-details-btn"
-            title="Cohort Details"
-            icon="fa-solid fa-users"
-            size="md"
-            active={page.url.pathname.includes('explorer/cohort')}
           />
         {/if}
       </div>

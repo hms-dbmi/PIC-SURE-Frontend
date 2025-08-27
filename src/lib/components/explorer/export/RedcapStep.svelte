@@ -23,7 +23,10 @@
   <div class="flex flex-row items-center self-center card p-4 my-4">
     <label for="copyable-dataset-id" class="font-bold mr-2">Dataset ID:</label>
     <span id="copyable-dataset-id" class="mr-2">{datasetId}</span>
-    <CopyButton itemToCopy={datasetId} class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500" />
+    <CopyButton
+      itemToCopy={datasetId}
+      class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+    />
   </div>
   <p>
     Once the request has been submitted, the local Sample and Data Access Committee will review and

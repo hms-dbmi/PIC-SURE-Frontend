@@ -6,7 +6,6 @@ import { user } from '$lib/stores/User';
 import { filters, hasGenomicFilter } from '$lib/stores/Filter';
 import { exports } from '$lib/stores/Export';
 import { resources } from '$lib/stores/Resources';
-import { commonAreaUUID } from '$lib/stores/Dataset';
 import type { Filter } from '$lib/models/Filter';
 import type { ExportInterface } from '$lib/models/Export.ts';
 
@@ -54,10 +53,6 @@ export function getQueryRequest(
       query.addField(exportedField.conceptPath);
     }
   });
-
-  if (features.federated) {
-    query.commonAreaUUID = get(commonAreaUUID) || undefined;
-  }
 
   if (features.requireConsents && addConsents) {
     query = updateConsentFilters(query);

@@ -57,7 +57,7 @@ export class Query implements QueryInterface {
     this.requiredFields = newQuery?.requiredFields || [];
     this.anyRecordOf = newQuery?.anyRecordOf || [];
     this.anyRecordOfMulti = newQuery?.anyRecordOfMulti || [];
-    this.crossCountFields = newQuery?.crossCountFields || undefined;
+    this.crossCountFields = newQuery?.crossCountFields || [];
     this.fields = newQuery?.fields || [];
     const variantInfoFilter = newQuery?.variantInfoFilters?.[0] || {
       categoryVariantInfoFilters: {},

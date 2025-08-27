@@ -12,7 +12,7 @@
   import { filters } from '$lib/stores/Filter';
   import { totalParticipants } from '$lib/stores/ResultStore';
   import { createDatasetName } from '$lib/services/datasets';
-  import { federatedQueryStatuses } from '$lib/stores/Dataset';
+  import { federatedQueryMap } from '$lib/stores/Dataset';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
@@ -81,10 +81,14 @@
       if (features.explorer.enableRedcapExport) {
         lockDownload = false;
       }
+      const siteQueryIds = Object.values($federatedQueryMap)
+        .map((info) => ({ resourceId: info?.resourceId, name: info?.name, queryId: info?.queryId }))
+        .filter((v) => v.queryId);
+
       saveDatasetPromise = createDatasetName(
         datasetId,
         datasetNameInput,
-        Object.keys($federatedQueryStatuses).length > 0 ? Object.values($federatedQueryStatuses) : undefined,
+        siteQueryIds.length > 0 ? siteQueryIds : undefined,
       ).then((data: DataSet) => {
         if (features.federated) {
           statusPromise = Promise.resolve();
@@ -103,14 +107,21 @@
     const queryFragment = `/${statusId}/status`;
     return api
       .post(`${Picsure.Query}${queryFragment}`, query)
-      .then((res: { picsureResultId: string; status: string }) => {
-        if (res.status === 'ERROR') {
-          lockDownload = true;
-          return Promise.reject(res.status);
-        }
-        picsureResultId = res.picsureResultId;
-        lockDownload = false;
-      });
+      .then(
+        (res: {
+          picsureResultId: string;
+          status: string;
+          resultMetadata: { picsureQueryId: string };
+        }) => {
+          if (res.status === 'ERROR') {
+            lockDownload = true;
+            return Promise.reject(res.status);
+          }
+          console.log(res);
+          picsureResultId = res.resultMetadata.picsureQueryId;
+          lockDownload = false;
+        },
+      );
   }
 
   function onComplete() {
@@ -156,7 +167,10 @@
       <TypeStep {activeType} />
     </Step>
   {/if}
-  <Step name="save-dataset" locked={!datasetNameInput || datasetNameInput.length < 2 || !datasetId || !saveable}>
+  <Step
+    name="save-dataset"
+    locked={!datasetNameInput || datasetNameInput.length < 2 || !datasetId || !saveable}
+  >
     {#snippet header()}Save Dataset ID:{/snippet}
     {#if features.federated}
       <CommonAreaSaveDatasetStep {query} bind:datasetId bind:datasetNameInput bind:saveable />
