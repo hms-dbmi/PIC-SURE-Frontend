@@ -39,18 +39,20 @@ export async function loadPatientCount(isOpenAccess: boolean) {
     const resultStats: StatResult[] = getResultList(isOpenAccess, branding?.results?.stats || []);
     resultCounts.set(resultStats);
     Promise.allSettled(resultStats.flatMap(StatPromise.list)).then((results) => {
-      if (!results.some(StatPromise.rejected)) {
+      if (results.some(StatPromise.rejected)) {
         if (!isToastShowing('query-error')) {
           if (get(filters).length !== 0) {
             toaster.error({
               id: 'query-error',
               description: branding?.explorePage?.filterErrorText,
+              duration: 4000,
               closable: true,
             });
           } else {
             toaster.error({
               id: 'query-error',
               title: branding?.explorePage?.queryErrorText,
+              duration: 4000,
               closable: true,
             });
           }
@@ -79,6 +81,7 @@ export async function loadPatientCount(isOpenAccess: boolean) {
     if (!isToastShowing('query-error')) {
       toaster.error({
         id: 'query-error',
+        duration: 4000,
         title:
           'An error occured while loading patient counts. If this problem persists, please contact an administrator.',
         closable: true,
