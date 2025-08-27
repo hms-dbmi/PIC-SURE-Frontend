@@ -173,8 +173,12 @@ test.describe('Export Page', () => {
     await checkStepRenderedCorrectly(page, 1, 'Review Cohort Details:', false, 'Next', true);
     await nextButton.click();
 
+    // Tree Step
+    await checkStepRenderedCorrectly(page, 2, 'Finalize Data:', false, 'Next', true);
+    await nextButton.click();
+
     // Review and Save Dataset
-    await checkStepRenderedCorrectly(page, 2, 'Review and Save Dataset:', true, 'Next', true);
+    await checkStepRenderedCorrectly(page, 3, 'Review and Save Dataset:', true, 'Next', true);
     const csvExportOption = page.getByTestId('csv-export-option');
     const pfbExportOption = page.getByTestId('pfb-export-option');
     await expect(csvExportOption).toBeVisible();
