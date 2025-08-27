@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding, features } from '$lib/configuration';
+  import { branding } from '$lib/configuration';
   import { Picsure } from '$lib/paths';
   import * as api from '$lib/api';
   import type { QueryRequestInterface } from '$lib/models/api/Request';

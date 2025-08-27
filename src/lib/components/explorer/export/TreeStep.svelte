@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getInitialTree, getConceptTree } from '$lib/stores/Dictionary';
-  import { selectedConcepts, addConcept, removeConcept } from '$lib/stores/TreeStepConcepts';
+  import { addConcept, removeConcept } from '$lib/stores/TreeStepConcepts';
   import Loading from '$lib/components/Loading.svelte';
   import RemoteTree from '$lib/components/tree/RemoteTree.svelte';
   import Summary from '$lib/components/explorer/export/Summary.svelte';
