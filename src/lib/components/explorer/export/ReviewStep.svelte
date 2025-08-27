@@ -189,7 +189,7 @@
         <div>
           <label for="sample-ids-checkbox" class="flex items-center" data-testid="sample-ids-label">
             {#if checkingSampleIds}
-              <Loading ring />
+              <Loading size="micro" ring />
             {:else}
               <input
                 type="checkbox"

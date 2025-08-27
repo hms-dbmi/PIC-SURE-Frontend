@@ -33,7 +33,6 @@ export interface CommonAreaResponse {
 }
 
 export class FederatedQueryManager {
-
   /**
    * Creates a common area UUID for coordinating federated queries
    */
@@ -81,13 +80,12 @@ export class FederatedQueryManager {
         const resourceQuery = structuredClone(query);
         resourceQuery.resourceUUID = resource.uuid;
         resourceQuery.query.expectedResultType = 'COUNT';
-        
+
         // Set fields expected by FederatedQueryRequest
         resourceQuery.resourceCredentials = resourceQuery.resourceCredentials || {};
         // Note: institutionOfOrigin and requesterEmail are set by the backend
-        
-        console.log('Final federated query payload:', JSON.stringify(resourceQuery, null, 2));
 
+        console.log('Final federated query payload:', JSON.stringify(resourceQuery, null, 2));
 
         return api
           .post(`${Picsure.Query}`, resourceQuery)
@@ -170,7 +168,6 @@ export class FederatedQueryManager {
   }
 }
 
-
 export function useFederatedQuery(options: UseFederatedQueryOptions) {
   const { query, onComplete, onError } = options;
 
@@ -199,7 +196,8 @@ export function useFederatedQuery(options: UseFederatedQueryOptions) {
       const allResourceNames = allResources.map((r) => r.name);
 
       // Initialize all sites as PENDING immediately so Summary shows loading states
-      const initialMap: Record<string, { status?: string; resourceId?: string; name?: string }> = {};
+      const initialMap: Record<string, { status?: string; resourceId?: string; name?: string }> =
+        {};
       allResources.forEach(({ name, uuid }) => {
         initialMap[name] = { status: 'PENDING', resourceId: uuid, name };
       });
@@ -211,14 +209,13 @@ export function useFederatedQuery(options: UseFederatedQueryOptions) {
 
       // Set the type for federated queries - try different type names
       query['@type'] = 'FederatedQueryRequest';
-      
+
       // Execute federated queries (handles partial failures gracefully)
       try {
         state.isLoading = false;
         const responses = await manager.executeFederatedQuery(query);
         state.responses = responses;
         onComplete?.();
-
       } catch (queryError) {
         // This only happens if ALL queries failed
         state.error =

@@ -87,7 +87,7 @@
           <i class="fa-solid fa-circle-check text-success-500"></i>
           <span id="site-indicator-label" class="uppercase">{siteName}</span>
           <span id="site-indicator-value">({value})</span>
-        {:catch error}
+        {:catch}
           <i class="fa-solid fa-circle-xmark text-error-500"></i>
           <span id="site-indicator-label">{siteName}</span>
         {/await}
