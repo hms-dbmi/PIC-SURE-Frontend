@@ -18,7 +18,11 @@
 {#if showShell}
   <div style="display: contents">
     <main class="w-full h-full">
-      <div id="appShell" class="w-full h-full flex flex-col overflow-hidden" data-testid="app-shell">
+      <div
+        id="appShell"
+        class="w-full h-full flex flex-col overflow-hidden"
+        data-testid="app-shell"
+      >
         {@render header?.()}
         <div class="flex-auto w-full h-full flex overflow-hidden">
           <div id="page" class="flex-1 overflow-x-hidden flex flex-col">
@@ -35,4 +39,3 @@
     </main>
   </div>
 {/if}
-

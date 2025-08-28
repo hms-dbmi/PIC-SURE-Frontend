@@ -6,7 +6,11 @@ import { user } from '$lib/stores/User';
 
 export const load: LayoutLoad = async ({ url, fetch }) => {
   if (browser) {
-    if (!features.login.open && !localStorage.getItem('token') && !url.pathname.includes('/login')) {
+    if (
+      !features.login.open &&
+      !localStorage.getItem('token') &&
+      !url.pathname.includes('/login')
+    ) {
       user && user.set({});
       redirect(302, '/login');
     }
