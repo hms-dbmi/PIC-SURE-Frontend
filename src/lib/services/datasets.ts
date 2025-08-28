@@ -1,8 +1,19 @@
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import type { DataSet } from '$lib/models/Dataset';
+import type { FederatedResourceInfo } from '$lib/stores/Dataset';
 
-export async function createDatasetName(queryId: string, name: string): Promise<DataSet> {
+interface DatasetRequest {
+  queryId: string;
+  name: string;
+  metadata?: { saved: number; siteQueryIds: Omit<FederatedResourceInfo, 'status'>[] };
+}
+
+export async function createDatasetName(
+  queryId: string,
+  name: string,
+  siteQueryIds?: Omit<FederatedResourceInfo, 'status'>[],
+): Promise<DataSet> {
   if (name === '' && name.trim() === '') {
     throw 'Please input a Dataset ID name';
   }
@@ -11,5 +22,13 @@ export async function createDatasetName(queryId: string, name: string): Promise<
     throw 'Name can only contain letters, numbers, and these special symbols - ? + = [ ] . ( ) : \' "';
   }
 
-  return await api.post(Picsure.NamedDataSet, { queryId, name });
+  const request: DatasetRequest = {
+    queryId,
+    name,
+  };
+  if (siteQueryIds) {
+    request.metadata = { saved: new Date().valueOf(), siteQueryIds };
+  }
+
+  return await api.post(Picsure.NamedDataSet, request);
 }

@@ -10,10 +10,10 @@ export interface TreeNodeInterface {
   allSelected: boolean;
   noneSelected: boolean;
   indeterminant: boolean;
-  select: () => void;
-  unselect: () => void;
-  toggleSelected: () => void;
-  toggleOpen: () => void;
+  select: () => void | Promise<void>;
+  unselect: () => void | Promise<void>;
+  toggleSelected: () => void | Promise<void>;
+  toggleOpen: () => void | Promise<void>;
 }
 
 export interface NodeInterface {
