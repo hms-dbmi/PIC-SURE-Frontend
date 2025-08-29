@@ -1,10 +1,10 @@
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/environment';
 import * as api from '$lib/api';
-import type { Route } from '$lib/models/Route';
 import type { User } from '$lib/models/User';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
-import { routes, features } from '$lib/configuration';
+import { features } from '$lib/configuration';
+import { type Route, routes } from '$lib/routes';
 import { Psama } from '$lib/paths';
 import { goto } from '$app/navigation';
 import type { QueryInterface } from '$lib/models/query/Query';
