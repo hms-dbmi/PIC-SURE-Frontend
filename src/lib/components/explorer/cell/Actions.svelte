@@ -65,7 +65,7 @@
     >{shouldDisableFilter ? 'Filtering is not available for this variable' : 'View Filter'}</span
   >
 </button>
-{#if $features.explorer.enableHierarchy}
+{#if $features.explorer.hiierarchy}
   <button
     type="button"
     title="Data Hierarchy"
@@ -76,7 +76,7 @@
     <span class="sr-only">View Data Hierarchy</span>
   </button>
 {/if}
-{#if $features.explorer.exportsEnableExport && !isOpenAccess}
+{#if $features.explorer.exportIcon && !isOpenAccess}
   <button
     type="button"
     title={isExported ? 'Remove from Analysis' : 'Add for Analysis'}

@@ -26,11 +26,11 @@
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
-    $filters.length !== 0 || ($features.explorer.exportsEnableExport && $exports.length !== 0),
+    $filters.length !== 0 || ($features.explorer.exportIcon && $exports.length !== 0),
   );
 
   let showExportButton = $derived(
-    $features.explorer.allowExport && !isOpenAccess && hasFilterOrExport && $hasNonZeroResult,
+    $features.explorer.exportPage && !isOpenAccess && hasFilterOrExport && $hasNonZeroResult,
   );
 
   let hasValidDistributionFilters = $derived(
@@ -44,18 +44,18 @@
   );
 
   let showExplorerDistributions = $derived(
-    isExplorer && $features.explorer.distributionExplorer && hasValidDistributionFilters,
+    isExplorer && $features.distributionExplorer.explorer && hasValidDistributionFilters,
   );
 
   let showDiscoverDistributions = $derived(
-    isOpenAccess && $features.discoverFeautures.distributionExplorer && hasValidDistributionFilters,
+    isOpenAccess && $features.distributionExplorer.discover && hasValidDistributionFilters,
   );
 
   let showVariantExplorer = $derived(
     isExplorer && $features.explorer.variantExplorer && $hasGenomicFilter,
   );
 
-  let showCohortDetails = $derived(isExplorer && $features.explorer.enableCohortDetails);
+  let showCohortDetails = $derived(isExplorer && $features.explorer.cohortDetails);
 
   let showToolSuite = $derived(
     showCohortDetails ||

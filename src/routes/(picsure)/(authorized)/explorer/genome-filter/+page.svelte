@@ -31,8 +31,8 @@
   let edit = page.url.searchParams.get('edit') || '';
   let selectedOption: Option = $state(
     (() => {
-      if ($features.enableGENEQuery && !$features.enableSNPQuery) return Option.Genomic;
-      if (!$features.enableGENEQuery && $features.enableSNPQuery) return Option.SNP;
+      if ($features.query.GENEQuery && !$features.query.SNPQuery) return Option.Genomic;
+      if (!$features.query.GENEQuery && $features.query.SNPQuery) return Option.SNP;
       return ['snp', 'genomic'].includes(edit) ? (edit as Option) : Option.None;
     })(),
   );
@@ -86,7 +86,7 @@
   backTitle="Back to Explore"
   transition
 >
-  {#if $features.enableGENEQuery && $features.enableSNPQuery}
+  {#if $features.query.GENEQuery && $features.query.SNPQuery}
     <FilterType class="my-4" onselect={onSelectFilterType} active={selectedOption} />
   {/if}
   {#if selectedOption !== Option.None}

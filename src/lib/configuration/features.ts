@@ -1,17 +1,18 @@
 export const defaultFeatures: {
   federated: boolean;
+  tour: {
+    explorer: boolean;
+    discover: boolean;
+  };
   explorer: {
-    allowExport: boolean;
+    exportPage: boolean;
+    exportIcon: boolean;
     allowDownload: boolean;
-    exportsEnableExport: boolean;
     variantExplorer: boolean;
-    distributionExplorer: boolean;
-    enableTour: boolean;
-    authTour: string;
-    enableHierarchy: boolean;
-    enablePfbExport: boolean;
-    enableSampleIdCheckbox: boolean;
-    enableCohortDetails: boolean;
+    hiierarchy: boolean;
+    pfbExport: boolean;
+    sampleIdCheckbox: boolean;
+    cohortDetails: boolean;
   };
   login: {
     open: boolean;
@@ -20,16 +21,17 @@ export const defaultFeatures: {
   analyzeAnalysis: boolean;
   dataRequests: boolean;
   manualRole: boolean;
-  enableSNPQuery: boolean;
-  enableGENEQuery: boolean;
+  query: {
+    SNPQuery: boolean;
+    GENEQuery: boolean;
+  };
   requireConsents: boolean;
   useQueryTemplate: boolean;
   discover: boolean;
   collaborate: boolean;
-  discoverFeautures: {
-    enableTour: boolean;
-    openTour: string;
-    distributionExplorer: boolean;
+  distributionExplorer: {
+    explorer: boolean;
+    discover: boolean;
   };
   dashboard: boolean;
   dashboardDrawer: boolean;
@@ -38,18 +40,19 @@ export const defaultFeatures: {
   enforceTermsOfService: boolean;
 } = {
   federated: false,
+  tour: {
+    explorer: true,
+    discover: false,
+  },
   explorer: {
-    allowExport: false,
+    exportPage: false,
+    exportIcon: false,
     allowDownload: true,
-    exportsEnableExport: false,
     variantExplorer: false,
-    distributionExplorer: false,
-    enableTour: true,
-    authTour: '',
-    enableHierarchy: false,
-    enablePfbExport: true,
-    enableSampleIdCheckbox: false,
-    enableCohortDetails: false,
+    hiierarchy: false,
+    pfbExport: true,
+    sampleIdCheckbox: false,
+    cohortDetails: false,
   },
   login: {
     open: false,
@@ -58,16 +61,17 @@ export const defaultFeatures: {
   analyzeAnalysis: false,
   dataRequests: false,
   manualRole: false,
-  enableSNPQuery: false,
-  enableGENEQuery: false,
+  query: {
+    SNPQuery: false,
+    GENEQuery: false,
+  },
   requireConsents: false,
   useQueryTemplate: false,
   discover: false,
   collaborate: false,
-  discoverFeautures: {
-    enableTour: true,
-    openTour: '',
-    distributionExplorer: false,
+  distributionExplorer: {
+    explorer: true,
+    discover: false,
   },
   dashboard: false,
   dashboardDrawer: false,

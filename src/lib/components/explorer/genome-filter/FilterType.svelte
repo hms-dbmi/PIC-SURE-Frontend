@@ -11,8 +11,8 @@
 
   const { active = Option.None, class: className = '', onselect = () => {} }: Props = $props();
 
-  let enableGENEQuery = $derived($features.enableGENEQuery);
-  let enableSNPQuery = $derived($features.enableSNPQuery);
+  let enableGENEQuery = $derived($features.query.GENEQuery);
+  let enableSNPQuery = $derived($features.query.SNPQuery);
 </script>
 
 <div class="flex flex-row justify-center justify-items-center gap-16 {className ?? ''}">

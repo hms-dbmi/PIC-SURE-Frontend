@@ -78,7 +78,7 @@
         <Searchbox bind:searchTerm={searchInput} search={update} />
       </div>
       <div class="flex-none">
-        {#if !isOpenAccess && ($features.enableGENEQuery || $features.enableSNPQuery)}
+        {#if !isOpenAccess && ($features.query.GENEQuery || $features.query.SNPQuery)}
           <a
             data-testid="genomic-filter-btn"
             class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
@@ -111,7 +111,7 @@
         expandable
       />
     {/if}
-    {#if $features.explorer.enableTour && $tour}
+    {#if $features.explorer.tour && $tour}
       <div id="explorer-tour" class="text-center mt-4">
         <ExplorerTour {tourConfig} />
       </div>

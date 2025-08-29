@@ -113,7 +113,7 @@
     }
 
     // Auto select csv export when pfb feature is disabled.
-    if (!$features.explorer.enablePfbExport) {
+    if (!$features.explorer.pfbExport) {
       activeType = 'DATAFRAME';
     }
   });
@@ -385,7 +385,7 @@
           {/await}
           {#if !loadingSampleIds}
             <Datatable tableName="ExportSummary" data={activeRows} {columns} />
-            {#if $features.explorer.enableSampleIdCheckbox}
+            {#if $features.explorer.sampleIdCheckbox}
               <div>
                 <label
                   for="sample-ids-checkbox"
@@ -431,7 +431,7 @@
       </section>
     </Step>
   {/if}
-  {#if $features.explorer.enablePfbExport}
+  {#if $features.explorer.pfbExport}
     <Step name="select-type" locked={activeType === undefined}>
       {#snippet header()}Review and Save Dataset:{/snippet}
       <section class="flex flex-col w-full h-full items-center">
@@ -566,7 +566,7 @@
                   </div>
                 {/if}
               </section>
-            {:else if query.query.expectedResultType === 'DATAFRAME_PFB' && $features.explorer.enablePfbExport}
+            {:else if query.query.expectedResultType === 'DATAFRAME_PFB' && $features.explorer.pfbExport}
               <section class="flex flex-col gap-8 place-items-center">
                 <div class="flex justify-center mt-4">
                   Select an option below to export your selected data in PFB format.

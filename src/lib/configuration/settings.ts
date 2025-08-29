@@ -1,4 +1,8 @@
 export const defaultSettings: {
+  tour: {
+    auth: string;
+    open: string;
+  };
   variantExplorer: {
     type: string;
     maxCount: number;
@@ -7,13 +11,12 @@ export const defaultSettings: {
   distributionExplorer: {
     graphColors: string[];
   };
-  google: {
-    analytics: string;
-    tagManager: string;
-  };
   maxDataPointsForExport: number;
-  auth0Tenant: string;
 } = {
+  tour: {
+    auth: '',
+    open: '',
+  },
   variantExplorer: {
     type: 'aggregate',
     maxCount: 0,
@@ -22,12 +25,7 @@ export const defaultSettings: {
   distributionExplorer: {
     graphColors: [],
   },
-  google: {
-    analytics: '',
-    tagManager: '',
-  },
   maxDataPointsForExport: 0,
-  auth0Tenant: '',
 };
 
 export type SettingsConfig = typeof defaultSettings;

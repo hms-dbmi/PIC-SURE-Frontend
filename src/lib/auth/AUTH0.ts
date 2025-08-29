@@ -1,11 +1,9 @@
-import { get } from 'svelte/store';
 import type { AuthData } from '$lib/models/AuthProvider';
 import AuthProvider from '$lib/models/AuthProvider';
 import { browser } from '$app/environment';
 import type { User } from '$lib/models/User';
 import * as api from '$lib/api';
 import auth0 from 'auth0-js';
-import { settings } from '$lib/stores/Configuration';
 import { Psama } from '$lib/paths';
 
 interface Auth0Data extends AuthData {
@@ -40,7 +38,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
     const redirectUrl = this.getRedirectURI();
     this.saveState(redirectTo, type);
     const webAuth = new auth0.WebAuth({
-      domain: get(settings).auth0Tenant + '.auth0.com',
+      domain: (import.meta.env?.VITE_AUTH0_TENANT || 'avillachlab') + '.auth0.com',
       clientID: this.clientid || '',
       redirectUri: redirectUrl,
       responseType: 'token',

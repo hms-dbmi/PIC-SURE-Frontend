@@ -239,36 +239,40 @@
   },
   "features": {
     "federated": false,
+    "tour": {
+      "explorer": true,
+      "discover": false
+    },
     "explorer": {
-      "allowExport": false,
+      "exportPage": false,
       "allowDownload": false,
-      "exportsEnableExport": false,
+      "exportIcon": false,
       "variantExplorer": false,
-      "distributionExplorer": false,
-      "enableTour": true,
-      "authTour": "NHANES-Auth",
-      "enableHierarchy": false,
-      "enablePfbExport": true,
-      "enableSampleIdCheckbox": false,
-      "enableCohortDetails": false
+      "hiierarchy": false,
+      "pfbExport": true,
+      "sampleIdCheckbox": false,
+      "cohortDetails": false
     },
     "login": {
       "open": false
     },
-    "analyzeApi": true,
-    "analyzeAnalysis": false,
+    "analysisPage": {
+      "api": true,
+      "analysis": false
+    },
     "dataRequests": false,
     "manualRole": false,
-    "enableSNPQuery": false,
-    "enableGENEQuery": false,
+    "queries": {
+      "SNPQuery": false,
+      "GeneQeury": false
+    },
     "requireConsents": false,
     "useQueryTemplate": false,
     "discover": false,
     "collaborate": false,
-    "discoverFeautures": {
-      "enableTour": true,
-      "openTour": "BDC-Open",
-      "distributionExplorer": false
+    "distributionExplorer": {
+      "explorer": true,
+      "discover": false
     },
     "dashboard": false,
     "dashboardDrawer": false,
@@ -277,6 +281,10 @@
     "enforceTermsOfService": false
   },
   "settings": {
+    "tour": {
+      "auth": "NHANES-Auth",
+      "open": "BDC-Open"
+    },
     "variantExplorer": {
       "type": "aggregate",
       "maxCount": 10000,
@@ -285,11 +293,6 @@
     "distributionExplorer": {
       "graphColors": ["#328FFF", "#675AFF", "#FFBC35"]
     },
-    "google": {
-      "analytics": "",
-      "tagManager": ""
-    },
-    "maxDataPointsForExport": 1000000,
-    "auth0Tenant": "avillachlab"
+    "maxDataPointsForExport": 1000000
   }
 }

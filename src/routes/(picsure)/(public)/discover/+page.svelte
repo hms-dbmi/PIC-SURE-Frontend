@@ -1,12 +1,12 @@
 <script lang="ts">
   import Content from '$lib/components/Content.svelte';
-  import { branding, features } from '$lib/stores/Configuration';
+  import { branding, settings } from '$lib/stores/Configuration';
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import TourData from '$lib/assets/TourConfiguration.json';
 
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const Tour: Record<string, any> = TourData;
-  const tourName = $derived($features.discoverFeautures.openTour);
+  const tourName = $derived($settings.tour.open);
 
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   let openTour: any = $derived(
