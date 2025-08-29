@@ -67,7 +67,7 @@
               {count.toLocaleString()} variants found
             </div>
           {/if}
-          {#if $settings.variantExplorer.type === ExportType.Full}
+          {#if ($settings.variantExplorer.type as ExportType) === ExportType.Full}
             <div class="">
               <label class="flex items-center space-x-2">
                 <input

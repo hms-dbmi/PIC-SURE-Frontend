@@ -5,7 +5,7 @@ import { browser } from '$app/environment';
 import type { User } from '$lib/models/User';
 import * as api from '$lib/api';
 import auth0 from 'auth0-js';
-import { auth } from '$lib/stores/Configuration';
+import { settings } from '$lib/stores/Configuration';
 import { Psama } from '$lib/paths';
 
 interface Auth0Data extends AuthData {
@@ -40,7 +40,7 @@ class Auth0 extends AuthProvider implements Auth0Data {
     const redirectUrl = this.getRedirectURI();
     this.saveState(redirectTo, type);
     const webAuth = new auth0.WebAuth({
-      domain: (get(auth)?.auth0Tenant || '') + '.auth0.com',
+      domain: get(settings).auth0Tenant + '.auth0.com',
       clientID: this.clientid || '',
       redirectUri: redirectUrl,
       responseType: 'token',

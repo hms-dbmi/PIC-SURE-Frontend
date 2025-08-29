@@ -1,11 +1,6 @@
 import type { Step } from '$lib/types';
 import type { Column } from '$lib/components/datatable/types';
-import { ExportType } from '$lib/models/Variant';
 import type { StatField, StatConfig } from '$lib/models/Stat';
-
-import * as configJson from './assets/configuration.json' assert { type: 'json' };
-
-const ENV_PREFIX = 'VITE_';
 
 export const PROJECT_HOSTNAME =
   typeof window !== 'undefined'
@@ -239,98 +234,25 @@ export const defaultBranding: {
 
 export type BrandingConfig = typeof defaultBranding;
 
-export function loadBrandingConfigs(): BrandingConfig {
-  const branding: BrandingConfig = {
-    ...defaultBranding,
-    ...configJson,
+export function loadBrandingConfigs(branding: Partial<BrandingConfig>): BrandingConfig {
+  const codeBlocks: CodeBlock = {
+    ...defaultBranding.explorePage.codeBlocks,
+    ...branding.explorePage?.codeBlocks,
   };
-
-  const codeBlocks: CodeBlock = { ...configJson.explorePage.codeBlocks };
   Object.keys(codeBlocks).forEach((key: string) => {
     codeBlocks[key as keyof CodeBlock] = codeBlocks[key as keyof CodeBlock].replace(
       '{{PICSURE_NETWORK_URL}}',
       PROJECT_HOSTNAME,
     );
   });
-  branding.explorePage.codeBlocks = codeBlocks;
 
-  return branding as BrandingConfig;
+  return {
+    ...defaultBranding,
+    ...branding,
+    explorePage: {
+      ...defaultBranding.explorePage,
+      ...branding.explorePage,
+      codeBlocks,
+    },
+  };
 }
-
-function orDefault(
-  key: string,
-  defaultValue: boolean | string | number | ExportType,
-  json: boolean = false,
-) {
-  const value = import.meta.env[ENV_PREFIX + key];
-  if (value === undefined) return defaultValue;
-  else if (json) return JSON.parse(value);
-  else if (value === 'true' || value === 'false') return value === 'true' || defaultValue;
-  else {
-    try {
-      return parseInt(value);
-    } catch {
-      return value;
-    }
-  }
-}
-
-export const features = {
-  federated: orDefault('FEDERATED', false),
-  explorer: {
-    allowExport: orDefault('ALLOW_EXPORT', false),
-    allowDownload: orDefault('ALLOW_DOWNLOAD', true),
-    exportsEnableExport: orDefault('ALLOW_EXPORT_ENABLED', false),
-    variantExplorer: orDefault('VARIANT_EXPLORER', false),
-    distributionExplorer: orDefault('DIST_EXPLORER', false),
-    enableTour: orDefault('EXPLORER_TOUR', true),
-    authTour: orDefault('AUTH_TOUR_NAME', 'NHANES-Auth'),
-    enableHierarchy: orDefault('ENABLE_HIERARCHY', false),
-    enablePfbExport: orDefault('DOWNLOAD_AS_PFB', true),
-    enableSampleIdCheckbox: orDefault('ENABLE_SAMPLE_ID_CHECKBOX', false),
-    enableCohortDetails: orDefault('ENABLE_COHORT_DETAILS', false),
-  },
-  login: {
-    open: orDefault('OPEN', false),
-  },
-  analyzeApi: orDefault('ANALYZE_API', true),
-  analyzeAnalysis: orDefault('ANALYZE_ANALYSIS', false),
-  dataRequests: orDefault('DATA_REQUESTS', false),
-  manualRole: orDefault('MANUAL_ROLE', false),
-  enableSNPQuery: orDefault('ENABLE_SNP_QUERY', false),
-  enableGENEQuery: orDefault('ENABLE_GENE_QUERY', false),
-  requireConsents: orDefault('REQUIRE_CONSENTS', false),
-  useQueryTemplate: orDefault('USE_QUERY_TEMPLATE', false),
-  discover: orDefault('DISCOVER', false),
-  collaborate: orDefault('COLLABORATE', false),
-  discoverFeautures: {
-    enableTour: orDefault('EXPLORER_TOUR', true),
-    openTour: orDefault('OPEN_TOUR_NAME', 'BDC-Open'),
-    distributionExplorer: orDefault('DIST_EXPLORER', false),
-  },
-  dashboard: orDefault('DASHBOARD', false),
-  dashboardDrawer: orDefault('DASHBOARD_DRAWER', false),
-  confirmDownload: orDefault('CONFIRM_DOWNLOAD', false),
-  termsOfService: orDefault('ENABLE_TOS', false),
-  enforceTermsOfService: orDefault('ENFORCE_TOS_ACCEPT', false),
-};
-
-export const settings = {
-  variantExplorer: {
-    type: orDefault('VARIANT_EXPLORER_TYPE', ExportType.Aggregate) as ExportType,
-    maxCount: orDefault('VARIANT_EXPLORER_MAX_COUNT', 10000),
-    excludeColumns: orDefault('VARIANT_EXPLORER_EXCLUDE_COLUMNS', '[]', true),
-  },
-  distributionExplorer: {
-    graphColors: orDefault('DIST_EXPLORER_GRAPH_COLORS', '["#328FFF", "#675AFF", "#FFBC35"]', true),
-  },
-  google: {
-    analytics: orDefault('GOOGLE_ANALYTICS_ID', ''),
-    tagManager: orDefault('GOOGLE_TAG_MANAGER_ID', ''),
-  },
-  maxDataPointsForExport: orDefault('MAX_DATA_POINTS_FOR_EXPORT', 1000000),
-};
-
-export const auth = {
-  auth0Tenant: orDefault('AUTH0_TENANT', 'avillachlab'),
-};

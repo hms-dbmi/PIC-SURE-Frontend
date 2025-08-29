@@ -1,19 +1,25 @@
-import { writable, readable, type Readable, type Writable } from 'svelte/store';
+import { type Writable, writable } from 'svelte/store';
+
+import * as configJson from '../assets/configuration.json' assert { type: 'json' };
 
 import {
-  features as initFeatures,
-  settings as initSettings,
-  auth as initAuth,
-  defaultBranding,
   type BrandingConfig,
+  type FeaturesConfig,
+  type SettingsConfig,
+  defaultBranding,
+  defaultFeatures,
+  defaultSettings,
   loadBrandingConfigs,
+  loadFeaturesConfig,
+  loadSettingsConfig,
 } from '$lib/configuration';
 
 export const branding: Writable<BrandingConfig> = writable(defaultBranding);
-export const features: Writable<typeof initFeatures> = writable(initFeatures);
-export const settings: Writable<typeof initSettings> = writable(initSettings);
-export const auth: Readable<typeof initAuth> = readable(initAuth);
+export const features: Writable<FeaturesConfig> = writable(defaultFeatures);
+export const settings: Writable<SettingsConfig> = writable(defaultSettings);
 
 export function initializeBranding() {
-  branding.set(loadBrandingConfigs());
+  branding.set(loadBrandingConfigs(configJson.branding));
+  features.set(loadFeaturesConfig(configJson.features));
+  settings.set(loadSettingsConfig(configJson.settings));
 }
