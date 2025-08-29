@@ -1,13 +1,12 @@
-import { writable, type Writable } from 'svelte/store';
+import { get, writable, type Writable } from 'svelte/store';
 
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import type { Column } from '$lib/components/datatable/types';
 import { user } from '$lib/stores/User';
-import { get } from 'svelte/store';
 import type { User } from '$lib/models/User';
 import { browser } from '$app/environment';
-import { features } from '$lib/configuration';
+import { features } from '$lib/stores/Configuration';
 export const columns: Writable<Column[]> = writable([]);
 
 export type DashboardRow = Record<string, string | number | boolean | null>;
@@ -40,7 +39,8 @@ export async function loadDashboardData() {
   columns.set(dashboardData.columns);
 
   const loggedInUser: User = get(user);
-  const useConsents = features.useQueryTemplate && isUserLoggedIn() && loggedInUser?.queryTemplate;
+  const useConsents =
+    get(features).useQueryTemplate && isUserLoggedIn() && loggedInUser?.queryTemplate;
 
   let consents: string[] = [];
   if (useConsents) {

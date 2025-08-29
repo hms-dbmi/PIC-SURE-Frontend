@@ -74,6 +74,7 @@
         "dataElement": "name"
       }
     ],
+    "tourSearchTerm": "age",
     "tourSearchIntro": "PIC-SURE Search allows you to search for variable level data.",
     "totalPatientsText": "Filtered Participants",
     "queryErrorText": "There was an error with your query. If this persists, please contact you PIC-SURE admin.",

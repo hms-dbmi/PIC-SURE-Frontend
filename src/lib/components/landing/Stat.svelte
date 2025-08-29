@@ -6,7 +6,7 @@
   import { countResult } from '$lib/utilities/PatientCount';
   import { sanitizeHTML } from '$lib/utilities/HTML';
   import Loading from '$lib/components/Loading.svelte';
-  import { features } from '$lib/configuration';
+  import { features } from '$lib/stores/Configuration';
   interface Props {
     stats: Readable<StatResult[]>;
     description: string;
@@ -56,7 +56,7 @@
             <strong class="p-1 mb-3">
               {countResult(counts.filter(StatPromise.fullfiled).map(({ value }) => value))}
             </strong>
-            {#if !features.federated && counts.some(StatPromise.rejected)}
+            {#if !$features.federated && counts.some(StatPromise.rejected)}
               <i class="fa-solid fa-circle-exclamation p-1 mb-4 mt-1"></i>
             {/if}
           {/await}

@@ -3,7 +3,7 @@
 
   import * as api from '$lib/api';
   import { Psama } from '$lib/paths';
-  import { branding } from '$lib/configuration';
+  import { branding } from '$lib/stores/Configuration';
   import { toaster } from '$lib/toaster';
   import { isTopAdmin } from '$lib/stores/User';
   import { sanitizeHTML } from '$lib/utilities/HTML';
@@ -41,7 +41,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Edit Terms of Service</title>
+  <title>{$branding.applicationName} | Edit Terms of Service</title>
 </svelte:head>
 
 <Content

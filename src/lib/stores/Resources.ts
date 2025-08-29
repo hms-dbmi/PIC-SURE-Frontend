@@ -2,7 +2,7 @@ import { get, writable, type Writable } from 'svelte/store';
 
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
-import { features } from '$lib/configuration';
+import { features } from '$lib/stores/Configuration';
 import { toaster } from '$lib/toaster';
 
 interface QueryResource {
@@ -47,7 +47,7 @@ export const resources: Writable<ResourceMap> = writable(defaultResources);
 
 export function getQueryResources(isOpenAccess: boolean = false): QueryResource[] {
   const _resources = get(resources);
-  return features.federated
+  return get(features).federated
     ? _resources.queryable
     : [
         isOpenAccess
@@ -60,7 +60,7 @@ async function getResources() {
   if (get(resources).queryable.length > 0) return;
 
   const resourceMap: ResourceMap = defaultResources;
-  if (features.federated) {
+  if (get(features).federated) {
     await api
       .get(Picsure.Resources)
       .then((siteResources: ResourceResponse[]) => {

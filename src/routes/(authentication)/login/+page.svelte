@@ -5,7 +5,7 @@
   import { page } from '$app/state';
   import { browser } from '$app/environment';
 
-  import { branding, features } from '$lib/configuration';
+  import { branding, features } from '$lib/stores/Configuration';
   import type { AuthData } from '$lib/models/AuthProvider';
   import { toaster } from '$lib/toaster';
 
@@ -15,9 +15,9 @@
   import Loading from '$lib/components/Loading.svelte';
 
   const redirectTo = page.url.searchParams.get('redirectTo') || '/';
-  const siteName = branding?.applicationName;
-  const description = branding?.login.description;
-  const openPicsureLinkText = branding?.login.openPicsureLinkText;
+  const siteName = $branding.applicationName;
+  const description = $branding.login.description;
+  const openPicsureLinkText = $branding.login.openPicsureLinkText;
   let logoutReason: string | null;
 
   onMount(() => {
@@ -54,7 +54,7 @@
   {:then providers}
     <div id="login-box" class="w-max mt-2">
       <header class="flex flex-col items-center">
-        {#if branding?.login?.showSiteName}
+        {#if $branding.login.showSiteName}
           <div>{siteName}</div>
         {/if}
       </header>
@@ -100,9 +100,9 @@
             {/each}
           {/if}
         </div>
-        {#if features.login.open}
+        {#if $features.login.open}
           <a
-            href={branding?.login?.openPicsureLink || '/'}
+            href={$branding.login.openPicsureLink || '/'}
             class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white mb-4 w-full"
             >{openPicsureLinkText}</a
           >

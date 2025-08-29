@@ -1,5 +1,5 @@
 import { Query, type ExpectedResultType, type QueryInterface } from '$lib/models/query/Query';
-import { features } from '$lib/configuration';
+import { features } from '$lib/stores/Configuration';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/User';
@@ -18,8 +18,9 @@ export function getQueryRequest(
   resourceUUID = get(resources).hpdsAuth,
   expectedResultType: ExpectedResultType = 'COUNT',
 ): QueryRequestInterface {
+  const _features = get(features);
   let query: Query = new Query();
-  if (features.useQueryTemplate && addConsents) {
+  if (_features.useQueryTemplate && addConsents) {
     const queryTemplate: QueryInterface | undefined = get(user).queryTemplate;
     if (queryTemplate) {
       query = new Query(structuredClone(queryTemplate));
@@ -54,7 +55,7 @@ export function getQueryRequest(
     }
   });
 
-  if (features.requireConsents && addConsents) {
+  if (_features.requireConsents && addConsents) {
     query = updateConsentFilters(query);
   }
 
@@ -71,16 +72,17 @@ export function getBlankQueryRequest(
   resourceUUID = get(resources).hpdsAuth,
   expectedResultType: ExpectedResultType = 'COUNT',
 ): QueryRequestInterface {
+  const _features = get(features);
   let query: Query = new Query();
 
-  if (features.useQueryTemplate && !isOpenAccess) {
+  if (_features.useQueryTemplate && !isOpenAccess) {
     const queryTemplate: QueryInterface = get(user).queryTemplate as QueryInterface;
     if (queryTemplate) {
       query = new Query(structuredClone(queryTemplate));
     }
   }
 
-  if (features.requireConsents && !isOpenAccess) {
+  if (_features.requireConsents && !isOpenAccess) {
     query = updateConsentFilters(query);
   }
 

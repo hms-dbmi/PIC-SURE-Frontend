@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { branding } from '$lib/stores/Configuration';
   import Content from '$lib/components/Content.svelte';
   import { isAdmin } from '$lib/stores/User';
   import { toaster } from '$lib/toaster';
@@ -51,7 +51,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | New Role</title>
+  <title>{$branding.applicationName} | New Role</title>
 </svelte:head>
 
 <Content title="Manual Role">

@@ -1,7 +1,7 @@
 import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
 
 import { isToastShowing, toaster } from '$lib/toaster';
-import { branding } from '$lib/configuration';
+import { branding } from '$lib/stores/Configuration';
 import { getValidStatList, populateStatRequests, StatPromise } from '$lib/utilities/StatBuilder';
 
 import type { StatResult } from '$lib/models/Stat';
@@ -21,7 +21,7 @@ let lastStatRequest: string = '';
 export async function loadLandingStats() {
   loadResources();
   try {
-    const validStats = getValidStatList(branding?.landing?.stats || []);
+    const validStats = getValidStatList(get(branding).landing.stats);
 
     // Rudmientary caching for when a user loads the page in open mode and then authenticates.
     // Stat list will be different for open and auth - see getValidStatList method.

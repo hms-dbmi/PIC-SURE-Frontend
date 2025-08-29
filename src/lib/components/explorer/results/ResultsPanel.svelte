@@ -7,7 +7,7 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { features } from '$lib/configuration';
+  import { features } from '$lib/stores/Configuration';
 
   import { filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult } from '$lib/stores/ResultStore';
@@ -26,11 +26,11 @@
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
-    $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
+    $filters.length !== 0 || ($features.explorer.exportsEnableExport && $exports.length !== 0),
   );
 
   let showExportButton = $derived(
-    features.explorer.allowExport && !isOpenAccess && hasFilterOrExport && $hasNonZeroResult,
+    $features.explorer.allowExport && !isOpenAccess && hasFilterOrExport && $hasNonZeroResult,
   );
 
   let hasValidDistributionFilters = $derived(
@@ -44,18 +44,18 @@
   );
 
   let showExplorerDistributions = $derived(
-    isExplorer && features.explorer.distributionExplorer && hasValidDistributionFilters,
+    isExplorer && $features.explorer.distributionExplorer && hasValidDistributionFilters,
   );
 
   let showDiscoverDistributions = $derived(
-    isOpenAccess && features.discoverFeautures.distributionExplorer && hasValidDistributionFilters,
+    isOpenAccess && $features.discoverFeautures.distributionExplorer && hasValidDistributionFilters,
   );
 
   let showVariantExplorer = $derived(
-    isExplorer && features.explorer.variantExplorer && $hasGenomicFilter,
+    isExplorer && $features.explorer.variantExplorer && $hasGenomicFilter,
   );
 
-  let showCohortDetails = $derived(isExplorer && features.explorer.enableCohortDetails);
+  let showCohortDetails = $derived(isExplorer && $features.explorer.enableCohortDetails);
 
   let showToolSuite = $derived(
     showCohortDetails ||

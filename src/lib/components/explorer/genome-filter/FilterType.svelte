@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { features } from '$lib/configuration';
+  import { features } from '$lib/stores/Configuration';
   import { Option } from '$lib/models/GenomeFilter';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
 
@@ -10,10 +10,13 @@
   }
 
   const { active = Option.None, class: className = '', onselect = () => {} }: Props = $props();
+
+  let enableGENEQuery = $derived($features.enableGENEQuery);
+  let enableSNPQuery = $derived($features.enableSNPQuery);
 </script>
 
 <div class="flex flex-row justify-center justify-items-center gap-16 {className ?? ''}">
-  {#if features.enableGENEQuery}
+  {#if enableGENEQuery}
     <CardButton
       data-testid="gene-variant-option"
       title="Variants by gene name"
@@ -24,7 +27,7 @@
       onclick={() => onselect(Option.Genomic)}
     />
   {/if}
-  {#if features.enableSNPQuery}
+  {#if enableSNPQuery}
     <CardButton
       data-testid="snp-option"
       title="Specific Variants"
@@ -35,7 +38,7 @@
       onclick={() => onselect(Option.SNP)}
     />
   {/if}
-  {#if !features.enableGENEQuery && !features.enableSNPQuery}
+  {#if !enableGENEQuery && !enableSNPQuery}
     Genomic filtering has not been enabled in this environment. :(
   {/if}
 </div>

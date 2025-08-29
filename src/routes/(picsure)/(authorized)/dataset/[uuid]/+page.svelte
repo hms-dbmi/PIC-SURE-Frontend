@@ -3,7 +3,7 @@
 
   import type { DataSet } from '$lib/models/Dataset';
   import { getDataset } from '$lib/stores/Dataset';
-  import { branding } from '$lib/configuration';
+  import { branding } from '$lib/stores/Configuration';
 
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -28,7 +28,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Dataset</title>
+  <title>{$branding.applicationName} | Dataset</title>
 </svelte:head>
 
 <Content title="View Dataset" backUrl="/dataset" backTitle="Back to Datasets">

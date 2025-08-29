@@ -1,24 +1,11 @@
-import { BDCPrivileges, PicsurePrivileges } from './models/Privilege';
-import type { Route } from './models/Route';
+import type { Step } from '$lib/types';
+import type { Column } from '$lib/components/datatable/types';
+import { ExportType } from '$lib/models/Variant';
+import type { StatField, StatConfig } from '$lib/models/Stat';
+
 import * as configJson from './assets/configuration.json' assert { type: 'json' };
-import { ExportType } from './models/Variant';
-import type {
-  ExplorePageConfig,
-  FooterConfig,
-  HelpConfig,
-  Indexable,
-  LandingConfig,
-  ResultsConfig,
-  LoginConfig,
-  SiteMapConfig,
-  CodeBlockConfig,
-  PrivacyConfig,
-  AnalysisConfig,
-  CollaborateConfig,
-  DatasetRequestPageConfig,
-  TermsOfServiceConfig,
-} from './types';
-import type { StatField } from '$lib/models/Stat';
+
+const ENV_PREFIX = 'VITE_';
 
 export const PROJECT_HOSTNAME =
   typeof window !== 'undefined'
@@ -27,202 +14,323 @@ export const PROJECT_HOSTNAME =
       ? `https://${import.meta.env?.VITE_PROJECT_HOSTNAME}/picsure`
       : 'https://nhanes.hms.harvard.edu/picsure';
 
-export interface Branding {
+interface Link {
+  title: string;
+  url: string;
+  newTab?: boolean;
+  feature?: string;
+}
+
+interface CodeBlock {
+  PythonExport: string;
+  RExport: string;
+  PythonAPI: string;
+  RAPI: string;
+}
+
+export const defaultBranding: {
   applicationName: string;
   logo: {
     alt: string;
     src: string;
   };
-  statFields: { [key: string]: StatField[] };
-  sitemap: SiteMapConfig[];
-  footer: FooterConfig;
-  explorePage: ExplorePageConfig;
-  landing: LandingConfig;
-  results: ResultsConfig;
-  datasetRequestPage: DatasetRequestPageConfig;
-  login: LoginConfig;
-  help: HelpConfig;
-  privacyPolicy: PrivacyConfig;
-  analysisConfig: AnalysisConfig;
-  collaborateConfig: CollaborateConfig;
-  genomic?: {
+  statFields: Record<string, StatField[]>;
+  explorePage: {
+    columns: Column[];
+    tourSearchTerm: string;
+    tourSearchIntro: string;
+    totalPatientsText: string;
+    queryErrorText: string;
+    filterErrorText: string;
+    analysisExportText: string;
+    confirmDownloadTitle: string;
+    confirmDownloadMessage: string;
+    codeBlocks: CodeBlock;
+    goTo: {
+      instructions: string;
+      links: Link[];
+    };
+    pfbExportUrls: Link[];
+  };
+  landing: {
+    searchPlaceholder: string;
+    explanation: string;
+    authExplanation: string;
+    actions: {
+      title: string;
+      description: string;
+      icon: string;
+      url: string;
+      btnText: string;
+      isOpen: boolean;
+      showIfLoggedIn: boolean;
+    }[];
+    stats: StatConfig[];
+  };
+  results: {
+    totalStatKey: string;
+    stats: StatConfig[];
+    cohortDescription: string;
+  };
+  datasetRequestPage: {
+    searchIntro: string;
+  };
+  login: {
+    description: string;
+    showSiteName: boolean;
+    openPicsureLink: string;
+    openPicsureLinkText: string;
+    contactLink: string;
+  };
+  help: {
+    links: {
+      title: string;
+      description: string;
+      icon: string;
+      url: string;
+    }[];
+    popups: Record<
+      string,
+      {
+        consequence: string;
+        frequency: string;
+      }
+    >;
+  };
+  footer: {
+    showSitemap: boolean;
+    excludeSitemapOn: string[];
+    links: Link[];
+  };
+  sitemap: {
+    category: string;
+    feature?: string;
+    privilege?: string;
+    links: Link[];
+  }[];
+  privacyPolicy: {
+    title: string;
+    content: string;
+    url: string;
+  };
+  analysisPage: {
+    api: {
+      cards: {
+        header: string;
+        body: string;
+        link: string;
+      }[];
+      instructions: {
+        connection: string;
+        execution: string;
+      };
+    };
+    analysis: {
+      platform: string;
+      introduction: string;
+      access: string;
+      examples: string;
+    };
+  };
+  collaboratePage: {
+    steps: Step[];
+    introduction: string;
+    findCollaborators: string;
+  };
+  genomic: {
     defaultGenomeBuild: string;
   };
-  termsOfService: TermsOfServiceConfig;
-}
-
-export const branding: Branding = {
-  applicationName: 'PIC‑SURE',
-  statFields: {} as { [key: string]: StatField[] },
-  logo: {
-    alt: import.meta.env?.VITE_LOGO_ALT || 'PIC‑SURE',
-    src: import.meta.env?.VITE_LOGO || '',
-  },
-  sitemap: [] as SiteMapConfig[],
-  footer: {} as FooterConfig,
-  explorePage: {
-    tourSearchTerm: import.meta.env?.EXPLORE_TOUR_SEARCH_TERM || 'age',
-  } as ExplorePageConfig,
-  landing: {} as LandingConfig,
-  datasetRequestPage: {} as DatasetRequestPageConfig,
-  results: {} as ResultsConfig,
-  login: {} as LoginConfig,
-  help: {} as HelpConfig,
-  privacyPolicy: {} as PrivacyConfig,
-  analysisConfig: {} as AnalysisConfig,
-  collaborateConfig: {} as CollaborateConfig,
-  termsOfService: {} as TermsOfServiceConfig,
-};
-
-export const initializeBranding = () => {
-  branding.applicationName = configJson.applicationName;
-
-  // Replace URLs in code blocks before assigning
-  const codeBlocks: CodeBlockConfig = { ...configJson.explorePage.codeBlocks };
-  Object.keys(codeBlocks).forEach((key: string) => {
-    if (typeof codeBlocks[key] === 'string') {
-      codeBlocks[key] = codeBlocks[key].replace('{{PICSURE_NETWORK_URL}}', PROJECT_HOSTNAME);
-    }
-  });
-
-  branding.explorePage = {
-    ...branding.explorePage,
-    ...configJson.explorePage,
-    codeBlocks,
+  termsOfService: {
+    rejectionUrl: string;
   };
-  branding.statFields = configJson.statFields;
-  branding.landing = configJson.landing;
-  branding.results = configJson.results;
-  branding.datasetRequestPage = configJson.datasetRequestPage;
-  branding.login = configJson.login;
-  branding.help = configJson.help;
-  branding.footer = configJson.footer;
-  branding.sitemap = configJson.sitemap as SiteMapConfig[];
-  branding.privacyPolicy = configJson.privacyPolicy;
-  branding.analysisConfig = configJson.analysisPage;
-  branding.collaborateConfig = configJson.collaboratePage;
-  branding.genomic = configJson.genomic;
-  branding.termsOfService = configJson.termsOfService;
-};
-
-export const routes: Route[] = [
-  {
-    path: '/dashboard',
-    text: 'Data Dashboard',
-    feature: 'dashboard',
+} = {
+  applicationName: 'PIC‑SURE',
+  logo: {
+    alt: (import.meta.env?.VITE_LOGO_ALT as string) || 'PIC‑SURE',
+    src: (import.meta.env?.VITE_LOGO as string) || '',
   },
-  {
-    path: '/discover',
-    text: 'Discover',
-    feature: 'discover',
+  statFields: {},
+  explorePage: {
+    columns: [],
+    tourSearchTerm: '',
+    tourSearchIntro: '',
+    totalPatientsText: '',
+    queryErrorText: '',
+    filterErrorText: '',
+    analysisExportText: '',
+    confirmDownloadTitle: '',
+    confirmDownloadMessage: '',
+    codeBlocks: {
+      PythonExport: '',
+      RExport: '',
+      PythonAPI: '',
+      RAPI: '',
+    },
+    goTo: {
+      instructions: '',
+      links: [],
+    },
+    pfbExportUrls: [],
   },
-  {
-    path: '/explorer',
-    text: 'Explore',
-    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
+  landing: {
+    searchPlaceholder: '',
+    explanation: '',
+    authExplanation: '',
+    actions: [],
+    stats: [],
   },
-  {
-    path: '/collaborate',
-    text: 'Collaborate',
-    feature: 'collaborate',
-    privilege: [PicsurePrivileges.QUERY],
+  results: {
+    totalStatKey: '',
+    stats: [],
+    cohortDescription: '',
   },
-  {
-    path: '/analyze/api',
-    text: 'Prepare for Analysis',
-    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
-    feature: 'analyzeApi',
-  },
-  {
-    path: '/analyze/analysis',
-    text: 'Analyze',
-    privilege: [PicsurePrivileges.QUERY],
-    feature: 'analyzeAnalysis',
-  },
-  {
-    path: '/dataset',
-    text: 'Manage Datasets',
-    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.NAMED_DATASET],
-  },
-  {
-    path: '/dataset/request',
-    text: 'Data Request',
-    privilege: [PicsurePrivileges.DATA_ADMIN],
-    feature: 'dataRequests',
-  },
-  {
-    path: '/admin/configuration',
-    text: 'Configuration',
-    privilege: [PicsurePrivileges.SUPER],
-  },
-  {
-    path: '/admin/manual-role',
-    text: 'Manual Role',
-    privilege: [PicsurePrivileges.ADMIN],
-    feature: 'manualRole',
-  },
-  { path: '/admin/users', text: 'Manage Users', privilege: [PicsurePrivileges.ADMIN] },
-  { path: '/help', text: 'Help' },
-];
-
-export const features: Indexable = {
-  federated: import.meta.env?.VITE_FEDERATED === 'true',
-  explorer: {
-    allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
-    allowDownload: import.meta.env?.VITE_ALLOW_DOWNLOAD !== 'false', // default true
-    exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
-    variantExplorer: import.meta.env?.VITE_VARIANT_EXPLORER === 'true',
-    distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
-    enableTour: import.meta.env?.EXPLORER_TOUR !== 'false', // default true
-    authTour: import.meta.env?.VITE_AUTH_TOUR_NAME ?? 'NHANES-Auth',
-    enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
-    enablePfbExport: import.meta.env?.VITE_DOWNLOAD_AS_PFB !== 'false', // default true
-    enableSampleIdCheckbox: import.meta.env?.VITE_ENABLE_SAMPLE_ID_CHECKBOX === 'true',
-    enableCohortDetails: import.meta.env?.VITE_ENABLE_COHORT_DETAILS === 'true',
+  datasetRequestPage: {
+    searchIntro: '',
   },
   login: {
-    open: import.meta.env?.VITE_OPEN === 'true',
+    description: '',
+    showSiteName: true,
+    openPicsureLink: '',
+    openPicsureLinkText: '',
+    contactLink: '',
   },
-  analyzeApi: import.meta.env?.VITE_ANALYZE_API !== 'false', // default true,
-  analyzeAnalysis: import.meta.env?.VITE_ANALYZE_ANALYSIS === 'true', // default false,
-  dataRequests: import.meta.env?.VITE_DATA_REQUESTS === 'true',
-  manualRole: import.meta.env?.VITE_MANUAL_ROLE === 'true',
-  enableSNPQuery: import.meta.env?.VITE_ENABLE_SNP_QUERY === 'true',
-  enableGENEQuery: import.meta.env?.VITE_ENABLE_GENE_QUERY === 'true',
-  requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
-  useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
-  discover: import.meta.env?.VITE_DISCOVER === 'true',
-  collaborate: import.meta.env?.VITE_COLLABORATE === 'true',
-  discoverFeautures: {
-    enableTour: import.meta.env?.EXPLORER_TOUR !== 'false', // default true
-    openTour: import.meta.env?.VITE_OPEN_TOUR_NAME ?? 'BDC-Open',
-    distributionExplorer: import.meta.env?.VITE_DIST_EXPLORER === 'true',
+  help: {
+    links: [],
+    popups: {},
   },
-  dashboard: import.meta.env?.VITE_DASHBOARD === 'true',
-  dashboardDrawer: import.meta.env?.VITE_DASHBOARD_DRAWER === 'true',
-  confirmDownload: import.meta.env?.VITE_CONFIRM_DOWNLOAD === 'true',
-  termsOfService: import.meta.env?.VITE_ENABLE_TOS === 'true',
-  enforceTermsOfService: import.meta.env?.VITE_ENFORCE_TOS_ACCEPT === 'true',
+  footer: {
+    showSitemap: false,
+    excludeSitemapOn: [],
+    links: [],
+  },
+  sitemap: [],
+  privacyPolicy: {
+    title: '',
+    content: '',
+    url: '',
+  },
+  analysisPage: {
+    api: {
+      cards: [],
+      instructions: {
+        connection: '',
+        execution: '',
+      },
+    },
+    analysis: {
+      platform: '',
+      introduction: '',
+      access: '',
+      examples: '',
+    },
+  },
+  collaboratePage: {
+    steps: [],
+    introduction: '',
+    findCollaborators: '',
+  },
+  genomic: {
+    defaultGenomeBuild: '',
+  },
+  termsOfService: {
+    rejectionUrl: '',
+  },
 };
 
-export const settings: Indexable = {
+export type BrandingConfig = typeof defaultBranding;
+
+export function loadBrandingConfigs(): BrandingConfig {
+  const branding: BrandingConfig = {
+    ...defaultBranding,
+    ...configJson,
+  };
+
+  const codeBlocks: CodeBlock = { ...configJson.explorePage.codeBlocks };
+  Object.keys(codeBlocks).forEach((key: string) => {
+    codeBlocks[key as keyof CodeBlock] = codeBlocks[key as keyof CodeBlock].replace(
+      '{{PICSURE_NETWORK_URL}}',
+      PROJECT_HOSTNAME,
+    );
+  });
+  branding.explorePage.codeBlocks = codeBlocks;
+
+  return branding as BrandingConfig;
+}
+
+function orDefault(
+  key: string,
+  defaultValue: boolean | string | number | ExportType,
+  json: boolean = false,
+) {
+  const value = import.meta.env[ENV_PREFIX + key];
+  if (value === undefined) return defaultValue;
+  else if (json) return JSON.parse(value);
+  else if (value === 'true' || value === 'false') return value === 'true' || defaultValue;
+  else {
+    try {
+      return parseInt(value);
+    } catch {
+      return value;
+    }
+  }
+}
+
+export const features = {
+  federated: orDefault('FEDERATED', false),
+  explorer: {
+    allowExport: orDefault('ALLOW_EXPORT', false),
+    allowDownload: orDefault('ALLOW_DOWNLOAD', true),
+    exportsEnableExport: orDefault('ALLOW_EXPORT_ENABLED', false),
+    variantExplorer: orDefault('VARIANT_EXPLORER', false),
+    distributionExplorer: orDefault('DIST_EXPLORER', false),
+    enableTour: orDefault('EXPLORER_TOUR', true),
+    authTour: orDefault('AUTH_TOUR_NAME', 'NHANES-Auth'),
+    enableHierarchy: orDefault('ENABLE_HIERARCHY', false),
+    enablePfbExport: orDefault('DOWNLOAD_AS_PFB', true),
+    enableSampleIdCheckbox: orDefault('ENABLE_SAMPLE_ID_CHECKBOX', false),
+    enableCohortDetails: orDefault('ENABLE_COHORT_DETAILS', false),
+  },
+  login: {
+    open: orDefault('OPEN', false),
+  },
+  analyzeApi: orDefault('ANALYZE_API', true),
+  analyzeAnalysis: orDefault('ANALYZE_ANALYSIS', false),
+  dataRequests: orDefault('DATA_REQUESTS', false),
+  manualRole: orDefault('MANUAL_ROLE', false),
+  enableSNPQuery: orDefault('ENABLE_SNP_QUERY', false),
+  enableGENEQuery: orDefault('ENABLE_GENE_QUERY', false),
+  requireConsents: orDefault('REQUIRE_CONSENTS', false),
+  useQueryTemplate: orDefault('USE_QUERY_TEMPLATE', false),
+  discover: orDefault('DISCOVER', false),
+  collaborate: orDefault('COLLABORATE', false),
+  discoverFeautures: {
+    enableTour: orDefault('EXPLORER_TOUR', true),
+    openTour: orDefault('OPEN_TOUR_NAME', 'BDC-Open'),
+    distributionExplorer: orDefault('DIST_EXPLORER', false),
+  },
+  dashboard: orDefault('DASHBOARD', false),
+  dashboardDrawer: orDefault('DASHBOARD_DRAWER', false),
+  confirmDownload: orDefault('CONFIRM_DOWNLOAD', false),
+  termsOfService: orDefault('ENABLE_TOS', false),
+  enforceTermsOfService: orDefault('ENFORCE_TOS_ACCEPT', false),
+};
+
+export const settings = {
   variantExplorer: {
-    type: (import.meta.env?.VITE_VARIANT_EXPLORER_TYPE || ExportType.Aggregate) as ExportType,
-    maxCount: parseInt(import.meta.env?.VITE_VARIANT_EXPLORER_MAX_COUNT || 10000),
-    excludeColumns: JSON.parse(import.meta.env?.VITE_VARIANT_EXPLORER_EXCLUDE_COLUMNS || '[]'),
+    type: orDefault('VARIANT_EXPLORER_TYPE', ExportType.Aggregate) as ExportType,
+    maxCount: orDefault('VARIANT_EXPLORER_MAX_COUNT', 10000),
+    excludeColumns: orDefault('VARIANT_EXPLORER_EXCLUDE_COLUMNS', '[]', true),
   },
   distributionExplorer: {
-    graphColors: JSON.parse(
-      import.meta.env?.VITE_DIST_EXPLORER_GRAPH_COLORS || '["#328FFF", "#675AFF", "#FFBC35"]',
-    ),
+    graphColors: orDefault('DIST_EXPLORER_GRAPH_COLORS', '["#328FFF", "#675AFF", "#FFBC35"]', true),
   },
   google: {
-    analytics: import.meta.env?.VITE_GOOGLE_ANALYTICS_ID || '',
-    tagManager: import.meta.env?.VITE_GOOGLE_TAG_MANAGER_ID || '',
+    analytics: orDefault('GOOGLE_ANALYTICS_ID', ''),
+    tagManager: orDefault('GOOGLE_TAG_MANAGER_ID', ''),
   },
-  maxDataPointsForExport: parseInt(import.meta.env?.VITE_MAX_DATA_POINTS_FOR_EXPORT || 1000000),
+  maxDataPointsForExport: orDefault('MAX_DATA_POINTS_FOR_EXPORT', 1000000),
 };
 
 export const auth = {
-  auth0Tenant: import.meta.env?.VITE_AUTH0_TENANT || 'avillachlab',
+  auth0Tenant: orDefault('AUTH0_TENANT', 'avillachlab'),
 };

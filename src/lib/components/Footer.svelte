@@ -1,37 +1,36 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { branding, features } from '$lib/configuration';
+  import { branding, features } from '$lib/stores/Configuration';
   import { user, isLoggedIn } from '$lib/stores/User';
   import Terms from '$lib/components/Terms.svelte';
   import Modal from '$lib/components/Modal.svelte';
 
-  let { showSitemap = branding?.footer?.showSitemap || false }: { showSitemap?: boolean } =
-    $props();
+  let { showSitemap = $branding.footer.showSitemap || false }: { showSitemap?: boolean } = $props();
 
   let hideSitemap = $derived(
     !showSitemap ||
-      branding?.footer?.excludeSitemapOn?.find((hide) => page.url.pathname.includes(hide)),
+      $branding.footer.excludeSitemapOn?.find((hide) => page.url.pathname.includes(hide)),
   );
 
   let sitemap = $derived(
-    branding?.sitemap?.map((section) => ({
+    $branding.sitemap.map((section) => ({
       ...section,
       show:
         (!section.privilege ||
           ($user.privileges && $user.privileges.includes(section.privilege))) &&
-        (!section.feature || features[section.feature as keyof typeof features]),
-    })),
+        (!section.feature || !!$features[section.feature as keyof typeof $features]),
+    })) || [],
   );
 
   let modalOpen: boolean = $state(
-    features.enforceTermsOfService && $isLoggedIn && !$user.acceptedTOS,
+    $features.enforceTermsOfService && $isLoggedIn && !$user.acceptedTOS,
   );
   let modalClosable: boolean = $derived(
-    !features.enforceTermsOfService || !$isLoggedIn || ($isLoggedIn && !!$user?.acceptedTOS),
+    !$features.enforceTermsOfService || !$isLoggedIn || ($isLoggedIn && !!$user?.acceptedTOS),
   );
 </script>
 
-{#if !hideSitemap && branding?.sitemap?.length > 0}
+{#if (!hideSitemap && $branding.sitemap.length) || 0 > 0}
   <div id="sitemap-footer">
     <div class="flex flex-wrap place-content-center">
       {#each sitemap as section}
@@ -39,7 +38,7 @@
           <ul class="basis-1/8">
             <li class="font-bold text-center">{section.category}</li>
             {#each section.links as link}
-              {#if !link.feature || features[link.feature]}
+              {#if !link.feature || $features[link.feature as keyof typeof $features]}
                 <li class="text-center">
                   <a
                     target={link.newTab ? '_blank' : '_self'}
@@ -57,7 +56,7 @@
 {/if}
 <footer id="main-footer" class="flex relativem mt-4">
   <ul>
-    {#if features.termsOfService}
+    {#if $features.termsOfService}
       <li>
         <Modal
           bind:open={modalOpen}
@@ -74,7 +73,7 @@
         </Modal>
       </li>
     {/if}
-    {#each branding?.footer?.links as link}
+    {#each $branding.footer.links as link}
       <li>
         <a
           class="hover:underline text-[0.74rem]"

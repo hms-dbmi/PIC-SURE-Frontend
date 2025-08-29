@@ -1,5 +1,6 @@
+import { get } from 'svelte/store';
 import * as api from '$lib/api';
-import { branding, features } from '$lib/configuration';
+import { branding, features } from '$lib/stores/Configuration';
 import { Picsure } from '$lib/paths';
 
 import type { ExpectedResultType } from '$lib/models/query/Query';
@@ -41,8 +42,9 @@ export const StatPromise = {
 };
 
 export function getStatFields(key: string): StatField[] {
-  const statKeys = branding?.statFields ? Object.keys(branding?.statFields) : [];
-  return statKeys.includes(key) ? branding?.statFields[key] : [];
+  const _branding = get(branding);
+  const statKeys = Object.keys(_branding.statFields);
+  return statKeys.includes(key) ? _branding.statFields[key] : [];
 }
 
 function dictionaryRequest(isOpenAccess: boolean = false): DictionarySearchRequest {
@@ -175,7 +177,7 @@ export function getValidStatList(list: StatConfig[]): StatResult[] {
       });
     }
 
-    if (features.login.open && openUsers) {
+    if (get(features).login.open && openUsers) {
       statList.push({
         ...stat,
         auth: false,

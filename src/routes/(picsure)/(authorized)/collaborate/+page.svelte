@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { branding } from '$lib/configuration';
+  import { branding } from '$lib/stores/Configuration';
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
   import Content from '$lib/components/Content.svelte';
@@ -11,8 +11,8 @@
   let findCollaborators: string = $state('');
 
   onMount(() => {
-    introduction = sanitizeHTML(branding.collaborateConfig.introduction);
-    findCollaborators = sanitizeHTML(branding.collaborateConfig.findCollaborators);
+    introduction = sanitizeHTML($branding.collaboratePage.introduction);
+    findCollaborators = sanitizeHTML($branding.collaboratePage.findCollaborators);
   });
 </script>
 

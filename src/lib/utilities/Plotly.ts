@@ -1,9 +1,9 @@
+import { get } from 'svelte/store';
 import type { PlotlyHTMLElement, Root, Data, Config, Layout } from 'plotly.js';
-import { settings } from '$lib/configuration';
+import { settings } from '$lib/stores/Configuration';
 
 const MAX_TITLE_LENGTH = 60;
 const OBFUSCATION_RANGE = 6;
-const defaultColors = settings.distributionExplorer.graphColors;
 
 export const defaultPlotlyConfig: Partial<Config> = {
   editable: true,
@@ -61,6 +61,7 @@ export type PlotValues = {
 };
 
 function getColors(num: number) {
+  const defaultColors = get(settings).distributionExplorer.graphColors;
   const colors = [];
   for (let i = 0; i < num; i++) {
     colors.push(defaultColors[i % defaultColors.length]);

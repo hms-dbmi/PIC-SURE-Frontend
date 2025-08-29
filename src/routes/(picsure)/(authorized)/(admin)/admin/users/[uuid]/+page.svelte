@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { branding } from '$lib/configuration';
+  import { branding } from '$lib/stores/Configuration';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
@@ -35,7 +35,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | User Summary</title>
+  <title>{$branding.applicationName} | User Summary</title>
 </svelte:head>
 
 <Content title="User Summary" backUrl="/admin/users" backTitle="Back to Users">

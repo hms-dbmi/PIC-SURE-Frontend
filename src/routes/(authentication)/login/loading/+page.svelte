@@ -2,7 +2,7 @@
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { features } from '$lib/configuration';
+  import { features } from '$lib/stores/Configuration';
   import type AuthProvider from '$lib/models/AuthProvider';
   import { createInstance } from '$lib/AuthProviderRegistry';
   import { browser } from '$app/environment';
@@ -44,7 +44,7 @@
 
       // api returns as string
       user.acceptedTOS = String(user.acceptedTOS) === 'true';
-      if (features.enforceTermsOfService && !user.acceptedTOS) {
+      if ($features.enforceTermsOfService && !user.acceptedTOS) {
         setToken(user.token);
         goto(redirectTo);
       } else {

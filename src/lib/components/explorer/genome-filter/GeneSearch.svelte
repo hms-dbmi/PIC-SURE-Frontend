@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { branding } from '$lib/stores/Configuration';
 
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   import Panel from '$lib/components/explorer/Panel.svelte';
@@ -16,7 +16,7 @@
     selectedGenes.set([]);
   }
 
-  const helpText = branding?.help?.popups?.genomicFilter;
+  let helpText = $derived($branding.help.popups.genomicFilter);
 </script>
 
 <div id="gene-search" class="grid grid-cols-3 gap-3 {props.class || ''}">
@@ -35,13 +35,13 @@
     subtitle="The calculated consequence is based on VEP annotation."
   >
     {#snippet help()}
-      <HelpInfoPopup id="cons-help-popup" text={helpText.consequence} />
+      <HelpInfoPopup id="cons-help-popup" text={helpText?.consequence} />
     {/snippet}
     <Consequence />
   </Panel>
   <Panel title="Select Variant Frequency">
     {#snippet help()}
-      <HelpInfoPopup id="freq-help-popup" text={helpText.frequency} />
+      <HelpInfoPopup id="freq-help-popup" text={helpText?.frequency} />
     {/snippet}
     <Frequency />
   </Panel>

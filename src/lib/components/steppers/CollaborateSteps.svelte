@@ -1,8 +1,7 @@
 <script lang="ts">
   import StepIndicator from '$lib/components/steppers/StepIndicator.svelte';
   import type { Step } from '$lib/types';
-  import { features } from '$lib/configuration';
-  import { branding } from '$lib/configuration';
+  import { features, branding } from '$lib/stores/Configuration';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
 
@@ -12,8 +11,9 @@
 
   const getSteps = () => {
     let steps: Step[] = [];
-    if (branding?.collaborateConfig?.steps && branding.collaborateConfig.steps.length > 0) {
-      steps = branding?.collaborateConfig?.steps.map((step: Step) => ({
+    const colabSteps = $branding.collaboratePage.steps;
+    if (colabSteps.length > 0) {
+      steps = colabSteps.map((step: Step) => ({
         label: step.label,
         icon: step.icon,
         path: step.path,
@@ -25,28 +25,28 @@
         icon: 'fa-search',
         path: '/explorer',
       });
-      if (features['collaborate' as keyof typeof features]) {
+      if ($features.collaborate) {
         steps.push({
           label: 'Find Collaborators',
           icon: 'fa-handshake',
           path: '/collaborate',
         });
       }
-      if (features['dataRequests' as keyof typeof features]) {
+      if ($features.dataRequests) {
         steps.push({
           label: 'Request Access to Data',
           icon: 'fa-database',
           path: '/data-requests',
         });
       }
-      if (features['analyzeApi' as keyof typeof features]) {
+      if ($features.analyzeApi) {
         steps.push({
           label: 'Analyze with API',
           icon: 'fa-chart-simple',
           path: '/analyze/api',
         });
       }
-      if (features['analyzeAnalysis' as keyof typeof features]) {
+      if ($features.analyzeAnalysis) {
         steps.push({
           label: 'Analyze with Service Workbench',
           icon: 'fa-chart-line',

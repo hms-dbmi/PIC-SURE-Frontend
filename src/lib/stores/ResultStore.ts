@@ -1,7 +1,7 @@
 import { get, writable, type Writable } from 'svelte/store';
 
 import { isToastShowing, toaster } from '$lib/toaster';
-import { branding } from '$lib/configuration';
+import { branding } from '$lib/stores/Configuration';
 import { getResultList, StatPromise } from '$lib/utilities/StatBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
 
@@ -36,7 +36,7 @@ export async function loadPatientCount(isOpenAccess: boolean) {
     }
 
     await get(resourcesPromise);
-    const resultStats: StatResult[] = getResultList(isOpenAccess, branding?.results?.stats || []);
+    const resultStats: StatResult[] = getResultList(isOpenAccess, get(branding).results.stats);
     resultCounts.set(resultStats);
     Promise.allSettled(resultStats.flatMap(StatPromise.list)).then((results) => {
       if (results.some(StatPromise.rejected)) {
@@ -44,14 +44,14 @@ export async function loadPatientCount(isOpenAccess: boolean) {
           if (get(filters).length !== 0) {
             toaster.error({
               id: 'query-error',
-              description: branding?.explorePage?.filterErrorText,
+              description: get(branding).explorePage.filterErrorText,
               duration: 4000,
               closable: true,
             });
           } else {
             toaster.error({
               id: 'query-error',
-              title: branding?.explorePage?.queryErrorText,
+              title: get(branding).explorePage.queryErrorText,
               duration: 4000,
               closable: true,
             });
@@ -67,7 +67,9 @@ export async function loadPatientCount(isOpenAccess: boolean) {
         ),
       );
     });
-    const totalCount = resultStats.find((count) => count.key === branding?.results?.totalStatKey);
+    const totalCount = resultStats.find(
+      (count) => count.key === get(branding).results.totalStatKey,
+    );
     if (totalCount) {
       Promise.allSettled(StatPromise.list(totalCount)).then(
         (results: PromiseSettledResult<StatValue>[]) => {

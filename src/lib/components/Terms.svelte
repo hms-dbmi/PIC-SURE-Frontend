@@ -3,7 +3,7 @@
 
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
-  import { branding, features } from '$lib/configuration';
+  import { branding, features } from '$lib/stores/Configuration';
   import * as api from '$lib/api';
   import { Psama } from '$lib/paths';
   import { toaster } from '$lib/toaster';
@@ -16,7 +16,7 @@
   let { modalOpen = $bindable(false) }: { modalOpen?: boolean } = $props();
   let terms: Promise<string> = $state(Promise.resolve(''));
   let enforceTerms: boolean = $derived(
-    features.enforceTermsOfService && $isLoggedIn && !$user.acceptedTOS,
+    $features.enforceTermsOfService && $isLoggedIn && !$user.acceptedTOS,
   );
 
   function loadTermsHTML() {
@@ -46,8 +46,8 @@
   function reject() {
     if (browser) {
       logout().then(() => {
-        if (branding.termsOfService.rejectionUrl) {
-          window.location.href = branding.termsOfService.rejectionUrl;
+        if ($branding.termsOfService.rejectionUrl) {
+          window.location.href = $branding.termsOfService.rejectionUrl;
         } else {
           goto('/login');
         }

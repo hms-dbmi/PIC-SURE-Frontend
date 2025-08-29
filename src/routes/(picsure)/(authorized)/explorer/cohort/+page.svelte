@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
 
-  import { branding } from '$lib/configuration';
+  import { branding } from '$lib/stores/Configuration';
   import { countResult } from '$lib/utilities/PatientCount';
   import { StatPromise, getStatFields } from '$lib/utilities/StatBuilder';
 
@@ -87,12 +87,12 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Cohort Details</title>
+  <title>{$branding.applicationName} | Cohort Details</title>
 </svelte:head>
 
 <Content full backUrl="/explorer" backTitle="Back to Cohort Builder" title="Cohort Details">
   <p class="text-center">
-    {branding.results.cohortDescription ||
+    {$branding.results.cohortDescription ||
       'Distribution of total patient counts across networked institutions.'}
   </p>
   {#await $resourcesPromise}

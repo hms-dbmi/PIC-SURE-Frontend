@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
 
   import { goto } from '$app/navigation';
-  import { branding, features } from '$lib/configuration';
+  import { branding, features } from '$lib/stores/Configuration';
   import { isToastShowing, toaster } from '$lib/toaster';
 
   import { panelOpen } from '$lib/stores/SidePanel';
@@ -30,12 +30,12 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Variant Explorer</title>
+  <title>{$branding.applicationName} | Variant Explorer</title>
 </svelte:head>
 
 <Content full backUrl="/explorer" backTitle="Back to Explore">
   <h2 class="text-center clear-both">Variant Explorer</h2>
-  {#if features.explorer.variantExplorer}
+  {#if $features.explorer.variantExplorer}
     <VariantExplorer />
   {:else}
     <ErrorAlert title="Error">

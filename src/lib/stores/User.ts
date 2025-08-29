@@ -3,7 +3,7 @@ import { browser } from '$app/environment';
 import * as api from '$lib/api';
 import type { User } from '$lib/models/User';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
-import { features } from '$lib/configuration';
+import { features } from '$lib/stores/Configuration';
 import { type Route, routes } from '$lib/routes';
 import { Psama } from '$lib/paths';
 import { goto } from '$app/navigation';
@@ -108,8 +108,11 @@ export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user
   }
 
   function featureRoutes(routeList: Route[]): Route[] {
+    const _features = get(features);
     return routeList
-      .filter((route) => (route.feature ? !!features[route.feature] : true))
+      .filter((route) =>
+        route.feature ? _features[route.feature as keyof typeof _features] : true,
+      )
       .map((route: Route) =>
         route.children ? { ...route, children: featureRoutes(route.children) } : route,
       );
@@ -173,7 +176,7 @@ export async function login(token: string) {
   if (browser && token) {
     setToken(token);
     await getUser(true, false);
-    if (features.useQueryTemplate) {
+    if (get(features).useQueryTemplate) {
       const queryTemplate = await getQueryTemplate();
       if (queryTemplate) {
         user.set({ ...get(user), queryTemplate });

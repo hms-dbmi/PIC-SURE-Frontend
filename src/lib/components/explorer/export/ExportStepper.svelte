@@ -7,7 +7,7 @@
   import { browser } from '$app/environment';
 
   import * as api from '$lib/api';
-  import { branding, features, settings } from '$lib/configuration';
+  import { branding, features, settings } from '$lib/stores/Configuration';
   import { Picsure } from '$lib/paths';
   import { toaster } from '$lib/toaster';
 
@@ -50,7 +50,7 @@
     picsureResultId?: string;
   }
 
-  const MAX_DATA_POINTS_FOR_EXPORT = settings.maxDataPointsForExport || 1000000;
+  const MAX_DATA_POINTS_FOR_EXPORT = $settings.maxDataPointsForExport || 1000000;
   const PROMISE_WAIT_INTERVAL = 7;
 
   const columns = [
@@ -113,7 +113,7 @@
     }
 
     // Auto select csv export when pfb feature is disabled.
-    if (!features.explorer.enablePfbExport) {
+    if (!$features.explorer.enablePfbExport) {
       activeType = 'DATAFRAME';
     }
   });
@@ -340,14 +340,14 @@
 
 <Modal
   bind:open={modalOpen}
-  title={branding.explorePage.confirmDownloadTitle || 'Are you sure you want to download data?'}
+  title={$branding.explorePage.confirmDownloadTitle || 'Are you sure you want to download data?'}
   width="w-1/2"
   withDefault
   confirmText="Download"
   cancelText="Cancel"
   onconfirm={() => download()}
 >
-  {branding.explorePage.confirmDownloadMessage ||
+  {$branding.explorePage.confirmDownloadMessage ||
     'This action will download the data to your local machine. Are you sure you want to proceed?'}
 </Modal>
 <Stepper
@@ -385,7 +385,7 @@
           {/await}
           {#if !loadingSampleIds}
             <Datatable tableName="ExportSummary" data={activeRows} {columns} />
-            {#if features.explorer.enableSampleIdCheckbox}
+            {#if $features.explorer.enableSampleIdCheckbox}
               <div>
                 <label
                   for="sample-ids-checkbox"
@@ -431,7 +431,7 @@
       </section>
     </Step>
   {/if}
-  {#if features.explorer.enablePfbExport}
+  {#if $features.explorer.enablePfbExport}
     <Step name="select-type" locked={activeType === undefined}>
       {#snippet header()}Review and Save Dataset:{/snippet}
       <section class="flex flex-col w-full h-full items-center">
@@ -510,12 +510,12 @@
           {:then}
             {#if query.query.expectedResultType === 'DATAFRAME'}
               <section class="flex flex-col gap-8">
-                <p class="mt-4">{branding.explorePage.analysisExportText}</p>
+                <p class="mt-4">{$branding.explorePage.analysisExportText}</p>
                 <Tabs value={tabSet} onValueChange={(e: { value: string }) => (tabSet = e.value)}>
                   {#snippet list()}
                     <TabItem bind:group={tabSet} value="Python">Python</TabItem>
                     <TabItem bind:group={tabSet} value="R">R</TabItem>
-                    {#if features.explorer.allowDownload}
+                    {#if $features.explorer.allowDownload}
                       <TabItem bind:group={tabSet} value="Download">Download</TabItem>
                     {/if}
                   {/snippet}
@@ -523,7 +523,7 @@
                     <Tabs.Panel value="Python">
                       <CodeBlock
                         lang="python"
-                        code={branding.explorePage.codeBlocks.PythonExport.replace(
+                        code={$branding.explorePage.codeBlocks.PythonExport.replace(
                           '{{queryId}}',
                           datasetId,
                         ) || 'Code not set'}
@@ -532,31 +532,31 @@
                     <Tabs.Panel value="R">
                       <CodeBlock
                         lang="r"
-                        code={branding.explorePage.codeBlocks.RExport.replace(
+                        code={$branding.explorePage.codeBlocks.RExport.replace(
                           '{{queryId}}',
                           datasetId,
                         ) || 'Code not set'}
                       />
                     </Tabs.Panel>
-                    {#if features.explorer.allowDownload}
+                    {#if $features.explorer.allowDownload}
                       <Tabs.Panel value="Download">
                         <button
                           class="btn preset-filled-primary-500"
                           onclick={() =>
-                            features.confirmDownload ? (modalOpen = true) : download()}
+                            $features.confirmDownload ? (modalOpen = true) : download()}
                           ><i class="fa-solid fa-download mr-1"></i>Download as CSV</button
                         >
                       </Tabs.Panel>
                     {/if}
                   {/snippet}
                 </Tabs>
-                <p>{branding.explorePage.goTo.instructions}</p>
+                <p>{$branding.explorePage.goTo.instructions}</p>
                 <div class="flex justify-center">
                   <UserToken />
                 </div>
-                {#if branding.explorePage.goTo.links.length > 0}
+                {#if $branding.explorePage.goTo.links.length > 0}
                   <div class="flex justify-center">
-                    {#each branding.explorePage.goTo.links as link}
+                    {#each $branding.explorePage.goTo.links as link}
                       <a
                         class="btn preset-tonal-primary border border-primary-500 m-2 hover:preset-filled-primary-500"
                         href={link.url}
@@ -566,13 +566,13 @@
                   </div>
                 {/if}
               </section>
-            {:else if query.query.expectedResultType === 'DATAFRAME_PFB' && features.explorer.enablePfbExport}
+            {:else if query.query.expectedResultType === 'DATAFRAME_PFB' && $features.explorer.enablePfbExport}
               <section class="flex flex-col gap-8 place-items-center">
                 <div class="flex justify-center mt-4">
                   Select an option below to export your selected data in PFB format.
                 </div>
-                {#if branding.explorePage?.pfbExportUrls && branding.explorePage.pfbExportUrls.length > 0}
-                  {#each branding.explorePage.pfbExportUrls as exportLink}
+                {#if $branding.explorePage.pfbExportUrls.length > 0}
+                  {#each $branding.explorePage.pfbExportUrls as exportLink}
                     <button
                       disabled={exportLoading}
                       class="flex-initial w-64 btn preset-filled-primary-500 disabled:preset-tonal-primary border border-primary-500"
@@ -583,7 +583,7 @@
                 {/if}
                 <button
                   class="flex-initial w-64 btn preset-filled-primary-500"
-                  onclick={() => (features.confirmDownload ? (modalOpen = true) : download())}
+                  onclick={() => ($features.confirmDownload ? (modalOpen = true) : download())}
                   ><i class="fa-solid fa-download"></i>Download as PFB</button
                 >
               </section>

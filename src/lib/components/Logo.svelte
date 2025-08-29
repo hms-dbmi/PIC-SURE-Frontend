@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { branding } from '$lib/stores/Configuration';
 
   interface Props {
     height?: number;
@@ -10,11 +10,11 @@
 
   const { height, width, unit = 'rem', class: className = '' }: Props = $props();
 
-  const src = branding.logo.src;
-  const alt = branding.logo.alt;
+  let src = $derived($branding.logo.src);
+  let alt = $derived($branding.logo.alt);
 
   // If width or height is set, scale the image or svg to the larger size
-  const imgSize =
+  const imgSize = $derived(
     !width && !height
       ? { width: src ? 'auto' : undefined, height: src ? 'auto' : undefined }
       : (width && !height) || (width && height && width > height)
@@ -25,14 +25,14 @@
         : {
             width: (src ? 'auto' : (((height || 0) / 180) * 1010).toFixed(2)) + unit,
             height: height + unit,
-          };
+          },
+  );
 
-  const sizeStyle = [
-    imgSize.width && 'width:' + imgSize.width,
-    imgSize.height && 'height:' + imgSize.height,
-  ]
-    .filter((x) => x)
-    .join(';');
+  const sizeStyle = $derived(
+    [imgSize.width && 'width:' + imgSize.width, imgSize.height && 'height:' + imgSize.height]
+      .filter((x) => x)
+      .join(';'),
+  );
 </script>
 
 {#if src}

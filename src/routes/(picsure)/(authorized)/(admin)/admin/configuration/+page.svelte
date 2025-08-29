@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
 
   import type { Indexable } from '$lib/types';
-  import { branding, features } from '$lib/configuration';
+  import { branding, features } from '$lib/stores/Configuration';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
@@ -72,7 +72,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Configuration</title>
+  <title>{$branding.applicationName} | Configuration</title>
 </svelte:head>
 
 <Content title="Configuration">
@@ -180,7 +180,7 @@
       </ErrorAlert>
     {/await}
   </div>
-  {#if features.termsOfService}
+  {#if $features.termsOfService}
     <div id="misc-configs">
       <a
         href="/admin/configuration/terms/edit"

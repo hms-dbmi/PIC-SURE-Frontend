@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import type { Unsubscriber } from 'svelte/store';
 
-  import { branding, features } from '$lib/configuration';
+  import { branding, features } from '$lib/stores/Configuration';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/StaticTable.svelte';
   import DashboardLink from '$lib/components/dashboard/DashboardLink.svelte';
@@ -49,7 +49,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName}</title>
+  <title>{$branding.applicationName}</title>
 </svelte:head>
 <Content title="Data Dashboard" class="content-center" full>
   <section id="data-container" class="">
@@ -64,8 +64,8 @@
         showPagination={false}
         searchable={false}
         stickyHeader
-        rowClickHandler={features.dashboardDrawer ? rowClickHandler : undefined}
-        isClickable={features.dashboardDrawer}
+        rowClickHandler={$features.dashboardDrawer ? rowClickHandler : undefined}
+        isClickable={$features.dashboardDrawer}
       />
     {:catch}
       <ErrorAlert title="An Error Occured">
