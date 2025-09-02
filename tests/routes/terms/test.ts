@@ -89,7 +89,7 @@ test.describe('Logged in', () => {
         tosUpdateRequest = true;
       } else if (request.url().includes('/psama/user/me')) {
         meRequest = true;
-      } else if (request.url().includes('/psama/user/logout')) {
+      } else if (request.url().includes('/psama/logout')) {
         logoutRequest = true;
       }
     });
