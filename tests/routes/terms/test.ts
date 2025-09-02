@@ -26,7 +26,7 @@ Psama.Accept = Psama.TOS + '/accept';
 Psama.Update = Psama.TOS + '/update';
 Psama.Me = Psama.User + '/me';
 Psama.Template = Psama.User + '/me/queryTemplate*';
-Psama.Logout = Psama.User + '/logout';
+Psama.Logout = '*/**/psama/logout';
 
 const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use this site.</p>';
 
@@ -89,7 +89,7 @@ test.describe('Logged in', () => {
         tosUpdateRequest = true;
       } else if (request.url().includes('/psama/user/me')) {
         meRequest = true;
-      } else if (request.url().includes('/psama/user/logout')) {
+      } else if (request.url().includes('/psama/logout')) {
         logoutRequest = true;
       }
     });
