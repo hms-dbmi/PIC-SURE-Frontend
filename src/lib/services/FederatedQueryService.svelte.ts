@@ -153,16 +153,16 @@ export async function executeFederatedQuery(
     const responses = await executeSiteQueries(query);
     return { responses, datasetId };
   } catch (error) {
-    const allResourceNames = allResources.map((r) => r.name);
-    allResourceNames.forEach((resourceName) => {
-      federatedQueryMap.update((current) => ({
-        ...current,
-        [resourceName]: {
-          ...(current[resourceName] || {}),
-          status: 'ERROR',
-        },
-      }));
-    });
+    allResources.map((r) => r.name)
+      .forEach((resourceName) => {
+        federatedQueryMap.update((current) => ({
+          ...current,
+          [resourceName]: {
+            ...(current[resourceName] || {}),
+            status: 'ERROR',
+          },
+        }));
+      });
     throw error;
   }
 }
