@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import { executeFederatedQuery } from '$lib/services/useFederatedQueryState.svelte';
+  import { executeFederatedQuery } from '$lib/services/FederatedQueryService.svelte';
   import Summary from './Summary.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
