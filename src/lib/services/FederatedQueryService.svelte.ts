@@ -153,7 +153,8 @@ export async function executeFederatedQuery(
     const responses = await executeSiteQueries(query);
     return { responses, datasetId };
   } catch (error) {
-    allResources.map((r) => r.name)
+    allResources
+      .map((r) => r.name)
       .forEach((resourceName) => {
         federatedQueryMap.update((current) => ({
           ...current,
