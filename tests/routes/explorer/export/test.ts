@@ -196,7 +196,7 @@ test.describe('Export Page', () => {
     await nextButton.click();
 
     // Save Dataset ID
-    await checkStepRenderedCorrectly(page, 3, 'Save Dataset ID:', true, 'Next', true);
+    await checkStepRenderedCorrectly(page, 4, 'Save Dataset ID:', true, 'Next', true);
     const datasetNameInput = page.locator('input#dataset-name');
     await expect(datasetNameInput).toBeVisible();
     await datasetNameInput.fill('test-dataset');
@@ -212,7 +212,7 @@ test.describe('Export Page', () => {
     await nextButton.click();
 
     // Start Analysis
-    await checkStepRenderedCorrectly(page, 4, 'Start Analysis:', false, 'Done', false);
+    await checkStepRenderedCorrectly(page, 5, 'Start Analysis:', false, 'Done', false);
     const tabGroup = page.getByTestId('tabs-list');
     const codeBlock = page.getByTestId('tabs-panel').locator('.code-block').first();
     await expect(tabGroup).toBeVisible();

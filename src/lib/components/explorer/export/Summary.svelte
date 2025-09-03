@@ -77,7 +77,7 @@
   </div>
 </div>
 
-{#if Object.keys($federatedQueryMap).length === 0 && Object.keys(resultCountMap).length > 0}
+{#if Object.keys($federatedQueryMap).length === 0 && Object.keys(resultCountMap).length > 1}
   <div id="site-indicators" class="grid grid-cols-3 gap-y-2 gap-x-6">
     {#each Object.entries(resultCountMap) as [siteName, value]}
       <div id="site-indicator">

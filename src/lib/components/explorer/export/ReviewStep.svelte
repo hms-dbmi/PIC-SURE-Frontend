@@ -30,9 +30,11 @@
   let { query, rows, dataLimitExceeded }: PrepareProps = $props();
 
   const columns = [
-    ...(branding.explorePage.columns || []),
+    { dataElement: 'name', label: 'Variable Name', sort: true },
+    { dataElement: 'description', label: 'Variable Description', sort: true },
     { dataElement: 'type', label: 'Type', sort: true, class: 'text-center' },
   ];
+
   let activeRows: ExportRowInterface[] = $derived(rows);
   let loadingSampleIds = $state(false);
   let sampleIds = $state(false);

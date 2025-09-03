@@ -6,7 +6,7 @@
     activeType: string | undefined;
   }
 
-  let { activeType }: Props = $props();
+  let { activeType = $bindable() }: Props = $props();
 </script>
 
 <section class="flex flex-col w-full h-full items-center">

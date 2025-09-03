@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import { useFederatedQuery } from '$lib/services/useFederatedQueryState.svelte';
+  import { executeFederatedQuery } from '$lib/services/useFederatedQueryState.svelte';
   import Summary from './Summary.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -19,40 +19,32 @@
     datasetNameInput = $bindable(),
     saveable = $bindable(),
   }: Props = $props();
+  
+  let isLoading = $state(true);
+  let error = $state<string | null>(null);
 
-  // Initialize the federated query composable
-  const federatedQuery = useFederatedQuery({
-    query,
-    onComplete: () => {
+  onMount(async () => {
+    try {
+      const result = await executeFederatedQuery(query);
+      datasetId = result.datasetId;
       saveable = true;
-    },
-    onError: (error) => {
-      console.error('Federated query error:', error);
-    },
-  });
-
-  // Reactive assignments to keep props in sync
-  $effect(() => {
-    datasetId = federatedQuery.datasetId;
-  });
-
-  $effect(() => {
-    saveable = federatedQuery.saveable;
-  });
-
-  onMount(() => {
-    federatedQuery.initialize();
+      isLoading = false;
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Failed to execute federated query';
+      isLoading = false;
+      console.error('Federated query error:', err);
+    }
   });
 </script>
 
 <section class="flex flex-col w-full h-full items-center">
   <Summary />
 
-  {#if federatedQuery.state.isLoading}
+  {#if isLoading}
     <Loading ring size="medium" label="Preparing datasets..." />
-  {:else if federatedQuery.state.error && Object.keys(federatedQuery.state.responses).length === 0}
+  {:else if error}
     <ErrorAlert title="Failed to prepare federated query">
-      {federatedQuery.state.error}
+      {error}
     </ErrorAlert>
   {:else}
     <div class="w-full h-full m-2 card p-4">

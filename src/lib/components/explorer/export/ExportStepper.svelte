@@ -164,7 +164,7 @@
   {#if features.explorer.enablePfbExport && !features.federated}
     <Step name="select-type" locked={activeType === undefined}>
       {#snippet header()}Review and Save Dataset:{/snippet}
-      <TypeStep {activeType} />
+      <TypeStep bind:activeType />
     </Step>
   {/if}
   <Step
@@ -175,7 +175,7 @@
     {#if features.federated}
       <CommonAreaSaveDatasetStep {query} bind:datasetId bind:datasetNameInput bind:saveable />
     {:else}
-      <SaveDatasetStep {query} {datasetId} bind:datasetNameInput {activeType} />
+      <SaveDatasetStep {query} bind:datasetId bind:datasetNameInput {activeType} bind:saveable />
     {/if}
     {#if !saveable}
       <Loading ring size="micro" label="Creating datasets to save..." />
@@ -193,10 +193,10 @@
           <p class="mt-4">{branding.explorePage.analysisExportText}</p>
           {#if showTabbedAnalysisStep}
             <TabbedAnalysisStep {query} {datasetId} />
-          {:else if features.explorer.enableRedcapExport}
-            <RedcapStep {datasetId} />
           {:else if showPfbExportStep}
             <PfbExport {query} {datasetId} />
+          {:else if features.explorer.enableRedcapExport}
+            <RedcapStep {datasetId} />
           {/if}
           {#if branding.explorePage.goTo.instructions && branding.explorePage.goTo.instructions.length > 0}
             <p>{branding.explorePage.goTo.instructions}</p>

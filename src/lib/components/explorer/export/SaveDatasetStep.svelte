@@ -16,6 +16,7 @@
     datasetId: string;
     datasetNameInput: string;
     activeType: ExpectedResultType | undefined;
+    saveable: boolean;
   }
 
   let {
@@ -23,6 +24,7 @@
     datasetId = $bindable(),
     datasetNameInput = $bindable(),
     activeType,
+    saveable = $bindable(),
   }: Props = $props();
   const PROMISE_WAIT_INTERVAL = 7;
   let processingMessage: string = $state('');
@@ -71,6 +73,10 @@
       throw error;
     }
   }
+
+  $effect(() => {
+    saveable = datasetNameInput.length > 2 && datasetId.length > 0;
+  });
 
   onMount(() => {
     preparePromise = submitQuery();
