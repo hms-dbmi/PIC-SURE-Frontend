@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import { v4 as uuidv4 } from 'uuid';
 
-  import { branding, features } from '$lib/configuration';
+  import { features } from '$lib/configuration';
   import { exports, addExports, removeExports } from '$lib/stores/Export';
   import type { ExportInterface } from '$lib/models/Export';
   import type { ExportRowInterface } from '$lib/models/ExportRow';

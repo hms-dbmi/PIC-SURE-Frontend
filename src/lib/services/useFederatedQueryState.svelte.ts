@@ -97,11 +97,7 @@ async function executeSiteQueries(query: QueryRequestInterface): Promise<Record<
   queryResults.forEach((result) => {
     if (result.status === 'fulfilled') {
       const queryResult = result.value;
-      if (
-        queryResult.success &&
-        'picsureResultId' in queryResult &&
-        queryResult.picsureResultId
-      ) {
+      if (queryResult.success && 'picsureResultId' in queryResult && queryResult.picsureResultId) {
         responses[queryResult.resourceName] = queryResult.picsureResultId;
         federatedQueryMap.update((current) => ({
           ...current,
@@ -137,7 +133,9 @@ async function executeSiteQueries(query: QueryRequestInterface): Promise<Record<
   return responses;
 }
 
-export async function executeFederatedQuery(query: QueryRequestInterface): Promise<FederatedQueryResult> {
+export async function executeFederatedQuery(
+  query: QueryRequestInterface,
+): Promise<FederatedQueryResult> {
   await loadResources();
 
   const allResources = getQueryResources();
