@@ -195,6 +195,5 @@ export async function getConceptTree(
 }
 
 export async function getInitialTree(): Promise<SearchResult[]> {
-  const url = `${Picsure.Concept.Tree}`;
-  return api.get(url);
+  return api.get(Picsure.Concept.Tree);
 }
