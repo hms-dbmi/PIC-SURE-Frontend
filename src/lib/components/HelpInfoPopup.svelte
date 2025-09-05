@@ -23,6 +23,7 @@
       {#if children}
         {@render children?.()}
       {:else if text}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
         {@html sanitizeHTML(text)}
       {/if}
     </Popover>

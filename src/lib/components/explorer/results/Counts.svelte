@@ -74,6 +74,7 @@
         <a href="/explorer/cohort" class="anchor font-bold">Cohort Details</a>
         for more information.
       {:else}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
         {@html sanitizeHTML(branding?.explorePage?.queryErrorText)}
       {/if}
     </p>

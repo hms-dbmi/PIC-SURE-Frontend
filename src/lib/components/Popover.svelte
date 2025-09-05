@@ -16,6 +16,7 @@
   } from '@skeletonlabs/floating-ui-svelte';
   import { fade } from 'svelte/transition';
   import { shift, type Placement } from '@floating-ui/dom';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
 
   export type TriggerType = 'click' | 'hover' | 'focus' | 'manual';
   interface Props {
@@ -110,7 +111,8 @@
       {/if}
       {#if message}
         <article>
-          <p class="opacity-60">{message}</p>
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html sanitizeHTML(message)}
         </article>
       {:else}
         {@render children?.()}
