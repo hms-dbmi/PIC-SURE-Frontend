@@ -18,7 +18,7 @@
   <div data-testid={id}>
     <Popover data-testid="{id}-content" triggerTypes={['click', 'hover']}>
       {#snippet trigger()}
-        <i class="fa-solid fa-circle-{type} text-{color}-800-200 hover:text-{color}-800-200"></i>
+        <i class="fa-solid fa-circle-{type} text-{color}-950-50 hover:text-{color}-300-700"></i>
       {/snippet}
       {#if children}
         {@render children?.()}
