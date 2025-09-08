@@ -32,8 +32,17 @@ function rejectIfQueryError(result: any) {
   return result?.errorType ? Promise.reject('api error') : result;
 }
 
+export interface StatPromiseWithResource {
+  promise: Promise<StatValue>;
+  resourceName: string;
+}
+
 export const StatPromise = {
-  list: (stat: StatResult): Promise<StatValue>[] => Object.values(stat.result),
+  list: (stat: StatResult): StatPromiseWithResource[] =>
+    Object.entries(stat.result).map(([resourceName, promise]) => ({
+      promise,
+      resourceName,
+    })),
   rejected: (result: PromiseSettledResult<StatValue>) => result.status === 'rejected',
   fullfiled: (result: PromiseSettledResult<StatValue>) => result.status === 'fulfilled',
   valueOrZero: (result: PromiseSettledResult<StatValue>): StatValue =>

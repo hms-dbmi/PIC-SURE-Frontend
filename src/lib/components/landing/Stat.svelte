@@ -7,6 +7,7 @@
   import { sanitizeHTML } from '$lib/utilities/HTML';
   import Loading from '$lib/components/Loading.svelte';
   import { features } from '$lib/configuration';
+  import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   interface Props {
     stats: Readable<StatResult[]>;
     description: string;
@@ -50,14 +51,35 @@
           data-testid="value-{authString}-{stat.key}-{stat.label}"
           class="flex flex-col justify-center items-center text-2xl"
         >
-          {#await Promise.allSettled(StatPromise.list(stat))}
+          {#await Promise.allSettled(StatPromise.list(stat).map(({ promise }) => promise))}
             <Loading ring size="mini" />
           {:then counts}
+            {@const statPromises = StatPromise.list(stat)}
+            {@const countResults = counts.map((result, index) => ({
+              ...result,
+              resourceName: statPromises[index].resourceName
+            }))}
             <strong class="p-1 mb-3">
-              {countResult(counts.filter(StatPromise.fullfiled).map(({ value }) => value))}
+              {#if features.federated}
+                {countResult(countResults.filter(StatPromise.fullfiled).map((result) => result.status === 'fulfilled' ? result.value : 0))}
+                {#if countResults.some(StatPromise.rejected)}
+                {@const failedSites = countResults.filter(StatPromise.rejected).map((result) => result.resourceName).join(', ')}
+                  <HelpInfoPopup
+                    type="exclamation"
+                    color="warning"
+                    id="result-count-error"
+                    text="The following sites are not included as they did not return patient counts: {failedSites}."
+                  />
+                {/if}
+              {/if}
             </strong>
             {#if !features.federated && counts.some(StatPromise.rejected)}
-              <i class="fa-solid fa-circle-exclamation p-1 mb-4 mt-1"></i>
+              <HelpInfoPopup
+                type="exclamation"
+                color="warning"
+                id="result-count-error"
+                text="We're having trouble fetching some data points right now. Please try again later."
+              />
             {/if}
           {/await}
         </div>

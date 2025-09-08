@@ -47,8 +47,8 @@
     let rows: RowType[] = [];
 
     stats.forEach((stat: StatResult) => {
-      const statTotal: Promise<StatValue> = Promise.allSettled(StatPromise.list(stat)).then(
-        (results) => countResult(results.map(StatPromise.valueOrZero)),
+      const statTotal: Promise<StatValue> = Promise.allSettled(StatPromise.list(stat).map(({ promise }) => promise)).then(
+        (results: PromiseSettledResult<StatValue>[]) => countResult(results.map(StatPromise.valueOrZero)),
       );
       const resourceTotals: Promise<StatValue>[] = resourceNames.map((resource) =>
         stat.result[resource].then((count) => countResult([count])),
@@ -62,8 +62,8 @@
           return `${count}` === '-1' ? NO_DATA : count;
         };
 
-        const fieldTotal: Promise<StatValue> = Promise.allSettled(StatPromise.list(stat)).then(
-          (results) => countResult(results.map(StatPromise.valueOrZero).map(fieldCount)),
+        const fieldTotal: Promise<StatValue> = Promise.allSettled(StatPromise.list(stat).map(({ promise }) => promise)).then(
+          (results: PromiseSettledResult<StatValue>[]) => countResult(results.map(StatPromise.valueOrZero).map(fieldCount)),
         );
         const fieldTotals: Promise<StatValue>[] = resourceNames.map((resource) =>
           stat.result[resource].then(fieldCount),
