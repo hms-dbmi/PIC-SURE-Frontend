@@ -39,25 +39,7 @@ export async function loadPatientCount(isOpenAccess: boolean) {
     const resultStats: StatResult[] = getResultList(isOpenAccess, branding?.results?.stats || []);
     resultCounts.set(resultStats);
     Promise.allSettled(resultStats.flatMap(StatPromise.list)).then((results) => {
-      if (results.some(StatPromise.rejected)) {
-        if (!isToastShowing('query-error')) {
-          if (get(filters).length !== 0) {
-            toaster.error({
-              id: 'query-error',
-              description: branding?.explorePage?.filterErrorText,
-              duration: 4000,
-              closable: true,
-            });
-          } else {
-            toaster.error({
-              id: 'query-error',
-              title: branding?.explorePage?.queryErrorText,
-              duration: 4000,
-              closable: true,
-            });
-          }
-        }
-      } else {
+      if (!results.some(StatPromise.rejected)) {
         // Cache if no rejected requests
         requestCache.set(cacheKey, resultStats);
       }

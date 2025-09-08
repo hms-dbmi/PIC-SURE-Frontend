@@ -68,7 +68,11 @@ test.describe('Results Panel', () => {
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
     await expect(page.locator('#result-count')).toHaveText('N/A');
-    await expect(page.getByTestId('toast-message')).toBeVisible();
+    const errorAlert = page.getByTestId('error-alert');
+    await expect(errorAlert).toBeVisible();
+    await expect(errorAlert).toContainText(
+      'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
+    );
   });
   test('Result panel shows generic error on open with no filters', async ({ page }) => {
     // Given
@@ -82,7 +86,11 @@ test.describe('Results Panel', () => {
 
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
-    await expect(page.getByTestId('toast-message')).toBeVisible();
+    const errorAlert = page.getByTestId('error-alert');
+    await expect(errorAlert).toBeVisible();
+    await expect(errorAlert).toContainText(
+      'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
+    );
   });
   test('Result panel shows the correct number of results', async ({ page }) => {
     // Given
