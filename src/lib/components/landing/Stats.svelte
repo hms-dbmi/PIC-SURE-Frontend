@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
 
   import { branding } from '$lib/configuration';
-  import { stats, authStats, hasError, loadLandingStats } from '$lib/stores/Stats';
+  import { stats, authStats, loadLandingStats } from '$lib/stores/Stats';
 
   import Stat from './Stat.svelte';
 

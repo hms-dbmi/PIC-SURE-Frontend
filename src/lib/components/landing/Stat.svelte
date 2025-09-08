@@ -57,13 +57,22 @@
             {@const statPromises = StatPromise.list(stat)}
             {@const countResults = counts.map((result, index) => ({
               ...result,
-              resourceName: statPromises[index].resourceName
+              resourceName: statPromises[index].resourceName,
             }))}
-            <strong class="p-1 mb-3">
+            <div class="flex flex-row h-full">
+              <strong class="p-1 mb-3">
+                {countResult(
+                  countResults
+                    .filter(StatPromise.fullfiled)
+                    .map((result) => (result.status === 'fulfilled' ? result.value : 0)),
+                )}
+              </strong>
               {#if features.federated}
-                {countResult(countResults.filter(StatPromise.fullfiled).map((result) => result.status === 'fulfilled' ? result.value : 0))}
                 {#if countResults.some(StatPromise.rejected)}
-                {@const failedSites = countResults.filter(StatPromise.rejected).map((result) => result.resourceName).join(', ')}
+                  {@const failedSites = countResults
+                    .filter(StatPromise.rejected)
+                    .map((result) => result.resourceName)
+                    .join(', ')}
                   <HelpInfoPopup
                     type="exclamation"
                     color="warning"
@@ -72,7 +81,7 @@
                   />
                 {/if}
               {/if}
-            </strong>
+            </div>
             {#if !features.federated && counts.some(StatPromise.rejected)}
               <HelpInfoPopup
                 type="exclamation"
