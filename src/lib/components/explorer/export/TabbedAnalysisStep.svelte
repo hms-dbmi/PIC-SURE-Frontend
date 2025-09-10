@@ -11,8 +11,10 @@
 
 <Tabs value={tabSet} onValueChange={(e: { value: string }) => (tabSet = e.value)}>
   {#snippet list()}
-    <TabItem bind:group={tabSet} value="Python">Python</TabItem>
-    <TabItem bind:group={tabSet} value="R">R</TabItem>
+    {#if features.analyzeApi}
+      <TabItem bind:group={tabSet} value="Python">Python</TabItem>
+      <TabItem bind:group={tabSet} value="R">R</TabItem>
+    {/if}
     {#if features.explorer.allowDownload}
       <TabItem bind:group={tabSet} value="Download">Download</TabItem>
     {/if}

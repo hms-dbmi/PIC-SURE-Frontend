@@ -61,7 +61,7 @@
       !features.explorer.enableRedcapExport,
   );
   const showUserToken = $derived(
-    query.query.expectedResultType === 'DATAFRAME' && !features.explorer.enableRedcapExport,
+    query.query.expectedResultType === 'DATAFRAME' && features.analyzeApi && !features.explorer.enableRedcapExport,
   );
 
   onMount(async () => {
