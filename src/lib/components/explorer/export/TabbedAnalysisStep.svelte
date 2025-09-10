@@ -6,7 +6,9 @@
   import DownloadButton from './DownloadButton.svelte';
   import { getDatasetId, getQueryRequest } from '$lib/ExportStepperManager.svelte';
 
-  let tabSet: string = $state('Python');
+  let tabSet: string = $state(
+    features.analyzeApi ? 'Python' : features.explorer.allowDownload ? 'Download' : '',
+  );
 </script>
 
 <Tabs value={tabSet} onValueChange={(e: { value: string }) => (tabSet = e.value)}>

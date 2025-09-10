@@ -48,7 +48,9 @@
 
     someSelected: boolean = $derived.by(() => {
       if (this.isLeaf) return this.selected;
-      return this.children.some((child: RemoteTreeNodeClass) => child.someSelected || child.selected);
+      return this.children.some(
+        (child: RemoteTreeNodeClass) => child.someSelected || child.selected,
+      );
     });
 
     allSelected: boolean = $derived.by(() => {
