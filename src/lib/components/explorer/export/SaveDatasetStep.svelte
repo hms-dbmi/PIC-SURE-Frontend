@@ -83,7 +83,7 @@
 <section class="flex flex-col w-full h-full items-center">
   <Summary />
   {#await preparePromise}
-    <Loading ring label="Preparing" />
+    <Loading ring />
   {:then}
     <div class="w-full h-full m-2 card p-4">
       <header class="card-header">
