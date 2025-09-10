@@ -1,17 +1,11 @@
 <script lang="ts">
   import { branding, features } from '$lib/configuration';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
   import TabItem from '$lib/components/TabItem.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
   import DownloadButton from './DownloadButton.svelte';
+  import { getDatasetId, getQueryRequest } from '$lib/ExportStepperManager.svelte';
 
-  interface Props {
-    query: QueryRequestInterface;
-    datasetId: string;
-  }
-
-  let { query, datasetId }: Props = $props();
   let tabSet: string = $state('Python');
 </script>
 
@@ -27,20 +21,24 @@
     <Tabs.Panel value="Python">
       <CodeBlock
         lang="python"
-        code={branding.explorePage.codeBlocks.PythonExport.replace('{{queryId}}', datasetId) ||
-          'Code not set for Python in configuration'}
+        code={branding.explorePage.codeBlocks.PythonExport.replace(
+          '{{queryId}}',
+          getDatasetId() ?? 'DATASET_ID_MISSING',
+        ) || 'Code not set for Python in configuration'}
       />
     </Tabs.Panel>
     <Tabs.Panel value="R">
       <CodeBlock
         lang="r"
-        code={branding.explorePage.codeBlocks.RExport.replace('{{queryId}}', datasetId) ||
-          'Code not set for R in configuration'}
+        code={branding.explorePage.codeBlocks.RExport.replace(
+          '{{queryId}}',
+          getDatasetId() ?? 'DATASET_ID_MISSING',
+        ) || 'Code not set for R in configuration'}
       />
     </Tabs.Panel>
     {#if features.explorer.allowDownload}
       <Tabs.Panel value="Download">
-        <DownloadButton {query} {datasetId} />
+        <DownloadButton query={getQueryRequest()} datasetId={getDatasetId()} />
       </Tabs.Panel>
     {/if}
   {/snippet}

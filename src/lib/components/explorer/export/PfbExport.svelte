@@ -2,18 +2,10 @@
   import { branding } from '$lib/configuration';
   import { Picsure } from '$lib/paths';
   import * as api from '$lib/api';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
   import DownloadButton from './DownloadButton.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import { toaster } from '$lib/toaster';
-
-  interface Props {
-    query: QueryRequestInterface;
-    datasetId: string;
-  }
-
-  let { query, datasetId }: Props = $props();
-
+  import { getDatasetId, getQueryRequest } from '$lib/ExportStepperManager.svelte';
   let exportLoading: boolean = $state(false);
 
   async function exportSignedToUrl(url?: string) {
@@ -40,9 +32,9 @@
   }
 
   async function getSignedUrl(): Promise<string | null> {
-    const path = `${Picsure.Query}/${datasetId}/signed-url`;
+    const path = `${Picsure.Query}/${getDatasetId()}/signed-url`;
     try {
-      const res = await api.post(path, query);
+      const res = await api.post(path, getQueryRequest());
       return res.signedUrl || null;
     } catch (error) {
       console.error('Error getting signed URL:', error);
@@ -70,5 +62,5 @@
       </button>
     {/each}
   {/if}
-  <DownloadButton {query} {datasetId} />
+  <DownloadButton query={getQueryRequest()} datasetId={getDatasetId()} />
 </section>

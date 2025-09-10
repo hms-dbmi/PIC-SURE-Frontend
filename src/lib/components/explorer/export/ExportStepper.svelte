@@ -7,7 +7,6 @@
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import type { DataSet } from '$lib/models/Dataset';
-  import { type ExpectedResultType } from '$lib/models/query/Query.ts';
   import { exports } from '$lib/stores/Export';
   import { filters } from '$lib/stores/Filter';
   import { totalParticipants } from '$lib/stores/ResultStore';
@@ -29,6 +28,18 @@
   import PfbExport from './PfbExport.svelte';
   import AnalysisPlatformLinks from './AnalysisPlatformLinks.svelte';
   import { selectedConcepts } from '$lib/stores/TreeStepConcepts';
+  import {
+    getLockDownload,
+    setLockDownload,
+    getDatasetId,
+    getDatasetNameInput,
+    getSaveable,
+    getActiveType,
+    setActiveType,
+    getPicsureResultId,
+    setPicsureResultId,
+    setQueryRequest,
+  } from '$lib/ExportStepperManager.svelte';
 
   interface Props {
     query: QueryRequestInterface;
@@ -37,16 +48,9 @@
 
   const { query, rows = [] }: Props = $props();
 
-  let activeType: ExpectedResultType | undefined = $state(undefined);
   let statusPromise: Promise<unknown> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
   let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
-  let datasetNameInput: string = $state('');
-  let picsureResultId: string = $state('');
-  let lockDownload = $state(true);
-  let saveable = $state(!features.federated);
-
-  let datasetId: string = $state('');
 
   const showTabbedAnalysisStep = $derived(
     query.query.expectedResultType === 'DATAFRAME' && !features.explorer.enableRedcapExport,
@@ -62,8 +66,9 @@
 
   onMount(async () => {
     // Auto select csv export when pfb feature is disabled.
+    setQueryRequest(query);
     if (!features.explorer.enablePfbExport) {
-      activeType = 'DATAFRAME';
+      setActiveType('DATAFRAME');
     }
   });
 
@@ -79,31 +84,34 @@
     }
     if (stepName === 'start') {
       if (features.explorer.enableRedcapExport) {
-        lockDownload = false;
+        setLockDownload(false);
       }
       const siteQueryIds = Object.values($federatedQueryMap)
         .map((info) => ({ resourceId: info?.resourceId, name: info?.name, queryId: info?.queryId }))
         .filter((v) => v.queryId);
-
-      saveDatasetPromise = createDatasetName(
-        datasetId,
-        datasetNameInput,
-        siteQueryIds.length > 0 ? siteQueryIds : undefined,
-      ).then((data: DataSet) => {
-        if (features.federated) {
-          statusPromise = Promise.resolve();
+      if (getDatasetId()) {
+        saveDatasetPromise = createDatasetName(
+          getDatasetId() ?? '',
+          getDatasetNameInput() ?? '',
+          siteQueryIds.length > 0 ? siteQueryIds : undefined,
+        ).then((data: DataSet) => {
+          if (features.federated) {
+            statusPromise = Promise.resolve();
+            return data;
+          } else {
+            statusPromise = checkExportStatus(getPicsureResultId());
+          }
           return data;
-        } else {
-          statusPromise = checkExportStatus(picsureResultId);
-        }
-        return data;
-      });
+        });
+      } else {
+        throw new Error('No dataset ID provided');
+      }
     }
     return;
   }
 
   async function checkExportStatus(lastPicsureResultId?: string) {
-    const statusId = lastPicsureResultId || datasetId;
+    const statusId = lastPicsureResultId || getDatasetId();
     const queryFragment = `/${statusId}/status`;
     return api
       .post(`${Picsure.Query}${queryFragment}`, query)
@@ -114,12 +122,12 @@
           resultMetadata: { picsureQueryId: string };
         }) => {
           if (res.status === 'ERROR') {
-            lockDownload = true;
+            setLockDownload(true);
             return Promise.reject(res.status);
           }
           console.log(res);
-          picsureResultId = res.resultMetadata.picsureQueryId;
-          lockDownload = false;
+          setPicsureResultId(res.resultMetadata.picsureQueryId);
+          setLockDownload(false);
         },
       );
   }
@@ -138,9 +146,13 @@
 
   const MAX_DATA_POINTS_FOR_EXPORT = settings.maxDataPointsForExport || 1000000;
   function dataLimitExceeded(): boolean {
+    const extraVariables = $filters
+      .filter((filter) => filter.filterType === 'AnyRecordOf')
+      .reduce((acc, filter) => acc + filter.concepts.length, 0);
     let participantCount: number =
       typeof $totalParticipants === 'number' ? $totalParticipants : MAX_DATA_POINTS_FOR_EXPORT + 1;
-    let totalDataPoints: number = participantCount + $filters.length + $exports.length;
+    let totalDataPoints: number =
+      participantCount + ($filters.length + extraVariables) + $exports.length;
     return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
   }
 </script>
@@ -162,26 +174,26 @@
     </Step>
   {/if}
   {#if features.explorer.enablePfbExport && !features.federated}
-    <Step name="select-type" locked={activeType === undefined}>
+    <Step name="select-type" locked={getActiveType() === undefined}>
       {#snippet header()}Review and Save Dataset:{/snippet}
-      <TypeStep bind:activeType />
+      <TypeStep />
     </Step>
   {/if}
   <Step
     name="save-dataset"
-    locked={!datasetNameInput || datasetNameInput.length < 2 || !datasetId || !saveable}
+    locked={!getDatasetNameInput() ||
+      (getDatasetNameInput()?.length ?? 0) < 2 ||
+      !getDatasetId() ||
+      !getSaveable()}
   >
     {#snippet header()}Save Dataset ID:{/snippet}
     {#if features.federated}
-      <CommonAreaSaveDatasetStep {query} bind:datasetId bind:datasetNameInput bind:saveable />
+      <CommonAreaSaveDatasetStep />
     {:else}
-      <SaveDatasetStep {query} bind:datasetId bind:datasetNameInput {activeType} bind:saveable />
-    {/if}
-    {#if !saveable}
-      <Loading ring size="micro" label="Creating datasets to save..." />
+      <SaveDatasetStep />
     {/if}
   </Step>
-  <Step name="start" locked={lockDownload}>
+  <Step name="start" locked={getLockDownload()}>
     {#snippet header()}Start Analysis:{/snippet}
     <section class="flex flex-col w-full h-full items-center">
       {#await saveDatasetPromise}
@@ -192,11 +204,11 @@
         {:then}
           <p class="mt-4">{branding.explorePage.analysisExportText}</p>
           {#if showTabbedAnalysisStep}
-            <TabbedAnalysisStep {query} {datasetId} />
+            <TabbedAnalysisStep />
           {:else if showPfbExportStep}
-            <PfbExport {query} {datasetId} />
+            <PfbExport />
           {:else if features.explorer.enableRedcapExport}
-            <RedcapStep {datasetId} />
+            <RedcapStep />
           {/if}
           {#if branding.explorePage.goTo.instructions && branding.explorePage.goTo.instructions.length > 0}
             <p>{branding.explorePage.goTo.instructions}</p>

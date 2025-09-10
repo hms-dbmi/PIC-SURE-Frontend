@@ -1,11 +1,6 @@
 <script lang="ts">
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
-
-  interface Props {
-    datasetId: string;
-  }
-
-  let { datasetId }: Props = $props();
+  import { getDatasetId } from '$lib/ExportStepperManager.svelte';
 </script>
 
 <section class="flex flex-col w-full h-full">
@@ -22,9 +17,9 @@
   </ul>
   <div class="flex flex-row items-center self-center card p-4 my-4">
     <label for="copyable-dataset-id" class="font-bold mr-2">Dataset ID:</label>
-    <span id="copyable-dataset-id" class="mr-2">{datasetId}</span>
+    <span id="copyable-dataset-id" class="mr-2">{getDatasetId()}</span>
     <CopyButton
-      itemToCopy={datasetId}
+      itemToCopy={getDatasetId() ?? 'MISSING_DATASET_ID'}
       class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
     />
   </div>
