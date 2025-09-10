@@ -62,7 +62,7 @@ async function executeSiteQueries(query: QueryRequestInterface): Promise<Record<
       resourceQuery.resourceCredentials = resourceQuery.resourceCredentials || {};
 
       return api
-        .post(Picsure.Query, resourceQuery)
+        .post(Picsure.Query + '?isInstitute=true', resourceQuery)
         .then((response: QueryResponse) => {
           if (response.picsureResultId) {
             return {
