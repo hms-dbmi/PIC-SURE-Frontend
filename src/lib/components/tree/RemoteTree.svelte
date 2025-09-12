@@ -77,11 +77,14 @@
         }
         // Now select all children
         if (this.children.length > 0) {
-          this.children.forEach((child) => child.select());
+          await Promise.all(this.children.map((child) => child.select()));
         } else {
           onselect(this.conceptPath);
           this.selected = true;
         }
+      } else {
+        onselect(this.conceptPath);
+        this.selected = true;
       }
     }
 
@@ -91,7 +94,7 @@
         if (!this.childrenLoaded) {
           await this.loadChildren();
         }
-        this.children.forEach((child) => child.unselect());
+        await Promise.all(this.children.map((child) => child.unselect()));
       } else {
         this.selected = false;
         onunselect(this.conceptPath);
