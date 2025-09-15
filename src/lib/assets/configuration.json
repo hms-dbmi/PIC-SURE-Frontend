@@ -76,7 +76,7 @@
     ],
     "tourSearchIntro": "PIC-SURE Search allows you to search for variable level data.",
     "totalPatientsText": "Filtered Participants",
-    "queryErrorText": "There was an error with your query. If this persists, please contact you PIC-SURE admin.",
+    "queryErrorText": "There was an error with your query. If this persists, please contact your PIC-SURE admin.",
     "filterErrorText": "There was an error when adding the filter to the query. Please remove your most recent filter and try again. If this error persists, please contact us. We will respond to your request as soon as we can.",
     "analysisExportText": "To export data and start your analysis, use the following code to connect to PIC-SURE and save the dataframe or download the file. Note that you will need your personal access token to complete the connection to PIC-SURE with code.",
     "confirmDownloadTitle": "Are you sure you want to download data?",
