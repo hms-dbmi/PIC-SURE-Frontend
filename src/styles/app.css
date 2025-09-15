@@ -87,8 +87,10 @@ hr {
   @apply hr;
 }
 
-p {
-  margin: 1rem;
+@layer base {
+  p {
+    margin: 1rem;
+  }
 }
 
 .code-block pre {
