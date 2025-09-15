@@ -71,7 +71,7 @@ test.describe('Results Panel', () => {
     const errorAlert = page.getByTestId('error-alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText(
-      'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
+      'There was an error with your query. If this persists, please contact your PIC-SURE admin.',
     );
   });
   test('Result panel shows generic error on open with no filters', async ({ page }) => {
@@ -89,7 +89,7 @@ test.describe('Results Panel', () => {
     const errorAlert = page.getByTestId('error-alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText(
-      'There was an error with your query. If this persists, please contact you PIC-SURE admin.',
+      'There was an error with your query. If this persists, please contact your PIC-SURE admin.',
     );
   });
   test('Result panel shows the correct number of results', async ({ page }) => {
