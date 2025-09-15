@@ -147,3 +147,9 @@ export interface CodeBlockConfig extends Indexable {
 export interface TermsOfServiceConfig {
   rejectionUrl: string;
 }
+
+export class AnyRecordOfFilterError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}

@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
+import type { SearchResult } from '$lib/models/Search';
+import { GenotypeMap, type SNP } from '$lib/models/GenomeFilter';
+import { AnyRecordOfFilterError } from '$lib/types';
 
-import type { SearchResult } from './Search';
-import { GenotypeMap, type SNP } from './GenomeFilter';
 type FilterType =
   | 'Categorical'
   | 'AnyRecordOf'
@@ -105,6 +106,11 @@ function getAllConceptPaths(results: SearchResult[]): string[] {
 
 export function createAnyRecordOfFilter(searchResult: SearchResult, treeResult: SearchResult) {
   const conceptPaths = getAllConceptPaths(treeResult?.children || []);
+  if (conceptPaths.length === 0) {
+    throw new AnyRecordOfFilterError('No concept paths found');
+  } else if (conceptPaths.length > 9500) {
+    throw new AnyRecordOfFilterError('Too many concept paths found');
+  }
   const filter: AnyRecordOfFilterInterface = {
     uuid: uuidv4(),
     id: searchResult.conceptPath,
