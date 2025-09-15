@@ -1,33 +1,27 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
   import { executeFederatedQuery } from '$lib/services/FederatedQueryService.svelte';
   import Summary from './Summary.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-
-  interface Props {
-    query: QueryRequestInterface;
-    datasetId: string;
-    datasetNameInput: string;
-    saveable: boolean;
-  }
-
-  let {
-    query,
-    datasetId = $bindable(),
-    datasetNameInput = $bindable(),
-    saveable = $bindable(),
-  }: Props = $props();
+  import {
+    getQueryRequest,
+    setDatasetId,
+    getDatasetId,
+    setSaveable,
+    getDatasetNameInput,
+    setDatasetNameInput,
+  } from '$lib/ExportStepperManager.svelte';
 
   let isLoading = $state(true);
   let error = $state<string | null>(null);
+  let datasetNameInput: string | undefined = $state(getDatasetNameInput());
 
   onMount(async () => {
     try {
-      const result = await executeFederatedQuery(query);
-      datasetId = result.datasetId;
-      saveable = true;
+      const result = await executeFederatedQuery(getQueryRequest());
+      setDatasetId(result.datasetId);
+      setSaveable(true);
       isLoading = false;
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to execute federated query';
@@ -35,13 +29,19 @@
       console.error('Federated query error:', err);
     }
   });
+
+  $effect(() => {
+    setDatasetNameInput(datasetNameInput);
+    setSaveable((getDatasetNameInput()?.length ?? 0) > 2 && (getDatasetId()?.length ?? 0) > 0);
+  });
 </script>
 
 <section class="flex flex-col w-full h-full items-center">
   <Summary />
 
   {#if isLoading}
-    <Loading ring size="medium" label="Preparing datasets..." />
+    <Loading ring size="small" />
+    <span class="ml-2">Creating datasets to save...</span>
   {:else if error}
     <ErrorAlert title="Failed to prepare federated query">
       {error}
@@ -70,10 +70,10 @@
           <div class="flex items-center m-2">
             <div class="flex items-center">
               <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
-              {#if !datasetId}
+              {#if !getDatasetId()}
                 <Loading ring size="micro" label="Generating ID..." />
               {:else}
-                <div id="dataset-id" class="mr-4">{datasetId}</div>
+                <div id="dataset-id" class="mr-4">{getDatasetId()}</div>
               {/if}
             </div>
           </div>

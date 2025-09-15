@@ -24,6 +24,7 @@ export const facetsPromise: Writable<Promise<DictionaryFacetResult[]>> = writabl
 export const openFacets: Writable<string[]> = writable([]);
 
 const dictonaryCacheMap = new Map<string, SearchResult>();
+const ENSURE_MAX_DEPTH = 100;
 
 function cacheResult(key: string, value: SearchResult) {
   if (!key || !value) return;
@@ -194,6 +195,10 @@ export async function getConceptTree(
   return api.post(url, conceptPath);
 }
 
-export async function getInitialTree(): Promise<SearchResult[]> {
-  return api.get(Picsure.Concept.Tree);
+export async function getInitialTree(depth: number = 1): Promise<SearchResult[]> {
+  console.log('getInitialTree depth', depth);
+  if (depth > ENSURE_MAX_DEPTH) {
+    depth = ENSURE_MAX_DEPTH;
+  }
+  return api.get(`${Picsure.Concept.Tree}?depth=${depth}`);
 }

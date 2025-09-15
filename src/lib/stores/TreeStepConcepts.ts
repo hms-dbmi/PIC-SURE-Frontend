@@ -3,7 +3,7 @@ import { writable, type Writable } from 'svelte/store';
 export const selectedConcepts: Writable<string[]> = writable([]);
 
 export function addConcept(conceptPath: string) {
-  selectedConcepts.update((prev) => [...prev, conceptPath]);
+  selectedConcepts.update((prev) => (prev.includes(conceptPath) ? prev : [...prev, conceptPath]));
 }
 
 export function removeConcept(conceptPath: string) {

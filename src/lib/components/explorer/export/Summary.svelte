@@ -4,9 +4,14 @@
   import { filters } from '$lib/stores/Filter';
   import { features } from '$lib/configuration';
   import { totalParticipants, resultCounts, loadPatientCount } from '$lib/stores/ResultStore';
-  import type { StatResultMap } from '$lib/models/Stat';
+  import type { StatResultMap, StatValue } from '$lib/models/Stat';
+  import type { FederatedResourceInfo } from '$lib/stores/Dataset';
   import Loading from '$lib/components/Loading.svelte';
   import { federatedQueryMap } from '$lib/stores/Dataset';
+
+  interface SiteInfo extends FederatedResourceInfo {
+    count?: Promise<StatValue>;
+  }
   let { exports } = ExportStore;
 
   let participantsCount = $derived($totalParticipants);
@@ -17,7 +22,8 @@
 
   let resultCountMap: StatResultMap = $state({});
 
-  function getStatusIcon(status: string) {
+  function getStatusIcon(info: SiteInfo) {
+    const status = info?.status !== undefined ? info?.status : info.count ? 'COMPLETE' : 'ERROR';
     switch (status) {
       case 'AVAILABLE':
       case 'COMPLETE':
@@ -31,12 +37,31 @@
     }
   }
 
+  let siteMapsCombined = $derived.by(() => {
+    const combined: Record<string, SiteInfo> = {};
+
+    Object.entries($federatedQueryMap).forEach(([siteName, info]) => {
+      combined[siteName] = { ...info };
+    });
+
+    // Merge resultCountMap into the combined map
+    Object.entries(resultCountMap).forEach(([siteName, count]) => {
+      if (combined[siteName]) {
+        combined[siteName].count = count;
+      } else {
+        combined[siteName] = { count };
+      }
+    });
+
+    return combined;
+  });
+
   let siteStatusIcons = $derived(
-    $federatedQueryMap
+    siteMapsCombined
       ? Object.fromEntries(
-          Object.entries($federatedQueryMap).map(([siteName, info]) => [
+          Object.entries(siteMapsCombined).map(([siteName, info]) => [
             siteName,
-            getStatusIcon(info?.status || ''),
+            getStatusIcon(info),
           ]),
         )
       : {},
@@ -51,9 +76,6 @@
     if (patientCountEntry) {
       resultCountMap = patientCountEntry.result;
     }
-  });
-  $effect(() => {
-    console.log('federatedQueryMap', $federatedQueryMap);
   });
 </script>
 
@@ -77,31 +99,23 @@
   </div>
 </div>
 
-{#if Object.keys($federatedQueryMap).length === 0 && Object.keys(resultCountMap).length > 1}
+{#if features.federated && siteMapsCombined && Object.keys(siteMapsCombined).length > 0}
   <div id="site-indicators" class="grid grid-cols-3 gap-y-2 gap-x-6">
-    {#each Object.entries(resultCountMap) as [siteName, value]}
-      <div id="site-indicator">
-        {#await value}
-          <Loading size="micro" />
-        {:then value}
-          <i class="fa-solid fa-circle-check text-success-500"></i>
-          <span id="site-indicator-label" class="uppercase">{siteName}</span>
-          <span id="site-indicator-value">({value})</span>
-        {:catch}
-          <i class="fa-solid fa-circle-xmark text-error-500"></i>
-          <span id="site-indicator-label">{siteName}</span>
-        {/await}
-      </div>
-    {/each}
-  </div>
-{/if}
-
-{#if features.federated && $federatedQueryMap && Object.keys($federatedQueryMap).length > 0}
-  <div id="site-indicators" class="grid grid-cols-3 gap-y-2 gap-x-6">
-    {#each Object.entries($federatedQueryMap) as [siteName, info]}
+    {#each Object.entries(siteMapsCombined) as [siteName, info]}
       <div id="site-indicator">
         {#if info?.status === 'PENDING'}
           <Loading size="micro" label={`${siteName}`} />
+        {:else if info?.count}
+          {#await info?.count}
+            <Loading size="micro" label={`${siteName}`} />
+          {:then count}
+            <i class={siteStatusIcons[siteName]}></i>
+            <span id="site-indicator-label" class="uppercase">{siteName}</span>
+            <span id="site-indicator-value" class="ml-1">({count})</span>
+          {:catch}
+            <i class="fa-solid fa-circle-xmark text-error-500"></i>
+            <span id="site-indicator-label">{siteName}</span>
+          {/await}
         {:else}
           <i class={siteStatusIcons[siteName]}></i>
           <span id="site-indicator-label" class="uppercase">{siteName}</span>

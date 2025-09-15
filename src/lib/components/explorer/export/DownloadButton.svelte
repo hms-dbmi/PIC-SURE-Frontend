@@ -6,10 +6,10 @@
   import { Picsure } from '$lib/paths';
   import Modal from '$lib/components/Modal.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-
+  import { toaster } from '$lib/toaster';
   interface Props {
     query: QueryRequestInterface;
-    datasetId: string;
+    datasetId: string | undefined;
   }
 
   let { query, datasetId }: Props = $props();
@@ -25,6 +25,14 @@
 
   async function download(): Promise<void> {
     if (!features.explorer.allowDownload) {
+      return;
+    }
+    if (!datasetId) {
+      console.error('No dataset ID provided');
+      toaster.error({
+        title: 'No dataset ID provided. Go back and save a dataset and try again.',
+        closable: true,
+      });
       return;
     }
     try {

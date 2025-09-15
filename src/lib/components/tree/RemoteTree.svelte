@@ -2,6 +2,7 @@
   import type { TreeNodeInterface } from '$lib/components/tree/types';
   import type { SearchResult } from '$lib/models/Search';
   import RemoteTreeNodeComponent from '$lib/components/tree/RemoteTreeNode.svelte';
+  import { onMount } from 'svelte';
 
   let {
     initialNodes = [],
@@ -9,12 +10,14 @@
     onselect = () => {},
     onunselect = () => {},
     fullWidth = false,
+    previousSelectedConcepts,
   }: {
     initialNodes: SearchResult[];
     fetchChildren: (conceptPath: string) => Promise<SearchResult[]>;
     onselect?: (value: string) => void;
     onunselect?: (value: string) => void;
     fullWidth: boolean;
+    previousSelectedConcepts: string[];
   } = $props();
 
   class RemoteTreeNodeClass implements TreeNodeInterface {
@@ -45,12 +48,14 @@
 
     someSelected: boolean = $derived.by(() => {
       if (this.isLeaf) return this.selected;
-      return this.children.some((child: RemoteTreeNodeClass) => child.someSelected);
+      return this.children.some(
+        (child: RemoteTreeNodeClass) => child.someSelected || child.selected,
+      );
     });
 
     allSelected: boolean = $derived.by(() => {
       if (this.isLeaf) return this.selected;
-      if (this.children.length === 0) return false;
+      if (this.children.length === 0) return this.selected; // If no children loaded, use direct selection state
       return this.children.every((child: RemoteTreeNodeClass) => child.allSelected);
     });
 
@@ -72,12 +77,14 @@
         }
         // Now select all children
         if (this.children.length > 0) {
-          this.children.forEach((child) => child.select());
+          await Promise.all(this.children.map((child) => child.select()));
         } else {
           onselect(this.conceptPath);
           this.selected = true;
         }
-        this.open = true;
+      } else {
+        onselect(this.conceptPath);
+        this.selected = true;
       }
     }
 
@@ -87,7 +94,7 @@
         if (!this.childrenLoaded) {
           await this.loadChildren();
         }
-        this.children.forEach((child) => child.unselect());
+        await Promise.all(this.children.map((child) => child.unselect()));
       } else {
         this.selected = false;
         onunselect(this.conceptPath);
@@ -138,6 +145,40 @@
   let treeNodes: RemoteTreeNodeClass[] = $state(
     initialNodes?.map((node) => new RemoteTreeNodeClass(node)) ?? undefined,
   );
+
+  function updateNodeSelection(node: RemoteTreeNodeClass, selectedConcepts: string[]): void {
+    if (node.isLeaf) {
+      node.selected = selectedConcepts.includes(node.conceptPath);
+    } else {
+      // Only process children if they exist (have been loaded)
+      if (node.children && node.children.length > 0) {
+        node.children.forEach((child) => updateNodeSelection(child, selectedConcepts));
+
+        // If any children are selected, expand this node to show them
+        const hasSelectedChildren = node.children.some(
+          (child) => child.selected || child.someSelected,
+        );
+        if (hasSelectedChildren) {
+          node.open = true;
+        }
+
+        // Update parent selection state - check if all children are selected
+        node.selected = node.children.every((child) => child.selected);
+      } else {
+        // No children loaded yet, check if this node itself is selected
+        node.selected = selectedConcepts.includes(node.conceptPath);
+      }
+    }
+  }
+
+  onMount(() => {
+    // Initialize tree with pre-selected concepts (only once during mount)
+    if (treeNodes && previousSelectedConcepts && previousSelectedConcepts.length > 0) {
+      treeNodes.forEach((node) => {
+        updateNodeSelection(node, previousSelectedConcepts);
+      });
+    }
+  });
 </script>
 
 <div class="overflow-auto {fullWidth ? 'w-full' : ''}">

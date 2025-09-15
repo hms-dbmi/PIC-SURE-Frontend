@@ -97,7 +97,7 @@
     }
 
     // Get sample ID counts via cross counts query
-    const crossCountQuery = new Query(structuredClone(query.query));
+    const crossCountQuery = new Query(structuredClone($state.snapshot(query).query));
     crossCountQuery.expectedResultType = 'CROSS_COUNT';
     const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
     crossCountQuery.setCrossCountFields(crossCountFields);

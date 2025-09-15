@@ -5,6 +5,15 @@
   import RemoteTree from '$lib/components/tree/RemoteTree.svelte';
   import Summary from '$lib/components/explorer/export/Summary.svelte';
   import type { SearchResult } from '$lib/models/Search';
+  import { selectedConcepts } from '$lib/stores/TreeStepConcepts';
+  import { get } from 'svelte/store';
+  // Calculate largestDepth synchronously before template renders
+  let largestDepth: number =
+    $selectedConcepts && $selectedConcepts.length > 0
+      ? Math.max(
+          ...$selectedConcepts.map((concept: string) => concept.split('\\').filter(Boolean).length),
+        )
+      : 1;
 
   async function fetchChildren(conceptPath: string): Promise<SearchResult[]> {
     const dataset = conceptPath.split('\\')[1];
@@ -43,7 +52,7 @@
     </header>
     <hr />
     <div class="card-body p-4">
-      {#await getInitialTree()}
+      {#await getInitialTree(largestDepth)}
         <Loading ring size="small" />
       {:then treeNodes}
         <RemoteTree
@@ -52,6 +61,7 @@
           fullWidth={true}
           onselect={selectNode}
           onunselect={unselectNode}
+          previousSelectedConcepts={get(selectedConcepts)}
         />
       {/await}
     </div>

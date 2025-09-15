@@ -55,7 +55,7 @@ async function executeSiteQueries(query: QueryRequestInterface): Promise<Record<
 
   const queryResults = await Promise.allSettled(
     resources.map((resource) => {
-      const resourceQuery = structuredClone(query);
+      const resourceQuery = structuredClone($state.snapshot(query));
       resourceQuery.resourceUUID = resource.uuid;
       resourceQuery.query.expectedResultType = 'COUNT';
 

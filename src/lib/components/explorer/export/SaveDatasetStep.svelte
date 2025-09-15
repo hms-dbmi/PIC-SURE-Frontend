@@ -3,33 +3,26 @@
   import Summary from '$lib/components/explorer/export/Summary.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
   import type { DataSetResponse } from '$lib/models/Dataset';
-  import type { ExpectedResultType } from '$lib/models/query/Query.ts';
   import * as api from '$lib/api';
   import { Picsure } from '$lib/paths';
   import { exports } from '$lib/stores/Export';
   import { stepperState } from '$lib/stores/Stepper';
+  import {
+    getActiveType,
+    getDatasetId,
+    setDatasetId,
+    getDatasetNameInput,
+    setDatasetNameInput,
+    setSaveable,
+    getQueryRequest,
+  } from '$lib/ExportStepperManager.svelte';
 
-  interface Props {
-    query: QueryRequestInterface;
-    datasetId: string;
-    datasetNameInput: string;
-    activeType: ExpectedResultType | undefined;
-    saveable: boolean;
-  }
-
-  let {
-    query,
-    datasetId = $bindable(),
-    datasetNameInput = $bindable(),
-    activeType,
-    saveable = $bindable(),
-  }: Props = $props();
   const PROMISE_WAIT_INTERVAL = 7;
   let processingMessage: string = $state('');
   let datasetIdPromise: Promise<void | DataSetResponse> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
+  let datasetNameInput: string | undefined = $state(getDatasetNameInput());
 
   async function submitQuery(): Promise<void> {
     let interval: NodeJS.Timeout;
@@ -58,12 +51,12 @@
     }
 
     try {
-      query.query.fields = $exports.map((exp) => exp.conceptPath);
-      query.query.expectedResultType = activeType || 'DATAFRAME';
-      datasetId = '';
+      getQueryRequest().query.fields = $exports.map((exp) => exp.conceptPath);
+      getQueryRequest().query.expectedResultType = getActiveType() || 'DATAFRAME';
+      setDatasetId('');
       requestUpdate(() =>
-        api.post(Picsure.Query, query).then((res: DataSetResponse) => {
-          datasetId = res.picsureResultId || 'Error';
+        api.post(Picsure.Query, getQueryRequest()).then((res: DataSetResponse) => {
+          setDatasetId(res.picsureResultId || 'Error');
         }),
       );
       await datasetIdPromise;
@@ -75,7 +68,11 @@
   }
 
   $effect(() => {
-    saveable = datasetNameInput.length > 2 && datasetId.length > 0;
+    setSaveable((getDatasetNameInput()?.length ?? 0) > 2 && (getDatasetId()?.length ?? 0) > 0);
+  });
+
+  $effect(() => {
+    setDatasetNameInput(datasetNameInput);
   });
 
   onMount(() => {
@@ -86,7 +83,7 @@
 <section class="flex flex-col w-full h-full items-center">
   <Summary />
   {#await preparePromise}
-    <Loading ring label="Preparing" />
+    <Loading ring />
   {:then}
     <div class="w-full h-full m-2 card p-4">
       <header class="card-header">
@@ -114,7 +111,7 @@
               {#await datasetIdPromise}
                 <Loading ring size="micro" label={processingMessage} />
               {:then}
-                <div id="dataset-id" class="mr-4">{datasetId}</div>
+                <div id="dataset-id" class="mr-4">{getDatasetId()}</div>
               {:catch}
                 <div>An error occurred while getting the dataset ID. Please try again later.</div>
               {/await}
