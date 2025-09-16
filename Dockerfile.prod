@@ -1,12 +1,11 @@
 # Step 1: Build the app with node
 FROM node:23.3.0-alpine3.19 AS builder
+RUN npm install -g pnpm@latest-10
+
 WORKDIR /app
-COPY package*.json .
-COPY .env .
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --prod
 COPY . .
-RUN npm run build
-RUN npm ci --omit dev
 
 # Step 2: Serve the app with httpd
 FROM httpd:2.4.65-alpine
