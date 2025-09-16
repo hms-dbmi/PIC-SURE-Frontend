@@ -1,7 +1,19 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
+  import { branding } from '$lib/configuration';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
+
   import Content from '$lib/components/Content.svelte';
   import CollaborateSteps from '$lib/components/steppers/CollaborateSteps.svelte';
-  import { branding } from '$lib/configuration';
+
+  let introduction: string = $state('');
+  let findCollaborators: string = $state('');
+
+  onMount(() => {
+    introduction = sanitizeHTML(branding.collaborateConfig.introduction);
+    findCollaborators = sanitizeHTML(branding.collaborateConfig.findCollaborators);
+  });
 </script>
 
 <Content title="Find Collaborators">
@@ -10,8 +22,8 @@
   </section>
   <section>
     <!-- eslint-disable svelte/no-at-html-tags -->
-    {@html branding.collaborateConfig.introduction}
-    {@html branding.collaborateConfig.findCollaborators}
+    {@html introduction}
+    {@html findCollaborators}
     <!-- eslint-enable svelte/no-at-html-tags -->
   </section>
 </Content>

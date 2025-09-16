@@ -12,11 +12,13 @@ import type {
   LoginConfig,
   SiteMapConfig,
   CodeBlockConfig,
+  StatField,
   PrivacyConfig,
   AnalysisConfig,
   CollaborateConfig,
+  DatasetRequestPageConfig,
+  TermsOfServiceConfig,
 } from './types';
-import type { StatField } from '$lib/models/Stat';
 
 export const PROJECT_HOSTNAME =
   typeof window !== 'undefined'
@@ -37,6 +39,7 @@ export interface Branding {
   explorePage: ExplorePageConfig;
   landing: LandingConfig;
   results: ResultsConfig;
+  datasetRequestPage: DatasetRequestPageConfig;
   login: LoginConfig;
   help: HelpConfig;
   privacyPolicy: PrivacyConfig;
@@ -45,6 +48,7 @@ export interface Branding {
   genomic?: {
     defaultGenomeBuild: string;
   };
+  termsOfService: TermsOfServiceConfig;
 }
 
 export const branding: Branding = {
@@ -60,12 +64,14 @@ export const branding: Branding = {
     tourSearchTerm: import.meta.env?.EXPLORE_TOUR_SEARCH_TERM || 'age',
   } as ExplorePageConfig,
   landing: {} as LandingConfig,
+  datasetRequestPage: {} as DatasetRequestPageConfig,
   results: {} as ResultsConfig,
   login: {} as LoginConfig,
   help: {} as HelpConfig,
   privacyPolicy: {} as PrivacyConfig,
   analysisConfig: {} as AnalysisConfig,
   collaborateConfig: {} as CollaborateConfig,
+  termsOfService: {} as TermsOfServiceConfig,
 };
 
 export const initializeBranding = () => {
@@ -87,6 +93,7 @@ export const initializeBranding = () => {
   branding.statFields = configJson.statFields;
   branding.landing = configJson.landing;
   branding.results = configJson.results;
+  branding.datasetRequestPage = configJson.datasetRequestPage;
   branding.login = configJson.login;
   branding.help = configJson.help;
   branding.footer = configJson.footer;
@@ -95,6 +102,7 @@ export const initializeBranding = () => {
   branding.analysisConfig = configJson.analysisPage;
   branding.collaborateConfig = configJson.collaboratePage;
   branding.genomic = configJson.genomic;
+  branding.termsOfService = configJson.termsOfService;
 };
 
 export const routes: Route[] = [
@@ -137,8 +145,8 @@ export const routes: Route[] = [
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.NAMED_DATASET],
   },
   {
-    path: '/admin/requests',
-    text: 'Data Requests',
+    path: '/dataset/request',
+    text: 'Data Request',
     privilege: [PicsurePrivileges.DATA_ADMIN],
     feature: 'dataRequests',
   },
@@ -169,8 +177,10 @@ export const features: Indexable = {
     authTour: import.meta.env?.VITE_AUTH_TOUR_NAME ?? 'NHANES-Auth',
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
     enablePfbExport: import.meta.env?.VITE_DOWNLOAD_AS_PFB !== 'false', // default true
+    enableRedcapExport: import.meta.env?.VITE_ENABLE_REDCAP_EXPORT === 'true',
     enableSampleIdCheckbox: import.meta.env?.VITE_ENABLE_SAMPLE_ID_CHECKBOX === 'true',
     enableCohortDetails: import.meta.env?.VITE_ENABLE_COHORT_DETAILS === 'true',
+    showTreeStep: import.meta.env?.VITE_SHOW_TREE_STEP === 'true',
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
@@ -194,6 +204,7 @@ export const features: Indexable = {
   dashboardDrawer: import.meta.env?.VITE_DASHBOARD_DRAWER === 'true',
   confirmDownload: import.meta.env?.VITE_CONFIRM_DOWNLOAD === 'true',
   termsOfService: import.meta.env?.VITE_ENABLE_TOS === 'true',
+  enforceTermsOfService: import.meta.env?.VITE_ENFORCE_TOS_ACCEPT === 'true',
 };
 
 export const settings: Indexable = {

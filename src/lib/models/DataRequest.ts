@@ -1,3 +1,5 @@
+import type { QueryInterface } from '$lib/models/query/Query';
+
 export enum UploadStatus {
   Uploading = 'Uploading',
   Querying = 'Querying',
@@ -11,8 +13,10 @@ export enum UploadStatus {
 export type Status = {
   genomic: UploadStatus;
   phenotypic: UploadStatus;
+  patient: UploadStatus;
+  query: UploadStatus;
   queryId: string;
-  approved: string;
+  approved: string | null;
   site: string;
 } | null;
 
@@ -30,7 +34,12 @@ export type Metadata = {
   resourceResultId: string;
   resultMetadata: {
     queryJson: {
-      query: object;
+      type: string;
+      resourceUUID: string;
+      commonAreaUUID: string;
+      query: QueryInterface;
+      institutionOfOrigin: string;
+      requesterEmail: string;
     };
   };
 } | null;
@@ -38,4 +47,5 @@ export type Metadata = {
 export type DataType = {
   genomic: boolean;
   phenotypic: boolean;
+  patient: boolean;
 };

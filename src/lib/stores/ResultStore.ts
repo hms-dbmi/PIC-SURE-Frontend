@@ -1,6 +1,6 @@
 import { get, writable, type Writable } from 'svelte/store';
 
-import { toaster } from '$lib/toaster';
+import { isToastShowing, toaster } from '$lib/toaster';
 import { branding } from '$lib/configuration';
 import { getResultList, StatPromise } from '$lib/utilities/StatBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
@@ -39,13 +39,7 @@ export async function loadPatientCount(isOpenAccess: boolean) {
     const resultStats: StatResult[] = getResultList(isOpenAccess, branding?.results?.stats || []);
     resultCounts.set(resultStats);
     Promise.allSettled(resultStats.flatMap(StatPromise.list)).then((results) => {
-      if (results.some(StatPromise.rejected)) {
-        if (get(filters).length !== 0) {
-          toaster.error({ description: branding?.explorePage?.filterErrorText, closable: false });
-        } else {
-          toaster.error({ title: branding?.explorePage?.queryErrorText });
-        }
-      } else {
+      if (!results.some(StatPromise.rejected)) {
         // Cache if no rejected requests
         requestCache.set(cacheKey, resultStats);
       }
@@ -66,9 +60,14 @@ export async function loadPatientCount(isOpenAccess: boolean) {
     }
   } catch (error) {
     console.error(error);
-    toaster.error({
-      title:
-        'An error occured while loading patient counts. If this problem persists, please contact an administrator.',
-    });
+    if (!isToastShowing('query-error')) {
+      toaster.error({
+        id: 'query-error',
+        duration: 4000,
+        title:
+          'An error occured while loading patient counts. If this problem persists, please contact an administrator.',
+        closable: true,
+      });
+    }
   }
 }

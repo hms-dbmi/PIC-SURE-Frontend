@@ -419,14 +419,15 @@ test.describe('Facet & search', () => {
     await page.goto('/explorer?search=age');
     const firstCheckName = facetsResponse[0].facets[0].name;
     const facetCheckBox = page.locator('input#' + firstCheckName);
+    await facetCheckBox.waitFor();
     await expect(facetCheckBox).toBeVisible();
 
     // When
-    await facetCheckBox.click(); // to Included state
+    await facetCheckBox.click();
 
     // Then
     await expect(facetCheckBox).toBeVisible();
-    await expect(facetCheckBox).toHaveAttribute('aria-checked', 'true');
+    await expect(facetCheckBox).toBeChecked();
   });
   test('Facet toggle adds badge', async ({ page }) => {
     // Given
@@ -439,12 +440,15 @@ test.describe('Facet & search', () => {
     await page.goto('/explorer?search=age');
     const firstCheckName = facetsResponse[0].facets[0].name;
     const facetCheckBox = page.locator('input#' + firstCheckName);
+    const facetCategory = page.getByTestId('accordion-control').first();
+    await facetCheckBox.waitFor();
     await expect(facetCheckBox).toBeVisible();
 
     // When
-    await facetCheckBox.click(); // to Included state
-
+    await facetCheckBox.click();
     const badge = page.locator(`#${facetsResponse[0].facets[0].name}.badge`);
+    await expect(badge).not.toBeVisible();
+    await facetCategory.click();
     // Then
     await expect(badge).toBeVisible();
   });
@@ -459,16 +463,17 @@ test.describe('Facet & search', () => {
     await page.goto('/explorer?search=age');
     const firstCheckName = facetsResponse[0].facets[0].name;
     const facetCheckBox = page.locator('input#' + firstCheckName);
-    await facetCheckBox.click(); // to Included state
+    await facetCheckBox.waitFor();
+    await facetCheckBox.click();
     await expect(facetCheckBox).toBeVisible();
 
     //When
-    await facetCheckBox.click(); // to Default state
+    await facetCheckBox.click();
 
     // Then
-    await expect(facetCheckBox).toHaveAttribute('aria-checked', 'false');
+    await expect(facetCheckBox).not.toBeChecked();
   });
-  test('Unselecting  ', async ({ page }) => {
+  test('Unselecting facet removes badge', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) =>
       route.fulfill({ json: searchResults }),
@@ -477,18 +482,53 @@ test.describe('Facet & search', () => {
       route.fulfill({ json: facetsResponse }),
     );
     await page.goto('/explorer?search=age');
+    const facetCategory = page.getByTestId('accordion-control').first();
     const firstCheckName = facetsResponse[0].facets[0].name;
     const facetCheckBox = page.locator('input#' + firstCheckName);
+    await facetCheckBox.waitFor();
+    await facetCheckBox.click();
+    const badge = page.locator(`#${facetsResponse[0].facets[0].name}.badge`);
+    await expect(facetCheckBox).toBeVisible();
+
+    //When
+    await expect(badge).not.toBeVisible();
+    await facetCategory.click();
+    await expect(badge).toBeVisible();
+    await facetCategory.click();
+    await facetCheckBox.click(); // to Default state
+
+    // Then
+    await facetCategory.click();
+    await expect(badge).not.toBeVisible();
+  });
+  test('Unselecting facet using badge removes badge & unchecks facet', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: facetsResponse }),
+    );
+    await page.goto('/explorer?search=age');
+    const facetCategory = page.getByTestId('accordion-control').first();
+    const firstCheckName = facetsResponse[0].facets[0].name;
+    const facetCheckBox = page.locator('input#' + firstCheckName);
+    await facetCheckBox.waitFor(); // Wait for element to exist
     await facetCheckBox.click(); // to Included state
     const badge = page.locator(`#${facetsResponse[0].facets[0].name}.badge`);
     await expect(facetCheckBox).toBeVisible();
-    await expect(badge).toBeVisible();
 
     //When
-    await facetCheckBox.click(); // to Default state
-
     await expect(badge).not.toBeVisible();
+    await facetCategory.click();
+    await expect(badge).toBeVisible();
+    await badge.locator('button').click();
+    await facetCategory.click();
+
     // Then
+    await expect(badge).not.toBeVisible();
+    await facetCategory.click();
+    await expect(facetCheckBox).not.toBeChecked();
   });
   test('Facet toggles included', async ({ page }) => {
     // Given
@@ -501,14 +541,15 @@ test.describe('Facet & search', () => {
     await page.goto('/explorer?search=age');
     const firstCheckName = facetsResponse[0].facets[0].name;
     const facetCheckBox = page.locator('input#' + firstCheckName);
-    await facetCheckBox.click(); // to Included state
+    await facetCheckBox.waitFor();
+    await facetCheckBox.click();
     await expect(facetCheckBox).toBeVisible();
 
     //When
     await facetCheckBox.click(); // to Default state
 
     // Then
-    await expect(facetCheckBox).toHaveAttribute('aria-checked', 'false');
+    await expect(facetCheckBox).not.toBeChecked();
   });
   test('Facets have counts', async ({ page }) => {
     // Given

@@ -14,6 +14,8 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm ci
+      - name: Sync SvelteKit
+        run: npx svelte-kit sync
       - name: Run linting tests
         run: npm run lint
       - name: Install Playwright Browsers

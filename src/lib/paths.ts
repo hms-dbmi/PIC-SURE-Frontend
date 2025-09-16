@@ -1,6 +1,7 @@
-const DICT = 'picsure/proxy/dictionary-api';
-const QUERY = 'picsure/query';
-const UPLOADER = 'picsure/proxy/uploader';
+const PREFIX = 'picsure';
+const DICT = `${PREFIX}/proxy/dictionary-api`;
+const QUERY = `${PREFIX}/query`;
+const UPLOADER = `${PREFIX}/proxy/uploader`;
 
 export const Picsure = {
   Concepts: `${DICT}/concepts`,
@@ -10,11 +11,11 @@ export const Picsure = {
   },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,
-  NamedDataSet: 'picsure/dataset/named',
+  NamedDataSet: `${PREFIX}/dataset/named`,
   Dictionary: DICT,
   Facets: `${DICT}/facets`,
-  Search: 'picsure/search',
-  Resources: 'picsure/resource',
+  Search: `${PREFIX}/search`,
+  Resources: `${PREFIX}/resource`,
   Query: QUERY,
   QuerySync: `${QUERY}/sync`,
   Uploader: {
@@ -33,9 +34,10 @@ export const Psama = {
   Priviege: 'psama/privilege',
   StudyAccess: 'psama/studyAccess',
   Role: 'psama/role',
+  TOS: 'psama/tos',
   Users: USER,
   User: {
-    Logout: `${USER}/logout`,
+    Logout: 'psama/logout',
     Me: `${USER}/me`,
     Template: `${USER}/me/queryTemplate`,
     Refresh: `${USER}/me/refresh_long_term_token`,

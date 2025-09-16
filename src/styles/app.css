@@ -6,6 +6,20 @@
 
 @source '../../node_modules/@skeletonlabs/skeleton-svelte/dist';
 
+/* Force generate standard colors */
+@source inline("{hover:,}bg-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}");
+@source inline("{hover:,}text-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}");
+@source inline("border-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}");
+
+/* Force generate color pairings */
+@source inline("{hover:,}bg-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}-{50,100,200,300,400,500,600,700,800,900,950}");
+@source inline("{hover:,}text-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}-{50,100,200,300,400,500,600,700,800,900,950}");
+@source inline("border-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}-{50,100,200,300,400,500,600,700,800,900,950}");
+
+/* Your preset classes if they exist */
+@source inline("preset-tonal-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}");
+@source inline("preset-filled-{primary,secondary,tertiary,success,warning,error,surface}-{50,100,200,300,400,500,600,700,800,900,950}");
+
 @import './theme.css';
 
 @custom-variant dark (&:is(.dark *));
@@ -29,6 +43,10 @@
 } */
 
 @layer utilities {
+}
+
+:root {
+  --color-gic-blue: #338fff;
 }
 
 html,
@@ -62,15 +80,17 @@ input[type='checkbox'] {
 
 select {
   @apply select;
-  padding: 0.5rem 1.25rem;
+  @apply py-2;
 }
 
 hr {
   @apply hr;
 }
 
-p {
-  margin: 1rem;
+@layer base {
+  p {
+    margin: 1rem;
+  }
 }
 
 .code-block pre {
@@ -92,6 +112,11 @@ p {
       color: var(--color-surface-800);
     }
   }
+}
+
+.card {
+  border-radius: var(--radius-container);
+  @apply border border-surface-200;
 }
 
 .w-modal {
@@ -647,6 +672,16 @@ label.required input:invalid,
 
   ul {
     @apply list-disc ml-8;
+  }
+
+  ol {
+    @apply list-[lower-roman] ml-8;
+  }
+
+  div,
+  ol,
+  ul {
+    @apply my-2;
   }
 
   a {

@@ -7,11 +7,17 @@
   import RadioTree from '$lib/components/tree/RadioTree.svelte';
   import { getConceptTree } from '$lib/stores/Dictionary';
   import { panelOpen } from '$lib/stores/SidePanel';
+  import Loading from '$lib/components/Loading.svelte';
+  import { toaster } from '$lib/toaster';
+  import { AnyRecordOfFilterError } from '$lib/types';
+  import Modal from '$lib/components/Modal.svelte';
 
   interface Props {
     data?: SearchResult;
     onclose?: () => void;
   }
+
+  let modalOpen: boolean = $state(false);
 
   const ENSURE_MAX_DEPTH = 100;
   let { data = {} as SearchResult, onclose = () => {} }: Props = $props();
@@ -48,30 +54,51 @@
   }
 
   let selectedNode = $state(data.conceptPath);
+  let isLoading = $state(false);
 
   async function addSelection() {
-    const treeResult: SearchResult = await getConceptTree(
-      data.dataset,
-      ENSURE_MAX_DEPTH,
-      selectedNode,
-    );
-    let filter: Filter;
-    const searchResult: SearchResult = {
-      conceptPath: selectedNode,
-      display: selectedNode.split('\\').filter(Boolean).pop() || selectedNode,
-      name: selectedNode,
-      allowFiltering: true,
-      dataset: data.dataset,
-      studyAcronym: data.studyAcronym,
-      description: `Any Record of ${selectedNode}`,
-      meta: data.meta,
-      study: data.study,
-      table: data.table,
-      type: 'AnyRecordOf',
-    };
-    filter = createAnyRecordOfFilter(searchResult, treeResult);
-    addFilter(filter);
-    finish();
+    if (isLoading) return;
+
+    isLoading = true;
+    try {
+      const treeResult: SearchResult = await getConceptTree(
+        data.dataset,
+        ENSURE_MAX_DEPTH,
+        selectedNode,
+      );
+      let filter: Filter;
+      const searchResult: SearchResult = {
+        conceptPath: selectedNode,
+        display: selectedNode.split('\\').filter(Boolean).pop() || selectedNode,
+        name: selectedNode,
+        allowFiltering: true,
+        dataset: data.dataset,
+        studyAcronym: data.studyAcronym,
+        description: `Any Record of ${selectedNode}`,
+        meta: data.meta,
+        study: data.study,
+        table: data.table,
+        type: 'AnyRecordOf',
+      };
+      filter = createAnyRecordOfFilter(searchResult, treeResult);
+      addFilter(filter);
+      finish();
+    } catch (error: unknown) {
+      if (
+        error instanceof AnyRecordOfFilterError &&
+        error.message === 'Too many concept paths found'
+      ) {
+        modalOpen = true;
+      } else {
+        console.error('Error adding selection: ', error instanceof Error ? error.message : error);
+        toaster.error({
+          description:
+            'Something went wrong when adding the filter. If the problem persists, please contact your administrator.',
+        });
+      }
+    } finally {
+      isLoading = false;
+    }
   }
 
   function finish() {
@@ -81,6 +108,24 @@
   }
 </script>
 
+<Modal
+  bind:open={modalOpen}
+  data-testid="hierarchy-component-error-modal"
+  title="Data tree selection too large"
+  closeable={true}
+  width="w-1/2"
+>
+  <div data-testid="hierarchy-component-error-modal-content">
+    <p class="m-0">
+      The level of the data tree you selected exceeds 9,500 variables. This was not added as a
+      filter to your query. Please make a selection lower in the data tree and try again.
+    </p>
+    <div class="flex justify-center mt-4">
+      <button class="btn preset-filled-primary-500" onclick={() => (modalOpen = false)}>Okay</button
+      >
+    </div>
+  </div>
+</Modal>
 <div data-testid="hierarchy-component" class="flex flex-row bg-surface-100 p-4 rounded-container">
   {#if treeNode}
     <RadioTree fullWidth={true} nodes={[treeNode]} onselect={(value) => (selectedNode = value)} />
@@ -88,9 +133,14 @@
   <button
     class="btn btn-icon preset-filled-primary-500 m-1"
     data-testid="add-filter"
-    aria-label="Add Filter"
+    aria-label={isLoading ? 'Adding Filter...' : 'Add Filter'}
     onclick={addSelection}
+    disabled={isLoading}
   >
-    <i class="fas fa-plus"></i>
+    {#if isLoading}
+      <Loading size="micro" color="white" />
+    {:else}
+      <i class="fas fa-plus"></i>
+    {/if}
   </button>
 </div>

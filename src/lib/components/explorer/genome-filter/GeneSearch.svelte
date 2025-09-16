@@ -19,7 +19,7 @@
   const helpText = branding?.help?.popups?.genomicFilter;
 </script>
 
-<div id="gene-search" class="grid grid-col-3 gap-3 {props.class || ''}">
+<div id="gene-search" class="grid grid-cols-3 gap-3 {props.class || ''}">
   <Panel title="Search for Gene with Variant" subtitle="Use the official gene symbol." required>
     {#snippet action()}
       <button

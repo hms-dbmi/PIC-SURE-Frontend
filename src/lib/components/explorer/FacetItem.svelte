@@ -1,6 +1,6 @@
 <script lang="ts">
   import FacetItem from './FacetItem.svelte';
-  import type { DictionaryFacetResult } from '$lib/models/api/DictionaryResponses';
+  import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
   import type { Facet } from '$lib/models/Search';
   import SearchStore from '$lib/stores/Search';
   let { updateFacets, selectedFacets } = SearchStore;
@@ -85,7 +85,11 @@
   );
 </script>
 
-<label data-testId={`facet-${facet.name}-label`} for={facet.name} class="m-1">
+<label
+  data-testId={`facet-${facet.name}-label`}
+  for={facet.name}
+  class="flex gap-1 m-1 leading-[normal]"
+>
   {#if facet?.children !== undefined && facet?.children?.length > 0}
     <button
       type="button"
@@ -108,7 +112,7 @@
     aria-checked={checked}
     onclick={onClick}
   />
-  <span class:opacity-75={facet.count === 0}
+  <span class:opacity-75={facet.count === 0} style="word-wrap: break-word;"
     >{`${facet.display} (${facet.count?.toLocaleString()})`}</span
   >
 </label>

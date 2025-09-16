@@ -1,22 +1,32 @@
 <script lang="ts">
-  import { sendData } from '$lib/stores/DataRequest';
-
   import { browser } from '$app/environment';
-
   import Modal from '$lib/components/Modal.svelte';
+
+  export type SendDataModalProps = {
+    sendEnabled: boolean;
+    onConfirm?: () => void;
+  };
 
   let disablePrompt = $state(false);
   let modalOpen: boolean = $state(false);
-  const { sendEnabled = false }: { sendEnabled?: boolean } = $props();
+  let { sendEnabled, onConfirm }: SendDataModalProps = $props();
 
-  async function close() {
+  function handleConfirm() {
     if (disablePrompt && browser) {
       localStorage.setItem('dataRequest-sendData-displayPrompt', 'no');
     }
 
     modalOpen = false;
+    onConfirm?.();
+  }
 
-    await sendData();
+  function openModal() {
+    // Check if user previously chose to skip the prompt
+    if (browser && localStorage.getItem('dataRequest-sendData-displayPrompt') === 'no') {
+      handleConfirm();
+      return;
+    }
+    modalOpen = true;
   }
 </script>
 
@@ -25,14 +35,14 @@
   data-testid="send-data-btn"
   class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
   disabled={!sendEnabled}
-  onclick={disablePrompt ? sendData : () => (modalOpen = true)}>Send Data</button
+  onclick={openModal}>Send Data</button
 >
 <Modal
   data-testid="send-data"
   open={modalOpen}
   disabled={!sendEnabled}
   withDefault={false}
-  onconfirm={sendData}
+  onconfirm={handleConfirm}
 >
   <p class="font-bold text-center mb-4">
     Sending data from PIC-SURE to Service Workbench could take several minutes.
@@ -58,7 +68,7 @@
         type="button"
         data-testid="send-data-modal-confirm-btn"
         class="btn preset-filled-primary-500"
-        onclick={close}
+        onclick={handleConfirm}
       >
         Okay, got it!
       </button>

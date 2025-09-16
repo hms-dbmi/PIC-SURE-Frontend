@@ -9,6 +9,13 @@ const userFile = (user: string) => `tests/.auth/${user}.json`;
 Object.entries(userTypes).forEach(async ([user, userVariation]) => {
   test(`authenticate as ${user}`, async ({ page }) => {
     const userData = { ...picsureUser, ...userVariation };
+
+    // We must accept the Google consent dialog before we can interact with some elements in the page.
+    await page.goto('/');
+    await page.waitForSelector('[data-testid="consentModal"]');
+    const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
+    await acceptConsentButton.click();
+
     const mockLoginResponse =
       '/login/loading/#access_token=' +
       mockToken +
@@ -20,11 +27,6 @@ Object.entries(userTypes).forEach(async ([user, userVariation]) => {
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', userData);
     await mockApiSuccess(page, '*/**/psama/user/me', userData);
     await page.goto(mockLoginResponse);
-
-    // We must accept the Google consent dialog before we can interact with some elements in the page.
-    await page.waitForSelector('[data-testid="consentModal"]');
-    const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
-    await acceptConsentButton.click();
 
     await page.waitForURL('/');
 
