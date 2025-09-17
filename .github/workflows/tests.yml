@@ -8,15 +8,16 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-      - uses: actions/setup-node@v4
+      - name: Use Node 4
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Git Code
+        uses: actions/checkout@v4
       - name: Install dependencies
         run: pnpm install
       - name: Sync SvelteKit
@@ -24,7 +25,7 @@ jobs:
       - name: Run linting tests
         run: pnpm run lint
       - name: Install Playwright Browsers
-        run: pnpm exec playwright install
+        run: pnpm exec playwright install --with-deps
       - name: Check Playwright versions
         run: pnpm ls @playwright/test || true
       - name: Run Playwright tests
