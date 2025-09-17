@@ -8,7 +8,7 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     steps:
-      - name: Use Node 4
+      - name: Use Node 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
