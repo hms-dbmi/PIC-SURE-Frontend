@@ -6,30 +6,33 @@ on:
     branches: [main, release]
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Use Node 4
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Setup pnpm
+      - name: Use PNPM 10
         uses: pnpm/action-setup@v4
         with:
           version: 10
-      - name: Setup Git Code
+      - name: Checkout Code
         uses: actions/checkout@v4
+
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Sync SvelteKit
         run: pnpm svelte-kit sync
-      - name: Run linting tests
-        run: pnpm run lint
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
       - name: Check Playwright versions
         run: pnpm ls @playwright/test || true
+
+      - name: Run linting tests
+        run: pnpm run lint
       - name: Run Playwright tests
-        run: pnpm test
+        run: pnpm run test
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
