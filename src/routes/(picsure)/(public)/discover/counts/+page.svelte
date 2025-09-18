@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { page } from '$app/state';
 
   import { branding } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
@@ -9,27 +8,84 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import AccessionCell from '$lib/components/studycounts/AccessionCell.svelte';
   import AccessCell from '$lib/components/studycounts/AccessCell.svelte';
+  import ConsentCounts from '$lib/components/studycounts/ConsetnCounts.svelte';
 
-  import { loadStudyCounts, filterStudiesByCount } from '$lib/services/studycounts';
-  import type { StudyCountsData } from '$lib/models/StudyCounts';
   import type { Column } from '$lib/components/datatable/types';
   import { goto } from '$app/navigation';
   import { totalParticipants } from '$lib/stores/ResultStore';
+  import { loadResources } from '$lib/stores/Resources';
+  import { ServerSide } from '$lib/paths';
+  import type { CleanedStudyData } from '$lib/models/api/Studies';
+  import { user, isUserLoggedIn } from '$lib/stores/User';
+  import { get } from 'svelte/store';
+  import { features } from '$lib/configuration';
+  import type { User } from '$lib/models/User';
+  import * as api from '$lib/api';
+  
+  interface Props {
+    counts: { name: string, count: string }[];
+  }
+  const { counts }: Props = $props();
 
+  const countMap = $derived(() => {
+    const map: { [studyAccession: string]: { [consentCode: string]: string } } = {};
+    
+    counts.forEach((count) => {
+      // Parse the consent name to extract study accession and consent code
+      // Format: "\\_studies_consents\\phs001612\\HMB-IRB-NPU\\" or "\\_studies_consents\\phs003703\\"
+      const match = count.name.match(/\\\\_studies_consents\\\\([^\\\\]+)(?:\\\\([^\\\\]+)\\)?\\\\/);
+      
+      if (match) {
+        const studyAccession = match[1]; // e.g., "phs001612"
+        const consentCode = match[2] || '-1'; // e.g., "HMB-IRB-NPU" or "-1" if no consent code
+        
+        if (!map[studyAccession]) {
+          map[studyAccession] = {};
+        } else if (consentCode === '-1' && map[studyAccession]['GRU']) {
+          if (map[studyAccession]['GRU'] === count.count) {
+            return;
+          }
+        } else if (consentCode === 'GRU' && map[studyAccession]['-1']) {
+          if (map[studyAccession]['-1'] === count.count) {
+            map[studyAccession][consentCode] = count.count;
+            delete map[studyAccession]['-1'];
+          }
+        }
+        map[studyAccession][consentCode] = count.count;
+      }
+    });
+    
+    return map;
+  });
   let isLoading = $state(true);
   let error = $state<string | null>(null);
-  let studies = $state<StudyCountsData[]>([]);
-  let filteredStudies = $state<StudyCountsData[]>([]);
+  let studies = $state<CleanedStudyData[]>([]);
+  let userConsents = $state<string[]>([]);
   let showLowCounts = $state(false);
+  const loggedInUser: User = get(user);
+  const useConsents = features.useQueryTemplate && isUserLoggedIn() && loggedInUser && loggedInUser?.queryTemplate;
 
-  $effect(() => {
-    filteredStudies = filterStudiesByCount(studies, showLowCounts);
+  const columns: Column[] = [
+    { dataElement: 'abbreviation', label: 'Abbreviation', class: 'font-medium' },
+    { dataElement: 'accession', label: 'Accession' },
+    { dataElement: 'name', label: 'Name' },
+    { dataElement: 'countsByConsent', label: 'Counts by Consent Code'},
+    { dataElement: 'access', label: 'Access', class: 'text-center' },
+  ];
+
+  let tableData = $derived.by(() => {
+    studies.forEach((study) => {
+      study.hasAccess = userConsents.some((consent) => study.countsByConsent.includes(consent));
+      study.countsByConsentMap = countMap()[study.accession] || {};
+    });
+    return studies;
   });
 
-  // Check if there's a valid cohort when component mounts
   onMount(async () => {
-    // Wait a bit for the ResultStore to initialize
-    await new Promise(resolve => setTimeout(resolve, 100));
+    loadResources();
+    if (useConsents) {
+      userConsents = (loggedInUser.queryTemplate?.categoryFilters as any)?.['\\_consents\\'] || [];
+    }
 
     // If no cohort, cohort has 0 participants, or cohort is too small (< 10), redirect back to discover
     if (!$totalParticipants || $totalParticipants === 0 || $totalParticipants < 10) {
@@ -41,7 +97,7 @@
     try {
       isLoading = true;
       error = null;
-      studies = await loadStudyCounts(true);
+      studies = await api.get(ServerSide.Studies);
     } catch (err) {
       console.error('Error loading study counts:', err);
       error = err instanceof Error ? err.message : 'Failed to load study counts data';
@@ -49,68 +105,6 @@
       isLoading = false;
     }
   });
-
-  // Get all unique consent codes across all studies
-  function getAllConsentCodes(): string[] {
-    const consentCodes = new Set<string>();
-    studies.forEach(study => {
-      Object.keys(study.countsByConsent).forEach(code => {
-        consentCodes.add(code);
-      });
-    });
-    return Array.from(consentCodes).sort();
-  }
-
-  // Format count display
-  function formatCount(count: number | string): string {
-    if (typeof count === 'string') {
-      return count;
-    }
-    return count.toLocaleString();
-  }
-
-  // Generate table data for StaticTable
-  function generateTableData() {
-    const consentCodes = getAllConsentCodes();
-
-    return filteredStudies.map(study => ({
-      abbreviation: study.abbreviation,
-      accession: study.accession,
-      name: study.name,
-      ...Object.fromEntries(
-        consentCodes.map(code => [
-          code,
-          study.countsByConsent[code] !== undefined ? formatCount(study.countsByConsent[code]) : '-'
-        ])
-      ),
-      totalCount: formatCount(study.totalCount),
-      access: study.isPublic ? 'Public' : 'Request'
-    }));
-  }
-
-  // Generate table columns
-  function generateTableColumns(): Column[] {
-    const consentCodes = getAllConsentCodes();
-    const columns: Column[] = [
-      { dataElement: 'abbreviation', label: 'Abbreviation', class: 'font-medium' },
-      { dataElement: 'accession', label: 'Accession' },
-      { dataElement: 'name', label: 'Name' },
-      ...consentCodes.map(code => ({
-        dataElement: code,
-        label: code,
-        class: 'text-center'
-      })),
-      {
-        dataElement: 'totalCount',
-        label: 'Total',
-        class: 'text-center font-medium'
-      },
-      { dataElement: 'access', label: 'Access', class: 'text-center' }
-    ];
-    return columns;
-  }
-
-
 </script>
 
 <svelte:head>
@@ -123,8 +117,13 @@
       The following obfuscation techniques are used to protect participant-level data:
     </p>
     <ul class="list-disc list-inside mt-4 text-sm text-surface-700 max-w-2xl mx-auto">
-      <li>If the consents or studies are less than 10, the count will be displayed as "&lt; 10".</li>
-      <li>If the consent results are less than 10 and the total study count is greater than 10, the total count will be obfuscated by +/- 3%.</li>
+      <li>
+        If the consents or studies are less than 10, the count will be displayed as "&lt; 10".
+      </li>
+      <li>
+        If the consent results are less than 10 and the total study count is greater than 10, the
+        total count will be obfuscated by +/- 3%.
+      </li>
     </ul>
   </div>
 
@@ -134,7 +133,7 @@
     </ErrorAlert>
   {:else if isLoading}
     <Loading ring size="large" />
-  {:else if filteredStudies.length === 0}
+  {:else if tableData.length === 0}
     <div class="text-center py-8">
       <p class="text-surface-600">No study data available.</p>
     </div>
@@ -143,7 +142,7 @@
     <div class="flex justify-end mb-4">
       <button
         class="btn preset-filled-primary-500"
-        onclick={() => showLowCounts = !showLowCounts}
+        onclick={() => (showLowCounts = !showLowCounts)}
       >
         {showLowCounts ? 'Hide studies with counts < 10' : 'Show studies with counts < 10'}
       </button>
@@ -152,11 +151,12 @@
     <!-- Data Table -->
     <StaticTable
       tableName="StudyCountsTable"
-      data={generateTableData()}
-      columns={generateTableColumns()}
+      data={tableData}
+      columns={columns}
       cellOverides={{
         accession: AccessionCell,
-        access: AccessCell
+        access: AccessCell,
+        countsByConsent: ConsentCounts,
       }}
       searchable={false}
       showPagination={true}

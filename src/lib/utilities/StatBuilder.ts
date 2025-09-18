@@ -87,15 +87,20 @@ function hardcoded({ stat }: RequestMapOptions) {
   return Promise.resolve((stat?.value as PatientCount) || 0);
 }
 
-async function getOpenCount(options: RequestMapOptions): Promise<PatientCount> {
+export async function getOpenCrossCount(
+  options: RequestMapOptions,
+): Promise<{ [key: string]: number }> {
   const request = { ...options.request };
   request.query.expectedResultType = 'CROSS_COUNT';
   const concepts = await loadAllConcepts();
   request.query.setCrossCountFields(concepts);
-  return api
-    .post(Picsure.QuerySync, request)
-    .then(rejectIfQueryError)
-    .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
+  return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
+}
+
+async function getOpenCount(options: RequestMapOptions): Promise<PatientCount> {
+  return getOpenCrossCount(options).then((counts) =>
+    countResult([counts['\\_studies_consents\\'] || 0]),
+  );
 }
 
 function getAuthCount(options: RequestMapOptions): Promise<PatientCount> {

@@ -13,11 +13,13 @@
 
   let { data = [], ...rest }: Props = $props();
 
-  const handler = $derived(
-    new TableHandler(data, {
-      rowsPerPage: getDefaultRows(rest.tableName),
-    }),
-  );
+  const handler = new TableHandler(data, {
+    rowsPerPage: getDefaultRows(rest.tableName),
+  });
+
+  $effect(() => {
+    handler.setRows(data);
+  });
 </script>
 
 <RemoteTable {handler} {...rest} />

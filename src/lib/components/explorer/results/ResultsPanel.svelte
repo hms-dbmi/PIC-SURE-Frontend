@@ -57,9 +57,7 @@
 
   let showCohortDetails = $derived(isExplorer && features.explorer.enableCohortDetails);
 
-  let showParticipantCountByStudy = $derived(
-    isOpenAccess && $totalParticipants !== undefined && $totalParticipants > 0
-  );
+  let showParticipantCountByStudy = $derived(isOpenAccess && $totalParticipants !== undefined);
 
   let showToolSuite = $derived(
     showCohortDetails ||
@@ -225,7 +223,7 @@
             disabled={$totalParticipants < 10}
             active={page.url.pathname === '/discover/counts'}
             class={$totalParticipants < 10 ? 'cursor-not-allowed' : ''}
-            {...($totalParticipants < 10 && { 'aria-label': 'Cohort count is too small' })}
+            {...$totalParticipants < 10 && { 'aria-label': 'Cohort count is too small' }}
           />
         {/if}
       </div>

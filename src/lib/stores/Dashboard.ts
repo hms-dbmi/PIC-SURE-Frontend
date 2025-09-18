@@ -24,7 +24,7 @@ export type DashboardResp = {
   rows: DashboardRow[];
 };
 
-function fetchDashboard(): Promise<DashboardResp> {
+export function fetchDashboard(): Promise<DashboardResp> {
   return api.get(Picsure.Dashboard);
 }
 

@@ -24,6 +24,10 @@ export const Picsure = {
   },
 };
 
+export const ServerSide = {
+  Studies: '/api/studies',
+}
+
 const USER = 'psama/user';
 
 export const Psama = {
