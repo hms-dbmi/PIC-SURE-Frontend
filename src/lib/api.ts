@@ -4,7 +4,6 @@ import { browser } from '$app/environment';
 import { page } from '$app/state';
 
 const BEARER = 'Bearer ';
-const hostname = browser ? window.location.origin : import.meta.env.VITE_ORIGIN;
 
 // TODO: fix any types
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -46,7 +45,7 @@ async function send({
     }
   }
 
-  const res = await fetch(`${hostname}/${path}`, opts);
+  const res = await fetch(`${getHostname()}/${path}`, opts);
 
   return await handleResponse(res);
 }
@@ -103,4 +102,8 @@ function refreshToken(res: Response) {
     newAuthToken = newAuthToken.replace(BEARER, '');
     login(newAuthToken);
   }
+}
+
+function getHostname(): string {
+  return browser ? window.location.origin : import.meta.env.VITE_ORIGIN;
 }
