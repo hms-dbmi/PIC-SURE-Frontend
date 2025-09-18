@@ -4,6 +4,7 @@ import { browser } from '$app/environment';
 import { page } from '$app/state';
 
 const BEARER = 'Bearer ';
+const hostname = browser ? window.location.origin : import.meta.env.VITE_ORIGIN;
 
 // TODO: fix any types
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -45,7 +46,7 @@ async function send({
     }
   }
 
-  const res = await fetch(`${window.location.origin}/${path}`, opts);
+  const res = await fetch(`${hostname}/${path}`, opts);
 
   return await handleResponse(res);
 }
