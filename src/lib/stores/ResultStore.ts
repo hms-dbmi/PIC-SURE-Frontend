@@ -38,7 +38,7 @@ export async function loadPatientCount(isOpenAccess: boolean) {
     await get(resourcesPromise);
     const resultStats: StatResult[] = getResultList(isOpenAccess, branding?.results?.stats || []);
     resultCounts.set(resultStats);
-    Promise.allSettled(resultStats.flatMap(StatPromise.list)).then((results) => {
+    Promise.allSettled(resultStats.flatMap(StatPromise.list).map(({ promise }) => promise)).then((results) => {
       if (!results.some(StatPromise.rejected)) {
         // Cache if no rejected requests
         requestCache.set(cacheKey, resultStats);
@@ -51,7 +51,7 @@ export async function loadPatientCount(isOpenAccess: boolean) {
     });
     const totalCount = resultStats.find((count) => count.key === branding?.results?.totalStatKey);
     if (totalCount) {
-      Promise.allSettled(StatPromise.list(totalCount)).then(
+      Promise.allSettled(StatPromise.list(totalCount).map(({ promise }) => promise)).then(
         (results: PromiseSettledResult<StatValue>[]) => {
           const values = results.filter(StatPromise.fullfiled).map(({ value }) => value);
           totalParticipants.set(countResult(values, false) as number);
