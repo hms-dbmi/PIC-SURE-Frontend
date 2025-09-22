@@ -17,8 +17,13 @@
 
   let participantsCount = $derived($totalParticipants);
   let anyRecordsOfCount = $derived.by(() => {
-    const anyRecordsOfFilters = $filters.filter((filter) => filter.filterType === 'AnyRecordOf') as AnyRecordOfFilterInterface[];
-    return anyRecordsOfFilters.reduce((acc, filter) => acc + filter.concepts.length, 0)-anyRecordsOfFilters.length;
+    const anyRecordsOfFilters = $filters.filter(
+      (filter) => filter.filterType === 'AnyRecordOf',
+    ) as AnyRecordOfFilterInterface[];
+    return (
+      anyRecordsOfFilters.reduce((acc, filter) => acc + filter.concepts.length, 0) -
+      anyRecordsOfFilters.length
+    );
   });
   let variablesCount = $derived($filters.length + $exports.length + anyRecordsOfCount);
   let dataPoints = $derived(
