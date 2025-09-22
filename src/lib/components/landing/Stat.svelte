@@ -77,6 +77,7 @@
                     type="exclamation"
                     color="warning"
                     id="result-count-error"
+                    size="text-xs"
                     text="The following sites are not included as they did not return patient counts: {failedSites}."
                   />
                 {/if}
