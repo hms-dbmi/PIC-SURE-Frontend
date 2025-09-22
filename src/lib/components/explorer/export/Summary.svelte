@@ -8,6 +8,7 @@
   import type { FederatedResourceInfo } from '$lib/stores/Dataset';
   import Loading from '$lib/components/Loading.svelte';
   import { federatedQueryMap } from '$lib/stores/Dataset';
+  import type { AnyRecordOfFilterInterface } from '$lib/models/Filter';
 
   interface SiteInfo extends FederatedResourceInfo {
     count?: Promise<StatValue>;
@@ -15,7 +16,11 @@
   let { exports } = ExportStore;
 
   let participantsCount = $derived($totalParticipants);
-  let variablesCount = $derived($filters.length + $exports.length);
+  let anyRecordsOfCount = $derived.by(() => {
+    const anyRecordsOfFilters = $filters.filter((filter) => filter.filterType === 'AnyRecordOf') as AnyRecordOfFilterInterface[];
+    return anyRecordsOfFilters.reduce((acc, filter) => acc + filter.concepts.length, 0)-anyRecordsOfFilters.length;
+  });
+  let variablesCount = $derived($filters.length + $exports.length + anyRecordsOfCount);
   let dataPoints = $derived(
     typeof participantsCount === 'number' ? participantsCount * variablesCount : 0,
   );
