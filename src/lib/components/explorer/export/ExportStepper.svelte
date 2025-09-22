@@ -69,6 +69,7 @@
   onMount(async () => {
     // Auto select csv export when pfb feature is disabled.
     setQueryRequest(query);
+    $federatedQueryMap = {};
     if (!features.explorer.enablePfbExport) {
       setActiveType('DATAFRAME');
     }
