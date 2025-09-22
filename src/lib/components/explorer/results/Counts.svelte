@@ -26,18 +26,20 @@
   $effect(() => {
     showErrorMessage = false;
     $resultCounts.forEach((stat) => {
-      Promise.allSettled(StatPromise.list(stat)).then((counts) => {
-        if (hasErrorInCounts(counts)) {
-          showErrorMessage = true;
-        }
-      });
+      Promise.allSettled(StatPromise.list(stat).map(({ promise }) => promise)).then(
+        (counts: PromiseSettledResult<StatValue>[]) => {
+          if (hasErrorInCounts(counts)) {
+            showErrorMessage = true;
+          }
+        },
+      );
     });
   });
 </script>
 
 {#each $resultCounts as stat}
   <div class="flex flex-col items-center mt-2">
-    {#await Promise.allSettled(StatPromise.list(stat))}
+    {#await Promise.allSettled(StatPromise.list(stat).map(({ promise }) => promise))}
       <Loading ring size="mini" />
     {:then counts}
       {@const count: PatientCount = countSettled(counts)}

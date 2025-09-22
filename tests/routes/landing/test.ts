@@ -119,7 +119,6 @@ test.describe('Landing page', () => {
 
           // Then
           await expect(page.getByTestId(testID).locator('i.fa-circle-exclamation')).toBeVisible();
-          await expect(page.getByTestId('landing-error')).toBeVisible();
         });
       });
   });

@@ -36,12 +36,14 @@ export async function loadLandingStats() {
     hasError.set(false);
     const stats: StatResult[] = populateStatRequests(validStats);
     statData.set(stats);
-    Promise.allSettled(stats.flatMap(StatPromise.list)).then((results) => {
-      if (results.some(StatPromise.rejected)) {
-        hasError.set(true);
-      }
-      loaded.set(true);
-    });
+    Promise.allSettled(stats.flatMap(StatPromise.list).map(({ promise }) => promise)).then(
+      (results) => {
+        if (results.some(StatPromise.rejected)) {
+          hasError.set(true);
+        }
+        loaded.set(true);
+      },
+    );
   } catch (error) {
     console.error(error);
     if (!isToastShowing('stats-error')) {

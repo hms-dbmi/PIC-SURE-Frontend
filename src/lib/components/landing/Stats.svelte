@@ -2,10 +2,9 @@
   import { onMount } from 'svelte';
 
   import { branding } from '$lib/configuration';
-  import { stats, authStats, hasError, loadLandingStats } from '$lib/stores/Stats';
+  import { stats, authStats, loadLandingStats } from '$lib/stores/Stats';
 
   import Stat from './Stat.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 
   onMount(loadLandingStats);
 </script>
@@ -19,11 +18,5 @@
 
   {#if $stats.length > 0}
     <Stat {stats} description={branding?.landing?.explanation} />
-  {/if}
-
-  {#if $hasError}
-    <ErrorAlert data-testid="landing-error" solid>
-      We're having trouble fetching some data points right now. Please try again later.
-    </ErrorAlert>
   {/if}
 </section>
