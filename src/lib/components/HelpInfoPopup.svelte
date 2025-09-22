@@ -12,14 +12,22 @@
     children?: Snippet;
   }
 
-  const { text, id = '', type = 'question', color = 'primary', size = '', children }: Props = $props();
+  const {
+    text,
+    id = '',
+    type = 'question',
+    color = 'primary',
+    size = '',
+    children,
+  }: Props = $props();
 </script>
 
 {#if text || children}
   <div data-testid={id}>
     <Popover data-testid="{id}-content" triggerTypes={['click', 'hover']}>
       {#snippet trigger()}
-        <i class="fa-solid fa-circle-{type} text-{color}-950-50 hover:text-{color}-300-700 {size}"></i>
+        <i class="fa-solid fa-circle-{type} text-{color}-950-50 hover:text-{color}-300-700 {size}"
+        ></i>
       {/snippet}
       {#if children}
         {@render children?.()}
