@@ -173,8 +173,12 @@ test.describe('Export Page', () => {
     await checkStepRenderedCorrectly(page, 1, 'Review Cohort Details:', false, 'Next', true);
     await nextButton.click();
 
+    // Tree Step
+    await checkStepRenderedCorrectly(page, 2, 'Finalize Data:', false, 'Next', true);
+    await nextButton.click();
+
     // Review and Save Dataset
-    await checkStepRenderedCorrectly(page, 2, 'Review and Save Dataset:', true, 'Next', true);
+    await checkStepRenderedCorrectly(page, 3, 'Review and Save Dataset:', true, 'Next', true);
     const csvExportOption = page.getByTestId('csv-export-option');
     const pfbExportOption = page.getByTestId('pfb-export-option');
     await expect(csvExportOption).toBeVisible();
@@ -192,7 +196,7 @@ test.describe('Export Page', () => {
     await nextButton.click();
 
     // Save Dataset ID
-    await checkStepRenderedCorrectly(page, 3, 'Save Dataset ID:', true, 'Next', true);
+    await checkStepRenderedCorrectly(page, 4, 'Save Dataset ID:', true, 'Next', true);
     const datasetNameInput = page.locator('input#dataset-name');
     await expect(datasetNameInput).toBeVisible();
     await datasetNameInput.fill('test-dataset');
@@ -208,7 +212,7 @@ test.describe('Export Page', () => {
     await nextButton.click();
 
     // Start Analysis
-    await checkStepRenderedCorrectly(page, 4, 'Start Analysis:', false, 'Done', false);
+    await checkStepRenderedCorrectly(page, 5, 'Start Analysis:', false, 'Done', false);
     const tabGroup = page.getByTestId('tabs-list');
     const codeBlock = page.getByTestId('tabs-panel').locator('.code-block').first();
     await expect(tabGroup).toBeVisible();

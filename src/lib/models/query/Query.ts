@@ -10,7 +10,8 @@ export type ExpectedResultType =
   | 'DATAFRAME_TIMESERIES'
   | 'AGGREGATE_VCF_EXCERPT'
   | 'VCF_EXCERPT'
-  | 'VARIANT_COUNT_FOR_QUERY';
+  | 'VARIANT_COUNT_FOR_QUERY'
+  | 'SECRET_ADMIN_DATAFRAME';
 
 export interface QueryInterface {
   fields: string[];
@@ -56,7 +57,7 @@ export class Query implements QueryInterface {
     this.requiredFields = newQuery?.requiredFields || [];
     this.anyRecordOf = newQuery?.anyRecordOf || [];
     this.anyRecordOfMulti = newQuery?.anyRecordOfMulti || [];
-    this.crossCountFields = newQuery?.crossCountFields || undefined;
+    this.crossCountFields = newQuery?.crossCountFields || [];
     this.fields = newQuery?.fields || [];
     const variantInfoFilter = newQuery?.variantInfoFilters?.[0] || {
       categoryVariantInfoFilters: {},

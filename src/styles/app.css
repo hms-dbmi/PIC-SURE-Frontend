@@ -87,8 +87,10 @@ hr {
   @apply hr;
 }
 
-p {
-  margin: 1rem;
+@layer base {
+  p {
+    margin: 1rem;
+  }
 }
 
 .code-block pre {
@@ -110,6 +112,11 @@ p {
       color: var(--color-surface-800);
     }
   }
+}
+
+.card {
+  border-radius: var(--radius-container);
+  @apply border border-surface-200;
 }
 
 .w-modal {
