@@ -86,7 +86,10 @@
   });
 
   onMount(async () => {
+    console.log('onMount counts', counts);
+    console.log('onMount pageData', pageData);
     loadResources();
+
     if (useConsents) {
       userConsents = (loggedInUser.queryTemplate?.categoryFilters as any)?.['\\_consents\\'] || [];
     }
@@ -100,6 +103,7 @@
     try {
       isLoading = true;
       error = null;
+      console.log('onMount pageData', pageData);
       studies = pageData.studies || [];
     } catch (err) {
       console.error('Error loading study counts:', err);
@@ -135,7 +139,7 @@
       {error}
     </ErrorAlert>
   {:else if isLoading}
-    <Loading ring size="large" />
+    <Loading ring size="medium" />
   {:else if tableData.length === 0}
     <div class="text-center py-8">
       <p class="text-surface-600">No study data available.</p>
