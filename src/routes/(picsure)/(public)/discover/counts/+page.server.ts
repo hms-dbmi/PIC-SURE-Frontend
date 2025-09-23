@@ -1,4 +1,4 @@
-import * as api from '$lib/api';
+import type { PageServerLoad } from './$types';
 import { Picsure } from '$lib/paths';
 import type { DashboardRow } from '$lib/stores/Dashboard';
 import type { CleanedStudyData } from '$lib/models/api/Studies';
@@ -18,21 +18,27 @@ let cachedData: CleanedStudyData[] | null = null;
 
 const ACCESSION_PATTERN = /(\.v\d+)(\.p\d+)?(\.c\d+)?$/;
 
-export async function GET() {
+export const load: PageServerLoad = async ({ url }: { url: URL }) => {
   try {
+    const options = {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    };
     if (!cachedData) {
       const [drawerRes, dashboardRes] = await Promise.all([
-        api.get(Picsure.DashboardDrawer, { Accept: 'application/json' }, false),
-        api.get(Picsure.Dashboard, { Accept: 'application/json' }, false),
+        fetch(`${url.origin}/${Picsure.DashboardDrawer}`, options),
+        fetch(`${url.origin}/${Picsure.Dashboard}`, options),
       ]);
 
       if (!drawerRes.ok) throw new Error(`Drawer request failed: ${drawerRes.status}`);
       if (!dashboardRes.ok) throw new Error(`Dashboard request failed: ${dashboardRes.status}`);
 
       const rawData: StudyData[] = await drawerRes.json();
-      
+
       if (!rawData || !Array.isArray(rawData)) throw new Error('Invalid drawer data format');
-      
+
       const { rows }: { rows: DashboardRow[] } = await dashboardRes.json();
 
       if (!rows) throw new Error('Missing row data');
@@ -55,7 +61,7 @@ export async function GET() {
       },
     );
   }
-}
+};
 
 const cleanData = (data: StudyData[], rowData: DashboardRow[]): CleanedStudyData[] => {
   const drawerDataMap = new Map<number, StudyData>(data.map((study) => [study.datasetId, study]));
@@ -69,7 +75,6 @@ const cleanData = (data: StudyData[], rowData: DashboardRow[]): CleanedStudyData
     }
     groupedRows.get(abbreviation)!.push(row);
   }
-
 
   return Array.from(groupedRows.entries())
     .map(([abbreviation, rows]) => {
@@ -91,13 +96,13 @@ const cleanData = (data: StudyData[], rowData: DashboardRow[]): CleanedStudyData
       const accession = String(firstRow.accession ?? '');
       const baseAccession = normalizeAccession(accession);
 
-       return {
-         abbreviation,
-         name: drawerData.studyFullname,
-         countsByConsent: drawerData.consentGroups.map(cleanConsentGroupCode),
-         accession: baseAccession,
-         additional_info_link: String(firstRow.additional_info_link ?? ''),
-       };
+      return {
+        abbreviation,
+        name: drawerData.studyFullname,
+        countsByConsent: drawerData.consentGroups.map(cleanConsentGroupCode),
+        accession: baseAccession,
+        additional_info_link: String(firstRow.additional_info_link ?? ''),
+      };
     })
     .filter((item): item is CleanedStudyData => item !== null);
 };
