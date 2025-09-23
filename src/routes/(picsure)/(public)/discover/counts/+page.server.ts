@@ -29,8 +29,8 @@ export const load: PageServerLoad<{ studies: CleanedStudyData[] }> = async ({ ur
     };
     if (!cachedData) {
       const [drawerRes, dashboardRes] = await Promise.all([
-        fetch(`${url.origin}/${Picsure.DashboardDrawer}`, options),
-        fetch(`${url.origin}/${Picsure.Dashboard}`, options),
+        fetch(`https://localhost/${Picsure.DashboardDrawer}`, options),
+        fetch(`https://localhost/${Picsure.Dashboard}`, options),
       ]);
 
       if (!drawerRes.ok) throw new Error(`Drawer request failed: ${drawerRes.status}`);
