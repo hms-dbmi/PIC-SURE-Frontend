@@ -5,9 +5,8 @@
   import Loading from '$lib/components/Loading.svelte';
   import StaticTable from '$lib/components/datatable/StaticTable.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import AccessionCell from '$lib/components/studycounts/AccessionCell.svelte';
   import AccessCell from '$lib/components/studycounts/AccessCell.svelte';
-  import ConsentCounts from '$lib/components/studycounts/ConsetnCounts.svelte';
+  import ConsentCounts from '$lib/components/studycounts/ConsetCounts.svelte';
 
   import type { Column } from '$lib/components/datatable/types';
   import { goto } from '$app/navigation';
@@ -30,7 +29,7 @@
   const columns: Column[] = [
     { dataElement: 'abbreviation', label: 'Abbreviation', class: 'font-medium' },
     { dataElement: 'accession', label: 'Accession' },
-    { dataElement: 'name', label: 'Name' },
+    { dataElement: 'name', label: 'Name', class: 'max-w-96' },
     { dataElement: 'countsByConsent', label: 'Counts by Consent Code' },
     { dataElement: 'access', label: 'Access', class: 'text-center' },
   ];
@@ -55,7 +54,7 @@
     }
     
     if ($lastStudyCrossCount) {
-      const map: { [studyAccession: string]: { [consentCode: string]: string } } = {};
+      const map: Map<string, Map<string, string>> = new Map();
 
       Object.entries($lastStudyCrossCount).forEach(([key, count]) => {
         // Parse the consent name to extract study accession and consent code
@@ -68,25 +67,25 @@
           const studyAccession = match[1]; // e.g., "phs001612"
           const consentCode = match[2] || '-1'; // e.g., "HMB-IRB-NPU" or "-1" if no consent code
 
-          if (!map[studyAccession]) {
-            map[studyAccession] = {};
-          } else if (consentCode === '-1' && map[studyAccession]['GRU']) {
-            if (map[studyAccession]['GRU'] === count) {
+          if (!map.get(studyAccession)) {
+            map.set(studyAccession, new Map());
+          } else if (consentCode === '-1' && map.get(studyAccession)?.get('GRU')) {
+            if (map.get(studyAccession)?.get('GRU') === count) {
               return;
             }
-          } else if (consentCode === 'GRU' && map[studyAccession]['-1']) {
-            if (map[studyAccession]['-1'] === count) {
-              map[studyAccession][consentCode] = count;
-              delete map[studyAccession]['-1'];
+          } else if (consentCode === 'GRU' && map.get(studyAccession)?.get('-1')) {
+            if (map.get(studyAccession)?.get('-1') === count) {
+              map.get(studyAccession)?.set(consentCode, count);
+              map.get(studyAccession)?.delete('-1');
             }
           }
-          map[studyAccession][consentCode] = count;
+          map.get(studyAccession)?.set(consentCode, count);
         }
       });
 
       studies.forEach((study) => {
         study.hasAccess = userConsents.some((consent) => study.countsByConsent.includes(consent));
-        study.countsByConsentMap = map[study.accession] || {};
+        study.countsByConsentMap = map.get(study.accession) || new Map();
       });
       return studies;
     }
@@ -122,6 +121,25 @@
       <p class="text-surface-600">No study data available.</p>
     </div>
     {:else}
+    <StaticTable
+      tableName="StudyCountsTable"
+      data={
+        showLowCounts
+          ? studies.filter(
+              (study) =>
+                Object.values(study.countsByConsentMap || new Map()).some((v) => v !== '< 10')
+            )
+          : studies
+      }
+      {columns}
+      cellOverides={{
+        access: AccessCell,
+        countsByConsent: ConsentCounts,
+      }}
+      searchable={true}
+      showPagination={true}
+      fullWidth={true}
+    />
     <div class="flex justify-end mb-4">
       <button
         class="btn preset-filled-primary-500"
@@ -130,21 +148,6 @@
         {showLowCounts ? 'Hide studies with counts < 10' : 'Show studies with counts < 10'}
       </button>
     </div>
-
-    <StaticTable
-      tableName="StudyCountsTable"
-      data={studies}
-      {columns}
-      cellOverides={{
-        accession: AccessionCell,
-        access: AccessCell,
-        countsByConsent: ConsentCounts,
-      }}
-      searchable={false}
-      showPagination={true}
-      title=""
-      fullWidth={true}
-    />
     {/if}
   {:catch error}
     <ErrorAlert title="Error loading study data" color="error">

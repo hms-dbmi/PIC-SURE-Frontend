@@ -1,8 +1,11 @@
 <script lang="ts">
   interface Props {
-    counts: {
-    [consentCode: string]: string | number;
-} | undefined;
+    counts:
+      | Map<string, Map<string, string>>
+      | {
+          [consentCode: string]: string | number;
+        }
+      | undefined;
   }
 
   let { counts }: Props = $props();
@@ -10,7 +13,7 @@
 </script>
 
 <div class="table-wrap">
-  <table class="table table-auto">
+  <table class="table table-auto bg-transparent">
     <tbody>
       {#if counts}
         {#each Object.entries(counts) as [consentCode, count]}
