@@ -14,31 +14,34 @@
   import { goto } from '$app/navigation';
   import { totalParticipants } from '$lib/stores/ResultStore';
   import { loadResources } from '$lib/stores/Resources';
-  import { ServerSide } from '$lib/paths';
   import type { CleanedStudyData } from '$lib/models/api/Studies';
   import { user, isUserLoggedIn } from '$lib/stores/User';
   import { get } from 'svelte/store';
   import { features } from '$lib/configuration';
   import type { User } from '$lib/models/User';
-  import * as api from '$lib/api';
-  
-  interface Props {
-    counts: { name: string, count: string }[];
+  import type { PageProps } from './$types';
+
+  interface ComponentProps {
+    counts: { name: string; count: string }[];
   }
-  const { counts }: Props = $props();
+
+  const props = $props<PageProps & ComponentProps>();
+  const { counts, data: pageData } = props;
 
   const countMap = $derived(() => {
     const map: { [studyAccession: string]: { [consentCode: string]: string } } = {};
-    
-    counts.forEach((count) => {
+
+    counts.forEach((count: { name: string; count: string }) => {
       // Parse the consent name to extract study accession and consent code
       // Format: "\\_studies_consents\\phs001612\\HMB-IRB-NPU\\" or "\\_studies_consents\\phs003703\\"
-      const match = count.name.match(/\\\\_studies_consents\\\\([^\\\\]+)(?:\\\\([^\\\\]+)\\)?\\\\/);
-      
+      const match = count.name.match(
+        /\\\\_studies_consents\\\\([^\\\\]+)(?:\\\\([^\\\\]+)\\)?\\\\/,
+      );
+
       if (match) {
         const studyAccession = match[1]; // e.g., "phs001612"
         const consentCode = match[2] || '-1'; // e.g., "HMB-IRB-NPU" or "-1" if no consent code
-        
+
         if (!map[studyAccession]) {
           map[studyAccession] = {};
         } else if (consentCode === '-1' && map[studyAccession]['GRU']) {
@@ -54,7 +57,7 @@
         map[studyAccession][consentCode] = count.count;
       }
     });
-    
+
     return map;
   });
   let isLoading = $state(true);
@@ -63,13 +66,14 @@
   let userConsents = $state<string[]>([]);
   let showLowCounts = $state(false);
   const loggedInUser: User = get(user);
-  const useConsents = features.useQueryTemplate && isUserLoggedIn() && loggedInUser && loggedInUser?.queryTemplate;
+  const useConsents =
+    features.useQueryTemplate && isUserLoggedIn() && loggedInUser && loggedInUser?.queryTemplate;
 
   const columns: Column[] = [
     { dataElement: 'abbreviation', label: 'Abbreviation', class: 'font-medium' },
     { dataElement: 'accession', label: 'Accession' },
     { dataElement: 'name', label: 'Name' },
-    { dataElement: 'countsByConsent', label: 'Counts by Consent Code'},
+    { dataElement: 'countsByConsent', label: 'Counts by Consent Code' },
     { dataElement: 'access', label: 'Access', class: 'text-center' },
   ];
 
@@ -97,7 +101,7 @@
     try {
       isLoading = true;
       error = null;
-      studies = await api.get(ServerSide.Studies);
+      studies = pageData.studies || [];
     } catch (err) {
       console.error('Error loading study counts:', err);
       error = err instanceof Error ? err.message : 'Failed to load study counts data';
@@ -152,7 +156,7 @@
     <StaticTable
       tableName="StudyCountsTable"
       data={tableData}
-      columns={columns}
+      {columns}
       cellOverides={{
         accession: AccessionCell,
         access: AccessCell,

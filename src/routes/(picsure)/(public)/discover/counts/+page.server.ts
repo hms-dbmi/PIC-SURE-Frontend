@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { error } from '@sveltejs/kit';
 import { Picsure } from '$lib/paths';
 import type { DashboardRow } from '$lib/stores/Dashboard';
 import type { CleanedStudyData } from '$lib/models/api/Studies';
@@ -18,7 +19,7 @@ let cachedData: CleanedStudyData[] | null = null;
 
 const ACCESSION_PATTERN = /(\.v\d+)(\.p\d+)?(\.c\d+)?$/;
 
-export const load: PageServerLoad = async ({ url }: { url: URL }) => {
+export const load: PageServerLoad<{ studies: CleanedStudyData[] }> = async ({ url }) => {
   try {
     const options = {
       method: 'GET',
@@ -47,19 +48,13 @@ export const load: PageServerLoad = async ({ url }: { url: URL }) => {
       cachedData = cleanData(rawData, rows);
     }
 
-    return new Response(JSON.stringify(cachedData), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('Error fetching studies data:', error);
-    return new Response(
-      JSON.stringify({ error: `Failed to fetch studies data. Reason: ${message}` }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      },
-    );
+    return {
+      studies: cachedData
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Error fetching studies data:', err);
+    throw error(500, `Failed to fetch studies data: ${message}`);
   }
 };
 
