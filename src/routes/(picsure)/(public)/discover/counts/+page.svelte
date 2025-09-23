@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
 
   import { branding } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
@@ -24,9 +23,38 @@
 
   let { data: pageData }: PageProps = $props();
 
-  const countMap = $derived(() => {
+  let showLowCounts = $state(false);
+  const loggedInUser: User = get(user);
+  const useConsents = $derived(features.useQueryTemplate && isUserLoggedIn() && loggedInUser && loggedInUser?.queryTemplate);
+
+  const columns: Column[] = [
+    { dataElement: 'abbreviation', label: 'Abbreviation', class: 'font-medium' },
+    { dataElement: 'accession', label: 'Accession' },
+    { dataElement: 'name', label: 'Name' },
+    { dataElement: 'countsByConsent', label: 'Counts by Consent Code' },
+    { dataElement: 'access', label: 'Access', class: 'text-center' },
+  ];
+
+
+  const studyDataPromise = loadStudyData();
+
+  async function loadStudyData(): Promise<CleanedStudyData[]> {
+    loadResources();
+    
+    // If no cohort, cohort has 0 participants, or cohort is too small (< 10), redirect back to discover
+    if (!$totalParticipants || $totalParticipants === 0 || $totalParticipants < 10) {
+      await goto('/discover', { replaceState: true });
+      return [];
+    }
+
+    const studies = pageData.studies || [];
+    let userConsents: string[] = [];
+    
+    if (useConsents) {
+      userConsents = (loggedInUser.queryTemplate?.categoryFilters as any)?.['\\_consents\\'] || [];
+    }
+    
     if ($lastStudyCrossCount) {
-      console.log('countMap lastStudyCrossCount', $lastStudyCrossCount);
       const map: { [studyAccession: string]: { [consentCode: string]: string } } = {};
 
       Object.entries($lastStudyCrossCount).forEach(([key, count]) => {
@@ -56,60 +84,14 @@
         }
       });
 
-      return map;
+      studies.forEach((study) => {
+        study.hasAccess = userConsents.some((consent) => study.countsByConsent.includes(consent));
+        study.countsByConsentMap = map[study.accession] || {};
+      });
+      return studies;
     }
-    throw new Error('No lastStudyCrossCount');
-  });
-  let isLoading = $state(true);
-  let error = $state<string | null>(null);
-  let studies = $state<CleanedStudyData[]>([]);
-  let userConsents = $state<string[]>([]);
-  let showLowCounts = $state(false);
-  const loggedInUser: User = get(user);
-  const useConsents =
-    features.useQueryTemplate && isUserLoggedIn() && loggedInUser && loggedInUser?.queryTemplate;
-
-  const columns: Column[] = [
-    { dataElement: 'abbreviation', label: 'Abbreviation', class: 'font-medium' },
-    { dataElement: 'accession', label: 'Accession' },
-    { dataElement: 'name', label: 'Name' },
-    { dataElement: 'countsByConsent', label: 'Counts by Consent Code' },
-    { dataElement: 'access', label: 'Access', class: 'text-center' },
-  ];
-
-  let tableData = $derived.by(() => {
-    studies.forEach((study) => {
-      study.hasAccess = userConsents.some((consent) => study.countsByConsent.includes(consent));
-      study.countsByConsentMap = countMap()[study.accession] || {};
-    });
-    return studies;
-  });
-
-  onMount(async () => {
-    loadResources();
-
-    if (useConsents) {
-      userConsents = (loggedInUser.queryTemplate?.categoryFilters as any)?.['\\_consents\\'] || [];
-    }
-
-    // If no cohort, cohort has 0 participants, or cohort is too small (< 10), redirect back to discover
-    if (!$totalParticipants || $totalParticipants === 0 || $totalParticipants < 10) {
-      await goto('/discover', { replaceState: true });
-      return;
-    }
-
-    try {
-      isLoading = true;
-      error = null;
-      console.log('onMount pageData', pageData);
-      studies = pageData.studies || [];
-    } catch (err) {
-      console.error('Error loading study counts:', err);
-      error = err instanceof Error ? err.message : 'Failed to load study counts data';
-    } finally {
-      isLoading = false;
-    }
-  });
+    throw new Error('No Counts Found');
+  }
 </script>
 
 <svelte:head>
@@ -132,18 +114,14 @@
     </ul>
   </div>
 
-  {#if error}
-    <ErrorAlert title="Error loading study data" color="error">
-      {error}
-    </ErrorAlert>
-  {:else if isLoading}
+  {#await studyDataPromise}
     <Loading ring size="medium" />
-  {:else if tableData.length === 0}
+  {:then studies}
+    {#if studies.length === 0}
     <div class="text-center py-8">
       <p class="text-surface-600">No study data available.</p>
     </div>
-  {:else}
-    <!-- Show/Hide Low Counts Toggle -->
+    {:else}
     <div class="flex justify-end mb-4">
       <button
         class="btn preset-filled-primary-500"
@@ -153,10 +131,9 @@
       </button>
     </div>
 
-    <!-- Data Table -->
     <StaticTable
       tableName="StudyCountsTable"
-      data={tableData}
+      data={studies}
       {columns}
       cellOverides={{
         accession: AccessionCell,
@@ -168,5 +145,10 @@
       title=""
       fullWidth={true}
     />
-  {/if}
+    {/if}
+  {:catch error}
+    <ErrorAlert title="Error loading study data" color="error">
+      {error instanceof Error ? error.message : 'Failed to load study data'}
+    </ErrorAlert>
+  {/await}
 </Content>
