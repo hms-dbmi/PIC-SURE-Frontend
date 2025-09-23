@@ -1,3 +1,13 @@
+# Step 1: Build the app with node
+FROM node:23.3.0-alpine3.19 AS builder
+RUN npm install -g pnpm@latest-10
+
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
+COPY . .
+
+# Step 2: Serve the app with httpd
 FROM httpd:2.4.65-alpine
 
 RUN apk add --update openssl sed nodejs npm supervisor
@@ -20,7 +30,6 @@ RUN mkdir -p /usr/local/apache2/logs/ssl_mutex
 ENV NODE_ENV=development
 WORKDIR /app
 RUN mkdir -p logs
-COPY . .
-RUN npm i
+COPY --from=builder /app .
 COPY supervisord-local.conf /etc/supervisor/conf.d/supervisord.conf
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
