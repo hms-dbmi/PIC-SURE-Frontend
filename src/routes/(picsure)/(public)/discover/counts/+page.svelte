@@ -19,46 +19,46 @@
   import { get } from 'svelte/store';
   import { features } from '$lib/configuration';
   import type { User } from '$lib/models/User';
+  import { lastStudyCrossCount } from '$lib/stores/ResultStore';
   import type { PageProps } from './$types';
 
-  interface ComponentProps {
-    counts: { name: string; count: string }[];
-  }
-
-  const props = $props<PageProps & ComponentProps>();
-  const { counts, data: pageData } = props;
+  let { data: pageData }: PageProps = $props();
 
   const countMap = $derived(() => {
-    const map: { [studyAccession: string]: { [consentCode: string]: string } } = {};
+    if ($lastStudyCrossCount) {
+      console.log('countMap lastStudyCrossCount', $lastStudyCrossCount);
+      const map: { [studyAccession: string]: { [consentCode: string]: string } } = {};
 
-    counts.forEach((count: { name: string; count: string }) => {
-      // Parse the consent name to extract study accession and consent code
-      // Format: "\\_studies_consents\\phs001612\\HMB-IRB-NPU\\" or "\\_studies_consents\\phs003703\\"
-      const match = count.name.match(
-        /\\\\_studies_consents\\\\([^\\\\]+)(?:\\\\([^\\\\]+)\\)?\\\\/,
-      );
+      Object.entries($lastStudyCrossCount).forEach(([key, count]) => {
+        // Parse the consent name to extract study accession and consent code
+        // Format: "\\_studies_consents\\phs001612\\HMB-IRB-NPU\\" or "\\_studies_consents\\phs003703\\"
+        const match = key.match(
+          /\\\\_studies_consents\\\\([^\\\\]+)(?:\\\\([^\\\\]+)\\)?\\\\/,
+        );
 
-      if (match) {
-        const studyAccession = match[1]; // e.g., "phs001612"
-        const consentCode = match[2] || '-1'; // e.g., "HMB-IRB-NPU" or "-1" if no consent code
+        if (match) {
+          const studyAccession = match[1]; // e.g., "phs001612"
+          const consentCode = match[2] || '-1'; // e.g., "HMB-IRB-NPU" or "-1" if no consent code
 
-        if (!map[studyAccession]) {
-          map[studyAccession] = {};
-        } else if (consentCode === '-1' && map[studyAccession]['GRU']) {
-          if (map[studyAccession]['GRU'] === count.count) {
-            return;
+          if (!map[studyAccession]) {
+            map[studyAccession] = {};
+          } else if (consentCode === '-1' && map[studyAccession]['GRU']) {
+            if (map[studyAccession]['GRU'] === count) {
+              return;
+            }
+          } else if (consentCode === 'GRU' && map[studyAccession]['-1']) {
+            if (map[studyAccession]['-1'] === count) {
+              map[studyAccession][consentCode] = count;
+              delete map[studyAccession]['-1'];
+            }
           }
-        } else if (consentCode === 'GRU' && map[studyAccession]['-1']) {
-          if (map[studyAccession]['-1'] === count.count) {
-            map[studyAccession][consentCode] = count.count;
-            delete map[studyAccession]['-1'];
-          }
+          map[studyAccession][consentCode] = count;
         }
-        map[studyAccession][consentCode] = count.count;
-      }
-    });
+      });
 
-    return map;
+      return map;
+    }
+    throw new Error('No lastStudyCrossCount');
   });
   let isLoading = $state(true);
   let error = $state<string | null>(null);
@@ -86,8 +86,6 @@
   });
 
   onMount(async () => {
-    console.log('onMount counts', counts);
-    console.log('onMount pageData', pageData);
     loadResources();
 
     if (useConsents) {

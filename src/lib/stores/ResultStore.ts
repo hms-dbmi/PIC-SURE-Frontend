@@ -16,6 +16,7 @@ export const hasNonZeroResult: Writable<boolean> = writable(false);
 export const resultCounts: Writable<StatResult[]> = writable([]);
 export const loading: Writable<Promise<void>> = writable(Promise.resolve());
 export const totalParticipants: Writable<number> = writable(0);
+export const lastStudyCrossCount: Writable<{ [key: string]: string } | undefined> = writable(undefined);
 
 export async function loadPatientCount(isOpenAccess: boolean) {
   loadResources();

@@ -26,6 +26,7 @@ import { getQueryResources } from '$lib/stores/Resources';
 import { getBlankQueryRequest } from '$lib/utilities/QueryBuilder';
 import { getQueryRequest } from '$lib/utilities/QueryBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
+import { lastStudyCrossCount } from '$lib/stores/ResultStore';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rejectIfQueryError(result: any) {
@@ -89,7 +90,7 @@ function hardcoded({ stat }: RequestMapOptions) {
 
 export async function getOpenCrossCount(
   options: RequestMapOptions,
-): Promise<{ [key: string]: number }> {
+): Promise<{ [key: string]: string }> {
   const request = { ...options.request };
   request.query.expectedResultType = 'CROSS_COUNT';
   const concepts = await loadAllConcepts();
@@ -98,9 +99,10 @@ export async function getOpenCrossCount(
 }
 
 async function getOpenCount(options: RequestMapOptions): Promise<PatientCount> {
-  return getOpenCrossCount(options).then((counts) =>
-    countResult([counts['\\_studies_consents\\'] || 0]),
-  );
+  return getOpenCrossCount(options).then((counts) => {
+    lastStudyCrossCount.set(counts);
+    return countResult([counts['\\_studies_consents\\'] || 0]);
+  });
 }
 
 function getAuthCount(options: RequestMapOptions): Promise<PatientCount> {
