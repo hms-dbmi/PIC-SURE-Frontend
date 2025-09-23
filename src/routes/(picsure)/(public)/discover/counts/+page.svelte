@@ -97,7 +97,6 @@
       return;
     }
 
-    // Continue with normal loading
     try {
       isLoading = true;
       error = null;
