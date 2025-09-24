@@ -1,22 +1,24 @@
 <script lang="ts">
   interface Props {
-    counts:
-      | Map<string, Map<string, string>>
-      | {
-          [consentCode: string]: string | number;
-        }
-      | undefined;
+    data: {
+      cell?:
+        | Map<string, Map<string, string>>
+        | {
+            [consentCode: string]: string | number;
+          }
+        | undefined;
+    };
   }
 
-  let { counts }: Props = $props();
+  let { data }: Props = $props();
   const LESS_THAN_10 = '< 10';
 </script>
 
 <div class="table-wrap">
   <table class="table table-auto !bg-transparent">
     <tbody>
-      {#if counts}
-        {#each Object.entries(counts) as [consentCode, count]}
+      {#if data.cell}
+        {#each Object.entries(data.cell) as [consentCode, count]}
           <tr>
             <td>
               {#if consentCode !== '-1'}

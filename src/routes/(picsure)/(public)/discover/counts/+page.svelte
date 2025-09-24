@@ -130,7 +130,7 @@
         showLowCounts
           ? studies.filter(
               (study) =>
-                Object.values(study.countsByConsentMap || new Map()).some((v) => v !== '< 10')
+                Object.values(study.countsByConsentMap || {}).some((v) => v !== '< 10')
             )
           : studies
       }
