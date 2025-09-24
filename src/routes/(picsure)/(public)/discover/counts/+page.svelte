@@ -30,7 +30,7 @@
     { dataElement: 'abbreviation', label: 'Abbreviation', class: 'font-medium' },
     { dataElement: 'accession', label: 'Accession' },
     { dataElement: 'name', label: 'Name', class: 'w-96' },
-    { dataElement: 'countsByConsent', label: 'Counts by Consent Code' },
+    { dataElement: 'countsByConsentMap', label: 'Counts by Consent Code' },
     { dataElement: 'access', label: 'Access', class: 'text-center' },
   ];
 
@@ -137,7 +137,7 @@
       {columns}
       cellOverides={{
         access: AccessCell,
-        countsByConsent: ConsentCounts,
+        countsByConsentMap: ConsentCounts,
       }}
       searchable={true}
       showPagination={true}
