@@ -29,7 +29,7 @@
   const columns: Column[] = [
     { dataElement: 'abbreviation', label: 'Abbreviation', class: 'font-medium' },
     { dataElement: 'accession', label: 'Accession' },
-    { dataElement: 'name', label: 'Name', class: 'max-w-96' },
+    { dataElement: 'name', label: 'Name', class: 'w-96' },
     { dataElement: 'countsByConsent', label: 'Counts by Consent Code' },
     { dataElement: 'access', label: 'Access', class: 'text-center' },
   ];
@@ -59,13 +59,11 @@
       Object.entries($lastStudyCrossCount).forEach(([key, count]) => {
         // Parse the consent name to extract study accession and consent code
         // Format: "\\_studies_consents\\phs001612\\HMB-IRB-NPU\\" or "\\_studies_consents\\phs003703\\"
-        const match = key.match(
-          /\\\\_studies_consents\\\\([^\\\\]+)(?:\\\\([^\\\\]+)\\)?\\\\/,
-        );
+        const parts = key.split('/\\+/').filter(Boolean); // split on '\' and drop empties
 
-        if (match) {
-          const studyAccession = match[1]; // e.g., "phs001612"
-          const consentCode = match[2] || '-1'; // e.g., "HMB-IRB-NPU" or "-1" if no consent code
+        if (parts[0] === '_studies_consents' && parts.length >= 2) {
+          const studyAccession = parts[1]; // e.g., "phs001612"
+          const consentCode = parts[2] || '-1'; // e.g., "HMB-IRB-NPU" or "-1" if no consent code
 
           if (!map.get(studyAccession)) {
             map.set(studyAccession, new Map());
