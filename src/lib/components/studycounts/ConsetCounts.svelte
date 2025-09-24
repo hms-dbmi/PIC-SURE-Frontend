@@ -15,24 +15,33 @@
 </script>
 
 <div class="table-wrap">
-  <table class="table table-auto !bg-transparent">
-    <tbody>
+  <table class="table-reset">
+    <tbody class="p-0 m-0">
       {#if data.cell}
         {#each Object.entries(data.cell) as [consentCode, count]}
-          <tr>
-            <td>
+          <tr class="p-0 m-0">
+            <td class="p-0 m-0">
               {#if consentCode !== '-1'}
                 {consentCode}
               {/if}
             </td>
-            <td>{count}</td>
+            <td class="p-0 m-0">{count}</td>
           </tr>
         {/each}
       {:else}
-        <tr>
-          <td>{LESS_THAN_10}</td>
+        <tr class="p-0 m-0">
+          <td class="p-0 m-0">{LESS_THAN_10}</td>
         </tr>
       {/if}
     </tbody>
   </table>
 </div>
+
+<style>
+  .table-reset,
+  .table-reset *,
+  .table-reset *::before,
+  .table-reset *::after {
+    all: revert;
+  }
+</style>
