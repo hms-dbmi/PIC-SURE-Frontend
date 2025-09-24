@@ -13,7 +13,7 @@
 </script>
 
 <div class="table-wrap">
-  <table class="table table-auto bg-transparent">
+  <table class="table table-auto !bg-transparent">
     <tbody>
       {#if counts}
         {#each Object.entries(counts) as [consentCode, count]}
