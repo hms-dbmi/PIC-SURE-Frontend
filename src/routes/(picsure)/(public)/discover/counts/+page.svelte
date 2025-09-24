@@ -14,17 +14,14 @@
   import { loadResources } from '$lib/stores/Resources';
   import type { CleanedStudyData } from '$lib/models/api/Studies';
   import { user, isUserLoggedIn } from '$lib/stores/User';
-  import { get } from 'svelte/store';
   import { features } from '$lib/configuration';
-  import type { User } from '$lib/models/User';
   import { lastStudyCrossCount } from '$lib/stores/ResultStore';
   import type { PageProps } from './$types';
 
   let { data: pageData }: PageProps = $props();
 
   let showLowCounts = $state(false);
-  const loggedInUser: User = get(user);
-  const useConsents = $derived(features.useQueryTemplate && isUserLoggedIn() && loggedInUser && loggedInUser?.queryTemplate);
+  const useConsents = $derived(features.useQueryTemplate && isUserLoggedIn() && $user?.queryTemplate);
 
   const columns: Column[] = [
     { dataElement: 'abbreviation', label: 'Abbreviation', class: 'font-medium' },
@@ -50,7 +47,7 @@
     let userConsents: string[] = [];
     
     if (useConsents) {
-      userConsents = (loggedInUser.queryTemplate?.categoryFilters as any)?.['\\_consents\\'] || [];
+      userConsents = ($user?.queryTemplate?.categoryFilters as any)?.['\\_consents\\'] || [];
     }
     
     if ($lastStudyCrossCount) {
@@ -66,7 +63,7 @@
         if (prefix === '_studies_consents' && accession) {
           const studyAccession = accession; // e.g., "phs001612"
           const consentCode = consent || '-1'; // e.g., "HMB-IRB-NPU" or "-1" if no consent code
-
+          
           if (!map.get(studyAccession)) {
             map.set(studyAccession, new Map());
           } else if (consentCode === '-1' && map.get(studyAccession)?.get('GRU')) {
@@ -83,13 +80,25 @@
         }
       });
 
+      const normalizeCountForSort = (value: string | number | undefined): number => {
+        if (value === undefined || value === null) return 0;
+        if (typeof value === 'number') return value < 10 ? 10 : value;
+        const trimmed = value.trim();
+        if (trimmed.startsWith('<')) return 10;
+        const match = trimmed.match(/\d+/);
+        const parsed = match ? Number(match[0]) : NaN;
+        return Number.isNaN(parsed) ? 0 : parsed;
+      };
+
       studies.forEach((study) => {
         study.hasAccess = userConsents.some((consent) => study.countsByConsent.includes(consent));
         const m = map.get(study.accession);
         study.countsByConsentMap = m
           ? Object.fromEntries(Array.from(m.entries()))
           : undefined;
+        study.totalCountSort = normalizeCountForSort(study.countsByConsentMap?.['-1']);
       });
+      studies.sort((a, b) => (b.totalCountSort ?? 0) - (a.totalCountSort ?? 0));
       return studies;
     }
     throw new Error('No Counts Found');
@@ -111,7 +120,7 @@
       </li>
       <li>
         If the consent results are less than 10 and the total study count is greater than 10, the
-        total count will be obfuscated by +/- 3%.
+        total count will be obfuscated by +/- 3.
       </li>
     </ul>
   </div>
@@ -141,9 +150,9 @@
       }}
       searchable={true}
       showPagination={true}
-      fullWidth={true}
+      fullWidth={false}
     />
-    <div class="flex justify-end mb-4">
+    <div class="flex justify-end m-4">
       <button
         class="btn preset-filled-primary-500"
         onclick={() => (showLowCounts = !showLowCounts)}
