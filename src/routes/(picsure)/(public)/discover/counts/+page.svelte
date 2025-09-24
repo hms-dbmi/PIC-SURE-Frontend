@@ -59,7 +59,7 @@
       Object.entries($lastStudyCrossCount).forEach(([key, count]) => {
         // Parse the consent name to extract study accession and consent code
         // Format: "\\_studies_consents\\phs001612\\HMB-IRB-NPU\\" or "\\_studies_consents\\phs003703\\"
-        const parts = key.split('\\').filter(Boolean); // split on '\' and drop empties
+        const parts = key.split('\\\\').filter(Boolean); // split on '\' and drop empties
 
         if (parts[0] === '_studies_consents' && parts.length >= 2) {
           const studyAccession = parts[1]; // e.g., "phs001612"
