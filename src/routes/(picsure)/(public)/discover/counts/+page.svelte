@@ -85,7 +85,10 @@
 
       studies.forEach((study) => {
         study.hasAccess = userConsents.some((consent) => study.countsByConsent.includes(consent));
-        study.countsByConsentMap = map.get(study.accession) || new Map();
+        const m = map.get(study.accession);
+        study.countsByConsentMap = m
+          ? Object.fromEntries(Array.from(m.entries()))
+          : undefined;
       });
       return studies;
     }
