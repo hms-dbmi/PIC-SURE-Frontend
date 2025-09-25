@@ -15,6 +15,13 @@
   const entries = $derived(data.cell ? Object.entries(data.cell) : []);
   const singleEntry = $derived(entries.length === 1 && entries[0][0] === '-1');
   const namedEntries = $derived(entries.filter(([code]) => code !== '-1'));
+  console.log('--------------------------------');
+  console.log(data);
+  console.log(entries);
+  console.log(singleEntry);
+  console.log(namedEntries);
+  console.log(LESS_THAN_10);
+  console.log('--------------------------------');
 </script>
 
 <div class="table-wrap">
@@ -22,11 +29,13 @@
     <tbody class="p-0 m-0">
       {#if data.cell}
         {#if singleEntry}
+        {@debug entries}
           <tr class="p-0 m-0 !bg-transparent">
             <td class="p-0 m-0 pl-4 text-end">{entries[0][1]}</td>
           </tr>
         {:else}
           {#each namedEntries as [consentCode, count]}
+          {@debug namedEntries}
             <tr class="p-0 m-0 !bg-transparent">
               <td class="p-0 m-0">{consentCode}</td>
               <td class="p-0 pl-4 text-end">{count}</td>
