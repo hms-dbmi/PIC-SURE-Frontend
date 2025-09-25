@@ -96,6 +96,7 @@ const cleanData = (data: StudyData[], rowData: DashboardRow[]): CleanedStudyData
         name: drawerData.studyFullname,
         countsByConsent: drawerData.consentGroups.map(cleanConsentGroupCode),
         accession: baseAccession,
+        fullAccession: accession,
         additional_info_link: String(firstRow.additional_info_link ?? ''),
       };
     })

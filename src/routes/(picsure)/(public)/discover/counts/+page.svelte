@@ -20,8 +20,7 @@
 
   let { data: pageData }: PageProps = $props();
 
-  let showLowCounts = $state(false);
-  const useConsents = $derived(features.useQueryTemplate && isUserLoggedIn() && $user?.queryTemplate);
+  let shouldShowLowCounts = $state(false);
 
   const columns: Column[] = [
     { dataElement: 'abbreviation', label: 'Abbreviation', class: 'font-medium' },
@@ -30,8 +29,7 @@
     { dataElement: 'countsByConsentMap', label: 'Counts by Consent Code' },
     { dataElement: 'access', label: 'Access', class: 'text-center' },
   ];
-
-
+  
   const studyDataPromise = loadStudyData();
 
   async function loadStudyData(): Promise<CleanedStudyData[]> {
@@ -45,7 +43,7 @@
 
     const studies = pageData.studies || [];
     let userConsents: string[] = [];
-    
+    const useConsents = features.useQueryTemplate && isUserLoggedIn() && $user?.queryTemplate;
     if (useConsents) {
       userConsents = ($user?.queryTemplate?.categoryFilters as any)?.['\\_consents\\'] || [];
     }
@@ -90,8 +88,12 @@
         return Number.isNaN(parsed) ? 0 : parsed;
       };
 
+      const consentifyAccession = (accession: string) => {
+        return accession.replace(/\.v\d+\.p\d+/, '');
+      };
+
       studies.forEach((study) => {
-        study.hasAccess = userConsents.some((consent) => study.countsByConsent.includes(consent));
+        study.hasAccess = userConsents.some((consent) => consentifyAccession(study.fullAccession).includes(consent));
         const m = map.get(study.accession);
         study.countsByConsentMap = m
           ? Object.fromEntries(Array.from(m.entries()))
@@ -136,7 +138,7 @@
     <StaticTable
       tableName="StudyCountsTable"
       data={
-        showLowCounts
+        shouldShowLowCounts
           ? studies.filter(
               (study) =>
                 Object.values(study.countsByConsentMap || {}).some((v) => v !== '< 10')
@@ -155,9 +157,9 @@
     <div class="flex justify-end m-4">
       <button
         class="btn preset-filled-primary-500"
-        onclick={() => (showLowCounts = !showLowCounts)}
+        onclick={() => (shouldShowLowCounts = !shouldShowLowCounts)}
       >
-        {showLowCounts ? 'Hide studies with counts < 10' : 'Show studies with counts < 10'}
+        {shouldShowLowCounts ? 'Hide studies with counts < 10' : 'Show studies with counts < 10'}
       </button>
     </div>
     {/if}

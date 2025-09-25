@@ -18,24 +18,24 @@
 </script>
 
 <div class="table-wrap">
-  <table class="table-reset">
+  <table class="table-reset w-full">
     <tbody class="p-0 m-0">
       {#if data.cell}
         {#if singleEntry}
           <tr class="p-0 m-0 !bg-transparent">
-            <td class="p-0 m-0">{entries[0][1]}</td>
+            <td class="p-0 m-0 pl-4 text-end">{entries[0][1]}</td>
           </tr>
         {:else}
           {#each namedEntries as [consentCode, count]}
             <tr class="p-0 m-0 !bg-transparent">
               <td class="p-0 m-0">{consentCode}</td>
-              <td class="p-0 ml-2">{count}</td>
+              <td class="p-0 pl-4 text-end">{count}</td>
             </tr>
           {/each}
         {/if}
       {:else}
         <tr class="p-0 m-0 !bg-transparent">
-          <td class="p-0 m-0 w-full text-right">{LESS_THAN_10}</td>
+          <td class="p-0 m-0 pl-4 text-end">{LESS_THAN_10}</td>
         </tr>
       {/if}
     </tbody>

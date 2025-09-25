@@ -222,7 +222,6 @@
             size="md"
             disabled={$totalParticipants < 10}
             active={page.url.pathname === '/discover/counts'}
-            class={$totalParticipants < 10 ? 'cursor-not-allowed' : ''}
             {...$totalParticipants < 10 && { 'aria-label': 'Cohort count is too small' }}
           />
         {/if}

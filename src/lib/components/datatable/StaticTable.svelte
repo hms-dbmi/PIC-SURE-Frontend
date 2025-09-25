@@ -19,6 +19,7 @@
 
   $effect(() => {
     handler.setRows(data);
+    handler.setPage(1);
   });
 </script>
 
