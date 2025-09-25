@@ -39,6 +39,7 @@
     getPicsureResultId,
     setPicsureResultId,
     setQueryRequest,
+    getQueryRequest,
   } from '$lib/ExportStepperManager.svelte';
 
   interface Props {
@@ -53,15 +54,15 @@
   let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
 
   const showTabbedAnalysisStep = $derived(
-    query.query.expectedResultType === 'DATAFRAME' && !features.explorer.enableRedcapExport,
+    getQueryRequest().query.expectedResultType === 'DATAFRAME' && !features.explorer.enableRedcapExport,
   );
   const showPfbExportStep = $derived(
-    query.query.expectedResultType === 'DATAFRAME_PFB' &&
+    getQueryRequest().query.expectedResultType === 'DATAFRAME_PFB' &&
       features.explorer.enablePfbExport &&
       !features.explorer.enableRedcapExport,
   );
   const showUserToken = $derived(
-    query.query.expectedResultType === 'DATAFRAME' &&
+    getQueryRequest().query.expectedResultType === 'DATAFRAME' &&
       features.analyzeApi &&
       !features.explorer.enableRedcapExport,
   );
@@ -82,7 +83,7 @@
 
     if (shouldAddConcepts) {
       $selectedConcepts.forEach((concept: string) => {
-        query.query.addField(concept);
+        getQueryRequest().query.addField(concept);
       });
     }
     if (stepName === 'start') {
