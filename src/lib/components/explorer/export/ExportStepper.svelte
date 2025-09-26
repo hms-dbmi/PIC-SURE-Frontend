@@ -40,6 +40,7 @@
     setPicsureResultId,
     setQueryRequest,
     getQueryRequest,
+    resetExportStepperState,
   } from '$lib/ExportStepperManager.svelte';
 
   interface Props {
@@ -145,8 +146,10 @@
         'https://redcap.tch.harvard.edu/redcap_edc/surveys/?s=EWYX8X8XX77TTWFR',
         '_blank',
       );
+      resetExportStepperState();
       goto('/explorer');
     } else {
+      resetExportStepperState();
       goto('/explorer');
     }
   }

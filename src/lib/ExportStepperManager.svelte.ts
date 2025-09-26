@@ -14,7 +14,7 @@ let lockDownload = $state(true);
 let picsureResultId: string | undefined = $state(undefined);
 let saveable = $state(false);
 
-export function setActiveType(type: ExpectedResultType) {
+export function setActiveType(type: ExpectedResultType | undefined) {
   activeType = type;
 }
 
@@ -68,4 +68,17 @@ export function setSaveable(canSave: boolean) {
 
 export function getSaveable() {
   return saveable;
+}
+
+export function resetExportStepperState() {
+  setActiveType(undefined);
+  setDatasetId(undefined);
+  setDatasetNameInput(undefined);
+  setLockDownload(true);
+  setPicsureResultId(undefined);
+  setSaveable(false);
+  setQueryRequest({
+    resourceUUID: '',
+    query: new Query(),
+  });
 }
