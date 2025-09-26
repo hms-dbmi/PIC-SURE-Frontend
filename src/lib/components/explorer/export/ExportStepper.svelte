@@ -27,7 +27,7 @@
   import RedcapStep from './RedcapStep.svelte';
   import PfbExport from './PfbExport.svelte';
   import AnalysisPlatformLinks from './AnalysisPlatformLinks.svelte';
-  import { selectedConcepts } from '$lib/stores/TreeStepConcepts';
+  import { selectedConcepts, addConcept } from '$lib/stores/TreeStepConcepts';
   import {
     getLockDownload,
     setLockDownload,
@@ -81,6 +81,10 @@
     const shouldAddConcepts =
       features.explorer.showTreeStep &&
       stepName === (features.federated ? 'save-dataset' : 'select-type');
+
+    if (stepName === 'select-variables') {
+      getQueryRequest().query.fields.forEach(addConcept);
+    }
 
     if (shouldAddConcepts) {
       $selectedConcepts.forEach((concept: string) => {
