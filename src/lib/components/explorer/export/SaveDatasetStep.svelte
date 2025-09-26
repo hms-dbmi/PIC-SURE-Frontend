@@ -6,7 +6,6 @@
   import type { DataSetResponse } from '$lib/models/Dataset';
   import * as api from '$lib/api';
   import { Picsure } from '$lib/paths';
-  import { exports } from '$lib/stores/Export';
   import { stepperState } from '$lib/stores/Stepper';
   import {
     getActiveType,
@@ -51,7 +50,6 @@
     }
 
     try {
-      getQueryRequest().query.fields = $exports.map((exp) => exp.conceptPath);
       getQueryRequest().query.expectedResultType = getActiveType() || 'DATAFRAME';
       setDatasetId('');
       requestUpdate(() =>

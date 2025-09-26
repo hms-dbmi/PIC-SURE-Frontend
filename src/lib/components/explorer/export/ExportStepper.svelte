@@ -27,7 +27,7 @@
   import RedcapStep from './RedcapStep.svelte';
   import PfbExport from './PfbExport.svelte';
   import AnalysisPlatformLinks from './AnalysisPlatformLinks.svelte';
-  import { selectedConcepts } from '$lib/stores/TreeStepConcepts';
+  import { selectedConcepts, addConcept } from '$lib/stores/TreeStepConcepts';
   import {
     getLockDownload,
     setLockDownload,
@@ -39,6 +39,8 @@
     getPicsureResultId,
     setPicsureResultId,
     setQueryRequest,
+    getQueryRequest,
+    resetExportStepperState,
   } from '$lib/ExportStepperManager.svelte';
 
   interface Props {
@@ -53,15 +55,16 @@
   let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
 
   const showTabbedAnalysisStep = $derived(
-    query.query.expectedResultType === 'DATAFRAME' && !features.explorer.enableRedcapExport,
+    getQueryRequest().query.expectedResultType === 'DATAFRAME' &&
+      !features.explorer.enableRedcapExport,
   );
   const showPfbExportStep = $derived(
-    query.query.expectedResultType === 'DATAFRAME_PFB' &&
+    getQueryRequest().query.expectedResultType === 'DATAFRAME_PFB' &&
       features.explorer.enablePfbExport &&
       !features.explorer.enableRedcapExport,
   );
   const showUserToken = $derived(
-    query.query.expectedResultType === 'DATAFRAME' &&
+    getQueryRequest().query.expectedResultType === 'DATAFRAME' &&
       features.analyzeApi &&
       !features.explorer.enableRedcapExport,
   );
@@ -80,9 +83,13 @@
       features.explorer.showTreeStep &&
       stepName === (features.federated ? 'save-dataset' : 'select-type');
 
+    if (stepName === 'select-variables') {
+      getQueryRequest().query.fields.forEach(addConcept);
+    }
+
     if (shouldAddConcepts) {
       $selectedConcepts.forEach((concept: string) => {
-        query.query.addField(concept);
+        getQueryRequest().query.addField(concept);
       });
     }
     if (stepName === 'start') {
@@ -93,6 +100,9 @@
         .map((info) => ({ resourceId: info?.resourceId, name: info?.name, queryId: info?.queryId }))
         .filter((v) => v.queryId);
       if (getDatasetId()) {
+        if (!getPicsureResultId()) {
+          setPicsureResultId(getDatasetId());
+        }
         saveDatasetPromise = createDatasetName(
           getDatasetId() ?? '',
           getDatasetNameInput() ?? '',
@@ -141,8 +151,10 @@
         'https://redcap.tch.harvard.edu/redcap_edc/surveys/?s=EWYX8X8XX77TTWFR',
         '_blank',
       );
+      resetExportStepperState();
       goto('/explorer');
     } else {
+      resetExportStepperState();
       goto('/explorer');
     }
   }
