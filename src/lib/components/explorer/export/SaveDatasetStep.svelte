@@ -6,7 +6,6 @@
   import type { DataSetResponse } from '$lib/models/Dataset';
   import * as api from '$lib/api';
   import { Picsure } from '$lib/paths';
-  import { exports } from '$lib/stores/Export';
   import { stepperState } from '$lib/stores/Stepper';
   import {
     getActiveType,

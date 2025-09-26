@@ -55,7 +55,8 @@
   let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
 
   const showTabbedAnalysisStep = $derived(
-    getQueryRequest().query.expectedResultType === 'DATAFRAME' && !features.explorer.enableRedcapExport,
+    getQueryRequest().query.expectedResultType === 'DATAFRAME' &&
+      !features.explorer.enableRedcapExport,
   );
   const showPfbExportStep = $derived(
     getQueryRequest().query.expectedResultType === 'DATAFRAME_PFB' &&
