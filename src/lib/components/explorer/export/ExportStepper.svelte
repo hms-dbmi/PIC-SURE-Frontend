@@ -94,6 +94,9 @@
         .map((info) => ({ resourceId: info?.resourceId, name: info?.name, queryId: info?.queryId }))
         .filter((v) => v.queryId);
       if (getDatasetId()) {
+        if (!getPicsureResultId()) {
+          setPicsureResultId(getDatasetId());
+        }
         saveDatasetPromise = createDatasetName(
           getDatasetId() ?? '',
           getDatasetNameInput() ?? '',

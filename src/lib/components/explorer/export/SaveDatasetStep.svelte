@@ -51,7 +51,6 @@
     }
 
     try {
-      // getQueryRequest().query.fields = $exports.map((exp) => exp.conceptPath);
       getQueryRequest().query.expectedResultType = getActiveType() || 'DATAFRAME';
       setDatasetId('');
       requestUpdate(() =>
