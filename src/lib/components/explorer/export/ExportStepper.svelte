@@ -82,7 +82,7 @@
 
   function updateConcepts() {
     const conceptsToRemove = prevConcepts.filter(
-      (concept: string) => !$selectedConcepts.includes(concept)
+      (concept: string) => !$selectedConcepts.includes(concept),
     );
     conceptsToRemove.forEach((concept: string) => {
       const fieldIndex = getQueryRequest().query.fields.indexOf(concept);
@@ -103,7 +103,6 @@
 
     if (stepName === 'select-variables') {
       getQueryRequest().query.fields.forEach(addConcept);
-      
     }
 
     if (shouldUpdateConcepts) {
