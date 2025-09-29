@@ -105,13 +105,16 @@
           </div>
           <div class="flex items-center m-2">
             <div class="flex items-center">
-              <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
               {#await datasetIdPromise}
+                <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
                 <Loading ring size="micro" label={processingMessage} />
               {:then}
+                <label for="dataset-id" class="font-bold mr-2">Dataset ID:</label>
                 <div id="dataset-id" class="mr-4">{getDatasetId()}</div>
               {:catch}
-                <div>An error occurred while getting the dataset ID. Please try again later.</div>
+                <ErrorAlert
+                  title="An error occurred while getting the dataset ID. Please try again later."
+                />
               {/await}
             </div>
           </div>
