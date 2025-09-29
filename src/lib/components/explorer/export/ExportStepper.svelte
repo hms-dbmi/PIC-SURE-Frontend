@@ -69,6 +69,8 @@
       !features.explorer.enableRedcapExport,
   );
 
+  let prevConcepts: string[] = $state([]);
+
   onMount(async () => {
     // Auto select csv export when pfb feature is disabled.
     setQueryRequest(query);
@@ -78,19 +80,34 @@
     }
   });
 
+  function updateConcepts() {
+    const conceptsToRemove = prevConcepts.filter(
+      (concept: string) => !$selectedConcepts.includes(concept)
+    );
+    conceptsToRemove.forEach((concept: string) => {
+      const fieldIndex = getQueryRequest().query.fields.indexOf(concept);
+      if (fieldIndex > -1) {
+        getQueryRequest().query.fields.splice(fieldIndex, 1);
+      }
+    });
+    prevConcepts = $selectedConcepts;
+    $selectedConcepts.forEach((concept: string) => {
+      getQueryRequest().query.addField(concept);
+    });
+  }
+
   async function onNextHandler(_step: number, stepName: string): Promise<void> {
-    const shouldAddConcepts =
+    const shouldUpdateConcepts =
       features.explorer.showTreeStep &&
       stepName === (features.federated ? 'save-dataset' : 'select-type');
 
     if (stepName === 'select-variables') {
       getQueryRequest().query.fields.forEach(addConcept);
+      
     }
 
-    if (shouldAddConcepts) {
-      $selectedConcepts.forEach((concept: string) => {
-        getQueryRequest().query.addField(concept);
-      });
+    if (shouldUpdateConcepts) {
+      updateConcepts();
     }
     if (stepName === 'start') {
       if (features.explorer.enableRedcapExport) {
