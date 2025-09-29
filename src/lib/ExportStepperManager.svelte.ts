@@ -11,7 +11,6 @@ let activeType: ExpectedResultType | undefined = $state(undefined);
 let datasetId: string | undefined = $state(undefined);
 let datasetNameInput: string | undefined = $state(undefined);
 let lockDownload = $state(true);
-let picsureResultId: string | undefined = $state(undefined);
 let saveable = $state(false);
 
 export function setActiveType(type: ExpectedResultType | undefined) {
@@ -46,14 +45,6 @@ export function getLockDownload() {
   return lockDownload;
 }
 
-export function setPicsureResultId(id: string | undefined) {
-  picsureResultId = id;
-}
-
-export function getPicsureResultId() {
-  return picsureResultId;
-}
-
 export function getQueryRequest() {
   return queryRequest;
 }
@@ -75,7 +66,6 @@ export function resetExportStepperState() {
   setDatasetId(undefined);
   setDatasetNameInput(undefined);
   setLockDownload(true);
-  setPicsureResultId(undefined);
   setSaveable(false);
   setQueryRequest({
     resourceUUID: '',

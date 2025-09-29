@@ -36,8 +36,6 @@
     getSaveable,
     getActiveType,
     setActiveType,
-    getPicsureResultId,
-    setPicsureResultId,
     setQueryRequest,
     getQueryRequest,
     resetExportStepperState,
@@ -116,9 +114,6 @@
         .map((info) => ({ resourceId: info?.resourceId, name: info?.name, queryId: info?.queryId }))
         .filter((v) => v.queryId);
       if (getDatasetId()) {
-        if (!getPicsureResultId()) {
-          setPicsureResultId(getDatasetId());
-        }
         saveDatasetPromise = createDatasetName(
           getDatasetId() ?? '',
           getDatasetNameInput() ?? '',
@@ -128,7 +123,7 @@
             statusPromise = Promise.resolve();
             return data;
           } else {
-            statusPromise = checkExportStatus(getPicsureResultId());
+            statusPromise = checkExportStatus(getDatasetId());
           }
           return data;
         });
@@ -155,7 +150,6 @@
             return Promise.reject(res.status);
           }
           console.log(res);
-          setPicsureResultId(res.resultMetadata.picsureQueryId);
           setLockDownload(false);
         },
       );
