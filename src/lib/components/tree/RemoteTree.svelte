@@ -55,7 +55,7 @@
 
     allSelected: boolean = $derived.by(() => {
       if (this.isLeaf) return this.selected;
-      if (this.children.length === 0) return this.selected; // If no children loaded, use direct selection state
+      if (this.children.length === 0) return this.selected;
       return this.children.every((child: RemoteTreeNodeClass) => child.allSelected);
     });
 
@@ -66,6 +66,7 @@
 
     indeterminant: boolean = $derived.by(() => {
       if (this.isLeaf) return false;
+      if (this.children.length === 0) return false;
       return this.someSelected && !this.allSelected;
     });
 
