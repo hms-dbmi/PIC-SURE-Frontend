@@ -151,7 +151,6 @@
           } else if (res.status !== 'SUCCESS' && res.status !== 'AVAILABLE') {
             return checkExportStatus(res.picsureResultId || lastPicsureResultId);
           }
-          console.log(res);
           setLockDownload(false);
           return Promise.resolve();
         },
