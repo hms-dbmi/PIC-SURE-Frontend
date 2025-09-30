@@ -45,7 +45,7 @@
     query: QueryRequestInterface;
     rows?: ExportRowInterface[];
   }
-  
+
   const PROMISE_WAIT_INTERVAL = 7;
 
   const { query, rows = [] }: Props = $props();
