@@ -45,10 +45,13 @@
     query: QueryRequestInterface;
     rows?: ExportRowInterface[];
   }
+  
+  const PROMISE_WAIT_INTERVAL = 7;
 
   const { query, rows = [] }: Props = $props();
 
   let statusPromise: Promise<unknown> = $state(Promise.resolve());
+  let retries: number = $state(0);
   let preparePromise: Promise<void> = $state(Promise.resolve());
   let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
 
@@ -119,11 +122,12 @@
           getDatasetNameInput() ?? '',
           siteQueryIds.length > 0 ? siteQueryIds : undefined,
         ).then((data: DataSet) => {
+          retries = 0;
           if (features.federated) {
             statusPromise = Promise.resolve();
             return data;
           } else {
-            statusPromise = checkExportStatus(getDatasetId());
+            statusPromise = checkExportStatus(getDatasetId(), true);
           }
           return data;
         });
@@ -134,9 +138,10 @@
     return;
   }
 
-  async function checkExportStatus(lastPicsureResultId?: string) {
+  async function checkExportStatus(lastPicsureResultId?: string, retry: boolean = false) {
     const statusId = lastPicsureResultId || getDatasetId();
     const queryFragment = `/${statusId}/status`;
+    let interval: NodeJS.Timeout;
     return api
       .post(`${Picsure.Query}${queryFragment}`, query)
       .then(
@@ -147,11 +152,18 @@
         }): Promise<void> => {
           if (res.status === 'ERROR') {
             setLockDownload(true);
+            clearInterval(interval);
             return Promise.reject(res.status);
           } else if (res.status !== 'SUCCESS' && res.status !== 'AVAILABLE') {
-            return checkExportStatus(res.picsureResultId || lastPicsureResultId);
+            if (retry) {
+              interval = setInterval(() => {
+                retries++;
+              }, PROMISE_WAIT_INTERVAL * 1000);
+            }
+            return checkExportStatus(res.picsureResultId || lastPicsureResultId, retries < 10);
           }
           setLockDownload(false);
+          clearInterval(interval);
           return Promise.resolve();
         },
       );
