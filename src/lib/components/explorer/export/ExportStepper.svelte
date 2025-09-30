@@ -149,7 +149,7 @@
             setLockDownload(true);
             return Promise.reject(res.status);
           } else if (res.status !== 'SUCCESS' && res.status !== 'AVAILABLE') {
-            return checkExportStatus(res.resultMetadata.picsureQueryId || lastPicsureResultId);
+            return checkExportStatus(res.picsureResultId || lastPicsureResultId);
           }
           console.log(res);
           setLockDownload(false);
