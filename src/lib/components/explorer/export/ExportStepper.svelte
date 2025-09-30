@@ -144,13 +144,16 @@
           picsureResultId: string;
           status: string;
           resultMetadata: { picsureQueryId: string };
-        }) => {
+        }): Promise<void> => {
           if (res.status === 'ERROR') {
             setLockDownload(true);
             return Promise.reject(res.status);
+          } else if (res.status !== 'SUCCESS' && res.status !== 'AVAILABLE') {
+              return checkExportStatus(res.resultMetadata.picsureQueryId || lastPicsureResultId);
           }
           console.log(res);
           setLockDownload(false);
+          return Promise.resolve();
         },
       );
   }
