@@ -55,6 +55,7 @@ export async function withBackoff<T>(
     try {
       return await fn();
     } catch (error) {
+      console.warn('Backoff caught: ', error);
       lastError = error;
 
       // Check if we should retry this error

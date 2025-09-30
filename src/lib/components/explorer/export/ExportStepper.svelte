@@ -159,9 +159,9 @@
         setLockDownload(false);
         return;
       },
-      10,
-      1000,
-      30000,
+      15,
+      500,
+      60000,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       (error, _attempt) => {
         return !(
@@ -274,7 +274,11 @@
           <ErrorAlert
             title="An error occurred while saving your dataset. Please try again. If this problem persists, please
           contact an administrator."
-          />
+          >
+            {#if e.includes('Export not ready')}
+              <p>{e}</p>
+            {/if}
+          </ErrorAlert>
           <div class="hidden">{e}</div>
         </div>
       {/await}
