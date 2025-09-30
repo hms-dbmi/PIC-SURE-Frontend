@@ -12,6 +12,7 @@
   import { totalParticipants } from '$lib/stores/ResultStore';
   import { createDatasetName } from '$lib/services/datasets';
   import { federatedQueryMap } from '$lib/stores/Dataset';
+  import { withBackoff } from '$lib/utilities/backoff';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
@@ -46,12 +47,9 @@
     rows?: ExportRowInterface[];
   }
 
-  const PROMISE_WAIT_INTERVAL = 7;
-
   const { query, rows = [] }: Props = $props();
 
   let statusPromise: Promise<unknown> = $state(Promise.resolve());
-  let retries: number = $state(0);
   let preparePromise: Promise<void> = $state(Promise.resolve());
   let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
 
@@ -122,12 +120,11 @@
           getDatasetNameInput() ?? '',
           siteQueryIds.length > 0 ? siteQueryIds : undefined,
         ).then((data: DataSet) => {
-          retries = 0;
           if (features.federated) {
             statusPromise = Promise.resolve();
             return data;
           } else {
-            statusPromise = checkExportStatus(getDatasetId(), true);
+            statusPromise = checkExportStatus(getDatasetId());
           }
           return data;
         });
@@ -138,35 +135,40 @@
     return;
   }
 
-  async function checkExportStatus(lastPicsureResultId?: string, retry: boolean = false) {
+  async function checkExportStatus(lastPicsureResultId?: string): Promise<void> {
     const statusId = lastPicsureResultId || getDatasetId();
     const queryFragment = `/${statusId}/status`;
-    let interval: NodeJS.Timeout;
-    return api
-      .post(`${Picsure.Query}${queryFragment}`, query)
-      .then(
-        (res: {
+
+    return withBackoff(
+      async () => {
+        const res = (await api.post(`${Picsure.Query}${queryFragment}`, query)) as {
           picsureResultId: string;
           status: string;
           resultMetadata: { picsureQueryId: string };
-        }): Promise<void> => {
-          if (res.status === 'ERROR') {
-            setLockDownload(true);
-            clearInterval(interval);
-            return Promise.reject(res.status);
-          } else if (res.status !== 'SUCCESS' && res.status !== 'AVAILABLE') {
-            if (retry) {
-              interval = setInterval(() => {
-                retries++;
-              }, PROMISE_WAIT_INTERVAL * 1000);
-            }
-            return checkExportStatus(res.picsureResultId || lastPicsureResultId, retries < 10);
-          }
-          setLockDownload(false);
-          clearInterval(interval);
-          return Promise.resolve();
-        },
-      );
+        };
+
+        if (res.status === 'ERROR') {
+          setLockDownload(true);
+          throw new Error(`Export failed with status: ${res.status}`);
+        }
+
+        if (res.status !== 'SUCCESS' && res.status !== 'AVAILABLE') {
+          throw new Error(`Export not ready. Status: ${res.status}`);
+        }
+
+        setLockDownload(false);
+        return;
+      },
+      10,
+      1000,
+      30000,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      (error, _attempt) => {
+        return !(
+          error instanceof Error && error.message.includes('Export failed with status: ERROR')
+        );
+      },
+    );
   }
 
   function onComplete() {
