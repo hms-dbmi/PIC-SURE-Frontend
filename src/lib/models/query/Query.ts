@@ -1,5 +1,6 @@
 import type { Indexable } from '$lib/types';
 import { type SNP } from '$lib/models/GenomeFilter';
+type UUID = `${string}-${string}-${string}-${string}-${string}` | null;
 
 export type ExpectedResultType =
   | 'COUNT'
@@ -148,5 +149,71 @@ export class Query implements QueryInterface {
       this.requiredFields.length +
       this.anyRecordOf.length
     );
+  }
+}
+
+export type PhenotypicFilterType = 'REQUIRED' | 'FILTER' | 'ANY_RECORD_OF';
+export type Operator = 'AND' | 'OR';
+export type PhenotypicClause = PhenotypicSubqueryInterface | PhenotypicFilterInterface;
+
+export interface QueryInterfaceV3 {
+  select: string[];
+  authorizationFilters: AuthorizationFilterInterface[];
+  phenotypicClause: PhenotypicClause | null;
+  genomicFilters: GenomicFilterInterfacev3[];
+  expectedResultType: ExpectedResultType;
+  picsureId: UUID;
+  id: UUID;
+}
+
+export interface PhenotypicClauseInterface {
+  type: string;
+}
+export interface AuthorizationFilterInterface {
+  conceptPath: string;
+  values: string[];
+}
+
+export interface PhenotypicFilterInterface extends PhenotypicClauseInterface {
+  type: 'PhenotypicFilter';
+  phenotypicFilterType: PhenotypicFilterType;
+  conceptPath: string;
+  values: string[];
+  min: number | undefined;
+  max: number | undefined;
+  not: boolean;
+}
+
+export interface PhenotypicSubqueryInterface extends PhenotypicClauseInterface {
+  type: 'PhenotypicSubquery';
+  not: boolean | null;
+  phenotypicClauses: PhenotypicClause[];
+  operator: Operator;
+}
+
+export interface GenomicFilterInterfacev3 {
+  key: string;
+  values?: string[];
+  min?: number;
+  max?: number;
+}
+
+export class QueryV3 implements QueryInterfaceV3 {
+  select: string[];
+  authorizationFilters: AuthorizationFilterInterface[];
+  phenotypicClause: PhenotypicClause | null;
+  genomicFilters: GenomicFilterInterfacev3[];
+  expectedResultType: ExpectedResultType;
+  picsureId: UUID;
+  id: UUID;
+
+  constructor(newQuery?: QueryInterfaceV3) {
+    this.select = newQuery?.select || [];
+    this.authorizationFilters = newQuery?.authorizationFilters || [];
+    this.phenotypicClause = newQuery?.phenotypicClause || null;
+    this.genomicFilters = newQuery?.genomicFilters || [];
+    this.expectedResultType = newQuery?.expectedResultType || 'COUNT';
+    this.picsureId = newQuery?.picsureId || null;
+    this.id = newQuery?.id || null;
   }
 }
