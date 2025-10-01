@@ -9,6 +9,7 @@
     type?: 'question' | 'info' | 'exclamation' | 'xmark';
     color?: string;
     size?: string;
+    popoverSize?: string;
     children?: Snippet;
   }
 
@@ -18,13 +19,14 @@
     type = 'question',
     color = 'primary',
     size = '',
+    popoverSize = '',
     children,
   }: Props = $props();
 </script>
 
 {#if text || children}
   <div data-testid={id}>
-    <Popover data-testid="{id}-content" triggerTypes={['click', 'hover']}>
+    <Popover data-testid="{id}-content" triggerTypes={['click', 'hover']} size={popoverSize}>
       {#snippet trigger()}
         <i class="fa-solid fa-circle-{type} text-{color}-950-50 hover:text-{color}-300-700 {size}"
         ></i>

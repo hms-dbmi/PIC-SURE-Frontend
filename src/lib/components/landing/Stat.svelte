@@ -78,6 +78,7 @@
                     color="warning"
                     id="result-count-error"
                     size="text-xs"
+                    popoverSize="text-sm"
                     text="The following sites are not included as they did not return patient counts: {failedSites}."
                   />
                 {/if}

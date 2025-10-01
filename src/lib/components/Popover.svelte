@@ -27,6 +27,7 @@
     triggerTypes?: string[];
     placement?: Placement;
     color?: string;
+    size?: string;
     'data-testid'?: string;
     trigger?: Snippet;
     children?: Snippet;
@@ -41,6 +42,7 @@
     triggerTypes = ['click'],
     placement = 'top',
     color = 'surface',
+    size = 'text-sm',
     'data-testid': testid = '',
     trigger,
     children,
@@ -98,9 +100,9 @@
 {#if open}
   <div
     bind:this={floating.elements.floating}
-    class="popover"
+    class="popover {size}"
     aria-label={title || 'Help popover'}
-    style="background-color: var(--color-{color}-100); opacity: 0.90;{floating.floatingStyles}"
+    style="background-color: var(--color-{color}-100); opacity: 0.95;{floating.floatingStyles}"
     {...interactions.getFloatingProps()}
     data-testid={testid}
     transition:fade={{ duration: 200 }}
