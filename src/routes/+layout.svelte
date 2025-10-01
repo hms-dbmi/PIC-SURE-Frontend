@@ -10,7 +10,8 @@
   initializeBranding();
 </script>
 
-<div class="alert-banner">
+<main class="w-full h-full">
+  <div class="alert-banner">
   <p>
     Because of a lapse in government funding, the information on this website may not be up to date,
     transactions submitted via the website may not be processed, and the agency may not be able to
@@ -25,8 +26,6 @@
     <a href="http://opm.gov/" class="anchor" target="_blank" rel="noopener noreferrer">opm.gov.</a>
   </p>
 </div>
-
-<main class="w-full h-full">
   {@render children?.()}
   <GoogleTracking />
 </main>
