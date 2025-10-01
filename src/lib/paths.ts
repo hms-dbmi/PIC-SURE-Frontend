@@ -18,6 +18,8 @@ export const Picsure = {
   Resources: `${PREFIX}/resource`,
   Query: QUERY,
   QuerySync: `${QUERY}/sync`,
+  QueryV3: `${PREFIX}/v3/query`,
+  QueryV3Sync: `${PREFIX}/v3/query/sync`,
   Uploader: {
     Upload: `${UPLOADER}/upload`,
     Sites: `${UPLOADER}/sites`,

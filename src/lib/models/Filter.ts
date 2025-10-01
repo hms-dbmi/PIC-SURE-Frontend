@@ -3,7 +3,7 @@ import type { SearchResult } from '$lib/models/Search';
 import { GenotypeMap, type SNP } from '$lib/models/GenomeFilter';
 import { AnyRecordOfFilterError } from '$lib/types';
 
-type FilterType =
+export type FilterType =
   | 'Categorical'
   | 'AnyRecordOf'
   | 'numeric'
@@ -46,6 +46,8 @@ export interface GenomicFilterInterface extends FilterInterface {
   Gene_with_variant?: string[];
   Variant_consequence_calculated?: string[];
   Variant_frequency_as_text?: string[];
+  min?: string;
+  max?: string;
 }
 
 export interface SnpFilterInterface extends FilterInterface {
@@ -154,16 +156,26 @@ export function createGenomicFilter(geneFilter: {
   Gene_with_variant?: string[];
   Variant_consequence_calculated?: string[];
   Variant_frequency_as_text?: string[];
+  min?: string;
+  max?: string;
 }) {
   const orJoin = (key: string, arr: string[] | undefined) =>
     arr && arr.length > 0 ? `${key}: ${arr.join(', ')}` : undefined;
-  const description = [
+  const descriptionParts = [
     orJoin('Gene with variant', geneFilter.Gene_with_variant),
     orJoin('Variant frequency', geneFilter.Variant_frequency_as_text),
     orJoin('Consequence Group by severity', geneFilter.Variant_consequence_calculated),
-  ]
-    .filter((x) => x)
-    .join('; ');
+  ].filter((x) => x);
+
+  // Add min/max description if present
+  if (geneFilter.min !== undefined || geneFilter.max !== undefined) {
+    const rangeParts = [];
+    if (geneFilter.min !== undefined) rangeParts.push(`min: ${geneFilter.min}`);
+    if (geneFilter.max !== undefined) rangeParts.push(`max: ${geneFilter.max}`);
+    descriptionParts.push(`Range: ${rangeParts.join(', ')}`);
+  }
+
+  const description = descriptionParts.join('; ');
 
   const filter: Filter = {
     uuid: uuidv4(),
@@ -175,6 +187,8 @@ export function createGenomicFilter(geneFilter: {
     Gene_with_variant: geneFilter.Gene_with_variant,
     Variant_consequence_calculated: geneFilter.Variant_consequence_calculated,
     Variant_frequency_as_text: geneFilter.Variant_frequency_as_text,
+    min: geneFilter.min,
+    max: geneFilter.max,
     allowFiltering: true,
     dataset: '',
   };
