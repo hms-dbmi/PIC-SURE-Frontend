@@ -614,14 +614,14 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "10c44n2"
+  version_hash: "s1cgt4"
 };
 async function get_hooks() {
   let handle;
   let handleFetch;
   let handleError;
   let init;
-  ({ handle, handleFetch, handleError, init } = await import('./chunks/hooks.server-BYxyggGo.js'));
+  ({ handle, handleFetch, handleError, init } = await import('./chunks/hooks.server-BNB9m_Ev.js'));
   let reroute;
   let transport;
   return {
