@@ -2,6 +2,7 @@
   import Summary from '$lib/components/explorer/export/Summary.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import { getActiveType, setActiveType } from '$lib/ExportStepperManager.svelte';
+  import { features } from '$lib/configuration';
 </script>
 
 <section class="flex flex-col w-full h-full items-center">
@@ -15,6 +16,16 @@
       active={getActiveType() === 'DATAFRAME'}
       onclick={() => setActiveType('DATAFRAME')}
     ></CardButton>
+    {#if features.explorer.enableExportTimeseries}
+      <CardButton
+        data-testid="timeseries-export-option"
+        title="Export as Timeseries"
+        subtitle="Export as an R or Python data frame or a comma-separated values file including timestamps"
+        size="other"
+        active={getActiveType() === 'DATAFRAME_TIMESERIES'}
+        onclick={() => setActiveType('DATAFRAME_TIMESERIES')}
+      ></CardButton>
+    {/if}
     <CardButton
       data-testid="pfb-export-option"
       title="Export as PFB"

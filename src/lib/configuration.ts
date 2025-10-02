@@ -181,6 +181,7 @@ export const features: Indexable = {
     enableSampleIdCheckbox: import.meta.env?.VITE_ENABLE_SAMPLE_ID_CHECKBOX === 'true',
     enableCohortDetails: import.meta.env?.VITE_ENABLE_COHORT_DETAILS === 'true',
     showTreeStep: import.meta.env?.VITE_SHOW_TREE_STEP === 'true',
+    enableExportTimeseries: import.meta.env?.VITE_EXPORT_TIMESERIES !== 'false', // default true
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
