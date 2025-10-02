@@ -111,15 +111,21 @@ export class Query implements QueryInterface {
   }
 
   addRequiredField(field: string) {
-    this.requiredFields.push(field);
+    if (!this.requiredFields.includes(field)) {
+      this.requiredFields.push(field);
+    }
   }
 
   addField(field: string) {
-    this.fields.push(field);
+    if (!this.fields.includes(field)) {
+      this.fields.push(field);
+    }
   }
 
   addAnyRecordOf(field: string) {
-    this.anyRecordOf.push(field);
+    if (!this.anyRecordOf.includes(field)) {
+      this.anyRecordOf.push(field);
+    }
   }
 
   hasGenomicFilter() {

@@ -12,6 +12,7 @@
   import { totalParticipants } from '$lib/stores/ResultStore';
   import { createDatasetName } from '$lib/services/datasets';
   import { federatedQueryMap } from '$lib/stores/Dataset';
+  import { withBackoff } from '$lib/utilities/backoff';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
@@ -27,7 +28,7 @@
   import RedcapStep from './RedcapStep.svelte';
   import PfbExport from './PfbExport.svelte';
   import AnalysisPlatformLinks from './AnalysisPlatformLinks.svelte';
-  import { selectedConcepts } from '$lib/stores/TreeStepConcepts';
+  import { selectedConcepts, addConcept } from '$lib/stores/TreeStepConcepts';
   import {
     getLockDownload,
     setLockDownload,
@@ -36,9 +37,9 @@
     getSaveable,
     getActiveType,
     setActiveType,
-    getPicsureResultId,
-    setPicsureResultId,
     setQueryRequest,
+    getQueryRequest,
+    resetExportStepperState,
   } from '$lib/ExportStepperManager.svelte';
 
   interface Props {
@@ -53,18 +54,21 @@
   let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
 
   const showTabbedAnalysisStep = $derived(
-    query.query.expectedResultType === 'DATAFRAME' && !features.explorer.enableRedcapExport,
+    getQueryRequest().query.expectedResultType === 'DATAFRAME' &&
+      !features.explorer.enableRedcapExport,
   );
   const showPfbExportStep = $derived(
-    query.query.expectedResultType === 'DATAFRAME_PFB' &&
+    getQueryRequest().query.expectedResultType === 'DATAFRAME_PFB' &&
       features.explorer.enablePfbExport &&
       !features.explorer.enableRedcapExport,
   );
   const showUserToken = $derived(
-    query.query.expectedResultType === 'DATAFRAME' &&
+    getQueryRequest().query.expectedResultType === 'DATAFRAME' &&
       features.analyzeApi &&
       !features.explorer.enableRedcapExport,
   );
+
+  let prevConcepts: string[] = $state([]);
 
   onMount(async () => {
     // Auto select csv export when pfb feature is disabled.
@@ -75,15 +79,33 @@
     }
   });
 
+  function updateConcepts() {
+    const conceptsToRemove = prevConcepts.filter(
+      (concept: string) => !$selectedConcepts.includes(concept),
+    );
+    conceptsToRemove.forEach((concept: string) => {
+      const fieldIndex = getQueryRequest().query.fields.indexOf(concept);
+      if (fieldIndex > -1) {
+        getQueryRequest().query.fields.splice(fieldIndex, 1);
+      }
+    });
+    prevConcepts = $selectedConcepts;
+    $selectedConcepts.forEach((concept: string) => {
+      getQueryRequest().query.addField(concept);
+    });
+  }
+
   async function onNextHandler(_step: number, stepName: string): Promise<void> {
-    const shouldAddConcepts =
+    const shouldUpdateConcepts =
       features.explorer.showTreeStep &&
       stepName === (features.federated ? 'save-dataset' : 'select-type');
 
-    if (shouldAddConcepts) {
-      $selectedConcepts.forEach((concept: string) => {
-        query.query.addField(concept);
-      });
+    if (stepName === 'select-variables') {
+      getQueryRequest().query.fields.forEach(addConcept);
+    }
+
+    if (shouldUpdateConcepts) {
+      updateConcepts();
     }
     if (stepName === 'start') {
       if (features.explorer.enableRedcapExport) {
@@ -102,7 +124,7 @@
             statusPromise = Promise.resolve();
             return data;
           } else {
-            statusPromise = checkExportStatus(getPicsureResultId());
+            statusPromise = checkExportStatus(getDatasetId());
           }
           return data;
         });
@@ -113,26 +135,40 @@
     return;
   }
 
-  async function checkExportStatus(lastPicsureResultId?: string) {
+  async function checkExportStatus(lastPicsureResultId?: string): Promise<void> {
     const statusId = lastPicsureResultId || getDatasetId();
     const queryFragment = `/${statusId}/status`;
-    return api
-      .post(`${Picsure.Query}${queryFragment}`, query)
-      .then(
-        (res: {
+
+    return withBackoff(
+      async () => {
+        const res = (await api.post(`${Picsure.Query}${queryFragment}`, query)) as {
           picsureResultId: string;
           status: string;
           resultMetadata: { picsureQueryId: string };
-        }) => {
-          if (res.status === 'ERROR') {
-            setLockDownload(true);
-            return Promise.reject(res.status);
-          }
-          console.log(res);
-          setPicsureResultId(res.resultMetadata.picsureQueryId);
-          setLockDownload(false);
-        },
-      );
+        };
+
+        if (res.status === 'ERROR') {
+          setLockDownload(true);
+          throw new Error(`Export failed with status: ${res.status}`);
+        }
+
+        if (res.status !== 'SUCCESS' && res.status !== 'AVAILABLE') {
+          throw new Error(`Export not ready. Status: ${res.status}`);
+        }
+
+        setLockDownload(false);
+        return;
+      },
+      15,
+      500,
+      60000,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      (error, _attempt) => {
+        return !(
+          error instanceof Error && error.message.includes('Export failed with status: ERROR')
+        );
+      },
+    );
   }
 
   function onComplete() {
@@ -141,8 +177,10 @@
         'https://redcap.tch.harvard.edu/redcap_edc/surveys/?s=EWYX8X8XX77TTWFR',
         '_blank',
       );
+      resetExportStepperState();
       goto('/explorer');
     } else {
+      resetExportStepperState();
       goto('/explorer');
     }
   }
@@ -236,7 +274,11 @@
           <ErrorAlert
             title="An error occurred while saving your dataset. Please try again. If this problem persists, please
           contact an administrator."
-          />
+          >
+            {#if e.includes('Export not ready')}
+              <p>{e}</p>
+            {/if}
+          </ErrorAlert>
           <div class="hidden">{e}</div>
         </div>
       {/await}
