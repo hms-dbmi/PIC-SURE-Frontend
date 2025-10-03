@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: 'weekly'
     commit-message:
-      prefix: '[npm] '
+      prefix: '[pnpm] '
 
   - package-ecosystem: 'docker'
     directory: '/'
