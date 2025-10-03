@@ -54,7 +54,8 @@
   let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
 
   const showTabbedAnalysisStep = $derived(
-    getQueryRequest().query.expectedResultType === 'DATAFRAME' &&
+    (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
+      getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
       !features.explorer.enableRedcapExport,
   );
   const showPfbExportStep = $derived(
@@ -63,7 +64,8 @@
       !features.explorer.enableRedcapExport,
   );
   const showUserToken = $derived(
-    getQueryRequest().query.expectedResultType === 'DATAFRAME' &&
+    (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
+      getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
       features.analyzeApi &&
       !features.explorer.enableRedcapExport,
   );
