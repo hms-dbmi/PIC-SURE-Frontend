@@ -86,8 +86,7 @@
       {#if isDownloading}
         <Loading ring size="micro" label="Downloading" />
       {/if}
-      </button
-    >
+    </button>
   {:else}
     <ErrorAlert title="Download is disabled!" color="warning" solid={true}>
       <p>Downloading data is disabled. Please contact the administrator to enable this feature.</p>
