@@ -3,9 +3,11 @@ FROM node:23.3.0-alpine3.19 AS builder
 RUN npm install -g pnpm@latest-10
 
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .
 RUN pnpm install --prod
-COPY . .
+COPY src src
+COPY .env svelte.config.js vite.config.ts .
+RUN pnpm build
 
 # Step 2: Serve the app with httpd
 FROM httpd:2.4.65-alpine
