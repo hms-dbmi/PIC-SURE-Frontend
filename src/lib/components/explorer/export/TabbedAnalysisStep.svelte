@@ -42,7 +42,9 @@
     </Tabs.Panel>
     {#if features.explorer.allowDownload}
       <Tabs.Panel value="Download">
-        <DownloadButton query={getQueryRequest()} datasetId={getDatasetId()} />
+        <div class="flex justify-center w-full">
+          <DownloadButton query={getQueryRequest()} datasetId={getDatasetId()} />
+        </div>
       </Tabs.Panel>
     {/if}
   {/snippet}
