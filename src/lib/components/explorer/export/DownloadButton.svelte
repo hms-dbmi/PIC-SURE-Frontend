@@ -84,7 +84,7 @@
       onclick={() => (features.confirmDownload ? (modalOpen = true) : download())}
       ><i class="fa-solid fa-download mr-1"></i>{downloadText}
       {#if isDownloading}
-        <Loading ring size="micro" label="Downloading" />
+        <Loading ring size="micro" />
       {/if}
     </button>
   {:else}
