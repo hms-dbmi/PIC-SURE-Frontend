@@ -7,6 +7,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { toaster } from '$lib/toaster';
+  import Loading from '$lib/components/Loading.svelte';
   interface Props {
     query: QueryRequestInterface;
     datasetId: string | undefined;
@@ -14,9 +15,11 @@
 
   let { query, datasetId }: Props = $props();
   let modalOpen: boolean = $state(false);
+  let isDownloading: boolean = $state(false);
 
   const downloadText = $derived(
-    query.query.expectedResultType === 'DATAFRAME'
+    query.query.expectedResultType === 'DATAFRAME' ||
+      query.query.expectedResultType === 'DATAFRAME_TIMESERIES'
       ? 'Download as CSV'
       : query.query.expectedResultType === 'DATAFRAME_PFB' && features.explorer.enablePfbExport
         ? 'Download as PFB'
@@ -36,6 +39,7 @@
       return;
     }
     try {
+      isDownloading = true;
       const res = await api.post(`${Picsure.Query}/${datasetId}/result`, {});
       const responseDataUrl = URL.createObjectURL(new Blob([res], { type: 'octet/stream' }));
       if (browser) {
@@ -55,6 +59,8 @@
       }
     } catch (error) {
       console.error('Error in onCompleteHandler', error);
+    } finally {
+      isDownloading = false;
     }
   }
 </script>
@@ -76,7 +82,11 @@
     <button
       class="btn preset-filled-primary-500"
       onclick={() => (features.confirmDownload ? (modalOpen = true) : download())}
-      ><i class="fa-solid fa-download mr-1"></i>{downloadText}</button
+      ><i class="fa-solid fa-download mr-1"></i>{downloadText}
+      {#if isDownloading}
+        <Loading ring size="micro" label="Downloading" />
+      {/if}
+      </button
     >
   {:else}
     <ErrorAlert title="Download is disabled!" color="warning" solid={true}>
