@@ -11,6 +11,7 @@
     data?: any;
   }
 
+  // eslint-disable-next-line svelte/valid-compile
   let { data = [], ...rest }: Props = $props();
 
   const handler = $derived(
