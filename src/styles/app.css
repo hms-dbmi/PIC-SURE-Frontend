@@ -161,6 +161,7 @@ hr {
     display: block;
   }
 
+  .btn,
   #appShell div:has(nav#page-navigation),
   #appShell div:has(div#user-session-avatar) {
     display: none;
