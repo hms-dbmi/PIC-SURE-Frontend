@@ -107,6 +107,19 @@ export function getBlankQueryRequest(
   };
 }
 
+const parseNumber = (input: string | number | null | undefined): number | undefined => {
+  if (input === null || input === undefined) return undefined;
+  if (typeof input === 'number') return Number.isFinite(input) ? input : undefined;
+
+  const trimmed = input.trim();
+  if (trimmed === '') return undefined;
+
+  // remove common grouping separators: comma, space, NBSP, thin space, underscore
+  const normalized = trimmed.replace(/[,_\s\u00A0\u202F]/g, '');
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : undefined;
+};
+
 export function getQueryRequestV3(
   addConsents = true,
   resourceUUID = get(resources).hpdsAuth,
@@ -155,7 +168,7 @@ export function getQueryRequestV3(
     phenotypicClauses: [],
     not: false,
   } as PhenotypicSubqueryInterface;
-  const nonGenomicFilters = (get(filters) as Filter[]).filter((filter: Filter) => filter.filterType !== 'genomic');
+  const nonGenomicFilters = (get(filters) as Filter[]).filter((filter: Filter) => filter.filterType !== 'genomic' && filter.filterType !== 'snp');
   nonGenomicFilters.forEach((filter: Filter) => {
       const newFilterClause = {
         type: 'PhenotypicFilter',
@@ -171,8 +184,8 @@ export function getQueryRequestV3(
         newFilterClause.phenotypicFilterType = 'REQUIRED';
       } else if (filter.filterType === 'numeric') {
         if (filter.min !== undefined && filter.max !== undefined) {
-          newFilterClause.min = Number(filter.min) || undefined;
-          newFilterClause.max = Number(filter.max) || undefined;
+          newFilterClause.min = parseNumber(filter.min);
+          newFilterClause.max = parseNumber(filter.max);
         } else {
           newFilterClause.phenotypicFilterType = 'REQUIRED';
         }
@@ -191,12 +204,6 @@ export function getQueryRequestV3(
           newFilterClause.max = Number(filter.max) || undefined;
         } else {
           newFilterClause.phenotypicFilterType = 'REQUIRED';
-        }
-      } else if (filter.filterType === 'Categorical') {
-        if (filter.categoryValues === undefined || filter.categoryValues.length === 0) {
-          newFilterClause.phenotypicFilterType = 'REQUIRED';
-        } else {
-          newFilterClause.values = filter?.categoryValues || undefined;
         }
       }
       baseClause.phenotypicClauses.push(newFilterClause);
