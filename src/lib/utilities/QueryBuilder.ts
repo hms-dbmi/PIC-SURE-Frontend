@@ -6,6 +6,7 @@ import {
   type PhenotypicFilterInterface,
   type PhenotypicSubqueryInterface,
   type PhenotypicFilterType,
+  type PhenotypicClause,
 } from '$lib/models/query/Query';
 import { features } from '$lib/configuration';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
@@ -114,7 +115,7 @@ const parseNumber = (input: string | number | null | undefined): number | undefi
   const trimmed = input.trim();
   if (trimmed === '') return undefined;
 
-  // remove common grouping separators: comma, space, NBSP, thin space, underscore
+  // remove grouping separators: comma, space, NBSP, thin space, underscore
   const normalized = trimmed.replace(/[,_\s\u00A0\u202F]/g, '');
   const n = Number(normalized);
   return Number.isFinite(n) ? n : undefined;
@@ -128,7 +129,9 @@ export function getQueryRequestV3(
   const query: QueryV3 = new QueryV3();
 
   if (expectedResultType !== 'CROSS_COUNT') {
-    query.select = (get(exports) as ExportInterface[]).map((exportedField) => exportedField.conceptPath);
+    query.select = (get(exports) as ExportInterface[]).map(
+      (exportedField) => exportedField.conceptPath,
+    );
   }
 
   if (features.useQueryTemplate && addConsents) {
@@ -168,46 +171,48 @@ export function getQueryRequestV3(
     phenotypicClauses: [],
     not: false,
   } as PhenotypicSubqueryInterface;
-  const nonGenomicFilters = (get(filters) as Filter[]).filter((filter: Filter) => filter.filterType !== 'genomic' && filter.filterType !== 'snp');
+  const nonGenomicFilters = (get(filters) as Filter[]).filter(
+    (filter: Filter) => filter.filterType !== 'genomic' && filter.filterType !== 'snp',
+  );
   nonGenomicFilters.forEach((filter: Filter) => {
-      const newFilterClause = {
-        type: 'PhenotypicFilter',
-        phenotypicFilterType: convertFilterTypeToClauseType(filter.filterType),
-        conceptPath: filter.id,
-        not: false,
-      } as PhenotypicFilterInterface;
-      if (filter.filterType === 'AnyRecordOf') {
-        newFilterClause.phenotypicFilterType = 'ANY_RECORD_OF';
-        newFilterClause.conceptPath = filter.id;
-        newFilterClause.values = filter.concepts;
-      } else if (filter.filterType === 'required') {
+    const newFilterClause = {
+      type: 'PhenotypicFilter',
+      phenotypicFilterType: convertFilterTypeToClauseType(filter.filterType),
+      conceptPath: filter.id,
+      not: false,
+    } as PhenotypicFilterInterface;
+    if (filter.filterType === 'AnyRecordOf') {
+      newFilterClause.phenotypicFilterType = 'ANY_RECORD_OF';
+      newFilterClause.conceptPath = filter.id;
+      newFilterClause.values = filter.concepts;
+    } else if (filter.filterType === 'required') {
+      newFilterClause.phenotypicFilterType = 'REQUIRED';
+    } else if (filter.filterType === 'numeric') {
+      if (filter.min !== undefined && filter.max !== undefined) {
+        newFilterClause.min = parseNumber(filter.min);
+        newFilterClause.max = parseNumber(filter.max);
+      } else {
         newFilterClause.phenotypicFilterType = 'REQUIRED';
-      } else if (filter.filterType === 'numeric') {
-        if (filter.min !== undefined && filter.max !== undefined) {
-          newFilterClause.min = parseNumber(filter.min);
-          newFilterClause.max = parseNumber(filter.max);
-        } else {
-          newFilterClause.phenotypicFilterType = 'REQUIRED';
-        }
-      } else if (filter.filterType === 'Categorical') {
-        if (filter.categoryValues === undefined || filter.categoryValues.length === 0) {
-          newFilterClause.phenotypicFilterType = 'REQUIRED';
-        } else {
-          newFilterClause.values = filter?.categoryValues || undefined;
-        }
       }
-      if (filter.filterType === 'required') {
+    } else if (filter.filterType === 'Categorical') {
+      if (filter.categoryValues === undefined || filter.categoryValues.length === 0) {
         newFilterClause.phenotypicFilterType = 'REQUIRED';
-      } else if (filter.filterType === 'numeric') {
-        if (filter.min !== undefined && filter.max !== undefined) {
-          newFilterClause.min = Number(filter.min) || undefined;
-          newFilterClause.max = Number(filter.max) || undefined;
-        } else {
-          newFilterClause.phenotypicFilterType = 'REQUIRED';
-        }
+      } else {
+        newFilterClause.values = filter?.categoryValues || undefined;
       }
-      baseClause.phenotypicClauses.push(newFilterClause);
-    });
+    }
+    if (filter.filterType === 'required') {
+      newFilterClause.phenotypicFilterType = 'REQUIRED';
+    } else if (filter.filterType === 'numeric') {
+      if (filter.min !== undefined && filter.max !== undefined) {
+        newFilterClause.min = Number(filter.min) || undefined;
+        newFilterClause.max = Number(filter.max) || undefined;
+      } else {
+        newFilterClause.phenotypicFilterType = 'REQUIRED';
+      }
+    }
+    baseClause.phenotypicClauses.push(newFilterClause);
+  });
 
   (get(filters) as Filter[])
     .filter((filter: Filter) => filter.filterType === 'genomic')
@@ -233,6 +238,10 @@ export function getQueryRequestV3(
   }
   query.expectedResultType = expectedResultType;
 
+  if (features.requireConsents && addConsents) {
+    updateAuthorizationFiltersV3(query);
+  }
+
   const serializedQuery = JSON.parse(
     JSON.stringify(query, (key, value) => {
       if (key === 'type') return undefined;
@@ -245,12 +254,46 @@ export function getQueryRequestV3(
   };
 }
 
+export const updateAuthorizationFiltersV3 = (query: QueryV3) => {
+  const hasHarmonizedInSelect = selectIncludesHarmonizedPathV3(query.select || []);
+  const hasHarmonizedInPhenotype = phenotypicClauseIncludesHarmonizedPath(query.phenotypicClause);
+  const hasAnyHarmonized = hasHarmonizedInSelect || hasHarmonizedInPhenotype;
+
+  if (!hasAnyHarmonized) {
+    query.authorizationFilters = (query.authorizationFilters || []).filter(
+      (af) => af.conceptPath !== harmonizedConsentPath,
+    );
+  }
+
+  const hasGenomic = (query.genomicFilters || []).length > 0;
+  if (!hasGenomic) {
+    query.authorizationFilters = (query.authorizationFilters || []).filter(
+      (af) => af.conceptPath !== topmedConsentPath,
+    );
+  }
+
+  return query;
+};
+
+const selectIncludesHarmonizedPathV3 = (arr: string[]): boolean => {
+  return arr.some((concept) => concept.includes(harmonizedPath));
+};
+
+const phenotypicClauseIncludesHarmonizedPath = (clause: PhenotypicClause | null): boolean => {
+  if (!clause) return false;
+  if (clause.type === 'PhenotypicFilter') {
+    const filterClause = clause as PhenotypicFilterInterface;
+    return !!filterClause.conceptPath && filterClause.conceptPath.includes(harmonizedPath);
+  }
+  const sub = clause as PhenotypicSubqueryInterface;
+  return (sub.phenotypicClauses || []).some(phenotypicClauseIncludesHarmonizedPath);
+};
+
 const convertGenomicFilterToClause = (
   filter: GenomicFilterInterface,
 ): GenomicFilterInterfacev3[] => {
   const genomicFilters: GenomicFilterInterfacev3[] = [];
 
-  // Check if this is a numeric genomic filter (has min/max but no categorical values)
   const hasMinMax =
     (filter.min !== undefined && filter.min !== '') ||
     (filter.max !== undefined && filter.max !== '');
@@ -260,13 +303,10 @@ const convertGenomicFilterToClause = (
     (filter.Variant_frequency_as_text && filter.Variant_frequency_as_text.length > 0);
 
   if (hasMinMax && !hasCategoricalValues) {
-    // This is a numeric genomic filter
     const min = filter.min ? Number(filter.min) : undefined;
     const max = filter.max ? Number(filter.max) : undefined;
     return convertNumericGenomicFilterToClause('genomic_range', min, max);
   }
-
-  // This is a categorical genomic filter
   if (filter.Gene_with_variant && filter.Gene_with_variant.length > 0) {
     genomicFilters.push({
       key: 'Gene_with_variant',
@@ -309,8 +349,6 @@ const convertNumericGenomicFilterToClause = (
   min?: number,
   max?: number,
 ): GenomicFilterInterfacev3[] => {
-  // For future use when numeric genomic filters are implemented in the UI
-  // This would handle cases where genomic filters have min/max values instead of categorical values
   if (min !== undefined && max !== undefined) {
     return [{ key, min, max }];
   } else if (min !== undefined) {

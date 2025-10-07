@@ -70,13 +70,13 @@
 
   async function runAsV3Query() {
     try {
-    v3QueryRunning = true;
-    const query = getQueryRequestV3();
-    console.log(query);
-    console.log('========== Calling V3 Query ==========');
-    console.log('QUERY: ', JSON.stringify(query, null, 2));
-    console.log('RESULTS: ', await api.post(Picsure.QueryV3Sync, query));
-    console.log('========== ================ ==========');
+      v3QueryRunning = true;
+      const query = getQueryRequestV3();
+      console.log(query);
+      console.log('========== Calling V3 Query ==========');
+      console.log('QUERY: ', JSON.stringify(query, null, 2));
+      console.log('RESULTS: ', await api.post(Picsure.QueryV3Sync, query));
+      console.log('========== ================ ==========');
     } catch (error) {
       console.error('Error in runAsV3Query', error);
       throw error;
