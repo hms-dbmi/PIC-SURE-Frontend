@@ -178,9 +178,9 @@ export interface PhenotypicFilterInterface extends PhenotypicClauseInterface {
   type: 'PhenotypicFilter';
   phenotypicFilterType: PhenotypicFilterType;
   conceptPath: string;
-  values: string[];
-  min: number | undefined;
-  max: number | undefined;
+  values?: string[];
+  min?: number | undefined;
+  max?: number | undefined;
   not: boolean;
 }
 
