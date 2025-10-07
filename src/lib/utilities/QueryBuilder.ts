@@ -183,7 +183,6 @@ export function getQueryRequestV3(
     } as PhenotypicFilterInterface;
     if (filter.filterType === 'AnyRecordOf') {
       newFilterClause.phenotypicFilterType = 'ANY_RECORD_OF';
-      newFilterClause.conceptPath = filter.id;
       newFilterClause.values = filter.concepts;
     } else if (filter.filterType === 'required') {
       newFilterClause.phenotypicFilterType = 'REQUIRED';
@@ -199,16 +198,6 @@ export function getQueryRequestV3(
         newFilterClause.phenotypicFilterType = 'REQUIRED';
       } else {
         newFilterClause.values = filter?.categoryValues || undefined;
-      }
-    }
-    if (filter.filterType === 'required') {
-      newFilterClause.phenotypicFilterType = 'REQUIRED';
-    } else if (filter.filterType === 'numeric') {
-      if (filter.min !== undefined && filter.max !== undefined) {
-        newFilterClause.min = Number(filter.min) || undefined;
-        newFilterClause.max = Number(filter.max) || undefined;
-      } else {
-        newFilterClause.phenotypicFilterType = 'REQUIRED';
       }
     }
     baseClause.phenotypicClauses.push(newFilterClause);
@@ -303,8 +292,8 @@ const convertGenomicFilterToClause = (
     (filter.Variant_frequency_as_text && filter.Variant_frequency_as_text.length > 0);
 
   if (hasMinMax && !hasCategoricalValues) {
-    const min = filter.min ? Number(filter.min) : undefined;
-    const max = filter.max ? Number(filter.max) : undefined;
+    const min = filter.min ? parseNumber(filter.min) : undefined;
+    const max = filter.max ? parseNumber(filter.max) : undefined;
     return convertNumericGenomicFilterToClause('genomic_range', min, max);
   }
   if (filter.Gene_with_variant && filter.Gene_with_variant.length > 0) {
