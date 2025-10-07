@@ -21,5 +21,9 @@
   <p class="font-bold text-left my-1">Additional Variables Included in Dataset</p>
   <ul data-testid="dataset-summary-variables" class="primary-list">
     <li>query.fields: {JSON.stringify(query?.fields)}</li>
+    <li>query.requiredFields: {JSON.stringify(query?.requiredFields)}</li>
+    <li>query.anyRecordOf: {JSON.stringify(query?.anyRecordOf)}</li>
+    <li>query.anyRecordOfMulti: {JSON.stringify(query?.anyRecordOfMulti)}</li>
+    <li>query.crossCountFields: {JSON.stringify(query?.crossCountFields)}</li>
   </ul>
 </section>
