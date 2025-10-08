@@ -6,6 +6,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .
 RUN pnpm install --prod
 COPY src src
+COPY static static
 COPY .env svelte.config.js vite.config.ts .
 RUN pnpm build
 
