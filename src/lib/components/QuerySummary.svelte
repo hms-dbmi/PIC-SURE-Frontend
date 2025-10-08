@@ -12,7 +12,7 @@
     fields: query?.fields,
     requiredFields: query?.requiredFields,
     anyRecordOf: query?.anyRecordOf,
-    anyRecordOfMulti: query?.anyRecordOfMulti.flat(),
+    anyRecordOfMulti: query?.anyRecordOfMulti?.flat(),
     crossCountFields: query?.crossCountFields,
   });
 </script>
