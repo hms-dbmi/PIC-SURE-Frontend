@@ -1,14 +1,16 @@
 import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
 import * as uuid from 'uuid';
 
-import type { Filter } from '$lib/models/Filter';
+import type { Filter, FilterMap } from '$lib/models/Filter';
 import type { SearchResult } from '$lib/models/Search';
 import { browser } from '$app/environment';
 import { user } from './User';
 
 const SESSION_NAMESPACE = uuid.v4();
 
-export const filters: Writable<Filter[]> = writable(restoreFilters());
+export const filterMap: Writable<FilterMap> = writable(restoreFilters());
+export const filters: Readable<Filter[]> = derived(filterMap, ($filterMap) => Object.values($filterMap).sort());
+
 export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic') : false,
 );
@@ -45,44 +47,46 @@ filters.subscribe((f) => {
   }
 });
 
-function restoreFilters() {
-  if (browser && sessionStorage.getItem('filters')) {
-    const oldFilters: Filter[] = JSON.parse(sessionStorage.getItem('filters') || '[]');
-    return oldFilters.map((filter) => ({ ...filter, uuid: filterUUID(filter) }));
-  }
-  return [];
+function generateFilterMap(filters: Filter[]):FilterMap {
+  return filters.reduce((map: FilterMap, filter: Filter) => { map[filter.uuid] = filter; return map }, {})
 }
 
-function filterUUID(filter: Filter) {
+function restoreFilters():FilterMap {
+  if (browser && sessionStorage.getItem('filters')) {
+    const oldFilters: Filter[] = JSON.parse(sessionStorage.getItem('filters') || '[]');
+    return generateFilterMap(oldFilters.map((filter) => ({ ...filter, uuid: filterUUID(filter) })));
+  }
+  return {};
+}
+
+function filterUUID(filter: Filter):string {
   return uuid.v5(JSON.stringify({ ...filter, uuid: undefined }), SESSION_NAMESPACE);
 }
 
-export function addFilter(filter: Filter) {
-  const currentFilters = get(filters);
-  currentFilters.forEach((f) => {
-    if (f.id === filter.id) {
-      currentFilters.splice(currentFilters.indexOf(f), 1);
-    }
-  });
-  filter.uuid = filterUUID(filter);
-  filters.set([...currentFilters, filter]);
+export function addFilter(filter: Filter):Filter {
+  const currentFilters = get(filters).filter(f => f.id !== filter.id);
+  currentFilters.push({ ...filter, uuid: filterUUID(filter) });
+  filterMap.set(generateFilterMap(currentFilters));
   return filter;
 }
 
-export function removeFilter(uuid: string) {
-  const currentFilters = get(filters);
-  filters.set(currentFilters.filter((f) => f.uuid !== uuid));
-}
-export function removeGenomicFilters() {
-  const currentFilters = get(filters);
-  filters.set(currentFilters.filter((f) => f.filterType !== 'genomic'));
-}
-export function removeUnallowedFilters() {
-  const currentFilters = get(filters);
-  filters.set(currentFilters.filter((f) => f.allowFiltering));
+export function removeFilter(uuid: string):void {
+  const map = { ...get(filterMap) };
+  delete map[uuid];
+  filterMap.set(map);
 }
 
-export function removeInvalidFilters(): void {
+export function removeGenomicFilters():void {
+  const currentFilters = get(filters).filter((f) => f.filterType !== 'genomic');
+  filterMap.set(generateFilterMap(currentFilters));
+}
+
+export function removeUnallowedFilters():void {
+  const currentFilters = get(filters).filter((f) => f.allowFiltering);
+  filterMap.set(generateFilterMap(currentFilters));
+}
+
+export function removeInvalidFilters():void {
   const currentUser = get(user);
   const currentFilters = get(filters);
 
@@ -102,17 +106,21 @@ export function removeInvalidFilters(): void {
     return isValidFilter;
   });
 
-  filters.set(validFilters);
+  filterMap.set(generateFilterMap(validFilters));
 }
 
-export function clearFilters() {
-  filters.set([]);
+export function clearFilters():void {
+  filterMap.set({});
 }
 
-export function getFilter(uuid: string) {
-  return get(filters).find((f) => f.uuid === uuid);
+export function setFilters(filters: Filter[]):void {
+  filterMap.set(generateFilterMap(filters));
 }
 
-export function getFiltersByType(type: string) {
+export function getFilter(uuid: string):Filter {
+  return get(filterMap)[uuid];
+}
+
+export function getFiltersByType(type: string):Filter[] {
   return get(filters).filter((f) => f.filterType === type);
 }

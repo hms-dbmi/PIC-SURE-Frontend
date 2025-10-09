@@ -67,6 +67,9 @@ export type Filter =
   | SnpFilterInterface
   | AnyRecordOfFilterInterface;
 
+
+export interface FilterMap { [key: string]: Filter };
+
 export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
   const filter: Filter = {
     uuid: uuidv4(),
