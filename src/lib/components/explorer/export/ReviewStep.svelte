@@ -1,18 +1,18 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  import { v4 as uuidv4 } from 'uuid';
 
   import { features } from '$lib/configuration';
   import { exports, addExports, removeExports } from '$lib/stores/Export';
   import type { ExportInterface } from '$lib/models/Export';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import { searchDictionary } from '$lib/stores/Dictionary';
-  import { Query } from '$lib/models/query/Query';
+  import { Query, type QueryInterface } from '$lib/models/query/Query';
   import * as api from '$lib/api';
   import { Picsure } from '$lib/paths';
   import { toaster } from '$lib/toaster';
   import { resources, loadResources } from '$lib/stores/Resources';
+  import { genericUUID } from '$lib/utilities/UUID';
 
   import Summary from './Summary.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -97,7 +97,7 @@
     }
 
     // Get sample ID counts via cross counts query
-    const crossCountQuery = new Query(structuredClone($state.snapshot(query).query));
+    const crossCountQuery = new Query(structuredClone($state.snapshot(query).query as QueryInterface));
     crossCountQuery.expectedResultType = 'CROSS_COUNT';
     const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
     crossCountQuery.setCrossCountFields(crossCountFields);
@@ -131,7 +131,7 @@
       const newExports = genomicConcepts.map(
         (concept) =>
           ({
-            id: uuidv4(),
+            id: genericUUID(),
             searchResult: concept,
             display: concept?.display || '',
             conceptPath: concept?.conceptPath || '',

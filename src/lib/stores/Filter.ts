@@ -1,12 +1,10 @@
 import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
-import * as uuid from 'uuid';
 
+import { objectUUID } from '$lib/utilities/UUID';
 import type { Filter, FilterMap } from '$lib/models/Filter';
 import type { SearchResult } from '$lib/models/Search';
 import { browser } from '$app/environment';
 import { user } from './User';
-
-const SESSION_NAMESPACE = uuid.v4();
 
 export const filterMap: Writable<FilterMap> = writable(restoreFilters());
 export const filters: Readable<Filter[]> = derived(filterMap, ($filterMap) => Object.values($filterMap).sort());
@@ -54,18 +52,14 @@ function generateFilterMap(filters: Filter[]):FilterMap {
 function restoreFilters():FilterMap {
   if (browser && sessionStorage.getItem('filters')) {
     const oldFilters: Filter[] = JSON.parse(sessionStorage.getItem('filters') || '[]');
-    return generateFilterMap(oldFilters.map((filter) => ({ ...filter, uuid: filterUUID(filter) })));
+    return generateFilterMap(oldFilters.map((filter) => ({ ...filter, uuid: objectUUID(filter) })));
   }
   return {};
 }
 
-function filterUUID(filter: Filter):string {
-  return uuid.v5(JSON.stringify({ ...filter, uuid: undefined }), SESSION_NAMESPACE);
-}
-
 export function addFilter(filter: Filter):Filter {
   const currentFilters = get(filters).filter(f => f.id !== filter.id);
-  currentFilters.push({ ...filter, uuid: filterUUID(filter) });
+  currentFilters.push({ ...filter, uuid: objectUUID(filter) });
   filterMap.set(generateFilterMap(currentFilters));
   return filter;
 }
