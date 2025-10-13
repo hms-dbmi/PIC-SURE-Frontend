@@ -38,7 +38,7 @@
     "gtagjs": "^0.0.10",
     "plotly.js-basic-dist-min": "^3.1.0",
     "quill": "^2.0.3",
-    "shiki": "^3.12.2",
+    "shiki": "^3.13.0",
     "svelte": "^5.38.10",
     "tailwindcss": "^4.1.13",
     "uuid": "^10.0.0",
