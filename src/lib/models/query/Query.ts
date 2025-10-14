@@ -151,7 +151,6 @@ export class Query implements QueryInterface {
   }
 }
 
-
 // -------------------------------- V3 Query -------------------------------- //
 
 type UUID = `${string}-${string}-${string}-${string}-${string}` | null;

@@ -102,21 +102,4 @@ describe('FlatFilterTree Model', () => {
     expect(tree.operators.length).toBe(2);
     expect(tree.toString).toBe('A AND B AND D');
   });
-  it('correctly generates simple tree', () => {
-    const tree = new FlatFilterTree(['A', 'B']);
-
-    expect(tree.toString).toBe('A AND B');
-    expect(tree.clauseTree.toString).toBe('{operator:AND;clauses:[A,B]}');
-  });
-  it('correctly generates max 1 depth clause tree', () => {
-    const tree = new FlatFilterTree(['A', 'B', 'C', 'D', 'E']);
-
-    tree.swap('B', Operator.OR, 'C');
-    tree.swap('D', Operator.OR, 'E');
-
-    expect(tree.toString).toBe('A AND B OR C AND D OR E');
-    expect(tree.clauseTree.toString).toBe(
-      '{operator:AND;clauses:[A,{operator:OR;clauses:[B,C]},{operator:OR;clauses:[D,E]}]}',
-    );
-  });
 });

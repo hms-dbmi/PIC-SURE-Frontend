@@ -13,7 +13,14 @@ import { features } from '$lib/configuration';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/User';
-import { filters, hasGenomicFilter } from '$lib/stores/Filter';
+import { FlatFilterTree } from '$lib/models/FlatTree';
+import {
+  filters,
+  filterTree,
+  genomicFilters,
+  hasGenomicFilter,
+  getFilterById,
+} from '$lib/stores/Filter';
 import { exports } from '$lib/stores/Export';
 import { resources } from '$lib/stores/Resources';
 import type {
@@ -157,6 +164,64 @@ function serializeQueryV3(query: QueryV3) {
   );
 }
 
+function getClausesFromFlatTree(tree: FlatFilterTree): PhenotypicClause {
+  if (tree.operators.length === 0 && tree.filters.length === 1) {
+    const filter = getFilterById(tree.filters[0]);
+    const phenotypicClauses: PhenotypicFilterInterface[] = filter
+      ? [convertPhenotypicFilterToClause(filter)]
+      : [];
+    const clause: PhenotypicClause = {
+      type: 'PhenotypicSubquery',
+      operator: Operator.AND,
+      phenotypicClauses,
+      not: false,
+    };
+    return clause;
+  }
+
+  const root: PhenotypicClause = {
+    type: 'PhenotypicSubquery',
+    operator: Operator.AND,
+    phenotypicClauses: [],
+    not: false,
+  };
+  let currentClause = root;
+
+  tree.operators.forEach((operator, index) => {
+    const filter = getFilterById(tree.filters[index]);
+    if (filter) {
+      const clause: PhenotypicFilterInterface = convertPhenotypicFilterToClause(filter);
+      if (operator !== currentClause.operator) {
+        // push to non-root operator group before switching to a new group
+        if (operator === Operator.AND) {
+          currentClause.phenotypicClauses.push(clause);
+          currentClause = root;
+        } else {
+          const newClause: PhenotypicClause = {
+            type: 'PhenotypicSubquery',
+            operator: Operator.OR,
+            phenotypicClauses: [],
+            not: false,
+          };
+          root.phenotypicClauses.push(newClause);
+          currentClause = newClause;
+          currentClause.phenotypicClauses.push(clause);
+        }
+      } else {
+        currentClause.phenotypicClauses.push(clause);
+      }
+    }
+  });
+
+  // Add last filter
+  const lastFilter = getFilterById(tree.filters[tree.filters.length - 1]);
+  if (lastFilter) {
+    currentClause.phenotypicClauses.push(convertPhenotypicFilterToClause(lastFilter));
+  }
+
+  return root;
+}
+
 export function getQueryRequestV3(
   addConsents = true,
   resourceUUID = get(resources).hpdsAuth,
@@ -165,14 +230,8 @@ export function getQueryRequestV3(
   const query: QueryV3 = new QueryV3();
   query.expectedResultType = expectedResultType;
 
-  const baseClause: PhenotypicSubqueryInterface = {
-    type: 'PhenotypicSubquery',
-    operator: Operator.AND,
-    phenotypicClauses: [],
-    not: false,
-  };
-
-  get(filters).forEach((filter: Filter) => {
+  query.phenotypicClause = getClausesFromFlatTree(get(filterTree));
+  get(genomicFilters).forEach((filter: Filter) => {
     if (filter.filterType === 'snp') {
       convertSnpFilterToClause(filter).forEach((genomicFilter) => {
         query.genomicFilters.push(genomicFilter);
@@ -181,14 +240,8 @@ export function getQueryRequestV3(
       convertGenomicFilterToClause(filter).forEach((genomicFilter) => {
         query.genomicFilters.push(genomicFilter);
       });
-    } else {
-      baseClause.phenotypicClauses.push(convertPhenotypicFilterToClause(filter));
     }
   });
-
-  if (baseClause.phenotypicClauses.length > 0) {
-    query.phenotypicClause = baseClause;
-  }
 
   addAuthorizationFiltersV3(query, addConsents);
 

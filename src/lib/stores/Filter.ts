@@ -3,12 +3,22 @@ import * as uuid from 'uuid';
 
 import type { Filter } from '$lib/models/Filter';
 import type { SearchResult } from '$lib/models/Search';
+import { FlatFilterTree } from '$lib/models/FlatTree';
 import { browser } from '$app/environment';
 import { user } from './User';
+import type { Operator } from '$lib/models/query/Query';
 
 const SESSION_NAMESPACE = uuid.v4();
+const genomicFilterTypes = ['snp', 'genomic'];
 
 export const filters: Writable<Filter[]> = writable(restoreFilters());
+export const genomicFilters: Readable<Filter[]> = derived(filters, ($f) =>
+  $f.filter((f) => genomicFilterTypes.includes(f.filterType)),
+);
+export const phenotypicFilters: Readable<Filter[]> = derived(filters, ($f) =>
+  $f.filter((f) => !genomicFilterTypes.includes(f.filterType)),
+);
+export const filterTree: Writable<FlatFilterTree> = writable(restoreFilterTree());
 export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic') : false,
 );
@@ -21,7 +31,7 @@ export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$u
 
   return $filters.some((filter) => {
     let filterDataset = filter.dataset || '';
-    if (filter.filterType === 'genomic' || filter.filterType === 'snp') {
+    if (genomicFilterTypes.includes(filter.filterType)) {
       filterDataset = 'Gene_with_variant';
     }
 
@@ -39,13 +49,39 @@ export const activeFilter: Writable<Filter | undefined> = writable();
 export const activeSearch: Writable<SearchResult | undefined> = writable();
 export const filterWarning: Writable<string | undefined> = writable();
 
-filters.subscribe((f) => {
+filters.subscribe((filterList: Filter[]) => {
   if (browser) {
-    sessionStorage.setItem('filters', JSON.stringify(f));
+    // Update filter tree
+    const tree: FlatFilterTree = get(filterTree);
+    const ids: string[] = filterList
+      .filter((f) => !genomicFilterTypes.includes(f.filterType))
+      .map((filter) => filter.id);
+
+    const newFilters = ids.filter((id) => !tree.filters.includes(id));
+    tree.add(...newFilters);
+
+    const removedFilters = tree.filters.filter((id) => !ids.includes(id));
+    tree.remove(...removedFilters);
+
+    filterTree.set(tree);
+
+    // store new filter state
+    sessionStorage.setItem('filters', JSON.stringify(filterList));
+    sessionStorage.setItem('filterTree', JSON.stringify(tree));
   }
 });
 
-function restoreFilters() {
+function restoreFilterTree(): FlatFilterTree {
+  if (browser && sessionStorage.getItem('filterTree')) {
+    const oldTree: { operators: Operator[]; filters: string[] } = JSON.parse(
+      sessionStorage.getItem('filterTree') || '{filters:[],operators:[]}',
+    );
+    return new FlatFilterTree(oldTree.filters, oldTree.operators);
+  }
+  return new FlatFilterTree();
+}
+
+function restoreFilters(): Filter[] {
   if (browser && sessionStorage.getItem('filters')) {
     const oldFilters: Filter[] = JSON.parse(sessionStorage.getItem('filters') || '[]');
     return oldFilters.map((filter) => ({ ...filter, uuid: filterUUID(filter) }));
@@ -90,7 +126,7 @@ export function removeInvalidFilters(): void {
 
   const validFilters = currentFilters.filter((filter) => {
     let filterDataset = filter.dataset || '';
-    if (filter.filterType === 'genomic' || filter.filterType === 'snp') {
+    if (genomicFilterTypes.includes(filter.filterType)) {
       filterDataset = 'Gene_with_variant';
     }
 
@@ -111,6 +147,10 @@ export function clearFilters() {
 
 export function getFilter(uuid: string) {
   return get(filters).find((f) => f.uuid === uuid);
+}
+
+export function getFilterById(id: string) {
+  return get(filters).find((f) => f.id === id);
 }
 
 export function getFiltersByType(type: string) {
