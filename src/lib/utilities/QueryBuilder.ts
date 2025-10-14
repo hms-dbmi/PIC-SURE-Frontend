@@ -22,7 +22,6 @@ import type {
   SnpFilterInterface,
 } from '$lib/models/Filter';
 import type { GenomicFilterInterfacev3 } from '$lib/models/query/Query';
-import type { SNP } from '$lib/models/GenomeFilter';
 import type { ExportInterface } from '$lib/models/Export.ts';
 
 const harmonizedPath = '\\DCC Harmonized data set';
@@ -42,7 +41,7 @@ export function getQueryRequest(
     }
   }
 
-  (get(filters) as Filter[]).forEach((filter: Filter) => {
+  get(filters).forEach((filter: Filter) => {
     if (filter.filterType === 'Categorical') {
       if (filter.displayType === 'restrict') {
         query.addCategoryFilter(filter.id, filter.categoryValues);
@@ -108,6 +107,32 @@ export function getBlankQueryRequest(
   };
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export const updateConsentFilters = (query: Query) => {
+  if (
+    !hasHarmonizedPath(query.categoryFilters) &&
+    !hasHarmonizedPath(query.numericFilters) &&
+    !fieldsIncludeHarmonizedPath(query.fields) &&
+    !fieldsIncludeHarmonizedPath(query.requiredFields)
+  ) {
+    query.removeCategoryFilter(harmonizedConsentPath);
+  }
+
+  if (!get(hasGenomicFilter)) {
+    query.removeCategoryFilter(topmedConsentPath);
+  }
+
+  return query;
+};
+/* eslint-enable @typescript-eslint/no-explicit-any */
+const hasHarmonizedPath = (obj: object): boolean => {
+  return Object.keys(obj).some((concept) => concept.includes(harmonizedPath));
+};
+
+const fieldsIncludeHarmonizedPath = (arr: string[]): boolean => {
+  return arr.some((concept) => concept.includes(harmonizedPath));
+};
+
 const parseNumber = (input: string | number | null | undefined): number | undefined => {
   if (input === null || input === undefined) return undefined;
   if (typeof input === 'number') return Number.isFinite(input) ? input : undefined;
@@ -121,17 +146,61 @@ const parseNumber = (input: string | number | null | undefined): number | undefi
   return Number.isFinite(n) ? n : undefined;
 };
 
+// -------------------------------- V3 Query -------------------------------- //
+
+function serializeQueryV3(query: QueryV3) {
+  return JSON.parse(
+    JSON.stringify(query, (key, value) => {
+      if (key === 'type') return undefined;
+      return value;
+    }),
+  );
+}
+
 export function getQueryRequestV3(
   addConsents = true,
   resourceUUID = get(resources).hpdsAuth,
   expectedResultType: ExpectedResultType = 'COUNT',
 ) {
   const query: QueryV3 = new QueryV3();
+  query.expectedResultType = expectedResultType;
 
-  if (expectedResultType !== 'CROSS_COUNT') {
-    query.select = (get(exports) as ExportInterface[]).map(
-      (exportedField) => exportedField.conceptPath,
-    );
+  const baseClause: PhenotypicSubqueryInterface = {
+    type: 'PhenotypicSubquery',
+    operator: 'AND',
+    phenotypicClauses: [],
+    not: false,
+  };
+
+  get(filters).forEach((filter: Filter) => {
+    if (filter.filterType === 'snp') {
+      convertSnpFilterToClause(filter).forEach((genomicFilter) => {
+        query.genomicFilters.push(genomicFilter);
+      });
+    } else if (filter.filterType === 'genomic') {
+      convertGenomicFilterToClause(filter).forEach((genomicFilter) => {
+        query.genomicFilters.push(genomicFilter);
+      });
+    } else {
+      baseClause.phenotypicClauses.push(convertPhenotypicFilterToClause(filter));
+    }
+  });
+
+  if (baseClause.phenotypicClauses.length > 0) {
+    query.phenotypicClause = baseClause;
+  }
+
+  addAuthorizationFiltersV3(query, addConsents);
+
+  return {
+    query: serializeQueryV3(query),
+    resourceUUID,
+  };
+}
+
+function addAuthorizationFiltersV3(query: QueryV3, addConsents: boolean) {
+  if (query.expectedResultType !== 'CROSS_COUNT') {
+    query.select = get(exports).map((field) => field.conceptPath);
   }
 
   if (features.useQueryTemplate && addConsents) {
@@ -165,104 +234,27 @@ export function getQueryRequestV3(
     }
   }
 
-  const baseClause = {
-    type: 'PhenotypicSubquery',
-    operator: 'AND',
-    phenotypicClauses: [],
-    not: false,
-  } as PhenotypicSubqueryInterface;
-  const nonGenomicFilters = (get(filters) as Filter[]).filter(
-    (filter: Filter) => filter.filterType !== 'genomic' && filter.filterType !== 'snp',
-  );
-  nonGenomicFilters.forEach((filter: Filter) => {
-    const newFilterClause = {
-      type: 'PhenotypicFilter',
-      phenotypicFilterType: convertFilterTypeToClauseType(filter.filterType),
-      conceptPath: filter.id,
-      not: false,
-    } as PhenotypicFilterInterface;
-    if (filter.filterType === 'AnyRecordOf') {
-      newFilterClause.phenotypicFilterType = 'ANY_RECORD_OF';
-      newFilterClause.values = filter.concepts;
-    } else if (filter.filterType === 'required') {
-      newFilterClause.phenotypicFilterType = 'REQUIRED';
-    } else if (filter.filterType === 'numeric') {
-      if (filter.min !== undefined && filter.max !== undefined) {
-        newFilterClause.min = parseNumber(filter.min);
-        newFilterClause.max = parseNumber(filter.max);
-      } else {
-        newFilterClause.phenotypicFilterType = 'REQUIRED';
-      }
-    } else if (filter.filterType === 'Categorical') {
-      if (filter.categoryValues === undefined || filter.categoryValues.length === 0) {
-        newFilterClause.phenotypicFilterType = 'REQUIRED';
-      } else {
-        newFilterClause.values = filter?.categoryValues || undefined;
-      }
-    }
-    baseClause.phenotypicClauses.push(newFilterClause);
-  });
-
-  (get(filters) as Filter[])
-    .filter((filter: Filter) => filter.filterType === 'genomic')
-    .forEach((filter: Filter) => {
-      const genomicFilters = convertGenomicFilterToClause(filter as GenomicFilterInterface);
-      genomicFilters.forEach((genomicFilter) => {
-        query.genomicFilters.push(genomicFilter);
-      });
-    });
-
-  (get(filters) as Filter[])
-    .filter((filter: Filter) => filter.filterType === 'snp')
-    .forEach((filter: Filter) => {
-      const genomicFilters = convertSnpFilterToClause(
-        (filter as SnpFilterInterface).snpValues || [],
-      );
-      genomicFilters.forEach((genomicFilter) => {
-        query.genomicFilters.push(genomicFilter);
-      });
-    });
-  if (nonGenomicFilters.length > 0) {
-    query.phenotypicClause = baseClause;
-  }
-  query.expectedResultType = expectedResultType;
-
   if (features.requireConsents && addConsents) {
-    updateAuthorizationFiltersV3(query);
-  }
+    const hasHarmonizedInSelect = selectIncludesHarmonizedPathV3(query.select || []);
+    const hasHarmonizedInPhenotype = phenotypicClauseIncludesHarmonizedPath(query.phenotypicClause);
+    const hasAnyHarmonized = hasHarmonizedInSelect || hasHarmonizedInPhenotype;
 
-  const serializedQuery = JSON.parse(
-    JSON.stringify(query, (key, value) => {
-      if (key === 'type') return undefined;
-      return value;
-    }),
-  );
-  return {
-    query: serializedQuery,
-    resourceUUID,
-  };
-}
+    if (!hasAnyHarmonized) {
+      query.authorizationFilters = (query.authorizationFilters || []).filter(
+        (af) => af.conceptPath !== harmonizedConsentPath,
+      );
+    }
 
-export const updateAuthorizationFiltersV3 = (query: QueryV3) => {
-  const hasHarmonizedInSelect = selectIncludesHarmonizedPathV3(query.select || []);
-  const hasHarmonizedInPhenotype = phenotypicClauseIncludesHarmonizedPath(query.phenotypicClause);
-  const hasAnyHarmonized = hasHarmonizedInSelect || hasHarmonizedInPhenotype;
-
-  if (!hasAnyHarmonized) {
-    query.authorizationFilters = (query.authorizationFilters || []).filter(
-      (af) => af.conceptPath !== harmonizedConsentPath,
-    );
-  }
-
-  const hasGenomic = (query.genomicFilters || []).length > 0;
-  if (!hasGenomic) {
-    query.authorizationFilters = (query.authorizationFilters || []).filter(
-      (af) => af.conceptPath !== topmedConsentPath,
-    );
+    const hasGenomic = (query.genomicFilters || []).length > 0;
+    if (!hasGenomic) {
+      query.authorizationFilters = (query.authorizationFilters || []).filter(
+        (af) => af.conceptPath !== topmedConsentPath,
+      );
+    }
   }
 
   return query;
-};
+}
 
 const selectIncludesHarmonizedPathV3 = (arr: string[]): boolean => {
   return arr.some((concept) => concept.includes(harmonizedPath));
@@ -276,6 +268,46 @@ const phenotypicClauseIncludesHarmonizedPath = (clause: PhenotypicClause | null)
   }
   const sub = clause as PhenotypicSubqueryInterface;
   return (sub.phenotypicClauses || []).some(phenotypicClauseIncludesHarmonizedPath);
+};
+
+const convertPhenotypicFilterToClause = (filter: Filter): PhenotypicFilterInterface => {
+  const newFilterClause: PhenotypicFilterInterface = {
+    type: 'PhenotypicFilter',
+    phenotypicFilterType: convertFilterTypeToClauseType(filter.filterType),
+    conceptPath: filter.id,
+    not: false,
+  };
+  switch (filter.filterType) {
+    case 'AnyRecordOf':
+      newFilterClause.phenotypicFilterType = 'ANY_RECORD_OF';
+      newFilterClause.values = filter.concepts;
+      break;
+
+    case 'required':
+      newFilterClause.phenotypicFilterType = 'REQUIRED';
+      break;
+
+    case 'numeric':
+      if (filter.min === undefined && filter.max === undefined) {
+        newFilterClause.phenotypicFilterType = 'REQUIRED';
+      }
+      if (filter.min !== undefined) {
+        newFilterClause.min = parseNumber(filter.min);
+      }
+      if (filter.max !== undefined) {
+        newFilterClause.max = parseNumber(filter.max);
+      }
+      break;
+
+    case 'Categorical':
+      if (!filter.categoryValues?.length) {
+        newFilterClause.phenotypicFilterType = 'REQUIRED';
+      } else {
+        newFilterClause.values = filter.categoryValues;
+      }
+      break;
+  }
+  return newFilterClause;
 };
 
 const convertGenomicFilterToClause = (
@@ -320,10 +352,10 @@ const convertGenomicFilterToClause = (
   return genomicFilters;
 };
 
-const convertSnpFilterToClause = (snps: SNP[]): GenomicFilterInterfacev3[] => {
+const convertSnpFilterToClause = (snps: SnpFilterInterface): GenomicFilterInterfacev3[] => {
   const genomicFilters: GenomicFilterInterfacev3[] = [];
 
-  snps.forEach((snp) => {
+  (snps.snpValues || []).forEach((snp) => {
     genomicFilters.push({
       key: snp.search,
       values: snp.constraint.split(','),
@@ -362,29 +394,3 @@ function convertFilterTypeToClauseType(filterType: FilterType): PhenotypicFilter
   }
   return 'FILTER';
 }
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export const updateConsentFilters = (query: Query) => {
-  if (
-    !hasHarmonizedPath(query.categoryFilters) &&
-    !hasHarmonizedPath(query.numericFilters) &&
-    !fieldsIncludeHarmonizedPath(query.fields) &&
-    !fieldsIncludeHarmonizedPath(query.requiredFields)
-  ) {
-    query.removeCategoryFilter(harmonizedConsentPath);
-  }
-
-  if (!get(hasGenomicFilter)) {
-    query.removeCategoryFilter(topmedConsentPath);
-  }
-
-  return query;
-};
-/* eslint-enable @typescript-eslint/no-explicit-any */
-const hasHarmonizedPath = (obj: object): boolean => {
-  return Object.keys(obj).some((concept) => concept.includes(harmonizedPath));
-};
-
-const fieldsIncludeHarmonizedPath = (arr: string[]): boolean => {
-  return arr.some((concept) => concept.includes(harmonizedPath));
-};

@@ -153,7 +153,7 @@
     </div>
     <button
       data-testid="run-as-v3-query-btn"
-      class="btn preset-filled-primary-500 hidden"
+      class="btn mt-4 preset-filled-primary-500"
       onclick={() => runAsV3Query()}
     >
       <span class="mr-2">Run as v3 query</span>
