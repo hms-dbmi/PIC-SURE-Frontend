@@ -1,6 +1,5 @@
 import type { Indexable } from '$lib/types';
 import { type SNP } from '$lib/models/GenomeFilter';
-type UUID = `${string}-${string}-${string}-${string}-${string}` | null;
 
 export type ExpectedResultType =
   | 'COUNT'
@@ -152,6 +151,10 @@ export class Query implements QueryInterface {
   }
 }
 
+
+// -------------------------------- V3 Query -------------------------------- //
+
+type UUID = `${string}-${string}-${string}-${string}-${string}` | null;
 export type PhenotypicFilterType = 'REQUIRED' | 'FILTER' | 'ANY_RECORD_OF';
 export type PhenotypicClause = PhenotypicSubqueryInterface | PhenotypicFilterInterface;
 export enum Operator {
