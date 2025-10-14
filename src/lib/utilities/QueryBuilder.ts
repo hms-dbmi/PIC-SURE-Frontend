@@ -7,6 +7,7 @@ import {
   type PhenotypicSubqueryInterface,
   type PhenotypicFilterType,
   type PhenotypicClause,
+  Operator,
 } from '$lib/models/query/Query';
 import { features } from '$lib/configuration';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
@@ -167,7 +168,7 @@ export function getQueryRequestV3(
 
   const baseClause: PhenotypicSubqueryInterface = {
     type: 'PhenotypicSubquery',
-    operator: 'AND',
+    operator: Operator.AND,
     phenotypicClauses: [],
     not: false,
   };

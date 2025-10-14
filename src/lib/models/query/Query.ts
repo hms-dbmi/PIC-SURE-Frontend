@@ -153,8 +153,11 @@ export class Query implements QueryInterface {
 }
 
 export type PhenotypicFilterType = 'REQUIRED' | 'FILTER' | 'ANY_RECORD_OF';
-export type Operator = 'AND' | 'OR';
 export type PhenotypicClause = PhenotypicSubqueryInterface | PhenotypicFilterInterface;
+export enum Operator {
+  AND = 'AND',
+  OR = 'OR',
+}
 
 export interface QueryInterfaceV3 {
   select: string[];
