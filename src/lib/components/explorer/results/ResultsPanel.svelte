@@ -18,6 +18,8 @@
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
+  import { sortable } from '$lib/utilities/sortable';
+  import { flip } from 'svelte/animate';
 
   let unsubFilters: Unsubscriber | null = null;
   let currentPage: string = page.url.pathname;
@@ -74,6 +76,7 @@
       unsubFilters();
       unsubFilters = null;
     }
+    
   }
 
   // The destroy/mount method is not called on page navigation if the page we're navigating to
@@ -149,9 +152,15 @@
         {#if $filters.length !== 0}
           <header class="text-left ml-1">Filters</header>
         {/if}
-        <section class="py-1">
-          {#each $filters as filter}
-            <FilterComponent {filter} />
+        <section
+          id="filters-section"
+          class="py-1"
+          use:sortable={{ items: $filters, getId: (f) => f.uuid, onReorder: (order) => filters.set(order) }}
+        >
+          {#each $filters as filter (filter.uuid)}
+            <div class="sortable-item" animate:flip={{ duration: 200 }}>
+              <FilterComponent {filter} />
+            </div>
           {/each}
         </section>
       </div>
@@ -218,5 +227,17 @@
 <style>
   hr {
     width: 88%;
+  }
+  #filters-section .sortable-item {
+    transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+  }
+  #filters-section :global(.dragging) {
+    opacity: 0.9;
+    transform: scale(0.98);
+    outline: none;
+  }
+  #filters-section :global(.dragging),
+  #filters-section :global(.dragging *:focus) {
+    outline: none;
   }
 </style>
