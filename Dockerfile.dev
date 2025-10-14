@@ -1,6 +1,16 @@
+# Step 1: Build the app with node
+FROM node:23.3.0-alpine3.19 AS builder
+RUN npm install -g pnpm@latest-10
+
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .
+RUN pnpm install
+COPY . .
+
+# Step 2: Serve the app with httpd
 FROM httpd:2.4.65-alpine
 
-RUN apk add --update openssl sed nodejs npm supervisor
+RUN apk add --update openssl sed nodejs npm pnpm supervisor
 #TODO: volume mount the certs
 RUN mkdir -p ${HTTPD_PREFIX}/cert
 COPY cert ${HTTPD_PREFIX}/cert
@@ -17,10 +27,10 @@ RUN sed -i '/^#LoadModule rewrite_module modules\/mod_rewrite.so/s/^#//' ${HTTPD
 RUN sed -i '/^#LoadModule socache_shmcb_module modules\/mod_socache_shmcb.so/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf
 RUN mkdir -p /usr/local/apache2/logs/ssl_mutex
 
+ENV NODE_ENV=development
 WORKDIR /app
 RUN mkdir -p logs
-COPY . .
-RUN npm i
+COPY --from=builder /app .
 ENV NODE_ENV=development
 COPY supervisord-dev.conf /etc/supervisor/conf.d/supervisord.conf
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
