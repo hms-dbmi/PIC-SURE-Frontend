@@ -46,7 +46,7 @@ filters.subscribe((f) => {
 function restoreFilters() {
   if (browser && sessionStorage.getItem('filters')) {
     const oldFilters: Filter[] = JSON.parse(sessionStorage.getItem('filters') || '[]');
-    return oldFilters.map((filter) => ({ ...filter, uuid: filterUUID(filter) }));
+    return oldFilters.map((filter) => ({ ...filter, uuid: objectUUID(filter) }));
   }
   return [];
 }
