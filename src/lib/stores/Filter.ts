@@ -51,23 +51,26 @@ export const filterWarning: Writable<string | undefined> = writable();
 
 filters.subscribe((filterList: Filter[]) => {
   if (browser) {
-    // Update filter tree
-    const tree: FlatFilterTree = get(filterTree);
-    const ids: string[] = filterList
-      .filter((f) => !genomicFilterTypes.includes(f.filterType))
-      .map((filter) => filter.id);
+    sessionStorage.setItem('filters', JSON.stringify(filterList));
+  }
+});
 
-    const newFilters = ids.filter((id) => !tree.filters.includes(id));
-    tree.add(...newFilters);
+phenotypicFilters.subscribe((filterList: Filter[]) => {
+  // Update filter tree
+  const tree: FlatFilterTree = get(filterTree);
+  const ids: string[] = filterList.map((filter) => filter.id);
 
-    const removedFilters = tree.filters.filter((id) => !ids.includes(id));
-    tree.remove(...removedFilters);
+  const newFilters = ids.filter((id) => !tree.filters.includes(id));
+  const removedFilters = tree.filters.filter((id) => !ids.includes(id));
 
+  if (newFilters.length > 0 || removedFilters.length > 0) {
+    newFilters.length > 0 && tree.add(...newFilters);
+    removedFilters.length > 0 && tree.remove(...removedFilters);
     filterTree.set(tree);
 
-    // store new filter state
-    sessionStorage.setItem('filters', JSON.stringify(filterList));
-    sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    if (browser) {
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    }
   }
 });
 
