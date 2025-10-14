@@ -108,7 +108,6 @@ export function getBlankQueryRequest(
   };
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export const updateConsentFilters = (query: Query) => {
   if (
     !hasHarmonizedPath(query.categoryFilters) &&
@@ -125,7 +124,7 @@ export const updateConsentFilters = (query: Query) => {
 
   return query;
 };
-/* eslint-enable @typescript-eslint/no-explicit-any */
+
 const hasHarmonizedPath = (obj: object): boolean => {
   return Object.keys(obj).some((concept) => concept.includes(harmonizedPath));
 };

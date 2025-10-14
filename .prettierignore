@@ -3,4 +3,4 @@ pnpm-lock.yaml
 package-lock.json
 yarn.lock
 
-tests/.auth
+tests/end-to-end/.auth
