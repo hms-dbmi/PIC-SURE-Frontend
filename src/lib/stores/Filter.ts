@@ -1,12 +1,10 @@
 import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
-import * as uuid from 'uuid';
 
 import type { Filter } from '$lib/models/Filter';
 import type { SearchResult } from '$lib/models/Search';
 import { browser } from '$app/environment';
 import { user } from './User';
-
-const SESSION_NAMESPACE = uuid.v4();
+import { objectUUID } from '$lib/utilities/UUID';
 
 export const filters: Writable<Filter[]> = writable(restoreFilters());
 export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
@@ -53,10 +51,6 @@ function restoreFilters() {
   return [];
 }
 
-function filterUUID(filter: Filter) {
-  return uuid.v5(JSON.stringify({ ...filter, uuid: undefined }), SESSION_NAMESPACE);
-}
-
 export function addFilter(filter: Filter) {
   const currentFilters = get(filters);
   currentFilters.forEach((f) => {
@@ -64,7 +58,7 @@ export function addFilter(filter: Filter) {
       currentFilters.splice(currentFilters.indexOf(f), 1);
     }
   });
-  filter.uuid = filterUUID(filter);
+  filter.uuid = objectUUID(filter);
   filters.set([...currentFilters, filter]);
   return filter;
 }
