@@ -69,7 +69,7 @@
 
   function subscribe() {
     if (!unsubFilters) {
-      unsubFilters = filters.subscribe(() => loadPatientCount(!$useAuth));
+      unsubFilters = filters.subscribe(() => loadPatientCount($useAuth));
     }
   }
 
