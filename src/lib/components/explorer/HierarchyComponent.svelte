@@ -133,12 +133,16 @@
   </div>
 </Modal>
 <div data-testid="hierarchy-component" class="flex flex-row bg-surface-100 p-4 rounded-container">
-  {#if disableAddFilter}
-    <ErrorAlert color="warning">Filtering is not available for this variable</ErrorAlert>
-  {/if}
-  {#if treeNode}
-    <RadioTree fullWidth={true} nodes={[treeNode]} onselect={(value) => (selectedNode = value)} />
-  {/if}
+  <div class="flex flex-col gap-2">
+    {#if disableAddFilter}
+      <ErrorAlert color="warning">
+        <p class="m-0">Filtering is not available for this variable</p>
+      </ErrorAlert>
+    {/if}
+    {#if treeNode}
+      <RadioTree fullWidth={true} nodes={[treeNode]} onselect={(value) => (selectedNode = value)} />
+    {/if}
+  </div>
   <button
     class="btn btn-icon preset-filled-primary-500 m-1"
     data-testid="add-filter"
