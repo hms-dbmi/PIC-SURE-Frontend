@@ -4,19 +4,21 @@
 
   let {
     nodes = [],
-    onselect = () => {},
     fullWidth = false,
+    onselect = () => {},
+    disableTree = false
   }: {
     nodes: RadioNodeData[];
-    onselect?: (value: string) => void;
     fullWidth: boolean;
+    onselect?: (value: string) => void;
+    disableTree?: boolean;
   } = $props();
 
   class RadioNode implements RadioNodeInterface {
     name: string = '';
     value: string = '';
     selected: boolean = $state(false);
-    disabled: boolean = $state(false);
+    disabled: boolean = $state(disableTree);
     children: RadioNode[] = $state([]);
 
     constructor(
@@ -24,11 +26,13 @@
       value: string,
       children: RadioNode[] = [],
       selected: boolean = false,
+      disabled: boolean = false,
     ) {
       this.name = name;
       this.value = value;
       this.children = children;
       this.selected = selected || this.isLeaf;
+      this.disabled = disabled;
     }
 
     get isLeaf(): boolean {
@@ -37,6 +41,7 @@
 
     select(): void {
       // Unselect all other nodes
+      if (this.disabled) return;
       treeNodes.forEach((rootNode) => {
         const unselectNode = (node: RadioNode) => {
           if (node !== this) {
@@ -66,6 +71,6 @@
 
 <div class={fullWidth ? 'w-full' : ''}>
   {#each treeNodes as treeNode, index}
-    <RadioTreeNode node={treeNode} {index} isRoot={index === 0} />
+    <RadioTreeNode node={treeNode} {index} disabled={disableTree} isRoot={index === 0} />
   {/each}
 </div>
