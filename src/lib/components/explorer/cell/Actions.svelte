@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { v4 as uuidv4 } from 'uuid';
-
   import type { SearchResult } from '$lib/models/Search';
   import { setActiveRow } from '$lib/stores/ExpandableRow';
   import type { ExportInterface } from '$lib/models/Export';
@@ -8,11 +6,12 @@
   import { panelOpen } from '$lib/stores/SidePanel';
   import { features } from '$lib/configuration';
   import { authorizedUsersOnly, openUsersOnly } from '$lib/stores/AccessState';
+  import { genericUUID } from '$lib/utilities/UUID';
 
   let { exports, addExport, removeExport } = ExportStore;
   let { data = {} as SearchResult } = $props();
   let exportItem = $derived({
-    id: uuidv4(),
+    id: genericUUID(),
     searchResult: data.row,
     display: data.row.display || data.row.name,
     conceptPath: data.row.conceptPath,
