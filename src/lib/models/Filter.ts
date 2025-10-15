@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { genericUUID } from '$lib/utilities/UUID';
 import type { SearchResult } from '$lib/models/Search';
 import { GenotypeMap, type SNP } from '$lib/models/GenomeFilter';
 import { AnyRecordOfFilterError } from '$lib/types';
@@ -67,7 +67,7 @@ export type Filter =
 
 export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
   const filter: Filter = {
-    uuid: uuidv4(),
+    uuid: genericUUID(),
     id: searchResult.conceptPath,
     filterType: 'Categorical',
     displayType: values && values?.length > 0 ? 'restrict' : 'anyRecordOf',
@@ -83,7 +83,7 @@ export function createCategoricalFilter(searchResult: SearchResult, values?: str
 
 export function createRequiredFilter(searchResult: SearchResult) {
   const filter: Filter = {
-    uuid: uuidv4(),
+    uuid: genericUUID(),
     id: searchResult.conceptPath,
     filterType: 'Categorical',
     displayType: 'any',
@@ -112,7 +112,7 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, treeResult: 
     throw new AnyRecordOfFilterError('Too many concept paths found');
   }
   const filter: AnyRecordOfFilterInterface = {
-    uuid: uuidv4(),
+    uuid: genericUUID(),
     id: searchResult.conceptPath,
     concepts: conceptPaths,
     filterType: 'AnyRecordOf',
@@ -128,7 +128,7 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, treeResult: 
 
 export function createNumericFilter(searchResult: SearchResult, min?: string, max?: string) {
   const filter: Filter = {
-    uuid: uuidv4(),
+    uuid: genericUUID(),
     id: searchResult.conceptPath,
     filterType: 'numeric',
     displayType:
@@ -166,7 +166,7 @@ export function createGenomicFilter(geneFilter: {
     .join('; ');
 
   const filter: Filter = {
-    uuid: uuidv4(),
+    uuid: genericUUID(),
     id: 'genomic',
     filterType: 'genomic',
     displayType: 'any',
@@ -192,7 +192,7 @@ export function createSnpsFilter(snps: SNP[]) {
     )
     .join('; ');
   const filter: Filter = {
-    uuid: uuidv4(),
+    uuid: genericUUID(),
     id: 'snp-variant',
     filterType: 'snp',
     displayType: 'any',

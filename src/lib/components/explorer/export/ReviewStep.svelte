@@ -1,7 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  import { v4 as uuidv4 } from 'uuid';
 
   import { features } from '$lib/configuration';
   import { exports, addExports, removeExports } from '$lib/stores/Export';
@@ -13,6 +12,7 @@
   import { Picsure } from '$lib/paths';
   import { toaster } from '$lib/toaster';
   import { resources, loadResources } from '$lib/stores/Resources';
+  import { genericUUID } from '$lib/utilities/UUID';
 
   import Summary from './Summary.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -131,7 +131,7 @@
       const newExports = genomicConcepts.map(
         (concept) =>
           ({
-            id: uuidv4(),
+            id: genericUUID(),
             searchResult: concept,
             display: concept?.display || '',
             conceptPath: concept?.conceptPath || '',
