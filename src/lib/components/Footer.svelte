@@ -27,7 +27,9 @@
     features.enforceTermsOfService && isUserLoggedIn() && !$user.acceptedTOS,
   );
   let modalClosable: boolean = $derived(
-    !features.enforceTermsOfService || !isUserLoggedIn() || (isUserLoggedIn() && !!$user?.acceptedTOS),
+    !features.enforceTermsOfService ||
+      !isUserLoggedIn() ||
+      (isUserLoggedIn() && !!$user?.acceptedTOS),
   );
 </script>
 

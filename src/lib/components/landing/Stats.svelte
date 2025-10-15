@@ -6,7 +6,7 @@
   import Stat from '$lib/components/landing/Stat.svelte';
 
   const showAuthStats = $derived(isUserLoggedIn() && $authStats.length > 0);
-  
+
   const isStatsMatching = $derived(() => {
     if ($authStats.length === 0 || $stats.length === 0) return false;
     const publicLabelsByKey = new Map($stats.map((s) => [s.key, s.label]));

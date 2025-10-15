@@ -48,15 +48,13 @@
   );
 
   let showDiscoverDistributions = $derived(
-    $openUsersOnly && 
-      features.discoverFeautures.distributionExplorer && 
+    $openUsersOnly &&
+      features.discoverFeautures.distributionExplorer &&
       hasValidDistributionFilters,
   );
 
   let showVariantExplorer = $derived(
-    $openUsersOnly && 
-      features.explorer.variantExplorer && 
-      $hasGenomicFilter,
+    $openUsersOnly && features.explorer.variantExplorer && $hasGenomicFilter,
   );
 
   let showCohortDetails = $derived(isDiscoverPage && features.explorer.enableCohortDetails);
