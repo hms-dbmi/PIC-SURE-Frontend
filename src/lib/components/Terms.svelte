@@ -7,7 +7,7 @@
   import * as api from '$lib/api';
   import { Psama } from '$lib/paths';
   import { toaster } from '$lib/toaster';
-  import { login, logout, user, isLoggedIn, getToken } from '$lib/stores/User';
+  import { login, logout, user, isUserLoggedIn, getToken } from '$lib/stores/User';
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
   import Loading from '$lib/components/Loading.svelte';
@@ -16,7 +16,7 @@
   let { modalOpen = $bindable(false) }: { modalOpen?: boolean } = $props();
   let terms: Promise<string> = $state(Promise.resolve(''));
   let enforceTerms: boolean = $derived(
-    features.enforceTermsOfService && $isLoggedIn && !$user.acceptedTOS,
+    features.enforceTermsOfService && isUserLoggedIn() && !$user.acceptedTOS,
   );
 
   function loadTermsHTML() {

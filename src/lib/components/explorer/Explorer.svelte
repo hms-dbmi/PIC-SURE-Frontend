@@ -39,9 +39,10 @@
     { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
   ];
   const cellOverides = { id: Actions };
-
-  let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
-  let path = $derived(isOpenAccess ? '/discover' : '/explorer');
+  const genomicFeaturesEnabled = features.enableGENEQuery || features.enableSNPQuery;
+  let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
+  let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
+  let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
 
   function update() {
     if ($error) error.set('');
@@ -65,6 +66,12 @@
       // reload table and facets
       handler.invalidate();
     }
+    if (page.url.searchParams.get('startTour') === 'true') {
+      const tourBtn = document.querySelector('#explorer-tour-btn');
+      if (tourBtn) {
+        (tourBtn as HTMLElement).click();
+      }
+    }
   });
 </script>
 
@@ -78,7 +85,7 @@
         <Searchbox bind:searchTerm={searchInput} search={update} />
       </div>
       <div class="flex-none">
-        {#if !isOpenAccess && (features.enableGENEQuery || features.enableSNPQuery)}
+        {#if allowGenomicFiltering}
           <a
             data-testid="genomic-filter-btn"
             class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"

@@ -9,20 +9,18 @@
     createCategoryPlot,
   } from '$lib/utilities/Plotly';
   import { getQueryRequest } from '$lib/utilities/QueryBuilder';
-  import { page } from '$app/state';
   import { toaster } from '$lib/toaster';
   import Loading from '$lib/components/Loading.svelte';
   import { Picsure } from '$lib/paths';
   import { resources } from '$lib/stores/Resources';
+  import { useAuth } from '$lib/AccessState';
 
   let plotValues: PlotValues[] = $state([]);
   let newPlot: PlotlyNewPlot = $state() as PlotlyNewPlot;
   let loading = $state(true);
 
-  const isOpenAccess = page.url.pathname.includes('/discover');
-
   async function loadPlotData() {
-    const query = getQueryRequest(!isOpenAccess, $resources.visualization);
+    const query = getQueryRequest(useAuth(), $resources.visualization);
     const token = localStorage.getItem('token');
 
     await api
