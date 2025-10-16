@@ -6,7 +6,7 @@ import type { SearchResult } from '$lib/models/Search';
 import { FlatFilterTree } from '$lib/models/FlatTree';
 import { browser } from '$app/environment';
 import { user } from './User';
-import type { Operator } from '$lib/models/query/Query';
+import type { OperatorType } from '$lib/models/query/Query';
 
 const SESSION_NAMESPACE = uuid.v4();
 const genomicFilterTypes = ['snp', 'genomic'];
@@ -76,7 +76,7 @@ phenotypicFilters.subscribe((filterList: Filter[]) => {
 
 function restoreFilterTree(): FlatFilterTree {
   if (browser && sessionStorage.getItem('filterTree')) {
-    const oldTree: { operators: Operator[]; filters: string[] } = JSON.parse(
+    const oldTree: { operators: OperatorType[]; filters: string[] } = JSON.parse(
       sessionStorage.getItem('filterTree') || '{filters:[],operators:[]}',
     );
     return new FlatFilterTree(oldTree.filters, oldTree.operators);

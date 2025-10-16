@@ -1,10 +1,10 @@
-import { Operator } from '$lib/models/query/Query';
+import { type OperatorType, Operator } from '$lib/models/query/Query';
 
 export class FlatFilterTree {
   filters: string[];
-  operators: Operator[];
+  operators: OperatorType[];
 
-  constructor(filters: string[] = [], operators: Operator[] = []) {
+  constructor(filters: string[] = [], operators: OperatorType[] = []) {
     this.filters = filters;
     if (operators.length > 0) {
       this.operators = operators;
@@ -45,7 +45,7 @@ export class FlatFilterTree {
     });
   }
 
-  swap(a: string, operator: Operator, b: string) {
+  swap(a: string, operator: OperatorType, b: string) {
     const iA = this.filters.findIndex((f) => f === a);
     const iB = this.filters.findIndex((f) => f === b);
 

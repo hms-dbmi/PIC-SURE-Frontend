@@ -156,10 +156,11 @@ export class Query implements QueryInterface {
 type UUID = `${string}-${string}-${string}-${string}-${string}` | null;
 export type PhenotypicFilterType = 'REQUIRED' | 'FILTER' | 'ANY_RECORD_OF';
 export type PhenotypicClause = PhenotypicSubqueryInterface | PhenotypicFilterInterface;
-export enum Operator {
-  AND = 'AND',
-  OR = 'OR',
-}
+export const Operator = {
+  AND: 'AND',
+  OR: 'OR',
+} as const;
+export type OperatorType = (typeof Operator)[keyof typeof Operator];
 
 export interface QueryInterfaceV3 {
   select: string[];
@@ -193,7 +194,7 @@ export interface PhenotypicSubqueryInterface extends PhenotypicClauseInterface {
   type: 'PhenotypicSubquery';
   not: boolean | null;
   phenotypicClauses: PhenotypicClause[];
-  operator: Operator;
+  operator: OperatorType;
 }
 
 export interface GenomicFilterInterfacev3 {
