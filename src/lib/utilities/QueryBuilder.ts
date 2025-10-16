@@ -243,7 +243,13 @@ export function getQueryRequestV3(
     }
   });
 
-  addAuthorizationFiltersV3(query, addConsents);
+  if (query.expectedResultType !== 'CROSS_COUNT') {
+    query.select = get(exports).map((field) => field.conceptPath);
+  }
+
+  if (addConsents) {
+    addAuthorizationFiltersV3(query);
+  }
 
   return {
     query: serializeQueryV3(query),
@@ -251,12 +257,8 @@ export function getQueryRequestV3(
   };
 }
 
-function addAuthorizationFiltersV3(query: QueryV3, addConsents: boolean) {
-  if (query.expectedResultType !== 'CROSS_COUNT') {
-    query.select = get(exports).map((field) => field.conceptPath);
-  }
-
-  if (features.useQueryTemplate && addConsents) {
+function addAuthorizationFiltersV3(query: QueryV3) {
+  if (features.useQueryTemplate) {
     const queryTemplate: QueryInterface = get(user).queryTemplate as QueryInterface;
     if (queryTemplate) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -287,7 +289,7 @@ function addAuthorizationFiltersV3(query: QueryV3, addConsents: boolean) {
     }
   }
 
-  if (features.requireConsents && addConsents) {
+  if (features.requireConsents) {
     const hasHarmonizedInSelect = selectIncludesHarmonizedPathV3(query.select || []);
     const hasHarmonizedInPhenotype = phenotypicClauseIncludesHarmonizedPath(query.phenotypicClause);
     const hasAnyHarmonized = hasHarmonizedInSelect || hasHarmonizedInPhenotype;
@@ -305,8 +307,6 @@ function addAuthorizationFiltersV3(query: QueryV3, addConsents: boolean) {
       );
     }
   }
-
-  return query;
 }
 
 const selectIncludesHarmonizedPathV3 = (arr: string[]): boolean => {
