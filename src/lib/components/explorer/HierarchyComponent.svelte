@@ -12,7 +12,7 @@
   import { AnyRecordOfFilterError } from '$lib/types';
   import Modal from '$lib/components/Modal.svelte';
   import { page } from '$app/state';
-  import ErrorAlert from '../ErrorAlert.svelte';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
 
   const ENSURE_MAX_DEPTH = 100;
 
@@ -132,7 +132,10 @@
     </div>
   </div>
 </Modal>
-<div data-testid="hierarchy-component" class="flex flex-row justify-between bg-surface-100 p-4 rounded-container">
+<div
+  data-testid="hierarchy-component"
+  class="flex flex-row justify-between bg-surface-100 p-4 rounded-container"
+>
   <div class="flex flex-col gap-2">
     {#if disableAddFilter}
       <ErrorAlert color="warning">
@@ -140,7 +143,12 @@
       </ErrorAlert>
     {/if}
     {#if treeNode}
-      <RadioTree fullWidth={true} nodes={[treeNode]} disableTree={disableAddFilter} onselect={(value) => (selectedNode = value)} />
+      <RadioTree
+        fullWidth={true}
+        nodes={[treeNode]}
+        disableTree={disableAddFilter}
+        onselect={(value) => (selectedNode = value)}
+      />
     {/if}
   </div>
   <button

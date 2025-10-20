@@ -46,7 +46,7 @@
   <div class="tree-item-children ml-4" data-testid="tree-item-children:{node.name}" role="group">
     {#if !node.isLeaf}
       {#each node.children as child}
-        <RadioTreeNode node={child} index={index + 1} disabled={disabled} />
+        <RadioTreeNode node={child} index={index + 1} {disabled} />
       {/each}
     {/if}
   </div>

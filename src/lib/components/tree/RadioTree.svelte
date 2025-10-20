@@ -6,7 +6,7 @@
     nodes = [],
     fullWidth = false,
     onselect = () => {},
-    disableTree = false
+    disableTree = false,
   }: {
     nodes: RadioNodeData[];
     fullWidth: boolean;
