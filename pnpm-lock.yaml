@@ -22,8 +22,8 @@ importers:
         specifier: ^0.3.9
         version: 0.3.9(svelte@5.38.10)
       '@skeletonlabs/skeleton':
-        specifier: ^3.2.0
-        version: 3.2.0(tailwindcss@4.1.13)
+        specifier: ^4.1.0
+        version: 4.1.0(tailwindcss@4.1.13)
       '@skeletonlabs/skeleton-svelte':
         specifier: ^1.5.1
         version: 1.5.1(svelte@5.38.10)
@@ -553,6 +553,7 @@ packages:
 
   '@skeletonlabs/floating-ui-svelte@0.3.9':
     resolution: {integrity: sha512-YjGAqVVD54v2biXgbVeZKTj40Zc1I7hS62NTpF72UBFzKsFrYN8+odexBaHNZ/4ScPYLF1ChA0vp3NClo8To1Q==}
+    deprecated: 'This project is no longer actively maintained. Please see this GitHub Discussion: https://github.com/skeletonlabs/floating-ui-svelte/discussions/169 for details about why it was deprecated and where to go next'
     peerDependencies:
       svelte: ^5.0.0
 
@@ -561,8 +562,8 @@ packages:
     peerDependencies:
       svelte: ^5.20.0
 
-  '@skeletonlabs/skeleton@3.2.0':
-    resolution: {integrity: sha512-pV1IXFr3uOfeS4ISHEvONGke25p2GRKVtbEtF11HPcM2P8UKBFyPaIT7bAmlVE1vdIlq5x77+F8b77+6LuvWWw==}
+  '@skeletonlabs/skeleton@4.1.0':
+    resolution: {integrity: sha512-s1aI7xIZmLXBok4HoTtXJZ/KdFkfOuEp16gZbtMF+Bj8WzF4b9t2Xzd8gQZXJFEZSgdxGyitG7qS34+EU/wr8w==}
     peerDependencies:
       tailwindcss: ^4.0.0
 
@@ -2557,7 +2558,7 @@ snapshots:
       '@zag-js/tooltip': 1.24.1
       svelte: 5.38.10
 
-  '@skeletonlabs/skeleton@3.2.0(tailwindcss@4.1.13)':
+  '@skeletonlabs/skeleton@4.1.0(tailwindcss@4.1.13)':
     dependencies:
       tailwindcss: 4.1.13
 
