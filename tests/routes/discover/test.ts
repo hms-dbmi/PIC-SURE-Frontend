@@ -127,7 +127,9 @@ test('Search results with allowFiltering true are filterable', async ({ page }) 
   await expect(filterIcon).toBeVisible();
   await expect(filterIcon).not.toBeDisabled();
 });
-test("Hierarchy component's radio buttons are not selectable when disableAddFilter is true", async ({ page }) => {
+test("Hierarchy component's radio buttons are not selectable when disableAddFilter is true", async ({
+  page,
+}) => {
   // Given
   await page.goto('/discover?search=somedata');
   const tableBody = page.locator('tbody');
