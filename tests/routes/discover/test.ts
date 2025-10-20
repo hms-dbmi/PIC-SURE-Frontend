@@ -127,3 +127,18 @@ test('Search results with allowFiltering true are filterable', async ({ page }) 
   await expect(filterIcon).toBeVisible();
   await expect(filterIcon).not.toBeDisabled();
 });
+test("Hierarchy component's radio buttons are not selectable when disableAddFilter is true", async ({ page }) => {
+  // Given
+  await page.goto('/discover?search=somedata');
+  const tableBody = page.locator('tbody');
+  const firstRow = tableBody.locator('tr').nth(6);
+  const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
+  await hierarchyButton.click();
+  // When
+  await expect(page.getByTestId('hierarchy-component')).toBeVisible();
+  const hierarchyComponent = page.getByTestId('hierarchy-component');
+  const radioButtons = await hierarchyComponent.locator('input').all();
+  for (let i = 0; i < radioButtons.length; i++) {
+    await expect(radioButtons[i]).toBeDisabled();
+  }
+});
