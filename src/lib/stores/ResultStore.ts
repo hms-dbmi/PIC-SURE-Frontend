@@ -6,7 +6,7 @@ import { getResultList, StatPromise } from '$lib/utilities/StatBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
 
 import type { StatResult, StatValue } from '$lib/models/Stat';
-import { filters } from '$lib/stores/Filter';
+import { filters, genomicFilters } from '$lib/stores/Filter';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
 import { loading as resourcesPromise, loadResources } from '$lib/stores/Resources';
 
@@ -28,6 +28,7 @@ export async function loadPatientCount(isOpenAccess: boolean) {
       isOpenAccess,
       get(searchTerm),
       get(selectedFacets).map((facet) => facet.name),
+      get(genomicFilters).map(({ uuid }) => uuid),
       get(filters).map(({ uuid }) => uuid),
     ]);
     if (requestCache.has(cacheKey)) {

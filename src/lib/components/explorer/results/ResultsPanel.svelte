@@ -11,7 +11,7 @@
 
   import { features } from '$lib/configuration';
 
-  import { filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
+  import { filters, genomicFilters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
@@ -174,7 +174,7 @@
         >
       {/if}
     </div>
-    {#if $filters.length === 0 && $exports.length === 0}
+    {#if $filters.length + $genomicFilters.length + $exports.length === 0}
       <p class="text-center">No filters added</p>
     {:else}
       <div class="px-4 mb-1 w-80">
@@ -183,6 +183,9 @@
         {/if}
         <section class="py-1">
           {#each $filters as filter}
+            <FilterComponent {filter} />
+          {/each}
+          {#each $genomicFilters as filter}
             <FilterComponent {filter} />
           {/each}
         </section>

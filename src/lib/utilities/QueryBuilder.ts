@@ -7,29 +7,23 @@ import {
   type PhenotypicSubqueryInterface,
   type PhenotypicFilterType,
   type PhenotypicClause,
-  Operator,
 } from '$lib/models/query/Query';
 import { features } from '$lib/configuration';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/User';
-import { FlatFilterTree } from '$lib/models/FlatTree';
-import {
-  filters,
-  filterTree,
-  genomicFilters,
-  hasGenomicFilter,
-  getFilterById,
-} from '$lib/stores/Filter';
+import { filters, filterTree, genomicFilters, hasGenomicFilter } from '$lib/stores/Filter';
 import { exports } from '$lib/stores/Export';
 import { resources } from '$lib/stores/Resources';
 import type {
   Filter,
   FilterType,
+  FilterInterface,
   GenomicFilterInterface,
   SnpFilterInterface,
 } from '$lib/models/Filter';
-import type { GenomicFilterInterfacev3 } from '$lib/models/query/Query';
+import { Tree, type TreeNode } from '$lib/models/Tree';
+import type { GenomicFilterInterfacev3, OperatorType } from '$lib/models/query/Query';
 import type { ExportInterface } from '$lib/models/Export.ts';
 
 const harmonizedPath = '\\DCC Harmonized data set';
@@ -49,7 +43,7 @@ export function getQueryRequest(
     }
   }
 
-  get(filters).forEach((filter: Filter) => {
+  [...get(genomicFilters), ...get(filters)].forEach((filter: Filter) => {
     if (filter.filterType === 'Categorical') {
       if (filter.displayType === 'restrict') {
         query.addCategoryFilter(filter.id, filter.categoryValues);
@@ -164,62 +158,22 @@ function serializeQueryV3(query: QueryV3) {
   );
 }
 
-function getClausesFromFlatTree(tree: FlatFilterTree): PhenotypicClause {
-  if (tree.operators.length === 0 && tree.filters.length === 1) {
-    const filter = getFilterById(tree.filters[0]);
-    const phenotypicClauses: PhenotypicFilterInterface[] = filter
-      ? [convertPhenotypicFilterToClause(filter)]
-      : [];
-    const clause: PhenotypicClause = {
-      type: 'PhenotypicSubquery',
-      operator: Operator.AND,
-      phenotypicClauses,
-      not: false,
-    };
-    return clause;
-  }
-
-  const root: PhenotypicClause = {
+function getClausesFromTree(tree: Tree<FilterInterface>): PhenotypicClause {
+  const groupClause = (operator: OperatorType): PhenotypicSubqueryInterface => ({
     type: 'PhenotypicSubquery',
-    operator: Operator.AND,
+    operator,
     phenotypicClauses: [],
     not: false,
-  };
-  let currentClause = root;
-
-  tree.operators.forEach((operator, index) => {
-    const filter = getFilterById(tree.filters[index]);
-    if (filter) {
-      const clause: PhenotypicFilterInterface = convertPhenotypicFilterToClause(filter);
-      if (operator !== currentClause.operator) {
-        // push to non-root operator group before switching to a new group
-        if (operator === Operator.AND) {
-          currentClause.phenotypicClauses.push(clause);
-          currentClause = root;
-        } else {
-          const newClause: PhenotypicClause = {
-            type: 'PhenotypicSubquery',
-            operator: Operator.OR,
-            phenotypicClauses: [],
-            not: false,
-          };
-          root.phenotypicClauses.push(newClause);
-          currentClause = newClause;
-          currentClause.phenotypicClauses.push(clause);
-        }
-      } else {
-        currentClause.phenotypicClauses.push(clause);
-      }
-    }
   });
-
-  // Add last filter
-  const lastFilter = getFilterById(tree.filters[tree.filters.length - 1]);
-  if (lastFilter) {
-    currentClause.phenotypicClauses.push(convertPhenotypicFilterToClause(lastFilter));
-  }
-
-  return root;
+  const mapNode = (node: TreeNode<FilterInterface>): PhenotypicClause => {
+    if (tree.isGroup(node)) {
+      const newGroup = groupClause(node.operator);
+      newGroup.phenotypicClauses = node.children.map(mapNode);
+      return newGroup;
+    }
+    return convertPhenotypicFilterToClause(node as Filter);
+  };
+  return mapNode(tree.root);
 }
 
 export function getQueryRequestV3(
@@ -230,7 +184,7 @@ export function getQueryRequestV3(
   const query: QueryV3 = new QueryV3();
   query.expectedResultType = expectedResultType;
 
-  query.phenotypicClause = getClausesFromFlatTree(get(filterTree));
+  query.phenotypicClause = getClausesFromTree(get(filterTree));
   get(genomicFilters).forEach((filter: Filter) => {
     if (filter.filterType === 'snp') {
       convertSnpFilterToClause(filter).forEach((genomicFilter) => {

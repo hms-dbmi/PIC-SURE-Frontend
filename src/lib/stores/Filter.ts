@@ -1,27 +1,32 @@
 import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
 import * as uuid from 'uuid';
 
-import type { Filter } from '$lib/models/Filter';
+import { type Filter, createFilterGroup, type FilterInterface } from '$lib/models/Filter';
 import type { SearchResult } from '$lib/models/Search';
-import { FlatFilterTree } from '$lib/models/FlatTree';
 import { browser } from '$app/environment';
 import { user } from './User';
 import type { OperatorType } from '$lib/models/query/Query';
 
+import { Tree, type TreeNode } from '$lib/models/Tree';
+
 const SESSION_NAMESPACE = uuid.v4();
 const genomicFilterTypes = ['snp', 'genomic'];
 
-export const filters: Writable<Filter[]> = writable(restoreFilters());
-export const genomicFilters: Readable<Filter[]> = derived(filters, ($f) =>
-  $f.filter((f) => genomicFilterTypes.includes(f.filterType)),
+const createGroup = (nodes: TreeNode<FilterInterface>[], operator: OperatorType) =>
+  createFilterGroup(nodes as FilterInterface[], operator);
+
+export const genomicFilters: Writable<Filter[]> = writable(restoreGenomicFilters());
+export const filterTree: Writable<Tree<FilterInterface>> = writable(restoreFilterTree());
+
+export const filters: Readable<Filter[]> = derived(
+  filterTree,
+  ($tree) => $tree.leafNodes as Filter[],
 );
-export const phenotypicFilters: Readable<Filter[]> = derived(filters, ($f) =>
-  $f.filter((f) => !genomicFilterTypes.includes(f.filterType)),
-);
-export const filterTree: Writable<FlatFilterTree> = writable(restoreFilterTree());
-export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
+
+export const hasGenomicFilter: Readable<boolean> = derived(genomicFilters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic') : false,
 );
+
 export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => !filter.allowFiltering) : false,
 );
@@ -49,47 +54,35 @@ export const activeFilter: Writable<Filter | undefined> = writable();
 export const activeSearch: Writable<SearchResult | undefined> = writable();
 export const filterWarning: Writable<string | undefined> = writable();
 
-filters.subscribe((filterList: Filter[]) => {
+filterTree.subscribe((tree: Tree<FilterInterface>) => {
   if (browser) {
-    sessionStorage.setItem('filters', JSON.stringify(filterList));
+    sessionStorage.setItem('filterTree', tree.serialized);
   }
 });
 
-phenotypicFilters.subscribe((filterList: Filter[]) => {
-  // Update filter tree
-  const tree: FlatFilterTree = get(filterTree);
-  const ids: string[] = filterList.map((filter) => filter.id);
-
-  const newFilters = ids.filter((id) => !tree.filters.includes(id));
-  const removedFilters = tree.filters.filter((id) => !ids.includes(id));
-
-  if (newFilters.length > 0 || removedFilters.length > 0) {
-    newFilters.length > 0 && tree.add(...newFilters);
-    removedFilters.length > 0 && tree.remove(...removedFilters);
-    filterTree.set(tree);
-
-    if (browser) {
-      sessionStorage.setItem('filterTree', JSON.stringify(tree));
-    }
+genomicFilters.subscribe((filters: Filter[]) => {
+  if (browser) {
+    sessionStorage.setItem('genomicFilters', JSON.stringify(filters));
   }
 });
 
-function restoreFilterTree(): FlatFilterTree {
-  if (browser && sessionStorage.getItem('filterTree')) {
-    const oldTree: { operators: OperatorType[]; filters: string[] } = JSON.parse(
-      sessionStorage.getItem('filterTree') || '{filters:[],operators:[]}',
-    );
-    return new FlatFilterTree(oldTree.filters, oldTree.operators);
-  }
-  return new FlatFilterTree();
-}
-
-function restoreFilters(): Filter[] {
-  if (browser && sessionStorage.getItem('filters')) {
-    const oldFilters: Filter[] = JSON.parse(sessionStorage.getItem('filters') || '[]');
+function restoreGenomicFilters(): Filter[] {
+  if (browser && sessionStorage.getItem('genomicFilters')) {
+    const oldFilters: Filter[] = JSON.parse(sessionStorage.getItem('genomicFilters') || '[]');
     return oldFilters.map((filter) => ({ ...filter, uuid: filterUUID(filter) }));
   }
   return [];
+}
+
+function restoreFilterTree(): Tree<FilterInterface> {
+  const newTree = new Tree(createGroup);
+  if (browser && sessionStorage.getItem('filterTree')) {
+    const serializedTree = sessionStorage.getItem('filterTree');
+    if (!serializedTree) return newTree;
+    const oldTree = Tree.deserialize<FilterInterface>(serializedTree, createGroup);
+    return oldTree;
+  }
+  return newTree;
 }
 
 function filterUUID(filter: Filter) {
@@ -97,28 +90,52 @@ function filterUUID(filter: Filter) {
 }
 
 export function addFilter(filter: Filter) {
-  const currentFilters = get(filters);
-  currentFilters.forEach((f) => {
-    if (f.id === filter.id) {
-      currentFilters.splice(currentFilters.indexOf(f), 1);
+  if ('filterType' in filter && genomicFilterTypes.includes(filter.filterType)) {
+    const geneFilters = get(genomicFilters).filter((f) => f.id !== filter.id);
+    filter.uuid = filterUUID(filter);
+    geneFilters.push(filter);
+    genomicFilters.set(geneFilters);
+  } else {
+    const tree = get(filterTree);
+    const oldNode = tree.find((node) => 'id' in node && node.id === filter.id);
+    filter.uuid = filterUUID(filter);
+    if (oldNode) {
+      tree.update(oldNode, filter);
+    } else {
+      tree.add(filter);
     }
-  });
-  filter.uuid = filterUUID(filter);
-  filters.set([...currentFilters, filter]);
-  return filter;
+    filterTree.set(tree);
+  }
 }
 
 export function removeFilter(uuid: string) {
-  const currentFilters = get(filters);
-  filters.set(currentFilters.filter((f) => f.uuid !== uuid));
+  const isFilter = (filter: Filter) => 'uuid' in filter && filter.uuid === uuid;
+  const geneFilters = get(genomicFilters);
+  const oldGeneNode = geneFilters.find(isFilter);
+  if (oldGeneNode) {
+    genomicFilters.set(geneFilters.filter((node) => !isFilter(node)));
+    return;
+  }
+  const tree = get(filterTree);
+  const oldTreeNode = tree.find((node) => isFilter(node as Filter));
+  if (!oldTreeNode) return;
+  tree.remove(oldTreeNode);
+  filterTree.set(tree);
 }
+
 export function removeGenomicFilters() {
-  const currentFilters = get(filters);
-  filters.set(currentFilters.filter((f) => f.filterType !== 'genomic'));
+  genomicFilters.set([]);
 }
+
 export function removeUnallowedFilters() {
-  const currentFilters = get(filters);
-  filters.set(currentFilters.filter((f) => f.allowFiltering));
+  const isUnallowed = (node: Filter) => !node.allowFiltering;
+  const geneFilters = get(genomicFilters);
+  genomicFilters.set(geneFilters.filter((node) => !isUnallowed(node)));
+
+  const tree = get(filterTree);
+  const remove = tree.leafNodes.filter((node) => isUnallowed(node as Filter));
+  tree.remove(...remove);
+  filterTree.set(tree);
 }
 
 export function removeInvalidFilters(): void {
@@ -127,7 +144,7 @@ export function removeInvalidFilters(): void {
 
   if (!currentUser || currentFilters.length === 0) return;
 
-  const validFilters = currentFilters.filter((filter) => {
+  const match = (filter: Filter) => {
     let filterDataset = filter.dataset || '';
     if (genomicFilterTypes.includes(filter.filterType)) {
       filterDataset = 'Gene_with_variant';
@@ -139,23 +156,32 @@ export function removeInvalidFilters(): void {
     });
 
     return isValidFilter;
-  });
+  };
 
-  filters.set(validFilters);
+  const geneFilters = get(genomicFilters);
+  genomicFilters.set(geneFilters.filter((node) => match(node)));
+
+  const tree = get(filterTree);
+  const remove = tree.leafNodes.filter((node) => !match(node as Filter));
+  tree.remove(...remove);
+  filterTree.set(tree);
 }
 
 export function clearFilters() {
-  filters.set([]);
+  genomicFilters.set([]);
+  const tree = get(filterTree);
+  tree.root.children = [];
+  filterTree.set(tree);
 }
 
 export function getFilter(uuid: string) {
-  return get(filters).find((f) => f.uuid === uuid);
+  return [...get(filters), ...get(genomicFilters)].find((f) => f.uuid === uuid);
 }
 
 export function getFilterById(id: string) {
-  return get(filters).find((f) => f.id === id);
+  return [...get(filters), ...get(genomicFilters)].find((f) => f.id === id);
 }
 
 export function getFiltersByType(type: string) {
-  return get(filters).filter((f) => f.filterType === type);
+  return [...get(filters), ...get(genomicFilters)].filter((f) => f.filterType === type);
 }
