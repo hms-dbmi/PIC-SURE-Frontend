@@ -5,6 +5,7 @@
   import { branding, features } from '$lib/configuration';
   import { isToastShowing, toaster } from '$lib/toaster';
 
+  import type { Query } from '$lib/models/query/Query';
   import { panelOpen } from '$lib/stores/SidePanel';
 
   import Content from '$lib/components/Content.svelte';
@@ -13,7 +14,7 @@
   import { getQueryRequest } from '$lib/utilities/QueryBuilder';
 
   onMount(() => {
-    if (!getQueryRequest(true).query.hasGenomicFilter()) {
+    if (!(getQueryRequest(true).query as Query).hasGenomicFilter()) {
       if (!isToastShowing('no-query')) {
         toaster.error({
           id: 'no-query',

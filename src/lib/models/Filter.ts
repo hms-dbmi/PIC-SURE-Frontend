@@ -1,7 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { SearchResult } from '$lib/models/Search';
 import { GenotypeMap, type SNP } from '$lib/models/GenomeFilter';
+import { type OperatorType, Operator } from '$lib/models/query/Query';
 import { AnyRecordOfFilterError } from '$lib/types';
+
+import type { TreeNode, TreeGroup } from '$lib/models/Tree';
 
 export type FilterType =
   | 'Categorical'
@@ -11,10 +14,18 @@ export type FilterType =
   | 'datatable'
   | 'genomic'
   | 'snp'
-  | 'auto';
-type DisplayType = 'any' | 'anyRecordOf' | 'restrict' | 'lessThan' | 'greaterThan' | 'between';
+  | 'auto'
+  | 'FilterGroup';
+type DisplayType =
+  | 'any'
+  | 'anyRecordOf'
+  | 'restrict'
+  | 'lessThan'
+  | 'greaterThan'
+  | 'between'
+  | 'group';
 
-export interface FilterInterface {
+export interface FilterInterface extends TreeNode<FilterInterface> {
   uuid: string;
   id: string;
   filterType: FilterType;
@@ -60,6 +71,16 @@ export interface AnyRecordOfFilterInterface extends FilterInterface {
   concepts: string[];
 }
 
+export interface FilterGroupInterface extends FilterInterface, TreeGroup<FilterInterface> {
+  filterType: 'FilterGroup';
+  displayType: 'group';
+  variableName: 'none';
+  dataset: '';
+  allowFiltering: true;
+  children: FilterInterface[];
+  operator: OperatorType;
+}
+
 export type Filter =
   | CategoricalFilterInterface
   | NumericFilterInterface
@@ -67,8 +88,33 @@ export type Filter =
   | SnpFilterInterface
   | AnyRecordOfFilterInterface;
 
-export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
+export function createFilterGroup(
+  children: FilterInterface[] = [],
+  operator: OperatorType = Operator.AND,
+): FilterGroupInterface {
+  const id = uuidv4();
+  const newGroup: FilterGroupInterface = {
+    filterType: 'FilterGroup',
+    displayType: 'group',
+    variableName: 'none',
+    dataset: '',
+    allowFiltering: true,
+    uuid: id,
+    id: `filter-group-${id}`,
+    children,
+    operator,
+    parent: undefined,
+  };
+  children.forEach((child) => (child.parent = newGroup));
+  return newGroup;
+}
+
+export function createCategoricalFilter(
+  searchResult: SearchResult,
+  values?: string[],
+): CategoricalFilterInterface {
   const filter: Filter = {
+    parent: undefined,
     uuid: uuidv4(),
     id: searchResult.conceptPath,
     filterType: 'Categorical',
@@ -83,8 +129,9 @@ export function createCategoricalFilter(searchResult: SearchResult, values?: str
   return filter;
 }
 
-export function createRequiredFilter(searchResult: SearchResult) {
+export function createRequiredFilter(searchResult: SearchResult): CategoricalFilterInterface {
   const filter: Filter = {
+    parent: undefined,
     uuid: uuidv4(),
     id: searchResult.conceptPath,
     filterType: 'Categorical',
@@ -106,7 +153,10 @@ function getAllConceptPaths(results: SearchResult[]): string[] {
   ]);
 }
 
-export function createAnyRecordOfFilter(searchResult: SearchResult, treeResult: SearchResult) {
+export function createAnyRecordOfFilter(
+  searchResult: SearchResult,
+  treeResult: SearchResult,
+): AnyRecordOfFilterInterface {
   const conceptPaths = getAllConceptPaths(treeResult?.children || []);
   if (conceptPaths.length === 0) {
     throw new AnyRecordOfFilterError('No concept paths found');
@@ -114,6 +164,7 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, treeResult: 
     throw new AnyRecordOfFilterError('Too many concept paths found');
   }
   const filter: AnyRecordOfFilterInterface = {
+    parent: undefined,
     uuid: uuidv4(),
     id: searchResult.conceptPath,
     concepts: conceptPaths,
@@ -128,8 +179,13 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, treeResult: 
   return filter;
 }
 
-export function createNumericFilter(searchResult: SearchResult, min?: string, max?: string) {
+export function createNumericFilter(
+  searchResult: SearchResult,
+  min?: string,
+  max?: string,
+): NumericFilterInterface {
   const filter: Filter = {
+    parent: undefined,
     uuid: uuidv4(),
     id: searchResult.conceptPath,
     filterType: 'numeric',
@@ -158,7 +214,7 @@ export function createGenomicFilter(geneFilter: {
   Variant_frequency_as_text?: string[];
   min?: string;
   max?: string;
-}) {
+}): GenomicFilterInterface {
   const orJoin = (key: string, arr: string[] | undefined) =>
     arr && arr.length > 0 ? `${key}: ${arr.join(', ')}` : undefined;
   const descriptionParts = [
@@ -178,6 +234,7 @@ export function createGenomicFilter(geneFilter: {
   const description = descriptionParts.join('; ');
 
   const filter: Filter = {
+    parent: undefined,
     uuid: uuidv4(),
     id: 'genomic',
     filterType: 'genomic',
@@ -195,7 +252,7 @@ export function createGenomicFilter(geneFilter: {
   return filter;
 }
 
-export function createSnpsFilter(snps: SNP[]) {
+export function createSnpsFilter(snps: SNP[]): SnpFilterInterface {
   const description = snps
     .map(
       (snp) =>
@@ -206,6 +263,7 @@ export function createSnpsFilter(snps: SNP[]) {
     )
     .join('; ');
   const filter: Filter = {
+    parent: undefined,
     uuid: uuidv4(),
     id: 'snp-variant',
     filterType: 'snp',
