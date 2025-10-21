@@ -11,16 +11,22 @@
   import { toaster } from '$lib/toaster';
   import { AnyRecordOfFilterError } from '$lib/types';
   import Modal from '$lib/components/Modal.svelte';
+  import { page } from '$app/state';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+
+  const ENSURE_MAX_DEPTH = 100;
 
   interface Props {
     data?: SearchResult;
     onclose?: () => void;
   }
+  let { data = {} as SearchResult, onclose = () => {} }: Props = $props();
 
   let modalOpen: boolean = $state(false);
+  let disableAddFilter: boolean = $derived(
+    !data?.allowFiltering && page.url.pathname.includes('/discover'),
+  );
 
-  const ENSURE_MAX_DEPTH = 100;
-  let { data = {} as SearchResult, onclose = () => {} }: Props = $props();
   let conceptNodes = $state(
     data.conceptPath.split('\\').reduce((acc, node, index, array) => {
       if (index === 0 && node === '') return acc;
@@ -126,19 +132,37 @@
     </div>
   </div>
 </Modal>
-<div data-testid="hierarchy-component" class="flex flex-row bg-surface-100 p-4 rounded-container">
-  {#if treeNode}
-    <RadioTree fullWidth={true} nodes={[treeNode]} onselect={(value) => (selectedNode = value)} />
-  {/if}
+<div
+  data-testid="hierarchy-component"
+  class="flex flex-row justify-between bg-surface-100 p-4 rounded-container"
+>
+  <div class="flex flex-col gap-2">
+    {#if disableAddFilter}
+      <ErrorAlert color="warning">
+        <p class="m-0">Filtering is not available for this variable</p>
+      </ErrorAlert>
+    {/if}
+    {#if treeNode}
+      <RadioTree
+        fullWidth={true}
+        nodes={[treeNode]}
+        disableTree={disableAddFilter}
+        onselect={(value) => (selectedNode = value)}
+      />
+    {/if}
+  </div>
   <button
     class="btn btn-icon preset-filled-primary-500 m-1"
     data-testid="add-filter"
     aria-label={isLoading ? 'Adding Filter...' : 'Add Filter'}
     onclick={addSelection}
-    disabled={isLoading}
+    disabled={isLoading || disableAddFilter}
   >
     {#if isLoading}
       <Loading size="micro" color="white" />
+    {:else if disableAddFilter}
+      <i class="fas fa-warning"></i>
+      <span class="sr-only">Filtering is not available for this variable</span>
     {:else}
       <i class="fas fa-plus"></i>
     {/if}
