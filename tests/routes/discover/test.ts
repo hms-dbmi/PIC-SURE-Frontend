@@ -150,7 +150,7 @@ test('Cohort details button and variant explorer button are not visible', async 
   await expect(page.locator('#results-panel')).toBeVisible();
   await expect(cohortDetailsButton).not.toBeVisible();
   await expect(page.locator('#variant-explorer-btn')).not.toBeVisible();
- });
+});
 test("Hierarchy component's radio buttons are not selectable when disableAddFilter is true", async ({
   page,
 }) => {
