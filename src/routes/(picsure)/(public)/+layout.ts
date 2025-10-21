@@ -1,6 +1,6 @@
-import { features } from "$lib/configuration";
-import { redirect } from "@sveltejs/kit";
-import type { LayoutLoad } from "../../$types";
+import { features } from '$lib/configuration';
+import { redirect } from '@sveltejs/kit';
+import type { LayoutLoad } from '../../$types';
 
 export const load: LayoutLoad = async ({ url }) => {
   if (!features.discover && url.pathname.includes('/discover')) {
@@ -12,7 +12,11 @@ export const load: LayoutLoad = async ({ url }) => {
   if (!features.analyzeApi && features.analyzeAnalysis && url.pathname.includes('/analyze/api')) {
     redirect(302, '/analyze/analysis');
   }
-  if (!features.analyzeAnalysis && features.analyzeApi && url.pathname.includes('/analyze/analysis')) {
+  if (
+    !features.analyzeAnalysis &&
+    features.analyzeApi &&
+    url.pathname.includes('/analyze/analysis')
+  ) {
     redirect(302, '/analyze/api');
   }
 };

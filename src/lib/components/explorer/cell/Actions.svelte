@@ -5,7 +5,7 @@
   import ExportStore from '$lib/stores/Export';
   import { panelOpen } from '$lib/stores/SidePanel';
   import { features } from '$lib/configuration';
-  import { authorizedUsersOnly, openUsersOnly } from '$lib/stores/AccessState';
+  import { authorizedUsersOnly } from '$lib/stores/AccessState';
   import { genericUUID } from '$lib/utilities/UUID';
 
   let { exports, addExport, removeExport } = ExportStore;
@@ -45,7 +45,7 @@
   let isExported = $derived(
     $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath),
   );
-  let shouldDisableFilter = $derived(openUsersOnly && !data.row.allowFiltering);
+  let shouldDisableFilter = $derived(!$authorizedUsersOnly && !data.row.allowFiltering);
 </script>
 
 <button type="button" title="Information" class="btn-icon-color" onclick={insertInfoContent}>
@@ -75,7 +75,7 @@
     <span class="sr-only">View Data Hierarchy</span>
   </button>
 {/if}
-{#if features.explorer.exportsEnableExport && !$authorizedUsersOnly}
+{#if features.explorer.exportsEnableExport && $authorizedUsersOnly}
   <button
     type="button"
     title={isExported ? 'Remove from Analysis' : 'Add for Analysis'}

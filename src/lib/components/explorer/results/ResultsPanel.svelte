@@ -54,10 +54,10 @@
   );
 
   let showVariantExplorer = $derived(
-    $openUsersOnly && features.explorer.variantExplorer && $hasGenomicFilter,
+    !isDiscoverPage && features.explorer.variantExplorer && $hasGenomicFilter,
   );
 
-  let showCohortDetails = $derived(isDiscoverPage && features.explorer.enableCohortDetails);
+  let showCohortDetails = $derived(!isDiscoverPage && features.explorer.enableCohortDetails);
 
   let showToolSuite = $derived(
     showCohortDetails ||
