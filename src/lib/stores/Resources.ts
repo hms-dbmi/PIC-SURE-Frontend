@@ -55,10 +55,7 @@ export function getQueryResources(isOpenAccess: boolean = false): QueryResource[
     ? _resources.queryable
     : [
         isOpenAccess
-          ? {
-              name: 'hpdsOpen',
-              uuid: features.explorer.enable ? _resources.hpdsOpen : _resources.hpdsOpenV3,
-            }
+          ? { name: 'hpdsOpen', uuid: _resources.hpdsOpen }
           : { name: 'hpds', uuid: _resources.hpdsAuth },
       ];
 }

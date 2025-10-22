@@ -30,52 +30,6 @@ const harmonizedPath = '\\DCC Harmonized data set';
 const harmonizedConsentPath = '\\_harmonized_consent\\';
 const topmedConsentPath = '\\_topmed_consents\\';
 
-export function getQueryRequest(
-  addConsents = true,
-  resourceUUID = get(resources).hpdsAuth,
-  expectedResultType: ExpectedResultType = 'COUNT',
-  mutateMethod: (query: QueryV2 | QueryV3) => QueryV2 | QueryV3 = (q) => q,
-): QueryRequestInterface {
-  if (features.explorer.enableOrQueries) {
-    return getQueryRequestV3(
-      addConsents,
-      resourceUUID,
-      expectedResultType,
-      (query: QueryV3) => mutateMethod(query as QueryV3) as QueryV3,
-    );
-  } else {
-    return getQueryRequestV2(
-      addConsents,
-      resourceUUID,
-      expectedResultType,
-      (query: QueryV2) => mutateMethod(query as QueryV2) as QueryV2,
-    );
-  }
-}
-
-export function getBlankQueryRequest(
-  isOpenAccess = false,
-  resourceUUID = get(resources).hpdsAuth,
-  expectedResultType: ExpectedResultType = 'COUNT',
-  mutateMethod: (query: QueryV2 | QueryV3) => QueryV2 | QueryV3 = (q) => q,
-): QueryRequestInterface {
-  if (features.explorer.enableOrQueries) {
-    return getBlankQueryRequestV3(
-      isOpenAccess,
-      resourceUUID,
-      expectedResultType,
-      (query: QueryV3) => mutateMethod(query as QueryV3) as QueryV3,
-    );
-  } else {
-    return getBlankQueryRequestV2(
-      isOpenAccess,
-      resourceUUID,
-      expectedResultType,
-      (query: QueryV2) => mutateMethod(query as QueryV2) as QueryV2,
-    );
-  }
-}
-
 // -------------------------------- V2 Query -------------------------------- //
 
 export function getQueryRequestV2(

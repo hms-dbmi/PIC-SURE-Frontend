@@ -1,3 +1,4 @@
+import { get } from 'svelte/store';
 import * as api from '$lib/api';
 import { branding, features } from '$lib/configuration';
 import { Picsure } from '$lib/paths';
@@ -22,12 +23,12 @@ import type {
 import { loadAllConcepts } from '$lib/services/hpds';
 import { isUserLoggedIn } from '$lib/stores/User';
 import { addConsents } from '$lib/stores/Dictionary';
-import { getQueryResources } from '$lib/stores/Resources';
+import { getQueryResources, resources } from '$lib/stores/Resources';
 import {
-  getQueryRequest,
-  getBlankQueryRequest,
   getQueryRequestV2,
   getBlankQueryRequestV2,
+  getQueryRequestV3,
+  getBlankQueryRequestV3,
 } from '$lib/utilities/QueryBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
@@ -111,22 +112,18 @@ async function getOpenPatientCount({
 }: RequestMapOptions): Promise<PatientCount> {
   let request: QueryRequestInterface;
   const concepts = await loadAllConcepts();
-  const addConceptsV2 = (query: QueryV2) => {
-    query.setCrossCountFields(concepts);
-    return query;
-  };
   const addConceptsV3 = (query: QueryV3) => {
     query.select = concepts;
     return query;
   };
-  if (isOpenAccess) {
-    const addConcepts = (query: QueryV2 | QueryV3) =>
-      features.explorer.enableOrQueries
-        ? addConceptsV3(query as QueryV3)
-        : addConceptsV2(query as QueryV2);
+  const addConceptsV2 = (query: QueryV2) => {
+    query.setCrossCountFields(concepts);
+    return query;
+  };
+  if (isOpenAccess && features.explorer.enableOrQueries) {
     request = addFilters
-      ? getQueryRequest(!isOpenAccess, resource, 'COUNT', addConcepts)
-      : getBlankQueryRequest(isOpenAccess, resource, 'COUNT', addConcepts);
+      ? getQueryRequestV3(!isOpenAccess, get(resources).hpdsOpenV3, 'COUNT', addConceptsV3)
+      : getBlankQueryRequestV3(isOpenAccess, get(resources).hpdsOpenV3, 'COUNT', addConceptsV3);
   } else {
     request = addFilters
       ? getQueryRequestV2(!isOpenAccess, resource, 'COUNT', addConceptsV2)
@@ -134,9 +131,8 @@ async function getOpenPatientCount({
     const query = request.query as QueryV2;
     query.expectedResultType = 'CROSS_COUNT';
   }
-  const url = isOpenAccess ? Picsure.QuerySync : Picsure.QueryV2Sync;
   return api
-    .post(url, request)
+    .post(Picsure.QueryV2Sync, request)
     .then(rejectIfQueryError)
     .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }
