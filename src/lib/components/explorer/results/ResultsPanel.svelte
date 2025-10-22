@@ -7,37 +7,23 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import * as api from '$lib/api';
-  import { Picsure } from '$lib/paths';
-
   import { features } from '$lib/configuration';
-  import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
-  import type { FilterGroupInterface } from '$lib/models/Filter';
 
-  import {
-    filterTree,
-    filters,
-    genomicFilters,
-    hasGenomicFilter,
-    clearFilters,
-  } from '$lib/stores/Filter';
+  import { filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
-  import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
+  import Filters from '$lib/components/explorer/results/Filters.svelte';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
-  import Loading from '$lib/components/Loading.svelte';
-  import FilterGroup from '$lib/components/explorer/results/FilterGroup.svelte';
 
   let unsubFilters: Unsubscriber | null = null;
   let currentPage: string = page.url.pathname;
   let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
   let isExplorer = $derived(page.url.pathname.includes('/explorer'));
   let modalOpen: boolean = $state(false);
-  let v3QueryRunning: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
@@ -76,23 +62,6 @@
       (($filters.length !== 0 || $exports.length !== 0) &&
         (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer)),
   );
-
-  async function runAsV3Query() {
-    try {
-      v3QueryRunning = true;
-      const query = getQueryRequestV3();
-      console.log(query);
-      console.log('========== Calling V3 Query ==========');
-      console.log('QUERY: ', JSON.stringify(query, null, 2));
-      console.log('RESULTS: ', await api.post(Picsure.QueryV3Sync, query));
-      console.log('========== ================ ==========');
-    } catch (error) {
-      console.error('Error in runAsV3Query', error);
-      throw error;
-    } finally {
-      v3QueryRunning = false;
-    }
-  }
 
   function subscribe() {
     if (!unsubFilters) {
@@ -160,16 +129,6 @@
         Prepare for Analysis
       </button>
     </div>
-    <button
-      data-testid="run-as-v3-query-btn"
-      class="btn mt-4 preset-filled-primary-500"
-      onclick={() => runAsV3Query()}
-    >
-      <span class="mr-2">Run as v3 query</span>
-      {#if v3QueryRunning}
-        <Loading ring size="micro" color="white" />
-      {/if}
-    </button>
   {/if}
   <div id="export-filters" class="flex flex-col items-center mt-7 w-80">
     <hr />
@@ -183,22 +142,8 @@
         >
       {/if}
     </div>
-    {#if $filters.length + $genomicFilters.length + $exports.length === 0}
-      <p class="text-center">No filters added</p>
-    {:else}
-      <div class="px-4 mb-1 w-80">
-        {#if $filters.length !== 0}
-          <header class="text-left ml-1">Filters</header>
-        {/if}
-        <section class="py-1">
-          <FilterGroup group={$filterTree.root as FilterGroupInterface} />
-          {#each $genomicFilters as filter}
-            <FilterComponent {filter} />
-          {/each}
-        </section>
-      </div>
-    {/if}
-    {#if $exports.length !== 0}
+    <Filters />
+    {#if $exports.length > 0}
       <div class="px-4 mb-1 w-80">
         <header class="text-left ml-1" data-testid="export-header">Added Variables</header>
         <section class="py-1">

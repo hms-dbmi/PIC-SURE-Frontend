@@ -2,7 +2,7 @@ import * as api from '$lib/api';
 import { branding, features } from '$lib/configuration';
 import { Picsure } from '$lib/paths';
 
-import type { ExpectedResultType } from '$lib/models/query/Query';
+import type { ExpectedResultType, QueryV2, QueryV3 } from '$lib/models/query/Query';
 import type {
   DictionaryConceptResult,
   DictionaryFacetResult,
@@ -23,9 +23,14 @@ import { loadAllConcepts } from '$lib/services/hpds';
 import { isUserLoggedIn } from '$lib/stores/User';
 import { addConsents } from '$lib/stores/Dictionary';
 import { getQueryResources } from '$lib/stores/Resources';
-import { getBlankQueryRequest } from '$lib/utilities/QueryBuilder';
-import { getQueryRequest } from '$lib/utilities/QueryBuilder';
+import {
+  getQueryRequest,
+  getBlankQueryRequest,
+  getQueryRequestV2,
+  getBlankQueryRequestV2,
+} from '$lib/utilities/QueryBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
+import type { QueryRequestInterface } from '$lib/models/api/Request';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rejectIfQueryError(result: any) {
@@ -88,49 +93,92 @@ function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<PatientCo
     });
 }
 
-function blank({ request }: RequestMapOptions): Promise<PatientCount> {
-  return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
+function blank({ addFilters, isOpenAccess, resource }: RequestMapOptions): Promise<PatientCount> {
+  const request = addFilters
+    ? getQueryRequestV2(!isOpenAccess, resource, 'COUNT')
+    : getBlankQueryRequestV2(isOpenAccess, resource, 'COUNT');
+  return api.post(Picsure.QueryV2Sync, request).then(rejectIfQueryError);
 }
 
 function hardcoded({ stat }: RequestMapOptions) {
   return Promise.resolve((stat?.value as PatientCount) || 0);
 }
 
-async function getOpenCount(options: RequestMapOptions): Promise<PatientCount> {
-  const request = { ...options.request };
-  request.query.expectedResultType = 'CROSS_COUNT';
+async function getOpenPatientCount({
+  addFilters,
+  isOpenAccess,
+  resource,
+}: RequestMapOptions): Promise<PatientCount> {
+  let request: QueryRequestInterface;
   const concepts = await loadAllConcepts();
-  request.query.setCrossCountFields(concepts);
+  const addConceptsV2 = (query: QueryV2) => {
+    query.setCrossCountFields(concepts);
+    return query;
+  };
+  const addConceptsV3 = (query: QueryV3) => {
+    query.select = concepts;
+    return query;
+  };
+  if (isOpenAccess) {
+    const addConcepts = (query: QueryV2 | QueryV3) =>
+      features.explorer.enableOrQueries
+        ? addConceptsV3(query as QueryV3)
+        : addConceptsV2(query as QueryV2);
+    request = addFilters
+      ? getQueryRequest(!isOpenAccess, resource, 'COUNT', addConcepts)
+      : getBlankQueryRequest(isOpenAccess, resource, 'COUNT', addConcepts);
+  } else {
+    request = addFilters
+      ? getQueryRequestV2(!isOpenAccess, resource, 'COUNT', addConceptsV2)
+      : getBlankQueryRequestV2(isOpenAccess, resource, 'COUNT', addConceptsV2);
+    const query = request.query as QueryV2;
+    query.expectedResultType = 'CROSS_COUNT';
+  }
+  const url = isOpenAccess ? Picsure.QuerySync : Picsure.QueryV2Sync;
   return api
-    .post(Picsure.QuerySync, request)
+    .post(url, request)
     .then(rejectIfQueryError)
     .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }
 
-function getAuthCount(options: RequestMapOptions): Promise<PatientCount> {
-  const request = { ...options.request };
-  request.query.expectedResultType = 'COUNT';
-  return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
+function getAuthPatientCount({
+  addFilters,
+  isOpenAccess,
+  resource,
+}: RequestMapOptions): Promise<PatientCount> {
+  const request = addFilters
+    ? getQueryRequestV2(!isOpenAccess, resource, 'COUNT')
+    : getBlankQueryRequestV2(isOpenAccess, resource, 'COUNT');
+  return api.post(Picsure.QueryV2Sync, request).then(rejectIfQueryError);
 }
 
 function patientCount(options: RequestMapOptions): Promise<PatientCount> {
-  return options.isOpenAccess ? getOpenCount(options) : getAuthCount(options);
+  return options.isOpenAccess ? getOpenPatientCount(options) : getAuthPatientCount(options);
 }
 
 function getCrossCounts(field: string, type: ExpectedResultType) {
-  return function (options: RequestMapOptions): Promise<PatientCountMap> {
+  return function ({
+    addFilters,
+    isOpenAccess,
+    resource,
+  }: RequestMapOptions): Promise<PatientCountMap> {
     const fields: string[] = getStatFields(field).map((f) => f.conceptPath);
     if (fields.length === 0) return Promise.reject(`${field} feilds were not configured`);
-
-    const request = { ...options.request };
-    request.query.expectedResultType = type;
-    request.query.setCrossCountFields(fields);
-    return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
+    const request = addFilters
+      ? getQueryRequestV2(!isOpenAccess, resource, type)
+      : getBlankQueryRequestV2(isOpenAccess, resource, type);
+    const query = request.query as QueryV2;
+    query.setCrossCountFields(fields);
+    return api.post(Picsure.QueryV2Sync, request).then(rejectIfQueryError);
   };
 }
 
 function getConsentCount(type: ExpectedResultType) {
-  return function (options: RequestMapOptions): Promise<PatientCount> {
+  return function ({
+    addFilters,
+    isOpenAccess,
+    resource,
+  }: RequestMapOptions): Promise<PatientCount> {
     const fields: StatField[] = getStatFields('query:consent');
     if (fields.length === 0) return Promise.reject('consent feilds were not configured');
 
@@ -142,12 +190,14 @@ function getConsentCount(type: ExpectedResultType) {
       {},
     );
 
-    const request = { ...options.request };
-    request.query.expectedResultType = type;
+    const request = addFilters
+      ? getQueryRequestV2(!isOpenAccess, resource, type)
+      : getBlankQueryRequestV2(isOpenAccess, resource, type);
+
     Object.entries(categoryMap).forEach(([conceptPath, fieldList]) =>
-      request.query.addCategoryFilter(conceptPath, fieldList),
+      (request.query as QueryV2).addCategoryFilter(conceptPath, fieldList),
     );
-    return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
+    return api.post(Picsure.QueryV2Sync, request).then(rejectIfQueryError);
   };
 }
 
@@ -206,7 +256,8 @@ export function populateStatRequests(validStats: StatResult[]): StatResult[] {
         newMap[name] = requestMap[stat.key]({
           isOpenAccess,
           stat,
-          request: getBlankQueryRequest(isOpenAccess, uuid),
+          resource: uuid,
+          addFilters: false,
         });
         return newMap;
       }, {}),
@@ -230,7 +281,8 @@ export function getResultList(isOpenAccess: boolean, list: StatConfig[]): StatRe
         newMap[name] = requestMap[stat.key]({
           isOpenAccess,
           stat,
-          request: getQueryRequest(!isOpenAccess, uuid),
+          resource: uuid,
+          addFilters: true,
         });
         return newMap;
       }, {}),

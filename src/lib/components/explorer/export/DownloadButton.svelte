@@ -40,7 +40,7 @@
     }
     try {
       isDownloading = true;
-      const res = await api.post(`${Picsure.Query}/${datasetId}/result`, {});
+      const res = await api.post(`${Picsure.QueryV2}/${datasetId}/result`, {});
       const responseDataUrl = URL.createObjectURL(new Blob([res], { type: 'octet/stream' }));
       if (browser) {
         const link = document.createElement('a');

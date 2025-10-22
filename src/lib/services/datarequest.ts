@@ -2,11 +2,11 @@ import { type Writable, writable, get } from 'svelte/store';
 import * as api from '$lib/api';
 import { type Status, type Metadata, type Sites } from '$lib/models/DataRequest';
 import { Picsure } from '$lib/paths';
-import type { QueryInterface } from '$lib/models/query/Query';
+import type { QueryInterfaceV2 } from '$lib/models/query/Query';
 
 export async function searchForDataset(queryId: string): Promise<Metadata> {
   try {
-    return api.get(`${Picsure.Query}/${queryId}/metadata`);
+    return api.get(`${Picsure.QueryV2}/${queryId}/metadata`);
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : 'Unknown error occurred');
   }
@@ -29,7 +29,7 @@ export async function approveDataset(queryId: string, date: string): Promise<voi
 }
 
 export async function sendData(
-  query: QueryInterface,
+  query: QueryInterfaceV2,
   site: string,
   dataType: string,
   queryId: string,

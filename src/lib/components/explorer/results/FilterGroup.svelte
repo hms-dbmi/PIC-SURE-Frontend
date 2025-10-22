@@ -9,18 +9,20 @@
 </script>
 
 <div class={`filter-group-${group.operator.toLowerCase()}`} data-testid={`filter-group-${id}`}>
-  {#each group.children as child, index}
-    {#if index > 0}
-      <OperatorDropdown
-        siblingA={group.children[index - 1]}
-        siblingB={group.children[index]}
-        operator={group.operator}
-      />
-    {/if}
-    {#if child && 'children' in child}
-      <FilterGroup group={child as FilterGroupInterface} />
-    {:else}
-      <FilterComponent filter={child as Filter} />
-    {/if}
-  {/each}
+  {#key group.uuid}
+    {#each group.children as child, index}
+      {#if index > 0}
+        <OperatorDropdown
+          siblingA={group.children[index - 1]}
+          siblingB={group.children[index]}
+          operator={group.operator}
+        />
+      {/if}
+      {#if child && 'children' in child}
+        <FilterGroup group={child as FilterGroupInterface} />
+      {:else}
+        <FilterComponent filter={child as Filter} />
+      {/if}
+    {/each}
+  {/key}
 </div>
