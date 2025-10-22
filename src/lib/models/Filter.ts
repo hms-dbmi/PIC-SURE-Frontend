@@ -86,7 +86,8 @@ export type Filter =
   | NumericFilterInterface
   | GenomicFilterInterface
   | SnpFilterInterface
-  | AnyRecordOfFilterInterface;
+  | AnyRecordOfFilterInterface
+  | FilterGroupInterface;
 
 export function createFilterGroup(
   children: FilterInterface[] = [],

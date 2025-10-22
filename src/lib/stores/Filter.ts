@@ -55,6 +55,7 @@ export const activeSearch: Writable<SearchResult | undefined> = writable();
 export const filterWarning: Writable<string | undefined> = writable();
 
 filterTree.subscribe((tree: Tree<FilterInterface>) => {
+  console.log('filterTree state change', tree.serialized);
   if (browser) {
     sessionStorage.setItem('filterTree', tree.serialized);
   }
@@ -89,6 +90,12 @@ function filterUUID(filter: Filter) {
   return uuid.v5(JSON.stringify({ ...filter, uuid: undefined }), SESSION_NAMESPACE);
 }
 
+export function toggleOperator(siblingA: FilterInterface, siblingB: FilterInterface) {
+  const tree = get(filterTree);
+  tree.toggleOperator(siblingA, siblingB);
+  filterTree.set(tree);
+}
+
 export function addFilter(filter: Filter) {
   if ('filterType' in filter && genomicFilterTypes.includes(filter.filterType)) {
     const geneFilters = get(genomicFilters).filter((f) => f.id !== filter.id);
@@ -96,13 +103,17 @@ export function addFilter(filter: Filter) {
     geneFilters.push(filter);
     genomicFilters.set(geneFilters);
   } else {
+    console.log('added filter is genomic');
     const tree = get(filterTree);
+    console.log('before mutation', tree.serialized);
     const oldNode = tree.find((node) => 'id' in node && node.id === filter.id);
     filter.uuid = filterUUID(filter);
     if (oldNode) {
       tree.update(oldNode, filter);
+      console.log('after update mutation', tree.serialized);
     } else {
       tree.add(filter);
+      console.log('after add mutation', tree.serialized);
     }
     filterTree.set(tree);
   }

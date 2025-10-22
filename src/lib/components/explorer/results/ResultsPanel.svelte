@@ -3,15 +3,24 @@
   import { elasticInOut } from 'svelte/easing';
   import type { Unsubscriber } from 'svelte/store';
   import { slide, scale } from 'svelte/transition';
-  import * as api from '$lib/api';
-  import { Picsure } from '$lib/paths';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { features } from '$lib/configuration';
+  import * as api from '$lib/api';
+  import { Picsure } from '$lib/paths';
 
-  import { filters, genomicFilters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
+  import { features } from '$lib/configuration';
+  import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
+  import type { FilterGroupInterface } from '$lib/models/Filter';
+
+  import {
+    filterTree,
+    filters,
+    genomicFilters,
+    hasGenomicFilter,
+    clearFilters,
+  } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
@@ -20,8 +29,8 @@
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
-  import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
   import Loading from '$lib/components/Loading.svelte';
+  import FilterGroup from '$lib/components/explorer/results/FilterGroup.svelte';
 
   let unsubFilters: Unsubscriber | null = null;
   let currentPage: string = page.url.pathname;
@@ -182,9 +191,7 @@
           <header class="text-left ml-1">Filters</header>
         {/if}
         <section class="py-1">
-          {#each $filters as filter}
-            <FilterComponent {filter} />
-          {/each}
+          <FilterGroup group={$filterTree.root as FilterGroupInterface} />
           {#each $genomicFilters as filter}
             <FilterComponent {filter} />
           {/each}
