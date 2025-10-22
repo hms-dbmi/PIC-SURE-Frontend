@@ -13,14 +13,14 @@
   import Loading from '$lib/components/Loading.svelte';
   import { Picsure } from '$lib/paths';
   import { resources } from '$lib/stores/Resources';
-  import { useAuth } from '$lib/stores/AccessState';
+  import { useAuth } from '$lib/AccessState';
 
   let plotValues: PlotValues[] = $state([]);
   let newPlot: PlotlyNewPlot = $state() as PlotlyNewPlot;
   let loading = $state(true);
 
   async function loadPlotData() {
-    const query = getQueryRequest($useAuth, $resources.visualization);
+    const query = getQueryRequest(useAuth(), $resources.visualization);
     const token = localStorage.getItem('token');
 
     await api

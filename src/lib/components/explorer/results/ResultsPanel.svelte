@@ -12,7 +12,7 @@
   import { filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
-  import { openUsersOnly, authorizedUsersOnly, useAuth } from '$lib/stores/AccessState';
+  import { useAuth } from '$lib/AccessState';
 
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
@@ -44,11 +44,12 @@
   );
 
   let showExplorerDistributions = $derived(
-    $authorizedUsersOnly && features.explorer.distributionExplorer && hasValidDistributionFilters,
+    !isDiscoverPage && features.explorer.distributionExplorer && hasValidDistributionFilters,
   );
 
   let showDiscoverDistributions = $derived(
-    $openUsersOnly &&
+    isDiscoverPage &&
+      features.discover &&
       features.discoverFeautures.distributionExplorer &&
       hasValidDistributionFilters,
   );
@@ -67,7 +68,7 @@
 
   function subscribe() {
     if (!unsubFilters) {
-      unsubFilters = filters.subscribe(() => loadPatientCount($useAuth));
+      unsubFilters = filters.subscribe(() => loadPatientCount(useAuth()));
     }
   }
 
