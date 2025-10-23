@@ -101,10 +101,12 @@ export function createFilterGroup(
     dataset: '',
     allowFiltering: true,
     uuid: id,
-    id: `filter-group-${id}`,
     children,
     operator,
     parent: undefined,
+    get id() {
+      return `filter-group-${this.uuid}`;
+    },
   };
   children.forEach((child) => (child.parent = newGroup));
   return newGroup;

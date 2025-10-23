@@ -409,18 +409,20 @@ describe('FlatFilterTree Model', () => {
       expect(((found as TestGroup).children[0] as TestNode).value).toBe('A');
     });
   });
-  describe('getLeafNodes', () => {
+  describe('leafNodes', () => {
     it('returns a list of leaves', () => {
       // Given
       const tree = new Tree<string>(createTestGroup);
       tree.add(createTestNode('A'));
       tree.add(createTestNode('B'));
+      tree.add(createTestNode('C'));
+      tree.add(createTestNode('D'));
 
       // When
       const leaves = tree.leafNodes;
 
       // Then
-      expect(leaves.length).toBe(2);
+      expect(leaves.length).toBe(4);
       expect(
         leaves
           .map((leaf) =>
@@ -428,7 +430,7 @@ describe('FlatFilterTree Model', () => {
           )
           .filter((x) => x)
           .join(','),
-      ).toBe('A:AND,B:AND');
+      ).toBe('A:AND,B:AND,C:AND,D:AND');
     });
     it('returns empty array for tree with only root', () => {
       // Given
