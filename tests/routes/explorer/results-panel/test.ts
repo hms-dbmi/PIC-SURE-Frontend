@@ -180,6 +180,36 @@ test.describe('Results Panel', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
     await expect(page.locator('#export-data-button')).not.toBeVisible();
   });
+
+  test('Export button disabled during counts loading then enabled after', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    // Delay the counts response to simulate loading state
+    await page.route(countResultPath, async (route) => {
+      await new Promise((r) => setTimeout(r, 1500));
+      await route.fulfill({ json: '9999' });
+    });
+    await page.goto('/explorer?search=somedata');
+
+    // Open results panel
+    await page.locator('#results-panel-toggle').click();
+
+    // Add a filter so the export button shows (hasFilterOrExport)
+    await mockApiSuccess(page, `${conceptsDetailPath}/${detailResponseCat.dataset}`, detailResponseCat);
+    await page.locator('#row-0 button[title=Filter]').click();
+    await page.locator('#options-container label:nth-child(1)').click();
+    await page.getByTestId('add-filter').click();
+
+    const exportButton = page.locator('#export-data-button');
+    await expect(exportButton).toBeVisible();
+    await expect(exportButton).toBeDisabled();
+
+    // Then eventually counts finish and button becomes enabled
+    const resultCountNumber = page.locator('#result-count-number');
+    await expect(resultCountNumber).toBeVisible();
+    await expect(exportButton).toBeEnabled();
+  });
   test('Clear All clears exports and filters', async ({ page }) => {
     // Given
     await mockApiSuccess(
