@@ -196,7 +196,11 @@ test.describe('Results Panel', () => {
     await page.locator('#results-panel-toggle').click();
 
     // Add a filter so the export button shows (hasFilterOrExport)
-    await mockApiSuccess(page, `${conceptsDetailPath}/${detailResponseCat.dataset}`, detailResponseCat);
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
     await page.locator('#row-0 button[title=Filter]').click();
     await page.locator('#options-container label:nth-child(1)').click();
     await page.getByTestId('add-filter').click();
