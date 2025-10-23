@@ -1,7 +1,6 @@
 import { error, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
 import { browser } from '$app/environment';
-import { page } from '$app/state';
 
 const BEARER = 'Bearer ';
 
@@ -39,8 +38,7 @@ async function send({
     if (token) {
       opts.headers['Authorization'] = `${BEARER}${token}`;
       opts.headers['request-source'] = 'Authorized';
-    }
-    if (page.url.pathname.includes('/discover')) {
+    } else {
       opts.headers['request-source'] = 'Open';
     }
   }

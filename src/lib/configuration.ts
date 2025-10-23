@@ -130,19 +130,19 @@ export const routes: Route[] = [
   {
     path: '/analyze/api',
     text: 'Prepare for Analysis',
-    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
+    privilege: [PicsurePrivileges.API_ACCESS, BDCPrivileges.AUTHORIZED_ACCESS],
     feature: 'analyzeApi',
   },
   {
     path: '/analyze/analysis',
     text: 'Analyze',
-    privilege: [PicsurePrivileges.QUERY],
+    privilege: [PicsurePrivileges.API_ACCESS],
     feature: 'analyzeAnalysis',
   },
   {
     path: '/dataset',
     text: 'Manage Datasets',
-    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.NAMED_DATASET],
+    privilege: [PicsurePrivileges.NAMED_DATASET, BDCPrivileges.NAMED_DATASET],
   },
   {
     path: '/dataset/request',
@@ -168,6 +168,7 @@ export const routes: Route[] = [
 export const features: Indexable = {
   federated: import.meta.env?.VITE_FEDERATED === 'true',
   explorer: {
+    open: import.meta.env?.VITE_OPEN_EXPLORER === 'true' && import.meta.env?.VITE_OPEN === 'true',
     allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
     allowDownload: import.meta.env?.VITE_ALLOW_DOWNLOAD !== 'false', // default true
     exportsEnableExport: import.meta.env?.VITE_ALLOW_EXPORT_ENABLED === 'true',
