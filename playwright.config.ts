@@ -8,6 +8,7 @@ const config: PlaywrightTestConfig = {
   webServer: {
     command: 'npm run build && npm run preview',
     port: 4173,
+    reuseExistingServer: true,
     stdout: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
     stderr: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
   },

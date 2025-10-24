@@ -21,3 +21,4 @@ httpd-vhosts.conf
 *.iml
 supervisord.log
 supervisord.pid
+.cursor/
