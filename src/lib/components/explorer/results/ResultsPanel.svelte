@@ -30,7 +30,10 @@
   );
 
   let showExportButton = $derived(
-    features.explorer.allowExport && !isOpenAccess && hasFilterOrExport && $hasNonZeroResult,
+    features.explorer.allowExport &&
+      !isOpenAccess &&
+      hasFilterOrExport &&
+      ($countsLoading || $hasNonZeroResult),
   );
 
   let hasValidDistributionFilters = $derived(
