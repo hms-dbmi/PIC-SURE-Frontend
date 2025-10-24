@@ -122,14 +122,17 @@ async function getOpenPatientCount({
   };
   if (isOpenAccess && features.explorer.enableOrQueries) {
     request = addFilters
-      ? getQueryRequestV3(!isOpenAccess, get(resources).hpdsOpenV3, 'COUNT', addConceptsV3)
-      : getBlankQueryRequestV3(isOpenAccess, get(resources).hpdsOpenV3, 'COUNT', addConceptsV3);
+      ? getQueryRequestV3(!isOpenAccess, get(resources).hpdsOpenV3, 'CROSS_COUNT', addConceptsV3)
+      : getBlankQueryRequestV3(
+          isOpenAccess,
+          get(resources).hpdsOpenV3,
+          'CROSS_COUNT',
+          addConceptsV3,
+        );
   } else {
     request = addFilters
-      ? getQueryRequestV2(!isOpenAccess, resource, 'COUNT', addConceptsV2)
-      : getBlankQueryRequestV2(isOpenAccess, resource, 'COUNT', addConceptsV2);
-    const query = request.query as QueryV2;
-    query.expectedResultType = 'CROSS_COUNT';
+      ? getQueryRequestV2(!isOpenAccess, resource, 'CROSS_COUNT', addConceptsV2)
+      : getBlankQueryRequestV2(isOpenAccess, resource, 'CROSS_COUNT', addConceptsV2);
   }
   return api
     .post(Picsure.QueryV2Sync, request)
