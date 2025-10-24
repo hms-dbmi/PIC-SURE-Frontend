@@ -13,7 +13,9 @@ export type ExpectedResultType =
   | 'VARIANT_COUNT_FOR_QUERY'
   | 'SECRET_ADMIN_DATAFRAME';
 
-export interface QueryInterface {
+export type QueryInterface = QueryInterfaceV2 | QueryInterfaceV3;
+
+export interface QueryInterfaceV2 {
   fields: string[];
   categoryFilters: object; //TODO: define type
   numericFilters: object;
@@ -40,7 +42,7 @@ interface VariantInfoFilters {
   numericVariantInfoFilters?: NumericVariantInfoFiltersInterface;
 }
 
-export class Query implements QueryInterface {
+export class QueryV2 implements QueryInterfaceV2 {
   categoryFilters: object;
   numericFilters: object;
   requiredFields: string[];
@@ -51,7 +53,7 @@ export class Query implements QueryInterface {
   variantInfoFilters: VariantInfoFilters[];
   expectedResultType: ExpectedResultType | ExpectedResultType[];
 
-  constructor(newQuery?: QueryInterface) {
+  constructor(newQuery?: QueryInterfaceV2) {
     this.categoryFilters = newQuery?.categoryFilters || {};
     this.numericFilters = newQuery?.numericFilters || {};
     this.requiredFields = newQuery?.requiredFields || [];

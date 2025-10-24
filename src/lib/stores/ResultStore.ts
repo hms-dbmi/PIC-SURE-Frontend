@@ -29,7 +29,8 @@ export async function loadPatientCount(isOpenAccess: boolean) {
       get(searchTerm),
       get(selectedFacets).map((facet) => facet.name),
       get(genomicFilters).map(({ uuid }) => uuid),
-      get(filters).map(({ uuid }) => uuid),
+      // if operator changes we need to redo query
+      get(filters).map(({ uuid, parent }) => uuid + parent?.operator),
     ]);
     if (requestCache.has(cacheKey)) {
       resultCounts.set(requestCache.get(cacheKey) as StatResult[]);

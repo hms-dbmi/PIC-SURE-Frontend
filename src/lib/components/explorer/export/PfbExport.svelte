@@ -32,7 +32,7 @@
   }
 
   async function getSignedUrl(): Promise<string | null> {
-    const path = `${Picsure.Query}/${getDatasetId()}/signed-url`;
+    const path = `${Picsure.QueryV2}/${getDatasetId()}/signed-url`;
     try {
       const res = await api.post(path, getQueryRequest());
       return res.signedUrl || null;

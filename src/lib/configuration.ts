@@ -12,13 +12,13 @@ import type {
   LoginConfig,
   SiteMapConfig,
   CodeBlockConfig,
-  StatField,
   PrivacyConfig,
   AnalysisConfig,
   CollaborateConfig,
   DatasetRequestPageConfig,
   TermsOfServiceConfig,
 } from './types';
+import type { StatField } from './models/Stat';
 
 export const PROJECT_HOSTNAME =
   typeof window !== 'undefined'
@@ -182,6 +182,7 @@ export const features: Indexable = {
     enableCohortDetails: import.meta.env?.VITE_ENABLE_COHORT_DETAILS === 'true',
     showTreeStep: import.meta.env?.VITE_SHOW_TREE_STEP === 'true',
     enableExportTimeseries: import.meta.env?.VITE_EXPORT_TIMESERIES !== 'false', // default true
+    enableOrQueries: import.meta.env?.VITE_OR_QUERIES !== 'false',
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',

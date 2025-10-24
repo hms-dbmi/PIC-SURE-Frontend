@@ -32,21 +32,28 @@ function createTestGroup(children: TreeNode<string>[], operator: OperatorType): 
   return parent;
 }
 
+function printGroup(group: TreeNode<string>) {
+  const print = (node: TreeNode<string>): string => {
+    if (node && 'children' in node) {
+      const group = node as TestGroup;
+      return '(' + group.children.map(print).join(` ${group.operator} `) + ')';
+    }
+    return (node as TestNode).value;
+  };
+  return print(group);
+}
+
+function print(tree: Tree<string>) {
+  return printGroup(tree.root);
+}
+
 describe('FlatFilterTree Model', () => {
   it('has no operator when there is one filter', () => {
     // Given
     const tree = new Tree<string>(createTestGroup);
 
     // Then
-    expect(tree.root.children.length).toBe(0);
-    expect(tree.root.operator).toBe(Operator.AND);
-    expect(tree.serialized).toBe(
-      JSON.stringify({
-        children: [],
-        type: 'group',
-        operator: 'AND',
-      }),
-    );
+    expect(print(tree)).toBe('()');
   });
   describe('add', () => {
     it('add new element to root', () => {
@@ -57,13 +64,7 @@ describe('FlatFilterTree Model', () => {
       tree.add(createTestNode('A'));
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [{ type: 'node', value: 'A' }],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(A)');
     });
     it('add multiple elements to root', () => {
       // Given
@@ -73,16 +74,7 @@ describe('FlatFilterTree Model', () => {
       tree.add(createTestNode('A'), createTestNode('B'));
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            { type: 'node', value: 'A' },
-            { type: 'node', value: 'B' },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(A AND B)');
     });
   });
   describe('remove', () => {
@@ -93,19 +85,11 @@ describe('FlatFilterTree Model', () => {
       tree.add(A);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [{ type: 'node', value: 'A' }],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(A)');
       tree.remove(A);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({ children: [], type: 'group', operator: 'AND' }),
-      );
+      expect(print(tree)).toBe('()');
     });
     it('remove one child from OR subgroup, collapsing OR group to root AND group', () => {
       // Given
@@ -116,32 +100,11 @@ describe('FlatFilterTree Model', () => {
       tree.add(OR);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'A' },
-                { type: 'node', value: 'B' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('((A OR B))');
       tree.remove(A);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [{ type: 'node', value: 'B' }],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(B)');
     });
     it('remove one child from OR subgroup, OR group remains', () => {
       // Given
@@ -153,42 +116,11 @@ describe('FlatFilterTree Model', () => {
       tree.add(OR);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'A' },
-                { type: 'node', value: 'B' },
-                { type: 'node', value: 'C' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('((A OR B OR C))');
       tree.remove(A);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'B' },
-                { type: 'node', value: 'C' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('((B OR C))');
     });
     it('remove multiple children', () => {
       // Given
@@ -199,27 +131,11 @@ describe('FlatFilterTree Model', () => {
       tree.add(A, B, C);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            { type: 'node', value: 'A' },
-            { type: 'node', value: 'B' },
-            { type: 'node', value: 'C' },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(A AND B AND C)');
       tree.remove(A, B);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [{ type: 'node', value: 'C' }],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(C)');
     });
   });
   describe('update', () => {
@@ -301,39 +217,14 @@ describe('FlatFilterTree Model', () => {
       const tree = new Tree<string>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
-      tree.add(A);
-      tree.add(B);
+      tree.add(A, B);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            { type: 'node', value: 'A' },
-            { type: 'node', value: 'B' },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(A AND B)');
       tree.toggleOperator(A, B);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'A' },
-                { type: 'node', value: 'B' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('((A OR B))');
     });
     it('collapse OR subgroup', () => {
       // Given
@@ -344,96 +235,29 @@ describe('FlatFilterTree Model', () => {
       tree.add(OR);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'A' },
-                { type: 'node', value: 'B' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('((A OR B))');
       tree.toggleOperator(A, B);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            { type: 'node', value: 'A' },
-            { type: 'node', value: 'B' },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(A AND B)');
     });
     it('merge two OR subgroups', () => {
       // Given
       const tree = new Tree<string>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
-      tree.add(A);
-      tree.add(B);
-      tree.toggleOperator(A, B);
       const C = createTestNode('C');
       const D = createTestNode('D');
-      tree.add(C);
-      tree.add(D);
-      tree.toggleOperator(C, D);
+      const OR1 = createTestGroup([A, B], Operator.OR);
+      const OR2 = createTestGroup([C, D], Operator.OR);
+      tree.add(OR1, OR2);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'A' },
-                { type: 'node', value: 'B' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-            {
-              children: [
-                { type: 'node', value: 'C' },
-                { type: 'node', value: 'D' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
-      tree.toggleOperator(B, C);
+      expect(print(tree)).toBe('((A OR B) AND (C OR D))');
+      tree.toggleOperator(OR1, OR2);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'A' },
-                { type: 'node', value: 'B' },
-                { type: 'node', value: 'C' },
-                { type: 'node', value: 'D' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('((A OR B OR C OR D))');
     });
     it('split OR group', () => {
       // Given
@@ -446,51 +270,11 @@ describe('FlatFilterTree Model', () => {
       tree.add(OR);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'A' },
-                { type: 'node', value: 'B' },
-                { type: 'node', value: 'C' },
-                { type: 'node', value: 'D' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('((A OR B OR C OR D))');
       tree.toggleOperator(B, C);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'A' },
-                { type: 'node', value: 'B' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-            {
-              children: [
-                { type: 'node', value: 'C' },
-                { type: 'node', value: 'D' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('((A OR B) AND (C OR D))');
     });
     it('merge AND into leading OR group', () => {
       // Given
@@ -499,52 +283,15 @@ describe('FlatFilterTree Model', () => {
       const B = createTestNode('B');
       const C = createTestNode('C');
       const D = createTestNode('D');
-      tree.add(A);
-      tree.add(B);
-      tree.add(C);
-      tree.add(D);
-      tree.toggleOperator(A, B);
+      const OR = createTestGroup([A, B], Operator.OR);
+      tree.add(OR, C, D);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'A' },
-                { type: 'node', value: 'B' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-            { type: 'node', value: 'C' },
-            { type: 'node', value: 'D' },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
-      tree.toggleOperator(B, C);
+      expect(print(tree)).toBe('((A OR B) AND C AND D)');
+      tree.toggleOperator(OR, C);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'A' },
-                { type: 'node', value: 'B' },
-                { type: 'node', value: 'C' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-            { type: 'node', value: 'D' },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('((A OR B OR C) AND D)');
     });
     it('merge AND into trailing OR group', () => {
       // Given
@@ -553,52 +300,15 @@ describe('FlatFilterTree Model', () => {
       const B = createTestNode('B');
       const C = createTestNode('C');
       const D = createTestNode('D');
-      tree.add(A);
-      tree.add(B);
-      tree.add(C);
-      tree.add(D);
-      tree.toggleOperator(C, D);
+      const OR = createTestGroup([C, D], Operator.OR);
+      tree.add(A, B, OR);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            { type: 'node', value: 'A' },
-            { type: 'node', value: 'B' },
-            {
-              children: [
-                { type: 'node', value: 'C' },
-                { type: 'node', value: 'D' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
-      tree.toggleOperator(B, C);
+      expect(print(tree)).toBe('(A AND B AND (C OR D))');
+      tree.toggleOperator(B, OR);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            { type: 'node', value: 'A' },
-            {
-              children: [
-                { type: 'node', value: 'B' },
-                { type: 'node', value: 'C' },
-                { type: 'node', value: 'D' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(A AND (B OR C OR D))');
     });
     it('split from leading OR group', () => {
       // Given
@@ -608,49 +318,14 @@ describe('FlatFilterTree Model', () => {
       const C = createTestNode('C');
       const D = createTestNode('D');
       const OR = createTestGroup([A, B, C], Operator.OR);
-      tree.add(OR);
-      tree.add(D);
+      tree.add(OR, D);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'A' },
-                { type: 'node', value: 'B' },
-                { type: 'node', value: 'C' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-            { type: 'node', value: 'D' },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('((A OR B OR C) AND D)');
       tree.toggleOperator(B, C);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            {
-              children: [
-                { type: 'node', value: 'A' },
-                { type: 'node', value: 'B' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-            { type: 'node', value: 'C' },
-            { type: 'node', value: 'D' },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('((A OR B) AND C AND D)');
     });
     it('split from trailing OR group', () => {
       // Given
@@ -660,49 +335,14 @@ describe('FlatFilterTree Model', () => {
       const C = createTestNode('C');
       const D = createTestNode('D');
       const OR = createTestGroup([B, C, D], Operator.OR);
-      tree.add(A);
-      tree.add(OR);
+      tree.add(A, OR);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            { type: 'node', value: 'A' },
-            {
-              children: [
-                { type: 'node', value: 'B' },
-                { type: 'node', value: 'C' },
-                { type: 'node', value: 'D' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(A AND (B OR C OR D))');
       tree.toggleOperator(B, C);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            { type: 'node', value: 'A' },
-            { type: 'node', value: 'B' },
-            {
-              children: [
-                { type: 'node', value: 'C' },
-                { type: 'node', value: 'D' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(A AND B AND (C OR D))');
     });
     it('complex structure', () => {
       // Given
@@ -715,66 +355,14 @@ describe('FlatFilterTree Model', () => {
       const F = createTestNode('F');
       const OR1 = createTestGroup([B, C, D], Operator.OR);
       const OR2 = createTestGroup([E, F], Operator.OR);
-      tree.add(A);
-      tree.add(OR1);
-      tree.add(OR2);
+      tree.add(A, OR1, OR2);
 
       // When
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            { type: 'node', value: 'A' },
-            {
-              children: [
-                { type: 'node', value: 'B' },
-                { type: 'node', value: 'C' },
-                { type: 'node', value: 'D' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-            {
-              children: [
-                { type: 'node', value: 'E' },
-                { type: 'node', value: 'F' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(A AND (B OR C OR D) AND (E OR F))');
       tree.toggleOperator(B, C);
 
       // Then
-      expect(tree.serialized).toBe(
-        JSON.stringify({
-          children: [
-            { type: 'node', value: 'A' },
-            { type: 'node', value: 'B' },
-            {
-              children: [
-                { type: 'node', value: 'C' },
-                { type: 'node', value: 'D' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-            {
-              children: [
-                { type: 'node', value: 'E' },
-                { type: 'node', value: 'F' },
-              ],
-              type: 'group',
-              operator: 'OR',
-            },
-          ],
-          type: 'group',
-          operator: 'AND',
-        }),
-      );
+      expect(print(tree)).toBe('(A AND B AND (C OR D) AND (E OR F))');
     });
   });
   describe('find', () => {
@@ -785,10 +373,9 @@ describe('FlatFilterTree Model', () => {
       tree.add(OR);
 
       // Then
-      const node = tree.find((node) => 'value' in node && node.value === 'A') as
-        | TestNode
-        | undefined;
-      expect(node?.value).toBe('A');
+      const node = tree.find((node) => 'value' in node && node.value === 'A');
+      expect(node).toBeDefined();
+      expect((node as TestNode).value).toBe('A');
     });
     it('returns undefined when node not found', () => {
       const tree = new Tree<string>(createTestGroup);
@@ -814,8 +401,7 @@ describe('FlatFilterTree Model', () => {
       const tree = new Tree<string>(createTestGroup);
       const OR1 = createTestGroup([createTestNode('A')], Operator.OR);
       const OR2 = createTestGroup([createTestNode('B')], Operator.OR);
-      tree.add(OR1);
-      tree.add(OR2);
+      tree.add(OR1, OR2);
 
       // Then
       const found = tree.find((node) => tree.isGroup(node) && node.operator === Operator.OR);
@@ -823,18 +409,20 @@ describe('FlatFilterTree Model', () => {
       expect(((found as TestGroup).children[0] as TestNode).value).toBe('A');
     });
   });
-  describe('getLeafNodes', () => {
+  describe('leafNodes', () => {
     it('returns a list of leaves', () => {
       // Given
       const tree = new Tree<string>(createTestGroup);
       tree.add(createTestNode('A'));
       tree.add(createTestNode('B'));
+      tree.add(createTestNode('C'));
+      tree.add(createTestNode('D'));
 
       // When
       const leaves = tree.leafNodes;
 
       // Then
-      expect(leaves.length).toBe(2);
+      expect(leaves.length).toBe(4);
       expect(
         leaves
           .map((leaf) =>
@@ -842,7 +430,7 @@ describe('FlatFilterTree Model', () => {
           )
           .filter((x) => x)
           .join(','),
-      ).toBe('A:AND,B:AND');
+      ).toBe('A:AND,B:AND,C:AND,D:AND');
     });
     it('returns empty array for tree with only root', () => {
       // Given
@@ -851,7 +439,6 @@ describe('FlatFilterTree Model', () => {
       // Then
       expect(tree.leafNodes).toEqual([]);
     });
-
     it('handles nested OR groups', () => {
       // Given
       const tree = new Tree<string>(createTestGroup);
@@ -937,7 +524,6 @@ describe('FlatFilterTree Model', () => {
 
       // Then
       expect(tree.serialized).toBe(serialized);
-      expect(tree.root.children.length).toBe(2);
       expect(tree.leafNodes.length).toBe(3);
     });
 
@@ -1006,7 +592,6 @@ describe('FlatFilterTree Model', () => {
 
       // Then
       expect(tree.serialized).toBe(serialized);
-      expect(tree.root.children.length).toBe(0);
       expect(tree.leafNodes.length).toBe(0);
     });
 

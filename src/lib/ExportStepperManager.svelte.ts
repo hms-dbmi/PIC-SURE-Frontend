@@ -1,10 +1,10 @@
 import type { ExpectedResultType } from '$lib/models/query/Query.ts';
 import type { QueryRequestInterface } from './models/api/Request';
-import { Query } from './models/query/Query';
+import { QueryV2 } from './models/query/Query';
 
 let queryRequest: QueryRequestInterface = $state({
   resourceUUID: '',
-  query: new Query(),
+  query: new QueryV2(),
 });
 
 let activeType: ExpectedResultType | undefined = $state(undefined);
@@ -69,6 +69,6 @@ export function resetExportStepperState() {
   setSaveable(false);
   setQueryRequest({
     resourceUUID: '',
-    query: new Query(),
+    query: new QueryV2(),
   });
 }

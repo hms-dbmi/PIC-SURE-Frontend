@@ -5,16 +5,16 @@
   import { branding, features } from '$lib/configuration';
   import { isToastShowing, toaster } from '$lib/toaster';
 
-  import type { Query } from '$lib/models/query/Query';
+  import type { QueryV2 } from '$lib/models/query/Query';
   import { panelOpen } from '$lib/stores/SidePanel';
 
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import VariantExplorer from '$lib/components/explorer/variant/VariantExplorer.svelte';
-  import { getQueryRequest } from '$lib/utilities/QueryBuilder';
+  import { getQueryRequestV2 } from '$lib/utilities/QueryBuilder';
 
   onMount(() => {
-    if (!(getQueryRequest(true).query as Query).hasGenomicFilter()) {
+    if (!(getQueryRequestV2(true).query as QueryV2).hasGenomicFilter()) {
       if (!isToastShowing('no-query')) {
         toaster.error({
           id: 'no-query',
