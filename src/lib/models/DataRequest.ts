@@ -1,4 +1,4 @@
-import type { QueryInterface } from '$lib/models/query/Query';
+import type { QueryInterfaceV2 } from '$lib/models/query/Query';
 
 export enum UploadStatus {
   Uploading = 'Uploading',
@@ -37,7 +37,7 @@ export type Metadata = {
       type: string;
       resourceUUID: string;
       commonAreaUUID: string;
-      query: QueryInterface;
+      query: QueryInterfaceV2;
       institutionOfOrigin: string;
       requesterEmail: string;
     };

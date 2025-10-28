@@ -689,3 +689,10 @@ label.required input:invalid,
     @apply anchor;
   }
 }
+
+.operator-select {
+  @apply my-2 ml-8 w-32 px-2 py-1 bg-surface-200;
+}
+.filter-group-or {
+  @apply p-1 border border-surface-200-800;
+}

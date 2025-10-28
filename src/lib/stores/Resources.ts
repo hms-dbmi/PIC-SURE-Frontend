@@ -16,6 +16,7 @@ export interface ResourceMap {
   aggregate: string;
   search: string;
   hpdsOpen: string;
+  hpdsOpenV3: string;
   hpdsAuth: string;
   queryIdGen: string;
   queryable: QueryResource[];
@@ -30,6 +31,7 @@ const defaultResources: ResourceMap = {
     '') as string,
   hpdsOpen: (import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '') as string,
   hpdsAuth: (import.meta.env?.VITE_RESOURCE_HPDS || '') as string,
+  hpdsOpenV3: (import.meta.env?.VITE_RESOURCE_OPEN_V3_HPDS || '') as string,
   queryIdGen: (import.meta.env?.VITE_RESOURCE_QUERY_ID_GEN || '') as string,
   queryable: [],
 };

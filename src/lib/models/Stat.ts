@@ -1,5 +1,3 @@
-import type { QueryRequestInterface } from '$lib/models/api/Request';
-
 export type PatientCount = string | number | undefined;
 
 export interface PatientCountMap {
@@ -33,7 +31,8 @@ export interface StatResult {
 }
 
 export interface RequestMapOptions {
+  resource: string;
   isOpenAccess: boolean;
   stat: StatConfig;
-  request: QueryRequestInterface;
+  addFilters: boolean;
 }

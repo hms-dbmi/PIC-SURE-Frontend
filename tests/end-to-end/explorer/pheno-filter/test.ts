@@ -26,7 +26,6 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('Add Filters', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
-
   test('Add button is disabled when nothing is selected', async ({ page }) => {
     // Given
     await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
@@ -657,7 +656,6 @@ test.describe('Any record of filter', () => {
     await expect(page.getByTestId('distributions-btn')).not.toBeVisible();
   });
 });
-
 test.describe('User with no query scopes can add filters without error', () => {
   const outOfScopeStudy = 7;
   test.use({ storageState: 'tests/end-to-end/.auth/noScopeUser.json' });
@@ -689,5 +687,76 @@ test.describe('User with no query scopes can add filters without error', () => {
 
     // Then
     await expect(page.locator('#discover-error-container')).not.toBeVisible();
+  });
+});
+test.describe('Query V2 OR features', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/noScopeUser.json' });
+  let querySyncRequest: string[] = [];
+
+  test.beforeEach(({ page }) => {
+    page.on('request', (request) => {
+      if (request.url().includes('/picsure/query/sync')) {
+        const data = request.postData();
+        if (data !== null) {
+          querySyncRequest.push(data);
+        }
+      }
+    });
+  });
+
+  test.afterEach(() => {
+    querySyncRequest = [];
+  });
+  test('sends request with QueryV2 structure', async ({ page }) => {
+    // Given
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await page.goto('/explorer?search=somedata');
+
+    // When
+    await clickNthFilterIcon(page);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    const addFilterButton = page.getByTestId('add-filter');
+    await addFilterButton.click();
+
+    // Then
+    expect(querySyncRequest.length).toBe(1);
+    expect(querySyncRequest[0]).not.toContain('phenotypicClauses');
+  });
+  test('does not have dropdowns on explorer', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await page.goto('/explorer?search=somedata');
+
+    // When
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${mockData.content[5].dataset}`,
+      detailResForAge,
+    );
+    await clickNthFilterIcon(page, 5);
+    const selectAllButton = page.locator('#select-all');
+    await selectAllButton.click();
+    const addFilterButton = page.getByTestId('add-filter');
+    await addFilterButton.click();
+
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${mockData.content[5].dataset}`,
+      detailResForAge2,
+    );
+    await clickNthFilterIcon(page, 6);
+    const selectAllButton2 = page.locator('#select-all');
+    await selectAllButton2.click();
+    const addFilterButton2 = page.getByTestId('add-filter');
+    await addFilterButton2.click();
+
+    // Then
+    const filters = await page.locator('#export-filters .operator-select').all();
+    expect(filters.length).toBe(0);
   });
 });

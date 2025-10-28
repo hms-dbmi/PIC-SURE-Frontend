@@ -6,12 +6,12 @@
   import { stepperState } from '$lib/stores/Stepper';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import Content from '$lib/components/Content.svelte';
-  import { getQueryRequest } from '$lib/utilities/QueryBuilder';
+  import { getQueryRequestV2 } from '$lib/utilities/QueryBuilder';
   import type { ExportInterface } from '$lib/models/Export';
   import { features } from '$lib/configuration';
   let { exports } = ExportStore;
 
-  let queryRequest: QueryRequestInterface = getQueryRequest(true);
+  let queryRequest: QueryRequestInterface = getQueryRequestV2(true);
   let exportRows: ExportRowInterface[] = $exports.map((exp) => {
     return {
       ref: exp,

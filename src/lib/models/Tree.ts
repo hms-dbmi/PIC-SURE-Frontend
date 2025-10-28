@@ -117,7 +117,7 @@ export class Tree<T> {
     childNode.parent = childNode.parent.parent;
   }
 
-  private createOrGroupFromAndSiblings(sibA: TreeNode<T>, sibB: TreeNode<T>) {
+  private newOrGroup(sibA: TreeNode<T>, sibB: TreeNode<T>) {
     const newOrGroup = this.createGroup([sibA, sibB], Operator.OR);
     this.root.children.splice(this.root.children.indexOf(sibA), 1);
     this.root.children.splice(this.root.children.indexOf(sibB), 1, newOrGroup);
@@ -149,24 +149,26 @@ export class Tree<T> {
     }
   }
 
-  private mergeOrGroups(sibA: TreeNode<T>, sibB: TreeNode<T>) {
+  private mergeOrGroups(sibA: TreeGroup<T>, sibB: TreeGroup<T>) {
     if (sibA.parent === undefined || sibB.parent === undefined) return;
 
-    sibA.parent.children.push(...(sibB.parent.children || []));
-    this.root.children = this.root.children.filter((child) => child !== sibB.parent);
-    sibB.parent.children.forEach((child) => (child.parent = sibA.parent));
+    sibA.children.push(...(sibB.children || []));
+    this.root.children = this.root.children.filter((child) => child !== sibB);
+    sibB.children.forEach((child) => (child.parent = sibA));
   }
 
-  private moveNodeBetweenGroups(sibA: TreeNode<T>, sibB: TreeNode<T>) {
-    const [andNode, orNode] = sibA.parent?.operator === Operator.AND ? [sibA, sibB] : [sibB, sibA];
-    if (andNode.parent === undefined || orNode.parent === undefined) return;
+  private mergeNodeIntoOrGroup(sibA: TreeNode<T>, sibB: TreeNode<T>) {
+    const [orGroup, andNode] = this.isGroup(sibA)
+      ? [sibA as TreeGroup<T>, sibB]
+      : [sibB as TreeGroup<T>, sibA];
+    if (andNode.parent === undefined || orGroup.parent === undefined) return;
 
     const andNodeIndex = andNode.parent.children.indexOf(andNode);
-    const orGroupIndex = andNode.parent.children.indexOf(orNode.parent);
-    const index = andNodeIndex > orGroupIndex ? orNode.parent.children.length : 0;
-    orNode.parent.children.splice(index, 0, andNode);
+    const orGroupIndex = andNode.parent.children.indexOf(orGroup);
+    const index = andNodeIndex > orGroupIndex ? orGroup.children.length : 0;
+    orGroup.children.splice(index, 0, andNode);
     andNode.parent.children = andNode.parent.children.filter((child) => child !== andNode);
-    andNode.parent = orNode.parent;
+    andNode.parent = orGroup;
   }
 
   // Swaps the AND/OR grouping of two adjacent siblings
@@ -176,24 +178,22 @@ export class Tree<T> {
     // both siblings should be part of a group and should therefore have parents.
     if (sibA.parent === undefined || sibB.parent === undefined) return;
 
-    if (sibA.parent === sibB.parent) {
-      // in the same group
-      if (sibA.parent === undefined || sibA.parent.operator === Operator.AND) {
-        this.createOrGroupFromAndSiblings(sibA, sibB);
+    if (!this.isGroup(sibA) && !this.isGroup(sibB)) {
+      if (sibA.parent.operator === Operator.AND) {
+        // A & B are Nodes in AND group
+        this.newOrGroup(sibA, sibB);
       } else {
-        // both children are in an OR subgroup
+        // A & B are Nodes in OR group
         this.splitOrCollapseOrGroup(sibA, sibB);
       }
+    } else if (this.isGroup(sibA) && this.isGroup(sibB)) {
+      // A & B are both Or groups
+      this.mergeOrGroups(sibA, sibB);
     } else {
-      // in different groups
-      if (sibA.parent.operator === sibB.parent.operator && sibA.parent.operator === Operator.OR) {
-        // both children have the same operators but are in different OR groups
-        this.mergeOrGroups(sibA, sibB);
-      } else {
-        // children have different operators and are in different groups
-        this.moveNodeBetweenGroups(sibA, sibB);
-      }
+      // A or B is Group, the other is Node
+      this.mergeNodeIntoOrGroup(sibA, sibB);
     }
+
     this.pruneTree();
   }
 
