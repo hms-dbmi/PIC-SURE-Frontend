@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { genericUUID } from '$lib/utilities/UUID';
 import type { SearchResult } from '$lib/models/Search';
 import { GenotypeMap, type SNP } from '$lib/models/GenomeFilter';
 import { type OperatorType, Operator } from '$lib/models/query/Query';
@@ -93,7 +93,7 @@ export function createFilterGroup(
   children: FilterInterface[] = [],
   operator: OperatorType = Operator.AND,
 ): FilterGroupInterface {
-  const id = uuidv4();
+  const id = genericUUID();
   const newGroup: FilterGroupInterface = {
     filterType: 'FilterGroup',
     displayType: 'group',
@@ -118,7 +118,7 @@ export function createCategoricalFilter(
 ): CategoricalFilterInterface {
   const filter: Filter = {
     parent: undefined,
-    uuid: uuidv4(),
+    uuid: genericUUID(),
     id: searchResult.conceptPath,
     filterType: 'Categorical',
     displayType: values && values?.length > 0 ? 'restrict' : 'anyRecordOf',
@@ -135,7 +135,7 @@ export function createCategoricalFilter(
 export function createRequiredFilter(searchResult: SearchResult): CategoricalFilterInterface {
   const filter: Filter = {
     parent: undefined,
-    uuid: uuidv4(),
+    uuid: genericUUID(),
     id: searchResult.conceptPath,
     filterType: 'Categorical',
     displayType: 'any',
@@ -168,7 +168,7 @@ export function createAnyRecordOfFilter(
   }
   const filter: AnyRecordOfFilterInterface = {
     parent: undefined,
-    uuid: uuidv4(),
+    uuid: genericUUID(),
     id: searchResult.conceptPath,
     concepts: conceptPaths,
     filterType: 'AnyRecordOf',
@@ -189,7 +189,7 @@ export function createNumericFilter(
 ): NumericFilterInterface {
   const filter: Filter = {
     parent: undefined,
-    uuid: uuidv4(),
+    uuid: genericUUID(),
     id: searchResult.conceptPath,
     filterType: 'numeric',
     displayType:
@@ -238,7 +238,7 @@ export function createGenomicFilter(geneFilter: {
 
   const filter: Filter = {
     parent: undefined,
-    uuid: uuidv4(),
+    uuid: genericUUID(),
     id: 'genomic',
     filterType: 'genomic',
     displayType: 'any',
@@ -267,7 +267,7 @@ export function createSnpsFilter(snps: SNP[]): SnpFilterInterface {
     .join('; ');
   const filter: Filter = {
     parent: undefined,
-    uuid: uuidv4(),
+    uuid: genericUUID(),
     id: 'snp-variant',
     filterType: 'snp',
     displayType: 'any',

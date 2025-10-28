@@ -10,7 +10,7 @@
   import { features } from '$lib/configuration';
 
   import { filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
-  import { loadPatientCount, hasNonZeroResult } from '$lib/stores/ResultStore';
+  import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
   import Filters from '$lib/components/explorer/results/Filters.svelte';
@@ -30,7 +30,10 @@
   );
 
   let showExportButton = $derived(
-    features.explorer.allowExport && !isOpenAccess && hasFilterOrExport && $hasNonZeroResult,
+    features.explorer.allowExport &&
+      !isOpenAccess &&
+      hasFilterOrExport &&
+      ($countsLoading || $hasNonZeroResult),
   );
 
   let hasValidDistributionFilters = $derived(
@@ -123,6 +126,7 @@
         id="export-data-button"
         type="button"
         class="btn preset-filled-primary-500"
+        disabled={$countsLoading}
         onclick={() => goto('/explorer/export')}
         transition:scale={{ easing: elasticInOut }}
       >
