@@ -7,7 +7,7 @@ import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, features } from '$lib/configuration';
 import { Psama } from '$lib/paths';
 import { goto } from '$app/navigation';
-import type { QueryInterface } from '$lib/models/query/Query';
+import type { QueryInterfaceV2 } from '$lib/models/query/Query';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/state';
 import { resources } from '$lib/stores/Resources';
@@ -158,14 +158,14 @@ export function refreshLongTermToken() {
   });
 }
 
-export async function getQueryTemplate(): Promise<QueryInterface> {
+export async function getQueryTemplate(): Promise<QueryInterfaceV2> {
   try {
     const res = await api.get(Psama.User.Template + '/' + get(resources).application);
-    const queryTemplate = JSON.parse(res.queryTemplate) as QueryInterface;
+    const queryTemplate = JSON.parse(res.queryTemplate) as QueryInterfaceV2;
     return queryTemplate;
   } catch (error) {
     console.error('Error parsing query template: ' + error);
-    return {} as QueryInterface;
+    return {} as QueryInterfaceV2;
   }
 }
 

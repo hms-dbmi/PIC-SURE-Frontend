@@ -143,7 +143,7 @@
 
     return withBackoff(
       async () => {
-        const res = (await api.post(`${Picsure.Query}${queryFragment}`, query)) as {
+        const res = (await api.post(`${Picsure.QueryV2}${queryFragment}`, query)) as {
           picsureResultId: string;
           status: string;
           resultMetadata: { picsureQueryId: string };

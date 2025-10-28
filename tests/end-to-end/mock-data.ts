@@ -1,6 +1,6 @@
 import type { User } from '../../src/lib/models/User';
 import { PicsurePrivileges, BDCPrivileges } from '../../src/lib/models/Privilege';
-import type { QueryInterface } from '$lib/models/query/Query';
+import type { QueryInterfaceV2 } from '$lib/models/query/Query';
 import type { DashboardResp } from '$lib/stores/Dashboard';
 
 export const HPDS = process.env.VITE_RESOURCE_HPDS;
@@ -92,7 +92,7 @@ export const mockDashboard: DashboardResp = {
   ],
 };
 
-const mockQueryTemplate: QueryInterface = {
+const mockQueryTemplate: QueryInterfaceV2 = {
   categoryFilters: {
     '\\_consents\\': ['test_data_set', 'STUDY123', 'phs001', 'phs123'],
     '\\_harmonized_consent\\': ['test_data_set', 'STUDY123', 'phs001', 'phs123'],

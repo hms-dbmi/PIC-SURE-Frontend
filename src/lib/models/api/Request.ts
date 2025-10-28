@@ -1,8 +1,8 @@
-import type { Query, QueryV3 } from '$lib/models/query/Query';
+import type { QueryV2, QueryV3 } from '$lib/models/query/Query';
 
 export interface QueryRequestInterface {
   resourceUUID: string;
-  query: Query | QueryV3;
+  query: QueryV2 | QueryV3;
   '@type'?: string;
   commonAreaUUID?: string;
   institutionOfOrigin?: string;
