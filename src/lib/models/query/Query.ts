@@ -1,6 +1,5 @@
 import type { Indexable } from '$lib/types';
 import { type SNP } from '$lib/models/GenomeFilter';
-type UUID = `${string}-${string}-${string}-${string}-${string}` | null;
 
 export type ExpectedResultType =
   | 'COUNT'
@@ -152,9 +151,16 @@ export class Query implements QueryInterface {
   }
 }
 
+// -------------------------------- V3 Query -------------------------------- //
+
+type UUID = `${string}-${string}-${string}-${string}-${string}` | null;
 export type PhenotypicFilterType = 'REQUIRED' | 'FILTER' | 'ANY_RECORD_OF';
-export type Operator = 'AND' | 'OR';
 export type PhenotypicClause = PhenotypicSubqueryInterface | PhenotypicFilterInterface;
+export const Operator = {
+  AND: 'AND',
+  OR: 'OR',
+} as const;
+export type OperatorType = (typeof Operator)[keyof typeof Operator];
 
 export interface QueryInterfaceV3 {
   select: string[];
@@ -188,7 +194,7 @@ export interface PhenotypicSubqueryInterface extends PhenotypicClauseInterface {
   type: 'PhenotypicSubquery';
   not: boolean | null;
   phenotypicClauses: PhenotypicClause[];
-  operator: Operator;
+  operator: OperatorType;
 }
 
 export interface GenomicFilterInterfacev3 {
