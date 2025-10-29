@@ -281,6 +281,74 @@ test.describe('Results Panel', () => {
     test.afterEach(() => {
       querySyncRequest = [];
     });
+    test('shows distributions button when there are no OR filter groups', async ({ page }) => {
+      // Given
+      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      await mockApiSuccess(page, countResultPath, '9999');
+      await page.goto('/discover?search=somedata');
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const firstItem = await getOption(page);
+      await firstItem.click();
+      const addFilterButton = page.getByTestId('add-filter');
+      await addFilterButton.click();
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat2,
+      );
+      await page.locator('#row-2 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const secondItem = await getOption(page);
+      await secondItem.click();
+      const addFilterButton2 = page.getByTestId('add-filter');
+      await addFilterButton2.click();
+
+      // Then
+      expect(page.getByTestId('distributions-btn')).not.toBeDisabled();
+    });
+    test('disables distributions button when there are OR filter groups', async ({ page }) => {
+      // Given
+      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      await mockApiSuccess(page, countResultPath, '9999');
+      await page.goto('/discover?search=somedata');
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const firstItem = await getOption(page);
+      await firstItem.click();
+      const addFilterButton = page.getByTestId('add-filter');
+      await addFilterButton.click();
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat2,
+      );
+      await page.locator('#row-2 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const secondItem = await getOption(page);
+      await secondItem.click();
+      const addFilterButton2 = page.getByTestId('add-filter');
+      await addFilterButton2.click();
+      const dropdowns = await page.locator('#export-filters .operator-select').all();
+      await dropdowns[0].selectOption('OR');
+
+      // Then
+      expect(page.getByTestId('distributions-btn')).toBeDisabled();
+    });
 
     test('sends request with QueryV3 structure', async ({ page }) => {
       // Given

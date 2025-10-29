@@ -26,6 +26,18 @@ export class Tree<T> {
     this.createGroup = createGroup;
   }
 
+  get hasOr(): boolean {
+    const hasORChild = (node: TreeNode<T>) => {
+      if (this.isGroup(node)) {
+        if (node.operator === Operator.OR) return true;
+        return node.children.some(hasORChild);
+      }
+      return false;
+    };
+
+    return hasORChild(this.root);
+  }
+
   isGroup(node: TreeNode<T>): node is TreeGroup<T> {
     return node && 'children' in node;
   }

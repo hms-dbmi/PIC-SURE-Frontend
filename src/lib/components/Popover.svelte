@@ -123,7 +123,7 @@
     <FloatingArrow
       bind:ref={elemArrow}
       context={floating.context}
-      fill="var(--color-{color}-200)"
+      fill="var(--color-{color}-100)"
     />
   </div>
 {/if}

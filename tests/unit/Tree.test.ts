@@ -55,6 +55,23 @@ describe('FlatFilterTree Model', () => {
     // Then
     expect(print(tree)).toBe('()');
   });
+  it('has an OR group somewhere in tree', () => {
+    // Given
+    const tree = new Tree<string>(createTestGroup);
+    const A = createTestNode('A');
+    const B = createTestNode('B');
+    tree.add(A, B);
+
+    // When
+    expect(tree.hasOr).toBe(false);
+    const C = createTestNode('C');
+    const D = createTestNode('D');
+    const OR = createTestGroup([C, D], Operator.OR);
+    tree.add(OR);
+
+    // Then
+    expect(tree.hasOr).toBe(true);
+  });
   describe('add', () => {
     it('add new element to root', () => {
       // Given

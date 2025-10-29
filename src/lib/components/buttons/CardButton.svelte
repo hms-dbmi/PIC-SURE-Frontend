@@ -25,10 +25,23 @@
     onclick = () => {},
   }: Props = $props();
 
-  const cardClasses = `card card-btn ${size !== 'other' ? 'card-btn-' + size : ''} ${className} hover:scale-110 hover:shadow-lg`;
+  const cardClasses = `card card-btn ${size !== 'other' ? 'card-btn-' + size : ''} ${className}`;
 </script>
 
-{#if href}
+{#if disabled}
+  <button
+    data-testid={testid}
+    type="button"
+    class={cardClasses}
+    class:preset-filled-primary-500={active}
+    class:preset-outlined-primary-500={!active}
+    {disabled}
+  >
+    {#if icon}<i class="icon {icon}"></i>{/if}
+    <div class="title">{title}</div>
+    {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
+  </button>
+{:else if href}
   <a
     {href}
     data-testid={testid}
