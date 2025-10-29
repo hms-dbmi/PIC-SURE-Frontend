@@ -184,22 +184,32 @@
           />
         {/if}
         {#if showDiscoverDistributions}
-          <Popover
-            triggerTypes={['hover', 'focus']}
-            placement="left"
-            message="Variable distributions currently not available with 'OR' queries."
-          >
-            {#snippet trigger()}
-              <CardButton
-                href="/discover/distributions"
-                data-testid="distributions-btn"
-                title="Variable Distributions"
-                icon="fa-solid fa-chart-pie"
-                size="md"
-                disabled={$hasOrGroup}
-              />
-            {/snippet}
-          </Popover>
+          {#if $hasOrGroup}
+            <Popover
+              triggerTypes={['hover', 'focus']}
+              placement="left"
+              message="Variable distributions currently not available with 'OR' queries."
+            >
+              {#snippet trigger()}
+                <CardButton
+                  href="/discover/distributions"
+                  data-testid="distributions-btn"
+                  title="Variable Distributions"
+                  icon="fa-solid fa-chart-pie"
+                  size="md"
+                  disabled
+                />
+              {/snippet}
+            </Popover>
+          {:else}
+            <CardButton
+              href="/discover/distributions"
+              data-testid="distributions-btn"
+              title="Variable Distributions"
+              icon="fa-solid fa-chart-pie"
+              size="md"
+            />
+          {/if}
         {/if}
         {#if showVariantExplorer}
           <CardButton
