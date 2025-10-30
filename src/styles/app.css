@@ -571,7 +571,7 @@ label.required input:invalid,
 }
 
 .card-btn:hover {
-  @apply scale-110 shadow-lg;
+  @apply scale-110 disabled:scale-none shadow-lg disabled:shadow-none;
 }
 
 .card-btn-sm {

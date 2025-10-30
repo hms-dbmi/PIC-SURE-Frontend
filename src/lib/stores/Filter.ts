@@ -55,6 +55,8 @@ export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$u
   });
 });
 
+export const hasOrGroup: Readable<boolean> = derived(filterTree, ($ft) => $ft.hasOr);
+
 // modal data
 export const activeFilter: Writable<Filter | undefined> = writable();
 export const activeSearch: Writable<SearchResult | undefined> = writable();
