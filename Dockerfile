@@ -11,7 +11,7 @@ COPY .env svelte.config.js vite.config.ts .
 RUN pnpm build
 
 # Step 2: Serve the app with httpd
-FROM httpd:2.4.65-alpine
+FROM httpd:2.4.63-alpine
 
 RUN apk add --update openssl sed nodejs supervisor
 
