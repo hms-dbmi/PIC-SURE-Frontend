@@ -7,6 +7,7 @@ import {
   searchResultPath,
   facetResultPath,
   facetsResponse,
+  detailResponseCat2,
 } from '../../../mock-data';
 import { getOption } from '../../../utils';
 
@@ -179,6 +180,51 @@ test.describe('Results Panel', () => {
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
     await expect(page.locator('#export-data-button')).not.toBeVisible();
+  });
+
+  test('Export button disabled during counts loading then enabled after', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    // Deterministic counts: fast for initial and first filter, delayed after second filter
+    let countCalls = 0;
+    await page.route(countResultPath, async (route) => {
+      countCalls += 1;
+      if (countCalls >= 3) {
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+      await route.fulfill({ json: '9999' });
+    });
+    await page.goto('/explorer?search=somedata');
+    await page.locator('#results-panel-toggle').click();
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await page.locator('#row-0 button[title=Filter]').click();
+    await page.locator('#options-container label:nth-child(1)').click();
+    await page.getByTestId('add-filter').click();
+    const exportButton = page.locator('#export-data-button');
+    await expect(exportButton).toBeVisible();
+    await expect(exportButton).toBeEnabled();
+
+    // Add second filter to trigger delayed counts and disabled state
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat2.dataset}`,
+      detailResponseCat2,
+    );
+    await page.locator('#row-2 button[title=Filter]').click();
+    await page.locator('#select-all').click();
+    await page.getByTestId('add-filter').click();
+
+    await expect(exportButton).toBeVisible();
+    await expect(exportButton).toBeDisabled();
+    // Then eventually counts finish and button becomes enabled
+    const resultCountNumber = page.locator('#result-count-number');
+    await expect(resultCountNumber).toBeVisible();
+    await expect(exportButton).toBeEnabled();
   });
   test('Clear All clears exports and filters', async ({ page }) => {
     // Given
