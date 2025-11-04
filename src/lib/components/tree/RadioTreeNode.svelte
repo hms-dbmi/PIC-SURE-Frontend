@@ -6,13 +6,14 @@
     node,
     index,
     isRoot = false,
-  }: { node: RadioNodeInterface; index: number; isRoot?: boolean } = $props();
+    disabled = false,
+  }: { node: RadioNodeInterface; index: number; isRoot?: boolean; disabled?: boolean } = $props();
 </script>
 
 <details
   class="tree-item"
   data-testid="tree-item:{node.name}-{node.value}"
-  aria-disabled={node.disabled}
+  aria-disabled={node.disabled || disabled}
   open
 >
   <summary
@@ -34,6 +35,7 @@
       type="radio"
       name="tree-radio"
       value={node.value}
+      disabled={node.disabled || disabled}
       checked={node.selected}
       onclick={() => node.select()}
     />
@@ -44,7 +46,7 @@
   <div class="tree-item-children ml-4" data-testid="tree-item-children:{node.name}" role="group">
     {#if !node.isLeaf}
       {#each node.children as child}
-        <RadioTreeNode node={child} index={index + 1} />
+        <RadioTreeNode node={child} index={index + 1} {disabled} />
       {/each}
     {/if}
   </div>
