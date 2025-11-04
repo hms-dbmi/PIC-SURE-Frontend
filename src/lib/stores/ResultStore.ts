@@ -15,6 +15,7 @@ const requestCache: Map<string, StatResult[]> = new Map();
 export const hasNonZeroResult: Writable<boolean> = writable(false);
 export const resultCounts: Writable<StatResult[]> = writable([]);
 export const loading: Writable<Promise<void>> = writable(Promise.resolve());
+export const countsLoading: Writable<boolean> = writable(false);
 export const totalParticipants: Writable<number> = writable(0);
 
 export async function loadPatientCount(isOpenAccess: boolean) {
@@ -32,12 +33,14 @@ export async function loadPatientCount(isOpenAccess: boolean) {
     ]);
     if (requestCache.has(cacheKey)) {
       resultCounts.set(requestCache.get(cacheKey) as StatResult[]);
+      countsLoading.set(false);
       return;
     }
 
     await get(resourcesPromise);
     const resultStats: StatResult[] = getResultList(isOpenAccess, branding?.results?.stats || []);
     resultCounts.set(resultStats);
+    countsLoading.set(true);
     Promise.allSettled(resultStats.flatMap(StatPromise.list).map(({ promise }) => promise)).then(
       (results) => {
         if (!results.some(StatPromise.rejected)) {
@@ -49,6 +52,7 @@ export async function loadPatientCount(isOpenAccess: boolean) {
             (result) => StatPromise.fullfiled(result) && `${countResult([result.value])}` !== '0',
           ),
         );
+        countsLoading.set(false);
       },
     );
     const totalCount = resultStats.find((count) => count.key === branding?.results?.totalStatKey);
@@ -62,6 +66,7 @@ export async function loadPatientCount(isOpenAccess: boolean) {
     }
   } catch (error) {
     console.error(error);
+    countsLoading.set(false);
     if (!isToastShowing('query-error')) {
       toaster.error({
         id: 'query-error',
