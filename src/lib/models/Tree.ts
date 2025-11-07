@@ -64,7 +64,9 @@ export class Tree<T> {
     newNode.parent = parent;
 
     if (parent === undefined) {
-      // root node
+      if (!this.isGroup(newNode)) {
+        throw new Error('Root must be a TreeGroup');
+      }
       this.root = newNode as TreeGroup<T>;
       return;
     }
@@ -114,8 +116,7 @@ export class Tree<T> {
     const siblingCount = childNode.parent.children.length;
     const indexOfChildGroup = childNode.parent.parent.children.indexOf(childNode.parent);
     if (indexOfChildGroup < 0) {
-      console.error('Tree may be malformed');
-      return;
+      throw new Error('Tree structure is malformed: parent not found in grandparent\'s children');
     }
 
     // auto prune child's group if it's the only child
@@ -130,10 +131,17 @@ export class Tree<T> {
   }
 
   private newOrGroup(sibA: TreeNode<T>, sibB: TreeNode<T>) {
+    if (sibA.parent === undefined || sibB.parent === undefined) return;
+    if (sibA.parent !== sibB.parent) return;
+    
+    const parent = sibA.parent;
     const newOrGroup = this.createGroup([sibA, sibB], Operator.OR);
-    this.root.children.splice(this.root.children.indexOf(sibA), 1);
-    this.root.children.splice(this.root.children.indexOf(sibB), 1, newOrGroup);
-    newOrGroup.parent = this.root;
+    const aIndex = parent.children.indexOf(sibA);
+    const bIndex = parent.children.indexOf(sibB);
+    
+    parent.children.splice(Math.max(aIndex, bIndex), 1);
+    parent.children.splice(Math.min(aIndex, bIndex), 1, newOrGroup);
+    newOrGroup.parent = parent;
     sibA.parent = newOrGroup;
     sibB.parent = newOrGroup;
   }
@@ -163,10 +171,16 @@ export class Tree<T> {
 
   private mergeOrGroups(sibA: TreeGroup<T>, sibB: TreeGroup<T>) {
     if (sibA.parent === undefined || sibB.parent === undefined) return;
-
+    if (sibA.parent !== sibB.parent) return;
+    
     sibA.children.push(...(sibB.children || []));
-    this.root.children = this.root.children.filter((child) => child !== sibB);
     sibB.children.forEach((child) => (child.parent = sibA));
+    
+    const parent = sibA.parent;
+    const bIndex = parent.children.indexOf(sibB);
+    if (bIndex >= 0) {
+      parent.children.splice(bIndex, 1);
+    }
   }
 
   private mergeNodeIntoOrGroup(sibA: TreeNode<T>, sibB: TreeNode<T>) {
@@ -189,6 +203,7 @@ export class Tree<T> {
   toggleOperator(sibA: TreeNode<T>, sibB: TreeNode<T>) {
     // both siblings should be part of a group and should therefore have parents.
     if (sibA.parent === undefined || sibB.parent === undefined) return;
+    if (sibA.parent !== sibB.parent) return;
 
     if (!this.isGroup(sibA) && !this.isGroup(sibB)) {
       if (sibA.parent.operator === Operator.AND) {
@@ -252,7 +267,11 @@ export class Tree<T> {
       }
       return objData;
     };
-    return JSON.stringify(toObj(this.root));
+    try {
+      return JSON.stringify(toObj(this.root));
+    } catch (error) {
+      throw new Error(`Error serializing tree: ${error}`);
+    }
   }
 
   static deserialize<T>(
@@ -266,10 +285,17 @@ export class Tree<T> {
       }
       node.parent = parent;
     };
-    const parsed: TreeGroup<T> = JSON.parse(serialized) as TreeGroup<T>;
-    linkParents(parsed);
-    tree.root = parsed;
-    return tree;
+    try {
+      const parsed: TreeGroup<T> = JSON.parse(serialized) as TreeGroup<T>;
+      linkParents(parsed);
+      tree.root = parsed;
+      return tree;
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error(`Invalid JSON: ${error.message}`);
+      }
+      throw new Error(`Error deserializing tree: ${error}`);
+    }
   }
   /* eslint-enable @typescript-eslint/no-explicit-any */
 }
