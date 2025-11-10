@@ -197,6 +197,19 @@ export class Tree<T> {
     andNode.parent = orGroup;
   }
 
+  reorderNodes(sibA: TreeNode<T>, sibB: TreeNode<T>) {
+    if (sibA.parent === undefined || sibB.parent === undefined) return;
+    if (sibA.parent !== sibB.parent) return;
+
+    const parent = sibA.parent;
+    const aIndex = parent.children.indexOf(sibA);
+    const bIndex = parent.children.indexOf(sibB);
+    parent.children.splice(bIndex, 0, sibA);
+    parent.children.splice(aIndex, 1);
+    sibA.parent = parent;
+    sibB.parent = parent;
+  }
+
   // Swaps the AND/OR grouping of two adjacent siblings
   // You'll notice, we don't really need to know the intended operator
   // because we can infer where siblings should go based on parent operators

@@ -13,14 +13,28 @@
   import Modal from '$lib/components/Modal.svelte';
   import AddFilter from '$lib/components/explorer/AddFilter.svelte';
   import ViewAnyRecordOfFilter from '$lib/components/explorer/ViewAnyRecordOfFilter.svelte';
-
-  let { filter }: { filter: Filter } = $props();
+  import { useSortable } from '@dnd-kit-svelte/sortable';
+  import { CSS, styleObjectToString } from '@dnd-kit-svelte/utilities';
+  let { filter, draggable = false }: { filter: Filter, draggable?: boolean } = $props();
   let open = $state(false);
   let carot = $state('fa-caret-up');
   const genomicFilter = $derived(['genomic', 'snp'].includes(filter.filterType));
   const anyRecordOfFilter = $derived(filter.filterType === 'AnyRecordOf');
   let filterModal: boolean = $state(false);
   let anyRecordOfModal: boolean = $state(false);
+
+  const {attributes, listeners, node, activatorNode, transform, transition, isDragging, isSorting, isOver} =
+		useSortable({
+			id: filter.uuid,
+		});
+
+  const style = $derived(
+		styleObjectToString({
+			transform: CSS.Transform.toString(transform.current),
+			transition: isSorting.current ? transition.current : undefined,
+			zIndex: isDragging.current ? 1 : undefined,
+		})
+	);
 
   function editFilter() {
     if (filter.filterType === 'genomic') {
@@ -91,8 +105,22 @@
   in:scale={{ easing: elasticInOut }}
   out:fade={{ duration: 300 }}
   data-testid="added-filter-{filter.id}"
->
-  <header class="card-header p-1 flex">
+  bind:this={node.current}
+  {style}
+  >
+  <header class={["card-header p-1 flex", {'invisible': isDragging.current, 'bg-surface-300!': isOver.current}]}>
+    {#if draggable && !isDragging.current}
+      <div
+        class="flex items-center justify-center bg-surface-100 rounded-l-md p-1.5 w-7 flex-shrink-0 self-stretch min-h-full"
+        bind:this={activatorNode.current}
+				{...attributes.current}
+				{...listeners.current}
+      >
+        <div class="cursor-grab active:cursor-grabbing text-primary-500">
+          <i class="fa-solid fa-grip-vertical" style="color: var(--color-surface-900);"></i>
+        </div>
+      </div>
+    {/if}
     {#if !anyRecordOfFilter}
       <div
         class="flex-auto variable"
@@ -183,7 +211,14 @@
     </section>
   {/if}
 </div>
-
+{#if isDragging.current}
+  <div class="flex items-center justify-center abs inset-0">
+    <!-- You can put any content here for the dragging state -->
+    <div class="flex items-center justify-center bg-surface-100 rounded-l-md p-1.5 flex-shrink-0 self-stretch w-full h-full">
+      <span class="text-orange">Moving: {filter.variableName}</span>
+    </div>
+  </div>
+  {/if}
 <style>
   .actions {
     flex: none;
