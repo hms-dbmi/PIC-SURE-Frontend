@@ -1,1 +1,0 @@
-{"version":3,"file":"client-BWx-wafP.js","sources":["../../../.svelte-kit/adapter-node/chunks/client.js"],"sourcesContent":["import { s as stores } from \"./client2.js\";\n({\n  check: stores.updated.check\n});\n"],"names":[],"mappings":";;AACA,CAAC;AACD,EAAE,KAAK,EAAE,MAAM,CAAC,OAAO,CAAC;AACxB,CAAC"}
