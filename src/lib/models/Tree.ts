@@ -1,4 +1,5 @@
 import { Operator, type OperatorType } from '$lib/models/query/Query';
+import type { FilterInterface } from './Filter';
 
 export interface TreeNode<T> {
   parent: TreeGroup<T> | undefined;
@@ -199,13 +200,22 @@ export class Tree<T> {
 
   reorderNodes(sibA: TreeNode<T>, sibB: TreeNode<T>) {
     if (sibA.parent === undefined || sibB.parent === undefined) return;
-    if (sibA.parent !== sibB.parent) return;
-
+  
     const parent = sibA.parent;
-    const aIndex = parent.children.indexOf(sibA);
-    const bIndex = parent.children.indexOf(sibB);
-    parent.children.splice(bIndex, 0, sibA);
+    const aIndex = parent.children.findIndex(
+      (child) => ('uuid' in child) && (child as FilterInterface).uuid === (sibA as FilterInterface).uuid
+    );
+    const bIndex = parent.children.findIndex(
+      (child) => ('uuid' in child) && (child as FilterInterface).uuid === (sibB as FilterInterface).uuid
+    );
+    
+    if (aIndex === -1 || bIndex === -1) return;
+    
     parent.children.splice(aIndex, 1);
+    
+    const insertIndex = aIndex < bIndex ? bIndex - 1 : bIndex;
+    parent.children.splice(insertIndex, 0, sibA);
+    
     sibA.parent = parent;
     sibB.parent = parent;
   }

@@ -7,6 +7,7 @@
   import { exports } from '$lib/stores/Export';
 
   import { DndContext, DragOverlay, useSensors, useSensor, TouchSensor, KeyboardSensor, MouseSensor } from '@dnd-kit-svelte/core';
+  import Droppable from '$lib/components/Droppable.svelte';
   import { SortableContext } from '@dnd-kit-svelte/sortable';
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import FilterGroup from '$lib/components/explorer/results/FilterGroup.svelte';
@@ -29,14 +30,16 @@
       {#if features.explorer.enableOrQueries && isOpenAccess}
       <DndContext {sensors}>
         <SortableContext items={$filterTree.root.children.map((child) => (child as FilterInterface).uuid)}>
-          <FilterGroup group={$filterTree.root as FilterGroupInterface} />
+          <Droppable id="root">
+            <FilterGroup group={$filterTree.root as FilterGroupInterface} />
+          </Droppable>
         </SortableContext>
 
         <DragOverlay>
           {#if activeItem && $filterTree.isGroup(activeItem as TreeNode<FilterInterface>)}
             <FilterGroup group={activeItem as FilterGroupInterface} />
-          {:else if activeItem && 'filter' in activeItem}
-            <FilterComponent filter={activeItem.filter as Filter} />
+          {:else if activeItem}
+            <FilterComponent filter={activeItem as Filter} />
           {/if}
         </DragOverlay>
       </DndContext>
