@@ -26,6 +26,7 @@
   const {attributes, listeners, node, activatorNode, transform, transition, isDragging, isSorting, isOver} =
 		useSortable({
 			id: filter.uuid,
+			data: { type: 'item' },
 		});
 
   const style = $derived(

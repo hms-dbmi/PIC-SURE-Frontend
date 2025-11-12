@@ -5,7 +5,6 @@
   import FilterGroup from '$lib/components/explorer/results/FilterGroup.svelte';
   import { SortableContext, useSortable } from '@dnd-kit-svelte/sortable';
   import { CSS, styleObjectToString } from '@dnd-kit-svelte/utilities';
-  import Droppable from '$lib/components/Droppable.svelte';
 
   let { group = $bindable() }: { group: FilterGroupInterface } = $props();
   let id = $derived(group.uuid.split('-')[0]);
@@ -24,6 +23,10 @@
     isOver,
   } = useSortable({
     id: group.uuid,
+    data: { 
+      type: group.parent === undefined || group.parent === null ? 'root' : 'group', 
+      accepts: ['item'] 
+    },
   });
 
   const style = $derived(
@@ -43,7 +46,10 @@
       bind:this={node.current}
       class={[
         'flex flex-row items-center gap-0',
-        { invisible: isDragging.current, 'bg-surface-300!': isOver.current },
+        { 
+          invisible: isDragging.current, 
+          'bg-primary-500/10 rounded-md ring-2 ring-primary-500': isOver.current && !isRoot
+        },
       ]}
       {style}
     >
@@ -73,14 +79,10 @@
           {/if}
           {#if child && 'children' in child}
             <SortableContext items={(child as FilterGroupInterface).children.map((c) => c.uuid)}>
-              <Droppable id={child.uuid}>
-                <FilterGroup group={child as FilterGroupInterface} />
-              </Droppable>
+              <FilterGroup group={child as FilterGroupInterface} />
             </SortableContext>
           {:else}
-            <Droppable id={child.uuid}>
-              <FilterComponent filter={child as Filter} draggable={canReorder} />
-            </Droppable>
+            <FilterComponent filter={child as Filter} draggable={canReorder} />
           {/if}
         {/each}
       </div>
@@ -95,7 +97,7 @@
         <div
           class="flex-1 h-full bg-surface-200/30 border-2 border-dashed border-surface-400 rounded-r-md flex items-center justify-center"
         >
-          <div class="text-surface-500 text-sm opacity-50">
+          <div class="text-surface-500 text-sm opacity-50 ">
             Moving group: {group.operator.toLowerCase()}
           </div>
         </div>
