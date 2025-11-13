@@ -65,10 +65,6 @@
     });
   });
 
-  $effect(() => {
-    console.log('transform', transform.current);
-  });
-
   function editFilter() {
     if (filter.filterType === 'genomic') {
       populateFromGeneFilter(filter);

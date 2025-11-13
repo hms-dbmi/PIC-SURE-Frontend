@@ -100,8 +100,6 @@
     const overType = over?.data?.type as 'item' | 'group' | 'root' | undefined;
     const acceptsItem = over?.data?.accepts?.includes('item') ?? false;
 
-    console.log('onDragOver - activeType:', activeType, 'overType:', overType, 'over.id:', over.id);
-
     // Detect zone when hovering over a group with an item
     if (activeType === 'item' && overType === 'group') {
       const zone = getDropZone(over.id);
