@@ -60,10 +60,10 @@ export class Tree<T> {
 
   update(oldNode: TreeNode<T>, newNode: TreeNode<T>) {
     const parent = oldNode.parent;
-    console.log('updating nodes', oldNode, newNode);
+
     this.transferChildrenIfGroups(oldNode, newNode);
     newNode.parent = parent;
-    console.log('newNode parent', newNode.parent);
+
     if (parent === undefined) {
       if (!this.isGroup(newNode)) {
         throw new Error('Root must be a TreeGroup');
@@ -103,10 +103,8 @@ export class Tree<T> {
     if (!this.isGroup(oldNode) || !this.isGroup(newNode)) return;
 
     if (newNode.children.length === 0) {
-      console.log('transferring children', oldNode.children);
       newNode.children = oldNode.children;
       newNode.children.forEach((child) => (child.parent = newNode));
-      console.log('newNode children', newNode.children);
     }
   }
 
@@ -201,7 +199,6 @@ export class Tree<T> {
   }
 
   reorderNodes(sibA: TreeNode<T>, sibB: TreeNode<T>) {
-    console.log('reordering nodes', sibA, sibB);
     if (!sibA || !sibB) throw new Error('Invalid nodes');
     if (sibA.parent === undefined || sibB.parent === undefined) throw new Error('Invalid parents');
 
@@ -223,11 +220,9 @@ export class Tree<T> {
   }
 
   addNodeToGroup(node: TreeNode<T>, group: TreeGroup<T>) {
-    console.log('adding node to group', node, group);
     node.parent?.children.splice(node.parent?.children.indexOf(node) ?? -1, 1);
     node.parent = group;
     group.children.push(node);
-    console.log('group children', group.children);
     this.pruneTree();
   }
 
