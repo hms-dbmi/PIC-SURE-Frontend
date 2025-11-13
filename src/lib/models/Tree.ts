@@ -117,7 +117,7 @@ export class Tree<T> {
     const siblingCount = childNode.parent.children.length;
     const indexOfChildGroup = childNode.parent.parent.children.indexOf(childNode.parent);
     if (indexOfChildGroup < 0) {
-      throw new Error('Tree structure is malformed: parent not found in grandparent\'s children');
+      throw new Error("Tree structure is malformed: parent not found in grandparent's children");
     }
 
     // auto prune child's group if it's the only child
@@ -134,12 +134,12 @@ export class Tree<T> {
   private newOrGroup(sibA: TreeNode<T>, sibB: TreeNode<T>) {
     if (sibA.parent === undefined || sibB.parent === undefined) return;
     if (sibA.parent !== sibB.parent) return;
-    
+
     const parent = sibA.parent;
     const newOrGroup = this.createGroup([sibA, sibB], Operator.OR);
     const aIndex = parent.children.indexOf(sibA);
     const bIndex = parent.children.indexOf(sibB);
-    
+
     parent.children.splice(Math.max(aIndex, bIndex), 1);
     parent.children.splice(Math.min(aIndex, bIndex), 1, newOrGroup);
     newOrGroup.parent = parent;
@@ -173,10 +173,10 @@ export class Tree<T> {
   private mergeOrGroups(sibA: TreeGroup<T>, sibB: TreeGroup<T>) {
     if (sibA.parent === undefined || sibB.parent === undefined) return;
     if (sibA.parent !== sibB.parent) return;
-    
+
     sibA.children.push(...(sibB.children || []));
     sibB.children.forEach((child) => (child.parent = sibA));
-    
+
     const parent = sibA.parent;
     const bIndex = parent.children.indexOf(sibB);
     if (bIndex >= 0) {
@@ -204,17 +204,19 @@ export class Tree<T> {
 
     const parent = sibA.parent;
     const aIndex = parent.children.findIndex(
-      (child) => ('uuid' in child) && (child as FilterInterface).uuid === (sibA as FilterInterface).uuid
+      (child) =>
+        'uuid' in child && (child as FilterInterface).uuid === (sibA as FilterInterface).uuid,
     );
     const bIndex = parent.children.findIndex(
-      (child) => ('uuid' in child) && (child as FilterInterface).uuid === (sibB as FilterInterface).uuid
+      (child) =>
+        'uuid' in child && (child as FilterInterface).uuid === (sibB as FilterInterface).uuid,
     );
-    
+
     if (aIndex === -1 || bIndex === -1) return;
-    
+
     parent.children.splice(aIndex, 1);
     parent.children.splice(bIndex, 0, sibA);
-    
+
     sibA.parent = parent;
     sibB.parent = parent;
   }

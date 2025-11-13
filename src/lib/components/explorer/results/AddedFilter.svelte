@@ -15,14 +15,14 @@
   import ViewAnyRecordOfFilter from '$lib/components/explorer/ViewAnyRecordOfFilter.svelte';
   import { useSortable } from '@dnd-kit-svelte/sortable';
   import { CSS, styleObjectToString } from '@dnd-kit-svelte/utilities';
-  
+
   type DropZone = 'top' | 'middle' | 'bottom' | null;
-  let { 
-    filter, 
+  let {
+    filter,
     draggable = false,
     hoverZone = null,
-    hoverGroupId = null
-  }: { 
+    hoverGroupId = null,
+  }: {
     filter: Filter;
     draggable?: boolean;
     hoverZone?: DropZone;
@@ -34,16 +34,24 @@
   const anyRecordOfFilter = $derived(filter.filterType === 'AnyRecordOf');
   let filterModal: boolean = $state(false);
   let anyRecordOfModal: boolean = $state(false);
-  
+
   const isHovered = $derived(hoverGroupId === filter.uuid);
   const showTopZone = $derived(isHovered && hoverZone === 'top');
   const showBottomZone = $derived(isHovered && hoverZone === 'bottom');
 
-  const {attributes, listeners, node, activatorNode, transform, transition, isDragging, isSorting, isOver} =
-		useSortable({
-			id: filter.uuid,
-			data: { type: 'item' },
-		});
+  const {
+    attributes,
+    listeners,
+    node,
+    activatorNode,
+    transform,
+    transition,
+    isDragging,
+    isSorting,
+  } = useSortable({
+    id: filter.uuid,
+    data: { type: 'item' },
+  });
 
   const style = $derived.by(() => {
     const current = transform.current;
@@ -54,7 +62,7 @@
       transform: CSS.Transform.toString(current),
       transition: isSorting.current ? transition.current : undefined,
       zIndex: isDragging.current ? 1 : undefined,
-    })
+    });
   });
 
   $effect(() => {
@@ -125,144 +133,155 @@
 </script>
 
 {#key filter.uuid}
-<div class="relative">
-  {#if showTopZone}
-    <div class="absolute -top-2 left-0 right-0 h-1 bg-primary-500 rounded-full z-10 shadow-lg"></div>
-    <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-      Reorder before filter
-    </div>
-  {/if}
-  
-  <div
-    id={filter.uuid}
-    class="flex flex-col card bg-surface-100 p-1 m-1"
-    in:scale={{ easing: elasticInOut }}
-    out:fade={{ duration: 300 }}
-    data-testid="added-filter-{filter.id}"
-    data-sortable-id={filter.uuid}
-    bind:this={node.current}
-    {style}
+  <div class="relative">
+    {#if showTopZone}
+      <div
+        class="absolute -top-2 left-0 right-0 h-1 bg-primary-500 rounded-full z-10 shadow-lg"
+      ></div>
+      <div
+        class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10"
+      >
+        Reorder before filter
+      </div>
+    {/if}
+
+    <div
+      id={filter.uuid}
+      class="flex flex-col card bg-surface-100 p-1 m-1"
+      in:scale={{ easing: elasticInOut }}
+      out:fade={{ duration: 300 }}
+      data-testid="added-filter-{filter.id}"
+      data-sortable-id={filter.uuid}
+      bind:this={node.current}
+      {style}
     >
-    <header class={["card-header p-1 flex", {'invisible': isDragging.current}]}>
-      {#if draggable && !isDragging.current}
-        <div
-          class="flex items-center justify-center bg-surface-100 rounded-l-md p-1 w-7 flex-shrink-0 self-stretch min-h-full"
-          bind:this={activatorNode.current}
-					{...attributes.current}
-					{...listeners.current}
-        >
-          <div class="cursor-grab active:cursor-grabbing text-primary-500">
-            <i class="fa-solid fa-grip-vertical" style="color: var(--color-surface-900);"></i>
-          </div>
-        </div>
-      {/if}
-      {#if !anyRecordOfFilter}
-        <div
-          class="flex-auto variable"
-          tabindex="0"
-          role="button"
-          onclick={toggleCardBody}
-          onkeydown={(e: KeyboardEvent) => (e.key === 'Enter' || e.key === ' ') && toggleCardBody(e)}
-        >
-          {filter.variableName}
-        </div>
-      {:else}
-        <Modal
-          bind:open={anyRecordOfModal}
-          title="View Variables in Filter"
-          data-testid={`any-record-of-filter-modal-${filter.id}`}
-          withDefault={false}
-        >
-          {#snippet trigger()}
-            <div class="text-left">
-              {(filter as AnyRecordOfFilterInterface)?.concepts?.length} variable(s) in {filter
-                .searchResult?.display ||
-                filter.searchResult?.name ||
-                filter.variableName}
-              category
-            </div>
-          {/snippet}
-          <ViewAnyRecordOfFilter {filter} />
-        </Modal>
-      {/if}
-      <div class="actions">
-        {#if genomicFilter}
-          <button
-            type="button"
-            title="Edit Filter"
-            class="bg-initial text-black-500 hover:text-primary-600"
-            onclick={editFilter}
+      <header class={['card-header p-1 flex', { invisible: isDragging.current }]}>
+        {#if draggable && !isDragging.current}
+          <div
+            class="flex items-center justify-center bg-surface-100 rounded-l-md p-1 w-7 flex-shrink-0 self-stretch min-h-full"
+            bind:this={activatorNode.current}
+            {...attributes.current}
+            {...listeners.current}
           >
-            <i class="fa-solid fa-pen-to-square"></i>
-            <span class="sr-only">Edit Filter</span>
-          </button>
-        {:else if !anyRecordOfFilter}
+            <div class="cursor-grab active:cursor-grabbing text-primary-500">
+              <i class="fa-solid fa-grip-vertical" style="color: var(--color-surface-900);"></i>
+            </div>
+          </div>
+        {/if}
+        {#if !anyRecordOfFilter}
+          <div
+            class="flex-auto variable"
+            tabindex="0"
+            role="button"
+            onclick={toggleCardBody}
+            onkeydown={(e: KeyboardEvent) =>
+              (e.key === 'Enter' || e.key === ' ') && toggleCardBody(e)}
+          >
+            {filter.variableName}
+          </div>
+        {:else}
           <Modal
-            bind:open={filterModal}
-            title="Edit Filter"
-            triggerBase="bg-initial text-black-500 hover:text-primary-600"
+            bind:open={anyRecordOfModal}
+            title="View Variables in Filter"
+            data-testid={`any-record-of-filter-modal-${filter.id}`}
             withDefault={false}
           >
             {#snippet trigger()}
-              <i class="fa-solid fa-pen-to-square"></i>
-              <span class="sr-only">Edit Filter</span>
+              <div class="text-left">
+                {(filter as AnyRecordOfFilterInterface)?.concepts?.length} variable(s) in {filter
+                  .searchResult?.display ||
+                  filter.searchResult?.name ||
+                  filter.variableName}
+                category
+              </div>
             {/snippet}
-            <AddFilter
-              data={filter.searchResult}
-              existingFilter={filter}
-              onclose={() => (filterModal = false)}
-            />
+            <ViewAnyRecordOfFilter {filter} />
           </Modal>
         {/if}
-        <button
-          type="button"
-          title="Remove Filter"
-          class="bg-initial text-black-500 hover:text-primary-600"
-          onclick={deleteFilter}
-        >
-          <i class="fa-solid fa-times-circle"></i>
-          <span class="sr-only">Remove Filter</span>
-        </button>
-        {#if !anyRecordOfFilter}
+        <div class="actions">
+          {#if genomicFilter}
+            <button
+              type="button"
+              title="Edit Filter"
+              class="bg-initial text-black-500 hover:text-primary-600"
+              onclick={editFilter}
+            >
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span class="sr-only">Edit Filter</span>
+            </button>
+          {:else if !anyRecordOfFilter}
+            <Modal
+              bind:open={filterModal}
+              title="Edit Filter"
+              triggerBase="bg-initial text-black-500 hover:text-primary-600"
+              withDefault={false}
+            >
+              {#snippet trigger()}
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span class="sr-only">Edit Filter</span>
+              {/snippet}
+              <AddFilter
+                data={filter.searchResult}
+                existingFilter={filter}
+                onclose={() => (filterModal = false)}
+              />
+            </Modal>
+          {/if}
           <button
             type="button"
-            title="See details"
+            title="Remove Filter"
             class="bg-initial text-black-500 hover:text-primary-600"
-            onclick={toggleCardBody}
+            onclick={deleteFilter}
           >
-            <i class="fa-solid {carot}"></i>
-            <span class="sr-only">See details</span>
+            <i class="fa-solid fa-times-circle"></i>
+            <span class="sr-only">Remove Filter</span>
           </button>
-        {/if}
-      </div>
-    </header>
-    {#if open}
-      <section class="p-1 whitespace-pre-wrap" transition:slide={{ axis: 'y' }}>
-        {derivedFilterDescription(filter)}
-        {derivedStudyDescription(filter)}
-        {#if filter.filterType === 'Categorical' && filter.displayType !== 'any' && filter.displayType !== 'anyRecordOf'}
-          <div>Values: {filter.categoryValues.join(', ')}</div>
-        {/if}
-      </section>
-    {/if}
-  </div>
-  {#if isDragging.current}
-    <div class="absolute inset-0 flex flex-col card pointer-events-none">
-      <header class="card-header p-1 flex">
-        <div class="flex-auto flex items-center justify-center">
-          <div class="text-surface-500 text-sm opacity-50 mt-0.5">Moving filter: {filter.variableName}</div>
+          {#if !anyRecordOfFilter}
+            <button
+              type="button"
+              title="See details"
+              class="bg-initial text-black-500 hover:text-primary-600"
+              onclick={toggleCardBody}
+            >
+              <i class="fa-solid {carot}"></i>
+              <span class="sr-only">See details</span>
+            </button>
+          {/if}
         </div>
       </header>
+      {#if open}
+        <section class="p-1 whitespace-pre-wrap" transition:slide={{ axis: 'y' }}>
+          {derivedFilterDescription(filter)}
+          {derivedStudyDescription(filter)}
+          {#if filter.filterType === 'Categorical' && filter.displayType !== 'any' && filter.displayType !== 'anyRecordOf'}
+            <div>Values: {filter.categoryValues.join(', ')}</div>
+          {/if}
+        </section>
+      {/if}
     </div>
-  {/if}
-  
-  {#if showBottomZone}
-    <div class="absolute -bottom-2 left-0 right-0 h-1 bg-primary-500 rounded-full z-10 shadow-lg"></div>
-    <div class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-primary-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
-      Reorder after filter
-    </div>
-  {/if}
-</div>
+    {#if isDragging.current}
+      <div class="absolute inset-0 flex flex-col card pointer-events-none">
+        <header class="card-header p-1 flex">
+          <div class="flex-auto flex items-center justify-center">
+            <div class="text-surface-500 text-sm opacity-50 mt-0.5">
+              Moving filter: {filter.variableName}
+            </div>
+          </div>
+        </header>
+      </div>
+    {/if}
+
+    {#if showBottomZone}
+      <div
+        class="absolute -bottom-2 left-0 right-0 h-1 bg-primary-500 rounded-full z-10 shadow-lg"
+      ></div>
+      <div
+        class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-primary-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10"
+      >
+        Reorder after filter
+      </div>
+    {/if}
+  </div>
 {/key}
 
 <style>
