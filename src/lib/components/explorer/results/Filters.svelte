@@ -31,33 +31,79 @@
     useSensor(MouseSensor),
   );
   let activeItem = $state<FilterInterface | FilterGroupInterface | undefined>(undefined);
+  type DropZone = 'top' | 'middle' | 'bottom' | null;
+  let hoverZone = $state<DropZone>(null);
+  let hoverGroupId = $state<string | null>(null);
+  let currentMouseY = $state<number>(0);
+  
 
-  function findContainer(id: string | number): FilterGroupInterface | null {
-    const node = $filterTree.find(
-      (n) => 'uuid' in (n as FilterInterface) && (n as FilterInterface).uuid === id,
-    );
+    function findContainer(id: string | number): FilterGroupInterface | null {
+    const node = $filterTree.find((n) => ('uuid' in (n as FilterInterface)) && (n as FilterInterface).uuid === id);
     if (node && $filterTree.isGroup(node as TreeNode<FilterInterface>)) {
       return node as FilterGroupInterface;
     }
     return node?.parent as FilterGroupInterface;
   }
-  function onDragStart({ active }: DragStartEvent) {
-    const node = $filterTree.find(
-      (n) => 'uuid' in (n as FilterInterface) && (n as FilterInterface).uuid === active.id,
-    );
-    if ($filterTree.isGroup(node as TreeNode<FilterInterface>)) {
-      activeItem = (node as FilterGroupInterface) ?? null;
-    } else {
-      activeItem = (node as FilterInterface) ?? null;
-    }
+
+  function getDropZone(overGroupId: string | number): DropZone {
+    // Find the DOM element for the group
+    const elements = document.querySelectorAll('[data-sortable-id]');
+    let groupElement: Element | undefined;
+    
+    elements.forEach((el) => {
+      if (el.getAttribute('data-sortable-id') === String(overGroupId)) {
+        groupElement = el;
+      }
+    });
+    
+    if (!groupElement) return 'middle';
+    
+    const rect = groupElement.getBoundingClientRect();
+    const relativeY = currentMouseY - rect.top;
+    const height = rect.height;
+    const percentage = relativeY / height;
+    
+    // More generous middle zone for adding to group
+    if (percentage < 0.2) return 'top';
+    if (percentage > 0.8) return 'bottom';
+    return 'middle';
   }
 
-  function onDragOver({ active, over }: DragOverEvent) {
-    if (!over || !active) return;
+  function onDragStart({active}: DragStartEvent) {
+    const node = $filterTree.find((n) => ('uuid' in (n as FilterInterface)) && (n as FilterInterface).uuid === active.id);
+		if ($filterTree.isGroup(node as TreeNode<FilterInterface>)) {
+			activeItem = node as FilterGroupInterface ?? null;
+		} else {
+			activeItem = node as FilterInterface ?? null;
+		}
+	}
+
+  function onDragOver(event: DragOverEvent) {
+    const {active, over} = event;
+    if (!over || !active) {
+      hoverZone = null;
+      hoverGroupId = null;
+      return;
+    }
 
     const activeType = active.data?.type as 'item' | 'group' | undefined;
     const overType = over?.data?.type as 'item' | 'group' | 'root' | undefined;
     const acceptsItem = over?.data?.accepts?.includes('item') ?? false;
+
+    // Detect zone when hovering over a group
+    if (activeType === 'item' && overType === 'group') {
+      const zone = getDropZone(over.id);
+      hoverZone = zone;
+      hoverGroupId = String(over.id);
+      
+      // Only move to container if in middle zone
+      if (zone !== 'middle') {
+        return; // Don't move yet, wait for onDragEnd
+      }
+    } else {
+      hoverZone = null;
+      hoverGroupId = null;
+    }
 
     // Only move items between different containers
     if (activeType !== 'item') return;
@@ -68,22 +114,20 @@
 
     if (!activeContainer || !overContainer || activeContainer === overContainer) return;
 
-    const item = activeContainer.children.find(
-      (child) => 'uuid' in child && (child as FilterInterface).uuid === active.id,
-    );
+    const item = activeContainer.children.find((child) => ('uuid' in child) && (child as FilterInterface).uuid === active.id);
     if (!item) return;
 
-    // Move item to new container
-    activeContainer.children = activeContainer.children.filter(
-      (child) => 'uuid' in child && (child as FilterInterface).uuid !== active.id,
-    );
+    // Move item to new container (only happens for middle zone now)
+    activeContainer.children = activeContainer.children.filter((child) => ('uuid' in child) && (child as FilterInterface).uuid !== active.id);
     overContainer.children.push(item as FilterInterface);
     (item as FilterInterface).parent = overContainer;
   }
 
-  function onDragEnd({ active, over }: DragEndEvent) {
+  function onDragEnd({active, over}: DragEndEvent) {
     if (!over) {
       activeItem = undefined;
+      hoverZone = null;
+      hoverGroupId = null;
       return;
     }
 
@@ -92,18 +136,45 @@
 
     // Handle group reordering
     if (activeType === 'group' && (overType === 'group' || overType === 'item')) {
-      const activeNode = $filterTree.find(
-        (n) => 'uuid' in (n as FilterInterface) && (n as FilterInterface).uuid === active.id,
-      );
-      const overNode = $filterTree.find(
-        (n) => 'uuid' in (n as FilterInterface) && (n as FilterInterface).uuid === over.id,
-      );
-
+      const activeNode = $filterTree.find((n) => ('uuid' in (n as FilterInterface)) && (n as FilterInterface).uuid === active.id);
+      const overNode = $filterTree.find((n) => ('uuid' in (n as FilterInterface)) && (n as FilterInterface).uuid === over.id);
+      
       if (activeNode && overNode) {
         $filterTree.reorderNodes(activeNode as FilterInterface, overNode as FilterInterface);
       }
     }
-
+    
+    // Handle item dropped on group in top/bottom zone (place before/after group)
+    if (activeType === 'item' && overType === 'group' && (hoverZone === 'top' || hoverZone === 'bottom')) {
+      const activeNode = $filterTree.find((n) => ('uuid' in (n as FilterInterface)) && (n as FilterInterface).uuid === active.id);
+      const overNode = $filterTree.find((n) => ('uuid' in (n as FilterInterface)) && (n as FilterInterface).uuid === over.id);
+      
+      if (activeNode && overNode && overNode.parent) {
+        const targetParent = overNode.parent as FilterGroupInterface;
+        const currentParent = activeNode.parent as FilterGroupInterface | undefined;
+        
+        // Remove from current parent
+        if (currentParent) {
+          currentParent.children = currentParent.children.filter((child) => child !== activeNode);
+          currentParent.uuid = genericUUID();
+        }
+        
+        // Add to target parent at the correct position
+        const overIndex = targetParent.children.indexOf(overNode as FilterInterface);
+        
+        if (hoverZone === 'bottom') {
+          // Bottom zone: place AFTER the group
+          targetParent.children.splice(overIndex + 1, 0, activeNode as FilterInterface);
+        } else {
+          // Top zone: place BEFORE the group
+          targetParent.children.splice(overIndex, 0, activeNode as FilterInterface);
+        }
+        
+        (activeNode as FilterInterface).parent = targetParent;
+        targetParent.uuid = genericUUID();
+      }
+    }
+    
     // Handle item reordering within same container
     if (activeType === 'item' && overType === 'item') {
       const activeContainer = findContainer(active.id);
@@ -111,18 +182,16 @@
 
       if (!activeContainer || !overContainer) {
         activeItem = undefined;
+        hoverZone = null;
+        hoverGroupId = null;
         return;
       }
 
       if (activeContainer === overContainer) {
         // Same container reorder
-        const activeNode = $filterTree.find(
-          (n) => 'uuid' in (n as FilterInterface) && (n as FilterInterface).uuid === active.id,
-        );
-        const overNode = $filterTree.find(
-          (n) => 'uuid' in (n as FilterInterface) && (n as FilterInterface).uuid === over.id,
-        );
-
+        const activeNode = $filterTree.find((n) => ('uuid' in (n as FilterInterface)) && (n as FilterInterface).uuid === active.id);
+        const overNode = $filterTree.find((n) => ('uuid' in (n as FilterInterface)) && (n as FilterInterface).uuid === over.id);
+        
         if (activeNode && overNode) {
           $filterTree.reorderNodes(activeNode as FilterInterface, overNode as FilterInterface);
           activeContainer.uuid = genericUUID();
@@ -134,15 +203,11 @@
       }
     }
 
-    // Handle item dropped on group (cross-container, handled by onDragOver)
-    if (activeType === 'item' && overType === 'group') {
-      const activeNode = $filterTree.find(
-        (n) => 'uuid' in (n as FilterInterface) && (n as FilterInterface).uuid === active.id,
-      );
-      const overNode = $filterTree.find(
-        (n) => 'uuid' in (n as FilterInterface) && (n as FilterInterface).uuid === over.id,
-      );
-
+    // Handle item dropped on group in middle zone (add to group, handled by onDragOver)
+    if (activeType === 'item' && overType === 'group' && hoverZone === 'middle') {
+      const activeNode = $filterTree.find((n) => ('uuid' in (n as FilterInterface)) && (n as FilterInterface).uuid === active.id);
+      const overNode = $filterTree.find((n) => ('uuid' in (n as FilterInterface)) && (n as FilterInterface).uuid === over.id);
+      
       if (activeNode?.parent && overNode && $filterTree.isGroup(overNode)) {
         (activeNode.parent as FilterGroupInterface).uuid = genericUUID();
         (overNode as FilterGroupInterface).uuid = genericUUID();
@@ -150,6 +215,8 @@
     }
 
     activeItem = undefined;
+    hoverZone = null;
+    hoverGroupId = null;
     $filterTree.pruneTree();
     ($filterTree.root as FilterGroupInterface).uuid = genericUUID();
     filterTree.set($filterTree);

@@ -6,10 +6,23 @@
   import { SortableContext, useSortable } from '@dnd-kit-svelte/sortable';
   import { CSS, styleObjectToString } from '@dnd-kit-svelte/utilities';
 
-  let { group = $bindable() }: { group: FilterGroupInterface } = $props();
+  type DropZone = 'top' | 'middle' | 'bottom' | null;
+  let { 
+    group = $bindable(),
+    hoverZone = null,
+    hoverGroupId = null
+  }: { 
+    group: FilterGroupInterface;
+    hoverZone?: DropZone;
+    hoverGroupId?: string | null;
+  } = $props();
   let id = $derived(group.uuid.split('-')[0]);
   const canReorder = $derived(group.children.length > 1);
   const isRoot = $derived(group.parent === undefined || group.parent === null);
+  const isHovered = $derived(hoverGroupId === group.uuid);
+  const showMiddleZone = $derived(isHovered && hoverZone === 'middle' && !isRoot);
+  const showTopZone = $derived(isHovered && hoverZone === 'top' && !isRoot);
+  const showBottomZone = $derived(isHovered && hoverZone === 'bottom' && !isRoot);
 
   const {
     attributes,
@@ -29,27 +42,35 @@
     },
   });
 
-  const style = $derived(
-    styleObjectToString({
-      transform: CSS.Transform.toString(transform.current),
+  const style = $derived.by(() => {
+    const current = transform.current;
+    if (current) {
+      current.scaleY = 1;
+    }
+    return styleObjectToString({
+      transform: CSS.Transform.toString(current),
       transition: isSorting.current ? transition.current : undefined,
       zIndex: isDragging.current ? 1 : undefined,
-    }),
-  );
+    })
+  });
 </script>
 
 {#key group.uuid}
   <div class="relative">
+    {#if showTopZone}
+      <div class="absolute -top-2 left-0 right-0 h-1 bg-primary-500 rounded-full z-10 shadow-lg"></div>
+      <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+        Reorder before group
+      </div>
+    {/if}
+    
     <div
       id={`filter-group-${id}`}
       data-testid={`filter-group-${id}`}
+      data-sortable-id={group.uuid}
       bind:this={node.current}
       class={[
-        'flex flex-row items-center gap-0',
-        { 
-          invisible: isDragging.current, 
-          'bg-primary-500/10 rounded-md ring-2 ring-primary-500': isOver.current && !isRoot
-        },
+        'flex flex-row items-center gap-0 transition-all',
       ]}
       {style}
     >
@@ -79,14 +100,28 @@
           {/if}
           {#if child && 'children' in child}
             <SortableContext items={(child as FilterGroupInterface).children.map((c) => c.uuid)}>
-              <FilterGroup group={child as FilterGroupInterface} />
+              <FilterGroup group={child as FilterGroupInterface} {hoverZone} {hoverGroupId} />
             </SortableContext>
           {:else}
-            <FilterComponent filter={child as Filter} draggable={canReorder} />
+            <FilterComponent filter={child as Filter} draggable={canReorder} {hoverZone} {hoverGroupId} />
           {/if}
         {/each}
       </div>
     </div>
+    
+    {#if showMiddleZone}
+      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-primary-500 text-white text-xs px-3 py-1.5 rounded-md whitespace-nowrap z-10 shadow-lg font-medium">
+        Add to group
+      </div>
+    {/if}
+    
+    {#if showBottomZone}
+      <div class="absolute -bottom-2 left-0 right-0 h-1 bg-primary-500 rounded-full z-10 shadow-lg"></div>
+      <div class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-primary-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+        Reorder after group
+      </div>
+    {/if}
+    
     {#if isDragging.current}
       <div class="absolute inset-0 flex flex-row items-center gap-0 pointer-events-none">
         {#if canReorder && !isRoot}

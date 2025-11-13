@@ -15,13 +15,29 @@
   import ViewAnyRecordOfFilter from '$lib/components/explorer/ViewAnyRecordOfFilter.svelte';
   import { useSortable } from '@dnd-kit-svelte/sortable';
   import { CSS, styleObjectToString } from '@dnd-kit-svelte/utilities';
-  let { filter, draggable = false }: { filter: Filter, draggable?: boolean } = $props();
+  
+  type DropZone = 'top' | 'middle' | 'bottom' | null;
+  let { 
+    filter, 
+    draggable = false,
+    hoverZone = null,
+    hoverGroupId = null
+  }: { 
+    filter: Filter;
+    draggable?: boolean;
+    hoverZone?: DropZone;
+    hoverGroupId?: string | null;
+  } = $props();
   let open = $state(false);
   let carot = $state('fa-caret-up');
   const genomicFilter = $derived(['genomic', 'snp'].includes(filter.filterType));
   const anyRecordOfFilter = $derived(filter.filterType === 'AnyRecordOf');
   let filterModal: boolean = $state(false);
   let anyRecordOfModal: boolean = $state(false);
+  
+  const isHovered = $derived(hoverGroupId === filter.uuid);
+  const showTopZone = $derived(isHovered && hoverZone === 'top');
+  const showBottomZone = $derived(isHovered && hoverZone === 'bottom');
 
   const {attributes, listeners, node, activatorNode, transform, transition, isDragging, isSorting, isOver} =
 		useSortable({
@@ -29,13 +45,21 @@
 			data: { type: 'item' },
 		});
 
-  const style = $derived(
-		styleObjectToString({
-			transform: CSS.Transform.toString(transform.current),
-			transition: isSorting.current ? transition.current : undefined,
-			zIndex: isDragging.current ? 1 : undefined,
-		})
-	);
+  const style = $derived.by(() => {
+    const current = transform.current;
+    if (current) {
+      current.scaleY = 1;
+    }
+    return styleObjectToString({
+      transform: CSS.Transform.toString(current),
+      transition: isSorting.current ? transition.current : undefined,
+      zIndex: isDragging.current ? 1 : undefined,
+    })
+  });
+
+  $effect(() => {
+    console.log('transform', transform.current);
+  });
 
   function editFilter() {
     if (filter.filterType === 'genomic') {
@@ -102,16 +126,24 @@
 
 {#key filter.uuid}
 <div class="relative">
+  {#if showTopZone}
+    <div class="absolute -top-2 left-0 right-0 h-1 bg-primary-500 rounded-full z-10 shadow-lg"></div>
+    <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-primary-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+      Reorder before filter
+    </div>
+  {/if}
+  
   <div
     id={filter.uuid}
     class="flex flex-col card bg-surface-100 p-1 m-1"
     in:scale={{ easing: elasticInOut }}
     out:fade={{ duration: 300 }}
     data-testid="added-filter-{filter.id}"
+    data-sortable-id={filter.uuid}
     bind:this={node.current}
     {style}
     >
-    <header class={["card-header p-1 flex", {'invisible': isDragging.current, 'bg-surface-300!': isOver.current}]}>
+    <header class={["card-header p-1 flex", {'invisible': isDragging.current}]}>
       {#if draggable && !isDragging.current}
         <div
           class="flex items-center justify-center bg-surface-100 rounded-l-md p-1 w-7 flex-shrink-0 self-stretch min-h-full"
@@ -221,6 +253,13 @@
           <div class="text-surface-500 text-sm opacity-50 mt-0.5">Moving filter: {filter.variableName}</div>
         </div>
       </header>
+    </div>
+  {/if}
+  
+  {#if showBottomZone}
+    <div class="absolute -bottom-2 left-0 right-0 h-1 bg-primary-500 rounded-full z-10 shadow-lg"></div>
+    <div class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-primary-500 text-white text-xs px-2 py-1 rounded whitespace-nowrap z-10">
+      Reorder after filter
     </div>
   {/if}
 </div>
