@@ -29,41 +29,38 @@
   );
 
   async function getHierarchy(): Promise<NodeInterface[]> {
-    if (!data.dataset || !data.conceptPath) {
-      throw new Error('Dataset and concept path are required');
+    if (!data?.dataset || !data?.conceptPath) {
+      return [];
     }
+
     try {
-      const hierarchyConcepts = (await getHierarchyConcepts(data.dataset, data.conceptPath))?.reverse();
-      if (!hierarchyConcepts || hierarchyConcepts.length === 0) {
-        throw new Error('No hierarchy concepts found');
+      const hierarchyConcepts = await getHierarchyConcepts(data.dataset, data.conceptPath);
+
+      if (!hierarchyConcepts?.length) {
+        return [];
       }
 
-      let rootNode: NodeInterface | null = null;
-      let currentNode: NodeInterface | null = null;
-      
-      for (let i = 0; i < hierarchyConcepts.length; i++) {
-        const concept = hierarchyConcepts[i];
-        const newNode = createNode(concept);
-        
-        if (i === 0) {
-          rootNode = newNode;
-          currentNode = newNode;
-        } else if (currentNode) {
-          currentNode.children = [newNode];
-          currentNode = newNode;
+      const rootNode = hierarchyConcepts.reduce<NodeInterface | null>((parent, concept) => {
+        const node = createNode(concept);
+        if (parent) {
+          node.children = [parent];
         }
-      }
-      
+        return node;
+      }, null);
+
       return rootNode ? [rootNode] : [];
     } catch (error) {
-      console.error('Error getting hierarchy concepts: ', error instanceof Error ? error.message : error);
-      throw new Error('Error getting hierarchy concepts');
+      console.error(
+        'Error getting hierarchy concepts: ',
+        error instanceof Error ? error.message : error,
+      );
+      throw error; // let the {#await} {:catch} block handle UI
     }
   }
 
   function createNode(concept: SearchResult): NodeInterface {
     return {
-      name: concept.name,
+      name: `${concept.display} (${concept.name})`,
       value: concept.value,
       children: [],
       open: true,
@@ -108,9 +105,7 @@
       addFilter(filter);
       finish();
     } catch (error: unknown) {
-      if (
-        error instanceof AnyRecordOfFilterError
-      ) {
+      if (error instanceof AnyRecordOfFilterError) {
         modalOpen = true;
       } else {
         console.error('Error adding selection: ', error instanceof Error ? error.message : error);
