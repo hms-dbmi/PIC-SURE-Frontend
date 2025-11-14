@@ -29,31 +29,43 @@
   );
 
   async function getHierarchy(): Promise<NodeInterface[]> {
+    if (!data.dataset || !data.conceptPath) {
+      throw new Error('Dataset and concept path are required');
+    }
     try {
-      const hierarchyConcepts = await getHierarchyConcepts(data.dataset, data.conceptPath);
-      const reversedHierarchyConcepts = hierarchyConcepts.reverse();
-      let nodes: NodeInterface[] = [];
-      for (let i = 0; i < reversedHierarchyConcepts.length; i++) {
-        const concept = reversedHierarchyConcepts[i];
-        const child = reversedHierarchyConcepts[i + 1];
-        if (child) { 
-          nodes.push(createNode(concept, child));
-        } else {
-          nodes.push(createNode(concept));
+      const hierarchyConcepts = (await getHierarchyConcepts(data.dataset, data.conceptPath))?.reverse();
+      if (!hierarchyConcepts || hierarchyConcepts.length === 0) {
+        throw new Error('No hierarchy concepts found');
+      }
+
+      let rootNode: NodeInterface | null = null;
+      let currentNode: NodeInterface | null = null;
+      
+      for (let i = 0; i < hierarchyConcepts.length; i++) {
+        const concept = hierarchyConcepts[i];
+        const newNode = createNode(concept);
+        
+        if (i === 0) {
+          rootNode = newNode;
+          currentNode = newNode;
+        } else if (currentNode) {
+          currentNode.children = [newNode];
+          currentNode = newNode;
         }
       }
-      return nodes;
+      
+      return rootNode ? [rootNode] : [];
     } catch (error) {
       console.error('Error getting hierarchy concepts: ', error instanceof Error ? error.message : error);
-      return [];
+      throw new Error('Error getting hierarchy concepts');
     }
   }
 
-  function createNode(concept: SearchResult, child?: SearchResult): NodeInterface {
+  function createNode(concept: SearchResult): NodeInterface {
     return {
       name: concept.name,
       value: concept.value,
-      children: child ? [createNode(child, child?.children?.[0])] : [] as NodeInterface[],
+      children: [],
       open: true,
       selected: false,
     };
@@ -64,6 +76,12 @@
 
   async function addSelection() {
     if (isLoading) return;
+    if (!selectedNode) {
+      toaster.error({
+        description: 'No selection made',
+      });
+      return;
+    }
 
     isLoading = true;
     try {
@@ -91,8 +109,7 @@
       finish();
     } catch (error: unknown) {
       if (
-        error instanceof AnyRecordOfFilterError &&
-        error.message === 'Too many concept paths found'
+        error instanceof AnyRecordOfFilterError
       ) {
         modalOpen = true;
       } else {
