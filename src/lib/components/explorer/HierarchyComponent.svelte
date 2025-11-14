@@ -30,14 +30,14 @@
 
   async function getHierarchy(): Promise<NodeInterface[]> {
     if (!data?.dataset || !data?.conceptPath) {
-      return [];
+      throw new Error('Dataset and concept path are required');
     }
 
     try {
       const hierarchyConcepts = await getHierarchyConcepts(data.dataset, data.conceptPath);
 
       if (!hierarchyConcepts?.length) {
-        return [];
+        throw new Error('No hierarchy concepts found');
       }
 
       const rootNode = hierarchyConcepts.reduce<NodeInterface | null>((parent, concept) => {
@@ -54,7 +54,7 @@
         'Error getting hierarchy concepts: ',
         error instanceof Error ? error.message : error,
       );
-      throw error; // let the {#await} {:catch} block handle UI
+      throw error;
     }
   }
 
