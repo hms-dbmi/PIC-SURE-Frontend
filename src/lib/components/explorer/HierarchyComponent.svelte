@@ -24,6 +24,8 @@
   let { data = {} as SearchResult, onclose = () => {} }: Props = $props();
 
   let modalOpen: boolean = $state(false);
+  let selectedNode: string | undefined = $state(undefined);
+  let isLoading = $state(false);
   let disableAddFilter: boolean = $derived(
     !data?.allowFiltering && page.url.pathname.includes('/discover'),
   );
@@ -61,15 +63,12 @@
   function createNode(concept: SearchResult): NodeInterface {
     return {
       name: `${concept.display} (${concept.name})`,
-      value: concept.value,
+      value: concept.conceptPath,
       children: [],
       open: true,
       selected: false,
     };
   }
-
-  let selectedNode = $state(data.conceptPath);
-  let isLoading = $state(false);
 
   async function addSelection() {
     if (isLoading) return;
