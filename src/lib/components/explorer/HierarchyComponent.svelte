@@ -13,6 +13,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import { page } from '$app/state';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import { getHierarchyConcepts } from '$lib/stores/Dictionary';
 
   const ENSURE_MAX_DEPTH = 100;
 
@@ -27,36 +28,35 @@
     !data?.allowFiltering && page.url.pathname.includes('/discover'),
   );
 
-  let conceptNodes = $state(
-    data.conceptPath.split('\\').reduce((acc, node, index, array) => {
-      if (index === 0 && node === '') return acc;
-      if (index === array.length - 1 && node === '') return acc;
-      return [...acc, node];
-    }, [] as string[]),
-  );
-  let treeNode: NodeInterface | null = $state(createHierarchy());
-
-  function createHierarchy(): NodeInterface | null {
-    if (!conceptNodes.length) return null;
-
-    let currentNode: NodeInterface | null = null;
-    let currentPath = '';
-
-    for (let i = conceptNodes.length - 1; i >= 0; i--) {
-      const nodeName = conceptNodes[i];
-      currentPath =
-        i === 0 ? `\\${nodeName}` : `${currentPath ? nodeName + '\\' + currentPath : nodeName}`;
-
-      currentNode = {
-        name: nodeName,
-        value: `\\${conceptNodes.slice(0, i + 1).join('\\')}\\`,
-        children: currentNode ? [currentNode] : [],
-        open: true,
-        selected: false,
-      };
+  async function getHierarchy(): Promise<NodeInterface[]> {
+    try {
+      const hierarchyConcepts = await getHierarchyConcepts(data.dataset, data.conceptPath);
+      const reversedHierarchyConcepts = hierarchyConcepts.reverse();
+      let nodes: NodeInterface[] = [];
+      for (let i = 0; i < reversedHierarchyConcepts.length; i++) {
+        const concept = reversedHierarchyConcepts[i];
+        const child = reversedHierarchyConcepts[i + 1];
+        if (child) { 
+          nodes.push(createNode(concept, child));
+        } else {
+          nodes.push(createNode(concept));
+        }
+      }
+      return nodes;
+    } catch (error) {
+      console.error('Error getting hierarchy concepts: ', error instanceof Error ? error.message : error);
+      return [];
     }
+  }
 
-    return currentNode;
+  function createNode(concept: SearchResult, child?: SearchResult): NodeInterface {
+    return {
+      name: concept.name,
+      value: concept.value,
+      children: child ? [createNode(child, child?.children?.[0])] : [] as NodeInterface[],
+      open: true,
+      selected: false,
+    };
   }
 
   let selectedNode = $state(data.conceptPath);
@@ -142,14 +142,20 @@
         <p class="m-0">Filtering is not available for this variable</p>
       </ErrorAlert>
     {/if}
-    {#if treeNode}
+    {#await getHierarchy()}
+      <Loading ring size="small" />
+    {:then treeNodes}
       <RadioTree
         fullWidth={true}
-        nodes={[treeNode]}
+        nodes={treeNodes}
         disableTree={disableAddFilter}
         onselect={(value) => (selectedNode = value)}
       />
-    {/if}
+    {:catch error}
+      <ErrorAlert color="error">
+        <p class="m-0">Error loading hierarchy: {error instanceof Error ? error.message : error}</p>
+      </ErrorAlert>
+    {/await}
   </div>
   <button
     class="btn btn-icon preset-filled-primary-500 m-1"
