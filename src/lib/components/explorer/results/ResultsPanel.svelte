@@ -143,7 +143,10 @@
   }
 
   function openHelpDesk() {
-    window.open('https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5/group/6/create/362', '_blank');
+    window.open(
+      'https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5/group/6/create/362',
+      '_blank',
+    );
   }
 </script>
 
@@ -185,8 +188,7 @@
       onclick={(e) => {
         e.stopPropagation();
         openHelpDesk();
-      }}
-      >Let us know</a
+      }}>Let us know</a
     >!
   </p>
 </Modal>
@@ -246,8 +248,7 @@
           <span class="text-sm">Advanced Filtering</span>
           <span
             class="chip preset-tonal-primary text-xs px-2 py-0.5 rounded"
-            data-testid="advanced-filtering-beta-chip"
-            >Beta</span
+            data-testid="advanced-filtering-beta-chip">Beta</span
           >
         </div>
         <Switch

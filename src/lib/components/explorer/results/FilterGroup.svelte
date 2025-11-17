@@ -17,7 +17,9 @@
     hoverGroupId?: string | null;
   } = $props();
   let id = $derived(group.uuid.split('-')[0]);
-  const canReorder = $derived(group.children.length > 1 && (!group.parent || group.parent.children.length > 1));
+  const canReorder = $derived(
+    group.children.length > 1 && (!group.parent || group.parent.children.length > 1),
+  );
   const isRoot = $derived(group.parent === undefined || group.parent === null);
   const isHovered = $derived(hoverGroupId === group.uuid);
   const showMiddleZone = $derived(isHovered && hoverZone === 'middle' && !isRoot);

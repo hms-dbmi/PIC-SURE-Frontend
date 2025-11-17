@@ -269,7 +269,10 @@ test.describe('Results Panel', () => {
 
     test.beforeEach(({ page }) => {
       page.on('request', (request) => {
-        if (request.url().includes('/picsure/query/sync') || request.url().includes('/picsure/v3/query/sync')) {
+        if (
+          request.url().includes('/picsure/query/sync') ||
+          request.url().includes('/picsure/v3/query/sync')
+        ) {
           const data = request.postData();
           if (data !== null) {
             querySyncRequest.push(data);
@@ -519,7 +522,9 @@ test.describe('Results Panel', () => {
 
       // Then
       expect(querySyncRequest.length).toBe(5);
-      expect(querySyncRequest[querySyncRequest.length - 2]).not.toBe(querySyncRequest[querySyncRequest.length - 1]);
+      expect(querySyncRequest[querySyncRequest.length - 2]).not.toBe(
+        querySyncRequest[querySyncRequest.length - 1],
+      );
     });
     test('ensure or group is displayed correctly', async ({ page }) => {
       // Given
@@ -668,10 +673,7 @@ test.describe('Results Panel', () => {
       const toggle = page.getByTestId('switch');
       await toggle.click();
 
-      await page
-        .locator('#modal-component')
-        .getByRole('button', { name: 'Proceed' })
-        .click();
+      await page.locator('#modal-component').getByRole('button', { name: 'Proceed' }).click();
 
       await toggle.click();
 
@@ -710,10 +712,7 @@ test.describe('Results Panel', () => {
 
       const toggle = page.getByTestId('switch');
       await toggle.click();
-      await page
-        .locator('#modal-component')
-        .getByRole('button', { name: 'Proceed' })
-        .click();
+      await page.locator('#modal-component').getByRole('button', { name: 'Proceed' }).click();
 
       const dropdowns = await page.locator('#export-filters .operator-select').all();
       await dropdowns[0].selectOption('OR');
@@ -730,9 +729,7 @@ test.describe('Results Panel', () => {
           .getByText('This will remove any "or" filters and filter groups you have added'),
       ).toBeVisible();
 
-      const cancelButton = page
-        .locator('#modal-component')
-        .getByRole('button', { name: 'Cancel' });
+      const cancelButton = page.locator('#modal-component').getByRole('button', { name: 'Cancel' });
       await expect(cancelButton).toBeVisible();
       await cancelButton.click();
 
@@ -772,19 +769,13 @@ test.describe('Results Panel', () => {
 
       const toggle = page.getByTestId('switch');
       await toggle.click();
-      await page
-        .locator('#modal-component')
-        .getByRole('button', { name: 'Proceed' })
-        .click();
+      await page.locator('#modal-component').getByRole('button', { name: 'Proceed' }).click();
 
       const dropdowns = await page.locator('#export-filters .operator-select').all();
       await dropdowns[0].selectOption('OR');
 
       await toggle.click();
-      await page
-        .locator('#modal-component')
-        .getByRole('button', { name: 'Proceed' })
-        .click();
+      await page.locator('#modal-component').getByRole('button', { name: 'Proceed' }).click();
 
       await expect(toggle).not.toBeChecked();
       const orSubGroups = await page
@@ -792,7 +783,9 @@ test.describe('Results Panel', () => {
         .all();
       expect(orSubGroups.length).toBe(0);
     });
-    test('Reenabling advanced filtering after disabling converts allows ORs again', async ({ page }) => {
+    test('Reenabling advanced filtering after disabling converts allows ORs again', async ({
+      page,
+    }) => {
       await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
       await mockApiSuccess(page, facetResultPath, facetsResponse);
       await mockApiSuccess(page, searchResultPath, mockData);
@@ -824,19 +817,13 @@ test.describe('Results Panel', () => {
 
       const toggle = page.getByTestId('switch');
       await toggle.click();
-      await page
-        .locator('#modal-component')
-        .getByRole('button', { name: 'Proceed' })
-        .click();
+      await page.locator('#modal-component').getByRole('button', { name: 'Proceed' }).click();
 
       const dropdowns = await page.locator('#export-filters .operator-select').all();
       await dropdowns[0].selectOption('OR');
 
       await toggle.click();
-      await page
-        .locator('#modal-component')
-        .getByRole('button', { name: 'Proceed' })
-        .click();
+      await page.locator('#modal-component').getByRole('button', { name: 'Proceed' }).click();
 
       await expect(toggle).not.toBeChecked();
       const orSubGroups = await page
@@ -845,10 +832,7 @@ test.describe('Results Panel', () => {
       expect(orSubGroups.length).toBe(0);
 
       await toggle.click();
-      await page
-        .locator('#modal-component')
-        .getByRole('button', { name: 'Proceed' })
-        .click();
+      await page.locator('#modal-component').getByRole('button', { name: 'Proceed' }).click();
 
       await expect(toggle).toBeChecked();
     });

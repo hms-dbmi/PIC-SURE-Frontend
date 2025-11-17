@@ -2,7 +2,6 @@ import { get, derived, writable, type Readable, type Writable } from 'svelte/sto
 import { genericUUID } from '$lib/utilities/UUID';
 
 import { browser } from '$app/environment';
-import { features } from '$lib/configuration';
 
 import {
   type Filter,

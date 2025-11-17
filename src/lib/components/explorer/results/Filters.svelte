@@ -5,7 +5,12 @@
   import type { FilterGroupInterface, FilterInterface } from '$lib/models/Filter';
   import type { TreeNode } from '$lib/models/Tree';
   import type { Filter } from '$lib/models/Filter';
-  import { filterTree, filters, genomicFilters, advancedFilteringEnabled } from '$lib/stores/Filter';
+  import {
+    filterTree,
+    filters,
+    genomicFilters,
+    advancedFilteringEnabled,
+  } from '$lib/stores/Filter';
   import { exports } from '$lib/stores/Export';
 
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
