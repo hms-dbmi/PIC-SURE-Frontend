@@ -171,6 +171,7 @@
   withDefault
   confirmText="Proceed"
   cancelText=""
+  width="w-1/3"
   footerButtons={true}
   onconfirm={proceedEnableAdvancedFiltering}
 >
@@ -203,6 +204,7 @@
   confirmClass="preset-filled-primary-500"
   cancelClass="preset-tonal-primary border hover:preset-filled-primary-500"
   footerButtons={true}
+  width="w-1/3"
   onconfirm={proceedDisableAdvancedFiltering}
   onclose={cancelDisableAdvancedFiltering}
 >
