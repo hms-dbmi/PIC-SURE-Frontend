@@ -29,7 +29,6 @@
   import Popover from '$lib/components/Popover.svelte';
 
   let unsubFilters: Unsubscriber | null = null;
-  let unsubAdvancedFiltering: Unsubscriber | null = null;
   let currentPage: string = page.url.pathname;
   let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
   let isExplorer = $derived(page.url.pathname.includes('/explorer'));
@@ -82,21 +81,12 @@
     if (!unsubFilters) {
       unsubFilters = filters.subscribe(() => loadPatientCount(isOpenAccess));
     }
-    if (!unsubAdvancedFiltering) {
-      unsubAdvancedFiltering = advancedFilteringEnabled.subscribe(() =>
-        loadPatientCount(isOpenAccess),
-      );
-    }
   }
 
   function unsubscribe() {
     if (unsubFilters) {
       unsubFilters();
       unsubFilters = null;
-    }
-    if (unsubAdvancedFiltering) {
-      unsubAdvancedFiltering();
-      unsubAdvancedFiltering = null;
     }
   }
 
@@ -137,6 +127,7 @@
   function proceedEnableAdvancedFiltering() {
     advancedFilteringEnabled.set(true);
     enableAdvancedFilteringModalOpen = false;
+    loadPatientCount(isOpenAccess);
   }
 
   function proceedDisableAdvancedFiltering() {
