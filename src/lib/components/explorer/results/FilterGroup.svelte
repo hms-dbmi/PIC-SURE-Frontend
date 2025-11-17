@@ -88,7 +88,7 @@
         </div>
       {/if}
       <div
-        class={`filter-group-${group.operator.toLowerCase()}`}
+        class={`filter-group-${group.operator.toLowerCase()} w-full`}
         data-testid={`filter-group-${id}`}
       >
         {#each group.children as child, index (child.uuid)}
