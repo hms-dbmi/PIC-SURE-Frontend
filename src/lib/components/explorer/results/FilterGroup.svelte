@@ -72,7 +72,7 @@
       data-testid={`filter-group-${id}`}
       data-sortable-id={group.uuid}
       bind:this={node.current}
-      class={['flex flex-row items-center gap-0 transition-all']}
+      class={['flex flex-row items-center gap-0 w-full transition-all']}
       {style}
     >
       {#if canReorder && !isRoot}
