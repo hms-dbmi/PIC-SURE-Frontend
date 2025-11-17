@@ -134,6 +134,7 @@
     disableAdvancedFiltering();
     advancedFilteringEnabled.set(false);
     disableAdvancedFilteringModalOpen = false;
+    loadPatientCount(isOpenAccess);
   }
 
   function cancelDisableAdvancedFiltering() {
