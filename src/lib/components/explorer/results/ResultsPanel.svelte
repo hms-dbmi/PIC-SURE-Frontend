@@ -4,6 +4,7 @@
   import type { Unsubscriber } from 'svelte/store';
   import { slide, scale } from 'svelte/transition';
   import { Switch } from '@skeletonlabs/skeleton-svelte';
+  import { filterTree } from '$lib/stores/Filter';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -136,6 +137,7 @@
     advancedFilteringEnabled.set(false);
     disableAdvancedFilteringModalOpen = false;
     loadPatientCount(isOpenAccess);
+    $filterTree.pruneTree();
   }
 
   function cancelDisableAdvancedFiltering() {
