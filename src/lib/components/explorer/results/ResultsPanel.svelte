@@ -120,6 +120,7 @@
         disableAdvancedFilteringModalOpen = true;
       } else {
         advancedFilteringEnabled.set(false);
+        loadPatientCount(isOpenAccess);
       }
     }
   }
