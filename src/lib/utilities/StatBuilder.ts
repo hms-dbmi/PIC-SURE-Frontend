@@ -24,6 +24,7 @@ import { loadAllConcepts } from '$lib/services/hpds';
 import { isUserLoggedIn } from '$lib/stores/User';
 import { addConsents } from '$lib/stores/Dictionary';
 import { getQueryResources, resources } from '$lib/stores/Resources';
+import { advancedFilteringEnabled } from '$lib/stores/Filter';
 import {
   getQueryRequestV2,
   getBlankQueryRequestV2,
@@ -120,7 +121,11 @@ async function getOpenPatientCount({
     query.setCrossCountFields(concepts);
     return query;
   };
-  if (isOpenAccess && features.explorer.enableOrQueries) {
+  if (
+    isOpenAccess &&
+    features.explorer.enableOrQueries &&
+    get(advancedFilteringEnabled)
+  ) {
     request = addFilters
       ? getQueryRequestV3(!isOpenAccess, get(resources).hpdsOpenV3, 'CROSS_COUNT', addConceptsV3)
       : getBlankQueryRequestV3(

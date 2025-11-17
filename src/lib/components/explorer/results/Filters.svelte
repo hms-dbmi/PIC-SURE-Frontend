@@ -5,7 +5,7 @@
   import type { FilterGroupInterface, FilterInterface } from '$lib/models/Filter';
   import type { TreeNode } from '$lib/models/Tree';
   import type { Filter } from '$lib/models/Filter';
-  import { filterTree, filters, genomicFilters } from '$lib/stores/Filter';
+  import { filterTree, filters, genomicFilters, advancedFilteringEnabled } from '$lib/stores/Filter';
   import { exports } from '$lib/stores/Export';
 
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
@@ -295,7 +295,7 @@
       <header class="text-left ml-1">Filters</header>
     {/if}
     <section class="py-1">
-      {#if features.explorer.enableOrQueries && isOpenAccess}
+      {#if $advancedFilteringEnabled && (features.explorer.enableOrQueries || !isOpenAccess)}
         <DndContext {sensors} {onDragStart} {onDragEnd} {onDragOver}>
           <SortableContext
             items={$filterTree.root.children.map((child) => (child as FilterInterface).uuid)}

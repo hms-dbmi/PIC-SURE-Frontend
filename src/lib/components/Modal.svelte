@@ -100,9 +100,9 @@
           </article>
           {#if footerButtons}
             <footer class="modal-footer flex justify-end space-x-2 mt-6">
-              <button type="button" class="btn {cancelClass}" onclick={modalClose}
-                >{cancelText}</button
-              >
+              {#if cancelText}<button type="button" class="btn {cancelClass}" onclick={modalClose}
+                  >{cancelText}</button
+                >{/if}
               {#if onconfirm}<button type="button" class="btn {confirmClass}" onclick={confirm}
                   >{confirmText}</button
                 >{/if}

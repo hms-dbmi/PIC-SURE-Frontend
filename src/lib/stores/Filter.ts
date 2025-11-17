@@ -11,7 +11,7 @@ import {
   createFilterGroup,
 } from '$lib/models/Filter';
 import type { SearchResult } from '$lib/models/Search';
-import type { OperatorType } from '$lib/models/query/Query';
+import { Operator, type OperatorType } from '$lib/models/query/Query';
 import { Tree, type TreeNode } from '$lib/models/Tree';
 import { user } from '$lib/stores/User';
 import { objectUUID } from '$lib/utilities/UUID';
@@ -57,6 +57,37 @@ export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$u
 
 export const hasOrGroup: Readable<boolean> = derived(filterTree, ($ft) => $ft.hasOr);
 
+function restoreAdvancedFiltering(): boolean {
+  if (browser && sessionStorage.getItem('advancedFiltering') !== null) {
+    return sessionStorage.getItem('advancedFiltering') === 'true';
+  }
+  return false;
+}
+
+export const advancedFilteringEnabled: Writable<boolean> = writable(restoreAdvancedFiltering());
+
+advancedFilteringEnabled.subscribe((enabled: boolean) => {
+  if (browser) {
+    sessionStorage.setItem('advancedFiltering', String(enabled));
+  }
+});
+
+export function disableAdvancedFiltering() {
+  const tree = get(filterTree);
+  const convertOrGroupsToAnd = (node: TreeNode<FilterInterface>): void => {
+    if (tree.isGroup(node)) {
+      if (node.operator === Operator.OR) {
+        node.operator = Operator.AND;
+      }
+      node.children.forEach(convertOrGroupsToAnd);
+    }
+  };
+  convertOrGroupsToAnd(tree.root);
+  tree.pruneTree();
+  (tree.root as FilterGroupInterface).uuid = genericUUID();
+  filterTree.set(tree);
+}
+
 // modal data
 export const activeFilter: Writable<Filter | undefined> = writable();
 export const activeSearch: Writable<SearchResult | undefined> = writable();
@@ -94,7 +125,7 @@ function restoreFilterTree(): Tree<FilterInterface> {
 }
 
 export function toggleOperator(siblingA: FilterInterface, siblingB: FilterInterface) {
-  if (!features.explorer.enableOrQueries) return;
+  if (!get(advancedFilteringEnabled)) return;
   const tree = get(filterTree);
   tree.toggleOperator(siblingA, siblingB);
   (tree.root as FilterGroupInterface).uuid = genericUUID();

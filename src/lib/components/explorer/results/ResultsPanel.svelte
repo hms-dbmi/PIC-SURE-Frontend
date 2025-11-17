@@ -3,13 +3,21 @@
   import { elasticInOut } from 'svelte/easing';
   import type { Unsubscriber } from 'svelte/store';
   import { slide, scale } from 'svelte/transition';
+  import { Switch } from '@skeletonlabs/skeleton-svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { features } from '$lib/configuration';
+  import { features, branding } from '$lib/configuration';
 
-  import { filters, hasGenomicFilter, clearFilters, hasOrGroup } from '$lib/stores/Filter';
+  import {
+    filters,
+    hasGenomicFilter,
+    clearFilters,
+    hasOrGroup,
+    advancedFilteringEnabled,
+    disableAdvancedFiltering,
+  } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
@@ -25,6 +33,8 @@
   let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
   let isExplorer = $derived(page.url.pathname.includes('/explorer'));
   let modalOpen: boolean = $state(false);
+  let enableAdvancedFilteringModalOpen: boolean = $state(false);
+  let disableAdvancedFilteringModalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
@@ -100,6 +110,39 @@
 
   onMount(subscribe);
   onDestroy(unsubscribe);
+
+  function handleAdvancedFilteringToggle(details: { checked: boolean }) {
+    if (details.checked) {
+      enableAdvancedFilteringModalOpen = true;
+    } else {
+      if ($hasOrGroup) {
+        advancedFilteringEnabled.set(false);
+        disableAdvancedFilteringModalOpen = true;
+      } else {
+        advancedFilteringEnabled.set(false);
+      }
+    }
+  }
+
+  function proceedEnableAdvancedFiltering() {
+    advancedFilteringEnabled.set(true);
+    enableAdvancedFilteringModalOpen = false;
+  }
+
+  function proceedDisableAdvancedFiltering() {
+    disableAdvancedFiltering();
+    advancedFilteringEnabled.set(false);
+    disableAdvancedFilteringModalOpen = false;
+  }
+
+  function cancelDisableAdvancedFiltering() {
+    advancedFilteringEnabled.set(true);
+    disableAdvancedFilteringModalOpen = false;
+  }
+
+  function openHelpDesk() {
+    window.open('https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5/group/6/create/362', '_blank');
+  }
 </script>
 
 <Modal
@@ -114,6 +157,54 @@
   }}
 >
   Are you sure you want to clear all filters?
+</Modal>
+
+<Modal
+  bind:open={enableAdvancedFilteringModalOpen}
+  title="Advanced Filtering is now enabled"
+  withDefault
+  confirmText="Proceed"
+  cancelText=""
+  footerButtons={true}
+  onconfirm={proceedEnableAdvancedFiltering}
+>
+  <p>
+    With Advanced Filtering, you can build more complex queries by combining filters using "and" and
+    "or" with the dropdown menu. As this feature is under active development, some other features
+    may not be available with this enabled.
+  </p>
+  <p>
+    What do you think about Advanced Filtering?
+    <a
+      href={branding.login.contactLink}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="anchor"
+      onclick={(e) => {
+        e.stopPropagation();
+        openHelpDesk();
+      }}
+      >Let us know</a
+    >!
+  </p>
+</Modal>
+
+<Modal
+  bind:open={disableAdvancedFilteringModalOpen}
+  title="Advanced Filtering will be removed"
+  withDefault
+  confirmText="Proceed"
+  cancelText="Cancel"
+  confirmClass="preset-filled-primary-500"
+  cancelClass="preset-tonal-primary border hover:preset-filled-primary-500"
+  footerButtons={true}
+  onconfirm={proceedDisableAdvancedFiltering}
+  onclose={cancelDisableAdvancedFiltering}
+>
+  <p>
+    This will remove any "or" filters and filter groups you have added. The filters you have added
+    will now be combined using "and".
+  </p>
 </Modal>
 <section
   id="results-panel"
@@ -147,6 +238,24 @@
         >
       {/if}
     </div>
+    {#if $filters.length > 0}
+      <div class="flex items-center justify-between w-full px-4 mt-2 mb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-sm">Advanced Filtering</span>
+          <span
+            class="chip preset-filled-primary-500 text-xs px-2 py-0.5 rounded"
+            data-testid="advanced-filtering-beta-chip"
+            >Beta</span
+          >
+        </div>
+        <Switch
+          name="advanced-filtering-toggle"
+          controlActive="bg-primary-500"
+          checked={$advancedFilteringEnabled}
+          onCheckedChange={handleAdvancedFilteringToggle}
+        />
+      </div>
+    {/if}
     <Filters />
     {#if $exports.length > 0}
       <div class="px-4 mb-1 w-80">
