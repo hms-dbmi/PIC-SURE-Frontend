@@ -29,6 +29,7 @@
   import Popover from '$lib/components/Popover.svelte';
 
   let unsubFilters: Unsubscriber | null = null;
+  let unsubAdvancedFiltering: Unsubscriber | null = null;
   let currentPage: string = page.url.pathname;
   let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
   let isExplorer = $derived(page.url.pathname.includes('/explorer'));
@@ -81,12 +82,21 @@
     if (!unsubFilters) {
       unsubFilters = filters.subscribe(() => loadPatientCount(isOpenAccess));
     }
+    if (!unsubAdvancedFiltering) {
+      unsubAdvancedFiltering = advancedFilteringEnabled.subscribe(() =>
+        loadPatientCount(isOpenAccess),
+      );
+    }
   }
 
   function unsubscribe() {
     if (unsubFilters) {
       unsubFilters();
       unsubFilters = null;
+    }
+    if (unsubAdvancedFiltering) {
+      unsubAdvancedFiltering();
+      unsubAdvancedFiltering = null;
     }
   }
 
@@ -243,7 +253,7 @@
         <div class="flex items-center gap-2">
           <span class="text-sm">Advanced Filtering</span>
           <span
-            class="chip preset-filled-primary-500 text-xs px-2 py-0.5 rounded"
+            class="chip preset-tonal-primary text-xs px-2 py-0.5 rounded"
             data-testid="advanced-filtering-beta-chip"
             >Beta</span
           >

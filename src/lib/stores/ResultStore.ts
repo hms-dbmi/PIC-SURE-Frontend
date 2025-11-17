@@ -6,7 +6,7 @@ import { getResultList, StatPromise } from '$lib/utilities/StatBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
 
 import type { StatResult, StatValue } from '$lib/models/Stat';
-import { filters, genomicFilters } from '$lib/stores/Filter';
+import { filters, genomicFilters, advancedFilteringEnabled } from '$lib/stores/Filter';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
 import { loading as resourcesPromise, loadResources } from '$lib/stores/Resources';
 
@@ -32,6 +32,8 @@ export async function loadPatientCount(isOpenAccess: boolean) {
       get(genomicFilters).map(({ uuid }) => uuid),
       // if operator changes we need to redo query
       get(filters).map(({ uuid, parent }) => uuid + parent?.operator),
+      // if advanced filtering toggle changes, query version changes (V2 vs V3)
+      get(advancedFilteringEnabled),
     ]);
     if (requestCache.has(cacheKey)) {
       resultCounts.set(requestCache.get(cacheKey) as StatResult[]);

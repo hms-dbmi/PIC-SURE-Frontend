@@ -121,11 +121,9 @@ async function getOpenPatientCount({
     query.setCrossCountFields(concepts);
     return query;
   };
-  if (
-    isOpenAccess &&
-    features.explorer.enableOrQueries &&
-    get(advancedFilteringEnabled)
-  ) {
+  const useV3 =
+    isOpenAccess && features.explorer.enableOrQueries && get(advancedFilteringEnabled);
+  if (useV3) {
     request = addFilters
       ? getQueryRequestV3(!isOpenAccess, get(resources).hpdsOpenV3, 'CROSS_COUNT', addConceptsV3)
       : getBlankQueryRequestV3(
@@ -139,8 +137,9 @@ async function getOpenPatientCount({
       ? getQueryRequestV2(!isOpenAccess, resource, 'CROSS_COUNT', addConceptsV2)
       : getBlankQueryRequestV2(isOpenAccess, resource, 'CROSS_COUNT', addConceptsV2);
   }
+  const endpoint = useV3 ? Picsure.QueryV3Sync : Picsure.QueryV2Sync;
   return api
-    .post(Picsure.QueryV2Sync, request)
+    .post(endpoint, request)
     .then(rejectIfQueryError)
     .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }

@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess } from '../custom-context';
 import {
   conceptsDetailPath,
@@ -269,7 +269,7 @@ test.describe('Results Panel', () => {
 
     test.beforeEach(({ page }) => {
       page.on('request', (request) => {
-        if (request.url().includes('/picsure/query/sync')) {
+        if (request.url().includes('/picsure/query/sync') || request.url().includes('/picsure/v3/query/sync')) {
           const data = request.postData();
           if (data !== null) {
             querySyncRequest.push(data);
@@ -332,6 +332,7 @@ test.describe('Results Panel', () => {
       await firstItem.click();
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
+      await enableAdvancedFiltering(page);
       await mockApiSuccess(
         page,
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
@@ -370,10 +371,12 @@ test.describe('Results Panel', () => {
       await firstItem.click();
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
+      await enableAdvancedFiltering(page);
 
       // Then
-      expect(querySyncRequest.length).toBe(1);
-      expect(querySyncRequest[0]).toContain('phenotypicClauses');
+      expect(querySyncRequest.length).toBeGreaterThanOrEqual(1);
+      const lastRequest = querySyncRequest[querySyncRequest.length - 1];
+      expect(lastRequest).toContain('phenotypicClauses');
     });
     test('if there is only one filter, there should be no dropdown', async ({ page }) => {
       // Given
@@ -395,7 +398,7 @@ test.describe('Results Panel', () => {
       await firstItem.click();
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
-
+      await enableAdvancedFiltering(page);
       // Then
       const dropdowns = await page.locator('#export-filters .operator-select').all();
       expect(dropdowns.length).toBe(0);
@@ -420,7 +423,7 @@ test.describe('Results Panel', () => {
       await firstItem.click();
       let addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
-
+      await enableAdvancedFiltering(page);
       await mockApiSuccess(
         page,
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
@@ -432,7 +435,6 @@ test.describe('Results Panel', () => {
       await secondItem.click();
       addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
-
       // Then
       await expect(page.locator('#results-panel')).toBeVisible();
       const dropdowns = await page.locator('#export-filters .operator-select').all();
@@ -456,6 +458,7 @@ test.describe('Results Panel', () => {
       await firstItem.click();
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
+      await enableAdvancedFiltering(page);
       await mockApiSuccess(
         page,
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
@@ -473,7 +476,7 @@ test.describe('Results Panel', () => {
       await dropdowns[0].selectOption('OR');
 
       // Then
-      expect(querySyncRequest.length).toBe(3);
+      expect(querySyncRequest.length).toBeGreaterThanOrEqual(3);
       expect(dropdowns[0]).toHaveValue('OR');
       expect(querySyncRequest[querySyncRequest.length - 1]).toContain('operator":"OR');
     });
@@ -497,6 +500,7 @@ test.describe('Results Panel', () => {
       await firstItem.click();
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
+      await enableAdvancedFiltering(page);
       await mockApiSuccess(
         page,
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
@@ -514,8 +518,8 @@ test.describe('Results Panel', () => {
       await dropdowns[0].selectOption('OR');
 
       // Then
-      expect(querySyncRequest.length).toBe(3);
-      expect(querySyncRequest[1]).not.toBe(querySyncRequest[2]);
+      expect(querySyncRequest.length).toBe(5);
+      expect(querySyncRequest[querySyncRequest.length - 2]).not.toBe(querySyncRequest[querySyncRequest.length - 1]);
     });
     test('ensure or group is displayed correctly', async ({ page }) => {
       // Given
@@ -535,6 +539,7 @@ test.describe('Results Panel', () => {
       await firstItem.click();
       let addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
+      await enableAdvancedFiltering(page);
       await mockApiSuccess(
         page,
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
@@ -556,6 +561,296 @@ test.describe('Results Panel', () => {
         .locator('#export-filters .filter-group-and .filter-group-or')
         .all();
       expect(orSubGroups.length).toBe(1);
+    });
+  });
+
+  const enableAdvancedFiltering = async (page: Page) => {
+    const toggle = page.getByTestId('switch');
+    await toggle.click();
+    await page.locator('#modal-component').getByRole('button', { name: 'Proceed' }).click();
+  };
+
+  test.describe('Advanced Filtering Toggle', () => {
+    test('toggle appears when filters are added', async ({ page }) => {
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      await mockApiSuccess(page, countResultPath, '9999');
+      await page.goto('/explorer?search=somedata');
+      await page.locator('#results-panel-toggle').click();
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const firstItem = await getOption(page);
+      await firstItem.click();
+      await page.getByTestId('add-filter').click();
+
+      await expect(page.getByTestId('switch')).toBeVisible();
+      await expect(page.getByTestId('advanced-filtering-beta-chip')).toBeVisible();
+      await expect(page.getByTestId('advanced-filtering-beta-chip')).toHaveText('Beta');
+    });
+
+    test('toggle does not appear when no filters are added', async ({ page }) => {
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      await mockApiSuccess(page, countResultPath, '9999');
+      await page.goto('/explorer?search=somedata');
+      await page.locator('#results-panel-toggle').click();
+
+      await expect(page.getByTestId('switch')).not.toBeVisible();
+    });
+
+    test('enabling toggle shows modal with help desk link', async ({ page }) => {
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      await mockApiSuccess(page, countResultPath, '9999');
+      await page.goto('/explorer?search=somedata');
+      await page.locator('#results-panel-toggle').click();
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const firstItem = await getOption(page);
+      await firstItem.click();
+      await page.getByTestId('add-filter').click();
+
+      const toggle = page.getByTestId('switch');
+      await toggle.click();
+
+      await expect(page.locator('#modal-component')).toBeVisible();
+      await expect(
+        page.locator('#modal-component').getByText('Advanced Filtering is now enabled'),
+      ).toBeVisible();
+      await expect(
+        page
+          .locator('#modal-component')
+          .getByText('With Advanced Filtering, you can build more complex queries'),
+      ).toBeVisible();
+      await expect(
+        page.locator('#modal-component').getByRole('link', { name: 'Let us know' }),
+      ).toBeVisible();
+
+      const proceedButton = page
+        .locator('#modal-component')
+        .getByRole('button', { name: 'Proceed' });
+      await expect(proceedButton).toBeVisible();
+      await proceedButton.click();
+
+      await expect(page.locator('#modal-component')).not.toBeVisible();
+    });
+
+    test('disabling toggle without OR filters does not show modal', async ({ page }) => {
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      await mockApiSuccess(page, countResultPath, '9999');
+      await page.goto('/explorer?search=somedata');
+      await page.locator('#results-panel-toggle').click();
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const firstItem = await getOption(page);
+      await firstItem.click();
+      await page.getByTestId('add-filter').click();
+
+      const toggle = page.getByTestId('switch');
+      await toggle.click();
+
+      await page
+        .locator('#modal-component')
+        .getByRole('button', { name: 'Proceed' })
+        .click();
+
+      await toggle.click();
+
+      await expect(page.locator('#modal-component')).not.toBeVisible();
+    });
+
+    test('disabling toggle with OR filters shows confirmation modal', async ({ page }) => {
+      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      await mockApiSuccess(page, countResultPath, '9999');
+      await page.goto('/discover?search=somedata');
+      await page.locator('#results-panel-toggle').click();
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const firstItem = await getOption(page);
+      await firstItem.click();
+      await page.getByTestId('add-filter').click();
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat2,
+      );
+      await page.locator('#row-2 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const secondItem = await getOption(page);
+      await secondItem.click();
+      await page.getByTestId('add-filter').click();
+
+      const toggle = page.getByTestId('switch');
+      await toggle.click();
+      await page
+        .locator('#modal-component')
+        .getByRole('button', { name: 'Proceed' })
+        .click();
+
+      const dropdowns = await page.locator('#export-filters .operator-select').all();
+      await dropdowns[0].selectOption('OR');
+
+      await toggle.click();
+
+      await expect(page.locator('#modal-component')).toBeVisible();
+      await expect(
+        page.locator('#modal-component').getByText('Advanced Filtering will be removed'),
+      ).toBeVisible();
+      await expect(
+        page
+          .locator('#modal-component')
+          .getByText('This will remove any "or" filters and filter groups you have added'),
+      ).toBeVisible();
+
+      const cancelButton = page
+        .locator('#modal-component')
+        .getByRole('button', { name: 'Cancel' });
+      await expect(cancelButton).toBeVisible();
+      await cancelButton.click();
+
+      await expect(page.locator('#modal-component')).not.toBeVisible();
+      await expect(toggle).toBeChecked();
+    });
+
+    test('proceeding to disable advanced filtering converts OR to AND', async ({ page }) => {
+      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      await mockApiSuccess(page, countResultPath, '9999');
+      await page.goto('/discover?search=somedata');
+      await page.locator('#results-panel-toggle').click();
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const firstItem = await getOption(page);
+      await firstItem.click();
+      await page.getByTestId('add-filter').click();
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat2,
+      );
+      await page.locator('#row-2 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const secondItem = await getOption(page);
+      await secondItem.click();
+      await page.getByTestId('add-filter').click();
+
+      const toggle = page.getByTestId('switch');
+      await toggle.click();
+      await page
+        .locator('#modal-component')
+        .getByRole('button', { name: 'Proceed' })
+        .click();
+
+      const dropdowns = await page.locator('#export-filters .operator-select').all();
+      await dropdowns[0].selectOption('OR');
+
+      await toggle.click();
+      await page
+        .locator('#modal-component')
+        .getByRole('button', { name: 'Proceed' })
+        .click();
+
+      await expect(toggle).not.toBeChecked();
+      const orSubGroups = await page
+        .locator('#export-filters .filter-group-and .filter-group-or')
+        .all();
+      expect(orSubGroups.length).toBe(0);
+    });
+    test('Reenabling advanced filtering after disabling converts allows ORs again', async ({ page }) => {
+      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      await mockApiSuccess(page, countResultPath, '9999');
+      await page.goto('/discover?search=somedata');
+      await page.locator('#results-panel-toggle').click();
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const firstItem = await getOption(page);
+      await firstItem.click();
+      await page.getByTestId('add-filter').click();
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat2,
+      );
+      await page.locator('#row-2 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const secondItem = await getOption(page);
+      await secondItem.click();
+      await page.getByTestId('add-filter').click();
+
+      const toggle = page.getByTestId('switch');
+      await toggle.click();
+      await page
+        .locator('#modal-component')
+        .getByRole('button', { name: 'Proceed' })
+        .click();
+
+      const dropdowns = await page.locator('#export-filters .operator-select').all();
+      await dropdowns[0].selectOption('OR');
+
+      await toggle.click();
+      await page
+        .locator('#modal-component')
+        .getByRole('button', { name: 'Proceed' })
+        .click();
+
+      await expect(toggle).not.toBeChecked();
+      const orSubGroups = await page
+        .locator('#export-filters .filter-group-and .filter-group-or')
+        .all();
+      expect(orSubGroups.length).toBe(0);
+
+      await toggle.click();
+      await page
+        .locator('#modal-component')
+        .getByRole('button', { name: 'Proceed' })
+        .click();
+
+      await expect(toggle).toBeChecked();
     });
   });
 });

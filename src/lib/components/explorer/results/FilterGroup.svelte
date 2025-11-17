@@ -17,7 +17,7 @@
     hoverGroupId?: string | null;
   } = $props();
   let id = $derived(group.uuid.split('-')[0]);
-  const canReorder = $derived(group.children.length > 1 && (group.parent?.children?.length ? group.parent.children.length > 1 : false));
+  const canReorder = $derived(group.children.length > 1 && (!group.parent || group.parent.children.length > 1));
   const isRoot = $derived(group.parent === undefined || group.parent === null);
   const isHovered = $derived(hoverGroupId === group.uuid);
   const showMiddleZone = $derived(isHovered && hoverZone === 'middle' && !isRoot);
@@ -72,7 +72,7 @@
       data-testid={`filter-group-${id}`}
       data-sortable-id={group.uuid}
       bind:this={node.current}
-      class={['flex flex-row items-center gap-0 w-full transition-all']}
+      class="flex flex-row items-center gap-0 w-full transition-all"
       {style}
     >
       {#if canReorder && !isRoot}
