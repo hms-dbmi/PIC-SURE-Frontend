@@ -164,7 +164,7 @@
       />
     {:catch error}
       <ErrorAlert color="error">
-        <p class="m-0">Error loading hierarchy: {error instanceof Error ? error.message : error}</p>
+        <p class="m-0">Error loading hierarchy</p>
       </ErrorAlert>
     {/await}
   </div>
