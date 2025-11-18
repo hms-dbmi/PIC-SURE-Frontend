@@ -13,7 +13,7 @@ RUN sed -i 's/data-theme="[^"]*"/data-theme="bdc"/' ./src/app.html
 RUN pnpm run build
 
 # Step 2: Serve the app with httpd
-FROM httpd:2.4.65-alpine
+FROM httpd:2.4.63-alpine
 
 RUN apk add --update openssl sed nodejs supervisor
 

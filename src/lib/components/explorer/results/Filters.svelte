@@ -72,7 +72,6 @@
     const height = rect.height;
     const percentage = relativeY / height;
 
-
     // More generous middle zone for adding to group
     if (percentage < 0.2) return 'top';
     if (percentage > 0.8) return 'bottom';
