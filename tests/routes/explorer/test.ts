@@ -623,8 +623,9 @@ test.describe('Explorer for authenticated users', () => {
         await page.route('*/**/picsure/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
-        await page.route('*/**/picsure/proxy/dictionary-api/concepts/hierarchy/test_data_set', async (route: Route) =>
-          route.fulfill({ json: hierarchyResponse }),
+        await page.route(
+          '*/**/picsure/proxy/dictionary-api/concepts/hierarchy/test_data_set',
+          async (route: Route) => route.fulfill({ json: hierarchyResponse }),
         );
         await page.goto('/explorer?search=somedata');
         // When
