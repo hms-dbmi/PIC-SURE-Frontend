@@ -73,15 +73,31 @@ advancedFilteringEnabled.subscribe((enabled: boolean) => {
 
 export function disableAdvancedFiltering() {
   const tree = get(filterTree);
-  const convertOrGroupsToAnd = (node: TreeNode<FilterInterface>): void => {
+  
+  const flattenOrGroups = (node: TreeNode<FilterInterface>): void => {
     if (tree.isGroup(node)) {
-      if (node.operator === Operator.OR) {
-        node.operator = Operator.AND;
+      node.children.forEach(flattenOrGroups);
+      
+      if (node.operator === Operator.OR && node.parent) {
+        const children = [...node.children];
+        
+        if (children.length === 2) {
+          tree.toggleOperator(children[0], children[1]);
+        } else if (children.length > 2) {
+          const parent = node.parent;
+          const nodeIndex = parent.children.indexOf(node);
+          
+          children.forEach((child) => {
+            child.parent = parent;
+          });
+          
+          parent.children.splice(nodeIndex, 1, ...children);
+        }
       }
-      node.children.forEach(convertOrGroupsToAnd);
     }
   };
-  convertOrGroupsToAnd(tree.root);
+  
+  flattenOrGroups(tree.root);
   tree.pruneTree();
   (tree.root as FilterGroupInterface).uuid = genericUUID();
   filterTree.set(tree);
