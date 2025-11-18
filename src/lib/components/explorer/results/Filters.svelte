@@ -62,10 +62,8 @@
       }
     });
 
-    console.log('getDropZone:', overGroupId, 'found element:', groupElement);
-
     if (!groupElement) {
-      console.log('Element not found, returning middle as fallback');
+      console.warn('Element not found, returning middle as fallback');
       return 'middle';
     }
 
@@ -74,7 +72,6 @@
     const height = rect.height;
     const percentage = relativeY / height;
 
-    console.log('Zone calc:', { relativeY, height, percentage, currentMouseY, rectTop: rect.top });
 
     // More generous middle zone for adding to group
     if (percentage < 0.2) return 'top';
@@ -121,8 +118,6 @@
       activeType === 'group' &&
       (overType === 'group' || overType === 'item' || overType === 'root')
     ) {
-      console.log('Group dragged over:', overType, 'ID:', over.id);
-
       // Root is just a container, don't show zones on it
       if (overType === 'root') {
         hoverZone = null;
@@ -135,14 +130,11 @@
         // Groups can't be added to other groups, so only show top/bottom
         hoverZone = zone === 'middle' ? 'bottom' : zone;
         hoverGroupId = String(over.id);
-        console.log('Set hoverZone for group:', hoverZone, 'hoverGroupId:', hoverGroupId);
       } else {
         // When dragging group over item, show top/bottom zones
         const zone = getDropZone(over.id);
-        console.log('Zone from getDropZone:', zone);
         hoverZone = zone === 'middle' ? 'bottom' : zone;
         hoverGroupId = String(over.id);
-        console.log('Set hoverZone for item:', hoverZone, 'hoverGroupId:', hoverGroupId);
       }
       return; // Don't do anything else, just show visual feedback
     } else {
