@@ -245,7 +245,7 @@
         >
       {/if}
     </div>
-    {#if $filters.length > 0}
+    {#if $filters.length > 0 && features.explorer.enableOrQueries && isOpenAccess}
       <div class="flex items-center justify-between w-full px-4 mt-2 mb-2">
         <div class="flex items-center gap-2">
           <span class="text-sm">Advanced Filtering</span>
