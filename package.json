@@ -13,7 +13,7 @@
     "format": "prettier --write .",
     "test:integration": "playwright test",
     "test:unit": "vitest run",
-    "playwright": "playwright test --ui > /dev/null 2>&1 &"
+    "playwright": "playwright test --ui"
   },
   "type": "module",
   "dependencies": {
@@ -45,7 +45,7 @@
     "vite": "^5.4.20"
   },
   "devDependencies": {
-    "@playwright/test": "^1.55.0",
+    "@playwright/test": "^1.56.1",
     "@types/node": "22.9.0",
     "@types/plotly.js-basic-dist-min": "^2.12.4",
     "@types/uuid": "^10.0.0",

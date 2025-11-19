@@ -69,7 +69,13 @@ class RAS extends AuthProvider implements RasData {
       return undefined;
     }
 
-    return api.post(`${Psama.Auth}/ras`, { code });
+    const newUser: OktaUser = await api.post(`${Psama.Auth}/ras`, { code });
+    if (newUser && newUser?.oktaIdToken) {
+      newUser.oktaIdToken && localStorage.setItem('oktaIdToken', newUser.oktaIdToken);
+      return newUser;
+    }
+
+    throw new Error('RAS authentication failed. Missing Okta ID token.');
   };
 
   login = async (redirectTo: string, type: string): Promise<void> => {
