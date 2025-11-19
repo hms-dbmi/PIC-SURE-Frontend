@@ -17,6 +17,7 @@
     hasOrGroup,
     advancedFilteringEnabled,
     disableAdvancedFiltering,
+    genomicFilters,
   } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
@@ -29,6 +30,7 @@
   import Popover from '$lib/components/Popover.svelte';
 
   let unsubFilters: Unsubscriber | null = null;
+  let unsubGenomicFilters: Unsubscriber | null = null;
   let currentPage: string = page.url.pathname;
   let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
   let isExplorer = $derived(page.url.pathname.includes('/explorer'));
@@ -81,12 +83,19 @@
     if (!unsubFilters) {
       unsubFilters = filters.subscribe(() => loadPatientCount(isOpenAccess));
     }
+    if (!unsubGenomicFilters) {
+      unsubGenomicFilters = genomicFilters.subscribe(() => loadPatientCount(isOpenAccess));
+    }
   }
 
   function unsubscribe() {
     if (unsubFilters) {
       unsubFilters();
       unsubFilters = null;
+    }
+    if (unsubGenomicFilters) {
+      unsubGenomicFilters();
+      unsubGenomicFilters = null;
     }
   }
 
