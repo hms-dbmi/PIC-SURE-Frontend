@@ -142,6 +142,22 @@ export async function getConceptDetails(
   return response;
 }
 
+export async function getHierarchyConcepts(
+  dataset: string,
+  conceptPath: string,
+): Promise<SearchResult[]> {
+  const response: SearchResult[] = await api.post(
+    `${Picsure.Concept.Hierarchy}/${dataset}`,
+    conceptPath,
+  );
+
+  if (!response) {
+    throw new Error('No response');
+  }
+
+  return response;
+}
+
 export function addConsents(request: DictionarySearchRequest) {
   const queryTemplate = get(user)?.queryTemplate;
   if (queryTemplate) {

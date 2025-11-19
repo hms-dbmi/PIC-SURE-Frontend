@@ -12,6 +12,7 @@ export const Picsure = {
   Concept: {
     Detail: `${DICT}/concepts/detail`,
     Tree: `${DICT}/concepts/tree`,
+    Hierarchy: `${DICT}/concepts/hierarchy`,
   },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,

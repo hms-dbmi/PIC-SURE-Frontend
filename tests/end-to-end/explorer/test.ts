@@ -10,6 +10,7 @@ import {
   searchResults as mockData,
   searchResultPath,
   facetResponseWithZeroCount,
+  hierarchyResponse,
 } from '../mock-data';
 import { type SearchResult } from '../../../src/lib/models/Search';
 import { getOption, clickNthFilterIcon } from '../utils';
@@ -622,6 +623,10 @@ test.describe('Explorer for authenticated users', () => {
         await page.route('*/**/picsure/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
+        await page.route(
+          '*/**/picsure/proxy/dictionary-api/concepts/hierarchy/test_data_set',
+          async (route: Route) => route.fulfill({ json: hierarchyResponse }),
+        );
         await page.goto('/explorer?search=somedata');
         // When
         const tableBody = page.locator('tbody');
@@ -650,21 +655,15 @@ test.describe('Explorer for authenticated users', () => {
       test('Hierarchy component data is expected', async ({ page }) => {
         // Then
         await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-
-        const rowData = mockData.content[0];
         const hierarchyComponent = page.getByTestId('hierarchy-component');
         const treeItems = await hierarchyComponent.locator('details').all();
-        const conceptPathItems = rowData.conceptPath.split('\\').filter((item) => item !== '');
+        const conceptPathItems = hierarchyResponse.reverse();
         for (let i = 0; i < conceptPathItems.length; i++) {
           const treeItem = treeItems[i];
           const treeItemText = await treeItem.locator('> summary label').textContent();
-          expect(treeItemText).toContain(conceptPathItems[i]);
+          expect(treeItemText).toContain(conceptPathItems[i].display);
+          expect(treeItemText).toContain(conceptPathItems[i].name);
         }
-      });
-      test('Hierarchy component has a hierarchy', async ({ page }) => {
-        // Then
-        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-        await expect(page.getByTestId('tree-item:SOMEDATA-\\SOMEDATA\\')).toBeVisible();
       });
       test("Hierarchy component's last item is the only one selected", async ({ page }) => {
         // Then

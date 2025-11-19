@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Route } from '@playwright/test';
 import { test, mockApiSuccess } from '../../custom-context';
 
 import {
@@ -12,6 +12,7 @@ import {
   detailResForAge,
   detailResForAge2,
   mockDataWithChildren,
+  hierarchyResponse,
 } from '../../mock-data';
 import { getOption, clickNthFilterIcon } from '../../utils';
 import { createCategoricalFilter, createNumericFilter } from '../../../../src/lib/models/Filter';
@@ -593,6 +594,10 @@ test.describe('Any record of filter', () => {
       `${conceptTreePath}/${mockData.content[0].dataset}?depth=100`,
       mockDataWithChildren,
     );
+    await page.route(
+      '*/**/picsure/proxy/dictionary-api/concepts/hierarchy/test_data_set',
+      async (route: Route) => route.fulfill({ json: hierarchyResponse }),
+    );
 
     await page.goto('/explorer?search=somedata');
 
@@ -603,7 +608,7 @@ test.describe('Any record of filter', () => {
     const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
     await hierarchyButton.click();
     await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-    const secondItem = page.getByTestId('radio:disease');
+    const secondItem = page.getByTestId('radio:Disease (disease)');
     await secondItem.click();
     const addFilterButton = page.getByTestId('add-filter');
     await addFilterButton.click();
