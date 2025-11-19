@@ -486,6 +486,39 @@ export const detailResponseCat = {
   },
 };
 
+export const hierarchyResponse = [
+  {
+    conceptPath: '\\SOMEDATA\\questionnaire\\disease\\',
+    name: 'disease',
+    display: 'Disease',
+    dataset: 'test_data_set',
+    allowFiltering: true,
+    studyAcronym: 'TDS',
+    description: 'Disease',
+    type: 'Categorical',
+  },
+  {
+    conceptPath: '\\SOMEDATA\\questionnaire\\',
+    name: 'heart_test',
+    display: 'Questionnaire',
+    dataset: 'test_data_set',
+    allowFiltering: true,
+    studyAcronym: 'TDS',
+    description: 'Do you have a history of heart attack? Including extended family?',
+    type: 'Categorical',
+  },
+  {
+    conceptPath: '\\SOMEDATA\\',
+    name: 'heart_died',
+    display: 'SOMEDATA',
+    dataset: 'test_data_set',
+    allowFiltering: true,
+    studyAcronym: 'TDS',
+    description: 'Test description and this is a long description to test the UI?',
+    type: 'Categorical',
+  },
+];
+
 export const detailResponseCatSameDataset = {
   type: 'Categorical',
   conceptPath: '\\SOMEDATA\\questionnaire\\disease\\Did you die from a heart attack?\\',
