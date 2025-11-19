@@ -291,7 +291,7 @@
       <header class="text-left ml-1">Filters</header>
     {/if}
     <section class="py-1">
-      {#if $advancedFilteringEnabled && (features.explorer.enableOrQueries || !isOpenAccess)}
+      {#if $advancedFilteringEnabled && features.explorer.enableOrQueries && isOpenAccess}
         <DndContext {sensors} {onDragStart} {onDragEnd} {onDragOver}>
           <SortableContext
             items={$filterTree.root.children.map((child) => (child as FilterInterface).uuid)}
