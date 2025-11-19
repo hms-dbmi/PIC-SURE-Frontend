@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Indexable } from '$lib/types';
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { active, archived, loadDatasets } from '$lib/stores/Dataset';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -26,7 +26,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Datasets</title>
+  <title>{config.branding.applicationName} | Datasets</title>
 </svelte:head>
 
 <Content title="Manage Datasets">

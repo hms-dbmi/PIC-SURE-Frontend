@@ -2,11 +2,12 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import * as api from '$lib/api';
-  import { branding, features, settings } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { Picsure } from '$lib/paths';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import type { DataSet } from '$lib/models/Dataset';
+  import type { QueryV2 } from '$lib/models/query/Query';
   import { exports } from '$lib/stores/Export';
   import { filters } from '$lib/stores/Filter';
   import { totalParticipants } from '$lib/stores/ResultStore';
@@ -56,18 +57,18 @@
   const showTabbedAnalysisStep = $derived(
     (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
       getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
-      !features.explorer.enableRedcapExport,
+      !config.features.explorer.enableRedcapExport,
   );
   const showPfbExportStep = $derived(
     getQueryRequest().query.expectedResultType === 'DATAFRAME_PFB' &&
-      features.explorer.enablePfbExport &&
-      !features.explorer.enableRedcapExport,
+      config.features.explorer.enablePfbExport &&
+      !config.features.explorer.enableRedcapExport,
   );
   const showUserToken = $derived(
     (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
       getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
-      features.analyzeApi &&
-      !features.explorer.enableRedcapExport,
+      config.features.analyzeApi &&
+      !config.features.explorer.enableRedcapExport,
   );
 
   let prevConcepts: string[] = $state([]);
@@ -76,7 +77,7 @@
     // Auto select csv export when pfb feature is disabled.
     setQueryRequest(query);
     $federatedQueryMap = {};
-    if (!features.explorer.enablePfbExport) {
+    if (!config.features.explorer.enablePfbExport) {
       setActiveType('DATAFRAME');
     }
   });
@@ -86,31 +87,31 @@
       (concept: string) => !$selectedConcepts.includes(concept),
     );
     conceptsToRemove.forEach((concept: string) => {
-      const fieldIndex = getQueryRequest().query.fields.indexOf(concept);
+      const fieldIndex = (getQueryRequest().query as QueryV2).fields.indexOf(concept);
       if (fieldIndex > -1) {
-        getQueryRequest().query.fields.splice(fieldIndex, 1);
+        (getQueryRequest().query as QueryV2).fields.splice(fieldIndex, 1);
       }
     });
     prevConcepts = $selectedConcepts;
     $selectedConcepts.forEach((concept: string) => {
-      getQueryRequest().query.addField(concept);
+      (getQueryRequest().query as QueryV2).addField(concept);
     });
   }
 
   async function onNextHandler(_step: number, stepName: string): Promise<void> {
     const shouldUpdateConcepts =
-      features.explorer.showTreeStep &&
-      stepName === (features.federated ? 'save-dataset' : 'select-type');
+      config.features.explorer.showTreeStep &&
+      stepName === (config.features.federated ? 'save-dataset' : 'select-type');
 
     if (stepName === 'select-variables') {
-      getQueryRequest().query.fields.forEach(addConcept);
+      (getQueryRequest().query as QueryV2).fields.forEach(addConcept);
     }
 
     if (shouldUpdateConcepts) {
       updateConcepts();
     }
     if (stepName === 'start') {
-      if (features.explorer.enableRedcapExport) {
+      if (config.features.explorer.enableRedcapExport) {
         setLockDownload(false);
       }
       const siteQueryIds = Object.values($federatedQueryMap)
@@ -122,7 +123,7 @@
           getDatasetNameInput() ?? '',
           siteQueryIds.length > 0 ? siteQueryIds : undefined,
         ).then((data: DataSet) => {
-          if (features.federated) {
+          if (config.features.federated) {
             statusPromise = Promise.resolve();
             return data;
           } else {
@@ -174,7 +175,7 @@
   }
 
   function onComplete() {
-    if (features.explorer.enableRedcapExport) {
+    if (config.features.explorer.enableRedcapExport) {
       window.open(
         'https://redcap.tch.harvard.edu/redcap_edc/surveys/?s=EWYX8X8XX77TTWFR',
         '_blank',
@@ -187,7 +188,7 @@
     }
   }
 
-  const MAX_DATA_POINTS_FOR_EXPORT = settings.maxDataPointsForExport || 1000000;
+  const MAX_DATA_POINTS_FOR_EXPORT = config.settings.maxDataPointsForExport || 1000000;
   function dataLimitExceeded(): boolean {
     const extraVariables = $filters
       .filter((filter) => filter.filterType === 'AnyRecordOf')
@@ -204,19 +205,19 @@
   class="w-full h-full m-8"
   oncomplete={onComplete}
   onnext={onNextHandler}
-  buttonCompleteLabel={features.explorer.enableRedcapExport ? 'Request Access' : 'Done'}
+  buttonCompleteLabel={config.features.explorer.enableRedcapExport ? 'Request Access' : 'Done'}
 >
   <Step name="review" locked={dataLimitExceeded()}>
     {#snippet header()}Review Cohort Details:{/snippet}
     <ReviewStep {query} {rows} {preparePromise} dataLimitExceeded={dataLimitExceeded()} />
   </Step>
-  {#if features.explorer.showTreeStep}
+  {#if config.features.explorer.showTreeStep}
     <Step name="select-variables">
       {#snippet header()}Finalize Data:{/snippet}
       <TreeStep />
     </Step>
   {/if}
-  {#if features.explorer.enablePfbExport && !features.federated}
+  {#if config.features.explorer.enablePfbExport && !config.features.federated}
     <Step name="select-type" locked={getActiveType() === undefined}>
       {#snippet header()}Review and Save Dataset:{/snippet}
       <TypeStep />
@@ -230,7 +231,7 @@
       !getSaveable()}
   >
     {#snippet header()}Save Dataset ID:{/snippet}
-    {#if features.federated}
+    {#if config.features.federated}
       <CommonAreaSaveDatasetStep />
     {:else}
       <SaveDatasetStep />
@@ -245,16 +246,16 @@
         {#await statusPromise}
           <Loading ring size="medium" label="Preparing" />
         {:then}
-          <p class="mt-4">{branding.explorePage.analysisExportText}</p>
+          <p class="mt-4">{config.branding.explorePage.analysisExportText}</p>
           {#if showTabbedAnalysisStep}
             <TabbedAnalysisStep />
           {:else if showPfbExportStep}
             <PfbExport />
-          {:else if features.explorer.enableRedcapExport}
+          {:else if config.features.explorer.enableRedcapExport}
             <RedcapStep />
           {/if}
-          {#if branding.explorePage.goTo.instructions && branding.explorePage.goTo.instructions.length > 0}
-            <p>{branding.explorePage.goTo.instructions}</p>
+          {#if config.branding.explorePage.goTo.instructions && config.branding.explorePage.goTo.instructions.length > 0}
+            <p>{config.branding.explorePage.goTo.instructions}</p>
           {/if}
           {#if showUserToken}
             <div class="flex justify-center">

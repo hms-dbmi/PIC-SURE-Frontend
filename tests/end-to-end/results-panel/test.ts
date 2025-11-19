@@ -185,6 +185,10 @@ test.describe('Results Panel', () => {
 
   test('Export button disabled during counts loading then enabled after', async ({ page }) => {
     // Given
+    await mockApiSuccess(page, '*/**/api/config', {
+      features: [{ name: 'ALLOW_EXPORT', value: 'true' }],
+      settings: [],
+    });
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
     // Deterministic counts: fast for initial and first filter, delayed after second filter
@@ -229,6 +233,10 @@ test.describe('Results Panel', () => {
   });
   test('Clear All clears exports and filters', async ({ page }) => {
     // Given
+    await mockApiSuccess(page, '*/**/api/config', {
+      features: [{ name: 'ALLOW_EXPORT_ENABLED', value: 'true' }],
+      settings: [],
+    });
     await mockApiSuccess(
       page,
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
@@ -267,7 +275,11 @@ test.describe('Results Panel', () => {
   test.describe('Discover OR', () => {
     let querySyncRequest: string[] = [];
 
-    test.beforeEach(({ page }) => {
+    test.beforeEach(async ({ page }) => {
+      await mockApiSuccess(page, '*/**/api/config', {
+        features: [{ name: 'ENABLE_OR_QUERIES', value: 'true' }],
+        settings: [],
+      });
       page.on('request', (request) => {
         if (request.url().includes('/picsure/query/sync')) {
           const data = request.postData();
@@ -281,6 +293,7 @@ test.describe('Results Panel', () => {
     test.afterEach(() => {
       querySyncRequest = [];
     });
+
     test('shows distributions button when there are no OR filter groups', async ({ page }) => {
       // Given
       await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
@@ -349,7 +362,6 @@ test.describe('Results Panel', () => {
       // Then
       expect(page.getByTestId('distributions-btn')).toBeDisabled();
     });
-
     test('sends request with QueryV3 structure', async ({ page }) => {
       // Given
       await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);

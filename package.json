@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
-    "dev": "vite dev",
+    "dev": "vite dev --port 3000 --host",
     "build": "vite build",
     "preview": "vite preview",
     "test": "pnpm run test:integration && pnpm run test:unit",
@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "test:integration": "playwright test",
     "test:unit": "vitest run",
-    "playwright": "playwright test --ui"
+    "playwright": "playwright test --ui",
+    "playwright:debug": "DEBUG=pw:webserver playwright test --ui"
   },
   "type": "module",
   "dependencies": {

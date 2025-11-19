@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   import Panel from '$lib/components/explorer/Panel.svelte';
@@ -16,7 +16,7 @@
     selectedGenes.set([]);
   }
 
-  const helpText = branding?.help?.popups?.genomicFilter;
+  const helpText = config.branding.help.popups.genomicFilter;
 </script>
 
 <div id="gene-search" class="grid grid-cols-3 gap-3 {className || ''}">

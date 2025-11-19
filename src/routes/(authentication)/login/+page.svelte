@@ -5,7 +5,7 @@
   import { page } from '$app/state';
   import { browser } from '$app/environment';
 
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import type { AuthData } from '$lib/models/AuthProvider';
   import { toaster } from '$lib/toaster';
 
@@ -15,10 +15,13 @@
   import Loading from '$lib/components/Loading.svelte';
 
   const redirectTo = page.url.searchParams.get('redirectTo') || '/';
-  const siteName = branding?.applicationName;
-  const description = branding?.login.description;
-  const openPicsureLinkText = branding?.login.openPicsureLinkText;
+  const siteName = config.branding.applicationName;
+  const description = config.branding.login.description;
+  const openPicsureLinkText = config.branding.login.openPicsureLinkText;
   let logoutReason: string | null;
+  let loading = $state(
+    Promise.allSettled([page.data?.providers, config.loading]).then(() => page.data?.providers),
+  );
 
   onMount(() => {
     if (browser) {
@@ -49,12 +52,12 @@
     </h1>
     <p data-testid="login-description" class="text-2xl">{description}</p>
   </div>
-  {#await page.data?.providers}
+  {#await loading}
     <Loading ring size="medium" />
   {:then providers}
     <div id="login-box" class="w-max mt-2">
       <header class="flex flex-col items-center">
-        {#if branding?.login?.showSiteName}
+        {#if config.branding.login.showSiteName}
           <div>{siteName}</div>
         {/if}
       </header>
@@ -100,9 +103,9 @@
             {/each}
           {/if}
         </div>
-        {#if features.login.open}
+        {#if config.features.login.open}
           <a
-            href={branding?.login?.openPicsureLink || '/'}
+            href={config.branding.login.openPicsureLink || '/'}
             class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white mb-4 w-full"
             >{openPicsureLinkText}</a
           >

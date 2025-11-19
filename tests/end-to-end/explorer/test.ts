@@ -1,5 +1,5 @@
 import { expect, type Route } from '@playwright/test';
-import { test, mockApiFail } from '../custom-context';
+import { test, mockApiFail, mockApiSuccess } from '../custom-context';
 import {
   conceptsDetailPath,
   detailResponseCat,
@@ -16,6 +16,13 @@ import { getOption, clickNthFilterIcon } from '../utils';
 
 test.describe('Explorer for authenticated users', () => {
   test.beforeEach(async ({ page }) => {
+    await mockApiSuccess(page, '*/**/api/config', {
+      features: [
+        { name: 'ALLOW_EXPORT_ENABLED', value: 'true' },
+        { name: 'ENABLE_HIERARCHY', value: 'true' },
+      ],
+      settings: [],
+    });
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),

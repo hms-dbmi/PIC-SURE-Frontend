@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { exports, addExports, removeExports } from '$lib/stores/Export';
   import type { ExportInterface } from '$lib/models/Export';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
@@ -187,7 +187,7 @@
       </ErrorAlert>
     {:else if !loadingSampleIds}
       <Datatable tableName="ExportSummary" data={activeRows} {columns} />
-      {#if features.explorer.enableSampleIdCheckbox}
+      {#if config.features.explorer.enableSampleIdCheckbox}
         <div>
           <label for="sample-ids-checkbox" class="flex items-center" data-testid="sample-ids-label">
             {#if checkingSampleIds}
