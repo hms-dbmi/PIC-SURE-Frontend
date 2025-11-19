@@ -46,6 +46,14 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 test.describe('variant explorer', () => {
   test.describe('Genetic filter applied', () => {
     test.beforeEach(async ({ page }) => {
+      await mockApiSuccess(page, '*/**/api/config', {
+        features: [
+          { name: 'ENABLE_GENE_QUERY', value: 'true' },
+          { name: 'ENABLE_SNP_QUERY', value: 'true' },
+          { name: 'VARIANT_EXPLORER', value: 'true' },
+        ],
+        settings: [],
+      });
       // Add genomic filter steps
       await page.goto('/explorer');
       await mockSyncAPI(page, successResults);

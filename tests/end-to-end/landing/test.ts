@@ -7,11 +7,10 @@ import {
   facetsResponse,
   searchResults,
 } from '../mock-data';
-import type { Branding } from '../../../src/lib/configuration';
-import * as config from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
-//TypeScript is confused by the JSON import so I am fxing it here
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
+import type { Branding } from '../../../src/lib/models/Configuration';
+import brandingJson from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
+const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
+
 const loggedInActions = branding?.landing?.actions?.filter((action) => action.showIfLoggedIn);
 const loggedOutActions = branding?.landing?.actions?.filter(
   (action) => !action.showIfLoggedIn || action.isOpen,
@@ -51,6 +50,13 @@ test.describe('Landing page', () => {
     });
   });
   test.describe('Stats', () => {
+    test.beforeEach(async ({ page }) => {
+      await mockApiSuccess(page, '*/**/api/config', {
+        features: [{ name: 'OPEN', value: 'true' }],
+        settings: [],
+      });
+    });
+
     const stats: MockLandingStat[] = [
       { key: 'query:blank', route: '*/**/picsure/query/sync', api: '88', value: '88' },
       {

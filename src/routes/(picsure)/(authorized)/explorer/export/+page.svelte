@@ -8,7 +8,7 @@
   import Content from '$lib/components/Content.svelte';
   import { getQueryRequestV2 } from '$lib/utilities/QueryBuilder';
   import type { ExportInterface } from '$lib/models/Export';
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   let { exports } = ExportStore;
 
   let queryRequest: QueryRequestInterface = getQueryRequestV2(true);
@@ -32,7 +32,7 @@
       type: filter.searchResult?.type,
     };
   });
-  if (features.useQueryTemplate) {
+  if (config.features.useQueryTemplate) {
     const patientIdExport: ExportInterface = {
       id: '\\_Patient ID\\',
       conceptPath: '\\_Patient ID\\',
@@ -57,7 +57,7 @@
       type: patientIdExport.searchResult?.type,
     };
     exportRows.push(patientIdRow);
-    if (features.useQueryTemplate) {
+    if (config.features.useQueryTemplate) {
       const topmedExport: ExportInterface = {
         id: '\\_Topmed Study Accession with Subject ID\\',
         conceptPath: '\\_Topmed Study Accession with Subject ID\\',

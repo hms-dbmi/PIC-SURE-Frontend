@@ -121,6 +121,24 @@ async function checkStepRenderedCorrectly(
 }
 
 test.describe('Export Page', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockApiSuccess(page, '*/**/api/config', {
+      features: [
+        { name: 'ALLOW_DOWNLOAD', value: 'true' },
+        { name: 'ALLOW_EXPORT_ENABLED', value: 'true' },
+        { name: 'ALLOW_EXPORT', value: 'true' },
+        { name: 'ANALYZE_API', value: 'true' },
+        { name: 'DOWNLOAD_AS_PFB', value: 'true' },
+        { name: 'ENABLE_REDCAP_EXPORT', value: 'false' },
+        { name: 'ENABLE_SAMPLE_ID_CHECKBOX', value: 'true' },
+        { name: 'SHOW_TREE_STEP', value: 'true' },
+        { name: 'EXPORT_TIMESERIES', value: 'false' },
+        { name: 'USE_QUERY_TEMPLATE', value: 'true' },
+      ],
+      settings: [],
+    });
+  });
+
   test('Empty Export page renders', async ({ page }) => {
     await page.goto('/explorer/export');
     await expect(page).toHaveURL('/explorer/export');

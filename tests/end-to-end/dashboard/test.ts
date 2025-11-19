@@ -7,6 +7,13 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('Dashboard page', () => {
   test.beforeEach(async ({ page }) => {
+    await mockApiSuccess(page, '*/**/api/config', {
+      features: [
+        { name: 'DASHBOARD_DRAWER', value: 'true' },
+        { name: 'DASHBOARD', value: 'true' },
+      ],
+      settings: [],
+    });
     await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/dashboard', mockDashboard);
   });
   test.describe('Dashboard table', () => {

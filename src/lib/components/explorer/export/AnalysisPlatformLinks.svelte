@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 </script>
 
-{#if branding.explorePage.goTo.links.length > 0}
+{#if config.branding.explorePage.goTo.links.length > 0}
   <div class="flex justify-center">
-    {#each branding.explorePage.goTo.links as link}
+    {#each config.branding.explorePage.goTo.links as link}
       <a
         class="btn preset-tonal-primary border border-primary-500 m-2 hover:preset-filled-primary-500"
         href={link.url}

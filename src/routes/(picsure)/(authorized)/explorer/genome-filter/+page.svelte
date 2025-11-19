@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
@@ -31,8 +31,8 @@
   let edit = page.url.searchParams.get('edit') || '';
   let selectedOption: Option = $state(
     (() => {
-      if (features.enableGENEQuery && !features.enableSNPQuery) return Option.Genomic;
-      if (!features.enableGENEQuery && features.enableSNPQuery) return Option.SNP;
+      if (config.features.enableGENEQuery && !config.features.enableSNPQuery) return Option.Genomic;
+      if (!config.features.enableGENEQuery && config.features.enableSNPQuery) return Option.SNP;
       return ['snp', 'genomic'].includes(edit) ? (edit as Option) : Option.None;
     })(),
   );
@@ -75,7 +75,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Gemonic Filter</title>
+  <title>{config.branding.applicationName} | Gemonic Filter</title>
 </svelte:head>
 
 <Content
@@ -86,7 +86,7 @@
   backTitle="Back to Explore"
   transition
 >
-  {#if features.enableGENEQuery && features.enableSNPQuery}
+  {#if config.features.enableGENEQuery && config.features.enableSNPQuery}
     <FilterType class="my-4" onselect={onSelectFilterType} active={selectedOption} />
   {/if}
   {#if selectedOption !== Option.None}

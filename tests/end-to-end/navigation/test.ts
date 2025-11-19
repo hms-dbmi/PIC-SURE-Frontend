@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { test } from '../custom-context';
 import { picsureUser, userTypes } from '../mock-data';
-import { routes } from '../../../src/lib/configuration';
+import { routes } from '../../../src/lib/configuration.svelte';
 import { PicsurePrivileges } from '../../../src/lib/models/Privilege';
 import type { Route } from '../../../src/lib/models/Route';
 

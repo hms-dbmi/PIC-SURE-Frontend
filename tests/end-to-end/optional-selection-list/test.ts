@@ -254,6 +254,13 @@ test.describe('OptionaSelectionList', () => {
   });
   test('Loads next values when scrolling when infinite scroll is enabled', async ({ page }) => {
     // Given
+    await mockApiSuccess(page, '*/**/api/config', {
+      features: [
+        { name: 'ENABLE_GENE_QUERY', value: 'true' },
+        { name: 'ENABLE_SNP_QUERY', value: 'true' },
+      ],
+      settings: [],
+    });
     const mockDataWithManyOptions = {
       ...detailResponseCat2,
       values: Array.from({ length: 100 }, (_, i) => `Option ${i + 1}`),

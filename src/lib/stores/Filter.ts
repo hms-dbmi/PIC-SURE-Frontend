@@ -2,7 +2,7 @@ import { get, derived, writable, type Readable, type Writable } from 'svelte/sto
 import { genericUUID } from '$lib/utilities/UUID';
 
 import { browser } from '$app/environment';
-import { features } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 
 import {
   type Filter,
@@ -94,7 +94,7 @@ function restoreFilterTree(): Tree<FilterInterface> {
 }
 
 export function toggleOperator(siblingA: FilterInterface, siblingB: FilterInterface) {
-  if (!features.explorer.enableOrQueries) return;
+  if (!config.features.explorer.enableOrQueries) return;
   const tree = get(filterTree);
   tree.toggleOperator(siblingA, siblingB);
   (tree.root as FilterGroupInterface).uuid = genericUUID();

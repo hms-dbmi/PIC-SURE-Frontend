@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { Picsure } from '$lib/paths';
   import * as api from '$lib/api';
   import DownloadButton from './DownloadButton.svelte';
@@ -47,8 +47,8 @@
   <div class="flex justify-center mt-4">
     Select an option below to export your selected data in PFB format.
   </div>
-  {#if branding.explorePage?.pfbExportUrls && branding.explorePage.pfbExportUrls.length > 0}
-    {#each branding.explorePage.pfbExportUrls as exportLink}
+  {#if config.branding.explorePage?.pfbExportUrls && config.branding.explorePage.pfbExportUrls.length > 0}
+    {#each config.branding.explorePage.pfbExportUrls as exportLink}
       <button
         disabled={exportLoading}
         class="flex-initial w-64 btn preset-filled-primary-500 disabled:preset-tonal-primary border border-primary-500"

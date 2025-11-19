@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { settings } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   import { ExportType } from '$lib/models/Variant';
   import type { VariantData } from '$lib/models/Variant';
@@ -37,10 +37,10 @@
     {/if}
     <Loading ring size="medium" />
   {:then varData}
-    {#if count > settings.variantExplorer.maxCount}
+    {#if count > config.settings.variantExplorer.maxCount}
       <ErrorAlert color="warning">
         Too many variants! Found {count.toLocaleString()}, but cannot display more than
-        {settings.variantExplorer.maxCount} variants.
+        {config.settings.variantExplorer.maxCount} variants.
       </ErrorAlert>
     {:else if count > 0 && !!varData && varData.rows.length > 0}
       <Datatable
@@ -67,7 +67,7 @@
               {count.toLocaleString()} variants found
             </div>
           {/if}
-          {#if settings.variantExplorer.type === ExportType.Full}
+          {#if config.settings.variantExplorer.type === ExportType.Full}
             <div class="">
               <label class="flex items-center space-x-2">
                 <input

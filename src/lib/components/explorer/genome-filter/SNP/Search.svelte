@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { SNP } from '$lib/models/GenomeFilter';
   import { getSNPCounts } from '$lib/stores/SNPFilter';
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
@@ -34,7 +34,7 @@
     },
   };
 
-  const genomeBuild = branding.genomic?.defaultGenomeBuild || 'GRCh38';
+  const genomeBuild = config.branding.genomic?.defaultGenomeBuild || 'GRCh38';
   const validSnpPattern = /^\w+,\d+,(A|T|C|G)+,(A|T|C|G)+$/;
   let searchElement: HTMLInputElement;
   let warn: Warning | undefined = $state(undefined);

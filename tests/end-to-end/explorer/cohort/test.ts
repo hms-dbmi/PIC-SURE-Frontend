@@ -16,6 +16,10 @@ const SYNC_URL = '*/**/picsure/query/sync';
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.beforeEach(async ({ page }) => {
+  await mockApiSuccess(page, '*/**/api/config', {
+    features: [{ name: 'ENABLE_COHORT_DETAILS', value: 'true' }],
+    settings: [],
+  });
   await mockApiSuccess(page, searchResultPath, mockData);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
 });

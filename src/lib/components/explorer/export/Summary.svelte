@@ -2,7 +2,7 @@
   import ExportStore from '$lib/stores/Export';
   import { onMount } from 'svelte';
   import { filters } from '$lib/stores/Filter';
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { totalParticipants, resultCounts, loadPatientCount } from '$lib/stores/ResultStore';
   import type { StatResultMap, StatValue } from '$lib/models/Stat';
   import type { FederatedResourceInfo } from '$lib/stores/Dataset';
@@ -109,7 +109,7 @@
   </div>
 </div>
 
-{#if features.federated && siteMapsCombined && Object.keys(siteMapsCombined).length > 0}
+{#if config.features.federated && siteMapsCombined && Object.keys(siteMapsCombined).length > 0}
   <div id="site-indicators" class="grid grid-cols-3 gap-y-2 gap-x-6">
     {#each Object.entries(siteMapsCombined) as [siteName, info]}
       <div id="site-indicator">

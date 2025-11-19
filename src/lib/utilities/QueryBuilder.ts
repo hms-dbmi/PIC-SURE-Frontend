@@ -8,7 +8,7 @@ import {
   type PhenotypicFilterType,
   type PhenotypicClause,
 } from '$lib/models/query/Query';
-import { features } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/User';
@@ -83,7 +83,7 @@ export function getBlankQueryRequestV2(
 ): QueryRequestInterface {
   let query: QueryV2 = new QueryV2();
 
-  if (features.useQueryTemplate && !isOpenAccess) {
+  if (config.features.useQueryTemplate && !isOpenAccess) {
     const queryTemplate: QueryInterfaceV2 = get(user).queryTemplate as QueryInterfaceV2;
     if (queryTemplate) {
       query = new QueryV2(structuredClone(queryTemplate));
@@ -92,7 +92,7 @@ export function getBlankQueryRequestV2(
 
   query = mutateMethod(query);
 
-  if (features.requireConsents && !isOpenAccess) {
+  if (config.features.requireConsents && !isOpenAccess) {
     query = updateConsentFilters(query);
   }
 
@@ -212,7 +212,7 @@ export function getBlankQueryRequestV3(
 
   query = mutateMethod(query);
 
-  if (features.requireConsents && !isOpenAccess) {
+  if (config.features.requireConsents && !isOpenAccess) {
     addAuthorizationFiltersV3(query);
   }
 
@@ -223,7 +223,7 @@ export function getBlankQueryRequestV3(
 }
 
 function addAuthorizationFiltersV3(query: QueryV3): void {
-  if (features.useQueryTemplate) {
+  if (config.features.useQueryTemplate) {
     const queryTemplate: QueryInterfaceV2 = get(user).queryTemplate as QueryInterfaceV2;
     if (queryTemplate) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -254,7 +254,7 @@ function addAuthorizationFiltersV3(query: QueryV3): void {
     }
   }
 
-  if (features.requireConsents) {
+  if (config.features.requireConsents) {
     const hasHarmonizedInSelect = selectIncludesHarmonizedPathV3(query.select || []);
     const hasHarmonizedInPhenotype = phenotypicClauseIncludesHarmonizedPath(query.phenotypicClause);
     const hasAnyHarmonized = hasHarmonizedInSelect || hasHarmonizedInPhenotype;
