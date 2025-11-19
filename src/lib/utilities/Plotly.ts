@@ -1,4 +1,4 @@
-import type { PlotlyHTMLElement, Root, Data, Config, Layout } from 'plotly.js';
+import type { PlotlyHTMLElement, Root, Data, Config, Layout } from 'plotly.js-basic-dist-min';
 import { settings } from '$lib/configuration';
 
 const MAX_TITLE_LENGTH = 60;

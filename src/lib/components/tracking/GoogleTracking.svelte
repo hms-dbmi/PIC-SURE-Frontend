@@ -43,10 +43,10 @@
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-  function gtag(command: string, ...arg: any[]) {
+  function gtag(...args: any[]) {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
     if (!window.dataLayer) window.dataLayer = [];
-    window.dataLayer.push(arguments);
+    window.dataLayer.push(args);
   }
 
   function initialize() {

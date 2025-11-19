@@ -18,7 +18,9 @@
   });
 
   async function load() {
-    privilege = await getPrivilege(page.params.uuid);
+    if (page.params?.uuid) {
+      privilege = await getPrivilege(page.params.uuid);
+    }
     await loadApplications();
   }
 </script>
