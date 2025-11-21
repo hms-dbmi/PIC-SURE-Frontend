@@ -12,13 +12,13 @@ import type {
   LoginConfig,
   SiteMapConfig,
   CodeBlockConfig,
-  StatField,
   PrivacyConfig,
   AnalysisConfig,
   CollaborateConfig,
   DatasetRequestPageConfig,
   TermsOfServiceConfig,
 } from './types';
+import type { StatField } from '$lib/models/Stat';
 
 export const PROJECT_HOSTNAME =
   typeof window !== 'undefined'

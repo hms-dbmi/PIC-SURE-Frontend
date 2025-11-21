@@ -18,7 +18,9 @@
   });
 
   async function load() {
-    role = await getRole(page.params.uuid);
+    if (page.params?.uuid) {
+      role = await getRole(page.params.uuid);
+    }
     await loadPrivileges();
   }
 </script>

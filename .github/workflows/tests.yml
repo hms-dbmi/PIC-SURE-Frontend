@@ -27,9 +27,14 @@ jobs:
         run: pnpm exec playwright install --with-deps
       - name: Check Playwright versions
         run: pnpm ls @playwright/test || true
+      - name: Run PNPM audit
+        run: pnpm audit --audit-level=moderate
+        continue-on-error: true
 
       - name: Run linting tests
         run: pnpm run lint
+      - name: Run Svelte check
+        run: pnpm run check
       - name: Run Playwright tests
         run: pnpm run test
 

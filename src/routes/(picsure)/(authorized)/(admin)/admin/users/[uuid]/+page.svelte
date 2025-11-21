@@ -28,9 +28,11 @@
 
   async function load() {
     await loadUsers();
-    user = await getUser(page.params.uuid);
-    connection = (await getConnection(user.connection)) || '';
-    roles = await Promise.all(user.roles.map(getRole));
+    if (page.params?.uuid) {
+      user = await getUser(page.params.uuid);
+      connection = (await getConnection(user.connection)) || '';
+      roles = await Promise.all(user.roles.map(getRole));
+    }
   }
 </script>
 

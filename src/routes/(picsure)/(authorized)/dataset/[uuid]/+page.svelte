@@ -23,7 +23,9 @@
   });
 
   async function loadDataset() {
-    dataset = await getDataset(page.params.uuid);
+    if (page.params?.uuid) {
+      dataset = await getDataset(page.params.uuid);
+    }
   }
 </script>
 
