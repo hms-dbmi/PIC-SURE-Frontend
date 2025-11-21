@@ -49,7 +49,6 @@ test('Discover can display ±3', async ({ page }) => {
   const match = raw.match(/^(\d[\d,]*)\s*±(\d+)$/);
   const numeric = parseInt((match?.[1] || '0').replace(/,/g, '')) || 0;
   const plusMinus = match?.[2] || '0';
-
   // Then
   await expect(page.locator('#results-panel')).toBeVisible();
   await expect(page.locator('#result-count')).toContainText(
@@ -143,4 +142,29 @@ test("Hierarchy component's radio buttons are not selectable when disableAddFilt
   for (let i = 0; i < radioButtons.length; i++) {
     await expect(radioButtons[i]).toBeDisabled();
   }
+});
+test('Cohort details button and variant explorer button are not visible', async ({ page }) => {
+  // Given
+  await mockApiSuccess(
+    page,
+    `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+    detailResponseCat,
+  );
+  await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
+  const bigNumberSync = { '\\_studies_consents\\': '1477888±3' };
+  await mockApiSuccess(page, '*/**/picsure/query/sync', bigNumberSync);
+  await page.goto('/discover?search=somedata');
+
+  // When
+  await clickNthFilterIcon(page);
+  const firstItem = await getOption(page);
+  await firstItem.click();
+  const addFilterButton = page.getByTestId('add-filter');
+  await addFilterButton.click();
+  const cohortDetailsButton = page.getByTestId('cohort-details-btn');
+
+  // Then
+  await expect(page.locator('#results-panel')).toBeVisible();
+  await expect(cohortDetailsButton).not.toBeVisible();
+  await expect(page.locator('#variant-explorer-btn')).not.toBeVisible();
 });

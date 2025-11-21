@@ -7,7 +7,7 @@
   import { browser } from '$app/environment';
 
   import { createInstance } from '$lib/AuthProviderRegistry.ts';
-  import { user, userRoutes, isLoggedIn, logout } from '$lib/stores/User';
+  import { user, userRoutes, isUserLoggedIn, logout } from '$lib/stores/User';
   import type { Route } from '$lib/models/Route';
   import type AuthData from '$lib/models/AuthProvider.ts';
   import type AuthProvider from '$lib/models/AuthProvider.ts';
@@ -69,7 +69,7 @@
   </nav>
   {#snippet trail()}
     <div id="user-session-avatar" class="content-center">
-      {#if $user && $user.privileges && $user.email && $isLoggedIn}
+      {#if $user && $user.privileges && $user.email && isUserLoggedIn()}
         <!-- Logout -->
         <Popover>
           {#snippet trigger()}

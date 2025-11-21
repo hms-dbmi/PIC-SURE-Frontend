@@ -9,6 +9,7 @@ import type { StatResult, StatValue } from '$lib/models/Stat';
 import { filters } from '$lib/stores/Filter';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
 import { loading as resourcesPromise, loadResources } from '$lib/stores/Resources';
+import { features } from '$lib/configuration';
 
 const CACHE_MAX_ENTRIES = 100;
 const requestCache: Map<string, StatResult[]> = new Map();
@@ -18,7 +19,8 @@ export const loading: Writable<Promise<void>> = writable(Promise.resolve());
 export const countsLoading: Writable<boolean> = writable(false);
 export const totalParticipants: Writable<number> = writable(0);
 
-export async function loadPatientCount(isOpenAccess: boolean) {
+export async function loadPatientCount(useAuth: boolean) {
+  const isOpenAccess = !useAuth && !features.explorer.open && features.discover;
   loadResources();
   try {
     if (requestCache.size >= CACHE_MAX_ENTRIES) {
