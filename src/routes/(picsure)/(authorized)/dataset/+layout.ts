@@ -7,10 +7,19 @@ import { get } from 'svelte/store';
 
 export const prerender = false;
 
-export const load: LayoutLoad = () => {
+export const load: LayoutLoad = ({ url }) => {
   if (browser) {
     const userPrivileges = get(user)?.privileges || [];
-    if (!userPrivileges.includes(PicsurePrivileges.NAMED_DATASET)) {
+    if (
+      url.pathname.includes('/dataset/request') &&
+      !userPrivileges.includes(PicsurePrivileges.DATA_ADMIN)
+    ) {
+      redirect(302, '/');
+    }
+    if (
+      (url.pathname.includes('/dataset') && !url.pathname.includes('/request')) &&
+      !userPrivileges.includes(PicsurePrivileges.NAMED_DATASET)
+    ) {
       redirect(302, '/');
     }
   }
