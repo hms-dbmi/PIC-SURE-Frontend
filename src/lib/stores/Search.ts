@@ -29,14 +29,20 @@ const unsubscribers: { [key: string]: Unsubscriber } = {
   selectedFacets: emptyFn,
 };
 
+let isResetting = false;
+
 export function initHandler() {
   Object.values(unsubscribers).forEach((unsub) => unsub());
   unsubscribers.selectedFacets = selectedFacets.subscribe(() => {
-    tableHandler.setPage(1);
+    if (!isResetting) {
+      tableHandler.setPage(1);
+    }
   });
 
   unsubscribers.searchTerm = searchTerm.subscribe(() => {
-    tableHandler.setPage(1);
+    if (!isResetting) {
+      tableHandler.setPage(1);
+    }
   });
 
   tableHandler.load(async (state: State) => {
@@ -111,10 +117,13 @@ export async function updateFacets(facetsToUpdate: Facet[]) {
 }
 
 export function resetSearch() {
+  isResetting = true;
   searchTerm.set('');
   selectedFacets.set([]);
   error.set('');
   tour.set(true);
+  isResetting = false;
+  tableHandler.setPage(1);
 }
 
 export default {
