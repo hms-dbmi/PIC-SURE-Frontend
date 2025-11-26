@@ -50,6 +50,9 @@
         return node;
       }, null);
 
+      //select the last node in the hierarchy
+      selectedNode = hierarchyConcepts[0].conceptPath;
+
       return rootNode ? [rootNode] : [];
     } catch (error) {
       console.error(
