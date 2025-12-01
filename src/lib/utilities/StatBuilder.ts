@@ -214,6 +214,38 @@ export function populateStatRequests(validStats: StatResult[]): StatResult[] {
   });
 }
 
+export function isStatValueEqual(
+  a: StatValue | null | undefined,
+  b: StatValue | null | undefined,
+): boolean {
+  if (a === b) return true;
+
+  const normalize = (val: any) => {
+    if (typeof val === 'string') {
+      return val.replaceAll(',', '');
+    }
+    return val;
+  };
+
+  const normA = normalize(a);
+  const normB = normalize(b);
+
+  if (normA == normB) return true;
+
+  if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) return false;
+
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+
+  for (const key of keysA) {
+    const valA = (a as Record<string, unknown>)[key];
+    const valB = (b as Record<string, unknown>)[key];
+    if (normalize(valA) != normalize(valB)) return false;
+  }
+  return true;
+}
+
 export function getResultList(isOpenAccess: boolean, list: StatConfig[]): StatResult[] {
   const validStats = list.filter((stat) => !!requestMap[stat.key]);
 
