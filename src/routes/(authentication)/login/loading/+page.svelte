@@ -2,11 +2,10 @@
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import type AuthProvider from '$lib/models/AuthProvider';
   import { createInstance } from '$lib/AuthProviderRegistry';
   import { browser } from '$app/environment';
-  import { filters } from '$lib/stores/Filter';
   import { panelOpen } from '$lib/stores/SidePanel';
   import Loading from '$lib/components/Loading.svelte';
   import type { User } from '$lib/models/User';
@@ -44,7 +43,7 @@
 
       // api returns as string
       user.acceptedTOS = String(user.acceptedTOS) === 'true';
-      if (features.enforceTermsOfService && !user.acceptedTOS) {
+      if (config.features.enforceTermsOfService && !user.acceptedTOS) {
         setToken(user.token);
         goto(redirectTo);
       } else {
@@ -55,20 +54,20 @@
 
   onMount(async () => {
     panelOpen.set(false);
-    attemptUserLogin().catch((error) => {
+    attemptUserLogin()
+    .then(() => {
+      // wait to delete from session storage, in case attemptUserLogin loads the filters and triggers the 
+      // session storage to be re-written
+      setTimeout(() => {
+        sessionStorage.removeItem('filterTree');
+        sessionStorage.removeItem('genomicFilters');
+      }, 500);
+    })
+    .catch((error) => {
       console.error('Login Error: ', error);
       goto('/login/error');
       return;
     });
-
-    let filtersJson = sessionStorage.getItem('filters');
-    if (filtersJson) {
-      let storedFilters = JSON.parse(filtersJson || '[]');
-      filters.set(storedFilters);
-      // wait to delete from session storage, in case loading the filters in the line above triggers the session
-      // storage to be re-written
-      setTimeout(() => sessionStorage.setItem('filters', '[]'), 500);
-    }
   });
 </script>
 

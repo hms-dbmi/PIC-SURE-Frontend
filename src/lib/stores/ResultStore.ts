@@ -1,7 +1,7 @@
 import { get, writable, type Writable } from 'svelte/store';
 
 import { isToastShowing, toaster } from '$lib/toaster';
-import { branding } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 import { getResultList, StatPromise } from '$lib/utilities/StatBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
 
@@ -40,7 +40,10 @@ export async function loadPatientCount(isOpenAccess: boolean) {
     }
 
     await get(resourcesPromise);
-    const resultStats: StatResult[] = getResultList(isOpenAccess, branding?.results?.stats || []);
+    const resultStats: StatResult[] = getResultList(
+      isOpenAccess,
+      config.branding.results.stats || [],
+    );
     resultCounts.set(resultStats);
     countsLoading.set(true);
     Promise.allSettled(resultStats.flatMap(StatPromise.list).map(({ promise }) => promise)).then(
@@ -57,7 +60,9 @@ export async function loadPatientCount(isOpenAccess: boolean) {
         countsLoading.set(false);
       },
     );
-    const totalCount = resultStats.find((count) => count.key === branding?.results?.totalStatKey);
+    const totalCount = resultStats.find(
+      (count) => count.key === config.branding.results.totalStatKey,
+    );
     if (totalCount) {
       Promise.allSettled(StatPromise.list(totalCount).map(({ promise }) => promise)).then(
         (results: PromiseSettledResult<StatValue>[]) => {

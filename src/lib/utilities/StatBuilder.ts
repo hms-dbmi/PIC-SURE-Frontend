@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import * as api from '$lib/api';
-import { branding, features } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 import { Picsure } from '$lib/paths';
 
 import type { ExpectedResultType, QueryV2, QueryV3 } from '$lib/models/query/Query';
@@ -56,8 +56,8 @@ export const StatPromise = {
 };
 
 export function getStatFields(key: string): StatField[] {
-  const statKeys = branding?.statFields ? Object.keys(branding?.statFields) : [];
-  return statKeys.includes(key) ? branding?.statFields[key] : [];
+  const statKeys = config.branding.statFields ? Object.keys(config.branding.statFields) : [];
+  return statKeys.includes(key) ? config.branding.statFields[key] : [];
 }
 
 function dictionaryRequest(isOpenAccess: boolean = false): DictionarySearchRequest {
@@ -120,7 +120,7 @@ async function getOpenPatientCount({
     query.setCrossCountFields(concepts);
     return query;
   };
-  if (isOpenAccess && features.explorer.enableOrQueries) {
+  if (isOpenAccess && config.features.explorer.enableOrQueries) {
     request = addFilters
       ? getQueryRequestV3(!isOpenAccess, get(resources).hpdsOpenV3, 'CROSS_COUNT', addConceptsV3)
       : getBlankQueryRequestV3(
@@ -233,7 +233,7 @@ export function getValidStatList(list: StatConfig[]): StatResult[] {
       });
     }
 
-    if (features.login.open && openUsers) {
+    if (config.features.login.open && openUsers) {
       statList.push({
         ...stat,
         auth: false,

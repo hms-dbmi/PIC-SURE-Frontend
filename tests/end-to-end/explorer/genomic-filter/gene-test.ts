@@ -7,17 +7,22 @@ import {
   searchResultPath,
   facetResultPath,
 } from '../../mock-data';
-import * as config from '../../../../src/lib/assets/configuration.json' assert { type: 'json' };
-import type { Branding } from '$lib/configuration';
-//TypeScript is confused by the JSON import so I am fxing it here
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
+import type { Branding } from '$lib/models/Configuration';
+import brandingJson from '../../../../src/lib/assets/configuration.json' with { type: 'json' };
+const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.beforeEach(async ({ page }) => {
+  await mockApiSuccess(page, '*/**/api/config', {
+    features: [
+      { name: 'ENABLE_GENE_QUERY', value: 'true' },
+      { name: 'ENABLE_SNP_QUERY', value: 'true' },
+    ],
+    settings: [],
+  });
   await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, searchResultPath, searchResults);

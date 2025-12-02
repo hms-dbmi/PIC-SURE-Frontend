@@ -16,6 +16,16 @@ import { getOption, nthFilterIcon, clickNthFilterIcon } from '../utils';
 test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
 test.beforeEach(async ({ page }) => {
+  await mockApiSuccess(page, '*/**/api/config', {
+    features: [
+      { name: 'OPEN', value: 'true' },
+      { name: 'ENABLE_GENE_QUERY', value: 'true' },
+      { name: 'ENABLE_HIERARCHY', value: 'true' },
+      { name: 'ENABLE_SNP_QUERY', value: 'true' },
+      { name: 'EXPLORE_TOUR', value: 'true' },
+    ],
+    settings: [],
+  });
   await mockApiSuccess(page, searchResultPath, mockData);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
 });

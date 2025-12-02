@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import PrivilegeForm from '$lib/components/admin/configuration/PrivilegeForm.svelte';
@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | New Privilege</title>
+  <title>{config.branding.applicationName} | New Privilege</title>
 </svelte:head>
 
 <Content title="New Privilege" backUrl="/admin/configuration" backTitle="Back to Configuration">

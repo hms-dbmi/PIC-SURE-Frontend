@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   import { type Connection } from '$lib/models/Connection';
   import { getConnection } from '$lib/stores/Connections';
@@ -24,7 +24,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Edit Connection Configuration</title>
+  <title>{config.branding.applicationName} | Edit Connection Configuration</title>
 </svelte:head>
 
 <Content title="Edit Connection" backUrl="/admin/configuration" backTitle="Back to Configuration">

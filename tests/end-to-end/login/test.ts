@@ -1,15 +1,19 @@
 import { expect } from '@playwright/test';
-import { test, mockHTMLBodySuccess } from '../custom-context';
-import * as config from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
-import type { Branding } from '$lib/configuration';
-//TypeScript is confused by the JSON import so I am fxing it here
-/* eslint-disable @typescript-eslint/no-explicit-any */
-const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
+import { test, mockHTMLBodySuccess, mockApiSuccess } from '../custom-context';
+import type { Branding } from '$lib/models/Configuration';
+import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
+const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
 //TODO: Tests for login dropdown
 
 test.describe('Google consent', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockApiSuccess(page, '*/**/api/config', {
+      features: [],
+      settings: [{ name: 'GOOGLE_TAG_MANAGER_ID', value: 'some-google-tag' }],
+    });
+  });
   test('Google Consent Modal shows on login page', async ({ page }) => {
     // Given
     await page.goto('/login');

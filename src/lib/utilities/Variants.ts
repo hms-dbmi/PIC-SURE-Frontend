@@ -1,6 +1,6 @@
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
-import { settings } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 import type { Indexable } from '$lib/types';
 
 import type { QueryRequestInterface } from '$lib/models/api/Request';
@@ -25,7 +25,7 @@ export function getVariantData(
 
     const lines = response.split('\n');
     const headers: string[] = lines[0].split('\t');
-    const excludeIndexes = settings.variantExplorer.excludeColumns
+    const excludeIndexes = config.settings.variantExplorer.excludeColumns
       .map((column: string) => headers.indexOf(column))
       .filter((x: number) => x >= 0);
     const variants: string[][] = lines

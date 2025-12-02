@@ -72,6 +72,7 @@ export const test = base.extend({
     use(context);
   },
   page: async ({ page }, use, testInfo) => {
+    await mockApiSuccess(page, 'https://www.googletagmanager.com/**/*', {});
     await use(page);
     // Take screenshot on failure
     await screenshotOnFailure({ page }, testInfo);

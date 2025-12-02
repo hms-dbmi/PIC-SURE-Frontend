@@ -1,6 +1,6 @@
 import type { LayoutLoad } from './../$types';
 import { redirect } from '@sveltejs/kit';
-import { features } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 import { browser } from '$app/environment';
 
 export const prerender = false;
@@ -8,7 +8,7 @@ export const prerender = false;
 export const load: LayoutLoad = ({ url }) => {
   if (browser) {
     if (
-      features.analyzeApi &&
+      config.features.analyzeApi &&
       url.pathname === '/analyze' &&
       !url.pathname.includes('/api') &&
       !url.pathname.includes('/analysis') &&
@@ -17,7 +17,7 @@ export const load: LayoutLoad = ({ url }) => {
       redirect(302, `/analyze/api`);
     }
     if (
-      features.analyzeAnalysis &&
+      config.features.analyzeAnalysis &&
       url.pathname === '/analyze' &&
       !url.pathname.includes('/api') &&
       !url.pathname.includes('/analysis') &&
