@@ -19,8 +19,8 @@
   const description = config.branding.login.description;
   const openPicsureLinkText = config.branding.login.openPicsureLinkText;
   let logoutReason: string | null;
-  let loading = $state(
-    Promise.allSettled([page.data?.providers, config.loading]).then(() => page.data?.providers),
+  const loading = Promise.all([page.data?.providers, config.loading]).then(
+    ([providers]) => providers
   );
 
   onMount(() => {
