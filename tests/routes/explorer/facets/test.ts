@@ -127,17 +127,19 @@ test.describe('Facet Categories', () => {
     await page.goto('/explorer?search=age');
 
     // Then
-    facetsResponse
-      .map(({ display }) => display)
-      .forEach(async (categoryDisplay, index) => {
-        const categoryAtIndex = page
-          .getByTestId('accordion-item')
-          .nth(index)
-          .getByRole('button')
-          .getByTestId('accordion-control');
+    await Promise.all(
+      facetsResponse
+        .map(({ display }) => display)
+        .map(async (categoryDisplay, index) => {
+          const categoryAtIndex = page
+            .getByTestId('accordion-item')
+            .nth(index)
+            .getByRole('button')
+            .getByTestId('accordion-control');
 
-        await expect(categoryAtIndex).toHaveText(categoryDisplay);
-      });
+          return expect(categoryAtIndex).toHaveText(categoryDisplay);
+        }),
+    );
   });
   test('Facet Category has facets listed', async ({ page }) => {
     // Given
