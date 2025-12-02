@@ -181,7 +181,7 @@ export type Branding = Indexable & {
     };
   };
   collaboratePage: {
-    steps: Step[];
+    steps?: Step[];
     introduction: string;
     findCollaborators: string;
   };

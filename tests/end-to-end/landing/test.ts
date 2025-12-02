@@ -8,7 +8,7 @@ import {
   searchResults,
 } from '../mock-data';
 import type { Branding } from '../../../src/lib/models/Configuration';
-import brandingJson from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
+import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const loggedInActions = branding?.landing?.actions?.filter((action) => action.showIfLoggedIn);

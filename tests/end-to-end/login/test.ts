@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { test, mockHTMLBodySuccess, mockApiSuccess } from '../custom-context';
 import type { Branding } from '$lib/models/Configuration';
-import brandingJson from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
+import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 

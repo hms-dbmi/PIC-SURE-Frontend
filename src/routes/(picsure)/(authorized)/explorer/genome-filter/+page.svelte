@@ -75,7 +75,7 @@
 </script>
 
 <svelte:head>
-  <title>{config.branding.applicationName} | Gemonic Filter</title>
+  <title>{config.branding.applicationName} | Genomic Filter</title>
 </svelte:head>
 
 <Content

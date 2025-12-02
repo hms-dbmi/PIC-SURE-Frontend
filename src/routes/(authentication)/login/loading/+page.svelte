@@ -54,7 +54,16 @@
 
   onMount(async () => {
     panelOpen.set(false);
-    attemptUserLogin().catch((error) => {
+    attemptUserLogin()
+    .then(() => {
+      // wait to delete from session storage, in case attemptUserLogin loads the filters and triggers the 
+      // session storage to be re-written
+      setTimeout(() => {
+        sessionStorage.removeItem('filterTree');
+        sessionStorage.removeItem('genomicFilters');
+      }, 500);
+    })
+    .catch((error) => {
       console.error('Login Error: ', error);
       goto('/login/error');
       return;

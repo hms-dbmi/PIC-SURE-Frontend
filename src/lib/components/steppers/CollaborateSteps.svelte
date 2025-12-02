@@ -11,8 +11,9 @@
 
   const getSteps = () => {
     let steps: Step[] = [];
-    if (config.branding.collaboratePage.steps.length > 0) {
-      steps = config.branding.collaboratePage.steps.map((step: Step) => ({
+    const configSteps = config.branding.collaboratePage?.steps || [];
+    if (configSteps.length > 0) {
+      steps = configSteps.map((step: Step) => ({
         label: step.label,
         icon: step.icon,
         path: step.path,

@@ -8,7 +8,7 @@ import {
   facetResultPath,
 } from '../../mock-data';
 import type { Branding } from '$lib/models/Configuration';
-import brandingJson from '../../../../src/lib/assets/configuration.json' assert { type: 'json' };
+import brandingJson from '../../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
