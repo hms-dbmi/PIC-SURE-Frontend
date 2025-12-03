@@ -1,5 +1,5 @@
 import { expect, type Route } from '@playwright/test';
-import { mockApiFail, test } from '../../custom-context';
+import { mockApiFail, test, mockApiSuccess } from '../../custom-context';
 import {
   searchResults,
   facetsResponse,
@@ -119,6 +119,27 @@ test.describe('Facet Categories', () => {
     // Then
     await expect(facetCategoryElement).toBeVisible();
     await expect(facetCategoryElement).toHaveText(facetsResponse[0].display);
+  });
+  test('Facet categories render in the order the api serves them', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, searchResultPath, searchResults);
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await page.goto('/explorer?search=age');
+
+    // Then
+    await Promise.all(
+      facetsResponse
+        .map(({ display }) => display)
+        .map(async (categoryDisplay, index) => {
+          const categoryAtIndex = page
+            .getByTestId('accordion-item')
+            .nth(index)
+            .getByRole('button')
+            .getByTestId('accordion-control');
+
+          return expect(categoryAtIndex).toHaveText(categoryDisplay);
+        }),
+    );
   });
   test('Facet Category has facets listed', async ({ page }) => {
     // Given
@@ -667,6 +688,7 @@ test.describe('Nested Facets', () => {
     await expect(nestedFacetChildren).not.toBeVisible();
   });
 });
+
 test.describe('Hidden Facets', () => {
   test('Facets with zero counts are not displayed', async ({ page }) => {
     // Given
