@@ -3,16 +3,15 @@
   import { goto } from '$app/navigation';
   import Searchbox from '$lib/components/Searchbox.svelte';
   import Stats from '$lib/components/landing/Stats.svelte';
-  import { isOpenAccess, useAuth } from '$lib/AccessState';
   import { isUserLoggedIn } from '$lib/stores/User';
   import { features } from '$lib/configuration';
 
   let searchTerm = $state('');
 
   function search() {
-    ((features.explore.open && features.discover) && !isUserLoggedIn())
-    ? goto(`/discover?search=${searchTerm}`)
-    : goto(`/explorer?search=${searchTerm}`);
+    features.explore.open && features.discover && !isUserLoggedIn()
+      ? goto(`/discover?search=${searchTerm}`)
+      : goto(`/explorer?search=${searchTerm}`);
   }
 
   const actionsToDisplay = branding?.landing?.actions.filter((action) => {

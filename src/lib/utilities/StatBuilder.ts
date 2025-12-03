@@ -220,7 +220,7 @@ export function isStatValueEqual(
 ): boolean {
   if (a === b) return true;
 
-  const normalize = (val: any) => {
+  const normalize = (val: unknown) => {
     if (typeof val === 'string') {
       return val.replaceAll(',', '');
     }

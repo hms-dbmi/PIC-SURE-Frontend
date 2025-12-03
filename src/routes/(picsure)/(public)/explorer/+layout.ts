@@ -1,7 +1,7 @@
 import type { LayoutLoad } from './$types';
 import { browser } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
-import { isTokenExpired, isUserLoggedIn } from '$lib/stores/User';
+import { isTokenExpired } from '$lib/stores/User';
 import { useAuth } from '$lib/AccessState';
 
 export const load: LayoutLoad = ({ url }) => {
