@@ -3,20 +3,16 @@
   import { goto } from '$app/navigation';
   import Searchbox from '$lib/components/Searchbox.svelte';
   import Stats from '$lib/components/landing/Stats.svelte';
-  import { browser } from '$app/environment';
+  import { isOpenAccess, useAuth } from '$lib/AccessState';
+  import { isUserLoggedIn } from '$lib/stores/User';
+  import { features } from '$lib/configuration';
+
   let searchTerm = $state('');
 
-  const isUserLoggedIn = () => {
-    if (browser) {
-      return !!localStorage.getItem('token');
-    }
-    return false;
-  };
-
   function search() {
-    isUserLoggedIn()
-      ? goto(`/explorer?search=${searchTerm}`)
-      : goto(`/discover?search=${searchTerm}`);
+    ((features.explore.open && features.discover) && !isUserLoggedIn())
+    ? goto(`/discover?search=${searchTerm}`)
+    : goto(`/explorer?search=${searchTerm}`);
   }
 
   const actionsToDisplay = branding?.landing?.actions.filter((action) => {
