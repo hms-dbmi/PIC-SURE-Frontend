@@ -9,7 +9,7 @@
   let searchTerm = $state('');
 
   function search() {
-    features.explore.open && features.discover && !isUserLoggedIn()
+    features.login.open && features.discover && !isUserLoggedIn()
       ? goto(`/discover?search=${searchTerm}`)
       : goto(`/explorer?search=${searchTerm}`);
   }
