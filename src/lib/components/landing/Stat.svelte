@@ -1,12 +1,13 @@
 <script lang="ts">
   import type { Readable } from 'svelte/store';
-
   import type { StatResult } from '$lib/models/Stat';
+
+  import { browser } from '$app/environment';
   import { StatPromise } from '$lib/utilities/StatBuilder';
   import { countResult } from '$lib/utilities/PatientCount';
   import { sanitizeHTML } from '$lib/utilities/HTML';
-  import Loading from '$lib/components/Loading.svelte';
   import { features } from '$lib/configuration';
+  import Loading from '$lib/components/Loading.svelte';
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   interface Props {
     stats: Readable<StatResult[]>;
@@ -42,7 +43,7 @@
 <div data-testid="data-summary-{authString}" class="w-full flex flex-col items-center">
   <div class="w-2/4">
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    {@html sanitizeHTML(description)}
+    {@html browser ? sanitizeHTML(description) : description}
   </div>
   <div class="grid {gridClass} grid-flow-col justify-center p-2 my-2 gap-y-9 {width}">
     {#each $stats as stat (`${authString}-${stat.key}-${stat.label}`)}

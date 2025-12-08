@@ -21,6 +21,7 @@
   } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
+  import { useAuth } from '$lib/AccessState';
 
   import Filters from '$lib/components/explorer/results/Filters.svelte';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
@@ -32,8 +33,7 @@
   let unsubFilters: Unsubscriber | null = null;
   let unsubGenomicFilters: Unsubscriber | null = null;
   let currentPage: string = page.url.pathname;
-  let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
-  let isExplorer = $derived(page.url.pathname.includes('/explorer'));
+  let isDiscoverPage = $derived(currentPage.includes('/discover'));
   let modalOpen: boolean = $state(false);
   let enableAdvancedFilteringModalOpen: boolean = $state(false);
   let disableAdvancedFilteringModalOpen: boolean = $state(false);
@@ -44,7 +44,7 @@
 
   let showExportButton = $derived(
     features.explorer.allowExport &&
-      !isOpenAccess &&
+      !isDiscoverPage &&
       hasFilterOrExport &&
       ($countsLoading || $hasNonZeroResult),
   );
@@ -60,18 +60,21 @@
   );
 
   let showExplorerDistributions = $derived(
-    isExplorer && features.explorer.distributionExplorer && hasValidDistributionFilters,
+    !isDiscoverPage && features.explorer.distributionExplorer && hasValidDistributionFilters,
   );
 
   let showDiscoverDistributions = $derived(
-    isOpenAccess && features.discoverFeautures.distributionExplorer && hasValidDistributionFilters,
+    isDiscoverPage &&
+      features.discover &&
+      features.discoverFeautures.distributionExplorer &&
+      hasValidDistributionFilters,
   );
 
   let showVariantExplorer = $derived(
-    isExplorer && features.explorer.variantExplorer && $hasGenomicFilter,
+    !isDiscoverPage && features.explorer.variantExplorer && $hasGenomicFilter,
   );
 
-  let showCohortDetails = $derived(isExplorer && features.explorer.enableCohortDetails);
+  let showCohortDetails = $derived(!isDiscoverPage && features.explorer.enableCohortDetails);
 
   let showToolSuite = $derived(
     showCohortDetails ||
@@ -81,7 +84,7 @@
 
   function subscribe() {
     if (!unsubFilters) {
-      unsubFilters = filters.subscribe(() => loadPatientCount(isOpenAccess));
+      unsubFilters = filters.subscribe(() => loadPatientCount(useAuth()));
     }
     if (!unsubGenomicFilters) {
       unsubGenomicFilters = genomicFilters.subscribe(() => loadPatientCount(isOpenAccess));

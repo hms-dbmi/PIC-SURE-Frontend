@@ -38,8 +38,6 @@ export const isAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.ADMIN);
 });
 
-export const isLoggedIn: Readable<boolean> = derived(tokenStatus, ($tokenStatus) => $tokenStatus);
-
 user.subscribe((user: User) => {
   if (browser) {
     clearSessionTokenIfExpired();
@@ -100,12 +98,20 @@ function clearSessionTokenIfExpired() {
   }
 }
 
-export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user, $isLoggedIn]) => {
+export const userRoutes: Readable<Route[]> = derived([user], ([$user]) => {
   const userPrivileges: string[] = $user?.privileges || [];
 
-  if (userPrivileges.length === 0 || !$isLoggedIn) {
+  if (userPrivileges.length === 0 || !isUserLoggedIn()) {
     // Public routes for non-logged in user
-    return routes.filter((route) => !route.privilege);
+    const openRoutes = featureRoutes(routes.filter((route) => !route.privilege));
+    console.log('openRoutes', openRoutes);
+    if (features.login.open && !isUserLoggedIn() && !features.discover) {
+      openRoutes.unshift({
+        path: '/explorer',
+        text: 'Explore',
+      });
+    }
+    return openRoutes;
   }
 
   function featureRoutes(routeList: Route[]): Route[] {
