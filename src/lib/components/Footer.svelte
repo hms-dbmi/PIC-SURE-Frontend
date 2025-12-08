@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { branding, features } from '$lib/configuration';
-  import { user, isLoggedIn } from '$lib/stores/User';
+  import { user, isUserLoggedIn } from '$lib/stores/User';
   import Terms from '$lib/components/Terms.svelte';
   import Modal from '$lib/components/Modal.svelte';
 
@@ -24,10 +24,12 @@
   );
 
   let modalOpen: boolean = $state(
-    features.enforceTermsOfService && $isLoggedIn && !$user.acceptedTOS,
+    features.enforceTermsOfService && isUserLoggedIn() && !$user.acceptedTOS,
   );
   let modalClosable: boolean = $derived(
-    !features.enforceTermsOfService || !$isLoggedIn || ($isLoggedIn && !!$user?.acceptedTOS),
+    !features.enforceTermsOfService ||
+      !isUserLoggedIn() ||
+      (isUserLoggedIn() && !!$user?.acceptedTOS),
   );
 </script>
 

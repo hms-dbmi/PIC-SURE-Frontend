@@ -90,7 +90,7 @@ test.describe('Landing page', () => {
       ?.filter((stat) => stat.key !== 'hardcoded')
       .forEach((stat) => {
         const mockStat: MockLandingStat = stats.find((s) => s.key === stat.key) || notFound;
-        const testID = `value-open-${stat.key}-${stat.label}`;
+        const testID = `value-auth-${stat.key}-${stat.label}`;
 
         test(`Has expected stat of ${stat.label}`, async ({ page }) => {
           // Given
@@ -99,7 +99,7 @@ test.describe('Landing page', () => {
 
           // Then
           await expect(
-            page.getByTestId('data-summary-open').getByText(stat.label, { exact: true }),
+            page.getByTestId('data-summary-auth').getByText(stat.label, { exact: true }),
           ).toBeVisible();
         });
         test(`Has expected stat value for ${stat.label}`, async ({ page }) => {
@@ -121,6 +121,31 @@ test.describe('Landing page', () => {
           await expect(page.getByTestId(testID).locator('i.fa-circle-exclamation')).toBeVisible();
         });
       });
+
+    test('Shows only auth stats when sets match; both when different', async ({ page }) => {
+      // Given
+      await mockApiSuccess(page, '*/**/picsure/query/sync', '88');
+      await mockApiSuccess(
+        page,
+        '*/**/picsure/proxy/dictionary-api/concepts?page_number=1&page_size=1',
+        searchResults,
+      );
+      await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
+      await page.goto('/');
+
+      // Then
+      const authContainer = page.getByTestId('data-summary-auth');
+      const openContainer = page.getByTestId('data-summary-open');
+
+      await expect(authContainer).toBeVisible();
+
+      // If branding produces identical auth/open sets, open is hidden. If branding differs, both show.
+      if (await openContainer.count()) {
+        await expect(openContainer).toBeVisible();
+      } else {
+        await expect(openContainer).toHaveCount(0);
+      }
+    });
   });
   test.describe('Actions', () => {
     loggedInActions.forEach(({ description, icon, url, title }) => {
@@ -170,6 +195,79 @@ test.describe('Landing page', () => {
 
 test.describe('Logged Out Landing', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test.describe('Stats (Logged Out)', () => {
+    const stats: MockLandingStat[] = [
+      { key: 'query:blank', route: '*/**/picsure/query/sync', api: '88', value: '88' },
+      {
+        key: 'query:genomic',
+        route: '*/**/picsure/query/sync',
+        api: { 'some-genome': 4 },
+        value: '4',
+      },
+      {
+        key: 'query:biosample',
+        route: '*/**/picsure/query/sync',
+        api: { 'some-sample': 12 },
+        value: '12',
+      },
+      { key: 'query:consent', route: '*/**/picsure/query/sync', api: '50', value: '50' },
+      {
+        key: 'dict:concepts',
+        route: '*/**/picsure/proxy/dictionary-api/concepts?page_number=1&page_size=1',
+        api: searchResults,
+        value: searchResults.totalElements.toLocaleString(),
+      },
+      {
+        key: 'dict:facets:dataset_id',
+        route: '*/**/picsure/proxy/dictionary-api/facets',
+        api: facetsResponse,
+        value: facetsResponse[1].facets.length.toLocaleString(),
+      },
+    ];
+    const notFound: MockLandingStat = {
+      key: 'not-found',
+      route: '*/**',
+      api: undefined,
+      value: '-',
+    };
+
+    branding?.landing?.stats
+      ?.filter((stat) => stat.key !== 'hardcoded')
+      .forEach((stat) => {
+        const mockStat: MockLandingStat = stats.find((s) => s.key === stat.key) || notFound;
+        const testID = `value-open-${stat.key}-${stat.label}`;
+
+        test(`Has expected stat of ${stat.label}`, async ({ page }) => {
+          // Given
+          await mockApiSuccess(page, mockStat.route, mockStat.api);
+          await page.goto('/');
+
+          // Then
+          await expect(
+            page.getByTestId('data-summary-open').getByText(stat.label, { exact: true }),
+          ).toBeVisible();
+        });
+        test(`Has expected stat value for ${stat.label}`, async ({ page }) => {
+          // Given
+          await mockApiSuccess(page, mockStat.route, mockStat.api);
+          await page.goto('/');
+
+          // Then
+          await expect(page.getByTestId(testID)).toHaveText(mockStat.value);
+        });
+        test(`Should display error message if api returns error for ${stat.label}`, async ({
+          page,
+        }) => {
+          // Given
+          await mockApiFail(page, mockStat.route, 'failed');
+          await page.goto('/');
+
+          // Then
+          await expect(page.getByTestId(testID).locator('i.fa-circle-exclamation')).toBeVisible();
+        });
+      });
+  });
 
   loggedOutActions.forEach(({ description, icon, url, title }) => {
     test(`Has expected action of description: ${description}`, async ({ page }) => {

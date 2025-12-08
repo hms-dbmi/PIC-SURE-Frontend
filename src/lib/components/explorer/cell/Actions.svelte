@@ -1,12 +1,11 @@
 <script lang="ts">
-  import { page } from '$app/state';
-
   import type { SearchResult } from '$lib/models/Search';
   import { setActiveRow } from '$lib/stores/ExpandableRow';
   import type { ExportInterface } from '$lib/models/Export';
   import ExportStore from '$lib/stores/Export';
   import { panelOpen } from '$lib/stores/SidePanel';
   import { features } from '$lib/configuration';
+  import { isAuthorizedAccess, isOpenAccess } from '$lib/AccessState';
   import { genericUUID } from '$lib/utilities/UUID';
 
   let { exports, addExport, removeExport } = ExportStore;
@@ -42,11 +41,11 @@
       $panelOpen = true;
     }
   }
-  let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
+
   let isExported = $derived(
     $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath),
   );
-  let shouldDisableFilter = $derived(isOpenAccess && !data.row.allowFiltering);
+  let shouldDisableFilter = $derived(!isAuthorizedAccess() && !data.row.allowFiltering);
 </script>
 
 <button type="button" title="Information" class="btn-icon-color" onclick={insertInfoContent}>
@@ -76,7 +75,7 @@
     <span class="sr-only">View Data Hierarchy</span>
   </button>
 {/if}
-{#if features.explorer.exportsEnableExport && !isOpenAccess}
+{#if features.explorer.exportsEnableExport && !isOpenAccess()}
   <button
     type="button"
     title={isExported ? 'Remove from Analysis' : 'Add for Analysis'}
