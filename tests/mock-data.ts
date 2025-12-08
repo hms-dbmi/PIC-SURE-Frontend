@@ -121,6 +121,7 @@ export const picsureUser: User = {
     BDCPrivileges.AUTHORIZED_ACCESS,
     BDCPrivileges.OPEN,
     BDCPrivileges.NAMED_DATASET,
+    PicsurePrivileges.API_ACCESS,
   ],
   queryScopes: ['Gene_with_variant', 'test_data_set', 'STUDY123', 'phs001', 'phs123'],
   // expired token
@@ -130,11 +131,45 @@ export const picsureUser: User = {
 };
 
 export const userTypes = {
-  generalUser: { privileges: [PicsurePrivileges.QUERY] },
-  noScopeUser: { privileges: [PicsurePrivileges.QUERY], queryScopes: undefined },
-  adminUser: { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.ADMIN] },
-  superUser: { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.SUPER] },
-  dataUser: { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.DATA_ADMIN] },
+  generalUser: {
+    privileges: [
+      PicsurePrivileges.QUERY,
+      PicsurePrivileges.NAMED_DATASET,
+      PicsurePrivileges.API_ACCESS,
+    ],
+  },
+  noScopeUser: {
+    privileges: [
+      PicsurePrivileges.QUERY,
+      PicsurePrivileges.NAMED_DATASET,
+      PicsurePrivileges.API_ACCESS,
+    ],
+    queryScopes: undefined,
+  },
+  adminUser: {
+    privileges: [
+      PicsurePrivileges.QUERY,
+      PicsurePrivileges.ADMIN,
+      PicsurePrivileges.NAMED_DATASET,
+      PicsurePrivileges.API_ACCESS,
+    ],
+  },
+  superUser: {
+    privileges: [
+      PicsurePrivileges.QUERY,
+      PicsurePrivileges.SUPER,
+      PicsurePrivileges.NAMED_DATASET,
+      PicsurePrivileges.API_ACCESS,
+    ],
+  },
+  dataUser: {
+    privileges: [
+      PicsurePrivileges.QUERY,
+      PicsurePrivileges.DATA_ADMIN,
+      PicsurePrivileges.NAMED_DATASET,
+      PicsurePrivileges.API_ACCESS,
+    ],
+  },
   noTOS: { acceptedTOS: false },
 };
 
