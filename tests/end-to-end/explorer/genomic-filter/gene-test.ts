@@ -14,6 +14,7 @@ import type { Branding } from '$lib/configuration';
 const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
+const QUERY = '*/**/picsure/v3/query/sync';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -397,7 +398,7 @@ test('Apply Filter adds to sidepanel', async ({ page }) => {
   await page.getByTestId('select-variant-frequency').getByLabel('Rare').click();
 
   // When
-  await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
+  await mockApiSuccess(page, QUERY, 200);
   await page.getByTestId('add-filter-btn').click();
 
   // Then
@@ -415,7 +416,7 @@ test('Clicking edit filter button in results panel returns to genomic filter wit
   const selectedContainer = page.locator('#selected-options-container');
   await optionsContainer.getByLabel(geneValues.results[0]).click();
   await page.getByTestId('select-variant-frequency').getByLabel('Rare').click();
-  await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
+  await mockApiSuccess(page, QUERY, 200);
   await page.getByTestId('add-filter-btn').click();
 
   // When
@@ -437,7 +438,7 @@ test('Editing filter from results panel updates results panel on save', async ({
   const optionsContainer = page.locator('#options-container');
   await optionsContainer.getByLabel(geneValues.results[0]).click();
   await page.getByTestId('select-variant-frequency').getByLabel('Rare').click();
-  await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
+  await mockApiSuccess(page, QUERY, 200);
   await page.getByTestId('add-filter-btn').click();
 
   // When
@@ -471,7 +472,7 @@ test('Clicking Genomic Filtering after adding a gene filter navigates to edit fi
   const selectedContainer = page.locator('#selected-options-container');
   await optionsContainer.getByLabel(geneValues.results[0]).click();
   await page.getByTestId('select-variant-frequency').getByLabel('Rare').click();
-  await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
+  await mockApiSuccess(page, QUERY, 200);
   await page.getByTestId('add-filter-btn').click();
   await expect(page.getByTestId('added-filter-genomic')).toBeVisible();
 

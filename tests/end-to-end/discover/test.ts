@@ -36,7 +36,7 @@ test('Discover can display ±3', async ({ page }) => {
     detailResponseCat,
   );
   await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-  await mockApiSuccess(page, '*/**/picsure/query/sync', crossCountSyncResponsePlus3);
+  await mockApiSuccess(page, '*/**/picsure/v3/query/sync', crossCountSyncResponsePlus3);
   await page.goto('/discover?search=somedata');
 
   // When
@@ -65,7 +65,7 @@ test('Discover displays large number with ± and no space', async ({ page }) => 
   );
   await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
   const bigNumberSync = { '\\_studies_consents\\': '1477888±3' };
-  await mockApiSuccess(page, '*/**/picsure/query/sync', bigNumberSync);
+  await mockApiSuccess(page, '*/**/picsure/v3/query/sync', bigNumberSync);
   await page.goto('/discover?search=somedata');
 
   // When
@@ -89,7 +89,7 @@ test('Discover can display < 10', async ({ page }) => {
     detailResponseCat,
   );
   await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-  await mockApiSuccess(page, '*/**/picsure/query/sync', crossCountSyncResponseLessThan10);
+  await mockApiSuccess(page, '*/**/picsure/v3/query/sync', crossCountSyncResponseLessThan10);
   await page.goto('/discover?search=somedata');
 
   // When
@@ -105,7 +105,7 @@ test('Discover can display < 10', async ({ page }) => {
 });
 test('Search results with allowFiltering false are not filterable', async ({ page }) => {
   // Given
-  await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+  await mockApiSuccess(page, '*/**/picsure/v3/query/sync', '9999');
   await page.goto('/discover?search=somedata');
 
   // When
@@ -117,7 +117,7 @@ test('Search results with allowFiltering false are not filterable', async ({ pag
 });
 test('Search results with allowFiltering true are filterable', async ({ page }) => {
   // Given
-  await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+  await mockApiSuccess(page, '*/**/picsure/v3/query/sync', '9999');
   await page.goto('/discover?search=somedata');
 
   // When
