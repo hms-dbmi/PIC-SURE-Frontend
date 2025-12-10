@@ -1,5 +1,4 @@
 import type { PatientCount, StatValue } from '$lib/models/Stat';
-import { features } from '$lib/configuration';
 
 const PLUS_MINUS = '\u00B1';
 
@@ -23,7 +22,7 @@ function normalizeCounts(countInput: StatValue[]): PatientCount[] {
 
 export function countResult(results: StatValue[], asString = true): PatientCount {
   const counts = normalizeCounts(results);
-  if (counts.length === 0) return !features.federated ? undefined : asString ? '0' : 0;
+  if (counts.length === 0) return asString ? '0' : 0;
   if (counts.length === 1 && counts[0]?.toString().startsWith('<')) return counts[0];
 
   const parsed = counts.map(parseCount);

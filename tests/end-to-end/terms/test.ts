@@ -32,7 +32,7 @@ const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use th
 
 test.beforeEach(({ page }) => {
   mockApiSuccess(page, 'https://www.googletagmanager.com/**/*', {});
-  mockApiSuccess(page, '*/**/picsure/query/sync', 99);
+  mockApiSuccess(page, '*/**/picsure/v3/query/sync', 99);
   mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/concepts*', mockSearchResults);
   mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
 });

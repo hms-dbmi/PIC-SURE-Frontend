@@ -17,7 +17,7 @@ import { getOption, clickNthFilterIcon } from '../../utils';
 import { createCategoricalFilter, createNumericFilter } from '../../../../src/lib/models/Filter';
 import type { SearchResult } from '../../../../src/lib/models/Search';
 
-const countResultPath = '*/**/picsure/query/sync';
+const countResultPath = '*/**/picsure/v3/query/sync';
 
 test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, searchResultPath, mockData);
@@ -28,7 +28,7 @@ test.describe('Add Filters', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   test('Add button is disabled when nothing is selected', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -45,7 +45,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -62,7 +62,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -82,7 +82,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -117,7 +117,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -157,7 +157,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -183,7 +183,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -212,7 +212,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -243,7 +243,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -271,7 +271,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${mockData.content[5].dataset}`,
       detailResForAge,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -306,7 +306,7 @@ test.describe('Add Filters', () => {
   });
   test('Fitlers with min and max display in the info panel', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -334,7 +334,7 @@ test.describe('Add Filters', () => {
   });
   test('Fitlers with no min display less than text', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -359,7 +359,7 @@ test.describe('Add Filters', () => {
   });
   test('Fitlers with no max display greater than text', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -384,7 +384,7 @@ test.describe('Add Filters', () => {
   });
   test('Fitlers where the min and max were left blank show the correct text', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -403,7 +403,7 @@ test.describe('Add Filters', () => {
   });
   test('Added Fitlers contain study acronym and dataset', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -429,7 +429,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -457,7 +457,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -483,7 +483,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -513,7 +513,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -544,7 +544,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -662,7 +662,7 @@ test.describe('User with no query scopes can add filters without error', () => {
 
   test('User can prepare data for analysis', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
 
     await page.goto('/explorer?search=somedata');
 
@@ -676,7 +676,7 @@ test.describe('User with no query scopes can add filters without error', () => {
   });
   test('User can view variable distirubtions', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
 
     await page.goto('/explorer?search=somedata');
 
@@ -689,13 +689,13 @@ test.describe('User with no query scopes can add filters without error', () => {
     await expect(page.locator('#discover-error-container')).not.toBeVisible();
   });
 });
-test.describe('Query V2 OR features', () => {
+test.describe('Query V3 OR features', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/noScopeUser.json' });
   let querySyncRequest: string[] = [];
 
   test.beforeEach(({ page }) => {
     page.on('request', (request) => {
-      if (request.url().includes('/picsure/query/sync')) {
+      if (request.url().includes('/picsure/v3/query/sync')) {
         const data = request.postData();
         if (data !== null) {
           querySyncRequest.push(data);
@@ -707,7 +707,7 @@ test.describe('Query V2 OR features', () => {
   test.afterEach(() => {
     querySyncRequest = [];
   });
-  test('sends request with QueryV2 structure', async ({ page }) => {
+  test('sends request with QueryV3 structure', async ({ page }) => {
     // Given
     await mockApiSuccess(
       page,
@@ -725,11 +725,11 @@ test.describe('Query V2 OR features', () => {
 
     // Then
     expect(querySyncRequest.length).toBe(1);
-    expect(querySyncRequest[0]).not.toContain('phenotypicClauses');
+    expect(querySyncRequest[0]).toContain('phenotypicClauses');
   });
   test('does not have dropdowns on explorer', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When

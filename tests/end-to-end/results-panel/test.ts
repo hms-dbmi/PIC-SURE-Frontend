@@ -12,7 +12,7 @@ import {
 } from '../mock-data';
 import { getOption } from '../utils';
 
-const countResultPath = '*/**/picsure/query/sync';
+const countResultPath = '*/**/picsure/v3/query/sync';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -269,7 +269,7 @@ test.describe('Results Panel', () => {
 
     test.beforeEach(({ page }) => {
       page.on('request', (request) => {
-        if (request.url().includes('/picsure/query/sync')) {
+        if (request.url().includes('/picsure/v3/query/sync')) {
           const data = request.postData();
           if (data !== null) {
             querySyncRequest.push(data);

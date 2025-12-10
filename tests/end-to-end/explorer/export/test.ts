@@ -16,7 +16,7 @@ import {
 } from '../../mock-data';
 import { getOption } from '../../utils';
 
-const countResultPath = '*/**/picsure/query/sync';
+const countResultPath = '*/**/picsure/v3/query/sync';
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
 // Standard identifiers that should be present
@@ -79,7 +79,7 @@ async function setupExportPageAndAddFilterAndExport(
     await expect(page.getByTestId('add-filter-btn')).not.toBeEnabled();
     const optionsContainer = page.locator('#options-container');
     await optionsContainer.getByLabel(geneValues.results[0]).click();
-    await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
+    await mockApiSuccess(page, countResultPath, 200);
     await page.getByTestId('add-filter-btn').click();
   }
 

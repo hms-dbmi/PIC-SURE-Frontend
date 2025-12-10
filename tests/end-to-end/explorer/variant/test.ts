@@ -46,6 +46,7 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 test.describe('variant explorer', () => {
   test.describe('Genetic filter applied', () => {
     test.beforeEach(async ({ page }) => {
+      await mockApiSuccess(page, '*/**/picsure/v3/query/sync', '9999');
       // Add genomic filter steps
       await page.goto('/explorer');
       await mockSyncAPI(page, successResults);

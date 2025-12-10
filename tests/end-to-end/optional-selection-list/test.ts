@@ -12,6 +12,7 @@ import {
 import { getOption, clickNthFilterIcon } from '../utils';
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
+const queryResultPath = '*/**/picsure/v3/query/sync';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -21,9 +22,7 @@ test.describe('OptionaSelectionList', () => {
   test('Renders', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
 
     // When
@@ -34,9 +33,7 @@ test.describe('OptionaSelectionList', () => {
   test('Search Box shows', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
 
     // When
@@ -49,9 +46,7 @@ test.describe('OptionaSelectionList', () => {
   test('Expected Options are shown and unchecked', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
 
     // When
@@ -73,9 +68,7 @@ test.describe('OptionaSelectionList', () => {
   test('Selected options is empty', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
 
     // When
@@ -93,9 +86,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route(`${conceptsDetailPath}/${detailResponseCat.dataset}`, async (route: Route) =>
       route.fulfill({ json: detailResponseCat }),
     );
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
 
     // When
@@ -122,9 +113,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route(`${conceptsDetailPath}/${detailResponseCat.dataset}`, async (route: Route) =>
       route.fulfill({ json: detailResponseCat }),
     );
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
     const dataValues = mockData.content[0].values || [];
 
@@ -155,9 +144,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route(`${conceptsDetailPath}/${detailResponseCat2.dataset}`, async (route: Route) =>
       route.fulfill({ json: detailResponseCat2 }),
     );
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
     const dataValues = mockData.content[2].values || [];
 
@@ -189,9 +176,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route(`${conceptsDetailPath}/${detailResponseCat.dataset}`, async (route: Route) =>
       route.fulfill({ json: detailResponseCat }),
     );
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
     await clickNthFilterIcon(page);
     const component = page.getByTestId('optional-selection-list');
@@ -219,9 +204,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route(`${conceptsDetailPath}/${detailResponseCat2.dataset}`, async (route: Route) =>
       route.fulfill({ json: mockDataWithManyOptions }),
     );
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
 
     // When
@@ -262,9 +245,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route(`${conceptsDetailPath}/${detailResponseCat2.dataset}`, async (route: Route) =>
       route.fulfill({ json: mockDataWithManyOptions }),
     );
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await mockApiSuccess(
       page,
       `*/**/picsure/search/${HPDS}/values/?genomicConceptPath=Gene_with_variant&query=&page=1&size=20`,
@@ -320,9 +301,7 @@ test.describe('OptionaSelectionList', () => {
     await page.route(`${conceptsDetailPath}/${detailResponseCat2.dataset}`, async (route: Route) =>
       route.fulfill({ json: mockDataWithManyOptions }),
     );
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
-      route.fulfill({ body: '9999' }),
-    );
+    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
 
     // When
