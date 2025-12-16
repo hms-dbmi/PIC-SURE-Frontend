@@ -5,12 +5,12 @@
   import type { SearchResult } from '$lib/models/Search';
   import { addFilter } from '$lib/stores/Filter';
   import { activeRow } from '$lib/stores/ExpandableRow';
-  import type { Filter } from '$lib/models/Filter';
+  import type { Filter } from '$lib/models/Filter.svelte';
   import {
     createCategoricalFilter,
     createNumericFilter,
     createRequiredFilter,
-  } from '$lib/models/Filter';
+  } from '$lib/models/Filter.svelte';
   import { getConceptDetails } from '$lib/stores/Dictionary';
   import { panelOpen } from '$lib/stores/SidePanel';
 

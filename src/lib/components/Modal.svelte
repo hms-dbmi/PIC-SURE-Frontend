@@ -51,9 +51,9 @@
     onclose();
   }
 
-  function confirm() {
+  function confirm(data?: any) {
     modalOpen = false;
-    onconfirm && onconfirm();
+    onconfirm && onconfirm(data);
   }
 </script>
 

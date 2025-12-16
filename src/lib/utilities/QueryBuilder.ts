@@ -21,8 +21,8 @@ import type {
   FilterInterface,
   GenomicFilterInterface,
   SnpFilterInterface,
-} from '$lib/models/Filter';
-import { Tree, type TreeNode } from '$lib/models/Tree';
+} from '$lib/models/Filter.svelte';
+import { Tree, type TreeNode } from '$lib/models/Tree.svelte';
 import type { GenomicFilterInterfacev3, OperatorType } from '$lib/models/query/Query';
 import type { ExportInterface } from '$lib/models/Export.ts';
 

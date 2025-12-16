@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
   import type { NodeInterface } from '$lib/components/tree/types';
-  import { type Filter, createAnyRecordOfFilter } from '$lib/models/Filter';
+  import { type Filter, createAnyRecordOfFilter } from '$lib/models/Filter.svelte';
   import { activeRow } from '$lib/stores/ExpandableRow';
   import { addFilter } from '$lib/stores/Filter';
   import RadioTree from '$lib/components/tree/RadioTree.svelte';

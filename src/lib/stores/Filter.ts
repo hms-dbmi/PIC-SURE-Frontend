@@ -9,10 +9,10 @@ import {
   type FilterInterface,
   type FilterGroupInterface,
   createFilterGroup,
-} from '$lib/models/Filter';
+} from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
 import type { OperatorType } from '$lib/models/query/Query';
-import { Tree, type TreeNode } from '$lib/models/Tree';
+import { Tree, type TreeNode } from '$lib/models/Tree.svelte';
 import { user } from '$lib/stores/User';
 import { objectUUID } from '$lib/utilities/UUID';
 

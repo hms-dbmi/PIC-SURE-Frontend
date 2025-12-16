@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { FilterInterface } from '$lib/models/Filter';
+  import type { FilterInterface } from '$lib/models/Filter.svelte';
   import { Operator, type OperatorType } from '$lib/models/query/Query';
   import { toggleOperator } from '$lib/stores/Filter';
 

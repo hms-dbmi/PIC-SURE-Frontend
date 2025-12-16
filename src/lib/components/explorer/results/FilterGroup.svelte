@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Filter, FilterGroupInterface } from '$lib/models/Filter';
+  import type { Filter, FilterGroupInterface } from '$lib/models/Filter.svelte';
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import OperatorDropdown from '$lib/components/explorer/results/OperatorDropdown.svelte';
   import FilterGroup from '$lib/components/explorer/results/FilterGroup.svelte';

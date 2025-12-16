@@ -196,7 +196,6 @@ export async function getConceptTree(
 }
 
 export async function getInitialTree(depth: number = 1): Promise<SearchResult[]> {
-  console.log('getInitialTree depth', depth);
   if (depth > ENSURE_MAX_DEPTH) {
     depth = ENSURE_MAX_DEPTH;
   }

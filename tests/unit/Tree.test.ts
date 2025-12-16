@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
 import { Operator, type OperatorType } from '$lib/models/query/Query';
-import { Tree } from '$lib/models/Tree';
-import type { TreeNode, TreeGroup } from '$lib/models/Tree';
+import { Tree } from '$lib/models/Tree.svelte';
+import type { TreeNode, TreeGroup } from '$lib/models/Tree.svelte';
 
 interface TestNode extends TreeNode<string> {
   type: 'node';
