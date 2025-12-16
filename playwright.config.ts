@@ -11,6 +11,7 @@ const config: PlaywrightTestConfig = {
     reuseExistingServer: !process.env.CI,
     stdout: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
     stderr: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
+    reuseExistingServer: true
   },
   testDir: 'tests/end-to-end',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
