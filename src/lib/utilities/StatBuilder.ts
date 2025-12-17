@@ -114,11 +114,11 @@ async function getOpenPatientCount({
   let request: QueryRequestInterface;
   const concepts = await loadAllConcepts();
   const addConceptsV3 = (query: QueryV3) => {
-    query.select = concepts;
+    //query.select = concepts;
     return query;
   };
   const addConceptsV2 = (query: QueryV2) => {
-    query.setCrossCountFields(concepts);
+    //query.setCrossCountFields(concepts);
     return query;
   };
   if (isOpenAccess && features.explorer.enableOrQueries && get(advancedFilteringEnabled)) {
