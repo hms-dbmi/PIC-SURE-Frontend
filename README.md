@@ -82,7 +82,8 @@ Also, please refer to our [Code of Conduct](https://github.com/hms-dbmi/pic-sure
 
 ## Configuration
 
-Some PIC-SURE features are configurable. We provide a feature flag file [here](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/configuration.ts).
+Some PIC-SURE text is configurable. We provide a configuration file that is used for custom text elements [here](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/assets/configuration.json).
+Feature flags and settings are stored in the picsure-db, accessing from the picsure api on route `GET:/picsure/configuration` and loaded into svelte on the server side which can be accessed by the client on route `GET:/api/config`. There are defaults located in [here](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/configuration.ts).
 This system is under active development and subject to change.
 
 ## Support

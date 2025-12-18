@@ -4,7 +4,7 @@ import { browser } from '$app/environment';
 import type { User } from '$lib/models/User';
 import * as api from '$lib/api';
 import auth0 from 'auth0-js';
-import { auth } from '$lib/configuration';
+import { auth } from '$lib/configuration.svelte';
 import { Psama } from '$lib/paths';
 
 interface Auth0Data extends AuthData {

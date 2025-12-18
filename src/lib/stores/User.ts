@@ -4,7 +4,7 @@ import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
 import type { User } from '$lib/models/User';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
-import { routes, features } from '$lib/configuration';
+import { routes, config } from '$lib/configuration.svelte';
 import { Psama } from '$lib/paths';
 import { goto } from '$app/navigation';
 import type { QueryInterfaceV2 } from '$lib/models/query/Query';
@@ -109,7 +109,7 @@ export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user
 
   function featureRoutes(routeList: Route[]): Route[] {
     return routeList
-      .filter((route) => (route.feature ? !!features[route.feature] : true))
+      .filter((route) => (route.feature ? config.features[route.feature] : true))
       .map((route: Route) =>
         route.children ? { ...route, children: featureRoutes(route.children) } : route,
       );
@@ -173,7 +173,7 @@ export async function login(token: string) {
   if (browser && token) {
     setToken(token);
     await getUser(true, false);
-    if (features.useQueryTemplate) {
+    if (config.features.useQueryTemplate) {
       const queryTemplate = await getQueryTemplate();
       if (queryTemplate) {
         user.set({ ...get(user), queryTemplate });

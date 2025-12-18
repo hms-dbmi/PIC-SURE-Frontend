@@ -7,9 +7,15 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
-  import { filters, hasGenomicFilter, clearFilters, hasOrGroup } from '$lib/stores/Filter';
+  import {
+    filters,
+    genomicFilters,
+    hasGenomicFilter,
+    clearFilters,
+    hasOrGroup,
+  } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
@@ -27,11 +33,12 @@
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
-    $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
+    $filters.length !== 0 ||
+      (config.features.explorer.exportsEnableExport && $exports.length !== 0),
   );
 
   let showExportButton = $derived(
-    features.explorer.allowExport &&
+    config.features.explorer.allowExport &&
       !isOpenAccess &&
       hasFilterOrExport &&
       ($countsLoading || $hasNonZeroResult),
@@ -48,22 +55,24 @@
   );
 
   let showExplorerDistributions = $derived(
-    isExplorer && features.explorer.distributionExplorer && hasValidDistributionFilters,
+    isExplorer && config.features.explorer.distributionExplorer && hasValidDistributionFilters,
   );
 
   let showDiscoverDistributions = $derived(
-    isOpenAccess && features.discoverFeautures.distributionExplorer && hasValidDistributionFilters,
+    isOpenAccess &&
+      config.features.discoverFeatures.distributionExplorer &&
+      hasValidDistributionFilters,
   );
 
   let showVariantExplorer = $derived(
-    isExplorer && features.explorer.variantExplorer && $hasGenomicFilter,
+    isExplorer && config.features.explorer.variantExplorer && $hasGenomicFilter,
   );
 
-  let showCohortDetails = $derived(isExplorer && features.explorer.enableCohortDetails);
+  let showCohortDetails = $derived(isExplorer && config.features.explorer.enableCohortDetails);
 
   let showToolSuite = $derived(
     showCohortDetails ||
-      (($filters.length !== 0 || $exports.length !== 0) &&
+      (($genomicFilters.length !== 0 || $filters.length !== 0 || $exports.length !== 0) &&
         (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer)),
   );
 

@@ -1,6 +1,6 @@
 <script lang="ts">
   import * as api from '$lib/api';
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { browser } from '$app/environment';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import { Picsure } from '$lib/paths';
@@ -21,13 +21,14 @@
     query.query.expectedResultType === 'DATAFRAME' ||
       query.query.expectedResultType === 'DATAFRAME_TIMESERIES'
       ? 'Download as CSV'
-      : query.query.expectedResultType === 'DATAFRAME_PFB' && features.explorer.enablePfbExport
+      : query.query.expectedResultType === 'DATAFRAME_PFB' &&
+          config.features.explorer.enablePfbExport
         ? 'Download as PFB'
         : 'Download is Disabled',
   );
 
   async function download(): Promise<void> {
-    if (!features.explorer.allowDownload) {
+    if (!config.features.explorer.allowDownload) {
       return;
     }
     if (!datasetId) {
@@ -48,7 +49,7 @@
         if (query.query.expectedResultType === 'DATAFRAME') {
           link.download = 'pic-sure-data.csv';
         } else if (
-          features.explorer.enablePfbExport &&
+          config.features.explorer.enablePfbExport &&
           query.query.expectedResultType === 'DATAFRAME_PFB'
         ) {
           link.download = 'pic-sure-data.avro';
@@ -66,22 +67,23 @@
 </script>
 
 <div class="flex items-center m-1">
-  {#if features.explorer.allowDownload}
+  {#if config.features.explorer.allowDownload}
     <Modal
       bind:open={modalOpen}
-      title={branding.explorePage.confirmDownloadTitle || 'Are you sure you want to download data?'}
+      title={config.branding.explorePage.confirmDownloadTitle ||
+        'Are you sure you want to download data?'}
       width="w-1/2"
       withDefault
       confirmText="Download"
       cancelText="Cancel"
       onconfirm={() => download()}
     >
-      {branding.explorePage.confirmDownloadMessage ||
+      {config.branding.explorePage.confirmDownloadMessage ||
         'This action will download the data to your local machine. Are you sure you want to proceed?'}
     </Modal>
     <button
       class="btn preset-filled-primary-500"
-      onclick={() => (features.confirmDownload ? (modalOpen = true) : download())}
+      onclick={() => (config.features.confirmDownload ? (modalOpen = true) : download())}
       ><i class="fa-solid fa-download mr-1"></i>{downloadText}
       {#if isDownloading}
         <Loading ring size="micro" color="white" />

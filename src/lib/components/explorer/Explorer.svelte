@@ -4,7 +4,7 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import type { Column } from '$lib/components/datatable/types';
   import {
     searchTerm,
@@ -33,7 +33,7 @@
 
   let searchInput = $state(page.url.searchParams.get('search') || $searchTerm || '');
   const tableName = 'ExplorerTable';
-  const tableColumns = branding.explorePage.columns || [];
+  const tableColumns = config.branding.explorePage.columns || [];
   const columns: Column[] = [
     ...tableColumns,
     { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
@@ -78,7 +78,7 @@
         <Searchbox bind:searchTerm={searchInput} search={update} />
       </div>
       <div class="flex-none">
-        {#if !isOpenAccess && (features.enableGENEQuery || features.enableSNPQuery)}
+        {#if !isOpenAccess && (config.features.enableGENEQuery || config.features.enableSNPQuery)}
           <a
             data-testid="genomic-filter-btn"
             class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
@@ -111,7 +111,7 @@
         expandable
       />
     {/if}
-    {#if features.explorer.enableTour && $tour}
+    {#if config.features.explorer.enableTour && $tour}
       <div id="explorer-tour" class="text-center mt-4">
         <ExplorerTour {tourConfig} />
       </div>

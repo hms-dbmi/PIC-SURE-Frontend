@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   interface Props {
     height?: number;
@@ -10,8 +10,8 @@
 
   const { height, width, unit = 'rem', class: className = '' }: Props = $props();
 
-  const src = branding.logo.src;
-  const alt = branding.logo.alt;
+  const src = config.branding.logo?.src;
+  const alt = config.branding.logo?.alt;
 
   // If width or height is set, scale the image or svg to the larger size
   const imgSize =

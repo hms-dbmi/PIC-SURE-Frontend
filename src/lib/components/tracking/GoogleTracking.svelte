@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { page } from '$app/state';
-  import { branding, settings } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   type Acceptance = 'granted' | 'denied';
   interface Consent {
@@ -23,9 +23,10 @@
   };
 
   const tagManagerSrc = 'https://www.googletagmanager.com/gtag/js?id=';
-  const googleTag = settings.google.tagManager;
-  const googleAnalyticsID = settings.google.analytics;
-  const enablePrompt = googleTag && branding?.privacyPolicy?.url && branding?.privacyPolicy?.title;
+  const googleTag = config.settings.google.tagManager;
+  const googleAnalyticsID = config.settings.google.analytics;
+  const enablePrompt =
+    googleTag && config.branding.privacyPolicy.url && config.branding.privacyPolicy.title;
 
   let consent: Consent = $state(defaultConsent);
   let consentPrompt: boolean = $state(false);
@@ -119,9 +120,9 @@
           <p>
             We use cookies to provide you with the best possible experience and to help us make the
             site more useful to visitors. To learn more, please visit our <a
-              href={branding?.privacyPolicy?.url}
+              href={config.branding.privacyPolicy.url}
               target="_blank"
-              class="anchor">{branding?.privacyPolicy?.title}</a
+              class="anchor">{config.branding.privacyPolicy.title}</a
             >.
           </p>
         </div>

@@ -5,6 +5,13 @@ import { searchResults, facetsResponse, searchResultPath, facetResultPath } from
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.beforeEach(async ({ page }) => {
+  await mockApiSuccess(page, '*/**/api/config', {
+    features: [
+      { name: 'ENABLE_GENE_QUERY', value: 'true' },
+      { name: 'ENABLE_SNP_QUERY', value: 'true' },
+    ],
+    settings: [],
+  });
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, searchResultPath, searchResults);
 });

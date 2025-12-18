@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { goto } from '$app/navigation';
   import Searchbox from '$lib/components/Searchbox.svelte';
   import Stats from '$lib/components/landing/Stats.svelte';
@@ -19,7 +19,7 @@
       : goto(`/discover?search=${searchTerm}`);
   }
 
-  const actionsToDisplay = branding?.landing?.actions.filter((action) => {
+  const actionsToDisplay = config.branding.landing.actions.filter((action) => {
     if (isUserLoggedIn()) {
       return action.showIfLoggedIn;
     } else {
@@ -29,7 +29,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName}</title>
+  <title>{config.branding.applicationName}</title>
 </svelte:head>
 
 <div
@@ -37,7 +37,7 @@
   class="flex flex-wrap flex-col justify-evenly text-center items-center w-full h-full mt-8"
 >
   <section id="search-section" class="flex flex-col text-center items-center my-auto w-2/3">
-    <Searchbox placeholder={branding?.landing?.searchPlaceholder} bind:searchTerm {search} />
+    <Searchbox placeholder={config.branding.landing.searchPlaceholder} bind:searchTerm {search} />
   </section>
   <section id="actions-section" class="flex flex-row justify-evenly items-center mb-auto w-2/3">
     {#each actionsToDisplay as { title, description, icon, url, btnText }}

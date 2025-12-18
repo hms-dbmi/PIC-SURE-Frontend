@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { isUserLoggedIn } from '$lib/stores/User';
 
   interface Props {
@@ -10,7 +10,9 @@
     children?: Snippet;
   }
 
-  let showShell = $derived(features.login.open || (!features.login.open && isUserLoggedIn()));
+  let showShell = $derived(
+    config.features.login.open || (!config.features.login.open && isUserLoggedIn()),
+  );
 
   const { header, sidebarRight, pageFooter, children }: Props = $props();
 </script>

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   import type { FilterGroupInterface } from '$lib/models/Filter';
   import { filterTree, filters, genomicFilters } from '$lib/stores/Filter';
@@ -20,7 +20,7 @@
       <header class="text-left ml-1">Filters</header>
     {/if}
     <section class="py-1">
-      {#if features.explorer.enableOrQueries && isOpenAccess}
+      {#if config.features.explorer.enableOrQueries && isOpenAccess}
         <FilterGroup group={$filterTree.root as FilterGroupInterface} />
       {:else}
         {#each $filters as filter}

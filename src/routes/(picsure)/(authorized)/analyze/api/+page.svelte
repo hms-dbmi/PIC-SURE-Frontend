@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
   import Content from '$lib/components/Content.svelte';
@@ -15,13 +15,13 @@
   let execution: string = $state('');
 
   onMount(() => {
-    connection = sanitizeHTML(branding.analysisConfig.api.instructions.connection);
-    execution = sanitizeHTML(branding.analysisConfig.api.instructions.execution);
+    connection = sanitizeHTML(config.branding.analysisPage.api.instructions.connection);
+    execution = sanitizeHTML(config.branding.analysisPage.api.instructions.execution);
   });
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | API</title>
+  <title>{config.branding.applicationName} | API</title>
 </svelte:head>
 
 <Content title="Prepare for Analysis with the PIC-SURE API">
@@ -44,17 +44,20 @@
         <Tabs.Panel value="Python">
           <CodeBlock
             lang="python"
-            code={branding.explorePage.codeBlocks.PythonAPI || 'Code not set'}
+            code={config.branding.explorePage.codeBlocks.PythonAPI || 'Code not set'}
           />
         </Tabs.Panel>
         <Tabs.Panel value="R">
-          <CodeBlock lang="r" code={branding.explorePage.codeBlocks.RAPI || 'Code not set'} />
+          <CodeBlock
+            lang="r"
+            code={config.branding.explorePage.codeBlocks.RAPI || 'Code not set'}
+          />
         </Tabs.Panel>
       {/snippet}
     </Tabs>
   </section>
   <section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
-    {#each branding.analysisConfig.api.cards as card}
+    {#each config.branding.analysisPage.api.cards as card}
       <a
         href={card.link}
         target={card.link.startsWith('http') ? '_blank' : '_self'}

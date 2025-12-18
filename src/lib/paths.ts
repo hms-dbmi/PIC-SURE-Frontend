@@ -1,17 +1,22 @@
-import { features } from '$lib/configuration';
-
-const V3_QUERIES = features.explorer.enableOrQueries;
-
 const PREFIX = 'picsure';
 const DICT = `${PREFIX}/proxy/dictionary-api`;
 const QUERY = `${PREFIX}/query`;
 const UPLOADER = `${PREFIX}/proxy/uploader`;
+const LOCAL = 'api';
+
+export const LocalServer = {
+  Configs: `${LOCAL}/config`,
+};
 
 export const Picsure = {
   Concepts: `${DICT}/concepts`,
   Concept: {
     Detail: `${DICT}/concepts/detail`,
     Tree: `${DICT}/concepts/tree`,
+  },
+  Configuration: {
+    Get: `${PREFIX}/configuration`,
+    Admin: `${PREFIX}/configuration/admin`,
   },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,
@@ -20,8 +25,6 @@ export const Picsure = {
   Facets: `${DICT}/facets`,
   Search: `${PREFIX}/search`,
   Resources: `${PREFIX}/resource`,
-  Query: V3_QUERIES ? `${PREFIX}/v3/query` : QUERY,
-  QuerySync: V3_QUERIES ? `${PREFIX}/v3/query/sync` : `${QUERY}/sync`,
   QueryV2: QUERY,
   QueryV2Sync: `${QUERY}/sync`,
   QueryV3: `${PREFIX}/v3/query`,
