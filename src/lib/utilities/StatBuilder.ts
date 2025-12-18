@@ -99,8 +99,6 @@ function hardcoded({ stat }: RequestMapOptions) {
 async function getOpenCount(options: RequestMapOptions): Promise<PatientCount> {
   const request = { ...options.request };
   request.query.expectedResultType = 'CROSS_COUNT';
-  const concepts = await loadAllConcepts();
-  request.query.setCrossCountFields(concepts);
   return api
     .post(Picsure.QuerySync, request)
     .then(rejectIfQueryError)
