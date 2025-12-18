@@ -19,7 +19,6 @@ import type {
   RequestMapOptions,
 } from '$lib/models/Stat';
 
-import { loadAllConcepts } from '$lib/services/hpds';
 import { isUserLoggedIn } from '$lib/stores/User';
 import { addConsents } from '$lib/stores/Dictionary';
 import { getQueryResources } from '$lib/stores/Resources';
