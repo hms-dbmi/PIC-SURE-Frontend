@@ -76,7 +76,7 @@ test.describe('Explorer for authenticated users', () => {
   });
   test('Has search result table when search is executed', async ({ page }) => {
     // Given
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
+    await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
     await page.goto('/explorer');
@@ -107,7 +107,7 @@ test.describe('Explorer for authenticated users', () => {
     test.describe('Info Actions', () => {
       test('Clicking a row opens info panel', async ({ page }) => {
         // Given
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -129,7 +129,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking the row again closes the info panel', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -155,7 +155,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking the info icon opens and then closes the info panel', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -184,7 +184,7 @@ test.describe('Explorer for authenticated users', () => {
       }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -234,7 +234,7 @@ test.describe('Explorer for authenticated users', () => {
         page,
       }) => {
         // Given
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -260,7 +260,7 @@ test.describe('Explorer for authenticated users', () => {
       }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -280,7 +280,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking the filter button opens the correct filter panel', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -303,7 +303,7 @@ test.describe('Explorer for authenticated users', () => {
         page,
       }) => {
         // Given
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -327,7 +327,7 @@ test.describe('Explorer for authenticated users', () => {
         const row = mockData.content[0] as SearchResult;
         const searchValue = 'No';
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.route(
@@ -362,7 +362,7 @@ test.describe('Explorer for authenticated users', () => {
         // Given
         const row = mockData.content[0] as SearchResult;
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.route(
@@ -386,7 +386,7 @@ test.describe('Explorer for authenticated users', () => {
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
           async (route: Route) => route.fulfill({ json: detailResponseCat }),
         );
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -421,7 +421,7 @@ test.describe('Explorer for authenticated users', () => {
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
           async (route: Route) => route.fulfill({ json: detailResponseCat }),
         );
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -470,7 +470,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking the export button flips the icon', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -493,7 +493,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking the export button opens result panel', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -513,7 +513,7 @@ test.describe('Explorer for authenticated users', () => {
       }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -535,7 +535,7 @@ test.describe('Explorer for authenticated users', () => {
         //todo check remove button class
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -559,7 +559,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking a second export adds a second export', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -586,7 +586,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Exports remmain after closing and opening the results panel', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -619,7 +619,7 @@ test.describe('Explorer for authenticated users', () => {
     });
     test.describe('Hierarchy Actions', () => {
       test.beforeEach(async ({ page }) => {
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');

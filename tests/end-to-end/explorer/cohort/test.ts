@@ -11,7 +11,7 @@ import {
   facetsResponse,
 } from '../../mock-data';
 
-const SYNC_URL = '*/**/picsure/query/sync';
+const SYNC_URL = '*/**/picsure/v3/query/sync';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
