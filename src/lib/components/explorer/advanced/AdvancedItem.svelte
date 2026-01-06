@@ -36,7 +36,7 @@
 
 </script>
 
-<div class="flex flex-col gap-2" {@attach ref}>
+<div class="relative flex flex-col gap-2" {@attach ref}>
   {#if showLeadingOperator && leadingOperator}
     <div class="flex justify-center py-1 {activeId && activeId === filter.uuid && !isOverlay ? 'invisible' : ''}">
       <span class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
@@ -62,4 +62,10 @@
       </button>
     </div>
   </div>
+
+  {#if !isOverlay && isDragging.current}
+    <div
+      class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg"
+    ></div>
+  {/if}
 </div>
