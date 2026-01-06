@@ -14,10 +14,6 @@
     onRemoveChild: (child: FilterInterface) => void;
     onOperatorChange?: (group: FilterGroupInterface, operator: OperatorType) => void;
     activeId?: string | null;
-    operatorPreview?: { parentId: string | undefined; index: number } | null;
-    projectedOrder?: Record<string, string[]> | null;
-    showLeadingOperator?: boolean;
-    leadingOperator?: OperatorType;
     index?: number;
     isOverlay?: boolean;
     id?: string;
@@ -27,10 +23,6 @@
   let { 
     group = $bindable(), 
     activeId = null,
-    operatorPreview = null,
-    projectedOrder = null,
-    showLeadingOperator = false,
-    leadingOperator,
     index = 0, 
     isOverlay = false, 
     id = group.uuid, 
@@ -43,8 +35,23 @@
   let operator = $state((group as FilterGroupInterface).operator as OperatorType || Operator.AND);
   let not = $state(false);
   const isDraggable = $derived(id !== 'root');
-  const previewIndex = $derived(operatorPreview?.parentId === id ? operatorPreview.index : null);
-  const effectiveLength = $derived(projectedOrder?.[id]?.length ?? group.children.length);
+  
+  // Derive the actual index from parent's children array (reactive to array changes)
+  const actualIndex = $derived(
+    group.parent 
+      ? (group.parent as FilterGroupInterface).children.findIndex(
+          child => (child as FilterInterface).uuid === group.uuid
+        )
+      : -1
+  );
+  
+  // Derive leadingOperator from parent's operator when actualIndex > 0
+  const leadingOperator = $derived(
+    actualIndex > 0 && group.parent 
+      ? (group.parent as FilterGroupInterface).operator 
+      : undefined
+  );
+  const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
   const { ref, handleRef, isDragging } = useSortable({
     id: id,
@@ -52,7 +59,7 @@
     group: parentId,
     type: 'group',
     accept: ['item', 'group'],
-    collisionPriority: CollisionPriority.Low,
+    collisionPriority: CollisionPriority.Lowest,
     data: group,
   });
 
@@ -115,15 +122,6 @@
 
     <div class="flex flex-col gap-2 min-h-[50px]">
       {#each group.children as child, i (child.uuid)}
-        {@const effectiveIndex = projectedOrder?.[id]?.indexOf(child.uuid) ?? i}
-
-        {#if previewIndex !== null && previewIndex > 0 && effectiveIndex === previewIndex && child.uuid !== activeId}
-          <div class="flex justify-center py-1">
-            <span class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
-              {operator}
-            </span>
-          </div>
-        {/if}
       {#if child.filterType === 'FilterGroup'}
         <AdvancedGroup
             group={child as FilterGroupInterface}
@@ -133,10 +131,6 @@
             {onRemoveChild}
             isOverlay={isOverlay}
             {activeId}
-            {operatorPreview}
-            {projectedOrder}
-            showLeadingOperator={effectiveIndex > 0}
-            leadingOperator={operator}
             {onOperatorChange}
         />
       {:else}
@@ -146,20 +140,10 @@
           parentId={id}
           isOverlay={isOverlay}
           {activeId}
-          showLeadingOperator={effectiveIndex > 0}
-          leadingOperator={operator}
           onRemove={onRemoveChild}
         />
       {/if}
       {/each}
-
-      {#if operatorPreview && operatorPreview.parentId === id && operatorPreview.index > 0 && operatorPreview.index >= effectiveLength}
-        <div class="flex justify-center py-1">
-          <span class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
-            {operator}
-          </span>
-        </div>
-      {/if}
 
       {#if group.children.length === 0}
         <div class="card bg-surface-50 border-surface-400 border  text-center text-surface-400 italic py-4">Drop items here</div>

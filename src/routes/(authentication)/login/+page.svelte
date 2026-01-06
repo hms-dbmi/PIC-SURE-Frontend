@@ -87,8 +87,6 @@
     type: 'Categorical',
     children: [],
   }, ['test5', 'test6']);
-  $filterTree.add(filter2);
-  $filterTree.add(filter1);
   const group1 = $filterTree.createGroup([filter3, filter4], Operator.OR);
   const filter5 = createCategoricalFilter({
     conceptPath: 'test5',
@@ -115,6 +113,8 @@
   const group2 = $filterTree.createGroup([filter5, filter6], Operator.AND);
   $filterTree.add(group2);
   $filterTree.add(group1);
+  $filterTree.add(filter2);
+  $filterTree.add(filter1);
 </script>
 <Modal
   bind:open={advancedModalOpen}

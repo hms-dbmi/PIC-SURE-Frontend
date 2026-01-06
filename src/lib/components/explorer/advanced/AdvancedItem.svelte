@@ -1,15 +1,14 @@
 <script lang="ts">
-  import type { FilterInterface } from '$lib/models/Filter.svelte';
+  import type { FilterInterface, FilterGroupInterface } from '$lib/models/Filter.svelte';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
   import type { OperatorType } from '$lib/models/query/Query';
+  import { CollisionPriority } from '@dnd-kit/abstract';
 
   interface Props {
     filter: FilterInterface;
     index?: number;
     parentId?: string;
     isOverlay?: boolean;
-    showLeadingOperator?: boolean;
-    leadingOperator?: OperatorType;
     activeId?: string | null;
     onRemove: (filter: FilterInterface) => void;
   }
@@ -19,17 +18,33 @@
     index = 0,
     parentId,
     isOverlay = false,
-    showLeadingOperator = false,
-    leadingOperator,
     activeId = null,
     onRemove,
   }: Props = $props();
+  
+  // Derive the actual index from parent's children array (reactive to array changes)
+  const actualIndex = $derived(
+    filter.parent 
+      ? (filter.parent as FilterGroupInterface).children.findIndex(
+          child => (child as FilterInterface).uuid === filter.uuid
+        )
+      : -1
+  );
+  
+  // Derive leadingOperator from parent's operator when actualIndex > 0
+  const leadingOperator = $derived(
+    actualIndex > 0 && filter.parent 
+      ? (filter.parent as FilterGroupInterface).operator 
+      : undefined
+  );
+  const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
   const {ref, handleRef, isDragging, isDropTarget} = useSortable({
 		id: filter.uuid,
 		index: () => index,
 		type: 'item',
 		accept: 'item',
+		collisionPriority: CollisionPriority.High,
 		group: parentId,
 		data: filter as FilterInterface,
 	});

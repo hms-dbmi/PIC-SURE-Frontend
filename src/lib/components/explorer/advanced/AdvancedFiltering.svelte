@@ -10,7 +10,7 @@
     PointerSensor,
   } from '@dnd-kit-svelte/svelte';
   import { filterTree } from '$lib/stores/Filter';
-  import { Tree } from '$lib/models/Tree.svelte';
+  import { Tree, type TreeNode } from '$lib/models/Tree.svelte';
   import { createFilterGroup } from '$lib/models/Filter.svelte';
   import { Operator } from '$lib/models/query/Query';
 
@@ -18,6 +18,8 @@
   let activeId: string | null = $state(null);
   let operatorPreview: { parentId: string | undefined; index: number } | null = $state(null);
   let projectedOrder: Record<string, string[]> | null = $state(null);
+  // Store the last valid projectedOrder so it's available in handleDragEnd
+  let lastValidProjectedOrder: Record<string, string[]> | null = $state(null);
 
   // Initialize a local reactive tree.
   // We clone the global tree's structure initially.
@@ -49,7 +51,6 @@
   }
 
   function handleDragStart(event: any) {
-    console.log('handleDragStart', event);
     const active = event.operation.source;
     if (!active) return;
     const id = String(active.id);
@@ -59,20 +60,116 @@
   }
 
   function handleDragEnd(event: any) {
+    // Use lastValidProjectedOrder if projectedOrder is null (it might have been cleared)
+    let finalProjectedOrder = projectedOrder || lastValidProjectedOrder;
+    
+    // Also try to get order from the event if available
+    const operation = event?.operation;
+    const source = operation?.source;
+    const over = operation?.over;
+    const target = operation?.target;
+    
+    // Try to calculate order from source if projectedOrder is not available
+    // Since source/target don't have group info, use activeNode's parent
+    if (!finalProjectedOrder && activeNode && source) {
+      const activeUuid = String((activeNode as FilterInterface).uuid);
+      const sourceIndex = typeof source.index === 'function' ? source.index() : source.index;
+      const activeParentGroup = activeNode.parent ? containerIdForTreeParent(activeNode.parent) : undefined;
+      
+      if (activeParentGroup && typeof sourceIndex === 'number') {
+        const group = getGroupNodeByContainerId(activeParentGroup);
+        if (group) {
+          const currentIndex = group.children.findIndex(c => (c as FilterInterface).uuid === activeUuid);
+          
+          // If the index changed, we need to reorder
+          if (currentIndex !== sourceIndex) {
+            const currentOrder = group.children.map(c => (c as FilterInterface).uuid);
+            const withoutActive = currentOrder.filter(id => id !== activeUuid);
+            const clampedIndex = Math.max(0, Math.min(sourceIndex, withoutActive.length));
+            withoutActive.splice(clampedIndex, 0, activeUuid);
+            finalProjectedOrder = { [activeParentGroup]: withoutActive };
+          }
+        }
+      }
+    }
+    
+    // If we still don't have projectedOrder, assume the drag was cancelled
+    if (!finalProjectedOrder && activeNode) {
+      // Force reactivity update to ensure UI is in sync
+      if (activeNode.parent) {
+        const parent = activeNode.parent as FilterGroupInterface;
+        parent.children = [...parent.children];
+      }
+    }
+    
+    // Apply the reordering to the actual tree structure
+    if (finalProjectedOrder && activeNode) {
+      const activeUuid = String((activeNode as FilterInterface).uuid);
+      
+      // Process each container that has a new order
+      for (const [containerId, orderedIds] of Object.entries(finalProjectedOrder)) {
+        const group = getGroupNodeByContainerId(containerId);
+        if (!group) continue;
+        
+        // Create a map of UUID to node for quick lookup
+        const nodeMap = new Map(
+          group.children.map(child => [(child as FilterInterface).uuid, child as TreeNode<FilterInterface>])
+        );
+        
+        // Reorder children according to projectedOrder
+        const reorderedChildren: FilterInterface[] = [];
+        for (const uuid of orderedIds) {
+          const node = nodeMap.get(uuid);
+          if (node) {
+            reorderedChildren.push(node as FilterInterface);
+          }
+        }
+        
+        // If the active node is being moved to a different container, update its parent
+        if (orderedIds.includes(activeUuid)) {
+          const targetGroup = getGroupNodeByContainerId(containerId);
+          if (targetGroup && activeNode.parent !== targetGroup) {
+            // Remove from old parent if it exists
+            if (activeNode.parent) {
+              const oldParent = activeNode.parent as FilterGroupInterface;
+              const oldIndex = oldParent.children.findIndex(
+                child => (child as FilterInterface).uuid === activeUuid
+              );
+              if (oldIndex !== -1) {
+                oldParent.children.splice(oldIndex, 1);
+              }
+            }
+            // Set new parent
+            activeNode.parent = targetGroup;
+          }
+        }
+        
+        // Set parent references before assignment
+        reorderedChildren.forEach(child => {
+          child.parent = group;
+        });
+        
+        // Assign new array - this triggers reactivity
+        group.children = reorderedChildren;
+      }
+    }
+    
+    // Clear preview state
     activeNode = null;
     activeId = null;
     operatorPreview = null;
     projectedOrder = null;
-
+    lastValidProjectedOrder = null;
   }
 
   function handleDragOver(event: any) {
-    console.log('handleDragOver', event);
     const active = event?.operation?.source;
     const over = event?.operation?.over;
+    
     if (!active || !over) {
       operatorPreview = null;
       projectedOrder = null;
+      // Don't clear lastValidProjectedOrder here - keep the last valid one
       return;
     }
 
@@ -81,6 +178,7 @@
     if (!Number.isFinite(overIndex)) {
       operatorPreview = null;
       projectedOrder = null;
+      // Don't clear lastValidProjectedOrder here - keep the last valid one
       return;
     }
 
@@ -104,7 +202,7 @@
     const overGroup = getGroupNodeByContainerId(overContainerId);
     if (!activeGroup || !overGroup) {
       projectedOrder = null;
-
+      // Don't clear lastValidProjectedOrder here - keep the last valid one
       return;
     }
 
@@ -127,6 +225,10 @@
       }
     }
     projectedOrder = next;
+    // Store the last valid projectedOrder
+    if (next && Object.keys(next).length > 0) {
+      lastValidProjectedOrder = next;
+    }
 
   }
 
@@ -164,8 +266,6 @@
         onRemoveChild={removeNode}
         isOverlay={false}
         {activeId}
-        {operatorPreview}
-        {projectedOrder}
         onOperatorChange={handleOperatorChange}
     />
     <DragOverlay>
