@@ -19,12 +19,14 @@
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
   import Popover from '$lib/components/Popover.svelte';
+  import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
 
   let unsubFilters: Unsubscriber | null = null;
   let currentPage: string = page.url.pathname;
   let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
   let isExplorer = $derived(page.url.pathname.includes('/explorer'));
   let modalOpen: boolean = $state(false);
+  let advancedModalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
     $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
@@ -46,6 +48,8 @@
           filter.filterType === 'AnyRecordOf',
       ),
   );
+
+  let showAdvancedFiltering = $derived(!features.federated && $filters.length > 0);
 
   let showExplorerDistributions = $derived(
     isExplorer && features.explorer.distributionExplorer && hasValidDistributionFilters,
@@ -115,6 +119,19 @@
 >
   Are you sure you want to clear all filters?
 </Modal>
+<Modal
+  bind:open={advancedModalOpen}
+  title="Advanced Filters"
+  withDefault
+  width="w-full"
+  height="h-full"
+  confirmText="Apply Changes"
+  onconfirm={() => {
+    advancedModalOpen = false;
+  }}
+>
+  <AdvancedFiltering />
+</Modal>
 <section
   id="results-panel"
   class="flex flex-col items-center pt-8 pr-10 w-64"
@@ -164,6 +181,16 @@
       <hr />
       <h5 class="text-center text-xl mt-7">Tool Suite</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
+        {#if showAdvancedFiltering}
+          <CardButton
+            data-testid="advanced-filter-btn"
+            title="Advanced Filtering"
+            icon="fa-solid fa-sliders"
+            size="md"
+            active={advancedModalOpen}
+            onclick={() => (advancedModalOpen = true)}
+          />
+        {/if}
         {#if showCohortDetails}
           <CardButton
             href="/explorer/cohort"

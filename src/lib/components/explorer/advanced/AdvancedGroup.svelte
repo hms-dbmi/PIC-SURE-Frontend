@@ -16,35 +16,33 @@
     activeId?: string | null;
     operatorPreview?: { parentId: string | undefined; index: number } | null;
     projectedOrder?: Record<string, string[]> | null;
-    showLeadingOperator?: boolean;
-    leadingOperator?: OperatorType;
     index?: number;
+    effectiveIndex?: number;
     isOverlay?: boolean;
     id?: string;
     parentId?: string;
   }
 
-  let { 
-    group = $bindable(), 
+  let {
+    group = $bindable(),
     activeId = null,
     operatorPreview = null,
     projectedOrder = null,
-    showLeadingOperator = false,
-    leadingOperator,
-    index = 0, 
-    isOverlay = false, 
-    id = group.uuid, 
-    parentId, 
+    index = 0,
+    effectiveIndex = 0,
+    isOverlay = false,
+    id = group.uuid,
+    parentId,
     onRemove = () => {},
     onRemoveChild = () => {},
-    onOperatorChange = (g, op) => { g.setOperator(op); }
-  }: Props = $props(); 
+    onOperatorChange = (g, op) => {
+      g.setOperator(op);
+    },
+  }: Props = $props();
 
-  let operator = $state((group as FilterGroupInterface).operator as OperatorType || Operator.AND);
+  let operator = $state(((group as FilterGroupInterface).operator as OperatorType) || Operator.AND);
   let not = $state(false);
   const isDraggable = $derived(id !== 'root');
-  const previewIndex = $derived(operatorPreview?.parentId === id ? operatorPreview.index : null);
-  const effectiveLength = $derived(projectedOrder?.[id]?.length ?? group.children.length);
 
   const { ref, handleRef, isDragging } = useSortable({
     id: id,
@@ -68,10 +66,14 @@
 </script>
 
 <div class="relative" {@attach ref}>
-  {#if showLeadingOperator && leadingOperator}
-    <div class="flex justify-center py-1 {activeId && activeId === id && !isOverlay ? 'invisible' : ''}">
-      <span class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
-        {leadingOperator}
+  {#if effectiveIndex > 0}
+    <div
+      class="flex justify-center py-1 {activeId && activeId === id && !isOverlay
+        ? 'invisible'
+        : ''}"
+    >
+      <span id={`leading-operator-group-${id}`} class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
+        {operator}
       </span>
     </div>
   {/if}
@@ -81,88 +83,100 @@
       ? 'bg-surface-50 shadow-none border-none'
       : 'bg-white border-surface-400 border'}"
   >
-  {#if isDraggable}
-    <div id={`group-controls-${group.uuid}`} class="flex flex-row w-full flex-end">
-      <button
-      type="button"
-      title="Remove Group"
-      class="bg-initial text-black-500 hover:text-primary-600"
-      onclick={() => onRemove(group)}
-    >
-      <i class="fa-solid fa-times-circle"></i>
-      <span class="sr-only">Remove Group</span>
-    </button>
+    {#if isDraggable}
+      <div id={`group-controls-${group.uuid}`} class="flex flex-row w-full flex-end">
+        <button
+          type="button"
+          title="Remove Group"
+          class="bg-initial text-black-500 hover:text-primary-600"
+          onclick={() => onRemove(group)}
+        >
+          <i class="fa-solid fa-times-circle"></i>
+          <span class="sr-only">Remove Group</span>
+        </button>
+      </div>
+    {/if}
+    <div class="flex flex-row items-center gap-2 w-full">
+      <div
+        class="cursor-grab active:cursor-grabbing mr-2 {isDraggable ? 'block' : 'hidden'}"
+        {@attach handleRef}
+      >
+        <i class="fa-solid fa-grip-vertical text-surface-500"></i>
+      </div>
+      <div class="flex items-center justify-start gap-2">
+        <div>Between {id === 'root' ? 'groups' : 'items'}:</div>
+        <Segment
+          background="bg-white border-surface-400 border"
+          indicatorBg="bg-primary-500"
+          name="operator"
+          value={operator}
+          onValueChange={handleOperatorChange}
+        >
+          <Segment.Item value={Operator.AND}>{Operator.AND}</Segment.Item>
+          <Segment.Item value={Operator.OR}>{Operator.OR}</Segment.Item>
+        </Segment>
+      </div>
+      <div class="flex items-center gap-2 ml-auto">
+        <label for="not">Not:</label>
+        <Switch name="not" checked={not} onCheckedChange={handleNotChange}>
+          {#snippet activeChild()}!{/snippet}
+        </Switch>
+      </div>
     </div>
-  {/if}
-  <div class="flex flex-row items-center gap-2 w-full">
-    <div class="cursor-grab active:cursor-grabbing mr-2 {isDraggable ? 'block' : 'hidden'}" {@attach handleRef}>
-      <i class="fa-solid fa-grip-vertical text-surface-500"></i>
-    </div>
-    <div class="flex items-center justify-start gap-2">
-      <div>Between {id === 'root' ? "groups" : "items"}:</div>
-      <Segment background="bg-white border-surface-400 border" indicatorBg="bg-primary-500" name="operator" value={operator} onValueChange={handleOperatorChange}>
-        <Segment.Item value={Operator.AND}>{Operator.AND}</Segment.Item>
-        <Segment.Item value={Operator.OR}>{Operator.OR}</Segment.Item>
-      </Segment>
-    </div>
-    <div class="flex items-center gap-2 ml-auto">
-      <label for="not">Not:</label>
-      <Switch name="not" checked={not} onCheckedChange={handleNotChange}>
-        {#snippet activeChild()}!{/snippet}
-      </Switch>
-    </div>
-  </div>
 
     <div class="flex flex-col gap-2 min-h-[50px]">
       {#each group.children as child, i (child.uuid)}
         {@const effectiveIndex = projectedOrder?.[id]?.indexOf(child.uuid) ?? i}
-
-        {#if previewIndex !== null && previewIndex > 0 && effectiveIndex === previewIndex && child.uuid !== activeId}
+        {#if index !== null && index > 0 && effectiveIndex === index && child.uuid !== activeId}
           <div class="flex justify-center py-1">
-            <span class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
+            <span id={`leading-operator-${child.uuid}`} class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
               {operator}
             </span>
           </div>
         {/if}
-      {#if child.filterType === 'FilterGroup'}
-        <AdvancedGroup
+        {#if child.filterType === 'FilterGroup'}
+          <AdvancedGroup
             group={child as FilterGroupInterface}
             index={i}
+            effectiveIndex={effectiveIndex}
             parentId={id}
             {onRemove}
             {onRemoveChild}
-            isOverlay={isOverlay}
+            {isOverlay}
             {activeId}
             {operatorPreview}
             {projectedOrder}
-            showLeadingOperator={effectiveIndex > 0}
-            leadingOperator={operator}
             {onOperatorChange}
-        />
-      {:else}
-        <AdvancedItem
-          filter={child as FilterInterface}
-          index={i}
-          parentId={id}
-          isOverlay={isOverlay}
-          {activeId}
-          showLeadingOperator={effectiveIndex > 0}
-          leadingOperator={operator}
-          onRemove={onRemoveChild}
-        />
-      {/if}
+          />
+        {:else}
+          <AdvancedItem
+            filter={child as FilterInterface}
+            index={i}
+            effectiveIndex={effectiveIndex}
+            parentId={id}
+            projectedOrder={projectedOrder}
+            {isOverlay}
+            {activeId}
+            {operator}
+            onRemove={onRemoveChild}
+          />
+        {/if}
       {/each}
 
-      {#if operatorPreview && operatorPreview.parentId === id && operatorPreview.index > 0 && operatorPreview.index >= effectiveLength}
+      {#if operatorPreview && operatorPreview.parentId === id && operatorPreview.index > 0 && operatorPreview.index >= group.children.length}
         <div class="flex justify-center py-1">
-          <span class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
+          <span id={`trailing-operator-${id}`} class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
             {operator}
           </span>
         </div>
       {/if}
 
       {#if group.children.length === 0}
-        <div class="card bg-surface-50 border-surface-400 border  text-center text-surface-400 italic py-4">Drop items here</div>
+        <div
+          class="card bg-surface-50 border-surface-400 border text-center text-surface-400 italic py-4"
+        >
+          Drop items here
+        </div>
       {/if}
     </div>
   </div>
@@ -173,3 +187,15 @@
     ></div>
   {/if}
 </div>
+
+{#if !(effectiveIndex > 0) && (effectiveIndex === group.children.length - 1)}
+  <div
+    class="flex justify-center py-1 {activeId && activeId === id && !isOverlay
+      ? 'invisible'
+      : ''}"
+  >
+    <span id={`leading-operator-group-${id}`} class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
+      {operator}
+    </span>
+  </div>
+{/if}

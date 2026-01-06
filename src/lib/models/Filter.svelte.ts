@@ -112,9 +112,9 @@ export function createFilterGroup(
       this.operator = operator;
     },
   };
-  
+
   const stateGroup = $state(newGroup);
-  
+
   stateGroup.children.forEach((child) => (child.parent = stateGroup));
   return stateGroup as FilterGroupInterface;
 }

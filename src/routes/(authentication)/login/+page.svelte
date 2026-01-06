@@ -38,84 +38,103 @@
   );
   import Modal from '$lib/components/Modal.svelte';
   import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
-    import { createCategoricalFilter } from '$lib/models/Filter.svelte';
-    import { Operator } from '$lib/models/query/Query';
-    import { filterTree } from '$lib/stores/Filter';
+  import { createCategoricalFilter } from '$lib/models/Filter.svelte';
+  import { Operator } from '$lib/models/query/Query';
+  import { filterTree } from '$lib/stores/Filter';
   let advancedModalOpen: boolean = $state(false);
   $filterTree.root = $filterTree.createGroup([], Operator.AND);
-  const filter1 = createCategoricalFilter({
-    conceptPath: 'test',
-    dataset: 'test',
-    name: 'test',
-    display: 'test',
-    description: 'test',
-    allowFiltering: true,
-    studyAcronym: 'test',
-    type: 'Categorical',
-    children: [],
-  }, ['test', 'test2']);
-  const filter2 = createCategoricalFilter({
-    conceptPath: 'test2',
-    dataset: 'test2',
-    name: 'test2',
-    display: 'test2',
-    description: 'test2',
-    allowFiltering: true,
-    studyAcronym: 'test2',
-    type: 'Categorical',
-    children: [],
-  }, ['test3', 'test4']);
-  const filter3 = createCategoricalFilter({
-    conceptPath: 'test3',
-    dataset: 'test3',
-    name: 'test3',
-    display: 'test3',
-    description: 'test3',
-    allowFiltering: true,
-    studyAcronym: 'test3',
-    type: 'Categorical',
-    children: [],
-  }, ['test5', 'test6']);
-  const filter4 = createCategoricalFilter({
-    conceptPath: 'test4',
-    dataset: 'test4',
-    name: 'test4',
-    display: 'test4',
-    description: 'test4',
-    allowFiltering: true,
-    studyAcronym: 'test4',
-    type: 'Categorical',
-    children: [],
-  }, ['test5', 'test6']);
+  const filter1 = createCategoricalFilter(
+    {
+      conceptPath: 'test',
+      dataset: 'test',
+      name: 'test',
+      display: 'test',
+      description: 'test',
+      allowFiltering: true,
+      studyAcronym: 'test',
+      type: 'Categorical',
+      children: [],
+    },
+    ['test', 'test2'],
+  );
+  const filter2 = createCategoricalFilter(
+    {
+      conceptPath: 'test2',
+      dataset: 'test2',
+      name: 'test2',
+      display: 'test2',
+      description: 'test2',
+      allowFiltering: true,
+      studyAcronym: 'test2',
+      type: 'Categorical',
+      children: [],
+    },
+    ['test3', 'test4'],
+  );
+  const filter3 = createCategoricalFilter(
+    {
+      conceptPath: 'test3',
+      dataset: 'test3',
+      name: 'test3',
+      display: 'test3',
+      description: 'test3',
+      allowFiltering: true,
+      studyAcronym: 'test3',
+      type: 'Categorical',
+      children: [],
+    },
+    ['test5', 'test6'],
+  );
+  const filter4 = createCategoricalFilter(
+    {
+      conceptPath: 'test4',
+      dataset: 'test4',
+      name: 'test4',
+      display: 'test4',
+      description: 'test4',
+      allowFiltering: true,
+      studyAcronym: 'test4',
+      type: 'Categorical',
+      children: [],
+    },
+    ['test5', 'test6'],
+  );
   $filterTree.add(filter2);
   $filterTree.add(filter1);
   const group1 = $filterTree.createGroup([filter3, filter4], Operator.OR);
-  const filter5 = createCategoricalFilter({
-    conceptPath: 'test5',
-    dataset: 'test5',
-    name: 'test5',
-    display: 'test5',
-    description: 'test5',
-    allowFiltering: true,
-    studyAcronym: 'test5',
-    type: 'Categorical',
-    children: [],
-  }, ['test7', 'test8']);
-  const filter6 = createCategoricalFilter({
-    conceptPath: 'test6',
-    dataset: 'test6',
-    name: 'test6',
-    display: 'test6',
-    description: 'test6',
-    allowFiltering: true,
-    studyAcronym: 'test6',
-    type: 'Categorical',
-    children: [],
-  }, ['test9', 'test10']);
+  const filter5 = createCategoricalFilter(
+    {
+      conceptPath: 'test5',
+      dataset: 'test5',
+      name: 'test5',
+      display: 'test5',
+      description: 'test5',
+      allowFiltering: true,
+      studyAcronym: 'test5',
+      type: 'Categorical',
+      children: [],
+    },
+    ['test7', 'test8'],
+  );
+  const filter6 = createCategoricalFilter(
+    {
+      conceptPath: 'test6',
+      dataset: 'test6',
+      name: 'test6',
+      display: 'test6',
+      description: 'test6',
+      allowFiltering: true,
+      studyAcronym: 'test6',
+      type: 'Categorical',
+      children: [],
+    },
+    ['test9', 'test10'],
+  );
   const group2 = $filterTree.createGroup([filter5, filter6], Operator.AND);
   $filterTree.add(group2);
   $filterTree.add(group1);
 </script>
+
 <Modal
   bind:open={advancedModalOpen}
   title="Advanced Filters"
@@ -123,9 +142,11 @@
   width="w-full"
   height="h-full"
   confirmText="Apply Changes"
-  onconfirm={() => {advancedModalOpen = false}}
+  onconfirm={() => {
+    advancedModalOpen = false;
+  }}
 >
-    <AdvancedFiltering />
+  <AdvancedFiltering />
 </Modal>
 <section
   id="logins"
@@ -214,7 +235,9 @@
       </div>
     </div>
   {/await}
-  <button class="btn preset-filled-primary-500" onclick={() => advancedModalOpen = true}>Open Advanced Filters</button>
+  <button class="btn preset-filled-primary-500" onclick={() => (advancedModalOpen = true)}
+    >Open Advanced Filters</button
+  >
 </section>
 
 <style>

@@ -6,12 +6,13 @@
   interface Props {
     filter: FilterInterface;
     index?: number;
+    projectedOrder?: Record<string, string[]> | null;
     parentId?: string;
     isOverlay?: boolean;
-    showLeadingOperator?: boolean;
-    leadingOperator?: OperatorType;
+    effectiveIndex?: number;
     activeId?: string | null;
     onRemove: (filter: FilterInterface) => void;
+    operator: OperatorType;
   }
 
   let {
@@ -19,33 +20,46 @@
     index = 0,
     parentId,
     isOverlay = false,
-    showLeadingOperator = false,
-    leadingOperator,
+    effectiveIndex = 0,
     activeId = null,
     onRemove,
+    projectedOrder = null,
+    operator,
   }: Props = $props();
 
-  const {ref, handleRef, isDragging, isDropTarget} = useSortable({
-		id: filter.uuid,
-		index: () => index,
-		type: 'item',
-		accept: 'item',
-		group: parentId,
-		data: filter as FilterInterface,
-	});
+  const { ref, handleRef, isDragging, isDropTarget } = useSortable({
+    id: filter.uuid,
+    index: () => index,
+    type: 'item',
+    accept: 'item',
+    group: parentId,
+    data: filter as FilterInterface,
+  });
 
+  const parent = projectedOrder?.[parentId ?? ''] ?? [];
+  const showTrailingOperator = $derived(!(effectiveIndex > 0) && (effectiveIndex === parent.length - 1));
 </script>
 
 <div class="flex flex-col gap-2" {@attach ref}>
-  {#if showLeadingOperator && leadingOperator}
-    <div class="flex justify-center py-1 {activeId && activeId === filter.uuid && !isOverlay ? 'invisible' : ''}">
-      <span class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
-        {leadingOperator}
+  {#if effectiveIndex > 0}
+    <div
+      class="flex justify-center py-1 {activeId && activeId === filter.uuid && !isOverlay
+        ? 'invisible'
+        : ''}"
+    >
+      <span id={`leading-operator-${filter.uuid}`} class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
+        {operator}
       </span>
     </div>
   {/if}
 
-  <div class="card flex flex-row gap-2 items-center p-4 bg-white border-surface-400 border {isDragging.current && !isOverlay ? 'invisible' : ''}">
+  <div
+    id={`item-${filter.uuid}`}
+    class="card flex flex-row gap-2 items-center p-4 bg-white border-surface-400 border {isDragging.current &&
+    !isOverlay
+      ? 'invisible'
+      : ''}"
+  >
     <div class="cursor-grab active:cursor-grabbing m-0 flex items-center" {@attach handleRef}>
       <i class="fa-solid fa-grip-vertical text-surface-500"></i>
     </div>
@@ -62,4 +76,22 @@
       </button>
     </div>
   </div>
+
+  {#if !isOverlay && isDragging.current}
+    <div
+      class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg"
+    ></div>
+  {/if}
+  
+  {#if showTrailingOperator}
+    <div
+      class="flex justify-center py-1 {activeId && activeId === filter.uuid && !isOverlay
+        ? 'invisible'
+        : ''}"
+    >
+      <span id={`leading-operator-${filter.uuid}`} class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
+        {operator}
+      </span>
+    </div>
+  {/if}
 </div>

@@ -21,16 +21,18 @@
 
   // Initialize a local reactive tree.
   // We clone the global tree's structure initially.
-  // Note: Deep cloning might be needed if children are objects that shouldn't share references, 
+  // Note: Deep cloning might be needed if children are objects that shouldn't share references,
   // but for now we assume Tree.deserialize or similar logic is best if we want full isolation.
   // However, since Tree is now a class with $state, we should probably construct a new one.
   // For this fix, let's create a new Tree instance and initialize it with the current global root.
   // Important: If we want true isolation, we should clone the data.
-  
+
   const localTree = new Tree<FilterInterface>(() => createFilterGroup([], Operator.AND));
   // We need to clone the structure to avoid modifying the global store directly by reference.
   // Using serialization/deserialization is a safe way to clone the tree structure.
-  localTree.root = Tree.deserialize<FilterInterface>($filterTree.serialized, (nodes, op) => createFilterGroup(nodes as FilterInterface[], op)).root;
+  localTree.root = Tree.deserialize<FilterInterface>($filterTree.serialized, (nodes, op) =>
+    createFilterGroup(nodes as FilterInterface[], op),
+  ).root;
 
   const sensors = [KeyboardSensor, PointerSensor];
 
@@ -63,7 +65,6 @@
     activeId = null;
     operatorPreview = null;
     projectedOrder = null;
-
   }
 
   function handleDragOver(event: any) {
@@ -84,8 +85,9 @@
       return;
     }
 
-    const activeContainerId =
-      active.group ? String(active.group) : containerIdForTreeParent(activeNode?.parent);
+    const activeContainerId = active.group
+      ? String(active.group)
+      : containerIdForTreeParent(activeNode?.parent);
     const overContainerId = over.group
       ? String(over.group)
       : over.parentId
@@ -98,7 +100,6 @@
       parentId: overContainerId,
       index: overIndex,
     };
-
 
     const activeGroup = getGroupNodeByContainerId(activeContainerId);
     const overGroup = getGroupNodeByContainerId(overContainerId);
@@ -127,7 +128,6 @@
       }
     }
     projectedOrder = next;
-
   }
 
   function addGroup() {
@@ -140,11 +140,11 @@
   }
 
   function handleOperatorChange(group: FilterGroupInterface, newOperator: any) {
-     (group as FilterGroupInterface).setOperator(newOperator);
+    (group as FilterGroupInterface).setOperator(newOperator);
   }
-  
+
   export function applyChanges() {
-      filterTree.set(localTree);
+    filterTree.set(localTree);
   }
 
   function removeNode(filter: FilterInterface) {
@@ -156,30 +156,40 @@
   <button class="btn preset-filled-primary-500" onclick={addGroup}>Add Group</button>
 </div>
 <div class="flex-1 overflow-auto p-4 border border-surface-300 rounded-lg bg-surface-50">
-  <DragDropProvider {sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
-    <AdvancedGroup 
-        group={localTree.root as FilterGroupInterface} 
-        id="root" 
-        onRemove={removeGroup} 
-        onRemoveChild={removeNode}
-        isOverlay={false}
-        {activeId}
-        {operatorPreview}
-        {projectedOrder}
-        onOperatorChange={handleOperatorChange}
+  <DragDropProvider
+    {sensors}
+    onDragStart={handleDragStart}
+    onDragEnd={handleDragEnd}
+    onDragOver={handleDragOver}
+  >
+    <AdvancedGroup
+      group={localTree.root as FilterGroupInterface}
+      id="root"
+      onRemove={removeGroup}
+      onRemoveChild={removeNode}
+      isOverlay={false}
+      {activeId}
+      {operatorPreview}
+      {projectedOrder}
+      onOperatorChange={handleOperatorChange}
     />
     <DragOverlay>
       {#if activeNode && (activeNode as FilterInterface | FilterGroupInterface).filterType === 'FilterGroup'}
-        <AdvancedGroup 
-            bind:group={activeNode as FilterGroupInterface} 
-            onRemove={removeGroup}
-            onRemoveChild={removeNode}
-            isOverlay={true}
-            onOperatorChange={handleOperatorChange}
+        <AdvancedGroup
+          bind:group={activeNode as FilterGroupInterface}
+          onRemove={removeGroup}
+          onRemoveChild={removeNode}
+          isOverlay={true}
+          onOperatorChange={handleOperatorChange}
         />
       {:else if activeNode}
-        <AdvancedItem filter={activeNode as FilterInterface} isOverlay={true} onRemove={removeNode} />
-      {/if} 
+        <AdvancedItem
+          filter={activeNode as FilterInterface}
+          operator={localTree.root.operator}
+          isOverlay={true}
+          onRemove={removeNode}
+        />
+      {/if}
     </DragOverlay>
   </DragDropProvider>
 </div>

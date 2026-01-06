@@ -52,9 +52,9 @@ export class Tree<T> {
   remove(...toRemove: TreeNode<T>[]) {
     toRemove.forEach((node) => {
       if (node.parent === undefined) {
-         return;
+        return;
       }
-      
+
       // Try to find the node index by reference
       let index = node.parent.children.indexOf(node);
 
@@ -279,7 +279,7 @@ export class Tree<T> {
     createGroup: (nodes: TreeNode<T>[], operator: OperatorType) => TreeGroup<T>,
   ): Tree<T> {
     const tree = new Tree<T>(createGroup);
-    
+
     const reconstruct = (nodeData: SerializedTree): TreeNode<T> => {
       // Check if it's a group by checking for children (or based on your SerializedTree shape)
       // The SerializedTree interface has optional children.
@@ -289,18 +289,18 @@ export class Tree<T> {
         // We assume createGroup handles setting parent pointers for children if we pass them
         // But createGroup signature is (nodes, operator) -> TreeGroup
         const group = createGroup(children, nodeData.operator || Operator.AND);
-        
+
         // Merge other properties from nodeData back into the group (like uuid, etc)
         // because createGroup generates NEW uuids usually.
         // We need to preserve the IDs from serialization!
         // We must NOT overwrite children with the raw data children!
         const { children: rawChildren, parent: rawParent, ...restData } = nodeData;
         Object.assign(group, restData);
-        
-        // We must re-assign children's parent to this NEW group instance 
+
+        // We must re-assign children's parent to this NEW group instance
         // (createGroup might do it, but we overwrote group properties potentially)
-        children.forEach(child => child.parent = group);
-        
+        children.forEach((child) => (child.parent = group));
+
         return group;
       } else {
         // It is a leaf node
@@ -311,7 +311,7 @@ export class Tree<T> {
         // Cast to T because T is the node type (e.g. FilterInterface)
         // We need to return an object that matches T.
         // Since we don't have a factory for leaves, we just return the data object.
-        // Ideally this should also be reactive if T implies it? 
+        // Ideally this should also be reactive if T implies it?
         // But in our case 'FilterInterface' leaves are just data objects usually.
         // However, to be safe, let's just return the object.
         // NOTE: parent will be set by the caller (the group creating this child)
@@ -322,7 +322,7 @@ export class Tree<T> {
 
     const parsedData = JSON.parse(serialized) as SerializedTree;
     tree.root = reconstruct(parsedData) as TreeGroup<T>;
-    
+
     return tree;
   }
   /* eslint-enable @typescript-eslint/no-explicit-any */
