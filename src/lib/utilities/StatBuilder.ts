@@ -3,10 +3,10 @@ import * as api from '$lib/api';
 import { branding, features } from '$lib/configuration';
 import { Picsure } from '$lib/paths';
 
-import {
-  type ExpectedResultType,
-  type QueryV3,
-  type PhenotypicFilterInterface,
+import type {
+  ExpectedResultType,
+  QueryV3,
+  PhenotypicFilterInterface,
 } from '$lib/models/query/Query';
 import type {
   DictionaryConceptResult,

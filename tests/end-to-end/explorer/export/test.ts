@@ -16,7 +16,8 @@ import {
 } from '../../mock-data';
 import { getOption } from '../../utils';
 
-const countResultPath = '*/**/picsure/v3/query/sync';
+const queryPathV3 = 'picsure/v3/query';
+const countResultPath = `*/**/${queryPathV3}/sync`;
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
 // Standard identifiers that should be present
@@ -192,7 +193,7 @@ test.describe('Export Page', () => {
     await expect(csvExportOption).toHaveClass(/preset-filled-primary-500/);
     await expect(pfbExportOption).toHaveClass(/preset-outlined-primary-500/);
     await expect(nextButton).not.toBeDisabled();
-    await mockApiSuccess(page, `*/**/picsure/query`, newDatasetResponse);
+    await mockApiSuccess(page, `*/**/${queryPathV3}`, newDatasetResponse);
     await nextButton.click();
 
     // Save Dataset ID
@@ -205,7 +206,7 @@ test.describe('Export Page', () => {
     await mockApiSuccess(page, `*/**/picsure/dataset/named`, newDatasetResponse);
     await mockApiSuccess(
       page,
-      `*/**/picsure/query/${newDatasetResponse.picsureResultId}/status`,
+      `*/**/${queryPathV3}/${newDatasetResponse.picsureResultId}/status`,
       availableDatasetResponse,
     );
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
