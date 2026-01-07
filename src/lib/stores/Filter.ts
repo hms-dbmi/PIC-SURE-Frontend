@@ -28,6 +28,10 @@ export const filters: Readable<Filter[]> = derived(
   filterTree,
   ($tree) => $tree.leafNodes as Filter[],
 );
+export const allFilters: Readable<Filter[]> = derived(
+  [filterTree, genomicFilters],
+  ([$tree, $genomicFilters]) => [...($tree.leafNodes as Filter[]), ...$genomicFilters],
+);
 
 export const hasGenomicFilter: Readable<boolean> = derived(genomicFilters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic') : false,

@@ -7,6 +7,7 @@
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
   import type { DataSet } from '$lib/models/Dataset';
+  import type { QueryV3 } from '$lib/models/query/Query';
   import { exports } from '$lib/stores/Export';
   import { filters } from '$lib/stores/Filter';
   import { totalParticipants } from '$lib/stores/ResultStore';
@@ -70,8 +71,6 @@
       !features.explorer.enableRedcapExport,
   );
 
-  let prevConcepts: string[] = $state([]);
-
   onMount(async () => {
     // Auto select csv export when pfb feature is disabled.
     setQueryRequest(query);
@@ -82,19 +81,7 @@
   });
 
   function updateConcepts() {
-    const conceptsToRemove = prevConcepts.filter(
-      (concept: string) => !$selectedConcepts.includes(concept),
-    );
-    conceptsToRemove.forEach((concept: string) => {
-      const fieldIndex = getQueryRequest().query.fields.indexOf(concept);
-      if (fieldIndex > -1) {
-        getQueryRequest().query.fields.splice(fieldIndex, 1);
-      }
-    });
-    prevConcepts = $selectedConcepts;
-    $selectedConcepts.forEach((concept: string) => {
-      getQueryRequest().query.addField(concept);
-    });
+    (getQueryRequest().query as QueryV3).select = $selectedConcepts;
   }
 
   async function onNextHandler(_step: number, stepName: string): Promise<void> {
@@ -103,7 +90,7 @@
       stepName === (features.federated ? 'save-dataset' : 'select-type');
 
     if (stepName === 'select-variables') {
-      getQueryRequest().query.fields.forEach(addConcept);
+      (getQueryRequest().query as QueryV3).select.forEach(addConcept);
     }
 
     if (shouldUpdateConcepts) {
@@ -143,7 +130,7 @@
 
     return withBackoff(
       async () => {
-        const res = (await api.post(`${Picsure.QueryV2}${queryFragment}`, query)) as {
+        const res = (await api.post(`${Picsure.QueryV3}${queryFragment}`, query)) as {
           picsureResultId: string;
           status: string;
           resultMetadata: { picsureQueryId: string };

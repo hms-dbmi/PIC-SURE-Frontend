@@ -224,4 +224,40 @@ export class QueryV3 implements QueryInterfaceV3 {
     this.picsureId = newQuery?.picsureId || null;
     this.id = newQuery?.id || null;
   }
+
+  addClauses(clauses: PhenotypicClause[], defaultOperator: OperatorType = Operator.AND) {
+    clauses.forEach((clause: PhenotypicClause) => this.addClause(clause, defaultOperator));
+  }
+
+  addClause(clause: PhenotypicClause, defaultOperator: OperatorType = Operator.AND) {
+    if (this.phenotypicClause === null) {
+      this.phenotypicClause = clause;
+    } else if (this.phenotypicClause.type === 'PhenotypicFilter') {
+      this.phenotypicClause = {
+        type: 'PhenotypicSubquery',
+        phenotypicClauses: [this.phenotypicClause, clause],
+        operator: defaultOperator,
+        not: false,
+      };
+    } else if (this.phenotypicClause.type === 'PhenotypicSubquery') {
+      this.phenotypicClause.phenotypicClauses = [
+        ...(this.phenotypicClause.phenotypicClauses || []),
+        clause,
+      ];
+    }
+  }
+
+  hasGenomicFilter(): boolean {
+    return this.genomicFilters.length > 0;
+  }
+
+  hasFilter(): boolean {
+    return (
+      this.hasGenomicFilter() ||
+      (this.phenotypicClause !== null &&
+        ((this.phenotypicClause.type === 'PhenotypicSubquery' &&
+          this.phenotypicClause.phenotypicClauses.length > 0) ||
+          this.phenotypicClause.type === 'PhenotypicFilter'))
+    );
+  }
 }

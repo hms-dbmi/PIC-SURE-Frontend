@@ -3,10 +3,10 @@ import * as api from '$lib/api';
 import { branding, features } from '$lib/configuration';
 import { Picsure } from '$lib/paths';
 
-import type {
-  ExpectedResultType,
-  QueryV3,
-  PhenotypicFilterInterface,
+import {
+  type ExpectedResultType,
+  type QueryV3,
+  type PhenotypicFilterInterface,
 } from '$lib/models/query/Query';
 import type {
   DictionaryConceptResult,
@@ -113,6 +113,7 @@ const queryMappers = {
     return query;
   },
   addCategoryMap: (map: CategoryMap) => (query: QueryV3) => {
+    const clauses: PhenotypicFilterInterface[] = [];
     Object.entries(map).forEach(([conceptPath, fieldList]) => {
       const clause: PhenotypicFilterInterface = {
         type: 'PhenotypicFilter',
@@ -125,7 +126,9 @@ const queryMappers = {
       } else {
         clause.values = fieldList;
       }
+      clauses.push(clause);
     });
+    query.addClauses(clauses);
     return query;
   },
 };

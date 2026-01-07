@@ -7,7 +7,7 @@
   import type { ExportInterface } from '$lib/models/Export';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import { searchDictionary } from '$lib/stores/Dictionary';
-  import { QueryV2 } from '$lib/models/query/Query';
+  import { QueryV3 } from '$lib/models/query/Query';
   import * as api from '$lib/api';
   import { Picsure } from '$lib/paths';
   import { toaster } from '$lib/toaster';
@@ -97,12 +97,12 @@
     }
 
     // Get sample ID counts via cross counts query
-    const crossCountQuery = new QueryV2(structuredClone($state.snapshot(query).query as QueryV2));
+    const crossCountQuery = new QueryV3(structuredClone($state.snapshot(query).query as QueryV3));
     crossCountQuery.expectedResultType = 'CROSS_COUNT';
     const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
-    crossCountQuery.setCrossCountFields(crossCountFields);
+    crossCountQuery.select = crossCountFields;
 
-    const crossCountResponse: Record<string, number> = await api.post(Picsure.QueryV2Sync, {
+    const crossCountResponse: Record<string, number> = await api.post(Picsure.QueryV3Sync, {
       query: crossCountQuery,
       resourceUUID: $resources.hpdsAuth,
     });

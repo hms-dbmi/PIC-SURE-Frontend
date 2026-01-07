@@ -4,13 +4,13 @@ import { commonAreaUUID, federatedQueryMap } from '$lib/stores/Dataset';
 import { Picsure } from '$lib/paths';
 import * as api from '$lib/api';
 import { getQueryResources, loadResources, resources } from '$lib/stores/Resources';
-import { QueryV2 } from '$lib/models/query/Query';
+import { QueryV3 } from '$lib/models/query/Query';
 
 export interface QueryResponse {
   picsureResultId: string;
 }
 
-export interface CommonAreaResponse {
+export interface FederatedResponse {
   picsureResultId: string;
 }
 
@@ -25,14 +25,14 @@ async function createCommonAreaUUID(query: QueryRequestInterface): Promise<strin
     return currentUUID;
   }
 
-  const uuidQuery = new QueryV2();
+  const uuidQuery = new QueryV3();
   const uuidQueryRequest: QueryRequestInterface = {
     query: uuidQuery,
     resourceUUID: get(resources).queryIdGen,
   };
 
   try {
-    const res: CommonAreaResponse = await api.post(Picsure.QueryV2, uuidQueryRequest);
+    const res: FederatedResponse = await api.post(Picsure.QueryV3, uuidQueryRequest);
     const commonAreaDatasetId = res.picsureResultId;
 
     if (!commonAreaDatasetId) {
@@ -62,7 +62,7 @@ async function executeSiteQueries(query: QueryRequestInterface): Promise<Record<
       resourceQuery.resourceCredentials = resourceQuery.resourceCredentials || {};
 
       return api
-        .post(Picsure.QueryV2 + '?isInstitute=true', resourceQuery)
+        .post(Picsure.QueryV3 + '?isInstitute=true', resourceQuery)
         .then((response: QueryResponse) => {
           if (response.picsureResultId) {
             return {

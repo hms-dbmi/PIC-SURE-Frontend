@@ -10,7 +10,7 @@ import type { Column } from '$lib/components/datatable/types';
 
 export function getVariantCount(request: QueryRequestInterface): Promise<number> {
   request.query.expectedResultType = 'VARIANT_COUNT_FOR_QUERY';
-  return api.post(Picsure.QueryV2Sync, request).then((resp) => resp.count);
+  return api.post(Picsure.QueryV3Sync, request).then((resp) => resp.count);
 }
 
 export function getVariantData(
@@ -20,7 +20,7 @@ export function getVariantData(
   request.query.expectedResultType =
     exportType === ExportType.Aggregate ? 'AGGREGATE_VCF_EXCERPT' : 'VCF_EXCERPT';
 
-  return api.post(Picsure.QueryV2Sync, request).then((response) => {
+  return api.post(Picsure.QueryV3Sync, request).then((response) => {
     const downloadUrl = URL.createObjectURL(new Blob([response], { type: 'octet/stream' }));
 
     const lines = response.split('\n');

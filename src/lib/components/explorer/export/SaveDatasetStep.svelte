@@ -53,7 +53,7 @@
       getQueryRequest().query.expectedResultType = getActiveType() || 'DATAFRAME';
       setDatasetId('');
       requestUpdate(() =>
-        api.post(Picsure.QueryV2, getQueryRequest()).then((res: DataSetResponse) => {
+        api.post(Picsure.QueryV3, getQueryRequest()).then((res: DataSetResponse) => {
           setDatasetId(res.picsureResultId || 'Error');
         }),
       );

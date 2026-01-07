@@ -6,7 +6,7 @@ import type { QueryInterfaceV2 } from '$lib/models/query/Query';
 
 export async function searchForDataset(queryId: string): Promise<Metadata> {
   try {
-    return api.get(`${Picsure.QueryV2}/${queryId}/metadata`);
+    return api.get(`${Picsure.QueryV3}/${queryId}/metadata`);
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : 'Unknown error occurred');
   }
