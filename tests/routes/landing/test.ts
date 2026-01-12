@@ -269,7 +269,7 @@ test.describe('Logged Out Landing', () => {
       });
   });
 
-  loggedOutActions.forEach(({ description, icon, url, title }) => {
+  loggedOutActions.forEach(({ description, icon, url, title, isOpen }) => {
     test(`Has expected action of description: ${description}`, async ({ page }) => {
       // Given
       await page.goto('/');
@@ -297,14 +297,21 @@ test.describe('Logged Out Landing', () => {
       // Then
       if ((await action.getAttribute('target')) !== '_blank') {
         await action.click();
-        await expect(page).toHaveURL(`${url}`);
+        if (!isOpen) {
+          await action.click();
+          await expect(page).toHaveURL(new RegExp(`^.*/login\\?redirectTo=${encodeURIComponent(url)}`));
+          const urlObj = new URL(page.url());
+          expect(urlObj.searchParams.get('redirectTo')).toBe(url);
+        } else {
+          await expect(page).toHaveURL(url);
+        }
       } else {
         //check if new tab opened
         const newTabPromise = page.waitForEvent('popup');
         await action.click();
         const newPage = await newTabPromise;
         await newPage.waitForLoadState();
-        await expect(newPage).not.toBeNull();
+        expect(newPage).not.toBeNull();
         await expect(newPage).toHaveURL(`${url}`);
       }
     });
