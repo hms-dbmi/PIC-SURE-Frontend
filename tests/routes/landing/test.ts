@@ -299,7 +299,9 @@ test.describe('Logged Out Landing', () => {
         await action.click();
         if (!isOpen) {
           await action.click();
-          await expect(page).toHaveURL(new RegExp(`^.*/login\\?redirectTo=${encodeURIComponent(url)}`));
+          await expect(page).toHaveURL(
+            new RegExp(`^.*/login\\?redirectTo=${encodeURIComponent(url)}`),
+          );
           const urlObj = new URL(page.url());
           expect(urlObj.searchParams.get('redirectTo')).toBe(url);
         } else {
