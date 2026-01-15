@@ -19,7 +19,6 @@ import type {
   RequestMapOptions,
 } from '$lib/models/Stat';
 
-import { loadAllConcepts } from '$lib/services/hpds';
 import { isUserLoggedIn } from '$lib/stores/User';
 import { addConsents } from '$lib/stores/Dictionary';
 import { getQueryResources } from '$lib/stores/Resources';
@@ -99,8 +98,6 @@ function hardcoded({ stat }: RequestMapOptions) {
 async function getOpenCount(options: RequestMapOptions): Promise<PatientCount> {
   const request = { ...options.request };
   request.query.expectedResultType = 'CROSS_COUNT';
-  const concepts = await loadAllConcepts();
-  request.query.setCrossCountFields(concepts);
   return api
     .post(Picsure.QuerySync, request)
     .then(rejectIfQueryError)
