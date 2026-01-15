@@ -20,7 +20,6 @@ import type {
   RequestMapOptions,
 } from '$lib/models/Stat';
 
-import { loadAllConcepts } from '$lib/services/hpds';
 import { isUserLoggedIn } from '$lib/stores/User';
 import { addConsents } from '$lib/stores/Dictionary';
 import { getQueryResources, resources } from '$lib/stores/Resources';
@@ -112,28 +111,14 @@ async function getOpenPatientCount({
   resource,
 }: RequestMapOptions): Promise<PatientCount> {
   let request: QueryRequestInterface;
-  const concepts = await loadAllConcepts();
-  const addConceptsV3 = (query: QueryV3) => {
-    query.select = concepts;
-    return query;
-  };
-  const addConceptsV2 = (query: QueryV2) => {
-    query.setCrossCountFields(concepts);
-    return query;
-  };
   if (isOpenAccess && features.explorer.enableOrQueries && get(advancedFilteringEnabled)) {
     request = addFilters
-      ? getQueryRequestV3(!isOpenAccess, get(resources).hpdsOpenV3, 'CROSS_COUNT', addConceptsV3)
-      : getBlankQueryRequestV3(
-          isOpenAccess,
-          get(resources).hpdsOpenV3,
-          'CROSS_COUNT',
-          addConceptsV3,
-        );
+      ? getQueryRequestV3(!isOpenAccess, get(resources).hpdsOpenV3, 'CROSS_COUNT')
+      : getBlankQueryRequestV3(isOpenAccess, get(resources).hpdsOpenV3, 'CROSS_COUNT');
   } else {
     request = addFilters
-      ? getQueryRequestV2(!isOpenAccess, resource, 'CROSS_COUNT', addConceptsV2)
-      : getBlankQueryRequestV2(isOpenAccess, resource, 'CROSS_COUNT', addConceptsV2);
+      ? getQueryRequestV2(!isOpenAccess, resource, 'CROSS_COUNT')
+      : getBlankQueryRequestV2(isOpenAccess, resource, 'CROSS_COUNT');
   }
   return api
     .post(Picsure.QueryV2Sync, request)
