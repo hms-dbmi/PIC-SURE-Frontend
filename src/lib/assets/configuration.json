@@ -104,7 +104,7 @@
         "icon": "fa-solid fa-magnifying-glass",
         "url": "/explorer",
         "btnText": "Start Exploring",
-        "isOpen": false,
+        "isOpen": true,
         "showIfLoggedIn": true
       },
       {
@@ -114,6 +114,15 @@
         "url": "/analyze/api",
         "btnText": "Prepare for Analysis",
         "isOpen": false,
+        "showIfLoggedIn": true
+      },
+      {
+        "title": "Help",
+        "description": "Documentation and videos",
+        "icon": "fa-solid fa-circle-info",
+        "url": "/help",
+        "btnText": "Go To Help Page",
+        "isOpen": true,
         "showIfLoggedIn": true
       }
     ],
