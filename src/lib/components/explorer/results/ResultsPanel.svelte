@@ -132,7 +132,7 @@
         disableAdvancedFilteringModalOpen = true;
       } else {
         advancedFilteringEnabled.set(false);
-        loadPatientCount(isOpenAccess);
+        loadPatientCount(useAuth());
       }
     }
   }
@@ -140,14 +140,14 @@
   function proceedEnableAdvancedFiltering() {
     advancedFilteringEnabled.set(true);
     enableAdvancedFilteringModalOpen = false;
-    loadPatientCount(isOpenAccess);
+    loadPatientCount(useAuth());
   }
 
   function proceedDisableAdvancedFiltering() {
     disableAdvancedFiltering();
     advancedFilteringEnabled.set(false);
     disableAdvancedFilteringModalOpen = false;
-    loadPatientCount(isOpenAccess);
+    loadPatientCount(useAuth());
   }
 
   function cancelDisableAdvancedFiltering() {
@@ -257,7 +257,7 @@
         >
       {/if}
     </div>
-    {#if $filters.length > 0 && features.explorer.enableOrQueries && isOpenAccess}
+    {#if $filters.length > 0 && features.explorer.enableOrQueries && isDiscoverPage}
       <div class="flex items-center justify-between w-full px-4 mt-2 mb-2">
         <div class="flex items-center gap-2">
           <span class="text-sm">Advanced Filtering</span>
