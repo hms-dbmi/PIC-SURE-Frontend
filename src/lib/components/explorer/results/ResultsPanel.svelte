@@ -87,7 +87,7 @@
       unsubFilters = filters.subscribe(() => loadPatientCount(useAuth()));
     }
     if (!unsubGenomicFilters) {
-      unsubGenomicFilters = genomicFilters.subscribe(() => loadPatientCount(isOpenAccess));
+      unsubGenomicFilters = genomicFilters.subscribe(() => loadPatientCount(useAuth()));
     }
   }
 
