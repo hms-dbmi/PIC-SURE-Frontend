@@ -64,7 +64,12 @@
     <div class="cursor-grab active:cursor-grabbing m-0 flex items-center" {@attach handleRef}>
       <i class="fa-solid fa-grip-vertical text-surface-500"></i>
     </div>
-    <div class="text-sm font-medium">{filter.variableName}</div>
+    <div class="flex flex-col">
+      <div class="text-sm font-medium">{filter.variableName}</div>
+      {#if filter.searchResult?.studyAcronym}
+        <div class="text-xs text-surface-500">Study: {filter.searchResult.studyAcronym}</div>
+      {/if}
+    </div>
     <div class="ml-auto">
       <button
         type="button"

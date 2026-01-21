@@ -51,9 +51,9 @@
     onclose();
   }
 
-  function confirm(data?: any) {
+  function confirm() {
     modalOpen = false;
-    onconfirm && onconfirm(data);
+    onconfirm && onconfirm();
   }
 </script>
 
@@ -86,7 +86,7 @@
           data-testid="modal-wrapper-header"
           class="text-2xl font-bold block {title ? '' : 'text-right'}"
         >
-          {#if title}{title}{/if}
+          {#if title}<h2 class="inline text-black dark:text-white">{title}</h2>{/if}
           {#if closeable}<button
               data-testid="modal-close-button"
               class="hover:text-secondary-500"
