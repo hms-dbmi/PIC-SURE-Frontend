@@ -32,7 +32,7 @@
     onOperatorChange = (g, op) => { g.setOperator(op); }
   }: Props = $props(); 
 
-  let operator = $state((group as FilterGroupInterface).operator as OperatorType || Operator.AND);
+  const operatorValue = $derived((group as FilterGroupInterface).operator as OperatorType || Operator.AND);
   let not = $state(false);
   const isDraggable = $derived(id !== 'root');
   
@@ -64,9 +64,8 @@
   });
 
   function handleOperatorChange(e: any) {
-    operator = e.value as OperatorType;
-    // Notify parent instead of updating store directly
-    onOperatorChange(group, operator);
+    const newOperator = e.value as OperatorType;
+    onOperatorChange(group, newOperator);
   }
 
   function handleNotChange(e: any) {
@@ -107,10 +106,12 @@
     </div>
     <div class="flex items-center justify-start gap-2">
       <div>Between {id === 'root' ? "groups" : "items"}:</div>
-      <Segment background="bg-white border-surface-400 border" indicatorBg="bg-primary-500" name="operator" value={operator} onValueChange={handleOperatorChange}>
+{#key operatorValue}
+      <Segment background="bg-white border-surface-400 border" indicatorBg="bg-primary-500" name="operator" value={operatorValue} onValueChange={handleOperatorChange}>
         <Segment.Item value={Operator.AND}>{Operator.AND}</Segment.Item>
         <Segment.Item value={Operator.OR}>{Operator.OR}</Segment.Item>
       </Segment>
+      {/key}
     </div>
     <div class="flex items-center gap-2 ml-auto">
       <label for="not">Not:</label>
