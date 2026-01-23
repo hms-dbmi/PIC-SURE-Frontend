@@ -3,6 +3,7 @@
   import type { FilterGroupInterface, FilterInterface } from '$lib/models/Filter.svelte';
   import AdvancedItem from './AdvancedItem.svelte';
   import AdvancedGroup from './AdvancedGroup.svelte';
+  import EmptyDropZone from './EmptyDropZone.svelte';
   import { Operator, type OperatorType } from '$lib/models/query/Query';
   import { Segment } from '@skeletonlabs/skeleton-svelte';
   import { CollisionPriority } from '@dnd-kit/abstract';
@@ -53,14 +54,16 @@
   );
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
-  const { ref, handleRef, isDragging } = useSortable({
+  // Note: Groups intentionally have NO 'group' property so they can accept drops from ANY group
+  // This matches dnd-kit's column example pattern - columns are top-level sortables that accept items
+  const { ref, handleRef, isDragging, } = useSortable({
     id: id,
     index: () => index,
-    group: parentId,
+    // group: parentId, // REMOVED - allows cross-group drops onto this group
     type: 'group',
     accept: ['item', 'group'],
     collisionPriority: CollisionPriority.Lowest,
-    data: group,
+    data: { ...group, targetGroupId: id }, // Add targetGroupId for drop handling
   });
 
   function handleOperatorChange(e: any) {
@@ -121,33 +124,32 @@
     </div>
   </div>
 
-    <div class="flex flex-col gap-2 min-h-[50px]">
+    <div class="flex flex-col gap-2 min-h-[50px] w-full">
       {#each group.children as child, i (child.uuid)}
-      {#if child.filterType === 'FilterGroup'}
-        <AdvancedGroup
-            group={child as FilterGroupInterface}
+        {#if child.filterType === 'FilterGroup'}
+          <AdvancedGroup
+              group={child as FilterGroupInterface}
+              index={i}
+              parentId={id}
+              {onRemove}
+              {onRemoveChild}
+              isOverlay={isOverlay}
+              {activeId}
+              {onOperatorChange}
+          />
+        {:else}
+          <AdvancedItem
+            filter={child as FilterInterface}
             index={i}
             parentId={id}
-            {onRemove}
-            {onRemoveChild}
             isOverlay={isOverlay}
             {activeId}
-            {onOperatorChange}
-        />
-      {:else}
-        <AdvancedItem
-          filter={child as FilterInterface}
-          index={i}
-          parentId={id}
-          isOverlay={isOverlay}
-          {activeId}
-          onRemove={onRemoveChild}
-        />
-      {/if}
+            onRemove={onRemoveChild}
+          />
+        {/if}
       {/each}
-
       {#if group.children.length === 0}
-        <div class="card bg-surface-50 border-surface-400 border  text-center text-surface-400 italic py-4">Drop items here</div>
+        <EmptyDropZone groupId={id} />
       {/if}
     </div>
   </div>
