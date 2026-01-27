@@ -71,6 +71,7 @@
   );
 
   let prevConcepts: string[] = $state([]);
+  let prevExports: string[] = $state([]);
 
   onMount(async () => {
     // Auto select csv export when pfb feature is disabled.
@@ -79,6 +80,8 @@
     if (!features.explorer.enablePfbExport) {
       setActiveType('DATAFRAME');
     }
+    // Initialize tracked exports from current exports store
+    prevExports = $exports.map((e) => e.conceptPath).filter(Boolean);
   });
 
   function updateConcepts() {
@@ -97,6 +100,23 @@
     });
   }
 
+  function updateExports() {
+    const currentExports = $exports.map((e) => e.conceptPath).filter(Boolean);
+    const exportsToRemove = prevExports.filter(
+      (exportPath: string) => !currentExports.includes(exportPath),
+    );
+    exportsToRemove.forEach((exportPath: string) => {
+      const fieldIndex = getQueryRequest().query.fields.indexOf(exportPath);
+      if (fieldIndex > -1) {
+        getQueryRequest().query.fields.splice(fieldIndex, 1);
+      }
+    });
+    prevExports = currentExports;
+    currentExports.forEach((exportPath: string) => {
+      getQueryRequest().query.addField(exportPath);
+    });
+  }
+
   async function onNextHandler(_step: number, stepName: string): Promise<void> {
     const shouldUpdateConcepts =
       features.explorer.showTreeStep &&
@@ -108,6 +128,9 @@
 
     if (shouldUpdateConcepts) {
       updateConcepts();
+    }
+    if (stepName === 'save-dataset') {
+      updateExports();
     }
     if (stepName === 'start') {
       if (features.explorer.enableRedcapExport) {
