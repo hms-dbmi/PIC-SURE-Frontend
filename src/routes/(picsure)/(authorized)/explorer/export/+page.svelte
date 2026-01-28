@@ -1,17 +1,27 @@
 <script lang="ts">
   import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
   import { allFilters } from '$lib/stores/Filter';
-  import ExportStore from '$lib/stores/Export';
+  import { exports } from '$lib/stores/Export';
   import { stepperState } from '$lib/stores/Stepper';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import Content from '$lib/components/Content.svelte';
-  import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
+  import { getQueryRequestV3, getFilterConcepts } from '$lib/utilities/QueryBuilder';
   import type { ExportInterface } from '$lib/models/Export';
   import { features } from '$lib/configuration';
-  let { exports } = ExportStore;
+  import type { QueryV3 } from '$lib/models/query/Query';
+  import { resources } from '$lib/stores/Resources';
 
-  let queryRequest: QueryRequestInterface = getQueryRequestV3(true);
+  let queryRequest = getQueryRequestV3(true, $resources.hpdsAuth, 'COUNT', (query: QueryV3) => {
+    // populate selected export columns from filters and exports
+    query.select = [
+      ...new Set([
+        ...query.select,
+        ...getFilterConcepts(query),
+        ...$exports.map(({ conceptPath }) => conceptPath),
+      ]),
+    ];
+    return query;
+  });
   let exportRows: ExportRowInterface[] = $exports.map((exp) => {
     return {
       ref: exp,

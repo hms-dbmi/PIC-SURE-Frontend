@@ -5,7 +5,7 @@
   import RemoteTree from '$lib/components/tree/RemoteTree.svelte';
   import Summary from '$lib/components/explorer/export/Summary.svelte';
   import type { SearchResult } from '$lib/models/Search';
-  import { selectedConcepts } from '$lib/stores/TreeStepConcepts';
+  import { selectedConcepts, disabledConcepts } from '$lib/stores/TreeStepConcepts';
   import { get } from 'svelte/store';
   // Calculate largestDepth synchronously before template renders
   let largestDepth: number =
@@ -62,6 +62,7 @@
           onselect={selectNode}
           onunselect={unselectNode}
           previousSelectedConcepts={get(selectedConcepts)}
+          disabledConcepts={get(disabledConcepts)}
         />
       {/await}
     </div>

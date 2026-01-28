@@ -30,7 +30,7 @@ import { addConsents } from '$lib/stores/Dictionary';
 import { getQueryResources, resources } from '$lib/stores/Resources';
 import { getQueryRequestV3, getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
-import type { QueryRequestInterface } from '$lib/models/api/Request';
+import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rejectIfQueryError(result: any) {
@@ -140,7 +140,7 @@ async function getOpenPatientCount({
   const concepts = await loadAllConcepts();
   const mapper = queryMappers.addCrossCountFields(concepts);
   const resource = get(resources).hpdsOpenV3;
-  const request: QueryRequestInterface = addFilters
+  const request: QueryRequestInterfaceV3 = addFilters
     ? getQueryRequestV3(!isOpenAccess, resource, 'CROSS_COUNT', mapper)
     : getBlankQueryRequestV3(isOpenAccess, resource, 'CROSS_COUNT', mapper);
   return api

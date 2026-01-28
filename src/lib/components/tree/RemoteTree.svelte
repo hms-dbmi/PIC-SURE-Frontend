@@ -11,6 +11,7 @@
     onunselect = () => {},
     fullWidth = false,
     previousSelectedConcepts,
+    disabledConcepts = [],
   }: {
     initialNodes: SearchResult[];
     fetchChildren: (conceptPath: string) => Promise<SearchResult[]>;
@@ -18,6 +19,7 @@
     onunselect?: (value: string) => void;
     fullWidth: boolean;
     previousSelectedConcepts: string[];
+    disabledConcepts: string[];
   } = $props();
 
   class RemoteTreeNodeClass implements TreeNodeInterface {
@@ -103,6 +105,7 @@
     }
 
     async toggleSelected(): Promise<void> {
+      if (this.disabled) return;
       if (this.allSelected) {
         await this.unselect();
       } else {
@@ -172,11 +175,33 @@
     }
   }
 
+  function updateDisabledNodes(node: RemoteTreeNodeClass, disabledConcepts: string[]): void {
+    if (node.isLeaf) {
+      node.disabled = disabledConcepts.includes(node.conceptPath);
+    } else {
+      // Only process children if they exist (have been loaded)
+      if (node.children && node.children.length > 0) {
+        node.children.forEach((child) => updateDisabledNodes(child, disabledConcepts));
+
+        // Update parent selection state - check if all children are selected
+        node.disabled = node.children.every((child) => child.disabled);
+      } else {
+        // No children loaded yet, check if this node itself is selected
+        node.disabled = disabledConcepts.includes(node.conceptPath);
+      }
+    }
+  }
+
   onMount(() => {
     // Initialize tree with pre-selected concepts (only once during mount)
     if (treeNodes && previousSelectedConcepts && previousSelectedConcepts.length > 0) {
       treeNodes.forEach((node) => {
         updateNodeSelection(node, previousSelectedConcepts);
+      });
+    }
+    if (treeNodes && disabledConcepts && disabledConcepts.length > 0) {
+      treeNodes.forEach((node) => {
+        updateDisabledNodes(node, disabledConcepts);
       });
     }
   });

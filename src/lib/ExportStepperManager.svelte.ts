@@ -1,8 +1,8 @@
 import type { ExpectedResultType } from '$lib/models/query/Query.ts';
-import type { QueryRequestInterface } from './models/api/Request';
+import type { QueryRequestInterfaceV3 } from './models/api/Request';
 import { QueryV3 } from './models/query/Query';
 
-let queryRequest: QueryRequestInterface = $state({
+let queryRequest: QueryRequestInterfaceV3 = $state({
   resourceUUID: '',
   query: new QueryV3(),
 });
@@ -49,7 +49,7 @@ export function getQueryRequest() {
   return queryRequest;
 }
 
-export function setQueryRequest(q: QueryRequestInterface) {
+export function setQueryRequest(q: QueryRequestInterfaceV3) {
   queryRequest = q;
 }
 

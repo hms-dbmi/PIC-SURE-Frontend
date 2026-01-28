@@ -18,10 +18,10 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import Datatable from '$lib/components/datatable/StaticTable.svelte';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
+  import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 
   export interface PrepareProps {
-    query: QueryRequestInterface;
+    query: QueryRequestInterfaceV3;
     rows: ExportRowInterface[];
     preparePromise: Promise<void>;
     dataLimitExceeded: boolean;
@@ -97,7 +97,7 @@
     }
 
     // Get sample ID counts via cross counts query
-    const crossCountQuery = new QueryV3(structuredClone($state.snapshot(query).query as QueryV3));
+    const crossCountQuery = new QueryV3(structuredClone($state.snapshot(query).query));
     crossCountQuery.expectedResultType = 'CROSS_COUNT';
     const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
     crossCountQuery.select = crossCountFields;

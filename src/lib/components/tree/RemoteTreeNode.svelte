@@ -27,7 +27,7 @@
       class="m-1 ml-2"
       onclick={async () => await node.toggleOpen()}
       tabindex={node.isLeaf ? -1 : 0}
-      disabled={node.loading}
+      disabled={node.disabled || node.loading}
     >
       {#if !node.isLeaf}
         {#if node.loading}
@@ -47,6 +47,7 @@
       name={node.name}
       value={node.value}
       checked={node.allSelected}
+      disabled={node.disabled}
       indeterminate={node.indeterminant}
       onclick={async () => await node.toggleSelected()}
     />
