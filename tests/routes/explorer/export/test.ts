@@ -7,6 +7,7 @@ import {
   detailResponseCatSameDataset,
   searchResults as mockData,
   searchResultPath,
+  searchResultPathForSampleIds,
   facetResultPath,
   facetsResponse,
   geneValues,
@@ -233,5 +234,129 @@ test.describe('Export Page', () => {
     await expect(doneButton).toBeVisible();
     await doneButton.click();
     await expect(page).toHaveURL('/explorer');
+  });
+
+  test('Sample IDs checkbox adds genomic concepts to exports and query', async ({ page }) => {
+    // Mock data for genomic concepts
+    const genomicConceptsResponse = {
+      totalPages: 1,
+      totalElements: 2,
+      pageable: {
+        pageNumber: 0,
+        pageSize: 10000,
+        sort: { unsorted: true, sorted: false, empty: true },
+        offset: 0,
+        unpaged: false,
+        paged: true,
+      },
+      numberOfElements: 2,
+      first: true,
+      last: true,
+      size: 10000,
+      content: [
+        {
+          conceptPath: '\\GENOMIC\\SAMPLE_ID\\Study1\\',
+          name: 'SAMPLE_ID_Study1',
+          display: 'Sample ID - Study 1',
+          dataset: 'genomic_data',
+          allowFiltering: true,
+          studyAcronym: 'GS1',
+          description: 'Genomic sample identifier for Study 1',
+          values: [],
+          children: null,
+          meta: null,
+          type: 'Categorical',
+        },
+        {
+          conceptPath: '\\GENOMIC\\SAMPLE_ID\\Study2\\',
+          name: 'SAMPLE_ID_Study2',
+          display: 'Sample ID - Study 2',
+          dataset: 'genomic_data',
+          allowFiltering: true,
+          studyAcronym: 'GS2',
+          description: 'Genomic sample identifier for Study 2',
+          values: [],
+          children: null,
+          meta: null,
+          type: 'Categorical',
+        },
+      ],
+    };
+
+    // Cross-count response showing both concepts have data
+    const crossCountResponse: Record<string, number> = {
+      '\\GENOMIC\\SAMPLE_ID\\Study1\\': 100,
+      '\\GENOMIC\\SAMPLE_ID\\Study2\\': 150,
+    };
+
+    // First set up the page
+    await setupExportPageAndAddFilterAndExport(page);
+    await expect(page).toHaveURL('/explorer/export');
+
+    // Now set up mocks for the sample IDs checkbox AFTER the page is loaded
+    // Unroute the existing count route and set up our own
+    await page.unroute(countResultPath);
+    await page.route(countResultPath, async (route) => {
+      const request = route.request();
+      const postData = request.postDataJSON();
+      if (postData?.query?.expectedResultType === 'CROSS_COUNT') {
+        await route.fulfill({ json: crossCountResponse });
+      } else {
+        await route.fulfill({ body: '9999' });
+      }
+    });
+
+    // Mock the genomic concepts search (page_size=10000 is used for sample IDs)
+    await page.route(searchResultPathForSampleIds, async (route) => {
+      await route.fulfill({ json: genomicConceptsResponse });
+    });
+
+    // Find and click the sample IDs checkbox
+    const sampleIdsCheckbox = page.getByTestId('sample-ids-checkbox');
+    await expect(sampleIdsCheckbox).toBeVisible();
+    await expect(sampleIdsCheckbox).not.toBeChecked();
+    await sampleIdsCheckbox.click();
+
+    // Wait for the loading to complete and verify checkbox is checked
+    await expect(sampleIdsCheckbox).toBeChecked({ timeout: 10000 });
+
+    // Verify the sample ID rows appear in the table
+    const tableBody = page.locator('tbody');
+    await expect(tableBody).toBeVisible();
+    await expect(tableBody.getByText('Genomic sample identifier for Study 1')).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(tableBody.getByText('Genomic sample identifier for Study 2')).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Now navigate to save-dataset step and capture the query
+    const nextButton = page.getByTestId('next-btn');
+
+    // Step through to save-dataset, capturing the query sent
+    await nextButton.click(); // Review -> Tree Step
+    await nextButton.click(); // Tree Step -> Select Type
+
+    // Select CSV export type
+    const csvExportOption = page.getByTestId('csv-export-option');
+    await csvExportOption.click();
+
+    // Intercept the query request to verify sample IDs are included
+    let capturedQuery: { query: { fields: string[] } } | null = null;
+    await page.route('*/**/picsure/query', async (route) => {
+      const request = route.request();
+      capturedQuery = request.postDataJSON();
+      await route.fulfill({ json: newDatasetResponse });
+    });
+
+    await nextButton.click(); // Select Type -> Save Dataset (this triggers submitQuery)
+
+    // Wait for the dataset ID to appear (indicating query was submitted)
+    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+
+    // Verify the captured query contains the sample ID fields
+    expect(capturedQuery).not.toBeNull();
+    expect(capturedQuery!.query.fields).toContain('\\GENOMIC\\SAMPLE_ID\\Study1\\');
+    expect(capturedQuery!.query.fields).toContain('\\GENOMIC\\SAMPLE_ID\\Study2\\');
   });
 });
