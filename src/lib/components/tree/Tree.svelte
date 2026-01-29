@@ -20,12 +20,12 @@
     open: boolean = $state(false);
     selected: boolean = $state(false);
     disabled: boolean = $state(false);
-    children: TreeNode[] = $state([]);
+    children: TreeNodeInterface[] = $state([]);
 
     constructor(
       name: string,
       value: string,
-      children: TreeNode[] = [],
+      children: TreeNodeInterface[] = [],
       open: boolean = false,
       selected: boolean = false,
     ) {
@@ -43,6 +43,11 @@
       return this.children.some((child: TreeNode) => child.someSelected);
     });
 
+    someSelectedNotDisabled: boolean = $derived.by(() => {
+      if (this.isLeaf || this.children.length === 0) return !this.disabled && this.selected;
+      return this.children.some((child: TreeNode) => child.someSelectedNotDisabled);
+    });
+
     allSelected: boolean = $derived.by(() => {
       if (this.isLeaf) return this.selected;
       return this.children.every((child: TreeNode) => child.allSelected);
@@ -55,10 +60,12 @@
 
     indeterminant: boolean = $derived.by(() => {
       if (this.isLeaf) return false;
-      return this.someSelected && !this.allSelected;
+      return this.someSelectedNotDisabled && !this.allSelected;
     });
 
     select(): void {
+      if (this.disabled) return;
+
       if (!this.isLeaf) {
         this.children.forEach((child) => child.select());
         this.open = true;
@@ -69,6 +76,8 @@
     }
 
     unselect(): void {
+      if (this.disabled) return;
+
       if (!this.isLeaf) {
         this.children.forEach((child) => child.unselect());
       } else {

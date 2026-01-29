@@ -55,9 +55,13 @@
       );
     });
 
+    someSelectedNotDisabled: boolean = $derived.by(() => {
+      if (this.isLeaf || this.children.length === 0) return !this.disabled && this.selected;
+      return this.children.some((child: RemoteTreeNodeClass) => child.someSelectedNotDisabled);
+    });
+
     allSelected: boolean = $derived.by(() => {
-      if (this.isLeaf) return this.selected;
-      if (this.children.length === 0) return this.selected;
+      if (this.isLeaf || this.children.length === 0) return this.selected;
       return this.children.every((child: RemoteTreeNodeClass) => child.allSelected);
     });
 
@@ -67,12 +71,13 @@
     });
 
     indeterminant: boolean = $derived.by(() => {
-      if (this.isLeaf) return false;
-      if (this.children.length === 0) return false;
-      return this.someSelected && !this.allSelected;
+      if (this.isLeaf || this.children.length === 0) return false;
+      return this.someSelectedNotDisabled && !this.allSelected;
     });
 
     async select(): Promise<void> {
+      if (this.disabled) return;
+
       if (!this.isLeaf) {
         // Load children first if they haven't been loaded
         if (!this.childrenLoaded) {
@@ -92,12 +97,20 @@
     }
 
     async unselect(): Promise<void> {
+      if (this.disabled) return;
+
       if (!this.isLeaf) {
         // Load children first if they haven't been loaded to ensure we can unselect them
         if (!this.childrenLoaded) {
           await this.loadChildren();
         }
-        await Promise.all(this.children.map((child) => child.unselect()));
+        // Now unselect all children
+        if (this.children.length > 0) {
+          await Promise.all(this.children.map((child) => child.unselect()));
+        } else {
+          this.selected = false;
+          onunselect(this.conceptPath);
+        }
       } else {
         this.selected = false;
         onunselect(this.conceptPath);
@@ -105,7 +118,6 @@
     }
 
     async toggleSelected(): Promise<void> {
-      if (this.disabled) return;
       if (this.allSelected) {
         await this.unselect();
       } else {
@@ -127,7 +139,7 @@
     }
 
     private async loadChildren(): Promise<void> {
-      if (this.loading || this.childrenLoaded || this.isLeaf) return;
+      if (this.loading || this.childrenLoaded || this.isLeaf || this.disabled) return;
 
       this.loading = true;
       this.error = null;
@@ -147,7 +159,11 @@
   }
 
   let treeNodes: RemoteTreeNodeClass[] = $state(
-    initialNodes?.map((node) => new RemoteTreeNodeClass(node)) ?? undefined,
+    initialNodes?.map((node) => {
+      const treeNode = new RemoteTreeNodeClass(node);
+      if (treeNode.children?.length > 0) treeNode.childrenLoaded = true;
+      return treeNode;
+    }) ?? undefined,
   );
 
   function updateNodeSelection(node: RemoteTreeNodeClass, selectedConcepts: string[]): void {
@@ -176,34 +192,22 @@
   }
 
   function updateDisabledNodes(node: RemoteTreeNodeClass, disabledConcepts: string[]): void {
-    if (node.isLeaf) {
-      node.disabled = disabledConcepts.includes(node.conceptPath);
-    } else {
-      // Only process children if they exist (have been loaded)
-      if (node.children && node.children.length > 0) {
-        node.children.forEach((child) => updateDisabledNodes(child, disabledConcepts));
-
-        // Update parent selection state - check if all children are selected
-        node.disabled = node.children.every((child) => child.disabled);
-      } else {
-        // No children loaded yet, check if this node itself is selected
-        node.disabled = disabledConcepts.includes(node.conceptPath);
-      }
+    if (disabledConcepts.includes(node.conceptPath)) node.disabled = true;
+    if (!node.isLeaf && node.children && node.children.length > 0) {
+      node.children.forEach((child) => updateDisabledNodes(child, disabledConcepts));
     }
   }
 
   onMount(() => {
     // Initialize tree with pre-selected concepts (only once during mount)
-    if (treeNodes && previousSelectedConcepts && previousSelectedConcepts.length > 0) {
-      treeNodes.forEach((node) => {
+    treeNodes.forEach((node) => {
+      if (previousSelectedConcepts && previousSelectedConcepts.length > 0) {
         updateNodeSelection(node, previousSelectedConcepts);
-      });
-    }
-    if (treeNodes && disabledConcepts && disabledConcepts.length > 0) {
-      treeNodes.forEach((node) => {
+      }
+      if (disabledConcepts && disabledConcepts.length > 0) {
         updateDisabledNodes(node, disabledConcepts);
-      });
-    }
+      }
+    });
   });
 </script>
 
