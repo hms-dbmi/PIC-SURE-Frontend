@@ -12,7 +12,6 @@
   import { filters, hasGenomicFilter, clearFilters, genomicFilters } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
-  import { useAuth } from '$lib/AccessState';
 
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
@@ -22,7 +21,7 @@
 
   let unsubFilters: Unsubscriber | null = null;
   let unsubGenomicFilters: Unsubscriber | null = null;
-  let currentPage: string = page.url.pathname;
+  let currentPage: string = $state(page.url.pathname);
   let isDiscoverPage = $derived(currentPage.includes('/discover'));
   let modalOpen: boolean = $state(false);
 
@@ -72,10 +71,10 @@
 
   function subscribe() {
     if (!unsubFilters) {
-      unsubFilters = filters.subscribe(() => loadPatientCount(useAuth()));
+      unsubFilters = filters.subscribe(() => loadPatientCount(!isDiscoverPage));
     }
     if (!unsubGenomicFilters) {
-      unsubGenomicFilters = genomicFilters.subscribe(() => loadPatientCount(useAuth()));
+      unsubGenomicFilters = genomicFilters.subscribe(() => loadPatientCount(!isDiscoverPage));
     }
   }
 

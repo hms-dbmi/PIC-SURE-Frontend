@@ -13,14 +13,14 @@
   import Loading from '$lib/components/Loading.svelte';
   import { Picsure } from '$lib/paths';
   import { resources } from '$lib/stores/Resources';
-  import { useAuth } from '$lib/AccessState';
+  import { isOpenAccess } from '$lib/AccessState';
 
   let plotValues: PlotValues[] = $state([]);
   let newPlot: PlotlyNewPlot = $state() as PlotlyNewPlot;
   let loading = $state(true);
 
   async function loadPlotData() {
-    const query = getQueryRequest(useAuth(), $resources.visualization);
+    const query = getQueryRequest(!isOpenAccess(), $resources.visualization);
     const token = localStorage.getItem('token');
 
     await api
@@ -28,7 +28,7 @@
         query: query.query,
         resourceUUID: $resources.visualization,
         resourceCredentials: token ? { Authorization: 'Bearer ' + token } : {},
-      })
+      }, !isOpenAccess())
       .then((resp) => {
         plotValues = [
           ...(resp?.categoricalData || []).map(createCategoryPlot),
