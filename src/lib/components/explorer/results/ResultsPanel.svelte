@@ -21,7 +21,6 @@
   } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
-  import { useAuth } from '$lib/AccessState';
 
   import Filters from '$lib/components/explorer/results/Filters.svelte';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
@@ -32,7 +31,7 @@
 
   let unsubFilters: Unsubscriber | null = null;
   let unsubGenomicFilters: Unsubscriber | null = null;
-  let currentPage: string = page.url.pathname;
+  let currentPage: string = $state(page.url.pathname);
   let isDiscoverPage = $derived(currentPage.includes('/discover'));
   let modalOpen: boolean = $state(false);
   let enableAdvancedFilteringModalOpen: boolean = $state(false);
@@ -84,10 +83,10 @@
 
   function subscribe() {
     if (!unsubFilters) {
-      unsubFilters = filters.subscribe(() => loadPatientCount(useAuth()));
+      unsubFilters = filters.subscribe(() => loadPatientCount(!isDiscoverPage));
     }
     if (!unsubGenomicFilters) {
-      unsubGenomicFilters = genomicFilters.subscribe(() => loadPatientCount(useAuth()));
+      unsubGenomicFilters = genomicFilters.subscribe(() => loadPatientCount(!isDiscoverPage));
     }
   }
 
@@ -132,7 +131,7 @@
         disableAdvancedFilteringModalOpen = true;
       } else {
         advancedFilteringEnabled.set(false);
-        loadPatientCount(useAuth());
+        loadPatientCount(!isDiscoverPage);
       }
     }
   }
@@ -140,14 +139,14 @@
   function proceedEnableAdvancedFiltering() {
     advancedFilteringEnabled.set(true);
     enableAdvancedFilteringModalOpen = false;
-    loadPatientCount(useAuth());
+    loadPatientCount(!isDiscoverPage);
   }
 
   function proceedDisableAdvancedFiltering() {
     disableAdvancedFiltering();
     advancedFilteringEnabled.set(false);
     disableAdvancedFilteringModalOpen = false;
-    loadPatientCount(useAuth());
+    loadPatientCount(!isDiscoverPage);
   }
 
   function cancelDisableAdvancedFiltering() {
