@@ -55,11 +55,6 @@
       );
     });
 
-    someSelectedNotDisabled: boolean = $derived.by(() => {
-      if (this.isLeaf || this.children.length === 0) return !this.disabled && this.selected;
-      return this.children.some((child: RemoteTreeNodeClass) => child.someSelectedNotDisabled);
-    });
-
     allSelected: boolean = $derived.by(() => {
       if (this.isLeaf || this.children.length === 0) return this.selected;
       return this.children.every((child: RemoteTreeNodeClass) => child.allSelected);
@@ -72,7 +67,7 @@
 
     indeterminant: boolean = $derived.by(() => {
       if (this.isLeaf || this.children.length === 0) return false;
-      return this.someSelectedNotDisabled && !this.allSelected;
+      return this.someSelected && !this.allSelected;
     });
 
     async select(): Promise<void> {

@@ -43,11 +43,6 @@
       return this.children.some((child: TreeNode) => child.someSelected);
     });
 
-    someSelectedNotDisabled: boolean = $derived.by(() => {
-      if (this.isLeaf || this.children.length === 0) return !this.disabled && this.selected;
-      return this.children.some((child: TreeNode) => child.someSelectedNotDisabled);
-    });
-
     allSelected: boolean = $derived.by(() => {
       if (this.isLeaf) return this.selected;
       return this.children.every((child: TreeNode) => child.allSelected);
@@ -60,7 +55,7 @@
 
     indeterminant: boolean = $derived.by(() => {
       if (this.isLeaf) return false;
-      return this.someSelectedNotDisabled && !this.allSelected;
+      return this.someSelected && !this.allSelected;
     });
 
     select(): void {

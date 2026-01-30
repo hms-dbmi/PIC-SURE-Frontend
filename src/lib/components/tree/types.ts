@@ -10,7 +10,6 @@ export interface TreeNodeInterface {
   allSelected: boolean;
   noneSelected: boolean;
   indeterminant: boolean;
-  someSelectedNotDisabled: boolean;
   select: () => void | Promise<void>;
   unselect: () => void | Promise<void>;
   toggleSelected: () => void | Promise<void>;
