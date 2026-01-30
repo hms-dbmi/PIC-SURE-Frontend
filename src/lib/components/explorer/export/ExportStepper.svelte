@@ -79,12 +79,13 @@
     // Auto select csv export when pfb feature is disabled.
     setQueryRequest(queryRequest);
 
-    // prepopulate selected fields
+    // prepopulate selected fields, add exports
     clearSelectedConcepts();
     queryRequest.query.select.forEach((concept) => {
       addConcept(concept);
       toggleDisableConcept(concept);
     });
+    $exports.forEach(({ conceptPath }) => addConcept(conceptPath));
 
     $federatedQueryMap = {};
     if (!features.explorer.enablePfbExport) {

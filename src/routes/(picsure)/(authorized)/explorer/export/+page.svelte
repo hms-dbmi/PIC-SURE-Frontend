@@ -12,14 +12,8 @@
   import { resources } from '$lib/stores/Resources';
 
   let queryRequest = getQueryRequestV3(true, $resources.hpdsAuth, 'COUNT', (query: QueryV3) => {
-    // populate selected export columns from filters and exports
-    query.select = [
-      ...new Set([
-        ...query.select,
-        ...getFilterConcepts(query),
-        ...$exports.map(({ conceptPath }) => conceptPath),
-      ]),
-    ];
+    // populate selected export columns from filters
+    query.select = [...new Set([...query.select, ...getFilterConcepts(query)])];
     return query;
   });
   let exportRows: ExportRowInterface[] = $exports.map((exp) => {
