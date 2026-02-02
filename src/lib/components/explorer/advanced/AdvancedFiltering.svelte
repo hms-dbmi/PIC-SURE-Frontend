@@ -59,238 +59,234 @@
     if (node) activeNode = node as FilterInterface;
   }
 
-  function handleDragEnd(event: any) {
-    // Use lastValidProjectedOrder if projectedOrder is null (it might have been cleared)
-    let finalProjectedOrder = projectedOrder || lastValidProjectedOrder;
-    
-    // Also try to get order from the event if available
-    const operation = event?.operation;
-    const source = operation?.source;
-    const over = operation?.over;
-    const target = operation?.target;
-    
-    // Handle drops on EmptyDropZone - the target id will be "empty-{groupId}"
-    const targetId = target?.id ? String(target.id) : null;
-    if (targetId && targetId.startsWith('empty-') && activeNode) {
-      const targetGroupId = targetId.replace('empty-', '');
-      const targetGroup = getGroupNodeByContainerId(targetGroupId);
-      
-      if (targetGroup) {
-        const activeUuid = (activeNode as FilterInterface).uuid;
-        const oldParent = activeNode.parent as FilterGroupInterface | null;
-        
-        // Update parent reference first
-        activeNode.parent = targetGroup;
-        
-        // Remove from old parent using immutable pattern
-        if (oldParent) {
-          oldParent.children = oldParent.children.filter(
-            child => (child as FilterInterface).uuid !== activeUuid
-          );
-        }
-        
-        // Add to new group
-        targetGroup.children = [...targetGroup.children, activeNode as FilterInterface];
-        
-        // Clear state and return early
-        activeNode = null;
-        activeId = null;
-        operatorPreview = null;
-        projectedOrder = null;
-        lastValidProjectedOrder = null;
-        return;
-      }
-    }
-    
-    // Handle cross-group drops when over is null but target exists (group isolation workaround)
-    // This happens when dragging from one group to another - dnd-kit doesn't populate 'over' for cross-group
-    if (!finalProjectedOrder && targetId && activeNode) {
-      // Find the target node and its parent group
-      const targetNode = localTree.find((n) => (n as FilterInterface).uuid === targetId);
-      if (targetNode) {
-        const targetFilter = targetNode as FilterInterface;
-        const isTargetAGroup = targetFilter.filterType === 'FilterGroup';
-        const activeParent = activeNode.parent as FilterGroupInterface | null;
-        
-        // If target is a group, we want to drop INTO it (at the end)
-        // If target is an item, we want to drop AFTER it in the same container
-        let destinationGroup: FilterGroupInterface | null;
-        let insertIndex: number;
-        
-        if (isTargetAGroup) {
-          // Drop INTO the target group
-          destinationGroup = targetNode as FilterGroupInterface;
-          insertIndex = destinationGroup.children.length;
-        } else {
-          // Drop AFTER the target item in its parent
-          destinationGroup = targetNode.parent as FilterGroupInterface | null;
-          if (destinationGroup) {
-            const targetIndex = destinationGroup.children.findIndex(
-              child => (child as FilterInterface).uuid === targetId
-            );
-            insertIndex = targetIndex !== -1 ? targetIndex + 1 : destinationGroup.children.length;
-          } else {
-            insertIndex = 0;
-          }
-        }
-        
-        // Process cross-group moves OR same-group reordering (when target !== source)
-        if (destinationGroup && activeParent) {
-          const activeUuid = (activeNode as FilterInterface).uuid;
-          const isCrossGroup = destinationGroup !== activeParent;
-          const isSameGroupReorder = !isCrossGroup && targetId !== activeUuid;
-          
-          if (isCrossGroup) {
-            // Cross-group move: remove from old, add to new
-            activeNode.parent = destinationGroup;
-            
-            activeParent.children = activeParent.children.filter(
-              child => (child as FilterInterface).uuid !== activeUuid
-            );
-            
-            destinationGroup.children = [
-              ...destinationGroup.children.slice(0, insertIndex),
-              activeNode as FilterInterface,
-              ...destinationGroup.children.slice(insertIndex)
-            ];
-            
-            activeNode = null;
-            activeId = null;
-            operatorPreview = null;
-            projectedOrder = null;
-            lastValidProjectedOrder = null;
-            return;
-          } else if (isSameGroupReorder) {
-            // Same-group reorder: remove from current position, insert at new position
-            const currentIndex = destinationGroup.children.findIndex(
-              child => (child as FilterInterface).uuid === activeUuid
-            );
-            
-            if (currentIndex !== -1 && currentIndex !== insertIndex && currentIndex !== insertIndex - 1) {
-              // Remove from current position
-              const withoutActive = destinationGroup.children.filter(
-                child => (child as FilterInterface).uuid !== activeUuid
-              );
-              
-              // Adjust insert index if we removed from before the insert point
-              const adjustedIndex = currentIndex < insertIndex ? insertIndex - 1 : insertIndex;
-              
-              // Insert at new position
-              destinationGroup.children = [
-                ...withoutActive.slice(0, adjustedIndex),
-                activeNode as FilterInterface,
-                ...withoutActive.slice(adjustedIndex)
-              ];
-            }
-            
-            activeNode = null;
-            activeId = null;
-            operatorPreview = null;
-            projectedOrder = null;
-            lastValidProjectedOrder = null;
-            return;
-          }
-        }
-      }
-    }
-    
-    // Try to calculate order from source if projectedOrder is not available
-    // Since source/target don't have group info, use activeNode's parent
-    if (!finalProjectedOrder && activeNode && source) {
-      const activeUuid = String((activeNode as FilterInterface).uuid);
-      const sourceIndex = typeof source.index === 'function' ? source.index() : source.index;
-      const activeParentGroup = activeNode.parent ? containerIdForTreeParent(activeNode.parent) : undefined;
-      
-      if (activeParentGroup && typeof sourceIndex === 'number') {
-        const group = getGroupNodeByContainerId(activeParentGroup);
-        if (group) {
-          const currentIndex = group.children.findIndex(c => (c as FilterInterface).uuid === activeUuid);
-          
-          // If the index changed, we need to reorder
-          if (currentIndex !== sourceIndex) {
-            const currentOrder = group.children.map(c => (c as FilterInterface).uuid);
-            const withoutActive = currentOrder.filter(id => id !== activeUuid);
-            const clampedIndex = Math.max(0, Math.min(sourceIndex, withoutActive.length));
-            withoutActive.splice(clampedIndex, 0, activeUuid);
-            finalProjectedOrder = { [activeParentGroup]: withoutActive };
-          }
-        }
-      }
-    }
-    
-    // If we still don't have projectedOrder, assume the drag was cancelled
-    if (!finalProjectedOrder && activeNode) {
-      // Force reactivity update to ensure UI is in sync
-      if (activeNode.parent) {
-        const parent = activeNode.parent as FilterGroupInterface;
-        parent.children = [...parent.children];
-      }
-    }
-    
-    // Apply the reordering to the actual tree structure
-    if (finalProjectedOrder && activeNode) {
-      const activeUuid = String((activeNode as FilterInterface).uuid);
-      
-      // First, remove activeNode from its old parent if it's moving to a different container
-      const oldParent = activeNode.parent as FilterGroupInterface | null;
-      let removedFromOldParent = false;
-      
-      // Process each container that has a new order
-      for (const [containerId, orderedIds] of Object.entries(finalProjectedOrder)) {
-        const group = getGroupNodeByContainerId(containerId);
-        if (!group) continue;
-        
-        // Create a map of UUID to node for quick lookup (includes current group's children)
-        const nodeMap = new Map(
-          group.children.map(child => [(child as FilterInterface).uuid, child as TreeNode<FilterInterface>])
-        );
-        
-        // If activeNode is being moved TO this container but isn't in it yet, add to map
-        if (orderedIds.includes(activeUuid) && !nodeMap.has(activeUuid)) {
-          nodeMap.set(activeUuid, activeNode as TreeNode<FilterInterface>);
-          
-          // Remove from old parent if not already done
-          if (!removedFromOldParent && oldParent && oldParent !== group) {
-            const oldIndex = oldParent.children.findIndex(
-              child => (child as FilterInterface).uuid === activeUuid
-            );
-            if (oldIndex !== -1) {
-              oldParent.children.splice(oldIndex, 1);
-              // Trigger reactivity on old parent
-              oldParent.children = [...oldParent.children];
-            }
-            removedFromOldParent = true;
-          }
-          
-          // Update parent reference
-          activeNode.parent = group;
-        }
-        
-        // Reorder children according to projectedOrder
-        const reorderedChildren: FilterInterface[] = [];
-        for (const uuid of orderedIds) {
-          const node = nodeMap.get(uuid);
-          if (node) {
-            reorderedChildren.push(node as FilterInterface);
-          }
-        }
-        
-        // Set parent references before assignment
-        reorderedChildren.forEach(child => {
-          child.parent = group;
-        });
-        
-        // Assign new array - this triggers reactivity
-        group.children = reorderedChildren;
-      }
-    }
-    
-    // Clear preview state
+  function clearDragState() {
     activeNode = null;
     activeId = null;
     operatorPreview = null;
     projectedOrder = null;
     lastValidProjectedOrder = null;
+  }
+
+  function removeFromParent(node: FilterInterface, parent: FilterGroupInterface) {
+    parent.children = parent.children.filter(
+      (child) => (child as FilterInterface).uuid !== node.uuid
+    );
+  }
+
+  function insertAtIndex(
+    node: FilterInterface,
+    group: FilterGroupInterface,
+    index: number
+  ) {
+    node.parent = group;
+    group.children = [
+      ...group.children.slice(0, index),
+      node,
+      ...group.children.slice(index),
+    ];
+  }
+
+  function handleEmptyDropZone(targetId: string): boolean {
+    if (!targetId.startsWith('empty-') || !activeNode) return false;
+
+    const targetGroupId = targetId.replace('empty-', '');
+    const targetGroup = getGroupNodeByContainerId(targetGroupId);
+    if (!targetGroup) return false;
+
+    const oldParent = activeNode.parent as FilterGroupInterface | null;
+    if (oldParent) removeFromParent(activeNode, oldParent);
+    insertAtIndex(activeNode, targetGroup, targetGroup.children.length);
+    return true;
+  }
+
+  function findDropDestination(targetId: string): {
+    group: FilterGroupInterface;
+    index: number;
+  } | null {
+    const targetNode = localTree.find(
+      (n) => (n as FilterInterface).uuid === targetId
+    );
+    if (!targetNode) return null;
+
+    const isTargetAGroup =
+      (targetNode as FilterInterface).filterType === 'FilterGroup';
+
+    if (isTargetAGroup) {
+      const group = targetNode as FilterGroupInterface;
+      return { group, index: group.children.length };
+    }
+
+    const parentGroup = targetNode.parent as FilterGroupInterface | null;
+    if (!parentGroup) return null;
+
+    const targetIndex = parentGroup.children.findIndex(
+      (child) => (child as FilterInterface).uuid === targetId
+    );
+    return {
+      group: parentGroup,
+      index: targetIndex !== -1 ? targetIndex + 1 : parentGroup.children.length,
+    };
+  }
+
+  function handleCrossGroupOrReorder(targetId: string): boolean {
+    if (!activeNode) return false;
+
+    const destination = findDropDestination(targetId);
+    if (!destination) return false;
+
+    const { group: destinationGroup, index: insertIndex } = destination;
+    const activeParent = activeNode.parent as FilterGroupInterface | null;
+    if (!activeParent) return false;
+
+    const activeUuid = activeNode.uuid;
+    const isCrossGroup = destinationGroup !== activeParent;
+    const isSameGroupReorder = !isCrossGroup && targetId !== activeUuid;
+
+    if (isCrossGroup) {
+      removeFromParent(activeNode, activeParent);
+      insertAtIndex(activeNode, destinationGroup, insertIndex);
+      return true;
+    }
+
+    if (isSameGroupReorder) {
+      const currentIndex = destinationGroup.children.findIndex(
+        (child) => (child as FilterInterface).uuid === activeUuid
+      );
+
+      const noMovementNeeded =
+        currentIndex === -1 ||
+        currentIndex === insertIndex ||
+        currentIndex === insertIndex - 1;
+      if (noMovementNeeded) return false;
+
+      const withoutActive = destinationGroup.children.filter(
+        (child) => (child as FilterInterface).uuid !== activeUuid
+      );
+      const adjustedIndex =
+        currentIndex < insertIndex ? insertIndex - 1 : insertIndex;
+      destinationGroup.children = [
+        ...withoutActive.slice(0, adjustedIndex),
+        activeNode,
+        ...withoutActive.slice(adjustedIndex),
+      ];
+      return true;
+    }
+
+    return false;
+  }
+
+  function calculateOrderFromSource(source: any): Record<string, string[]> | null {
+    if (!activeNode || !source) return null;
+
+    const activeUuid = activeNode.uuid;
+    const sourceIndex =
+      typeof source.index === 'function' ? source.index() : source.index;
+    const activeParentGroup = activeNode.parent
+      ? containerIdForTreeParent(activeNode.parent)
+      : undefined;
+
+    if (!activeParentGroup || typeof sourceIndex !== 'number') return null;
+
+    const group = getGroupNodeByContainerId(activeParentGroup);
+    if (!group) return null;
+
+    const currentIndex = group.children.findIndex(
+      (c) => (c as FilterInterface).uuid === activeUuid
+    );
+    if (currentIndex === sourceIndex) return null;
+
+    const currentOrder = group.children.map((c) => (c as FilterInterface).uuid);
+    const withoutActive = currentOrder.filter((id) => id !== activeUuid);
+    const clampedIndex = Math.max(
+      0,
+      Math.min(sourceIndex, withoutActive.length)
+    );
+    withoutActive.splice(clampedIndex, 0, activeUuid);
+
+    return { [activeParentGroup]: withoutActive };
+  }
+
+  function applyProjectedOrder(order: Record<string, string[]>) {
+    if (!activeNode) return;
+
+    const activeUuid = activeNode.uuid;
+    const oldParent = activeNode.parent as FilterGroupInterface | null;
+    let removedFromOldParent = false;
+
+    for (const [containerId, orderedIds] of Object.entries(order)) {
+      const group = getGroupNodeByContainerId(containerId);
+      if (!group) continue;
+
+      const nodeMap = new Map(
+        group.children.map((child) => [
+          (child as FilterInterface).uuid,
+          child as TreeNode<FilterInterface>,
+        ])
+      );
+
+      const needsToMoveHere =
+        orderedIds.includes(activeUuid) && !nodeMap.has(activeUuid);
+      if (needsToMoveHere) {
+        nodeMap.set(activeUuid, activeNode as TreeNode<FilterInterface>);
+
+        if (!removedFromOldParent && oldParent && oldParent !== group) {
+          const oldIndex = oldParent.children.findIndex(
+            (child) => (child as FilterInterface).uuid === activeUuid
+          );
+          if (oldIndex !== -1) {
+            oldParent.children.splice(oldIndex, 1);
+            oldParent.children = [...oldParent.children];
+          }
+          removedFromOldParent = true;
+        }
+
+        activeNode.parent = group;
+      }
+
+      const reorderedChildren = orderedIds
+        .map((uuid) => nodeMap.get(uuid))
+        .filter((node): node is TreeNode<FilterInterface> => node !== undefined)
+        .map((node) => {
+          (node as FilterInterface).parent = group;
+          return node as FilterInterface;
+        });
+
+      group.children = reorderedChildren;
+    }
+  }
+
+  function handleDragEnd(event: any) {
+    const operation = event?.operation;
+    const source = operation?.source;
+    const target = operation?.target;
+    const targetId = target?.id ? String(target.id) : null;
+
+    if (targetId && handleEmptyDropZone(targetId)) {
+      clearDragState();
+      return;
+    }
+
+    let finalProjectedOrder = projectedOrder || lastValidProjectedOrder;
+
+    if (!finalProjectedOrder && targetId && handleCrossGroupOrReorder(targetId)) {
+      clearDragState();
+      return;
+    }
+
+    if (!finalProjectedOrder) {
+      finalProjectedOrder = calculateOrderFromSource(source);
+    }
+
+    if (!finalProjectedOrder && activeNode?.parent) {
+      const parent = activeNode.parent as FilterGroupInterface;
+      parent.children = [...parent.children];
+    }
+
+    if (finalProjectedOrder) {
+      applyProjectedOrder(finalProjectedOrder);
+    }
+
+    clearDragState();
   }
 
   function handleDragOver(event: any) {

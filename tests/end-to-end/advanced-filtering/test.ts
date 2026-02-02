@@ -236,6 +236,90 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     const badgeCount = await badges.count();
     expect(badgeCount).toBeGreaterThan(0);
   });
+
+  test('AF-DND-004: Filter reorder persists after re-opening Advanced Filtering', async ({ page }) => {
+    // Get the filter name elements (all visible filter names in order)
+    const filterNames = page.locator('.card.bg-white .text-sm.font-medium');
+    
+    // Get initial order of all visible filter names
+    const initialOrder = await filterNames.allTextContents();
+    console.log('[AF-DND-004] Initial order:', initialOrder);
+    
+    // Initial order should be: test5, test6, test3, test4, test2, test
+    expect(initialOrder).toContain('test');
+    expect(initialOrder).toContain('test2');
+    
+    // Get the card containing test2 and test
+    const test2Card = page.locator('.card.bg-white').filter({ has: page.getByText('test2', { exact: true }) }).filter({ has: page.locator('.fa-grip-vertical') });
+    const testCard = page.locator('.card.bg-white').filter({ has: page.getByText('test', { exact: true }) }).filter({ has: page.locator('.fa-grip-vertical') }).last();
+    
+    await expect(test2Card.first()).toBeVisible();
+    await expect(testCard).toBeVisible();
+    
+    // Scroll the test card into view
+    await testCard.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+    
+    // Get positions
+    const test2Box = await test2Card.first().boundingBox();
+    const testBox = await testCard.boundingBox();
+    expect(test2Box).not.toBeNull();
+    expect(testBox).not.toBeNull();
+    
+    // Perform the drag to reorder test2 below test
+    const dragHandle = test2Card.first().locator('.fa-grip-vertical').first();
+    await expect(dragHandle).toBeVisible();
+    
+    const handleBox = await dragHandle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+    const endX = testBox!.x + testBox!.width / 2;
+    const endY = testBox!.y + testBox!.height - 10;
+    
+    console.log(`[AF-DND-004] Dragging from (${startX.toFixed(0)}, ${startY.toFixed(0)}) to (${endX.toFixed(0)}, ${endY.toFixed(0)})`);
+    
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY + 20, { steps: 3 });
+    await page.mouse.move(endX, endY, { steps: 20 });
+    await page.mouse.up();
+    
+    // Wait for reorder to take effect
+    await page.waitForTimeout(500);
+    
+    // Verify the new order - test2 should now come after test
+    const newOrder = await filterNames.allTextContents();
+    console.log('[AF-DND-004] Order after drag:', newOrder);
+    const newTest2Index = newOrder.indexOf('test2');
+    const newTestIndex = newOrder.indexOf('test');
+    expect(newTest2Index).toBeGreaterThan(newTestIndex);
+    
+    // Click Apply Changes to persist the reorder
+    await afPage.clickApplyChanges();
+    console.log('[AF-DND-004] Clicked Apply Changes');
+    
+    // Close the modal
+    await afPage.closeModal();
+    console.log('[AF-DND-004] Modal closed');
+    
+    // Re-open the modal
+    await afPage.openModal();
+    console.log('[AF-DND-004] Modal re-opened');
+    
+    // Check the order - it should still have test before test2
+    const persistedOrder = await filterNames.allTextContents();
+    console.log('[AF-DND-004] Persisted order:', persistedOrder);
+    
+    const persistedTest2Index = persistedOrder.indexOf('test2');
+    const persistedTestIndex = persistedOrder.indexOf('test');
+    
+    console.log('[AF-DND-004] Persisted test2 index:', persistedTest2Index, 'Persisted test index:', persistedTestIndex);
+    
+    // Verify the reorder persisted: test2 should still come after test
+    expect(persistedTest2Index).toBeGreaterThan(persistedTestIndex);
+  });
 });
 
 test.describe('Advanced Filtering - Grouping', () => {
@@ -263,6 +347,169 @@ test.describe('Advanced Filtering - Grouping', () => {
   test('AF-GROUP-005: Group AND/OR control defaults to AND', async () => {
     await afPage.clickAddGroup();
     await afPage.expectMultipleRadioGroups();
+  });
+
+  test('AF-GROUP-006: Filters can be dragged into a group', async ({ page }) => {
+    // Get the initial filter count at the top level
+    const filterNames = page.locator('.card.bg-white .text-sm.font-medium');
+    const initialOrder = await filterNames.allTextContents();
+    console.log('[AF-GROUP-006] Initial filters:', initialOrder);
+    
+    // Create a group
+    await afPage.clickAddGroup();
+    
+    // Verify the empty group drop zone is visible
+    const dropZone = afPage.getEmptyGroupDropZone();
+    await expect(dropZone).toBeVisible();
+    
+    // Get a filter card to drag (use the last one "test" to avoid conflicts)
+    const testCard = page.locator('.card.bg-white').filter({ has: page.getByText('test', { exact: true }) }).filter({ has: page.locator('.fa-grip-vertical') }).last();
+    await expect(testCard).toBeVisible();
+    
+    // Scroll the test card into view
+    await testCard.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+    
+    // Get the drag handle from the filter
+    const dragHandle = testCard.locator('.fa-grip-vertical').first();
+    await expect(dragHandle).toBeVisible();
+    
+    const handleBox = await dragHandle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    
+    // Get the drop zone bounding box (the empty group area)
+    const dropZoneBox = await dropZone.boundingBox();
+    expect(dropZoneBox).not.toBeNull();
+    
+    console.log('[AF-GROUP-006] Handle box:', handleBox);
+    console.log('[AF-GROUP-006] Drop zone box:', dropZoneBox);
+    
+    // Drag from the filter card to the empty group drop zone
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+    const endX = dropZoneBox!.x + dropZoneBox!.width / 2;
+    const endY = dropZoneBox!.y + dropZoneBox!.height / 2;
+    
+    console.log(`[AF-GROUP-006] Dragging from (${startX.toFixed(0)}, ${startY.toFixed(0)}) to (${endX.toFixed(0)}, ${endY.toFixed(0)})`);
+    
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY + 20, { steps: 3 });
+    await page.mouse.move(endX, endY, { steps: 20 });
+    await page.mouse.up();
+    
+    // Wait for the drop to complete
+    await page.waitForTimeout(500);
+    
+    // Verify the filter is now inside the group (the "Drop items here" should be gone)
+    await expect(dropZone).not.toBeVisible({ timeout: 2000 });
+    
+    // The filter "test" should now be inside the nested card (the group)
+    // Groups have "Between items:" text, look for the filter inside a group
+    const groupCards = page.locator('.card').filter({ hasText: 'Between items:' });
+    const groupCount = await groupCards.count();
+    console.log('[AF-GROUP-006] Group card count:', groupCount);
+    expect(groupCount).toBeGreaterThanOrEqual(1);
+    
+    // Verify "test" filter is inside a group card (not at root level with "Between groups:" label)
+    const filterInGroup = groupCards.first().locator('.card.bg-white .text-sm.font-medium').filter({ hasText: /^test$/ });
+    await expect(filterInGroup).toBeVisible();
+    console.log('[AF-GROUP-006] Filter "test" is now inside a group');
+    
+    // Verify the combiner badges still exist  
+    const badges = afPage.getCombinerBadges();
+    const badgeCount = await badges.count();
+    expect(badgeCount).toBeGreaterThan(0);
+  });
+
+  test('AF-GROUP-007: Filter dragged into group is removed from original position', async ({ page }) => {
+    // Get the initial filter names at the root level (cards in the root area with "Between groups:" context)
+    const rootArea = page.locator('.card').filter({ hasText: 'Between groups:' }).first();
+    const filterNames = rootArea.locator('.card.bg-white .text-sm.font-medium');
+    const initialOrder = await filterNames.allTextContents();
+    console.log('[AF-GROUP-007] Initial filters at root:', initialOrder);
+    
+    // Initial order should contain "test" 
+    expect(initialOrder).toContain('test');
+    const initialCount = initialOrder.length;
+    console.log('[AF-GROUP-007] Initial filter count at root:', initialCount);
+    
+    // Create a group
+    await afPage.clickAddGroup();
+    
+    // Verify the empty group drop zone is visible
+    const dropZone = afPage.getEmptyGroupDropZone();
+    await expect(dropZone).toBeVisible();
+    
+    // Get a filter card to drag (use "test" to match AF-GROUP-006)
+    const testCard = page.locator('.card.bg-white').filter({ has: page.getByText('test', { exact: true }) }).filter({ has: page.locator('.fa-grip-vertical') }).last();
+    await expect(testCard).toBeVisible();
+    
+    // Scroll the test card into view
+    await testCard.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+    
+    // Get the drag handle from the filter
+    const dragHandle = testCard.locator('.fa-grip-vertical').first();
+    await expect(dragHandle).toBeVisible();
+    
+    const handleBox = await dragHandle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    
+    // Get the drop zone bounding box (the empty group area)
+    const dropZoneBox = await dropZone.boundingBox();
+    expect(dropZoneBox).not.toBeNull();
+    
+    // Drag from the filter card to the empty group drop zone
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+    const endX = dropZoneBox!.x + dropZoneBox!.width / 2;
+    const endY = dropZoneBox!.y + dropZoneBox!.height / 2;
+    
+    console.log(`[AF-GROUP-007] Dragging from (${startX.toFixed(0)}, ${startY.toFixed(0)}) to (${endX.toFixed(0)}, ${endY.toFixed(0)})`);
+    
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY + 20, { steps: 3 });
+    await page.mouse.move(endX, endY, { steps: 20 });
+    await page.mouse.up();
+    
+    // Wait for the drop to complete
+    await page.waitForTimeout(500);
+    
+    // Get the new filter order at the root level (excluding filters inside groups)
+    // The root area still shows "Between groups:" but individual filters at root level 
+    // should exclude the "test" filter which is now inside a group
+    
+    // Filters at root level are those that are direct children of the root area
+    // and NOT inside a group (which has "Between items:" text)
+    const groupCards = page.locator('.card').filter({ hasText: 'Between items:' });
+    const groupCount = await groupCards.count();
+    console.log('[AF-GROUP-007] Number of groups:', groupCount);
+    
+    // Get filter names still at root level (not inside any group with "Between items:")
+    // Root-level filters are in the area with "Between groups:" but not nested in "Between items:"
+    // We count all filter cards, then subtract those inside groups
+    const allFilterCards = page.locator('.card.bg-white .text-sm.font-medium');
+    const allFilters = await allFilterCards.allTextContents();
+    console.log('[AF-GROUP-007] All filters found:', allFilters);
+    
+    // Filters inside the group
+    const filtersInGroup = await groupCards.first().locator('.card.bg-white .text-sm.font-medium').allTextContents();
+    console.log('[AF-GROUP-007] Filters inside group:', filtersInGroup);
+    
+    // Verify "test" is ONLY in the group, not at root level
+    expect(filtersInGroup).toContain('test');
+    
+    // The remaining filters at root should be: test5, test6, test3, test4, test2 (5 filters)
+    // The "test" filter should only appear once (inside the group)
+    const testOccurrences = allFilters.filter(name => name === 'test').length;
+    console.log('[AF-GROUP-007] "test" occurrences in all filters:', testOccurrences);
+    expect(testOccurrences).toBe(1); // Should only appear once (inside the group)
+    
+    // Verify total filter count is still the same (6 filters total)
+    expect(allFilters.length).toBe(initialCount);
+    console.log('[AF-GROUP-007] Total filter count unchanged:', allFilters.length);
   });
 });
 
