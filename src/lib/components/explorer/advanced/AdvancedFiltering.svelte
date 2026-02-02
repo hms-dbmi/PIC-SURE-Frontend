@@ -9,6 +9,7 @@
     KeyboardSensor,
     PointerSensor,
   } from '@dnd-kit-svelte/svelte';
+  import { move } from '@dnd-kit/helpers';
   import { filterTree } from '$lib/stores/Filter';
   import { Tree, type TreeNode } from '$lib/models/Tree.svelte';
   import { createFilterGroup } from '$lib/models/Filter.svelte';
@@ -20,6 +21,8 @@
   let projectedOrder: Record<string, string[]> | null = $state(null);
   // Store the last valid projectedOrder so it's available in handleDragEnd
   let lastValidProjectedOrder: Record<string, string[]> | null = $state(null);
+  let dragStartSnapshot: string | null = $state(null);
+  let hasOptimisticReorder = $state(false);
 
   // Initialize a local reactive tree.
   // We clone the global tree's structure initially.
@@ -50,6 +53,20 @@
     return parent === localTree.root ? 'root' : String(parent.uuid);
   }
 
+  function buildSortableOrder(): Record<string, string[]> {
+    const order: Record<string, string[]> = {};
+    const walk = (group: FilterGroupInterface, containerId: string) => {
+      order[containerId] = group.children.map((child) => (child as FilterInterface).uuid);
+      group.children.forEach((child) => {
+        if ((child as FilterInterface).filterType === 'FilterGroup') {
+          walk(child as FilterGroupInterface, (child as FilterInterface).uuid);
+        }
+      });
+    };
+    walk(localTree.root as FilterGroupInterface, 'root');
+    return order;
+  }
+
   function handleDragStart(event: any) {
     const active = event.operation.source;
     if (!active) return;
@@ -57,6 +74,8 @@
     const node = localTree.find((n) => (n as FilterInterface).uuid === id);
     activeId = id;
     if (node) activeNode = node as FilterInterface;
+    dragStartSnapshot = localTree.serialized;
+    hasOptimisticReorder = false;
   }
 
   function clearDragState() {
@@ -65,6 +84,8 @@
     operatorPreview = null;
     projectedOrder = null;
     lastValidProjectedOrder = null;
+    dragStartSnapshot = null;
+    hasOptimisticReorder = false;
   }
 
   function removeFromParent(node: FilterInterface, parent: FilterGroupInterface) {
@@ -260,6 +281,21 @@
     const source = operation?.source;
     const target = operation?.target;
     const targetId = target?.id ? String(target.id) : null;
+    const canceled = event?.canceled ?? operation?.canceled;
+
+    if (canceled && dragStartSnapshot) {
+      localTree.root = Tree.deserialize<FilterInterface>(
+        dragStartSnapshot,
+        (nodes, op) => createFilterGroup(nodes as FilterInterface[], op)
+      ).root;
+      clearDragState();
+      return;
+    }
+
+    if (hasOptimisticReorder) {
+      clearDragState();
+      return;
+    }
 
     if (targetId && handleEmptyDropZone(targetId)) {
       clearDragState();
@@ -290,84 +326,47 @@
   }
 
   function handleDragOver(event: any) {
-    const active = event?.operation?.source;
-    const over = event?.operation?.over;
-    
-    if (!active || !over) {
+    const operation = event?.operation;
+    const source = operation?.source;
+    const target = operation?.target;
+
+    if (!source || !target) {
       operatorPreview = null;
       projectedOrder = null;
       return;
     }
 
-    const activeUuid = String(active.id);
-    const overIndex = Number(over.index);
-    if (!Number.isFinite(overIndex)) {
-      operatorPreview = null;
-      projectedOrder = null;
-      return;
-    }
+    const targetId = String(target.id);
+    const isEmptyDropZone = targetId.startsWith('empty-');
 
-    const activeContainerId =
-      active.group ? String(active.group) : containerIdForTreeParent(activeNode?.parent);
-    
-    // Handle empty drop zones: their id is "empty-{groupId}" and they store targetGroupId in data
-    const overId = String(over.id);
-    const isEmptyDropZone = overId.startsWith('empty-');
-    
-    // Look up the target node in tree to determine if it's a group
-    const overNode = localTree.find((n) => (n as FilterInterface).uuid === overId);
-    const isOverAGroup = overNode && (overNode as FilterInterface).filterType === 'FilterGroup';
-    
-    
-    // When dragging over a GROUP (not an item), drop INTO that group
-    // The group's own ID should be the container, not its parent
-    const overContainerId = isEmptyDropZone
-      ? over.data?.targetGroupId ? String(over.data.targetGroupId) : overId.replace('empty-', '')
-      : isOverAGroup
-        ? String(over.id)
-        : over.group
-          ? String(over.group)
-          : over.parentId
-            ? String(over.parentId)
-            : over.containerId
-              ? String(over.containerId)
-              : undefined;
-    
-    operatorPreview = {
-      parentId: overContainerId,
-      index: overIndex,
-    };
+    const baseOrder = buildSortableOrder();
+    let nextOrder = baseOrder;
 
+    if (isEmptyDropZone) {
+      const targetGroupId =
+        target?.data?.targetGroupId ? String(target.data.targetGroupId) : targetId.replace('empty-', '');
+      const activeUuid = String(source.id);
 
-    const activeGroup = getGroupNodeByContainerId(activeContainerId);
-    const overGroup = getGroupNodeByContainerId(overContainerId);
-    if (!activeGroup || !overGroup) {
-      projectedOrder = null;
-      return;
-    }
-
-    const activeIds = activeGroup.children.map((c) => c.uuid);
-    const overIds = overGroup.children.map((c) => c.uuid);
-
-    const next: Record<string, string[]> = {};
-    if (activeContainerId && activeContainerId === overContainerId) {
-      const without = activeIds.filter((id) => id !== activeUuid);
-      const clamped = Math.max(0, Math.min(overIndex, without.length));
-      without.splice(clamped, 0, activeUuid);
-      next[activeContainerId] = without;
-    } else {
-      if (activeContainerId) next[activeContainerId] = activeIds.filter((id) => id !== activeUuid);
-      if (overContainerId) {
-        const without = overIds.filter((id) => id !== activeUuid);
-        const clamped = Math.max(0, Math.min(overIndex, without.length));
-        without.splice(clamped, 0, activeUuid);
-        next[overContainerId] = without;
+      nextOrder = { ...baseOrder };
+      for (const [containerId, ids] of Object.entries(baseOrder)) {
+        nextOrder[containerId] = ids.filter((id) => id !== activeUuid);
       }
+
+      if (!nextOrder[targetGroupId]) {
+        nextOrder[targetGroupId] = [];
+      }
+      if (!nextOrder[targetGroupId].includes(activeUuid)) {
+        nextOrder[targetGroupId] = [...nextOrder[targetGroupId], activeUuid];
+      }
+    } else {
+      nextOrder = move(baseOrder, event);
     }
-    projectedOrder = next;
-    // Store the last valid projectedOrder
-    if (next && Object.keys(next).length > 0) {
-      lastValidProjectedOrder = next;
+
+    if (nextOrder !== baseOrder) {
+      projectedOrder = nextOrder;
+      lastValidProjectedOrder = nextOrder;
+      hasOptimisticReorder = true;
+      applyProjectedOrder(nextOrder);
     }
   }
 

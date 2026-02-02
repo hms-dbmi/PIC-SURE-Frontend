@@ -320,6 +320,86 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     // Verify the reorder persisted: test2 should still come after test
     expect(persistedTest2Index).toBeGreaterThan(persistedTestIndex);
   });
+
+  test('AF-DND-006: Dragging a filter shows a dotted drop preview', async ({ page }) => {
+    const dropPreview = page.getByTestId('drop-preview');
+    await expect(dropPreview).toHaveCount(0);
+
+    const test2Card = page.locator('.card.bg-white').filter({ has: page.getByText('test2', { exact: true }) }).filter({ has: page.locator('.fa-grip-vertical') });
+    const testCard = page.locator('.card.bg-white').filter({ has: page.getByText('test', { exact: true }) }).filter({ has: page.locator('.fa-grip-vertical') }).last();
+
+    await expect(test2Card.first()).toBeVisible();
+    await expect(testCard).toBeVisible();
+
+    await testCard.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    const dragHandle = test2Card.first().locator('.fa-grip-vertical').first();
+    await expect(dragHandle).toBeVisible();
+
+    const handleBox = await dragHandle.boundingBox();
+    const targetBox = await testCard.boundingBox();
+    expect(handleBox).not.toBeNull();
+    expect(targetBox).not.toBeNull();
+
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+    const endX = targetBox!.x + targetBox!.width / 2;
+    const endY = targetBox!.y + targetBox!.height - 10;
+
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY + 20, { steps: 3 });
+    await page.mouse.move(endX, endY, { steps: 20 });
+
+    await expect(dropPreview).toBeVisible({ timeout: 2000 });
+
+    await page.mouse.up();
+    await expect(dropPreview).toHaveCount(0);
+  });
+
+  test('AF-DND-006: Dragging a group shows a dotted drop preview', async ({ page }) => {
+    const dropPreview = page.getByTestId('drop-preview');
+    await expect(dropPreview).toHaveCount(0);
+
+    const groupHeaders = page.getByText('Between items:', { exact: false });
+    await expect(groupHeaders).toHaveCount(2);
+
+    const firstGroupHeader = groupHeaders.first();
+    const secondGroupHeader = groupHeaders.nth(1);
+
+    const firstGroup = firstGroupHeader.locator('xpath=ancestor::div[contains(@class, "card") and contains(@class, "bg-white")]').first();
+    const secondGroup = secondGroupHeader.locator('xpath=ancestor::div[contains(@class, "card") and contains(@class, "bg-white")]').first();
+
+    await expect(firstGroup).toBeVisible();
+    await expect(secondGroup).toBeVisible();
+
+    const dragHandle = secondGroup.locator('.fa-grip-vertical').first();
+    await expect(dragHandle).toBeVisible();
+
+    await firstGroup.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    const handleBox = await dragHandle.boundingBox();
+    const targetBox = await firstGroup.boundingBox();
+    expect(handleBox).not.toBeNull();
+    expect(targetBox).not.toBeNull();
+
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+    const endX = targetBox!.x + 50;
+    const endY = targetBox!.y - 50;
+
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY - 20, { steps: 3 });
+    await page.mouse.move(endX, endY, { steps: 20 });
+
+    await expect(dropPreview).toBeVisible({ timeout: 2000 });
+
+    await page.mouse.up();
+    await expect(dropPreview).toHaveCount(0);
+  });
 });
 
 test.describe('Advanced Filtering - Grouping', () => {

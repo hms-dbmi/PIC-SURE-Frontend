@@ -53,14 +53,12 @@
       : undefined
   );
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
+  const showDropPreview = $derived(!isOverlay && isDragging.current && isDraggable);
 
-  // Note: Groups intentionally have NO 'group' property so they can accept drops from ANY group
-  // This matches dnd-kit's column example pattern - columns are top-level sortables that accept items
-  // Group reordering is handled via handleDragEnd's cross-group logic when target is a group
   const { ref, handleRef, isDragging, } = useSortable({
     id: id,
     index: () => index,
-    // group: parentId, // REMOVED - allows cross-group drops onto this group
+    group: parentId,
     type: 'group',
     accept: ['item', 'group'],
     collisionPriority: CollisionPriority.Lowest,
@@ -87,9 +85,11 @@
   {/if}
 
   <div
-    class="card p-4 space-y-2 {isDragging.current && !isOverlay ? 'invisible' : ''} {id === 'root'
+    class="card p-4 space-y-2 {id === 'root'
       ? 'bg-surface-50 shadow-none border-none'
-      : 'bg-white border-surface-400 border'}"
+      : isDragging.current && !isOverlay
+        ? 'invisible'
+        : 'bg-white border-surface-400 border'}"
   >
   {#if isDraggable}
     <div id={`group-controls-${group.uuid}`} class="flex flex-row w-full flex-end">
@@ -155,8 +155,9 @@
     </div>
   </div>
 
-  {#if !isOverlay && isDragging.current}
+  {#if showDropPreview}
     <div
+      data-testid="drop-preview"
       class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg"
     ></div>
   {/if}

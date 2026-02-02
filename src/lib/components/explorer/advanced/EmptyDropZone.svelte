@@ -14,6 +14,7 @@
     type: 'item',
     accept: ['item', 'group'],
     collisionPriority: CollisionPriority.High,
+    group: groupId,
     data: { targetGroupId: groupId },
   });
 </script>

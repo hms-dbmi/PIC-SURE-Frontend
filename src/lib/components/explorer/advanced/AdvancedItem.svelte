@@ -60,7 +60,9 @@
     </div>
   {/if}
 
-  <div class="card flex flex-row gap-2 items-center p-4 bg-white border-surface-400 border {isDragging.current && !isOverlay ? 'invisible' : ''}">
+  <div
+    class="card flex flex-row gap-2 items-center p-4 {isDragging.current && !isOverlay ? 'invisible' : ''} bg-white border-surface-400 border"
+  >
     <div class="cursor-grab active:cursor-grabbing m-0 flex items-center" {@attach handleRef}>
       <i class="fa-solid fa-grip-vertical text-surface-500"></i>
     </div>
@@ -85,6 +87,7 @@
 
   {#if !isOverlay && isDragging.current}
     <div
+      data-testid="drop-preview"
       class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg"
     ></div>
   {/if}
