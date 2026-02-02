@@ -56,6 +56,7 @@
 
   // Note: Groups intentionally have NO 'group' property so they can accept drops from ANY group
   // This matches dnd-kit's column example pattern - columns are top-level sortables that accept items
+  // Group reordering is handled via handleDragEnd's cross-group logic when target is a group
   const { ref, handleRef, isDragging, } = useSortable({
     id: id,
     index: () => index,
@@ -63,7 +64,7 @@
     type: 'group',
     accept: ['item', 'group'],
     collisionPriority: CollisionPriority.Lowest,
-    data: { ...group, targetGroupId: id }, // Add targetGroupId for drop handling
+    data: { ...group, targetGroupId: id },
   });
 
   function handleOperatorChange(e: any) {

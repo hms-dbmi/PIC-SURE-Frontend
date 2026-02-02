@@ -313,15 +313,25 @@
     // Handle empty drop zones: their id is "empty-{groupId}" and they store targetGroupId in data
     const overId = String(over.id);
     const isEmptyDropZone = overId.startsWith('empty-');
+    
+    // Look up the target node in tree to determine if it's a group
+    const overNode = localTree.find((n) => (n as FilterInterface).uuid === overId);
+    const isOverAGroup = overNode && (overNode as FilterInterface).filterType === 'FilterGroup';
+    
+    
+    // When dragging over a GROUP (not an item), drop INTO that group
+    // The group's own ID should be the container, not its parent
     const overContainerId = isEmptyDropZone
       ? over.data?.targetGroupId ? String(over.data.targetGroupId) : overId.replace('empty-', '')
-      : over.group
-        ? String(over.group)
-        : over.parentId
-          ? String(over.parentId)
-          : over.containerId
-            ? String(over.containerId)
-            : undefined;
+      : isOverAGroup
+        ? String(over.id)
+        : over.group
+          ? String(over.group)
+          : over.parentId
+            ? String(over.parentId)
+            : over.containerId
+              ? String(over.containerId)
+              : undefined;
     
     operatorPreview = {
       parentId: overContainerId,
@@ -371,7 +381,7 @@
   }
 
   function handleOperatorChange(group: FilterGroupInterface, newOperator: any) {
-     (group as FilterGroupInterface).setOperator(newOperator);
+    (group as FilterGroupInterface).setOperator(newOperator);
   }
   
   export function applyChanges() {
