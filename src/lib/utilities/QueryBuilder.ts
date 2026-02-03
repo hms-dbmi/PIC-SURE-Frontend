@@ -21,6 +21,7 @@ import type {
   FilterInterface,
   GenomicFilterInterface,
   SnpFilterInterface,
+  AnyRecordOfFilterInterface,
 } from '$lib/models/Filter';
 import { Tree, type TreeNode } from '$lib/models/Tree';
 import type { GenomicFilterInterfacev3, OperatorType } from '$lib/models/query/Query';
@@ -179,13 +180,19 @@ export function getFilterConcepts(query: QueryV3): string[] {
   const concepts: string[] = [];
 
   function mapClause(clause: PhenotypicClause): void {
-    if (
-      clause.type == 'PhenotypicFilter' &&
-      (clause as PhenotypicFilterInterface).phenotypicFilterType !== 'ANY_RECORD_OF'
-    ) {
-      concepts.push(clause.conceptPath);
-    } else if (clause.type === 'PhenotypicSubquery' && clause.phenotypicClauses.length > 0) {
+    if (clause.type === 'PhenotypicSubquery' && clause.phenotypicClauses.length > 0) {
       clause.phenotypicClauses.forEach(mapClause);
+      return;
+    }
+    const thisFilter = clause as PhenotypicFilterInterface;
+    if (thisFilter.phenotypicFilterType === 'ANY_RECORD_OF') {
+      const anyRecordFilter = get(filters).find(
+        (filter) => filter.id === thisFilter.conceptPath,
+      ) as AnyRecordOfFilterInterface | undefined;
+      if (!anyRecordFilter) return;
+      anyRecordFilter.concepts.forEach((concept) => concepts.push(concept));
+    } else {
+      concepts.push(thisFilter.conceptPath);
     }
   }
   mapClause(query.phenotypicClause);

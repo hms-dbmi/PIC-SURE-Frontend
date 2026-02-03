@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
 
   import { features } from '$lib/configuration';
-  import { exports, addExports, removeExports } from '$lib/stores/Export';
+  import { exports, addExports, removeExports, mapSearchResultAsExport } from '$lib/stores/Export';
   import type { ExportInterface } from '$lib/models/Export';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import { searchDictionary } from '$lib/stores/Dictionary';
@@ -12,7 +12,6 @@
   import { Picsure } from '$lib/paths';
   import { toaster } from '$lib/toaster';
   import { resources, loadResources } from '$lib/stores/Resources';
-  import { genericUUID } from '$lib/utilities/UUID';
 
   import Summary from './Summary.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -128,15 +127,7 @@
       const genomicConcepts = await getGenomicConcepts();
 
       // Create new exports for each concept
-      const newExports = genomicConcepts.map(
-        (concept) =>
-          ({
-            id: genericUUID(),
-            searchResult: concept,
-            display: concept?.display || '',
-            conceptPath: concept?.conceptPath || '',
-          }) as ExportInterface,
-      );
+      const newExports = genomicConcepts.map(mapSearchResultAsExport);
 
       // Add exports and create corresponding rows
       addExports(newExports);

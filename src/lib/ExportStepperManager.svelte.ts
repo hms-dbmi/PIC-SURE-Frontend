@@ -1,6 +1,6 @@
 import type { ExpectedResultType } from '$lib/models/query/Query.ts';
-import type { QueryRequestInterfaceV3 } from './models/api/Request';
-import { QueryV3 } from './models/query/Query';
+import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+import { QueryV3 } from '$lib/models/query/Query';
 
 let queryRequest: QueryRequestInterfaceV3 = $state({
   resourceUUID: '',

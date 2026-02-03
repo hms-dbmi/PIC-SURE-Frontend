@@ -1,19 +1,31 @@
 <script lang="ts">
+  import type { SearchResult } from '$lib/models/Search';
+  import type { ExportInterface } from '$lib/models/Export';
   import { getInitialTree, getConceptTree } from '$lib/stores/Dictionary';
-  import { addConcept, removeConcept } from '$lib/stores/TreeStepConcepts';
+  import { exports } from '$lib/stores/Export';
+  import { addExport, removeExport, mapSearchResultAsExport } from '$lib/stores/Export';
   import Loading from '$lib/components/Loading.svelte';
   import RemoteTree from '$lib/components/tree/RemoteTree.svelte';
   import Summary from '$lib/components/explorer/export/Summary.svelte';
-  import type { SearchResult } from '$lib/models/Search';
-  import { selectedConcepts, disabledConcepts } from '$lib/stores/TreeStepConcepts';
-  import { get } from 'svelte/store';
+  import { getQueryRequest } from '$lib/ExportStepperManager.svelte';
+
+  let currentExports: ExportInterface[] = $state($exports);
+  exports.subscribe((newExports) => (currentExports = newExports));
+
+  let disabledConcepts: string[] = $derived(getQueryRequest().query.select);
+  let selectedConcepts: string[] = $derived([
+    ...currentExports.map(({ conceptPath }) => conceptPath),
+    ...disabledConcepts,
+  ]);
+
   // Calculate largestDepth synchronously before template renders
-  let largestDepth: number =
-    $selectedConcepts && $selectedConcepts.length > 0
+  let largestDepth: number = $derived(
+    selectedConcepts.length > 0
       ? Math.max(
-          ...$selectedConcepts.map((concept: string) => concept.split('\\').filter(Boolean).length),
+          ...selectedConcepts.map((concept: string) => concept.split('\\').filter(Boolean).length),
         )
-      : 1;
+      : 1,
+  );
 
   async function fetchChildren(conceptPath: string): Promise<SearchResult[]> {
     const dataset = conceptPath.split('\\')[1];
@@ -35,12 +47,14 @@
     return leaves;
   }
 
-  const selectNode = (value: string) => {
-    addConcept(value);
+  const onselect = (search?: SearchResult) => {
+    if (!search) return;
+    addExport(mapSearchResultAsExport(search));
   };
 
-  const unselectNode = (value: string) => {
-    removeConcept(value);
+  const onunselect = (search?: SearchResult) => {
+    if (!search) return;
+    removeExport(mapSearchResultAsExport(search));
   };
 </script>
 
@@ -59,10 +73,10 @@
           initialNodes={treeNodes}
           {fetchChildren}
           fullWidth={true}
-          onselect={selectNode}
-          onunselect={unselectNode}
-          previousSelectedConcepts={get(selectedConcepts)}
-          disabledConcepts={get(disabledConcepts)}
+          {onselect}
+          {onunselect}
+          {selectedConcepts}
+          {disabledConcepts}
         />
       {/await}
     </div>

@@ -2,14 +2,16 @@
   import type { TreeNodeInterface } from '$lib/components/tree/types';
   import RemoteTreeNode from '$lib/components/tree/RemoteTreeNode.svelte';
 
-  const { node }: { node: TreeNodeInterface & { loading?: boolean; error?: string | null } } =
-    $props();
+  interface Props {
+    node: TreeNodeInterface & { loading?: boolean; error?: string | null };
+  }
+  const { node }: Props = $props();
 </script>
 
 <details
   class="tree-item"
   data-testid="tree-item:{node.name}-{node.value}"
-  aria-disabled={node.disabled}
+  aria-disabled={node.allDisabled}
   open={node.open}
 >
   <summary
@@ -27,7 +29,7 @@
       class="m-1 ml-2"
       onclick={async () => await node.toggleOpen()}
       tabindex={node.isLeaf ? -1 : 0}
-      disabled={node.disabled || node.loading}
+      disabled={node.allDisabled || node.loading}
     >
       {#if !node.isLeaf}
         {#if node.loading}
@@ -47,7 +49,7 @@
       name={node.name}
       value={node.value}
       checked={node.allSelected}
-      disabled={node.disabled}
+      disabled={node.allDisabled}
       indeterminate={node.indeterminant}
       onclick={async () => await node.toggleSelected()}
     />

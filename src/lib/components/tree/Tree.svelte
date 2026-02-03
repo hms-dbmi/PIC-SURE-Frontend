@@ -58,6 +58,11 @@
       return this.someSelected && !this.allSelected;
     });
 
+    allDisabled: boolean = $derived.by(() => {
+      if (this.isLeaf) return this.disabled;
+      return this.children.every((child: TreeNode) => child.allDisabled);
+    });
+
     select(): void {
       if (this.disabled) return;
 

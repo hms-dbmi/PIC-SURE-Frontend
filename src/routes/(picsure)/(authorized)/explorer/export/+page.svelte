@@ -5,17 +5,9 @@
   import { stepperState } from '$lib/stores/Stepper';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import Content from '$lib/components/Content.svelte';
-  import { getQueryRequestV3, getFilterConcepts } from '$lib/utilities/QueryBuilder';
   import type { ExportInterface } from '$lib/models/Export';
   import { features } from '$lib/configuration';
-  import type { QueryV3 } from '$lib/models/query/Query';
-  import { resources } from '$lib/stores/Resources';
 
-  let queryRequest = getQueryRequestV3(true, $resources.hpdsAuth, 'COUNT', (query: QueryV3) => {
-    // populate selected export columns from filters
-    query.select = [...new Set([...query.select, ...getFilterConcepts(query)])];
-    return query;
-  });
   let exportRows: ExportRowInterface[] = $exports.map((exp) => {
     return {
       ref: exp,
@@ -126,7 +118,7 @@
 >
   {#if $exports.length > 0 || $allFilters.length > 0}
     <section class="flex justify-center items-center w-full h-full mt-8">
-      <ExportStepper query={queryRequest} rows={[...filterRows, ...exportRows]} />
+      <ExportStepper rows={[...filterRows, ...exportRows]} />
     </section>
   {:else}
     <div class="flex flex-col items-center justify-center m-8">

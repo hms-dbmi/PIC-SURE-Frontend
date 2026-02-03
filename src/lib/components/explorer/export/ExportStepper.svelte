@@ -5,7 +5,6 @@
   import { branding, features, settings } from '$lib/configuration';
   import { Picsure } from '$lib/paths';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
-  import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
   import type { DataSet } from '$lib/models/Dataset';
   import { exports } from '$lib/stores/Export';
   import { filters } from '$lib/stores/Filter';
@@ -29,12 +28,6 @@
   import PfbExport from './PfbExport.svelte';
   import AnalysisPlatformLinks from './AnalysisPlatformLinks.svelte';
   import {
-    selectedConcepts,
-    addConcept,
-    toggleDisableConcept,
-    clearSelectedConcepts,
-  } from '$lib/stores/TreeStepConcepts';
-  import {
     getLockDownload,
     setLockDownload,
     getDatasetId,
@@ -46,46 +39,42 @@
     getQueryRequest,
     resetExportStepperState,
   } from '$lib/ExportStepperManager.svelte';
+  import { getQueryRequestV3, getFilterConcepts } from '$lib/utilities/QueryBuilder';
+  import { QueryV3 } from '$lib/models/query/Query';
+  import { resources } from '$lib/stores/Resources';
+  // import { getSelectedConcepts, getDisabledConcepts, getLargestTreeDepth } from '$lib/ExportStepperManager.svelte';
 
-  interface Props {
-    query: QueryRequestInterfaceV3;
-    rows?: ExportRowInterface[];
-  }
-
-  const { query: queryRequest, rows = [] }: Props = $props();
+  const { rows = [] }: { rows?: ExportRowInterface[] } = $props();
+  let queryRequest = $state(getQueryRequest());
+  $effect(() => setQueryRequest(queryRequest));
 
   let statusPromise: Promise<unknown> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
   let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
 
   const showTabbedAnalysisStep = $derived(
-    (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
-      getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
+    (queryRequest.query.expectedResultType === 'DATAFRAME' ||
+      queryRequest.query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
       !features.explorer.enableRedcapExport,
   );
   const showPfbExportStep = $derived(
-    getQueryRequest().query.expectedResultType === 'DATAFRAME_PFB' &&
+    queryRequest.query.expectedResultType === 'DATAFRAME_PFB' &&
       features.explorer.enablePfbExport &&
       !features.explorer.enableRedcapExport,
   );
   const showUserToken = $derived(
-    (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
-      getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
+    (queryRequest.query.expectedResultType === 'DATAFRAME' ||
+      queryRequest.query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
       features.analyzeApi &&
       !features.explorer.enableRedcapExport,
   );
 
   onMount(async () => {
-    // Auto select csv export when pfb feature is disabled.
-    setQueryRequest(queryRequest);
-
-    // prepopulate selected fields, add exports
-    clearSelectedConcepts();
-    queryRequest.query.select.forEach((concept) => {
-      addConcept(concept);
-      toggleDisableConcept(concept);
+    queryRequest = getQueryRequestV3(true, $resources.hpdsAuth, 'COUNT', (query: QueryV3) => {
+      // populate selected export columns from filters
+      query.select = [...new Set([...query.select, ...getFilterConcepts(query)])];
+      return query;
     });
-    $exports.forEach(({ conceptPath }) => addConcept(conceptPath));
 
     $federatedQueryMap = {};
     if (!features.explorer.enablePfbExport) {
@@ -94,18 +83,6 @@
   });
 
   async function onNextHandler(_step: number, stepName: string): Promise<void> {
-    if (stepName === 'select-variables') {
-      getQueryRequest().query.select.forEach(addConcept);
-    }
-
-    if (
-      features.explorer.showTreeStep &&
-      stepName === (features.federated ? 'save-dataset' : 'select-type')
-    ) {
-      getQueryRequest().query.select = [
-        ...new Set([...getQueryRequest().query.select, ...$selectedConcepts]),
-      ];
-    }
     if (stepName === 'start') {
       if (features.explorer.enableRedcapExport) {
         setLockDownload(false);
