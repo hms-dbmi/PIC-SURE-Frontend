@@ -118,15 +118,15 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     await page.mouse.move(centerX, centerY + 50, { steps: 5 });
 
     // When dragging, the original card should become invisible (dragging state)
-    // AND a placeholder with dashed border should appear
-    const dragPlaceholder = page.locator('.border-dashed.border-primary-500');
+    // AND a drop preview placeholder should appear
+    const dragPlaceholder = page.getByTestId('drop-preview');
     await expect(dragPlaceholder).toBeVisible({ timeout: 2000 });
 
     // Release the drag
     await page.mouse.up();
 
-    // After releasing, the placeholder should disappear
-    await expect(dragPlaceholder).not.toBeVisible({ timeout: 2000 });
+    // After releasing, the drop preview should disappear
+    await expect(dragPlaceholder).toHaveCount(0, { timeout: 2000 });
   });
 
   test('AF-DND-003: Filters can be reordered via drag and drop', async ({ page }) => {
@@ -885,6 +885,152 @@ test.describe('Advanced Filtering - Grouping', () => {
     expect(badgeCount).toBeGreaterThan(0);
     
     console.log('[AF-GROUP-009] Test passed: Groups can be dragged and reordered');
+  });
+
+  test('AF-GROUP-010: Groups can be dragged and dropped into other groups (nesting)', async ({ page }) => {
+    const groupHeaders = page.getByText('Between items:', { exact: false });
+    await expect(groupHeaders).toHaveCount(2);
+
+    const targetGroupHeader = groupHeaders.first();
+    const sourceGroupHeader = groupHeaders.nth(1);
+
+    const targetGroup = targetGroupHeader
+      .locator('xpath=ancestor::div[contains(@class, "card") and contains(@class, "bg-white")]')
+      .first();
+    const sourceGroup = sourceGroupHeader
+      .locator('xpath=ancestor::div[contains(@class, "card") and contains(@class, "bg-white")]')
+      .first();
+
+    await expect(targetGroup).toBeVisible();
+    await expect(sourceGroup).toBeVisible();
+
+    const sourceFilters = await sourceGroup
+      .locator('> .flex.flex-col > .relative .text-sm.font-medium')
+      .allTextContents();
+
+    const dragHandle = sourceGroup.locator('.fa-grip-vertical').first();
+    await expect(dragHandle).toBeVisible();
+
+    const handleBox = await dragHandle.boundingBox();
+    expect(handleBox).not.toBeNull();
+
+    // Extract the target group's UUID from its controls element (id="group-controls-{uuid}")
+    const targetControlsId = await targetGroup.locator('[id^="group-controls-"]').first().getAttribute('id');
+    const targetGroupId = targetControlsId?.replace('group-controls-', '');
+    expect(targetGroupId).toBeTruthy();
+
+    // Use the specific group ID to find the exact drop zone
+    const dropZone = page.locator(`[data-testid="group-drop-zone"][data-group-id="${targetGroupId}"]`);
+
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY - 20, { steps: 3 });
+
+    await expect(dropZone).toBeVisible({ timeout: 2000 });
+    const dropBox = await dropZone.boundingBox();
+    expect(dropBox).not.toBeNull();
+
+    const endX = dropBox!.x + dropBox!.width / 2;
+    const endY = dropBox!.y + dropBox!.height / 2;
+
+    await page.mouse.move(endX, endY, { steps: 20 });
+    await page.mouse.up();
+
+    await page.waitForTimeout(500);
+
+    const nestedGroups = targetGroup.locator('.card.bg-white').filter({ hasText: 'Between items:' });
+    await expect(nestedGroups).toHaveCount(1);
+
+    const nestedFilters = await nestedGroups
+      .first()
+      .locator('.text-sm.font-medium')
+      .allTextContents();
+    expect(sourceFilters.every((filter) => nestedFilters.includes(filter))).toBe(true);
+  });
+
+  test('AF-GROUP-011: Nested groups can be dragged back to top level', async ({ page }) => {
+    const groupHeaders = page.getByText('Between items:', { exact: false });
+    await expect(groupHeaders).toHaveCount(2);
+
+    const targetGroupHeader = groupHeaders.first();
+    const sourceGroupHeader = groupHeaders.nth(1);
+
+    const targetGroup = targetGroupHeader
+      .locator('xpath=ancestor::div[contains(@class, "card") and contains(@class, "bg-white")]')
+      .first();
+    const sourceGroup = sourceGroupHeader
+      .locator('xpath=ancestor::div[contains(@class, "card") and contains(@class, "bg-white")]')
+      .first();
+
+    const sourceHandle = sourceGroup.locator('.fa-grip-vertical').first();
+    await expect(sourceHandle).toBeVisible();
+
+    const sourceBox = await sourceHandle.boundingBox();
+    expect(sourceBox).not.toBeNull();
+
+    // Extract the target group's UUID from its controls element
+    const targetControlsId = await targetGroup.locator('[id^="group-controls-"]').first().getAttribute('id');
+    const targetGroupId = targetControlsId?.replace('group-controls-', '');
+    expect(targetGroupId).toBeTruthy();
+
+    // Use the specific group ID to find the exact drop zone
+    const targetDropZone = page.locator(`[data-testid="group-drop-zone"][data-group-id="${targetGroupId}"]`);
+
+    const nestStartX = sourceBox!.x + sourceBox!.width / 2;
+    const nestStartY = sourceBox!.y + sourceBox!.height / 2;
+
+    await page.mouse.move(nestStartX, nestStartY);
+    await page.mouse.down();
+    await page.mouse.move(nestStartX, nestStartY - 20, { steps: 3 });
+
+    await expect(targetDropZone).toBeVisible({ timeout: 2000 });
+    const targetDropBox = await targetDropZone.boundingBox();
+    expect(targetDropBox).not.toBeNull();
+
+    const nestEndX = targetDropBox!.x + targetDropBox!.width / 2;
+    const nestEndY = targetDropBox!.y + targetDropBox!.height / 2;
+
+    await page.mouse.move(nestEndX, nestEndY, { steps: 20 });
+    await page.mouse.up();
+
+    await page.waitForTimeout(500);
+
+    const nestedGroups = targetGroup.locator('.card.bg-white').filter({ hasText: 'Between items:' });
+    await expect(nestedGroups).toHaveCount(1);
+
+    const nestedGroup = nestedGroups.first();
+    const nestedHandle = nestedGroup.locator('.fa-grip-vertical').first();
+    await expect(nestedHandle).toBeVisible();
+
+    const nestedBox = await nestedHandle.boundingBox();
+    expect(nestedBox).not.toBeNull();
+
+    const rootDropZone = page.locator('[data-testid="group-drop-zone"][data-group-id="root"]');
+
+    const liftStartX = nestedBox!.x + nestedBox!.width / 2;
+    const liftStartY = nestedBox!.y + nestedBox!.height / 2;
+
+    await page.mouse.move(liftStartX, liftStartY);
+    await page.mouse.down();
+    await page.mouse.move(liftStartX, liftStartY - 20, { steps: 3 });
+
+    await expect(rootDropZone).toBeVisible({ timeout: 2000 });
+    const rootDropBox = await rootDropZone.boundingBox();
+    expect(rootDropBox).not.toBeNull();
+
+    const liftEndX = rootDropBox!.x + rootDropBox!.width / 2;
+    const liftEndY = rootDropBox!.y + rootDropBox!.height / 2;
+
+    await page.mouse.move(liftEndX, liftEndY, { steps: 20 });
+    await page.mouse.up();
+
+    await page.waitForTimeout(500);
+
+    await expect(targetGroup.locator('.card.bg-white').filter({ hasText: 'Between items:' })).toHaveCount(0);
+    await expect(page.getByText('Between items:', { exact: false })).toHaveCount(2);
   });
 });
 
