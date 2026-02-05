@@ -210,6 +210,9 @@ export const features: Indexable = {
 };
 
 export const settings: Indexable = {
+  export: {
+    apiBuffer: parseInt(import.meta.env?.VITE_EXPORT_API_BUFFER || 15),
+  },
   variantExplorer: {
     type: (import.meta.env?.VITE_VARIANT_EXPLORER_TYPE || ExportType.Aggregate) as ExportType,
     maxCount: parseInt(import.meta.env?.VITE_VARIANT_EXPLORER_MAX_COUNT || 10000),

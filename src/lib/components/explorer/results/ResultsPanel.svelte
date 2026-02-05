@@ -150,7 +150,18 @@
     <Filters />
     {#if $exports.length > 0}
       <div class="px-4 mb-1 w-80">
-        <header class="text-left ml-1" data-testid="export-header">Added Variables</header>
+        <header class="txxt-left ml-1" data-testid="export-header">
+          Added Variables
+          {#if $exports.length > 10}
+            <button
+              data-testid="clear-all-results-btn"
+              class="anchor text-sm flex-none float-right mr-2"
+              onclick={() => {
+                $exports = [];
+              }}>Clear</button
+            >
+          {/if}
+        </header>
         <section class="py-1">
           {#each $exports as variable (variable.id)}
             <ExportedVariable {variable} />

@@ -3,7 +3,7 @@
   import RemoteTreeNode from '$lib/components/tree/RemoteTreeNode.svelte';
 
   interface Props {
-    node: TreeNodeInterface & { loading?: boolean; error?: string | null };
+    node: TreeNodeInterface & { hasLoading: boolean; error?: string | null };
   }
   const { node }: Props = $props();
 </script>
@@ -29,10 +29,10 @@
       class="m-1 ml-2"
       onclick={async () => await node.toggleOpen()}
       tabindex={node.isLeaf ? -1 : 0}
-      disabled={node.allDisabled || node.loading}
+      disabled={node.allDisabled || node.hasLoading}
     >
       {#if !node.isLeaf}
-        {#if node.loading}
+        {#if node.hasLoading}
           <i class="fa-solid fa-spinner fa-spin"></i>
         {:else}
           <i class="fa-solid fa-angle-{node.open ? 'down' : 'right'}"></i>

@@ -14,7 +14,7 @@
     disabledConcepts = [],
   }: {
     initialNodes: SearchResult[];
-    fetchChildren: (conceptPath: string) => Promise<SearchResult[]>;
+    fetchChildren: (conceptPath: string) => Promise<SearchResult[] | undefined | null>;
     onselect?: (search?: SearchResult) => void;
     onunselect?: (search?: SearchResult) => void;
     fullWidth: boolean;
@@ -42,17 +42,23 @@
       this.conceptPath = apiNode.conceptPath;
       this.search = apiNode;
 
-      if ((apiNode?.children?.length || 0) > 0) {
-        this.children = apiNode?.children?.map((child) => new RemoteTreeNodeClass(child)) ?? [];
-        this.childrenLoaded = true;
-      }
-      this.isLeaf = this.children.length === 0;
-
-      // For leaf nodes, mark as loaded since they won't have children
-      if (this.isLeaf) {
+      if (apiNode.children === undefined || apiNode.children === null) {
+        this.isLeaf = true;
+      } else if (apiNode.children.length > 0) {
+        this.children = apiNode.children.map((child) => new RemoteTreeNodeClass(child));
         this.childrenLoaded = true;
       }
     }
+
+    allchildrenLoaded: boolean = $derived.by(() => {
+      if (this.isLeaf) return true;
+      return this.childrenLoaded && this.children.every((child) => child.allchildrenLoaded);
+    });
+
+    hasLoading: boolean = $derived.by(() => {
+      if (this.isLeaf) return this.loading;
+      return this.loading || this.children.some((child) => child.hasLoading);
+    });
 
     someSelected: boolean = $derived.by(() => {
       if (this.isLeaf) return this.selected;
@@ -145,16 +151,17 @@
     }
 
     private async loadChildren(): Promise<void> {
-      if (this.loading || this.childrenLoaded || this.isLeaf || this.disabled) return;
+      if (this.loading || this.allchildrenLoaded || this.isLeaf || this.disabled) return;
 
       this.loading = true;
       this.error = null;
 
       try {
-        const childrenData: SearchResult[] = await fetchChildren(this.conceptPath);
-        this.children = childrenData.map((child) => new RemoteTreeNodeClass(child));
+        const childrenData = await fetchChildren(this.conceptPath);
+        this.isLeaf =
+          childrenData === undefined || childrenData === null || childrenData.length === 0;
+        this.children = childrenData?.map((child) => new RemoteTreeNodeClass(child)) || [];
         this.childrenLoaded = true;
-        this.isLeaf = this.children.length === 0;
       } catch (err) {
         this.error = err instanceof Error ? err.message : 'Failed to load children';
         console.error('Error loading children for', this.conceptPath, err);
