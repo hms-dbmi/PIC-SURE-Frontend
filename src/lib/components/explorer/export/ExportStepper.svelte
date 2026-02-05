@@ -42,7 +42,6 @@
   import { getQueryRequestV3, getFilterConcepts } from '$lib/utilities/QueryBuilder';
   import { QueryV3 } from '$lib/models/query/Query';
   import { resources } from '$lib/stores/Resources';
-  // import { getSelectedConcepts, getDisabledConcepts, getLargestTreeDepth } from '$lib/ExportStepperManager.svelte';
 
   const { rows = [] }: { rows?: ExportRowInterface[] } = $props();
   let queryRequest = $state(getQueryRequest());

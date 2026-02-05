@@ -177,7 +177,6 @@
 
   function updateNodeSelection(node: RemoteTreeNodeClass, selectedConcepts: string[]): void {
     node.selected = selectedConcepts.some((concept) => node.conceptPath.startsWith(concept));
-    // node.selected = selectedConcepts.includes(node.conceptPath);
 
     if (!node.isLeaf && node.children && node.children.length > 0) {
       node.children.forEach((child) => updateNodeSelection(child, selectedConcepts));
@@ -196,7 +195,6 @@
 
   function updateDisabledNodes(node: RemoteTreeNodeClass, disabledConcepts: string[]): void {
     node.disabled = disabledConcepts.some((concept) => node.conceptPath.startsWith(concept));
-    // node.disabled = disabledConcepts.includes(node.conceptPath);
 
     if (!node.isLeaf && node.children && node.children.length > 0) {
       node.children.forEach((child) => updateDisabledNodes(child, disabledConcepts));
