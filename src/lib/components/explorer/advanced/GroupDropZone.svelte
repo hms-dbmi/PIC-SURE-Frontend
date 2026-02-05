@@ -7,7 +7,9 @@
     index?: number;
     label?: string;
     isActive?: boolean;
+    isGroupDrag?: boolean;
     isOverlay?: boolean;
+    activeId?: string | null;
   }
 
   let {
@@ -15,31 +17,42 @@
     index = 0,
     label = 'Drop into group',
     isActive = false,
+    isGroupDrag = false,
     isOverlay = false,
+    activeId = null,
   }: Props = $props();
 
+  // Disable if this dropzone belongs to the currently dragged group
+  const isOwnDropzone = $derived(activeId === groupId);
+
+  // When enabled, High priority ensures it wins over group sortables
+  // Disable for the currently dragged group (can't drop into itself)
   const { ref, isDropTarget } = useSortable({
     id: `drop-${groupId}`,
     index: () => index,
     type: 'drop',
-    accept: ['item', 'group'],
+    accept: ['group'],
     collisionPriority: CollisionPriority.High,
+    disabled: () => isOwnDropzone,
     data: { targetGroupId: groupId, isGroupDropZone: true },
   });
 
-  const showZone = $derived(!isOverlay && (isActive || isDropTarget.current));
+  // Only show the zone visually when dragging a group
+  const showZone = $derived(!isOverlay && isGroupDrag);
 </script>
 
 <div
   data-testid="group-drop-zone"
   data-group-id={groupId}
-  class="rounded-md border border-dashed border-primary-500 bg-primary-50 text-primary-600 text-xs font-semibold uppercase tracking-wide flex items-center justify-center transition-all overflow-hidden"
-  class:max-h-0={!showZone}
+  class="rounded-md border border-dashed text-primary-600 text-xs font-semibold uppercase tracking-wide flex items-center justify-center transition-all"
+  class:h-2={!showZone}
   class:opacity-0={!showZone}
-  class:py-0={!showZone}
-  class:max-h-16={showZone}
+  class:border-transparent={!showZone}
+  class:h-24={showZone}
   class:opacity-100={showZone}
-  class:py-2={showZone}
+  class:bg-primary-50={showZone}
+  class:border-primary-500={showZone}
+  class:py-4={showZone}
   {@attach ref}
 >
   <span class="sr-only">{label}</span>

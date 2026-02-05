@@ -8,14 +8,15 @@
 
   let { groupId }: Props = $props();
 
+  // No group parameter - accepts drops from any group
+  // Highest priority ensures this wins over parent containers
   const { ref, isDropTarget } = useSortable({
     id: `empty-${groupId}`,
     index: () => 0,
     type: 'item',
     accept: ['item', 'group'],
-    collisionPriority: CollisionPriority.High,
-    group: groupId,
-    data: { targetGroupId: groupId },
+    collisionPriority: CollisionPriority.Highest,
+    data: { targetGroupId: groupId, isEmptyDropZone: true },
   });
 </script>
 

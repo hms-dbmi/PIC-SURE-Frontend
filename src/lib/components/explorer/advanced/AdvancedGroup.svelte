@@ -4,6 +4,7 @@
   import AdvancedItem from './AdvancedItem.svelte';
   import AdvancedGroup from './AdvancedGroup.svelte';
   import EmptyDropZone from './EmptyDropZone.svelte';
+  import GroupDropZone from './GroupDropZone.svelte';
   import { Operator, type OperatorType } from '$lib/models/query/Query';
   import { Segment } from '@skeletonlabs/skeleton-svelte';
   import { CollisionPriority } from '@dnd-kit/abstract';
@@ -15,19 +16,21 @@
     onRemoveChild: (child: FilterInterface) => void;
     onOperatorChange?: (group: FilterGroupInterface, operator: OperatorType) => void;
     activeId?: string | null;
+    isGroupDrag?: boolean;
     index?: number;
     isOverlay?: boolean;
     id?: string;
     parentId?: string;
   }
 
-  let { 
-    group = $bindable(), 
+  let {
+    group = $bindable(),
     activeId = null,
-    index = 0, 
-    isOverlay = false, 
-    id = group.uuid, 
-    parentId, 
+    isGroupDrag = false,
+    index = 0,
+    isOverlay = false,
+    id = group.uuid,
+    parentId,
     onRemove = () => {},
     onRemoveChild = () => {},
     onOperatorChange = (g, op) => { g.setOperator(op); }
@@ -53,7 +56,6 @@
       : undefined
   );
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
-  const showDropPreview = $derived(!isOverlay && isDragging.current && isDraggable);
 
   const { ref, handleRef, isDragging, } = useSortable({
     id: id,
@@ -64,6 +66,7 @@
     collisionPriority: CollisionPriority.Lowest,
     data: { ...group, targetGroupId: id },
   });
+  const showDropPreview = $derived(!isOverlay && isDragging.current && isDraggable);
 
   function handleOperatorChange(e: any) {
     const newOperator = e.value as OperatorType;
@@ -87,7 +90,7 @@
   <div
     class="card p-4 space-y-2 {id === 'root'
       ? 'bg-surface-50 shadow-none border-none'
-      : isDragging.current && !isOverlay
+      : activeId === id && isDragging.current && !isOverlay
         ? 'invisible'
         : 'bg-white border-surface-400 border'}"
   >
@@ -136,6 +139,7 @@
               {onRemoveChild}
               isOverlay={isOverlay}
               {activeId}
+              {isGroupDrag}
               {onOperatorChange}
           />
         {:else}
@@ -151,6 +155,9 @@
       {/each}
       {#if group.children.length === 0}
         <EmptyDropZone groupId={id} />
+      {:else if id !== 'root'}
+        <!-- GroupDropZone for dropping groups into this group; only visible when dragging a group, not shown on root -->
+        <GroupDropZone groupId={id} {isGroupDrag} isActive={activeId !== null} index={group.children.length} {isOverlay} {activeId} />
       {/if}
     </div>
   </div>

@@ -39,6 +39,8 @@
   );
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
+  const isBeingDragged = $derived(activeId === filter.uuid);
+
   const {ref, handleRef, isDragging, isDropTarget} = useSortable({
 		id: filter.uuid,
 		index: () => index,
@@ -61,7 +63,7 @@
   {/if}
 
   <div
-    class="card flex flex-row gap-2 items-center p-4 {isDragging.current && !isOverlay ? 'invisible' : ''} bg-white border-surface-400 border"
+    class="card flex flex-row gap-2 items-center p-4 {activeId === filter.uuid && isDragging.current && !isOverlay ? 'invisible' : ''} bg-white border-surface-400 border"
   >
     <div class="cursor-grab active:cursor-grabbing m-0 flex items-center" {@attach handleRef}>
       <i class="fa-solid fa-grip-vertical text-surface-500"></i>

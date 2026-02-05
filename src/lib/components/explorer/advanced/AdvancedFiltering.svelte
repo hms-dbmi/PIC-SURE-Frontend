@@ -3,6 +3,7 @@
   import type { FilterGroupInterface } from '$lib/models/Filter.svelte';
   import AdvancedGroup from './AdvancedGroup.svelte';
   import AdvancedItem from './AdvancedItem.svelte';
+  import GroupDropZone from './GroupDropZone.svelte';
   import {
     DragDropProvider,
     DragOverlay,
@@ -17,12 +18,16 @@
 
   let activeNode: FilterInterface | null = $state(null);
   let activeId: string | null = $state(null);
+  // True when actively dragging a group (not an item)
+  const isGroupDrag = $derived(activeNode?.filterType === 'FilterGroup');
   let operatorPreview: { parentId: string | undefined; index: number } | null = $state(null);
   let projectedOrder: Record<string, string[]> | null = $state(null);
   // Store the last valid projectedOrder so it's available in handleDragEnd
   let lastValidProjectedOrder: Record<string, string[]> | null = $state(null);
   let dragStartSnapshot: string | null = $state(null);
   let hasOptimisticReorder = $state(false);
+  // Track if actual drag movement occurred (not just a click)
+  let hasDragMovement = $state(false);
 
   // Initialize a local reactive tree.
   // We clone the global tree's structure initially.
@@ -76,6 +81,7 @@
     if (node) activeNode = node as FilterInterface;
     dragStartSnapshot = localTree.serialized;
     hasOptimisticReorder = false;
+    hasDragMovement = false;
   }
 
   function clearDragState() {
@@ -86,6 +92,7 @@
     lastValidProjectedOrder = null;
     dragStartSnapshot = null;
     hasOptimisticReorder = false;
+    hasDragMovement = false;
   }
 
   function removeFromParent(node: FilterInterface, parent: FilterGroupInterface) {
@@ -120,6 +127,39 @@
     return true;
   }
 
+  function handleGroupDropZone(targetId: string): boolean {
+    if (!targetId.startsWith('drop-') || !activeNode) return false;
+
+    const targetGroupId = targetId.replace('drop-', '');
+    const targetGroup = getGroupNodeByContainerId(targetGroupId);
+    if (!targetGroup) return false;
+
+    // Don't allow dropping a group into itself or its descendants
+    if (activeNode.filterType === 'FilterGroup') {
+      let checkNode: FilterGroupInterface | null = targetGroup;
+      while (checkNode) {
+        if (checkNode.uuid === activeNode.uuid) return false;
+        checkNode = checkNode.parent as FilterGroupInterface | null;
+      }
+    }
+
+    const oldParent = activeNode.parent as FilterGroupInterface | null;
+    if (oldParent) removeFromParent(activeNode, oldParent);
+    insertAtIndex(activeNode, targetGroup, targetGroup.children.length);
+    return true;
+  }
+
+  function isDropZoneTarget(targetId: string): boolean {
+    return targetId.startsWith('empty-') || targetId.startsWith('drop-');
+  }
+
+  function getDropZoneGroupId(target: any, targetId: string): string | null {
+    if (target?.data?.targetGroupId) return String(target.data.targetGroupId);
+    if (targetId.startsWith('empty-')) return targetId.replace('empty-', '');
+    if (targetId.startsWith('drop-')) return targetId.replace('drop-', '');
+    return null;
+  }
+
   function findDropDestination(targetId: string): {
     group: FilterGroupInterface;
     index: number;
@@ -152,12 +192,18 @@
   function handleCrossGroupOrReorder(targetId: string): boolean {
     if (!activeNode) return false;
 
+    // If dropped on itself, do nothing (this happens on click without drag)
+    if (targetId === activeNode.uuid) return false;
+
     const destination = findDropDestination(targetId);
     if (!destination) return false;
 
     const { group: destinationGroup, index: insertIndex } = destination;
     const activeParent = activeNode.parent as FilterGroupInterface | null;
     if (!activeParent) return false;
+
+    // Don't allow dropping a group into itself
+    if (destinationGroup === activeNode) return false;
 
     const activeUuid = activeNode.uuid;
     const isCrossGroup = destinationGroup !== activeParent;
@@ -280,8 +326,16 @@
     const operation = event?.operation;
     const source = operation?.source;
     const target = operation?.target;
-    const targetId = target?.id ? String(target.id) : null;
+    let targetId = target?.id ? String(target.id) : null;
     const canceled = event?.canceled ?? operation?.canceled;
+
+    const sourceId = source?.id ? String(source.id) : null;
+
+    // Ignore dropping on own dropzone (can't nest into yourself)
+    if (targetId && isDropZoneTarget(targetId) && targetId === `drop-${sourceId}`) {
+      // Don't treat this as a dropzone drop - fall through to other handling
+      targetId = null;
+    }
 
     if (canceled && dragStartSnapshot) {
       localTree.root = Tree.deserialize<FilterInterface>(
@@ -292,12 +346,54 @@
       return;
     }
 
-    if (hasOptimisticReorder) {
+    // Check if this looks like a click on the parent container (no real drag movement)
+    const activeParentId = activeNode?.parent
+      ? containerIdForTreeParent(activeNode.parent)
+      : undefined;
+    const isClickOnParentContainer = targetId === activeParentId || targetId === 'root';
+
+    // For clicks (no drag movement) on parent container, restore original state to prevent spurious reordering
+    // If hasDragMovement is true, this is a real drag and we should keep the changes
+    if (isClickOnParentContainer && !hasDragMovement && dragStartSnapshot) {
+      localTree.root = Tree.deserialize<FilterInterface>(
+        dragStartSnapshot,
+        (nodes, op) => createFilterGroup(nodes as FilterInterface[], op)
+      ).root;
       clearDragState();
       return;
     }
 
+    // Handle drop zones first (they have priority over optimistic reorder)
     if (targetId && handleEmptyDropZone(targetId)) {
+      clearDragState();
+      return;
+    }
+
+    if (targetId && handleGroupDropZone(targetId)) {
+      clearDragState();
+      return;
+    }
+
+    // Check for cross-group drops - these need special handling even if optimistic reorder occurred
+    // because move() doesn't handle cross-group moves correctly
+    if (targetId && activeNode) {
+      const targetNode = localTree.find((n) => (n as FilterInterface).uuid === targetId);
+      if (targetNode) {
+        const targetParent = targetNode.parent as FilterGroupInterface | null;
+        const activeParent = activeNode.parent as FilterGroupInterface | null;
+        // If target is in a different group, or target IS a group, handle as cross-group
+        const isCrossGroupTarget = targetParent && activeParent && targetParent !== activeParent;
+        const isGroupTarget = (targetNode as FilterInterface).filterType === 'FilterGroup';
+        if (isCrossGroupTarget || isGroupTarget) {
+          if (handleCrossGroupOrReorder(targetId)) {
+            clearDragState();
+            return;
+          }
+        }
+      }
+    }
+
+    if (hasOptimisticReorder) {
       clearDragState();
       return;
     }
@@ -336,15 +432,24 @@
       return;
     }
 
-    const targetId = String(target.id);
-    const isEmptyDropZone = targetId.startsWith('empty-');
+    let targetId = String(target.id);
+    let isDropZone = isDropZoneTarget(targetId);
+    const sourceId = String(source.id);
+
+    // Ignore dropzones that belong to the dragged item itself (can't nest into yourself)
+    if (isDropZone && targetId === `drop-${sourceId}`) {
+      // Clear any projected reorder - we don't want to apply changes when over own dropzone
+      projectedOrder = null;
+      return;
+    }
 
     const baseOrder = buildSortableOrder();
     let nextOrder = baseOrder;
 
-    if (isEmptyDropZone) {
-      const targetGroupId =
-        target?.data?.targetGroupId ? String(target.data.targetGroupId) : targetId.replace('empty-', '');
+    if (isDropZone) {
+      const targetGroupId = getDropZoneGroupId(target, targetId);
+      if (!targetGroupId) return;
+
       const activeUuid = String(source.id);
 
       nextOrder = { ...baseOrder };
@@ -363,10 +468,31 @@
     }
 
     if (nextOrder !== baseOrder) {
-      projectedOrder = nextOrder;
-      lastValidProjectedOrder = nextOrder;
-      hasOptimisticReorder = true;
-      applyProjectedOrder(nextOrder);
+      // Check if the source item actually moved to a different position
+      const sourceId = String(source.id);
+      let sourceActuallyMoved = false;
+
+      // Compare source position in baseOrder vs nextOrder
+      for (const [containerId, ids] of Object.entries(nextOrder)) {
+        const baseIds = baseOrder[containerId] || [];
+        const baseIndex = baseIds.indexOf(sourceId);
+        const nextIndex = ids.indexOf(sourceId);
+
+        // If source moved to this container or moved within this container
+        if (nextIndex !== -1 && (baseIndex !== nextIndex || !baseOrder[containerId]?.includes(sourceId))) {
+          sourceActuallyMoved = true;
+          break;
+        }
+      }
+
+      // Only apply optimistic reorder if source actually moved
+      if (sourceActuallyMoved) {
+        projectedOrder = nextOrder;
+        lastValidProjectedOrder = nextOrder;
+        hasOptimisticReorder = true;
+        hasDragMovement = true;  // Mark that real drag movement occurred
+        applyProjectedOrder(nextOrder);
+      }
     }
   }
 
@@ -397,14 +523,24 @@
 </div>
 <div class="flex-1 overflow-auto p-4 border border-surface-300 rounded-lg bg-surface-50">
   <DragDropProvider {sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
-    <AdvancedGroup 
-        group={localTree.root as FilterGroupInterface} 
-        id="root" 
-        onRemove={removeGroup} 
+    <AdvancedGroup
+        group={localTree.root as FilterGroupInterface}
+        id="root"
+        onRemove={removeGroup}
         onRemoveChild={removeNode}
         isOverlay={false}
         {activeId}
+        {isGroupDrag}
         onOperatorChange={handleOperatorChange}
+    />
+    <!-- Root-level drop zone for un-nesting groups -->
+    <GroupDropZone
+      groupId="root"
+      {isGroupDrag}
+      isActive={activeId !== null}
+      index={(localTree.root as FilterGroupInterface).children.length}
+      isOverlay={false}
+      {activeId}
     />
     <DragOverlay>
       {#if activeNode && (activeNode as FilterInterface | FilterGroupInterface).filterType === 'FilterGroup'}
