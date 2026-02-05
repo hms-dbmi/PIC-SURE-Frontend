@@ -57,6 +57,7 @@
   );
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
+  // Disable in overlay mode to prevent duplicate sortable IDs
   const { ref, handleRef, isDragging, } = useSortable({
     id: id,
     index: () => index,
@@ -65,6 +66,7 @@
     accept: ['item', 'group'],
     collisionPriority: CollisionPriority.Lowest,
     data: { ...group, targetGroupId: id },
+    disabled: isOverlay,
   });
   const showDropPreview = $derived(!isOverlay && isDragging.current && isDraggable);
 
@@ -80,7 +82,7 @@
 
 <div class="relative" {@attach ref}>
   {#if showLeadingOperator && leadingOperator}
-    <div class="flex justify-center py-1 {activeId && activeId === id && !isOverlay ? 'invisible' : ''}">
+    <div class="flex justify-center py-3 {activeId && activeId === id && !isOverlay ? 'invisible' : ''}">
       <span class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
         {leadingOperator}
       </span>

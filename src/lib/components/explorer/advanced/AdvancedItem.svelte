@@ -41,6 +41,7 @@
 
   const isBeingDragged = $derived(activeId === filter.uuid);
 
+  // Disable in overlay mode to prevent duplicate sortable IDs
   const {ref, handleRef, isDragging, isDropTarget} = useSortable({
 		id: filter.uuid,
 		index: () => index,
@@ -49,13 +50,14 @@
 		collisionPriority: CollisionPriority.High,
 		group: parentId,
 		data: filter as FilterInterface,
+		disabled: isOverlay,
 	});
 
 </script>
 
 <div class="relative flex flex-col gap-2" {@attach ref}>
   {#if showLeadingOperator && leadingOperator}
-    <div class="flex justify-center py-1 {activeId && activeId === filter.uuid && !isOverlay ? 'invisible' : ''}">
+    <div class="flex justify-center py-3 {activeId && activeId === filter.uuid && !isOverlay ? 'invisible' : ''}">
       <span class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
         {leadingOperator}
       </span>

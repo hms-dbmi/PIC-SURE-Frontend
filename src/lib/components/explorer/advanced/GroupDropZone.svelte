@@ -22,18 +22,16 @@
     activeId = null,
   }: Props = $props();
 
-  // Disable if this dropzone belongs to the currently dragged group
-  const isOwnDropzone = $derived(activeId === groupId);
-
   // When enabled, High priority ensures it wins over group sortables
-  // Disable for the currently dragged group (can't drop into itself)
+  // Self-drop protection is handled in handleGroupDropZone
+  // Disable in overlay mode to prevent duplicate sortable IDs
   const { ref, isDropTarget } = useSortable({
     id: `drop-${groupId}`,
     index: () => index,
     type: 'drop',
     accept: ['group'],
     collisionPriority: CollisionPriority.High,
-    disabled: () => isOwnDropzone,
+    disabled: isOverlay,
     data: { targetGroupId: groupId, isGroupDropZone: true },
   });
 
