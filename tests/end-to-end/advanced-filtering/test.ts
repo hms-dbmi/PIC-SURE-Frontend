@@ -358,7 +358,7 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     await expect(dropPreview).toHaveCount(0);
   });
 
-  test.skip('AF-DND-006: Dragging a group shows a dotted drop preview', async ({ page }) => {
+  test('AF-DND-006: Dragging a group shows a dotted drop preview', async ({ page }) => {
     const dropPreview = page.getByTestId('drop-preview');
     await expect(dropPreview).toHaveCount(0);
 
@@ -688,7 +688,7 @@ test.describe('Advanced Filtering - Grouping', () => {
     console.log('[AF-GROUP-008] Test passed: Group operators are independent of root operator');
   });
 
-  test.skip('AF-GROUP-009: Groups can be dragged and reordered relative to other top-level items', async ({ page }) => {
+  test('AF-GROUP-009: Groups can be dragged and reordered relative to other top-level items', async ({ page }) => {
     // The login page hack creates 2 groups (group1 with filter3,filter4 and group2 with filter5,filter6)
     // plus individual filters (filter1, filter2)
     // Initial structure at root level: group2, group1, filter2, filter1
@@ -912,7 +912,7 @@ test.describe('Advanced Filtering - Grouping', () => {
     expect(sourceFilters.every((filter) => nestedFilters.includes(filter))).toBe(true);
   });
 
-  test.skip('AF-GROUP-011: Nested groups can be dragged back to top level', async ({ page }) => {
+  test('AF-GROUP-011: Nested groups can be dragged back to top level', async ({ page }) => {
     // TODO: Un-nesting groups requires collision detection to hit root drop zone instead of parent group
     const groupHeaders = page.getByText('Between items:', { exact: false });
     await expect(groupHeaders).toHaveCount(2);
