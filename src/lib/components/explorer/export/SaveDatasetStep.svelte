@@ -54,7 +54,8 @@
       getQueryRequest().query.expectedResultType = getActiveType() || 'DATAFRAME';
       setDatasetId('');
       requestUpdate(() => {
-        const request = structuredClone(getQueryRequest()); // Make a copy so we don't add exports to selected for the loaded query
+        // Make a copy so we don't add exports to selected for the loaded query
+        const request = structuredClone($state.snapshot(getQueryRequest()));
         request.query.select = [
           ...request.query.select,
           ...$exports.map(({ conceptPath }) => conceptPath),

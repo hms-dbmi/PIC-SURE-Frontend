@@ -44,37 +44,36 @@
   import { resources } from '$lib/stores/Resources';
 
   const { rows = [] }: { rows?: ExportRowInterface[] } = $props();
-  let queryRequest = $state(getQueryRequest());
-  $effect(() => setQueryRequest(queryRequest));
 
   let statusPromise: Promise<unknown> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
   let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
 
   const showTabbedAnalysisStep = $derived(
-    (queryRequest.query.expectedResultType === 'DATAFRAME' ||
-      queryRequest.query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
+    (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
+      getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
       !features.explorer.enableRedcapExport,
   );
   const showPfbExportStep = $derived(
-    queryRequest.query.expectedResultType === 'DATAFRAME_PFB' &&
+    getQueryRequest().query.expectedResultType === 'DATAFRAME_PFB' &&
       features.explorer.enablePfbExport &&
       !features.explorer.enableRedcapExport,
   );
   const showUserToken = $derived(
-    (queryRequest.query.expectedResultType === 'DATAFRAME' ||
-      queryRequest.query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
+    (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
+      getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
       features.analyzeApi &&
       !features.explorer.enableRedcapExport,
   );
 
   onMount(async () => {
-    queryRequest = getQueryRequestV3(true, $resources.hpdsAuth, 'COUNT', (query: QueryV3) => {
-      // populate selected export columns from filters
-      query.select = [...new Set([...query.select, ...getFilterConcepts(query)])];
-      return query;
-    });
-
+    setQueryRequest(
+      getQueryRequestV3(true, $resources.hpdsAuth, 'COUNT', (query: QueryV3) => {
+        // populate selected export columns from filters
+        query.select = [...new Set([...query.select, ...getFilterConcepts(query)])];
+        return query;
+      }),
+    );
     $federatedQueryMap = {};
     if (!features.explorer.enablePfbExport) {
       setActiveType('DATAFRAME');
@@ -116,7 +115,7 @@
 
     return withBackoff(
       async () => {
-        const res = (await api.post(`${Picsure.QueryV3}${queryFragment}`, queryRequest)) as {
+        const res = (await api.post(`${Picsure.QueryV3}${queryFragment}`, getQueryRequest())) as {
           picsureResultId: string;
           status: string;
           resultMetadata: { picsureQueryId: string };
@@ -182,7 +181,7 @@
   <Step name="review" locked={dataLimitExceeded()}>
     {#snippet header()}Review Cohort Details:{/snippet}
     <ReviewStep
-      query={queryRequest}
+      query={getQueryRequest()}
       {rows}
       {preparePromise}
       dataLimitExceeded={dataLimitExceeded()}

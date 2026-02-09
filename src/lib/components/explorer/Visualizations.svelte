@@ -8,7 +8,7 @@
     createContinuousPlot,
     createCategoryPlot,
   } from '$lib/utilities/Plotly';
-  import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
+  import { getQueryRequestV2 } from '$lib/utilities/QueryBuilder';
   import { page } from '$app/state';
   import { toaster } from '$lib/toaster';
   import Loading from '$lib/components/Loading.svelte';
@@ -22,7 +22,7 @@
   const isOpenAccess = page.url.pathname.includes('/discover');
 
   async function loadPlotData() {
-    const query = getQueryRequestV3(!isOpenAccess, $resources.visualization);
+    const query = getQueryRequestV2(!isOpenAccess, $resources.visualization);
     const token = localStorage.getItem('token');
 
     await api

@@ -8,11 +8,6 @@
   import RemoteTree from '$lib/components/tree/RemoteTree.svelte';
   import Summary from '$lib/components/explorer/export/Summary.svelte';
   import { getQueryRequest } from '$lib/ExportStepperManager.svelte';
-  import { settings } from '$lib/configuration';
-
-  // An additional depth to get children - loads more up front if concept path is short,
-  // but reduces api calls when there are hundereds of children.
-  const API_BUFFER: number = settings.export.apiBuffer || 15;
 
   let currentExports: ExportInterface[] = $state($exports);
   exports.subscribe((newExports) => (currentExports = newExports));
@@ -27,7 +22,6 @@
   let largestDepth: number = $derived(
     selectedConcepts.length > 0
       ? Math.max(
-          API_BUFFER, // initial tree load depth to reduce overall api calls
           ...selectedConcepts.map((concept: string) => concept.split('\\').filter(Boolean).length),
         )
       : 1,
@@ -35,7 +29,7 @@
 
   async function fetchChildren(conceptPath: string): Promise<SearchResult[] | undefined | null> {
     const dataset = conceptPath.split('\\')[1];
-    const depth = conceptPath.split('\\').filter(Boolean).length + API_BUFFER;
+    const depth = conceptPath.split('\\').filter(Boolean).length;
     const treeNodes = await getConceptTree(dataset, depth, conceptPath);
 
     // Search the tree for the matching concept path, which could be nested. Return it's children.
@@ -61,14 +55,14 @@
     return parent?.children;
   }
 
-  const onselect = (search?: SearchResult) => {
-    if (!search) return;
-    addExport(mapSearchResultAsExport(search));
+  const onselect = (searchResult?: SearchResult) => {
+    if (!searchResult) return;
+    addExport(mapSearchResultAsExport(searchResult));
   };
 
-  const onunselect = (search?: SearchResult) => {
-    if (!search) return;
-    removeExport(mapSearchResultAsExport(search));
+  const onunselect = (searchResult?: SearchResult) => {
+    if (!searchResult) return;
+    removeExport(mapSearchResultAsExport(searchResult));
   };
 </script>
 

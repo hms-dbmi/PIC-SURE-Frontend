@@ -15,8 +15,8 @@
   }: {
     initialNodes: SearchResult[];
     fetchChildren: (conceptPath: string) => Promise<SearchResult[] | undefined | null>;
-    onselect?: (search?: SearchResult) => void;
-    onunselect?: (search?: SearchResult) => void;
+    onselect?: (searchResult?: SearchResult) => void;
+    onunselect?: (searchResult?: SearchResult) => void;
     fullWidth: boolean;
     selectedConcepts: string[];
     disabledConcepts: string[];
@@ -34,13 +34,13 @@
     error: string | null = $state(null);
     isLeaf: boolean = $state(false);
     childrenLoaded: boolean = $state(false);
-    search?: SearchResult = $state(undefined);
+    searchResult?: SearchResult = $state(undefined);
 
     constructor(apiNode: SearchResult) {
       this.name = apiNode.name;
       this.value = apiNode.name; // Using name as value, adjust if needed
       this.conceptPath = apiNode.conceptPath;
-      this.search = apiNode;
+      this.searchResult = apiNode;
 
       if (apiNode.children === undefined || apiNode.children === null) {
         this.isLeaf = true;
@@ -99,11 +99,11 @@
         if (this.children.length > 0) {
           await Promise.all(this.children.map((child) => child.select()));
         } else {
-          onselect(this.search);
+          onselect(this.searchResult);
           this.selected = true;
         }
       } else {
-        onselect(this.search);
+        onselect(this.searchResult);
         this.selected = true;
       }
     }
@@ -121,11 +121,11 @@
           await Promise.all(this.children.map((child) => child.unselect()));
         } else {
           this.selected = false;
-          onunselect(this.search);
+          onunselect(this.searchResult);
         }
       } else {
         this.selected = false;
-        onunselect(this.search);
+        onunselect(this.searchResult);
       }
     }
 
