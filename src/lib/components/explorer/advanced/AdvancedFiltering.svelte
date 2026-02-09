@@ -23,7 +23,6 @@
     if (!activeNode) return false;
     return (activeNode as FilterInterface).filterType === 'FilterGroup';
   });
-  let operatorPreview: { parentId: string | undefined; index: number } | null = $state(null);
   let projectedOrder: Record<string, string[]> | null = $state(null);
   // Store the last valid projectedOrder so it's available in handleDragEnd
   let lastValidProjectedOrder: Record<string, string[]> | null = $state(null);
@@ -90,7 +89,6 @@
   function clearDragState() {
     activeNode = null;
     activeId = null;
-    operatorPreview = null;
     projectedOrder = null;
     lastValidProjectedOrder = null;
     dragStartSnapshot = null;
@@ -430,7 +428,6 @@
     const target = operation?.target;
 
     if (!source || !target) {
-      operatorPreview = null;
       projectedOrder = null;
       return;
     }
