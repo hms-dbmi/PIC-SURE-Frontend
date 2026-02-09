@@ -16,6 +16,15 @@
   import { createFilterGroup } from '$lib/models/Filter.svelte';
   import { Operator } from '$lib/models/query/Query';
 
+  type DragOperation =
+    | { type: 'canceled' }
+    | { type: 'no-movement' }
+    | { type: 'empty-drop-zone'; targetId: string }
+    | { type: 'group-drop-zone'; targetId: string }
+    | { type: 'cross-group'; targetId: string }
+    | { type: 'reorder-applied' }
+    | { type: 'fallback'; targetId: string | null; source: any };
+
   let activeNode: FilterInterface | null = $state(null);
   let activeId: string | null = $state(null);
   // True when actively dragging a group (not an item)
@@ -94,6 +103,14 @@
     dragStartSnapshot = null;
     hasOptimisticReorder = false;
     hasDragMovement = false;
+  }
+
+  function restoreSnapshot() {
+    if (!dragStartSnapshot) return;
+    localTree.root = Tree.deserialize<FilterInterface>(
+      dragStartSnapshot,
+      (nodes, op) => createFilterGroup(nodes as FilterInterface[], op),
+    ).root;
   }
 
   function removeFromParent(node: FilterInterface, parent: FilterGroupInterface) {
@@ -323,86 +340,72 @@
     }
   }
 
-  function handleDragEnd(event: any) {
+  function classifyDragOperation(event: any): DragOperation {
     const operation = event?.operation;
     const source = operation?.source;
     const target = operation?.target;
     let targetId = target?.id ? String(target.id) : null;
     const canceled = event?.canceled ?? operation?.canceled;
-
     const sourceId = source?.id ? String(source.id) : null;
 
     // Ignore dropping on own dropzone (can't nest into yourself)
     if (targetId && isDropZoneTarget(targetId) && targetId === `drop-${sourceId}`) {
-      // Don't treat this as a dropzone drop - fall through to other handling
       targetId = null;
     }
 
-    if (canceled && dragStartSnapshot) {
-      localTree.root = Tree.deserialize<FilterInterface>(
-        dragStartSnapshot,
-        (nodes, op) => createFilterGroup(nodes as FilterInterface[], op)
-      ).root;
-      clearDragState();
-      return;
+    // Path 1: Canceled drag
+    if (canceled) {
+      return { type: 'canceled' };
     }
 
-    // Check if this looks like a click on the parent container (no real drag movement)
+    // Path 2: Click without movement (no real drag)
     const activeParentId = activeNode?.parent
       ? containerIdForTreeParent(activeNode.parent)
       : undefined;
     const isClickOnParentContainer = targetId === activeParentId || targetId === 'root';
-
-    // For clicks (no drag movement) on parent container, restore original state to prevent spurious reordering
-    // If hasDragMovement is true, this is a real drag and we should keep the changes
-    if (isClickOnParentContainer && !hasDragMovement && dragStartSnapshot) {
-      localTree.root = Tree.deserialize<FilterInterface>(
-        dragStartSnapshot,
-        (nodes, op) => createFilterGroup(nodes as FilterInterface[], op)
-      ).root;
-      clearDragState();
-      return;
+    if (isClickOnParentContainer && !hasDragMovement) {
+      return { type: 'no-movement' };
     }
 
-    // Handle drop zones first (they have priority over optimistic reorder)
-    if (targetId && handleEmptyDropZone(targetId)) {
-      clearDragState();
-      return;
+    // Path 3: Empty drop zone
+    if (targetId?.startsWith('empty-')) {
+      return { type: 'empty-drop-zone', targetId };
     }
 
-    if (targetId && handleGroupDropZone(targetId)) {
-      clearDragState();
-      return;
+    // Path 4: Group drop zone
+    if (targetId?.startsWith('drop-')) {
+      return { type: 'group-drop-zone', targetId };
     }
 
-    // Check for cross-group drops - these need special handling even if optimistic reorder occurred
-    // because move() doesn't handle cross-group moves correctly
+    // Path 5: Cross-group or group target
     if (targetId && activeNode) {
       const targetNode = localTree.find((n) => (n as FilterInterface).uuid === targetId);
       if (targetNode) {
         const targetParent = targetNode.parent as FilterGroupInterface | null;
         const activeParent = activeNode.parent as FilterGroupInterface | null;
-        // If target is in a different group, or target IS a group, handle as cross-group
-        const isCrossGroupTarget = targetParent && activeParent && targetParent !== activeParent;
-        const isGroupTarget = (targetNode as FilterInterface).filterType === 'FilterGroup';
+        const isCrossGroupTarget =
+          targetParent && activeParent && targetParent !== activeParent;
+        const isGroupTarget =
+          (targetNode as FilterInterface).filterType === 'FilterGroup';
         if (isCrossGroupTarget || isGroupTarget) {
-          if (handleCrossGroupOrReorder(targetId)) {
-            clearDragState();
-            return;
-          }
+          return { type: 'cross-group', targetId };
         }
       }
     }
 
+    // Path 6: Optimistic reorder already applied during drag
     if (hasOptimisticReorder) {
-      clearDragState();
-      return;
+      return { type: 'reorder-applied' };
     }
 
+    // Path 7: Fallback — try projected order or calculate from source
+    return { type: 'fallback', targetId, source };
+  }
+
+  function handleFallback(targetId: string | null, source: any) {
     let finalProjectedOrder = projectedOrder || lastValidProjectedOrder;
 
     if (!finalProjectedOrder && targetId && handleCrossGroupOrReorder(targetId)) {
-      clearDragState();
       return;
     }
 
@@ -418,7 +421,30 @@
     if (finalProjectedOrder) {
       applyProjectedOrder(finalProjectedOrder);
     }
+  }
 
+  function handleDragEnd(event: any) {
+    const op = classifyDragOperation(event);
+    switch (op.type) {
+      case 'canceled':
+      case 'no-movement':
+        restoreSnapshot();
+        break;
+      case 'empty-drop-zone':
+        handleEmptyDropZone(op.targetId);
+        break;
+      case 'group-drop-zone':
+        handleGroupDropZone(op.targetId);
+        break;
+      case 'cross-group':
+        handleCrossGroupOrReorder(op.targetId);
+        break;
+      case 'reorder-applied':
+        break;
+      case 'fallback':
+        handleFallback(op.targetId, op.source);
+        break;
+    }
     clearDragState();
   }
 
