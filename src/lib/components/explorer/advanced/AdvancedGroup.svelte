@@ -122,7 +122,7 @@
       </Segment>
       {/key}
     </div>
-    <div class="flex items-center gap-2 ml-auto">
+    <div class="hidden flex items-center gap-2 ml-auto">
       <label for="not">Not:</label>
       <Switch name="not" checked={not} onCheckedChange={handleNotChange}>
         {#snippet activeChild()}!{/snippet}
