@@ -19,7 +19,10 @@
   let activeNode: FilterInterface | null = $state(null);
   let activeId: string | null = $state(null);
   // True when actively dragging a group (not an item)
-  const isGroupDrag = $derived(activeNode?.filterType === 'FilterGroup');
+  const isGroupDrag = $derived.by(() => {
+    if (!activeNode) return false;
+    return (activeNode as FilterInterface).filterType === 'FilterGroup';
+  });
   let operatorPreview: { parentId: string | undefined; index: number } | null = $state(null);
   let projectedOrder: Record<string, string[]> | null = $state(null);
   // Store the last valid projectedOrder so it's available in handleDragEnd
