@@ -3,7 +3,7 @@
   import RemoteTreeNode from '$lib/components/tree/RemoteTreeNode.svelte';
 
   interface Props {
-    node: TreeNodeInterface & { hasLoading: boolean; error?: string | null };
+    node: TreeNodeInterface & { hasLoading?: boolean; error?: string | null };
   }
   const { node }: Props = $props();
 </script>
