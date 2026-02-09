@@ -39,8 +39,6 @@
   );
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
-  const isBeingDragged = $derived(activeId === filter.uuid);
-
   // Disable in overlay mode to prevent duplicate sortable IDs
   const {ref, handleRef, isDragging, isDropTarget} = useSortable({
 		id: filter.uuid,
@@ -81,7 +79,7 @@
         type="button"
         title="Remove Filter"
         class="bg-initial text-black-500 hover:text-primary-600"
-        onclick={() => onRemove(filter as FilterInterface)}
+        onclick={() => onRemove(filter)}
       >
         <i class="fa-solid fa-times-circle"></i>
         <span class="sr-only">Remove Filter</span>
