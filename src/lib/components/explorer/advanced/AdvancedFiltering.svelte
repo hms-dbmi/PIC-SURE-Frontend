@@ -425,10 +425,21 @@
 
   function handleDragEnd(event: any) {
     const op = classifyDragOperation(event);
+
+    // Always restore to pre-drag state first, so every path
+    // below mutates from a known-clean starting point.
+    restoreSnapshot();
+
+    // Re-resolve activeNode in the restored tree since restoreSnapshot
+    // replaced all nodes, making the old reference stale.
+    if (activeId) {
+      const freshNode = localTree.find((n) => (n as FilterInterface).uuid === activeId);
+      if (freshNode) activeNode = freshNode as FilterInterface;
+    }
+
     switch (op.type) {
       case 'canceled':
       case 'no-movement':
-        restoreSnapshot();
         break;
       case 'empty-drop-zone':
         handleEmptyDropZone(op.targetId);
@@ -440,6 +451,9 @@
         handleCrossGroupOrReorder(op.targetId);
         break;
       case 'reorder-applied':
+        if (lastValidProjectedOrder) {
+          applyProjectedOrder(lastValidProjectedOrder);
+        }
         break;
       case 'fallback':
         handleFallback(op.targetId, op.source);
