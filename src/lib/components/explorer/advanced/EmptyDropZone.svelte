@@ -20,7 +20,7 @@
   });
 </script>
 
-<div 
+<div
   class="card bg-surface-50 border-surface-400 border text-center text-surface-400 italic py-4 transition-colors"
   class:bg-primary-100={isDropTarget.current}
   class:border-primary-500={isDropTarget.current}

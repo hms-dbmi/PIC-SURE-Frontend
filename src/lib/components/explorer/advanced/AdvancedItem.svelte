@@ -1,7 +1,6 @@
 <script lang="ts">
-  import type { FilterInterface, FilterGroupInterface } from '$lib/models/Filter.svelte';
+  import type { FilterInterface } from '$lib/models/Filter.svelte';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
-  import type { OperatorType } from '$lib/models/query/Query';
   import { CollisionPriority } from '@dnd-kit/abstract';
 
   interface Props {
@@ -21,41 +20,38 @@
     activeId = null,
     onRemove,
   }: Props = $props();
-  
+
   // Derive the actual index from parent's children array (reactive to array changes)
   const actualIndex = $derived(
-    filter.parent 
-      ? (filter.parent as FilterGroupInterface).children.findIndex(
-          child => (child as FilterInterface).uuid === filter.uuid
-        )
-      : -1
+    filter.parent ? filter.parent.children.findIndex((child) => child.uuid === filter.uuid) : -1,
   );
-  
+
   // Derive leadingOperator from parent's operator when actualIndex > 0
   const leadingOperator = $derived(
-    actualIndex > 0 && filter.parent 
-      ? (filter.parent as FilterGroupInterface).operator 
-      : undefined
+    actualIndex > 0 && filter.parent ? filter.parent.operator : undefined,
   );
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
   // Disable in overlay mode to prevent duplicate sortable IDs
-  const {ref, handleRef, isDragging, isDropTarget} = useSortable({
-		id: filter.uuid,
-		index: () => index,
-		type: 'item',
-		accept: 'item',
-		collisionPriority: CollisionPriority.High,
-		group: parentId,
-		data: filter as FilterInterface,
-		disabled: isOverlay,
-	});
-
+  const { ref, handleRef, isDragging, isDropTarget } = useSortable({
+    id: filter.uuid,
+    index: () => index,
+    type: 'item',
+    accept: 'item',
+    collisionPriority: CollisionPriority.High,
+    group: parentId,
+    data: filter,
+    disabled: isOverlay,
+  });
 </script>
 
 <div class="relative flex flex-col gap-2" {@attach ref}>
   {#if showLeadingOperator && leadingOperator}
-    <div class="flex justify-center py-3 {activeId && activeId === filter.uuid && !isOverlay ? 'invisible' : ''}">
+    <div
+      class="flex justify-center py-3 {activeId && activeId === filter.uuid && !isOverlay
+        ? 'invisible'
+        : ''}"
+    >
       <span class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
         {leadingOperator}
       </span>
@@ -63,7 +59,11 @@
   {/if}
 
   <div
-    class="card flex flex-row gap-2 items-center p-4 {activeId === filter.uuid && isDragging.current && !isOverlay ? 'invisible' : ''} bg-white border-surface-400 border"
+    class="card flex flex-row gap-2 items-center p-4 {activeId === filter.uuid &&
+    isDragging.current &&
+    !isOverlay
+      ? 'invisible'
+      : ''} bg-white border-surface-400 border"
   >
     <div class="cursor-grab active:cursor-grabbing m-0 flex items-center" {@attach handleRef}>
       <i class="fa-solid fa-grip-vertical text-surface-500"></i>

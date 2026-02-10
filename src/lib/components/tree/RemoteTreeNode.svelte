@@ -1,11 +1,9 @@
 <script lang="ts">
-  import type { TreeNodeInterface } from '$lib/components/tree/types';
+  import type { HierarchyNodeInterface } from '$lib/components/tree/types';
   import RemoteTreeNode from '$lib/components/tree/RemoteTreeNode.svelte';
 
-  interface Props {
-    node: TreeNodeInterface & { hasLoading?: boolean; error?: string | null };
-  }
-  const { node }: Props = $props();
+  const { node }: { node: HierarchyNodeInterface & { loading?: boolean; error?: string | null } } =
+    $props();
 </script>
 
 <details

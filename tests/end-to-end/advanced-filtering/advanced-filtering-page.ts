@@ -132,16 +132,18 @@ export class AdvancedFilteringPage {
 
   async selectRootOperator(operator: 'AND' | 'OR') {
     console.log(`[AF] Selecting root operator: ${operator}`);
-    
+
     const radioToClick = this.getRootOperatorRadio(operator);
     await expect(radioToClick).toBeVisible();
-    
+
     // Click the parent container of the radio (the clickable segment item)
     await radioToClick.locator('..').click();
-    
+
     // Wait for UI to update - verify the combiner badges changed
     console.log(`[AF] Waiting for badges to update to ${operator}`);
-    const expectedBadge = this.getCombinerBadges().filter({ hasText: new RegExp(`^${operator}$`, 'i') });
+    const expectedBadge = this.getCombinerBadges().filter({
+      hasText: new RegExp(`^${operator}$`, 'i'),
+    });
     await expect(expectedBadge.first()).toBeVisible();
     console.log(`[AF] Root operator set to ${operator}`);
   }
@@ -222,7 +224,9 @@ export class AdvancedFilteringPage {
 
   async expectBadgeText(expectedText: 'AND' | 'OR') {
     console.log(`[AF] Asserting combiner badges show ${expectedText}`);
-    const badges = this.getCombinerBadges().filter({ hasText: new RegExp(`^${expectedText}$`, 'i') });
+    const badges = this.getCombinerBadges().filter({
+      hasText: new RegExp(`^${expectedText}$`, 'i'),
+    });
     await expect(badges.first()).toBeVisible();
     console.log(`[AF] Badge text verified as ${expectedText}`);
   }

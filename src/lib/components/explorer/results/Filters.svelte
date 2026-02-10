@@ -15,7 +15,6 @@
   let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
 </script>
 
-
 <Modal
   bind:open={advancedModalOpen}
   title="Advanced Filters"
@@ -23,7 +22,9 @@
   width="w-full"
   height="h-full"
   confirmText="Apply Changes"
-  onconfirm={() => {advancedModalOpen = false}}
+  onconfirm={() => {
+    advancedModalOpen = false;
+  }}
 >
   <AdvancedFiltering />
 </Modal>
@@ -32,10 +33,12 @@
 {:else}
   <div class="px-4 mb-1 w-80">
     {#if $filters.length + $genomicFilters.length > 0}
-    <div>
-      <header class="text-left ml-1">Filters</header>
-      <button class="btn preset-filled-primary-500" onclick={() => advancedModalOpen = true}>Advanced Filters</button>
-    </div>
+      <div>
+        <header class="text-left ml-1">Filters</header>
+        <button class="btn preset-filled-primary-500" onclick={() => (advancedModalOpen = true)}
+          >Advanced Filters</button
+        >
+      </div>
     {/if}
     <section class="py-1">
       {#if features.explorer.enableOrQueries && isOpenAccess}

@@ -4,7 +4,7 @@ import { GenotypeMap, type SNP } from '$lib/models/GenomeFilter';
 import { type OperatorType, Operator } from '$lib/models/query/Query';
 import { AnyRecordOfFilterError } from '$lib/types';
 
-import type { TreeNode, TreeGroup } from '$lib/models/Tree.svelte';
+import type { LogicNode, LogicGroup } from '$lib/models/LogicTree.svelte';
 
 export type FilterType =
   | 'Categorical'
@@ -26,7 +26,7 @@ type DisplayType =
   | 'between'
   | 'group';
 
-export interface FilterInterface extends TreeNode<FilterInterface> {
+export interface FilterInterface extends LogicNode<FilterInterface> {
   uuid: string;
   id: string;
   filterType: FilterType;
@@ -72,7 +72,7 @@ export interface AnyRecordOfFilterInterface extends FilterInterface {
   concepts: string[];
 }
 
-export interface FilterGroupInterface extends FilterInterface, TreeGroup<FilterInterface> {
+export interface FilterGroupInterface extends FilterInterface, LogicGroup<FilterInterface> {
   filterType: 'FilterGroup';
   displayType: 'group';
   variableName: 'none';

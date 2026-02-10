@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { TreeNodeInterface, NodeInterface } from '$lib/components/tree/types';
+  import type { HierarchyNodeInterface, NodeInterface } from '$lib/components/tree/types';
   import TreeNodeComponent from '$lib/components/tree/TreeNode.svelte';
 
   let {
@@ -14,7 +14,7 @@
     fullWidth?: boolean;
   } = $props();
 
-  class TreeNode implements TreeNodeInterface {
+  class TreeNode implements HierarchyNodeInterface {
     name: string = '';
     value: string = '';
     open: boolean = $state(false);

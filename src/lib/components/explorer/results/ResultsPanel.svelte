@@ -63,6 +63,13 @@
 
   let showCohortDetails = $derived(!isDiscoverPage && features.explorer.enableCohortDetails);
 
+  let nonGenomicFilterCount = $derived(
+    $filters.filter((filter) => filter.filterType !== 'genomic' && filter.filterType !== 'snp')
+      .length,
+  );
+
+  let showAdvancedFiltering = $derived(nonGenomicFilterCount >= 2);
+
   let showToolSuite = $derived(
     showCohortDetails ||
       (($allFilters.length !== 0 || $exports.length !== 0) &&

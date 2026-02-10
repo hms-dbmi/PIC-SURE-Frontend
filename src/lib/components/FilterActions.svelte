@@ -32,7 +32,6 @@
   };
 </script>
 
-
 <div class="actions">
   {#if genomicFilter}
     <button
