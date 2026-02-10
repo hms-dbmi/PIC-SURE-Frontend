@@ -1,17 +1,19 @@
 import { describe, it, expect } from 'vitest';
 
 import { Operator, type OperatorType } from '$lib/models/query/Query';
-import { Tree } from '$lib/models/Tree.svelte';
-import type { TreeNode, TreeGroup } from '$lib/models/Tree.svelte';
+import { LogicTree } from '$lib/models/LogicTree.svelte';
+import type { LogicNode, LogicGroup } from '$lib/models/LogicTree.svelte';
 
-interface TestNode extends TreeNode<string> {
+interface TestNode extends LogicNode<TestNode | TestGroup> {
   type: 'node';
   value: string;
 }
 
-interface TestGroup extends TreeNode<string>, TreeGroup<string> {
+interface TestGroup extends LogicNode<TestNode | TestGroup>, LogicGroup<TestNode | TestGroup> {
   type: 'group';
 }
+
+type TestTreeNode = TestNode | TestGroup;
 
 function createTestNode(value: string): TestNode {
   return {
@@ -21,7 +23,10 @@ function createTestNode(value: string): TestNode {
   };
 }
 
-function createTestGroup(children: TreeNode<string>[], operator: OperatorType): TestGroup {
+function createTestGroup(
+  children: TestTreeNode[],
+  operator: OperatorType,
+): TestGroup & TestTreeNode {
   const parent: TestGroup = {
     parent: undefined,
     type: 'group',
@@ -32,8 +37,8 @@ function createTestGroup(children: TreeNode<string>[], operator: OperatorType): 
   return parent;
 }
 
-function printGroup(group: TreeNode<string>) {
-  const print = (node: TreeNode<string>): string => {
+function printGroup(group: TestTreeNode) {
+  const print = (node: TestTreeNode): string => {
     if (node && 'children' in node) {
       const group = node as TestGroup;
       return '(' + group.children.map(print).join(` ${group.operator} `) + ')';
@@ -43,21 +48,21 @@ function printGroup(group: TreeNode<string>) {
   return print(group);
 }
 
-function print(tree: Tree<string>) {
+function print(tree: LogicTree<TestTreeNode>) {
   return printGroup(tree.root);
 }
 
 describe('FlatFilterTree Model', () => {
   it('has no operator when there is one filter', () => {
     // Given
-    const tree = new Tree<string>(createTestGroup);
+    const tree = new LogicTree<TestTreeNode>(createTestGroup);
 
     // Then
     expect(print(tree)).toBe('()');
   });
   it('has an OR group somewhere in tree', () => {
     // Given
-    const tree = new Tree<string>(createTestGroup);
+    const tree = new LogicTree<TestTreeNode>(createTestGroup);
     const A = createTestNode('A');
     const B = createTestNode('B');
     tree.add(A, B);
@@ -75,7 +80,7 @@ describe('FlatFilterTree Model', () => {
   describe('add', () => {
     it('add new element to root', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
 
       // When
       tree.add(createTestNode('A'));
@@ -85,7 +90,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('add multiple elements to root', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
 
       // When
       tree.add(createTestNode('A'), createTestNode('B'));
@@ -97,7 +102,7 @@ describe('FlatFilterTree Model', () => {
   describe('remove', () => {
     it('remove only child', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       tree.add(A);
 
@@ -110,7 +115,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('remove one child from OR subgroup, collapsing OR group to root AND group', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       const OR = createTestGroup([A, B], Operator.OR);
@@ -125,7 +130,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('remove one child from OR subgroup, OR group remains', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       const C = createTestNode('C');
@@ -141,7 +146,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('remove multiple children', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       const C = createTestNode('C');
@@ -158,11 +163,11 @@ describe('FlatFilterTree Model', () => {
   describe('update', () => {
     it('update root node', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       tree.add(createTestNode('A'));
 
       // When
-      const newTree: TreeGroup<string> = {
+      const newTree: TestGroup = {
         ...(tree.root as TestGroup),
         operator: Operator.OR,
       };
@@ -179,7 +184,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('update non-root node', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       tree.add(A);
 
@@ -198,7 +203,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('update non-root group', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       const OR = createTestGroup([A, B], Operator.OR);
@@ -231,7 +236,7 @@ describe('FlatFilterTree Model', () => {
   describe('toggleOperator', () => {
     it('make new OR subgroup', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       tree.add(A, B);
@@ -245,7 +250,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('collapse OR subgroup', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       const OR = createTestGroup([A, B], Operator.OR);
@@ -260,7 +265,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('merge two OR subgroups', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       const C = createTestNode('C');
@@ -278,7 +283,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('split OR group', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       const C = createTestNode('C');
@@ -295,7 +300,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('merge AND into leading OR group', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       const C = createTestNode('C');
@@ -312,7 +317,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('merge AND into trailing OR group', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       const C = createTestNode('C');
@@ -329,7 +334,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('split from leading OR group', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       const C = createTestNode('C');
@@ -346,7 +351,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('split from trailing OR group', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       const C = createTestNode('C');
@@ -363,7 +368,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('complex structure', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const B = createTestNode('B');
       const C = createTestNode('C');
@@ -385,7 +390,7 @@ describe('FlatFilterTree Model', () => {
   describe('find', () => {
     it('returns a nested node', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const OR = createTestGroup([createTestNode('A'), createTestNode('B')], Operator.OR);
       tree.add(OR);
 
@@ -395,7 +400,7 @@ describe('FlatFilterTree Model', () => {
       expect((node as TestNode).value).toBe('A');
     });
     it('returns undefined when node not found', () => {
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       tree.add(createTestNode('A'));
 
       // Then
@@ -404,7 +409,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('finds a group node', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const OR = createTestGroup([createTestNode('A')], Operator.OR);
       tree.add(OR);
 
@@ -415,7 +420,7 @@ describe('FlatFilterTree Model', () => {
     });
     it('finds first node', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const OR1 = createTestGroup([createTestNode('A')], Operator.OR);
       const OR2 = createTestGroup([createTestNode('B')], Operator.OR);
       tree.add(OR1, OR2);
@@ -429,7 +434,7 @@ describe('FlatFilterTree Model', () => {
   describe('leafNodes', () => {
     it('returns a list of leaves', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       tree.add(createTestNode('A'));
       tree.add(createTestNode('B'));
       tree.add(createTestNode('C'));
@@ -451,14 +456,14 @@ describe('FlatFilterTree Model', () => {
     });
     it('returns empty array for tree with only root', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
 
       // Then
       expect(tree.leafNodes).toEqual([]);
     });
     it('handles nested OR groups', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const innerOR = createTestGroup([createTestNode('A'), createTestNode('B')], Operator.OR);
       const outerOR = createTestGroup([innerOR, createTestNode('C')], Operator.OR);
       tree.add(outerOR);
@@ -471,7 +476,7 @@ describe('FlatFilterTree Model', () => {
   describe('serialize', () => {
     it('returns string without parent links', () => {
       // Given
-      const tree = new Tree<string>(createTestGroup);
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
       const OR = createTestGroup(
         ['B', 'C', 'D'].map((v) => createTestNode(v)),
         Operator.OR,
@@ -512,7 +517,7 @@ describe('FlatFilterTree Model', () => {
       });
 
       // When
-      const tree = Tree.deserialize<string>(serialized, createTestGroup);
+      const tree = LogicTree.deserialize<TestTreeNode>(serialized, createTestGroup);
 
       // Then
       expect(tree.serialized).toBe(serialized);
@@ -537,7 +542,7 @@ describe('FlatFilterTree Model', () => {
       });
 
       // When
-      const tree = Tree.deserialize<string>(serialized, createTestGroup);
+      const tree = LogicTree.deserialize<TestTreeNode>(serialized, createTestGroup);
 
       // Then
       expect(tree.serialized).toBe(serialized);
@@ -546,7 +551,7 @@ describe('FlatFilterTree Model', () => {
 
     it('deserializes a complex nested structure', () => {
       // Given
-      const tree1 = new Tree<string>(createTestGroup);
+      const tree1 = new LogicTree<TestTreeNode>(createTestGroup);
       const A = createTestNode('A');
       const OR1 = createTestGroup([createTestNode('B'), createTestNode('C')], Operator.OR);
       const OR2 = createTestGroup([createTestNode('D'), createTestNode('E')], Operator.OR);
@@ -554,7 +559,7 @@ describe('FlatFilterTree Model', () => {
 
       // When
       const serialized = tree1.serialized;
-      const tree2 = Tree.deserialize<string>(serialized, createTestGroup);
+      const tree2 = LogicTree.deserialize<TestTreeNode>(serialized, createTestGroup);
 
       // Then
       expect(tree2.serialized).toBe(serialized);
@@ -579,7 +584,7 @@ describe('FlatFilterTree Model', () => {
       });
 
       // When
-      const tree = Tree.deserialize<string>(serialized, createTestGroup);
+      const tree = LogicTree.deserialize<TestTreeNode>(serialized, createTestGroup);
 
       // Then
       const nodeA = tree.find((node) => 'value' in node && node.value === 'A') as TestNode;
@@ -592,7 +597,7 @@ describe('FlatFilterTree Model', () => {
     it('throws error for invalid JSON', () => {
       // Then
       expect(() => {
-        Tree.deserialize<string>('invalid json', createTestGroup);
+        LogicTree.deserialize<TestTreeNode>('invalid json', createTestGroup);
       }).toThrow();
     });
 
@@ -605,7 +610,7 @@ describe('FlatFilterTree Model', () => {
       });
 
       // When
-      const tree = Tree.deserialize<string>(serialized, createTestGroup);
+      const tree = LogicTree.deserialize<TestTreeNode>(serialized, createTestGroup);
 
       // Then
       expect(tree.serialized).toBe(serialized);
@@ -614,7 +619,7 @@ describe('FlatFilterTree Model', () => {
 
     it('round-trip: serialize then deserialize produces identical tree', () => {
       // Given
-      const tree1 = new Tree<string>(createTestGroup);
+      const tree1 = new LogicTree<TestTreeNode>(createTestGroup);
       const OR = createTestGroup(
         ['B', 'C', 'D'].map((v) => createTestNode(v)),
         Operator.OR,
@@ -622,7 +627,7 @@ describe('FlatFilterTree Model', () => {
       tree1.add(createTestNode('A'), OR);
 
       // When
-      const tree2 = Tree.deserialize<string>(tree1.serialized, createTestGroup);
+      const tree2 = LogicTree.deserialize<TestTreeNode>(tree1.serialized, createTestGroup);
 
       // Then
       expect(tree2.serialized).toBe(tree1.serialized);

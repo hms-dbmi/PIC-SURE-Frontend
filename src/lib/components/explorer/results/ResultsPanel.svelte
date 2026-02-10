@@ -62,9 +62,8 @@
   let showCohortDetails = $derived(isExplorer && features.explorer.enableCohortDetails);
 
   let nonGenomicFilterCount = $derived(
-    $filters.filter(
-      (filter) => filter.filterType !== 'genomic' && filter.filterType !== 'snp',
-    ).length,
+    $filters.filter((filter) => filter.filterType !== 'genomic' && filter.filterType !== 'snp')
+      .length,
   );
 
   let showAdvancedFiltering = $derived(nonGenomicFilterCount >= 2);

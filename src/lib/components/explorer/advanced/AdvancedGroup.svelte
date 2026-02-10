@@ -1,6 +1,10 @@
 <script lang="ts">
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
-  import type { FilterGroupInterface, FilterInterface } from '$lib/models/Filter.svelte';
+  import {
+    isFilterGroup,
+    type FilterGroupInterface,
+    type FilterInterface,
+  } from '$lib/models/Filter.svelte';
   import AdvancedItem from './AdvancedItem.svelte';
   import AdvancedGroup from './AdvancedGroup.svelte';
   import EmptyDropZone from './EmptyDropZone.svelte';
@@ -33,32 +37,28 @@
     parentId,
     onRemove = () => {},
     onRemoveChild = () => {},
-    onOperatorChange = (g, op) => { g.setOperator(op); }
-  }: Props = $props(); 
+    onOperatorChange = (g, op) => {
+      g.setOperator(op);
+    },
+  }: Props = $props();
 
-  const operatorValue = $derived((group as FilterGroupInterface).operator as OperatorType || Operator.AND);
+  const operatorValue = $derived(group.operator || Operator.AND);
   let not = $state(false);
   const isDraggable = $derived(id !== 'root');
-  
+
   // Derive the actual index from parent's children array (reactive to array changes)
   const actualIndex = $derived(
-    group.parent 
-      ? (group.parent as FilterGroupInterface).children.findIndex(
-          child => (child as FilterInterface).uuid === group.uuid
-        )
-      : -1
+    group.parent ? group.parent.children.findIndex((child) => child.uuid === group.uuid) : -1,
   );
-  
+
   // Derive leadingOperator from parent's operator when actualIndex > 0
   const leadingOperator = $derived(
-    actualIndex > 0 && group.parent 
-      ? (group.parent as FilterGroupInterface).operator 
-      : undefined
+    actualIndex > 0 && group.parent ? group.parent.operator : undefined,
   );
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
   // Disable in overlay mode to prevent duplicate sortable IDs
-  const { ref, handleRef, isDragging, } = useSortable({
+  const { ref, handleRef, isDragging } = useSortable({
     id: id,
     index: () => index,
     group: parentId,
@@ -82,7 +82,11 @@
 
 <div class="relative" {@attach ref}>
   {#if showLeadingOperator && leadingOperator}
-    <div class="flex justify-center py-3 {activeId && activeId === id && !isOverlay ? 'invisible' : ''}">
+    <div
+      class="flex justify-center py-3 {activeId && activeId === id && !isOverlay
+        ? 'invisible'
+        : ''}"
+    >
       <span class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
         {leadingOperator}
       </span>
@@ -96,60 +100,69 @@
         ? 'invisible'
         : 'bg-white border-surface-400 border'}"
   >
-  {#if isDraggable}
-    <div id={`group-controls-${group.uuid}`} class="flex flex-row w-full flex-end">
-      <button
-      type="button"
-      title="Remove Group"
-      class="bg-initial text-black-500 hover:text-primary-600"
-      onclick={() => onRemove(group)}
-    >
-      <i class="fa-solid fa-times-circle"></i>
-      <span class="sr-only">Remove Group</span>
-    </button>
+    {#if isDraggable}
+      <div id={`group-controls-${group.uuid}`} class="flex flex-row w-full flex-end">
+        <button
+          type="button"
+          title="Remove Group"
+          class="bg-initial text-black-500 hover:text-primary-600"
+          onclick={() => onRemove(group)}
+        >
+          <i class="fa-solid fa-times-circle"></i>
+          <span class="sr-only">Remove Group</span>
+        </button>
+      </div>
+    {/if}
+    <div class="flex flex-row items-center gap-2 w-full">
+      <div
+        class="cursor-grab active:cursor-grabbing mr-2 {isDraggable ? 'block' : 'hidden'}"
+        {@attach handleRef}
+      >
+        <i class="fa-solid fa-grip-vertical text-surface-500"></i>
+      </div>
+      <div class="flex items-center justify-start gap-2">
+        <div>Between {id === 'root' ? 'groups' : 'items'}:</div>
+        {#key operatorValue}
+          <Segment
+            background="bg-white border-surface-400 border"
+            indicatorBg="bg-primary-500"
+            name="operator"
+            value={operatorValue}
+            onValueChange={handleOperatorChange}
+          >
+            <Segment.Item value={Operator.AND}>{Operator.AND}</Segment.Item>
+            <Segment.Item value={Operator.OR}>{Operator.OR}</Segment.Item>
+          </Segment>
+        {/key}
+      </div>
+      <div class="hidden flex items-center gap-2 ml-auto">
+        <label for="not">Not:</label>
+        <Switch name="not" checked={not} onCheckedChange={handleNotChange}>
+          {#snippet activeChild()}!{/snippet}
+        </Switch>
+      </div>
     </div>
-  {/if}
-  <div class="flex flex-row items-center gap-2 w-full">
-    <div class="cursor-grab active:cursor-grabbing mr-2 {isDraggable ? 'block' : 'hidden'}" {@attach handleRef}>
-      <i class="fa-solid fa-grip-vertical text-surface-500"></i>
-    </div>
-    <div class="flex items-center justify-start gap-2">
-      <div>Between {id === 'root' ? "groups" : "items"}:</div>
-{#key operatorValue}
-      <Segment background="bg-white border-surface-400 border" indicatorBg="bg-primary-500" name="operator" value={operatorValue} onValueChange={handleOperatorChange}>
-        <Segment.Item value={Operator.AND}>{Operator.AND}</Segment.Item>
-        <Segment.Item value={Operator.OR}>{Operator.OR}</Segment.Item>
-      </Segment>
-      {/key}
-    </div>
-    <div class="hidden flex items-center gap-2 ml-auto">
-      <label for="not">Not:</label>
-      <Switch name="not" checked={not} onCheckedChange={handleNotChange}>
-        {#snippet activeChild()}!{/snippet}
-      </Switch>
-    </div>
-  </div>
 
     <div class="flex flex-col gap-2 min-h-[50px] w-full">
       {#each group.children as child, i (child.uuid)}
-        {#if child.filterType === 'FilterGroup'}
+        {#if isFilterGroup(child)}
           <AdvancedGroup
-              group={child as FilterGroupInterface}
-              index={i}
-              parentId={id}
-              {onRemove}
-              {onRemoveChild}
-              isOverlay={isOverlay}
-              {activeId}
-              {isGroupDrag}
-              {onOperatorChange}
+            group={child}
+            index={i}
+            parentId={id}
+            {onRemove}
+            {onRemoveChild}
+            {isOverlay}
+            {activeId}
+            {isGroupDrag}
+            {onOperatorChange}
           />
         {:else}
           <AdvancedItem
-            filter={child as FilterInterface}
+            filter={child}
             index={i}
             parentId={id}
-            isOverlay={isOverlay}
+            {isOverlay}
             {activeId}
             onRemove={onRemoveChild}
           />
@@ -159,7 +172,14 @@
         <EmptyDropZone groupId={id} />
       {:else if id !== 'root'}
         <!-- GroupDropZone for dropping groups into this group; only visible when dragging a group, not shown on root -->
-        <GroupDropZone groupId={id} {isGroupDrag} isActive={activeId !== null} index={group.children.length} {isOverlay} {activeId} />
+        <GroupDropZone
+          groupId={id}
+          {isGroupDrag}
+          isActive={activeId !== null}
+          index={group.children.length}
+          {isOverlay}
+          {activeId}
+        />
       {/if}
     </div>
   </div>

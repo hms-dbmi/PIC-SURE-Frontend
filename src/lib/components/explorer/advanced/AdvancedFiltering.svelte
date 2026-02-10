@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { FilterInterface } from '$lib/models/Filter.svelte';
   import type { FilterGroupInterface } from '$lib/models/Filter.svelte';
+  import { isFilterGroup, createFilterGroup } from '$lib/models/Filter.svelte';
   import AdvancedGroup from './AdvancedGroup.svelte';
   import AdvancedItem from './AdvancedItem.svelte';
   import GroupDropZone from './GroupDropZone.svelte';
@@ -12,8 +13,7 @@
   } from '@dnd-kit-svelte/svelte';
   import { move } from '@dnd-kit/helpers';
   import { filterTree } from '$lib/stores/Filter';
-  import { Tree, type TreeNode } from '$lib/models/Tree.svelte';
-  import { createFilterGroup } from '$lib/models/Filter.svelte';
+  import { LogicTree } from '$lib/models/LogicTree.svelte';
   import { Operator } from '$lib/models/query/Query';
 
   type DragOperation =
@@ -30,7 +30,7 @@
   // True when actively dragging a group (not an item)
   const isGroupDrag = $derived.by(() => {
     if (!activeNode) return false;
-    return (activeNode as FilterInterface).filterType === 'FilterGroup';
+    return isFilterGroup(activeNode);
   });
   let projectedOrder: Record<string, string[]> | null = $state(null);
   // Store the last valid projectedOrder so it's available in handleDragEnd
@@ -42,26 +42,27 @@
 
   // Initialize a local reactive tree.
   // We clone the global tree's structure initially.
-  // Note: Deep cloning might be needed if children are objects that shouldn't share references, 
+  // Note: Deep cloning might be needed if children are objects that shouldn't share references,
   // but for now we assume Tree.deserialize or similar logic is best if we want full isolation.
   // However, since Tree is now a class with $state, we should probably construct a new one.
   // For this fix, let's create a new Tree instance and initialize it with the current global root.
   // Important: If we want true isolation, we should clone the data.
-  
-  const localTree = new Tree<FilterInterface>(() => createFilterGroup([], Operator.AND));
+
+  const localTree = new LogicTree<FilterInterface>((nodes, op) => createFilterGroup(nodes, op));
   // We need to clone the structure to avoid modifying the global store directly by reference.
   // Using serialization/deserialization is a safe way to clone the tree structure.
-  localTree.root = Tree.deserialize<FilterInterface>($filterTree.serialized, (nodes, op) => createFilterGroup(nodes as FilterInterface[], op)).root;
+  localTree.root = LogicTree.deserialize<FilterInterface>($filterTree.serialized, (nodes, op) =>
+    createFilterGroup(nodes, op),
+  ).root;
 
   const sensors = [KeyboardSensor, PointerSensor];
 
-  function getGroupNodeByContainerId(containerId: string | undefined) {
+  function getGroupNodeByContainerId(containerId: string | undefined): FilterGroupInterface | null {
     if (!containerId) return null;
     if (containerId === 'root') return localTree.root as FilterGroupInterface;
-    const node = localTree.find((n) => (n as FilterInterface).uuid === containerId);
-    return node && (node as FilterInterface).filterType === 'FilterGroup'
-      ? (node as FilterGroupInterface)
-      : null;
+    const node = localTree.find((n) => n.uuid === containerId);
+    if (!node) return null;
+    return isFilterGroup(node) ? node : null;
   }
 
   function containerIdForTreeParent(parent: any) {
@@ -72,10 +73,10 @@
   function buildSortableOrder(): Record<string, string[]> {
     const order: Record<string, string[]> = {};
     const walk = (group: FilterGroupInterface, containerId: string) => {
-      order[containerId] = group.children.map((child) => (child as FilterInterface).uuid);
+      order[containerId] = group.children.map((child) => child.uuid);
       group.children.forEach((child) => {
-        if ((child as FilterInterface).filterType === 'FilterGroup') {
-          walk(child as FilterGroupInterface, (child as FilterInterface).uuid);
+        if (isFilterGroup(child)) {
+          walk(child, child.uuid);
         }
       });
     };
@@ -87,9 +88,9 @@
     const active = event.operation.source;
     if (!active) return;
     const id = String(active.id);
-    const node = localTree.find((n) => (n as FilterInterface).uuid === id);
+    const node = localTree.find((n) => n.uuid === id);
     activeId = id;
-    if (node) activeNode = node as FilterInterface;
+    if (node) activeNode = node;
     dragStartSnapshot = localTree.serialized;
     hasOptimisticReorder = false;
     hasDragMovement = false;
@@ -107,29 +108,18 @@
 
   function restoreSnapshot() {
     if (!dragStartSnapshot) return;
-    localTree.root = Tree.deserialize<FilterInterface>(
-      dragStartSnapshot,
-      (nodes, op) => createFilterGroup(nodes as FilterInterface[], op),
+    localTree.root = LogicTree.deserialize<FilterInterface>(dragStartSnapshot, (nodes, op) =>
+      createFilterGroup(nodes, op),
     ).root;
   }
 
   function removeFromParent(node: FilterInterface, parent: FilterGroupInterface) {
-    parent.children = parent.children.filter(
-      (child) => (child as FilterInterface).uuid !== node.uuid
-    );
+    parent.children = parent.children.filter((child) => child.uuid !== node.uuid);
   }
 
-  function insertAtIndex(
-    node: FilterInterface,
-    group: FilterGroupInterface,
-    index: number
-  ) {
+  function insertAtIndex(node: FilterInterface, group: FilterGroupInterface, index: number) {
     node.parent = group;
-    group.children = [
-      ...group.children.slice(0, index),
-      node,
-      ...group.children.slice(index),
-    ];
+    group.children = [...group.children.slice(0, index), node, ...group.children.slice(index)];
   }
 
   function handleEmptyDropZone(targetId: string): boolean {
@@ -182,25 +172,17 @@
     group: FilterGroupInterface;
     index: number;
   } | null {
-    const targetNode = localTree.find(
-      (n) => (n as FilterInterface).uuid === targetId
-    );
+    const targetNode = localTree.find((n) => n.uuid === targetId);
     if (!targetNode) return null;
 
-    const isTargetAGroup =
-      (targetNode as FilterInterface).filterType === 'FilterGroup';
-
-    if (isTargetAGroup) {
-      const group = targetNode as FilterGroupInterface;
-      return { group, index: group.children.length };
+    if (isFilterGroup(targetNode)) {
+      return { group: targetNode, index: targetNode.children.length };
     }
 
     const parentGroup = targetNode.parent as FilterGroupInterface | null;
     if (!parentGroup) return null;
 
-    const targetIndex = parentGroup.children.findIndex(
-      (child) => (child as FilterInterface).uuid === targetId
-    );
+    const targetIndex = parentGroup.children.findIndex((child) => child.uuid === targetId);
     return {
       group: parentGroup,
       index: targetIndex !== -1 ? targetIndex + 1 : parentGroup.children.length,
@@ -235,20 +217,15 @@
 
     if (isSameGroupReorder) {
       const currentIndex = destinationGroup.children.findIndex(
-        (child) => (child as FilterInterface).uuid === activeUuid
+        (child) => child.uuid === activeUuid,
       );
 
       const noMovementNeeded =
-        currentIndex === -1 ||
-        currentIndex === insertIndex ||
-        currentIndex === insertIndex - 1;
+        currentIndex === -1 || currentIndex === insertIndex || currentIndex === insertIndex - 1;
       if (noMovementNeeded) return false;
 
-      const withoutActive = destinationGroup.children.filter(
-        (child) => (child as FilterInterface).uuid !== activeUuid
-      );
-      const adjustedIndex =
-        currentIndex < insertIndex ? insertIndex - 1 : insertIndex;
+      const withoutActive = destinationGroup.children.filter((child) => child.uuid !== activeUuid);
+      const adjustedIndex = currentIndex < insertIndex ? insertIndex - 1 : insertIndex;
       destinationGroup.children = [
         ...withoutActive.slice(0, adjustedIndex),
         activeNode,
@@ -264,8 +241,7 @@
     if (!activeNode || !source) return null;
 
     const activeUuid = activeNode.uuid;
-    const sourceIndex =
-      typeof source.index === 'function' ? source.index() : source.index;
+    const sourceIndex = typeof source.index === 'function' ? source.index() : source.index;
     const activeParentGroup = activeNode.parent
       ? containerIdForTreeParent(activeNode.parent)
       : undefined;
@@ -275,17 +251,12 @@
     const group = getGroupNodeByContainerId(activeParentGroup);
     if (!group) return null;
 
-    const currentIndex = group.children.findIndex(
-      (c) => (c as FilterInterface).uuid === activeUuid
-    );
+    const currentIndex = group.children.findIndex((c) => c.uuid === activeUuid);
     if (currentIndex === sourceIndex) return null;
 
-    const currentOrder = group.children.map((c) => (c as FilterInterface).uuid);
+    const currentOrder = group.children.map((c) => c.uuid);
     const withoutActive = currentOrder.filter((id) => id !== activeUuid);
-    const clampedIndex = Math.max(
-      0,
-      Math.min(sourceIndex, withoutActive.length)
-    );
+    const clampedIndex = Math.max(0, Math.min(sourceIndex, withoutActive.length));
     withoutActive.splice(clampedIndex, 0, activeUuid);
 
     return { [activeParentGroup]: withoutActive };
@@ -302,22 +273,14 @@
       const group = getGroupNodeByContainerId(containerId);
       if (!group) continue;
 
-      const nodeMap = new Map(
-        group.children.map((child) => [
-          (child as FilterInterface).uuid,
-          child as TreeNode<FilterInterface>,
-        ])
-      );
+      const nodeMap = new Map(group.children.map((child) => [child.uuid, child]));
 
-      const needsToMoveHere =
-        orderedIds.includes(activeUuid) && !nodeMap.has(activeUuid);
+      const needsToMoveHere = orderedIds.includes(activeUuid) && !nodeMap.has(activeUuid);
       if (needsToMoveHere) {
-        nodeMap.set(activeUuid, activeNode as TreeNode<FilterInterface>);
+        nodeMap.set(activeUuid, activeNode);
 
         if (!removedFromOldParent && oldParent && oldParent !== group) {
-          const oldIndex = oldParent.children.findIndex(
-            (child) => (child as FilterInterface).uuid === activeUuid
-          );
+          const oldIndex = oldParent.children.findIndex((child) => child.uuid === activeUuid);
           if (oldIndex !== -1) {
             oldParent.children.splice(oldIndex, 1);
             oldParent.children = [...oldParent.children];
@@ -330,10 +293,10 @@
 
       const reorderedChildren = orderedIds
         .map((uuid) => nodeMap.get(uuid))
-        .filter((node): node is TreeNode<FilterInterface> => node !== undefined)
+        .filter((node): node is FilterInterface => node !== undefined)
         .map((node) => {
-          (node as FilterInterface).parent = group;
-          return node as FilterInterface;
+          node.parent = group;
+          return node;
         });
 
       group.children = reorderedChildren;
@@ -379,15 +342,12 @@
 
     // Path 5: Cross-group or group target
     if (targetId && activeNode) {
-      const targetNode = localTree.find((n) => (n as FilterInterface).uuid === targetId);
+      const targetNode = localTree.find((n) => n.uuid === targetId);
       if (targetNode) {
         const targetParent = targetNode.parent as FilterGroupInterface | null;
         const activeParent = activeNode.parent as FilterGroupInterface | null;
-        const isCrossGroupTarget =
-          targetParent && activeParent && targetParent !== activeParent;
-        const isGroupTarget =
-          (targetNode as FilterInterface).filterType === 'FilterGroup';
-        if (isCrossGroupTarget || isGroupTarget) {
+        const isCrossGroupTarget = targetParent && activeParent && targetParent !== activeParent;
+        if (isCrossGroupTarget || isFilterGroup(targetNode)) {
           return { type: 'cross-group', targetId };
         }
       }
@@ -433,8 +393,8 @@
     // Re-resolve activeNode in the restored tree since restoreSnapshot
     // replaced all nodes, making the old reference stale.
     if (activeId) {
-      const freshNode = localTree.find((n) => (n as FilterInterface).uuid === activeId);
-      if (freshNode) activeNode = freshNode as FilterInterface;
+      const freshNode = localTree.find((n) => n.uuid === activeId);
+      if (freshNode) activeNode = freshNode;
     }
 
     switch (op.type) {
@@ -519,7 +479,10 @@
         const nextIndex = ids.indexOf(sourceId);
 
         // If source moved to this container or moved within this container
-        if (nextIndex !== -1 && (baseIndex !== nextIndex || !baseOrder[containerId]?.includes(sourceId))) {
+        if (
+          nextIndex !== -1 &&
+          (baseIndex !== nextIndex || !baseOrder[containerId]?.includes(sourceId))
+        ) {
           sourceActuallyMoved = true;
           break;
         }
@@ -530,7 +493,7 @@
         projectedOrder = nextOrder;
         lastValidProjectedOrder = nextOrder;
         hasOptimisticReorder = true;
-        hasDragMovement = true;  // Mark that real drag movement occurred
+        hasDragMovement = true; // Mark that real drag movement occurred
         applyProjectedOrder(nextOrder);
       }
     }
@@ -548,9 +511,9 @@
   function handleOperatorChange(group: FilterGroupInterface, newOperator: any) {
     (group as FilterGroupInterface).setOperator(newOperator);
   }
-  
+
   export function applyChanges() {
-      filterTree.set(localTree);
+    filterTree.set(localTree);
   }
 
   function removeNode(filter: FilterInterface) {
@@ -562,16 +525,21 @@
   <button class="btn preset-filled-primary-500" onclick={addGroup}>Add Group</button>
 </div>
 <div class="flex-1 overflow-auto p-4 border border-surface-300 rounded-lg bg-surface-50">
-  <DragDropProvider {sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
+  <DragDropProvider
+    {sensors}
+    onDragStart={handleDragStart}
+    onDragEnd={handleDragEnd}
+    onDragOver={handleDragOver}
+  >
     <AdvancedGroup
-        group={localTree.root as FilterGroupInterface}
-        id="root"
-        onRemove={removeGroup}
-        onRemoveChild={removeNode}
-        isOverlay={false}
-        {activeId}
-        {isGroupDrag}
-        onOperatorChange={handleOperatorChange}
+      group={localTree.root as FilterGroupInterface}
+      id="root"
+      onRemove={removeGroup}
+      onRemoveChild={removeNode}
+      isOverlay={false}
+      {activeId}
+      {isGroupDrag}
+      onOperatorChange={handleOperatorChange}
     />
     <!-- Root-level drop zone for un-nesting groups -->
     <GroupDropZone
@@ -583,17 +551,17 @@
       {activeId}
     />
     <DragOverlay>
-      {#if activeNode && (activeNode as FilterInterface | FilterGroupInterface).filterType === 'FilterGroup'}
-        <AdvancedGroup 
-            bind:group={activeNode as FilterGroupInterface} 
-            onRemove={removeGroup}
-            onRemoveChild={removeNode}
-            isOverlay={true}
-            onOperatorChange={handleOperatorChange}
+      {#if activeNode && isFilterGroup(activeNode)}
+        <AdvancedGroup
+          group={activeNode as FilterGroupInterface}
+          onRemove={removeGroup}
+          onRemoveChild={removeNode}
+          isOverlay={true}
+          onOperatorChange={handleOperatorChange}
         />
       {:else if activeNode}
-        <AdvancedItem filter={activeNode as FilterInterface} isOverlay={true} onRemove={removeNode} />
-      {/if} 
+        <AdvancedItem filter={activeNode} isOverlay={true} onRemove={removeNode} />
+      {/if}
     </DragOverlay>
   </DragDropProvider>
 </div>

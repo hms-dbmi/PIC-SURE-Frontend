@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Filter, FilterGroupInterface } from '$lib/models/Filter.svelte';
+  import { isFilterGroup, type Filter, type FilterGroupInterface } from '$lib/models/Filter.svelte';
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import OperatorDropdown from '$lib/components/explorer/results/OperatorDropdown.svelte';
   import FilterGroup from '$lib/components/explorer/results/FilterGroup.svelte';
@@ -18,8 +18,8 @@
           operator={group.operator}
         />
       {/if}
-      {#if child && 'children' in child}
-        <FilterGroup group={child as FilterGroupInterface} />
+      {#if isFilterGroup(child)}
+        <FilterGroup group={child} />
       {:else}
         <FilterComponent filter={child as Filter} />
       {/if}
