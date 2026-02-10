@@ -64,14 +64,16 @@
   let showCohortDetails = $derived(!isDiscoverPage && features.explorer.enableCohortDetails);
 
   let nonGenomicFilterCount = $derived(
-    $filters.filter((filter) => filter.filterType !== 'genomic' && filter.filterType !== 'snp')
-      .length,
+    $filters.filter(
+      (filter) => filter.filterType !== 'genomic' && filter.filterType !== 'snp',
+    ).length,
   );
 
   let showAdvancedFiltering = $derived(nonGenomicFilterCount >= 2);
 
   let showToolSuite = $derived(
     showCohortDetails ||
+      showAdvancedFiltering ||
       (($allFilters.length !== 0 || $exports.length !== 0) &&
         (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer)),
   );
@@ -239,6 +241,14 @@
             icon="fa-solid fa-dna"
             size="md"
             active={page.url.pathname.includes('explorer/variant')}
+          />
+        {/if}
+        {#if showAdvancedFiltering}
+          <CardButton
+            data-testid="advanced-filtering-btn"
+            title="Advanced Filtering"
+            icon="fa-solid fa-sliders"
+            size="md"
           />
         {/if}
       </div>
