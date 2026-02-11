@@ -74,13 +74,15 @@
         <Popover>
           {#snippet trigger()}
             <Avatar
-              name={($user.email || '').toUpperCase()}
+              name={($user.email || 'unknown').toUpperCase()}
               background="preset-tonal-primary hover:preset-tonal-secondary"
               border="border hover:border-primary-400"
               font="text-2xl"
               size="size-12"
               classes="m-3"
-            />
+            >
+              {($user.email || '?').toUpperCase().charAt(0)}
+            </Avatar>
           {/snippet}
           <div class="flex flex-col items-center">
             <p class="pb-6">{$user.email}</p>
