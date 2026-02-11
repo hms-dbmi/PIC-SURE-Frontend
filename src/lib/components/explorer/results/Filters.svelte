@@ -33,12 +33,7 @@
 {:else}
   <div class="px-4 mb-1 w-80">
     {#if $filters.length + $genomicFilters.length > 0}
-      <div>
-        <header class="text-left ml-1">Filters</header>
-        <button class="btn preset-filled-primary-500" onclick={() => ($advancedFilteringOpen = true)}
-          >Advanced Filters</button
-        >
-      </div>
+      <header class="text-left ml-1">Filters</header>
     {/if}
     <section class="py-1">
       {#if features.explorer.enableOrQueries && isOpenAccess}
