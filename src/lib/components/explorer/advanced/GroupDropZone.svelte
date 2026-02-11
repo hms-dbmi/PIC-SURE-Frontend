@@ -43,7 +43,7 @@
   data-testid="group-drop-zone"
   data-group-id={groupId}
   class="rounded-md border border-dashed text-primary-600 text-xs font-semibold uppercase tracking-wide flex items-center justify-center transition-all"
-  class:h-2={!showZone}
+  class:h-0={!showZone}
   class:opacity-0={!showZone}
   class:border-transparent={!showZone}
   class:h-24={showZone}

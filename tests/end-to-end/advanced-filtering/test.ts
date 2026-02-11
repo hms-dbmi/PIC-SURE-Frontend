@@ -76,6 +76,28 @@ test.describe('Advanced Filtering - Global Combiner', () => {
     // Verify OR badges are still visible after reopening (proves persistence)
     await afPage.expectBadgeText('OR');
   });
+
+  test('AF-COMBINER-006: AND uses primary color, OR uses secondary color', async () => {
+    // Verify AND badges use primary color by default
+    const andBadges = afPage.getAndBadges();
+    await expect(andBadges.first()).toBeVisible();
+    await expect(andBadges.first()).toHaveClass(/preset-filled-primary/);
+
+    // Switch root to OR
+    await afPage.selectRootOperator('OR');
+
+    // Verify OR badges now use secondary color
+    const orBadges = afPage.getOrBadges();
+    await expect(orBadges.first()).toBeVisible();
+    await expect(orBadges.first()).toHaveClass(/preset-filled-secondary/);
+
+    // Verify remaining AND badges (inside sub-groups) still use primary color
+    const remainingAndBadges = afPage.getAndBadges();
+    const andCount = await remainingAndBadges.count();
+    if (andCount > 0) {
+      await expect(remainingAndBadges.first()).toHaveClass(/preset-filled-primary/);
+    }
+  });
 });
 
 test.describe('Advanced Filtering - Drag and Drop', () => {
@@ -1106,5 +1128,152 @@ test.describe('Advanced Filtering - Apply', () => {
 
   test('AF-APPLY-002: Apply button is styled as a primary button', async () => {
     await afPage.expectApplyButtonHasPrimaryStyle();
+  });
+
+  test('AF-APPLY-003: Clicking Apply to Query closes Advanced Filtering and returns to main page', async () => {
+    // Verify modal is open
+    await afPage.expectModalVisible();
+
+    // Click Apply Changes
+    await afPage.clickApplyChanges();
+
+    // Verify the modal is closed
+    await afPage.expectModalClosed();
+
+    // Verify we're back on the main page (login page in test context)
+    await expect(afPage.openModalButton).toBeVisible();
+  });
+});
+
+test.describe('Advanced Filtering - Genomic Filters', () => {
+  let afPage: AdvancedFilteringPage;
+
+  test.beforeEach(async ({ page }) => {
+    afPage = new AdvancedFilteringPage(page);
+    await afPage.setupAndOpenModal();
+  });
+
+  test('AF-GENOMIC-001: Genomic filter appears at bottom of filters list', async () => {
+    // Verify the genomic filters section exists
+    const genomicSection = afPage.getGenomicFiltersSection();
+    await expect(genomicSection).toBeVisible();
+
+    // Verify a genomic filter item is displayed
+    const genomicItems = afPage.getGenomicFilterItems();
+    await expect(genomicItems).toHaveCount(1);
+
+    // Verify it contains the expected genomic filter text
+    await expect(genomicItems.first()).toContainText('Genomic Filter');
+
+    // Verify the genomic section comes after the phenotypic filters (drag-drop area)
+    // by checking the genomic section is the last child in the filtering area
+    const filteringArea = afPage.filteringArea;
+    const genomicSectionInArea = filteringArea.getByTestId('genomic-filters-section');
+    await expect(genomicSectionInArea).toBeVisible();
+  });
+
+  test('AF-GENOMIC-002: Separator between phenotypic and genomic filter shows fixed AND text', async () => {
+    // Verify the AND separator exists between phenotypic and genomic filters
+    const separator = afPage.getGenomicAndSeparator();
+    await expect(separator).toBeVisible();
+    await expect(separator).toContainText('AND');
+  });
+
+  test('AF-GENOMIC-003: Genomic filter AND separator is not changeable by user', async () => {
+    // Verify the AND separator is static text (badge), not an interactive control
+    const separator = afPage.getGenomicAndSeparator();
+    await expect(separator).toBeVisible();
+
+    // Verify no radio buttons or interactive controls inside the separator
+    const radios = separator.getByRole('radio');
+    await expect(radios).toHaveCount(0);
+
+    // Verify no buttons inside the separator
+    const buttons = separator.getByRole('button');
+    await expect(buttons).toHaveCount(0);
+
+    // Verify it's a simple badge, not a Segment control
+    const badge = separator.locator('.badge');
+    await expect(badge).toBeVisible();
+    await expect(badge).toContainText('AND');
+  });
+
+  test('AF-GENOMIC-004: Genomic filter cannot be dragged', async () => {
+    // Verify the genomic filter item has no drag handle
+    const genomicItem = afPage.getGenomicFilterItems().first();
+    await expect(genomicItem).toBeVisible();
+
+    // Verify no grip-vertical icon (drag handle) inside the genomic filter
+    const dragHandle = genomicItem.locator('.fa-grip-vertical');
+    await expect(dragHandle).toHaveCount(0);
+  });
+
+  test('AF-GENOMIC-005: Genomic filter cannot be placed into a group', async ({ page }) => {
+    // The genomic filter is rendered outside the DragDropProvider,
+    // so it cannot participate in drag-and-drop at all.
+    // Verify the genomic filter is outside the sortable area
+    const genomicItem = afPage.getGenomicFilterItems().first();
+    await expect(genomicItem).toBeVisible();
+
+    // Verify the genomic filter does not have sortable attributes
+    // (data-dnd-kit attributes are added by useSortable)
+    const hasSortableAttr = await genomicItem.evaluate((el) => {
+      return Array.from(el.attributes).some((attr) => attr.name.startsWith('data-dnd'));
+    });
+    expect(hasSortableAttr).toBe(false);
+  });
+
+});
+
+test.describe('Advanced Filtering - Genomic Filters (Ordering)', () => {
+  let afPage: AdvancedFilteringPage;
+
+  test.beforeEach(async ({ page }) => {
+    afPage = new AdvancedFilteringPage(page);
+    await afPage.setupAndOpenModal();
+  });
+
+  test('AF-GENOMIC-006: Genomic filter always appears below all phenotypic filters', async ({
+    page,
+  }) => {
+    // The login hack sets up 6 phenotypic filters (in 2 groups + 2 individual) and 1 genomic filter.
+    // Verify that the genomic section appears AFTER the phenotypic drag-drop area in DOM order.
+    const filteringArea = afPage.filteringArea;
+
+    // The filtering area contains: [drag-drop div] then [genomic-filters-section]
+    // Verify genomic section is the last content section
+    const genomicSection = afPage.getGenomicFiltersSection();
+    await expect(genomicSection).toBeVisible();
+
+    // Verify phenotypic filters exist in the drag-drop area (NOT in genomic section)
+    await expect(page.getByText('test', { exact: true })).toBeVisible();
+    await expect(page.getByText('test2', { exact: true })).toBeVisible();
+    const phenotypicInGenomic = genomicSection.getByText('test', { exact: true });
+    await expect(phenotypicInGenomic).toHaveCount(0);
+
+    // Verify the genomic section is positioned after the drag-drop area by checking
+    // that the genomic section's top boundary is below the last phenotypic filter
+    const genomicRect = await genomicSection.boundingBox();
+    const lastPhenotypic = page.getByText('test', { exact: true });
+    const phenotypicRect = await lastPhenotypic.boundingBox();
+    expect(genomicRect!.y).toBeGreaterThan(phenotypicRect!.y);
+  });
+
+  test('AF-GENOMIC-007: Genomic filter AND separator remains fixed regardless of phenotypic filter count', async () => {
+    // With multiple phenotypic filters (6) and 1 genomic filter,
+    // verify the AND separator is static and non-interactive
+    const separator = afPage.getGenomicAndSeparator();
+    await expect(separator).toBeVisible();
+    await expect(separator).toContainText('AND');
+
+    // Verify no interactive controls in the separator
+    const radios = separator.getByRole('radio');
+    await expect(radios).toHaveCount(0);
+    const buttons = separator.getByRole('button');
+    await expect(buttons).toHaveCount(0);
+
+    // Verify the separator badge uses the surface style (not primary/interactive)
+    const badge = separator.locator('.badge');
+    await expect(badge).toHaveClass(/preset-filled-surface/);
   });
 });

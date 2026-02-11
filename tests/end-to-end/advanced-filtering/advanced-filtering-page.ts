@@ -39,7 +39,7 @@ export class AdvancedFilteringPage {
     this.consentButton = page.getByTestId('acceptGoogleConsent');
     this.openModalButton = page.getByRole('button', { name: 'Open Advanced Filters' });
     this.addGroupButton = page.getByRole('button', { name: 'Add Group' });
-    this.applyChangesButton = this.filteringArea.getByRole('button', { name: 'Apply Changes' });
+    this.applyChangesButton = this.modal.getByRole('button', { name: 'Apply Changes' });
 
     // Root group AND/OR segment (first one on the page)
     this.rootAndOrSegment = page.getByRole('radiogroup').first();
@@ -53,8 +53,13 @@ export class AdvancedFilteringPage {
   }
 
   async acceptConsent() {
-    console.log('[AF] Clicking consent button');
-    await this.consentButton.click();
+    console.log('[AF] Checking for consent button');
+    try {
+      await this.consentButton.click({ timeout: 2000 });
+      console.log('[AF] Consent accepted');
+    } catch {
+      console.log('[AF] No consent button found, continuing');
+    }
   }
 
   async openModal() {
@@ -241,6 +246,11 @@ export class AdvancedFilteringPage {
     await expect(this.applyChangesButton).toHaveClass(/preset-filled-primary/);
   }
 
+  async expectModalClosed() {
+    console.log('[AF] Asserting modal is closed');
+    await expect(this.modal).not.toBeVisible();
+  }
+
   async expectAddGroupButtonVisible() {
     console.log('[AF] Asserting Add Group button is visible');
     await expect(this.addGroupButton).toBeVisible();
@@ -266,6 +276,20 @@ export class AdvancedFilteringPage {
     const groupCount = await this.getAllRadioGroups().count();
     console.log(`[AF] Found ${groupCount} radio groups`);
     expect(groupCount).toBeGreaterThan(1);
+  }
+
+  // ==================== Genomic Filter Locators ====================
+
+  getGenomicFiltersSection(): Locator {
+    return this.page.getByTestId('genomic-filters-section');
+  }
+
+  getGenomicFilterItems(): Locator {
+    return this.page.getByTestId('genomic-filter-item');
+  }
+
+  getGenomicAndSeparator(): Locator {
+    return this.page.getByTestId('genomic-and-separator');
   }
 
   // ==================== Debug Helpers ====================

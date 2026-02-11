@@ -38,10 +38,11 @@
   );
   import Modal from '$lib/components/Modal.svelte';
   import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
-  import { createCategoricalFilter } from '$lib/models/Filter.svelte';
+  import { createCategoricalFilter, createGenomicFilter } from '$lib/models/Filter.svelte';
   import { Operator } from '$lib/models/query/Query';
-  import { filterTree } from '$lib/stores/Filter';
+  import { filterTree, genomicFilters } from '$lib/stores/Filter';
   let advancedModalOpen: boolean = $state(false);
+  let advancedFilteringRef: ReturnType<typeof AdvancedFiltering>;
   $filterTree.root = $filterTree.createGroup([], Operator.AND);
   const filter1 = createCategoricalFilter(
     {
@@ -133,6 +134,13 @@
   $filterTree.add(group1);
   $filterTree.add(filter2);
   $filterTree.add(filter1);
+
+  const genomicFilter1 = createGenomicFilter({
+    Gene_with_variant: ['BRCA1', 'BRCA2'],
+    Variant_frequency_as_text: ['Novel/Rare'],
+    Variant_consequence_calculated: ['missense'],
+  });
+  $genomicFilters = [genomicFilter1];
 </script>
 
 <Modal
@@ -143,10 +151,10 @@
   height="h-full"
   confirmText="Apply Changes"
   onconfirm={() => {
-    advancedModalOpen = false;
+    advancedFilteringRef?.applyChanges();
   }}
 >
-  <AdvancedFiltering />
+  <AdvancedFiltering bind:this={advancedFilteringRef} />
 </Modal>
 <section
   id="logins"
