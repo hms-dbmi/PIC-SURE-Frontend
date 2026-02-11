@@ -53,8 +53,13 @@ export class AdvancedFilteringPage {
   }
 
   async acceptConsent() {
-    console.log('[AF] Clicking consent button');
-    await this.consentButton.click();
+    console.log('[AF] Checking for consent button');
+    try {
+      await this.consentButton.click({ timeout: 2000 });
+      console.log('[AF] Consent accepted');
+    } catch {
+      console.log('[AF] No consent button found, continuing');
+    }
   }
 
   async openModal() {

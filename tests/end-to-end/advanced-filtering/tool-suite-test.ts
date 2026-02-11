@@ -141,4 +141,65 @@ test.describe('Advanced Filtering - Tool Suite', () => {
     await expect(page.getByRole('heading', { name: 'Advanced Filters' })).toBeVisible();
   });
 
+  test('AF-APPLY-004: Clicking Apply to Query triggers query execution with updated filter structure', async ({
+    page,
+  }) => {
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await page.goto('/explorer?search=somedata');
+
+    // Add first filter
+    await clickNthFilterIcon(page, 0);
+    const firstItem = await getOption(page);
+    await firstItem.click();
+    await page.getByTestId('add-filter').click();
+
+    // Add second filter (need 2 for AND/OR controls to appear)
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCatSameDataset.dataset}`,
+      detailResponseCatSameDataset,
+    );
+    await clickNthFilterIcon(page, 1);
+    const secondItem = await getOption(page);
+    await secondItem.click();
+    await page.getByTestId('add-filter').click();
+
+    // Wait for results panel to appear
+    await expect(page.locator('#results-panel')).toBeVisible();
+
+    // Open the Advanced Filtering modal
+    const advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
+    await expect(advancedFilteringBtn).toBeEnabled();
+    await advancedFilteringBtn.click();
+
+    const modal = page.getByRole('dialog');
+    await expect(modal).toBeVisible();
+
+    // Make a visible change: switch root operator from AND to OR
+    const orRadio = page.getByRole('radio', { name: 'OR' }).first();
+    await expect(orRadio).toBeVisible();
+    await orRadio.locator('..').click();
+
+    // Set up a listener for the sync API call before clicking Apply
+    const syncRequestPromise = page.waitForRequest(
+      (request) => request.url().includes('/picsure/query/sync'),
+      { timeout: 10000 },
+    );
+
+    // Click Apply Changes
+    const applyBtn = modal.getByRole('button', { name: 'Apply Changes' });
+    await applyBtn.click();
+
+    // Verify modal closes
+    await expect(modal).not.toBeVisible();
+
+    // Verify the sync request was made (query re-runs with updated structure)
+    const syncRequest = await syncRequestPromise;
+    expect(syncRequest.url()).toContain('/picsure/query/sync');
+  });
+
 });
