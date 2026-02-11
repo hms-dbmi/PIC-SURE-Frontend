@@ -39,7 +39,7 @@ export class AdvancedFilteringPage {
     this.consentButton = page.getByTestId('acceptGoogleConsent');
     this.openModalButton = page.getByRole('button', { name: 'Open Advanced Filters' });
     this.addGroupButton = page.getByRole('button', { name: 'Add Group' });
-    this.applyChangesButton = this.filteringArea.getByRole('button', { name: 'Apply Changes' });
+    this.applyChangesButton = this.modal.getByRole('button', { name: 'Apply Changes' });
 
     // Root group AND/OR segment (first one on the page)
     this.rootAndOrSegment = page.getByRole('radiogroup').first();
@@ -239,6 +239,11 @@ export class AdvancedFilteringPage {
   async expectApplyButtonHasPrimaryStyle() {
     console.log('[AF] Asserting Apply Changes button has primary style');
     await expect(this.applyChangesButton).toHaveClass(/preset-filled-primary/);
+  }
+
+  async expectModalClosed() {
+    console.log('[AF] Asserting modal is closed');
+    await expect(this.modal).not.toBeVisible();
   }
 
   async expectAddGroupButtonVisible() {

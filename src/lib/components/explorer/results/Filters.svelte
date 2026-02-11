@@ -12,6 +12,7 @@
   import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
 
   let advancedModalOpen: boolean = $state(false);
+  let advancedFilteringRef: ReturnType<typeof AdvancedFiltering>;
   let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
 </script>
 
@@ -23,10 +24,10 @@
   height="h-full"
   confirmText="Apply Changes"
   onconfirm={() => {
-    advancedModalOpen = false;
+    advancedFilteringRef?.applyChanges();
   }}
 >
-  <AdvancedFiltering />
+  <AdvancedFiltering bind:this={advancedFilteringRef} />
 </Modal>
 {#if $filters.length + $genomicFilters.length + $exports.length === 0}
   <p class="text-center">No filters added</p>

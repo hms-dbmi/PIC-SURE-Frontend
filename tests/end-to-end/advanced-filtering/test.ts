@@ -1107,4 +1107,18 @@ test.describe('Advanced Filtering - Apply', () => {
   test('AF-APPLY-002: Apply button is styled as a primary button', async () => {
     await afPage.expectApplyButtonHasPrimaryStyle();
   });
+
+  test('AF-APPLY-003: Clicking Apply to Query closes Advanced Filtering and returns to main page', async () => {
+    // Verify modal is open
+    await afPage.expectModalVisible();
+
+    // Click Apply Changes
+    await afPage.clickApplyChanges();
+
+    // Verify the modal is closed
+    await afPage.expectModalClosed();
+
+    // Verify we're back on the main page (login page in test context)
+    await expect(afPage.openModalButton).toBeVisible();
+  });
 });

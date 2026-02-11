@@ -42,6 +42,7 @@
   import { Operator } from '$lib/models/query/Query';
   import { filterTree } from '$lib/stores/Filter';
   let advancedModalOpen: boolean = $state(false);
+  let advancedFilteringRef: ReturnType<typeof AdvancedFiltering>;
   $filterTree.root = $filterTree.createGroup([], Operator.AND);
   const filter1 = createCategoricalFilter(
     {
@@ -143,10 +144,10 @@
   height="h-full"
   confirmText="Apply Changes"
   onconfirm={() => {
-    advancedModalOpen = false;
+    advancedFilteringRef?.applyChanges();
   }}
 >
-  <AdvancedFiltering />
+  <AdvancedFiltering bind:this={advancedFilteringRef} />
 </Modal>
 <section
   id="logins"

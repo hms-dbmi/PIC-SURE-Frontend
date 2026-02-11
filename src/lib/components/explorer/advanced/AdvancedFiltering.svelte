@@ -565,4 +565,3 @@
     </DragOverlay>
   </DragDropProvider>
 </div>
-<button class="btn preset-filled-primary-500" onclick={applyChanges}>Apply Changes</button>
