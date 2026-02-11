@@ -1,17 +1,13 @@
 <script lang="ts">
   import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
-  import { filters } from '$lib/stores/Filter';
-  import ExportStore from '$lib/stores/Export';
+  import { allFilters } from '$lib/stores/Filter';
+  import { exports } from '$lib/stores/Export';
   import { stepperState } from '$lib/stores/Stepper';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import Content from '$lib/components/Content.svelte';
-  import { getQueryRequestV2 } from '$lib/utilities/QueryBuilder';
   import type { ExportInterface } from '$lib/models/Export';
   import { features } from '$lib/configuration';
-  let { exports } = ExportStore;
 
-  let queryRequest: QueryRequestInterface = getQueryRequestV2(true);
   let exportRows: ExportRowInterface[] = $exports.map((exp) => {
     return {
       ref: exp,
@@ -22,7 +18,7 @@
       type: exp.searchResult?.type,
     };
   });
-  let filterRows: ExportRowInterface[] = $filters.map((filter) => {
+  let filterRows: ExportRowInterface[] = $allFilters.map((filter) => {
     return {
       ref: filter,
       selected: true,
@@ -120,9 +116,9 @@
   }}
   title="Export Data for Research Analysis"
 >
-  {#if $exports.length > 0 || $filters.length > 0}
+  {#if $exports.length > 0 || $allFilters.length > 0}
     <section class="flex justify-center items-center w-full h-full mt-8">
-      <ExportStepper query={queryRequest} rows={[...filterRows, ...exportRows]} />
+      <ExportStepper rows={[...filterRows, ...exportRows]} />
     </section>
   {:else}
     <div class="flex flex-col items-center justify-center m-8">

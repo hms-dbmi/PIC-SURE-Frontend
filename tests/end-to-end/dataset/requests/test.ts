@@ -6,6 +6,8 @@ import {
   metadata as mockMetadata,
 } from '../../mock-data';
 
+const queryPathV3 = 'picsure/v3/query';
+
 const dummyUuid = '6d405d0f-8243-4494-8bd3-8820cd33d836';
 const dummyDate = '2024-01-01';
 const debounceTime = 1020;
@@ -61,7 +63,7 @@ test.describe('data requests', () => {
     test('Should not advance to step 2 when api metadata request fails', async ({ page }) => {
       // Given
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiFail(page, `*/**/picsure/query/${dummyUuid}/metadata`, 'failed');
+      await mockApiFail(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, 'failed');
       await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
@@ -82,7 +84,7 @@ test.describe('data requests', () => {
     test('Should populate error if metadata fails', async ({ page }) => {
       // Given
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiFail(page, `*/**/picsure/query/${dummyUuid}/metadata`, 'failed');
+      await mockApiFail(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, 'failed');
       await page.goto('/dataset/request');
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
@@ -94,7 +96,7 @@ test.describe('data requests', () => {
     test('Should populate error if metadata fails with expected text', async ({ page }) => {
       // Given
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, {
+      await mockApiSuccess(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, {
         status: 'UNSENT',
         resourceID: 'abc',
         resourceStatus: null,
@@ -121,7 +123,7 @@ test.describe('data requests', () => {
   test.describe('step 2', () => {
     test.beforeEach(async ({ page }) => {
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
+      await mockApiSuccess(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, mockMetadata);
     });
     test('Should load step 2 when valid uuid provided', async ({ page }) => {
       // Given
@@ -165,7 +167,7 @@ test.describe('data requests', () => {
   test.describe('step 3', () => {
     test.beforeEach(async ({ page }) => {
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
-      await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
+      await mockApiSuccess(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, mockMetadata);
       await mockApiSuccess(
         page,
         `*/**/picsure/proxy/uploader/status/${dummyUuid}/approve?date=${dummyDate}`,
@@ -465,7 +467,7 @@ test.describe('data requests', () => {
       site: mockSites.sites[1],
       genomic: 'Error',
     });
-    await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
+    await mockApiSuccess(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, mockMetadata);
     await page.goto('/dataset/request');
 
     // When
@@ -497,7 +499,7 @@ test.describe('data requests', () => {
       site: mockSites.sites[1],
       genomic: 'Error',
     });
-    await mockApiSuccess(page, `*/**/picsure/query/${dummyUuid}/metadata`, mockMetadata);
+    await mockApiSuccess(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, mockMetadata);
     await page.goto('/dataset/request');
     await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
     await page.getByTestId('search-dataset-btn').click();

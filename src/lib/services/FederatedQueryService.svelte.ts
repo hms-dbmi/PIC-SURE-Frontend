@@ -1,16 +1,16 @@
 import { get } from 'svelte/store';
-import { type QueryRequestInterface } from '$lib/models/api/Request';
+import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { commonAreaUUID, federatedQueryMap } from '$lib/stores/Dataset';
 import { Picsure } from '$lib/paths';
 import * as api from '$lib/api';
 import { getQueryResources, loadResources, resources } from '$lib/stores/Resources';
-import { QueryV2 } from '$lib/models/query/Query';
+import { QueryV3 } from '$lib/models/query/Query';
 
 export interface QueryResponse {
   picsureResultId: string;
 }
 
-export interface CommonAreaResponse {
+export interface FederatedResponse {
   picsureResultId: string;
 }
 
@@ -19,20 +19,20 @@ export interface FederatedQueryResult {
   datasetId: string;
 }
 
-async function createCommonAreaUUID(query: QueryRequestInterface): Promise<string> {
+async function createCommonAreaUUID(query: QueryRequestInterfaceV3): Promise<string> {
   const currentUUID = get(commonAreaUUID);
   if (currentUUID) {
     return currentUUID;
   }
 
-  const uuidQuery = new QueryV2();
-  const uuidQueryRequest: QueryRequestInterface = {
+  const uuidQuery = new QueryV3();
+  const uuidQueryRequest: QueryRequestInterfaceV3 = {
     query: uuidQuery,
     resourceUUID: get(resources).queryIdGen,
   };
 
   try {
-    const res: CommonAreaResponse = await api.post(Picsure.QueryV2, uuidQueryRequest);
+    const res: FederatedResponse = await api.post(Picsure.QueryV3, uuidQueryRequest);
     const commonAreaDatasetId = res.picsureResultId;
 
     if (!commonAreaDatasetId) {
@@ -49,7 +49,7 @@ async function createCommonAreaUUID(query: QueryRequestInterface): Promise<strin
   }
 }
 
-async function executeSiteQueries(query: QueryRequestInterface): Promise<Record<string, string>> {
+async function executeSiteQueries(query: QueryRequestInterfaceV3): Promise<Record<string, string>> {
   const responses: Record<string, string> = {};
   const resources = getQueryResources();
 
@@ -62,7 +62,7 @@ async function executeSiteQueries(query: QueryRequestInterface): Promise<Record<
       resourceQuery.resourceCredentials = resourceQuery.resourceCredentials || {};
 
       return api
-        .post(Picsure.QueryV2 + '?isInstitute=true', resourceQuery)
+        .post(Picsure.QueryV3 + '?isInstitute=true', resourceQuery)
         .then((response: QueryResponse) => {
           if (response.picsureResultId) {
             return {
@@ -134,7 +134,7 @@ async function executeSiteQueries(query: QueryRequestInterface): Promise<Record<
 }
 
 export async function executeFederatedQuery(
-  query: QueryRequestInterface,
+  query: QueryRequestInterfaceV3,
 ): Promise<FederatedQueryResult> {
   await loadResources();
 

@@ -3,19 +3,19 @@ import { Picsure } from '$lib/paths';
 import { settings } from '$lib/configuration';
 import type { Indexable } from '$lib/types';
 
-import type { QueryRequestInterface } from '$lib/models/api/Request';
+import type { QueryRequestInterfaceV2 } from '$lib/models/api/Request';
 import { ExportType, type VariantData } from '$lib/models/Variant';
 
 import type { Column } from '$lib/components/datatable/types';
 
-export function getVariantCount(request: QueryRequestInterface): Promise<number> {
+export function getVariantCount(request: QueryRequestInterfaceV2): Promise<number> {
   request.query.expectedResultType = 'VARIANT_COUNT_FOR_QUERY';
   return api.post(Picsure.QueryV2Sync, request).then((resp) => resp.count);
 }
 
 export function getVariantData(
   exportType: ExportType,
-  request: QueryRequestInterface,
+  request: QueryRequestInterfaceV2,
 ): Promise<VariantData> {
   request.query.expectedResultType =
     exportType === ExportType.Aggregate ? 'AGGREGATE_VCF_EXCERPT' : 'VCF_EXCERPT';

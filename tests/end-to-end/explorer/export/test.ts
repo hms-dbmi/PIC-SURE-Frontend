@@ -1,7 +1,7 @@
-import { expect } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import { expect, type Route, type Page } from '@playwright/test';
 import { test, mockApiSuccess } from '../../custom-context';
 import {
+  conceptTreePath,
   conceptsDetailPath,
   detailResponseCat,
   detailResponseCatSameDataset,
@@ -13,10 +13,12 @@ import {
   newDatasetResponse,
   availableDatasetResponse,
   picsureUser,
+  mockDataWithChildren,
 } from '../../mock-data';
 import { getOption } from '../../utils';
 
-const countResultPath = '*/**/picsure/v3/query/sync';
+const queryPathV3 = '*/**/picsure/v3/query';
+const countResultPath = `${queryPathV3}/sync`;
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
 // Standard identifiers that should be present
@@ -44,6 +46,7 @@ async function setupExportPageAndAddFilterAndExport(
   page: Page,
   includeGenomicFilter: boolean = false,
 ) {
+  await mockApiSuccess(page, `${conceptTreePath}?depth=4`, mockDataWithChildren);
   await mockApiSuccess(
     page,
     `${conceptsDetailPath}/${detailResponseCat.dataset}`,
@@ -192,7 +195,7 @@ test.describe('Export Page', () => {
     await expect(csvExportOption).toHaveClass(/preset-filled-primary-500/);
     await expect(pfbExportOption).toHaveClass(/preset-outlined-primary-500/);
     await expect(nextButton).not.toBeDisabled();
-    await mockApiSuccess(page, `*/**/picsure/query`, newDatasetResponse);
+    await mockApiSuccess(page, queryPathV3, newDatasetResponse);
     await nextButton.click();
 
     // Save Dataset ID
@@ -205,7 +208,7 @@ test.describe('Export Page', () => {
     await mockApiSuccess(page, `*/**/picsure/dataset/named`, newDatasetResponse);
     await mockApiSuccess(
       page,
-      `*/**/picsure/query/${newDatasetResponse.picsureResultId}/status`,
+      `${queryPathV3}/${newDatasetResponse.picsureResultId}/status`,
       availableDatasetResponse,
     );
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
@@ -233,5 +236,37 @@ test.describe('Export Page', () => {
     await expect(doneButton).toBeVisible();
     await doneButton.click();
     await expect(page).toHaveURL('/explorer');
+  });
+
+  test('Adds filters to select field for QueryV3', async ({ page }) => {
+    const conceptPaths = mockData.content.map((row) => row.conceptPath);
+    const addedFilterConcept = conceptPaths[0];
+    const addedExportConcept = conceptPaths[1];
+    const expectedSelectFields = [addedExportConcept, addedFilterConcept];
+    await setupExportPageAndAddFilterAndExport(page);
+    await expect(page).toHaveURL('/explorer/export');
+    const nextButton = page.getByTestId('next-btn');
+
+    // Review Cohort Details
+    await nextButton.click();
+
+    // Tree Step
+    await nextButton.click();
+
+    // Review and Save Dataset=
+    await page.getByTestId('csv-export-option').click();
+    await expect(nextButton).not.toBeDisabled();
+    await page.route(queryPathV3, (route: Route) => {
+      const request = route.request().postDataJSON();
+      const selects: string[] = request?.query?.select || [];
+      const allFiltersInSelect = expectedSelectFields.every((concept) => selects.includes(concept));
+
+      if (allFiltersInSelect) {
+        return route.fulfill({ json: newDatasetResponse });
+      }
+      return route.abort('Query did not include filter concept paths in QueryV3 select files');
+    });
+
+    await nextButton.click();
   });
 });

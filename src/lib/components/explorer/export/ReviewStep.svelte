@@ -3,25 +3,24 @@
   import { onMount } from 'svelte';
 
   import { features } from '$lib/configuration';
-  import { exports, addExports, removeExports } from '$lib/stores/Export';
+  import { exports, addExports, removeExports, mapSearchResultAsExport } from '$lib/stores/Export';
   import type { ExportInterface } from '$lib/models/Export';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import { searchDictionary } from '$lib/stores/Dictionary';
-  import { QueryV2 } from '$lib/models/query/Query';
+  import { QueryV3 } from '$lib/models/query/Query';
   import * as api from '$lib/api';
   import { Picsure } from '$lib/paths';
   import { toaster } from '$lib/toaster';
   import { resources, loadResources } from '$lib/stores/Resources';
-  import { genericUUID } from '$lib/utilities/UUID';
 
   import Summary from './Summary.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import Datatable from '$lib/components/datatable/StaticTable.svelte';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
+  import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 
   export interface PrepareProps {
-    query: QueryRequestInterface;
+    query: QueryRequestInterfaceV3;
     rows: ExportRowInterface[];
     preparePromise: Promise<void>;
     dataLimitExceeded: boolean;
@@ -97,12 +96,12 @@
     }
 
     // Get sample ID counts via cross counts query
-    const crossCountQuery = new QueryV2(structuredClone($state.snapshot(query).query as QueryV2));
+    const crossCountQuery = new QueryV3(structuredClone($state.snapshot(query).query));
     crossCountQuery.expectedResultType = 'CROSS_COUNT';
     const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
-    crossCountQuery.setCrossCountFields(crossCountFields);
+    crossCountQuery.select = crossCountFields;
 
-    const crossCountResponse: Record<string, number> = await api.post(Picsure.QueryV2Sync, {
+    const crossCountResponse: Record<string, number> = await api.post(Picsure.QueryV3Sync, {
       query: crossCountQuery,
       resourceUUID: $resources.hpdsAuth,
     });
@@ -128,15 +127,7 @@
       const genomicConcepts = await getGenomicConcepts();
 
       // Create new exports for each concept
-      const newExports = genomicConcepts.map(
-        (concept) =>
-          ({
-            id: genericUUID(),
-            searchResult: concept,
-            display: concept?.display || '',
-            conceptPath: concept?.conceptPath || '',
-          }) as ExportInterface,
-      );
+      const newExports = genomicConcepts.map(mapSearchResultAsExport);
 
       // Add exports and create corresponding rows
       addExports(newExports);

@@ -9,7 +9,7 @@
 
   import { features } from '$lib/configuration';
 
-  import { filters, hasGenomicFilter, clearFilters, hasOrGroup } from '$lib/stores/Filter';
+  import { allFilters, hasGenomicFilter, clearFilters, hasOrGroup } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
@@ -27,7 +27,7 @@
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
-    $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
+    $allFilters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
   );
 
   let showExportButton = $derived(
@@ -38,8 +38,8 @@
   );
 
   let hasValidDistributionFilters = $derived(
-    $filters.length !== 0 &&
-      !$filters.every(
+    $allFilters.length !== 0 &&
+      !$allFilters.every(
         (filter) =>
           filter.filterType === 'genomic' ||
           filter.filterType === 'snp' ||
@@ -63,13 +63,13 @@
 
   let showToolSuite = $derived(
     showCohortDetails ||
-      (($filters.length !== 0 || $exports.length !== 0) &&
+      (($allFilters.length !== 0 || $exports.length !== 0) &&
         (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer)),
   );
 
   function subscribe() {
     if (!unsubFilters) {
-      unsubFilters = filters.subscribe(() => loadPatientCount(isOpenAccess));
+      unsubFilters = allFilters.subscribe(() => loadPatientCount(isOpenAccess));
     }
   }
 
@@ -150,7 +150,18 @@
     <Filters />
     {#if $exports.length > 0}
       <div class="px-4 mb-1 w-80">
-        <header class="text-left ml-1" data-testid="export-header">Added Variables</header>
+        <header class="txxt-left ml-1" data-testid="export-header">
+          Added Variables
+          {#if $exports.length > 10}
+            <button
+              data-testid="clear-all-results-btn"
+              class="anchor text-sm flex-none float-right mr-2"
+              onclick={() => {
+                $exports = [];
+              }}>Clear</button
+            >
+          {/if}
+        </header>
         <section class="py-1">
           {#each $exports as variable (variable.id)}
             <ExportedVariable {variable} />

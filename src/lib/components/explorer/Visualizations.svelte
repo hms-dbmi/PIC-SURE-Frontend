@@ -26,7 +26,7 @@
     const token = localStorage.getItem('token');
 
     await api
-      .post(Picsure.QueryV2Sync, {
+      .post(Picsure.QueryV3Sync, {
         query: query.query,
         resourceUUID: $resources.visualization,
         resourceCredentials: token ? { Authorization: 'Bearer ' + token } : {},

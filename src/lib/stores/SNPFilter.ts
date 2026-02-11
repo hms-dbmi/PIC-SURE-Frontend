@@ -9,8 +9,9 @@ import {
   loadResources,
   getQueryResources,
 } from '$lib/stores/Resources';
-import type { QueryV2 } from '$lib/models/query/Query';
-import { getBlankQueryRequestV2, updateConsentFilters } from '$lib/utilities/QueryBuilder';
+import type { GenomicFilterInterfacev3 } from '$lib/models/query/Query';
+import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+import { getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
 
 export const selectedSNPs: Writable<SNP[]> = writable([]);
 
@@ -28,11 +29,13 @@ export function clearSnpFilters() {
 }
 
 function snpRequest(snp: SNP, resource: string): Promise<number> {
-  const searchQuery = getBlankQueryRequestV2(false, resource);
-  const query = searchQuery.query as QueryV2;
-  query.addCategoryFilter(snp.search, [Genotype.Heterozygous, Genotype.Homozygous]);
-  searchQuery.query = updateConsentFilters(query);
-  return api.post(Picsure.QueryV2Sync, searchQuery);
+  const filter: GenomicFilterInterfacev3 = {
+    key: snp.search,
+    values: [Genotype.Heterozygous, Genotype.Homozygous],
+  };
+  const searchRequest: QueryRequestInterfaceV3 = getBlankQueryRequestV3(false, resource);
+  searchRequest.query.genomicFilters.push(filter);
+  return api.post(Picsure.QueryV3Sync, searchRequest);
 }
 
 export async function getSNPCounts(check: SNP): Promise<{ count: number; errors: number }> {

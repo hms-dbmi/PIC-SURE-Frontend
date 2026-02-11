@@ -5,7 +5,6 @@
   import { branding, features, settings } from '$lib/configuration';
   import { Picsure } from '$lib/paths';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
   import type { DataSet } from '$lib/models/Dataset';
   import { exports } from '$lib/stores/Export';
   import { filters } from '$lib/stores/Filter';
@@ -28,7 +27,6 @@
   import RedcapStep from './RedcapStep.svelte';
   import PfbExport from './PfbExport.svelte';
   import AnalysisPlatformLinks from './AnalysisPlatformLinks.svelte';
-  import { selectedConcepts, addConcept } from '$lib/stores/TreeStepConcepts';
   import {
     getLockDownload,
     setLockDownload,
@@ -41,13 +39,11 @@
     getQueryRequest,
     resetExportStepperState,
   } from '$lib/ExportStepperManager.svelte';
+  import { getQueryRequestV3, getFilterConcepts } from '$lib/utilities/QueryBuilder';
+  import { QueryV3 } from '$lib/models/query/Query';
+  import { resources } from '$lib/stores/Resources';
 
-  interface Props {
-    query: QueryRequestInterface;
-    rows?: ExportRowInterface[];
-  }
-
-  const { query, rows = [] }: Props = $props();
+  const { rows = [] }: { rows?: ExportRowInterface[] } = $props();
 
   let statusPromise: Promise<unknown> = $state(Promise.resolve());
   let preparePromise: Promise<void> = $state(Promise.resolve());
@@ -70,45 +66,21 @@
       !features.explorer.enableRedcapExport,
   );
 
-  let prevConcepts: string[] = $state([]);
-
   onMount(async () => {
-    // Auto select csv export when pfb feature is disabled.
-    setQueryRequest(query);
+    setQueryRequest(
+      getQueryRequestV3(true, $resources.hpdsAuth, 'COUNT', (query: QueryV3) => {
+        // populate selected export columns from filters
+        query.select = [...new Set([...query.select, ...getFilterConcepts(query)])];
+        return query;
+      }),
+    );
     $federatedQueryMap = {};
     if (!features.explorer.enablePfbExport) {
       setActiveType('DATAFRAME');
     }
   });
 
-  function updateConcepts() {
-    const conceptsToRemove = prevConcepts.filter(
-      (concept: string) => !$selectedConcepts.includes(concept),
-    );
-    conceptsToRemove.forEach((concept: string) => {
-      const fieldIndex = getQueryRequest().query.fields.indexOf(concept);
-      if (fieldIndex > -1) {
-        getQueryRequest().query.fields.splice(fieldIndex, 1);
-      }
-    });
-    prevConcepts = $selectedConcepts;
-    $selectedConcepts.forEach((concept: string) => {
-      getQueryRequest().query.addField(concept);
-    });
-  }
-
   async function onNextHandler(_step: number, stepName: string): Promise<void> {
-    const shouldUpdateConcepts =
-      features.explorer.showTreeStep &&
-      stepName === (features.federated ? 'save-dataset' : 'select-type');
-
-    if (stepName === 'select-variables') {
-      getQueryRequest().query.fields.forEach(addConcept);
-    }
-
-    if (shouldUpdateConcepts) {
-      updateConcepts();
-    }
     if (stepName === 'start') {
       if (features.explorer.enableRedcapExport) {
         setLockDownload(false);
@@ -143,7 +115,7 @@
 
     return withBackoff(
       async () => {
-        const res = (await api.post(`${Picsure.QueryV2}${queryFragment}`, query)) as {
+        const res = (await api.post(`${Picsure.QueryV3}${queryFragment}`, getQueryRequest())) as {
           picsureResultId: string;
           status: string;
           resultMetadata: { picsureQueryId: string };
@@ -208,7 +180,12 @@
 >
   <Step name="review" locked={dataLimitExceeded()}>
     {#snippet header()}Review Cohort Details:{/snippet}
-    <ReviewStep {query} {rows} {preparePromise} dataLimitExceeded={dataLimitExceeded()} />
+    <ReviewStep
+      query={getQueryRequest()}
+      {rows}
+      {preparePromise}
+      dataLimitExceeded={dataLimitExceeded()}
+    />
   </Step>
   {#if features.explorer.showTreeStep}
     <Step name="select-variables">
