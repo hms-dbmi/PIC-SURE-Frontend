@@ -3,24 +3,24 @@ import { Picsure } from '$lib/paths';
 import { settings } from '$lib/configuration';
 import type { Indexable } from '$lib/types';
 
-import type { QueryRequestInterfaceV2 } from '$lib/models/api/Request';
+import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { ExportType, type VariantData } from '$lib/models/Variant';
 
 import type { Column } from '$lib/components/datatable/types';
 
-export function getVariantCount(request: QueryRequestInterfaceV2): Promise<number> {
+export function getVariantCount(request: QueryRequestInterfaceV3): Promise<number> {
   request.query.expectedResultType = 'VARIANT_COUNT_FOR_QUERY';
-  return api.post(Picsure.QueryV2Sync, request).then((resp) => resp.count);
+  return api.post(Picsure.QueryV3Sync, request).then((resp) => resp.count);
 }
 
 export function getVariantData(
   exportType: ExportType,
-  request: QueryRequestInterfaceV2,
+  request: QueryRequestInterfaceV3,
 ): Promise<VariantData> {
   request.query.expectedResultType =
     exportType === ExportType.Aggregate ? 'AGGREGATE_VCF_EXCERPT' : 'VCF_EXCERPT';
 
-  return api.post(Picsure.QueryV2Sync, request).then((response) => {
+  return api.post(Picsure.QueryV3Sync, request).then((response) => {
     const downloadUrl = URL.createObjectURL(new Blob([response], { type: 'octet/stream' }));
 
     const lines = response.split('\n');

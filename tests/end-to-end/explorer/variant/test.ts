@@ -14,6 +14,7 @@ import {
 import { getOption, clickNthFilterIcon } from '../../utils';
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
+const SyncQueryV3 = '*/**/picsure/v3/query/sync';
 
 interface Results {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,7 +29,7 @@ const successResults: Results = {
 };
 
 function mockSyncAPI(context: BrowserContext | Page, resultMap: Results) {
-  return context.route('*/**/picsure/query/sync', (route: Route) => {
+  return context.route(SyncQueryV3, (route: Route) => {
     const request = route.request().postDataJSON();
     const result = resultMap[request.query.expectedResultType];
     if (result && result.pass) {
@@ -46,7 +47,8 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 test.describe('variant explorer', () => {
   test.describe('Genetic filter applied', () => {
     test.beforeEach(async ({ page }) => {
-      await mockApiSuccess(page, '*/**/picsure/v3/query/sync', '9999');
+      await mockApiSuccess(page, SyncQueryV3, '9999');
+      await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
       // Add genomic filter steps
       await page.goto('/explorer');
       await mockSyncAPI(page, successResults);

@@ -9,7 +9,8 @@
     getQueryResources,
   } from '$lib/stores/Resources';
   import { getVariantCount, getVariantData } from '$lib/utilities/Variants';
-  import { getQueryRequestV2 } from '$lib/utilities/QueryBuilder';
+  import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
+  import { settings } from '$lib/configuration';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
@@ -23,10 +24,10 @@
     await $resourcesPromise;
 
     variantResults = getQueryResources().map((resource) => {
-      const queryRequest = getQueryRequestV2(true, resource.uuid);
+      const queryRequest = getQueryRequestV3(true, resource.uuid);
       return {
         name: resource.name,
-        exportType: ExportType.Aggregate,
+        exportType: settings.variantExplorer.type || ExportType.Aggregate,
         count: getVariantCount(queryRequest),
         queryRequest,
       };

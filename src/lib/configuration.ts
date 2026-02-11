@@ -211,7 +211,10 @@ export const features: Indexable = {
 
 export const settings: Indexable = {
   variantExplorer: {
-    type: (import.meta.env?.VITE_VARIANT_EXPLORER_TYPE || ExportType.Aggregate) as ExportType,
+    type:
+      import.meta.env?.VITE_VARIANT_EXPLORER_TYPE === 'full'
+        ? ExportType.Full
+        : ExportType.Aggregate,
     maxCount: parseInt(import.meta.env?.VITE_VARIANT_EXPLORER_MAX_COUNT || 10000),
     excludeColumns: JSON.parse(import.meta.env?.VITE_VARIANT_EXPLORER_EXCLUDE_COLUMNS || '[]'),
   },
