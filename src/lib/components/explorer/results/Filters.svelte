@@ -3,7 +3,7 @@
   import { features } from '$lib/configuration';
 
   import type { FilterGroupInterface } from '$lib/models/Filter.svelte';
-  import { filterTree, filters, genomicFilters } from '$lib/stores/Filter';
+  import { filterTree, filters, genomicFilters, advancedFilteringOpen } from '$lib/stores/Filter';
   import { exports } from '$lib/stores/Export';
 
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
@@ -11,13 +11,12 @@
   import Modal from '$lib/components/Modal.svelte';
   import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
 
-  let advancedModalOpen: boolean = $state(false);
   let advancedFilteringRef: ReturnType<typeof AdvancedFiltering>;
   let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
 </script>
 
 <Modal
-  bind:open={advancedModalOpen}
+  bind:open={$advancedFilteringOpen}
   title="Advanced Filters"
   withDefault
   width="w-full"
@@ -36,7 +35,7 @@
     {#if $filters.length + $genomicFilters.length > 0}
       <div>
         <header class="text-left ml-1">Filters</header>
-        <button class="btn preset-filled-primary-500" onclick={() => (advancedModalOpen = true)}
+        <button class="btn preset-filled-primary-500" onclick={() => ($advancedFilteringOpen = true)}
           >Advanced Filters</button
         >
       </div>

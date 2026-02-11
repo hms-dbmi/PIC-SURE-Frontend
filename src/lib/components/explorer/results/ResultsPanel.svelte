@@ -9,7 +9,14 @@
 
   import { features } from '$lib/configuration';
 
-  import { filters, hasGenomicFilter, clearFilters, hasOrGroup } from '$lib/stores/Filter';
+  import {
+    filters,
+    genomicFilters,
+    hasGenomicFilter,
+    clearFilters,
+    hasOrGroup,
+    advancedFilteringOpen,
+  } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
@@ -66,7 +73,8 @@
       .length,
   );
 
-  let showAdvancedFiltering = $derived(nonGenomicFilterCount >= 2);
+  let showAdvancedFiltering = true;
+  let advancedFilteringDisabled = $derived($filters.length + $genomicFilters.length === 0);
 
   let showToolSuite = $derived(
     showCohortDetails ||
@@ -235,6 +243,8 @@
             title="Advanced Filtering"
             icon="fa-solid fa-sliders"
             size="md"
+            disabled={advancedFilteringDisabled}
+            onclick={() => ($advancedFilteringOpen = true)}
           />
         {/if}
       </div>

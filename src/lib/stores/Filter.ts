@@ -56,6 +56,7 @@ export const hasOrGroup: Readable<boolean> = derived(filterTree, ($ft) => $ft.ha
 export const activeFilter: Writable<Filter | undefined> = writable();
 export const activeSearch: Writable<SearchResult | undefined> = writable();
 export const filterWarning: Writable<string | undefined> = writable();
+export const advancedFilteringOpen: Writable<boolean> = writable(false);
 
 filterTree.subscribe((tree: LogicTree<FilterInterface>) => {
   if (browser) {
