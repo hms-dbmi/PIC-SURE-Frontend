@@ -273,6 +273,20 @@ export class AdvancedFilteringPage {
     expect(groupCount).toBeGreaterThan(1);
   }
 
+  // ==================== Genomic Filter Locators ====================
+
+  getGenomicFiltersSection(): Locator {
+    return this.page.getByTestId('genomic-filters-section');
+  }
+
+  getGenomicFilterItems(): Locator {
+    return this.page.getByTestId('genomic-filter-item');
+  }
+
+  getGenomicAndSeparator(): Locator {
+    return this.page.getByTestId('genomic-and-separator');
+  }
+
   // ==================== Debug Helpers ====================
 
   async logCurrentState() {

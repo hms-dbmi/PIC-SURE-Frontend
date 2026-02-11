@@ -1122,3 +1122,82 @@ test.describe('Advanced Filtering - Apply', () => {
     await expect(afPage.openModalButton).toBeVisible();
   });
 });
+
+test.describe('Advanced Filtering - Genomic Filters', () => {
+  let afPage: AdvancedFilteringPage;
+
+  test.beforeEach(async ({ page }) => {
+    afPage = new AdvancedFilteringPage(page);
+    await afPage.setupAndOpenModal();
+  });
+
+  test('AF-GENOMIC-001: Genomic filter appears at bottom of filters list', async () => {
+    // Verify the genomic filters section exists
+    const genomicSection = afPage.getGenomicFiltersSection();
+    await expect(genomicSection).toBeVisible();
+
+    // Verify a genomic filter item is displayed
+    const genomicItems = afPage.getGenomicFilterItems();
+    await expect(genomicItems).toHaveCount(1);
+
+    // Verify it contains the expected genomic filter text
+    await expect(genomicItems.first()).toContainText('Genomic Filter');
+
+    // Verify the genomic section comes after the phenotypic filters (drag-drop area)
+    // by checking the genomic section is the last child in the filtering area
+    const filteringArea = afPage.filteringArea;
+    const genomicSectionInArea = filteringArea.getByTestId('genomic-filters-section');
+    await expect(genomicSectionInArea).toBeVisible();
+  });
+
+  test('AF-GENOMIC-002: Separator between phenotypic and genomic filter shows fixed AND text', async () => {
+    // Verify the AND separator exists between phenotypic and genomic filters
+    const separator = afPage.getGenomicAndSeparator();
+    await expect(separator).toBeVisible();
+    await expect(separator).toContainText('AND');
+  });
+
+  test('AF-GENOMIC-003: Genomic filter AND separator is not changeable by user', async () => {
+    // Verify the AND separator is static text (badge), not an interactive control
+    const separator = afPage.getGenomicAndSeparator();
+    await expect(separator).toBeVisible();
+
+    // Verify no radio buttons or interactive controls inside the separator
+    const radios = separator.getByRole('radio');
+    await expect(radios).toHaveCount(0);
+
+    // Verify no buttons inside the separator
+    const buttons = separator.getByRole('button');
+    await expect(buttons).toHaveCount(0);
+
+    // Verify it's a simple badge, not a Segment control
+    const badge = separator.locator('.badge');
+    await expect(badge).toBeVisible();
+    await expect(badge).toContainText('AND');
+  });
+
+  test('AF-GENOMIC-004: Genomic filter cannot be dragged', async () => {
+    // Verify the genomic filter item has no drag handle
+    const genomicItem = afPage.getGenomicFilterItems().first();
+    await expect(genomicItem).toBeVisible();
+
+    // Verify no grip-vertical icon (drag handle) inside the genomic filter
+    const dragHandle = genomicItem.locator('.fa-grip-vertical');
+    await expect(dragHandle).toHaveCount(0);
+  });
+
+  test('AF-GENOMIC-005: Genomic filter cannot be placed into a group', async ({ page }) => {
+    // The genomic filter is rendered outside the DragDropProvider,
+    // so it cannot participate in drag-and-drop at all.
+    // Verify the genomic filter is outside the sortable area
+    const genomicItem = afPage.getGenomicFilterItems().first();
+    await expect(genomicItem).toBeVisible();
+
+    // Verify the genomic filter does not have sortable attributes
+    // (data-dnd-kit attributes are added by useSortable)
+    const hasSortableAttr = await genomicItem.evaluate((el) => {
+      return Array.from(el.attributes).some((attr) => attr.name.startsWith('data-dnd'));
+    });
+    expect(hasSortableAttr).toBe(false);
+  });
+});

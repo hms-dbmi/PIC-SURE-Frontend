@@ -12,7 +12,7 @@
     PointerSensor,
   } from '@dnd-kit-svelte/svelte';
   import { move } from '@dnd-kit/helpers';
-  import { filterTree } from '$lib/stores/Filter';
+  import { filterTree, genomicFilters } from '$lib/stores/Filter';
   import { LogicTree } from '$lib/models/LogicTree.svelte';
   import { Operator } from '$lib/models/query/Query';
 
@@ -524,7 +524,7 @@
 <div class="mb-2 flex justify-end gap-2">
   <button class="btn preset-filled-primary-500" onclick={addGroup}>Add Group</button>
 </div>
-<div class="flex-1 overflow-auto p-4 border border-surface-300 rounded-lg bg-surface-50">
+<div class="flex-1 overflow-auto p-4  border border-surface-300 rounded-lg bg-surface-50">
   <DragDropProvider
     {sensors}
     onDragStart={handleDragStart}
@@ -564,4 +564,29 @@
       {/if}
     </DragOverlay>
   </DragDropProvider>
+  {#if $genomicFilters.length > 0}
+    <div data-testid="genomic-filters-section">
+      {#if (localTree.root as FilterGroupInterface).children.length > 0}
+        <div class="flex justify-center pb-3" data-testid="genomic-and-separator">
+          <span class="badge preset-filled-surface-200-800 font-bold text-xs uppercase">AND</span>
+        </div>
+      {/if}
+      {#each $genomicFilters as gFilter (gFilter.uuid)}
+        <div
+          class="card flex flex-row gap-2 items-center p-4 bg-white border-surface-400 border opacity-75"
+          data-testid="genomic-filter-item"
+        >
+          <div class="flex items-center">
+            <i class="fa-solid fa-dna text-surface-400"></i>
+          </div>
+          <div class="flex flex-col">
+            <div class="text-sm font-medium">{gFilter.variableName}</div>
+            {#if gFilter.description}
+              <div class="text-xs text-surface-500">{gFilter.description}</div>
+            {/if}
+          </div>
+        </div>
+      {/each}
+    </div>
+  {/if}
 </div>
