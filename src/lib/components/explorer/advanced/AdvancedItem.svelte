@@ -52,7 +52,11 @@
         ? 'invisible'
         : ''}"
     >
-      <span class="badge preset-filled-primary-200-800 font-bold text-xs uppercase">
+      <span
+        class="badge font-bold text-xs uppercase {leadingOperator === 'OR'
+          ? 'preset-filled-secondary-200-800'
+          : 'preset-filled-primary-200-800'}"
+      >
         {leadingOperator}
       </span>
     </div>

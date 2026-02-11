@@ -76,6 +76,28 @@ test.describe('Advanced Filtering - Global Combiner', () => {
     // Verify OR badges are still visible after reopening (proves persistence)
     await afPage.expectBadgeText('OR');
   });
+
+  test('AF-COMBINER-006: AND uses primary color, OR uses secondary color', async () => {
+    // Verify AND badges use primary color by default
+    const andBadges = afPage.getAndBadges();
+    await expect(andBadges.first()).toBeVisible();
+    await expect(andBadges.first()).toHaveClass(/preset-filled-primary/);
+
+    // Switch root to OR
+    await afPage.selectRootOperator('OR');
+
+    // Verify OR badges now use secondary color
+    const orBadges = afPage.getOrBadges();
+    await expect(orBadges.first()).toBeVisible();
+    await expect(orBadges.first()).toHaveClass(/preset-filled-secondary/);
+
+    // Verify remaining AND badges (inside sub-groups) still use primary color
+    const remainingAndBadges = afPage.getAndBadges();
+    const andCount = await remainingAndBadges.count();
+    if (andCount > 0) {
+      await expect(remainingAndBadges.first()).toHaveClass(/preset-filled-primary/);
+    }
+  });
 });
 
 test.describe('Advanced Filtering - Drag and Drop', () => {
