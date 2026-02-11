@@ -1,7 +1,7 @@
 import type { LayoutLoad } from './../$types';
 import { redirect } from '@sveltejs/kit';
 import { browser } from '$app/environment';
-import { PicsurePrivileges } from '$lib/models/Privilege';
+import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { user } from '$lib/stores/User';
 import { get } from 'svelte/store';
 
@@ -19,7 +19,7 @@ export const load: LayoutLoad = ({ url }) => {
     if (
       url.pathname.includes('/dataset') &&
       !url.pathname.includes('/request') &&
-      !userPrivileges.includes(PicsurePrivileges.NAMED_DATASET)
+      !(userPrivileges.includes(PicsurePrivileges.NAMED_DATASET) || userPrivileges.includes(BDCPrivileges.NAMED_DATASET))
     ) {
       redirect(302, '/');
     }
