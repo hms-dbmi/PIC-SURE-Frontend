@@ -28,7 +28,7 @@
         query: query.query,
         resourceUUID: $resources.visualization,
         resourceCredentials: token ? { Authorization: 'Bearer ' + token } : {},
-      }, !isOpenAccess())
+      }, undefined, !isOpenAccess())
       .then((resp) => {
         plotValues = [
           ...(resp?.categoricalData || []).map(createCategoryPlot),

@@ -41,6 +41,8 @@ async function send({
     } else {
       opts.headers['request-source'] = 'Open';
     }
+  } else if (browser) {
+    opts.headers['request-source'] = 'Open';
   }
 
   const res = await fetch(`${window.location.origin}/${path}`, opts);
