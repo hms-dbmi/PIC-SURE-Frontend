@@ -5,7 +5,7 @@
   import ExportStore from '$lib/stores/Export';
   import { panelOpen } from '$lib/stores/SidePanel';
   import { features } from '$lib/configuration';
-  import { isAuthorizedAccess, isOpenAccess } from '$lib/AccessState';
+  import { isOpenAccess } from '$lib/AccessState';
   import { genericUUID } from '$lib/utilities/UUID';
 
   let { exports, addExport, removeExport } = ExportStore;
@@ -45,7 +45,7 @@
   let isExported = $derived(
     $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath),
   );
-  let shouldDisableFilter = $derived(!isAuthorizedAccess() && !data.row.allowFiltering);
+  let shouldDisableFilter = $derived(isOpenAccess() && !data.row.allowFiltering);
 </script>
 
 <button type="button" title="Information" class="btn-icon-color" onclick={insertInfoContent}>
