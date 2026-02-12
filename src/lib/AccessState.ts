@@ -6,7 +6,3 @@ import { browser } from '$app/environment';
 export function isOpenAccess(): boolean {
   return (browser && page.url.pathname.includes('/discover')) || !isUserLoggedIn();
 }
-
-export function isAuthorizedAccess(): boolean {
-  return isUserLoggedIn() && !features.explorer.open;
-}
