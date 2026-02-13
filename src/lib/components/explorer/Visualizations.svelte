@@ -24,11 +24,16 @@
     const token = localStorage.getItem('token');
 
     await api
-      .post(Picsure.QuerySync, {
-        query: query.query,
-        resourceUUID: $resources.visualization,
-        resourceCredentials: token ? { Authorization: 'Bearer ' + token } : {},
-      }, undefined, !isOpenAccess())
+      .post(
+        Picsure.QuerySync,
+        {
+          query: query.query,
+          resourceUUID: $resources.visualization,
+          resourceCredentials: token ? { Authorization: 'Bearer ' + token } : {},
+        },
+        undefined,
+        !isOpenAccess(),
+      )
       .then((resp) => {
         plotValues = [
           ...(resp?.categoricalData || []).map(createCategoryPlot),
