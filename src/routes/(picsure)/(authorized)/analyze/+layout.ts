@@ -11,7 +11,10 @@ export const prerender = false;
 export const load: LayoutLoad = ({ url }) => {
   if (browser) {
     const userPrivileges = get(user)?.privileges || [];
-    if (!userPrivileges.includes(PicsurePrivileges.API_ACCESS) && !userPrivileges.includes(BDCPrivileges.AUTHORIZED_ACCESS)) {
+    if (
+      !userPrivileges.includes(PicsurePrivileges.API_ACCESS) &&
+      !userPrivileges.includes(BDCPrivileges.AUTHORIZED_ACCESS)
+    ) {
       redirect(302, '/');
     }
     if (
