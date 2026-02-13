@@ -19,7 +19,10 @@ export const load: LayoutLoad = ({ url }) => {
     if (
       url.pathname.includes('/dataset') &&
       !url.pathname.includes('/request') &&
-      !(userPrivileges.includes(PicsurePrivileges.NAMED_DATASET) || userPrivileges.includes(BDCPrivileges.NAMED_DATASET))
+      !(
+        userPrivileges.includes(PicsurePrivileges.NAMED_DATASET) ||
+        userPrivileges.includes(BDCPrivileges.NAMED_DATASET)
+      )
     ) {
       redirect(302, '/');
     }
