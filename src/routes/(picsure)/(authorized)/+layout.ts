@@ -15,7 +15,10 @@ export const load: LayoutLoad = ({ url }) => {
       redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
     }
     const userPrivileges = get(user)?.privileges || [];
-    if (!userPrivileges.includes(PicsurePrivileges.QUERY) && !userPrivileges.includes(BDCPrivileges.AUTHORIZED_ACCESS)) {
+    if (
+      !userPrivileges.includes(PicsurePrivileges.QUERY) &&
+      !userPrivileges.includes(BDCPrivileges.AUTHORIZED_ACCESS)
+    ) {
       redirect(302, '/');
     }
     if (!features.analyzeApi && features.analyzeAnalysis && url.pathname.includes('/analyze/api')) {
