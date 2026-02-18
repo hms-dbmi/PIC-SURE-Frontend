@@ -7,6 +7,13 @@ import { user } from './User';
 import { objectUUID } from '$lib/utilities/UUID';
 
 export const filters: Writable<Filter[]> = writable(restoreFilters());
+export const associatedStudies: Readable<string[]> = derived(filters, ($f) => {
+  const studies = new Set<string>();
+  for (const filter of $f) {
+    if (filter.dataset) studies.add(filter.dataset);
+  }
+  return [...studies];
+});
 export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic') : false,
 );
