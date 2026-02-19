@@ -198,9 +198,9 @@
   }
 
   function onComplete() {
-    log(createLog('EXPORT', 'export.stepper.complete', { datasetId: getDatasetId()}));
+    log(createLog('EXPORT', 'export.stepper.complete', { datasetId: getDatasetId() }));
     if (features.explorer.enableRedcapExport) {
-      log(createLog('EXPORT', 'export.open_redcap', { datasetId: getDatasetId()}));
+      log(createLog('EXPORT', 'export.open_redcap', { datasetId: getDatasetId() }));
       window.open(
         'https://redcap.tch.harvard.edu/redcap_edc/surveys/?s=EWYX8X8XX77TTWFR',
         '_blank',

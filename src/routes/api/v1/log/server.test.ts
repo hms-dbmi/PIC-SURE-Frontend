@@ -54,29 +54,35 @@ describe('+server POST /api/log', () => {
     };
   });
 
-  it('returns 500 with status dropped when RESOURCE_LOG is missing', async () => {
+  it('returns 202 with status dropped when RESOURCE_LOG is missing', async () => {
     mockEnv = {};
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const response = await POST(makeEvent(makeRequest({ event_type: 'TEST' })));
 
-    expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({ status: 'dropped' });
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ result: 'dropped' });
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('not configured'));
   });
 
-  it('returns 400 for invalid JSON body', async () => {
+  it('returns 202 with status dropped for invalid JSON body', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
     const response = await POST(makeEvent(makeInvalidRequest()));
 
-    expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ error: 'Invalid JSON' });
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ result: 'dropped' });
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid JSON'));
   });
 
-  it('returns 400 when event_type is missing', async () => {
+  it('returns 202 with status dropped when event_type is missing', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
     const response = await POST(makeEvent(makeRequest({ action: 'click' })));
 
-    expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ error: 'event_type is required' });
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ result: 'dropped' });
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Missing event_type'));
   });
 
   it('forwards request to PIC-SURE with resourceUUID and query body', async () => {
@@ -90,7 +96,7 @@ describe('+server POST /api/log', () => {
     );
 
     expect(response.status).toBe(202);
-    expect(await response.json()).toEqual({ status: 'accepted' });
+    expect(await response.json()).toEqual({ result: 'accepted' });
 
     expect(fetchSpy).toHaveBeenCalledOnce();
     const [url, opts] = fetchSpy.mock.calls[0];
@@ -116,7 +122,7 @@ describe('+server POST /api/log', () => {
     const response = await POST(makeEvent(makeRequest({ event_type: 'QUERY' })));
 
     expect(response.status).toBe(202);
-    expect(await response.json()).toEqual({ status: 'accepted' });
+    expect(await response.json()).toEqual({ result: 'accepted' });
     expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Upstream returned 500'));
   });
 
@@ -127,7 +133,7 @@ describe('+server POST /api/log', () => {
     const response = await POST(makeEvent(makeRequest({ event_type: 'QUERY' })));
 
     expect(response.status).toBe(202);
-    expect(await response.json()).toEqual({ status: 'accepted' });
+    expect(await response.json()).toEqual({ result: 'accepted' });
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining('Network error'),
       expect.any(Error),

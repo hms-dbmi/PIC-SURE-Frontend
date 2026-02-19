@@ -28,7 +28,14 @@
   let help: string = $state('');
 
   let login = async (redirectTo: string, providerType: string) => {
-    log(createLog('AUTH_LOGIN', 'login.click', { provider: providerType }, { idp: provider?.name ?? undefined, }));
+    log(
+      createLog(
+        'AUTH_LOGIN',
+        'login.click',
+        { provider: providerType },
+        { idp: provider?.name ?? undefined },
+      ),
+    );
     let instance = await createInstance(provider!);
     instance.login(redirectTo, providerType).then(() => {
       resetSearch();

@@ -10,7 +10,11 @@
   async function toggleArchive(event: Event) {
     event.stopPropagation();
     const isArchiving = !data.row.archived;
-    log(createLog('DATASET', isArchiving ? 'dataset.archive' : 'dataset.restore', { datasetId: data.cell }));
+    log(
+      createLog('DATASET', isArchiving ? 'dataset.archive' : 'dataset.restore', {
+        datasetId: data.cell,
+      }),
+    );
 
     try {
       toggleButton.disabled = true;

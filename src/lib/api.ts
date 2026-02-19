@@ -93,7 +93,12 @@ async function handleResponse(res: Response) {
     logout(undefined, false);
   }
   const resText = await res.text();
-  log(createLog('ERROR', 'error.unknown', undefined, { status: res.status, error: { message: resText}}));
+  log(
+    createLog('ERROR', 'error.unknown', undefined, {
+      status: res.status,
+      error: { message: resText },
+    }),
+  );
   error(res.status as NumericRange<400, 599>, resText);
 }
 

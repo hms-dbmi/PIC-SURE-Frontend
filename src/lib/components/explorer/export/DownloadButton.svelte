@@ -42,12 +42,17 @@
     }
     try {
       isDownloading = true;
-      log(createLog('DOWNLOAD', 'export.download_clicked', { type: query.query.expectedResultType, datasetId }));
+      log(
+        createLog('DOWNLOAD', 'export.download_clicked', {
+          type: query.query.expectedResultType,
+          datasetId,
+        }),
+      );
       const startTime = performance.now();
       const res = await api.post(`${Picsure.Query}/${datasetId}/result`, {});
       const duration = Math.round(performance.now() - startTime);
       const blob = new Blob([res], { type: 'octet/stream' });
-      
+
       const responseDataUrl = URL.createObjectURL(blob);
       if (browser) {
         const link = document.createElement('a');
@@ -64,10 +69,27 @@
         link.click();
         document.body.removeChild(link);
       }
-      log(createLog('DOWNLOAD', 'export.download_success', { type: query.query.expectedResultType, datasetId }, { bytes: blob.size, duration }));
+      log(
+        createLog(
+          'DOWNLOAD',
+          'export.download_success',
+          { type: query.query.expectedResultType, datasetId },
+          { bytes: blob.size, duration },
+        ),
+      );
     } catch (error) {
       console.error('Error in onCompleteHandler', error);
-      log(createLog('DOWNLOAD', 'export.download_error', { type: query.query.expectedResultType, datasetId }, { status: isHttpError(error) ? error.status : undefined, error: { message: (error as Error).message } }));
+      log(
+        createLog(
+          'DOWNLOAD',
+          'export.download_error',
+          { type: query.query.expectedResultType, datasetId },
+          {
+            status: isHttpError(error) ? error.status : undefined,
+            error: { message: (error as Error).message },
+          },
+        ),
+      );
     } finally {
       isDownloading = false;
     }

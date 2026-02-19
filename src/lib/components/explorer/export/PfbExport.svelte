@@ -54,7 +54,12 @@
         disabled={exportLoading}
         class="flex-initial w-64 btn preset-filled-primary-500 disabled:preset-tonal-primary border border-primary-500"
         onclick={() => {
-          log(createLog('EXPORT', 'export.pfb_signed_url', { platform: exportLink.title, datasetId: getDatasetId() }));
+          log(
+            createLog('EXPORT', 'export.pfb_signed_url', {
+              platform: exportLink.title,
+              datasetId: getDatasetId(),
+            }),
+          );
           exportSignedToUrl(exportLink.url);
         }}
       >

@@ -48,8 +48,14 @@
                     target={link.newTab ? '_blank' : '_self'}
                     href={link.url}
                     class="hover:underline"
-                    onclick={() => log(createLog('NAVIGATION', 'sitemap.link_click', { title: link.title, url: link.url, category: section.category }))}
-                    >{link.title}</a
+                    onclick={() =>
+                      log(
+                        createLog('NAVIGATION', 'sitemap.link_click', {
+                          title: link.title,
+                          url: link.url,
+                          category: section.category,
+                        }),
+                      )}>{link.title}</a
                   >
                 </li>
               {/if}
@@ -85,7 +91,8 @@
           class="hover:underline text-[0.74rem]"
           target={link.newTab ? '_blank' : '_self'}
           href={link.url}
-          onclick={() => log(createLog('NAVIGATION', 'footer.link_click', { title: link.title, url: link.url }))}
+          onclick={() =>
+            log(createLog('NAVIGATION', 'footer.link_click', { title: link.title, url: link.url }))}
           >{link.title}</a
         >
       </li>

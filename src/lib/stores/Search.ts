@@ -84,7 +84,14 @@ export async function search(state: State): Promise<SearchResult[]> {
     state.setTotalRows(0);
     return [];
   }
-  log(createLog('SEARCH', 'search.dictionary', { term, facetCount: facets.length, page: state.currentPage, pageSize: state.rowsPerPage }));
+  log(
+    createLog('SEARCH', 'search.dictionary', {
+      term,
+      facetCount: facets.length,
+      page: state.currentPage,
+      pageSize: state.rowsPerPage,
+    }),
+  );
   const search = searchDictionary(term.trim(), facets, {
     pageNumber: state.currentPage - 1,
     pageSize: state.rowsPerPage,
