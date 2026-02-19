@@ -9,7 +9,7 @@
 
   import { features } from '$lib/configuration';
 
-  import { filters, hasGenomicFilter, clearFilters, genomicFilters } from '$lib/stores/Filter';
+  import { filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
@@ -20,7 +20,6 @@
   import Counts from '$lib/components/explorer/results/Counts.svelte';
 
   let unsubFilters: Unsubscriber | null = null;
-  let unsubGenomicFilters: Unsubscriber | null = null;
   let currentPage: string = $state(page.url.pathname);
   let isDiscoverPage = $derived(currentPage.includes('/discover'));
   let modalOpen: boolean = $state(false);
@@ -73,19 +72,12 @@
     if (!unsubFilters) {
       unsubFilters = filters.subscribe(() => loadPatientCount(!isDiscoverPage));
     }
-    if (!unsubGenomicFilters) {
-      unsubGenomicFilters = genomicFilters.subscribe(() => loadPatientCount(!isDiscoverPage));
-    }
   }
 
   function unsubscribe() {
     if (unsubFilters) {
       unsubFilters();
       unsubFilters = null;
-    }
-    if (unsubGenomicFilters) {
-      unsubGenomicFilters();
-      unsubGenomicFilters = null;
     }
   }
 
