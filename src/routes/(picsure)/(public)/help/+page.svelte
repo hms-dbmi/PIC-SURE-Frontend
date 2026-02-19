@@ -2,6 +2,7 @@
   import Content from '$lib/components/Content.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import { branding } from '$lib/configuration';
+  import { log, createLog } from '$lib/logger';
 </script>
 
 <svelte:head>
@@ -15,6 +16,7 @@
         title={link.title}
         subtitle={link.description}
         icon="{link.icon} text-primary-600-400"
+        onclick={() => log(createLog('NAVIGATION', 'help.link_click', { title: link.title, url: link.url }))}
       />
     {/each}
   </section>
