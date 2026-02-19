@@ -4,6 +4,7 @@
   import { user, isUserLoggedIn } from '$lib/stores/User';
   import Terms from '$lib/components/Terms.svelte';
   import Modal from '$lib/components/Modal.svelte';
+  import { log, createLog } from '$lib/logger';
 
   let { showSitemap = branding?.footer?.showSitemap || false }: { showSitemap?: boolean } =
     $props();
@@ -46,7 +47,9 @@
                   <a
                     target={link.newTab ? '_blank' : '_self'}
                     href={link.url}
-                    class="hover:underline">{link.title}</a
+                    class="hover:underline"
+                    onclick={() => log(createLog('NAVIGATION', 'sitemap.link_click', { title: link.title, url: link.url, category: section.category }))}
+                    >{link.title}</a
                   >
                 </li>
               {/if}
@@ -81,7 +84,9 @@
         <a
           class="hover:underline text-[0.74rem]"
           target={link.newTab ? '_blank' : '_self'}
-          href={link.url}>{link.title}</a
+          href={link.url}
+          onclick={() => log(createLog('NAVIGATION', 'footer.link_click', { title: link.title, url: link.url }))}
+          >{link.title}</a
         >
       </li>
     {/each}
