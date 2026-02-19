@@ -23,20 +23,22 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 
   if (!RESOURCE_LOG || !origin) {
     console.warn('[log] RESOURCE_LOG or origin not configured; dropping event');
-    return json({ status: 'dropped' }, { status: 500 });
+    return json({ result: 'dropped' }, { status: ACCEPTED });
   }
 
   let body: LogEvent;
   try {
     body = await request.json();
   } catch {
-    return json({ error: 'Invalid JSON' }, { status: 400 });
+    console.warn('[log] Invalid JSON in log request; dropping event');
+    return json({ result: 'dropped' }, { status: ACCEPTED });
   }
 
   body.src_ip = getClientAddress();
 
   if (!body.event_type) {
-    return json({ error: 'event_type is required' }, { status: 400 });
+    console.warn('[log] Missing event_type in log request; dropping event');
+    return json({ result: 'dropped' }, { status: ACCEPTED });
   }
 
   const headers: Record<string, string> = {
@@ -71,5 +73,5 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     console.error('[log] Network error forwarding to logging service:', err);
   }
 
-  return json({ status: 'accepted' }, { status: ACCEPTED });
+  return json({ result: 'accepted' }, { status: ACCEPTED });
 };

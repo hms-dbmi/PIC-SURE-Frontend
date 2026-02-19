@@ -57,7 +57,12 @@
         api.post(Picsure.Query, getQueryRequest()).then((res: DataSetResponse) => {
           setDatasetId(res.picsureResultId || 'Error');
           if (res.picsureResultId) {
-            log(createLog('DATA', 'dataset.create', { name: getDatasetNameInput(), datasetId: res.picsureResultId }));
+            log(
+              createLog('DATA', 'dataset.create', {
+                name: getDatasetNameInput(),
+                datasetId: res.picsureResultId,
+              }),
+            );
           }
         }),
       );

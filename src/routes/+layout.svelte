@@ -14,11 +14,13 @@
   onMount(initSanitizeConfig);
 
   afterNavigate(({ from, to, type }) => {
-    log(createLog('NAVIGATION', 'page.navigate', {
-      from: from?.url.pathname,
-      to: to?.url.pathname,
-      type,
-    }));
+    log(
+      createLog('NAVIGATION', 'page.navigate', {
+        from: from?.url.pathname,
+        to: to?.url.pathname,
+        type,
+      }),
+    );
   });
 </script>
 

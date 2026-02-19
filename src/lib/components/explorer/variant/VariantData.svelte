@@ -58,7 +58,8 @@
               class="btn btn-sm preset-tonal-primary border border-primary-500"
               href={varData.downloadUrl}
               download="variantData.tsv"
-              onclick={() => log(createLog('EXPORT', 'variant.download', { aggregate: aggregateCheckbox }))}
+              onclick={() =>
+                log(createLog('EXPORT', 'variant.download', { aggregate: aggregateCheckbox }))}
             >
               <i class="fa-solid fa-download"></i>
               Download Variant{aggregateCheckbox ? ' (Aggregate)' : ''} Data

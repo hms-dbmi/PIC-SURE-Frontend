@@ -81,7 +81,7 @@ export async function updateFacetsFromSearch(): Promise<DictionaryFacetResult[]>
   }
 
   try {
-    log(createLog('SEARCH', 'facets.load', { search, facets}));
+    log(createLog('SEARCH', 'facets.load', { search, facets }));
     const response: DictionaryFacetResult[] = await api.post(Picsure.Facets, request);
     initializeHiddenFacets(response);
     processFacetResults(response);

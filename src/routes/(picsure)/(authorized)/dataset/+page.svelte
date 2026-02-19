@@ -57,8 +57,7 @@
       onclick={() => {
         displayArchived = !displayArchived;
         log(createLog('DATASET', 'dataset.toggle_archived', { showArchived: displayArchived }));
-      }}
-      >{displayArchived ? 'Hide' : 'Show'} deleted datasets</button
+      }}>{displayArchived ? 'Hide' : 'Show'} deleted datasets</button
     >
   {:catch}
     <ErrorAlert title="API Error">Something went wrong when sending your request.</ErrorAlert>

@@ -16,7 +16,8 @@
         title={link.title}
         subtitle={link.description}
         icon="{link.icon} text-primary-600-400"
-        onclick={() => log(createLog('NAVIGATION', 'help.link_click', { title: link.title, url: link.url }))}
+        onclick={() =>
+          log(createLog('NAVIGATION', 'help.link_click', { title: link.title, url: link.url }))}
       />
     {/each}
   </section>
