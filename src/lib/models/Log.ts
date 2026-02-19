@@ -36,6 +36,7 @@ export interface LogEvent {
   bytes?: number;
   duration?: number;
   referrer?: string;
+  associated_study?: string[];
   metadata?: Record<string, unknown>;
-  error?: { origin?: string; message?: string; [key: string]: unknown };
+  error?: Record<string, unknown>;
 }

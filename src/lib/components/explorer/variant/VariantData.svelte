@@ -7,6 +7,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import Datatable from '$lib/components/datatable/StaticTable.svelte';
+  import { log, createLog } from '$lib/logger';
 
   let {
     count,
@@ -57,6 +58,7 @@
               class="btn btn-sm preset-tonal-primary border border-primary-500"
               href={varData.downloadUrl}
               download="variantData.tsv"
+              onclick={() => log(createLog('EXPORT', 'variant.download', { aggregate: aggregateCheckbox }))}
             >
               <i class="fa-solid fa-download"></i>
               Download Variant{aggregateCheckbox ? ' (Aggregate)' : ''} Data

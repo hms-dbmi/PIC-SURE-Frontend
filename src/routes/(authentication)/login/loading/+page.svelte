@@ -11,6 +11,7 @@
   import Loading from '$lib/components/Loading.svelte';
   import type { User } from '$lib/models/User';
   import { login, setToken } from '$lib/stores/User';
+  import { log, createLog } from '$lib/logger';
 
   async function attemptUserLogin() {
     let redirectTo = '/';
@@ -42,6 +43,8 @@
         throw new Error('User not found');
       }
 
+      log(createLog('LOGIN', 'login.success', { provider: providerType }));
+
       // api returns as string
       user.acceptedTOS = String(user.acceptedTOS) === 'true';
       if (features.enforceTermsOfService && !user.acceptedTOS) {
@@ -56,6 +59,7 @@
   onMount(async () => {
     panelOpen.set(false);
     attemptUserLogin().catch((error) => {
+      log(createLog('LOGIN', 'login.failure', { error: String(error) }));
       console.error('Login Error: ', error);
       goto('/login/error');
       return;

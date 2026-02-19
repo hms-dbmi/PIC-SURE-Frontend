@@ -25,6 +25,8 @@ import { getQueryResources } from '$lib/stores/Resources';
 import { getBlankQueryRequest } from '$lib/utilities/QueryBuilder';
 import { getQueryRequest } from '$lib/utilities/QueryBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
+import { log, createLog } from '$lib/logger';
+import { query } from '$app/server';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rejectIfQueryError(result: any) {
@@ -98,6 +100,7 @@ function hardcoded({ stat }: RequestMapOptions) {
 async function getOpenCount(options: RequestMapOptions): Promise<PatientCount> {
   const request = { ...options.request };
   request.query.expectedResultType = 'CROSS_COUNT';
+  log(createLog('QUERY', 'query.execute', { isOpenAccess: true, type: 'patientCount', query: request.query }));
   return api
     .post(Picsure.QuerySync, request)
     .then(rejectIfQueryError)
@@ -107,6 +110,7 @@ async function getOpenCount(options: RequestMapOptions): Promise<PatientCount> {
 function getAuthCount(options: RequestMapOptions): Promise<PatientCount> {
   const request = { ...options.request };
   request.query.expectedResultType = 'COUNT';
+  log(createLog('QUERY', 'query.execute', { isOpenAccess: false, type: 'patientCount', query: request.query }));
   return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
 }
 
@@ -122,6 +126,7 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     const request = { ...options.request };
     request.query.expectedResultType = type;
     request.query.setCrossCountFields(fields);
+    log(createLog('QUERY', 'query.execute', { type: field, query: request.query }));
     return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
   };
 }
