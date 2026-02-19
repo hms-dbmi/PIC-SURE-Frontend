@@ -13,6 +13,7 @@ import type {
 import type { Pageable } from '$lib/models/api/Pageable';
 import { user } from '$lib/stores/User';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
+import { log, createLog } from '$lib/logger';
 
 export type FacetSkeleton = {
   [facetCategory: string]: string[];
@@ -80,6 +81,7 @@ export async function updateFacetsFromSearch(): Promise<DictionaryFacetResult[]>
   }
 
   try {
+    log(createLog('SEARCH', 'facets.load', { search, facets}));
     const response: DictionaryFacetResult[] = await api.post(Picsure.Facets, request);
     initializeHiddenFacets(response);
     processFacetResults(response);
