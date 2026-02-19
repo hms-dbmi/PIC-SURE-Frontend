@@ -11,6 +11,7 @@
   import type { Route } from '$lib/models/Route';
   import type AuthData from '$lib/models/AuthProvider.ts';
   import type AuthProvider from '$lib/models/AuthProvider.ts';
+  import { log, createLog } from '$lib/logger';
 
   import Logo from '$lib/components/Logo.svelte';
   import Popover from '$lib/components/Popover.svelte';
@@ -90,7 +91,10 @@
               id="user-logout-btn"
               class="btn preset-filled-primary-500 w-fit"
               title="Logout"
-              onclick={() => logout(providerInstance, false)}>Logout</button
+              onclick={() => {
+                log(createLog('AUTH', 'logout.click'));
+                logout(providerInstance, false);
+              }}>Logout</button
             >
           </div>
         </Popover>

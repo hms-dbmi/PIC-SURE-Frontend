@@ -11,6 +11,7 @@ import type { QueryInterface } from '$lib/models/query/Query';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/state';
 import { resources } from '$lib/stores/Resources';
+import { log, createLog } from '$lib/logger';
 
 // Create a store that syncs with localStorage
 function createLocalStorageStore(key: string, initialValue: boolean) {
@@ -91,6 +92,7 @@ function clearSessionTokenIfExpired() {
   if (browser) {
     const token = localStorage.getItem('token');
     if (token && isTokenExpired(token)) {
+      log(createLog('AUTH', 'session.expired'));
       console.log('Clearing expired token from local storage.');
       removeToken();
       user.set({});
@@ -190,6 +192,8 @@ export async function login(token: string) {
 }
 
 export async function logout(authProvider?: AuthProvider, redirect = false) {
+  log(createLog('AUTH', 'logout.success'));
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function handleErrors(error: any) {
     console.error('Error logging out: ' + error);

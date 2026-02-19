@@ -4,6 +4,7 @@ import { isToastShowing, toaster } from '$lib/toaster';
 import { branding } from '$lib/configuration';
 import { getResultList, StatPromise } from '$lib/utilities/StatBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
+import { log, createLog } from '$lib/logger';
 
 import type { StatResult, StatValue } from '$lib/models/Stat';
 import { filters } from '$lib/stores/Filter';
@@ -43,6 +44,7 @@ export async function loadPatientCount(useAuth: boolean) {
     const resultStats: StatResult[] = getResultList(isOpenAccess, branding?.results?.stats || []);
     resultCounts.set(resultStats);
     countsLoading.set(true);
+    log(createLog('QUERY', 'query.start_load_patient_count'));
     Promise.allSettled(resultStats.flatMap(StatPromise.list).map(({ promise }) => promise)).then(
       (results) => {
         if (!results.some(StatPromise.rejected)) {
@@ -62,7 +64,9 @@ export async function loadPatientCount(useAuth: boolean) {
       Promise.allSettled(StatPromise.list(totalCount).map(({ promise }) => promise)).then(
         (results: PromiseSettledResult<StatValue>[]) => {
           const values = results.filter(StatPromise.fullfiled).map(({ value }) => value);
-          totalParticipants.set(countResult(values, false) as number);
+          const count = countResult(values, false) as number;
+          totalParticipants.set(count);
+          log(createLog('QUERY', 'query.count_returned', { count }));
         },
       );
     }

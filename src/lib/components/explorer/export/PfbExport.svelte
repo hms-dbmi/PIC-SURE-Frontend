@@ -6,6 +6,7 @@
   import Loading from '$lib/components/Loading.svelte';
   import { toaster } from '$lib/toaster';
   import { getDatasetId, getQueryRequest } from '$lib/ExportStepperManager.svelte';
+  import { log, createLog } from '$lib/logger';
   let exportLoading: boolean = $state(false);
 
   async function exportSignedToUrl(url?: string) {
@@ -52,7 +53,10 @@
       <button
         disabled={exportLoading}
         class="flex-initial w-64 btn preset-filled-primary-500 disabled:preset-tonal-primary border border-primary-500"
-        onclick={() => exportSignedToUrl(exportLink.url)}
+        onclick={() => {
+          log(createLog('EXPORT', 'export.pfb_signed_url', { platform: exportLink.title, datasetId: getDatasetId() }));
+          exportSignedToUrl(exportLink.url);
+        }}
       >
         <i class="fa-solid fa-arrow-up-right-from-square"></i>
         <span>Export to {exportLink.title}</span>
