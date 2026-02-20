@@ -1,5 +1,5 @@
 # Step 1: Build the app with node
-FROM node:23.3.0-alpine3.19 AS builder
+FROM node:25.6.1-alpine3.23 AS builder
 RUN npm install -g pnpm@latest-10
 
 WORKDIR /app
@@ -8,7 +8,7 @@ RUN pnpm install
 COPY . .
 
 # Step 2: Serve the app with httpd
-FROM httpd:2.4.65-alpine
+FROM httpd:2.4.66-alpine3.23
 
 RUN apk add --update openssl sed nodejs npm pnpm supervisor
 #TODO: volume mount the certs
