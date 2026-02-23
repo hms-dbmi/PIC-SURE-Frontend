@@ -32,6 +32,8 @@ RUN mkdir -p logs
 COPY --from=builder /app/build build/
 COPY --from=builder /app/node_modules node_modules/
 COPY package.json .
-ENV NODE_ENV=production
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN chown -R www-data:www-data /app
+ENV NODE_ENV=production
+USER www-data
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

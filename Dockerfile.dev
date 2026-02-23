@@ -31,6 +31,8 @@ ENV NODE_ENV=development
 WORKDIR /app
 RUN mkdir -p logs
 COPY --from=builder /app .
-ENV NODE_ENV=development
 COPY supervisord-dev.conf /etc/supervisor/conf.d/supervisord.conf
+RUN chown -R www-data:www-data /app
+ENV NODE_ENV=development
+USER www-data
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
