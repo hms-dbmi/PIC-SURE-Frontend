@@ -1,6 +1,5 @@
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import { Picsure } from '$lib/paths';
 import type { RequestHandler } from './$types';
 import type { LogEvent } from '$lib/models/Log';
 
