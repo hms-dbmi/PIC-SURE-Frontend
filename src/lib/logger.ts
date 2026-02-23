@@ -43,7 +43,7 @@ export function log(event: LogEvent): void {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  fetch(`/${Internal.Log}`, {
+  fetch(Internal.Log, {
     method: 'POST',
     headers,
     body: JSON.stringify(event),
