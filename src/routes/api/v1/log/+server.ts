@@ -53,7 +53,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
   }
 
   try {
-    const target = `picsure/proxy/pic-sure=logging`;
+    const target = new URL('picsure/proxy/pic-sure-logging', origin).toString();
     const upstream = await fetch(target, {
       method: 'POST',
       headers,
@@ -65,7 +65,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
         `[log] Upstream returned ${upstream.status}: ${await upstream.text().catch(() => '(no body)')}`,
       );
     }
-    console.log(`[log] Forwarded to logging service: ${upstream.status}`);
+    console.debug(`[log] Forwarded to logging service: ${upstream.status}`);
   } catch (err) {
     console.error('[log] Network error forwarding to logging service:', err);
   }
