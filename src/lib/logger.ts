@@ -6,7 +6,11 @@ import { get } from 'svelte/store';
 import { v4 as uuidv4 } from 'uuid';
 import { PicsurePrivileges } from './models/Privilege';
 import type { User } from './models/User';
-import { associatedStudies } from '$lib/stores/Filter';
+// Registered lazily by Filter.ts to avoid circular dependency: Filter → logger → Filter
+let _associatedStudies: import('svelte/store').Readable<string[]> | undefined;
+export function registerAssociatedStudies(store: import('svelte/store').Readable<string[]>) {
+  _associatedStudies = store;
+}
 
 const SESSION_ID_KEY = 'log_session_id';
 
@@ -74,7 +78,7 @@ export function createLog(
     event.idp = sessionStorage.getItem('idp') || undefined;
   }
   if (metadata) event.metadata = metadata;
-  event.associated_study = get(associatedStudies);
+  event.associated_study = _associatedStudies ? get(_associatedStudies) : [];
 
   if (browser) {
     event.session_id = getSessionId();
