@@ -1,5 +1,5 @@
 # Step 1: Build the app with node
-FROM node:23.3.0-alpine3.19 AS builder
+FROM node:25.6.1-alpine3.23 AS builder
 RUN npm install -g pnpm@latest-10
 
 WORKDIR /app
@@ -11,7 +11,7 @@ COPY .env svelte.config.js vite.config.ts .
 RUN pnpm build
 
 # Step 2: Serve the app with httpd
-FROM httpd:2.4.65-alpine
+FROM httpd:2.4.66-alpine3.23
 
 RUN apk add --update openssl sed nodejs supervisor
 
@@ -31,6 +31,8 @@ RUN mkdir -p logs
 COPY --from=builder /app/build build/
 COPY --from=builder /app/node_modules node_modules/
 COPY package.json .
-ENV NODE_ENV=production
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN chown -R www-data:www-data /app
+ENV NODE_ENV=production
+USER www-data
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
