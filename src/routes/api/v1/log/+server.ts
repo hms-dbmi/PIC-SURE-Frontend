@@ -17,11 +17,10 @@ function getOrigin(request: Request): string | undefined {
 }
 
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
-  const RESOURCE_LOG = env.RESOURCE_LOG;
   const AUDIT_API_KEY = env.AUDIT_API_KEY;
   const origin = getOrigin(request);
 
-  if (!RESOURCE_LOG || !origin) {
+  if (!origin) {
     console.warn('[log] RESOURCE_LOG or origin not configured; dropping event');
     return json({ result: 'dropped' }, { status: ACCEPTED });
   }
@@ -55,12 +54,11 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
   }
 
   try {
-    const target = `${origin}${Picsure.QuerySync}`;
-    console.log(`[log] Forwarding to PIC-SURE resource: ${RESOURCE_LOG}`);
+    const target = `picsure/proxy/pic-sure=logging`;
     const upstream = await fetch(target, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ resourceUUID: RESOURCE_LOG, query: body }),
+      body: JSON.stringify(body),
     });
 
     if (!upstream.ok) {
