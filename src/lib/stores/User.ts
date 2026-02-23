@@ -94,7 +94,7 @@ function clearSessionTokenIfExpired() {
     if (token && isTokenExpired(token)) {
       console.log('Clearing expired token from local storage.');
       removeToken();
-      user && user.set({});
+      if (user) user.set({});
       log(createLog('AUTH', 'session.expired'));
     }
   }
