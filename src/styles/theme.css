@@ -1,4 +1,5 @@
 [data-theme='picsure'] {
+  --input-bg-color: white;
   --text-scaling: 1.067;
   --base-font-color: var(--color-surface-950);
   --base-font-color-dark: var(--color-surface-50);
@@ -205,6 +206,7 @@
 }
 
 [data-theme='bdc'] {
+  --input-bg-color: white;
   --text-scaling: 1.067;
   --base-font-color: var(--color-surface-950);
   --base-font-color-dark: var(--color-surface-50);
@@ -411,6 +413,7 @@
 }
 
 [data-theme='gic'] {
+  --input-bg-color: white;
   --text-scaling: 1.067;
   --base-font-color: var(--color-surface-950);
   --base-font-color-dark: var(--color-surface-50);
@@ -617,6 +620,7 @@
 }
 
 [data-theme='bch'] {
+  --input-bg-color: white;
   --text-scaling: 1;
   --base-font-color: var(--color-surface-950);
   --base-font-color-dark: var(--color-surface-50);
