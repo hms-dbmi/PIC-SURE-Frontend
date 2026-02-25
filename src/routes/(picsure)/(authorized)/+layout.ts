@@ -2,7 +2,7 @@ import type { LayoutLoad } from './$types';
 import { browser } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
 import { isTokenExpired, user } from '$lib/stores/User';
-import { PicsurePrivileges } from '$lib/models/Privilege';
+import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { get } from 'svelte/store';
 import { features } from '$lib/configuration';
 
@@ -15,7 +15,10 @@ export const load: LayoutLoad = ({ url }) => {
       redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
     }
     const userPrivileges = get(user)?.privileges || [];
-    if (!userPrivileges.includes(PicsurePrivileges.QUERY)) {
+    if (
+      !userPrivileges.includes(PicsurePrivileges.QUERY) &&
+      !userPrivileges.includes(BDCPrivileges.AUTHORIZED_ACCESS)
+    ) {
       redirect(302, '/');
     }
     if (!features.analyzeApi && features.analyzeAnalysis && url.pathname.includes('/analyze/api')) {
