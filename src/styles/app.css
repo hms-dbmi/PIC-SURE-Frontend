@@ -42,6 +42,9 @@
   }
 } */
 
+/* default custom color variables in case they aren't set in the theme */
+--input-bg-color: var(--body-background-color);
+
 @layer utilities {
 }
 
@@ -72,6 +75,11 @@ input[type='search'] {
   width: 100%;
   @apply input;
   padding: 0.5rem 1.25rem;
+}
+
+input[type='search'],
+input[type='text'] {
+  background-color: var(--input-bg-color);
 }
 
 input[type='checkbox'] {
@@ -462,14 +470,12 @@ nav#page-navigation li .nav-dropdown a:focus {
 
 .input-border,
 #user-token #token {
+  @apply input;
   overflow: auto;
   overflow-wrap: break-word;
   word-wrap: break-word;
   padding: 0.5em;
-}
-
-#user-token #token {
-  @apply input;
+  background-color: var(--input-bg-color);
 }
 
 .btn {
