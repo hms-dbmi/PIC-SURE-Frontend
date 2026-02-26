@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import * as api from '$lib/api';
-  import { branding, features, settings } from '$lib/configuration';
+  import { features, settings } from '$lib/configuration';
   import { Picsure } from '$lib/paths';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
@@ -268,16 +268,12 @@
         {#await statusPromise}
           <Loading ring size="medium" label="Preparing" />
         {:then}
-          <p class="mt-4">{branding.explorePage.analysisExportText}</p>
           {#if showTabbedAnalysisStep}
             <TabbedAnalysisStep />
           {:else if showPfbExportStep}
             <PfbExport />
           {:else if features.explorer.enableRedcapExport}
             <RedcapStep />
-          {/if}
-          {#if branding.explorePage.goTo.instructions && branding.explorePage.goTo.instructions.length > 0}
-            <p>{branding.explorePage.goTo.instructions}</p>
           {/if}
           {#if showUserToken}
             <div class="flex justify-center">
