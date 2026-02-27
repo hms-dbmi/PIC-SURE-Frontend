@@ -1,6 +1,17 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
+  import { branding } from '$lib/configuration';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
+
   import Content from '$lib/components/Content.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
+
+  let setupInstructions = $state('');
+
+  onMount(() => {
+    setupInstructions = sanitizeHTML(branding.analysisConfig.api.example.setup);
+  });
 </script>
 
 <Content backUrl="/analyze" title="Analyze Example">
@@ -25,16 +36,8 @@
       </ol>
 
       <h4 class="font-medium mt-8">1. Set up your analysis workspace</h4>
-      <p>
-        First, you will need to set up your analysis workspace. To leverage the existing
-        documentation and examples of how to use the PIC-SURE API, this workspace should have Python
-        or R installed. You can access the publicly available examples on the
-        <a
-          class="anchor"
-          href="https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API/tree/master/CDC_National_Health_and_Nutrition_Examination_Survey"
-          target="_blank">GitHub repository</a
-        >.
-      </p>
+      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+      <p>{@html setupInstructions}</p>
 
       <h4 class="font-medium mt-8">2. Get your Personal Access Token</h4>
       <p>

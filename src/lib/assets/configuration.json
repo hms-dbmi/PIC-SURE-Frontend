@@ -153,6 +153,9 @@
       "instructions": {
         "connection": "To connect to the PIC-SURE Application Programming Interface (API), you will need your personal access token. Copy your token and save as a text file called \"token.txt\" in the working directory of your chosen analysis workspace.",
         "execution": "To start your analysis, copy and execute the following code in your preferred analysis environment to connect to the PIC-SURE API. Note that you will need your personal access token to complete the connection."
+      },
+      "example": {
+        "setup": "<p>First, you will need to set up your analysis workspace. To leverage the existing documentation and examples of how to use the PIC-SURE API, this workspace should have Python or R installed. You can access the publicly available examples on the <a class=\"anchor\" href=\"https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API/tree/master/CDC_National_Health_and_Nutrition_Examination_Survey\" target=\"_blank\">GitHub repository</a>."
       }
     },
     "analysis": {

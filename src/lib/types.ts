@@ -115,6 +115,9 @@ export interface AnalysisConfig {
       connection: string;
       execution: string;
     };
+    example: {
+      setup: string;
+    };
   };
   analysis: {
     platform: string;
