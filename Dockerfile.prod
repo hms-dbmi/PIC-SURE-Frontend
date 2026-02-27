@@ -32,8 +32,5 @@ COPY --from=builder /app/build build/
 COPY --from=builder /app/node_modules node_modules/
 COPY package.json .
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-RUN chown -R www-data:www-data /app
-RUN chown -R www-data:www-data /usr/local/apache2/logs
 ENV NODE_ENV=production
-USER www-data
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
