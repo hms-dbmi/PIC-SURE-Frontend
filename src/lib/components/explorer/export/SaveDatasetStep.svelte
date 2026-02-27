@@ -16,6 +16,7 @@
     setSaveable,
     getQueryRequest,
   } from '$lib/ExportStepperManager.svelte';
+  import { log, createLog } from '$lib/logger';
 
   const PROMISE_WAIT_INTERVAL = 7;
   let processingMessage: string = $state('');
@@ -55,6 +56,14 @@
       requestUpdate(() =>
         api.post(Picsure.Query, getQueryRequest()).then((res: DataSetResponse) => {
           setDatasetId(res.picsureResultId || 'Error');
+          if (res.picsureResultId) {
+            log(
+              createLog('DATA', 'dataset.create', {
+                name: getDatasetNameInput(),
+                datasetId: res.picsureResultId,
+              }),
+            );
+          }
         }),
       );
       await datasetIdPromise;

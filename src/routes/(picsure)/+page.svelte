@@ -5,10 +5,12 @@
   import Stats from '$lib/components/landing/Stats.svelte';
   import { isUserLoggedIn } from '$lib/stores/User';
   import { features } from '$lib/configuration';
+  import { log, createLog } from '$lib/logger';
 
   let searchTerm = $state('');
 
   function search() {
+    log(createLog('SEARCH', 'landing.search', { term: searchTerm }));
     features.login.open && features.discover && !isUserLoggedIn()
       ? goto(`/discover?search=${searchTerm}`)
       : goto(`/explorer?search=${searchTerm}`);

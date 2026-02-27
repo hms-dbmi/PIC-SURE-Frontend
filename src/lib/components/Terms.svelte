@@ -9,6 +9,7 @@
   import { toaster } from '$lib/toaster';
   import { login, logout, user, isUserLoggedIn, getToken } from '$lib/stores/User';
   import { sanitizeHTML } from '$lib/utilities/HTML';
+  import { log, createLog } from '$lib/logger';
 
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -25,6 +26,7 @@
 
   function accept() {
     if (browser) {
+      log(createLog('AUTH', 'tos.accept'));
       api
         .post(Psama.TOS + '/accept', {})
         .then(() => {
@@ -45,6 +47,7 @@
 
   function reject() {
     if (browser) {
+      log(createLog('AUTH', 'tos.reject'));
       logout().then(() => {
         if (branding.termsOfService.rejectionUrl) {
           window.location.href = branding.termsOfService.rejectionUrl;

@@ -3,6 +3,7 @@
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import { getActiveType, setActiveType } from '$lib/ExportStepperManager.svelte';
   import { features } from '$lib/configuration';
+  import { log, createLog } from '$lib/logger';
 </script>
 
 <section class="flex flex-col w-full h-full items-center">
@@ -15,7 +16,10 @@
       size="other"
       class="flex-1 max-w-64"
       active={getActiveType() === 'DATAFRAME'}
-      onclick={() => setActiveType('DATAFRAME')}
+      onclick={() => {
+        log(createLog('EXPORT', 'export.select_type', { type: 'DATAFRAME' }));
+        setActiveType('DATAFRAME');
+      }}
     ></CardButton>
     {#if features.explorer.enableExportTimeseries}
       <CardButton
@@ -25,7 +29,10 @@
         size="other"
         class="flex-1 max-w-64"
         active={getActiveType() === 'DATAFRAME_TIMESERIES'}
-        onclick={() => setActiveType('DATAFRAME_TIMESERIES')}
+        onclick={() => {
+          log(createLog('EXPORT', 'export.select_type', { type: 'DATAFRAME_TIMESERIES' }));
+          setActiveType('DATAFRAME_TIMESERIES');
+        }}
       ></CardButton>
     {/if}
     <CardButton
@@ -35,7 +42,10 @@
       size="other"
       class="flex-1 max-w-64"
       active={getActiveType() === 'DATAFRAME_PFB'}
-      onclick={() => setActiveType('DATAFRAME_PFB')}
+      onclick={() => {
+        log(createLog('EXPORT', 'export.select_type', { type: 'DATAFRAME_PFB' }));
+        setActiveType('DATAFRAME_PFB');
+      }}
     ></CardButton>
   </div>
 </section>

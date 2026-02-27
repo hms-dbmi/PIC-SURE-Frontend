@@ -2,6 +2,7 @@
   import type { Indexable } from '$lib/types';
   import { branding } from '$lib/configuration';
   import { active, archived, loadDatasets } from '$lib/stores/Dataset';
+  import { log, createLog } from '$lib/logger';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
@@ -53,8 +54,10 @@
       data-testid="dataset-toggle-archive"
       type="button"
       class="btn bg-secondary-500 text-secondary-contrast-500"
-      onclick={() => (displayArchived = !displayArchived)}
-      >{displayArchived ? 'Hide' : 'Show'} deleted datasets</button
+      onclick={() => {
+        displayArchived = !displayArchived;
+        log(createLog('DATASET', 'dataset.toggle_archived', { showArchived: displayArchived }));
+      }}>{displayArchived ? 'Hide' : 'Show'} deleted datasets</button
     >
   {:catch}
     <ErrorAlert title="API Error">Something went wrong when sending your request.</ErrorAlert>

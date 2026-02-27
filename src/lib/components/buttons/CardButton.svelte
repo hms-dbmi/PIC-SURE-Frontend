@@ -39,6 +39,7 @@
     class:preset-outlined-primary-500={!active}
     rel={disabled ? 'nofollow' : undefined}
     tabindex="0"
+    {onclick}
   >
     {#if icon}<i class="icon {icon}"></i>{/if}
     <div class="title">{title}</div>
