@@ -37,7 +37,7 @@
 
       <h4 class="font-medium mt-8">1. Set up your analysis workspace</h4>
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      <p>{@html setupInstructions}</p>
+      {@html setupInstructions}
 
       <h4 class="font-medium mt-8">2. Get your Personal Access Token</h4>
       <p>
