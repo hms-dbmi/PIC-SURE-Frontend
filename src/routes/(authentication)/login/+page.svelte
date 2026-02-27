@@ -45,7 +45,7 @@
 >
   <div id="title-box" class="flex flex-col items-center text-center mb-8 max-w-3/4">
     <h1 data-testid="login-title" class="mb-6 w-full flex gap-2 items-center justify-center">
-      <Logo class="flex-none" height={7.5} />
+      <Logo class="flex-none" height={branding.login.logoHeight || 7.5} />
     </h1>
     <p data-testid="login-description" class="text-2xl">{description}</p>
   </div>

@@ -86,6 +86,7 @@ export interface LoginConfig {
   openPicsureLink: string;
   openPicsureLinkText: string;
   contactLink: string;
+  logoHeight: number;
 }
 
 export interface HelpConfig {
