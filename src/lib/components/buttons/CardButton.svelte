@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
   interface Props {
     title: string;
     icon?: string;
@@ -25,37 +26,27 @@
     onclick = () => {},
   }: Props = $props();
 
-  const cardClasses = `card card-btn ${size !== 'other' ? 'card-btn-' + size : ''} ${className} hover:scale-110 hover:shadow-lg`;
+  function clickEvent() {
+    if (href && href.startsWith('/')) {
+      goto(href);
+    } else if (href) {
+      window.open(href, '_blank');
+    } else {
+      onclick();
+    }
+  }
 </script>
 
-{#if href}
-  <a
-    {href}
-    data-testid={testid}
-    aria-disabled={disabled || undefined}
-    target={href.startsWith('/') ? undefined : '_blank'}
-    class={cardClasses}
-    class:preset-filled-primary-500={active}
-    class:preset-outlined-primary-500={!active}
-    rel={disabled ? 'nofollow' : undefined}
-    tabindex="0"
-  >
-    {#if icon}<i class="icon {icon}"></i>{/if}
-    <div class="title">{title}</div>
-    {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
-  </a>
-{:else}
-  <button
-    data-testid={testid}
-    type="button"
-    class={cardClasses}
-    class:preset-filled-primary-500={active}
-    class:preset-outlined-primary-500={!active}
-    {onclick}
-    {disabled}
-  >
-    {#if icon}<i class="icon {icon}"></i>{/if}
-    <div class="title">{title}</div>
-    {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
-  </button>
-{/if}
+<button
+  data-testid={testid}
+  type="button"
+  class={`card card-btn ${size !== 'other' ? 'card-btn-' + size : ''} ${className}`}
+  class:preset-filled-primary-500={active}
+  class:preset-outlined-primary-500={!active}
+  onclick={clickEvent}
+  {disabled}
+>
+  {#if icon}<i class="icon {icon}"></i>{/if}
+  <div class="title">{title}</div>
+  {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
+</button>

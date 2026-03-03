@@ -1,46 +1,68 @@
 <script lang="ts">
+  import type { SearchResult } from '$lib/models/Search';
+  import type { ExportInterface } from '$lib/models/Export';
   import { getInitialTree, getConceptTree } from '$lib/stores/Dictionary';
-  import { addConcept, removeConcept } from '$lib/stores/TreeStepConcepts';
+  import { exports } from '$lib/stores/Export';
+  import { addExport, removeExport, mapSearchResultAsExport } from '$lib/stores/Export';
   import Loading from '$lib/components/Loading.svelte';
   import RemoteTree from '$lib/components/tree/RemoteTree.svelte';
   import Summary from '$lib/components/explorer/export/Summary.svelte';
-  import type { SearchResult } from '$lib/models/Search';
-  import { selectedConcepts } from '$lib/stores/TreeStepConcepts';
-  import { get } from 'svelte/store';
-  // Calculate largestDepth synchronously before template renders
-  let largestDepth: number =
-    $selectedConcepts && $selectedConcepts.length > 0
-      ? Math.max(
-          ...$selectedConcepts.map((concept: string) => concept.split('\\').filter(Boolean).length),
-        )
-      : 1;
+  import { getQueryRequest } from '$lib/ExportStepperManager.svelte';
 
-  async function fetchChildren(conceptPath: string): Promise<SearchResult[]> {
+  let currentExports: ExportInterface[] = $state($exports);
+  exports.subscribe((newExports) => (currentExports = newExports));
+
+  let disabledConcepts: string[] = $derived(getQueryRequest().query.select);
+  let selectedConcepts: string[] = $derived([
+    ...currentExports.map(({ conceptPath }) => conceptPath),
+    ...disabledConcepts,
+  ]);
+
+  // Calculate largestDepth synchronously before template renders
+  let largestDepth: number = $derived(
+    selectedConcepts.length > 0
+      ? Math.max(
+          ...selectedConcepts.map((concept: string) => concept.split('\\').filter(Boolean).length),
+        )
+      : 1,
+  );
+
+  async function fetchChildren(conceptPath: string): Promise<SearchResult[] | undefined | null> {
     const dataset = conceptPath.split('\\')[1];
     const depth = conceptPath.split('\\').filter(Boolean).length;
     const treeNodes = await getConceptTree(dataset, depth, conceptPath);
 
-    function getAllLeaves(node: SearchResult): SearchResult[] {
-      if (!node.children || node.children.length === 0) {
-        return [node];
+    // Search the tree for the matching concept path, which could be nested. Return it's children.
+    function getParentNode(node: SearchResult): SearchResult | undefined {
+      if (node.conceptPath === conceptPath) {
+        return node || undefined;
       }
-      return node.children.flatMap(getAllLeaves);
+
+      // Search through children for matching concept path only if concept path starts with current
+      if (conceptPath.startsWith(node.conceptPath + '/')) {
+        for (const child of node.children || []) {
+          const result = getParentNode(child);
+          if (result) {
+            return result;
+          }
+        }
+      }
+
+      return undefined;
     }
 
-    const leaves = getAllLeaves(treeNodes);
-    if (leaves.length === 1 && leaves[0].conceptPath === conceptPath) {
-      return [];
-    }
-
-    return leaves;
+    const parent = getParentNode(treeNodes);
+    return parent?.children;
   }
 
-  const selectNode = (value: string) => {
-    addConcept(value);
+  const onselect = (searchResult?: SearchResult) => {
+    if (!searchResult) return;
+    addExport(mapSearchResultAsExport(searchResult));
   };
 
-  const unselectNode = (value: string) => {
-    removeConcept(value);
+  const onunselect = (searchResult?: SearchResult) => {
+    if (!searchResult) return;
+    removeExport(mapSearchResultAsExport(searchResult));
   };
 </script>
 
@@ -59,9 +81,10 @@
           initialNodes={treeNodes}
           {fetchChildren}
           fullWidth={true}
-          onselect={selectNode}
-          onunselect={unselectNode}
-          previousSelectedConcepts={get(selectedConcepts)}
+          {onselect}
+          {onunselect}
+          {selectedConcepts}
+          {disabledConcepts}
         />
       {/await}
     </div>

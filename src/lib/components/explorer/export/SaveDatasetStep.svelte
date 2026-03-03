@@ -7,6 +7,7 @@
   import * as api from '$lib/api';
   import { Picsure } from '$lib/paths';
   import { stepperState } from '$lib/stores/Stepper';
+  import { exports } from '$lib/stores/Export';
   import {
     getActiveType,
     getDatasetId,
@@ -52,11 +53,17 @@
     try {
       getQueryRequest().query.expectedResultType = getActiveType() || 'DATAFRAME';
       setDatasetId('');
-      requestUpdate(() =>
-        api.post(Picsure.Query, getQueryRequest()).then((res: DataSetResponse) => {
+      requestUpdate(() => {
+        // Make a copy so we don't add exports to selected for the loaded query
+        const request = structuredClone($state.snapshot(getQueryRequest()));
+        request.query.select = [
+          ...request.query.select,
+          ...$exports.map(({ conceptPath }) => conceptPath),
+        ];
+        return api.post(Picsure.QueryV3, request).then((res: DataSetResponse) => {
           setDatasetId(res.picsureResultId || 'Error');
-        }),
-      );
+        });
+      });
       await datasetIdPromise;
     } catch (error) {
       $stepperState.current--;
@@ -86,8 +93,8 @@
     <div class="w-full h-full m-2 card p-4">
       <header class="card-header">
         Save the information in your final data export by clicking the Save Dataset ID button.
-        Navigate to the <a class="anchor" href="/dataset">Manage Datasets page</a> to view or manage
-        your Dataset IDs.
+        Navigate to the <a class="anchor" href="/dataset">Manage Datasets page</a> to view or manage your
+        Dataset IDs.
       </header>
       <hr />
       <div class="card-body p-4 flex flex-col justify-center items-center">

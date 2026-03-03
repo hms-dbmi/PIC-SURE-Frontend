@@ -9,15 +9,16 @@
 
   import { features } from '$lib/configuration';
 
-  import { filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
+  import { allFilters, hasGenomicFilter, clearFilters, hasOrGroup } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
-  import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
+  import Filters from '$lib/components/explorer/results/Filters.svelte';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
+  import Popover from '$lib/components/Popover.svelte';
 
   let unsubFilters: Unsubscriber | null = null;
   let currentPage: string = $state(page.url.pathname);
@@ -25,7 +26,7 @@
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
-    $filters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
+    $allFilters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
   );
 
   let showExportButton = $derived(
@@ -36,8 +37,8 @@
   );
 
   let hasValidDistributionFilters = $derived(
-    $filters.length !== 0 &&
-      !$filters.every(
+    $allFilters.length !== 0 &&
+      !$allFilters.every(
         (filter) =>
           filter.filterType === 'genomic' ||
           filter.filterType === 'snp' ||
@@ -64,13 +65,13 @@
 
   let showToolSuite = $derived(
     showCohortDetails ||
-      (($filters.length !== 0 || $exports.length !== 0) &&
+      (($allFilters.length !== 0 || $exports.length !== 0) &&
         (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer)),
   );
 
   function subscribe() {
     if (!unsubFilters) {
-      unsubFilters = filters.subscribe(() => loadPatientCount(!isDiscoverPage));
+      unsubFilters = allFilters.subscribe(() => loadPatientCount(!isDiscoverPage));
     }
   }
 
@@ -148,23 +149,21 @@
         >
       {/if}
     </div>
-    {#if $filters.length === 0 && $exports.length === 0}
-      <p class="text-center">No filters added</p>
-    {:else}
+    <Filters />
+    {#if $exports.length > 0}
       <div class="px-4 mb-1 w-80">
-        {#if $filters.length !== 0}
-          <header class="text-left ml-1">Filters</header>
-        {/if}
-        <section class="py-1">
-          {#each $filters as filter}
-            <FilterComponent {filter} />
-          {/each}
-        </section>
-      </div>
-    {/if}
-    {#if $exports.length !== 0}
-      <div class="px-4 mb-1 w-80">
-        <header class="text-left ml-1" data-testid="export-header">Added Variables</header>
+        <header class="txxt-left ml-1" data-testid="export-header">
+          Added Variables
+          {#if $exports.length > 10}
+            <button
+              data-testid="clear-all-results-btn"
+              class="anchor text-sm flex-none float-right mr-2"
+              onclick={() => {
+                $exports = [];
+              }}>Clear</button
+            >
+          {/if}
+        </header>
         <section class="py-1">
           {#each $exports as variable (variable.id)}
             <ExportedVariable {variable} />
@@ -198,13 +197,32 @@
           />
         {/if}
         {#if showDiscoverDistributions}
-          <CardButton
-            href="/discover/distributions"
-            data-testid="distributions-btn"
-            title="Variable Distributions"
-            icon="fa-solid fa-chart-pie"
-            size="md"
-          />
+          {#if $hasOrGroup}
+            <Popover
+              triggerTypes={['hover', 'focus']}
+              placement="left"
+              message="Variable distributions currently not available with 'OR' queries."
+            >
+              {#snippet trigger()}
+                <CardButton
+                  href="/discover/distributions"
+                  data-testid="distributions-btn"
+                  title="Variable Distributions"
+                  icon="fa-solid fa-chart-pie"
+                  size="md"
+                  disabled
+                />
+              {/snippet}
+            </Popover>
+          {:else}
+            <CardButton
+              href="/discover/distributions"
+              data-testid="distributions-btn"
+              title="Variable Distributions"
+              icon="fa-solid fa-chart-pie"
+              size="md"
+            />
+          {/if}
         {/if}
         {#if showVariantExplorer}
           <CardButton
