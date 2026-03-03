@@ -21,9 +21,13 @@
 
   let { user = undefined, roleList, connections }: Props = $props();
 
+  // svelte-ignore state_referenced_locally
   let email: string = $state(user && user.email ? user.email : '');
+  // svelte-ignore state_referenced_locally
   let connection: string = $state(user && user.connection ? user.connection : '');
+  // svelte-ignore state_referenced_locally
   let active: boolean = $state(user ? user.active : true);
+  // svelte-ignore state_referenced_locally
   let roles = $state(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     roleList.map(([_name, uuid]) => ({

@@ -25,8 +25,10 @@
     children,
   }: Props = $props();
 
-  const btnStyle = `btn btn-sm h-fit border preset-${variant}-${color} hover:preset-filled-${color}-500 text-lg`;
-  const clean_testid = testid || name.replaceAll(' ', '-').toLowerCase() + '-btn';
+  const btnStyle = $derived(
+    `btn btn-sm h-fit border preset-${variant}-${color} hover:preset-filled-${color}-500 text-lg`,
+  );
+  const clean_testid = $derived(testid || name.replaceAll(' ', '-').toLowerCase() + '-btn');
 </script>
 
 {#if href}
