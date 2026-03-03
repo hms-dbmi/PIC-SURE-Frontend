@@ -5,7 +5,7 @@
 
   let { data = {} as SearchResult }: { data?: SearchResult } = $props();
 
-  let detailPromise = getConceptDetails(data.conceptPath, data.dataset);
+  let detailPromise = $derived(getConceptDetails(data.conceptPath, data.dataset));
 </script>
 
 <div class="card bg-surface-100 min-h-60 p-4">

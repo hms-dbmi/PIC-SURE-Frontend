@@ -15,7 +15,7 @@
     children?: Snippet;
   } = $props();
 
-  const justify = position === 'left' ? 'justify-start' : 'justify-end';
+  const justify = $derived(position === 'left' ? 'justify-start' : 'justify-end');
 
   // Tips for Drawer modals:
   // - Use `contentBase` to set styles, including height/width

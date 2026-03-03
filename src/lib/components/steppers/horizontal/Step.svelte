@@ -24,6 +24,7 @@
 
   // Register step on init (keep these paired)
   const stepIndex = $stepperState.total;
+  // svelte-ignore state_referenced_locally
   $stepperState.stepMap = [...$stepperState.stepMap, name];
   $stepperState.total++;
 

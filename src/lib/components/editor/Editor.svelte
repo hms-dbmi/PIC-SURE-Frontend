@@ -33,27 +33,29 @@
     ['50', '200', '500', '800', '950'].map((val) => `var(--color-${color}-${val})`),
   );
 
-  const toolbarOptions = [
-    headerDropdown ? [{ header: [1, 2, 3, 4, 5, 6, false] }] : [{ header: 1 }, { header: 2 }],
-    ['bold', 'italic', 'underline', 'strike', { script: 'sub' }, { script: 'super' }],
-    ...(alignOptions
-      ? [
-          [{ align: [] }, { indent: '-1' }, { indent: '+1' }],
-          ['link', 'blockquote', 'code-block'],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-        ]
-      : []),
-    embedOptions ? ['image', 'video', 'formula'] : undefined,
-    fontOptions
-      ? [
-          { font: [] },
-          { size: ['small', false, 'large', 'huge'] },
-          { color: colors },
-          { background: colors },
-        ]
-      : undefined,
-    ['clean'],
-  ].filter((x) => x !== undefined);
+  const toolbarOptions = $derived(
+    [
+      headerDropdown ? [{ header: [1, 2, 3, 4, 5, 6, false] }] : [{ header: 1 }, { header: 2 }],
+      ['bold', 'italic', 'underline', 'strike', { script: 'sub' }, { script: 'super' }],
+      ...(alignOptions
+        ? [
+            [{ align: [] }, { indent: '-1' }, { indent: '+1' }],
+            ['link', 'blockquote', 'code-block'],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+          ]
+        : []),
+      embedOptions ? ['image', 'video', 'formula'] : undefined,
+      fontOptions
+        ? [
+            { font: [] },
+            { size: ['small', false, 'large', 'huge'] },
+            { color: colors },
+            { background: colors },
+          ]
+        : undefined,
+      ['clean'],
+    ].filter((x) => x !== undefined),
+  );
 
   // Swap known Quill format classes for tailwind classes and nbsp for spaces, then sanitize
   function swapAndClean(content: string) {

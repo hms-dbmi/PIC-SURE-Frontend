@@ -18,7 +18,7 @@
     name: string = '';
     value: string = '';
     selected: boolean = $state(false);
-    disabled: boolean = $state(disableTree);
+    disabled: boolean = $state(false);
     children: RadioNode[] = $state([]);
 
     constructor(
@@ -63,10 +63,10 @@
     if (node.children.length > 0) {
       children = node.children.map(mapNodeToTree);
     }
-    return new RadioNode(name, value, children, selected);
+    return new RadioNode(name, value, children, selected, disableTree);
   }
 
-  let treeNodes: RadioNode[] = $state(nodes.map(mapNodeToTree));
+  let treeNodes: RadioNode[] = $derived(nodes.map(mapNodeToTree));
 </script>
 
 <div class={fullWidth ? 'w-full' : ''}>

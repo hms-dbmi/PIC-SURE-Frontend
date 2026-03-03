@@ -3,6 +3,7 @@
 
   let { snp, onsave = () => {} }: { snp: SNP; onsave: (snp: SNP) => void } = $props();
 
+  // svelte-ignore state_referenced_locally
   let constraint: string = $state(snp.constraint);
 </script>
 
