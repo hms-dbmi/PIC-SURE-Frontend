@@ -1,8 +1,7 @@
 <script lang="ts">
   import type { ExportInterface } from '$lib/models/Export';
   import { fade } from 'svelte/transition';
-  import ExportStore from '$lib/stores/Export';
-  const { removeExport } = ExportStore;
+  import { removeExportByUuid } from '$lib/stores/Export';
 
   interface Props {
     variable: ExportInterface;
@@ -10,7 +9,7 @@
 
   let { variable }: Props = $props();
   const remove = function () {
-    removeExport(variable.id);
+    removeExportByUuid(variable.id);
   };
 </script>
 
