@@ -183,6 +183,7 @@ export const features: Indexable = {
     enableCohortDetails: import.meta.env?.VITE_ENABLE_COHORT_DETAILS === 'true',
     showTreeStep: import.meta.env?.VITE_SHOW_TREE_STEP === 'true',
     enableExportTimeseries: import.meta.env?.VITE_EXPORT_TIMESERIES !== 'false', // default true
+    enableOrQueries: import.meta.env?.VITE_OR_QUERIES !== 'false',
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
@@ -211,7 +212,10 @@ export const features: Indexable = {
 
 export const settings: Indexable = {
   variantExplorer: {
-    type: (import.meta.env?.VITE_VARIANT_EXPLORER_TYPE || ExportType.Aggregate) as ExportType,
+    type:
+      import.meta.env?.VITE_VARIANT_EXPLORER_TYPE === 'full'
+        ? ExportType.Full
+        : ExportType.Aggregate,
     maxCount: parseInt(import.meta.env?.VITE_VARIANT_EXPLORER_MAX_COUNT || 10000),
     excludeColumns: JSON.parse(import.meta.env?.VITE_VARIANT_EXPLORER_EXCLUDE_COLUMNS || '[]'),
   },

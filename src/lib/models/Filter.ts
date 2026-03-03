@@ -1,9 +1,12 @@
 import { genericUUID } from '$lib/utilities/UUID';
 import type { SearchResult } from '$lib/models/Search';
 import { GenotypeMap, type SNP } from '$lib/models/GenomeFilter';
+import { type OperatorType, Operator } from '$lib/models/query/Query';
 import { AnyRecordOfFilterError } from '$lib/types';
 
-type FilterType =
+import type { TreeNode, TreeGroup } from '$lib/models/Tree';
+
+export type FilterType =
   | 'Categorical'
   | 'AnyRecordOf'
   | 'numeric'
@@ -11,10 +14,19 @@ type FilterType =
   | 'datatable'
   | 'genomic'
   | 'snp'
-  | 'auto';
-type DisplayType = 'any' | 'anyRecordOf' | 'restrict' | 'lessThan' | 'greaterThan' | 'between';
+  | 'auto'
+  | 'FilterGroup';
 
-export interface FilterInterface {
+type DisplayType =
+  | 'any'
+  | 'anyRecordOf'
+  | 'restrict'
+  | 'lessThan'
+  | 'greaterThan'
+  | 'between'
+  | 'group';
+
+export interface FilterInterface extends TreeNode<FilterInterface> {
   uuid: string;
   id: string;
   filterType: FilterType;
@@ -46,6 +58,8 @@ export interface GenomicFilterInterface extends FilterInterface {
   Gene_with_variant?: string[];
   Variant_consequence_calculated?: string[];
   Variant_frequency_as_text?: string[];
+  min?: string;
+  max?: string;
 }
 
 export interface SnpFilterInterface extends FilterInterface {
@@ -58,15 +72,53 @@ export interface AnyRecordOfFilterInterface extends FilterInterface {
   concepts: string[];
 }
 
+export interface FilterGroupInterface extends FilterInterface, TreeGroup<FilterInterface> {
+  filterType: 'FilterGroup';
+  displayType: 'group';
+  variableName: 'none';
+  dataset: '';
+  allowFiltering: true;
+  children: FilterInterface[];
+  operator: OperatorType;
+}
+
 export type Filter =
   | CategoricalFilterInterface
   | NumericFilterInterface
   | GenomicFilterInterface
   | SnpFilterInterface
-  | AnyRecordOfFilterInterface;
+  | AnyRecordOfFilterInterface
+  | FilterGroupInterface;
 
-export function createCategoricalFilter(searchResult: SearchResult, values?: string[]) {
+export function createFilterGroup(
+  children: FilterInterface[] = [],
+  operator: OperatorType = Operator.AND,
+): FilterGroupInterface {
+  const id = genericUUID();
+  const newGroup: FilterGroupInterface = {
+    filterType: 'FilterGroup',
+    displayType: 'group',
+    variableName: 'none',
+    dataset: '',
+    allowFiltering: true,
+    uuid: id,
+    children,
+    operator,
+    parent: undefined,
+    get id() {
+      return `filter-group-${this.uuid}`;
+    },
+  };
+  children.forEach((child) => (child.parent = newGroup));
+  return newGroup;
+}
+
+export function createCategoricalFilter(
+  searchResult: SearchResult,
+  values?: string[],
+): CategoricalFilterInterface {
   const filter: Filter = {
+    parent: undefined,
     uuid: genericUUID(),
     id: searchResult.conceptPath,
     filterType: 'Categorical',
@@ -81,8 +133,9 @@ export function createCategoricalFilter(searchResult: SearchResult, values?: str
   return filter;
 }
 
-export function createRequiredFilter(searchResult: SearchResult) {
+export function createRequiredFilter(searchResult: SearchResult): CategoricalFilterInterface {
   const filter: Filter = {
+    parent: undefined,
     uuid: genericUUID(),
     id: searchResult.conceptPath,
     filterType: 'Categorical',
@@ -104,7 +157,10 @@ function getAllConceptPaths(results: SearchResult[]): string[] {
   ]);
 }
 
-export function createAnyRecordOfFilter(searchResult: SearchResult, treeResult: SearchResult) {
+export function createAnyRecordOfFilter(
+  searchResult: SearchResult,
+  treeResult: SearchResult,
+): AnyRecordOfFilterInterface {
   const conceptPaths = getAllConceptPaths(treeResult?.children || []);
   if (conceptPaths.length === 0) {
     throw new AnyRecordOfFilterError('No concept paths found');
@@ -112,6 +168,7 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, treeResult: 
     throw new AnyRecordOfFilterError('Too many concept paths found');
   }
   const filter: AnyRecordOfFilterInterface = {
+    parent: undefined,
     uuid: genericUUID(),
     id: searchResult.conceptPath,
     concepts: conceptPaths,
@@ -126,8 +183,13 @@ export function createAnyRecordOfFilter(searchResult: SearchResult, treeResult: 
   return filter;
 }
 
-export function createNumericFilter(searchResult: SearchResult, min?: string, max?: string) {
+export function createNumericFilter(
+  searchResult: SearchResult,
+  min?: string,
+  max?: string,
+): NumericFilterInterface {
   const filter: Filter = {
+    parent: undefined,
     uuid: genericUUID(),
     id: searchResult.conceptPath,
     filterType: 'numeric',
@@ -154,18 +216,29 @@ export function createGenomicFilter(geneFilter: {
   Gene_with_variant?: string[];
   Variant_consequence_calculated?: string[];
   Variant_frequency_as_text?: string[];
-}) {
+  min?: string;
+  max?: string;
+}): GenomicFilterInterface {
   const orJoin = (key: string, arr: string[] | undefined) =>
     arr && arr.length > 0 ? `${key}: ${arr.join(', ')}` : undefined;
-  const description = [
+  const descriptionParts = [
     orJoin('Gene with variant', geneFilter.Gene_with_variant),
     orJoin('Variant frequency', geneFilter.Variant_frequency_as_text),
     orJoin('Consequence Group by severity', geneFilter.Variant_consequence_calculated),
-  ]
-    .filter((x) => x)
-    .join('; ');
+  ].filter((x) => x);
+
+  // Add min/max description if present
+  if (geneFilter.min !== undefined || geneFilter.max !== undefined) {
+    const rangeParts = [];
+    if (geneFilter.min !== undefined) rangeParts.push(`min: ${geneFilter.min}`);
+    if (geneFilter.max !== undefined) rangeParts.push(`max: ${geneFilter.max}`);
+    descriptionParts.push(`Range: ${rangeParts.join(', ')}`);
+  }
+
+  const description = descriptionParts.join('; ');
 
   const filter: Filter = {
+    parent: undefined,
     uuid: genericUUID(),
     id: 'genomic',
     filterType: 'genomic',
@@ -175,13 +248,15 @@ export function createGenomicFilter(geneFilter: {
     Gene_with_variant: geneFilter.Gene_with_variant,
     Variant_consequence_calculated: geneFilter.Variant_consequence_calculated,
     Variant_frequency_as_text: geneFilter.Variant_frequency_as_text,
+    min: geneFilter.min,
+    max: geneFilter.max,
     allowFiltering: true,
     dataset: '',
   };
   return filter;
 }
 
-export function createSnpsFilter(snps: SNP[]) {
+export function createSnpsFilter(snps: SNP[]): SnpFilterInterface {
   const description = snps
     .map(
       (snp) =>
@@ -192,6 +267,7 @@ export function createSnpsFilter(snps: SNP[]) {
     )
     .join('; ');
   const filter: Filter = {
+    parent: undefined,
     uuid: genericUUID(),
     id: 'snp-variant',
     filterType: 'snp',

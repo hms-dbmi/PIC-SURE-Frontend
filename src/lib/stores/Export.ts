@@ -1,6 +1,8 @@
 import { get, writable, type Writable } from 'svelte/store';
 
 import type { ExportInterface } from '$lib/models/Export';
+import type { SearchResult } from '$lib/models/Search';
+import { objectUUID } from '$lib/utilities/UUID';
 
 export const exports: Writable<ExportInterface[]> = writable([]);
 
@@ -22,7 +24,7 @@ export function addExports(exportedFields: ExportInterface[]) {
   exports.set([...currentExports, ...newExports]);
 }
 
-export function removeExport(uuid: string) {
+export function removeExportByUuid(uuid: string) {
   const currentExports = get(exports);
   exports.set(
     currentExports.filter((e: ExportInterface) =>
@@ -40,8 +42,21 @@ export function removeExports(exportsToRemove: ExportInterface[]) {
   );
 }
 
+export function removeExport(e: ExportInterface) {
+  removeExports([e]);
+}
+
 export function clearExports() {
   exports.set([]);
+}
+
+export function mapSearchResultAsExport(result: SearchResult): ExportInterface {
+  return {
+    id: objectUUID(result),
+    searchResult: result,
+    display: result.display || result.name,
+    conceptPath: result.conceptPath,
+  };
 }
 
 export default {
@@ -51,5 +66,7 @@ export default {
   addExports,
   removeExport,
   removeExports,
+  removeExportByUuid,
   clearExports,
+  mapSearchResultAsExport,
 };

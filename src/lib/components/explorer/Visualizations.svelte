@@ -8,7 +8,7 @@
     createContinuousPlot,
     createCategoryPlot,
   } from '$lib/utilities/Plotly';
-  import { getQueryRequest } from '$lib/utilities/QueryBuilder';
+  import { getQueryRequestV2 } from '$lib/utilities/QueryBuilder';
   import { toaster } from '$lib/toaster';
   import Loading from '$lib/components/Loading.svelte';
   import { Picsure } from '$lib/paths';
@@ -20,12 +20,12 @@
   let loading = $state(true);
 
   async function loadPlotData() {
-    const query = getQueryRequest(!isOpenAccess(), $resources.visualization);
+    const query = getQueryRequestV2(!isOpenAccess(), $resources.visualization);
     const token = localStorage.getItem('token');
 
     await api
       .post(
-        Picsure.QuerySync,
+        Picsure.QueryV3Sync,
         {
           query: query.query,
           resourceUUID: $resources.visualization,
