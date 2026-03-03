@@ -55,6 +55,7 @@
     return step === $stepperState.current;
   }
 
+  // svelte-ignore state_referenced_locally
   setContext('buttonCompleteLabel', buttonCompleteLabel);
   setContext('StepperState', stepperState);
   setContext('onBack', _onBack);

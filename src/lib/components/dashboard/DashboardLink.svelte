@@ -1,7 +1,7 @@
 <script lang="ts">
   let { data = { row: { additional_info_link: '', consentGranted: false } } } = $props();
-  let link = data.row.additional_info_link as string;
-  let consentGranted = data.row.consentGranted;
+  let link = $derived(data.row.additional_info_link as string);
+  let consentGranted = $derived(data.row.consentGranted);
 </script>
 
 {#if consentGranted}

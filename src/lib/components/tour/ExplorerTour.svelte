@@ -171,6 +171,7 @@
     });
   }
 
+  // svelte-ignore state_referenced_locally
   const steps = mapConfigurationToSteps(tourConfig.steps);
 
   // Notes:

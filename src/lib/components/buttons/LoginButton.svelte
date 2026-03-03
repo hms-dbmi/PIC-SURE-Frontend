@@ -22,8 +22,10 @@
     class: className = '',
   }: Props = $props();
 
-  const testId = `login-button-${provider?.name?.toLowerCase()}`;
-  let imageSrc: string | undefined = $state(undefined);
+  const testId = $derived(`login-button-${provider?.name?.toLowerCase()}`);
+  let imageSrc: string | undefined = $derived(
+    provider?.imagesrc ? './' + provider.imagesrc : undefined,
+  );
   let help: string = $state('');
 
   let login = async (redirectTo: string, providerType: string) => {
@@ -32,10 +34,6 @@
       resetSearch();
     });
   };
-
-  if (provider?.imagesrc) {
-    imageSrc = './' + provider.imagesrc;
-  }
 
   onMount(() => (help = sanitizeHTML(helpText)));
 </script>

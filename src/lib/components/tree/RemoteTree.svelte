@@ -171,7 +171,7 @@
     }
   }
 
-  let treeNodes: RemoteTreeNodeClass[] = $state(
+  let treeNodes: RemoteTreeNodeClass[] = $derived(
     initialNodes?.map((node) => new RemoteTreeNodeClass(node)) ?? undefined,
   );
 

@@ -13,6 +13,8 @@
     useFloating,
     useInteractions,
     useRole,
+    type ElementProps,
+    type FloatingContext,
   } from '@skeletonlabs/floating-ui-svelte';
   import { fade } from 'svelte/transition';
   import { shift, type Placement } from '@floating-ui/dom';
@@ -52,41 +54,56 @@
   let elemArrow: HTMLElement | null = $state(null);
 
   // Use Floating
-  const floating = useFloating({
-    whileElementsMounted: autoUpdate,
-    get open() {
-      return open;
-    },
-    onOpenChange: (newOpen: boolean) => {
-      if (newOpen) onengage();
-      open = newOpen;
-    },
-    placement: placement,
-    get middleware() {
-      return [offset(10), flip(), shift(), elemArrow && arrow({ element: elemArrow })];
-    },
-  });
+  const floating = $derived(
+    useFloating({
+      whileElementsMounted: autoUpdate,
+      get open() {
+        return open;
+      },
+      onOpenChange: (newOpen: boolean) => {
+        if (newOpen) onengage();
+        open = newOpen;
+      },
+      placement: placement,
+      get middleware() {
+        return [offset(10), flip(), shift(), elemArrow && arrow({ element: elemArrow })];
+      },
+    }),
+  );
+
+  function getHover(context: FloatingContext): ElementProps | undefined {
+    if (triggerTypes.includes('hover')) {
+      return useHover(context, { move: false });
+    }
+    return undefined;
+  }
+
+  function getClick(context: FloatingContext): ElementProps | undefined {
+    if (triggerTypes.includes('click')) {
+      return useClick(context);
+    }
+    return undefined;
+  }
+
+  function getFocus(context: FloatingContext): ElementProps | undefined {
+    if (triggerTypes.includes('focus')) {
+      return useFocus(context);
+    }
+    return undefined;
+  }
 
   // Interactions
-  const role = useRole(floating.context, { role: 'tooltip' });
-  const dismiss = useDismiss(floating.context);
-  let interactionsToUse = [role, dismiss];
+  let interactionsToUse = $derived(
+    [
+      useRole(floating.context, { role: 'tooltip' }),
+      useDismiss(floating.context),
+      getHover(floating.context),
+      getClick(floating.context),
+      getFocus(floating.context),
+    ].filter((x) => x !== undefined),
+  );
 
-  if (triggerTypes.includes('hover')) {
-    const hover = useHover(floating.context, { move: false });
-    interactionsToUse.push(hover);
-  }
-
-  if (triggerTypes.includes('click')) {
-    const click = useClick(floating.context);
-    interactionsToUse.push(click);
-  }
-
-  if (triggerTypes.includes('focus')) {
-    const focus = useFocus(floating.context);
-    interactionsToUse.push(focus);
-  }
-  const interactions = useInteractions(interactionsToUse);
+  const interactions = $derived(useInteractions(interactionsToUse));
 </script>
 
 <button

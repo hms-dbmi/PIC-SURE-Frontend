@@ -15,11 +15,12 @@
     ondelete = () => {},
   }: Props = $props();
 
-  let label: string = $state(field.label);
-  let id: string = $state(field.id);
+  let label: string = $derived(field.label);
+  let id: string = $derived(field.id);
 
   let dirtyForm = $derived(field.id !== id || field.label !== label);
-  const newField: boolean = field.label === '' || field.id === '';
+  const newField: boolean = $derived(field.label === '' || field.id === '');
+  // svelte-ignore state_referenced_locally
   let edit: boolean = $state(newField);
 
   const saveField = () => {

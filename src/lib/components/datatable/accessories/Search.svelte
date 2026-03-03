@@ -4,7 +4,7 @@
 
   let { handler }: { handler: TableHandler | RemoteTableHandler } = $props();
 
-  const search = handler.createSearch();
+  const search = $derived(handler.createSearch());
 </script>
 
 <input

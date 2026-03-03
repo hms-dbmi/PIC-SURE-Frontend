@@ -14,9 +14,13 @@
 
   let { connection = undefined }: Props = $props();
 
+  // svelte-ignore state_referenced_locally
   let label: string = $state(connection?.label || '');
+  // svelte-ignore state_referenced_locally
   let id: string = $state(connection?.id || '');
+  // svelte-ignore state_referenced_locally
   let subPrefix: string = $state(connection?.subPrefix || '');
+  // svelte-ignore state_referenced_locally
   let requiredFields: string = $state(connection?.requiredFields || '[]');
 
   function updateRequiredFields(json: string) {
