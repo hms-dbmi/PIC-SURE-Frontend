@@ -111,7 +111,7 @@
     return new TreeNode(name, value, children, shouldOpen, selected);
   }
 
-  let treeNodes: TreeNode[] = $state(nodes.map(mapNodeToTree));
+  let treeNodes: TreeNode[] = $derived(nodes.map(mapNodeToTree));
 </script>
 
 <div class="overflow-auto h-[350.75px] {fullWidth ? 'w-full' : ''}">

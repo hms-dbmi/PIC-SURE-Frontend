@@ -11,7 +11,7 @@
     logAction?: string;
   } = $props();
 
-  const search = handler.createSearch();
+  const search = (() => handler.createSearch())();
 
   let debounceTimer: ReturnType<typeof setTimeout>;
   function handleInput() {

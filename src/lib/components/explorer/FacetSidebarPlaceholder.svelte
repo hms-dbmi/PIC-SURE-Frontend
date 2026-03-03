@@ -8,10 +8,10 @@
     previousCategories = [] as PreviousCategoriesForPlaceholder[],
   } = $props();
 
-  const smartMode = previousCategories?.length > 0;
-  const numberOfCategories = smartMode ? previousCategories?.length || 1 : numCategories;
-  const fadeLastCategory = smartMode ? false : fadeEffect;
-  const numFacets = 1 + numberOfCategories;
+  const smartMode = $derived(previousCategories?.length > 0);
+  const numberOfCategories = $derived(smartMode ? previousCategories?.length || 1 : numCategories);
+  const fadeLastCategory = $derived(smartMode ? false : fadeEffect);
+  const numFacets = $derived(1 + numberOfCategories);
 </script>
 
 <div class="flex flex-col gap-4">

@@ -8,13 +8,15 @@
 
   let { query = {} }: Props = $props();
 
-  const fieldList = Object.entries({
-    fields: query?.fields,
-    requiredFields: query?.requiredFields,
-    anyRecordOf: query?.anyRecordOf,
-    anyRecordOfMulti: query?.anyRecordOfMulti?.flat(),
-    crossCountFields: query?.crossCountFields,
-  });
+  const fieldList = $derived(
+    Object.entries({
+      fields: query?.fields,
+      requiredFields: query?.requiredFields,
+      anyRecordOf: query?.anyRecordOf,
+      anyRecordOfMulti: query?.anyRecordOfMulti?.flat(),
+      crossCountFields: query?.crossCountFields,
+    }),
+  );
 </script>
 
 <section id="detail-filters-container" class="m-3">
