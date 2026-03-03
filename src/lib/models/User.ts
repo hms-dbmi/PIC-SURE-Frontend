@@ -1,7 +1,7 @@
 import type { Role } from '$lib/models/Role';
 import type { Connection } from '$lib/models/Connection';
 
-import type { QueryInterface } from './query/Query';
+import type { QueryInterfaceV2 } from './query/Query';
 
 export interface User {
   uuid?: string;
@@ -11,7 +11,7 @@ export interface User {
   queryScopes?: string[];
   token?: string;
   acceptedTOS?: boolean;
-  readonly queryTemplate?: QueryInterface;
+  readonly queryTemplate?: QueryInterfaceV2;
 }
 
 export interface ExtendedUser extends User {

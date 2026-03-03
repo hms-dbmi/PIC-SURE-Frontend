@@ -1,0 +1,95 @@
+import { test as base, type Route, type BrowserContext, type Page } from '@playwright/test';
+import type { TestInfo } from '@playwright/test';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export function mockApiSuccess(context: BrowserContext | Page, path: string, json: any) {
+  return context.route(path, async (route: Route) => route.fulfill({ json }));
+}
+
+export function mockApiSuccessByMethod(
+  context: BrowserContext | Page,
+  path: string,
+  method: string,
+  json: any,
+) {
+  return context.route(path, async (route: Route) => {
+    if (route.request().method() === method) {
+      await route.fulfill({ json });
+      return;
+    }
+    await route.fallback();
+  });
+}
+
+export function mockApiFail(
+  context: BrowserContext | Page,
+  path: string,
+  message:
+    | 'aborted'
+    | 'accessdenied'
+    | 'addressunreachable'
+    | 'blockedbyclient'
+    | 'blockedbyresponse'
+    | 'connectionaborted'
+    | 'connectionclosed'
+    | 'connectionfailed'
+    | 'connectionrefused'
+    | 'connectionreset'
+    | 'internetdisconnected'
+    | 'namenotresolved'
+    | 'timedout'
+    | 'failed',
+) {
+  return context.route(path, (route: Route) => route.abort(message));
+}
+
+export function mockHTMLBodySuccess(context: Page, path: string | RegExp, body: string) {
+  return context.route(path, async (route: Route) => route.fulfill({ body }));
+}
+
+async function screenshotOnFailure({ page }: { page: Page }, testInfo: TestInfo) {
+  if (testInfo.status !== testInfo.expectedStatus) {
+    // Get a unique place for the screenshot.
+    const screenshotPath = testInfo.outputPath(`failure.png`);
+    // Add it to the report.
+    testInfo.attachments.push({
+      name: 'screenshot-at-failure',
+      path: screenshotPath,
+      contentType: 'image/png',
+    });
+    // Take the screenshot itself.
+    await page.screenshot({ path: screenshotPath, timeout: 5000 });
+  }
+}
+
+export const test = base.extend({
+  context: async ({ context }, use) => {
+    await context.addInitScript(() => {
+      sessionStorage.setItem('type', 'AUTH0');
+      sessionStorage.setItem('redirect', '/');
+    });
+
+    // Stub log endpoint so tests don't wait on fire-and-forget audit requests
+    await context.route('**/api/v1/log', (route) =>
+      route.fulfill({ status: 202, json: { result: 'accepted' } }),
+    );
+    await context.route('**/*', (request) => {
+      const url = request.request().url();
+      if (
+        // url.startsWith('https://www.googletagmanager.com') // Google Analytics
+        !url.startsWith('http://localhost') // ignore all non local api endpoints to improve speed.
+      ) {
+        request.abort();
+      } else {
+        request.continue();
+      }
+    });
+
+    use(context);
+  },
+  page: async ({ page }, use, testInfo) => {
+    await use(page);
+    // Take screenshot on failure
+    await screenshotOnFailure({ page }, testInfo);
+  },
+});

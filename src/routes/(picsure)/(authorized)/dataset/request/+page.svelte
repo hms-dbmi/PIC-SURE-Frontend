@@ -3,7 +3,7 @@
   import { branding } from '$lib/configuration';
   import { uuidInput } from '$lib/utilities/Forms';
   import { log, createLog } from '$lib/logger';
-  import type { QueryInterface } from '$lib/models/query/Query';
+  import type { QueryInterfaceV2 } from '$lib/models/query/Query';
   import { type Status, type Metadata, type DataType, UploadStatus } from '$lib/models/DataRequest';
   import {
     searchForDataset,
@@ -29,7 +29,7 @@
 
   let datasetId: string = $state('');
   let metadata: Metadata | undefined = $state(undefined);
-  let query: QueryInterface | undefined = $state(undefined);
+  let query: QueryInterfaceV2 | undefined = $state(undefined);
   let approved: string | null = $state(null); // As a date string
   let requesterEmail: string | undefined = $state(undefined);
   let datasetStorageLocation: string | undefined = $state(undefined);
@@ -102,7 +102,7 @@
         return;
       }
       if (metadata.resultMetadata.queryJson) {
-        query = metadata.resultMetadata.queryJson.query as QueryInterface;
+        query = metadata.resultMetadata.queryJson.query as QueryInterfaceV2;
         requesterEmail = metadata.resultMetadata.queryJson.requesterEmail;
         datasetStorageLocation = metadata.resultMetadata.queryJson.commonAreaUUID;
       }

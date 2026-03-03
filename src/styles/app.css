@@ -577,7 +577,7 @@ label.required input:invalid,
 }
 
 .card-btn:hover {
-  @apply scale-110 shadow-lg;
+  @apply scale-110 disabled:scale-none shadow-lg disabled:shadow-none;
 }
 
 .card-btn-sm {
@@ -694,4 +694,11 @@ label.required input:invalid,
   a {
     @apply anchor;
   }
+}
+
+.operator-select {
+  @apply my-2 ml-8 w-32 px-2 py-1 bg-surface-200;
+}
+.filter-group-or {
+  @apply p-1 border border-surface-200-800;
 }

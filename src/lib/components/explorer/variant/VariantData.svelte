@@ -21,7 +21,7 @@
     onAggregateToggle: (checked: boolean) => void;
   } = $props();
 
-  let aggregateCheckbox: boolean = $state(exportType === ExportType.Full);
+  let aggregateCheckbox: boolean = $state(exportType === ExportType.Aggregate);
 
   function aggregateChange() {
     aggregateCheckbox = !aggregateCheckbox;

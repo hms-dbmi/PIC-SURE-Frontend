@@ -1,3 +1,7 @@
+import { features } from '$lib/configuration';
+
+const V3_QUERIES = features.explorer.enableOrQueries;
+
 const PREFIX = 'picsure';
 const DICT = `${PREFIX}/proxy/dictionary-api`;
 const QUERY = `${PREFIX}/query`;
@@ -18,8 +22,12 @@ export const Picsure = {
   Facets: `${DICT}/facets`,
   Search: `${PREFIX}/search`,
   Resources: `${PREFIX}/resource`,
-  Query: QUERY,
-  QuerySync: `${QUERY}/sync`,
+  Query: V3_QUERIES ? `${PREFIX}/v3/query` : QUERY,
+  QuerySync: V3_QUERIES ? `${PREFIX}/v3/query/sync` : `${QUERY}/sync`,
+  QueryV2: QUERY,
+  QueryV2Sync: `${QUERY}/sync`,
+  QueryV3: `${PREFIX}/v3/query`,
+  QueryV3Sync: `${PREFIX}/v3/query/sync`,
   Uploader: {
     Upload: `${UPLOADER}/upload`,
     Sites: `${UPLOADER}/sites`,

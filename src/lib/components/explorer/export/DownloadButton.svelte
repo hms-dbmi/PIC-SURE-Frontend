@@ -49,11 +49,11 @@
         }),
       );
       const startTime = performance.now();
-      const res = await api.post(`${Picsure.Query}/${datasetId}/result`, {});
+      const res = await api.post(`${Picsure.QueryV3}/${datasetId}/result`, {});
       const duration = Math.round(performance.now() - startTime);
       const blob = new Blob([res], { type: 'octet/stream' });
 
-      const responseDataUrl = URL.createObjectURL(blob);
+      const responseDataUrl = URL.createObjectURL(new Blob([res], { type: 'octet/stream' }));
       if (browser) {
         const link = document.createElement('a');
         link.href = responseDataUrl;
