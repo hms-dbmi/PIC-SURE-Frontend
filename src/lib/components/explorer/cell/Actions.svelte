@@ -7,6 +7,7 @@
   import { features } from '$lib/configuration';
   import { isOpenAccess } from '$lib/AccessState';
   import { genericUUID } from '$lib/utilities/UUID';
+  import { log, createLog } from '$lib/logger';
 
   let { exports, addExport, removeExport } = ExportStore;
   let { data = {} as SearchResult } = $props();
@@ -20,6 +21,12 @@
   function updateActiveRow(componentName: string) {
     return (event: Event) => {
       event.stopPropagation();
+      log(
+        createLog('ACTION', `search_result.${componentName}`, {
+          variable: data.row.display || data.row.name,
+          conceptPath: data.row.conceptPath,
+        }),
+      );
       setActiveRow({
         row: data.row.conceptPath,
         component: componentName,
@@ -35,8 +42,20 @@
   function insertExportContent(e: Event) {
     e.stopPropagation();
     if ($exports.includes(exportItem)) {
+      log(
+        createLog('ACTION', 'search_result.export_remove', {
+          variable: data.row.display || data.row.name,
+          conceptPath: data.row.conceptPath,
+        }),
+      );
       removeExport(exportItem.id);
     } else {
+      log(
+        createLog('ACTION', 'search_result.export_add', {
+          variable: data.row.display || data.row.name,
+          conceptPath: data.row.conceptPath,
+        }),
+      );
       addExport(exportItem);
       $panelOpen = true;
     }

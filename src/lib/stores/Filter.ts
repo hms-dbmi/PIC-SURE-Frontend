@@ -5,8 +5,17 @@ import type { SearchResult } from '$lib/models/Search';
 import { browser } from '$app/environment';
 import { user } from './User';
 import { objectUUID } from '$lib/utilities/UUID';
+import { log, createLog, registerAssociatedStudies } from '$lib/logger';
 
 export const filters: Writable<Filter[]> = writable(restoreFilters());
+export const associatedStudies: Readable<string[]> = derived(filters, ($f) => {
+  const studies = new Set<string>();
+  for (const filter of $f) {
+    if (filter.dataset) studies.add(filter.dataset);
+  }
+  return [...studies];
+});
+registerAssociatedStudies(associatedStudies);
 export const hasGenomicFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic') : false,
 );
@@ -53,6 +62,7 @@ function restoreFilters() {
 
 export function addFilter(filter: Filter) {
   const currentFilters = get(filters);
+  const isUpdate = currentFilters.some((f) => f.id === filter.id);
   currentFilters.forEach((f) => {
     if (f.id === filter.id) {
       currentFilters.splice(currentFilters.indexOf(f), 1);
@@ -60,20 +70,42 @@ export function addFilter(filter: Filter) {
   });
   filter.uuid = objectUUID(filter);
   filters.set([...currentFilters, filter]);
+  log(
+    createLog('FILTER', isUpdate ? 'filter.update' : 'filter.add', {
+      filterType: filter.filterType,
+      displayType: filter.displayType,
+      variable: filter.variableName,
+      dataset: filter.dataset,
+    }),
+  );
   return filter;
 }
 
 export function removeFilter(uuid: string) {
   const currentFilters = get(filters);
+  const removed = currentFilters.find((f) => f.uuid === uuid);
   filters.set(currentFilters.filter((f) => f.uuid !== uuid));
+  if (removed) {
+    log(
+      createLog('FILTER', 'filter.remove', {
+        filterType: removed.filterType,
+        variable: removed.variableName,
+        dataset: removed.dataset,
+      }),
+    );
+  }
 }
 export function removeGenomicFilters() {
   const currentFilters = get(filters);
+  const count = currentFilters.filter((f) => f.filterType === 'genomic').length;
   filters.set(currentFilters.filter((f) => f.filterType !== 'genomic'));
+  if (count > 0) log(createLog('FILTER', 'filter.remove_genomic', { count }));
 }
 export function removeUnallowedFilters() {
   const currentFilters = get(filters);
+  const count = currentFilters.filter((f) => !f.allowFiltering).length;
   filters.set(currentFilters.filter((f) => f.allowFiltering));
+  if (count > 0) log(createLog('FILTER', 'filter.remove_unallowed', { count }));
 }
 
 export function removeInvalidFilters(): void {
@@ -97,10 +129,14 @@ export function removeInvalidFilters(): void {
   });
 
   filters.set(validFilters);
+  const removedCount = currentFilters.length - validFilters.length;
+  if (removedCount > 0) log(createLog('FILTER', 'filter.remove_invalid', { count: removedCount }));
 }
 
 export function clearFilters() {
+  const count = get(filters).length;
   filters.set([]);
+  if (count > 0) log(createLog('FILTER', 'filter.clear', { count }));
 }
 
 export function getFilter(uuid: string) {

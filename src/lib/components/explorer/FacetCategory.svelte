@@ -6,6 +6,7 @@
   import type { Facet } from '$lib/models/Search';
   import { updateFacets, selectedFacets } from '$lib/stores/Search';
   import { hiddenFacets, openFacets } from '$lib/stores/Dictionary';
+  import { log, createLog } from '$lib/logger';
 
   import FacetItem from './FacetItem.svelte';
 
@@ -155,6 +156,15 @@
           name="facet-fitler"
           id={facetCategory.name + '-filter'}
           bind:value={textFilterValue}
+          onblur={() => {
+            if (textFilterValue)
+              log(
+                createLog('SEARCH', 'facet.search', {
+                  category: facetCategory.name,
+                  term: textFilterValue,
+                }),
+              );
+          }}
         />
       {/if}
       {#each facetsToDisplay as facet}
