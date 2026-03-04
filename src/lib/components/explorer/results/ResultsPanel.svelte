@@ -19,6 +19,8 @@
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
 
+  import { subscribeOnChange } from '$lib/utilities/Subscribers';
+
   let unsubFilters: Unsubscriber | null = null;
   let currentPage: string = $state(page.url.pathname);
   let isDiscoverPage = $derived(currentPage.includes('/discover'));
@@ -69,9 +71,7 @@
   );
 
   function subscribe() {
-    if (!unsubFilters) {
-      unsubFilters = filters.subscribe(() => loadPatientCount(!isDiscoverPage));
-    }
+    unsubFilters = subscribeOnChange(filters, () => loadPatientCount(!isDiscoverPage));
   }
 
   function unsubscribe() {
@@ -99,7 +99,10 @@
     }
   });
 
-  onMount(subscribe);
+  onMount(() => {
+    loadPatientCount(!isDiscoverPage);
+    subscribe();
+  });
   onDestroy(unsubscribe);
 </script>
 
