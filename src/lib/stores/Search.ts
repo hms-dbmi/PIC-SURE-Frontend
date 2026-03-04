@@ -1,5 +1,7 @@
 import { get, writable, type Unsubscriber, type Writable } from 'svelte/store';
 
+import { subscribeOnChange } from '$lib/utilities/Subscribers';
+
 import { TableHandler, type State } from '@vincjo/datatables/server';
 
 import { type Facet, type SearchResult } from '$lib/models/Search';
@@ -33,17 +35,13 @@ let isResetting = false;
 
 export function initHandler() {
   Object.values(unsubscribers).forEach((unsub) => unsub());
-  unsubscribers.selectedFacets = selectedFacets.subscribe(() => {
-    if (!isResetting) {
-      tableHandler.setPage(1);
-    }
-  });
 
-  unsubscribers.searchTerm = searchTerm.subscribe(() => {
-    if (!isResetting) {
-      tableHandler.setPage(1);
-    }
-  });
+  const resetPage = () => {
+    if (!isResetting) tableHandler.setPage(1);
+  };
+
+  unsubscribers.selectedFacets = subscribeOnChange(selectedFacets, resetPage);
+  unsubscribers.searchTerm = subscribeOnChange(searchTerm, resetPage);
 
   tableHandler.load(async (state: State) => {
     const term = get(searchTerm);
