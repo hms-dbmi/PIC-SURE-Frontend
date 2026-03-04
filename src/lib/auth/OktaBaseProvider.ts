@@ -86,14 +86,16 @@ abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
       this.saveState(redirectTo, type, this.idp);
       const clientID = encodeURIComponent(this.clientid);
       const idpId = encodeURIComponent(this.oktaidpid);
+      const redirect = encodeURIComponent(redirectUrl);
+      const state = encodeURIComponent(this.state);
       window.location.href =
         this.uri +
         '?response_type=code' +
         '&scope=openid' +
         `&client_id=${clientID}` +
         `&idp=${idpId}` +
-        `&redirect_uri=${redirectUrl}` +
-        `&state=${this.state}`;
+        `&redirect_uri=${redirect}` +
+        `&state=${state}`;
     }
   };
 
