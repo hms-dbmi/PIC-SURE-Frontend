@@ -5,27 +5,32 @@ import * as api from '$lib/api';
 import type { OktaUser } from '$lib/models/User';
 import { Psama } from '$lib/paths';
 
-interface RasData extends AuthData {
+const STATE_NAME = 'oauthState';
+const STATE_PREFIX = 'okta-';
+
+interface OktaData extends AuthData {
   uri: string;
   clientid: string;
   state?: string;
   idp: string;
   oktaidpid: string;
   oktalogouturl: string;
+  connection: string;
 }
 
-class RAS extends AuthProvider implements RasData {
+class OKTA extends AuthProvider implements OktaData {
   uri: string;
   clientid: string;
   state: string;
   oktaidpid: string;
   oktalogouturl: string;
   idp: string;
+  connection: string;
 
-  constructor(data: RasData) {
+  constructor(data: OktaData) {
     super(data);
-    this.state = localStorage.getItem('state') || 'ras-' + this.generateRandomState();
-    localStorage.setItem('state', this.state);
+    this.state = localStorage.getItem(STATE_NAME) || STATE_PREFIX + this.generateRandomState();
+    localStorage.setItem(STATE_NAME, this.state);
 
     if (
       data.uri === undefined ||
@@ -34,7 +39,7 @@ class RAS extends AuthProvider implements RasData {
       data.logouturl === undefined ||
       data.oktalogouturl === undefined
     ) {
-      throw new Error('Missing required RAS parameter(s).');
+      throw new Error('Missing required OKTA parameter(s).');
     }
 
     this.uri = data.uri;
@@ -42,6 +47,7 @@ class RAS extends AuthProvider implements RasData {
     this.oktaidpid = data.oktaidpid;
     this.idp = data.idp;
     this.oktalogouturl = data.oktalogouturl;
+    this.connection = data.connection || 'Okta';
   }
 
   private generateRandomState() {
@@ -59,7 +65,7 @@ class RAS extends AuthProvider implements RasData {
 
     if (!code || localState !== responseState) {
       console.debug(
-        'RAS authentication failed code: ',
+        'OKTA authentication failed code: ',
         code,
         ' state: ',
         responseState,
@@ -69,29 +75,29 @@ class RAS extends AuthProvider implements RasData {
       return undefined;
     }
 
-    const newUser: OktaUser = await api.post(`${Psama.Auth}/ras`, { code });
+    const psamaPath = this.connection ? `${Psama.Auth}/${this.connection}` : Psama.Auth;
+    const newUser: OktaUser = await api.post(psamaPath, { code });
     if (newUser && newUser?.oktaIdToken) {
       newUser.oktaIdToken && localStorage.setItem('oktaIdToken', newUser.oktaIdToken);
       return newUser;
     }
 
-    throw new Error('RAS authentication failed. Missing Okta ID token.');
+    throw new Error('OKTA authentication failed. Missing Okta ID token.');
   };
 
   login = async (redirectTo: string, type: string): Promise<void> => {
     let redirectUrl = '/';
     if (browser) {
-      redirectUrl = this.getRedirectURI();
-      redirectUrl = redirectUrl.replace(/\/$/, '');
+      redirectUrl = this.getRedirectURI().replace(/\/$/, '');
       this.saveState(redirectTo, type, this.idp);
-      const rasClientID = encodeURIComponent(this.clientid);
-      const rasIdpId = encodeURIComponent(this.oktaidpid);
+      const clientID = encodeURIComponent(this.clientid);
+      const idpId = encodeURIComponent(this.oktaidpid);
       window.location.href =
         this.uri +
         '?response_type=code' +
         '&scope=openid' +
-        `&client_id=${rasClientID}` +
-        `&idp=${rasIdpId}` +
+        `&client_id=${clientID}` +
+        `&idp=${idpId}` +
         `&redirect_uri=${redirectUrl}` +
         `&state=${this.state}`;
     }
@@ -119,5 +125,5 @@ class RAS extends AuthProvider implements RasData {
   };
 }
 
-export default RAS;
-export type { RasData as AuthType };
+export default OKTA;
+export type { OktaData as AuthType };
