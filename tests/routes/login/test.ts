@@ -168,8 +168,9 @@ test.describe('Login page', () => {
   for (const providerName of enabledProviders) {
     const providerUrl: { [key: string]: string | undefined } = {
       AUTH0: 'https://avillachlab.auth0.com/',
-      RAS: process.env.VITE_AUTH_PROVIDER_MODULE_RAS_URI,
+      OKTA: process.env.VITE_AUTH_PROVIDER_MODULE_OKTA_URI,
       FENCE: process.env.VITE_AUTH_PROVIDER_MODULE_FENCE_URI,
+      // Skipping test for RAS as the base functionality is the same and RAS is deprecated
     };
     test(`Clicking the ${providerName} login button opens the idp login page`, async ({ page }) => {
       const url = providerUrl[providerName];
