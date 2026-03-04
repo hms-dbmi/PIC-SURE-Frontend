@@ -251,7 +251,7 @@
   type="button"
   data-testid="explorer-tour-btn"
   id="tourBtn"
-  class="btn preset-filled-secondary-500 text-black hover:text-white"
+  class="btn preset-filled-secondary-500"
   onclick={() => {
     started = false;
     openModal = true;
