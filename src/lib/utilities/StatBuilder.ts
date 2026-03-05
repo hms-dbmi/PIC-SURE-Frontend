@@ -62,7 +62,7 @@ function getFacetCategoryCount(category: string) {
   return function ({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
     const request: DictionarySearchRequest = dictionaryRequest(isOpenAccess);
     return api
-      .post(Picsure.Facets, request)
+      .post(Picsure.Facets, request, undefined, !isOpenAccess)
       .then((res: DictionaryFacetResult[]) => {
         const facetCat = res.find((facetCat) => facetCat.name === category);
         if (!facetCat) {
@@ -81,14 +81,14 @@ function getFacetCategoryCount(category: string) {
 function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
   const request: DictionarySearchRequest = dictionaryRequest(isOpenAccess);
   return api
-    .post(`${Picsure.Concepts}?page_number=1&page_size=1`, request)
+    .post(`${Picsure.Concepts}?page_number=1&page_size=1`, request, undefined, !isOpenAccess)
     .then((res: DictionaryConceptResult) => {
       return res.totalElements || Promise.reject('total not found');
     });
 }
 
-function blank({ request }: RequestMapOptions): Promise<PatientCount> {
-  return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
+function blank({ request, isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
+  return api.post(Picsure.QuerySync, request, undefined, !isOpenAccess).then(rejectIfQueryError);
 }
 
 function hardcoded({ stat }: RequestMapOptions) {
@@ -99,7 +99,7 @@ async function getOpenCount(options: RequestMapOptions): Promise<PatientCount> {
   const request = { ...options.request };
   request.query.expectedResultType = 'CROSS_COUNT';
   return api
-    .post(Picsure.QuerySync, request)
+    .post(Picsure.QuerySync, request, undefined, false)
     .then(rejectIfQueryError)
     .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }
@@ -107,7 +107,7 @@ async function getOpenCount(options: RequestMapOptions): Promise<PatientCount> {
 function getAuthCount(options: RequestMapOptions): Promise<PatientCount> {
   const request = { ...options.request };
   request.query.expectedResultType = 'COUNT';
-  return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
+  return api.post(Picsure.QuerySync, request, undefined, true).then(rejectIfQueryError);
 }
 
 function patientCount(options: RequestMapOptions): Promise<PatientCount> {
@@ -122,7 +122,9 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     const request = { ...options.request };
     request.query.expectedResultType = type;
     request.query.setCrossCountFields(fields);
-    return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
+    return api
+      .post(Picsure.QuerySync, request, undefined, !options.isOpenAccess)
+      .then(rejectIfQueryError);
   };
 }
 
@@ -144,7 +146,9 @@ function getConsentCount(type: ExpectedResultType) {
     Object.entries(categoryMap).forEach(([conceptPath, fieldList]) =>
       request.query.addCategoryFilter(conceptPath, fieldList),
     );
-    return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
+    return api
+      .post(Picsure.QuerySync, request, undefined, !options.isOpenAccess)
+      .then(rejectIfQueryError);
   };
 }
 
