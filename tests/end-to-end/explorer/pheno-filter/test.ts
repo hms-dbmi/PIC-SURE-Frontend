@@ -732,7 +732,7 @@ test.describe('Query V3 OR features', () => {
     expect(querySyncRequest.length).toBe(1);
     expect(querySyncRequest[0]).toContain('phenotypicClauses');
   });
-  test('does not have dropdowns on explorer', async ({ page }) => {
+  test('shows AND label between filters on explorer', async ({ page }) => {
     // Given
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
@@ -761,7 +761,8 @@ test.describe('Query V3 OR features', () => {
     await addFilterButton2.click();
 
     // Then
-    const filters = await page.locator('#export-filters .operator-select').all();
-    expect(filters.length).toBe(0);
+    const labels = await page.getByTestId('operator-label').all();
+    expect(labels.length).toBe(1);
+    await expect(page.getByTestId('operator-label').first()).toHaveText('AND');
   });
 });

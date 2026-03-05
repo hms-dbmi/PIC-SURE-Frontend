@@ -14,7 +14,6 @@
     filters,
     hasGenomicFilter,
     clearFilters,
-    hasOrGroup,
     advancedFilteringOpen,
   } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
@@ -25,7 +24,6 @@
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
-  import Popover from '$lib/components/Popover.svelte';
 
   let unsubFilters: Unsubscriber | null = null;
   let currentPage: string = $state(page.url.pathname);
@@ -204,32 +202,13 @@
         />
       {/if}
       {#if showDiscoverDistributions}
-        {#if $hasOrGroup}
-          <Popover
-            triggerTypes={['hover', 'focus']}
-            placement="left"
-            message="Variable distributions currently not available with 'OR' queries."
-          >
-            {#snippet trigger()}
-              <CardButton
-                href="/discover/distributions"
-                data-testid="distributions-btn"
-                title="Variable Distributions"
-                icon="fa-solid fa-chart-pie"
-                size="md"
-                disabled
-              />
-            {/snippet}
-          </Popover>
-        {:else}
-          <CardButton
-            href="/discover/distributions"
-            data-testid="distributions-btn"
-            title="Variable Distributions"
-            icon="fa-solid fa-chart-pie"
-            size="md"
-          />
-        {/if}
+        <CardButton
+          href="/discover/distributions"
+          data-testid="distributions-btn"
+          title="Variable Distributions"
+          icon="fa-solid fa-chart-pie"
+          size="md"
+        />
       {/if}
       {#if showVariantExplorer}
         <CardButton
