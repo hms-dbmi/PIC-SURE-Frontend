@@ -20,12 +20,12 @@
     open: boolean = $state(false);
     selected: boolean = $state(false);
     disabled: boolean = $state(false);
-    children: TreeNodeInterface[] = $state([]);
+    children: TreeNode[] = $state([]);
 
     constructor(
       name: string,
       value: string,
-      children: TreeNodeInterface[] = [],
+      children: TreeNode[] = [],
       open: boolean = false,
       selected: boolean = false,
     ) {

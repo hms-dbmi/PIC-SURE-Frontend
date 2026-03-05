@@ -288,7 +288,8 @@ export class LogicTree<T extends LogicNode<T>> {
         const children = nodeData.children.map(reconstruct);
         const group = createGroup(children, nodeData.operator || Operator.AND);
 
-        const { children: rawChildren, parent: rawParent, ...restData } = nodeData;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { children: _rawChildren, parent: _rawParent, ...restData } = nodeData;
         Object.assign(group, restData);
 
         children.forEach((child) => (child.parent = group));
@@ -296,7 +297,8 @@ export class LogicTree<T extends LogicNode<T>> {
         return group;
       } else {
         // It is a leaf node
-        const { parent, children, ...rest } = nodeData;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { parent: _parent, children: _children, ...rest } = nodeData;
         const leaf = { ...rest, parent: undefined } as unknown as T;
         return leaf;
       }

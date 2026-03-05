@@ -59,23 +59,31 @@
 
   // Disable in overlay mode to prevent duplicate sortable IDs
   const { ref, handleRef, isDragging } = useSortable({
-    id: id,
+    get id() {
+      return id;
+    },
     index: () => index,
-    group: parentId,
+    get group() {
+      return parentId;
+    },
     type: 'group',
     accept: ['item', 'group'],
     collisionPriority: CollisionPriority.Lowest,
-    data: { ...group, targetGroupId: id },
-    disabled: isOverlay,
+    get data() {
+      return { ...group, targetGroupId: id };
+    },
+    get disabled() {
+      return isOverlay;
+    },
   });
   const showDropPreview = $derived(!isOverlay && isDragging.current && isDraggable);
 
-  function handleOperatorChange(e: any) {
+  function handleOperatorChange(e: { value: string }) {
     const newOperator = e.value as OperatorType;
     onOperatorChange(group, newOperator);
   }
 
-  function handleNotChange(e: any) {
+  function handleNotChange(e: { checked: boolean }) {
     not = e.checked;
   }
 </script>
@@ -176,14 +184,7 @@
         <EmptyDropZone groupId={id} />
       {:else if id !== 'root'}
         <!-- GroupDropZone for dropping groups into this group; only visible when dragging a group, not shown on root -->
-        <GroupDropZone
-          groupId={id}
-          {isGroupDrag}
-          isActive={activeId !== null}
-          index={group.children.length}
-          {isOverlay}
-          {activeId}
-        />
+        <GroupDropZone groupId={id} {isGroupDrag} index={group.children.length} {isOverlay} />
       {/if}
     </div>
   </div>

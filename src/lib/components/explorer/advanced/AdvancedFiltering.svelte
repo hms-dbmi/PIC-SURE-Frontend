@@ -1,4 +1,5 @@
 <script lang="ts">
+  /* eslint-disable @typescript-eslint/no-explicit-any -- dnd-kit events lack exported types */
   import type { FilterInterface } from '$lib/models/Filter.svelte';
   import type { FilterGroupInterface } from '$lib/models/Filter.svelte';
   import { isFilterGroup, createFilterGroup } from '$lib/models/Filter.svelte';
@@ -14,7 +15,7 @@
   import { move } from '@dnd-kit/helpers';
   import { filterTree, genomicFilters } from '$lib/stores/Filter';
   import { LogicTree } from '$lib/models/LogicTree.svelte';
-  import { Operator } from '$lib/models/query/Query';
+  import { Operator, type OperatorType } from '$lib/models/query/Query';
 
   type DragOperation =
     | { type: 'canceled' }
@@ -508,7 +509,7 @@
     localTree.remove(group);
   }
 
-  function handleOperatorChange(group: FilterGroupInterface, newOperator: any) {
+  function handleOperatorChange(group: FilterGroupInterface, newOperator: OperatorType) {
     (group as FilterGroupInterface).setOperator(newOperator);
   }
 
@@ -525,7 +526,7 @@
 <div class="mb-2 flex justify-end gap-2">
   <button class="btn preset-filled-primary-500" onclick={addGroup}>Add Group</button>
 </div>
-<div class="flex-1 overflow-auto p-4  border border-surface-300 rounded-lg bg-surface-50">
+<div class="flex-1 overflow-auto p-4 border border-surface-300 rounded-lg bg-surface-50">
   <DragDropProvider
     {sensors}
     onDragStart={handleDragStart}
@@ -546,10 +547,8 @@
     <GroupDropZone
       groupId="root"
       {isGroupDrag}
-      isActive={activeId !== null}
       index={(localTree.root as FilterGroupInterface).children.length}
       isOverlay={false}
-      {activeId}
     />
     <DragOverlay>
       {#if activeNode && isFilterGroup(activeNode)}

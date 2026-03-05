@@ -6,33 +6,35 @@
     groupId: string;
     index?: number;
     label?: string;
-    isActive?: boolean;
     isGroupDrag?: boolean;
     isOverlay?: boolean;
-    activeId?: string | null;
   }
 
   let {
     groupId,
     index = 0,
     label = 'Drop into group',
-    isActive = false,
     isGroupDrag = false,
     isOverlay = false,
-    activeId = null,
   }: Props = $props();
 
   // When enabled, High priority ensures it wins over group sortables
   // Self-drop protection is handled in handleGroupDropZone
   // Disable in overlay mode to prevent duplicate sortable IDs
-  const { ref, isDropTarget } = useSortable({
-    id: `drop-${groupId}`,
+  const { ref } = useSortable({
+    get id() {
+      return `drop-${groupId}`;
+    },
     index: () => index,
     type: 'drop',
     accept: ['group'],
     collisionPriority: CollisionPriority.High,
-    disabled: isOverlay,
-    data: { targetGroupId: groupId, isGroupDropZone: true },
+    get disabled() {
+      return isOverlay;
+    },
+    get data() {
+      return { targetGroupId: groupId, isGroupDropZone: true };
+    },
   });
 
   // Only show the zone visually when dragging a group

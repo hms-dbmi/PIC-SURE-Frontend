@@ -201,5 +201,4 @@ test.describe('Advanced Filtering - Tool Suite', () => {
     const syncRequest = await syncRequestPromise;
     expect(syncRequest.url()).toContain('/picsure/query/sync');
   });
-
 });

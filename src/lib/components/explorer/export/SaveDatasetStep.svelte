@@ -93,8 +93,8 @@
     <div class="w-full h-full m-2 card p-4">
       <header class="card-header">
         Save the information in your final data export by clicking the Save Dataset ID button.
-        Navigate to the <a class="anchor" href="/dataset">Manage Datasets page</a> to view or manage your
-        Dataset IDs.
+        Navigate to the <a class="anchor" href="/dataset">Manage Datasets page</a> to view or manage
+        your Dataset IDs.
       </header>
       <hr />
       <div class="card-body p-4 flex flex-col justify-center items-center">

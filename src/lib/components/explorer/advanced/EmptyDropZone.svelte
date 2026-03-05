@@ -11,12 +11,16 @@
   // No group parameter - accepts drops from any group
   // Highest priority ensures this wins over parent containers
   const { ref, isDropTarget } = useSortable({
-    id: `empty-${groupId}`,
+    get id() {
+      return `empty-${groupId}`;
+    },
     index: () => 0,
     type: 'item',
     accept: ['item', 'group'],
     collisionPriority: CollisionPriority.Highest,
-    data: { targetGroupId: groupId, isEmptyDropZone: true },
+    get data() {
+      return { targetGroupId: groupId, isEmptyDropZone: true };
+    },
   });
 </script>
 

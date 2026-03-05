@@ -12,7 +12,6 @@
   import {
     allFilters,
     filters,
-    genomicFilters,
     hasGenomicFilter,
     clearFilters,
     hasOrGroup,
@@ -72,20 +71,11 @@
   let showCohortDetails = $derived(!isDiscoverPage && features.explorer.enableCohortDetails);
 
   let nonGenomicFilterCount = $derived(
-    $filters.filter(
-      (filter) => filter.filterType !== 'genomic' && filter.filterType !== 'snp',
-    ).length,
+    $filters.filter((filter) => filter.filterType !== 'genomic' && filter.filterType !== 'snp')
+      .length,
   );
 
-  let showAdvancedFiltering = true;
-  let advancedFilteringDisabled = $derived($filters.length + $genomicFilters.length <= 1);
-
-  let showToolSuite = $derived(
-    showCohortDetails ||
-      showAdvancedFiltering ||
-      (($allFilters.length !== 0 || $exports.length !== 0) &&
-        (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer)),
-  );
+  let advancedFilteringDisabled = $derived(nonGenomicFilterCount < 1);
 
   function subscribe() {
     if (!unsubFilters) {
@@ -190,81 +180,77 @@
       </div>
     {/if}
   </div>
-  {#if showToolSuite}
-    <div class="flex flex-col items-center mt-7">
-      <hr />
-      <h5 class="text-center text-xl mt-7">Tool Suite</h5>
-      <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
-        {#if showCohortDetails}
+  <div class="flex flex-col items-center mt-7">
+    <hr />
+    <h5 class="text-center text-xl mt-7">Tool Suite</h5>
+    <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
+      {#if showCohortDetails}
+        <CardButton
+          href="/explorer/cohort"
+          data-testid="cohort-details-btn"
+          title="Cohort Details"
+          icon="fa-solid fa-users"
+          size="md"
+          active={page.url.pathname.includes('explorer/cohort')}
+        />
+      {/if}
+      {#if showExplorerDistributions}
+        <CardButton
+          href="/explorer/distributions"
+          data-testid="distributions-btn"
+          title="Variable Distributions"
+          icon="fa-solid fa-chart-pie"
+          size="md"
+        />
+      {/if}
+      {#if showDiscoverDistributions}
+        {#if $hasOrGroup}
+          <Popover
+            triggerTypes={['hover', 'focus']}
+            placement="left"
+            message="Variable distributions currently not available with 'OR' queries."
+          >
+            {#snippet trigger()}
+              <CardButton
+                href="/discover/distributions"
+                data-testid="distributions-btn"
+                title="Variable Distributions"
+                icon="fa-solid fa-chart-pie"
+                size="md"
+                disabled
+              />
+            {/snippet}
+          </Popover>
+        {:else}
           <CardButton
-            href="/explorer/cohort"
-            data-testid="cohort-details-btn"
-            title="Cohort Details"
-            icon="fa-solid fa-users"
-            size="md"
-            active={page.url.pathname.includes('explorer/cohort')}
-          />
-        {/if}
-        {#if showExplorerDistributions}
-          <CardButton
-            href="/explorer/distributions"
+            href="/discover/distributions"
             data-testid="distributions-btn"
             title="Variable Distributions"
             icon="fa-solid fa-chart-pie"
             size="md"
           />
         {/if}
-        {#if showDiscoverDistributions}
-          {#if $hasOrGroup}
-            <Popover
-              triggerTypes={['hover', 'focus']}
-              placement="left"
-              message="Variable distributions currently not available with 'OR' queries."
-            >
-              {#snippet trigger()}
-                <CardButton
-                  href="/discover/distributions"
-                  data-testid="distributions-btn"
-                  title="Variable Distributions"
-                  icon="fa-solid fa-chart-pie"
-                  size="md"
-                  disabled
-                />
-              {/snippet}
-            </Popover>
-          {:else}
-            <CardButton
-              href="/discover/distributions"
-              data-testid="distributions-btn"
-              title="Variable Distributions"
-              icon="fa-solid fa-chart-pie"
-              size="md"
-            />
-          {/if}
-        {/if}
-        {#if showVariantExplorer}
-          <CardButton
-            href="/explorer/variant"
-            data-testid="variant-explorer-btn"
-            title="Variant Explorer"
-            icon="fa-solid fa-dna"
-            size="md"
-            active={page.url.pathname.includes('explorer/variant')}
-          />
-        {/if}
-        {#if showAdvancedFiltering}
-          <CardButton
-            data-testid="advanced-filtering-btn"
-            title="Advanced Filtering"
-            icon="fa-solid fa-sliders"
-            size="md"
-            disabled={advancedFilteringDisabled}
-            onclick={() => ($advancedFilteringOpen = true)}
-          />
-        {/if}
-      </div>
+      {/if}
+      {#if showVariantExplorer}
+        <CardButton
+          href="/explorer/variant"
+          data-testid="variant-explorer-btn"
+          title="Variant Explorer"
+          icon="fa-solid fa-dna"
+          size="md"
+          active={page.url.pathname.includes('explorer/variant')}
+        />
+      {/if}
+      <CardButton
+        data-testid="advanced-filtering-btn"
+        title="Advanced Filtering"
+        icon="fa-solid fa-sliders"
+        size="md"
+        disabled={advancedFilteringDisabled}
+        onclick={() => ($advancedFilteringOpen = true)}
+      />
     </div>
-  {/if}
+  </div>
 </section>
 
 <style>

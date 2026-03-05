@@ -173,11 +173,6 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
 
     console.log('[AF-DND-003] test2 index:', test2Index, 'test index:', testIndex);
 
-    // Get the Nth filter card elements (bg-white cards with drag handles)
-    const allFilterCards = page
-      .locator('.card.bg-white')
-      .filter({ has: page.locator('.fa-grip-vertical') });
-
     // The last individual filters are test2 and test - find them by getting their name elements
     const test2NameEl = filterNames.filter({ hasText: /^test2$/ });
     const testNameEl = filterNames.filter({ hasText: /^test$/ });
@@ -881,10 +876,6 @@ test.describe('Advanced Filtering - Grouping', () => {
     expect(handleBox).not.toBeNull();
     expect(updatedFirstGroupBox).not.toBeNull();
 
-    // Drag the second group to reorder it before the first group
-    // Use Playwright's dragTo which is more reliable with dnd-kit
-    const secondGroupDragHandleBox = handleBox!;
-
     console.log(`[AF-GROUP-009] Using dragTo from second group handle to first group`);
 
     // Use dragTo - targeting the top portion of the first group triggers reorder
@@ -1208,7 +1199,7 @@ test.describe('Advanced Filtering - Genomic Filters', () => {
     await expect(dragHandle).toHaveCount(0);
   });
 
-  test('AF-GENOMIC-005: Genomic filter cannot be placed into a group', async ({ page }) => {
+  test('AF-GENOMIC-005: Genomic filter cannot be placed into a group', async () => {
     // The genomic filter is rendered outside the DragDropProvider,
     // so it cannot participate in drag-and-drop at all.
     // Verify the genomic filter is outside the sortable area
@@ -1222,7 +1213,6 @@ test.describe('Advanced Filtering - Genomic Filters', () => {
     });
     expect(hasSortableAttr).toBe(false);
   });
-
 });
 
 test.describe('Advanced Filtering - Genomic Filters (Ordering)', () => {
@@ -1238,8 +1228,6 @@ test.describe('Advanced Filtering - Genomic Filters (Ordering)', () => {
   }) => {
     // The login hack sets up 6 phenotypic filters (in 2 groups + 2 individual) and 1 genomic filter.
     // Verify that the genomic section appears AFTER the phenotypic drag-drop area in DOM order.
-    const filteringArea = afPage.filteringArea;
-
     // The filtering area contains: [drag-drop div] then [genomic-filters-section]
     // Verify genomic section is the last content section
     const genomicSection = afPage.getGenomicFiltersSection();

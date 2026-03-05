@@ -33,15 +33,23 @@
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
   // Disable in overlay mode to prevent duplicate sortable IDs
-  const { ref, handleRef, isDragging, isDropTarget } = useSortable({
-    id: filter.uuid,
+  const { ref, handleRef, isDragging } = useSortable({
+    get id() {
+      return filter.uuid;
+    },
     index: () => index,
     type: 'item',
     accept: 'item',
     collisionPriority: CollisionPriority.High,
-    group: parentId,
-    data: filter,
-    disabled: isOverlay,
+    get group() {
+      return parentId;
+    },
+    get data() {
+      return filter;
+    },
+    get disabled() {
+      return isOverlay;
+    },
   });
 </script>
 
