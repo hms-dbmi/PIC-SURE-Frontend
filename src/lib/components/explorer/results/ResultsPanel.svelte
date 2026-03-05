@@ -74,7 +74,7 @@
   );
 
   let showAdvancedFiltering = true;
-  let advancedFilteringDisabled = $derived($filters.length + $genomicFilters.length === 0);
+  let advancedFilteringDisabled = $derived($filters.length + $genomicFilters.length <= 1);
 
   let showToolSuite = $derived(
     showCohortDetails ||
