@@ -513,6 +513,7 @@
   }
 
   export function applyChanges() {
+    localTree.pruneTree();
     filterTree.set(localTree);
   }
 
