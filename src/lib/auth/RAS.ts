@@ -1,7 +1,6 @@
 import { Psama } from '$lib/paths';
 import OktaBaseProvider, { type OktaBaseData as RasData } from './OktaBaseProvider';
 
-// DEPRECATED. Provided for compatability but future state should use OKTA provider for RAS
 class RAS extends OktaBaseProvider {
   constructor(data: RasData) {
     if (
@@ -20,11 +19,26 @@ class RAS extends OktaBaseProvider {
     return `${Psama.Auth}/ras`;
   }
 
-  protected getLogoutRedirectUri(): string {
-    return `${window.location.protocol}//${window.location.hostname}${
-      window.location.port ? ':' + window.location.port : ''
-    }/login`;
+  protected get logoutRedirectUri(): string {
+    return encodeURI(
+      `${window.location.protocol}//${window.location.hostname}${
+        window.location.port ? ':' + window.location.port : ''
+      }/login`,
+    );
   }
+
+  // RAS logout flow
+  // RAS logouturl set:     App -> RAS(this.logouturl) -> OKTA -> APP
+  // RAS logouturl not set: App ------------------------> OKTA -> APP
+  logout = (): Promise<string> => {
+    localStorage.removeItem(this.stateStorageKey);
+
+    return Promise.resolve(
+      this.logouturl
+        ? this.logouturl + encodeURIComponent(this.oktaLogoutRedirectURI)
+        : this.oktaLogoutRedirectURI,
+    );
+  };
 }
 
 export default RAS;

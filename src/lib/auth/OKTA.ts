@@ -21,6 +21,22 @@ class OKTA extends OktaBaseProvider {
   protected get psamaPath(): string {
     return `${Psama.Auth}/${this.idp}`;
   }
+
+  protected get logoutRedirectUri(): string {
+    return encodeURI(
+      this.logouturl ||
+        `${window.location.protocol}//${window.location.hostname}${
+          window.location.port ? ':' + window.location.port : ''
+        }/login`,
+    );
+  }
+
+  // OKTA logout flow: App -> Okta -> (this.logouturl || App)
+  logout = (): Promise<string> => {
+    localStorage.removeItem(this.stateStorageKey);
+
+    return Promise.resolve(this.oktaLogoutRedirectURI);
+  };
 }
 
 export default OKTA;

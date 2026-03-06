@@ -43,15 +43,6 @@ abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
 
   protected abstract get psamaPath(): string;
 
-  protected getLogoutRedirectUri(): string {
-    return (
-      this.logouturl ||
-      `${window.location.protocol}//${window.location.hostname}${
-        window.location.port ? ':' + window.location.port : ''
-      }/login`
-    );
-  }
-
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   authenticate = async (hashParts: string[]): Promise<OktaUser | undefined> => {
     const responseMap = this.getResponseMap(hashParts);
@@ -61,12 +52,10 @@ abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
 
     if (!code || localState !== responseState) {
       console.debug(
-        `${this.constructor.name} authentication failed code: `,
-        code,
-        ' state: ',
-        responseState,
-        ' localState: ',
-        localState,
+        `${this.constructor.name} authentication failed`,
+        `code: ${code}`,
+        `state: ${responseState}`,
+        `localState: ${localState}`,
       );
       return undefined;
     }
@@ -85,7 +74,7 @@ abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
       const redirectUrl = this.getRedirectURI().replace(/\/$/, '');
       this.saveState(redirectTo, type, this.idp);
       const clientID = encodeURIComponent(this.clientid);
-      const idpId = this.oktaidpid ? encodeURIComponent(this.oktaidpid) : undefined;
+      const clientidpId = this.oktaidpid ? encodeURIComponent(this.oktaidpid) : undefined;
       const redirect = encodeURIComponent(redirectUrl);
       const state = encodeURIComponent(this.state);
       window.location.href =
@@ -93,26 +82,21 @@ abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
         '?response_type=code' +
         '&scope=openid' +
         `&client_id=${clientID}` +
-        (idpId ? `&idp=${idpId}` : '') +
+        (clientidpId ? `&idp=${clientidpId}` : '') +
         `&redirect_uri=${redirect}` +
         `&state=${state}`;
     }
   };
 
-  logout = (): Promise<string> => {
-    localStorage.removeItem(this.stateStorageKey);
-
-    const logoutRedirect = encodeURI(this.getLogoutRedirectUri());
+  protected abstract get logoutRedirectUri(): string;
+  protected get oktaLogoutRedirectURI(): string {
     const oktaIdToken = localStorage.getItem('oktaIdToken');
-    const oktaRedirect =
+    return (
       this.oktalogouturl +
       `?id_token_hint=${oktaIdToken}` +
-      `&post_logout_redirect_uri=${logoutRedirect}`;
-
-    const oktaEncodedRedirect = encodeURIComponent(oktaRedirect);
-    const logoutUrl = (this.logouturl || '') + oktaEncodedRedirect;
-    return Promise.resolve(logoutUrl);
-  };
+      `&post_logout_redirect_uri=${this.logoutRedirectUri}`
+    );
+  }
 }
 
 export default OktaBaseProvider;
