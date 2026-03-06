@@ -30,7 +30,7 @@
     "@tailwindcss/vite": "^4.1.13",
     "@types/auth0-js": "^9.21.6",
     "@types/quill": "^2.0.14",
-    "@vincjo/datatables": "^2.6.3",
+    "@vincjo/datatables": "^2.6.6",
     "auth0-js": "^9.28.0",
     "dompurify": "^3.2.6",
     "dotenv": "^16.6.1",
