@@ -24,6 +24,7 @@
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
+  import Popover from '$lib/components/Popover.svelte';
 
   let unsubFilters: Unsubscriber | null = null;
   let currentPage: string = $state(page.url.pathname);
@@ -73,7 +74,7 @@
       .length,
   );
 
-  let advancedFilteringDisabled = $derived(nonGenomicFilterCount < 1);
+  let advancedFilteringDisabled = $derived(nonGenomicFilterCount <= 1);
 
   function subscribe() {
     if (!unsubFilters) {
@@ -220,14 +221,33 @@
           active={page.url.pathname.includes('explorer/variant')}
         />
       {/if}
-      <CardButton
-        data-testid="advanced-filtering-btn"
-        title="Advanced Filtering"
-        icon="fa-solid fa-sliders"
-        size="md"
-        disabled={advancedFilteringDisabled}
-        onclick={() => ($advancedFilteringOpen = true)}
-      />
+      {#if advancedFilteringDisabled}
+        <Popover
+          triggerTypes={['hover', 'focus']}
+          placement="left"
+          message="Advanced Filtering is not available with only one non-genomic filter."
+        >
+          {#snippet trigger()}
+            <CardButton
+              data-testid="advanced-filtering-btn"
+              title="Advanced Filtering"
+              icon="fa-solid fa-sliders"
+              size="md"
+              disabled={advancedFilteringDisabled}
+              onclick={() => ($advancedFilteringOpen = true)}
+            />
+          {/snippet}
+        </Popover>
+      {:else}
+        <CardButton
+          data-testid="advanced-filtering-btn"
+          title="Advanced Filtering"
+          icon="fa-solid fa-sliders"
+          size="md"
+          disabled={advancedFilteringDisabled}
+          onclick={() => ($advancedFilteringOpen = true)}
+        />
+      {/if}
     </div>
   </div>
 </section>

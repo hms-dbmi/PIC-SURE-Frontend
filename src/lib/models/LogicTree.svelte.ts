@@ -59,14 +59,11 @@ export class LogicTree<T extends LogicNode<T>> {
       let index = node.parent.children.indexOf(node);
 
       // If not found by reference, try by UUID if available
-      if (index === -1) {
-        index = node.parent.children.findIndex((child) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const childUuid = (child as any).uuid;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const nodeUuid = (node as any).uuid;
-          return childUuid && nodeUuid && childUuid === nodeUuid;
-        });
+      if (index === -1 && 'uuid' in node) {
+        const nodeUuid = node.uuid;
+        index = node.parent.children.findIndex(
+          (child) => 'uuid' in child && child.uuid === nodeUuid,
+        );
       }
 
       if (index !== -1) {
