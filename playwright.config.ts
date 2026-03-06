@@ -10,7 +10,7 @@ const config: PlaywrightTestConfig = {
     port: 4173,
     reuseExistingServer: !process.env.CI,
     stdout: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
-    stderr: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe'
+    stderr: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
   },
   testDir: 'tests/end-to-end',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
