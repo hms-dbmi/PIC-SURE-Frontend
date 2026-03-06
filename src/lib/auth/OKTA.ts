@@ -9,7 +9,6 @@ class OKTA extends OktaBaseProvider {
     if (
       data.uri === undefined ||
       data.clientid === undefined ||
-      data.oktaidpid === undefined ||
       data.idp === undefined ||
       data.oktalogouturl === undefined
     ) {
