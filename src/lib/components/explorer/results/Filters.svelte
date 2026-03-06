@@ -1,17 +1,29 @@
 <script lang="ts">
-  import { page } from '$app/state';
-  import { features } from '$lib/configuration';
-
-  import type { FilterGroupInterface } from '$lib/models/Filter';
-  import { filterTree, filters, genomicFilters } from '$lib/stores/Filter';
+  import type { FilterGroupInterface } from '$lib/models/Filter.svelte';
+  import { filterTree, filters, genomicFilters, advancedFilteringOpen } from '$lib/stores/Filter';
   import { exports } from '$lib/stores/Export';
 
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
-  import FilterGroup from '$lib/components/explorer/results/FilterGroup.svelte';
+  import ResultsFilterGroup from '$lib/components/explorer/results/ResultsFilterGroup.svelte';
+  import Modal from '$lib/components/Modal.svelte';
+  import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
 
-  let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
+  let advancedFilteringRef: ReturnType<typeof AdvancedFiltering>;
 </script>
 
+<Modal
+  bind:open={$advancedFilteringOpen}
+  title="Advanced Filters"
+  withDefault
+  width="w-full"
+  height="h-full"
+  confirmText="Apply Changes"
+  onconfirm={() => {
+    advancedFilteringRef?.applyChanges();
+  }}
+>
+  <AdvancedFiltering bind:this={advancedFilteringRef} />
+</Modal>
 {#if $filters.length + $genomicFilters.length + $exports.length === 0}
   <p class="text-center">No filters added</p>
 {:else}
@@ -20,12 +32,9 @@
       <header class="text-left ml-1">Filters</header>
     {/if}
     <section class="py-1">
-      {#if features.explorer.enableOrQueries && isOpenAccess}
-        <FilterGroup group={$filterTree.root as FilterGroupInterface} />
-      {:else}
-        {#each $filters as filter}
-          <FilterComponent {filter} />
-        {/each}
+      <ResultsFilterGroup group={$filterTree.root as FilterGroupInterface} />
+      {#if $genomicFilters.length > 0 && $filters.length > 0}
+        <span class="font-semibold text-xs py-0.5">AND</span>
       {/if}
       {#each $genomicFilters as filter}
         <FilterComponent {filter} />

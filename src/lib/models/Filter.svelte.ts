@@ -16,7 +16,6 @@ export type FilterType =
   | 'snp'
   | 'auto'
   | 'FilterGroup';
-
 type DisplayType =
   | 'any'
   | 'anyRecordOf'
@@ -91,30 +90,37 @@ export type Filter =
   | AnyRecordOfFilterInterface
   | FilterGroupInterface;
 
+export function isFilterGroup(node: FilterInterface): node is FilterGroupInterface {
+  return node.filterType === 'FilterGroup';
+}
+
 export function createFilterGroup(
   children: FilterInterface[] = [],
   operator: OperatorType = Operator.AND,
 ): FilterGroupInterface {
   const id = genericUUID();
-  const newGroup: FilterGroupInterface = {
-    filterType: 'FilterGroup',
-    displayType: 'group',
-    variableName: 'none',
+  const newGroup = {
+    filterType: 'FilterGroup' as const,
+    displayType: 'group' as const,
+    variableName: 'none' as const,
     dataset: '',
     allowFiltering: true,
     uuid: id,
     children,
     operator,
-    parent: undefined,
+    parent: undefined as FilterGroupInterface | undefined,
     get id() {
       return `filter-group-${this.uuid}`;
     },
-    setOperator: (operator: OperatorType) => {
-      newGroup.operator = operator;
+    setOperator(operator: OperatorType) {
+      this.operator = operator;
     },
   };
-  children.forEach((child) => (child.parent = newGroup));
-  return newGroup;
+
+  const stateGroup = $state(newGroup);
+
+  stateGroup.children.forEach((child) => (child.parent = stateGroup));
+  return stateGroup as FilterGroupInterface;
 }
 
 export function createCategoricalFilter(

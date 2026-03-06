@@ -8,7 +8,7 @@
   import type { FederatedResourceInfo } from '$lib/stores/Dataset';
   import Loading from '$lib/components/Loading.svelte';
   import { federatedQueryMap } from '$lib/stores/Dataset';
-  import type { AnyRecordOfFilterInterface } from '$lib/models/Filter';
+  import type { AnyRecordOfFilterInterface } from '$lib/models/Filter.svelte';
 
   interface SiteInfo extends FederatedResourceInfo {
     count?: Promise<StatValue>;
