@@ -18,12 +18,12 @@ const SYNC_URL = '*/**/picsure/v3/query/sync';
 /**
  * Page Object Model for the Advanced Filtering feature.
  * Navigates to the explorer, adds filters through the UI,
- * then opens the Advanced Filtering modal from the Tool Suite.
+ * then opens the Advanced Filtering page from the Tool Suite.
  */
 export class AdvancedFilteringPage {
   readonly page: Page;
 
-  // Modal elements
+  // Page content area (was modal when AF was a dialog)
   readonly modal: Locator;
   readonly modalTitle: Locator;
   readonly filteringArea: Locator;
@@ -50,17 +50,17 @@ export class AdvancedFilteringPage {
   constructor(page: Page) {
     this.page = page;
 
-    // Modal structure
-    this.modal = page.getByRole('dialog');
-    this.modalTitle = page.getByRole('heading', { name: 'Advanced Filters' });
-    this.filteringArea = page.getByRole('article');
+    // Page content area — Advanced Filtering is now a route, not a dialog
+    this.modal = page.locator('.main-content');
+    this.modalTitle = page.getByRole('heading', { name: 'Advanced Filtering' });
+    this.filteringArea = page.locator('.main-content');
 
     // Buttons
     this.advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
     this.addGroupButton = page.getByRole('button', { name: 'Add Group' });
-    this.applyChangesButton = this.modal.getByRole('button', { name: 'Apply Changes' });
+    this.applyChangesButton = page.getByRole('button', { name: 'Apply Changes' });
 
-    // Root group AND/OR segment (first one in the modal)
+    // Root group AND/OR segment (first one on the page)
     this.rootAndOrSegment = this.modal.getByRole('radiogroup').first();
   }
 
@@ -110,8 +110,7 @@ export class AdvancedFilteringPage {
   }
 
   /**
-   * Standard setup: navigate to explorer, add 4 filters, open the Advanced Filtering modal.
-   * Adds filters from rows 0, 1, 2, 3 of the search results.
+   * Standard setup: navigate to explorer, add filters, open the Advanced Filtering page.
    */
   async setupAndOpenModal(filterCount: number = 4) {
     await this.mockApis();
@@ -168,8 +167,9 @@ export class AdvancedFilteringPage {
     await expect(this.advancedFilteringBtn).toBeEnabled();
     await this.advancedFilteringBtn.click();
 
-    // Verify the modal opened
+    // Verify the page navigated to Advanced Filtering
     await expect(this.modal).toBeVisible();
+    await expect(this.modalTitle).toBeVisible();
   }
 
   /**
@@ -209,11 +209,12 @@ export class AdvancedFilteringPage {
     await expect(this.advancedFilteringBtn).toBeEnabled();
     await this.advancedFilteringBtn.click();
     await expect(this.modal).toBeVisible();
+    await expect(this.modalTitle).toBeVisible();
   }
 
   async closeModal() {
-    await this.page.keyboard.press('Escape');
-    await expect(this.modal).not.toBeVisible();
+    await this.clickBackButton();
+    await this.page.waitForURL(/\/explorer(\?|$)/);
   }
 
   // ==================== Filter Locators ====================
@@ -356,7 +357,8 @@ export class AdvancedFilteringPage {
   }
 
   async expectModalClosed() {
-    await expect(this.modal).not.toBeVisible();
+    await this.page.waitForURL(/\/explorer(\?|$)/);
+    await expect(this.advancedFilteringBtn).toBeVisible();
   }
 
   async expectAddGroupButtonVisible() {
@@ -378,6 +380,40 @@ export class AdvancedFilteringPage {
   async expectMultipleRadioGroups() {
     const groupCount = await this.getAllRadioGroups().count();
     expect(groupCount).toBeGreaterThan(1);
+  }
+
+  // ==================== Unsaved Changes Modal ====================
+
+  getUnsavedModal(): Locator {
+    return this.page.getByRole('dialog').filter({ hasText: 'Unsaved Changes' });
+  }
+
+  getBackButton(): Locator {
+    return this.page.getByRole('button', { name: /back to explore/i });
+  }
+
+  async clickBackButton() {
+    await this.getBackButton().click();
+  }
+
+  async expectUnsavedModalVisible() {
+    await expect(this.getUnsavedModal()).toBeVisible();
+  }
+
+  async expectUnsavedModalNotVisible() {
+    await expect(this.getUnsavedModal()).not.toBeVisible();
+  }
+
+  async clickUnsavedCancel() {
+    await this.getUnsavedModal().getByRole('button', { name: 'Cancel' }).click();
+  }
+
+  async clickUnsavedDiscard() {
+    await this.getUnsavedModal().getByRole('button', { name: 'Discard Changes' }).click();
+  }
+
+  async clickUnsavedApply() {
+    await this.getUnsavedModal().getByRole('button', { name: 'Apply & Go Back' }).click();
   }
 
   // ==================== Genomic Filter Locators ====================

@@ -14,7 +14,6 @@
     filters,
     hasGenomicFilter,
     clearFilters,
-    advancedFilteringOpen,
   } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
@@ -229,23 +228,23 @@
         >
           {#snippet trigger()}
             <CardButton
+              href={`${isDiscoverPage ? '/discover' : '/explorer'}/advanced-filtering`}
               data-testid="advanced-filtering-btn"
               title="Advanced Filtering"
               icon="fa-solid fa-sliders"
               size="md"
               disabled={advancedFilteringDisabled}
-              onclick={() => ($advancedFilteringOpen = true)}
             />
           {/snippet}
         </Popover>
       {:else}
         <CardButton
+          href={`${isDiscoverPage ? '/discover' : '/explorer'}/advanced-filtering`}
           data-testid="advanced-filtering-btn"
           title="Advanced Filtering"
           icon="fa-solid fa-sliders"
           size="md"
           disabled={advancedFilteringDisabled}
-          onclick={() => ($advancedFilteringOpen = true)}
         />
       {/if}
     </div>

@@ -63,7 +63,7 @@ test.describe('Advanced Filtering - Global Combiner', () => {
     await afPage.selectRootOperator('OR');
     await afPage.expectBadgeText('OR');
     await afPage.clickApplyChanges();
-    await afPage.closeModal();
+    await afPage.expectModalClosed();
     await afPage.openModal();
     await afPage.expectBadgeText('OR');
   });
@@ -100,11 +100,11 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     await afPage.expectDragHandlesExist();
   });
 
-  test('AF-DND-002: Filters can be picked up by dragging', async () => {
+  test('AF-DND-002: Filters can be picked up by dragging', async ({ page }) => {
     const modal = afPage.modal;
     const filterCards = modal
       .locator('.card.bg-white')
-      .filter({ has: afPage.page.locator('.fa-grip-vertical') });
+      .filter({ has: page.locator('.fa-grip-vertical') });
     const firstCard = filterCards.first();
     await expect(firstCard).toBeVisible();
 
@@ -112,20 +112,24 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     await expect(dragHandle).toBeVisible();
     await expect(firstCard).not.toHaveClass(/\binvisible\b/);
 
+    await dragHandle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
     const handleBox = await dragHandle.boundingBox();
     expect(handleBox).not.toBeNull();
 
-    const centerX = handleBox!.x + handleBox!.width / 2;
-    const centerY = handleBox!.y + handleBox!.height / 2;
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
 
-    await afPage.page.mouse.move(centerX, centerY);
-    await afPage.page.mouse.down();
-    await afPage.page.mouse.move(centerX, centerY + 50, { steps: 5 });
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY + 20, { steps: 3 });
+    await page.mouse.move(startX, startY + 100, { steps: 20 });
 
-    const dragPlaceholder = afPage.page.getByTestId('drop-preview');
-    await expect(dragPlaceholder).toBeVisible({ timeout: 2000 });
+    const dragPlaceholder = page.getByTestId('drop-preview');
+    await expect(dragPlaceholder).toBeVisible({ timeout: 3000 });
 
-    await afPage.page.mouse.up();
+    await page.mouse.up();
     await expect(dragPlaceholder).toHaveCount(0, { timeout: 2000 });
   });
 
@@ -247,7 +251,7 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     expect(newOrder.indexOf(filterA)).toBeGreaterThan(newOrder.indexOf(filterB));
 
     await afPage.clickApplyChanges();
-    await afPage.closeModal();
+    await afPage.expectModalClosed();
     await afPage.openModal();
 
     const persistedOrder = await filterNameEls.allTextContents();
@@ -298,6 +302,70 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     await page.mouse.move(endX, endY, { steps: 20 });
 
     await expect(dropPreview).toBeVisible({ timeout: 2000 });
+
+    await page.mouse.up();
+    await expect(dropPreview).toHaveCount(0);
+  });
+
+  test('AF-DND-007: Dragging a group shows a dotted drop preview', async ({ page }) => {
+    // Close AF, create a group via sessionStorage, then reopen
+    await afPage.closeModal();
+
+    await page.evaluate(() => {
+      const raw = sessionStorage.getItem('filterTree');
+      if (!raw) return;
+      const tree = JSON.parse(raw);
+      const lastTwo = tree.children.splice(-2, 2);
+      tree.children.push({
+        children: lastTwo,
+        operator: 'AND',
+        uuid: 'test-dnd007-group-uuid',
+      });
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    });
+
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+
+    const dropPreview = page.getByTestId('drop-preview');
+    await expect(dropPreview).toHaveCount(0);
+
+    // Find the group's drag handle via the "Between items:" label's sibling grip icon
+    const groupHeader = afPage.modal.getByText('Between items:').first();
+    await expect(groupHeader).toBeVisible();
+
+    // The grip icon is in the same row as "Between items:" — go up to the flex row, find the handle
+    const groupRow = groupHeader.locator('xpath=ancestor::div[contains(@class, "flex-row")]').first();
+    const dragHandle = groupRow.locator('.fa-grip-vertical').first();
+    await expect(dragHandle).toBeVisible();
+
+    await dragHandle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    // Get the first top-level filter as a drag target
+    const firstFilter = afPage.filterNames[0];
+    const targetCard = afPage.modal
+      .locator('.card.bg-white')
+      .filter({ has: page.getByText(firstFilter, { exact: true }) })
+      .first();
+    await expect(targetCard).toBeVisible();
+
+    const handleBox = await dragHandle.boundingBox();
+    const targetBox = await targetCard.boundingBox();
+    expect(handleBox).not.toBeNull();
+    expect(targetBox).not.toBeNull();
+
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+    const endY = targetBox!.y + targetBox!.height / 2;
+
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY - 20, { steps: 3 });
+    await page.mouse.move(startX, endY, { steps: 20 });
+
+    await expect(dropPreview).toBeVisible({ timeout: 3000 });
 
     await page.mouse.up();
     await expect(dropPreview).toHaveCount(0);
@@ -632,5 +700,76 @@ test.describe('Advanced Filtering - Genomic Filters (Ordering)', () => {
 
     const badge = separator.locator('.badge');
     await expect(badge).toHaveClass(/preset-filled-surface/);
+  });
+});
+
+test.describe('Advanced Filtering - Unsaved Changes', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  let afPage: AdvancedFilteringPage;
+
+  test.beforeEach(async ({ page }) => {
+    afPage = new AdvancedFilteringPage(page);
+    await afPage.setupAndOpenModal(2);
+  });
+
+  test('AF-UNSAVED-001: Back button with unsaved changes shows confirmation modal', async () => {
+    await afPage.selectRootOperator('OR');
+    await afPage.clickBackButton();
+    await afPage.expectUnsavedModalVisible();
+  });
+
+  test('AF-UNSAVED-002: Cancel keeps user on page with changes preserved', async ({ page }) => {
+    await afPage.selectRootOperator('OR');
+    await afPage.clickBackButton();
+    await afPage.expectUnsavedModalVisible();
+    await afPage.clickUnsavedCancel();
+    await afPage.expectUnsavedModalNotVisible();
+    expect(page.url()).toContain('/explorer/advanced-filtering');
+    await afPage.expectBadgeText('OR');
+  });
+
+  test('AF-UNSAVED-003: Discard Changes navigates away without saving', async ({ page }) => {
+    await afPage.selectRootOperator('OR');
+    await afPage.clickBackButton();
+    await afPage.expectUnsavedModalVisible();
+    await afPage.clickUnsavedDiscard();
+    await page.waitForURL('**/explorer');
+    await expect(afPage.advancedFilteringBtn).toBeVisible();
+
+    // Re-open and verify change was discarded
+    await afPage.openModal();
+    await afPage.expectBadgeText('AND');
+  });
+
+  test('AF-UNSAVED-004: Apply & Go Back applies changes and navigates', async ({ page }) => {
+    await afPage.selectRootOperator('OR');
+    await afPage.clickBackButton();
+    await afPage.expectUnsavedModalVisible();
+    await afPage.clickUnsavedApply();
+    await page.waitForURL('**/explorer');
+    await expect(afPage.advancedFilteringBtn).toBeVisible();
+
+    // Re-open and verify change was applied
+    await afPage.openModal();
+    await afPage.expectBadgeText('OR');
+  });
+
+  test('AF-UNSAVED-005: Back button with no changes navigates without modal', async ({ page }) => {
+    await afPage.clickBackButton();
+    await page.waitForURL('**/explorer');
+    await expect(afPage.advancedFilteringBtn).toBeVisible();
+  });
+
+  test('AF-UNSAVED-006: Apply Changes button navigates without showing unsaved modal', async ({
+    page,
+  }) => {
+    await afPage.selectRootOperator('OR');
+    await afPage.clickApplyChanges();
+    await page.waitForURL('**/explorer');
+    await expect(afPage.advancedFilteringBtn).toBeVisible();
+
+    // Re-open and verify change was applied
+    await afPage.openModal();
+    await afPage.expectBadgeText('OR');
   });
 });

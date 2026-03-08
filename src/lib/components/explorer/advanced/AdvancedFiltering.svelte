@@ -56,6 +56,8 @@
     createFilterGroup(nodes, op),
   ).root;
 
+  let savedSerialized = $state($filterTree.serialized);
+
   const sensors = [KeyboardSensor, PointerSensor];
 
   function getGroupNodeByContainerId(containerId: string | undefined): FilterGroupInterface | null {
@@ -516,6 +518,11 @@
   export function applyChanges() {
     localTree.pruneTree();
     filterTree.set(localTree);
+    savedSerialized = localTree.serialized;
+  }
+
+  export function hasUnsavedChanges(): boolean {
+    return localTree.serialized !== savedSerialized;
   }
 
   function removeNode(filter: FilterInterface) {

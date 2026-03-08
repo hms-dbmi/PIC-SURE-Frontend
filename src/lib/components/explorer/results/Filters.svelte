@@ -1,29 +1,12 @@
 <script lang="ts">
   import type { FilterGroupInterface } from '$lib/models/Filter.svelte';
-  import { filterTree, filters, genomicFilters, advancedFilteringOpen } from '$lib/stores/Filter';
+  import { filterTree, filters, genomicFilters } from '$lib/stores/Filter';
   import { exports } from '$lib/stores/Export';
 
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import ResultsFilterGroup from '$lib/components/explorer/results/ResultsFilterGroup.svelte';
-  import Modal from '$lib/components/Modal.svelte';
-  import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
-
-  let advancedFilteringRef: ReturnType<typeof AdvancedFiltering>;
 </script>
 
-<Modal
-  bind:open={$advancedFilteringOpen}
-  title="Advanced Filters"
-  withDefault
-  width="w-full"
-  height="h-full"
-  confirmText="Apply Changes"
-  onconfirm={() => {
-    advancedFilteringRef?.applyChanges();
-  }}
->
-  <AdvancedFiltering bind:this={advancedFilteringRef} />
-</Modal>
 {#if $filters.length + $genomicFilters.length + $exports.length === 0}
   <p class="text-center">No filters added</p>
 {:else}
