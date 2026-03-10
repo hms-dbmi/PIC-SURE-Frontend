@@ -177,15 +177,21 @@ export async function getQueryTemplate(): Promise<QueryInterface> {
 }
 
 export async function login(token: string) {
+  console.log(`[UserStore] login: called with token=${token ? token.substring(0, 20) + '...' : 'MISSING'}`);
   if (browser && token) {
     setToken(token);
+    console.log(`[UserStore] login: token set, calling getUser()`);
     await getUser(true, false);
+    console.log(`[UserStore] login: getUser() complete`);
     if (features.useQueryTemplate) {
       const queryTemplate = await getQueryTemplate();
       if (queryTemplate) {
         user.set({ ...get(user), queryTemplate });
       }
     }
+    console.log(`[UserStore] login: complete`);
+  } else {
+    console.warn(`[UserStore] login: skipped - browser=${browser}, hasToken=${!!token}`);
   }
 }
 

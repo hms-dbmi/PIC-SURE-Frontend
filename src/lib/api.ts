@@ -45,7 +45,18 @@ async function send({
     opts.headers['request-source'] = 'Open';
   }
 
-  const res = await fetch(`${window.location.origin}/${path}`, opts);
+  const url = `${window.location.origin}/${path}`;
+  console.log(`[API] ${method} ${url}`, { body: opts.body ? JSON.parse(opts.body) : undefined, headers: { ...opts.headers, Authorization: opts.headers['Authorization'] ? '[REDACTED]' : undefined } });
+
+  let res: Response;
+  try {
+    res = await fetch(url, opts);
+  } catch (fetchError) {
+    console.error(`[API] ${method} ${url}: FETCH ERROR`, fetchError);
+    throw fetchError;
+  }
+
+  console.log(`[API] ${method} ${url}: response status=${res.status} ${res.statusText}`, { contentType: res.headers.get('Content-Type') });
 
   return await handleResponse(res);
 }
@@ -76,16 +87,21 @@ async function handleResponse(res: Response) {
 
     const text = await res.text();
     try {
-      return JSON.parse(text);
+      const parsed = JSON.parse(text);
+      console.log(`[API] handleResponse: ${res.status} OK, parsed JSON response (keys: ${Object.keys(parsed).join(', ')})`);
+      return parsed;
     } catch (e) {
+      console.log(`[API] handleResponse: ${res.status} OK, non-JSON response (length: ${text.length})`);
       return text; //TODO: Change this
     }
   } else if (res.status === 401) {
+    console.warn(`[API] handleResponse: 401 Unauthorized - triggering logout with redirect`);
     browser &&
       sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
     logout(undefined, true);
     return;
   } else if (res.status === 403) {
+    console.warn(`[API] handleResponse: 403 Forbidden - triggering logout`);
     if (browser) {
       sessionStorage.removeItem('logout-reason');
       sessionStorage.removeItem('filters');
@@ -93,7 +109,9 @@ async function handleResponse(res: Response) {
     logout(undefined, false);
   }
 
-  error(res.status as NumericRange<400, 599>, await res.text());
+  const errorText = await res.text();
+  console.error(`[API] handleResponse: ${res.status} error`, errorText);
+  error(res.status as NumericRange<400, 599>, errorText);
 }
 
 function refreshToken(res: Response) {
