@@ -1,13 +1,6 @@
 import type { Indexable } from '$lib/types';
 import { QueryV2, QueryV3 } from '$lib/models/query/Query';
 
-export const QueryStatus = {
-  UNDEFINED: 'UNDEFINED',
-  QUEUED: 'QUEUED',
-  AVAILABLE: 'AVAILABLE',
-  ERROR: 'ERROR',
-};
-
 export const QueryVersion = { UNKNOWN: 'UNKNOWN', V2: 'V2', V3: 'V3' };
 
 type MappedQuery = QueryV2 | QueryV3 | null;
@@ -91,7 +84,7 @@ export function mapDataset(data: any) {
     queryId: data.query.uuid,
     startTime: secondsToDate(data.query.startTime),
     rawStartTime: data.query.startTime,
-    status: data.query.status || QueryStatus.UNDEFINED,
+    status: data.query.status || 'UNDEFINED',
   };
   return dataset;
 }

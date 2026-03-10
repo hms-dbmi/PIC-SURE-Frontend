@@ -42,6 +42,7 @@
 
   async function setFilters(data: QuerySummaryData) {
     modal = false;
+
     loadingFilters = Promise.all(data.fields.map((field) => pathToSearchResult(field)))
       .then((searchPaths: SearchResult[]) => {
         const exportsList: ExportInterface[] = searchPaths.map(mapSearchResultAsExport);
@@ -56,7 +57,7 @@
       })
       .catch(() => {
         toaster.error({
-          description: 'An error occured while retrieving data for additional fields.',
+          description: 'An error occurred while retrieving data for additional fields.',
         });
       });
   }
@@ -69,22 +70,39 @@
 {#await loadQuerySummaryData(query, version)}
   <Loading />
 {:then data}
-  <section id="detail-filters-container" class={`my-4 query-version-${version}`}>
-    {#if restoreQueryButton}
+  {@const hasErrors = data.errors.length > 0}
+  {#if hasErrors}
+    <ErrorAlert title="API Error" color="warning">
+      An error occurred while retrieving additional filter information for path{data.errors.length >
+      1
+        ? 's'
+        : ''}:
+      {#if data.errors.length > 1}
+        <ul>
+          {#each data.errors as path}
+            <li>{path}</li>
+          {/each}
+        </ul>
+      {:else}
+        {data.errors[0]}
+      {/if}
+    </ErrorAlert>
+  {/if}
+  <section data-testid="detail-filters-container" class={`my-4 query-version-${version}`}>
+    {#if restoreQueryButton && !hasErrors}
       <div class="float-right">
         <Modal
           bind:open={modal}
           title="Restore Filters"
+          data-testid="restore-filters"
           triggerBase="btn preset-filled-surface-500 float-right btn-sm"
           withDefault
           confirmText="Restore Filters"
           onconfirm={() => setFilters(data)}
         >
           {#snippet trigger()}
-            <button class="float-right">
-              {#await loadingFilters}<i class="fa-solid fa-spinner fa-spin"></i>{/await}
-              Restore Filters
-            </button>
+            {#await loadingFilters}<i class="fa-solid fa-spinner fa-spin"></i>{/await}
+            Restore Filters
           {/snippet}
           {#if hasExistingFilters}
             <ErrorAlert icon color="warning">You already have active filters.</ErrorAlert>
@@ -94,11 +112,19 @@
       </div>
     {:else}
       <div class="float-right">
-        <Popover data-testid="resotre-popover" triggerTypes={['hover']}>
-          {#snippet trigger()}
-            <button disabled class="btn preset-filled-surface-500 btn-sm">Restore Filters</button>
-          {/snippet}
-          Restoring queries made before the OR feature was introduced is not supported.
+        <Popover
+          triggerDisabled={true}
+          data-testid="restore-popover"
+          triggerTypes={['hover']}
+          triggerStyle="btn preset-filled-surface-500 btn-sm"
+        >
+          {#snippet trigger()}Restore Filters{/snippet}
+          {#if hasErrors}
+            This query can't currently be restored because it has returned errors. Refresh or
+            contact an admin.
+          {:else}
+            Restoring queries made before the OR feature was introduced is not supported.
+          {/if}
         </Popover>
       </div>
     {/if}
@@ -106,10 +132,11 @@
     <FiltersSummary filterTree={data.filterTree} genomicFilters={data.genomicFilters} />
   </section>
   <SelectedVariablesSummary paths={data.fields} />
-{:catch}
+{:catch error}
   <ErrorAlert title="API Error">
     An error occurred while retrieving filter information for {uuid
       ? `saved dataset ${uuid}`
       : 'this saved dataset'}.
+    {error}
   </ErrorAlert>
 {/await}

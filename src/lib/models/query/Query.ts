@@ -282,6 +282,7 @@ export class QueryV3 implements QueryInterfaceV3 {
       max: clause.max as number | undefined,
     };
   }
+
   static fromSerialized(data: {
     select?: string[];
     authorizationFilters?: AuthorizationFilterInterface[];

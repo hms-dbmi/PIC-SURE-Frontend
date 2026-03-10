@@ -1,6 +1,8 @@
 <script lang="ts">
-  import QuerySummary from '$lib/components/query/QuerySummary.svelte';
   import type { Metadata } from '$lib/models/DataRequest';
+  import { QueryV2 } from '$lib/models/query/Query';
+  import { QueryVersion } from '$lib/models/Dataset';
+  import QuerySummary from '$lib/components/query/QuerySummary.svelte';
 
   let { metadata }: { metadata: Metadata | undefined } = $props();
 
@@ -8,7 +10,7 @@
   let query = $derived(metadata?.resultMetadata?.queryJson?.query);
 </script>
 
-<section id="detail-summary-container" class="m-3">
+<section data-testid="detail-summary-container" class="m-3">
   <table class="table bg-transparent">
     <tbody>
       <tr>
@@ -20,5 +22,5 @@
 </section>
 
 {#if query}
-  <QuerySummary {query} />
+  <QuerySummary version={QueryVersion.V2} query={query as QueryV2} />
 {/if}

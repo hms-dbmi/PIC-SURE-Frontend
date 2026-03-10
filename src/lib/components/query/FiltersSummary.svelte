@@ -107,7 +107,7 @@
   <div class="flex flex-col gap-1">
     {#each filterTree.root.children as child, i}
       {#if i > 0}
-        {@render operatorDivider('AND')}
+        {@render operatorDivider((filterTree.root as FilterGroupInterface).operator)}
       {/if}
       {@render filterNode(child as FilterInterface)}
     {/each}

@@ -3,7 +3,7 @@
 
   import { branding } from '$lib/configuration';
 
-  import { QueryStatus, QueryVersion, type DataSet } from '$lib/models/Dataset';
+  import { QueryVersion, type DataSet } from '$lib/models/Dataset';
   import { getDataset } from '$lib/stores/Dataset.svelte';
 
   import Content from '$lib/components/Content.svelte';
@@ -23,7 +23,7 @@
     queryId: '',
     startTime: '',
     rawStartTime: 0,
-    status: QueryStatus.UNDEFINED,
+    status: 'UNDEFINED',
   });
 
   async function loadDataset() {
@@ -42,7 +42,7 @@
     <Loading />
   {:then}
     {#if dataset?.query && dataset?.queryId}
-      <section id="detail-summary-container" class="my-4">
+      <section data-testid="detail-summary-container" class="my-4">
         <h2 class="text-left h4 mb-2 mt-6">Dataset ID Summary</h2>
         <table class="table bg-transparent">
           <tbody>

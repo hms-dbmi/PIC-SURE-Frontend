@@ -5,7 +5,7 @@
   import { activeRow } from '$lib/stores/ExpandableRow';
   import { addFilter } from '$lib/stores/Filter';
   import RadioTree from '$lib/components/tree/RadioTree.svelte';
-  import { getConceptTree } from '$lib/stores/Dictionary';
+  import { getConceptTree, getHierarchyConcepts, ENSURE_MAX_DEPTH } from '$lib/stores/Dictionary';
   import { panelOpen } from '$lib/stores/SidePanel';
   import Loading from '$lib/components/Loading.svelte';
   import { toaster } from '$lib/toaster';
@@ -13,9 +13,6 @@
   import Modal from '$lib/components/Modal.svelte';
   import { page } from '$app/state';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import { getHierarchyConcepts } from '$lib/stores/Dictionary';
-
-  const ENSURE_MAX_DEPTH = 100;
 
   interface Props {
     data?: SearchResult;

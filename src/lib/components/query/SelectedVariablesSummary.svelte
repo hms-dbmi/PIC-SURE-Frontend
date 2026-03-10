@@ -49,7 +49,7 @@
   {/each}
 {/snippet}
 
-<section id="detail-variables-container" class="my-4">
+<section data-testid="detail-variables-container" class="my-4">
   <h2 class="text-left h4 mb-2 mt-6">Variables Included in Dataset</h2>
   {#if paths.length === 0}
     <p class="text-sm text-surface-700">No additional variables</p>

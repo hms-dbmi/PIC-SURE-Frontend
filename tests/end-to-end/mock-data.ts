@@ -2,6 +2,7 @@ import type { User } from '../../src/lib/models/User';
 import { PicsurePrivileges, BDCPrivileges } from '../../src/lib/models/Privilege';
 import type { QueryInterfaceV2 } from '$lib/models/query/Query';
 import type { DashboardResp } from '$lib/stores/Dashboard';
+import type { Indexable } from '$lib/types';
 
 export const HPDS = process.env.VITE_RESOURCE_HPDS;
 
@@ -10,27 +11,251 @@ export const mockToken =
 export const mockExpiredToken =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QHBpYy1zdXJlLm9yZyIsImV4cCI6MTYxMjE2NDk4MiwiaWF0IjoxNjA5NTcyOTgyfQ.kzaW-ZkhCPlTgdGQQAz_CA1ZB80PpZ5aiRa2lj46hbw';
 
+const conceptDetailPaths = {
+  STUDY123: '\\STUDY123\\',
+  GENDER: '\\STUDY123\\GENDER\\',
+  HEIGHT: '\\STUDY123\\HEIGHT\\',
+  WEIGHT: '\\STUDY123\\WEIGHT\\',
+  PHS001: '\\phs001\\',
+  SEX: '\\phs001\\SEX\\',
+  SAMPLE_NAME: '\\phs001\\SAMPLE NAME\\',
+  SAMPLE_ID: '\\phs001\\SAMPLE ID\\',
+};
+
+const defaultConceptDetail = {
+  display: '',
+  description: null,
+  allowFiltering: true,
+  studyAcronym: '',
+  children: null,
+  meta: {},
+  table: null,
+  study: {
+    fullName: '',
+    abbreviation: '',
+    description: '',
+    meta: {},
+  },
+};
+
+const conceptDetails: Indexable = {
+  [conceptDetailPaths.STUDY123]: {
+    ...defaultConceptDetail,
+    type: 'Categorical',
+    conceptPath: conceptDetailPaths.STUDY123,
+    name: 'STUDY123',
+    dataset: 'STUDY123',
+  },
+  [conceptDetailPaths.GENDER]: {
+    ...defaultConceptDetail,
+    type: 'Categorical',
+    conceptPath: conceptDetailPaths.GENDER,
+    name: 'GENDER',
+    dataset: 'STUDY123',
+    values: ['Male', 'Female', 'Undisclosed'],
+    study: {
+      ...defaultConceptDetail.study,
+      ref: 'STUDY123',
+    },
+  },
+  [conceptDetailPaths.HEIGHT]: {
+    ...defaultConceptDetail,
+    type: 'Continuous',
+    conceptPath: conceptDetailPaths.HEIGHT,
+    name: 'HEIGHT',
+    dataset: 'STUDY123',
+    min: 0,
+    max: 300,
+    study: {
+      ...defaultConceptDetail.study,
+      ref: 'STUDY123',
+    },
+  },
+  [conceptDetailPaths.WEIGHT]: {
+    ...defaultConceptDetail,
+    type: 'Continuous',
+    conceptPath: conceptDetailPaths.WEIGHT,
+    name: 'HEIGHT',
+    dataset: 'STUDY123',
+    min: 0,
+    max: 1000,
+    study: {
+      ...defaultConceptDetail.study,
+      ref: 'STUDY123',
+    },
+  },
+  [conceptDetailPaths.PHS001]: {
+    ...defaultConceptDetail,
+    type: 'Categorical',
+    conceptPath: conceptDetailPaths.PHS001,
+    name: 'phs001',
+    dataset: 'phs001',
+  },
+  [conceptDetailPaths.SEX]: {
+    ...defaultConceptDetail,
+    type: 'Categorical',
+    conceptPath: conceptDetailPaths.SEX,
+    name: 'SEX',
+    dataset: 'phs001',
+    values: ['MALE', 'FEMALE', 'UNSPECIFIED'],
+    study: {
+      ...defaultConceptDetail.study,
+      ref: 'phs001',
+    },
+  },
+  [conceptDetailPaths.SAMPLE_NAME]: {
+    ...defaultConceptDetail,
+    type: 'Categorical',
+    conceptPath: conceptDetailPaths.SAMPLE_NAME,
+    name: 'SAMPLE_NAME',
+    dataset: 'phs001',
+    values: ['BLOOD', 'GOO'],
+    study: {
+      ...defaultConceptDetail.study,
+      ref: 'phs001',
+    },
+  },
+  [conceptDetailPaths.SAMPLE_ID]: {
+    ...defaultConceptDetail,
+    type: 'Categorical',
+    conceptPath: conceptDetailPaths.SAMPLE_ID,
+    name: 'SAMPLE_ID',
+    dataset: 'phs001',
+    values: ['34325', '67356245'],
+    study: {
+      ...defaultConceptDetail.study,
+      ref: 'phs001',
+    },
+  },
+};
+
+const conceptTree: Indexable = {
+  [conceptDetailPaths.PHS001]: {
+    ...defaultConceptDetail,
+    type: 'Categorical',
+    conceptPath: conceptDetailPaths.PHS001,
+    name: 'phs001',
+    dataset: 'phs001',
+    children: [conceptDetails.SEX, conceptDetails.SAMPLE_NAME, conceptDetails.SAMPLE_ID],
+  },
+  [conceptDetailPaths.STUDY123]: {
+    ...defaultConceptDetail,
+    type: 'Categorical',
+    conceptPath: conceptDetailPaths.STUDY123,
+    name: 'STUDY123',
+    dataset: 'STUDY123',
+    children: [conceptDetails.GENDER, conceptDetails.HEIGHT, conceptDetails.WEIGHT],
+  },
+};
+
+export const datasetDetails = {
+  paths: conceptDetailPaths,
+  concepts: conceptDetails,
+  tree: conceptTree,
+};
+
 export const datasets = [
   {
     // Active
-    uuid: '3fc5301a-aa58-4abf-bcec-369d4ed9fdd2',
-    user: 'test@user',
-    name: 'active demo',
-    archived: false,
+    uuid: '058a9711-d264-4760-861b-a8a608028d9f',
     query: {
-      uuid: '6104ee94-1b0c-44cb-bed2-08c95d1d63ee',
+      uuid: 'e95a9d3d-ce93-4f64-accd-adf7f8e2a61a',
+      startTime: 1769731200000,
+      readyTime: null,
+      status: 'AVAILABLE',
+      resourceResultId: 'a2e3e707-a4f3-5750-8b45-3772b6ecbde9',
+      query: JSON.stringify({
+        '@type': 'GeneralQueryRequest',
+        resourceCredentials: { BEARER_TOKEN: null },
+        query: {
+          select: [conceptDetailPaths.GENDER, conceptDetailPaths.HEIGHT, conceptDetailPaths.WEIGHT],
+          authorizationFilters: [],
+          phenotypicClause: {
+            operator: 'AND',
+            phenotypicClauses: [
+              {
+                phenotypicFilterType: 'FILTER',
+                conceptPath: conceptDetailPaths.GENDER,
+                not: false,
+                values: ['Undisclosed'],
+              },
+            ],
+            not: false,
+          },
+          genomicFilters: [],
+          expectedResultType: 'DATAFRAME',
+          picsureId: null,
+          id: null,
+        },
+        resourceUUID: '954d5661-2536-4b47-b053-a383f81626e5',
+      }),
+      resource: {
+        uuid: '954d5661-2536-4b47-b053-a383f81626e5',
+        name: 'hpds',
+        description: 'Basic HPDS resource',
+        targetURL: null,
+        resourceRSPath: 'http://hpds:8080/PIC-SURE/',
+        hidden: false,
+        metadata: null,
+      },
+      metadata: '',
     },
+    user: 'test@user',
+    name: 'fgdgsdf',
+    archived: false,
     metadata: {},
   },
   {
     // Archived
-    uuid: '73952c80-641c-4f35-a527-ebfb3c55e02b',
-    user: 'test@user',
-    name: 'inactive demo',
-    archived: true,
+    uuid: '0f3417e4-8307-4128-b475-9e43dd9045be',
     query: {
-      uuid: '853c2c35-f665-462e-8775-aa07121ae3dc',
+      uuid: 'b697f38c-d9a6-4674-8afc-5a014ffcdfe6',
+      startTime: 1770076800000,
+      readyTime: null,
+      status: 'AVAILABLE',
+      resourceResultId: '14a5a376-f5ea-598b-9b52-ef76d876bd7f',
+      query: JSON.stringify({
+        '@type': 'GeneralQueryRequest',
+        resourceCredentials: { BEARER_TOKEN: null },
+        query: {
+          select: [
+            conceptDetailPaths.SEX,
+            conceptDetailPaths.SAMPLE_NAME,
+            conceptDetailPaths.SAMPLE_ID,
+          ],
+          authorizationFilters: [],
+          phenotypicClause: {
+            operator: 'AND',
+            phenotypicClauses: [
+              {
+                phenotypicFilterType: 'ANY_RECORD_OF',
+                conceptPath: '\\\\phs001\\\\',
+                not: false,
+              },
+            ],
+            not: false,
+          },
+          genomicFilters: [],
+          expectedResultType: 'DATAFRAME',
+          picsureId: null,
+          id: null,
+        },
+        resourceUUID: '954d5661-2536-4b47-b053-a383f81626e5',
+      }),
+      resource: {
+        uuid: '954d5661-2536-4b47-b053-a383f81626e5',
+        name: 'hpds',
+        description: 'Basic HPDS resource',
+        targetURL: null,
+        resourceRSPath: 'http://hpds:8080/PIC-SURE/',
+        hidden: false,
+        metadata: null,
+      },
+      metadata: '',
     },
+    user: 'test@user',
+    name: 'fhgsgfd',
+    archived: true,
     metadata: {},
   },
 ];
