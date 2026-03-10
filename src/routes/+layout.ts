@@ -14,13 +14,5 @@ export const load: LayoutLoad = async ({ url, fetch }) => {
       user && user.set({});
       redirect(302, '/login');
     }
-    try {
-      const response = await fetch(url.pathname);
-      if (response.status === 404) {
-        redirect(302, '/');
-      }
-    } catch (error) {
-      redirect(302, '/');
-    }
   }
 };
