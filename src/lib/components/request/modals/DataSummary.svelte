@@ -1,5 +1,5 @@
 <script lang="ts">
-  import QuerySummary from '$lib/components/query/V2QuerySummary.svelte';
+  import QuerySummary from '$lib/components/query/QuerySummary.svelte';
   import type { Metadata } from '$lib/models/DataRequest';
 
   let { metadata }: { metadata: Metadata | undefined } = $props();

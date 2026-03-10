@@ -6,19 +6,16 @@
     AnyRecordOfFilterInterface,
   } from '$lib/models/Filter';
   import { LogicTree } from '$lib/models/LogicTree.svelte';
-  import { QueryVersion } from '$lib/models/Dataset';
 
   let {
-    version = QueryVersion.UNKNOWN,
     filterTree,
-    filters,
     genomicFilters,
   }: {
-    version: string;
-    filterTree?: LogicTree<FilterInterface>;
-    filters: Filter[];
+    filterTree: LogicTree<FilterInterface>;
     genomicFilters: Filter[];
   } = $props();
+
+  let length = $derived(filterTree.length + genomicFilters.length);
 
   function filterDescription(filter: Filter): string {
     if (filter.filterType === 'Categorical') {
@@ -102,27 +99,18 @@
   {/if}
 {/snippet}
 
-{#if filters.length + genomicFilters.length === 0}
+{#if length === 0}
   <p class="text-sm text-surface-400 text-center py-2">No filters applied</p>
 {:else}
   <div class="flex flex-col gap-1">
-    {#if version === QueryVersion.V3 && filterTree}
-      {#each filterTree.root.children as child, i}
-        {#if i > 0}
-          {@render operatorDivider('AND')}
-        {/if}
-        {@render filterNode(child as FilterInterface)}
-      {/each}
-    {:else}
-      {#each filters as filter, i}
-        {#if i > 0}
-          {@render operatorDivider('AND')}
-        {/if}
-        {@render filterCard(filter)}
-      {/each}
-    {/if}
+    {#each filterTree.root.children as child, i}
+      {#if i > 0}
+        {@render operatorDivider('AND')}
+      {/if}
+      {@render filterNode(child as FilterInterface)}
+    {/each}
     {#if genomicFilters.length > 0}
-      {#if filters.length > 0}
+      {#if filterTree.length > 0}
         {@render operatorDivider('AND')}
       {/if}
       {#each genomicFilters as filter, i}

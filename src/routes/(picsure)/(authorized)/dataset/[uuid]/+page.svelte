@@ -4,13 +4,11 @@
   import { branding } from '$lib/configuration';
 
   import { QueryStatus, QueryVersion, type DataSet } from '$lib/models/Dataset';
-  import { QueryV2, QueryV3 } from '$lib/models/query/Query';
   import { getDataset } from '$lib/stores/Dataset.svelte';
 
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import V2QuerySummary from '$lib/components/query/V2QuerySummary.svelte';
-  import V3QuerySummary from '$lib/components/query/V3QuerySummary.svelte';
+  import QuerySummary from '$lib/components/query/QuerySummary.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
 
@@ -66,10 +64,8 @@
           </tbody>
         </table>
       </section>
-      {#if dataset.version === QueryVersion.V2}
-        <V2QuerySummary query={dataset.query as QueryV2} />
-      {:else if dataset.version === QueryVersion.V3}
-        <V3QuerySummary query={dataset.query as QueryV3} uuid={dataset.queryId} />
+      {#if dataset.query}
+        <QuerySummary query={dataset.query} version={dataset.version} uuid={dataset.queryId} />
       {:else}
         <ErrorAlert color="warning">Invalid query object.</ErrorAlert>
       {/if}

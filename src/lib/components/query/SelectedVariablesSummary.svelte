@@ -41,7 +41,7 @@
 
   {#each branches as node}
     <div class="mt-1.5">
-      <p class="text-xs font-semibold text-surface-600 mb-1">{node.label}</p>
+      <p class="text-xs font-semibold text-surface-600 m-0">{node.label}</p>
       <div class="pl-3 border-l border-surface-300">
         {@render nodeChildren(node.children)}
       </div>
@@ -70,7 +70,7 @@
 
     {#each rootBranches as node}
       <div>
-        <p class="text-sm font-semibold text-surface-700 m-0">{node.label}</p>
+        <p class="text-sm font-semibold text-surface-700 mx-0 mb-0">{node.label}</p>
         <div class="pl-3 border-l-2 border-surface-300 mt-1">
           {@render nodeChildren(node.children)}
         </div>
