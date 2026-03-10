@@ -23,19 +23,17 @@ import { getConceptDetails } from '$lib/stores/Dictionary';
 import { LogicTree } from '$lib/models/LogicTree.svelte';
 import { createGroup } from '$lib/stores/Filter';
 
-// -------------------------------- V2 Query -------------------------------- //
-
 async function pathToSearchResult(
-  path: string,
+  conceptPath: string,
   type: SearchResult['type'] = 'Categorical',
 ): Promise<SearchResult> {
-  const dataset = path.split('\\').filter(Boolean)[0] || path;
-  const raw = await getConceptDetails(path, dataset).catch((err) => {
+  const dataset = conceptPath.split('\\').filter(Boolean)[0] || conceptPath;
+  const raw = await getConceptDetails(conceptPath, dataset).catch((err) => {
     console.error(err);
     return {} as SearchResult;
   });
   return {
-    conceptPath: path,
+    conceptPath,
     dataset,
     name: raw?.name || '',
     display: raw?.display || '',
@@ -45,6 +43,8 @@ async function pathToSearchResult(
     type,
   };
 }
+
+// -------------------------------- V2 Query -------------------------------- //
 
 export async function loadV2Filters(query: QueryV2): Promise<LogicTree<FilterInterface>> {
   const tree = new LogicTree<FilterInterface>(createGroup);
@@ -95,26 +95,13 @@ export function loadV2Fields(query: QueryV2): string[] {
 // -------------------------------- V3 Query -------------------------------- //
 
 async function phenotypicFilterToFilter(pf: PhenotypicFilterInterface): Promise<Filter> {
-  const dataset = pf.conceptPath.split('\\').filter(Boolean)[0] || pf.conceptPath;
-  const raw = await getConceptDetails(pf.conceptPath, dataset).catch((err) => {
-    console.error(err);
-    return {} as SearchResult;
-  });
-  const searchResult: SearchResult = {
-    conceptPath: pf.conceptPath,
-    dataset,
-    name: raw?.name || '',
-    display: raw?.display || '',
-    studyAcronym: raw?.studyAcronym || '',
-    description: raw?.description || '',
-    allowFiltering: raw?.allowFiltering || false,
-    type:
-      pf.min !== undefined || pf.max !== undefined
-        ? 'Continuous'
-        : pf.phenotypicFilterType === 'ANY_RECORD_OF'
-          ? 'AnyRecordOf'
-          : 'Categorical',
-  };
+  const type =
+    pf.min !== undefined || pf.max !== undefined
+      ? 'Continuous'
+      : pf.phenotypicFilterType === 'ANY_RECORD_OF'
+        ? 'AnyRecordOf'
+        : 'Categorical';
+  const searchResult = await pathToSearchResult(pf.conceptPath, type);
 
   if (pf.phenotypicFilterType === 'ANY_RECORD_OF') {
     return createAnyRecordOfFilter(searchResult, { ...searchResult, children: [searchResult] });

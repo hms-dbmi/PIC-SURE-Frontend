@@ -52,30 +52,31 @@
 </script>
 
 {#snippet filterCard(filter: Filter)}
-  <div class="card bg-surface-100 flex flex-col gap-0.5 text-sm">
-    <p class="font-semibold leading-snug mb-0" title={filter.variableName}>
+  <div
+    class="card bg-surface-100 flex flex-col ml-2 p-3 gap-0.5 text-sm"
+    data-testid="dataset-filter-card"
+  >
+    <p class="font-semibold leading-snug m-0" title={filter.variableName}>
       {filter.variableName || filter.id}
     </p>
     {#if studyLabel(filter)}
-      <p class="text-xs text-surface-700 mt-0.5">From {studyLabel(filter)}</p>
+      <p class="text-xs text-surface-700 m-0 mb-1">From {studyLabel(filter)}</p>
     {/if}
     {#if filterDescription(filter)}
-      <p class="text-surface-700 mt-0.5">{filterDescription(filter)}</p>
+      <p class="text-surface-700 m-0 mt-1">{filterDescription(filter)}</p>
     {/if}
   </div>
 {/snippet}
 
 {#snippet operatorDivider(operator: string)}
-  <div class="flex items-center gap-2 px-1 my-0.5">
-    <div class="h-px flex-1 {operator === 'OR' ? 'bg-tertiary-300' : 'bg-surface-300'}"></div>
+  <div class="flex items-center gap-2 px-0 my-0.5" data-testid="dataset-operator-divider">
+    <div class="h-px flex-1 {operator === 'OR' ? 'bg-secondary-300' : 'bg-primary-300'}"></div>
     <span
-      class="text-xs font-bold px-2 py-0.5 rounded-full {operator === 'OR'
-        ? 'bg-tertiary-100 text-tertiary-700'
-        : 'bg-surface-200 text-surface-500'}"
+      class="badge font-bold text-xs uppercase {operator === 'OR'
+        ? 'preset-filled-secondary-200-800'
+        : 'preset-filled-primary-200-800'}">{operator}</span
     >
-      {operator}
-    </span>
-    <div class="h-px flex-1 {operator === 'OR' ? 'bg-tertiary-300' : 'bg-surface-300'}"></div>
+    <div class="h-px flex-1 {operator === 'OR' ? 'bg-secondary-300' : 'bg-primary-300'}"></div>
   </div>
 {/snippet}
 
@@ -83,9 +84,10 @@
   {#if node.filterType === 'FilterGroup'}
     {@const group = node as FilterGroupInterface}
     <div
-      class="border-l-2 pl-3 flex flex-col gap-1 {group.operator === 'OR'
-        ? 'border-tertiary-400'
-        : 'border-surface-300'}"
+      data-testid="dataset-filter-node"
+      class="border-l-2 px-0 ml-2 flex flex-col gap-1 {group.operator === 'OR'
+        ? 'border-secondary-400'
+        : 'border-primary-300'}"
     >
       {#each group.children as child, i}
         {#if i > 0}
