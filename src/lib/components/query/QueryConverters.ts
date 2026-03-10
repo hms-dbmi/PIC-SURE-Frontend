@@ -23,7 +23,7 @@ import { getConceptDetails } from '$lib/stores/Dictionary';
 import { LogicTree } from '$lib/models/LogicTree.svelte';
 import { createGroup } from '$lib/stores/Filter';
 
-async function pathToSearchResult(
+export async function pathToSearchResult(
   conceptPath: string,
   type: SearchResult['type'] = 'Categorical',
 ): Promise<SearchResult> {

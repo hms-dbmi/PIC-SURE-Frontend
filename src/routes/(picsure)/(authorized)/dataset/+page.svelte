@@ -22,7 +22,6 @@
     { dataElement: 'name', label: 'Dataset ID Name' },
     { dataElement: 'startTime', label: 'Created', sort: true },
     { dataElement: 'queryId', label: 'Dataset ID' },
-    { dataElement: 'version', label: 'Query Version' },
     { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
   ];
 

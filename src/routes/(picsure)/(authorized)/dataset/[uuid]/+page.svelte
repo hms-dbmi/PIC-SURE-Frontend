@@ -65,7 +65,12 @@
         </table>
       </section>
       {#if dataset.query}
-        <QuerySummary query={dataset.query} version={dataset.version} uuid={dataset.queryId} />
+        <QuerySummary
+          query={dataset.query}
+          version={dataset.version}
+          uuid={dataset.queryId}
+          name={dataset.name}
+        />
       {:else}
         <ErrorAlert color="warning">Invalid query object.</ErrorAlert>
       {/if}
