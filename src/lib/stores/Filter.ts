@@ -12,7 +12,7 @@ import { user } from '$lib/stores/User';
 
 const genomicFilterTypes = ['snp', 'genomic'];
 
-const createGroup = (nodes: FilterInterface[], operator: OperatorType) =>
+export const createGroup = (nodes: FilterInterface[], operator: OperatorType) =>
   createFilterGroup(nodes, operator);
 
 export const genomicFilters: Writable<Filter[]> = writable(restoreGenomicFilters());

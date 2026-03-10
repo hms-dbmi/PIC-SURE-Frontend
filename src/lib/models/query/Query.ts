@@ -260,4 +260,47 @@ export class QueryV3 implements QueryInterfaceV3 {
           this.phenotypicClause.type === 'PhenotypicFilter'))
     );
   }
+
+  private static deserializeClause(clause: Record<string, unknown>): PhenotypicClause {
+    if ('operator' in clause || 'phenotypicClauses' in clause) {
+      return {
+        type: 'PhenotypicSubquery',
+        operator: clause.operator as OperatorType,
+        not: (clause.not as boolean) ?? false,
+        phenotypicClauses: ((clause.phenotypicClauses as Record<string, unknown>[]) || []).map(
+          QueryV3.deserializeClause,
+        ),
+      };
+    }
+    return {
+      type: 'PhenotypicFilter',
+      phenotypicFilterType: clause.phenotypicFilterType as PhenotypicFilterType,
+      conceptPath: clause.conceptPath as string,
+      not: (clause.not as boolean) ?? false,
+      values: clause.values as string[] | undefined,
+      min: clause.min as number | undefined,
+      max: clause.max as number | undefined,
+    };
+  }
+  static fromSerialized(data: {
+    select?: string[];
+    authorizationFilters?: AuthorizationFilterInterface[];
+    phenotypicClause?: object | null;
+    genomicFilters?: GenomicFilterInterfacev3[];
+    expectedResultType?: ExpectedResultType;
+    picsureId?: UUID;
+    id?: UUID;
+  }): QueryV3 {
+    return new QueryV3({
+      select: data.select || [],
+      authorizationFilters: data.authorizationFilters || [],
+      phenotypicClause: data.phenotypicClause
+        ? QueryV3.deserializeClause(data.phenotypicClause as Record<string, unknown>)
+        : null,
+      genomicFilters: data.genomicFilters || [],
+      expectedResultType: data.expectedResultType || 'COUNT',
+      picsureId: data.picsureId ?? null,
+      id: data.id ?? null,
+    });
+  }
 }

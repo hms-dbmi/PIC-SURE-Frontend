@@ -30,6 +30,7 @@
   let activeButtonText: string = $state(text);
 
   function updateButton() {
+    event.stopPropagation();
     if (useIcon) {
       const iconText = icon;
       debounce(() => (activeIcon = iconText), 4500)();

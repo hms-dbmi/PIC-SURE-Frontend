@@ -98,6 +98,9 @@ importers:
       driver.js:
         specifier: ^1.3.6
         version: 1.3.6
+      eslint:
+        specifier: ^8.57.1
+        version: 8.57.1
       gtagjs:
         specifier: ^0.0.10
         version: 0.0.10
