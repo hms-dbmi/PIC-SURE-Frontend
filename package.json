@@ -6,14 +6,17 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "pnpm run test:integration && pnpm run test:unit",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "clean": "pnpm run format && pnpm run lint",
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",
+    "test": "pnpm run test:integration && pnpm run test:unit && pnpm run test:component",
+    "test:unit": "vitest run tests/unit",
+    "test:component": "vitest run tests/component",
     "test:integration": "playwright test",
-    "test:unit": "vitest run",
-    "playwright": "playwright test --ui"
+    "playwright": "playwright test --ui",
+    "playwright:dev": "PLAYWRIGHT_DEV=1 playwright test --ui"
   },
   "type": "module",
   "dependencies": {
@@ -51,6 +54,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/svelte": "^5.3.1",
     "@types/node": "22.9.0",
     "@types/plotly.js-basic-dist-min": "^2.12.4",
     "@types/uuid": "^10.0.0",
@@ -58,6 +63,7 @@
     "@typescript-eslint/parser": "^7.0.0",
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-svelte": "^2.46.1",
+    "happy-dom": "^20.8.3",
     "prettier": "^3.6.2",
     "prettier-plugin-svelte": "^3.4.0",
     "svelte-check": "^4.3.2",

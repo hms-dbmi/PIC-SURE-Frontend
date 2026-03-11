@@ -231,15 +231,6 @@ test.describe('dataset/[uuid]', () => {
     // Then
     await expect(page.getByTestId('dataset-summary-uuid')).toContainText(mockData[0].query.uuid);
   });
-  test('Restore Filters button is visible for V3 query', async ({ page }) => {
-    // Given
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
-    await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
-
-    // Then
-    await expect(page.getByTestId('restore-filters-btn')).toBeVisible();
-  });
   test('Filter cards are visible even on detail request failure', async ({ page }) => {
     // Given
     await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
@@ -430,29 +421,6 @@ test.describe('dataset/[uuid]', () => {
 
     // Then — the AnyRecordOf filter appears in the result panel
     await expect(page.getByTestId(`added-filter-${anyRecordOfConceptPath}`)).toBeVisible();
-  });
-
-  test('Restore Filters for AnyRecordOf disables restore and shows error when tree fetch fails', async ({
-    page,
-  }) => {
-    // Given — archived dataset has an ANY_RECORD_OF filter; tree API fails
-    const anyRecordOfDataset = mockData[1];
-    await mockApiSuccess(
-      page,
-      `*/**/picsure/dataset/named/${anyRecordOfDataset.uuid}`,
-      anyRecordOfDataset,
-    );
-    await mockApiFail(page, `${conceptTreePath}/**`, 'failed');
-
-    // When — navigate to dataset page
-    await page.goto(`/dataset/${anyRecordOfDataset.uuid}`);
-    await page.waitForSelector('[data-testid="detail-filters-container"]');
-
-    // Then — restore button is disabled and an error alert is shown with the failing concept path
-    await expect(page.getByTestId('restore-popover-btn')).toBeVisible();
-    await expect(page.getByTestId('restore-popover-btn')).toBeDisabled();
-    await expect(page.getByTestId('error-alert')).toBeVisible();
-    await expect(page.getByTestId('error-alert')).toContainText('\\phs001\\');
   });
 
   test('Copy button on queryId shows popup', async ({ page }) => {
