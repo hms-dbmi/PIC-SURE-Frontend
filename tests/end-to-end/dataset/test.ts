@@ -3,10 +3,13 @@ import { test, mockApiSuccess, mockApiFail } from '../custom-context';
 import {
   datasets as mockData,
   datasetDetails,
-  facetResultPath,
   facetsResponse,
+  facetResultPath,
   conceptTreePath,
+  conceptsDetailPath,
 } from '../mock-data';
+
+const datasetPath = '*/**/picsure/dataset/named';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -15,35 +18,28 @@ function mockDictionaryAPI(
   route: string,
   data: Record<string, unknown>,
 ) {
+  const error = {
+    status: 404,
+    contentType: 'application/json',
+    body: JSON.stringify({ error: 'request has undefined post body' }),
+  };
   return context.route(route, (route: Route) => {
     const buffer = route.request().postDataBuffer();
     if (buffer === null) {
-      return route.fulfill({
-        status: 404,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'request has undefined post body' }),
-      });
+      return route.fulfill(error);
     }
 
     const result = data[buffer.toString('utf-8')];
     return route.fulfill(
       result
         ? { status: 200, contentType: 'application/json', body: JSON.stringify(result) }
-        : {
-            status: 404,
-            contentType: 'application/json',
-            body: JSON.stringify({ error: 'request has undefined post body' }),
-          },
+        : error,
     );
   });
 }
 
 test.beforeEach(async ({ page }) => {
-  mockDictionaryAPI(
-    page,
-    '*/**/picsure/proxy/dictionary-api/concepts/detail/*',
-    datasetDetails.concepts,
-  );
+  mockDictionaryAPI(page, `${conceptsDetailPath}/*`, datasetDetails.concepts);
   mockDictionaryAPI(page, `${conceptTreePath}/*`, datasetDetails.tree);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, '*/**/picsure/v3/query/sync', '9999');
@@ -52,7 +48,7 @@ test.beforeEach(async ({ page }) => {
 test.describe('dataset', () => {
   test('Shows active datasets table', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
+    await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
 
     // Then
@@ -61,7 +57,7 @@ test.describe('dataset', () => {
   });
   test('Should not show archived datasets table on page load', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
+    await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
 
     // Then
@@ -70,7 +66,7 @@ test.describe('dataset', () => {
   });
   test('Shows archived datasets on archive toggle button press', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
+    await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
 
     // When
@@ -83,7 +79,7 @@ test.describe('dataset', () => {
   });
   test('Copy button displays popup msg', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
+    await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
 
     // When
@@ -95,8 +91,8 @@ test.describe('dataset', () => {
   });
   test('Archive button press moves item to archived', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, {
+    await mockApiSuccess(page, datasetPath, mockData);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, {
       ...mockData[0],
       archived: true,
     });
@@ -114,8 +110,8 @@ test.describe('dataset', () => {
   });
   test('Restore button press moves item to active', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[1].uuid}`, {
+    await mockApiSuccess(page, datasetPath, mockData);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[1].uuid}`, {
       ...mockData[1],
       archived: false,
     });
@@ -133,7 +129,7 @@ test.describe('dataset', () => {
   });
   test('Error message on api error', async ({ page }) => {
     // Given
-    await mockApiFail(page, '*/**/picsure/dataset/named', 'accessdenied');
+    await mockApiFail(page, datasetPath, 'accessdenied');
     await page.goto('/dataset');
 
     // Then
@@ -141,7 +137,7 @@ test.describe('dataset', () => {
   });
   test('Active table shows dataset name', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
+    await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
 
     // Then
@@ -149,7 +145,7 @@ test.describe('dataset', () => {
   });
   test('Toggle button shows "Show deleted datasets" on page load', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
+    await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
 
     // Then
@@ -157,7 +153,7 @@ test.describe('dataset', () => {
   });
   test('Toggle button text changes to "Hide deleted datasets" after press', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
+    await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
 
     // When
@@ -168,8 +164,8 @@ test.describe('dataset', () => {
   });
   test('Row click navigates to dataset detail page', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/dataset/named', mockData);
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, datasetPath, mockData);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto('/dataset');
 
     // When
@@ -182,20 +178,20 @@ test.describe('dataset', () => {
 test.describe('dataset/[uuid]', () => {
   test('Dataset values present on page', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // Then
-    await expect(page.getByTestId('detail-summary-container')).toBeVisible();
+    await expect(page.getByTestId('dataset-summary-container')).toBeVisible();
     await expect(page.getByTestId('dataset-summary-name')).toBeVisible();
     await expect(page.getByTestId('dataset-summary-uuid')).toBeVisible();
-    await expect(page.getByTestId('detail-filters-container')).toBeVisible();
-    await expect(page.getByTestId('detail-variables-container')).toBeVisible();
+    await expect(page.getByTestId('dataset-filters-container')).toBeVisible();
+    await expect(page.getByTestId('dataset-variables-container')).toBeVisible();
   });
   test('Error message on api error', async ({ page }) => {
     // Given
-    await mockApiFail(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, 'accessdenied');
+    await mockApiFail(page, `${datasetPath}/${mockData[0].uuid}`, 'accessdenied');
     await page.goto(`/dataset/${mockData[0].uuid}`);
 
     // Then
@@ -203,9 +199,9 @@ test.describe('dataset/[uuid]', () => {
   });
   test('Back button is visible and navigates to /dataset', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // When
     await page.getByTestId('back-btn').click();
@@ -215,40 +211,40 @@ test.describe('dataset/[uuid]', () => {
   });
   test('Dataset name displays correct value', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // Then
     await expect(page.getByTestId('dataset-summary-name')).toHaveText(mockData[0].name);
   });
   test('Dataset queryId displays correct value', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // Then
     await expect(page.getByTestId('dataset-summary-uuid')).toContainText(mockData[0].query.uuid);
   });
   test('Filter cards are visible even on detail request failure', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await mockApiFail(page, '*/**/picsure/proxy/dictionary-api/concepts/detail/**', 'failed');
     await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // Then
     await expect(page.getByTestId('dataset-filter-card').first()).toBeVisible();
   });
   test('Variables section is visible', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // Then
-    await expect(page.getByTestId('detail-variables-container')).toBeVisible();
+    await expect(page.getByTestId('dataset-variables-container')).toBeVisible();
   });
   test('Shows error when dataset query version is unknown', async ({ page }) => {
     // Given — query with no phenotypicClause or categoryFilters maps to version UNKNOWN (query = null)
@@ -264,11 +260,7 @@ test.describe('dataset/[uuid]', () => {
         }),
       },
     };
-    await mockApiSuccess(
-      page,
-      `*/**/picsure/dataset/named/${mockData[0].uuid}`,
-      unknownVersionDataset,
-    );
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, unknownVersionDataset);
     await page.goto(`/dataset/${mockData[0].uuid}`);
 
     // Then
@@ -278,9 +270,9 @@ test.describe('dataset/[uuid]', () => {
     page,
   }) => {
     // Given
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // When - open modal and confirm
     await page.getByTestId('restore-filters-btn').click();
@@ -296,7 +288,7 @@ test.describe('dataset/[uuid]', () => {
   });
   test('Restore Filters adds filters to Result Panel', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
 
     // When - open modal and confirm
@@ -318,9 +310,9 @@ test.describe('dataset/[uuid]', () => {
     page,
   }) => {
     // Given - restore filters once to populate the filter store
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
     await page.getByTestId('restore-filters-btn').click();
     await page
       .getByTestId('restore-filters')
@@ -331,7 +323,7 @@ test.describe('dataset/[uuid]', () => {
 
     // When - navigate back to dataset and open the restore modal again
     await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
     await page.getByTestId('restore-filters-btn').click();
 
     // Then - warning is shown in the modal
@@ -343,9 +335,9 @@ test.describe('dataset/[uuid]', () => {
     page,
   }) => {
     // Given - restore filters once to populate the filter store
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
     await page.getByTestId('restore-filters-btn').click();
     await page
       .getByTestId('restore-filters')
@@ -355,7 +347,7 @@ test.describe('dataset/[uuid]', () => {
 
     // When - navigate back, open modal, and confirm despite warning
     await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
     await page.getByTestId('restore-filters-btn').click();
     await page
       .getByTestId('restore-filters')
@@ -401,16 +393,12 @@ test.describe('dataset/[uuid]', () => {
         },
       ],
     };
-    await mockApiSuccess(
-      page,
-      `*/**/picsure/dataset/named/${anyRecordOfDataset.uuid}`,
-      anyRecordOfDataset,
-    );
+    await mockApiSuccess(page, `${datasetPath}/${anyRecordOfDataset.uuid}`, anyRecordOfDataset);
     await mockApiSuccess(page, `${conceptTreePath}/**`, treeResponse);
 
     // When — restore filters
     await page.goto(`/dataset/${anyRecordOfDataset.uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
     await page.getByTestId('restore-filters-btn').click();
     await page
       .getByTestId('restore-filters')
@@ -425,9 +413,9 @@ test.describe('dataset/[uuid]', () => {
 
   test('Copy button on queryId shows popup', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, `*/**/picsure/dataset/named/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
-    await page.waitForSelector('[data-testid="detail-summary-container"]');
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // When
     const copyBtn = page.getByTestId(`${mockData[0].query.uuid}-copy-btn`);

@@ -18,7 +18,12 @@
   import Modal from '$lib/components/Modal.svelte';
   import Popover from '$lib/components/Popover.svelte';
 
-  let { query, version, uuid, name }: {
+  let {
+    query,
+    version,
+    uuid,
+    name,
+  }: {
     query: QueryV2 | QueryV3;
     version: string;
     uuid?: string;
@@ -28,7 +33,7 @@
   let modal = $state(false);
   let hasExistingFilters = $derived($allFilters.length > 0);
 
-  async function setFilters(data: QuerySummaryData) {
+  function setFilters(data: QuerySummaryData) {
     modal = false;
     exports.set(data.exports);
     setFilterTree(data.filterTree);
@@ -37,7 +42,7 @@
       description: `Filters restored for ${name ? name + ' dataset' : 'dataset'}.`,
     });
     goto('/explorer');
-}
+  }
 
   let restoreQueryButton = $derived(
     version === QueryVersion.V3 || (version === QueryVersion.V2 && features.restoreV2queries),
@@ -49,7 +54,7 @@
 {:then data}
   {@const hasErrors = data.errors.length > 0}
   {#if hasErrors}
-  {@const plural = data.errors.length > 1 ? 's' : ''}
+    {@const plural = data.errors.length > 1 ? 's' : ''}
     <ErrorAlert title="API Error" color="warning">
       An error occurred while retrieving additional filter information for path{plural}:
       {#if data.errors.length > 1}
@@ -63,7 +68,7 @@
       {/if}
     </ErrorAlert>
   {/if}
-  <section data-testid="detail-filters-container" class={`my-4 query-version-${version}`}>
+  <section data-testid="dataset-filters-container" class={`my-4 query-version-${version}`}>
     {#if restoreQueryButton && !hasErrors}
       <div class="float-right">
         <Modal

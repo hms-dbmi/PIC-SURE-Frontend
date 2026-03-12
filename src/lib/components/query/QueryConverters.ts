@@ -22,7 +22,7 @@ import type { SearchResult } from '$lib/models/Search';
 import { getConceptDetails, getConceptTree, ENSURE_MAX_DEPTH } from '$lib/stores/Dictionary';
 import { LogicTree } from '$lib/models/LogicTree.svelte';
 import { createGroup } from '$lib/stores/Filter';
-  import { mapSearchResultAsExport, exports } from '$lib/stores/Export';
+import { mapSearchResultAsExport } from '$lib/stores/Export';
 import type { ExportInterface } from '$lib/models/Export';
 
 const defaultSearchResult = (conceptPath: string, type: string = 'Categorical') => {
@@ -257,18 +257,20 @@ export function genomicV3ToFilter(gfs: GenomicFilterInterfacev3[]): Filter {
 // ----------------------------- Unified loader ----------------------------- //
 
 function getExports(query: QueryV3, errors: string[]): Promise<ExportInterface[]> {
-  return Promise.all(query.select.map(async (conceptPath) => {
-    let searchResult: SearchResult;
-    try {
-      searchResult = await pathToSearchResult(conceptPath);
-    } catch (err) {
-      console.error(`Failed to retrieve results for: ${conceptPath}`, err);
-      searchResult = defaultSearchResult(conceptPath);
-      errors.push(conceptPath);
-    }
+  return Promise.all(
+    query.select.map(async (conceptPath) => {
+      let searchResult: SearchResult;
+      try {
+        searchResult = await pathToSearchResult(conceptPath);
+      } catch (err) {
+        console.error(`Failed to retrieve results for: ${conceptPath}`, err);
+        searchResult = defaultSearchResult(conceptPath);
+        errors.push(conceptPath);
+      }
 
-    return mapSearchResultAsExport(searchResult);
-  }));
+      return mapSearchResultAsExport(searchResult);
+    }),
+  );
 }
 
 export type QuerySummaryData = {
@@ -282,7 +284,8 @@ export async function loadQuerySummaryData(
   query: QueryV2 | QueryV3,
   version: string,
 ): Promise<QuerySummaryData> {
-  const q: QueryV3 = version === QueryVersion.V3 ? (query as QueryV3) : queryV2ToV3(query as QueryV2);
+  const q: QueryV3 =
+    version === QueryVersion.V3 ? (query as QueryV3) : queryV2ToV3(query as QueryV2);
 
   const errors: string[] = [];
   const filterTree = await queryToFilterTree(q, errors);

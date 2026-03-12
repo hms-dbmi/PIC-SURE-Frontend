@@ -5,7 +5,7 @@ export const QueryVersion = { UNKNOWN: 'UNKNOWN', V2: 'V2', V3: 'V3' };
 
 type MappedQuery = QueryV2 | QueryV3 | null;
 
-// TODO: Replace metadata nad query types
+// TODO: Replace metadata type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type DataSet = Indexable & {
   version: string;
@@ -21,6 +21,7 @@ export type DataSet = Indexable & {
   rawStartTime: number;
   status: string;
 };
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export interface DataSetResponse {
   picsureResultId?: string;
@@ -34,7 +35,6 @@ interface Message {
   errorType: string;
   message: string;
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 function secondsToDate(seconds: number) {
   const dt = new Date(seconds);

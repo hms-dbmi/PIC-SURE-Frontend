@@ -42,7 +42,7 @@
     <Loading />
   {:then}
     {#if dataset?.query && dataset?.queryId}
-      <section data-testid="detail-summary-container" class="my-4">
+      <section data-testid="dataset-summary-container" class="my-4">
         <h2 class="text-left h4 mb-2 mt-6">Dataset ID Summary</h2>
         <table class="table bg-transparent">
           <tbody>

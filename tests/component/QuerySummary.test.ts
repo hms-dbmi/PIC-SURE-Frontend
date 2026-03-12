@@ -55,7 +55,7 @@ function makeFilterTree() {
   } as unknown as LogicTree<FilterInterface>;
 }
 
-const baseData = { filterTree: makeFilterTree(), genomicFilters: [], fields: [], errors: [] };
+const baseData = { filterTree: makeFilterTree(), genomicFilters: [], exports: [], errors: [] };
 
 // query value is only forwarded to the mocked loadQuerySummaryData, so shape doesn't matter
 const baseProps = { query: {} as QueryV3, version: QueryVersion.V3 };
@@ -70,7 +70,7 @@ describe('QuerySummary', () => {
     render(QuerySummary, baseProps);
 
     // Wait for the {#await} block to resolve
-    await screen.findByTestId('detail-filters-container');
+    await screen.findByTestId('dataset-filters-container');
 
     expect(screen.getByTestId('restore-filters-btn')).toBeEnabled();
     expect(screen.queryByTestId('error-alert')).not.toBeInTheDocument();
@@ -83,7 +83,7 @@ describe('QuerySummary', () => {
     });
     render(QuerySummary, baseProps);
 
-    await screen.findByTestId('detail-filters-container');
+    await screen.findByTestId('dataset-filters-container');
 
     // Modal trigger is replaced by the disabled Popover button
     expect(screen.queryByTestId('restore-filters-btn')).not.toBeInTheDocument();

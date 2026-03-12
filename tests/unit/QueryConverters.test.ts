@@ -840,10 +840,10 @@ describe('queryToFilterTree', () => {
 
 describe('loadQuerySummaryData', () => {
   beforeEach(() => {
-    mockGetConceptDetails
-      .mockImplementation(
-        (conceptPath: string, _dataset: string) => Promise.resolve(makeSearchResult({ conceptPath }))
-      );
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    mockGetConceptDetails.mockImplementation((conceptPath: string, _dataset: string) =>
+      Promise.resolve(makeSearchResult({ conceptPath })),
+    );
   });
 
   it('V3: returns select paths as fields and maps genomicFilters', async () => {

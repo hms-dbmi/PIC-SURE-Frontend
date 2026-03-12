@@ -157,15 +157,13 @@ export const datasetDetails = {
 export const datasets = [
   {
     // Active
-    uuid: '058a9711-d264-4760-861b-a8a608028d9f',
+    uuid: '11111111-1111-1111-1111-111111111111',
     query: {
-      uuid: 'e95a9d3d-ce93-4f64-accd-adf7f8e2a61a',
+      uuid: '11111111-1111-1111-1111-111111111112',
       startTime: 1769731200000,
-      readyTime: null,
       status: 'AVAILABLE',
-      resourceResultId: 'a2e3e707-a4f3-5750-8b45-3772b6ecbde9',
+      resourceResultId: '11111111-1111-1111-1111-111111111113',
       query: JSON.stringify({
-        '@type': 'GeneralQueryRequest',
         resourceCredentials: { BEARER_TOKEN: null },
         query: {
           select: [conceptDetailPaths.GENDER, conceptDetailPaths.HEIGHT, conceptDetailPaths.WEIGHT],
@@ -187,35 +185,25 @@ export const datasets = [
           picsureId: null,
           id: null,
         },
-        resourceUUID: '954d5661-2536-4b47-b053-a383f81626e5',
+        resourceUUID: '11111111-1111-1111-1111-111111111114',
       }),
       resource: {
-        uuid: '954d5661-2536-4b47-b053-a383f81626e5',
+        uuid: '11111111-1111-1111-1111-111111111115',
         name: 'hpds',
-        description: 'Basic HPDS resource',
-        targetURL: null,
-        resourceRSPath: 'http://hpds:8080/PIC-SURE/',
-        hidden: false,
-        metadata: null,
       },
-      metadata: '',
     },
-    user: 'test@user',
-    name: 'fgdgsdf',
+    name: 'some-test-I-saved',
     archived: false,
-    metadata: {},
   },
   {
     // Archived
-    uuid: '0f3417e4-8307-4128-b475-9e43dd9045be',
+    uuid: '22222222-2222-2222-2222-222222222222',
     query: {
-      uuid: 'b697f38c-d9a6-4674-8afc-5a014ffcdfe6',
+      uuid: '22222222-2222-2222-2222-222222222223',
       startTime: 1770076800000,
-      readyTime: null,
       status: 'AVAILABLE',
-      resourceResultId: '14a5a376-f5ea-598b-9b52-ef76d876bd7f',
+      resourceResultId: '22222222-2222-2222-2222-222222222224',
       query: JSON.stringify({
-        '@type': 'GeneralQueryRequest',
         resourceCredentials: { BEARER_TOKEN: null },
         query: {
           select: [
@@ -240,23 +228,15 @@ export const datasets = [
           picsureId: null,
           id: null,
         },
-        resourceUUID: '954d5661-2536-4b47-b053-a383f81626e5',
+        resourceUUID: '22222222-2222-2222-2222-222222222225',
       }),
       resource: {
-        uuid: '954d5661-2536-4b47-b053-a383f81626e5',
+        uuid: '22222222-2222-2222-2222-222222222226',
         name: 'hpds',
-        description: 'Basic HPDS resource',
-        targetURL: null,
-        resourceRSPath: 'http://hpds:8080/PIC-SURE/',
-        hidden: false,
-        metadata: null,
       },
-      metadata: '',
     },
-    user: 'test@user',
-    name: 'fhgsgfd',
+    name: 'some-deleted-test-I-don\t-need',
     archived: true,
-    metadata: {},
   },
 ];
 

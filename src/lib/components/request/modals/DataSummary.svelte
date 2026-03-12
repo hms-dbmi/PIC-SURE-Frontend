@@ -10,7 +10,7 @@
   let query = $derived(metadata?.resultMetadata?.queryJson?.query);
 </script>
 
-<section data-testid="detail-summary-container" class="m-3">
+<section data-testid="dataset-summary-container" class="m-3">
   <table class="table bg-transparent">
     <tbody>
       <tr>
