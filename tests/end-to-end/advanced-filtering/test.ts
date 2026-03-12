@@ -336,7 +336,9 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     await expect(groupHeader).toBeVisible();
 
     // The grip icon is in the same row as "Between items:" — go up to the flex row, find the handle
-    const groupRow = groupHeader.locator('xpath=ancestor::div[contains(@class, "flex-row")]').first();
+    const groupRow = groupHeader
+      .locator('xpath=ancestor::div[contains(@class, "flex-row")]')
+      .first();
     const dragHandle = groupRow.locator('.fa-grip-vertical').first();
     await expect(dragHandle).toBeVisible();
 
@@ -741,7 +743,7 @@ test.describe('Advanced Filtering - Unsaved Changes', () => {
     await afPage.expectBadgeText('AND');
   });
 
-  test('AF-UNSAVED-004: Apply & Go Back applies changes and navigates', async ({ page }) => {
+  test('AF-UNSAVED-004: Apply Changes (modal) applies changes and navigates', async ({ page }) => {
     await afPage.selectRootOperator('OR');
     await afPage.clickBackButton();
     await afPage.expectUnsavedModalVisible();

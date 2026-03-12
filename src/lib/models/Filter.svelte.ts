@@ -290,3 +290,41 @@ export function createSnpsFilter(snps: SNP[]): SnpFilterInterface {
   };
   return filter;
 }
+
+export function derivedFilterDescription(filter: Filter): string {
+  if (filter.filterType === 'Categorical') {
+    if (filter.displayType === 'restrict') {
+      const valueText = filter.categoryValues.length === 1 ? 'value' : 'values';
+      return `Restricting to ${filter.categoryValues.length} ${valueText}.`;
+    } else if (filter.displayType === 'any' || filter.displayType === 'anyRecordOf') {
+      return 'Restricting to any value.';
+    } else {
+      return filter.description || 'N/A';
+    }
+  } else if (filter.filterType === 'AnyRecordOf') {
+    return 'Restricting to children of the selected value.';
+  } else if (filter.filterType === 'numeric') {
+    switch (filter.displayType) {
+      case 'any':
+        return 'Restricting to any value.';
+      case 'between':
+        return `Restricting to between ${filter.min} and ${filter.max}.`;
+      case 'greaterThan':
+        return `Restricting to greater than ${filter.min}.`;
+      case 'lessThan':
+        return `Restricting to less than ${filter.max}.`;
+      default:
+        return filter.description || 'N/A';
+    }
+  } else if (filter.filterType === 'genomic' || filter.filterType === 'snp') {
+    return filter.description || 'N/A';
+  }
+  return 'N/A';
+}
+
+export function derivedStudyDescription(filter: Filter) {
+  if (filter.searchResult?.studyAcronym && filter.searchResult?.dataset) {
+    return `${filter.searchResult.studyAcronym} (${filter.searchResult.dataset})`;
+  }
+  return filter.searchResult?.studyAcronym || filter.searchResult?.dataset || '';
+}

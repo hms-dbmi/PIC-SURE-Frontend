@@ -19,6 +19,7 @@
     onRemove: (group: FilterGroupInterface) => void;
     onRemoveChild: (child: FilterInterface) => void;
     onOperatorChange?: (group: FilterGroupInterface, operator: OperatorType) => void;
+    onAddGroup?: () => void;
     activeId?: string | null;
     isGroupDrag?: boolean;
     index?: number;
@@ -40,6 +41,7 @@
     onOperatorChange = (g, op) => {
       g.setOperator(op);
     },
+    onAddGroup = () => {},
   }: Props = $props();
 
   const operatorValue = $derived(group.operator || Operator.AND);
@@ -78,9 +80,9 @@
   });
   const showDropPreview = $derived(!isOverlay && isDragging.current && isDraggable);
 
-  function handleOperatorChange(e: { value: string }) {
-    const newOperator = e.value as OperatorType;
-    onOperatorChange(group, newOperator);
+  function handleOperatorChange(details: { value: string | null }) {
+    if (details.value == null) return;
+    onOperatorChange(group, details.value as OperatorType);
   }
 
   function handleNotChange(e: { checked: boolean }) {
@@ -91,7 +93,7 @@
 <div class="relative" {@attach ref}>
   {#if showLeadingOperator && leadingOperator}
     <div
-      class="flex justify-center py-3 {activeId && activeId === id && !isOverlay
+      class="flex justify-center py-2 {activeId && activeId === id && !isOverlay
         ? 'invisible'
         : ''}"
     >
@@ -106,33 +108,20 @@
   {/if}
 
   <div
-    class="card p-4 space-y-2 {id === 'root'
+    class="card py-2 px-4 {id === 'root'
       ? 'bg-surface-50 shadow-none border-none'
       : activeId === id && isDragging.current && !isOverlay
         ? 'invisible'
         : 'bg-white border-surface-400 border'}"
   >
-    {#if isDraggable}
-      <div id={`group-controls-${group.uuid}`} class="flex flex-row w-full flex-end">
-        <button
-          type="button"
-          title="Remove Group"
-          class="bg-initial text-black-500 hover:text-primary-600"
-          onclick={() => onRemove(group)}
-        >
-          <i class="fa-solid fa-times-circle"></i>
-          <span class="sr-only">Remove Group</span>
-        </button>
-      </div>
-    {/if}
-    <div class="flex flex-row items-center gap-2 w-full">
+    <div class="flex flex-row items-center gap-2 mb-1 w-full">
       <div
         class="cursor-grab active:cursor-grabbing mr-2 {isDraggable ? 'block' : 'hidden'}"
         {@attach handleRef}
       >
         <i class="fa-solid fa-grip-vertical text-surface-500"></i>
       </div>
-      <div class="flex items-center justify-start gap-2">
+      <div class="flex items-center justify-start gap-2 w-full">
         <div>Between {id === 'root' ? 'groups' : 'items'}:</div>
         {#key operatorValue}
           <Segment
@@ -146,6 +135,11 @@
             <Segment.Item value={Operator.OR}>{Operator.OR}</Segment.Item>
           </Segment>
         {/key}
+        {#if id === 'root'}
+          <button class="btn preset-filled-primary-500 ml-auto" onclick={onAddGroup}
+            >Add Group</button
+          >
+        {/if}
       </div>
       <div class="hidden flex items-center gap-2 ml-auto">
         <label for="not">Not:</label>
@@ -153,9 +147,22 @@
           {#snippet activeChild()}!{/snippet}
         </Switch>
       </div>
+      {#if isDraggable}
+        <div id={`group-controls-${group.uuid}`} class="ml-auto">
+          <button
+            type="button"
+            title="Remove Group"
+            class="bg-initial text-black-500 hover:text-primary-600"
+            onclick={() => onRemove(group)}
+          >
+            <i class="fa-solid fa-times-circle"></i>
+            <span class="sr-only">Remove Group</span>
+          </button>
+        </div>
+      {/if}
     </div>
 
-    <div class="flex flex-col gap-2 min-h-[50px] w-full">
+    <div class="flex flex-col min-h-[50px] w-full">
       {#each group.children as child, i (child.uuid)}
         {#if isFilterGroup(child)}
           <AdvancedGroup

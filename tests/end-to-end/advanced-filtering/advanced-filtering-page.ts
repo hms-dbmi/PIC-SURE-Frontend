@@ -405,7 +405,7 @@ export class AdvancedFilteringPage {
   }
 
   async clickUnsavedCancel() {
-    await this.getUnsavedModal().getByRole('button', { name: 'Cancel' }).click();
+    await this.getUnsavedModal().getByTestId('modal-close-button').click();
   }
 
   async clickUnsavedDiscard() {
@@ -413,7 +413,7 @@ export class AdvancedFilteringPage {
   }
 
   async clickUnsavedApply() {
-    await this.getUnsavedModal().getByRole('button', { name: 'Apply & Go Back' }).click();
+    await this.getUnsavedModal().getByRole('button', { name: 'Apply Changes' }).click();
   }
 
   // ==================== Genomic Filter Locators ====================

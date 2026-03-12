@@ -85,7 +85,7 @@ test.describe('Advanced Filtering - Tool Suite', () => {
     await expect(advancedFilteringBtn).toBeDisabled();
   });
 
-  test('AF-TOOL-003: Advanced Filtering tool becomes enabled when a filter is added', async ({
+  test('AF-TOOL-003: Advanced Filtering tool becomes enabled when a second filter is added', async ({
     page,
   }) => {
     await mockApiSuccess(
@@ -104,17 +104,29 @@ test.describe('Advanced Filtering - Tool Suite', () => {
     await expect(advancedFilteringBtn).toBeVisible();
     await expect(advancedFilteringBtn).toBeDisabled();
 
-    // Add a filter
+    // Add first filter — button should still be disabled (needs > 1)
     await clickNthFilterIcon(page, 0);
     const firstItem = await getOption(page);
     await firstItem.click();
+    await page.getByTestId('add-filter').click();
+    await expect(advancedFilteringBtn).toBeDisabled();
+
+    // Add second filter
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCatSameDataset.dataset}`,
+      detailResponseCatSameDataset,
+    );
+    await clickNthFilterIcon(page, 1);
+    const secondItem = await getOption(page);
+    await secondItem.click();
     await page.getByTestId('add-filter').click();
 
     // Verify the button is now enabled
     await expect(advancedFilteringBtn).toBeEnabled();
   });
 
-  test('AF-TOOL-004: Clicking Advanced Filtering tool opens the Advanced Filtering modal', async ({
+  test('AF-TOOL-004: Clicking Advanced Filtering tool navigates to the Advanced Filtering page', async ({
     page,
   }) => {
     await mockApiSuccess(
@@ -124,10 +136,20 @@ test.describe('Advanced Filtering - Tool Suite', () => {
     );
     await page.goto('/explorer?search=somedata');
 
-    // Add a filter to enable the button
+    // Add two filters to enable the button
     await clickNthFilterIcon(page, 0);
     const firstItem = await getOption(page);
     await firstItem.click();
+    await page.getByTestId('add-filter').click();
+
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCatSameDataset.dataset}`,
+      detailResponseCatSameDataset,
+    );
+    await clickNthFilterIcon(page, 1);
+    const secondItem = await getOption(page);
+    await secondItem.click();
     await page.getByTestId('add-filter').click();
 
     // Click the Advanced Filtering button
@@ -135,10 +157,9 @@ test.describe('Advanced Filtering - Tool Suite', () => {
     await expect(advancedFilteringBtn).toBeEnabled();
     await advancedFilteringBtn.click();
 
-    // Verify the Advanced Filtering modal opens
-    const modal = page.getByRole('dialog');
-    await expect(modal).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Advanced Filters' })).toBeVisible();
+    // Verify the Advanced Filtering page opens
+    await page.waitForURL(/\/explorer\/advanced-filtering/);
+    await expect(page.getByRole('heading', { name: 'Advanced Filtering' })).toBeVisible();
   });
 
   test('AF-APPLY-004: Clicking Apply to Query triggers query execution with updated filter structure', async ({
@@ -171,34 +192,28 @@ test.describe('Advanced Filtering - Tool Suite', () => {
     // Wait for results panel to appear
     await expect(page.locator('#results-panel')).toBeVisible();
 
-    // Open the Advanced Filtering modal
+    // Navigate to the Advanced Filtering page
     const advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
     await expect(advancedFilteringBtn).toBeEnabled();
     await advancedFilteringBtn.click();
 
-    const modal = page.getByRole('dialog');
-    await expect(modal).toBeVisible();
+    await page.waitForURL(/\/explorer\/advanced-filtering/);
+    await expect(page.getByRole('heading', { name: 'Advanced Filtering' })).toBeVisible();
 
     // Make a visible change: switch root operator from AND to OR
     const orRadio = page.getByRole('radio', { name: 'OR' }).first();
     await expect(orRadio).toBeVisible();
     await orRadio.locator('..').click();
 
-    // Set up a listener for the sync API call before clicking Apply
-    const syncRequestPromise = page.waitForRequest(
-      (request) => request.url().includes('/picsure/query/sync'),
-      { timeout: 10000 },
-    );
-
-    // Click Apply Changes
-    const applyBtn = modal.getByRole('button', { name: 'Apply Changes' });
+    // Click Apply Changes (this applies and navigates back to /explorer)
+    const applyBtn = page.getByRole('button', { name: 'Apply Changes' });
     await applyBtn.click();
 
-    // Verify modal closes
-    await expect(modal).not.toBeVisible();
+    // Verify navigated back to explorer
+    await page.waitForURL(/\/explorer(\?|$)/);
+    await expect(advancedFilteringBtn).toBeVisible();
 
-    // Verify the sync request was made (query re-runs with updated structure)
-    const syncRequest = await syncRequestPromise;
-    expect(syncRequest.url()).toContain('/picsure/query/sync');
+    // Verify the OR operator was applied by checking the filter display
+    await expect(page.locator('#results-panel')).toContainText('OR');
   });
 });

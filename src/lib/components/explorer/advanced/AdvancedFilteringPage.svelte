@@ -58,18 +58,17 @@
   <title>{branding.applicationName} | Advanced Filtering</title>
 </svelte:head>
 
-<Modal bind:open={showUnsavedModal} title="Unsaved Changes" closeable={false}>
+<Modal bind:open={showUnsavedModal} title="Unsaved Changes" closeable={true} onclose={handleCancel}>
   <p class="mb-6">You have unsaved changes to your filters. What would you like to do?</p>
   <footer class="flex justify-end gap-2">
-    <button class="btn preset-tonal-surface" onclick={handleCancel}>Cancel</button>
-    <button class="btn preset-tonal-warning" onclick={handleDiscard}>Discard Changes</button>
+    <button class="btn border preset-tonal-error" onclick={handleDiscard}>Discard Changes</button>
     <button class="btn preset-filled-primary-500" onclick={handleApplyAndLeave}>
-      Apply & Go Back
+      Apply Changes
     </button>
   </footer>
 </Modal>
 
-<Content full {backUrl} {backTitle} title="Advanced Filtering">
+<Content {backUrl} {backTitle} title="Advanced Filtering">
   <AdvancedFiltering bind:this={advancedFilteringRef} />
   <div class="mt-4 flex justify-end">
     <button class="btn preset-filled-primary-500" onclick={applyAndReturn}>Apply Changes</button>

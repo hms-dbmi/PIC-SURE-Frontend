@@ -2,6 +2,7 @@
   import type { FilterInterface } from '$lib/models/Filter.svelte';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
   import { CollisionPriority } from '@dnd-kit/abstract';
+  import { slide } from 'svelte/transition';
 
   interface Props {
     filter: FilterInterface;
@@ -20,6 +21,10 @@
     activeId = null,
     onRemove,
   }: Props = $props();
+
+  const anyRecordOfFilter = $derived(filter.filterType === 'AnyRecordOf');
+  let open = $state(false);
+  let carot = $state('fa-caret-up');
 
   // Derive the actual index from parent's children array (reactive to array changes)
   const actualIndex = $derived(
@@ -51,12 +56,35 @@
       return isOverlay;
     },
   });
+
+  const getNumericalDesc = function () {
+    if (!filter.searchResult || filter.filterType !== 'numeric') return;
+    switch (filter.displayType) {
+      case 'any':
+        return 'Restricting to any value.';
+      case 'between':
+        return `Restricting to between ${filter.searchResult.min} and ${filter.searchResult.max}.`;
+      case 'greaterThan':
+        return `Restricting to greater than ${filter.searchResult.min}.`;
+      case 'lessThan':
+        return `Restricting to less than ${filter.searchResult.max}.`;
+      default:
+        return filter.description || 'N/A';
+    }
+  };
+
+  const toggleCardBody = function (event: Event) {
+    event.stopPropagation();
+    event.preventDefault();
+    open = !open;
+    carot = open ? 'fa-caret-down' : 'fa-caret-up';
+  };
 </script>
 
-<div class="relative flex flex-col gap-2" {@attach ref}>
+<div class="relative" {@attach ref}>
   {#if showLeadingOperator && leadingOperator}
     <div
-      class="flex justify-center py-3 {activeId && activeId === filter.uuid && !isOverlay
+      class="flex justify-center py-1 {activeId && activeId === filter.uuid && !isOverlay
         ? 'invisible'
         : ''}"
     >
@@ -71,32 +99,53 @@
   {/if}
 
   <div
-    class="card flex flex-row gap-2 items-center p-4 {activeId === filter.uuid &&
+    class="card flex flex-col gap-2 py-2 px-4 {activeId === filter.uuid &&
     isDragging.current &&
     !isOverlay
       ? 'invisible'
       : ''} bg-white border-surface-400 border"
   >
-    <div class="cursor-grab active:cursor-grabbing m-0 flex items-center" {@attach handleRef}>
-      <i class="fa-solid fa-grip-vertical text-surface-500"></i>
+    <div class="flex flex-row items-center justify-start gap-2">
+      <div class="cursor-grab active:cursor-grabbing m-0 flex items-center" {@attach handleRef}>
+        <i class="fa-solid fa-grip-vertical text-surface-500"></i>
+      </div>
+      <div class="flex flex-col self-end">
+        <div class="text-sm font-medium">{filter.variableName}</div>
+        {#if filter.searchResult?.studyAcronym}
+          <div class="text-xs text-surface-500">Study: {filter.searchResult.studyAcronym}</div>
+        {/if}
+      </div>
+      <div class="ml-auto">
+        <button
+          type="button"
+          title="Remove Filter"
+          class="bg-initial text-black-500 hover:text-primary-600"
+          onclick={() => onRemove(filter)}
+        >
+          <i class="fa-solid fa-times-circle"></i>
+          <span class="sr-only">Remove Filter</span>
+        </button>
+        {#if !anyRecordOfFilter}
+          <button
+            type="button"
+            title="See details"
+            class="bg-initial text-black-500 hover:text-primary-600"
+            onclick={toggleCardBody}
+          >
+            <i class="fa-solid {carot}"></i>
+            <span class="sr-only">See details</span>
+          </button>
+        {/if}
+      </div>
     </div>
-    <div class="flex flex-col">
-      <div class="text-sm font-medium">{filter.variableName}</div>
-      {#if filter.searchResult?.studyAcronym}
-        <div class="text-xs text-surface-500">Study: {filter.searchResult.studyAcronym}</div>
-      {/if}
-    </div>
-    <div class="ml-auto">
-      <button
-        type="button"
-        title="Remove Filter"
-        class="bg-initial text-black-500 hover:text-primary-600"
-        onclick={() => onRemove(filter)}
-      >
-        <i class="fa-solid fa-times-circle"></i>
-        <span class="sr-only">Remove Filter</span>
-      </button>
-    </div>
+    {#if open}
+      <section class="pb-2 px-4 whitespace-pre-wrap" transition:slide={{ axis: 'y' }}>
+        {getNumericalDesc()}
+        {#if filter.filterType === 'Categorical' && filter.searchResult && filter.searchResult.values}
+          <div>Values: {filter.searchResult.values.join(', ')}</div>
+        {/if}
+      </section>
+    {/if}
   </div>
 
   {#if !isOverlay && isDragging.current}

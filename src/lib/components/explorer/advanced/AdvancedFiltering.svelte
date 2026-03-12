@@ -328,7 +328,9 @@
     const activeParentId = activeNode?.parent
       ? containerIdForTreeParent(activeNode.parent)
       : undefined;
-    const isClickOnParentContainer = targetId === activeParentId || targetId === 'root';
+    const targetIdEmpty = targetId?.startsWith('empty-');
+    const cleanTargetId = targetId && targetIdEmpty ? targetId.split('empty-')[1] : targetId;
+    const isClickOnParentContainer = targetId === activeParentId || targetId === 'root' || cleanTargetId === sourceId;
     if (isClickOnParentContainer && !hasDragMovement) {
       return { type: 'no-movement' };
     }
@@ -530,9 +532,6 @@
   }
 </script>
 
-<div class="mb-2 flex justify-end gap-2">
-  <button class="btn preset-filled-primary-500" onclick={addGroup}>Add Group</button>
-</div>
 <div class="flex-1 overflow-auto p-4 border border-surface-300 rounded-lg bg-surface-50">
   <DragDropProvider
     {sensors}
@@ -549,6 +548,7 @@
       {activeId}
       {isGroupDrag}
       onOperatorChange={handleOperatorChange}
+      onAddGroup={addGroup}
     />
     <!-- Root-level drop zone for un-nesting groups -->
     <GroupDropZone

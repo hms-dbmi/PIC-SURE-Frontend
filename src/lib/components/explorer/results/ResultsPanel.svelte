@@ -9,12 +9,7 @@
 
   import { features } from '$lib/configuration';
 
-  import {
-    allFilters,
-    filters,
-    hasGenomicFilter,
-    clearFilters,
-  } from '$lib/stores/Filter';
+  import { allFilters, filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 

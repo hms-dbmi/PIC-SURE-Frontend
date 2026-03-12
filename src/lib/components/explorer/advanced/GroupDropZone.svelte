@@ -44,7 +44,7 @@
 <div
   data-testid="group-drop-zone"
   data-group-id={groupId}
-  class="rounded-md border border-dashed text-primary-600 text-xs font-semibold uppercase tracking-wide flex items-center justify-center transition-all"
+  class="rounded-md mt-1 border border-dashed text-primary-600 text-xs font-semibold uppercase tracking-wide flex items-center justify-center transition-all"
   class:h-0={!showZone}
   class:opacity-0={!showZone}
   class:border-transparent={!showZone}
@@ -52,7 +52,7 @@
   class:opacity-100={showZone}
   class:bg-primary-50={showZone}
   class:border-primary-500={showZone}
-  class:py-4={showZone}
+  class:py-2={showZone}
   {@attach ref}
 >
   <span class="sr-only">{label}</span>

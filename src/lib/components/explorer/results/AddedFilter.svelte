@@ -5,7 +5,12 @@
   import { goto } from '$app/navigation';
 
   import { Option } from '$lib/models/GenomeFilter';
-  import type { Filter, AnyRecordOfFilterInterface } from '$lib/models/Filter.svelte';
+  import {
+    type Filter,
+    type AnyRecordOfFilterInterface,
+    derivedFilterDescription,
+    derivedStudyDescription,
+  } from '$lib/models/Filter.svelte';
   import { removeFilter, activeFilter, activeSearch } from '$lib/stores/Filter';
   import { populateFromGeneFilter } from '$lib/stores/GeneFilter';
   import { populateFromSNPFilter } from '$lib/stores/SNPFilter';
@@ -34,44 +39,6 @@
       $activeSearch = filter.searchResult;
     }
   }
-
-  // TODO: Clean up once dictionary is more clear
-  const derivedFilterDescription = function (filter: Filter) {
-    if (filter.filterType === 'Categorical') {
-      if (filter.displayType === 'restrict') {
-        let valueText = filter.categoryValues.length === 1 ? 'value' : 'values';
-        return `Restricting to ${filter.categoryValues.length} ${valueText}.`;
-      } else if (filter.displayType === 'any' || filter.displayType === 'anyRecordOf') {
-        return 'Restricting to any value.';
-      } else {
-        return filter.description;
-      }
-    } else if (filter.filterType === 'AnyRecordOf') {
-      return 'Restricting to children of the selected value.';
-    } else if (filter.filterType === 'numeric') {
-      switch (filter.displayType) {
-        case 'any':
-          return 'Restricting to any value.';
-        case 'between':
-          return `Restricting to between ${filter.min} and ${filter.max}.`;
-        case 'greaterThan':
-          return `Restricting to greater than ${filter.min}.`;
-        case 'lessThan':
-          return `Restricting to less than ${filter.max}.`;
-        default:
-          return filter.description || 'N/A';
-      }
-    } else if (filter.filterType === 'genomic' || filter.filterType === 'snp') {
-      return filter.description;
-    }
-  };
-
-  const derivedStudyDescription = function (filter: Filter) {
-    if (filter.searchResult?.studyAcronym && filter.searchResult?.dataset) {
-      return `${filter.searchResult.studyAcronym} (${filter.searchResult.dataset})`;
-    }
-    return filter.searchResult?.studyAcronym || filter.searchResult?.dataset || '';
-  };
 
   const toggleCardBody = function (event: Event) {
     event.stopPropagation();

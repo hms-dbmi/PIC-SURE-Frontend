@@ -15,7 +15,10 @@ import {
   hierarchyResponse,
 } from '../../mock-data';
 import { getOption, clickNthFilterIcon } from '../../utils';
-import { createCategoricalFilter, createNumericFilter } from '../../../../src/lib/models/Filter';
+import {
+  createCategoricalFilter,
+  createNumericFilter,
+} from '../../../../src/lib/models/Filter.svelte';
 import type { SearchResult } from '../../../../src/lib/models/Search';
 
 const countResultPath = '*/**/picsure/v3/query/sync';
