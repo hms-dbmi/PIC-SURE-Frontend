@@ -37,10 +37,15 @@ class Fence extends AuthProvider implements FenceData {
     if (browser) {
       redirectUrl = this.getRedirectURI();
       this.saveState(redirectTo, type, this.idp);
-      const fenceUrl = encodeURI(
-        `${this.uri}/user/oauth2/authorize?response_type=code&scope=user+openid&client_id=${this.clientid}&redirect_uri=${redirectUrl}&idp=${this.idp}`,
-      );
-      window.location.href = fenceUrl;
+      const fenceUrl =
+        this.uri +
+        '/user/oauth2/authorize' +
+        '?response_type=code' +
+        '&scope=user+openid' +
+        `&client_id=${this.clientid}` +
+        `&redirect_uri=${redirectUrl}` +
+        `&idp=${this.idp}`;
+      window.location.href = encodeURI(fenceUrl);
     } else {
       throw new Error('Only browser supported');
     }
