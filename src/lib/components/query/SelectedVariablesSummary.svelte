@@ -52,32 +52,29 @@
   {/each}
 {/snippet}
 
-<section data-testid="dataset-variables-container" class="my-4">
-  <h2 class="text-left h4 mb-2 mt-6">Variables Included in Dataset</h2>
-  {#if paths.length === 0}
-    <p class="text-sm text-surface-700">No additional variables</p>
-  {:else}
-    {@const entries = [...tree.values()]}
-    {@const rootLeaves = entries.filter((n) => n.children.size === 0)}
-    {@const rootBranches = entries.filter((n) => n.children.size > 0)}
+{#if paths.length === 0}
+  <p class="text-sm text-surface-700">No additional variables</p>
+{:else}
+  {@const entries = [...tree.values()]}
+  {@const rootLeaves = entries.filter((n) => n.children.size === 0)}
+  {@const rootBranches = entries.filter((n) => n.children.size > 0)}
 
-    {#if rootLeaves.length > 0}
-      <div class="flex flex-wrap gap-1.5 mb-3">
-        {#each rootLeaves as node}
-          <span class="bg-surface-200 text-surface-800 text-xs rounded px-2 py-1">
-            {node.label}
-          </span>
-        {/each}
-      </div>
-    {/if}
-
-    {#each rootBranches as node}
-      <div>
-        <p class="text-sm font-semibold text-surface-700 mx-0 mb-0">{node.label}</p>
-        <div class="pl-3 border-l-2 border-surface-300 mt-1">
-          {@render nodeChildren(node.children)}
-        </div>
-      </div>
-    {/each}
+  {#if rootLeaves.length > 0}
+    <div class="flex flex-wrap gap-1.5 mb-3">
+      {#each rootLeaves as node}
+        <span class="bg-surface-200 text-surface-800 text-xs rounded px-2 py-1">
+          {node.label}
+        </span>
+      {/each}
+    </div>
   {/if}
-</section>
+
+  {#each rootBranches as node}
+    <div class="mt-1.5">
+      <p class="text-sm font-semibold text-surface-700 mx-0 mb-0">{node.label}</p>
+      <div class="pl-3 border-l-2 border-surface-300 mt-1">
+        {@render nodeChildren(node.children)}
+      </div>
+    </div>
+  {/each}
+{/if}

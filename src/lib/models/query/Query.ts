@@ -225,6 +225,17 @@ export class QueryV3 implements QueryInterfaceV3 {
     this.id = newQuery?.id || null;
   }
 
+  get leaves(): PhenotypicFilterInterface[] {
+    const getLeaves = (node: PhenotypicClause): PhenotypicFilterInterface[] => {
+      if (node.type === 'PhenotypicSubquery') {
+        return node.phenotypicClauses.flatMap((child) => getLeaves(child));
+      }
+
+      return [node];
+    };
+    return this.phenotypicClause ? getLeaves(this.phenotypicClause) : [];
+  }
+
   addClauses(clauses: PhenotypicClause[], defaultOperator: OperatorType = Operator.AND) {
     clauses.forEach((clause: PhenotypicClause) => this.addClause(clause, defaultOperator));
   }

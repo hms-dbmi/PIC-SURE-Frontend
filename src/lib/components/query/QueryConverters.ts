@@ -53,7 +53,33 @@ export async function pathToSearchResult(
   };
 }
 
+export interface QueryEstimate {
+  filters: number;
+  exports: number;
+}
+
 // -------------------------------- V2 Query -------------------------------- //
+
+export function estimateV2(query: QueryV2): QueryEstimate {
+  const category = query.variantInfoFilters?.[0]?.categoryVariantInfoFilters;
+  return {
+    filters: [
+      Object.keys(query.categoryFilters).length,
+      Object.keys(query.numericFilters).length,
+      query.requiredFields.length,
+      query.anyRecordOf.length,
+      query.anyRecordOfMulti.flat().length,
+      (category?.Gene_with_variant?.length || 0) > 1 ||
+      (category?.Variant_consequence_calculated?.length || 0) > 1 ||
+      (category?.Variant_frequency_as_text?.length || 0) > 1
+        ? 1
+        : 0,
+    ]
+      .filter(Boolean)
+      .reduce((a, t) => t + a, 0),
+    exports: query.fields.length + (query.crossCountFields?.length || 0),
+  };
+}
 
 export function queryV2ToV3(query: QueryV2): QueryV3 {
   const clauses: PhenotypicFilterInterface[] = [];
@@ -149,6 +175,13 @@ export function queryV2ToV3(query: QueryV2): QueryV3 {
 }
 
 // -------------------------------- V3 Query -------------------------------- //
+
+export function estimateV3(query: QueryV3): QueryEstimate {
+  return {
+    filters: query.leaves.length + (query.genomicFilters.length > 1 ? 1 : 0),
+    exports: query.select.length,
+  };
+}
 
 async function phenotypicFilterToFilter(
   pf: PhenotypicFilterInterface,
@@ -274,23 +307,23 @@ function getExports(query: QueryV3, errors: string[]): Promise<ExportInterface[]
 }
 
 export type QuerySummaryData = {
-  filterTree: LogicTree<FilterInterface>;
-  genomicFilters: Filter[];
-  exports: ExportInterface[];
-  errors: string[];
+  filterTree: Promise<LogicTree<FilterInterface>>;
+  genomicFilters: Promise<Filter[]>;
+  exports: Promise<ExportInterface[]>;
+  errors: Promise<string[]>;
 };
 
-export async function loadQuerySummaryData(
-  query: QueryV2 | QueryV3,
-  version: string,
-): Promise<QuerySummaryData> {
+export function loadQuerySummaryData(query: QueryV2 | QueryV3, version: string): QuerySummaryData {
   const q: QueryV3 =
     version === QueryVersion.V3 ? (query as QueryV3) : queryV2ToV3(query as QueryV2);
 
-  const errors: string[] = [];
-  const filterTree = await queryToFilterTree(q, errors);
-  const genomicFilters = q.genomicFilters.length ? [genomicV3ToFilter(q.genomicFilters)] : [];
-  const exports = await getExports(q, errors);
+  const errorsList: string[] = [];
+  const filterTree = queryToFilterTree(q, errorsList);
+  const genomicFilters = Promise.resolve(
+    q.genomicFilters.length ? [genomicV3ToFilter(q.genomicFilters)] : [],
+  );
+  const exports = getExports(q, errorsList);
+  const errors = Promise.all([filterTree, exports]).then(() => errorsList);
 
   return {
     filterTree,

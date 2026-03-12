@@ -34,6 +34,8 @@ vi.mock('$lib/stores/Export', async () => {
 vi.mock('$lib/components/query/QueryConverters', () => ({
   loadQuerySummaryData: vi.fn(),
   pathToSearchResult: vi.fn(),
+  estimateV2: vi.fn().mockReturnValue({ filters: 3, exports: 3 }),
+  estimateV3: vi.fn().mockReturnValue({ filters: 3, exports: 3 }),
 }));
 
 const mockLoadQuerySummaryData = vi.mocked(loadQuerySummaryData);
@@ -55,7 +57,12 @@ function makeFilterTree() {
   } as unknown as LogicTree<FilterInterface>;
 }
 
-const baseData = { filterTree: makeFilterTree(), genomicFilters: [], exports: [], errors: [] };
+const baseData = {
+  filterTree: Promise.resolve(makeFilterTree()),
+  genomicFilters: Promise.resolve([]),
+  exports: Promise.resolve([]),
+  errors: Promise.resolve([]),
+};
 
 // query value is only forwarded to the mocked loadQuerySummaryData, so shape doesn't matter
 const baseProps = { query: {} as QueryV3, version: QueryVersion.V3 };
@@ -66,7 +73,7 @@ describe('QuerySummary', () => {
   });
 
   it('shows the enabled Restore Filters button when there are no errors', async () => {
-    mockLoadQuerySummaryData.mockResolvedValue(baseData);
+    mockLoadQuerySummaryData.mockReturnValue(baseData);
     render(QuerySummary, baseProps);
 
     // Wait for the {#await} block to resolve
@@ -77,9 +84,9 @@ describe('QuerySummary', () => {
   });
 
   it('disables the Restore Filters button and shows an error alert when data.errors is non-empty', async () => {
-    mockLoadQuerySummaryData.mockResolvedValue({
+    mockLoadQuerySummaryData.mockReturnValue({
       ...baseData,
-      errors: ['\\phs001\\'],
+      errors: Promise.resolve(['\\phs001\\']),
     });
     render(QuerySummary, baseProps);
 
@@ -90,17 +97,5 @@ describe('QuerySummary', () => {
     expect(screen.getByTestId('restore-popover-btn')).toBeDisabled();
     expect(screen.getByTestId('error-alert')).toBeInTheDocument();
     expect(screen.getByTestId('error-alert')).toHaveTextContent('\\phs001\\');
-  });
-
-  it('shows an API error alert in the catch block when loadQuerySummaryData rejects', async () => {
-    mockLoadQuerySummaryData.mockRejectedValue(new Error('network failure'));
-    render(QuerySummary, { ...baseProps, uuid: 'test-uuid-123' });
-
-    const alert = await screen.findByTestId('error-alert');
-
-    expect(alert).toBeInTheDocument();
-    expect(alert).toHaveTextContent('test-uuid-123');
-    expect(screen.queryByTestId('restore-filters-btn')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('restore-popover-btn')).not.toBeInTheDocument();
   });
 });

@@ -838,6 +838,16 @@ describe('queryToFilterTree', () => {
   });
 });
 
+async function allLoadQuerySummaryData(query: QueryV2 | QueryV3, version: string) {
+  const data = loadQuerySummaryData(query, version);
+  return {
+    exports: await data.exports,
+    filterTree: await data.filterTree,
+    genomicFilters: await data.genomicFilters,
+    errors: await data.errors,
+  };
+}
+
 describe('loadQuerySummaryData', () => {
   beforeEach(() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -854,7 +864,7 @@ describe('loadQuerySummaryData', () => {
     });
 
     // When
-    const data = await loadQuerySummaryData(query, QueryVersion.V3);
+    const data = await allLoadQuerySummaryData(query, QueryVersion.V3);
     const exports = data.exports.map(({ conceptPath }) => conceptPath);
 
     // Then
@@ -877,7 +887,7 @@ describe('loadQuerySummaryData', () => {
     });
 
     // When
-    const data = await loadQuerySummaryData(query, QueryVersion.V3);
+    const data = await allLoadQuerySummaryData(query, QueryVersion.V3);
 
     // Then
     expect(data.filterTree.leafNodes).toHaveLength(1);
@@ -891,7 +901,7 @@ describe('loadQuerySummaryData', () => {
     });
 
     // When
-    const data = await loadQuerySummaryData(query, QueryVersion.V2);
+    const data = await allLoadQuerySummaryData(query, QueryVersion.V2);
 
     // Then
     expect(data.filterTree.leafNodes).toHaveLength(1);
@@ -908,7 +918,7 @@ describe('loadQuerySummaryData', () => {
     });
 
     // When
-    const data = await loadQuerySummaryData(query, QueryVersion.V2);
+    const data = await allLoadQuerySummaryData(query, QueryVersion.V2);
     const exports = data.exports.map(({ conceptPath }) => conceptPath);
 
     // Then — requiredFields and anyRecordOf are now filter nodes, not field selections
@@ -928,7 +938,7 @@ describe('loadQuerySummaryData', () => {
     );
 
     // When
-    const data = await loadQuerySummaryData(query, QueryVersion.V2);
+    const data = await allLoadQuerySummaryData(query, QueryVersion.V2);
 
     // Then
     expect(data.filterTree.leafNodes).toHaveLength(2);
@@ -949,7 +959,7 @@ describe('loadQuerySummaryData', () => {
     });
 
     // When
-    const data = await loadQuerySummaryData(query, QueryVersion.V2);
+    const data = await allLoadQuerySummaryData(query, QueryVersion.V2);
 
     // Then
     expect(data.genomicFilters).toHaveLength(1);
@@ -963,7 +973,7 @@ describe('loadQuerySummaryData', () => {
     const query = makeV2Query({ categoryFilters: { [failingPath]: ['Male'] } });
 
     // When
-    const data = await loadQuerySummaryData(query, QueryVersion.V2);
+    const data = await allLoadQuerySummaryData(query, QueryVersion.V2);
 
     // Then — filter still created (degraded), path recorded in errors
     expect(data.errors).toEqual([failingPath]);

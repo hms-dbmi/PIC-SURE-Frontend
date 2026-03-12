@@ -64,20 +64,9 @@
           </tbody>
         </table>
       </section>
-      {#if dataset.query}
-        <QuerySummary
-          query={dataset.query}
-          version={dataset.version}
-          uuid={dataset.queryId}
-          name={dataset.name}
-        />
-      {:else}
-        <ErrorAlert color="warning">Invalid query object.</ErrorAlert>
-      {/if}
+      <QuerySummary query={dataset.query} version={dataset.version} name={dataset.name} />
     {:else}
-      <ErrorAlert title="API Error">
-        An error occured while retrieving dataset {page.params.uuid}.
-      </ErrorAlert>
+      <ErrorAlert color="warning">Invalid query object.</ErrorAlert>
     {/if}
   {:catch}
     <ErrorAlert title="API Error">
