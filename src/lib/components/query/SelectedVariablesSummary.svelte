@@ -1,5 +1,8 @@
 <script lang="ts">
-  let { paths }: { paths: string[] } = $props();
+  import type { ExportInterface } from '$lib/models/Export';
+
+  let { exports = [] }: { exports: ExportInterface[] } = $props();
+  let paths = $derived(exports.map(({ conceptPath }) => conceptPath));
 
   type PathNode = {
     label: string;

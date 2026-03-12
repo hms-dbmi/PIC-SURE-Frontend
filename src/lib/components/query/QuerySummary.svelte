@@ -3,19 +3,13 @@
   import { toaster } from '$lib/toaster';
   import { features } from '$lib/configuration';
 
-  import {
-    pathToSearchResult,
-    loadQuerySummaryData,
-    type QuerySummaryData,
-  } from './QueryConverters';
+  import { loadQuerySummaryData, type QuerySummaryData } from './QueryConverters';
 
-  import type { ExportInterface } from '$lib/models/Export';
   import type { QueryV2, QueryV3 } from '$lib/models/query/Query';
-  import type { SearchResult } from '$lib/models/Search';
   import { QueryVersion } from '$lib/models/Dataset';
 
   import { genomicFilters, allFilters, setFilterTree } from '$lib/stores/Filter';
-  import { mapSearchResultAsExport, exports } from '$lib/stores/Export';
+  import { exports } from '$lib/stores/Export';
 
   import FiltersSummary from '$lib/components/query/FiltersSummary.svelte';
   import SelectedVariablesSummary from '$lib/components/query/SelectedVariablesSummary.svelte';
@@ -24,12 +18,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import Popover from '$lib/components/Popover.svelte';
 
-  let {
-    query,
-    version,
-    uuid,
-    name,
-  }: {
+  let { query, version, uuid, name }: {
     query: QueryV2 | QueryV3;
     version: string;
     uuid?: string;
@@ -38,29 +27,17 @@
 
   let modal = $state(false);
   let hasExistingFilters = $derived($allFilters.length > 0);
-  let loadingFilters: Promise<void> = $state(Promise.resolve());
 
   async function setFilters(data: QuerySummaryData) {
     modal = false;
-
-    loadingFilters = Promise.all(data.fields.map((field) => pathToSearchResult(field)))
-      .then((searchPaths: SearchResult[]) => {
-        const exportsList: ExportInterface[] = searchPaths.map(mapSearchResultAsExport);
-
-        exports.set(exportsList);
-        setFilterTree(data.filterTree);
-        genomicFilters.set(data.genomicFilters);
-        toaster.success({
-          description: `Filters restored for ${name ? name + ' dataset' : 'dataset'}.`,
-        });
-        goto('/explorer');
-      })
-      .catch(() => {
-        toaster.error({
-          description: 'An error occurred while retrieving data for additional fields.',
-        });
-      });
-  }
+    exports.set(data.exports);
+    setFilterTree(data.filterTree);
+    genomicFilters.set(data.genomicFilters);
+    toaster.success({
+      description: `Filters restored for ${name ? name + ' dataset' : 'dataset'}.`,
+    });
+    goto('/explorer');
+}
 
   let restoreQueryButton = $derived(
     version === QueryVersion.V3 || (version === QueryVersion.V2 && features.restoreV2queries),
@@ -72,11 +49,9 @@
 {:then data}
   {@const hasErrors = data.errors.length > 0}
   {#if hasErrors}
+  {@const plural = data.errors.length > 1 ? 's' : ''}
     <ErrorAlert title="API Error" color="warning">
-      An error occurred while retrieving additional filter information for path{data.errors.length >
-      1
-        ? 's'
-        : ''}:
+      An error occurred while retrieving additional filter information for path{plural}:
       {#if data.errors.length > 1}
         <ul>
           {#each data.errors as path}
@@ -100,10 +75,7 @@
           confirmText="Restore Filters"
           onconfirm={() => setFilters(data)}
         >
-          {#snippet trigger()}
-            {#await loadingFilters}<i class="fa-solid fa-spinner fa-spin"></i>{/await}
-            Restore Filters
-          {/snippet}
+          {#snippet trigger()}Restore Filters{/snippet}
           {#if hasExistingFilters}
             <ErrorAlert icon color="warning">You already have active filters.</ErrorAlert>
           {/if}
@@ -131,7 +103,7 @@
     <h2 class="text-left h4 mb-2 mt-6">Filters Applied</h2>
     <FiltersSummary filterTree={data.filterTree} genomicFilters={data.genomicFilters} />
   </section>
-  <SelectedVariablesSummary paths={data.fields} />
+  <SelectedVariablesSummary exports={data.exports} />
 {:catch error}
   <ErrorAlert title="API Error">
     An error occurred while retrieving filter information for {uuid

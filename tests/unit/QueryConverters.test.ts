@@ -11,9 +11,7 @@ import type {
 import { getConceptDetails, getConceptTree } from '$lib/stores/Dictionary';
 
 import {
-  loadV2Fields,
-  loadV2GenomicFilters,
-  loadV2Filters,
+  queryV2ToV3,
   genomicV3ToFilter,
   pathToSearchResult,
   queryToFilterTree,
@@ -83,115 +81,246 @@ function makeV3Query(overrides: Partial<ConstructorParameters<typeof QueryV3>[0]
   });
 }
 
-describe('loadV2Fields', () => {
-  it('flattens all field arrays into a single list', () => {
-    // Given
-    const query = makeV2Query({
-      fields: ['\\\\dataset\\\\apples\\\\', '\\\\dataset\\\\banana\\\\'],
-      requiredFields: ['\\\\dataset\\\\cactus\\\\'],
-      anyRecordOf: ['\\\\dataset\\\\domino\\\\'],
-      anyRecordOfMulti: [['\\\\dataset\\\\equal\\\\']],
-      crossCountFields: ['\\\\dataset\\\\flower\\\\'],
+describe('queryV2ToV3', () => {
+  describe('select', () => {
+    it('maps fields to select', () => {
+      // Given
+      const query = makeV2Query({
+        fields: ['\\\\dataset\\\\apples\\\\', '\\\\dataset\\\\banana\\\\'],
+      });
+
+      // When
+      const result = queryV2ToV3(query);
+
+      // Then
+      expect(result.select).toEqual(['\\\\dataset\\\\apples\\\\', '\\\\dataset\\\\banana\\\\']);
     });
 
-    // When
-    const result = loadV2Fields(query);
+    it('merges fields and crossCountFields into select, deduplicating', () => {
+      // Given
+      const query = makeV2Query({
+        fields: ['\\\\dataset\\\\apples\\\\', '\\\\dataset\\\\banana\\\\'],
+        crossCountFields: ['\\\\dataset\\\\banana\\\\', '\\\\dataset\\\\cactus\\\\'],
+      });
 
-    // Then
-    expect(result).toEqual([
-      '\\\\dataset\\\\apples\\\\',
-      '\\\\dataset\\\\banana\\\\',
-      '\\\\dataset\\\\cactus\\\\',
-      '\\\\dataset\\\\domino\\\\',
-      '\\\\dataset\\\\equal\\\\',
-      '\\\\dataset\\\\flower\\\\',
-    ]);
-  });
+      // When
+      const result = queryV2ToV3(query);
 
-  it('deduplicates paths that appear in multiple arrays', () => {
-    // Given
-    const query = makeV2Query({
-      fields: ['\\\\dataset\\\\apples\\\\'],
-      requiredFields: ['\\\\dataset\\\\apples\\\\'],
+      // Then
+      expect(result.select).toEqual([
+        '\\\\dataset\\\\apples\\\\',
+        '\\\\dataset\\\\banana\\\\',
+        '\\\\dataset\\\\cactus\\\\',
+      ]);
     });
 
-    // When
-    const result = loadV2Fields(query);
-
-    // Then
-    expect(result).toEqual(['\\\\dataset\\\\apples\\\\']);
+    it('produces empty select when fields and crossCountFields are empty', () => {
+      // Given / When / Then
+      expect(queryV2ToV3(makeV2Query()).select).toEqual([]);
+    });
   });
 
-  it('returns empty array when all field arrays are empty', () => {
-    // Given
-    const query = makeV2Query();
-
-    // When / Then
-    expect(loadV2Fields(query)).toEqual([]);
-  });
-});
-
-describe('loadV2GenomicFilters', () => {
-  it('returns empty array when variantInfoFilters is empty', () => {
-    // Given
-    const query = makeV2Query({ variantInfoFilters: [] });
-
-    // When / Then
-    expect(loadV2GenomicFilters(query)).toHaveLength(0);
-  });
-
-  it('returns empty array when categoryVariantInfoFilters has no values', () => {
-    // Given
-    const query = makeV2Query({
-      variantInfoFilters: [{ categoryVariantInfoFilters: {}, numericVariantInfoFilters: {} }],
+  describe('phenotypicClause', () => {
+    it('is null when query has no filters', () => {
+      // Given / When / Then
+      expect(queryV2ToV3(makeV2Query()).phenotypicClause).toBeNull();
     });
 
-    // When / Then
-    expect(loadV2GenomicFilters(query)).toHaveLength(0);
-  });
+    it('is a single PhenotypicFilter when exactly one filter is present', () => {
+      // Given
+      const query = makeV2Query({ categoryFilters: { '\\\\dataset\\\\sex\\\\': ['Male'] } });
 
-  it('returns a genomic filter for Gene_with_variant', () => {
-    // Given
-    const query = makeV2Query({
-      variantInfoFilters: [
-        {
-          categoryVariantInfoFilters: { Gene_with_variant: ['BRCA1', 'BRCA2'] },
-          numericVariantInfoFilters: {},
+      // When
+      const { phenotypicClause } = queryV2ToV3(query);
+
+      // Then
+      expect(phenotypicClause?.type).toBe('PhenotypicFilter');
+    });
+
+    it('is a PhenotypicSubquery(AND) when multiple filters are present', () => {
+      // Given
+      const query = makeV2Query({
+        categoryFilters: {
+          '\\\\dataset\\\\sex\\\\': ['Male'],
+          '\\\\dataset\\\\ancestry\\\\': ['EUR'],
         },
-      ],
+      });
+
+      // When
+      const { phenotypicClause } = queryV2ToV3(query);
+
+      // Then
+      expect(phenotypicClause?.type).toBe('PhenotypicSubquery');
+      if (phenotypicClause?.type === 'PhenotypicSubquery') {
+        expect(phenotypicClause.operator).toBe('AND');
+        expect(phenotypicClause.phenotypicClauses).toHaveLength(2);
+      }
     });
 
-    // When
-    const result = loadV2GenomicFilters(query) as GenomicFilterInterface[];
+    it('maps categoryFilters entries to FILTER PhenotypicFilters with values', () => {
+      // Given
+      const query = makeV2Query({
+        categoryFilters: { '\\\\dataset\\\\sex\\\\': ['Male', 'Female'] },
+      });
 
-    // Then
-    expect(result).toHaveLength(1);
-    expect(result[0].filterType).toBe('genomic');
-    expect(result[0].Gene_with_variant).toEqual(['BRCA1', 'BRCA2']);
+      // When
+      const { phenotypicClause } = queryV2ToV3(query);
+
+      // Then
+      expect(phenotypicClause).toMatchObject({
+        type: 'PhenotypicFilter',
+        phenotypicFilterType: 'FILTER',
+        conceptPath: '\\\\dataset\\\\sex\\\\',
+        values: ['Male', 'Female'],
+      });
+    });
+
+    it('maps numericFilters entries to FILTER PhenotypicFilters with numeric min/max', () => {
+      // Given
+      const query = makeV2Query({
+        numericFilters: { '\\\\dataset\\\\age\\\\': { min: 18, max: 65 } },
+      });
+
+      // When
+      const { phenotypicClause } = queryV2ToV3(query);
+
+      // Then
+      expect(phenotypicClause).toMatchObject({
+        type: 'PhenotypicFilter',
+        phenotypicFilterType: 'FILTER',
+        conceptPath: '\\\\dataset\\\\age\\\\',
+        min: 18,
+        max: 65,
+      });
+    });
+
+    it('maps requiredFields entries to REQUIRED PhenotypicFilters', () => {
+      // Given
+      const query = makeV2Query({ requiredFields: ['\\\\dataset\\\\variable\\\\'] });
+
+      // When
+      const { phenotypicClause } = queryV2ToV3(query);
+
+      // Then
+      expect(phenotypicClause).toMatchObject({
+        type: 'PhenotypicFilter',
+        phenotypicFilterType: 'REQUIRED',
+        conceptPath: '\\\\dataset\\\\variable\\\\',
+      });
+    });
+
+    it('maps anyRecordOf entries to ANY_RECORD_OF PhenotypicFilters', () => {
+      // Given
+      const query = makeV2Query({ anyRecordOf: ['\\\\dataset\\\\variable\\\\'] });
+
+      // When
+      const { phenotypicClause } = queryV2ToV3(query);
+
+      // Then
+      expect(phenotypicClause).toMatchObject({
+        type: 'PhenotypicFilter',
+        phenotypicFilterType: 'ANY_RECORD_OF',
+        conceptPath: '\\\\dataset\\\\variable\\\\',
+      });
+    });
+
+    it('flattens anyRecordOfMulti entries into ANY_RECORD_OF PhenotypicFilters', () => {
+      // Given
+      const query = makeV2Query({
+        anyRecordOfMulti: [['\\\\dataset\\\\a\\\\', '\\\\dataset\\\\b\\\\']],
+      });
+
+      // When
+      const { phenotypicClause } = queryV2ToV3(query);
+
+      // Then — two ANY_RECORD_OF filters, one per path
+      expect(phenotypicClause?.type).toBe('PhenotypicSubquery');
+      if (phenotypicClause?.type === 'PhenotypicSubquery') {
+        expect(phenotypicClause.phenotypicClauses).toHaveLength(2);
+        expect(
+          phenotypicClause.phenotypicClauses.every(
+            (c) => c.type === 'PhenotypicFilter' && c.phenotypicFilterType === 'ANY_RECORD_OF',
+          ),
+        ).toBe(true);
+      }
+    });
   });
 
-  it('populates all three category variant fields when present', () => {
-    // Given
-    const query = makeV2Query({
-      variantInfoFilters: [
-        {
-          categoryVariantInfoFilters: {
-            Gene_with_variant: ['BRCA1'],
-            Variant_consequence_calculated: ['missense_variant'],
-            Variant_frequency_as_text: ['Common'],
+  describe('genomicFilters', () => {
+    it('is empty when variantInfoFilters is empty', () => {
+      // Given / When / Then
+      expect(queryV2ToV3(makeV2Query({ variantInfoFilters: [] })).genomicFilters).toHaveLength(0);
+    });
+
+    it('is empty when categoryVariantInfoFilters has no values', () => {
+      // Given
+      const query = makeV2Query({
+        variantInfoFilters: [{ categoryVariantInfoFilters: {}, numericVariantInfoFilters: {} }],
+      });
+
+      // When / Then
+      expect(queryV2ToV3(query).genomicFilters).toHaveLength(0);
+    });
+
+    it('maps Gene_with_variant to a genomicFilters entry', () => {
+      // Given
+      const query = makeV2Query({
+        variantInfoFilters: [
+          { categoryVariantInfoFilters: { Gene_with_variant: ['BRCA1', 'BRCA2'] } },
+        ],
+      });
+
+      // When
+      const { genomicFilters } = queryV2ToV3(query);
+
+      // Then
+      expect(genomicFilters).toHaveLength(1);
+      expect(genomicFilters[0]).toEqual({ key: 'Gene_with_variant', values: ['BRCA1', 'BRCA2'] });
+    });
+
+    it('maps all three category variant fields to separate genomicFilters entries', () => {
+      // Given
+      const query = makeV2Query({
+        variantInfoFilters: [
+          {
+            categoryVariantInfoFilters: {
+              Gene_with_variant: ['BRCA1'],
+              Variant_consequence_calculated: ['missense_variant'],
+              Variant_frequency_as_text: ['Common'],
+            },
           },
-          numericVariantInfoFilters: {},
-        },
-      ],
-    });
+        ],
+      });
 
-    // When
-    const [filter] = loadV2GenomicFilters(query) as GenomicFilterInterface[];
+      // When
+      const { genomicFilters } = queryV2ToV3(query);
+
+      // Then
+      expect(genomicFilters).toHaveLength(3);
+      expect(genomicFilters.find((g) => g.key === 'Gene_with_variant')?.values).toEqual(['BRCA1']);
+      expect(
+        genomicFilters.find((g) => g.key === 'Variant_consequence_calculated')?.values,
+      ).toEqual(['missense_variant']);
+      expect(genomicFilters.find((g) => g.key === 'Variant_frequency_as_text')?.values).toEqual([
+        'Common',
+      ]);
+    });
+  });
+
+  it('passes through a single expectedResultType value', () => {
+    // Given / When
+    const result = queryV2ToV3(makeV2Query({ expectedResultType: 'DATAFRAME' }));
 
     // Then
-    expect(filter.Gene_with_variant).toEqual(['BRCA1']);
-    expect(filter.Variant_consequence_calculated).toEqual(['missense_variant']);
-    expect(filter.Variant_frequency_as_text).toEqual(['Common']);
+    expect(result.expectedResultType).toBe('DATAFRAME');
+  });
+
+  it('takes the first element when expectedResultType is an array', () => {
+    // Given / When
+    const result = queryV2ToV3(makeV2Query({ expectedResultType: ['COUNT', 'DATAFRAME'] }));
+
+    // Then
+    expect(result.expectedResultType).toBe('COUNT');
   });
 });
 
@@ -338,148 +467,6 @@ describe('pathToSearchResult', () => {
 
     // Then
     expect(result.type).toBe('Categorical');
-  });
-});
-
-describe('loadV2Filters', () => {
-  beforeEach(() => {
-    mockGetConceptDetails.mockResolvedValue(makeSearchResult());
-  });
-
-  it('creates a categorical filter for each categoryFilters entry', async () => {
-    // Given
-    const query = makeV2Query({
-      categoryFilters: {
-        '\\\\dataset\\\\sex\\\\': ['Male', 'Female'],
-        '\\\\dataset\\\\ancestry\\\\': ['EUR'],
-      },
-    });
-    const errors: string[] = [];
-
-    // When
-    const tree = await loadV2Filters(query, errors);
-
-    // Then
-    expect(errors).toHaveLength(0);
-    expect(tree.leafNodes).toHaveLength(2);
-    expect(tree.leafNodes.every((n) => n.filterType === 'Categorical')).toBe(true);
-  });
-
-  it('creates a numeric filter for each numericFilters entry', async () => {
-    // Given
-    const query = makeV2Query({
-      numericFilters: { '\\\\dataset\\\\age\\\\': { min: '18', max: '65' } },
-    });
-    const errors: string[] = [];
-
-    // When
-    const tree = await loadV2Filters(query, errors);
-
-    // Then
-    expect(errors).toHaveLength(0);
-    expect(tree.leafNodes).toHaveLength(1);
-    expect(tree.leafNodes[0]).toMatchObject({ filterType: 'numeric', min: '18', max: '65' });
-  });
-
-  it('mixes categorical and numeric filters in one tree', async () => {
-    // Given
-    const query = makeV2Query({
-      categoryFilters: { '\\\\dataset\\\\sex\\\\': ['Male'] },
-      numericFilters: { '\\\\dataset\\\\age\\\\': { min: '18' } },
-    });
-    const errors: string[] = [];
-
-    // When
-    const tree = await loadV2Filters(query, errors);
-
-    // Then
-    expect(errors).toHaveLength(0);
-    expect(tree.leafNodes).toHaveLength(2);
-  });
-
-  it('returns an empty tree when there are no filters', async () => {
-    // Given
-    const query = makeV2Query();
-    const errors: string[] = [];
-
-    // When
-    const tree = await loadV2Filters(query, errors);
-
-    // Then
-    expect(errors).toHaveLength(0);
-    expect(tree.leafNodes).toHaveLength(0);
-  });
-
-  it('records the path and still creates a categorical filter when concept detail API fails', async () => {
-    // Given
-    const failingPath = '\\\\dataset\\\\sex\\\\';
-    mockGetConceptDetails.mockRejectedValueOnce(new Error('detail API unavailable'));
-    const query = makeV2Query({ categoryFilters: { [failingPath]: ['Male'] } });
-    const errors: string[] = [];
-
-    // When
-    const tree = await loadV2Filters(query, errors);
-
-    // Then — filter is created with fallback data, path recorded in errors
-    expect(errors).toEqual([failingPath]);
-    expect(tree.leafNodes).toHaveLength(1);
-    expect(tree.leafNodes[0]).toMatchObject({ filterType: 'Categorical' });
-  });
-
-  it('records the path and still creates a numeric filter when concept detail API fails', async () => {
-    // Given
-    const failingPath = '\\\\dataset\\\\age\\\\';
-    mockGetConceptDetails.mockRejectedValueOnce(new Error('detail API unavailable'));
-    const query = makeV2Query({ numericFilters: { [failingPath]: { min: '18', max: '65' } } });
-    const errors: string[] = [];
-
-    // When
-    const tree = await loadV2Filters(query, errors);
-
-    // Then — filter is created with fallback data, path recorded in errors
-    expect(errors).toEqual([failingPath]);
-    expect(tree.leafNodes).toHaveLength(1);
-    expect(tree.leafNodes[0]).toMatchObject({ filterType: 'numeric', min: '18', max: '65' });
-  });
-
-  it('only records the failing path when one of several filters fails', async () => {
-    // Given — first call fails, second succeeds
-    const failingPath = '\\\\dataset\\\\sex\\\\';
-    const succeedingPath = '\\\\dataset\\\\age\\\\';
-    mockGetConceptDetails
-      .mockRejectedValueOnce(new Error('detail API unavailable'))
-      .mockResolvedValueOnce(makeSearchResult({ conceptPath: succeedingPath }));
-    const query = makeV2Query({
-      categoryFilters: { [failingPath]: ['Male'] },
-      numericFilters: { [succeedingPath]: { min: '18' } },
-    });
-    const errors: string[] = [];
-
-    // When
-    const tree = await loadV2Filters(query, errors);
-
-    // Then — both filters created, only the failed path is in errors
-    expect(errors).toEqual([failingPath]);
-    expect(tree.leafNodes).toHaveLength(2);
-  });
-
-  it('records all paths when multiple filters fail', async () => {
-    // Given — both paths fail
-    const path1 = '\\\\dataset\\\\sex\\\\';
-    const path2 = '\\\\dataset\\\\race\\\\';
-    mockGetConceptDetails
-      .mockRejectedValueOnce(new Error('detail API unavailable'))
-      .mockRejectedValueOnce(new Error('detail API unavailable'));
-    const query = makeV2Query({ categoryFilters: { [path1]: ['Male'], [path2]: ['Asian'] } });
-    const errors: string[] = [];
-
-    // When
-    const tree = await loadV2Filters(query, errors);
-
-    // Then — both filters still created (degraded), both paths in errors
-    expect(errors).toEqual(expect.arrayContaining([path1, path2]));
-    expect(errors).toHaveLength(2);
-    expect(tree.leafNodes).toHaveLength(2);
   });
 });
 
@@ -853,7 +840,10 @@ describe('queryToFilterTree', () => {
 
 describe('loadQuerySummaryData', () => {
   beforeEach(() => {
-    mockGetConceptDetails.mockResolvedValue(makeSearchResult());
+    mockGetConceptDetails
+      .mockImplementation(
+        (conceptPath: string, _dataset: string) => Promise.resolve(makeSearchResult({ conceptPath }))
+      );
   });
 
   it('V3: returns select paths as fields and maps genomicFilters', async () => {
@@ -865,9 +855,10 @@ describe('loadQuerySummaryData', () => {
 
     // When
     const data = await loadQuerySummaryData(query, QueryVersion.V3);
+    const exports = data.exports.map(({ conceptPath }) => conceptPath);
 
     // Then
-    expect(data.fields).toEqual(['\\\\dataset\\\\variable1\\\\', '\\\\dataset\\\\variable2\\\\']);
+    expect(exports).toEqual(['\\\\dataset\\\\variable1\\\\', '\\\\dataset\\\\variable2\\\\']);
     expect(data.genomicFilters).toHaveLength(1);
     expect(data.genomicFilters[0].filterType).toBe('genomic');
     expect(data.filterTree.leafNodes).toHaveLength(0);
@@ -892,7 +883,7 @@ describe('loadQuerySummaryData', () => {
     expect(data.filterTree.leafNodes).toHaveLength(1);
   });
 
-  it('V2: builds filterTree from categoryFilters and returns loadV2Fields as fields', async () => {
+  it('V2: builds filterTree from categoryFilters', async () => {
     // Given
     const query = makeV2Query({
       categoryFilters: { '\\\\dataset\\\\sex\\\\': ['Male'] },
@@ -904,7 +895,46 @@ describe('loadQuerySummaryData', () => {
 
     // Then
     expect(data.filterTree.leafNodes).toHaveLength(1);
-    expect(data.fields).toContain('\\\\dataset\\\\age\\\\');
+    expect(data.filterTree.leafNodes[0]).toMatchObject({ filterType: 'Categorical' });
+  });
+
+  it('V2: fields contains only fields and crossCountFields (not requiredFields or anyRecordOf)', async () => {
+    // Given
+    const query = makeV2Query({
+      fields: ['\\\\dataset\\\\age\\\\'],
+      crossCountFields: ['\\\\dataset\\\\sex\\\\'],
+      requiredFields: ['\\\\dataset\\\\required\\\\'],
+      anyRecordOf: ['\\\\dataset\\\\aro\\\\'],
+    });
+
+    // When
+    const data = await loadQuerySummaryData(query, QueryVersion.V2);
+    const exports = data.exports.map(({ conceptPath }) => conceptPath);
+
+    // Then — requiredFields and anyRecordOf are now filter nodes, not field selections
+    expect(exports).toEqual(['\\\\dataset\\\\age\\\\', '\\\\dataset\\\\sex\\\\']);
+  });
+
+  it('V2: requiredFields and anyRecordOf produce filter nodes in the filterTree', async () => {
+    // Given
+    const query = makeV2Query({
+      requiredFields: ['\\\\dataset\\\\required\\\\'],
+      anyRecordOf: ['\\\\dataset\\\\aro\\\\'],
+    });
+    mockGetConceptTree.mockResolvedValue(
+      makeSearchResult({
+        children: [makeSearchResult({ conceptPath: '\\\\dataset\\\\aro\\\\child\\\\' })],
+      }),
+    );
+
+    // When
+    const data = await loadQuerySummaryData(query, QueryVersion.V2);
+
+    // Then
+    expect(data.filterTree.leafNodes).toHaveLength(2);
+    const types = data.filterTree.leafNodes.map((n) => n.filterType);
+    expect(types).toContain('Categorical'); // required maps to Categorical displayType:'any'
+    expect(types).toContain('AnyRecordOf');
   });
 
   it('V2: maps variantInfoFilters to genomicFilters', async () => {
@@ -924,5 +954,19 @@ describe('loadQuerySummaryData', () => {
     // Then
     expect(data.genomicFilters).toHaveLength(1);
     expect(data.genomicFilters[0].filterType).toBe('genomic');
+  });
+
+  it('V2: records errors from concept detail API failures', async () => {
+    // Given
+    const failingPath = '\\\\dataset\\\\sex\\\\';
+    mockGetConceptDetails.mockRejectedValueOnce(new Error('detail API unavailable'));
+    const query = makeV2Query({ categoryFilters: { [failingPath]: ['Male'] } });
+
+    // When
+    const data = await loadQuerySummaryData(query, QueryVersion.V2);
+
+    // Then — filter still created (degraded), path recorded in errors
+    expect(data.errors).toEqual([failingPath]);
+    expect(data.filterTree.leafNodes).toHaveLength(1);
   });
 });

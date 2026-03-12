@@ -46,6 +46,7 @@
   {:then}
     <Datatable
       isClickable
+      searchable
       tableName="ActiveDatasets"
       title="Active Datasets"
       data={$active}
@@ -56,6 +57,7 @@
     {#if getShowArchived()}
       <Datatable
         isClickable
+        searchable
         tableName="ArchivedDatasets"
         title="Deleted Datasets"
         data={$archived}

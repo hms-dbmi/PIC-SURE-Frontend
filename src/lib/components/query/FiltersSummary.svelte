@@ -7,10 +7,7 @@
   } from '$lib/models/Filter';
   import { LogicTree } from '$lib/models/LogicTree.svelte';
 
-  let {
-    filterTree,
-    genomicFilters,
-  }: {
+  let { filterTree, genomicFilters }: {
     filterTree: LogicTree<FilterInterface>;
     genomicFilters: Filter[];
   } = $props();
