@@ -330,7 +330,8 @@
       : undefined;
     const targetIdEmpty = targetId?.startsWith('empty-');
     const cleanTargetId = targetId && targetIdEmpty ? targetId.split('empty-')[1] : targetId;
-    const isClickOnParentContainer = targetId === activeParentId || targetId === 'root' || cleanTargetId === sourceId;
+    const isClickOnParentContainer =
+      targetId === activeParentId || targetId === 'root' || cleanTargetId === sourceId;
     if (isClickOnParentContainer && !hasDragMovement) {
       return { type: 'no-movement' };
     }

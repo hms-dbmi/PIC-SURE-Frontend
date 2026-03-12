@@ -4,7 +4,7 @@
     FilterInterface,
     FilterGroupInterface,
     AnyRecordOfFilterInterface,
-  } from '$lib/models/Filter';
+  } from '$lib/models/Filter.svelte';
   import { LogicTree } from '$lib/models/LogicTree.svelte';
 
   let {

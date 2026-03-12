@@ -1,4 +1,4 @@
-import { genericUUID } from '$lib/utilities/UUID';
+import { genericUUID, objectUUID } from '$lib/utilities/UUID';
 import type { SearchResult } from '$lib/models/Search';
 import { GenotypeMap, type SNP } from '$lib/models/GenomeFilter';
 import { type OperatorType, Operator } from '$lib/models/query/Query';
@@ -129,7 +129,7 @@ export function createCategoricalFilter(
 ): CategoricalFilterInterface {
   const filter: Filter = {
     parent: undefined,
-    uuid: genericUUID(),
+    uuid: '',
     id: searchResult.conceptPath,
     filterType: 'Categorical',
     displayType: values && values?.length > 0 ? 'restrict' : 'anyRecordOf',
@@ -140,13 +140,14 @@ export function createCategoricalFilter(
     allowFiltering: searchResult.allowFiltering,
     dataset: searchResult.dataset,
   };
+  filter.uuid = objectUUID(filter);
   return filter;
 }
 
 export function createRequiredFilter(searchResult: SearchResult): CategoricalFilterInterface {
   const filter: Filter = {
     parent: undefined,
-    uuid: genericUUID(),
+    uuid: '',
     id: searchResult.conceptPath,
     filterType: 'Categorical',
     displayType: 'any',
@@ -157,6 +158,7 @@ export function createRequiredFilter(searchResult: SearchResult): CategoricalFil
     allowFiltering: searchResult.allowFiltering,
     dataset: searchResult.dataset,
   };
+  filter.uuid = objectUUID(filter);
   return filter;
 }
 
@@ -179,7 +181,7 @@ export function createAnyRecordOfFilter(
   }
   const filter: AnyRecordOfFilterInterface = {
     parent: undefined,
-    uuid: genericUUID(),
+    uuid: '',
     id: searchResult.conceptPath,
     concepts: conceptPaths,
     filterType: 'AnyRecordOf',
@@ -190,6 +192,7 @@ export function createAnyRecordOfFilter(
     allowFiltering: searchResult.allowFiltering,
     dataset: searchResult.dataset,
   };
+  filter.uuid = objectUUID(filter);
   return filter;
 }
 
@@ -200,7 +203,7 @@ export function createNumericFilter(
 ): NumericFilterInterface {
   const filter: Filter = {
     parent: undefined,
-    uuid: genericUUID(),
+    uuid: '',
     id: searchResult.conceptPath,
     filterType: 'numeric',
     displayType:
@@ -219,6 +222,7 @@ export function createNumericFilter(
     allowFiltering: searchResult.allowFiltering,
     dataset: searchResult.dataset,
   };
+  filter.uuid = objectUUID(filter);
   return filter;
 }
 
@@ -249,7 +253,7 @@ export function createGenomicFilter(geneFilter: {
 
   const filter: Filter = {
     parent: undefined,
-    uuid: genericUUID(),
+    uuid: '',
     id: 'genomic',
     filterType: 'genomic',
     displayType: 'any',
@@ -263,6 +267,7 @@ export function createGenomicFilter(geneFilter: {
     allowFiltering: true,
     dataset: '',
   };
+  filter.uuid = objectUUID(filter);
   return filter;
 }
 
@@ -278,7 +283,7 @@ export function createSnpsFilter(snps: SNP[]): SnpFilterInterface {
     .join('; ');
   const filter: Filter = {
     parent: undefined,
-    uuid: genericUUID(),
+    uuid: '',
     id: 'snp-variant',
     filterType: 'snp',
     displayType: 'any',
@@ -288,6 +293,7 @@ export function createSnpsFilter(snps: SNP[]): SnpFilterInterface {
     allowFiltering: true,
     dataset: '',
   };
+  filter.uuid = objectUUID(filter);
   return filter;
 }
 

@@ -17,7 +17,7 @@ import {
   createFilterGroup,
   createRequiredFilter,
   createAnyRecordOfFilter,
-} from '$lib/models/Filter';
+} from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
 import { getConceptDetails, getConceptTree, ENSURE_MAX_DEPTH } from '$lib/stores/Dictionary';
 import { LogicTree } from '$lib/models/LogicTree.svelte';
