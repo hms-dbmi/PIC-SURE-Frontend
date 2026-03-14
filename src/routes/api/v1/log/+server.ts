@@ -8,6 +8,10 @@ const ACCEPTED = 202;
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
   const AUDIT_API_KEY = env.AUDIT_API_KEY;
 
+  if (!AUDIT_API_KEY) {
+    console.error('[log] Logging API Key not set!');
+  }
+
   let body: LogEvent;
   try {
     body = await request.json();
