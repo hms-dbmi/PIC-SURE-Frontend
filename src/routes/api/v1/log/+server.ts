@@ -30,7 +30,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
   };
 
   const authorization = request.headers.get('Authorization');
-  if (authorization) {
+  if (authorization && /^Bearer [\w-]+\.[\w-]+\.[\w-]+$/i.test(authorization)) {
     headers['Authorization'] = authorization;
   }
 
