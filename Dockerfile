@@ -37,6 +37,7 @@ RUN mkdir -p logs
 COPY --from=builder /app/build build/
 COPY --from=builder /app/node_modules node_modules/
 COPY package.json .
+ENV XFF_DEPTH=1
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 ENV NODE_ENV=production
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
