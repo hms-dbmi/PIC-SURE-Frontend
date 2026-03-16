@@ -31,12 +31,13 @@
         toaster.success({ description: 'Terms have been successfully published.' });
         goto('/admin/configuration');
       })
-      .catch(() =>
+      .catch((error) => {
+        console.log(error);
         toaster.error({
           description:
             'An error occured while publishing these terms. Make a backup and try again or contact an administrator.',
-        }),
-      );
+        });
+      });
   }
 </script>
 
