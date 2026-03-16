@@ -21,7 +21,7 @@
     | { type: 'canceled' }
     | { type: 'no-movement' }
     | { type: 'empty-drop-zone'; targetId: string }
-    | { type: 'group-drop-zone'; targetId: string }
+    | { type: 'group-drop-zone'; targetId: string; targetData?: any }
     | { type: 'cross-group'; targetId: string }
     | { type: 'reorder-applied' }
     | { type: 'fallback'; targetId: string | null; source: any };
@@ -138,10 +138,10 @@
     return true;
   }
 
-  function handleGroupDropZone(targetId: string): boolean {
+  function handleGroupDropZone(targetId: string, targetData?: any): boolean {
     if (!targetId.startsWith('drop-') || !activeNode) return false;
 
-    const targetGroupId = targetId.replace('drop-', '');
+    const targetGroupId = targetData?.targetGroupId || targetId.replace('drop-', '');
     const targetGroup = getGroupNodeByContainerId(targetGroupId);
     if (!targetGroup) return false;
 
@@ -155,8 +155,21 @@
     }
 
     const oldParent = activeNode.parent as FilterGroupInterface | null;
+    const insertAt: number | undefined = targetData?.insertAt;
+
+    // Compute adjusted index accounting for removal shifting indices
+    let finalIndex = targetGroup.children.length;
+    if (insertAt !== undefined && oldParent) {
+      const currentIndex = oldParent.children.findIndex((c) => c.uuid === activeNode.uuid);
+      finalIndex = insertAt;
+      if (oldParent === targetGroup && currentIndex !== -1 && currentIndex < insertAt) {
+        finalIndex = insertAt - 1;
+      }
+    }
+
     if (oldParent) removeFromParent(activeNode, oldParent);
-    insertAtIndex(activeNode, targetGroup, targetGroup.children.length);
+    finalIndex = Math.min(finalIndex, targetGroup.children.length);
+    insertAtIndex(activeNode, targetGroup, finalIndex);
     return true;
   }
 
@@ -178,10 +191,10 @@
     const targetNode = localTree.find((n) => n.uuid === targetId);
     if (!targetNode) return null;
 
-    if (isFilterGroup(targetNode)) {
-      return { group: targetNode, index: targetNode.children.length };
-    }
-
+    // Always find the target's position in its parent and return the parent
+    // as the destination group. This treats both items and groups as siblings
+    // for reordering. Explicit nesting into groups is handled separately
+    // by the empty-drop-zone and group-drop-zone paths.
     const parentGroup = targetNode.parent as FilterGroupInterface | null;
     if (!parentGroup) return null;
 
@@ -315,8 +328,10 @@
     const sourceId = source?.id ? String(source.id) : null;
 
     // Ignore dropping on own dropzone (can't nest into yourself)
-    if (targetId && isDropZoneTarget(targetId) && targetId === `drop-${sourceId}`) {
-      targetId = null;
+    if (targetId && sourceId && isDropZoneTarget(targetId)) {
+      if (targetId === `drop-${sourceId}` || targetId === `empty-${sourceId}`) {
+        targetId = null;
+      }
     }
 
     // Path 1: Canceled drag
@@ -328,9 +343,7 @@
     const activeParentId = activeNode?.parent
       ? containerIdForTreeParent(activeNode.parent)
       : undefined;
-    const targetIdEmpty = targetId?.startsWith('empty-');
-    const cleanTargetId = targetId && targetIdEmpty ? targetId.split('empty-')[1] : targetId;
-    const isClickOnParentContainer = targetId === activeParentId || targetId === 'root' || cleanTargetId === sourceId;
+    const isClickOnParentContainer = targetId === activeParentId || targetId === 'root';
     if (isClickOnParentContainer && !hasDragMovement) {
       return { type: 'no-movement' };
     }
@@ -342,7 +355,7 @@
 
     // Path 4: Group drop zone
     if (targetId?.startsWith('drop-')) {
-      return { type: 'group-drop-zone', targetId };
+      return { type: 'group-drop-zone', targetId, targetData: target?.data };
     }
 
     // Path 5: Cross-group or group target
@@ -410,7 +423,7 @@
         handleEmptyDropZone(op.targetId);
         break;
       case 'group-drop-zone':
-        handleGroupDropZone(op.targetId);
+        handleGroupDropZone(op.targetId, op.targetData);
         break;
       case 'cross-group':
         handleCrossGroupOrReorder(op.targetId);
@@ -425,6 +438,33 @@
         break;
     }
     clearDragState();
+  }
+
+  function wouldCreateCircularReference(order: Record<string, string[]>): boolean {
+    if (!activeNode || !isFilterGroup(activeNode)) return false;
+    const activeUuid = activeNode.uuid;
+
+    // Find which container the active group would be placed in
+    for (const [containerId, ids] of Object.entries(order)) {
+      if (!ids.includes(activeUuid)) continue;
+      if (containerId === 'root') continue;
+
+      // Check if the target container is the active group itself or a descendant
+      if (containerId === activeUuid) return true;
+
+      const isDescendant = (groupId: string): boolean => {
+        const childIds = order[groupId];
+        if (!childIds) return false;
+        for (const childId of childIds) {
+          if (childId === containerId) return true;
+          if (order[childId] && isDescendant(childId)) return true;
+        }
+        return false;
+      };
+
+      if (isDescendant(activeUuid)) return true;
+    }
+    return false;
   }
 
   function handleDragOver(event: any) {
@@ -442,11 +482,12 @@
     const sourceId = String(source.id);
 
     // Ignore dropzones that belong to the dragged item itself (can't nest into yourself)
-    if (isDropZone && targetId === `drop-${sourceId}`) {
-      // Clear any projected reorder - we don't want to apply changes when over own dropzone
+    if (isDropZone && (targetId === `drop-${sourceId}` || targetId === `empty-${sourceId}`)) {
       projectedOrder = null;
       return;
     }
+
+    const isDraggingGroup = activeNode && isFilterGroup(activeNode);
 
     const baseOrder = buildSortableOrder();
     let nextOrder = baseOrder;
@@ -466,13 +507,62 @@
         nextOrder[targetGroupId] = [];
       }
       if (!nextOrder[targetGroupId].includes(activeUuid)) {
-        nextOrder[targetGroupId] = [...nextOrder[targetGroupId], activeUuid];
+        const insertAt = target?.data?.insertAt;
+        if (insertAt !== undefined) {
+          // Position-aware insertion for reorder drop zones.
+          // Adjust for the active having been removed from this container.
+          const originalIds = baseOrder[targetGroupId] || [];
+          const originalIndex = originalIds.indexOf(activeUuid);
+          let adjustedIndex = insertAt;
+          if (originalIndex !== -1 && originalIndex < insertAt) {
+            adjustedIndex = insertAt - 1;
+          }
+          adjustedIndex = Math.min(adjustedIndex, nextOrder[targetGroupId].length);
+          nextOrder[targetGroupId] = [
+            ...nextOrder[targetGroupId].slice(0, adjustedIndex),
+            activeUuid,
+            ...nextOrder[targetGroupId].slice(adjustedIndex),
+          ];
+        } else {
+          nextOrder[targetGroupId] = [...nextOrder[targetGroupId], activeUuid];
+        }
       }
     } else {
       nextOrder = move(baseOrder, event);
     }
 
     if (nextOrder !== baseOrder) {
+      // Reject moves that would create circular references
+      if (wouldCreateCircularReference(nextOrder)) {
+        projectedOrder = null;
+        return;
+      }
+
+      // For group drags, reject cross-container moves during dragOver.
+      // Cross-container moves (nesting into another group) should only
+      // happen via explicit GroupDropZone / EmptyDropZone on drop.
+      if (isDraggingGroup) {
+        const activeUuid = String(source.id);
+        let originalContainer: string | null = null;
+        let newContainer: string | null = null;
+        for (const [containerId, ids] of Object.entries(baseOrder)) {
+          if (ids.includes(activeUuid)) {
+            originalContainer = containerId;
+            break;
+          }
+        }
+        for (const [containerId, ids] of Object.entries(nextOrder)) {
+          if (ids.includes(activeUuid)) {
+            newContainer = containerId;
+            break;
+          }
+        }
+        if (originalContainer !== newContainer) {
+          projectedOrder = null;
+          return;
+        }
+      }
+
       // Check if the source item actually moved to a different position
       const sourceId = String(source.id);
       let sourceActuallyMoved = false;

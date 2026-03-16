@@ -8,6 +8,7 @@
     label?: string;
     isGroupDrag?: boolean;
     isOverlay?: boolean;
+    insertAt?: number;
   }
 
   let {
@@ -16,6 +17,7 @@
     label = 'Drop into group',
     isGroupDrag = false,
     isOverlay = false,
+    insertAt,
   }: Props = $props();
 
   // When enabled, High priority ensures it wins over group sortables
@@ -23,7 +25,7 @@
   // Disable in overlay mode to prevent duplicate sortable IDs
   const { ref } = useSortable({
     get id() {
-      return `drop-${groupId}`;
+      return insertAt !== undefined ? `drop-${groupId}__${insertAt}` : `drop-${groupId}`;
     },
     index: () => index,
     type: 'drop',
@@ -33,7 +35,7 @@
       return isOverlay;
     },
     get data() {
-      return { targetGroupId: groupId, isGroupDropZone: true };
+      return { targetGroupId: groupId, isGroupDropZone: true, insertAt };
     },
   });
 
@@ -44,7 +46,7 @@
 <div
   data-testid="group-drop-zone"
   data-group-id={groupId}
-  class="rounded-md mt-1 border border-dashed text-primary-600 text-xs font-semibold uppercase tracking-wide flex items-center justify-center transition-all"
+  class="rounded-md mt-1 mb-1 border border-dashed text-primary-600 text-xs font-semibold uppercase tracking-wide flex items-center justify-center transition-all"
   class:h-0={!showZone}
   class:opacity-0={!showZone}
   class:border-transparent={!showZone}

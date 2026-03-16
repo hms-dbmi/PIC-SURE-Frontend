@@ -60,7 +60,7 @@
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
   // Disable in overlay mode to prevent duplicate sortable IDs
-  const { ref, handleRef, isDragging } = useSortable({
+  const { ref, handleRef } = useSortable({
     get id() {
       return id;
     },
@@ -69,7 +69,10 @@
       return parentId;
     },
     type: 'group',
-    accept: ['item', 'group'],
+    // Only accept items, not groups. Group-to-group collision causes dnd-kit's
+    // sortable to try insertAdjacentElement which fails with HierarchyRequestError
+    // when groups are containers. Group reordering uses GroupDropZone slots instead.
+    accept: ['item'],
     collisionPriority: CollisionPriority.Lowest,
     get data() {
       return { ...group, targetGroupId: id };
@@ -78,7 +81,11 @@
       return isOverlay;
     },
   });
-  const showDropPreview = $derived(!isOverlay && isDragging.current && isDraggable);
+  // Use our controlled activeId rather than dnd-kit's isDragging.current for the
+  // drop preview. isDragging.current can get stuck when tree nodes are replaced
+  // (e.g. restoreSnapshot in handleDragEnd), but activeId is always properly
+  // cleared in clearDragState().
+  const showDropPreview = $derived(!isOverlay && activeId === id && isDraggable);
 
   function handleOperatorChange(details: { value: string | null }) {
     if (details.value == null) return;
@@ -92,11 +99,7 @@
 
 <div class="relative" {@attach ref}>
   {#if showLeadingOperator && leadingOperator}
-    <div
-      class="flex justify-center py-2 {activeId && activeId === id && !isOverlay
-        ? 'invisible'
-        : ''}"
-    >
+    <div class="flex justify-center py-2 {activeId === id && !isOverlay ? 'invisible' : ''}">
       <span
         class="badge font-bold text-xs uppercase {leadingOperator === 'OR'
           ? 'preset-filled-secondary-200-800'
@@ -110,7 +113,7 @@
   <div
     class="card py-2 px-4 {id === 'root'
       ? 'bg-surface-50 shadow-none border-none'
-      : activeId === id && isDragging.current && !isOverlay
+      : activeId === id && !isOverlay
         ? 'invisible'
         : 'bg-white border-surface-400 border'}"
   >
@@ -164,6 +167,9 @@
 
     <div class="flex flex-col min-h-[50px] w-full">
       {#each group.children as child, i (child.uuid)}
+        {#if id === 'root' && isGroupDrag && child.uuid !== activeId && (i === 0 || group.children[i - 1]?.uuid !== activeId)}
+          <GroupDropZone groupId="root" {isGroupDrag} insertAt={i} {isOverlay} label="Move here" />
+        {/if}
         {#if isFilterGroup(child)}
           <AdvancedGroup
             group={child}
@@ -199,7 +205,8 @@
   {#if showDropPreview}
     <div
       data-testid="drop-preview"
-      class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg flex items-center justify-center"
+      id={`drop-preview-${id}`}
+      class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg flex items-center justify-center mt-1"
     >
       <span class="text-primary-600 text-xs font-semibold uppercase tracking-wide">
         Moving: Group

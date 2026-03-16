@@ -38,7 +38,7 @@
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
 
   // Disable in overlay mode to prevent duplicate sortable IDs
-  const { ref, handleRef, isDragging } = useSortable({
+  const { ref, handleRef } = useSortable({
     get id() {
       return filter.uuid;
     },
@@ -99,9 +99,7 @@
   {/if}
 
   <div
-    class="card flex flex-col gap-2 py-2 px-4 {activeId === filter.uuid &&
-    isDragging.current &&
-    !isOverlay
+    class="card flex flex-col gap-2 py-2 px-4 {activeId === filter.uuid && !isOverlay
       ? 'invisible'
       : ''} bg-white border-surface-400 border"
   >
@@ -113,6 +111,8 @@
         <div class="text-sm font-medium">{filter.variableName}</div>
         {#if filter.searchResult?.studyAcronym}
           <div class="text-xs text-surface-500">Study: {filter.searchResult.studyAcronym}</div>
+        {:else if filter.searchResult?.dataset}
+          <div class="text-xs text-surface-500">Study: {filter.searchResult.dataset}</div>
         {/if}
       </div>
       <div class="ml-auto">
@@ -148,7 +148,7 @@
     {/if}
   </div>
 
-  {#if !isOverlay && isDragging.current}
+  {#if !isOverlay && activeId === filter.uuid}
     <div
       data-testid="drop-preview"
       class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg flex items-center justify-center"
