@@ -107,7 +107,13 @@ export async function search(state: State): Promise<SearchResult[]> {
   if (!response) {
     error.set(errorText);
   }
-  log(createLog('SEARCH', 'search.results', { totalResults: response?.totalElements ?? 0 }));
+  log(
+    createLog('SEARCH', 'search.results', {
+      term: get(searchTerm),
+      totalResults: response?.totalElements ?? 0,
+      facetCount: get(selectedFacets).length,
+    }),
+  );
   state.setTotalRows(response?.totalElements ?? 0);
   return response?.content ?? [];
 }

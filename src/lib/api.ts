@@ -80,12 +80,13 @@ async function handleResponse(res: Response) {
       return text; //TODO: Change this
     }
   } else if (res.status === 401) {
-    log(createLog('AUTH', 'session.unauthorized'));
+    log(createLog('AUTH', 'session.unauthorized', undefined, { status: 401 }));
     browser &&
       sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
     logout(undefined, true);
     return;
   } else if (res.status === 403) {
+    log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
     if (browser) {
       sessionStorage.removeItem('logout-reason');
       sessionStorage.removeItem('filters');

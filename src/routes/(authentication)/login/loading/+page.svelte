@@ -43,7 +43,7 @@
         throw new Error('User not found');
       }
 
-      log(createLog('LOGIN', 'login.success', { provider: providerType }));
+      log(createLog('LOGIN', 'login.success', { provider: providerType }, { status: 200 }));
 
       // api returns as string
       user.acceptedTOS = String(user.acceptedTOS) === 'true';
@@ -59,7 +59,7 @@
   onMount(async () => {
     panelOpen.set(false);
     attemptUserLogin().catch((error) => {
-      log(createLog('LOGIN', 'login.failure', { error: String(error) }));
+      log(createLog('LOGIN', 'login.failure', { error: String(error) }, { status: 401 }));
       console.error('Login Error: ', error);
       goto('/login/error');
       return;

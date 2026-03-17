@@ -103,7 +103,8 @@ async function getOpenCount(options: RequestMapOptions): Promise<PatientCount> {
     createLog('QUERY', 'query.execute', {
       isOpenAccess: true,
       type: 'patientCount',
-      query: request.query,
+      resourceUUID: request.resourceUUID,
+      expectedResultType: request.query.expectedResultType,
     }),
   );
   return api
@@ -119,7 +120,8 @@ function getAuthCount(options: RequestMapOptions): Promise<PatientCount> {
     createLog('QUERY', 'query.execute', {
       isOpenAccess: false,
       type: 'patientCount',
-      query: request.query,
+      resourceUUID: request.resourceUUID,
+      expectedResultType: request.query.expectedResultType,
     }),
   );
   return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
@@ -137,7 +139,14 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     const request = { ...options.request };
     request.query.expectedResultType = type;
     request.query.setCrossCountFields(fields);
-    log(createLog('QUERY', 'query.execute', { type: field, query: request.query }));
+    log(
+      createLog('QUERY', 'query.execute', {
+        type: field,
+        resourceUUID: request.resourceUUID,
+        expectedResultType: request.query.expectedResultType,
+        crossCountFieldCount: fields.length,
+      }),
+    );
     return api.post(Picsure.QuerySync, request).then(rejectIfQueryError);
   };
 }

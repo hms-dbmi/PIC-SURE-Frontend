@@ -59,10 +59,10 @@ export function createLog(
   overrides?: Partial<LogEvent>,
 ): LogEvent {
   const event: LogEvent = {
+    _time: new Date().toISOString(),
     event_type: eventType,
     client_type: 'frontend',
     app: 'PIC-SURE',
-    status: 200,
   };
   if (action) event.action = action;
   const loggedIn = isUserLoggedIn();
@@ -72,13 +72,13 @@ export function createLog(
     const type = sessionStorage.getItem('type') ?? undefined;
     event.user_id = userData.userId ? userData.userId : userData.email;
     event.user_email = userData.email?.includes('@') ? userData.email : undefined;
-    event.eRA_commons_id = type === 'RAS' ? userData.email : undefined;
     event.user_id_provider = type;
     event.roles = getRelevantPrivileges(userData);
     event.idp = sessionStorage.getItem('idp') || undefined;
   }
   if (metadata) event.metadata = metadata;
-  event.associated_study = _associatedStudies ? get(_associatedStudies) : [];
+  const studies = _associatedStudies ? get(_associatedStudies) : undefined;
+  event.associated_study = studies?.length ? studies : undefined;
 
   if (browser) {
     event.session_id = getSessionId();

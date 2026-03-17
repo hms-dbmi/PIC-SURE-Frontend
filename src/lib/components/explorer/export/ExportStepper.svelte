@@ -198,7 +198,12 @@
   }
 
   function onComplete() {
-    log(createLog('EXPORT', 'export.stepper.complete', { datasetId: getDatasetId() }));
+    log(
+      createLog('EXPORT', 'export.stepper.complete', {
+        datasetId: getDatasetId(),
+        resultType: getActiveType(),
+      }),
+    );
     if (features.explorer.enableRedcapExport) {
       log(createLog('EXPORT', 'export.open_redcap', { datasetId: getDatasetId() }));
       window.open(
