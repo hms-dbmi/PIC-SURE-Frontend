@@ -775,3 +775,261 @@ test.describe('Advanced Filtering - Unsaved Changes', () => {
     await afPage.expectBadgeText('OR');
   });
 });
+
+test.describe('Advanced Filtering - Group Drag and Drop', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  let afPage: AdvancedFilteringPage;
+
+  /**
+   * Helper: set up page with two groups via sessionStorage manipulation.
+   */
+  async function setupWithTwoGroups(page: import('@playwright/test').Page) {
+    afPage = new AdvancedFilteringPage(page);
+    await afPage.setupAndOpenModal(4);
+    await afPage.closeModal();
+    await afPage.injectTwoGroups(page);
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+  }
+
+  test('AF-DND-GRP-001: Group does not disappear after being dragged and released', async ({
+    page,
+  }) => {
+    await setupWithTwoGroups(page);
+
+    const groups = afPage.getGroupCards();
+    const initialCount = await groups.count();
+    expect(initialCount).toBe(2);
+
+    const dragHandle = afPage.getGroupDragHandle(0);
+    await expect(dragHandle).toBeVisible();
+    await dragHandle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    const handleBox = await dragHandle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+
+    // Drag down and release
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY + 20, { steps: 3 });
+    await page.mouse.move(startX, startY + 150, { steps: 20 });
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+
+    // Both groups should still be visible
+    const finalCount = await groups.count();
+    expect(finalCount).toBe(initialCount);
+  });
+
+  test('AF-DND-GRP-002: Group drop preview clears after drag ends', async ({ page }) => {
+    await setupWithTwoGroups(page);
+
+    const dragHandle = afPage.getGroupDragHandle(0);
+    await expect(dragHandle).toBeVisible();
+    await dragHandle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    const handleBox = await dragHandle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+
+    // Start dragging
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY + 20, { steps: 3 });
+    await page.mouse.move(startX, startY + 150, { steps: 20 });
+
+    // Drop preview should be showing
+    const dropPreviews = afPage.getDropPreviews();
+    await expect(dropPreviews.first()).toBeVisible({ timeout: 3000 });
+
+    // Release the drag
+    await page.mouse.up();
+
+    // Drop previews should all be gone
+    await expect(dropPreviews).toHaveCount(0, { timeout: 2000 });
+  });
+
+  test('AF-DND-GRP-003: "Move here" reorder zones appear when dragging a group', async ({
+    page,
+  }) => {
+    await setupWithTwoGroups(page);
+
+    const moveHereZones = afPage.getMoveHereZones();
+    // No zones visible before drag
+    await expect(moveHereZones).toHaveCount(0);
+
+    const dragHandle = afPage.getGroupDragHandle(0);
+    await expect(dragHandle).toBeVisible();
+    await dragHandle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    const handleBox = await dragHandle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+
+    // Start dragging
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY + 20, { steps: 3 });
+    await page.mouse.move(startX, startY + 100, { steps: 10 });
+
+    // "Move here" zones should appear
+    const visibleZones = afPage.getMoveHereZones();
+    const zoneCount = await visibleZones.count();
+    expect(zoneCount).toBeGreaterThan(0);
+
+    // Release
+    await page.mouse.up();
+
+    // Zones should disappear
+    await expect(moveHereZones).toHaveCount(0, { timeout: 2000 });
+  });
+
+  test('AF-DND-GRP-004: Empty group does not disappear when dragged and released', async ({
+    page,
+  }) => {
+    afPage = new AdvancedFilteringPage(page);
+    await afPage.setupAndOpenModal(4);
+
+    // Add an empty group
+    await afPage.clickAddGroup();
+    const emptyGroupDrop = afPage.getEmptyGroupDropZone();
+    await expect(emptyGroupDrop).toBeVisible();
+
+    const groups = afPage.getGroupCards();
+    const initialGroupCount = await groups.count();
+    expect(initialGroupCount).toBeGreaterThanOrEqual(1);
+
+    // Find the empty group's drag handle
+    const dragHandle = groups.last().locator('.fa-grip-vertical').first();
+    await expect(dragHandle).toBeVisible();
+    await dragHandle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    const handleBox = await dragHandle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+
+    // Drag up and release
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY - 20, { steps: 3 });
+    await page.mouse.move(startX, startY - 100, { steps: 20 });
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+
+    // Group should still exist
+    const finalGroupCount = await groups.count();
+    expect(finalGroupCount).toBe(initialGroupCount);
+  });
+
+  test('AF-DND-GRP-005: Groups remain inside root container after drag operations', async ({
+    page,
+  }) => {
+    await setupWithTwoGroups(page);
+
+    // Get the root container bounds
+    const rootCard = afPage.modal.locator('.card').filter({ hasText: 'Between groups:' }).first();
+    await expect(rootCard).toBeVisible();
+    const rootBox = await rootCard.boundingBox();
+    expect(rootBox).not.toBeNull();
+
+    const dragHandle = afPage.getGroupDragHandle(0);
+    await expect(dragHandle).toBeVisible();
+    await dragHandle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    const handleBox = await dragHandle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+
+    // Drag group around and release
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY + 20, { steps: 3 });
+    await page.mouse.move(startX, startY + 200, { steps: 20 });
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+
+    // All groups should be within the root container bounds
+    const groups = afPage.getGroupCards();
+    const groupCount = await groups.count();
+    for (let i = 0; i < groupCount; i++) {
+      const groupBox = await groups.nth(i).boundingBox();
+      expect(groupBox).not.toBeNull();
+      expect(groupBox!.y).toBeGreaterThanOrEqual(rootBox!.y);
+      expect(groupBox!.y + groupBox!.height).toBeLessThanOrEqual(rootBox!.y + rootBox!.height + 5);
+    }
+  });
+
+  test('AF-DND-GRP-006: Repeated group drags do not cause stuck previews', async ({ page }) => {
+    await setupWithTwoGroups(page);
+
+    const dragHandle = afPage.getGroupDragHandle(0);
+    await expect(dragHandle).toBeVisible();
+    await dragHandle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    const handleBox = await dragHandle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+
+    // Perform 3 drag-and-release cycles
+    for (let cycle = 0; cycle < 3; cycle++) {
+      await page.mouse.move(startX, startY);
+      await page.mouse.down();
+      await page.mouse.move(startX, startY + 20, { steps: 3 });
+      await page.mouse.move(startX, startY + 100, { steps: 10 });
+      await page.mouse.up();
+      await page.waitForTimeout(500);
+    }
+
+    // No drop previews should remain
+    const dropPreviews = afPage.getDropPreviews();
+    await expect(dropPreviews).toHaveCount(0, { timeout: 2000 });
+
+    // Both groups should still be present
+    const groups = afPage.getGroupCards();
+    expect(await groups.count()).toBe(2);
+  });
+
+  test('AF-DND-GRP-007: No console errors when dragging groups', async ({ page }) => {
+    await setupWithTwoGroups(page);
+
+    const errors: string[] = [];
+    page.on('pageerror', (err) => errors.push(err.message));
+
+    const dragHandle = afPage.getGroupDragHandle(0);
+    await expect(dragHandle).toBeVisible();
+    await dragHandle.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
+
+    const handleBox = await dragHandle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+
+    // Drag around and release
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY + 20, { steps: 3 });
+    await page.mouse.move(startX, startY + 200, { steps: 20 });
+    await page.mouse.move(startX, startY - 50, { steps: 20 });
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+
+    // Filter out the known dnd-kit HierarchyRequestError (from its internal sortable)
+    const criticalErrors = errors.filter((e) => !e.includes('HierarchyRequestError'));
+    expect(criticalErrors).toHaveLength(0);
+  });
+});

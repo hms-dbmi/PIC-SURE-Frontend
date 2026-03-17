@@ -416,6 +416,48 @@ export class AdvancedFilteringPage {
     await this.getUnsavedModal().getByRole('button', { name: 'Apply Changes' }).click();
   }
 
+  // ==================== Group DnD Helpers ====================
+
+  /**
+   * Create a tree with two groups via sessionStorage.
+   * Must be called after closeModal() and before re-navigating.
+   * Returns the group UUIDs for later reference.
+   */
+  async injectTwoGroups(page: import('@playwright/test').Page) {
+    await page.evaluate(() => {
+      const raw = sessionStorage.getItem('filterTree');
+      if (!raw) return;
+      const tree = JSON.parse(raw);
+      // Split children into two groups of ~equal size
+      const half = Math.ceil(tree.children.length / 2);
+      const firstHalf = tree.children.splice(0, half);
+      const secondHalf = tree.children.splice(0);
+      tree.children = [
+        { children: firstHalf, operator: 'AND', uuid: 'test-group-a' },
+        { children: secondHalf, operator: 'AND', uuid: 'test-group-b' },
+      ];
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    });
+  }
+
+  getGroupCards(): Locator {
+    // Use .card.bg-white to exclude root (which has bg-surface-50)
+    return this.modal.locator('.card.bg-white').filter({ hasText: 'Between items:' });
+  }
+
+  getGroupDragHandle(groupIndex: number): Locator {
+    const group = this.getGroupCards().nth(groupIndex);
+    return group.locator('.fa-grip-vertical').first();
+  }
+
+  getDropPreviews(): Locator {
+    return this.page.getByTestId('drop-preview');
+  }
+
+  getMoveHereZones(): Locator {
+    return this.page.getByTestId('group-drop-zone').filter({ hasText: 'Move here' });
+  }
+
   // ==================== Genomic Filter Locators ====================
 
   getGenomicFiltersSection(): Locator {

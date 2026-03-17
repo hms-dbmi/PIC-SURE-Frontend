@@ -160,7 +160,7 @@
     // Compute adjusted index accounting for removal shifting indices
     let finalIndex = targetGroup.children.length;
     if (insertAt !== undefined && oldParent) {
-      const currentIndex = oldParent.children.findIndex((c) => c.uuid === activeNode.uuid);
+      const currentIndex = oldParent.children.findIndex((c) => c.uuid === activeNode!.uuid);
       finalIndex = insertAt;
       if (oldParent === targetGroup && currentIndex !== -1 && currentIndex < insertAt) {
         finalIndex = insertAt - 1;
@@ -640,13 +640,15 @@
       onOperatorChange={handleOperatorChange}
       onAddGroup={addGroup}
     />
-    <!-- Root-level drop zone for un-nesting groups -->
-    <GroupDropZone
-      groupId="root"
-      {isGroupDrag}
-      index={(localTree.root as FilterGroupInterface).children.length}
-      isOverlay={false}
-    />
+    <!-- Root-level drop zone for un-nesting groups; hidden when dragged group is already at root -->
+    {#if !(isGroupDrag && activeNode?.parent === localTree.root)}
+      <GroupDropZone
+        groupId="root"
+        {isGroupDrag}
+        index={(localTree.root as FilterGroupInterface).children.length}
+        isOverlay={false}
+      />
+    {/if}
     <DragOverlay>
       {#if activeNode && isFilterGroup(activeNode)}
         <AdvancedGroup

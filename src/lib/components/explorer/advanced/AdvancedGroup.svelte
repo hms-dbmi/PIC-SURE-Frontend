@@ -195,8 +195,17 @@
       {/each}
       {#if group.children.length === 0}
         <EmptyDropZone groupId={id} />
-      {:else if id !== 'root'}
-        <!-- GroupDropZone for dropping groups into this group; only visible when dragging a group, not shown on root -->
+      {:else if id === 'root' && isGroupDrag && group.children[group.children.length - 1]?.uuid !== activeId}
+        <!-- Reorder zone at end of root; skip if dragged group is already last -->
+        <GroupDropZone
+          groupId="root"
+          {isGroupDrag}
+          insertAt={group.children.length}
+          {isOverlay}
+          label="Move here"
+        />
+      {:else if id !== 'root' && !(isGroupDrag && group.children.some((c) => c.uuid === activeId))}
+        <!-- GroupDropZone for dropping groups into this group; hidden when dragging a group that's already in this group -->
         <GroupDropZone groupId={id} {isGroupDrag} index={group.children.length} {isOverlay} />
       {/if}
     </div>
