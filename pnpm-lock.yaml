@@ -53,8 +53,8 @@ importers:
         specifier: ^2.0.14
         version: 2.0.14
       '@vincjo/datatables':
-        specifier: ^2.6.3
-        version: 2.6.3(svelte@5.38.10)
+        specifier: ^2.6.6
+        version: 2.6.6(svelte@5.38.10)
       auth0-js:
         specifier: ^9.28.0
         version: 9.28.0
@@ -814,8 +814,8 @@ packages:
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
 
-  '@vincjo/datatables@2.6.3':
-    resolution: {integrity: sha512-dDJGsVL+E4V3USUxXBLRQjmuAuDpvJnSvVcrwtwKIl40Fn67Jg+7hKYcONjpFyeTrGPRg4P/KyXZGy2xNMONmg==}
+  '@vincjo/datatables@2.6.6':
+    resolution: {integrity: sha512-vLJKuA+b8a1mZrfocwfJK458j30ms+rWAOhYLKy4axgkpVQao1/HKUYJxCzvLwVh6ZWz6U74fJTIsHrVeJz5EA==}
     peerDependencies:
       svelte: ^5.16.0
 
@@ -2827,7 +2827,7 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@vincjo/datatables@2.6.3(svelte@5.38.10)':
+  '@vincjo/datatables@2.6.6(svelte@5.38.10)':
     dependencies:
       svelte: 5.38.10
 
