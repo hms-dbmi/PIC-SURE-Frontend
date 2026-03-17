@@ -76,6 +76,9 @@ export function addFilter(filter: Filter) {
       displayType: filter.displayType,
       variable: filter.variableName,
       dataset: filter.dataset,
+      valueCount: 'categoryValues' in filter ? filter.categoryValues?.length : undefined,
+      min: 'min' in filter ? filter.min : undefined,
+      max: 'max' in filter ? filter.max : undefined,
     }),
   );
   return filter;

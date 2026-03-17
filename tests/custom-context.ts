@@ -69,6 +69,11 @@ export const test = base.extend({
       sessionStorage.setItem('redirect', '/');
     });
 
+    // Stub log endpoint so tests don't wait on fire-and-forget audit requests
+    await context.route('**/api/v1/log', (route) =>
+      route.fulfill({ status: 202, json: { result: 'accepted' } }),
+    );
+
     use(context);
   },
   page: async ({ page }, use, testInfo) => {

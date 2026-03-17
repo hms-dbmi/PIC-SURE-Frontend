@@ -74,7 +74,7 @@
           'DOWNLOAD',
           'export.download_success',
           { type: query.query.expectedResultType, datasetId },
-          { bytes: blob.size, duration },
+          { status: 200, bytes: blob.size, duration },
         ),
       );
     } catch (error) {
