@@ -24,7 +24,7 @@
 
   const anyRecordOfFilter = $derived(filter.filterType === 'AnyRecordOf');
   let open = $state(false);
-  let carot = $state('fa-caret-up');
+  let caret = $state('fa-caret-up');
 
   // Derive the actual index from parent's children array (reactive to array changes)
   const actualIndex = $derived(
@@ -77,7 +77,7 @@
     event.stopPropagation();
     event.preventDefault();
     open = !open;
-    carot = open ? 'fa-caret-down' : 'fa-caret-up';
+    caret = open ? 'fa-caret-down' : 'fa-caret-up';
   };
 </script>
 
@@ -132,7 +132,7 @@
             class="bg-initial text-black-500 hover:text-primary-600"
             onclick={toggleCardBody}
           >
-            <i class="fa-solid {carot}"></i>
+            <i class="fa-solid {caret}"></i>
             <span class="sr-only">See details</span>
           </button>
         {/if}

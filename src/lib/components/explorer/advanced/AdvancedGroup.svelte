@@ -29,7 +29,7 @@
   }
 
   let {
-    group = $bindable(),
+    group,
     activeId = null,
     isGroupDrag = false,
     index = 0,
@@ -126,6 +126,7 @@
       </div>
       <div class="flex items-center justify-start gap-2 w-full">
         <div>Between {id === 'root' ? 'groups' : 'items'}:</div>
+        <!-- {#key} forces re-mount because Skeleton's Segment doesn't update its indicator position on prop change -->
         {#key operatorValue}
           <Segment
             background="bg-white border-surface-400 border"
@@ -144,6 +145,7 @@
           >
         {/if}
       </div>
+      <!-- TODO: NOT operator support — hidden until backend supports negation -->
       <div class="hidden flex items-center gap-2 ml-auto">
         <label for="not">Not:</label>
         <Switch name="not" checked={not} onCheckedChange={handleNotChange}>
