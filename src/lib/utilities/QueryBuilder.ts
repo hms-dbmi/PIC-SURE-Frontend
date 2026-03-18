@@ -22,8 +22,8 @@ import type {
   GenomicFilterInterface,
   SnpFilterInterface,
   AnyRecordOfFilterInterface,
-} from '$lib/models/Filter';
-import { Tree, type TreeNode } from '$lib/models/Tree';
+} from '$lib/models/Filter.svelte';
+import { LogicTree } from '$lib/models/LogicTree.svelte';
 import type { GenomicFilterInterfacev3, OperatorType } from '$lib/models/query/Query';
 import type { ExportInterface } from '$lib/models/Export.ts';
 
@@ -154,7 +154,7 @@ function serializeQueryV3(query: QueryV3) {
   );
 }
 
-function getClausesFromTree(tree: Tree<FilterInterface>): PhenotypicClause | null {
+function getClausesFromTree(tree: LogicTree<FilterInterface>): PhenotypicClause | null {
   if (tree.root.children.length === 0) return null;
 
   const groupClause = (operator: OperatorType): PhenotypicSubqueryInterface => ({
@@ -163,7 +163,7 @@ function getClausesFromTree(tree: Tree<FilterInterface>): PhenotypicClause | nul
     phenotypicClauses: [],
     not: false,
   });
-  const mapNode = (node: TreeNode<FilterInterface>): PhenotypicClause => {
+  const mapNode = (node: FilterInterface): PhenotypicClause => {
     if (tree.isGroup(node)) {
       const newGroup = groupClause(node.operator);
       newGroup.phenotypicClauses = node.children.map(mapNode);

@@ -1,10 +1,10 @@
-export interface TreeNodeInterface {
+export interface HierarchyNodeInterface {
   name: string;
   value: string;
   open: boolean;
   selected: boolean;
   disabled: boolean;
-  children: TreeNodeInterface[];
+  children: HierarchyNodeInterface[];
   isLeaf: boolean;
   someSelected: boolean;
   allSelected: boolean;
