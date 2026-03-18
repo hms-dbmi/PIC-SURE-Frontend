@@ -264,7 +264,7 @@ test.describe('Results Panel', () => {
     // Then
     await expect(page.getByText('No filters added')).toBeVisible();
   });
-  test.describe('Discover OR', () => {
+  test.describe('Filter Tree Display', () => {
     let querySyncRequest: string[] = [];
 
     test.beforeEach(({ page }) => {
@@ -281,7 +281,7 @@ test.describe('Results Panel', () => {
     test.afterEach(() => {
       querySyncRequest = [];
     });
-    test('shows distributions button when there are no OR filter groups', async ({ page }) => {
+    test('shows distributions button when filters are added', async ({ page }) => {
       // Given
       await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
       await mockApiSuccess(page, facetResultPath, facetsResponse);
@@ -314,41 +314,6 @@ test.describe('Results Panel', () => {
       // Then
       expect(page.getByTestId('distributions-btn')).not.toBeDisabled();
     });
-    test('disables distributions button when there are OR filter groups', async ({ page }) => {
-      // Given
-      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-      await mockApiSuccess(page, facetResultPath, facetsResponse);
-      await mockApiSuccess(page, searchResultPath, mockData);
-      await mockApiSuccess(page, countResultPath, '9999');
-      await page.goto('/discover?search=somedata');
-      await mockApiSuccess(
-        page,
-        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-        detailResponseCat,
-      );
-      await page.locator('#row-0 button[title=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
-      const firstItem = await getOption(page);
-      await firstItem.click();
-      const addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
-      await mockApiSuccess(
-        page,
-        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-        detailResponseCat2,
-      );
-      await page.locator('#row-2 button[title=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
-      const secondItem = await getOption(page);
-      await secondItem.click();
-      const addFilterButton2 = page.getByTestId('add-filter');
-      await addFilterButton2.click();
-      const dropdowns = await page.locator('#export-filters .operator-select').all();
-      await dropdowns[0].selectOption('OR');
-
-      // Then
-      expect(page.getByTestId('distributions-btn')).toBeDisabled();
-    });
 
     test('sends request with QueryV3 structure', async ({ page }) => {
       // Given
@@ -375,7 +340,7 @@ test.describe('Results Panel', () => {
       expect(querySyncRequest.length).toBe(1);
       expect(querySyncRequest[0]).toContain('phenotypicClauses');
     });
-    test('if there is only one filter, there should be no dropdown', async ({ page }) => {
+    test('single filter shows no operator label', async ({ page }) => {
       // Given
       await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
       await mockApiSuccess(page, facetResultPath, facetsResponse);
@@ -397,10 +362,10 @@ test.describe('Results Panel', () => {
       await addFilterButton.click();
 
       // Then
-      const dropdowns = await page.locator('#export-filters .operator-select').all();
-      expect(dropdowns.length).toBe(0);
+      const labels = await page.getByTestId('operator-label').all();
+      expect(labels.length).toBe(0);
     });
-    test('dropdown appears between pheno filters', async ({ page }) => {
+    test('AND label appears between filters', async ({ page }) => {
       // Given
       await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
       await mockApiSuccess(page, facetResultPath, facetsResponse);
@@ -435,127 +400,9 @@ test.describe('Results Panel', () => {
 
       // Then
       await expect(page.locator('#results-panel')).toBeVisible();
-      const dropdowns = await page.locator('#export-filters .operator-select').all();
-      expect(dropdowns.length).toBe(1);
-    });
-    test('can dropdown value be changed', async ({ page }) => {
-      // Given
-      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-      await mockApiSuccess(page, facetResultPath, facetsResponse);
-      await mockApiSuccess(page, searchResultPath, mockData);
-      await mockApiSuccess(page, countResultPath, '9999');
-      await page.goto('/discover?search=somedata');
-      await mockApiSuccess(
-        page,
-        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-        detailResponseCat,
-      );
-      await page.locator('#row-0 button[title=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
-      const firstItem = await getOption(page);
-      await firstItem.click();
-      const addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
-      await mockApiSuccess(
-        page,
-        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-        detailResponseCat2,
-      );
-      await page.locator('#row-2 button[title=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
-      const secondItem = await getOption(page);
-      await secondItem.click();
-      const addFilterButton2 = page.getByTestId('add-filter');
-      await addFilterButton2.click();
-
-      // When
-      const dropdowns = await page.locator('#export-filters .operator-select').all();
-      await dropdowns[0].selectOption('OR');
-
-      // Then
-      expect(querySyncRequest.length).toBe(3);
-      expect(dropdowns[0]).toHaveValue('OR');
-      expect(querySyncRequest[querySyncRequest.length - 1]).toContain('operator":"OR');
-    });
-    test('when a dropdown changes, the count is re-evaluated -> query has new value', async ({
-      page,
-    }) => {
-      // Given
-      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-      await mockApiSuccess(page, facetResultPath, facetsResponse);
-      await mockApiSuccess(page, searchResultPath, mockData);
-      await mockApiSuccess(page, countResultPath, '9999');
-      await page.goto('/discover?search=somedata');
-      await mockApiSuccess(
-        page,
-        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-        detailResponseCat,
-      );
-      await page.locator('#row-0 button[title=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
-      const firstItem = await getOption(page);
-      await firstItem.click();
-      const addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
-      await mockApiSuccess(
-        page,
-        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-        detailResponseCat2,
-      );
-      await page.locator('#row-2 button[title=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
-      const secondItem = await getOption(page);
-      await secondItem.click();
-      const addFilterButton2 = page.getByTestId('add-filter');
-      await addFilterButton2.click();
-
-      // When
-      const dropdowns = await page.locator('#export-filters .operator-select').all();
-      await dropdowns[0].selectOption('OR');
-
-      // Then
-      expect(querySyncRequest.length).toBe(3);
-      expect(querySyncRequest[1]).not.toBe(querySyncRequest[2]);
-    });
-    test('ensure or group is displayed correctly', async ({ page }) => {
-      // Given
-      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-      await mockApiSuccess(page, facetResultPath, facetsResponse);
-      await mockApiSuccess(page, searchResultPath, mockData);
-      await mockApiSuccess(page, countResultPath, '9999');
-      await page.goto('/discover?search=somedata');
-      await mockApiSuccess(
-        page,
-        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-        detailResponseCat,
-      );
-      await page.locator('#row-0 button[title=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
-      const firstItem = await getOption(page);
-      await firstItem.click();
-      let addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
-      await mockApiSuccess(
-        page,
-        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-        detailResponseCat2,
-      );
-      await page.locator('#row-2 button[title=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
-      const secondItem = await getOption(page);
-      await secondItem.click();
-      addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
-
-      // When
-      const dropdowns = await page.locator('#export-filters .operator-select').all();
-      await dropdowns[0].selectOption('OR');
-
-      // Then
-      const orSubGroups = await page
-        .locator('#export-filters .filter-group-and .filter-group-or')
-        .all();
-      expect(orSubGroups.length).toBe(1);
+      const labels = await page.getByTestId('operator-label').all();
+      expect(labels.length).toBe(1);
+      await expect(page.getByTestId('operator-label').first()).toHaveText('AND');
     });
   });
 });

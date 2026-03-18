@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { TreeNodeInterface } from '$lib/components/tree/types';
+  import type { HierarchyNodeInterface } from '$lib/components/tree/types';
   import type { SearchResult } from '$lib/models/Search';
   import RemoteTreeNodeComponent from '$lib/components/tree/RemoteTreeNode.svelte';
   import { onMount } from 'svelte';
@@ -22,7 +22,7 @@
     disabledConcepts: string[];
   } = $props();
 
-  class RemoteTreeNodeClass implements TreeNodeInterface {
+  class RemoteTreeNodeClass implements HierarchyNodeInterface {
     name: string = '';
     value: string = '';
     conceptPath: string = '';
