@@ -3,7 +3,7 @@ import { get, writable, type Writable } from 'svelte/store';
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import { Genotype, type SNP } from '$lib/models/GenomeFilter';
-import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter';
+import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter.svelte';
 import {
   loading as resourcesPromise,
   loadResources,
