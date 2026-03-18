@@ -30,6 +30,60 @@ test.describe('Advanced Filtering - Core Features', () => {
   });
 });
 
+test.describe('Advanced Filtering - Filter Details', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  let afPage: AdvancedFilteringPage;
+
+  test.beforeEach(async ({ page }) => {
+    afPage = new AdvancedFilteringPage(page);
+    await afPage.setupAndOpenModal(4);
+  });
+
+  test('AF-DETAIL-001: Expanding a numeric filter shows correct description', async ({ page }) => {
+    // The 4th filter (index 3) is a numeric "age" filter added as "any value"
+    const filterName = afPage.filterNames[3]; // 'age'
+    const filterCard = afPage.modal
+      .locator('.card.bg-white')
+      .filter({ has: page.getByText(filterName, { exact: true }) })
+      .filter({ has: page.locator('.fa-grip-vertical') })
+      .first();
+    await expect(filterCard).toBeVisible();
+
+    // Click the caret to expand the filter details
+    const caretButton = filterCard.getByRole('button', { name: 'See details' });
+    await expect(caretButton).toBeVisible();
+    await caretButton.click();
+
+    // Verify the description shows the correct text from derivedFilterDescription
+    const detailSection = filterCard.locator('section');
+    await expect(detailSection).toBeVisible();
+    await expect(detailSection).toContainText('Restricting to any value.');
+  });
+
+  test('AF-DETAIL-002: Expanding a categorical filter shows correct description', async ({
+    page,
+  }) => {
+    // The 1st filter (index 0) is a categorical filter with one selected value
+    const filterName = afPage.filterNames[0]; // 'Any family with heart attack?'
+    const filterCard = afPage.modal
+      .locator('.card.bg-white')
+      .filter({ has: page.getByText(filterName, { exact: true }) })
+      .filter({ has: page.locator('.fa-grip-vertical') })
+      .first();
+    await expect(filterCard).toBeVisible();
+
+    // Click the caret to expand the filter details
+    const caretButton = filterCard.getByRole('button', { name: 'See details' });
+    await expect(caretButton).toBeVisible();
+    await caretButton.click();
+
+    // Verify the description shows restricting info
+    const detailSection = filterCard.locator('section');
+    await expect(detailSection).toBeVisible();
+    await expect(detailSection).toContainText('Restricting to');
+  });
+});
+
 test.describe('Advanced Filtering - Global Combiner', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;

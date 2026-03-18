@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { FilterInterface } from '$lib/models/Filter.svelte';
+  import { derivedFilterDescription } from '$lib/models/Filter.svelte';
+  import type { Filter } from '$lib/models/Filter.svelte';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
   import { CollisionPriority } from '@dnd-kit/abstract';
   import { slide } from 'svelte/transition';
@@ -56,22 +58,6 @@
       return isOverlay;
     },
   });
-
-  const getNumericalDesc = function () {
-    if (!filter.searchResult || filter.filterType !== 'numeric') return;
-    switch (filter.displayType) {
-      case 'any':
-        return 'Restricting to any value.';
-      case 'between':
-        return `Restricting to between ${filter.searchResult.min} and ${filter.searchResult.max}.`;
-      case 'greaterThan':
-        return `Restricting to greater than ${filter.searchResult.min}.`;
-      case 'lessThan':
-        return `Restricting to less than ${filter.searchResult.max}.`;
-      default:
-        return filter.description || 'N/A';
-    }
-  };
 
   const toggleCardBody = function (event: Event) {
     event.stopPropagation();
@@ -140,10 +126,7 @@
     </div>
     {#if open}
       <section class="pb-2 px-4 whitespace-pre-wrap" transition:slide={{ axis: 'y' }}>
-        {getNumericalDesc()}
-        {#if filter.filterType === 'Categorical' && filter.searchResult && filter.searchResult.values}
-          <div>Values: {filter.searchResult.values.join(', ')}</div>
-        {/if}
+        {derivedFilterDescription(filter as Filter)}
       </section>
     {/if}
   </div>

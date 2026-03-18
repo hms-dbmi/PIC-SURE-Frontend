@@ -16,6 +16,7 @@
   import { filterTree, genomicFilters } from '$lib/stores/Filter';
   import { LogicTree } from '$lib/models/LogicTree.svelte';
   import { Operator, type OperatorType } from '$lib/models/query/Query';
+  import { toaster } from '$lib/toaster';
 
   type DragOperation =
     | { type: 'canceled' }
@@ -52,9 +53,13 @@
   const localTree = new LogicTree<FilterInterface>((nodes, op) => createFilterGroup(nodes, op));
   // We need to clone the structure to avoid modifying the global store directly by reference.
   // Using serialization/deserialization is a safe way to clone the tree structure.
-  localTree.root = LogicTree.deserialize<FilterInterface>($filterTree.serialized, (nodes, op) =>
-    createFilterGroup(nodes, op),
-  ).root;
+  try {
+    localTree.root = LogicTree.deserialize<FilterInterface>($filterTree.serialized, (nodes, op) =>
+      createFilterGroup(nodes, op),
+    ).root;
+  } catch {
+    toaster.error({ description: 'Failed to load saved filter arrangement. Starting fresh.' });
+  }
 
   let savedSerialized = $state($filterTree.serialized);
 
@@ -404,40 +409,43 @@
   function handleDragEnd(event: any) {
     const op = classifyDragOperation(event);
 
-    // Always restore to pre-drag state first, so every path
-    // below mutates from a known-clean starting point.
-    restoreSnapshot();
+    try {
+      // Always restore to pre-drag state first, so every path
+      // below mutates from a known-clean starting point.
+      restoreSnapshot();
 
-    // Re-resolve activeNode in the restored tree since restoreSnapshot
-    // replaced all nodes, making the old reference stale.
-    if (activeId) {
-      const freshNode = localTree.find((n) => n.uuid === activeId);
-      if (freshNode) activeNode = freshNode;
-    }
+      // Re-resolve activeNode in the restored tree since restoreSnapshot
+      // replaced all nodes, making the old reference stale.
+      if (activeId) {
+        const freshNode = localTree.find((n) => n.uuid === activeId);
+        if (freshNode) activeNode = freshNode;
+      }
 
-    switch (op.type) {
-      case 'canceled':
-      case 'no-movement':
-        break;
-      case 'empty-drop-zone':
-        handleEmptyDropZone(op.targetId);
-        break;
-      case 'group-drop-zone':
-        handleGroupDropZone(op.targetId, op.targetData);
-        break;
-      case 'cross-group':
-        handleCrossGroupOrReorder(op.targetId);
-        break;
-      case 'reorder-applied':
-        if (lastValidProjectedOrder) {
-          applyProjectedOrder(lastValidProjectedOrder);
-        }
-        break;
-      case 'fallback':
-        handleFallback(op.targetId, op.source);
-        break;
+      switch (op.type) {
+        case 'canceled':
+        case 'no-movement':
+          break;
+        case 'empty-drop-zone':
+          handleEmptyDropZone(op.targetId);
+          break;
+        case 'group-drop-zone':
+          handleGroupDropZone(op.targetId, op.targetData);
+          break;
+        case 'cross-group':
+          handleCrossGroupOrReorder(op.targetId);
+          break;
+        case 'reorder-applied':
+          if (lastValidProjectedOrder) {
+            applyProjectedOrder(lastValidProjectedOrder);
+          }
+          break;
+        case 'fallback':
+          handleFallback(op.targetId, op.source);
+          break;
+      }
+    } finally {
+      clearDragState();
     }
-    clearDragState();
   }
 
   function wouldCreateCircularReference(order: Record<string, string[]>): boolean {
