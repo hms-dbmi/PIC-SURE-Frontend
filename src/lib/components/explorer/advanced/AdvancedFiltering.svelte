@@ -57,7 +57,8 @@
     localTree.root = LogicTree.deserialize<FilterInterface>($filterTree.serialized, (nodes, op) =>
       createFilterGroup(nodes, op),
     ).root;
-  } catch {
+  } catch (e) {
+    console.error('Failed to deserialize filter tree:', e);
     toaster.error({ description: 'Failed to load saved filter arrangement. Starting fresh.' });
   }
 

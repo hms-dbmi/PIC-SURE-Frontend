@@ -39,14 +39,9 @@ test.describe('Advanced Filtering - Filter Details', () => {
     await afPage.setupAndOpenModal(4);
   });
 
-  test('AF-DETAIL-001: Expanding a numeric filter shows correct description', async ({ page }) => {
+  test('AF-DETAIL-001: Expanding a numeric filter shows correct description', async () => {
     // The 4th filter (index 3) is a numeric "age" filter added as "any value"
-    const filterName = afPage.filterNames[3]; // 'age'
-    const filterCard = afPage.modal
-      .locator('.card.bg-white')
-      .filter({ has: page.getByText(filterName, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
-      .first();
+    const filterCard = afPage.getFilterCard(afPage.filterNames[3]);
     await expect(filterCard).toBeVisible();
 
     // Click the caret to expand the filter details
@@ -60,16 +55,9 @@ test.describe('Advanced Filtering - Filter Details', () => {
     await expect(detailSection).toContainText('Restricting to any value.');
   });
 
-  test('AF-DETAIL-002: Expanding a categorical filter shows correct description', async ({
-    page,
-  }) => {
+  test('AF-DETAIL-002: Expanding a categorical filter shows correct description', async () => {
     // The 1st filter (index 0) is a categorical filter with one selected value
-    const filterName = afPage.filterNames[0]; // 'Any family with heart attack?'
-    const filterCard = afPage.modal
-      .locator('.card.bg-white')
-      .filter({ has: page.getByText(filterName, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
-      .first();
+    const filterCard = afPage.getFilterCard(afPage.filterNames[0]);
     await expect(filterCard).toBeVisible();
 
     // Click the caret to expand the filter details

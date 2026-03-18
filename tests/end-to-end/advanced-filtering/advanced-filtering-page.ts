@@ -225,6 +225,15 @@ export class AdvancedFilteringPage {
       .filter({ hasText: new RegExp(`^${name.replace(/[?()]/g, '\\$&')}$`) });
   }
 
+  /** Returns the draggable filter card for a given filter name. */
+  getFilterCard(name: string): Locator {
+    return this.modal
+      .locator('.card.bg-white')
+      .filter({ has: this.page.getByText(name, { exact: true }) })
+      .filter({ has: this.page.locator('.fa-grip-vertical') })
+      .first();
+  }
+
   getFilterByStudy(studyName: string): Locator {
     return this.modal.getByText(`Study: ${studyName}`).first();
   }
