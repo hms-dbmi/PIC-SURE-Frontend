@@ -4,7 +4,7 @@ import { GenotypeMap, type SNP } from '$lib/models/GenomeFilter';
 import { type OperatorType, Operator } from '$lib/models/query/Query';
 import { AnyRecordOfFilterError } from '$lib/types';
 
-import type { TreeNode, TreeGroup } from '$lib/models/Tree';
+import type { LogicNode, LogicGroup } from '$lib/models/LogicTree.svelte';
 
 export type FilterType =
   | 'Categorical'
@@ -16,7 +16,6 @@ export type FilterType =
   | 'snp'
   | 'auto'
   | 'FilterGroup';
-
 type DisplayType =
   | 'any'
   | 'anyRecordOf'
@@ -26,7 +25,7 @@ type DisplayType =
   | 'between'
   | 'group';
 
-export interface FilterInterface extends TreeNode<FilterInterface> {
+export interface FilterInterface extends LogicNode<FilterInterface> {
   uuid: string;
   id: string;
   filterType: FilterType;
@@ -72,7 +71,7 @@ export interface AnyRecordOfFilterInterface extends FilterInterface {
   concepts: string[];
 }
 
-export interface FilterGroupInterface extends FilterInterface, TreeGroup<FilterInterface> {
+export interface FilterGroupInterface extends FilterInterface, LogicGroup<FilterInterface> {
   filterType: 'FilterGroup';
   displayType: 'group';
   variableName: 'none';
@@ -80,6 +79,7 @@ export interface FilterGroupInterface extends FilterInterface, TreeGroup<FilterI
   allowFiltering: true;
   children: FilterInterface[];
   operator: OperatorType;
+  setOperator: (operator: OperatorType) => void;
 }
 
 export type Filter =
@@ -90,27 +90,37 @@ export type Filter =
   | AnyRecordOfFilterInterface
   | FilterGroupInterface;
 
+export function isFilterGroup(node: FilterInterface): node is FilterGroupInterface {
+  return node.filterType === 'FilterGroup';
+}
+
 export function createFilterGroup(
   children: FilterInterface[] = [],
   operator: OperatorType = Operator.AND,
 ): FilterGroupInterface {
   const id = genericUUID();
-  const newGroup: FilterGroupInterface = {
-    filterType: 'FilterGroup',
-    displayType: 'group',
-    variableName: 'none',
+  const newGroup = {
+    filterType: 'FilterGroup' as const,
+    displayType: 'group' as const,
+    variableName: 'none' as const,
     dataset: '',
     allowFiltering: true,
     uuid: id,
     children,
     operator,
-    parent: undefined,
+    parent: undefined as FilterGroupInterface | undefined,
     get id() {
       return `filter-group-${this.uuid}`;
     },
+    setOperator(operator: OperatorType) {
+      this.operator = operator;
+    },
   };
-  children.forEach((child) => (child.parent = newGroup));
-  return newGroup;
+
+  const stateGroup = $state(newGroup);
+
+  stateGroup.children.forEach((child) => (child.parent = stateGroup));
+  return stateGroup as FilterGroupInterface;
 }
 
 export function createCategoricalFilter(
@@ -279,4 +289,42 @@ export function createSnpsFilter(snps: SNP[]): SnpFilterInterface {
     dataset: '',
   };
   return filter;
+}
+
+export function derivedFilterDescription(filter: Filter): string {
+  if (filter.filterType === 'Categorical') {
+    if (filter.displayType === 'restrict') {
+      const valueText = filter.categoryValues.length === 1 ? 'value' : 'values';
+      return `Restricting to ${filter.categoryValues.length} ${valueText}.`;
+    } else if (filter.displayType === 'any' || filter.displayType === 'anyRecordOf') {
+      return 'Restricting to any value.';
+    } else {
+      return filter.description || 'N/A';
+    }
+  } else if (filter.filterType === 'AnyRecordOf') {
+    return 'Restricting to children of the selected value.';
+  } else if (filter.filterType === 'numeric') {
+    switch (filter.displayType) {
+      case 'any':
+        return 'Restricting to any value.';
+      case 'between':
+        return `Restricting to between ${filter.min} and ${filter.max}.`;
+      case 'greaterThan':
+        return `Restricting to greater than ${filter.min}.`;
+      case 'lessThan':
+        return `Restricting to less than ${filter.max}.`;
+      default:
+        return filter.description || 'N/A';
+    }
+  } else if (filter.filterType === 'genomic' || filter.filterType === 'snp') {
+    return filter.description || 'N/A';
+  }
+  return 'N/A';
+}
+
+export function derivedStudyDescription(filter: Filter) {
+  if (filter.searchResult?.studyAcronym && filter.searchResult?.dataset) {
+    return `${filter.searchResult.studyAcronym} (${filter.searchResult.dataset})`;
+  }
+  return filter.searchResult?.studyAcronym || filter.searchResult?.dataset || '';
 }
