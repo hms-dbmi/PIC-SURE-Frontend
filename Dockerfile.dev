@@ -10,7 +10,11 @@ COPY . .
 # Step 2: Serve the app with httpd
 FROM httpd:2.4.66-alpine3.23
 
+# Run apk upgrade to patch remediated CVEs in base image libraries
+RUN apk upgrade --no-cache
+
 RUN apk add --update openssl sed nodejs npm pnpm supervisor
+
 #TODO: volume mount the certs
 RUN mkdir -p ${HTTPD_PREFIX}/cert
 COPY cert ${HTTPD_PREFIX}/cert

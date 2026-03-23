@@ -16,6 +16,9 @@ RUN pnpm build
 # Step 2: Serve the app with httpd
 FROM httpd:2.4.66-alpine3.23
 
+# Run apk upgrade remediate known CVEs in base image libraries
+RUN apk upgrade --no-cache
+
 RUN apk add --update openssl sed nodejs supervisor
 
 RUN mkdir -p ${HTTPD_PREFIX}/cert
