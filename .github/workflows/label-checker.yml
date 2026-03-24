@@ -13,7 +13,7 @@ jobs:
     name: Check labels
     runs-on: ubuntu-latest
     steps:
-      - uses: docker://agilepathway/pull-request-label-checker@sha256:7506b198121c51b7909bd5fe928f4520b0787bb40dfb6796f0e591aa26b3c43c # v1.6.65
+      - uses: docker://agilepathway/pull-request-label-checker@sha256:f6cc01b7dff9694dbf7a8db96e251e7c3fd1fd8c6fb59a3810bdd6955ff82522 # v1.6.65
         with:
           any_of: breaking-change,enhancement,bug,documentation,ignore-for-release,dependencies
           repo_token: ${{ secrets.GITHUB_TOKEN }}
