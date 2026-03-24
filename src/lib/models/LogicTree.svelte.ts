@@ -257,6 +257,10 @@ export class LogicTree<T extends LogicNode<T>> {
     return leaves(this.root);
   }
 
+  get length(): number {
+    return this.leafNodes.length;
+  }
+
   /* eslint-disable @typescript-eslint/no-explicit-any */
   get serialized(): string {
     const toObj = (node: SerializedTree): any => {

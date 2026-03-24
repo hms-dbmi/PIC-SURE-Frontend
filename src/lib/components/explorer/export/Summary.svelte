@@ -5,9 +5,8 @@
   import { features } from '$lib/configuration';
   import { totalParticipants, resultCounts, loadPatientCount } from '$lib/stores/ResultStore';
   import type { StatResultMap, StatValue } from '$lib/models/Stat';
-  import type { FederatedResourceInfo } from '$lib/stores/Dataset';
   import Loading from '$lib/components/Loading.svelte';
-  import { federatedQueryMap } from '$lib/stores/Dataset';
+  import { federatedQueryMap, type FederatedResourceInfo } from '$lib/stores/Dataset.svelte';
   import type { AnyRecordOfFilterInterface } from '$lib/models/Filter.svelte';
 
   interface SiteInfo extends FederatedResourceInfo {
