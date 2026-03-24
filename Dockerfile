@@ -16,8 +16,8 @@ RUN pnpm build
 # Step 2: Serve the app with httpd
 FROM httpd:2.4.66-alpine3.23@sha256:8f26f33a7002658050e9ab2cd6b77502619dfc89d0a6ba2e9e4a202e0ef04596
 
-# Run apk upgrade remediate known CVEs in base image libraries
-RUN apk upgrade --no-cache
+# Run apk upgrade to remediate known CVEs in base image libraries
+RUN apk upgrade --no-cache zlib libexpat
 
 RUN apk add --no-cache \
   openssl=3.5.5-r0 \
