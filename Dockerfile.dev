@@ -1,16 +1,23 @@
 # Step 1: Build the app with node
-FROM node:25.6.1-alpine3.23 AS builder
-RUN npm install -g pnpm@latest-10
+FROM node:25.6.1-alpine3.23@sha256:b9b5737eabd423ba73b21fe2e82332c0656d571daf1ebf19b0f89d0dd0d3ca93 AS builder
+RUN npm install -g pnpm@10.24.0
 
 WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install
 COPY . .
 
 # Step 2: Serve the app with httpd
-FROM httpd:2.4.66-alpine3.23
+FROM httpd:2.4.66-alpine3.23@sha256:8f26f33a7002658050e9ab2cd6b77502619dfc89d0a6ba2e9e4a202e0ef04596
 
-RUN apk add --update openssl sed nodejs npm pnpm supervisor
+RUN apk add --no-cache \
+  openssl=3.5.5-r0 \
+  sed=4.9-r2 \
+  nodejs=24.13.0-r1 \
+  npm=11.11.0-r0 \
+  pnpm=10.24.0-r0 \
+  supervisor=4.3.0-r0
+
 #TODO: volume mount the certs
 RUN mkdir -p ${HTTPD_PREFIX}/cert
 COPY cert ${HTTPD_PREFIX}/cert
@@ -33,4 +40,6 @@ RUN mkdir -p logs
 COPY --from=builder /app .
 COPY supervisord-dev.conf /etc/supervisor/conf.d/supervisord.conf
 ENV NODE_ENV=development
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO /dev/null --no-check-certificate https://0.0.0.0:443/picsure/health || exit 1
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
