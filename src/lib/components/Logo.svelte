@@ -36,7 +36,15 @@
 </script>
 
 {#if src}
-  <img {src} {alt} id="nav-logo" data-testid="nav-logo" class={className} style={sizeStyle} />
+  <img
+    {src}
+    {alt}
+    title={alt}
+    id="nav-logo"
+    data-testid="nav-logo"
+    class={className}
+    style={sizeStyle}
+  />
 {:else}
   <svg
     data-testid="nav-logo"
