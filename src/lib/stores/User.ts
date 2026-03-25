@@ -39,13 +39,10 @@ export const isAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.ADMIN);
 });
 
-user.subscribe((user: User) => {
+user.subscribe(($user: User) => {
   if (browser) {
-    clearSessionTokenIfExpired();
-    const userCopy: User = { ...user };
-    // We don't want to save the long term token in local storage
-    userCopy.token = undefined;
-    localStorage.setItem('user', JSON.stringify(userCopy));
+    const { token: _, ...userWithoutToken } = $user;
+    localStorage.setItem('user', JSON.stringify(userWithoutToken));
   }
 });
 
@@ -64,21 +61,26 @@ export function removeToken() {
 }
 
 function restoreUser() {
-  if (browser && localStorage.getItem('user')) {
-    clearSessionTokenIfExpired();
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!user || Object.keys(user).length === 0) {
-        return {};
-      }
-      console.log('Restored user from local storage: ', user);
-      return user;
-    } catch (error) {
-      console.error('Error reading user from local storage:  ' + error);
-      return {};
-    }
+  if (!browser) return {};
+
+  const token = localStorage.getItem('token');
+  if (token && isTokenExpired(token)) {
+    console.log('Clearing expired token from local storage.');
+    removeToken();
+    localStorage.removeItem('user');
+    log(createLog('AUTH', 'session.expired'));
+    return {};
   }
-  return {};
+
+  try {
+    const stored = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!stored || Object.keys(stored).length === 0) return {};
+    console.log('Restored user from local storage: ', stored);
+    return stored;
+  } catch (error) {
+    console.error('Error reading user from local storage: ' + error);
+    return {};
+  }
 }
 
 export function isUserLoggedIn() {
@@ -88,17 +90,6 @@ export function isUserLoggedIn() {
   return false;
 }
 
-function clearSessionTokenIfExpired() {
-  if (browser) {
-    const token = localStorage.getItem('token');
-    if (token && isTokenExpired(token)) {
-      console.log('Clearing expired token from local storage.');
-      removeToken();
-      if (user) user.set({});
-      log(createLog('AUTH', 'session.expired'));
-    }
-  }
-}
 
 export const userRoutes: Readable<Route[]> = derived([user], ([$user]) => {
   const userPrivileges: string[] = $user?.privileges || [];
