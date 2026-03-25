@@ -12,7 +12,6 @@
   import { filters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
-  import { useAuth } from '$lib/AccessState';
 
   import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
@@ -20,8 +19,10 @@
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
 
+  import { subscribeOnChange } from '$lib/utilities/Subscribers';
+
   let unsubFilters: Unsubscriber | null = null;
-  let currentPage: string = page.url.pathname;
+  let currentPage: string = $state(page.url.pathname);
   let isDiscoverPage = $derived(currentPage.includes('/discover'));
   let modalOpen: boolean = $state(false);
 
@@ -70,9 +71,7 @@
   );
 
   function subscribe() {
-    if (!unsubFilters) {
-      unsubFilters = filters.subscribe(() => loadPatientCount(useAuth()));
-    }
+    unsubFilters = subscribeOnChange(filters, () => loadPatientCount(!isDiscoverPage));
   }
 
   function unsubscribe() {
@@ -100,7 +99,10 @@
     }
   });
 
-  onMount(subscribe);
+  onMount(() => {
+    loadPatientCount(!isDiscoverPage);
+    subscribe();
+  });
   onDestroy(unsubscribe);
 </script>
 

@@ -15,6 +15,8 @@
   import { open } from '$lib/stores/Drawer';
   import Loading from '$lib/components/Loading.svelte';
 
+  import { subscribeOnChange } from '$lib/utilities/Subscribers';
+
   const tableName = 'ExplorerTable';
 
   let unsubColumns: Unsubscriber;
@@ -31,10 +33,8 @@
   const dataLoadPromise = loadDashboardData();
 
   onMount(() => {
-    unsubColumns = columns.subscribe((newCols) => (currentColumns = newCols));
-    unsubRows = rows.subscribe((newRows) => {
-      currentRows = newRows;
-    });
+    unsubColumns = subscribeOnChange(columns, (newCols) => (currentColumns = newCols));
+    unsubRows = subscribeOnChange(rows, (newRows) => (currentRows = newRows));
   });
 
   onDestroy(() => {

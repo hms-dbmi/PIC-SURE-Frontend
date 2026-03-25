@@ -1,11 +1,11 @@
 <script lang="ts">
-  import ExportStore from '$lib/stores/Export';
+  import { exports } from '$lib/stores/Export';
   import ResultsPanel from '$lib/components/explorer/results/ResultsPanel.svelte';
   import { onDestroy, onMount } from 'svelte';
   import { type Unsubscriber } from 'svelte/store';
   import { filters } from '$lib/stores/Filter';
   import { panelOpen } from '$lib/stores/SidePanel';
-  let { exports } = ExportStore;
+  import { subscribeOnChange } from '$lib/utilities/Subscribers';
 
   let unsubFilterStore: Unsubscriber;
   let unsubExportStore: Unsubscriber;
@@ -15,13 +15,13 @@
   }
 
   onMount(() => {
-    unsubFilterStore = filters.subscribe(() => {
-      if ($filters?.length !== 0) {
+    unsubFilterStore = subscribeOnChange(filters, (filterList) => {
+      if (filterList?.length !== 0) {
         openPanel();
       }
     });
-    unsubExportStore = ExportStore.subscribe(() => {
-      if ($exports?.length !== 0) {
+    unsubExportStore = subscribeOnChange(exports, (exportList) => {
+      if (exportList?.length !== 0) {
         openPanel();
       }
     });

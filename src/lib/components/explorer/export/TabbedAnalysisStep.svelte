@@ -11,6 +11,9 @@
   );
 </script>
 
+{#if branding.explorePage.analysisExportText && branding.explorePage.analysisExportText.length > 0}
+  <p class="mt-4">{branding.explorePage.analysisExportText}</p>
+{/if}
 <Tabs value={tabSet} onValueChange={(e: { value: string }) => (tabSet = e.value)}>
   {#snippet list()}
     {#if features.analyzeApi}
@@ -49,3 +52,6 @@
     {/if}
   {/snippet}
 </Tabs>
+{#if branding.explorePage.goTo.instructions && branding.explorePage.goTo.instructions.length > 0}
+  <p>{branding.explorePage.goTo.instructions}</p>
+{/if}
