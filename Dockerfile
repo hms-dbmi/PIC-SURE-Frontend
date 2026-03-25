@@ -1,22 +1,26 @@
 # Step 1: Build the app with node
-FROM node:25.6.1-alpine3.23 AS builder
-RUN npm install -g pnpm@latest-10
+FROM node:25.6.1-alpine3.23@sha256:b9b5737eabd423ba73b21fe2e82332c0656d571daf1ebf19b0f89d0dd0d3ca93 AS builder
+RUN npm install -g pnpm@10.24.0
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .
 RUN pnpm install --prod
 COPY src src
 COPY static static
-COPY .env svelte.config.js vite.config.ts .
+COPY .env svelte.config.js vite.config.ts ./
 ARG THEME=picsure
 RUN sed -i 's/%sveltekit.assets%\/favicon.ico/%sveltekit.assets%\/'$THEME'-favicon.png/' ./src/app.html
 RUN sed -i 's/data-theme="[^"]*"/data-theme=\"'$THEME'\"/' ./src/app.html
 RUN pnpm build
 
 # Step 2: Serve the app with httpd
-FROM httpd:2.4.66-alpine3.23
+FROM httpd:2.4.66-alpine3.23@sha256:8f26f33a7002658050e9ab2cd6b77502619dfc89d0a6ba2e9e4a202e0ef04596
 
-RUN apk add --update openssl sed nodejs supervisor
+RUN apk add --no-cache \
+  openssl=3.5.5-r0 \
+  sed=4.9-r2 \
+  nodejs=24.13.0-r1 \
+  supervisor=4.3.0-r0
 
 RUN mkdir -p ${HTTPD_PREFIX}/cert
 
@@ -39,4 +43,6 @@ COPY --from=builder /app/node_modules node_modules/
 COPY package.json .
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 ENV NODE_ENV=production
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO /dev/null --no-check-certificate https://0.0.0.0:443/picsure/health || exit 1
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
