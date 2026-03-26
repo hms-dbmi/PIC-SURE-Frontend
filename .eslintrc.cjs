@@ -22,6 +22,11 @@ module.exports = {
     es2017: true,
     node: true,
   },
+  rules: {
+    // TODO: Remove once V3.2 branch merges.
+    // state_referenced_locally warnings are fixed there; suppressed here temporarily.
+    'svelte/valid-compile': ['error', { ignoreWarnings: true }],
+  },
   overrides: [
     {
       files: ['*.svelte'],
