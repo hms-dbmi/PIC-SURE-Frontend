@@ -17,10 +17,10 @@ RUN pnpm build
 FROM httpd:2.4.66-alpine3.23@sha256:8f26f33a7002658050e9ab2cd6b77502619dfc89d0a6ba2e9e4a202e0ef04596
 
 RUN apk add --no-cache \
-  openssl=3.5.5-r0 \
-  sed=4.9-r2 \
-  nodejs=24.13.0-r1 \
-  supervisor=4.3.0-r0 \
+  openssl \
+  sed \
+  nodejs \
+  supervisor \
   libexpat=2.7.5-r0 \
   zlib=1.3.2-r0
 
