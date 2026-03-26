@@ -111,6 +111,8 @@ jobs:
         run: pnpm exec playwright install --with-deps
       - name: Check Playwright versions
         run: pnpm ls @playwright/test || true
+      - name: Sync SvelteKit
+        run: pnpm svelte-kit sync
       - name: Run Playwright tests
         run: pnpm run test
       - name: Upload Playwright report
