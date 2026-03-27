@@ -7,6 +7,7 @@
   import { resources } from '$lib/stores/Resources';
 
   import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
+  import { log, createLog } from '$lib/logger';
 
   let allGenes: string[] = $state([]);
   let unselectedGenes = $derived(
@@ -22,9 +23,14 @@
   let loading = $state(false);
   let allOptionsLoaded = $state(false);
 
+  let previousGeneCount = 0;
+
   // given a search term, return new values to be added to displayed options
   async function getGeneValues(search: string = '') {
     const newSearch = lastFilter !== search;
+    if (newSearch && search) {
+      log(createLog('ACTION', 'genomic.gene_search', { term: search }));
+    }
     if (!newSearch && (currentPage >= totalPages || allOptionsLoaded)) return;
     loading = true;
     try {
@@ -60,7 +66,17 @@
   }
 
   onMount(async () => {
+    previousGeneCount = $selectedGenes.length;
     await getGeneValues();
+  });
+
+  $effect(() => {
+    const current = $selectedGenes;
+    if (current.length > previousGeneCount) {
+      const added = current[current.length - 1];
+      log(createLog('ACTION', 'genomic.gene_add', { gene: added }));
+    }
+    previousGeneCount = current.length;
   });
 </script>
 

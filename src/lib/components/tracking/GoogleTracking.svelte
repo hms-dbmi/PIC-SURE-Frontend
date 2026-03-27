@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { branding, settings } from '$lib/configuration';
+  import { log, createLog } from '$lib/logger';
 
   type Acceptance = 'granted' | 'denied';
   interface Consent {
@@ -71,6 +72,7 @@
   }
 
   function updateConsent(accepted: boolean) {
+    log(createLog('ACTION', 'consent.update', { accepted }));
     consent = {
       ...consent,
       analytics_storage: accepted ? 'granted' : 'denied',

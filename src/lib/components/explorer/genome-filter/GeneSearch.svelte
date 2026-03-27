@@ -9,10 +9,12 @@
   import Summary from '$lib/components/explorer/genome-filter/gene/Summary.svelte';
 
   import { selectedGenes, clearGeneFilters } from '$lib/stores/GeneFilter';
+  import { log, createLog } from '$lib/logger';
 
   let { class: className = '' }: { class: string } = $props();
 
   function clearSelectedGenes() {
+    log(createLog('ACTION', 'genomic.clear_genes'));
     selectedGenes.set([]);
   }
 
@@ -35,13 +37,23 @@
     subtitle="The calculated consequence is based on VEP annotation."
   >
     {#snippet help()}
-      <HelpInfoPopup id="cons-help-popup" text={helpText.consequence} />
+      <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+      <span
+        onclick={() => log(createLog('ACTION', 'genomic.help_click', { section: 'consequence' }))}
+      >
+        <HelpInfoPopup id="cons-help-popup" text={helpText.consequence} />
+      </span>
     {/snippet}
     <Consequence />
   </Panel>
   <Panel title="Select Variant Frequency">
     {#snippet help()}
-      <HelpInfoPopup id="freq-help-popup" text={helpText.frequency} />
+      <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+      <span
+        onclick={() => log(createLog('ACTION', 'genomic.help_click', { section: 'frequency' }))}
+      >
+        <HelpInfoPopup id="freq-help-popup" text={helpText.frequency} />
+      </span>
     {/snippet}
     <Frequency />
   </Panel>

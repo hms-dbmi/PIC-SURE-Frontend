@@ -70,19 +70,22 @@
   <ul>
     {#if features.termsOfService}
       <li>
-        <Modal
-          bind:open={modalOpen}
-          data-testid="terms-of-service"
-          width="w-3/4"
-          height="h-full"
-          triggerBase="hover:underline text-[0.74rem]"
-          withDefault={false}
-          footerButtons={false}
-          closeable={modalClosable}
-        >
-          {#snippet trigger()}Terms of Service{/snippet}
-          <Terms bind:modalOpen />
-        </Modal>
+        <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+        <span onclick={() => log(createLog('NAVIGATION', 'footer.tos_click'))}>
+          <Modal
+            bind:open={modalOpen}
+            data-testid="terms-of-service"
+            width="w-3/4"
+            height="h-full"
+            triggerBase="hover:underline text-[0.74rem]"
+            withDefault={false}
+            footerButtons={false}
+            closeable={modalClosable}
+          >
+            {#snippet trigger()}Terms of Service{/snippet}
+            <Terms bind:modalOpen />
+          </Modal>
+        </span>
       </li>
     {/if}
     {#each branding?.footer?.links as link}

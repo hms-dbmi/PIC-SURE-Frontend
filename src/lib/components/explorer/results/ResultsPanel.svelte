@@ -20,6 +20,7 @@
   import Counts from '$lib/components/explorer/results/Counts.svelte';
 
   import { subscribeOnChange } from '$lib/utilities/Subscribers';
+  import { log, createLog } from '$lib/logger';
 
   let unsubFilters: Unsubscriber | null = null;
   let currentPage: string = $state(page.url.pathname);
@@ -132,7 +133,10 @@
         type="button"
         class="btn preset-filled-primary-500"
         disabled={$countsLoading}
-        onclick={() => goto('/explorer/export')}
+        onclick={() => {
+          log(createLog('ACTION', 'explorer.prepare_for_analysis'));
+          goto('/explorer/export');
+        }}
         transition:scale={{ easing: elasticInOut }}
       >
         Prepare for Analysis

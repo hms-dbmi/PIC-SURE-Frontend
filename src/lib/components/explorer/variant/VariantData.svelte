@@ -25,6 +25,7 @@
 
   function aggregateChange() {
     aggregateCheckbox = !aggregateCheckbox;
+    log(createLog('ACTION', 'variant.aggregate_toggle', { checked: aggregateCheckbox }));
     onAggregateToggle(aggregateCheckbox);
   }
 </script>
@@ -50,6 +51,7 @@
         columns={varData.columns}
         fullWidth
         searchable
+        searchLogAction="variant.search_table"
       >
         {#snippet tableActions()}
           {#if varData.downloadUrl}

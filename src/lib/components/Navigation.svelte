@@ -53,7 +53,13 @@
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-950" toolbarClasses="flex-none z-10">
   {#snippet lead()}
-    <a href="/" aria-current="page" data-testid="logo-home-link" class="content-center">
+    <a
+      href="/"
+      aria-current="page"
+      data-testid="logo-home-link"
+      class="content-center"
+      onclick={() => log(createLog('NAVIGATION', 'logo.click'))}
+    >
       <Logo height={4} class="mx-1" />
     </a>
   {/snippet}

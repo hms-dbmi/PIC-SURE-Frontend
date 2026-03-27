@@ -6,6 +6,7 @@ import { get } from 'svelte/store';
 import { v4 as uuidv4 } from 'uuid';
 import { PicsurePrivileges } from './models/Privilege';
 import type { User } from './models/User';
+import { routes } from '$lib/configuration';
 // Registered lazily by Filter.ts to avoid circular dependency: Filter → logger → Filter
 let _associatedStudies: import('svelte/store').Readable<string[]> | undefined;
 export function registerAssociatedStudies(store: import('svelte/store').Readable<string[]>) {
@@ -92,4 +93,18 @@ export function createLog(
   if (overrides) Object.assign(event, overrides);
 
   return event;
+}
+
+export function getPageContext(): string {
+  if (typeof window === 'undefined') return 'Unknown';
+  const path = window.location.pathname;
+  if (path === '/') return 'Landing';
+  if (path.startsWith('/login')) return 'Login';
+
+  // Match against configured routes, longest path first
+  const match = routes
+    .filter((r) => path.startsWith(r.path))
+    .sort((a, b) => b.path.length - a.path.length)[0];
+
+  return match?.text ?? 'Other';
 }

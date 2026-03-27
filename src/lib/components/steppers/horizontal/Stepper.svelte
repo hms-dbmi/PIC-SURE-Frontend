@@ -3,6 +3,7 @@
   import { fade } from 'svelte/transition';
   import { stepperState } from '$lib/stores/Stepper';
   import type { StepperState } from '$lib/models/Stepper';
+  import { log, createLog } from '$lib/logger';
 
   type StepMethod = (step: number, name: string, state: StepperState) => void;
   const defaultStep: StepMethod = () => {};
@@ -33,6 +34,7 @@
     if (locked) return;
     const step = $stepperState.current + 1;
     const name = $stepperState.stepMap[step];
+    log(createLog('EXPORT', 'export.stepper_next', { step, stepName: name }));
     onnext(step, name, $stepperState);
 
     $stepperState.current = step;
@@ -41,6 +43,7 @@
   function _onBack() {
     const step = $stepperState.current === 0 ? 0 : $stepperState.current - 1;
     const name = $stepperState.stepMap[step];
+    log(createLog('EXPORT', 'export.stepper_back', { step, stepName: name }));
     onback(step, name, $stepperState);
     $stepperState.current = step;
   }

@@ -41,6 +41,7 @@ export const isAdmin = derived(user, ($user: User) => {
 
 user.subscribe(($user: User) => {
   if (browser) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { token: _, ...userWithoutToken } = $user;
     localStorage.setItem('user', JSON.stringify(userWithoutToken));
   }
@@ -89,7 +90,6 @@ export function isUserLoggedIn() {
   }
   return false;
 }
-
 
 export const userRoutes: Readable<Route[]> = derived([user], ([$user]) => {
   const userPrivileges: string[] = $user?.privileges || [];

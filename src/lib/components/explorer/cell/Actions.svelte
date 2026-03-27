@@ -7,7 +7,7 @@
   import { features } from '$lib/configuration';
   import { isOpenAccess } from '$lib/AccessState';
   import { genericUUID } from '$lib/utilities/UUID';
-  import { log, createLog } from '$lib/logger';
+  import { log, createLog, getPageContext } from '$lib/logger';
 
   let { exports, addExport, removeExport } = ExportStore;
   let { data = {} as SearchResult } = $props();
@@ -25,6 +25,7 @@
         createLog('ACTION', `search_result.${componentName}`, {
           variable: data.row.display || data.row.name,
           conceptPath: data.row.conceptPath,
+          pageContext: getPageContext(),
         }),
       );
       setActiveRow({
@@ -46,6 +47,7 @@
         createLog('ACTION', 'search_result.export_remove', {
           variable: data.row.display || data.row.name,
           conceptPath: data.row.conceptPath,
+          pageContext: getPageContext(),
         }),
       );
       removeExport(exportItem.id);
@@ -54,6 +56,7 @@
         createLog('ACTION', 'search_result.export_add', {
           variable: data.row.display || data.row.name,
           conceptPath: data.row.conceptPath,
+          pageContext: getPageContext(),
         }),
       );
       addExport(exportItem);

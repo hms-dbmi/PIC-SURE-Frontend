@@ -5,7 +5,7 @@ import type { SearchResult } from '$lib/models/Search';
 import { browser } from '$app/environment';
 import { user } from './User';
 import { objectUUID } from '$lib/utilities/UUID';
-import { log, createLog, registerAssociatedStudies } from '$lib/logger';
+import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
 
 export const filters: Writable<Filter[]> = writable(restoreFilters());
 export const associatedStudies: Readable<string[]> = derived(filters, ($f) => {
@@ -79,6 +79,7 @@ export function addFilter(filter: Filter) {
       valueCount: 'categoryValues' in filter ? filter.categoryValues?.length : undefined,
       min: 'min' in filter ? filter.min : undefined,
       max: 'max' in filter ? filter.max : undefined,
+      pageContext: getPageContext(),
     }),
   );
   return filter;
@@ -94,6 +95,7 @@ export function removeFilter(uuid: string) {
         filterType: removed.filterType,
         variable: removed.variableName,
         dataset: removed.dataset,
+        pageContext: getPageContext(),
       }),
     );
   }
@@ -139,7 +141,7 @@ export function removeInvalidFilters(): void {
 export function clearFilters() {
   const count = get(filters).length;
   filters.set([]);
-  if (count > 0) log(createLog('FILTER', 'filter.clear', { count }));
+  if (count > 0) log(createLog('FILTER', 'filter.clear', { count, pageContext: getPageContext() }));
 }
 
 export function getFilter(uuid: string) {

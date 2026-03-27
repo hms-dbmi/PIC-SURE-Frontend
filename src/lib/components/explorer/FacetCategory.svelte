@@ -6,7 +6,7 @@
   import type { Facet } from '$lib/models/Search';
   import { updateFacets, selectedFacets } from '$lib/stores/Search';
   import { hiddenFacets, openFacets } from '$lib/stores/Dictionary';
-  import { log, createLog } from '$lib/logger';
+  import { log, createLog, getPageContext } from '$lib/logger';
 
   import FacetItem from './FacetItem.svelte';
 
@@ -162,6 +162,7 @@
                 createLog('SEARCH', 'facet.search', {
                   category: facetCategory.name,
                   term: textFilterValue,
+                  pageContext: getPageContext(),
                 }),
               );
           }}

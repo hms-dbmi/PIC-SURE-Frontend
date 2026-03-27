@@ -9,7 +9,7 @@ import type { DictionaryConceptResult } from '$lib/models/api/Dictionary';
 import { searchDictionary } from '$lib/stores/Dictionary';
 import { updateFacetsFromSearch, facetsPromise } from '$lib/stores/Dictionary';
 import { getDefaultRows } from '$lib/components/datatable/stores';
-import { log, createLog } from '$lib/logger';
+import { log, createLog, getPageContext } from '$lib/logger';
 
 export const loading: Writable<boolean> = writable(false);
 export const searchPromise: Writable<Promise<DictionaryConceptResult | undefined>> = writable(
@@ -86,6 +86,7 @@ export async function search(state: State): Promise<SearchResult[]> {
     createLog('SEARCH', 'search.dictionary', {
       term,
       facetCount: facets.length,
+      pageContext: getPageContext(),
       page: state.currentPage,
       pageSize: state.rowsPerPage,
     }),
@@ -110,6 +111,7 @@ export async function search(state: State): Promise<SearchResult[]> {
       term: get(searchTerm),
       totalResults: response?.totalElements ?? 0,
       facetCount: get(selectedFacets).length,
+      pageContext: getPageContext(),
     }),
   );
   state.setTotalRows(response?.totalElements ?? 0);
@@ -121,10 +123,22 @@ export async function updateFacets(facetsToUpdate: Facet[]) {
   facetsToUpdate.forEach((facet) => {
     const facetIndex = currentFacets.findIndex((f) => f.name === facet.name);
     if (facetIndex !== -1) {
-      log(createLog('SEARCH', 'facet.remove', { facet: facet.name, category: facet.category }));
+      log(
+        createLog('SEARCH', 'facet.remove', {
+          facet: facet.name,
+          category: facet.category,
+          pageContext: getPageContext(),
+        }),
+      );
       currentFacets.splice(facetIndex, 1);
     } else {
-      log(createLog('SEARCH', 'facet.add', { facet: facet.name, category: facet.category }));
+      log(
+        createLog('SEARCH', 'facet.add', {
+          facet: facet.name,
+          category: facet.category,
+          pageContext: getPageContext(),
+        }),
+      );
       currentFacets.push(facet);
     }
   });
@@ -133,7 +147,7 @@ export async function updateFacets(facetsToUpdate: Facet[]) {
 }
 
 export function resetSearch() {
-  log(createLog('SEARCH', 'search.reset'));
+  log(createLog('SEARCH', 'search.reset', { pageContext: getPageContext() }));
   isResetting = true;
   searchTerm.set('');
   selectedFacets.set([]);
