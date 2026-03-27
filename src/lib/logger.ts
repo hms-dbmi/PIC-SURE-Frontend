@@ -4,7 +4,7 @@ import type { LogEvent } from '$lib/models/Log';
 import { user, isUserLoggedIn } from '$lib/stores/User';
 import { get } from 'svelte/store';
 import { v4 as uuidv4 } from 'uuid';
-import { PicsurePrivileges } from './models/Privilege';
+import { BDCPrivileges, PicsurePrivileges } from './models/Privilege';
 import type { User } from './models/User';
 import { routes } from '$lib/configuration';
 // Registered lazily by Filter.ts to avoid circular dependency: Filter → logger → Filter
@@ -29,6 +29,7 @@ const RELEVANT_PRIVILEGES = new Set([
   PicsurePrivileges.ADMIN,
   PicsurePrivileges.DATA_ADMIN,
   PicsurePrivileges.API_ACCESS,
+  BDCPrivileges.AUTHORIZED_ACCESS,
 ]);
 
 function getRelevantPrivileges(userData: User): string[] {
