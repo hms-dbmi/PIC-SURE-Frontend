@@ -57,7 +57,10 @@
       if (browser) {
         const link = document.createElement('a');
         link.href = responseDataUrl;
-        if (query.query.expectedResultType === 'DATAFRAME') {
+        if (
+          query.query.expectedResultType === 'DATAFRAME' ||
+          query.query.expectedResultType === 'DATAFRAME_TIMESERIES'
+        ) {
           link.download = 'pic-sure-data.csv';
         } else if (
           features.explorer.enablePfbExport &&
