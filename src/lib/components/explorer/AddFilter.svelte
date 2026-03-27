@@ -5,8 +5,8 @@
   import type { SearchResult } from '$lib/models/Search';
   import { addFilter } from '$lib/stores/Filter';
   import { activeRow } from '$lib/stores/ExpandableRow';
-  import type { Filter } from '$lib/models/Filter.svelte';
   import {
+    type Filter,
     createCategoricalFilter,
     createNumericFilter,
     createRequiredFilter,

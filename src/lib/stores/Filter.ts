@@ -13,7 +13,7 @@ import { LogicTree } from '$lib/models/LogicTree.svelte';
 
 const genomicFilterTypes = ['snp', 'genomic'];
 
-const createGroup = (nodes: FilterInterface[], operator: OperatorType) =>
+export const createGroup = (nodes: FilterInterface[], operator: OperatorType) =>
   createFilterGroup(nodes, operator);
 
 export const genomicFilters: Writable<Filter[]> = writable(restoreGenomicFilters());
@@ -248,6 +248,11 @@ export function clearFilters() {
   tree.root.uuid = genericUUID();
   filterTree.set(tree);
   if (count > 0) log(createLog('FILTER', 'filter.clear', { count, pageContext: getPageContext() }));
+}
+
+export function setFilterTree(tree: LogicTree<FilterInterface>) {
+  tree.root.uuid = genericUUID();
+  filterTree.set(tree);
 }
 
 export function getFilter(uuid: string) {

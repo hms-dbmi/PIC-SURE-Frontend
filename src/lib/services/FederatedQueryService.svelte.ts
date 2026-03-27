@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-import { commonAreaUUID, federatedQueryMap } from '$lib/stores/Dataset';
+import { commonAreaUUID, federatedQueryMap } from '$lib/stores/Dataset.svelte';
 import { Picsure } from '$lib/paths';
 import * as api from '$lib/api';
 import { getQueryResources, loadResources, resources } from '$lib/stores/Resources';

@@ -6,10 +6,8 @@
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
-  import { branding } from '$lib/configuration';
+  import { branding, features } from '$lib/configuration';
   import { filters } from '$lib/stores/Filter';
-  import { get } from 'svelte/store';
-  import { features } from '$lib/configuration';
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
   const ERROR_VALUE = 'N/A';
@@ -55,7 +53,7 @@
                 type="exclamation"
                 color="warning"
                 id="result-count-error"
-                text={get(filters).length !== 0
+                text={$filters.length !== 0
                   ? branding?.explorePage?.filterErrorText
                   : branding?.explorePage?.queryErrorText}
               />
