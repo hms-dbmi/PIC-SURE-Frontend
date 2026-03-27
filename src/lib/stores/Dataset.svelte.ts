@@ -3,6 +3,7 @@ import { get, writable, derived, type Readable, type Writable } from 'svelte/sto
 import { mapDataset, type DataSet } from '$lib/models/Dataset';
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
+import { log, createLog } from '$lib/logger';
 
 export const datasets: Writable<DataSet[]> = writable([]);
 export const commonAreaUUID: Writable<string | undefined> = writable(undefined);
@@ -20,6 +21,15 @@ export const active: Readable<DataSet[]> = derived(datasets, ($ds) =>
 export const archived: Readable<DataSet[]> = derived(datasets, ($ds) =>
   $ds.filter((ds) => ds.archived),
 );
+
+let showArchived = $state(false);
+export function toggleShowArchived() {
+  showArchived = !showArchived;
+  log(createLog('DATASET', 'dataset.toggle_archived', { showArchived }));
+}
+export function getShowArchived() {
+  return showArchived;
+}
 
 export async function loadDatasets() {
   const res = await api.get(Picsure.NamedDataSet);

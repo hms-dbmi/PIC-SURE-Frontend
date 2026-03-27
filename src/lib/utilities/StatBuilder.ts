@@ -163,14 +163,14 @@ function getAuthPatientCount({
   const request = addFilters
     ? getQueryRequestV3(!isOpenAccess, resource, 'COUNT')
     : getBlankQueryRequestV3(isOpenAccess, resource, 'COUNT');
-    log(
-      createLog('QUERY', 'query.execute', {
-        isOpenAccess: false,
-        type: 'patientCount',
-        resourceUUID: request.resourceUUID,
-        expectedResultType: request.query.expectedResultType,
-      }),
-    );
+  log(
+    createLog('QUERY', 'query.execute', {
+      isOpenAccess: false,
+      type: 'patientCount',
+      resourceUUID: request.resourceUUID,
+      expectedResultType: request.query.expectedResultType,
+    }),
+  );
   return api.post(Picsure.QueryV3Sync, request).then(rejectIfQueryError);
 }
 
@@ -190,14 +190,14 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(!isOpenAccess, resource, type, mapper)
       : getBlankQueryRequestV3(isOpenAccess, resource, type, mapper);
-      log(
-        createLog('QUERY', 'query.execute', {
-          type: field,
-          resourceUUID: request.resourceUUID,
-          expectedResultType: request.query.expectedResultType,
-          crossCountFieldCount: fields.length,
-        }),
-      );
+    log(
+      createLog('QUERY', 'query.execute', {
+        type: field,
+        resourceUUID: request.resourceUUID,
+        expectedResultType: request.query.expectedResultType,
+        crossCountFieldCount: fields.length,
+      }),
+    );
     return api.post(Picsure.QueryV3Sync, request).then(rejectIfQueryError);
   };
 }

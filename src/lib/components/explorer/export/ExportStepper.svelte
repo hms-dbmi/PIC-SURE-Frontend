@@ -10,7 +10,7 @@
   import { filters } from '$lib/stores/Filter';
   import { totalParticipants } from '$lib/stores/ResultStore';
   import { createDatasetName } from '$lib/services/datasets';
-  import { federatedQueryMap } from '$lib/stores/Dataset';
+  import { federatedQueryMap } from '$lib/stores/Dataset.svelte';
   import { withBackoff } from '$lib/utilities/backoff';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
