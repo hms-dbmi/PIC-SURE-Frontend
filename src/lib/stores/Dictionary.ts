@@ -24,7 +24,7 @@ export const facetsPromise: Writable<Promise<DictionaryFacetResult[]>> = writabl
 export const openFacets: Writable<string[]> = writable([]);
 
 const dictonaryCacheMap = new Map<string, SearchResult>();
-const ENSURE_MAX_DEPTH = 100;
+export const ENSURE_MAX_DEPTH = 100;
 
 function cacheResult(key: string, value: SearchResult) {
   if (!key || !value) return;

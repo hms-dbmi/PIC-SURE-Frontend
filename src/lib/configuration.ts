@@ -208,6 +208,7 @@ export const features: Indexable = {
   confirmDownload: import.meta.env?.VITE_CONFIRM_DOWNLOAD === 'true',
   termsOfService: import.meta.env?.VITE_ENABLE_TOS === 'true',
   enforceTermsOfService: import.meta.env?.VITE_ENFORCE_TOS_ACCEPT === 'true',
+  restoreV2queries: import.meta.env?.VITE_RESTORE_V2_QUERY === 'true',
 };
 
 export const settings: Indexable = {

@@ -29,7 +29,8 @@
   // svelte-ignore state_referenced_locally
   let activeButtonText: string = $state(text);
 
-  function updateButton() {
+ function updateButton(event: Event) {
+    event.stopPropagation();
     if (useIcon) {
       const iconText = icon;
       debounce(() => (activeIcon = iconText), 4500)();

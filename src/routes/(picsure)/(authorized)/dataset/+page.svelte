@@ -1,7 +1,15 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+
   import type { Indexable } from '$lib/types';
   import { branding } from '$lib/configuration';
-  import { active, archived, loadDatasets } from '$lib/stores/Dataset';
+  import {
+    active,
+    archived,
+    loadDatasets,
+    getShowArchived,
+    toggleShowArchived,
+  } from '$lib/stores/Dataset.svelte';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
@@ -12,7 +20,7 @@
 
   const columns = [
     { dataElement: 'name', label: 'Dataset ID Name' },
-    { dataElement: 'startTime', label: 'Created' },
+    { dataElement: 'startTime', label: 'Created', sort: true },
     { dataElement: 'queryId', label: 'Dataset ID' },
     { dataElement: 'uuid', label: 'Actions', class: 'text-center' },
   ];
@@ -22,7 +30,10 @@
     uuid: Actions,
   };
 
-  let displayArchived = $state(false);
+  const rowClickHandler = (row: Indexable) => {
+    const uuid = row?.uuid;
+    goto(`/dataset/${uuid}`);
+  };
 </script>
 
 <svelte:head>
@@ -34,17 +45,23 @@
     <Loading />
   {:then}
     <Datatable
+      isClickable
+      searchable
       tableName="ActiveDatasets"
       title="Active Datasets"
       data={$active}
+      {rowClickHandler}
       {columns}
       {cellOverides}
     />
-    {#if displayArchived}
+    {#if getShowArchived()}
       <Datatable
+        isClickable
+        searchable
         tableName="ArchivedDatasets"
         title="Deleted Datasets"
         data={$archived}
+        {rowClickHandler}
         {columns}
         {cellOverides}
       />
@@ -53,8 +70,8 @@
       data-testid="dataset-toggle-archive"
       type="button"
       class="btn bg-secondary-500 text-secondary-contrast-500"
-      onclick={() => (displayArchived = !displayArchived)}
-      >{displayArchived ? 'Hide' : 'Show'} deleted datasets</button
+      onclick={() => toggleShowArchived()}
+      >{getShowArchived() ? 'Hide' : 'Show'} deleted datasets</button
     >
   {:catch}
     <ErrorAlert title="API Error">Something went wrong when sending your request.</ErrorAlert>

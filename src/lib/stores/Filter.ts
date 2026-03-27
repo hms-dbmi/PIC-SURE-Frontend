@@ -12,7 +12,7 @@ import { user } from '$lib/stores/User';
 
 const genomicFilterTypes = ['snp', 'genomic'];
 
-const createGroup = (nodes: FilterInterface[], operator: OperatorType) =>
+export const createGroup = (nodes: FilterInterface[], operator: OperatorType) =>
   createFilterGroup(nodes, operator);
 
 export const genomicFilters: Writable<Filter[]> = writable(restoreGenomicFilters());
@@ -184,6 +184,11 @@ export function clearFilters() {
   genomicFilters.set([]);
   const tree = get(filterTree);
   tree.root.children = [];
+  tree.root.uuid = genericUUID();
+  filterTree.set(tree);
+}
+
+export function setFilterTree(tree: LogicTree<FilterInterface>) {
   tree.root.uuid = genericUUID();
   filterTree.set(tree);
 }

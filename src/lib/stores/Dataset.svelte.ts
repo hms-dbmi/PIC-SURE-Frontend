@@ -21,6 +21,14 @@ export const archived: Readable<DataSet[]> = derived(datasets, ($ds) =>
   $ds.filter((ds) => ds.archived),
 );
 
+let showArchived = $state(false);
+export function toggleShowArchived() {
+  showArchived = !showArchived;
+}
+export function getShowArchived() {
+  return showArchived;
+}
+
 export async function loadDatasets() {
   const res = await api.get(Picsure.NamedDataSet);
   datasets.set(res.map(mapDataset));

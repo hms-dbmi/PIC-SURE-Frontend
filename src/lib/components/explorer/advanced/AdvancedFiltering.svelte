@@ -1,8 +1,11 @@
 <script lang="ts">
   /* eslint-disable @typescript-eslint/no-explicit-any -- dnd-kit events lack exported types */
-  import type { FilterInterface } from '$lib/models/Filter.svelte';
-  import type { FilterGroupInterface } from '$lib/models/Filter.svelte';
-  import { isFilterGroup, createFilterGroup } from '$lib/models/Filter.svelte';
+  import {
+    type FilterInterface,
+    type FilterGroupInterface,
+    isFilterGroup,
+    createFilterGroup,
+  } from '$lib/models/Filter.svelte';
   import AdvancedGroup from './AdvancedGroup.svelte';
   import AdvancedItem from './AdvancedItem.svelte';
   import GroupDropZone from './GroupDropZone.svelte';

@@ -1,25 +1,29 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import type { DataSet } from '$lib/models/Dataset';
-  import { getDataset } from '$lib/stores/Dataset';
   import { branding } from '$lib/configuration';
+
+  import { QueryVersion, type DataSet } from '$lib/models/Dataset';
+  import { getDataset } from '$lib/stores/Dataset.svelte';
 
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import QuerySummary from '$lib/components/QuerySummary.svelte';
+  import QuerySummary from '$lib/components/query/QuerySummary.svelte';
   import Loading from '$lib/components/Loading.svelte';
+  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
 
   let dataset: DataSet | undefined = $state({
+    version: QueryVersion.UNKNOWN,
     uuid: '',
     user: '',
     name: '',
     archived: false,
     metadata: {},
-    query: {},
+    query: null,
     queryId: '',
     startTime: '',
     rawStartTime: 0,
+    status: 'UNDEFINED',
   });
 
   async function loadDataset() {
@@ -37,22 +41,33 @@
   {#await loadDataset()}
     <Loading />
   {:then}
-    <section id="detail-summary-container" class="m-3">
-      <h2 class="text-left my-1">Dataset ID Summary</h2>
-      <table class="table bg-transparent">
-        <tbody>
-          <tr>
-            <td>Dataset ID Name:</td>
-            <td data-testid="dataset-summary-name">{dataset?.name}</td>
-          </tr>
-          <tr>
-            <td>Dataset ID:</td>
-            <td data-testid="dataset-summary-uuid">{dataset?.uuid}</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-    <QuerySummary query={dataset?.query} />
+    {#if dataset?.query && dataset?.queryId}
+      <section data-testid="dataset-summary-container" class="my-4">
+        <h2 class="text-left h4 mb-2 mt-6">Dataset ID Summary</h2>
+        <table class="table bg-transparent">
+          <tbody>
+            <tr>
+              <td>Dataset ID Name:</td>
+              <td class="text-surface-700" data-testid="dataset-summary-name">{dataset.name}</td>
+            </tr>
+            <tr>
+              <td>Dataset ID:</td>
+              <td class="text-surface-700" data-testid="dataset-summary-uuid">
+                <span class="monospace">{dataset.queryId}</span>
+                <CopyButton
+                  data-testid="{dataset.queryId}-copy"
+                  useIcon
+                  itemToCopy={dataset.queryId}
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+      <QuerySummary query={dataset.query} version={dataset.version} name={dataset.name} />
+    {:else}
+      <ErrorAlert color="warning">Invalid query object.</ErrorAlert>
+    {/if}
   {:catch}
     <ErrorAlert title="API Error">
       An error occured while retrieving dataset {page.params.uuid}.
