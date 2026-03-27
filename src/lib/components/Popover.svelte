@@ -27,6 +27,7 @@
     message?: string;
     triggerStyle?: string;
     triggerTypes?: string[];
+    triggerDisabled?: boolean;
     placement?: Placement;
     color?: string;
     size?: string;
@@ -42,6 +43,7 @@
     message,
     triggerStyle = '',
     triggerTypes = ['click'],
+    triggerDisabled = false,
     placement = 'top',
     color = 'surface',
     size = 'text-sm',
@@ -111,6 +113,7 @@
   data-testid="{testid}-btn"
   class="cursor-pointer {triggerStyle}"
   {...interactions.getReferenceProps()}
+  disabled={triggerDisabled}
 >
   {@render trigger?.()}
 </button>

@@ -1,7 +1,9 @@
 <script lang="ts">
-  import type { FilterInterface } from '$lib/models/Filter.svelte';
-  import { derivedFilterDescription } from '$lib/models/Filter.svelte';
-  import type { Filter } from '$lib/models/Filter.svelte';
+  import {
+    type Filter,
+    type FilterInterface,
+    derivedFilterDescription,
+  } from '$lib/models/Filter.svelte';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
   import { CollisionPriority } from '@dnd-kit/abstract';
   import { slide } from 'svelte/transition';
