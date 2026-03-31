@@ -4,6 +4,7 @@
 
   import { branding } from '$lib/configuration';
   import { sanitizeHTML } from '$lib/utilities/HTML';
+  import { log, createLog } from '$lib/logger';
 
   import Content from '$lib/components/Content.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
@@ -35,7 +36,13 @@
     <div class="flex justify-center"><UserToken /></div>
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
     <p>{@html execution}</p>
-    <Tabs value={tabSet} onValueChange={(e) => (tabSet = e.value)}>
+    <Tabs
+      value={tabSet}
+      onValueChange={(e) => {
+        tabSet = e.value;
+        log(createLog('ACTION', 'analyze.tab_change', { tab: e.value }));
+      }}
+    >
       {#snippet list()}
         <TabItem bind:group={tabSet} value="Python">Python</TabItem>
         <TabItem bind:group={tabSet} value="R">R</TabItem>
@@ -59,6 +66,10 @@
         href={card.link}
         target={card.link.startsWith('http') ? '_blank' : '_self'}
         class="p-4 basis-2/4 max-w-sm min-h-48 mb-8"
+        onclick={() =>
+          log(
+            createLog('NAVIGATION', 'analyze.learn_more', { title: card.header, url: card.link }),
+          )}
       >
         <div
           class="card card-hover border border-surface-200 bg-surface-100 hover:scale-105 hover:shadow-lg"

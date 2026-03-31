@@ -1,0 +1,60 @@
+import { json } from '@sveltejs/kit';
+import { AUDIT_API_KEY } from '$env/static/private';
+import type { RequestHandler } from './$types';
+import type { LogEvent } from '$lib/models/Log';
+
+const ACCEPTED = 202;
+
+export const POST: RequestHandler = async ({ request, getClientAddress }) => {
+  if (!AUDIT_API_KEY) {
+    console.error('[log] Logging API Key not set!');
+  }
+
+  let body: LogEvent;
+  try {
+    body = await request.json();
+  } catch {
+    console.warn('[log] Invalid JSON in log request; dropping event');
+    return json({ result: 'dropped' }, { status: ACCEPTED });
+  }
+
+  body.src_ip = getClientAddress();
+
+  if (!body.event_type) {
+    console.warn('[log] Missing event_type in log request; dropping event');
+    return json({ result: 'dropped' }, { status: ACCEPTED });
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  const authorization = request.headers.get('Authorization');
+  if (authorization && /^Bearer [\w-]+\.[\w-]+\.[\w-]+$/i.test(authorization)) {
+    headers['Authorization'] = authorization;
+  }
+
+  if (AUDIT_API_KEY) {
+    headers['X-API-Key'] = AUDIT_API_KEY;
+  }
+
+  try {
+    const target = 'http://localhost/picsure/proxy/pic-sure-logging/audit';
+    const upstream = await fetch(target, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!upstream.ok) {
+      console.error(
+        `[log] Upstream returned ${upstream.status}: ${await upstream.text().catch(() => '(no body)')}`,
+      );
+    }
+    console.debug(`[log] Forwarded to logging service: ${upstream.status}`);
+  } catch (err) {
+    console.error('[log] Network error forwarding to logging service:', err);
+  }
+
+  return json({ result: 'accepted' }, { status: ACCEPTED });
+};

@@ -35,6 +35,7 @@
     expandable = false,
     rowClickHandler = () => {},
     tableActions,
+    searchLogAction,
   }: Props = $props();
 
   $effect(() => {
@@ -61,7 +62,7 @@
       {@render tableActions?.()}
       {#if searchable}
         <div class="flex-none">
-          <Search {handler} />
+          <Search {handler} logAction={searchLogAction} />
         </div>
       {/if}
     </header>

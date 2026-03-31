@@ -5,13 +5,23 @@
   import CodeBlock from '$lib/components/CodeBlock.svelte';
   import DownloadButton from './DownloadButton.svelte';
   import { getDatasetId, getQueryRequest } from '$lib/ExportStepperManager.svelte';
+  import { log, createLog } from '$lib/logger';
 
   let tabSet: string = $state(
     features.analyzeApi ? 'Python' : features.explorer.allowDownload ? 'Download' : '',
   );
 </script>
 
-<Tabs value={tabSet} onValueChange={(e: { value: string }) => (tabSet = e.value)}>
+{#if branding.explorePage.analysisExportText && branding.explorePage.analysisExportText.length > 0}
+  <p class="mt-4">{branding.explorePage.analysisExportText}</p>
+{/if}
+<Tabs
+  value={tabSet}
+  onValueChange={(e: { value: string }) => {
+    tabSet = e.value;
+    log(createLog('EXPORT', 'export.tab_change', { tab: e.value }));
+  }}
+>
   {#snippet list()}
     {#if features.analyzeApi}
       <TabItem bind:group={tabSet} value="Python">Python</TabItem>

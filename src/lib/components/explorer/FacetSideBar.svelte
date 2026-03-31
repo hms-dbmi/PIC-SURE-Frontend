@@ -5,6 +5,7 @@
   import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
   import { selectedFacets } from '$lib/stores/Search';
   import { facetsPromise, openFacets } from '$lib/stores/Dictionary';
+  import { log, createLog } from '$lib/logger';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import FacetCategory from '$lib/components/explorer/FacetCategory.svelte';
@@ -51,7 +52,21 @@
   />
 {:then newFacets}
   {#if newFacets?.length > 0}
-    <Accordion multiple value={$openFacets} onValueChange={(e) => ($openFacets = e.value)}>
+    <Accordion
+      multiple
+      value={$openFacets}
+      onValueChange={(e) => {
+        const prev = $openFacets;
+        const next = e.value;
+        const opened = next.filter((v: string) => !prev.includes(v));
+        const closed = prev.filter((v: string) => !next.includes(v));
+        if (opened.length)
+          log(createLog('SEARCH', 'facet.category_toggle', { category: opened[0], open: true }));
+        if (closed.length)
+          log(createLog('SEARCH', 'facet.category_toggle', { category: closed[0], open: false }));
+        $openFacets = next;
+      }}
+    >
       {#snippet iconOpen()}<i class="fa-solid fa-angle-up"></i>{/snippet}
       {#snippet iconClosed()}<i class="fa-solid fa-angle-down"></i>{/snippet}
       {#each newFacets as facetCategory}
@@ -59,7 +74,21 @@
       {/each}
     </Accordion>
   {:else}
-    <Accordion multiple value={$openFacets} onValueChange={(e) => ($openFacets = e.value)}>
+    <Accordion
+      multiple
+      value={$openFacets}
+      onValueChange={(e) => {
+        const prev = $openFacets;
+        const next = e.value;
+        const opened = next.filter((v: string) => !prev.includes(v));
+        const closed = prev.filter((v: string) => !next.includes(v));
+        if (opened.length)
+          log(createLog('SEARCH', 'facet.category_toggle', { category: opened[0], open: true }));
+        if (closed.length)
+          log(createLog('SEARCH', 'facet.category_toggle', { category: closed[0], open: false }));
+        $openFacets = next;
+      }}
+    >
       {#snippet iconOpen()}<i class="fa-solid fa-angle-up"></i>{/snippet}
       {#snippet iconClosed()}<i class="fa-solid fa-angle-down"></i>{/snippet}
       {#each recreateFacetCategories() as facetCategory}

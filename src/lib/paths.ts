@@ -6,6 +6,7 @@ const PREFIX = 'picsure';
 const DICT = `${PREFIX}/proxy/dictionary-api`;
 const QUERY = `${PREFIX}/query`;
 const UPLOADER = `${PREFIX}/proxy/uploader`;
+const API = '/api/v1';
 
 export const Picsure = {
   Concepts: `${DICT}/concepts`,
@@ -32,6 +33,10 @@ export const Picsure = {
     Sites: `${UPLOADER}/sites`,
     Status: `${UPLOADER}/status`,
   },
+};
+
+export const Internal = {
+  Log: `${API}/log`,
 };
 
 const USER = 'psama/user';

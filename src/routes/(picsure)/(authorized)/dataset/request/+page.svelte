@@ -3,6 +3,7 @@
   import { branding } from '$lib/configuration';
   import { uuidInput } from '$lib/utilities/Forms';
   import type { QueryInterfaceV2 } from '$lib/models/query/Query';
+  import { log, createLog } from '$lib/logger';
   import { type Status, type Metadata, type DataType, UploadStatus } from '$lib/models/DataRequest';
   import {
     searchForDataset,
@@ -79,6 +80,7 @@
   }
 
   async function search() {
+    log(createLog('DAR', 'data_request.search', { datasetId }));
     approved = null;
     errorFromSearch = undefined;
     searched = true;

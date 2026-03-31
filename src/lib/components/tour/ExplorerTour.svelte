@@ -7,6 +7,7 @@
   import { clearFilters } from '$lib/stores/Filter';
   import { clearExports } from '$lib/stores/Export';
   import { sanitizeHTML } from '$lib/utilities/HTML';
+  import { log, createLog, getPageContext } from '$lib/logger';
 
   import Modal from '$lib/components/Modal.svelte';
   import Loading from '$lib/components/Loading.svelte';
@@ -191,7 +192,23 @@
     disableButtons: ['previous'],
 
     steps: steps,
+    onHighlightStarted: (_element, step, { state }) => {
+      if (state.activeIndex && state.activeIndex > 0) {
+        log(
+          createLog('ACTION', 'tour.next', {
+            pageContext: getPageContext(),
+            step: state.activeIndex,
+          }),
+        );
+      }
+    },
     onDestroyed: () => {
+      log(
+        createLog('ACTION', 'tour.exit', {
+          pageContext: getPageContext(),
+          lastStep: tourDriver.getActiveIndex(),
+        }),
+      );
       resetSearch();
       selectedFacets.set([]);
       const sidePanel = document.querySelector('#side-panel') as HTMLElement;
@@ -205,6 +222,7 @@
   });
 
   async function startTour() {
+    log(createLog('ACTION', 'tour.start', { pageContext: getPageContext() }));
     started = true;
     openDrawer();
     resetSearch();
@@ -255,6 +273,7 @@
   onclick={() => {
     started = false;
     openModal = true;
+    log(createLog('ACTION', 'tour.open', { pageContext: getPageContext() }));
   }}
   >Take a Tour
 </button>

@@ -14,6 +14,7 @@
   import { page } from '$app/state';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { getHierarchyConcepts } from '$lib/stores/Dictionary';
+  import { log, createLog, getPageContext } from '$lib/logger';
 
   const ENSURE_MAX_DEPTH = 100;
 
@@ -163,7 +164,15 @@
         fullWidth={true}
         nodes={treeNodes}
         disableTree={disableAddFilter}
-        onselect={(value) => (selectedNode = value)}
+        onselect={(value) => {
+          selectedNode = value;
+          log(
+            createLog('ACTION', 'hierarchy.node_select', {
+              node: value,
+              pageContext: getPageContext(),
+            }),
+          );
+        }}
       />
     {:catch error}
       <ErrorAlert color="error">

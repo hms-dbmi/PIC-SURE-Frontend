@@ -14,6 +14,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import VariantData from '$lib/components/explorer/variant/VariantData.svelte';
+  import { log, createLog } from '$lib/logger';
 
   let variantResults: VariantResult[] = $state([]);
   let tabGroup = $state('');
@@ -34,6 +35,7 @@
   }
 
   function changeTabGroup(newTab: string) {
+    log(createLog('ACTION', 'variant.site_change', { site: newTab }));
     tabGroup = newTab;
     const tabResult = variantResults.find((result) => result.name === tabGroup);
     if (tabResult && !tabResult.data) {

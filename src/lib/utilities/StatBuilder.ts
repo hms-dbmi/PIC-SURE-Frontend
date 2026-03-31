@@ -33,6 +33,7 @@ import {
 } from '$lib/utilities/QueryBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
 import type { QueryRequestInterface } from '$lib/models/api/Request';
+import { log, createLog } from '$lib/logger';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rejectIfQueryError(result: any) {
@@ -135,6 +136,14 @@ async function getOpenPatientCount({
       ? getQueryRequestV2(!isOpenAccess, resource, 'CROSS_COUNT', addConceptsV2)
       : getBlankQueryRequestV2(isOpenAccess, resource, 'CROSS_COUNT', addConceptsV2);
   }
+  log(
+    createLog('QUERY', 'query.execute', {
+      isOpenAccess: true,
+      type: 'patientCount',
+      resourceUUID: request.resourceUUID,
+      expectedResultType: request.query.expectedResultType,
+    }),
+  );
   return api
     .post(Picsure.QueryV2Sync, request)
     .then(rejectIfQueryError)
@@ -149,6 +158,14 @@ function getAuthPatientCount({
   const request = addFilters
     ? getQueryRequestV2(!isOpenAccess, resource, 'COUNT')
     : getBlankQueryRequestV2(isOpenAccess, resource, 'COUNT');
+  log(
+    createLog('QUERY', 'query.execute', {
+      isOpenAccess: false,
+      type: 'patientCount',
+      resourceUUID: request.resourceUUID,
+      expectedResultType: request.query.expectedResultType,
+    }),
+  );
   return api.post(Picsure.QueryV2Sync, request).then(rejectIfQueryError);
 }
 
@@ -169,6 +186,14 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
       : getBlankQueryRequestV2(isOpenAccess, resource, type);
     const query = request.query as QueryV2;
     query.setCrossCountFields(fields);
+    log(
+      createLog('QUERY', 'query.execute', {
+        type: field,
+        resourceUUID: request.resourceUUID,
+        expectedResultType: request.query.expectedResultType,
+        crossCountFieldCount: fields.length,
+      }),
+    );
     return api.post(Picsure.QueryV2Sync, request).then(rejectIfQueryError);
   };
 }

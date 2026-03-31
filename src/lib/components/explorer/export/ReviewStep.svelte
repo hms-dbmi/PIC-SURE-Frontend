@@ -19,6 +19,7 @@
   import Loading from '$lib/components/Loading.svelte';
   import Datatable from '$lib/components/datatable/StaticTable.svelte';
   import type { QueryRequestInterface } from '$lib/models/api/Request';
+  import { log, createLog } from '$lib/logger';
 
   export interface PrepareProps {
     query: QueryRequestInterface;
@@ -112,6 +113,7 @@
   }
 
   async function toggleSampleIds() {
+    log(createLog('EXPORT', 'export.toggle_sample_id', { included: sampleIds }));
     try {
       loadingSampleIds = true;
       if (!sampleIds) {

@@ -1,6 +1,7 @@
 import { error, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
 import { browser } from '$app/environment';
+import { log, createLog } from '$lib/logger';
 
 const BEARER = 'Bearer ';
 
@@ -81,19 +82,27 @@ async function handleResponse(res: Response) {
       return text; //TODO: Change this
     }
   } else if (res.status === 401) {
+    log(createLog('AUTH', 'session.unauthorized', undefined, { status: 401 }));
     browser &&
       sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
     logout(undefined, true);
     return;
   } else if (res.status === 403) {
+    log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
     if (browser) {
       sessionStorage.removeItem('logout-reason');
       sessionStorage.removeItem('filters');
     }
     logout(undefined, false);
   }
-
-  error(res.status as NumericRange<400, 599>, await res.text());
+  const resText = await res.text();
+  log(
+    createLog('ERROR', 'error.unknown', undefined, {
+      status: res.status,
+      error: { message: resText },
+    }),
+  );
+  error(res.status as NumericRange<400, 599>, resText);
 }
 
 function refreshToken(res: Response) {

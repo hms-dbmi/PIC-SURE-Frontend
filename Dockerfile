@@ -38,5 +38,8 @@ COPY --from=builder /app/build build/
 COPY --from=builder /app/node_modules node_modules/
 COPY package.json .
 ENV NODE_ENV=production
+ENV XFF_DEPTH=1
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget -qO /dev/null --no-check-certificate https://0.0.0.0:443/picsure/health || exit 1
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

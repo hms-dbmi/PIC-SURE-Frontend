@@ -14,6 +14,7 @@ import { Operator, type OperatorType } from '$lib/models/query/Query';
 import { Tree, type TreeNode } from '$lib/models/Tree';
 import { user } from '$lib/stores/User';
 import { objectUUID } from '$lib/utilities/UUID';
+import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
 
 const genomicFilterTypes = ['snp', 'genomic'];
 
@@ -27,6 +28,15 @@ export const filters: Readable<Filter[]> = derived(
   filterTree,
   ($tree) => $tree.leafNodes as Filter[],
 );
+
+export const associatedStudies: Readable<string[]> = derived(filters, ($f) => {
+  const studies = new Set<string>();
+  for (const filter of $f) {
+    if (filter.dataset) studies.add(filter.dataset);
+  }
+  return [...studies];
+});
+registerAssociatedStudies(associatedStudies);
 
 export const hasGenomicFilter: Readable<boolean> = derived(genomicFilters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic') : false,
@@ -148,6 +158,8 @@ export function toggleOperator(siblingA: FilterInterface, siblingB: FilterInterf
 }
 
 export function addFilter(filter: Filter) {
+  const isUpdate = 'id' in filter && [...get(filters), ...get(genomicFilters)].some((f) => f.id === filter.id);
+
   if ('filterType' in filter && genomicFilterTypes.includes(filter.filterType)) {
     const geneFilters = get(genomicFilters).filter((f) => f.id !== filter.id);
     filter.uuid = objectUUID(filter);
@@ -164,6 +176,19 @@ export function addFilter(filter: Filter) {
     (tree.root as FilterGroupInterface).uuid = genericUUID();
     filterTree.set(tree);
   }
+
+  log(
+    createLog('FILTER', isUpdate ? 'filter.update' : 'filter.add', {
+      filterType: filter.filterType,
+      displayType: filter.displayType,
+      variable: filter.variableName,
+      dataset: filter.dataset,
+      valueCount: 'categoryValues' in filter ? filter.categoryValues?.length : undefined,
+      min: 'min' in filter ? filter.min : undefined,
+      max: 'max' in filter ? filter.max : undefined,
+      pageContext: getPageContext(),
+    }),
+  );
 }
 
 export function removeFilter(removeUuid: string) {
@@ -172,30 +197,54 @@ export function removeFilter(removeUuid: string) {
   const oldGeneNode = geneFilters.find(isFilter);
   if (oldGeneNode) {
     genomicFilters.set(geneFilters.filter((node) => !isFilter(node)));
+    log(
+      createLog('FILTER', 'filter.remove', {
+        filterType: oldGeneNode.filterType,
+        variable: oldGeneNode.variableName,
+        dataset: oldGeneNode.dataset,
+        pageContext: getPageContext(),
+      }),
+    );
     return;
   }
   const tree = get(filterTree);
   const oldTreeNode = tree.find((node) => isFilter(node as Filter));
   if (!oldTreeNode) return;
+  const removed = oldTreeNode as Filter;
   tree.remove(oldTreeNode);
   (tree.root as FilterGroupInterface).uuid = genericUUID();
   filterTree.set(tree);
+  log(
+    createLog('FILTER', 'filter.remove', {
+      filterType: removed.filterType,
+      variable: removed.variableName,
+      dataset: removed.dataset,
+      pageContext: getPageContext(),
+    }),
+  );
 }
 
 export function removeGenomicFilters() {
+  const count = get(genomicFilters).length;
   genomicFilters.set([]);
+  if (count > 0) log(createLog('FILTER', 'filter.remove_genomic', { count }));
 }
 
 export function removeUnallowedFilters() {
   const isUnallowed = (node: Filter) => !node.allowFiltering;
   const geneFilters = get(genomicFilters);
+  const removedGeneCount = geneFilters.filter((node) => isUnallowed(node)).length;
   genomicFilters.set(geneFilters.filter((node) => !isUnallowed(node)));
 
   const tree = get(filterTree);
   const remove = tree.leafNodes.filter((node) => isUnallowed(node as Filter));
+  const removedTreeCount = remove.length;
   tree.remove(...remove);
   (tree.root as FilterGroupInterface).uuid = genericUUID();
   filterTree.set(tree);
+
+  const count = removedGeneCount + removedTreeCount;
+  if (count > 0) log(createLog('FILTER', 'filter.remove_unallowed', { count }));
 }
 
 export function removeInvalidFilters(): void {
@@ -219,21 +268,28 @@ export function removeInvalidFilters(): void {
   };
 
   const geneFilters = get(genomicFilters);
+  const removedGeneCount = geneFilters.filter((node) => !match(node)).length;
   genomicFilters.set(geneFilters.filter((node) => match(node)));
 
   const tree = get(filterTree);
   const remove = tree.leafNodes.filter((node) => !match(node as Filter));
+  const removedTreeCount = remove.length;
   tree.remove(...remove);
   (tree.root as FilterGroupInterface).uuid = genericUUID();
   filterTree.set(tree);
+
+  const removedCount = removedGeneCount + removedTreeCount;
+  if (removedCount > 0) log(createLog('FILTER', 'filter.remove_invalid', { count: removedCount }));
 }
 
 export function clearFilters() {
+  const count = get(filters).length + get(genomicFilters).length;
   genomicFilters.set([]);
   const tree = get(filterTree);
   tree.root.children = [];
   (tree.root as FilterGroupInterface).uuid = genericUUID();
   filterTree.set(tree);
+  if (count > 0) log(createLog('FILTER', 'filter.clear', { count, pageContext: getPageContext() }));
 }
 
 export function getFilter(uuid: string) {

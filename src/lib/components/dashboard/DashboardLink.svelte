@@ -1,7 +1,10 @@
 <script lang="ts">
+  import { log, createLog } from '$lib/logger';
+
   let { data = { row: { additional_info_link: '', consentGranted: false } } } = $props();
   let link = data.row.additional_info_link as string;
   let consentGranted = data.row.consentGranted;
+  let dataset = data.row.dataset_id as string;
 </script>
 
 {#if consentGranted}
@@ -14,6 +17,9 @@
       ? 'opacity-50 cursor-not-allowed'
       : ''}"
     target="_blank"
-    onclick={(e) => e.stopPropagation()}>More Info</a
+    onclick={(e) => {
+      e.stopPropagation();
+      log(createLog('ACTION', 'dashboard.more_info_table', { dataset, url: link }));
+    }}>More Info</a
   >
 {/if}

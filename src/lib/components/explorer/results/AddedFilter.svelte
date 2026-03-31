@@ -9,6 +9,7 @@
   import { removeFilter, activeFilter, activeSearch } from '$lib/stores/Filter';
   import { populateFromGeneFilter } from '$lib/stores/GeneFilter';
   import { populateFromSNPFilter } from '$lib/stores/SNPFilter';
+  import { log, createLog } from '$lib/logger';
 
   import Modal from '$lib/components/Modal.svelte';
   import AddFilter from '$lib/components/explorer/AddFilter.svelte';
@@ -66,6 +67,7 @@
   });
 
   function editFilter() {
+    log(createLog('ACTION', 'filter.edit_click', { variable: filter.variableName }));
     if (filter.filterType === 'genomic') {
       populateFromGeneFilter(filter);
       goto('/explorer/genome-filter?edit=' + Option.Genomic);
@@ -121,6 +123,7 @@
     event.preventDefault();
     open = !open;
     carot = open ? 'fa-caret-down' : 'fa-caret-up';
+    if (open) log(createLog('ACTION', 'filter.view_details', { variable: filter.variableName }));
   };
 
   const deleteFilter = function () {

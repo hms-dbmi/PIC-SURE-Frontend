@@ -15,6 +15,8 @@
   import { open } from '$lib/stores/Drawer';
   import Loading from '$lib/components/Loading.svelte';
 
+  import { log, createLog } from '$lib/logger';
+
   const tableName = 'ExplorerTable';
 
   let unsubColumns: Unsubscriber;
@@ -43,6 +45,7 @@
   });
 
   function rowClickHandler(row: DashboardRow) {
+    log(createLog('ACTION', 'dashboard.row_click', { dataset: row.dataset_id, name: row.name }));
     $activeRow = row;
     $open = true;
   }
