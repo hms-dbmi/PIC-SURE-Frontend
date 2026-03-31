@@ -96,7 +96,8 @@ function blank({ addFilters, isOpenAccess, resource }: RequestMapOptions): Promi
   const request = addFilters
     ? getQueryRequestV3(!isOpenAccess, resource, 'COUNT')
     : getBlankQueryRequestV3(isOpenAccess, resource, 'COUNT');
-  return api.post(Picsure.QueryV3Sync, request).then(rejectIfQueryError);
+  const path = isOpenAccess ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+  return api.post(path, request).then(rejectIfQueryError);
 }
 
 function hardcoded({ stat }: RequestMapOptions) {
@@ -141,7 +142,7 @@ async function getOpenPatientCount({
     ? getQueryRequestV3(!isOpenAccess, resource, 'CROSS_COUNT')
     : getBlankQueryRequestV3(isOpenAccess, resource, 'CROSS_COUNT');
   return api
-    .post(Picsure.QueryV3Sync, request)
+    .post(Picsure.QueryOpenSync, request)
     .then(rejectIfQueryError)
     .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }
@@ -173,7 +174,8 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(!isOpenAccess, resource, type, mapper)
       : getBlankQueryRequestV3(isOpenAccess, resource, type, mapper);
-    return api.post(Picsure.QueryV3Sync, request).then(rejectIfQueryError);
+    const path = isOpenAccess ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+    return api.post(path, request).then(rejectIfQueryError);
   };
 }
 
@@ -198,7 +200,8 @@ function getConsentCount(type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(!isOpenAccess, resource, type, mapper)
       : getBlankQueryRequestV3(isOpenAccess, resource, type, mapper);
-    return api.post(Picsure.QueryV3Sync, request).then(rejectIfQueryError);
+    const path = isOpenAccess ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+    return api.post(path, request).then(rejectIfQueryError);
   };
 }
 
