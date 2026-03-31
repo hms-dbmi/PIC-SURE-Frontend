@@ -35,6 +35,8 @@ jobs:
         run: pnpm run lint
       - name: Run Svelte check
         run: pnpm run check
+        env:
+          AUDIT_API_KEY: ''
       - name: Run Playwright tests
         run: pnpm run test
 
