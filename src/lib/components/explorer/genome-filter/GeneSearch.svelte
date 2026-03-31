@@ -41,7 +41,9 @@
         role="button"
         tabindex="-1"
         onclick={() => log(createLog('ACTION', 'genomic.help_click', { section: 'consequence' }))}
-        onkeydown={(e) => e.key === 'Enter' && log(createLog('ACTION', 'genomic.help_click', { section: 'consequence' }))}
+        onkeydown={(e) =>
+          e.key === 'Enter' &&
+          log(createLog('ACTION', 'genomic.help_click', { section: 'consequence' }))}
       >
         <HelpInfoPopup id="cons-help-popup" text={helpText.consequence} />
       </span>
@@ -54,7 +56,9 @@
         role="button"
         tabindex="-1"
         onclick={() => log(createLog('ACTION', 'genomic.help_click', { section: 'frequency' }))}
-        onkeydown={(e) => e.key === 'Enter' && log(createLog('ACTION', 'genomic.help_click', { section: 'frequency' }))}
+        onkeydown={(e) =>
+          e.key === 'Enter' &&
+          log(createLog('ACTION', 'genomic.help_click', { section: 'frequency' }))}
       >
         <HelpInfoPopup id="freq-help-popup" text={helpText.frequency} />
       </span>
