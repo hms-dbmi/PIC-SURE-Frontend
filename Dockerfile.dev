@@ -1,5 +1,5 @@
 # Step 1: Build the app with node
-FROM node:24.14.1-alpine3.23@sha256:01743339035a5c3c11a373cd7c83aeab6ed1457b55da6a69e014a95ac4e4700b AS builder
+FROM node:25.8.2-alpine3.23@sha256:cf38e1f3c28ac9d81cdc0c51d8220320b3b618780e44ef96a39f76f7dbfef023 AS builder
 RUN npm install -g pnpm@10.24.0
 
 WORKDIR /app
