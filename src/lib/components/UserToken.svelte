@@ -107,8 +107,12 @@
         </div>
       </section>
       <footer class="card-footer mt-2">
-        <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-        <span onclick={() => log(createLog('ACTION', 'token.copy'))}>
+        <span
+          role="button"
+          tabindex="-1"
+          onclick={() => log(createLog('ACTION', 'token.copy'))}
+          onkeydown={(e) => e.key === 'Enter' && log(createLog('ACTION', 'token.copy'))}
+        >
           <CopyButton
             itemToCopy={$user.token || ''}
             class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"

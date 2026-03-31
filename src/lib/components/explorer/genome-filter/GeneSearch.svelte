@@ -37,9 +37,11 @@
     subtitle="The calculated consequence is based on VEP annotation."
   >
     {#snippet help()}
-      <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
       <span
+        role="button"
+        tabindex="-1"
         onclick={() => log(createLog('ACTION', 'genomic.help_click', { section: 'consequence' }))}
+        onkeydown={(e) => e.key === 'Enter' && log(createLog('ACTION', 'genomic.help_click', { section: 'consequence' }))}
       >
         <HelpInfoPopup id="cons-help-popup" text={helpText.consequence} />
       </span>
@@ -48,9 +50,11 @@
   </Panel>
   <Panel title="Select Variant Frequency">
     {#snippet help()}
-      <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
       <span
+        role="button"
+        tabindex="-1"
         onclick={() => log(createLog('ACTION', 'genomic.help_click', { section: 'frequency' }))}
+        onkeydown={(e) => e.key === 'Enter' && log(createLog('ACTION', 'genomic.help_click', { section: 'frequency' }))}
       >
         <HelpInfoPopup id="freq-help-popup" text={helpText.frequency} />
       </span>

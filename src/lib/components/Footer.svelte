@@ -70,8 +70,12 @@
   <ul>
     {#if features.termsOfService}
       <li>
-        <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-        <span onclick={() => log(createLog('NAVIGATION', 'footer.tos_click'))}>
+        <span
+          role="button"
+          tabindex="-1"
+          onclick={() => log(createLog('NAVIGATION', 'footer.tos_click'))}
+          onkeydown={(e) => e.key === 'Enter' && log(createLog('NAVIGATION', 'footer.tos_click'))}
+        >
           <Modal
             bind:open={modalOpen}
             data-testid="terms-of-service"
