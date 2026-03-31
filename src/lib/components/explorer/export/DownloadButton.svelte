@@ -49,7 +49,7 @@
         }),
       );
       const startTime = performance.now();
-      const res = await api.post(`${Picsure.Query}/${datasetId}/result`, {});
+      const res = await api.post(`${Picsure.QueryV2}/${datasetId}/result`, {});
       const duration = Math.round(performance.now() - startTime);
       const blob = new Blob([res], { type: 'octet/stream' });
 
