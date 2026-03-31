@@ -9,6 +9,8 @@
   import type { AuthData } from '$lib/models/AuthProvider';
   import { toaster } from '$lib/toaster';
 
+  import { log, createLog } from '$lib/logger';
+
   import LoginButton from '$lib/components/buttons/LoginButton.svelte';
   import Logo from '$lib/components/Logo.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -104,7 +106,12 @@
           <a
             href={branding?.login?.openPicsureLink || '/'}
             class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white mb-4 w-full"
-            >{openPicsureLinkText}</a
+            onclick={() =>
+              log(
+                createLog('NAVIGATION', 'login.explore_open', {
+                  url: branding?.login?.openPicsureLink || '/',
+                }),
+              )}>{openPicsureLinkText}</a
           >
         {/if}
         {#await page.data?.altProviders}

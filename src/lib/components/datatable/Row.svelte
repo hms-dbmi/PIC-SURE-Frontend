@@ -3,6 +3,7 @@
   import type { Column } from '$lib/components/datatable/types';
   import type { Indexable } from '$lib/types';
   import { activeTable, activeRow, activeComponent, setActiveRow } from '$lib/stores/ExpandableRow';
+  import { log, createLog, getPageContext } from '$lib/logger';
 
   interface Props {
     cellOverides?: Indexable;
@@ -27,6 +28,17 @@
   }: Props = $props();
 
   function onClick(row: Indexable) {
+    const willOpen = !(
+      $activeTable === tableName &&
+      ($activeRow === row?.conceptPath || $activeRow === row.dataset_id)
+    );
+    log(
+      createLog('ACTION', 'search_result.row_click', {
+        variable: row.conceptPath || row.dataset_id,
+        open: willOpen,
+        pageContext: getPageContext(),
+      }),
+    );
     setActiveRow({ row: row.conceptPath || row.dataset_id, table: tableName });
     rowClickHandler(row);
   }

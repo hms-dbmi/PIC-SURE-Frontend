@@ -9,6 +9,7 @@ import type { DictionaryConceptResult } from '$lib/models/api/Dictionary';
 import { searchDictionary } from '$lib/stores/Dictionary';
 import { updateFacetsFromSearch, facetsPromise } from '$lib/stores/Dictionary';
 import { getDefaultRows } from '$lib/components/datatable/stores';
+import { log, createLog, getPageContext } from '$lib/logger';
 
 export const loading: Writable<boolean> = writable(false);
 export const searchPromise: Writable<Promise<DictionaryConceptResult | undefined>> = writable(
@@ -81,6 +82,15 @@ export async function search(state: State): Promise<SearchResult[]> {
     state.setTotalRows(0);
     return [];
   }
+  log(
+    createLog('SEARCH', 'search.dictionary', {
+      term,
+      facetCount: facets.length,
+      pageContext: getPageContext(),
+      page: state.currentPage,
+      pageSize: state.rowsPerPage,
+    }),
+  );
   const search = searchDictionary(term.trim(), facets, {
     pageNumber: state.currentPage - 1,
     pageSize: state.rowsPerPage,
@@ -96,6 +106,14 @@ export async function search(state: State): Promise<SearchResult[]> {
   if (!response) {
     error.set(errorText);
   }
+  log(
+    createLog('SEARCH', 'search.results', {
+      term: get(searchTerm),
+      totalResults: response?.totalElements ?? 0,
+      facetCount: get(selectedFacets).length,
+      pageContext: getPageContext(),
+    }),
+  );
   state.setTotalRows(response?.totalElements ?? 0);
   return response?.content ?? [];
 }
@@ -105,8 +123,22 @@ export async function updateFacets(facetsToUpdate: Facet[]) {
   facetsToUpdate.forEach((facet) => {
     const facetIndex = currentFacets.findIndex((f) => f.name === facet.name);
     if (facetIndex !== -1) {
+      log(
+        createLog('SEARCH', 'facet.remove', {
+          facet: facet.name,
+          category: facet.category,
+          pageContext: getPageContext(),
+        }),
+      );
       currentFacets.splice(facetIndex, 1);
     } else {
+      log(
+        createLog('SEARCH', 'facet.add', {
+          facet: facet.name,
+          category: facet.category,
+          pageContext: getPageContext(),
+        }),
+      );
       currentFacets.push(facet);
     }
   });
@@ -115,6 +147,7 @@ export async function updateFacets(facetsToUpdate: Facet[]) {
 }
 
 export function resetSearch() {
+  log(createLog('SEARCH', 'search.reset', { pageContext: getPageContext() }));
   isResetting = true;
   searchTerm.set('');
   selectedFacets.set([]);

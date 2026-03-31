@@ -6,6 +6,7 @@
   import { filters } from '$lib/stores/Filter';
   import { panelOpen } from '$lib/stores/SidePanel';
   import { subscribeOnChange } from '$lib/utilities/Subscribers';
+  import { log, createLog } from '$lib/logger';
 
   let unsubFilterStore: Unsubscriber;
   let unsubExportStore: Unsubscriber;
@@ -42,7 +43,10 @@
       class="btn-icon btn-icon-sm preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
       aria-label="Toggle Results Panel"
       onclick={() => {
-        panelOpen.update((value) => !value);
+        panelOpen.update((value) => {
+          log(createLog('ACTION', 'results_panel.toggle', { open: !value }));
+          return !value;
+        });
       }}
     >
       <i class="fa-solid {$panelOpen ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>

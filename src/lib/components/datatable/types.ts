@@ -25,4 +25,5 @@ export interface TableProps {
   expandable?: boolean;
   rowClickHandler?: (row: Indexable) => void;
   tableActions?: import('svelte').Snippet;
+  searchLogAction?: string;
 }

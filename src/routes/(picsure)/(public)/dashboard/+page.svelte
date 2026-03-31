@@ -16,6 +16,7 @@
   import Loading from '$lib/components/Loading.svelte';
 
   import { subscribeOnChange } from '$lib/utilities/Subscribers';
+  import { log, createLog } from '$lib/logger';
 
   const tableName = 'ExplorerTable';
 
@@ -43,6 +44,7 @@
   });
 
   function rowClickHandler(row: DashboardRow) {
+    log(createLog('ACTION', 'dashboard.row_click', { dataset: row.dataset_id, name: row.name }));
     $activeRow = row;
     $open = true;
   }

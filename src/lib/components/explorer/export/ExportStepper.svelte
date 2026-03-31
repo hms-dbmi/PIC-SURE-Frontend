@@ -41,6 +41,7 @@
     getQueryRequest,
     resetExportStepperState,
   } from '$lib/ExportStepperManager.svelte';
+  import { log, createLog } from '$lib/logger';
 
   interface Props {
     query: QueryRequestInterface;
@@ -197,7 +198,14 @@
   }
 
   function onComplete() {
+    log(
+      createLog('EXPORT', 'export.stepper.complete', {
+        datasetId: getDatasetId(),
+        resultType: getActiveType(),
+      }),
+    );
     if (features.explorer.enableRedcapExport) {
+      log(createLog('EXPORT', 'export.open_redcap', { datasetId: getDatasetId() }));
       window.open(
         'https://redcap.tch.harvard.edu/redcap_edc/surveys/?s=EWYX8X8XX77TTWFR',
         '_blank',

@@ -20,6 +20,7 @@
   import Counts from '$lib/components/explorer/results/Counts.svelte';
 
   import { subscribeOnChange } from '$lib/utilities/Subscribers';
+  import { log, createLog } from '$lib/logger';
 
   let unsubFilters: Unsubscriber | null = null;
   let currentPage: string = $state(page.url.pathname);
@@ -86,7 +87,6 @@
   // to load on the next page. Example discover results displaying on explorer page.
   // To fix this, we resubscribe on page navigation with the correct isOpenAccess flag
   // for loadPatientCount method, dropping the previous results and sending a new request.
-  // (Subscriber method runs on initial subscription.)
   $effect(() => {
     if (!page.url.pathname.startsWith(currentPage)) {
       // if the current path doesn't start with the saved page path,
@@ -95,6 +95,7 @@
       //          invalid: /explorer/cohort -> /discover (like a back button action)
       currentPage = page.url.pathname;
       unsubscribe();
+      loadPatientCount(!isDiscoverPage);
       subscribe();
     }
   });
@@ -132,7 +133,10 @@
         type="button"
         class="btn preset-filled-primary-500"
         disabled={$countsLoading}
-        onclick={() => goto('/explorer/export')}
+        onclick={() => {
+          log(createLog('ACTION', 'explorer.prepare_for_analysis'));
+          goto('/explorer/export');
+        }}
         transition:scale={{ easing: elasticInOut }}
       >
         Prepare for Analysis

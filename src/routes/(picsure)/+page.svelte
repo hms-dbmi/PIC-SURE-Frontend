@@ -5,10 +5,12 @@
   import Stats from '$lib/components/landing/Stats.svelte';
   import { isUserLoggedIn } from '$lib/stores/User';
   import { features } from '$lib/configuration';
+  import { log, createLog } from '$lib/logger';
 
   let searchTerm = $state('');
 
   function search() {
+    log(createLog('SEARCH', 'landing.search', { term: searchTerm }));
     features.login.open && features.discover && !isUserLoggedIn()
       ? goto(`/discover?search=${searchTerm}`)
       : goto(`/explorer?search=${searchTerm}`);
@@ -40,7 +42,11 @@
         <div class="text-3xl my-1">{title}</div>
         <i class="text-[5rem] my-3 text-secondary-600-400 {icon}"></i>
         <div class="subtitle my-3">{description}</div>
-        <a data-testid="landing-action-{title}-btn" href={url} class="btn preset-filled-primary-500"
+        <a
+          data-testid="landing-action-{title}-btn"
+          href={url}
+          class="btn preset-filled-primary-500"
+          onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
           >{btnText}</a
         >
       </div>

@@ -3,6 +3,7 @@
   import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
 
   import { setDefaultRows } from '../stores';
+  import { log, createLog } from '$lib/logger';
 
   interface Props {
     tableName: string;
@@ -16,6 +17,7 @@
   const setRowsPerPage = () => {
     setDefaultRows(tableName, handler.rowsPerPage);
     handler.setPage(1);
+    log(createLog('ACTION', 'search_result.page_size_change', { pageSize: handler.rowsPerPage }));
   };
 </script>
 

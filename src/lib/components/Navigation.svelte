@@ -11,6 +11,7 @@
   import type { Route } from '$lib/models/Route';
   import type AuthData from '$lib/models/AuthProvider.ts';
   import type AuthProvider from '$lib/models/AuthProvider.ts';
+  import { log, createLog } from '$lib/logger';
 
   import Logo from '$lib/components/Logo.svelte';
   import Popover from '$lib/components/Popover.svelte';
@@ -52,7 +53,13 @@
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-950" toolbarClasses="flex-none z-10">
   {#snippet lead()}
-    <a href="/" aria-current="page" data-testid="logo-home-link" class="content-center">
+    <a
+      href="/"
+      aria-current="page"
+      data-testid="logo-home-link"
+      class="content-center"
+      onclick={() => log(createLog('NAVIGATION', 'logo.click'))}
+    >
       <Logo height={4} class="mx-1" />
     </a>
   {/snippet}
@@ -90,7 +97,10 @@
               id="user-logout-btn"
               class="btn preset-filled-primary-500 w-fit"
               title="Logout"
-              onclick={() => logout(providerInstance, false)}>Logout</button
+              onclick={() => {
+                log(createLog('AUTH', 'logout.click'));
+                logout(providerInstance, false);
+              }}>Logout</button
             >
           </div>
         </Popover>
