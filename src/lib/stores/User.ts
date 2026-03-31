@@ -183,8 +183,6 @@ export async function login(token: string) {
 }
 
 export async function logout(authProvider?: AuthProvider, redirect = false) {
-  log(createLog('AUTH', 'logout.success'));
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function handleErrors(error: any) {
     console.error('Error logging out: ' + error);
@@ -204,6 +202,7 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
     await authProvider
       .logout()
       .then((redirectURL) => {
+        log(createLog('AUTH', 'logout.success'));
         if (typeof redirectURL === 'string') {
           user.set({});
           location.replace(redirectURL);
@@ -220,6 +219,7 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
 
 function handleLogout(redirect: boolean) {
   user.set({});
+  log(createLog('AUTH', 'logout.success'));
   if (redirect) {
     goto(`/login?redirectTo=${encodeURIComponent(page.url.pathname)}`);
   } else {
