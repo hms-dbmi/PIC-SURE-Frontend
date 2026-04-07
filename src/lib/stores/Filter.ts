@@ -2,7 +2,6 @@ import { get, derived, writable, type Readable, type Writable } from 'svelte/sto
 import { genericUUID, objectUUID } from '$lib/utilities/UUID';
 
 import { browser } from '$app/environment';
-import { features } from '$lib/configuration';
 import { user } from '$lib/stores/User';
 import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
 
@@ -102,7 +101,6 @@ function restoreFilterTree(): LogicTree<FilterInterface> {
 }
 
 export function toggleOperator(siblingA: FilterInterface, siblingB: FilterInterface) {
-  if (!features.explorer.enableOrQueries) return;
   const tree = get(filterTree);
   tree.toggleOperator(siblingA, siblingB);
   tree.root.uuid = genericUUID();
