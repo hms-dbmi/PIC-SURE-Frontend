@@ -141,7 +141,7 @@ export function createCategoricalFilter(
     allowFiltering: searchResult.allowFiltering,
     dataset: searchResult.dataset,
   };
-  filter.uuid = objectUUID(filter);
+  filter.uuid = genericUUID();
   return filter;
 }
 
@@ -159,7 +159,7 @@ export function createRequiredFilter(searchResult: SearchResult): CategoricalFil
     allowFiltering: searchResult.allowFiltering,
     dataset: searchResult.dataset,
   };
-  filter.uuid = objectUUID(filter);
+  filter.uuid = genericUUID();
   return filter;
 }
 
@@ -193,7 +193,7 @@ export function createAnyRecordOfFilter(
     allowFiltering: searchResult.allowFiltering,
     dataset: searchResult.dataset,
   };
-  filter.uuid = objectUUID(filter);
+  filter.uuid = genericUUID();
   return filter;
 }
 
@@ -223,7 +223,7 @@ export function createNumericFilter(
     allowFiltering: searchResult.allowFiltering,
     dataset: searchResult.dataset,
   };
-  filter.uuid = objectUUID(filter);
+  filter.uuid = genericUUID();
   return filter;
 }
 
