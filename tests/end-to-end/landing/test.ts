@@ -124,7 +124,7 @@ test.describe('Landing page', () => {
 
     test('Shows only auth stats when sets match; both when different', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, '*/**/picsure/query/sync', '88');
+      await mockApiSuccess(page, '*/**/picsure/v3/query/sync', '88');
       await mockApiSuccess(
         page,
         '*/**/picsure/proxy/dictionary-api/concepts?page_number=1&page_size=1',
@@ -198,20 +198,20 @@ test.describe('Logged Out Landing', () => {
 
   test.describe('Stats (Logged Out)', () => {
     const stats: MockLandingStat[] = [
-      { key: 'query:blank', route: '*/**/picsure/v3/query/sync', api: '88', value: '88' },
+      { key: 'query:blank', route: '*/**/picsure/query/sync', api: '88', value: '88' },
       {
         key: 'query:genomic',
-        route: '*/**/picsure/v3/query/sync',
+        route: '*/**/picsure/query/sync',
         api: { 'some-genome': 4 },
         value: '4',
       },
       {
         key: 'query:biosample',
-        route: '*/**/picsure/v3/query/sync',
+        route: '*/**/picsure/query/sync',
         api: { 'some-sample': 12 },
         value: '12',
       },
-      { key: 'query:consent', route: '*/**/picsure/v3/query/sync', api: '50', value: '50' },
+      { key: 'query:consent', route: '*/**/picsure/query/sync', api: '50', value: '50' },
       {
         key: 'dict:concepts',
         route: '*/**/picsure/proxy/dictionary-api/concepts?page_number=1&page_size=1',
