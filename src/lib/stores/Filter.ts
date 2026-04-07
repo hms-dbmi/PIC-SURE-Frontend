@@ -104,12 +104,7 @@ export function addFilter(filter: Filter) {
     genomicFilters.set(geneFilters);
   } else {
     const tree = get(filterTree);
-    const oldNode = tree.find((node) => node.id === filter.id);
-    if (oldNode) {
-      tree.update(oldNode, filter);
-    } else {
-      tree.add(filter);
-    }
+    tree.add(filter);
     tree.root.uuid = genericUUID();
     filterTree.set(tree);
   }
