@@ -3,7 +3,7 @@
 
   import { toaster } from '$lib/toaster';
   import type { SearchResult } from '$lib/models/Search';
-  import { addFilter } from '$lib/stores/Filter';
+  import { addFilter, updateFilter } from '$lib/stores/Filter';
   import { activeRow } from '$lib/stores/ExpandableRow';
   import {
     type Filter,
@@ -103,7 +103,11 @@
       filter = createNumericFilter(data, minFormValue || undefined, maxFormValue || undefined);
     }
     if (!filter) return; //todo errors
-    addFilter(filter);
+    if (existingFilter) {
+      updateFilter(existingFilter.uuid, filter);
+    } else {
+      addFilter(filter);
+    }
     finish();
   }
 
