@@ -149,6 +149,25 @@ export function addFilter(filter: Filter) {
   }
 }
 
+export function updateFilter(existingUuid: string, filter: Filter) {
+  if ('filterType' in filter && genomicFilterTypes.includes(filter.filterType)) {
+    const geneFilters = get(genomicFilters);
+    const index = geneFilters.findIndex((f) => f.uuid === existingUuid);
+    if (index === -1) return;
+    filter.uuid = objectUUID(filter);
+    geneFilters[index] = filter;
+    genomicFilters.set(geneFilters);
+    return;
+  }
+  const tree = get(filterTree);
+  const oldNode = tree.find((node) => node.uuid === existingUuid);
+  if (!oldNode) return;
+  filter.uuid = existingUuid;
+  tree.update(oldNode, filter);
+  tree.root.uuid = genericUUID();
+  filterTree.set(tree);
+}
+
 export function removeFilter(removeUuid: string) {
   const isFilter = (filter: Filter) => 'uuid' in filter && filter.uuid === removeUuid;
   const geneFilters = get(genomicFilters);
