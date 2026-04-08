@@ -7,14 +7,12 @@ vi.mock('$lib/stores/User', () => ({ user: { subscribe: vi.fn() } }));
 
 import {
   addFilter,
+  updateFilter,
   removeFilter,
   filterTree,
   clearFilters,
 } from '$lib/stores/Filter';
-import {
-  createCategoricalFilter,
-  createNumericFilter,
-} from '$lib/models/Filter.svelte';
+import { createCategoricalFilter, createNumericFilter } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
 
 function mockSearchResult(conceptPath: string): SearchResult {
@@ -83,6 +81,38 @@ describe('addFilter - duplicate filters', () => {
     const leaves = tree.leafNodes;
     expect(leaves.length).toBe(1);
     expect(leaves[0].uuid).toBe(filter2.uuid);
+  });
+
+  it('updateFilter replaces a filter in place and preserves uuid and position', () => {
+    const search = mockSearchResult('\\demo\\concept\\path\\');
+    const filter1 = createCategoricalFilter(search, ['value1']);
+    const filter2 = createCategoricalFilter(search, ['value2']);
+
+    addFilter(filter1);
+    addFilter(filter2);
+
+    const edited = createCategoricalFilter(search, ['value1', 'extra']);
+    updateFilter(filter1.uuid, edited);
+
+    const tree = get(filterTree);
+    const leaves = tree.leafNodes;
+    expect(leaves.length).toBe(2);
+    expect(leaves[0].uuid).toBe(filter1.uuid);
+    expect((leaves[0] as typeof filter1).categoryValues).toEqual(['value1', 'extra']);
+    expect(leaves[1].uuid).toBe(filter2.uuid);
+  });
+
+  it('updateFilter is a no-op when the uuid does not exist', () => {
+    const search = mockSearchResult('\\demo\\concept\\path\\');
+    const filter1 = createCategoricalFilter(search, ['value1']);
+    addFilter(filter1);
+
+    const edited = createCategoricalFilter(search, ['value2']);
+    updateFilter('nonexistent-uuid', edited);
+
+    const tree = get(filterTree);
+    expect(tree.leafNodes.length).toBe(1);
+    expect(tree.leafNodes[0].uuid).toBe(filter1.uuid);
   });
 
   it('allows multiple numeric filters on the same concept path', () => {
