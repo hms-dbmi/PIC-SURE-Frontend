@@ -6,7 +6,9 @@ import { getResultList, StatPromise } from '$lib/utilities/StatBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
 
 import type { StatResult, StatValue } from '$lib/models/Stat';
+import type { Filter } from '$lib/models/Filter.svelte';
 import { filters, genomicFilters } from '$lib/stores/Filter';
+import { objectUUID } from '$lib/utilities/UUID';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
 import { loading as resourcesPromise, loadResources } from '$lib/stores/Resources';
 import { features } from '$lib/configuration';
@@ -27,13 +29,15 @@ export async function loadPatientCount(useAuth: boolean) {
       requestCache.clear();
     }
 
+    const hashFilter = (f: Filter, operator?: string) =>
+      objectUUID({ ...f, parent: undefined, uuid: undefined, operator });
     const cacheKey = JSON.stringify([
       isOpenAccess,
       get(searchTerm),
       get(selectedFacets).map((facet) => facet.name),
-      get(genomicFilters).map(({ uuid }) => uuid),
+      get(genomicFilters).map((f) => hashFilter(f)),
       // if operator changes we need to redo query
-      get(filters).map(({ uuid, parent }) => uuid + parent?.operator),
+      get(filters).map((f) => hashFilter(f, f.parent?.operator)),
     ]);
     if (requestCache.has(cacheKey)) {
       resultCounts.set(requestCache.get(cacheKey) as StatResult[]);
