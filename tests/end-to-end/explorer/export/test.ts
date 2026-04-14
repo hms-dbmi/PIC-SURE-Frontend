@@ -271,6 +271,51 @@ test.describe('Export Page', () => {
     await nextButton.click();
   });
 
+  test('System fields from config appear on export page', async ({ page }) => {
+    await setupExportPageAndAddFilterAndExport(page);
+    await expect(page).toHaveURL('/explorer/export');
+
+    const tableBody = page.locator('tbody');
+    await expect(tableBody).toBeVisible();
+
+    // System fields configured via VITE_EXPORT_SYSTEM_FIELDS in .env.test (patient_id,_consents)
+    // are prepended before user export rows but after filter rows
+    await expect(tableBody.getByText('patient_id', { exact: true })).toBeVisible();
+    await expect(tableBody.getByText('_consents', { exact: true })).toBeVisible();
+  });
+
+  test('System fields are included in query select on submit', async ({ page }) => {
+    await setupExportPageAndAddFilterAndExport(page);
+    await expect(page).toHaveURL('/explorer/export');
+    const nextButton = page.getByTestId('next-btn');
+
+    // Step through to save-dataset
+    await nextButton.click(); // Review Cohort Details
+    await nextButton.click(); // Tree Step
+
+    // Select CSV export type
+    await page.getByTestId('csv-export-option').click();
+    await expect(nextButton).not.toBeDisabled();
+
+    // Intercept the query request to verify system fields are included
+    let capturedQuery: { query: { select: string[] } } | null = null;
+    await page.route(queryPathV3, async (route: Route) => {
+      const request = route.request();
+      capturedQuery = request.postDataJSON();
+      await route.fulfill({ json: newDatasetResponse });
+    });
+
+    await nextButton.click(); // Submit query
+
+    // Wait for the dataset ID to appear (indicating query was submitted)
+    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+
+    // Verify the captured query contains the system fields
+    expect(capturedQuery).not.toBeNull();
+    expect(capturedQuery!.query.select).toContain('\\patient_id\\');
+    expect(capturedQuery!.query.select).toContain('\\_consents\\');
+  });
+
   test('Sample IDs checkbox adds genomic concepts to exports and query', async ({ page }) => {
     // Mock data for genomic concepts
     const genomicConceptsResponse = {

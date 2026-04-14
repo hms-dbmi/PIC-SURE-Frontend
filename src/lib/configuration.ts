@@ -183,6 +183,11 @@ export const features: Indexable = {
     enableCohortDetails: import.meta.env?.VITE_ENABLE_COHORT_DETAILS === 'true',
     showTreeStep: import.meta.env?.VITE_SHOW_TREE_STEP === 'true',
     enableExportTimeseries: import.meta.env?.VITE_EXPORT_TIMESERIES !== 'false', // default true
+    exportSystemFields: (import.meta.env?.VITE_EXPORT_SYSTEM_FIELDS || '')
+      .split(',')
+      .map((f: string) => f.trim())
+      .filter(Boolean)
+      .map((f: string) => `\\${f}\\`),
   },
   login: {
     open: import.meta.env?.VITE_OPEN === 'true',
