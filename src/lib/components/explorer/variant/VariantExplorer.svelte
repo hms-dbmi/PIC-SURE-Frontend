@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
+  import { settings } from '$lib/configuration';
   import { ExportType, type VariantResult } from '$lib/models/Variant';
   import {
     loading as resourcesPromise,
@@ -27,7 +28,7 @@
       const queryRequest = getQueryRequest(true, resource.uuid);
       return {
         name: resource.name,
-        exportType: ExportType.Aggregate,
+        exportType: settings.variantExplorer.type,
         count: getVariantCount(queryRequest),
         queryRequest,
       };
