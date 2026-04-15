@@ -14,6 +14,7 @@
   import { page } from '$app/state';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { getHierarchyConcepts } from '$lib/stores/Dictionary';
+  import { sortHierarchyDeepestFirst } from '$lib/utilities/Hierarchy';
   import { log, createLog, getPageContext } from '$lib/logger';
 
   const ENSURE_MAX_DEPTH = 100;
@@ -43,16 +44,17 @@
         throw new Error('No hierarchy concepts found');
       }
 
-      const rootNode = hierarchyConcepts.reduce<NodeInterface | null>((parent, concept) => {
+      const sorted = sortHierarchyDeepestFirst(hierarchyConcepts);
+
+      const rootNode = sorted.reduce<NodeInterface | null>((child, concept) => {
         const node = createNode(concept);
-        if (parent) {
-          node.children = [parent];
+        if (child) {
+          node.children = [child];
         }
         return node;
       }, null);
 
-      //select the last node in the hierarchy
-      selectedNode = hierarchyConcepts[0].conceptPath;
+      selectedNode = sorted[0].conceptPath;
 
       return rootNode ? [rootNode] : [];
     } catch (error) {
