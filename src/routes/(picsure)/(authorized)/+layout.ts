@@ -16,6 +16,15 @@ export const load: LayoutLoad = ({ url }) => {
       log(createLog('AUTH', 'auth.redirect_no_token', { targetUrl: url.pathname }));
       redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
     }
+    try {
+      if (isTokenExpired(token)) {
+        log(createLog('AUTH', 'auth.redirect_token_expired', { targetUrl: url.pathname }));
+        redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
+      }
+    } catch (error) {
+      console.error('Error checking token expiration:', error);
+      redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
+    }
     const userPrivileges = get(user)?.privileges || [];
     if (
       !userPrivileges.includes(PicsurePrivileges.QUERY) &&
@@ -38,15 +47,6 @@ export const load: LayoutLoad = ({ url }) => {
       url.pathname.includes('/analyze/analysis')
     ) {
       redirect(302, '/analyze/api');
-    }
-    try {
-      if (isTokenExpired(token)) {
-        log(createLog('AUTH', 'auth.redirect_token_expired', { targetUrl: url.pathname }));
-        redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
-      }
-    } catch (error) {
-      console.error('Error checking token expiration:', error);
-      redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
     }
   }
 };
