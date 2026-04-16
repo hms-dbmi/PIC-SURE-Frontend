@@ -39,11 +39,16 @@ export const isAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.ADMIN);
 });
 
+// User data lives in sessionStorage (tab-scoped), not localStorage. Each tab has its own
+// isolated user state, so opening the app in multiple tabs or logging out in one tab
+// cannot leak stale admin/privileged data into another tab's UI. Token stays in
+// localStorage because the API client reads it on every request and a fresh tab needs
+// to know the user is already authenticated.
 user.subscribe(($user: User) => {
   if (browser) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { token: _, ...userWithoutToken } = $user;
-    localStorage.setItem('user', JSON.stringify(userWithoutToken));
+    sessionStorage.setItem('user', JSON.stringify(userWithoutToken));
   }
 });
 
@@ -61,25 +66,38 @@ export function removeToken() {
   tokenStatus.set(false);
 }
 
+/**
+ * Clear all client-side session state: token, persisted user blob, and the user store.
+ *
+ * DO NOT call this from module-init code paths (e.g. `restoreUser`). The `user` store
+ * does not exist yet at that point, so `user.set()` will throw. `restoreUser` instead
+ * clears localStorage inline and returns `{}` as the initial store value.
+ */
+export function clearSession() {
+  removeToken();
+  sessionStorage.removeItem('user');
+  user.set({});
+}
+
 function restoreUser() {
   if (!browser) return {};
 
   const token = localStorage.getItem('token');
   if (token && isTokenExpired(token)) {
-    console.log('Clearing expired token from local storage.');
+    console.log('Clearing expired token from storage.');
     removeToken();
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
     log(createLog('AUTH', 'session.expired'));
     return {};
   }
 
   try {
-    const stored = JSON.parse(localStorage.getItem('user') || '{}');
+    const stored = JSON.parse(sessionStorage.getItem('user') || '{}');
     if (!stored || Object.keys(stored).length === 0) return {};
-    console.log('Restored user from local storage: ', stored);
+    console.log('Restored user from session storage: ', stored);
     return stored;
   } catch (error) {
-    console.error('Error reading user from local storage: ' + error);
+    console.error('Error reading user from session storage: ' + error);
     return {};
   }
 }
@@ -169,16 +187,25 @@ export async function getQueryTemplate(): Promise<QueryInterface> {
   }
 }
 
+/**
+ * Populate the user store from PSAMA using the token in localStorage. Used by the login
+ * flow and by the authorized layout when a fresh tab has a valid token but no user data
+ * in sessionStorage (since sessionStorage is tab-scoped, each new tab starts empty).
+ */
+export async function hydrateUserFromToken() {
+  await getUser(true, false);
+  if (features.useQueryTemplate) {
+    const queryTemplate = await getQueryTemplate();
+    if (queryTemplate) {
+      user.set({ ...get(user), queryTemplate });
+    }
+  }
+}
+
 export async function login(token: string) {
   if (browser && token) {
     setToken(token);
-    await getUser(true, false);
-    if (features.useQueryTemplate) {
-      const queryTemplate = await getQueryTemplate();
-      if (queryTemplate) {
-        user.set({ ...get(user), queryTemplate });
-      }
-    }
+    await hydrateUserFromToken();
   }
 }
 
@@ -231,7 +258,10 @@ export function isTokenExpired(token: string) {
   try {
     return getTokenExpiration(token) < new Date().getTime();
   } catch (error) {
+    // Treating parse failures as expired is the safe default, but silently doing so hides
+    // real bugs (corrupted token, unexpected format). Log so we can diagnose spurious logouts.
     console.error('Error checking token expiration: ' + error);
+    log(createLog('AUTH', 'token.parse_error', { error: String(error) }));
     return true;
   }
 }
