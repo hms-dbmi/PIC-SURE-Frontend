@@ -258,8 +258,6 @@ export function isTokenExpired(token: string) {
   try {
     return getTokenExpiration(token) < new Date().getTime();
   } catch (error) {
-    // Treating parse failures as expired is the safe default, but silently doing so hides
-    // real bugs (corrupted token, unexpected format). Log so we can diagnose spurious logouts.
     console.error('Error checking token expiration: ' + error);
     log(createLog('AUTH', 'token.parse_error', { error: String(error) }));
     return true;
