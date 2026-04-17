@@ -1,12 +1,12 @@
 import { json } from '@sveltejs/kit';
-import { AUDIT_API_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
 import type { LogEvent } from '$lib/models/Log';
 
 const ACCEPTED = 202;
 
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
-  if (!AUDIT_API_KEY) {
+  if (!env.AUDIT_API_KEY) {
     console.error('[log] Logging API Key not set!');
   }
 
@@ -34,8 +34,8 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     headers['Authorization'] = authorization;
   }
 
-  if (AUDIT_API_KEY) {
-    headers['X-API-Key'] = AUDIT_API_KEY;
+  if (env.AUDIT_API_KEY) {
+    headers['X-API-Key'] = env.AUDIT_API_KEY;
   }
 
   try {

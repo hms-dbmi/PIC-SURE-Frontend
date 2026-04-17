@@ -13,7 +13,6 @@
   import Modal from '$lib/components/Modal.svelte';
   import { page } from '$app/state';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import { getHierarchyConcepts } from '$lib/stores/Dictionary';
   import { sortHierarchyDeepestFirst } from '$lib/utilities/Hierarchy';
   import { log, createLog, getPageContext } from '$lib/logger';
   interface Props {

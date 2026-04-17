@@ -2,8 +2,15 @@
   import type { HierarchyNodeInterface } from '$lib/components/tree/types';
   import RemoteTreeNode from '$lib/components/tree/RemoteTreeNode.svelte';
 
-  const { node }: { node: HierarchyNodeInterface & { loading?: boolean; error?: string | null } } =
-    $props();
+  const {
+    node,
+  }: {
+    node: HierarchyNodeInterface & {
+      loading?: boolean;
+      hasLoading?: boolean;
+      error?: string | null;
+    };
+  } = $props();
 </script>
 
 <details

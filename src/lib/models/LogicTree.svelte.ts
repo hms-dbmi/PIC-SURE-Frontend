@@ -289,9 +289,11 @@ export class LogicTree<T extends LogicNode<T>> {
         const children = nodeData.children.map(reconstruct);
         const group = createGroup(children, nodeData.operator || Operator.AND);
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { children: _rawChildren, parent: _rawParent, ...restData } = nodeData;
-        Object.assign(group, restData);
+        // Only uuid and operator are meaningful on groups — operator is already
+        // set by createGroup above, so just restore the persisted uuid.
+        if (nodeData.uuid && 'uuid' in group) {
+          (group as unknown as { uuid: string }).uuid = nodeData.uuid;
+        }
 
         children.forEach((child) => (child.parent = group));
 

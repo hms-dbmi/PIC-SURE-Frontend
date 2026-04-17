@@ -5,7 +5,6 @@
   import { type Unsubscriber } from 'svelte/store';
   import { filters } from '$lib/stores/Filter';
   import { panelOpen } from '$lib/stores/SidePanel';
-  import { subscribeOnChange } from '$lib/utilities/Subscribers';
   import { log, createLog } from '$lib/logger';
 
   let unsubFilterStore: Unsubscriber;
@@ -16,12 +15,12 @@
   }
 
   onMount(() => {
-    unsubFilterStore = subscribeOnChange(filters, (filterList) => {
+    unsubFilterStore = filters.subscribe((filterList) => {
       if (filterList?.length !== 0) {
         openPanel();
       }
     });
-    unsubExportStore = subscribeOnChange(exports, (exportList) => {
+    unsubExportStore = exports.subscribe((exportList) => {
       if (exportList?.length !== 0) {
         openPanel();
       }
