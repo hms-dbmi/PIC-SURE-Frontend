@@ -110,12 +110,11 @@ export function toggleOperator(siblingA: FilterInterface, siblingB: FilterInterf
 export function addFilter(filter: Filter) {
   if ('filterType' in filter && genomicFilterTypes.includes(filter.filterType)) {
     const geneFilters = get(genomicFilters).filter((f) => f.id !== filter.id);
-    const isUpdate = geneFilters.length < get(genomicFilters).length;
     filter.uuid = objectUUID(filter);
     geneFilters.push(filter);
     genomicFilters.set(geneFilters);
     log(
-      createLog('FILTER', isUpdate ? 'filter.update' : 'filter.add', {
+      createLog('FILTER', 'filter.add', {
         filterType: filter.filterType,
         displayType: filter.displayType,
         variable: filter.variableName,
@@ -125,17 +124,11 @@ export function addFilter(filter: Filter) {
     );
   } else {
     const tree = get(filterTree);
-    const oldNode = tree.find((node) => 'id' in node && node.id === filter.id);
-    const isUpdate = !!oldNode;
-    if (oldNode) {
-      tree.update(oldNode, filter);
-    } else {
-      tree.add(filter);
-    }
+    tree.add(filter);
     tree.root.uuid = genericUUID();
     filterTree.set(tree);
     log(
-      createLog('FILTER', isUpdate ? 'filter.update' : 'filter.add', {
+      createLog('FILTER', 'filter.add', {
         filterType: filter.filterType,
         displayType: filter.displayType,
         variable: filter.variableName,

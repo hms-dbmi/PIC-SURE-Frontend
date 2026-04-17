@@ -7,7 +7,7 @@ import type {
   FilterGroupInterface,
   AnyRecordOfFilterInterface,
   GenomicFilterInterface,
-} from '$lib/models/Filter';
+} from '$lib/models/Filter.svelte';
 import { getConceptDetails, getConceptTree } from '$lib/stores/Dictionary';
 
 import {

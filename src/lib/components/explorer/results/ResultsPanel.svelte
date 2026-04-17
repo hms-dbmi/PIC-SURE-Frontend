@@ -71,7 +71,7 @@
   let advancedFilteringDisabled = $derived(nonGenomicFilterCount <= 1);
 
   function subscribe() {
-    unsubFilters = subscribeOnChange(filters, () => loadPatientCount(!isDiscoverPage));
+    unsubFilters = subscribeOnChange(allFilters, () => loadPatientCount(!isDiscoverPage));
   }
 
   function unsubscribe() {
@@ -157,7 +157,7 @@
     <Filters />
     {#if $exports.length > 0}
       <div class="px-4 mb-1 w-80">
-        <header class="txxt-left ml-1" data-testid="export-header">
+        <header class="text-left ml-1" data-testid="export-header">
           Added Variables
           {#if $exports.length > 10}
             <button

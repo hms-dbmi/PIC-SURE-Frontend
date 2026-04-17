@@ -14,7 +14,7 @@
     children?: import('svelte').Snippet;
   } = $props();
 
-  const sort = $derived(handler.createSort(orderBy));
+  const sort = (() => handler.createSort(orderBy))();
 </script>
 
 <th

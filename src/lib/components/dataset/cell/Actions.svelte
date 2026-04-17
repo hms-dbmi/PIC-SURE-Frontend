@@ -1,7 +1,7 @@
 <script lang="ts">
   import { toaster } from '$lib/toaster';
 
-  import { toggleArchived } from '$lib/stores/Dataset';
+  import { toggleArchived } from '$lib/stores/Dataset.svelte';
   import { log, createLog } from '$lib/logger';
 
   const { data = { cell: '', row: { archived: false } } } = $props();
