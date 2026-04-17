@@ -8,7 +8,7 @@ import { loadQuerySummaryData } from '$lib/components/query/QueryConverters';
 import { QueryVersion } from '$lib/models/Dataset';
 import { LogicTree } from '$lib/models/LogicTree.svelte';
 import { QueryV3 } from '$lib/models/query/Query';
-import type { FilterInterface, FilterGroupInterface } from '$lib/models/Filter';
+import type { FilterInterface, FilterGroupInterface } from '$lib/models/Filter.svelte';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));

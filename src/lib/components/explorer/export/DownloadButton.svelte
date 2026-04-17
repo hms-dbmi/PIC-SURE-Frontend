@@ -53,7 +53,7 @@
       const duration = Math.round(performance.now() - startTime);
       const blob = new Blob([res], { type: 'octet/stream' });
 
-      const responseDataUrl = URL.createObjectURL(new Blob([res], { type: 'octet/stream' }));
+      const responseDataUrl = URL.createObjectURL(blob);
       if (browser) {
         const link = document.createElement('a');
         link.href = responseDataUrl;

@@ -6,7 +6,6 @@
   import type AuthProvider from '$lib/models/AuthProvider';
   import { createInstance } from '$lib/AuthProviderRegistry';
   import { browser } from '$app/environment';
-  import { filters } from '$lib/stores/Filter';
   import { panelOpen } from '$lib/stores/SidePanel';
   import Loading from '$lib/components/Loading.svelte';
   import type { User } from '$lib/models/User';
@@ -64,15 +63,6 @@
       goto('/login/error');
       return;
     });
-
-    let filtersJson = sessionStorage.getItem('filters');
-    if (filtersJson) {
-      let storedFilters = JSON.parse(filtersJson || '[]');
-      filters.set(storedFilters);
-      // wait to delete from session storage, in case loading the filters in the line above triggers the session
-      // storage to be re-written
-      setTimeout(() => sessionStorage.setItem('filters', '[]'), 500);
-    }
   });
 </script>
 

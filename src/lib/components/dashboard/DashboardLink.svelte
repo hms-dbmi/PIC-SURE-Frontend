@@ -2,9 +2,9 @@
   import { log, createLog } from '$lib/logger';
 
   let { data = { row: { additional_info_link: '', consentGranted: false } } } = $props();
-  let link = data.row.additional_info_link as string;
-  let consentGranted = data.row.consentGranted;
-  let dataset = data.row.dataset_id as string;
+  let link = $derived(data.row.additional_info_link as string);
+  let consentGranted = $derived(data.row.consentGranted);
+  let dataset = $derived(data.row.dataset_id as string);
 </script>
 
 {#if consentGranted}
