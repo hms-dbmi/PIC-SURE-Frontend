@@ -64,14 +64,35 @@ async function screenshotOnFailure({ page }: { page: Page }, testInfo: TestInfo)
 
 export const test = base.extend({
   context: async ({ context }, use) => {
-    await context.addInitScript(() => {
-      sessionStorage.setItem('type', 'AUTH0');
-      sessionStorage.setItem('redirect', '/');
-    });
+    // Playwright's storageState only persists localStorage, not sessionStorage.
+    // The app stores user data in sessionStorage (tab-scoped). Extract user from
+    // the fixture's localStorage and inject it into sessionStorage before any page
+    // scripts run, so the user store initializes with the correct data.
+    const storageState = await context.storageState();
+    const origin = storageState.origins?.find((o) => o.localStorage);
+    const userData = origin?.localStorage?.find((item) => item.name === 'user')?.value;
+
+    await context.addInitScript(
+      ({ user }) => {
+        try {
+          sessionStorage.setItem('type', 'AUTH0');
+          sessionStorage.setItem('redirect', '/');
+          if (user) sessionStorage.setItem('user', user);
+        } catch {
+          // Cross-origin frames (auth providers, analytics) block sessionStorage access
+        }
+      },
+      { user: userData },
+    );
 
     // Stub log endpoint so tests don't wait on fire-and-forget audit requests
     await context.route('**/api/v1/log', (route) =>
       route.fulfill({ status: 202, json: { result: 'accepted' } }),
+    );
+
+    // Stub TOS endpoint so the terms modal doesn't block authenticated tests
+    await context.route('*/**/psama/tos/latest', (route) =>
+      route.fulfill({ status: 200, body: '<p>Test Terms of Service</p>' }),
     );
 
     use(context);
