@@ -30,6 +30,14 @@ Object.entries(userTypes).forEach(async ([user, userVariation]) => {
 
     await page.waitForURL('/');
 
+    // The app stores user data in sessionStorage (tab-scoped), but Playwright's
+    // storageState() only captures localStorage. Copy user to localStorage so the
+    // fixture file includes it for other tests to consume via the addInitScript shim.
+    await page.evaluate(() => {
+      const user = sessionStorage.getItem('user');
+      if (user) localStorage.setItem('user', user);
+    });
+
     await page.context().storageState({ path: userFile(user) });
   });
 });
@@ -41,6 +49,11 @@ test('unauthenticated user', async ({ page }) => {
   await acceptConsentButton.click();
 
   await page.waitForURL('/');
+
+  await page.evaluate(() => {
+    const user = sessionStorage.getItem('user');
+    if (user) localStorage.setItem('user', user);
+  });
 
   await page.context().storageState({ path: userFile('unauthenticated') });
 });
