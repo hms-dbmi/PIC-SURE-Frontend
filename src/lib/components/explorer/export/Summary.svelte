@@ -1,14 +1,13 @@
 <script lang="ts">
   import ExportStore from '$lib/stores/Export';
   import { onMount } from 'svelte';
-  import { filters } from '$lib/stores/Filter';
+  import { allFilters } from '$lib/stores/Filter';
   import { features } from '$lib/configuration';
   import { totalParticipants, resultCounts, loadPatientCount } from '$lib/stores/ResultStore';
   import type { StatResultMap, StatValue } from '$lib/models/Stat';
-  import type { FederatedResourceInfo } from '$lib/stores/Dataset';
   import Loading from '$lib/components/Loading.svelte';
-  import { federatedQueryMap } from '$lib/stores/Dataset';
-  import type { AnyRecordOfFilterInterface } from '$lib/models/Filter';
+  import { federatedQueryMap, type FederatedResourceInfo } from '$lib/stores/Dataset.svelte';
+  import type { AnyRecordOfFilterInterface } from '$lib/models/Filter.svelte';
 
   interface SiteInfo extends FederatedResourceInfo {
     count?: Promise<StatValue>;
@@ -17,7 +16,7 @@
 
   let participantsCount = $derived($totalParticipants);
   let anyRecordsOfCount = $derived.by(() => {
-    const anyRecordsOfFilters = $filters.filter(
+    const anyRecordsOfFilters = $allFilters.filter(
       (filter) => filter.filterType === 'AnyRecordOf',
     ) as AnyRecordOfFilterInterface[];
     return (
@@ -25,7 +24,7 @@
       anyRecordsOfFilters.length
     );
   });
-  let variablesCount = $derived($filters.length + $exports.length + anyRecordsOfCount);
+  let variablesCount = $derived($allFilters.length + $exports.length + anyRecordsOfCount);
   let dataPoints = $derived(
     typeof participantsCount === 'number' ? participantsCount * variablesCount : 0,
   );

@@ -1,22 +1,19 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
   import { setActiveRow } from '$lib/stores/ExpandableRow';
-  import type { ExportInterface } from '$lib/models/Export';
-  import ExportStore from '$lib/stores/Export';
+  import {
+    exports,
+    addExport,
+    removeExportByUuid,
+    mapSearchResultAsExport,
+  } from '$lib/stores/Export';
   import { panelOpen } from '$lib/stores/SidePanel';
   import { features } from '$lib/configuration';
   import { isOpenAccess } from '$lib/AccessState';
-  import { genericUUID } from '$lib/utilities/UUID';
   import { log, createLog, getPageContext } from '$lib/logger';
 
-  let { exports, addExport, removeExport } = ExportStore;
   let { data = {} as SearchResult } = $props();
-  let exportItem = $derived({
-    id: genericUUID(),
-    searchResult: data.row,
-    display: data.row.display || data.row.name,
-    conceptPath: data.row.conceptPath,
-  } as ExportInterface);
+  let exportItem = $derived(mapSearchResultAsExport(data.row));
 
   function updateActiveRow(componentName: string) {
     return (event: Event) => {
@@ -50,7 +47,7 @@
           pageContext: getPageContext(),
         }),
       );
-      removeExport(exportItem.id);
+      removeExportByUuid(exportItem.id);
     } else {
       log(
         createLog('ACTION', 'search_result.export_add', {

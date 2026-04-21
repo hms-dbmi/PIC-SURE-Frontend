@@ -13,7 +13,9 @@ export type ExpectedResultType =
   | 'VARIANT_COUNT_FOR_QUERY'
   | 'SECRET_ADMIN_DATAFRAME';
 
-export interface QueryInterface {
+export type QueryInterface = QueryInterfaceV2 | QueryInterfaceV3;
+
+export interface QueryInterfaceV2 {
   fields: string[];
   categoryFilters: object; //TODO: define type
   numericFilters: object;
@@ -40,7 +42,7 @@ interface VariantInfoFilters {
   numericVariantInfoFilters?: NumericVariantInfoFiltersInterface;
 }
 
-export class Query implements QueryInterface {
+export class QueryV2 implements QueryInterfaceV2 {
   categoryFilters: object;
   numericFilters: object;
   requiredFields: string[];
@@ -51,7 +53,7 @@ export class Query implements QueryInterface {
   variantInfoFilters: VariantInfoFilters[];
   expectedResultType: ExpectedResultType | ExpectedResultType[];
 
-  constructor(newQuery?: QueryInterface) {
+  constructor(newQuery?: QueryInterfaceV2) {
     this.categoryFilters = newQuery?.categoryFilters || {};
     this.numericFilters = newQuery?.numericFilters || {};
     this.requiredFields = newQuery?.requiredFields || [];
@@ -148,5 +150,169 @@ export class Query implements QueryInterface {
       this.requiredFields.length +
       this.anyRecordOf.length
     );
+  }
+}
+
+// -------------------------------- V3 Query -------------------------------- //
+
+type UUID = `${string}-${string}-${string}-${string}-${string}` | null;
+export type PhenotypicFilterType = 'REQUIRED' | 'FILTER' | 'ANY_RECORD_OF';
+export type PhenotypicClause = PhenotypicSubqueryInterface | PhenotypicFilterInterface;
+export const Operator = {
+  AND: 'AND',
+  OR: 'OR',
+} as const;
+export type OperatorType = (typeof Operator)[keyof typeof Operator];
+
+export interface QueryInterfaceV3 {
+  select: string[];
+  authorizationFilters: AuthorizationFilterInterface[];
+  phenotypicClause: PhenotypicClause | null;
+  genomicFilters: GenomicFilterInterfacev3[];
+  expectedResultType: ExpectedResultType;
+  picsureId: UUID;
+  id: UUID;
+}
+
+export interface PhenotypicClauseInterface {
+  type: string;
+}
+export interface AuthorizationFilterInterface {
+  conceptPath: string;
+  values: string[];
+}
+
+export interface PhenotypicFilterInterface extends PhenotypicClauseInterface {
+  type: 'PhenotypicFilter';
+  phenotypicFilterType: PhenotypicFilterType;
+  conceptPath: string;
+  values?: string[];
+  min?: number | undefined;
+  max?: number | undefined;
+  not: boolean;
+}
+
+export interface PhenotypicSubqueryInterface extends PhenotypicClauseInterface {
+  type: 'PhenotypicSubquery';
+  not: boolean | null;
+  phenotypicClauses: PhenotypicClause[];
+  operator: OperatorType;
+}
+
+export interface GenomicFilterInterfacev3 {
+  key: string;
+  values?: string[];
+  min?: number;
+  max?: number;
+}
+
+export class QueryV3 implements QueryInterfaceV3 {
+  select: string[];
+  authorizationFilters: AuthorizationFilterInterface[];
+  phenotypicClause: PhenotypicClause | null;
+  genomicFilters: GenomicFilterInterfacev3[];
+  expectedResultType: ExpectedResultType;
+  picsureId: UUID;
+  id: UUID;
+
+  constructor(newQuery?: QueryInterfaceV3) {
+    this.select = newQuery?.select || [];
+    this.authorizationFilters = newQuery?.authorizationFilters || [];
+    this.phenotypicClause = newQuery?.phenotypicClause || null;
+    this.genomicFilters = newQuery?.genomicFilters || [];
+    this.expectedResultType = newQuery?.expectedResultType || 'COUNT';
+    this.picsureId = newQuery?.picsureId || null;
+    this.id = newQuery?.id || null;
+  }
+
+  get leaves(): PhenotypicFilterInterface[] {
+    const getLeaves = (node: PhenotypicClause): PhenotypicFilterInterface[] => {
+      if (node.type === 'PhenotypicSubquery') {
+        return node.phenotypicClauses.flatMap((child) => getLeaves(child));
+      }
+
+      return [node];
+    };
+    return this.phenotypicClause ? getLeaves(this.phenotypicClause) : [];
+  }
+
+  addClauses(clauses: PhenotypicClause[], defaultOperator: OperatorType = Operator.AND) {
+    clauses.forEach((clause: PhenotypicClause) => this.addClause(clause, defaultOperator));
+  }
+
+  addClause(clause: PhenotypicClause, defaultOperator: OperatorType = Operator.AND) {
+    if (this.phenotypicClause === null) {
+      this.phenotypicClause = clause;
+    } else if (this.phenotypicClause.type === 'PhenotypicFilter') {
+      this.phenotypicClause = {
+        type: 'PhenotypicSubquery',
+        phenotypicClauses: [this.phenotypicClause, clause],
+        operator: defaultOperator,
+        not: false,
+      };
+    } else if (this.phenotypicClause.type === 'PhenotypicSubquery') {
+      this.phenotypicClause.phenotypicClauses = [
+        ...(this.phenotypicClause.phenotypicClauses || []),
+        clause,
+      ];
+    }
+  }
+
+  hasGenomicFilter(): boolean {
+    return this.genomicFilters.length > 0;
+  }
+
+  hasFilter(): boolean {
+    return (
+      this.hasGenomicFilter() ||
+      (this.phenotypicClause !== null &&
+        ((this.phenotypicClause.type === 'PhenotypicSubquery' &&
+          this.phenotypicClause.phenotypicClauses.length > 0) ||
+          this.phenotypicClause.type === 'PhenotypicFilter'))
+    );
+  }
+
+  private static deserializeClause(clause: Record<string, unknown>): PhenotypicClause {
+    if ('operator' in clause || 'phenotypicClauses' in clause) {
+      return {
+        type: 'PhenotypicSubquery',
+        operator: clause.operator as OperatorType,
+        not: (clause.not as boolean) ?? false,
+        phenotypicClauses: ((clause.phenotypicClauses as Record<string, unknown>[]) || []).map(
+          QueryV3.deserializeClause,
+        ),
+      };
+    }
+    return {
+      type: 'PhenotypicFilter',
+      phenotypicFilterType: clause.phenotypicFilterType as PhenotypicFilterType,
+      conceptPath: clause.conceptPath as string,
+      not: (clause.not as boolean) ?? false,
+      values: clause.values as string[] | undefined,
+      min: clause.min as number | undefined,
+      max: clause.max as number | undefined,
+    };
+  }
+
+  static fromSerialized(data: {
+    select?: string[];
+    authorizationFilters?: AuthorizationFilterInterface[];
+    phenotypicClause?: object | null;
+    genomicFilters?: GenomicFilterInterfacev3[];
+    expectedResultType?: ExpectedResultType;
+    picsureId?: UUID;
+    id?: UUID;
+  }): QueryV3 {
+    return new QueryV3({
+      select: data.select || [],
+      authorizationFilters: data.authorizationFilters || [],
+      phenotypicClause: data.phenotypicClause
+        ? QueryV3.deserializeClause(data.phenotypicClause as Record<string, unknown>)
+        : null,
+      genomicFilters: data.genomicFilters || [],
+      expectedResultType: data.expectedResultType || 'COUNT',
+      picsureId: data.picsureId ?? null,
+      id: data.id ?? null,
+    });
   }
 }

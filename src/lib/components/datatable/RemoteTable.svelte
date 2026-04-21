@@ -61,7 +61,7 @@
       {/if}
       {@render tableActions?.()}
       {#if searchable}
-        <div class="flex-none">
+        <div class="flex-none mt-4">
           <Search {handler} logAction={searchLogAction} />
         </div>
       {/if}

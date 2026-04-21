@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { TreeNodeInterface, NodeInterface } from '$lib/components/tree/types';
+  import type { HierarchyNodeInterface, NodeInterface } from '$lib/components/tree/types';
   import TreeNodeComponent from '$lib/components/tree/TreeNode.svelte';
 
   let {
@@ -14,7 +14,7 @@
     fullWidth?: boolean;
   } = $props();
 
-  class TreeNode implements TreeNodeInterface {
+  class TreeNode implements HierarchyNodeInterface {
     name: string = '';
     value: string = '';
     open: boolean = $state(false);
@@ -58,7 +58,14 @@
       return this.someSelected && !this.allSelected;
     });
 
+    allDisabled: boolean = $derived.by(() => {
+      if (this.isLeaf) return this.disabled;
+      return this.children.every((child: TreeNode) => child.allDisabled);
+    });
+
     select(): void {
+      if (this.disabled) return;
+
       if (!this.isLeaf) {
         this.children.forEach((child) => child.select());
         this.open = true;
@@ -69,6 +76,8 @@
     }
 
     unselect(): void {
+      if (this.disabled) return;
+
       if (!this.isLeaf) {
         this.children.forEach((child) => child.unselect());
       } else {
@@ -102,7 +111,7 @@
     return new TreeNode(name, value, children, shouldOpen, selected);
   }
 
-  let treeNodes: TreeNode[] = $state(nodes.map(mapNodeToTree));
+  let treeNodes: TreeNode[] = $derived(nodes.map(mapNodeToTree));
 </script>
 
 <div class="overflow-auto h-[350.75px] {fullWidth ? 'w-full' : ''}">

@@ -3,14 +3,14 @@
 
   import { toaster } from '$lib/toaster';
   import type { SearchResult } from '$lib/models/Search';
-  import { addFilter } from '$lib/stores/Filter';
+  import { addFilter, updateFilter } from '$lib/stores/Filter';
   import { activeRow } from '$lib/stores/ExpandableRow';
-  import type { Filter } from '$lib/models/Filter';
   import {
+    type Filter,
     createCategoricalFilter,
     createNumericFilter,
     createRequiredFilter,
-  } from '$lib/models/Filter';
+  } from '$lib/models/Filter.svelte';
   import { getConceptDetails } from '$lib/stores/Dictionary';
   import { panelOpen } from '$lib/stores/SidePanel';
 
@@ -103,7 +103,11 @@
       filter = createNumericFilter(data, minFormValue || undefined, maxFormValue || undefined);
     }
     if (!filter) return; //todo errors
-    addFilter(filter);
+    if (existingFilter) {
+      updateFilter(existingFilter.uuid, filter);
+    } else {
+      addFilter(filter);
+    }
     finish();
   }
 

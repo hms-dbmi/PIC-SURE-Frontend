@@ -24,7 +24,9 @@
     class: className = '',
   }: Props = $props();
 
+  // svelte-ignore state_referenced_locally
   let activeIcon: string = $state(icon);
+  // svelte-ignore state_referenced_locally
   let activeButtonText: string = $state(text);
 
   function updateButton() {

@@ -20,6 +20,7 @@
 
   let { code = '', lang = 'console', theme = 'dark-plus' }: CodeBlockProps = $props();
 
+  // svelte-ignore state_referenced_locally
   const generatedHtml = shiki.codeToHtml(code, { lang, theme });
 </script>
 

@@ -11,7 +11,7 @@
   import SnpSearch from '$lib/components/explorer/genome-filter/SNPSearch.svelte';
   import GeneSearch from '$lib/components/explorer/genome-filter/GeneSearch.svelte';
 
-  import type { GenomicFilterInterface, SnpFilterInterface } from '$lib/models/Filter';
+  import type { GenomicFilterInterface, SnpFilterInterface } from '$lib/models/Filter.svelte';
   import { Option } from '$lib/models/GenomeFilter';
   import {
     selectedGenes,

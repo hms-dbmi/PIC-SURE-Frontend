@@ -10,7 +10,8 @@
 
   let { handler, filterBy, class: className = '' }: Props = $props();
 
-  const filter = handler.createFilter(filterBy);
+  // svelte-ignore state_referenced_locally
+  const filter = $state(handler.createFilter(filterBy));
   let timeout: ReturnType<typeof setTimeout>;
 
   const setFilter = () => {

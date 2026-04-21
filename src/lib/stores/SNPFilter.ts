@@ -3,13 +3,15 @@ import { get, writable, type Writable } from 'svelte/store';
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import { Genotype, type SNP } from '$lib/models/GenomeFilter';
-import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter';
+import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter.svelte';
 import {
   loading as resourcesPromise,
   loadResources,
   getQueryResources,
 } from '$lib/stores/Resources';
-import { getBlankQueryRequest, updateConsentFilters } from '$lib/utilities/QueryBuilder';
+import type { GenomicFilterInterfacev3 } from '$lib/models/query/Query';
+import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+import { getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
 
 export const selectedSNPs: Writable<SNP[]> = writable([]);
 
@@ -27,10 +29,13 @@ export function clearSnpFilters() {
 }
 
 function snpRequest(snp: SNP, resource: string): Promise<number> {
-  const searchQuery = getBlankQueryRequest(false, resource);
-  searchQuery.query.addCategoryFilter(snp.search, [Genotype.Heterozygous, Genotype.Homozygous]);
-  searchQuery.query = updateConsentFilters(searchQuery.query);
-  return api.post(Picsure.QuerySync, searchQuery);
+  const filter: GenomicFilterInterfacev3 = {
+    key: snp.search,
+    values: [Genotype.Heterozygous, Genotype.Homozygous],
+  };
+  const searchRequest: QueryRequestInterfaceV3 = getBlankQueryRequestV3(false, resource);
+  searchRequest.query.genomicFilters.push(filter);
+  return api.post(Picsure.QueryV3Sync, searchRequest);
 }
 
 export async function getSNPCounts(check: SNP): Promise<{ count: number; errors: number }> {

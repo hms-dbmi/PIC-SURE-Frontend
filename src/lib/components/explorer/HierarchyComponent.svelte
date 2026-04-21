@@ -1,11 +1,11 @@
 <script lang="ts">
   import type { SearchResult } from '$lib/models/Search';
   import type { NodeInterface } from '$lib/components/tree/types';
-  import { type Filter, createAnyRecordOfFilter } from '$lib/models/Filter';
+  import { type Filter, createAnyRecordOfFilter } from '$lib/models/Filter.svelte';
   import { activeRow } from '$lib/stores/ExpandableRow';
   import { addFilter } from '$lib/stores/Filter';
   import RadioTree from '$lib/components/tree/RadioTree.svelte';
-  import { getConceptTree } from '$lib/stores/Dictionary';
+  import { getConceptTree, getHierarchyConcepts, ENSURE_MAX_DEPTH } from '$lib/stores/Dictionary';
   import { panelOpen } from '$lib/stores/SidePanel';
   import Loading from '$lib/components/Loading.svelte';
   import { toaster } from '$lib/toaster';
@@ -13,11 +13,8 @@
   import Modal from '$lib/components/Modal.svelte';
   import { page } from '$app/state';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import { getHierarchyConcepts } from '$lib/stores/Dictionary';
+  import { sortHierarchyDeepestFirst } from '$lib/utilities/Hierarchy';
   import { log, createLog, getPageContext } from '$lib/logger';
-
-  const ENSURE_MAX_DEPTH = 100;
-
   interface Props {
     data?: SearchResult;
     onclose?: () => void;
@@ -43,16 +40,17 @@
         throw new Error('No hierarchy concepts found');
       }
 
-      const rootNode = hierarchyConcepts.reduce<NodeInterface | null>((parent, concept) => {
+      const sorted = sortHierarchyDeepestFirst(hierarchyConcepts);
+
+      const rootNode = sorted.reduce<NodeInterface | null>((child, concept) => {
         const node = createNode(concept);
-        if (parent) {
-          node.children = [parent];
+        if (child) {
+          node.children = [child];
         }
         return node;
       }, null);
 
-      //select the last node in the hierarchy
-      selectedNode = hierarchyConcepts[0].conceptPath;
+      selectedNode = sorted[0].conceptPath;
 
       return rootNode ? [rootNode] : [];
     } catch (error) {

@@ -9,7 +9,10 @@
   class="flex items-center"
   role="button"
   tabindex="-1"
-  onclick={() => log(createLog('ACTION', 'dataset.copy_id', { value: data.cell }))}
+  onclick={(e) => {
+    e.stopPropagation();
+    log(createLog('ACTION', 'dataset.copy_id', { value: data.cell }));
+  }}
   onkeydown={(e) =>
     e.key === 'Enter' && log(createLog('ACTION', 'dataset.copy_id', { value: data.cell }))}
 >

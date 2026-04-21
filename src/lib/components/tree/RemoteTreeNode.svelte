@@ -1,15 +1,22 @@
 <script lang="ts">
-  import type { TreeNodeInterface } from '$lib/components/tree/types';
+  import type { HierarchyNodeInterface } from '$lib/components/tree/types';
   import RemoteTreeNode from '$lib/components/tree/RemoteTreeNode.svelte';
 
-  const { node }: { node: TreeNodeInterface & { loading?: boolean; error?: string | null } } =
-    $props();
+  const {
+    node,
+  }: {
+    node: HierarchyNodeInterface & {
+      loading?: boolean;
+      hasLoading?: boolean;
+      error?: string | null;
+    };
+  } = $props();
 </script>
 
 <details
   class="tree-item"
   data-testid="tree-item:{node.name}-{node.value}"
-  aria-disabled={node.disabled}
+  aria-disabled={node.allDisabled}
   open={node.open}
 >
   <summary
@@ -27,10 +34,10 @@
       class="m-1 ml-2"
       onclick={async () => await node.toggleOpen()}
       tabindex={node.isLeaf ? -1 : 0}
-      disabled={node.loading}
+      disabled={node.allDisabled || node.hasLoading}
     >
       {#if !node.isLeaf}
-        {#if node.loading}
+        {#if node.hasLoading}
           <i class="fa-solid fa-spinner fa-spin"></i>
         {:else}
           <i class="fa-solid fa-angle-{node.open ? 'down' : 'right'}"></i>
@@ -47,6 +54,7 @@
       name={node.name}
       value={node.value}
       checked={node.allSelected}
+      disabled={node.allDisabled}
       indeterminate={node.indeterminant}
       onclick={async () => await node.toggleSelected()}
     />
