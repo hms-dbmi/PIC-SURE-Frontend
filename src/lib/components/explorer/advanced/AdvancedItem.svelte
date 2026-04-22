@@ -92,7 +92,11 @@
       : ''} bg-white border-surface-400 border"
   >
     <div class="flex flex-row items-center justify-start gap-2">
-      <div class="cursor-grab active:cursor-grabbing m-0 flex items-center" {@attach handleRef}>
+      <div
+        class="cursor-grab active:cursor-grabbing m-0 flex items-center"
+        title="Click and drag to reorder and group filters"
+        {@attach handleRef}
+      >
         <i class="fa-solid fa-grip-vertical text-surface-500"></i>
       </div>
       <div class="flex flex-col self-end">

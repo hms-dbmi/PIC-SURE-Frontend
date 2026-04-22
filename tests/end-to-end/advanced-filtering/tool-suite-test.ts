@@ -159,7 +159,7 @@ test.describe('Advanced Filtering - Tool Suite', () => {
 
     // Verify the Advanced Filtering page opens
     await page.waitForURL(/\/explorer\/advanced-filtering/);
-    await expect(page.getByRole('heading', { name: 'Advanced Filtering' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Advanced Query Builder' })).toBeVisible();
   });
 
   test('AF-APPLY-004: Clicking Apply to Query triggers query execution with updated filter structure', async ({
@@ -198,7 +198,7 @@ test.describe('Advanced Filtering - Tool Suite', () => {
     await advancedFilteringBtn.click();
 
     await page.waitForURL(/\/explorer\/advanced-filtering/);
-    await expect(page.getByRole('heading', { name: 'Advanced Filtering' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Advanced Query Builder' })).toBeVisible();
 
     // Make a visible change: switch root operator from AND to OR
     const orRadio = page.getByRole('radio', { name: 'OR' }).first();

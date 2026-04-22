@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 import { test } from '../custom-context';
 import { AdvancedFilteringPage } from './advanced-filtering-page';
 
-test.describe('Advanced Filtering - Core Features', () => {
+test.describe('Advanced Query Builder - Core Features', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -30,7 +30,7 @@ test.describe('Advanced Filtering - Core Features', () => {
   });
 });
 
-test.describe('Advanced Filtering - Filter Details', () => {
+test.describe('Advanced Query Builder - Filter Details', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -72,7 +72,7 @@ test.describe('Advanced Filtering - Filter Details', () => {
   });
 });
 
-test.describe('Advanced Filtering - Global Combiner', () => {
+test.describe('Advanced Query Builder - Global Combiner', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -129,7 +129,7 @@ test.describe('Advanced Filtering - Global Combiner', () => {
   });
 });
 
-test.describe('Advanced Filtering - Drag and Drop', () => {
+test.describe('Advanced Query Builder - Drag and Drop', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -373,11 +373,11 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     const dropPreview = page.getByTestId('drop-preview');
     await expect(dropPreview).toHaveCount(0);
 
-    // Find the group's drag handle via the "Between items:" label's sibling grip icon
-    const groupHeader = afPage.modal.getByText('Between items:').first();
+    // Find the group's drag handle via the "Between filters:" label's sibling grip icon
+    const groupHeader = afPage.modal.getByText('Between filters:').first();
     await expect(groupHeader).toBeVisible();
 
-    // The grip icon is in the same row as "Between items:" — go up to the flex row, find the handle
+    // The grip icon is in the same row as "Between filters:" — go up to the flex row, find the handle
     const groupRow = groupHeader
       .locator('xpath=ancestor::div[contains(@class, "flex-row")]')
       .first();
@@ -416,7 +416,7 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
   });
 });
 
-test.describe('Advanced Filtering - Grouping', () => {
+test.describe('Advanced Query Builder - Grouping', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -425,16 +425,16 @@ test.describe('Advanced Filtering - Grouping', () => {
     await afPage.setupAndOpenModal(4);
   });
 
-  test('AF-GROUP-001: Add Group button is visible', async () => {
+  test('AF-GROUP-001: Add Subquery button is visible', async () => {
     await afPage.expectAddGroupButtonVisible();
   });
 
-  test('AF-GROUP-002: Clicking Add Group creates a new empty group box', async () => {
+  test('AF-GROUP-002: Clicking Add Subquery creates a new empty subquery box', async () => {
     await afPage.clickAddGroup();
     await expect(afPage.getEmptyGroupDropZone()).toBeVisible();
   });
 
-  test('AF-GROUP-004: Group box displays Group Filter label with AND/OR control', async () => {
+  test('AF-GROUP-004: Subquery box displays filter label with AND/OR control', async () => {
     await afPage.clickAddGroup();
     await afPage.expectNewGroupHasAndOrControls();
   });
@@ -469,7 +469,7 @@ test.describe('Advanced Filtering - Grouping', () => {
     await afPage.openModal();
 
     const lastFilter = afPage.filterNames[afPage.filterNames.length - 1];
-    const groupCards = modal.locator('.card').filter({ hasText: 'Between items:' });
+    const groupCards = modal.locator('.card.bg-white').filter({ hasText: 'Between filters:' });
     const groupCount = await groupCards.count();
     expect(groupCount).toBeGreaterThanOrEqual(1);
 
@@ -489,7 +489,7 @@ test.describe('Advanced Filtering - Grouping', () => {
     page,
   }) => {
     const modal = afPage.modal;
-    const rootArea = modal.locator('.card').filter({ hasText: 'Between groups:' }).first();
+    const rootArea = modal.locator('.card.bg-surface-50').first();
     const filterNameEls = rootArea.locator('.card.bg-white .text-sm.font-medium');
     const initialOrder = await filterNameEls.allTextContents();
 
@@ -517,7 +517,7 @@ test.describe('Advanced Filtering - Grouping', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
     await afPage.openModal();
 
-    const groupCards = modal.locator('.card').filter({ hasText: 'Between items:' });
+    const groupCards = modal.locator('.card.bg-white').filter({ hasText: 'Between filters:' });
     const filtersInGroup = await groupCards
       .first()
       .locator('.card.bg-white .text-sm.font-medium')
@@ -561,8 +561,8 @@ test.describe('Advanced Filtering - Grouping', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
     await afPage.openModal();
 
-    // Verify the group exists with "Between items:" label
-    const subgroup = modal.locator('.card').filter({ hasText: 'Between items:' }).last();
+    // Verify the subquery exists with "Between filters:" label
+    const subgroup = modal.locator('.card.bg-white').filter({ hasText: 'Between filters:' }).last();
     await expect(subgroup).toBeVisible();
 
     // Verify there are two radiogroups (root + subgroup)
@@ -620,7 +620,7 @@ test.describe('Advanced Filtering - Grouping', () => {
   });
 });
 
-test.describe('Advanced Filtering - Apply', () => {
+test.describe('Advanced Query Builder - Apply', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -645,7 +645,7 @@ test.describe('Advanced Filtering - Apply', () => {
   });
 });
 
-test.describe('Advanced Filtering - Genomic Filters', () => {
+test.describe('Advanced Query Builder - Genomic Filters', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -702,7 +702,7 @@ test.describe('Advanced Filtering - Genomic Filters', () => {
   });
 });
 
-test.describe('Advanced Filtering - Genomic Filters (Ordering)', () => {
+test.describe('Advanced Query Builder - Genomic Filters (Ordering)', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -747,7 +747,7 @@ test.describe('Advanced Filtering - Genomic Filters (Ordering)', () => {
   });
 });
 
-test.describe('Advanced Filtering - Unsaved Changes', () => {
+test.describe('Advanced Query Builder - Unsaved Changes', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -818,7 +818,7 @@ test.describe('Advanced Filtering - Unsaved Changes', () => {
   });
 });
 
-test.describe('Advanced Filtering - Group Drag and Drop', () => {
+test.describe('Advanced Query Builder - Group Drag and Drop', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -978,11 +978,8 @@ test.describe('Advanced Filtering - Group Drag and Drop', () => {
   }) => {
     await setupWithTwoGroups(page);
 
-    // Get the root container bounds
-    const rootCard = afPage.modal.locator('.card').filter({ hasText: 'Between groups:' }).first();
+    const rootCard = afPage.modal.locator('.card.bg-surface-50').first();
     await expect(rootCard).toBeVisible();
-    const rootBox = await rootCard.boundingBox();
-    expect(rootBox).not.toBeNull();
 
     const dragHandle = afPage.getGroupDragHandle(0);
     await expect(dragHandle).toBeVisible();
@@ -1002,7 +999,10 @@ test.describe('Advanced Filtering - Group Drag and Drop', () => {
     await page.mouse.up();
     await page.waitForTimeout(500);
 
-    // All groups should be within the root container bounds
+    // All groups should be within the root container bounds (capture rootBox after drag
+    // so viewport coordinates are consistent — dragging can scroll the overflow container)
+    const rootBox = await rootCard.boundingBox();
+    expect(rootBox).not.toBeNull();
     const groups = afPage.getGroupCards();
     const groupCount = await groups.count();
     for (let i = 0; i < groupCount; i++) {
