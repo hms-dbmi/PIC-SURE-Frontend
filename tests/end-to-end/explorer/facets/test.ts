@@ -236,7 +236,9 @@ test.describe('Facet Categories', () => {
         await expect(moreButton).toBeVisible();
         await moreButton.click();
         const facetsToExpect = facetsResponse[i].facets.filter((facet) => facet.count > 0);
-        await expect(page.getByTestId('accordion-item').nth(i).locator('label')).toHaveCount(facetsToExpect.length);
+        await expect(page.getByTestId('accordion-item').nth(i).locator('label')).toHaveCount(
+          facetsToExpect.length,
+        );
       }
     }
   });
@@ -290,7 +292,9 @@ test.describe('Facet Categories', () => {
         await moreButton.click();
         await expect(moreButton).toHaveText('Show Less');
         await moreButton.click();
-        await expect(page.getByTestId('accordion-item').nth(i).locator('label')).toHaveCount(MAX_FACETS_TO_SHOW);
+        await expect(page.getByTestId('accordion-item').nth(i).locator('label')).toHaveCount(
+          MAX_FACETS_TO_SHOW,
+        );
         await expect(moreButton).toHaveText('Show More');
       }
     }
