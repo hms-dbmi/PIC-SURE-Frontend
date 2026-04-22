@@ -30,6 +30,83 @@ test.describe('Advanced Query Builder - Core Features', () => {
   });
 });
 
+test.describe('Advanced Query Builder - Query Summary', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  let afPage: AdvancedFilteringPage;
+
+  test.beforeEach(async ({ page }) => {
+    afPage = new AdvancedFilteringPage(page);
+    await afPage.setupAndOpenModal(4);
+  });
+
+  test('AF-EQ-001: Logic tree summary section is visible and expanded by default', async () => {
+    await afPage.expectLogicTreeVisible();
+    // Panel should be expanded (equation text visible)
+    await expect(afPage.logicTreeText).toBeVisible();
+  });
+
+  test('AF-EQ-002: Equation text shows filter names joined by AND', async () => {
+    // Default operator is AND, so all 4 filters should be connected with AND
+    for (const filterName of afPage.filterNames) {
+      await afPage.expectLogicTreeText(filterName);
+    }
+    await afPage.expectLogicTreeText('AND');
+  });
+
+  test('AF-EQ-003: Switching root operator to OR updates equation', async () => {
+    await afPage.selectRootOperator('OR');
+    await afPage.expectLogicTreeText('OR');
+  });
+
+  test('AF-EQ-004: Logic tree summary can be collapsed and expanded', async () => {
+    // Equation text should be visible initially
+    await expect(afPage.logicTreeText).toBeVisible();
+
+    // Click the accordion control to collapse
+    const control = afPage.logicTreeSection.getByText('Query Summary');
+    await control.click();
+
+    // Equation text should be hidden
+    await expect(afPage.logicTreeText).not.toBeVisible();
+
+    // Click again to expand
+    await control.click();
+
+    // Equation text should be visible again
+    await expect(afPage.logicTreeText).toBeVisible();
+  });
+
+  test('AF-EQ-005: Subquery shows parentheses in equation', async ({ page }) => {
+    // Close, inject a subquery via sessionStorage, reopen
+    await afPage.closeModal();
+
+    await page.evaluate(() => {
+      const raw = sessionStorage.getItem('filterTree');
+      if (!raw) return;
+      const tree = JSON.parse(raw);
+      const lastTwo = tree.children.splice(-2, 2);
+      tree.children.push({
+        children: lastTwo,
+        operator: 'OR',
+        uuid: 'test-eq-group-uuid',
+      });
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    });
+
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+
+    // Equation should contain parentheses for the subquery
+    await afPage.expectLogicTreeText('(');
+    await afPage.expectLogicTreeText(')');
+    // Subquery uses OR
+    await afPage.expectLogicTreeText('OR');
+    // Root uses AND
+    await afPage.expectLogicTreeText('AND');
+  });
+});
+
 test.describe('Advanced Query Builder - Filter Details', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
@@ -845,22 +922,8 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     expect(initialCount).toBe(2);
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Drag down and release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 150, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
+    const { startX, startY } = await afPage.startDrag(dragHandle);
+    await afPage.endDrag(startX, startY);
 
     // Both groups should still be visible
     const finalCount = await groups.count();
@@ -871,27 +934,14 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     await setupWithTwoGroups(page);
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Start dragging
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 150, { steps: 20 });
+    const { startX, startY } = await afPage.startDrag(dragHandle);
 
     // Drop preview should be showing
     const dropPreviews = afPage.getDropPreviews();
     await expect(dropPreviews.first()).toBeVisible({ timeout: 3000 });
 
     // Release the drag
-    await page.mouse.up();
+    await afPage.endDrag(startX, startY);
 
     // Drop previews should all be gone
     await expect(dropPreviews).toHaveCount(0, { timeout: 2000 });
@@ -907,20 +957,7 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     await expect(moveHereZones).toHaveCount(0);
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Start dragging
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 100, { steps: 10 });
+    const { startX, startY } = await afPage.startDrag(dragHandle);
 
     // "Move here" zones should appear
     const visibleZones = afPage.getMoveHereZones();
@@ -928,7 +965,7 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     expect(zoneCount).toBeGreaterThan(0);
 
     // Release
-    await page.mouse.up();
+    await afPage.endDrag(startX, startY);
 
     // Zones should disappear
     await expect(moveHereZones).toHaveCount(0, { timeout: 2000 });
@@ -951,22 +988,8 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
 
     // Find the empty group's drag handle
     const dragHandle = groups.last().locator('.fa-grip-vertical').first();
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Drag up and release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY - 20, { steps: 3 });
-    await page.mouse.move(startX, startY - 100, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
+    const { startX, startY } = await afPage.startDrag(dragHandle, 'up');
+    await afPage.endDrag(startX, startY);
 
     // Group should still exist
     const finalGroupCount = await groups.count();
@@ -982,25 +1005,10 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     await expect(rootCard).toBeVisible();
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
+    const { startX, startY } = await afPage.startDrag(dragHandle);
+    await afPage.endDrag(startX, startY);
 
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Drag group around and release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 200, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
-
-    // All groups should be within the root container bounds (capture rootBox after drag
-    // so viewport coordinates are consistent — dragging can scroll the overflow container)
+    // All groups should be within the root container bounds
     const rootBox = await rootCard.boundingBox();
     expect(rootBox).not.toBeNull();
     const groups = afPage.getGroupCards();
@@ -1016,24 +1024,11 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
   test('AF-DND-GRP-006: Repeated group drags do not cause stuck previews', async ({ page }) => {
     await setupWithTwoGroups(page);
 
-    const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
     // Perform 3 drag-and-release cycles
     for (let cycle = 0; cycle < 3; cycle++) {
-      await page.mouse.move(startX, startY);
-      await page.mouse.down();
-      await page.mouse.move(startX, startY + 20, { steps: 3 });
-      await page.mouse.move(startX, startY + 100, { steps: 10 });
-      await page.mouse.up();
-      await page.waitForTimeout(500);
+      const dragHandle = afPage.getGroupDragHandle(0);
+      const { startX, startY } = await afPage.startDrag(dragHandle);
+      await afPage.endDrag(startX, startY);
     }
 
     // No drop previews should remain
@@ -1052,23 +1047,8 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     page.on('pageerror', (err) => errors.push(err.message));
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Drag around and release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 200, { steps: 20 });
-    await page.mouse.move(startX, startY - 50, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
+    const { startX, startY } = await afPage.startDrag(dragHandle);
+    await afPage.endDrag(startX, startY);
 
     // Filter out the known dnd-kit HierarchyRequestError (from its internal sortable)
     const criticalErrors = errors.filter((e) => !e.includes('HierarchyRequestError'));
