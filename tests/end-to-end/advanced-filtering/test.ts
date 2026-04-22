@@ -30,6 +30,83 @@ test.describe('Advanced Query Builder - Core Features', () => {
   });
 });
 
+test.describe('Advanced Query Builder - Query Summary', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  let afPage: AdvancedFilteringPage;
+
+  test.beforeEach(async ({ page }) => {
+    afPage = new AdvancedFilteringPage(page);
+    await afPage.setupAndOpenModal(4);
+  });
+
+  test('AF-EQ-001: Logic tree summary section is visible and expanded by default', async () => {
+    await afPage.expectLogicTreeVisible();
+    // Panel should be expanded (equation text visible)
+    await expect(afPage.logicTreeText).toBeVisible();
+  });
+
+  test('AF-EQ-002: Equation text shows filter names joined by AND', async () => {
+    // Default operator is AND, so all 4 filters should be connected with AND
+    for (const filterName of afPage.filterNames) {
+      await afPage.expectLogicTreeText(filterName);
+    }
+    await afPage.expectLogicTreeText('AND');
+  });
+
+  test('AF-EQ-003: Switching root operator to OR updates equation', async () => {
+    await afPage.selectRootOperator('OR');
+    await afPage.expectLogicTreeText('OR');
+  });
+
+  test('AF-EQ-004: Logic tree summary can be collapsed and expanded', async () => {
+    // Equation text should be visible initially
+    await expect(afPage.logicTreeText).toBeVisible();
+
+    // Click the accordion control to collapse
+    const control = afPage.logicTreeSection.getByText('Query Summary');
+    await control.click();
+
+    // Equation text should be hidden
+    await expect(afPage.logicTreeText).not.toBeVisible();
+
+    // Click again to expand
+    await control.click();
+
+    // Equation text should be visible again
+    await expect(afPage.logicTreeText).toBeVisible();
+  });
+
+  test('AF-EQ-005: Subquery shows parentheses in equation', async ({ page }) => {
+    // Close, inject a subquery via sessionStorage, reopen
+    await afPage.closeModal();
+
+    await page.evaluate(() => {
+      const raw = sessionStorage.getItem('filterTree');
+      if (!raw) return;
+      const tree = JSON.parse(raw);
+      const lastTwo = tree.children.splice(-2, 2);
+      tree.children.push({
+        children: lastTwo,
+        operator: 'OR',
+        uuid: 'test-eq-group-uuid',
+      });
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    });
+
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+
+    // Equation should contain parentheses for the subquery
+    await afPage.expectLogicTreeText('(');
+    await afPage.expectLogicTreeText(')');
+    // Subquery uses OR
+    await afPage.expectLogicTreeText('OR');
+    // Root uses AND
+    await afPage.expectLogicTreeText('AND');
+  });
+});
+
 test.describe('Advanced Query Builder - Filter Details', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;

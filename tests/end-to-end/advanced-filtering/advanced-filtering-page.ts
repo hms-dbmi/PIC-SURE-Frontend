@@ -36,6 +36,10 @@ export class AdvancedFilteringPage {
   // Root group controls
   readonly rootAndOrSegment: Locator;
 
+  // Equation Summary
+  readonly logicTreeSection: Locator;
+  readonly logicTreeText: Locator;
+
   /**
    * The display names of filters added during setup, in order.
    * Tests can reference these instead of hardcoded filter names.
@@ -62,6 +66,10 @@ export class AdvancedFilteringPage {
 
     // Root group AND/OR segment (first one on the page)
     this.rootAndOrSegment = this.modal.getByRole('radiogroup').first();
+
+    // Equation Summary
+    this.logicTreeSection = page.getByTestId('logic-tree-summary');
+    this.logicTreeText = page.getByTestId('logic-tree-text');
   }
 
   // ==================== Setup ====================
@@ -389,6 +397,14 @@ export class AdvancedFilteringPage {
   async expectMultipleRadioGroups() {
     const groupCount = await this.getAllRadioGroups().count();
     expect(groupCount).toBeGreaterThan(1);
+  }
+
+  async expectLogicTreeVisible() {
+    await expect(this.logicTreeSection).toBeVisible();
+  }
+
+  async expectLogicTreeText(expected: string) {
+    await expect(this.logicTreeText).toContainText(expected);
   }
 
   // ==================== Unsaved Changes Modal ====================
