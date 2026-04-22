@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
+  import { settings } from '$lib/configuration';
   import { ExportType, type VariantResult } from '$lib/models/Variant';
   import {
     loading as resourcesPromise,
