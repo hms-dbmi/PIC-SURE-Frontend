@@ -46,6 +46,7 @@
 
   const operatorValue = $derived(group.operator || Operator.AND);
   let not = $state(false);
+  const hasSubqueryChildren = $derived(group.children.some((child) => isFilterGroup(child)));
   const isDraggable = $derived(id !== 'root');
 
   // Derive the actual index from parent's children array (reactive to array changes)
@@ -120,29 +121,36 @@
     <div class="flex flex-row items-center gap-2 mb-1 w-full">
       <div
         class="cursor-grab active:cursor-grabbing mr-2 {isDraggable ? 'block' : 'hidden'}"
+        title="Click and drag to reorder and group filters"
         {@attach handleRef}
       >
         <i class="fa-solid fa-grip-vertical text-surface-500"></i>
       </div>
       <div class="flex items-center justify-start gap-2 w-full">
-        <div>Between {id === 'root' ? 'groups' : 'items'}:</div>
+        <div>Between {hasSubqueryChildren ? 'subqueries' : 'filters'}:</div>
         <!-- {#key} forces re-mount because Skeleton's Segment doesn't update its indicator position on prop change -->
         {#key operatorValue}
-          <Segment
-            background="bg-white border-surface-400 border"
-            indicatorBg={operatorValue === Operator.OR ? 'bg-secondary-500' : 'bg-primary-500'}
-            name="operator"
-            value={operatorValue}
-            onValueChange={handleOperatorChange}
-          >
-            <Segment.Item value={Operator.AND}>{Operator.AND}</Segment.Item>
-            <Segment.Item value={Operator.OR}>{Operator.OR}</Segment.Item>
-          </Segment>
+          <div title="Choose logic for the query">
+            <Segment
+              background="bg-white border-surface-400 border"
+              indicatorBg={operatorValue === Operator.OR ? 'bg-secondary-500' : 'bg-primary-500'}
+              name="operator"
+              value={operatorValue}
+              onValueChange={handleOperatorChange}
+            >
+              <Segment.Item value={Operator.AND}>{Operator.AND}</Segment.Item>
+              <Segment.Item value={Operator.OR}>{Operator.OR}</Segment.Item>
+            </Segment>
+          </div>
         {/key}
         {#if id === 'root'}
-          <button class="btn preset-filled-primary-500 ml-auto" onclick={onAddGroup}
-            >Add Group</button
+          <button
+            class="btn preset-filled-primary-500 ml-auto"
+            title="Add subquery to create a group of filters"
+            onclick={onAddGroup}
           >
+            Add Subquery
+          </button>
         {/if}
       </div>
       <!-- TODO: NOT operator support — hidden until backend supports negation -->
@@ -156,12 +164,12 @@
         <div id={`group-controls-${group.uuid}`} class="ml-auto">
           <button
             type="button"
-            title="Remove Group"
+            title="Remove Subquery"
             class="bg-initial text-black-500 hover:text-primary-600"
             onclick={() => onRemove(group)}
           >
             <i class="fa-solid fa-times-circle"></i>
-            <span class="sr-only">Remove Group</span>
+            <span class="sr-only">Remove Subquery</span>
           </button>
         </div>
       {/if}
@@ -220,7 +228,7 @@
       class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg flex items-center justify-center mt-1"
     >
       <span class="text-primary-600 text-xs font-semibold uppercase tracking-wide">
-        Moving: Group
+        Moving: Subquery
       </span>
     </div>
   {/if}

@@ -14,7 +14,7 @@
   let {
     groupId,
     index = 0,
-    label = 'Drop into group',
+    label = 'Drop into subquery',
     isGroupDrag = false,
     isOverlay = false,
     insertAt,

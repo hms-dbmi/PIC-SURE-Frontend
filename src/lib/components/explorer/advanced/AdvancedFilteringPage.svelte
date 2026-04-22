@@ -55,22 +55,37 @@
 <svelte:window onbeforeunload={handleBeforeUnload} />
 
 <svelte:head>
-  <title>{branding.applicationName} | Advanced Filtering</title>
+  <title>{branding.applicationName} | Advanced Query Builder</title>
 </svelte:head>
 
 <Modal bind:open={showUnsavedModal} title="Unsaved Changes" closeable={true} onclose={handleCancel}>
   <p class="mb-6">You have unsaved changes to your filters. What would you like to do?</p>
   <footer class="flex justify-end gap-2">
     <button class="btn border preset-tonal-error" onclick={handleDiscard}>Discard Changes</button>
-    <button class="btn preset-filled-primary-500" onclick={handleApplyAndLeave}>
+    <button
+      class="btn preset-filled-primary-500"
+      title="Save changes to query"
+      onclick={handleApplyAndLeave}
+    >
       Apply Changes
     </button>
   </footer>
 </Modal>
 
-<Content {backUrl} {backTitle} title="Advanced Filtering">
+<Content {backUrl} {backTitle} title="Advanced Query Builder">
+  <p class="text-center mb-4">
+    The Advanced Query Builder allows you to take full control of your search criteria. Define
+    whether your added filters should be combined with <strong>and</strong> or
+    <strong>or</strong> logic and create nested subqueries to group related conditions.
+  </p>
   <AdvancedFiltering bind:this={advancedFilteringRef} />
   <div class="mt-4 flex justify-end">
-    <button class="btn preset-filled-primary-500" onclick={applyAndReturn}>Apply Changes</button>
+    <button
+      class="btn preset-filled-primary-500"
+      title="Save changes to query"
+      onclick={applyAndReturn}
+    >
+      Apply Changes
+    </button>
   </div>
 </Content>

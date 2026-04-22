@@ -52,12 +52,12 @@ export class AdvancedFilteringPage {
 
     // Page content area — Advanced Filtering is now a route, not a dialog
     this.modal = page.locator('.main-content');
-    this.modalTitle = page.getByRole('heading', { name: 'Advanced Filtering' });
+    this.modalTitle = page.getByRole('heading', { name: 'Advanced Query Builder' });
     this.filteringArea = page.locator('.main-content');
 
     // Buttons
     this.advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
-    this.addGroupButton = page.getByRole('button', { name: 'Add Group' });
+    this.addGroupButton = page.getByRole('button', { name: 'Add Subquery' });
     this.applyChangesButton = page.getByRole('button', { name: 'Apply Changes' });
 
     // Root group AND/OR segment (first one on the page)
@@ -451,7 +451,7 @@ export class AdvancedFilteringPage {
 
   getGroupCards(): Locator {
     // Use .card.bg-white to exclude root (which has bg-surface-50)
-    return this.modal.locator('.card.bg-white').filter({ hasText: 'Between items:' });
+    return this.modal.locator('.card.bg-white').filter({ hasText: 'Between filters:' });
   }
 
   getGroupDragHandle(groupIndex: number): Locator {
