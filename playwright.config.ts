@@ -14,6 +14,7 @@ const config: PlaywrightTestConfig = {
     stdout: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
     stderr: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
   },
+  workers: process.env.CI ? 4 : undefined,
   testDir: 'tests/end-to-end',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
   reporter: [['list'], ['html']],
