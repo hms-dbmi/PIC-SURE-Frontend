@@ -483,6 +483,61 @@ export class AdvancedFilteringPage {
     return this.page.getByTestId('group-drop-zone').filter({ hasText: 'Move here' });
   }
 
+  /**
+   * Perform a drag on a handle element, keeping the pointer within the scroll
+   * container bounds. Firefox with Playwright's synthetic pointer events does
+   * not auto-scroll, so dragging past the container edge causes dnd-kit to
+   * lose track of the pointer and the drag never ends properly.
+   *
+   * Returns the start coordinates so callers can release at a known position.
+   */
+  async startDrag(
+    handle: Locator,
+    direction: 'down' | 'up' = 'down',
+    distance = 80,
+  ): Promise<{ startX: number; startY: number }> {
+    await expect(handle).toBeVisible();
+    await handle.scrollIntoViewIfNeeded();
+    await this.page.waitForTimeout(200);
+
+    const handleBox = await handle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    const startX = handleBox!.x + handleBox!.width / 2;
+    const startY = handleBox!.y + handleBox!.height / 2;
+
+    // Clamp drag distance to stay within the scroll container
+    const container = this.modal.locator('.overflow-auto').first();
+    const containerBox = await container.boundingBox();
+    if (containerBox) {
+      const maxDown = containerBox.y + containerBox.height - startY - 10;
+      const maxUp = startY - containerBox.y - 10;
+      if (direction === 'down') {
+        distance = Math.min(distance, maxDown);
+      } else {
+        distance = Math.min(distance, maxUp);
+      }
+    }
+    distance = Math.max(distance, 30); // always move enough to trigger drag
+
+    const sign = direction === 'down' ? 1 : -1;
+    await this.page.mouse.move(startX, startY);
+    await this.page.mouse.down();
+    await this.page.mouse.move(startX, startY + sign * 20, { steps: 3 });
+    await this.page.mouse.move(startX, startY + sign * distance, { steps: 10 });
+
+    return { startX, startY };
+  }
+
+  /**
+   * Release the drag. Moves the pointer back to the start position first so
+   * the pointerup event lands on an element dnd-kit is listening on.
+   */
+  async endDrag(startX: number, startY: number) {
+    await this.page.mouse.move(startX, startY, { steps: 5 });
+    await this.page.mouse.up();
+    await this.page.waitForTimeout(500);
+  }
+
   // ==================== Genomic Filter Locators ====================
 
   getGenomicFiltersSection(): Locator {

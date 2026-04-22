@@ -922,22 +922,8 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     expect(initialCount).toBe(2);
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Drag down and release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 150, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
+    const { startX, startY } = await afPage.startDrag(dragHandle);
+    await afPage.endDrag(startX, startY);
 
     // Both groups should still be visible
     const finalCount = await groups.count();
@@ -948,27 +934,14 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     await setupWithTwoGroups(page);
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Start dragging
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 150, { steps: 20 });
+    const { startX, startY } = await afPage.startDrag(dragHandle);
 
     // Drop preview should be showing
     const dropPreviews = afPage.getDropPreviews();
     await expect(dropPreviews.first()).toBeVisible({ timeout: 3000 });
 
     // Release the drag
-    await page.mouse.up();
+    await afPage.endDrag(startX, startY);
 
     // Drop previews should all be gone
     await expect(dropPreviews).toHaveCount(0, { timeout: 2000 });
@@ -984,20 +957,7 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     await expect(moveHereZones).toHaveCount(0);
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Start dragging
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 100, { steps: 10 });
+    const { startX, startY } = await afPage.startDrag(dragHandle);
 
     // "Move here" zones should appear
     const visibleZones = afPage.getMoveHereZones();
@@ -1005,7 +965,7 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     expect(zoneCount).toBeGreaterThan(0);
 
     // Release
-    await page.mouse.up();
+    await afPage.endDrag(startX, startY);
 
     // Zones should disappear
     await expect(moveHereZones).toHaveCount(0, { timeout: 2000 });
@@ -1028,22 +988,8 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
 
     // Find the empty group's drag handle
     const dragHandle = groups.last().locator('.fa-grip-vertical').first();
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Drag up and release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY - 20, { steps: 3 });
-    await page.mouse.move(startX, startY - 100, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
+    const { startX, startY } = await afPage.startDrag(dragHandle, 'up');
+    await afPage.endDrag(startX, startY);
 
     // Group should still exist
     const finalGroupCount = await groups.count();
@@ -1059,25 +1005,10 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     await expect(rootCard).toBeVisible();
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
+    const { startX, startY } = await afPage.startDrag(dragHandle);
+    await afPage.endDrag(startX, startY);
 
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Drag group around and release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 200, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
-
-    // All groups should be within the root container bounds (capture rootBox after drag
-    // so viewport coordinates are consistent — dragging can scroll the overflow container)
+    // All groups should be within the root container bounds
     const rootBox = await rootCard.boundingBox();
     expect(rootBox).not.toBeNull();
     const groups = afPage.getGroupCards();
@@ -1093,24 +1024,11 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
   test('AF-DND-GRP-006: Repeated group drags do not cause stuck previews', async ({ page }) => {
     await setupWithTwoGroups(page);
 
-    const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
     // Perform 3 drag-and-release cycles
     for (let cycle = 0; cycle < 3; cycle++) {
-      await page.mouse.move(startX, startY);
-      await page.mouse.down();
-      await page.mouse.move(startX, startY + 20, { steps: 3 });
-      await page.mouse.move(startX, startY + 100, { steps: 10 });
-      await page.mouse.up();
-      await page.waitForTimeout(500);
+      const dragHandle = afPage.getGroupDragHandle(0);
+      const { startX, startY } = await afPage.startDrag(dragHandle);
+      await afPage.endDrag(startX, startY);
     }
 
     // No drop previews should remain
@@ -1129,23 +1047,8 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     page.on('pageerror', (err) => errors.push(err.message));
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Drag around and release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 200, { steps: 20 });
-    await page.mouse.move(startX, startY - 50, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
+    const { startX, startY } = await afPage.startDrag(dragHandle);
+    await afPage.endDrag(startX, startY);
 
     // Filter out the known dnd-kit HierarchyRequestError (from its internal sortable)
     const criticalErrors = errors.filter((e) => !e.includes('HierarchyRequestError'));
