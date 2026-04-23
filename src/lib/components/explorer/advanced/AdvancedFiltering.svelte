@@ -636,7 +636,7 @@
 </script>
 
 <LogicTreeSummary root={localTree.root as FilterGroupInterface} genomicFilters={$genomicFilters} />
-<div class="flex-1 overflow-auto p-4 border border-surface-300 rounded-lg bg-surface-50">
+<div class="flex-1 overflow-auto p-2 border border-surface-300 rounded-lg bg-surface-50 w-full">
   <DragDropProvider
     {sensors}
     onDragStart={handleDragStart}

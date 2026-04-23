@@ -78,8 +78,10 @@
     whether your added filters should be combined with <strong>and</strong> or
     <strong>or</strong> logic and create nested subqueries to group related conditions.
   </p>
-  <AdvancedFiltering bind:this={advancedFilteringRef} />
-  <div class="mt-4 flex justify-end">
+  <div class="flex flex-col justify-center items-center w-[70%] m-auto">
+    <AdvancedFiltering bind:this={advancedFilteringRef} />
+  </div>
+  <div class="mt-4 flex justify-end w-[70%] mx-auto">
     <button
       class="btn preset-filled-primary-500"
       title="Save changes to query"
