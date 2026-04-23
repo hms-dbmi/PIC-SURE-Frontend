@@ -26,6 +26,7 @@
     isOverlay?: boolean;
     id?: string;
     parentId?: string;
+    depth?: number;
   }
 
   let {
@@ -41,8 +42,12 @@
     onOperatorChange = (g, op) => {
       g.setOperator(op);
     },
+    depth = 0,
     onAddGroup = () => {},
   }: Props = $props();
+
+  const groupBg = $derived(`background-color: rgba(var(--depth-overlay), ${depth * 0.06})`);
+  const groupBorder = $derived(`border-color: rgba(var(--depth-overlay), ${0.2 + depth * 0.08})`);
 
   const operatorValue = $derived(group.operator || Operator.AND);
   let not = $state(false);
@@ -112,11 +117,12 @@
   {/if}
 
   <div
-    class="card py-2 px-4 {id === 'root'
+    class="card py-1 px-2 {id === 'root'
       ? 'bg-surface-50 shadow-none border-none'
       : activeId === id && !isOverlay
         ? 'invisible'
-        : 'bg-white border-surface-400 border'}"
+        : 'border'}"
+    style={id !== 'root' && !(activeId === id && !isOverlay) ? `${groupBg}; ${groupBorder}` : ''}
   >
     <div class="flex flex-row items-center gap-2 mb-1 w-full">
       <div
@@ -124,7 +130,7 @@
         title="Click and drag to reorder and group filters"
         {@attach handleRef}
       >
-        <i class="fa-solid fa-grip-vertical text-surface-500"></i>
+        <i class="fa-solid fa-grip-vertical text-xl mx-1"></i>
       </div>
       <div class="flex items-center justify-start gap-2 w-full">
         <div>Between {hasSubqueryChildren ? 'subqueries' : 'filters'}:</div>
@@ -134,7 +140,10 @@
             <Segment
               background="bg-white border-surface-400 border"
               indicatorBg={operatorValue === Operator.OR ? 'bg-secondary-500' : 'bg-primary-500'}
+              indicatorClasses="scale-[1.04]"
               name="operator"
+              padding=0
+              gap=0
               value={operatorValue}
               onValueChange={handleOperatorChange}
             >
@@ -145,7 +154,7 @@
         {/key}
         {#if id === 'root'}
           <button
-            class="btn preset-filled-primary-500 ml-auto"
+            class="btn border preset-tonal-primary hover:preset-filled-primary-500 text-lg disabled:opacity-75  ml-auto"
             title="Add subquery to create a group of filters"
             onclick={onAddGroup}
           >
@@ -185,6 +194,7 @@
             group={child}
             index={i}
             parentId={id}
+            depth={depth + 1}
             {onRemove}
             {onRemoveChild}
             {isOverlay}
@@ -233,3 +243,12 @@
     </div>
   {/if}
 </div>
+
+<style>
+  :root {
+    --depth-overlay: 0, 0, 0;
+  }
+  :global(.dark) {
+    --depth-overlay: 255, 255, 255;
+  }
+</style>
