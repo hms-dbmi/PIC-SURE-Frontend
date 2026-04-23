@@ -9,7 +9,7 @@
 
   import { features } from '$lib/configuration';
 
-  import { filters, allFilters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
+  import { allFilters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
@@ -18,8 +18,6 @@
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
-  import Popover from '$lib/components/Popover.svelte';
-
   import { subscribeOnChange } from '$lib/utilities/Subscribers';
   import { log, createLog } from '$lib/logger';
 
@@ -65,10 +63,6 @@
   );
 
   let showCohortDetails = $derived(!isDiscoverPage && features.explorer.enableCohortDetails);
-
-  let nonGenomicFilterCount = $derived($filters.length);
-
-  let advancedFilteringDisabled = $derived(nonGenomicFilterCount <= 1);
 
   function subscribe() {
     unsubFilters = subscribeOnChange(allFilters, () => loadPatientCount(!isDiscoverPage));
@@ -149,12 +143,12 @@
       {#if hasFilterOrExport}
         <button
           data-testid="clear-all-results-btn"
-          class="anchor text-sm flex-none"
+          class="btn btn-xs preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 flex-none"
           onclick={() => (modalOpen = true)}>Reset</button
         >
       {/if}
     </div>
-    <Filters />
+    <Filters {isDiscoverPage} />
     {#if $exports.length > 0}
       <div class="px-4 mb-1 w-80">
         <header class="text-left ml-1" data-testid="export-header">
@@ -177,77 +171,52 @@
       </div>
     {/if}
   </div>
-  <div class="flex flex-col items-center mt-7">
-    <hr />
-    <h5 class="text-center text-xl mt-7">Tool Suite</h5>
-    <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
-      {#if showCohortDetails}
-        <CardButton
-          href="/explorer/cohort"
-          data-testid="cohort-details-btn"
-          title="Cohort Details"
-          icon="fa-solid fa-users"
-          size="md"
-          active={page.url.pathname.includes('explorer/cohort')}
-        />
-      {/if}
-      {#if showExplorerDistributions}
-        <CardButton
-          href="/explorer/distributions"
-          data-testid="distributions-btn"
-          title="Variable Distributions"
-          icon="fa-solid fa-chart-pie"
-          size="md"
-        />
-      {/if}
-      {#if showDiscoverDistributions}
-        <CardButton
-          href="/discover/distributions"
-          data-testid="distributions-btn"
-          title="Variable Distributions"
-          icon="fa-solid fa-chart-pie"
-          size="md"
-        />
-      {/if}
-      {#if showVariantExplorer}
-        <CardButton
-          href="/explorer/variant"
-          data-testid="variant-explorer-btn"
-          title="Variant Explorer"
-          icon="fa-solid fa-dna"
-          size="md"
-          active={page.url.pathname.includes('explorer/variant')}
-        />
-      {/if}
-      {#if advancedFilteringDisabled}
-        <Popover
-          triggerTypes={['hover', 'focus']}
-          placement="left"
-          message="Advanced Filtering is not available with only one non-genomic filter."
-        >
-          {#snippet trigger()}
-            <CardButton
-              href={`${isDiscoverPage ? '/discover' : '/explorer'}/advanced-filtering`}
-              data-testid="advanced-filtering-btn"
-              title="Advanced Filtering"
-              icon="fa-solid fa-sliders"
-              size="md"
-              disabled={advancedFilteringDisabled}
-            />
-          {/snippet}
-        </Popover>
-      {:else}
-        <CardButton
-          href={`${isDiscoverPage ? '/discover' : '/explorer'}/advanced-filtering`}
-          data-testid="advanced-filtering-btn"
-          title="Advanced Filtering"
-          icon="fa-solid fa-sliders"
-          size="md"
-          disabled={advancedFilteringDisabled}
-        />
-      {/if}
+  {#if showCohortDetails || showExplorerDistributions || showDiscoverDistributions || showVariantExplorer}
+    <div class="flex flex-col items-center mt-7">
+      <hr />
+      <h5 class="text-center text-xl mt-7">Tool Suite</h5>
+      <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
+        {#if showCohortDetails}
+          <CardButton
+            href="/explorer/cohort"
+            data-testid="cohort-details-btn"
+            title="Cohort Details"
+            icon="fa-solid fa-users"
+            size="md"
+            active={page.url.pathname.includes('explorer/cohort')}
+          />
+        {/if}
+        {#if showExplorerDistributions}
+          <CardButton
+            href="/explorer/distributions"
+            data-testid="distributions-btn"
+            title="Variable Distributions"
+            icon="fa-solid fa-chart-pie"
+            size="md"
+          />
+        {/if}
+        {#if showDiscoverDistributions}
+          <CardButton
+            href="/discover/distributions"
+            data-testid="distributions-btn"
+            title="Variable Distributions"
+            icon="fa-solid fa-chart-pie"
+            size="md"
+          />
+        {/if}
+        {#if showVariantExplorer}
+          <CardButton
+            href="/explorer/variant"
+            data-testid="variant-explorer-btn"
+            title="Variant Explorer"
+            icon="fa-solid fa-dna"
+            size="md"
+            active={page.url.pathname.includes('explorer/variant')}
+          />
+        {/if}
+      </div>
     </div>
-  </div>
+  {/if}
 </section>
 
 <style>
