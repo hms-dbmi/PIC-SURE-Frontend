@@ -229,16 +229,15 @@ export class AdvancedFilteringPage {
 
   getFilterByName(name: string): Locator {
     return this.modal
-      .locator('.text-sm.font-medium')
+      .getByTestId('filter-name')
       .filter({ hasText: new RegExp(`^${name.replace(/[?()]/g, '\\$&')}$`) });
   }
 
   /** Returns the draggable filter card for a given filter name. */
   getFilterCard(name: string): Locator {
     return this.modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: this.page.getByText(name, { exact: true }) })
-      .filter({ has: this.page.locator('.fa-grip-vertical') })
       .first();
   }
 
@@ -466,8 +465,7 @@ export class AdvancedFilteringPage {
   }
 
   getGroupCards(): Locator {
-    // Use .card.bg-white to exclude root (which has bg-surface-50)
-    return this.modal.locator('.card.bg-white').filter({ hasText: 'Between filters:' });
+    return this.modal.getByTestId('filter-group');
   }
 
   getGroupDragHandle(groupIndex: number): Locator {
@@ -497,7 +495,22 @@ export class AdvancedFilteringPage {
     distance = 80,
   ): Promise<{ startX: number; startY: number }> {
     await expect(handle).toBeVisible();
-    await handle.scrollIntoViewIfNeeded();
+
+    // Scroll the handle to the vertical center of the scroll container so there
+    // is always room to drag in either direction, regardless of container height.
+    const container = this.modal.locator('.overflow-auto').first();
+    const handleEl = await handle.elementHandle();
+    if (handleEl) {
+      await container.evaluate(
+        (el, h) => {
+          const containerRect = el.getBoundingClientRect();
+          const handleRect = h.getBoundingClientRect();
+          const handleOffsetInContainer = handleRect.top - containerRect.top + el.scrollTop;
+          el.scrollTop = handleOffsetInContainer - containerRect.height / 2;
+        },
+        handleEl,
+      );
+    }
     await this.page.waitForTimeout(200);
 
     const handleBox = await handle.boundingBox();
@@ -506,7 +519,6 @@ export class AdvancedFilteringPage {
     const startY = handleBox!.y + handleBox!.height / 2;
 
     // Clamp drag distance to stay within the scroll container
-    const container = this.modal.locator('.overflow-auto').first();
     const containerBox = await container.boundingBox();
     if (containerBox) {
       const maxDown = containerBox.y + containerBox.height - startY - 10;

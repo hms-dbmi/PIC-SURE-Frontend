@@ -221,9 +221,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
 
   test('AF-DND-002: Filters can be picked up by dragging', async ({ page }) => {
     const modal = afPage.modal;
-    const filterCards = modal
-      .locator('.card.bg-white')
-      .filter({ has: page.locator('.fa-grip-vertical') });
+    const filterCards = modal.getByTestId('filter-item');
     const firstCard = filterCards.first();
     await expect(firstCard).toBeVisible();
 
@@ -257,7 +255,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     const filterA = afPage.filterNames[0];
     const filterB = afPage.filterNames[1];
 
-    const filterNameEls = modal.locator('.card.bg-white .text-sm.font-medium');
+    const filterNameEls = modal.getByTestId('filter-name');
     const initialOrder = await filterNameEls.allTextContents();
     expect(initialOrder).toContain(filterA);
     expect(initialOrder).toContain(filterB);
@@ -267,14 +265,12 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     expect(aIndex).toBeLessThan(bIndex);
 
     const cardA = modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(filterA, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
       .first();
     const cardB = modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(filterB, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
       .first();
 
     await expect(cardA).toBeVisible();
@@ -322,20 +318,18 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     const filterA = afPage.filterNames[0];
     const filterB = afPage.filterNames[1];
 
-    const filterNameEls = modal.locator('.card.bg-white .text-sm.font-medium');
+    const filterNameEls = modal.getByTestId('filter-name');
     const initialOrder = await filterNameEls.allTextContents();
     expect(initialOrder).toContain(filterA);
     expect(initialOrder).toContain(filterB);
 
     const cardA = modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(filterA, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
       .first();
     const cardB = modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(filterB, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
       .first();
 
     await expect(cardA).toBeVisible();
@@ -386,14 +380,12 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     const filterB = afPage.filterNames[1];
 
     const cardA = modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(filterA, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
       .first();
     const cardB = modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(filterB, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
       .first();
 
     await expect(cardA).toBeVisible();
@@ -467,7 +459,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     // Get the first top-level filter as a drag target
     const firstFilter = afPage.filterNames[0];
     const targetCard = afPage.modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(firstFilter, { exact: true }) })
       .first();
     await expect(targetCard).toBeVisible();
@@ -546,14 +538,14 @@ test.describe('Advanced Query Builder - Grouping', () => {
     await afPage.openModal();
 
     const lastFilter = afPage.filterNames[afPage.filterNames.length - 1];
-    const groupCards = modal.locator('.card.bg-white').filter({ hasText: 'Between filters:' });
+    const groupCards = modal.getByTestId('filter-group');
     const groupCount = await groupCards.count();
     expect(groupCount).toBeGreaterThanOrEqual(1);
 
     const escFilter = lastFilter.replace(/[?()]/g, '\\$&');
     const filterInGroup = groupCards
       .first()
-      .locator('.card.bg-white .text-sm.font-medium')
+      .getByTestId('filter-name')
       .filter({ hasText: new RegExp(`^${escFilter}$`) });
     await expect(filterInGroup).toBeVisible();
 
@@ -566,8 +558,8 @@ test.describe('Advanced Query Builder - Grouping', () => {
     page,
   }) => {
     const modal = afPage.modal;
-    const rootArea = modal.locator('.card.bg-surface-50').first();
-    const filterNameEls = rootArea.locator('.card.bg-white .text-sm.font-medium');
+    const rootArea = modal.getByTestId('filter-root').first();
+    const filterNameEls = rootArea.getByTestId('filter-name');
     const initialOrder = await filterNameEls.allTextContents();
 
     const lastFilter = afPage.filterNames[afPage.filterNames.length - 1];
@@ -594,15 +586,12 @@ test.describe('Advanced Query Builder - Grouping', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
     await afPage.openModal();
 
-    const groupCards = modal.locator('.card.bg-white').filter({ hasText: 'Between filters:' });
-    const filtersInGroup = await groupCards
-      .first()
-      .locator('.card.bg-white .text-sm.font-medium')
-      .allTextContents();
+    const groupCards = modal.getByTestId('filter-group');
+    const filtersInGroup = await groupCards.first().getByTestId('filter-name').allTextContents();
 
     expect(filtersInGroup).toContain(lastFilter);
 
-    const allFilterCards = modal.locator('.card.bg-white .text-sm.font-medium');
+    const allFilterCards = modal.getByTestId('filter-name');
     const allFilters = await allFilterCards.allTextContents();
     const occurrences = allFilters.filter((name) => name === lastFilter).length;
     expect(occurrences).toBe(1);
@@ -639,7 +628,7 @@ test.describe('Advanced Query Builder - Grouping', () => {
     await afPage.openModal();
 
     // Verify the subquery exists with "Between filters:" label
-    const subgroup = modal.locator('.card.bg-white').filter({ hasText: 'Between filters:' }).last();
+    const subgroup = modal.getByTestId('filter-group').last();
     await expect(subgroup).toBeVisible();
 
     // Verify there are two radiogroups (root + subgroup)
@@ -797,11 +786,11 @@ test.describe('Advanced Query Builder - Genomic Filters (Ordering)', () => {
     const firstFilter = afPage.filterNames[0];
     const escFilter = firstFilter.replace(/[?()]/g, '\\$&');
     const phenotypicInModal = modal
-      .locator('.text-sm.font-medium')
+      .getByTestId('filter-name')
       .filter({ hasText: new RegExp(`^${escFilter}$`) });
     await expect(phenotypicInModal.first()).toBeVisible();
     const phenotypicInGenomic = genomicSection
-      .locator('.text-sm.font-medium')
+      .getByTestId('filter-name')
       .filter({ hasText: new RegExp(`^${escFilter}$`) });
     await expect(phenotypicInGenomic).toHaveCount(0);
 
@@ -1001,7 +990,7 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
   }) => {
     await setupWithTwoGroups(page);
 
-    const rootCard = afPage.modal.locator('.card.bg-surface-50').first();
+    const rootCard = afPage.modal.getByTestId('filter-root').first();
     await expect(rootCard).toBeVisible();
 
     const dragHandle = afPage.getGroupDragHandle(0);

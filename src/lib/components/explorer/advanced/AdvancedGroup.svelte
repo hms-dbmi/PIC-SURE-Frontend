@@ -117,6 +117,7 @@
   {/if}
 
   <div
+    data-testid={id === 'root' ? 'filter-root' : 'filter-group'}
     class="card py-1 px-2 {id === 'root'
       ? 'bg-surface-50 shadow-none border-none'
       : activeId === id && !isOverlay
@@ -142,8 +143,8 @@
               indicatorBg={operatorValue === Operator.OR ? 'bg-secondary-500' : 'bg-primary-500'}
               indicatorClasses="scale-[1.04]"
               name="operator"
-              padding=0
-              gap=0
+              padding="0"
+              gap="0"
               value={operatorValue}
               onValueChange={handleOperatorChange}
             >
@@ -154,7 +155,7 @@
         {/key}
         {#if id === 'root'}
           <button
-            class="btn border preset-tonal-primary hover:preset-filled-primary-500 text-lg disabled:opacity-75  ml-auto"
+            class="btn border preset-tonal-primary hover:preset-filled-primary-500 text-lg disabled:opacity-75 ml-auto"
             title="Add subquery to create a group of filters"
             onclick={onAddGroup}
           >
