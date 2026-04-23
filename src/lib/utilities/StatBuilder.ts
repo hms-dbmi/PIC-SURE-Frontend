@@ -31,6 +31,7 @@ import { getQueryRequestV3, getBlankQueryRequestV3 } from '$lib/utilities/QueryB
 import { countResult } from '$lib/utilities/PatientCount';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { log, createLog } from '$lib/logger';
+import { useOpenAccess } from '$lib/AccessState';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rejectIfQueryError(result: any) {
@@ -97,7 +98,7 @@ function blank({ addFilters, isOpenAccess, resource }: RequestMapOptions): Promi
   const request = addFilters
     ? getQueryRequestV3(!isOpenAccess, resource, 'COUNT')
     : getBlankQueryRequestV3(isOpenAccess, resource, 'COUNT');
-  const path = isOpenAccess ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+  const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
   return api.post(path, request).then(rejectIfQueryError);
 }
 
@@ -191,7 +192,7 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(!isOpenAccess, resource, type, mapper)
       : getBlankQueryRequestV3(isOpenAccess, resource, type, mapper);
-    const path = isOpenAccess ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
     log(
       createLog('QUERY', 'query.execute', {
         isOpenAccess,
@@ -226,7 +227,7 @@ function getConsentCount(type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(!isOpenAccess, resource, type, mapper)
       : getBlankQueryRequestV3(isOpenAccess, resource, type, mapper);
-    const path = isOpenAccess ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
     return api.post(path, request).then(rejectIfQueryError);
   };
 }

@@ -4,6 +4,7 @@ import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import { features } from '$lib/configuration';
 import { toaster } from '$lib/toaster';
+import { useOpenAccess } from '$lib/AccessState';
 
 interface QueryResource {
   name: string;
@@ -51,12 +52,10 @@ export const resources: Writable<ResourceMap> = writable(defaultResources);
 
 export function getQueryResources(isOpenAccess: boolean = false): QueryResource[] {
   const _resources = get(resources);
-  const isExploreWithoutLogin = features.explorer.open && features.login.open;
-  const useOpenAccess = isOpenAccess && !isExploreWithoutLogin;
   return features.federated
     ? _resources.queryable
     : [
-        useOpenAccess
+        useOpenAccess(isOpenAccess)
           ? { name: 'hpdsOpen', uuid: _resources.hpdsOpenV3 }
           : { name: 'hpds', uuid: _resources.hpdsAuth },
       ];
