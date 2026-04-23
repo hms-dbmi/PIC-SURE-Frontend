@@ -51,10 +51,12 @@ export const resources: Writable<ResourceMap> = writable(defaultResources);
 
 export function getQueryResources(isOpenAccess: boolean = false): QueryResource[] {
   const _resources = get(resources);
+  const isExploreWithoutLogin = features.explorer.open && features.login.open;
+  const useOpenAccess = isOpenAccess && !isExploreWithoutLogin;
   return features.federated
     ? _resources.queryable
     : [
-        isOpenAccess
+        useOpenAccess
           ? { name: 'hpdsOpen', uuid: _resources.hpdsOpenV3 }
           : { name: 'hpds', uuid: _resources.hpdsAuth },
       ];
