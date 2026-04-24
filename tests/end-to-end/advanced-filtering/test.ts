@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 import { test } from '../custom-context';
 import { AdvancedFilteringPage } from './advanced-filtering-page';
 
-test.describe('Advanced Filtering - Core Features', () => {
+test.describe('Advanced Query Builder - Core Features', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -30,7 +30,84 @@ test.describe('Advanced Filtering - Core Features', () => {
   });
 });
 
-test.describe('Advanced Filtering - Filter Details', () => {
+test.describe('Advanced Query Builder - Query Summary', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  let afPage: AdvancedFilteringPage;
+
+  test.beforeEach(async ({ page }) => {
+    afPage = new AdvancedFilteringPage(page);
+    await afPage.setupAndOpenModal(4);
+  });
+
+  test('AF-EQ-001: Logic tree summary section is visible and expanded by default', async () => {
+    await afPage.expectLogicTreeVisible();
+    // Panel should be expanded (equation text visible)
+    await expect(afPage.logicTreeText).toBeVisible();
+  });
+
+  test('AF-EQ-002: Equation text shows filter names joined by AND', async () => {
+    // Default operator is AND, so all 4 filters should be connected with AND
+    for (const filterName of afPage.filterNames) {
+      await afPage.expectLogicTreeText(filterName);
+    }
+    await afPage.expectLogicTreeText('AND');
+  });
+
+  test('AF-EQ-003: Switching root operator to OR updates equation', async () => {
+    await afPage.selectRootOperator('OR');
+    await afPage.expectLogicTreeText('OR');
+  });
+
+  test('AF-EQ-004: Logic tree summary can be collapsed and expanded', async () => {
+    // Equation text should be visible initially
+    await expect(afPage.logicTreeText).toBeVisible();
+
+    // Click the accordion control to collapse
+    const control = afPage.logicTreeSection.getByText('Query Summary');
+    await control.click();
+
+    // Equation text should be hidden
+    await expect(afPage.logicTreeText).not.toBeVisible();
+
+    // Click again to expand
+    await control.click();
+
+    // Equation text should be visible again
+    await expect(afPage.logicTreeText).toBeVisible();
+  });
+
+  test('AF-EQ-005: Subquery shows parentheses in equation', async ({ page }) => {
+    // Close, inject a subquery via sessionStorage, reopen
+    await afPage.closeModal();
+
+    await page.evaluate(() => {
+      const raw = sessionStorage.getItem('filterTree');
+      if (!raw) return;
+      const tree = JSON.parse(raw);
+      const lastTwo = tree.children.splice(-2, 2);
+      tree.children.push({
+        children: lastTwo,
+        operator: 'OR',
+        uuid: 'test-eq-group-uuid',
+      });
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    });
+
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+
+    // Equation should contain parentheses for the subquery
+    await afPage.expectLogicTreeText('(');
+    await afPage.expectLogicTreeText(')');
+    // Subquery uses OR
+    await afPage.expectLogicTreeText('OR');
+    // Root uses AND
+    await afPage.expectLogicTreeText('AND');
+  });
+});
+
+test.describe('Advanced Query Builder - Filter Details', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -72,7 +149,7 @@ test.describe('Advanced Filtering - Filter Details', () => {
   });
 });
 
-test.describe('Advanced Filtering - Global Combiner', () => {
+test.describe('Advanced Query Builder - Global Combiner', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -129,7 +206,7 @@ test.describe('Advanced Filtering - Global Combiner', () => {
   });
 });
 
-test.describe('Advanced Filtering - Drag and Drop', () => {
+test.describe('Advanced Query Builder - Drag and Drop', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -144,9 +221,7 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
 
   test('AF-DND-002: Filters can be picked up by dragging', async ({ page }) => {
     const modal = afPage.modal;
-    const filterCards = modal
-      .locator('.card.bg-white')
-      .filter({ has: page.locator('.fa-grip-vertical') });
+    const filterCards = modal.getByTestId('filter-item');
     const firstCard = filterCards.first();
     await expect(firstCard).toBeVisible();
 
@@ -180,7 +255,7 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     const filterA = afPage.filterNames[0];
     const filterB = afPage.filterNames[1];
 
-    const filterNameEls = modal.locator('.card.bg-white .text-sm.font-medium');
+    const filterNameEls = modal.getByTestId('filter-name');
     const initialOrder = await filterNameEls.allTextContents();
     expect(initialOrder).toContain(filterA);
     expect(initialOrder).toContain(filterB);
@@ -190,14 +265,12 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     expect(aIndex).toBeLessThan(bIndex);
 
     const cardA = modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(filterA, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
       .first();
     const cardB = modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(filterB, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
       .first();
 
     await expect(cardA).toBeVisible();
@@ -245,20 +318,18 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     const filterA = afPage.filterNames[0];
     const filterB = afPage.filterNames[1];
 
-    const filterNameEls = modal.locator('.card.bg-white .text-sm.font-medium');
+    const filterNameEls = modal.getByTestId('filter-name');
     const initialOrder = await filterNameEls.allTextContents();
     expect(initialOrder).toContain(filterA);
     expect(initialOrder).toContain(filterB);
 
     const cardA = modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(filterA, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
       .first();
     const cardB = modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(filterB, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
       .first();
 
     await expect(cardA).toBeVisible();
@@ -309,14 +380,12 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     const filterB = afPage.filterNames[1];
 
     const cardA = modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(filterA, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
       .first();
     const cardB = modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(filterB, { exact: true }) })
-      .filter({ has: page.locator('.fa-grip-vertical') })
       .first();
 
     await expect(cardA).toBeVisible();
@@ -373,11 +442,11 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     const dropPreview = page.getByTestId('drop-preview');
     await expect(dropPreview).toHaveCount(0);
 
-    // Find the group's drag handle via the "Between items:" label's sibling grip icon
-    const groupHeader = afPage.modal.getByText('Between items:').first();
+    // Find the group's drag handle via the "Between filters:" label's sibling grip icon
+    const groupHeader = afPage.modal.getByText('Between filters:').first();
     await expect(groupHeader).toBeVisible();
 
-    // The grip icon is in the same row as "Between items:" — go up to the flex row, find the handle
+    // The grip icon is in the same row as "Between filters:" — go up to the flex row, find the handle
     const groupRow = groupHeader
       .locator('xpath=ancestor::div[contains(@class, "flex-row")]')
       .first();
@@ -390,7 +459,7 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
     // Get the first top-level filter as a drag target
     const firstFilter = afPage.filterNames[0];
     const targetCard = afPage.modal
-      .locator('.card.bg-white')
+      .getByTestId('filter-item')
       .filter({ has: page.getByText(firstFilter, { exact: true }) })
       .first();
     await expect(targetCard).toBeVisible();
@@ -416,7 +485,7 @@ test.describe('Advanced Filtering - Drag and Drop', () => {
   });
 });
 
-test.describe('Advanced Filtering - Grouping', () => {
+test.describe('Advanced Query Builder - Grouping', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -425,16 +494,16 @@ test.describe('Advanced Filtering - Grouping', () => {
     await afPage.setupAndOpenModal(4);
   });
 
-  test('AF-GROUP-001: Add Group button is visible', async () => {
+  test('AF-GROUP-001: Add Subquery button is visible', async () => {
     await afPage.expectAddGroupButtonVisible();
   });
 
-  test('AF-GROUP-002: Clicking Add Group creates a new empty group box', async () => {
+  test('AF-GROUP-002: Clicking Add Subquery creates a new empty subquery box', async () => {
     await afPage.clickAddGroup();
     await expect(afPage.getEmptyGroupDropZone()).toBeVisible();
   });
 
-  test('AF-GROUP-004: Group box displays Group Filter label with AND/OR control', async () => {
+  test('AF-GROUP-004: Subquery box displays filter label with AND/OR control', async () => {
     await afPage.clickAddGroup();
     await afPage.expectNewGroupHasAndOrControls();
   });
@@ -469,14 +538,14 @@ test.describe('Advanced Filtering - Grouping', () => {
     await afPage.openModal();
 
     const lastFilter = afPage.filterNames[afPage.filterNames.length - 1];
-    const groupCards = modal.locator('.card').filter({ hasText: 'Between items:' });
+    const groupCards = modal.getByTestId('filter-group');
     const groupCount = await groupCards.count();
     expect(groupCount).toBeGreaterThanOrEqual(1);
 
     const escFilter = lastFilter.replace(/[?()]/g, '\\$&');
     const filterInGroup = groupCards
       .first()
-      .locator('.card.bg-white .text-sm.font-medium')
+      .getByTestId('filter-name')
       .filter({ hasText: new RegExp(`^${escFilter}$`) });
     await expect(filterInGroup).toBeVisible();
 
@@ -489,8 +558,8 @@ test.describe('Advanced Filtering - Grouping', () => {
     page,
   }) => {
     const modal = afPage.modal;
-    const rootArea = modal.locator('.card').filter({ hasText: 'Between groups:' }).first();
-    const filterNameEls = rootArea.locator('.card.bg-white .text-sm.font-medium');
+    const rootArea = modal.getByTestId('filter-root').first();
+    const filterNameEls = rootArea.getByTestId('filter-name');
     const initialOrder = await filterNameEls.allTextContents();
 
     const lastFilter = afPage.filterNames[afPage.filterNames.length - 1];
@@ -517,15 +586,12 @@ test.describe('Advanced Filtering - Grouping', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
     await afPage.openModal();
 
-    const groupCards = modal.locator('.card').filter({ hasText: 'Between items:' });
-    const filtersInGroup = await groupCards
-      .first()
-      .locator('.card.bg-white .text-sm.font-medium')
-      .allTextContents();
+    const groupCards = modal.getByTestId('filter-group');
+    const filtersInGroup = await groupCards.first().getByTestId('filter-name').allTextContents();
 
     expect(filtersInGroup).toContain(lastFilter);
 
-    const allFilterCards = modal.locator('.card.bg-white .text-sm.font-medium');
+    const allFilterCards = modal.getByTestId('filter-name');
     const allFilters = await allFilterCards.allTextContents();
     const occurrences = allFilters.filter((name) => name === lastFilter).length;
     expect(occurrences).toBe(1);
@@ -561,8 +627,8 @@ test.describe('Advanced Filtering - Grouping', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
     await afPage.openModal();
 
-    // Verify the group exists with "Between items:" label
-    const subgroup = modal.locator('.card').filter({ hasText: 'Between items:' }).last();
+    // Verify the subquery exists with "Between filters:" label
+    const subgroup = modal.getByTestId('filter-group').last();
     await expect(subgroup).toBeVisible();
 
     // Verify there are two radiogroups (root + subgroup)
@@ -620,7 +686,7 @@ test.describe('Advanced Filtering - Grouping', () => {
   });
 });
 
-test.describe('Advanced Filtering - Apply', () => {
+test.describe('Advanced Query Builder - Apply', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -645,7 +711,7 @@ test.describe('Advanced Filtering - Apply', () => {
   });
 });
 
-test.describe('Advanced Filtering - Genomic Filters', () => {
+test.describe('Advanced Query Builder - Genomic Filters', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -702,7 +768,7 @@ test.describe('Advanced Filtering - Genomic Filters', () => {
   });
 });
 
-test.describe('Advanced Filtering - Genomic Filters (Ordering)', () => {
+test.describe('Advanced Query Builder - Genomic Filters (Ordering)', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -720,11 +786,11 @@ test.describe('Advanced Filtering - Genomic Filters (Ordering)', () => {
     const firstFilter = afPage.filterNames[0];
     const escFilter = firstFilter.replace(/[?()]/g, '\\$&');
     const phenotypicInModal = modal
-      .locator('.text-sm.font-medium')
+      .getByTestId('filter-name')
       .filter({ hasText: new RegExp(`^${escFilter}$`) });
     await expect(phenotypicInModal.first()).toBeVisible();
     const phenotypicInGenomic = genomicSection
-      .locator('.text-sm.font-medium')
+      .getByTestId('filter-name')
       .filter({ hasText: new RegExp(`^${escFilter}$`) });
     await expect(phenotypicInGenomic).toHaveCount(0);
 
@@ -747,7 +813,7 @@ test.describe('Advanced Filtering - Genomic Filters (Ordering)', () => {
   });
 });
 
-test.describe('Advanced Filtering - Unsaved Changes', () => {
+test.describe('Advanced Query Builder - Unsaved Changes', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -818,7 +884,7 @@ test.describe('Advanced Filtering - Unsaved Changes', () => {
   });
 });
 
-test.describe('Advanced Filtering - Group Drag and Drop', () => {
+test.describe('Advanced Query Builder - Group Drag and Drop', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
@@ -845,22 +911,8 @@ test.describe('Advanced Filtering - Group Drag and Drop', () => {
     expect(initialCount).toBe(2);
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Drag down and release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 150, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
+    const { startX, startY } = await afPage.startDrag(dragHandle);
+    await afPage.endDrag(startX, startY);
 
     // Both groups should still be visible
     const finalCount = await groups.count();
@@ -871,27 +923,14 @@ test.describe('Advanced Filtering - Group Drag and Drop', () => {
     await setupWithTwoGroups(page);
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Start dragging
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 150, { steps: 20 });
+    const { startX, startY } = await afPage.startDrag(dragHandle);
 
     // Drop preview should be showing
     const dropPreviews = afPage.getDropPreviews();
     await expect(dropPreviews.first()).toBeVisible({ timeout: 3000 });
 
     // Release the drag
-    await page.mouse.up();
+    await afPage.endDrag(startX, startY);
 
     // Drop previews should all be gone
     await expect(dropPreviews).toHaveCount(0, { timeout: 2000 });
@@ -907,20 +946,7 @@ test.describe('Advanced Filtering - Group Drag and Drop', () => {
     await expect(moveHereZones).toHaveCount(0);
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Start dragging
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 100, { steps: 10 });
+    const { startX, startY } = await afPage.startDrag(dragHandle);
 
     // "Move here" zones should appear
     const visibleZones = afPage.getMoveHereZones();
@@ -928,7 +954,7 @@ test.describe('Advanced Filtering - Group Drag and Drop', () => {
     expect(zoneCount).toBeGreaterThan(0);
 
     // Release
-    await page.mouse.up();
+    await afPage.endDrag(startX, startY);
 
     // Zones should disappear
     await expect(moveHereZones).toHaveCount(0, { timeout: 2000 });
@@ -951,22 +977,8 @@ test.describe('Advanced Filtering - Group Drag and Drop', () => {
 
     // Find the empty group's drag handle
     const dragHandle = groups.last().locator('.fa-grip-vertical').first();
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Drag up and release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY - 20, { steps: 3 });
-    await page.mouse.move(startX, startY - 100, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
+    const { startX, startY } = await afPage.startDrag(dragHandle, 'up');
+    await afPage.endDrag(startX, startY);
 
     // Group should still exist
     const finalGroupCount = await groups.count();
@@ -978,31 +990,16 @@ test.describe('Advanced Filtering - Group Drag and Drop', () => {
   }) => {
     await setupWithTwoGroups(page);
 
-    // Get the root container bounds
-    const rootCard = afPage.modal.locator('.card').filter({ hasText: 'Between groups:' }).first();
+    const rootCard = afPage.modal.getByTestId('filter-root').first();
     await expect(rootCard).toBeVisible();
-    const rootBox = await rootCard.boundingBox();
-    expect(rootBox).not.toBeNull();
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Drag group around and release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 200, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
+    const { startX, startY } = await afPage.startDrag(dragHandle);
+    await afPage.endDrag(startX, startY);
 
     // All groups should be within the root container bounds
+    const rootBox = await rootCard.boundingBox();
+    expect(rootBox).not.toBeNull();
     const groups = afPage.getGroupCards();
     const groupCount = await groups.count();
     for (let i = 0; i < groupCount; i++) {
@@ -1016,24 +1013,11 @@ test.describe('Advanced Filtering - Group Drag and Drop', () => {
   test('AF-DND-GRP-006: Repeated group drags do not cause stuck previews', async ({ page }) => {
     await setupWithTwoGroups(page);
 
-    const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
     // Perform 3 drag-and-release cycles
     for (let cycle = 0; cycle < 3; cycle++) {
-      await page.mouse.move(startX, startY);
-      await page.mouse.down();
-      await page.mouse.move(startX, startY + 20, { steps: 3 });
-      await page.mouse.move(startX, startY + 100, { steps: 10 });
-      await page.mouse.up();
-      await page.waitForTimeout(500);
+      const dragHandle = afPage.getGroupDragHandle(0);
+      const { startX, startY } = await afPage.startDrag(dragHandle);
+      await afPage.endDrag(startX, startY);
     }
 
     // No drop previews should remain
@@ -1052,23 +1036,8 @@ test.describe('Advanced Filtering - Group Drag and Drop', () => {
     page.on('pageerror', (err) => errors.push(err.message));
 
     const dragHandle = afPage.getGroupDragHandle(0);
-    await expect(dragHandle).toBeVisible();
-    await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    // Drag around and release
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 200, { steps: 20 });
-    await page.mouse.move(startX, startY - 50, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(500);
+    const { startX, startY } = await afPage.startDrag(dragHandle);
+    await afPage.endDrag(startX, startY);
 
     // Filter out the known dnd-kit HierarchyRequestError (from its internal sortable)
     const criticalErrors = errors.filter((e) => !e.includes('HierarchyRequestError'));

@@ -26,6 +26,7 @@
     isOverlay?: boolean;
     id?: string;
     parentId?: string;
+    depth?: number;
   }
 
   let {
@@ -41,11 +42,16 @@
     onOperatorChange = (g, op) => {
       g.setOperator(op);
     },
+    depth = 0,
     onAddGroup = () => {},
   }: Props = $props();
 
+  const groupBg = $derived(`background-color: rgba(var(--depth-overlay), ${depth * 0.06})`);
+  const groupBorder = $derived(`border-color: rgba(var(--depth-overlay), ${0.2 + depth * 0.08})`);
+
   const operatorValue = $derived(group.operator || Operator.AND);
   let not = $state(false);
+  const hasSubqueryChildren = $derived(group.children.some((child) => isFilterGroup(child)));
   const isDraggable = $derived(id !== 'root');
 
   // Derive the actual index from parent's children array (reactive to array changes)
@@ -111,38 +117,50 @@
   {/if}
 
   <div
-    class="card py-2 px-4 {id === 'root'
+    data-testid={id === 'root' ? 'filter-root' : 'filter-group'}
+    class="card py-1 px-2 {id === 'root'
       ? 'bg-surface-50 shadow-none border-none'
       : activeId === id && !isOverlay
         ? 'invisible'
-        : 'bg-white border-surface-400 border'}"
+        : 'border'}"
+    style={id !== 'root' && !(activeId === id && !isOverlay) ? `${groupBg}; ${groupBorder}` : ''}
   >
     <div class="flex flex-row items-center gap-2 mb-1 w-full">
       <div
         class="cursor-grab active:cursor-grabbing mr-2 {isDraggable ? 'block' : 'hidden'}"
+        title="Click and drag to reorder and group filters"
         {@attach handleRef}
       >
-        <i class="fa-solid fa-grip-vertical text-surface-500"></i>
+        <i class="fa-solid fa-grip-vertical text-xl mx-1"></i>
       </div>
       <div class="flex items-center justify-start gap-2 w-full">
-        <div>Between {id === 'root' ? 'groups' : 'items'}:</div>
+        <div>Between {hasSubqueryChildren ? 'subqueries' : 'filters'}:</div>
         <!-- {#key} forces re-mount because Skeleton's Segment doesn't update its indicator position on prop change -->
         {#key operatorValue}
-          <Segment
-            background="bg-white border-surface-400 border"
-            indicatorBg={operatorValue === Operator.OR ? 'bg-secondary-500' : 'bg-primary-500'}
-            name="operator"
-            value={operatorValue}
-            onValueChange={handleOperatorChange}
-          >
-            <Segment.Item value={Operator.AND}>{Operator.AND}</Segment.Item>
-            <Segment.Item value={Operator.OR}>{Operator.OR}</Segment.Item>
-          </Segment>
+          <div title="Choose logic for the query">
+            <Segment
+              background="bg-white border-surface-400 border"
+              indicatorBg={operatorValue === Operator.OR ? 'bg-secondary-500' : 'bg-primary-500'}
+              indicatorClasses="scale-[1.04]"
+              name="operator"
+              padding="0"
+              gap="0"
+              value={operatorValue}
+              onValueChange={handleOperatorChange}
+            >
+              <Segment.Item value={Operator.AND}>{Operator.AND}</Segment.Item>
+              <Segment.Item value={Operator.OR}>{Operator.OR}</Segment.Item>
+            </Segment>
+          </div>
         {/key}
         {#if id === 'root'}
-          <button class="btn preset-filled-primary-500 ml-auto" onclick={onAddGroup}
-            >Add Group</button
+          <button
+            class="btn border preset-tonal-primary hover:preset-filled-primary-500 text-lg disabled:opacity-75 ml-auto"
+            title="Add subquery to create a group of filters"
+            onclick={onAddGroup}
           >
+            Add Subquery
+          </button>
         {/if}
       </div>
       <!-- TODO: NOT operator support — hidden until backend supports negation -->
@@ -156,12 +174,12 @@
         <div id={`group-controls-${group.uuid}`} class="ml-auto">
           <button
             type="button"
-            title="Remove Group"
+            title="Remove Subquery"
             class="bg-initial text-black-500 hover:text-primary-600"
             onclick={() => onRemove(group)}
           >
             <i class="fa-solid fa-times-circle"></i>
-            <span class="sr-only">Remove Group</span>
+            <span class="sr-only">Remove Subquery</span>
           </button>
         </div>
       {/if}
@@ -177,6 +195,7 @@
             group={child}
             index={i}
             parentId={id}
+            depth={depth + 1}
             {onRemove}
             {onRemoveChild}
             {isOverlay}
@@ -220,8 +239,17 @@
       class="max-md:hidden absolute inset-0 bg-primary-500/10 border border-dashed border-primary-500 rounded-lg flex items-center justify-center mt-1"
     >
       <span class="text-primary-600 text-xs font-semibold uppercase tracking-wide">
-        Moving: Group
+        Moving: Subquery
       </span>
     </div>
   {/if}
 </div>
+
+<style>
+  :root {
+    --depth-overlay: 0, 0, 0;
+  }
+  :global(.dark) {
+    --depth-overlay: 255, 255, 255;
+  }
+</style>
