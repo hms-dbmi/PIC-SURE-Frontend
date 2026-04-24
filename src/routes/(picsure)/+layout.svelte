@@ -31,8 +31,7 @@
   let showSidebar = $derived(
     (page.url.pathname.includes('/explorer') || page.url.pathname.includes('/discover')) &&
       !page.url.pathname.includes('/export') &&
-      !page.url.pathname.includes('/distributions') &&
-      !page.url.pathname.includes('/advanced-filtering'),
+      !page.url.pathname.includes('/distributions'),
   );
 
   beforeNavigate(({ to, cancel }) => {

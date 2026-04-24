@@ -1,9 +1,11 @@
 <script lang="ts">
   import { goto, beforeNavigate } from '$app/navigation';
+  import { onMount, onDestroy } from 'svelte';
   import { branding } from '$lib/configuration';
   import Content from '$lib/components/Content.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
+  import { panelOpen } from '$lib/stores/SidePanel';
 
   interface Props {
     backUrl: string;
@@ -16,6 +18,14 @@
   let showUnsavedModal = $state(false);
   let bypassGuard = false;
 
+  onMount(() => {
+    $panelOpen = false;
+  });
+
+  onDestroy(() => {
+    $panelOpen = true;
+  });
+
   beforeNavigate(({ cancel }) => {
     if (!bypassGuard && advancedFilteringRef?.hasUnsavedChanges()) {
       cancel();
@@ -23,9 +33,8 @@
     }
   });
 
-  function applyAndReturn() {
+  function applyChanges() {
     advancedFilteringRef?.applyChanges();
-    goto(backUrl);
   }
 
   function handleCancel() {
@@ -41,8 +50,6 @@
   function handleApplyAndLeave() {
     showUnsavedModal = false;
     advancedFilteringRef?.applyChanges();
-    bypassGuard = true;
-    goto(backUrl);
   }
 
   function handleBeforeUnload(event: BeforeUnloadEvent) {
@@ -73,7 +80,7 @@
 </Modal>
 
 <Content {backUrl} {backTitle} title="Advanced Query Builder">
-  <p class="text-center mb-4">
+  <p class="text-center w-[70%] m-auto mb-4">
     The Advanced Query Builder allows you to take full control of your search criteria. Define
     whether your added filters should be combined with <strong>and</strong> or
     <strong>or</strong> logic and create nested subqueries to group related conditions.
@@ -85,7 +92,7 @@
     <button
       class="btn preset-filled-primary-500"
       title="Save changes to query"
-      onclick={applyAndReturn}
+      onclick={applyChanges}
     >
       Apply Changes
     </button>

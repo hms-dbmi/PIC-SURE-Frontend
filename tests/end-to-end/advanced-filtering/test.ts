@@ -178,11 +178,13 @@ test.describe('Advanced Query Builder - Global Combiner', () => {
     await afPage.expectBadgeText('AND');
   });
 
-  test('AF-COMBINER-005: Top-level AND/OR selection persists when revisiting Advanced Filtering', async () => {
+  test('AF-COMBINER-005: Top-level AND/OR selection persists after applying changes', async () => {
     await afPage.selectRootOperator('OR');
     await afPage.expectBadgeText('OR');
     await afPage.clickApplyChanges();
-    await afPage.expectModalClosed();
+    await afPage.expectApplySucceeded();
+    // Navigate away and come back to verify persistence
+    await afPage.closeModal();
     await afPage.openModal();
     await afPage.expectBadgeText('OR');
   });
@@ -364,7 +366,9 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     expect(newOrder.indexOf(filterA)).toBeGreaterThan(newOrder.indexOf(filterB));
 
     await afPage.clickApplyChanges();
-    await afPage.expectModalClosed();
+    await afPage.expectApplySucceeded();
+    // Navigate away and come back to verify persistence
+    await afPage.closeModal();
     await afPage.openModal();
 
     const persistedOrder = await filterNameEls.allTextContents();
@@ -703,11 +707,10 @@ test.describe('Advanced Query Builder - Apply', () => {
     await afPage.expectApplyButtonHasPrimaryStyle();
   });
 
-  test('AF-APPLY-003: Clicking Apply to Query closes Advanced Filtering and returns to main page', async () => {
+  test('AF-APPLY-003: Clicking Apply to Query applies changes and stays on page', async () => {
     await afPage.expectModalVisible();
     await afPage.clickApplyChanges();
-    await afPage.expectModalClosed();
-    await expect(afPage.advancedFilteringBtn).toBeVisible();
+    await afPage.expectApplySucceeded();
   });
 });
 
@@ -851,16 +854,16 @@ test.describe('Advanced Query Builder - Unsaved Changes', () => {
     await afPage.expectBadgeText('AND');
   });
 
-  test('AF-UNSAVED-004: Apply Changes (modal) applies changes and navigates', async ({ page }) => {
+  test('AF-UNSAVED-004: Apply Changes (modal) applies changes and stays on page', async ({
+    page,
+  }) => {
     await afPage.selectRootOperator('OR');
     await afPage.clickBackButton();
     await afPage.expectUnsavedModalVisible();
     await afPage.clickUnsavedApply();
-    await page.waitForURL('**/explorer');
-    await expect(afPage.advancedFilteringBtn).toBeVisible();
-
-    // Re-open and verify change was applied
-    await afPage.openModal();
+    // Should stay on the AF page with the modal closed
+    await afPage.expectUnsavedModalNotVisible();
+    expect(page.url()).toContain('/advanced-filtering');
     await afPage.expectBadgeText('OR');
   });
 
@@ -870,16 +873,14 @@ test.describe('Advanced Query Builder - Unsaved Changes', () => {
     await expect(afPage.advancedFilteringBtn).toBeVisible();
   });
 
-  test('AF-UNSAVED-006: Apply Changes button navigates without showing unsaved modal', async ({
+  test('AF-UNSAVED-006: Apply Changes button stays on page without showing unsaved modal', async ({
     page,
   }) => {
     await afPage.selectRootOperator('OR');
     await afPage.clickApplyChanges();
-    await page.waitForURL('**/explorer');
-    await expect(afPage.advancedFilteringBtn).toBeVisible();
-
-    // Re-open and verify change was applied
-    await afPage.openModal();
+    // Should stay on page, no unsaved modal
+    await afPage.expectUnsavedModalNotVisible();
+    expect(page.url()).toContain('/advanced-filtering');
     await afPage.expectBadgeText('OR');
   });
 });

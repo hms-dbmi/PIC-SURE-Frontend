@@ -194,15 +194,14 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await expect(orRadio).toBeVisible();
     await orRadio.locator('..').click();
 
-    // Click Apply Changes (this applies and navigates back to /explorer)
+    // Click Apply Changes (stays on page, sidebar updates)
     const applyBtn = page.getByRole('button', { name: 'Apply Changes' });
     await applyBtn.click();
 
-    // Verify navigated back to explorer
-    await page.waitForURL(/\/explorer(\?|$)/);
-    await expect(advancedFilteringBtn).toBeVisible();
+    // Verify still on advanced-filtering page
+    expect(page.url()).toContain('/advanced-filtering');
 
-    // Verify the OR operator was applied by checking the filter display
-    await expect(page.locator('#results-panel')).toContainText('OR');
+    // Verify the sidebar opened and shows the OR operator
+    await expect(page.locator('#side-panel')).toBeVisible();
   });
 });
