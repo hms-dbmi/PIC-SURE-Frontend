@@ -626,9 +626,8 @@
     // Before this change, apply navigated away (destroying localTree), so sharing
     // the same instance was fine. Now that apply stays on the page, we need isolation.
     const storeTree = new LogicTree<FilterInterface>((nodes, op) => createFilterGroup(nodes, op));
-    storeTree.root = LogicTree.deserialize<FilterInterface>(
-      localTree.serialized,
-      (nodes, op) => createFilterGroup(nodes, op),
+    storeTree.root = LogicTree.deserialize<FilterInterface>(localTree.serialized, (nodes, op) =>
+      createFilterGroup(nodes, op),
     ).root;
     filterTree.set(storeTree);
     savedSerialized = localTree.serialized;
