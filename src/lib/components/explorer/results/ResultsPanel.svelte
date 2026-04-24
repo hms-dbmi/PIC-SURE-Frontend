@@ -138,12 +138,12 @@
   {/if}
   <div id="export-filters" class="flex flex-col items-center mt-7 w-80">
     <hr />
-    <div class="flex content-center mt-7">
-      <h5 class="text-xl flex-auto mr-2 mb-2">Filtered Data Summary</h5>
+    <div class="flex content-center items-center mt-6">
+      <h5 class="text-xl flex-auto ml-9 mr-2 mb-2 pt-1">Filtered Data Summary</h5>
       {#if hasFilterOrExport}
         <button
           data-testid="clear-all-results-btn"
-          class="btn btn-xs preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 flex-none"
+          class="btn btn-xs preset-tonal-error border border-error-500 hover:preset-filled-error-500 flex-none"
           onclick={() => (modalOpen = true)}>Reset</button
         >
       {/if}

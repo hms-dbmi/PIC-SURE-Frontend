@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { FilterGroupInterface } from '$lib/models/Filter.svelte';
+  import { page } from '$app/state';
   import { filterTree, filters, genomicFilters } from '$lib/stores/Filter';
   import { exports } from '$lib/stores/Export';
 
@@ -13,6 +14,7 @@
 
   let { isDiscoverPage = false }: Props = $props();
 
+  let isAdvancedFilteringPage = $derived(page.url.pathname.includes('/advanced-filtering'));
   let advancedFilteringDisabled = $derived($filters.length <= 1);
 
   const aqbBtnClass = 'btn btn-sm ml-auto preset-tonal-primary border border-primary-500';
@@ -25,7 +27,9 @@
     {#if $filters.length + $genomicFilters.length > 0}
       <div class="flex items-center m-1">
         <header class="text-left">Filters</header>
-        {#if advancedFilteringDisabled}
+        {#if isAdvancedFilteringPage}
+          <!-- Hide the AQB affordance when we're already on the AF page -->
+        {:else if advancedFilteringDisabled}
           <Popover
             triggerTypes={['hover', 'focus']}
             triggerStyle="ml-auto"

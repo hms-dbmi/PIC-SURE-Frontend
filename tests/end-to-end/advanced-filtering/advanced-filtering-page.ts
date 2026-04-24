@@ -377,6 +377,13 @@ export class AdvancedFilteringPage {
     await expect(this.advancedFilteringBtn).toBeVisible();
   }
 
+  async expectApplySucceeded() {
+    // User should still be on the advanced-filtering page
+    expect(this.page.url()).toContain('/advanced-filtering');
+    // The sidebar should have opened (panelOpen auto-opens on filter change)
+    await expect(this.page.locator('#side-panel')).toBeVisible();
+  }
+
   async expectAddGroupButtonVisible() {
     await expect(this.addGroupButton).toBeVisible();
   }
