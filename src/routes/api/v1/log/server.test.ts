@@ -50,7 +50,7 @@ describe('+server POST /api/log', () => {
     vi.restoreAllMocks();
     mockEnv = {
       RESOURCE_LOG: TEST_RESOURCE_UUID,
-      AUDIT_API_KEY: 'test-api-key-123',
+      LOGGING_API_KEY: 'test-api-key-123',
     };
   });
 
@@ -140,7 +140,7 @@ describe('+server POST /api/log', () => {
     );
   });
 
-  it('does not include X-API-Key header when AUDIT_API_KEY is not set', async () => {
+  it('does not include X-API-Key header when LOGGING_API_KEY is not set', async () => {
     mockEnv = { RESOURCE_LOG: TEST_RESOURCE_UUID };
     const fetchSpy = vi
       .spyOn(globalThis, 'fetch')
@@ -169,7 +169,7 @@ describe('+server POST /api/log - origin fallback', () => {
     vi.restoreAllMocks();
     mockEnv = {
       RESOURCE_LOG: TEST_RESOURCE_UUID,
-      AUDIT_API_KEY: 'test-api-key-123',
+      LOGGING_API_KEY: 'test-api-key-123',
     };
   });
 

@@ -6,7 +6,7 @@ import type { LogEvent } from '$lib/models/Log';
 const ACCEPTED = 202;
 
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
-  if (!env.AUDIT_API_KEY) {
+  if (!env.LOGGING_API_KEY) {
     console.error('[log] Logging API Key not set!');
   }
 
@@ -34,8 +34,8 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     headers['Authorization'] = authorization;
   }
 
-  if (env.AUDIT_API_KEY) {
-    headers['X-API-Key'] = env.AUDIT_API_KEY;
+  if (env.LOGGING_API_KEY) {
+    headers['X-API-Key'] = env.LOGGING_API_KEY;
   }
 
   try {
