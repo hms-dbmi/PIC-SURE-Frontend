@@ -27,7 +27,9 @@
     {#if $filters.length + $genomicFilters.length > 0}
       <div class="flex items-center m-1">
         <header class="text-left">Filters</header>
-        {#if isAdvancedFilteringPage}{:else if advancedFilteringDisabled}
+        {#if isAdvancedFilteringPage}
+          <!-- Hide the AQB affordance when we're already on the AF page -->
+        {:else if advancedFilteringDisabled}
           <Popover
             triggerTypes={['hover', 'focus']}
             triggerStyle="ml-auto"

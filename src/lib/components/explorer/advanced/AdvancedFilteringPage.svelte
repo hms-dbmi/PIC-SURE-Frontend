@@ -47,7 +47,7 @@
     goto(backUrl);
   }
 
-  function handleApplyAndLeave() {
+  function handleModalApply() {
     showUnsavedModal = false;
     advancedFilteringRef?.applyChanges();
   }
@@ -72,7 +72,7 @@
     <button
       class="btn preset-filled-primary-500"
       title="Save changes to query"
-      onclick={handleApplyAndLeave}
+      onclick={handleModalApply}
     >
       Apply Changes
     </button>

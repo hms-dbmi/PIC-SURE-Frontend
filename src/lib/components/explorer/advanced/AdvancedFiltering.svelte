@@ -46,25 +46,15 @@
   // Track if actual drag movement occurred (not just a click)
   let hasDragMovement = $state(false);
 
-  // Initialize a local reactive tree.
-  // We clone the global tree's structure initially.
-  // Note: Deep cloning might be needed if children are objects that shouldn't share references,
-  // but for now we assume Tree.deserialize or similar logic is best if we want full isolation.
-  // However, since Tree is now a class with $state, we should probably construct a new one.
-  // For this fix, let's create a new Tree instance and initialize it with the current global root.
-  // Important: If we want true isolation, we should clone the data.
-
-  const localTree = new LogicTree<FilterInterface>((nodes, op) => createFilterGroup(nodes, op));
-  // We need to clone the structure to avoid modifying the global store directly by reference.
-  // Using serialization/deserialization is a safe way to clone the tree structure.
-  try {
-    localTree.root = LogicTree.deserialize<FilterInterface>($filterTree.serialized, (nodes, op) =>
-      createFilterGroup(nodes, op),
-    ).root;
-  } catch (e) {
-    console.error('Failed to deserialize filter tree:', e);
-    toaster.error({ description: 'Failed to load saved filter arrangement. Starting fresh.' });
-  }
+  const localTree = (() => {
+    try {
+      return $filterTree.clone();
+    } catch (e) {
+      console.error('Failed to clone filter tree:', e);
+      toaster.error({ description: 'Failed to load saved filter arrangement. Starting fresh.' });
+      return new LogicTree<FilterInterface>((nodes, op) => createFilterGroup(nodes, op));
+    }
+  })();
 
   let savedSerialized = $state($filterTree.serialized);
 
@@ -622,14 +612,7 @@
 
   export function applyChanges() {
     localTree.pruneTree();
-    // Set a clone to the store so localTree and filterTree remain independent.
-    // Before this change, apply navigated away (destroying localTree), so sharing
-    // the same instance was fine. Now that apply stays on the page, we need isolation.
-    const storeTree = new LogicTree<FilterInterface>((nodes, op) => createFilterGroup(nodes, op));
-    storeTree.root = LogicTree.deserialize<FilterInterface>(localTree.serialized, (nodes, op) =>
-      createFilterGroup(nodes, op),
-    ).root;
-    filterTree.set(storeTree);
+    filterTree.set(localTree.clone());
     savedSerialized = localTree.serialized;
   }
 

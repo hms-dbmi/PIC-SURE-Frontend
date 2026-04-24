@@ -284,6 +284,10 @@ export class LogicTree<T extends LogicNode<T>> {
     return JSON.stringify(toObj(this.root));
   }
 
+  clone(): LogicTree<T> {
+    return LogicTree.deserialize<T>(this.serialized, this.createGroup);
+  }
+
   static deserialize<T extends LogicNode<T>>(
     serialized: string,
     createGroup: (nodes: T[], operator: OperatorType) => T & LogicGroup<T>,
