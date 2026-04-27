@@ -1,7 +1,7 @@
 import { error, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
 import { browser } from '$app/environment';
-import { log, createLog } from '$lib/logger';
+import { log, createLog, getSessionId } from '$lib/logger';
 
 const BEARER = 'Bearer ';
 
@@ -44,6 +44,10 @@ async function send({
     }
   } else if (browser) {
     opts.headers['request-source'] = 'Open';
+  }
+
+  if (browser) {
+    opts.headers['X-Session-Id'] = getSessionId();
   }
 
   const res = await fetch(`${window.location.origin}/${path}`, opts);

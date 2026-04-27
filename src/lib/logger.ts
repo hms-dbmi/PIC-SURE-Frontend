@@ -15,7 +15,7 @@ export function registerAssociatedStudies(store: import('svelte/store').Readable
 
 const SESSION_ID_KEY = 'log_session_id';
 
-function getSessionId(): string {
+export function getSessionId(): string {
   let id = sessionStorage.getItem(SESSION_ID_KEY);
   if (!id) {
     id = uuidv4();
