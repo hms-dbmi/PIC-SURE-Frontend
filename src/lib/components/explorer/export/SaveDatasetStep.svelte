@@ -18,6 +18,7 @@
     getQueryRequest,
   } from '$lib/ExportStepperManager.svelte';
   import { log, createLog } from '$lib/logger';
+  import { features } from '$lib/configuration';
 
   const PROMISE_WAIT_INTERVAL = 7;
   let processingMessage: string = $state('');
@@ -58,6 +59,7 @@
         // Make a copy so we don't add exports to selected for the loaded query
         const request = structuredClone($state.snapshot(getQueryRequest()));
         request.query.select = [
+          ...(features.explorer.exportSystemFields as string[]),
           ...request.query.select,
           ...$exports.map(({ conceptPath }) => conceptPath),
         ];

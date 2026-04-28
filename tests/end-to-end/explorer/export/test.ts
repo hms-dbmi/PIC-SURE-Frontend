@@ -29,16 +29,6 @@ const standardIdentifiers = [
     description: 'Patient identifier.',
     type: 'Categorical',
   },
-  {
-    name: 'TOPMed Study Accession with Subject ID',
-    description: 'TOPMed study accession number and subject identifier.',
-    type: 'Categorical',
-  },
-  {
-    name: 'Parent Study Accession with Subject ID',
-    description: 'Parent study accession number and subject identifier.',
-    type: 'Categorical',
-  },
 ];
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -147,25 +137,38 @@ test.describe('Export Page', () => {
     const tableBody = page.locator('tbody');
     await expect(tableBody).toBeVisible();
 
-    // Verify first row content (filter) using detailResponseCat
-    await expect(page.locator('#row-0-col-0')).toHaveText(detailResponseCat.display);
-    await expect(page.locator('#row-0-col-1')).toHaveText(detailResponseCat.description);
-    await expect(page.locator('#row-0-col-2')).toHaveText(detailResponseCat.type);
-
-    // Verify second row content (export) using detailResponseCatSameDataset
-    await expect(page.locator('#row-1-col-0')).toHaveText(detailResponseCatSameDataset.display);
-    await expect(page.locator('#row-1-col-1')).toHaveText(detailResponseCatSameDataset.description);
-    await expect(page.locator('#row-1-col-2')).toHaveText(detailResponseCatSameDataset.type);
-
-    // Verify standard identifiers
+    // Verify standard identifiers come first (Patient ID hardcoded, then system fields from env)
     for (let i = 0; i < standardIdentifiers.length; i++) {
-      const rowIndex = i + 2; // Standard identifiers start at row 2
-      await expect(page.locator(`#row-${rowIndex}-col-0`)).toHaveText(standardIdentifiers[i].name);
-      await expect(page.locator(`#row-${rowIndex}-col-1`)).toHaveText(
-        standardIdentifiers[i].description,
-      );
-      await expect(page.locator(`#row-${rowIndex}-col-2`)).toHaveText(standardIdentifiers[i].type);
+      await expect(page.locator(`#row-${i}-col-0`)).toHaveText(standardIdentifiers[i].name);
+      await expect(page.locator(`#row-${i}-col-1`)).toHaveText(standardIdentifiers[i].description);
+      await expect(page.locator(`#row-${i}-col-2`)).toHaveText(standardIdentifiers[i].type);
     }
+
+    // System field from VITE_EXPORT_SYSTEM_FIELDS (_consents)
+    const systemFieldOffset = standardIdentifiers.length;
+    await expect(page.locator(`#row-${systemFieldOffset}-col-0`)).toHaveText('_consents');
+
+    // Filter row
+    const filterRowIndex = systemFieldOffset + 1;
+    await expect(page.locator(`#row-${filterRowIndex}-col-0`)).toHaveText(
+      detailResponseCat.display,
+    );
+    await expect(page.locator(`#row-${filterRowIndex}-col-1`)).toHaveText(
+      detailResponseCat.description,
+    );
+    await expect(page.locator(`#row-${filterRowIndex}-col-2`)).toHaveText(detailResponseCat.type);
+
+    // Export row
+    const exportRowIndex = filterRowIndex + 1;
+    await expect(page.locator(`#row-${exportRowIndex}-col-0`)).toHaveText(
+      detailResponseCatSameDataset.display,
+    );
+    await expect(page.locator(`#row-${exportRowIndex}-col-1`)).toHaveText(
+      detailResponseCatSameDataset.description,
+    );
+    await expect(page.locator(`#row-${exportRowIndex}-col-2`)).toHaveText(
+      detailResponseCatSameDataset.type,
+    );
   });
 
   test('All steps render as expected', async ({ page }) => {
@@ -269,6 +272,51 @@ test.describe('Export Page', () => {
     });
 
     await nextButton.click();
+  });
+
+  test('System fields from config appear on export page', async ({ page }) => {
+    await setupExportPageAndAddFilterAndExport(page);
+    await expect(page).toHaveURL('/explorer/export');
+
+    const tableBody = page.locator('tbody');
+    await expect(tableBody).toBeVisible();
+
+    // Patient ID is always shown as a hardcoded display row
+    await expect(tableBody.getByText('Patient ID', { exact: true })).toBeVisible();
+    // System fields configured via VITE_EXPORT_SYSTEM_FIELDS in .env.test (_consents)
+    await expect(tableBody.getByText('_consents', { exact: true })).toBeVisible();
+  });
+
+  test('System fields are included in query select on submit', async ({ page }) => {
+    await setupExportPageAndAddFilterAndExport(page);
+    await expect(page).toHaveURL('/explorer/export');
+    const nextButton = page.getByTestId('next-btn');
+
+    // Step through to save-dataset
+    await nextButton.click(); // Review Cohort Details
+    await nextButton.click(); // Tree Step
+
+    // Select CSV export type
+    await page.getByTestId('csv-export-option').click();
+    await expect(nextButton).not.toBeDisabled();
+
+    // Intercept the query request to verify system fields are included
+    let capturedQuery: { query: { select: string[] } } | null = null;
+    await page.route(queryPathV3, async (route: Route) => {
+      const request = route.request();
+      capturedQuery = request.postDataJSON();
+      await route.fulfill({ json: newDatasetResponse });
+    });
+
+    await nextButton.click(); // Submit query
+
+    // Wait for the dataset ID to appear (indicating query was submitted)
+    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+
+    // Verify the captured query contains the system fields but NOT patient_id
+    expect(capturedQuery).not.toBeNull();
+    expect(capturedQuery!.query.select).not.toContain('\\patient_id\\');
+    expect(capturedQuery!.query.select).toContain('\\_consents\\');
   });
 
   test('Sample IDs checkbox adds genomic concepts to exports and query', async ({ page }) => {
