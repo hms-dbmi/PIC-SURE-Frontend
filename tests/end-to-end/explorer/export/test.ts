@@ -278,9 +278,9 @@ test.describe('Export Page', () => {
     const tableBody = page.locator('tbody');
     await expect(tableBody).toBeVisible();
 
-    // System fields configured via VITE_EXPORT_SYSTEM_FIELDS in .env.test (patient_id,_consents)
-    // are prepended before user export rows but after filter rows
-    await expect(tableBody.getByText('patient_id', { exact: true })).toBeVisible();
+    // Patient ID is always shown as a hardcoded display row
+    await expect(tableBody.getByText('Patient ID', { exact: true })).toBeVisible();
+    // System fields configured via VITE_EXPORT_SYSTEM_FIELDS in .env.test (_consents)
     await expect(tableBody.getByText('_consents', { exact: true })).toBeVisible();
   });
 
@@ -310,9 +310,9 @@ test.describe('Export Page', () => {
     // Wait for the dataset ID to appear (indicating query was submitted)
     await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
 
-    // Verify the captured query contains the system fields
+    // Verify the captured query contains the system fields but NOT patient_id
     expect(capturedQuery).not.toBeNull();
-    expect(capturedQuery!.query.select).toContain('\\patient_id\\');
+    expect(capturedQuery!.query.select).not.toContain('\\patient_id\\');
     expect(capturedQuery!.query.select).toContain('\\_consents\\');
   });
 

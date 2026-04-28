@@ -36,7 +36,13 @@
     variableId: conceptPath,
     name: conceptPath.replace(/^\\/, '').replace(/\\$/, ''),
   }));
-  exportRows = [...systemFieldRows, ...exportRows];
+  const patientIdRow: ExportRowInterface = {
+    selected: true,
+    variableId: '\\_Patient ID\\',
+    name: 'Patient ID',
+    description: 'Patient identifier.',
+    type: 'Categorical',
+  };
   stepperState.set({ ...$stepperState, current: 0, total: 0 });
 </script>
 
@@ -62,7 +68,7 @@
     </div>
   {:else if $exports.length > 0 || $allFilters.length > 0}
     <section class="flex justify-center items-center w-full h-full mt-8">
-      <ExportStepper rows={[...filterRows, ...exportRows]} />
+      <ExportStepper rows={[patientIdRow, ...systemFieldRows, ...filterRows, ...exportRows]} />
     </section>
   {:else}
     <div class="flex flex-col items-center justify-center m-8">

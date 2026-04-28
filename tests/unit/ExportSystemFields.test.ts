@@ -12,10 +12,9 @@ function parseExportSystemFields(envValue: string): string[] {
 describe('Export System Fields parsing', () => {
   it('parses comma-separated fields into concept paths with slash wrappers', () => {
     const result = parseExportSystemFields(
-      'patient_id,_consents,_Parent Study Accession with Subject ID,_Topmed Study Accession with Subject ID',
+      '_consents,_Parent Study Accession with Subject ID,_Topmed Study Accession with Subject ID',
     );
     expect(result).toEqual([
-      '\\patient_id\\',
       '\\_consents\\',
       '\\_Parent Study Accession with Subject ID\\',
       '\\_Topmed Study Accession with Subject ID\\',
