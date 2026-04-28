@@ -34,19 +34,14 @@ async function send({
     opts.headers = { ...opts.headers, ...headers };
   }
 
-  if (authenticate && browser) {
-    const token = localStorage.getItem('token');
+  if (browser) {
+    const token = authenticate ? localStorage.getItem('token') : null;
     if (token) {
       opts.headers['Authorization'] = `${BEARER}${token}`;
       opts.headers['request-source'] = 'Authorized';
     } else {
       opts.headers['request-source'] = 'Open';
     }
-  } else if (browser) {
-    opts.headers['request-source'] = 'Open';
-  }
-
-  if (browser) {
     opts.headers['X-Session-Id'] = getSessionId();
   }
 
