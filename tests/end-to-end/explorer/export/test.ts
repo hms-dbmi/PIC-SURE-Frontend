@@ -29,16 +29,6 @@ const standardIdentifiers = [
     description: 'Patient identifier.',
     type: 'Categorical',
   },
-  {
-    name: 'TOPMed Study Accession with Subject ID',
-    description: 'TOPMed study accession number and subject identifier.',
-    type: 'Categorical',
-  },
-  {
-    name: 'Parent Study Accession with Subject ID',
-    description: 'Parent study accession number and subject identifier.',
-    type: 'Categorical',
-  },
 ];
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -147,25 +137,30 @@ test.describe('Export Page', () => {
     const tableBody = page.locator('tbody');
     await expect(tableBody).toBeVisible();
 
-    // Verify first row content (filter) using detailResponseCat
-    await expect(page.locator('#row-0-col-0')).toHaveText(detailResponseCat.display);
-    await expect(page.locator('#row-0-col-1')).toHaveText(detailResponseCat.description);
-    await expect(page.locator('#row-0-col-2')).toHaveText(detailResponseCat.type);
-
-    // Verify second row content (export) using detailResponseCatSameDataset
-    await expect(page.locator('#row-1-col-0')).toHaveText(detailResponseCatSameDataset.display);
-    await expect(page.locator('#row-1-col-1')).toHaveText(detailResponseCatSameDataset.description);
-    await expect(page.locator('#row-1-col-2')).toHaveText(detailResponseCatSameDataset.type);
-
-    // Verify standard identifiers
+    // Verify standard identifiers come first (Patient ID hardcoded, then system fields from env)
     for (let i = 0; i < standardIdentifiers.length; i++) {
-      const rowIndex = i + 2; // Standard identifiers start at row 2
-      await expect(page.locator(`#row-${rowIndex}-col-0`)).toHaveText(standardIdentifiers[i].name);
-      await expect(page.locator(`#row-${rowIndex}-col-1`)).toHaveText(
+      await expect(page.locator(`#row-${i}-col-0`)).toHaveText(standardIdentifiers[i].name);
+      await expect(page.locator(`#row-${i}-col-1`)).toHaveText(
         standardIdentifiers[i].description,
       );
-      await expect(page.locator(`#row-${rowIndex}-col-2`)).toHaveText(standardIdentifiers[i].type);
+      await expect(page.locator(`#row-${i}-col-2`)).toHaveText(standardIdentifiers[i].type);
     }
+
+    // System field from VITE_EXPORT_SYSTEM_FIELDS (_consents)
+    const systemFieldOffset = standardIdentifiers.length;
+    await expect(page.locator(`#row-${systemFieldOffset}-col-0`)).toHaveText('_consents');
+
+    // Filter row
+    const filterRowIndex = systemFieldOffset + 1;
+    await expect(page.locator(`#row-${filterRowIndex}-col-0`)).toHaveText(detailResponseCat.display);
+    await expect(page.locator(`#row-${filterRowIndex}-col-1`)).toHaveText(detailResponseCat.description);
+    await expect(page.locator(`#row-${filterRowIndex}-col-2`)).toHaveText(detailResponseCat.type);
+
+    // Export row
+    const exportRowIndex = filterRowIndex + 1;
+    await expect(page.locator(`#row-${exportRowIndex}-col-0`)).toHaveText(detailResponseCatSameDataset.display);
+    await expect(page.locator(`#row-${exportRowIndex}-col-1`)).toHaveText(detailResponseCatSameDataset.description);
+    await expect(page.locator(`#row-${exportRowIndex}-col-2`)).toHaveText(detailResponseCatSameDataset.type);
   });
 
   test('All steps render as expected', async ({ page }) => {
