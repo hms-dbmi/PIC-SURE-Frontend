@@ -159,6 +159,53 @@ describe('FlatFilterTree Model', () => {
       // Then
       expect(print(tree)).toBe('(C)');
     });
+    it('remove group reparents children to parent', () => {
+      // Given
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
+      const A = createTestNode('A');
+      const B = createTestNode('B');
+      const C = createTestNode('C');
+      const OR = createTestGroup([B, C], Operator.OR);
+      tree.add(A, OR);
+
+      // When
+      expect(print(tree)).toBe('(A AND (B OR C))');
+      tree.remove(OR);
+
+      // Then — B and C should be reparented to root, not deleted
+      expect(print(tree)).toBe('(A AND B AND C)');
+    });
+    it('remove group preserves children position', () => {
+      // Given
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
+      const A = createTestNode('A');
+      const B = createTestNode('B');
+      const C = createTestNode('C');
+      const D = createTestNode('D');
+      const OR = createTestGroup([B, C], Operator.OR);
+      tree.add(A, OR, D);
+
+      // When
+      expect(print(tree)).toBe('(A AND (B OR C) AND D)');
+      tree.remove(OR);
+
+      // Then — B and C inserted where the group was
+      expect(print(tree)).toBe('(A AND B AND C AND D)');
+    });
+    it('remove empty group', () => {
+      // Given
+      const tree = new LogicTree<TestTreeNode>(createTestGroup);
+      const A = createTestNode('A');
+      const OR = createTestGroup([], Operator.OR);
+      tree.add(A, OR);
+
+      // When
+      expect(print(tree)).toBe('(A AND ())');
+      tree.remove(OR);
+
+      // Then
+      expect(print(tree)).toBe('(A)');
+    });
   });
   describe('update', () => {
     it('update root node', () => {

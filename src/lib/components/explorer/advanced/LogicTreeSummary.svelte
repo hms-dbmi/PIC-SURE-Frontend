@@ -1,6 +1,9 @@
 <script lang="ts">
   import { Accordion } from '@skeletonlabs/skeleton-svelte';
-  import { buildEquation, type EquationPart } from './logicTreeSummary';
+  import {
+    buildEquation,
+    type EquationPart,
+  } from '$lib/components/explorer/advanced/LogicTreeSummary';
   import type { FilterGroupInterface, FilterInterface } from '$lib/models/Filter.svelte';
 
   interface Props {

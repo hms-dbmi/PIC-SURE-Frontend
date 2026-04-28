@@ -5,7 +5,7 @@ import { createFilterGroup, type FilterInterface } from '$lib/models/Filter.svel
 import {
   buildEquation,
   type EquationPart,
-} from '$lib/components/explorer/advanced/logicTreeSummary';
+} from '$lib/components/explorer/advanced/LogicTreeSummary';
 
 function createFilter(name: string): FilterInterface {
   return {

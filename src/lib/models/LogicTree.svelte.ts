@@ -67,7 +67,14 @@ export class LogicTree<T extends LogicNode<T>> {
       }
 
       if (index !== -1) {
-        node.parent.children.splice(index, 1);
+        // Reparent children to the node's parent before removing
+        if (this.isGroup(node)) {
+          const children = [...node.children];
+          children.forEach((child) => (child.parent = node.parent));
+          node.parent.children.splice(index, 1, ...children);
+        } else {
+          node.parent.children.splice(index, 1);
+        }
       }
     });
     this.pruneTree();
@@ -275,6 +282,10 @@ export class LogicTree<T extends LogicNode<T>> {
       return objData;
     };
     return JSON.stringify(toObj(this.root));
+  }
+
+  clone(): LogicTree<T> {
+    return LogicTree.deserialize<T>(this.serialized, this.createGroup);
   }
 
   static deserialize<T extends LogicNode<T>>(
