@@ -16,8 +16,8 @@
   afterNavigate(({ from, to, type }) => {
     log(
       createLog('NAVIGATION', 'page.navigate', {
-        from: from?.url.pathname,
-        to: to?.url.pathname,
+        from: from?.url?.pathname,
+        to: to?.url?.pathname,
         type,
       }),
     );

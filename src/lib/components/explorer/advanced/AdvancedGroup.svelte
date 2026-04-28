@@ -155,7 +155,7 @@
         {/key}
         {#if id === 'root'}
           <button
-            class="btn border preset-tonal-primary hover:preset-filled-primary-500 text-lg disabled:opacity-75 ml-auto"
+            class="btn border preset-tonal-primary hover:preset-filled-primary-500 text-lg disabled:opacity-75 ml-auto mb-1"
             title="Add subquery to create a group of filters"
             onclick={onAddGroup}
           >
