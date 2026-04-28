@@ -647,9 +647,9 @@ test.describe('Any record of filter', () => {
     const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
     await addedFilter.click();
     await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
-    const variables = page.getByTestId('any-record-of-filter-modal').locator('div').all();
-    expect((await variables).length).toBe(mockDataWithChildren.children.length);
-    expect((await variables)[0]).toHaveText(mockDataWithChildren.children[0].conceptPath);
+    const variablesLocator = page.getByTestId('any-record-of-filter-modal').locator('div');
+    await expect(variablesLocator).toHaveCount(mockDataWithChildren.children.length);
+    await expect(variablesLocator.first()).toHaveText(mockDataWithChildren.children[0].conceptPath);
   });
   test('Clicking the close button closes the modal', async ({ page }) => {
     const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
@@ -764,8 +764,7 @@ test.describe('Query V3 OR features', () => {
     await addFilterButton2.click();
 
     // Then
-    const labels = await page.getByTestId('operator-label').all();
-    expect(labels.length).toBe(1);
+    await expect(page.getByTestId('operator-label')).toHaveCount(1);
     await expect(page.getByTestId('operator-label').first()).toHaveText('AND');
   });
 });

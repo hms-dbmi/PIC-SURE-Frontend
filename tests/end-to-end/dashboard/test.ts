@@ -22,9 +22,7 @@ test.describe('Dashboard page', () => {
       await page.goto('/dashboard');
 
       // Then
-      const buttons = await page.getByText('More Info').all();
-
-      expect(buttons.length).toBe(mockDashboard.rows.length);
+      await expect(page.getByText('More Info')).toHaveCount(mockDashboard.rows.length);
     });
     test('Dashboard renders disabled buttons when link is not available', async ({ page }) => {
       // Given
