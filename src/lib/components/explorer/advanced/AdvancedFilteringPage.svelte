@@ -83,7 +83,13 @@
   <p class="text-center w-[70%] m-auto mb-4">
     The Advanced Query Builder allows you to take full control of your search criteria. Define
     whether your added filters should be combined with <strong>and</strong> or
-    <strong>or</strong> logic and create nested subqueries to group related conditions.
+    <strong>or</strong> logic and create nested subqueries to group related conditions. Have
+    thoughts or feedback on Advanced Query Builder?
+    <a
+      class="anchor"
+      href="https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5/group/6/create/362"
+      >Let us know</a
+    >!
   </p>
   <div class="flex flex-col justify-center items-center w-[70%] m-auto">
     <AdvancedFiltering bind:this={advancedFilteringRef} />
