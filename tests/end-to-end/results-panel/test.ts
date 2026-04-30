@@ -313,7 +313,7 @@ test.describe('Results Panel', () => {
       await addFilterButton2.click();
 
       // Then
-      expect(page.getByTestId('distributions-btn')).not.toBeDisabled();
+      await expect(page.getByTestId('distributions-btn')).not.toBeDisabled();
     });
 
     test('sends request with QueryV3 structure', async ({ page }) => {
@@ -363,8 +363,7 @@ test.describe('Results Panel', () => {
       await addFilterButton.click();
 
       // Then
-      const labels = await page.getByTestId('operator-label').all();
-      expect(labels.length).toBe(0);
+      await expect(page.getByTestId('operator-label')).toHaveCount(0);
     });
     test('AND label appears between filters', async ({ page }) => {
       // Given
@@ -401,8 +400,7 @@ test.describe('Results Panel', () => {
 
       // Then
       await expect(page.locator('#results-panel')).toBeVisible();
-      const labels = await page.getByTestId('operator-label').all();
-      expect(labels.length).toBe(1);
+      await expect(page.getByTestId('operator-label')).toHaveCount(1);
       await expect(page.getByTestId('operator-label').first()).toHaveText('AND');
     });
   });

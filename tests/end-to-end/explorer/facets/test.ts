@@ -60,8 +60,7 @@ test.describe('Facet Side Bar', () => {
     await expect(facetSideBar).toBeVisible();
     const accordionDiv = facetSideBar.getByTestId('accordion');
     await expect(accordionDiv).toBeVisible();
-    const facetCategoryElement = await facetSideBar.getByTestId('accordion-item').all();
-    expect(facetCategoryElement).toHaveLength(facetsResponse.length);
+    await expect(facetSideBar.getByTestId('accordion-item')).toHaveCount(facetsResponse.length);
 
     // Then
     const checkboxes = page.getByTestId('accordion-item').nth(1).locator('label');
@@ -85,7 +84,6 @@ test.describe('Facet Side Bar', () => {
     const accordionDiv = facetSideBar.getByTestId('accordion');
     await expect(accordionDiv).toBeVisible();
     const facetCategoryElement = await facetSideBar.getByTestId('accordion-item').all();
-    expect(facetCategoryElement).toHaveLength(facetsResponse.length);
 
     // Then
     for (let i = 0; i < facetCategoryElement.length; i++) {
@@ -156,14 +154,13 @@ test.describe('Facet Categories', () => {
     for (let i = 0; i < facetsResponse.length; i++) {
       //When
       const facetList = page.getByTestId('accordion-item').nth(i);
-      const facetItems = await facetList.locator('label').all();
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
-        expect(facetItems).toHaveLength(MAX_FACETS_TO_SHOW);
+        await expect(facetList.locator('label')).toHaveCount(MAX_FACETS_TO_SHOW);
       } else {
         const facetsToExpect = facetsResponse[i].facets.filter((facet) => facet.count > 0);
-        expect(facetItems).toHaveLength(facetsToExpect.length);
+        await expect(facetList.locator('label')).toHaveCount(facetsToExpect.length);
       }
     }
   });
@@ -238,9 +235,10 @@ test.describe('Facet Categories', () => {
         const moreButton = facetList.getByTestId('show-more-facets');
         await expect(moreButton).toBeVisible();
         await moreButton.click();
-        const facetItems = await page.getByTestId('accordion-item').nth(i).locator('label').all();
         const facetsToExpect = facetsResponse[i].facets.filter((facet) => facet.count > 0);
-        expect(facetItems).toHaveLength(facetsToExpect.length);
+        await expect(page.getByTestId('accordion-item').nth(i).locator('label')).toHaveCount(
+          facetsToExpect.length,
+        );
       }
     }
   });
@@ -294,8 +292,9 @@ test.describe('Facet Categories', () => {
         await moreButton.click();
         await expect(moreButton).toHaveText('Show Less');
         await moreButton.click();
-        const facetItems = await page.getByTestId('accordion-item').nth(i).locator('label').all();
-        expect(facetItems).toHaveLength(MAX_FACETS_TO_SHOW);
+        await expect(page.getByTestId('accordion-item').nth(i).locator('label')).toHaveCount(
+          MAX_FACETS_TO_SHOW,
+        );
         await expect(moreButton).toHaveText('Show More');
       }
     }
@@ -419,10 +418,9 @@ test.describe('Facet Categories', () => {
         await searchInput.fill('NSRR CFS full name');
         await expect(searchInput).toHaveValue('NSRR CFS full name');
         const facetItems = await facetList.locator('label').all();
-        facetItems.forEach(async (facetItem) => {
-          const facetItemText = await facetItem.textContent();
-          expect(facetItemText).toContain('NSRR CFS');
-        });
+        for (const facetItem of facetItems) {
+          await expect(facetItem).toContainText('NSRR CFS');
+        }
       }
     }
   });
@@ -760,7 +758,6 @@ test.describe('Hidden Facets', () => {
     await emptyCategory.click();
 
     const emptyPanel = emptyCategory.locator('xpath=..').getByTestId('accordion-item');
-    const facetsInEmptyPanel = await emptyPanel.locator('label').all();
-    expect(facetsInEmptyPanel).toHaveLength(0);
+    await expect(emptyPanel.locator('label')).toHaveCount(0);
   });
 });

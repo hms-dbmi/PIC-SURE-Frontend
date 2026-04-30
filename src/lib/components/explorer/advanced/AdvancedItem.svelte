@@ -87,16 +87,21 @@
   {/if}
 
   <div
-    class="card flex flex-col gap-2 py-2 px-4 {activeId === filter.uuid && !isOverlay
+    data-testid="filter-item"
+    class="card flex flex-col gap-2 py-1 px-2 {activeId === filter.uuid && !isOverlay
       ? 'invisible'
       : ''} bg-white border-surface-400 border"
   >
     <div class="flex flex-row items-center justify-start gap-2">
-      <div class="cursor-grab active:cursor-grabbing m-0 flex items-center" {@attach handleRef}>
-        <i class="fa-solid fa-grip-vertical text-surface-500"></i>
+      <div
+        class="cursor-grab active:cursor-grabbing m-0 flex items-center"
+        title="Click and drag to reorder and group filters"
+        {@attach handleRef}
+      >
+        <i class="fa-solid fa-grip-vertical text-xl mx-1"></i>
       </div>
       <div class="flex flex-col self-end">
-        <div class="text-sm font-medium">{filter.variableName}</div>
+        <div data-testid="filter-name" class="text-sm font-medium">{filter.variableName}</div>
         {#if filter.searchResult?.studyAcronym}
           <div class="text-xs text-surface-500">Study: {filter.searchResult.studyAcronym}</div>
         {:else if filter.searchResult?.dataset}

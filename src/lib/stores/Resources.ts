@@ -4,6 +4,7 @@ import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import { features } from '$lib/configuration';
 import { toaster } from '$lib/toaster';
+import { useOpenAccess } from '$lib/AccessState';
 
 interface QueryResource {
   name: string;
@@ -54,7 +55,7 @@ export function getQueryResources(isOpenAccess: boolean = false): QueryResource[
   return features.federated
     ? _resources.queryable
     : [
-        isOpenAccess
+        useOpenAccess(isOpenAccess)
           ? { name: 'hpdsOpen', uuid: _resources.hpdsOpenV3 }
           : { name: 'hpds', uuid: _resources.hpdsAuth },
       ];

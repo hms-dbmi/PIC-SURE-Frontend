@@ -1,7 +1,7 @@
 import { error, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
 import { browser } from '$app/environment';
-import { log, createLog } from '$lib/logger';
+import { log, createLog, getSessionId } from '$lib/logger';
 
 const BEARER = 'Bearer ';
 
@@ -34,16 +34,15 @@ async function send({
     opts.headers = { ...opts.headers, ...headers };
   }
 
-  if (authenticate && browser) {
-    const token = localStorage.getItem('token');
+  if (browser) {
+    const token = authenticate ? localStorage.getItem('token') : null;
     if (token) {
       opts.headers['Authorization'] = `${BEARER}${token}`;
       opts.headers['request-source'] = 'Authorized';
     } else {
       opts.headers['request-source'] = 'Open';
     }
-  } else if (browser) {
-    opts.headers['request-source'] = 'Open';
+    opts.headers['X-Session-Id'] = getSessionId();
   }
 
   const res = await fetch(`${window.location.origin}/${path}`, opts);
