@@ -14,7 +14,7 @@ RUN sed -i 's/data-theme="[^"]*"/data-theme=\"'$THEME'\"/' ./src/app.html
 RUN pnpm build
 
 # Step 2: Serve the app with httpd
-FROM httpd:2.4.66-alpine3.23@sha256:8f26f33a7002658050e9ab2cd6b77502619dfc89d0a6ba2e9e4a202e0ef04596
+FROM httpd:2.4.67-alpine3.23@sha256:0136c2d4462f3b8ecc92bea70efdfef4d06523999ae8d7aa533969dea6db4576
 
 RUN apk add --no-cache \
   openssl \
