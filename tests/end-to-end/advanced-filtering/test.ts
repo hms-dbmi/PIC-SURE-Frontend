@@ -28,6 +28,35 @@ test.describe('Advanced Query Builder - Core Features', () => {
       await afPage.expectStudyInfoVisible(study);
     }
   });
+
+  test('AF-CORE-004: Filter metadata displays study and dataset on one line', async ({
+    page,
+  }) => {
+    const firstFilterCard = afPage.getFilterCard(afPage.filterNames[0]);
+    await expect(firstFilterCard).toContainText('Study: TDS, Dataset: test_data_set');
+
+    await afPage.closeModal();
+    await page.evaluate(() => {
+      const raw = sessionStorage.getItem('filterTree');
+      if (!raw) return;
+
+      const tree = JSON.parse(raw);
+      const firstFilter = tree.children?.[0];
+      if (!firstFilter?.searchResult) return;
+
+      firstFilter.searchResult.studyAcronym = null;
+      firstFilter.searchResult.dataset = 'pht12345';
+      sessionStorage.setItem('filterTree', JSON.stringify(tree));
+    });
+
+    await page.goto('/explorer?search=somedata');
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await afPage.openModal();
+
+    const updatedFirstFilterCard = afPage.getFilterCard(afPage.filterNames[0]);
+    await expect(updatedFirstFilterCard).toContainText('Dataset: pht12345');
+    await expect(updatedFirstFilterCard).not.toContainText('Study:');
+  });
 });
 
 test.describe('Advanced Query Builder - Query Summary', () => {
