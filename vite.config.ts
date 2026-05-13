@@ -30,9 +30,6 @@ export default defineConfig(async () => {
     },
     plugins,
     build: {
-      rollupOptions: {
-        maxParallelFileOps: 10,
-      },
       sourcemap: false,
     },
   };

@@ -43,13 +43,15 @@
 } */
 
 /* default custom color variables in case they aren't set in the theme */
---input-bg-color: var(--body-background-color);
-
-@layer utilities {
+:where(:root) {
+  --input-bg-color: var(--body-background-color);
 }
 
 :root {
   --color-gic-blue: #338fff;
+}
+
+@layer utilities {
 }
 
 html,

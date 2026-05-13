@@ -1,6 +1,6 @@
 import { BDCPrivileges, PicsurePrivileges } from './models/Privilege';
 import type { Route } from './models/Route';
-import * as configJson from './assets/configuration.json' assert { type: 'json' };
+import * as configJson from './assets/configuration.json' with { type: 'json' };
 import { ExportType } from './models/Variant';
 import type {
   ExplorePageConfig,
