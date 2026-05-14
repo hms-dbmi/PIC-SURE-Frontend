@@ -4,7 +4,7 @@ RUN apk add --no-cache pnpm=10.24.0-r0
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install
+RUN CI=true pnpm install
 COPY . .
 
 # Step 2: Serve the app with httpd
