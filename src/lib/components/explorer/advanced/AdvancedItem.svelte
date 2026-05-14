@@ -40,6 +40,16 @@
     actualIndex > 0 && filter.parent ? filter.parent.operator : undefined,
   );
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
+  const searchResultMetadata = $derived(
+    [
+      filter.searchResult?.studyAcronym && `Study: ${filter.searchResult.studyAcronym}`,
+      filter.searchResult?.dataset &&
+        filter.searchResult.dataset !== filter.searchResult?.studyAcronym &&
+        `Dataset: ${filter.searchResult.dataset}`,
+    ]
+      .filter(Boolean)
+      .join(', '),
+  );
 
   // Disable in overlay mode to prevent duplicate sortable IDs
   const { ref, handleRef } = useSortable({
@@ -102,10 +112,8 @@
       </div>
       <div class="flex flex-col self-end">
         <div data-testid="filter-name" class="text-sm font-medium">{filter.variableName}</div>
-        {#if filter.searchResult?.studyAcronym}
-          <div class="text-xs text-surface-500">Study: {filter.searchResult.studyAcronym}</div>
-        {:else if filter.searchResult?.dataset}
-          <div class="text-xs text-surface-500">Study: {filter.searchResult.dataset}</div>
+        {#if searchResultMetadata}
+          <div class="text-xs text-surface-500">{searchResultMetadata}</div>
         {/if}
       </div>
       <div class="ml-auto">
