@@ -29,9 +29,7 @@ test.describe('Advanced Query Builder - Core Features', () => {
     }
   });
 
-  test('AF-CORE-004: Filter metadata displays study and dataset on one line', async ({
-    page,
-  }) => {
+  test('AF-CORE-004: Filter metadata displays study and dataset on one line', async ({ page }) => {
     const firstFilterCard = afPage.getFilterCard(afPage.filterNames[0]);
     await expect(firstFilterCard).toContainText('Study: TDS, Dataset: test_data_set');
 
