@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
 import { test, mockHTMLBodySuccess } from '../custom-context';
-import * as config from '../../../src/lib/assets/configuration.json' assert { type: 'json' };
+import * as config from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 import type { Branding } from '$lib/configuration';
 //TypeScript is confused by the JSON import so I am fxing it here
 /* eslint-disable @typescript-eslint/no-explicit-any */

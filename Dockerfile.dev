@@ -1,46 +1,47 @@
 # Step 1: Build the app with node
 FROM node:24.14.1-alpine3.23@sha256:01743339035a5c3c11a373cd7c83aeab6ed1457b55da6a69e014a95ac4e4700b AS builder
-RUN npm install -g pnpm@10.24.0
+RUN apk add --no-cache pnpm=10.24.0-r0
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install
+RUN CI=true pnpm install
 COPY . .
 
 # Step 2: Serve the app with httpd
-FROM httpd:2.4.66-alpine3.23@sha256:8f26f33a7002658050e9ab2cd6b77502619dfc89d0a6ba2e9e4a202e0ef04596
+FROM httpd:2.4.67-alpine3.23@sha256:0136c2d4462f3b8ecc92bea70efdfef4d06523999ae8d7aa533969dea6db4576
 
 RUN apk add --no-cache \
-  openssl \
-  sed \
-  nodejs \
-  npm \
-  pnpm \
-  supervisor \
   libexpat=2.7.5-r0 \
+  nodejs=24.14.1-r0 \
+  npm=11.11.0-r0 \
+  openssl=3.5.6-r0 \
+  pnpm=10.24.0-r0 \
+  sed=4.9-r2 \
+  supervisor=4.3.0-r0 \
   zlib=1.3.2-r0
 
 #TODO: volume mount the certs
-RUN mkdir -p ${HTTPD_PREFIX}/cert
+RUN mkdir -p ${HTTPD_PREFIX}/cert /usr/local/apache2/logs/ssl_mutex
 COPY cert ${HTTPD_PREFIX}/cert
 COPY httpd-vhosts.conf ${HTTPD_PREFIX}/conf/extra/httpd-vhosts.conf
 
-RUN sed -i '/^#Include conf.extra.httpd-vhosts.conf/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf
-
-RUN sed -i '/^#LoadModule proxy_module/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf
-RUN sed -i  '/^#LoadModule proxy_http_module/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf
-RUN sed -i '/^#LoadModule proxy_connect_module/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf
-
-RUN sed -i '/^#LoadModule ssl_module modules\/mod_ssl.so/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf
-RUN sed -i '/^#LoadModule rewrite_module modules\/mod_rewrite.so/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf
-RUN sed -i '/^#LoadModule socache_shmcb_module modules\/mod_socache_shmcb.so/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf
-RUN mkdir -p /usr/local/apache2/logs/ssl_mutex
+RUN sed -i '/^#Include conf.extra.httpd-vhosts.conf/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf \
+  && sed -i '/^#LoadModule proxy_module/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf \
+  && sed -i '/^#LoadModule proxy_http_module/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf \
+  && sed -i '/^#LoadModule proxy_connect_module/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf \
+  && sed -i '/^#LoadModule ssl_module modules\/mod_ssl.so/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf \
+  && sed -i '/^#LoadModule rewrite_module modules\/mod_rewrite.so/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf \
+  && sed -i '/^#LoadModule socache_shmcb_module modules\/mod_socache_shmcb.so/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf
 
 WORKDIR /app
 RUN mkdir -p logs
 COPY --from=builder /app .
 COPY supervisord-dev.conf /etc/supervisor/conf.d/supervisord.conf
+RUN chown -R daemon:daemon /app ${HTTPD_PREFIX}/logs ${HTTPD_PREFIX}/cert
 ENV NODE_ENV=development
+ENV HOME=/tmp
+ENV npm_config_cache=/tmp/npm-cache
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget -qO /dev/null --no-check-certificate https://0.0.0.0:443/picsure/health || exit 1
+USER daemon
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
