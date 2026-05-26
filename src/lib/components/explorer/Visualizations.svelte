@@ -8,28 +8,29 @@
     createContinuousPlot,
     createCategoryPlot,
   } from '$lib/utilities/Plotly';
-  import { getQueryRequestV2 } from '$lib/utilities/QueryBuilder';
+  import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
   import { toaster } from '$lib/toaster';
   import Loading from '$lib/components/Loading.svelte';
   import { Picsure } from '$lib/paths';
   import { resources } from '$lib/stores/Resources';
   import { isOpenAccess } from '$lib/AccessState';
+  import LogicTreeSummary from '$lib/components/explorer/advanced/LogicTreeSummary.svelte';
+  import { filterTree, genomicFilters } from '$lib/stores/Filter';
+  import { type FilterGroupInterface } from '$lib/models/Filter.svelte';
 
   let plotValues: PlotValues[] = $state([]);
   let newPlot: PlotlyNewPlot = $state() as PlotlyNewPlot;
   let loading = $state(true);
 
   async function loadPlotData() {
-    const query = getQueryRequestV2(!isOpenAccess(), $resources.visualization);
-    const token = localStorage.getItem('token');
+    const query = getQueryRequestV3(!isOpenAccess(), $resources.visualization);
 
     await api
       .post(
-        Picsure.QueryV3Sync,
+        Picsure.Visualization.Distributions,
         {
           query: query.query,
-          resourceUUID: $resources.visualization,
-          resourceCredentials: token ? { Authorization: 'Bearer ' + token } : {},
+          hpdsResourceUUID: isOpenAccess() ? $resources.hpdsOpenV3 : $resources.hpdsAuth,
         },
         undefined,
         !isOpenAccess(),
@@ -63,6 +64,11 @@
 <p class="mb-8 text-center">
   All visualizations display the distributions of each variable filter for the specified cohort.
 </p>
+<LogicTreeSummary
+  root={$filterTree.root as FilterGroupInterface}
+  genomicFilters={$genomicFilters}
+  widthClass="w-3/4"
+/>
 <div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
   {#if loading}
     <Loading ring size="medium" />

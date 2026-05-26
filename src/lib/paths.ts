@@ -2,6 +2,7 @@ const PREFIX = 'picsure';
 const DICT = `${PREFIX}/proxy/dictionary-api`;
 const QUERY = `${PREFIX}/query`;
 const UPLOADER = `${PREFIX}/proxy/uploader`;
+const VIZ = `${PREFIX}/proxy/visualization`;
 const API = '/api/v1';
 
 export const Picsure = {
@@ -28,6 +29,9 @@ export const Picsure = {
     Upload: `${UPLOADER}/upload`,
     Sites: `${UPLOADER}/sites`,
     Status: `${UPLOADER}/status`,
+  },
+  Visualization: {
+    Distributions: `${VIZ}/distributions`,
   },
 };
 

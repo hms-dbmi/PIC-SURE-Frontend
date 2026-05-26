@@ -9,15 +9,16 @@
   interface Props {
     root: FilterGroupInterface;
     genomicFilters?: FilterInterface[];
+    widthClass?: string;
   }
 
-  let { root, genomicFilters = [] }: Props = $props();
+  let { root, genomicFilters = [], widthClass = 'w-full' }: Props = $props();
 
   let parts: EquationPart[] = $derived(buildEquation(root, genomicFilters));
   let accordionValue: string[] = $state(['logic-tree']);
 </script>
 
-<div class="mb-4 w-full" data-testid="logic-tree-summary">
+<div class="mb-4 mx-auto {widthClass}" data-testid="logic-tree-summary">
   <Accordion value={accordionValue} onValueChange={(e) => (accordionValue = e.value)} collapsible>
     {#snippet iconOpen()}<i class="fa-solid fa-angle-up"></i>{/snippet}
     {#snippet iconClosed()}<i class="fa-solid fa-angle-down"></i>{/snippet}
