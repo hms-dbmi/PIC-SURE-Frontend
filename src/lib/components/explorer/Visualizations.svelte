@@ -5,6 +5,8 @@
   import {
     type PlotValues,
     type PlotlyNewPlot,
+    type CategoricalPlotData,
+    type ContinuousPlotData,
     createContinuousPlot,
     createCategoryPlot,
   } from '$lib/utilities/Plotly';
@@ -15,14 +17,40 @@
   import { resources } from '$lib/stores/Resources';
   import { isOpenAccess } from '$lib/AccessState';
   import LogicTreeSummary from '$lib/components/explorer/advanced/LogicTreeSummary.svelte';
-  import { filterTree, genomicFilters } from '$lib/stores/Filter';
-  import { type FilterGroupInterface } from '$lib/models/Filter.svelte';
+  import { allFilters, filterTree, genomicFilters } from '$lib/stores/Filter';
+  import { type Filter, type FilterGroupInterface } from '$lib/models/Filter.svelte';
+  import { get } from 'svelte/store';
 
   let plotValues: PlotValues[] = $state([]);
   let newPlot: PlotlyNewPlot = $state() as PlotlyNewPlot;
   let loading = $state(true);
 
+  function getSubtitleByConceptPath(filters: Filter[]) {
+    return new Map(
+      filters.map((filter) => [
+        filter.id,
+        [
+          filter.searchResult?.studyAcronym && `Study: ${filter.searchResult.studyAcronym}`,
+          filter.searchResult?.dataset && `Dataset: ${filter.searchResult.dataset}`,
+        ]
+          .filter(Boolean)
+          .join(' '),
+      ]),
+    );
+  }
+
   async function loadPlotData() {
+    const subtitleByConceptPath = getSubtitleByConceptPath(get(allFilters));
+
+    const getSubtitle = (conceptPath?: string) =>
+      conceptPath ? subtitleByConceptPath.get(conceptPath) : undefined;
+    const withSubtitle = <T extends { conceptPath?: string }>(
+      data: T,
+    ): T & { subtitle?: string } => ({
+      ...data,
+      subtitle: getSubtitle(data.conceptPath),
+    });
+
     const query = getQueryRequestV3(!isOpenAccess(), $resources.visualization);
 
     await api
@@ -37,8 +65,12 @@
       )
       .then((resp) => {
         plotValues = [
-          ...(resp?.categoricalData || []).map(createCategoryPlot),
-          ...(resp?.continuousData || []).map(createContinuousPlot),
+          ...(resp?.categoricalData || []).map((data: CategoricalPlotData) =>
+            createCategoryPlot(withSubtitle(data)),
+          ),
+          ...(resp?.continuousData || []).map((data: ContinuousPlotData) =>
+            createContinuousPlot(withSubtitle(data)),
+          ),
         ];
       })
       .catch((error) => {

@@ -31,6 +31,8 @@ export type PlotlyNewPlot = (
 
 type PlotData = {
   title: string;
+  conceptPath?: string;
+  subtitle?: string;
   continuous: boolean;
   colors: string[];
   chartWidth: number;
@@ -66,6 +68,10 @@ function getColors(num: number) {
     colors.push(defaultColors[i % defaultColors.length]);
   }
   return colors;
+}
+
+function getSubTitle(inData: CategoricalPlotData | ContinuousPlotData) {
+  return inData.subtitle || '';
 }
 
 function shortenTitle(title: string) {
@@ -108,6 +114,7 @@ export function createCategoryPlot(inData: CategoricalPlotData): PlotValues {
 
   const colors: string[] = getColors(values.length);
   const title = shortenTitle(inData.title);
+  const subtitle = getSubTitle(inData);
   const data: Data[] = [
     {
       x: Object.keys(inData.categoricalMap),
@@ -144,6 +151,9 @@ export function createCategoryPlot(inData: CategoricalPlotData): PlotValues {
   const layout: Partial<Layout> = {
     title: {
       text: title,
+      subtitle: {
+        text: subtitle,
+      },
     },
     width: inData.chartWidth || 500,
     height: inData.chartHeight || 600,
@@ -208,8 +218,8 @@ export function createContinuousPlot(inData: ContinuousPlotData): PlotValues {
     });
 
   const { topBar, bottomBar } = obfuscateData(orderedValues, isObfuscated);
-
   const title = shortenTitle(inData.title);
+  const subtitle = getSubTitle(inData);
   const data: Data[] = [
     {
       x: orderedKeys,
@@ -251,6 +261,9 @@ export function createContinuousPlot(inData: ContinuousPlotData): PlotValues {
   const layout: Partial<Layout> = {
     title: {
       text: title,
+      subtitle: {
+        text: subtitle,
+      },
     },
     width: inData.chartWidth || 500,
     height: inData.chartHeight || 600,
