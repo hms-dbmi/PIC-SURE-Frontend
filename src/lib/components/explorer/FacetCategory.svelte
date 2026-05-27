@@ -8,6 +8,7 @@
   import { hiddenFacets, openFacets } from '$lib/stores/Dictionary';
   import { log, createLog, getPageContext } from '$lib/logger';
 
+  import ShowMoreButton from '$lib/components/buttons/ShowMoreButton.svelte';
   import FacetItem from './FacetItem.svelte';
 
   interface Props {
@@ -172,14 +173,11 @@
         <FacetItem {facet} {facetCategory} {textFilterValue} />
       {/each}
       {#if overShowLimit && !textFilterValue}
-        <button
-          data-testId="show-more-facets"
-          class="show-more w-fit mx-auto my-1"
+        <ShowMoreButton
+          data-testid="show-more-facets"
+          expanded={showMore}
           onclick={() => (showMore = !showMore)}
-        >
-          {showMore ? 'Show Less' : 'Show More'}
-          <i class="ml-1 fa-solid fa-angle-{showMore ? 'up' : 'down'}"></i>
-        </button>
+        />
       {/if}
     </div>
   {/snippet}
@@ -202,11 +200,3 @@
     {/each}
   </div>
 {/if}
-
-<style lang="postcss">
-  @reference "../../../styles/app.css";
-
-  .show-more {
-    @apply btn btn-sm preset-outlined-surface-500 rounded-container;
-  }
-</style>
