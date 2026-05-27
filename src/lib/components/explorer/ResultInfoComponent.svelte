@@ -2,6 +2,7 @@
   import type { SearchResult } from '$lib/models/Search';
   import { getConceptDetails } from '$lib/stores/Dictionary';
   import Loading from '$lib/components/Loading.svelte';
+  import ShowMoreButton from '$lib/components/buttons/ShowMoreButton.svelte';
   import { branding } from '$lib/configuration';
 
   type InfoRow = {
@@ -83,18 +84,21 @@
 </script>
 
 {#snippet rowContent(row: InfoRow)}
-  <span class="font-bold mb-1" class:capitalize={row.isMeta}>{row.label}:</span>
-  {row.value}
+  <span class="font-bold" class:capitalize={row.isMeta}>{row.label}:</span>
+  <span>{row.value}</span>
 {/snippet}
 
 {#snippet infoRows(rows: InfoRow[])}
-  <div class="w-full flex flex-row flex-wrap justify-between gap-y-1">
+  <div class="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-1">
     {#each rows as row}
       <div
-        class:w-full={row.layout !== 'top' && !row.isMeta}
-        class:pr-4={row.layout === 'top' || row.isMeta}
+        class="min-w-0"
+        class:md:col-span-2={row.layout !== 'top' && !row.isMeta}
+        class:xl:col-span-3={row.layout !== 'top' && !row.isMeta}
       >
-        {@render rowContent(row)}
+        <div class="inline-flex gap-1 max-w-full">
+          {@render rowContent(row)}
+        </div>
       </div>
     {/each}
   </div>
@@ -106,57 +110,48 @@
       <Loading ring size="medium" />
     {:then searchResultDetail}
       {@const variableRows = variableInfoRows(searchResultDetail)}
-      <section data-testid="variable-info" class="flex flex-col w-3/4 p-4">
+      <section data-testid="variable-info" class="flex flex-col w-full p-4">
         <h3 class="text-primary-500">
           {branding.explorePage.resultInfo?.variableHeader || 'Variable Information'}
         </h3>
         {@render infoRows(getVisibleRows(variableRows, showAllVariableInfo))}
         {#if variableRows.length > MAX_INFO_ROWS}
-          <button
+          <ShowMoreButton
             data-testid="show-more-variable-info"
-            class="show-more w-fit mx-auto my-1"
+            expanded={showAllVariableInfo}
             onclick={() => (showAllVariableInfo = !showAllVariableInfo)}
-          >
-            {showAllVariableInfo ? 'Show Less' : 'Show More'}
-            <i class="ml-1 fa-solid fa-angle-{showAllVariableInfo ? 'up' : 'down'}"></i>
-          </button>
+          />
         {/if}
       </section>
       {#if searchResultDetail.table}
         {@const datasetRows = datasetInfoRows(searchResultDetail.table)}
-        <section data-testid="dataset-info" class="flex flex-col w-3/4 p-4">
+        <section data-testid="dataset-info" class="flex flex-col w-full p-4">
           <h3 class="text-primary-500">
             {branding.explorePage.resultInfo?.datasetHeader || 'Dataset Information'}
           </h3>
           {@render infoRows(getVisibleRows(datasetRows, showAllDatasetInfo))}
           {#if datasetRows.length > MAX_INFO_ROWS}
-            <button
+            <ShowMoreButton
               data-testid="show-more-dataset-info"
-              class="show-more w-fit mx-auto my-1"
+              expanded={showAllDatasetInfo}
               onclick={() => (showAllDatasetInfo = !showAllDatasetInfo)}
-            >
-              {showAllDatasetInfo ? 'Show Less' : 'Show More'}
-              <i class="ml-1 fa-solid fa-angle-{showAllDatasetInfo ? 'up' : 'down'}"></i>
-            </button>
+            />
           {/if}
         </section>
       {/if}
       {#if searchResultDetail.study}
         {@const studyRows = studyInfoRows(searchResultDetail)}
-        <section data-testid="study-info" class="flex flex-col w-3/4 p-4">
+        <section data-testid="study-info" class="flex flex-col w-full p-4">
           <h3 class="text-primary-500">
             {branding.explorePage.resultInfo?.studyHeader || 'Study Information'}
           </h3>
           {@render infoRows(getVisibleRows(studyRows, showAllStudyInfo))}
           {#if studyRows.length > MAX_INFO_ROWS}
-            <button
+            <ShowMoreButton
               data-testid="show-more-study-info"
-              class="show-more w-fit mx-auto my-1"
+              expanded={showAllStudyInfo}
               onclick={() => (showAllStudyInfo = !showAllStudyInfo)}
-            >
-              {showAllStudyInfo ? 'Show Less' : 'Show More'}
-              <i class="ml-1 fa-solid fa-angle-{showAllStudyInfo ? 'up' : 'down'}"></i>
-            </button>
+            />
           {/if}
         </section>
       {/if}
