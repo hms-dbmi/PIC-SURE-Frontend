@@ -10,7 +10,12 @@
   import { features } from '$lib/configuration';
 
   import { allFilters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
-  import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
+  import {
+    loadPatientCount,
+    hasNonZeroResult,
+    countsLoading,
+    totalParticipants,
+  } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
   import Filters from '$lib/components/explorer/results/Filters.svelte';
@@ -60,6 +65,17 @@
 
   let showVariantExplorer = $derived(
     !isDiscoverPage && features.explorer.variantExplorer && $hasGenomicFilter,
+  );
+
+  function isObfuscatedLessThanTen(count: unknown) {
+    return typeof count === 'string' && count.trim().startsWith('<');
+  }
+
+  let distributionsDisabled = $derived(
+    $countsLoading ||
+      (isDiscoverPage
+        ? isObfuscatedLessThanTen($totalParticipants) || $totalParticipants < 10
+        : $totalParticipants === 0),
   );
 
   let showCohortDetails = $derived(!isDiscoverPage && features.explorer.enableCohortDetails);
@@ -193,6 +209,7 @@
             title="Variable Distributions"
             icon="fa-solid fa-chart-pie"
             size="md"
+            disabled={distributionsDisabled}
           />
         {/if}
         {#if showDiscoverDistributions}
@@ -202,6 +219,7 @@
             title="Variable Distributions"
             icon="fa-solid fa-chart-pie"
             size="md"
+            disabled={distributionsDisabled}
           />
         {/if}
         {#if showVariantExplorer}
