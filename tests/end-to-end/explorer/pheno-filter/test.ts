@@ -615,6 +615,8 @@ test.describe('Any record of filter', () => {
     await secondItem.click();
     const addFilterButton = page.getByTestId('add-filter');
     await addFilterButton.click();
+    await expect(page.locator('#modal-component')).not.toBeVisible();
+    await expect(page.getByTestId(/^any-record-of-filter-modal-.*-btn$/)).toBeVisible();
   });
   test('Adding an any record of filter adds the filter to the results panel', async ({ page }) => {
     await expect(page.locator('#results-panel')).toBeVisible();
@@ -629,14 +631,14 @@ test.describe('Any record of filter', () => {
     );
   });
   test('Clicking the Any Record of filter button opens the modal', async ({ page }) => {
-    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
+    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*-btn$/);
     await addedFilter.click();
     await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
   });
   test('Clicking the Any Record of filter modal has the correct number of variables', async ({
     page,
   }) => {
-    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
+    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*-btn$/);
     await addedFilter.click();
     await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
     await expect(
@@ -644,7 +646,7 @@ test.describe('Any record of filter', () => {
     ).toHaveText(`${mockDataWithChildren.children.length} variable(s) in disease category`);
   });
   test('Clicking the Any Record of filter modal has the correct variables', async ({ page }) => {
-    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
+    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*-btn$/);
     await addedFilter.click();
     await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
     const variablesLocator = page.getByTestId('any-record-of-filter-modal').locator('div');
@@ -652,11 +654,16 @@ test.describe('Any record of filter', () => {
     await expect(variablesLocator.first()).toHaveText(mockDataWithChildren.children[0].conceptPath);
   });
   test('Clicking the close button closes the modal', async ({ page }) => {
-    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
+    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*-btn$/);
     await addedFilter.click();
-    await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
-    await page.getByTestId('modal-close-button').click();
-    await expect(page.getByTestId('any-record-of-filter-modal')).not.toBeVisible();
+    const modal = page.getByTestId('any-record-of-filter-modal');
+    await expect(modal).toBeVisible();
+    await page
+      .locator('#modal-component')
+      .filter({ has: modal })
+      .getByTestId('modal-close-button')
+      .click();
+    await expect(modal).not.toBeVisible();
   });
   test('If there is only Any Record of filter, the distributions button is hidden', async ({
     page,
