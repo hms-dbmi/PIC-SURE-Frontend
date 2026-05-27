@@ -90,7 +90,10 @@
 {#snippet infoRows(rows: InfoRow[])}
   <div class="w-full flex flex-row flex-wrap justify-between gap-y-1">
     {#each rows as row}
-      <div class:w-full={row.layout !== 'top' && !row.isMeta} class:pr-4={row.layout === 'top' || row.isMeta}>
+      <div
+        class:w-full={row.layout !== 'top' && !row.isMeta}
+        class:pr-4={row.layout === 'top' || row.isMeta}
+      >
         {@render rowContent(row)}
       </div>
     {/each}

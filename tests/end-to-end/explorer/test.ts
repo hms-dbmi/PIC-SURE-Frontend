@@ -205,31 +205,25 @@ test.describe('Explorer for authenticated users', () => {
         await expect(variableInfo).toBeVisible();
         // Check Variable Information
         await expect(variableInfo.getByText('Variable Information')).toBeVisible();
-        await expect(variableInfo.getByText('Name: ' + detailResponseCat.display)).toBeVisible();
-        await expect(variableInfo.getByText('Accession: ' + detailResponseCat.name)).toBeVisible();
-        await expect(variableInfo.getByText('Type: ' + detailResponseCat.type)).toBeVisible();
-        await expect(
-          variableInfo.getByText('Description: ' + detailResponseCat.description),
-        ).toBeVisible();
+        await expect(variableInfo).toContainText('Name: ' + detailResponseCat.display);
+        await expect(variableInfo).toContainText('Accession: ' + detailResponseCat.name);
+        await expect(variableInfo).toContainText('Type: ' + detailResponseCat.type);
+        await expect(variableInfo).toContainText('Description: ' + detailResponseCat.description);
 
         // Check Dataset Information
-        await expect(infoPanel.getByText('Dataset Information')).toBeVisible();
-        await expect(infoPanel.getByText('Name: ' + detailResponseCat.table.display)).toBeVisible();
-        await expect(
-          infoPanel.getByText('Accession: ' + detailResponseCat.table.name),
-        ).toBeVisible();
-        await expect(
-          infoPanel.getByText('Description: ' + detailResponseCat.table.description),
-        ).toBeVisible();
+        const datasetInfo = infoPanel.getByTestId('dataset-info');
+        await expect(datasetInfo.getByText('Dataset Information')).toBeVisible();
+        await expect(datasetInfo).toContainText('Name: ' + detailResponseCat.table.display);
+        await expect(datasetInfo).toContainText('Accession: ' + detailResponseCat.table.name);
+        await expect(datasetInfo).toContainText(
+          'Description: ' + detailResponseCat.table.description,
+        );
 
         // Check Study Information
-        await expect(infoPanel.getByText('Study Information')).toBeVisible();
-        await expect(
-          infoPanel.getByText('Study Name: ' + detailResponseCat.study.fullName),
-        ).toBeVisible();
-        await expect(
-          infoPanel.getByText('Study Accession: ' + detailResponseCat.study.ref),
-        ).toBeVisible();
+        const studyInfo = infoPanel.getByTestId('study-info');
+        await expect(studyInfo.getByText('Study Information')).toBeVisible();
+        await expect(studyInfo).toContainText('Study Name: ' + detailResponseCat.study.fullName);
+        await expect(studyInfo).toContainText('Study Accession: ' + detailResponseCat.study.ref);
       });
       test('Clicking a filter button opens the filter panel & then clicking another row opens the info panel', async ({
         page,
