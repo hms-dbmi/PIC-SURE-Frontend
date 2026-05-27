@@ -2,6 +2,7 @@
   import type { SearchResult } from '$lib/models/Search';
   import { getConceptDetails } from '$lib/stores/Dictionary';
   import Loading from '$lib/components/Loading.svelte';
+  import { branding } from '$lib/configuration';
 
   let { data = {} as SearchResult }: { data?: SearchResult } = $props();
 
@@ -14,7 +15,9 @@
       <Loading ring size="medium" />
     {:then searchResultDetail}
       <section data-testid="variable-info" class="flex flex-col w-3/4 p-4">
-        <h3 class="text-primary-500">Variable Information</h3>
+        <h3 class="text-primary-500">
+          {branding.explorePage.resultInfo?.variableHeader || 'Variable Information'}
+        </h3>
         <div class="w-full flex flex-row justify-between">
           {#if searchResultDetail.display}
             <div><span class="font-bold">Name:</span> {searchResultDetail.display}</div>
@@ -32,7 +35,9 @@
       </section>
       {#if searchResultDetail.table}
         <section data-testid="dataset-info" class="flex flex-col w-3/4 p-4">
-          <h3 class="text-primary-500">Dataset Information</h3>
+          <h3 class="text-primary-500">
+            {branding.explorePage.resultInfo?.datasetHeader || 'Dataset Information'}
+          </h3>
           <div class="w-full flex flex-row justify-between">
             {#if searchResultDetail.table.display}
               <div>
@@ -54,7 +59,9 @@
       {/if}
       {#if searchResultDetail.study}
         <section data-testid="study-info" class="flex flex-col w-3/4 p-4">
-          <h3 class="text-primary-500">Study Information</h3>
+          <h3 class="text-primary-500">
+            {branding.explorePage.resultInfo?.studyHeader || 'Study Information'}
+          </h3>
           <div class="w-full flex flex-col">
             {#if searchResultDetail.study.fullName || searchResultDetail.study.display || searchResultDetail.study.studyAcronym || searchResultDetail?.studyAcronym}
               <div>

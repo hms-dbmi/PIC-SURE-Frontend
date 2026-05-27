@@ -52,6 +52,11 @@ export interface ExplorePageConfig {
     links: Array<Link>;
   };
   pfbExportUrls?: Link[];
+  resultInfo?: {
+    variableHeader?: string;
+    datasetHeader?: string;
+    studyHeader?: string;
+  };
 }
 
 export interface LandingConfig {
