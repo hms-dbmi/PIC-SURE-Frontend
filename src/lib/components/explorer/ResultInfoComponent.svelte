@@ -84,19 +84,19 @@
 </script>
 
 {#snippet rowContent(row: InfoRow)}
-  <span class="font-bold" class:capitalize={row.isMeta}>{row.label}:</span>
-  <span>{row.value}</span>
+  <span class="font-bold whitespace-nowrap" class:capitalize={row.isMeta}>{row.label}:</span>
+  <span class="min-w-0 break-words [overflow-wrap:anywhere]">{row.value}</span>
 {/snippet}
 
 {#snippet infoRows(rows: InfoRow[])}
-  <div class="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-1">
+  <div class="w-full grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-x-8 gap-y-1">
     {#each rows as row}
       <div
         class="min-w-0"
-        class:md:col-span-2={row.layout !== 'top' && !row.isMeta}
-        class:xl:col-span-3={row.layout !== 'top' && !row.isMeta}
+        class:lg:col-span-2={row.layout !== 'top' && !row.isMeta}
+        class:2xl:col-span-3={row.layout !== 'top' && !row.isMeta}
       >
-        <div class="inline-flex gap-1 max-w-full">
+        <div class="grid max-w-full min-w-0 grid-cols-[max-content_minmax(0,1fr)] items-start gap-x-1">
           {@render rowContent(row)}
         </div>
       </div>
