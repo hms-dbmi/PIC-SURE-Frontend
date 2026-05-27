@@ -11,17 +11,26 @@
     createCategoryPlot,
   } from '$lib/utilities/Plotly';
   import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
+  import {
+    categoricalHasData,
+    continuousHasData,
+    getExcludedVisualizationVariables,
+    getIncludedConceptPaths,
+    isVisualizationFilter,
+  } from '$lib/utilities/VisualizationData';
   import { toaster } from '$lib/toaster';
   import Loading from '$lib/components/Loading.svelte';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { Picsure } from '$lib/paths';
   import { resources } from '$lib/stores/Resources';
   import { isOpenAccess } from '$lib/AccessState';
   import LogicTreeSummary from '$lib/components/explorer/advanced/LogicTreeSummary.svelte';
-  import { allFilters, filterTree, genomicFilters } from '$lib/stores/Filter';
+  import { filters, filterTree, genomicFilters } from '$lib/stores/Filter';
   import { type Filter, type FilterGroupInterface } from '$lib/models/Filter.svelte';
   import { get } from 'svelte/store';
 
   let plotValues: PlotValues[] = $state([]);
+  let excludedVariables: string[] = $state([]);
   let newPlot: PlotlyNewPlot = $state() as PlotlyNewPlot;
   let loading = $state(true);
 
@@ -40,7 +49,10 @@
   }
 
   async function loadPlotData() {
-    const subtitleByConceptPath = getSubtitleByConceptPath(get(allFilters));
+    const plotFilters = get(filters);
+    const visualizationFilters = plotFilters.filter(isVisualizationFilter);
+    const subtitleByConceptPath = getSubtitleByConceptPath(plotFilters);
+    const minimumCount = isOpenAccess() ? 9 : 1;
 
     const getSubtitle = (conceptPath?: string) =>
       conceptPath ? subtitleByConceptPath.get(conceptPath) : undefined;
@@ -64,11 +76,24 @@
         !isOpenAccess(),
       )
       .then((resp) => {
+        const categoricalData = (resp?.categoricalData || []).filter((data: CategoricalPlotData) =>
+          categoricalHasData(data, minimumCount),
+        );
+        const continuousData = (resp?.continuousData || []).filter((data: ContinuousPlotData) =>
+          continuousHasData(data, minimumCount),
+        );
+        const includedConceptPaths = getIncludedConceptPaths(categoricalData, continuousData);
+
+        excludedVariables = getExcludedVisualizationVariables(
+          visualizationFilters,
+          includedConceptPaths,
+        );
+
         plotValues = [
-          ...(resp?.categoricalData || []).map((data: CategoricalPlotData) =>
+          ...categoricalData.map((data: CategoricalPlotData) =>
             createCategoryPlot(withSubtitle(data)),
           ),
-          ...(resp?.continuousData || []).map((data: ContinuousPlotData) =>
+          ...continuousData.map((data: ContinuousPlotData) =>
             createContinuousPlot(withSubtitle(data)),
           ),
         ];
@@ -77,7 +102,7 @@
         console.error('Viusalzation failed with query: ' + JSON.stringify(query), error);
         toaster.error({
           description:
-            'An error occured while parsing your token. Please try again later. If this problem persists, please contact an administrator.',
+            'An error occured while loading your visualization(s). Please try again later. If this problem persists, please contact an administrator.',
         });
       })
       .finally(() => {
@@ -101,6 +126,22 @@
   genomicFilters={$genomicFilters}
   widthClass="w-3/4"
 />
+{#if excludedVariables.length}
+  <div class="w-3/4 mx-auto my-4">
+    <ErrorAlert color="warning" iconSize="2xl" data-testid="excluded-visualizations-warning">
+      <p>
+        Some variables were excluded from visualization because there was insufficient participant
+        data for the selected query.
+      </p>
+      <p class="font-bold mt-2">Variables not included:</p>
+      <ul class="list-disc list-inside">
+        {#each excludedVariables as variable}
+          <li>{variable}</li>
+        {/each}
+      </ul>
+    </ErrorAlert>
+  </div>
+{/if}
 <div id="visualizations" class="flex flex-row flex-wrap gap-6 items-center justify-center">
   {#if loading}
     <Loading ring size="medium" />

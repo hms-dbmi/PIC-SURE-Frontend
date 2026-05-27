@@ -287,7 +287,7 @@ test.describe('Results Panel', () => {
       await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
       await mockApiSuccess(page, facetResultPath, facetsResponse);
       await mockApiSuccess(page, searchResultPath, mockData);
-      await mockApiSuccess(page, openCountResultPath, '9999');
+      await mockApiSuccess(page, openCountResultPath, { '\\_studies_consents\\': 9999 });
       await page.goto('/discover?search=somedata');
       await mockApiSuccess(
         page,
@@ -314,6 +314,56 @@ test.describe('Results Panel', () => {
 
       // Then
       await expect(page.getByTestId('distributions-btn')).not.toBeDisabled();
+    });
+
+    test('disables distributions button on Explore when total cohort count is zero', async ({
+      page,
+    }) => {
+      // Given
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      await mockApiSuccess(page, countResultPath, '0');
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.goto('/explorer?search=somedata');
+
+      // When
+      await page.locator('#row-0 button[title=Filter]').click();
+      const firstItem = await getOption(page);
+      await firstItem.click();
+      await page.getByTestId('add-filter').click();
+
+      // Then
+      await expect(page.getByTestId('distributions-btn')).toBeDisabled();
+    });
+
+    test('disables distributions button on Discover when total cohort count is less than ten', async ({
+      page,
+    }) => {
+      // Given
+      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      await mockApiSuccess(page, openCountResultPath, { '\\_studies_consents\\': '< 10' });
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.goto('/discover?search=somedata');
+
+      // When
+      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#options-container label:nth-child(1)').click();
+      const firstItem = await getOption(page);
+      await firstItem.click();
+      await page.getByTestId('add-filter').click();
+
+      // Then
+      await expect(page.getByTestId('distributions-btn')).toBeDisabled();
     });
 
     test('sends request with QueryV3 structure', async ({ page }) => {
