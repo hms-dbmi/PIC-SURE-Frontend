@@ -159,9 +159,7 @@ describe('ResultInfoComponent', () => {
       }),
     );
 
-    expect(screen.getByTestId('study-info')).toHaveTextContent(
-      `Study Name: ${expectedStudyName}`,
-    );
+    expect(screen.getByTestId('study-info')).toHaveTextContent(`Study Name: ${expectedStudyName}`);
   });
 
   it('falls back to the root study acronym when study name fields are missing', async () => {
