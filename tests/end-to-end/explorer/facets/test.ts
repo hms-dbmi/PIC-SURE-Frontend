@@ -591,57 +591,62 @@ test.describe('Facet & search', () => {
   });
   test('Selected facet is not disabled when 0 count', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) =>
-      route.fulfill({ json: searchResults }),
-    );
-    await page.route(facetResultPath, async (route: Route) =>
-      route.fulfill({
-        json: [
-          {
-            ...facetsResponse[0],
-            facets: [facetsResponse[0].facets[0], facetsResponse[0].facets[1]],
-          },
-          facetsResponse[1],
-        ],
-      }),
-    );
-    await page.goto('/explorer');
-    await page.route(searchResultPath, async (route: Route) =>
-      route.fulfill({
-        json: {
-          ...searchResults,
-          totalElements: 0,
-          content: [],
-        },
-      }),
-    );
-    await page.route(facetResultPath, async (route: Route) =>
-      route.fulfill({
-        json: [
-          {
-            ...facetsResponse[0],
-            facets: [
-              {
-                ...facetsResponse[0].facets[0],
-                count: 0,
-              },
-              facetsResponse[0].facets[1],
-            ],
-          },
-          facetsResponse[1],
-        ],
-      }),
-    );
-
     const firstCheckName = facetsResponse[0].facets[0].name;
-    const facetCheckBox = page.getByTestId(`facet-${firstCheckName}-label`);
-    await facetCheckBox.click();
+    const initialFacets = [
+      {
+        ...facetsResponse[0],
+        facets: [facetsResponse[0].facets[0], facetsResponse[0].facets[1]],
+      },
+      facetsResponse[1],
+    ];
+    const zeroCountFacets = [
+      {
+        ...facetsResponse[0],
+        facets: [
+          {
+            ...facetsResponse[0].facets[0],
+            count: 0,
+          },
+          facetsResponse[0].facets[1],
+        ],
+      },
+      facetsResponse[1],
+    ];
+
+    await page.route(searchResultPath, async (route: Route) => {
+      const body = route.request().postDataJSON();
+      const selectedFacet = body.facets?.some(
+        (facet: { name: string }) => facet.name === firstCheckName,
+      );
+      await route.fulfill({
+        json: selectedFacet
+          ? {
+              ...searchResults,
+              totalElements: 0,
+              content: [],
+            }
+          : searchResults,
+      });
+    });
+    await page.route(facetResultPath, async (route: Route) => {
+      const body = route.request().postDataJSON();
+      const selectedFacet = body.facets?.some(
+        (facet: { name: string }) => facet.name === firstCheckName,
+      );
+      await route.fulfill({ json: selectedFacet ? zeroCountFacets : initialFacets });
+    });
+
+    await page.goto('/explorer');
+    const facetLabel = page.getByTestId(`facet-${firstCheckName}-label`);
+    const facetCheckBox = page.locator(`input#${firstCheckName}`);
+    await expect(facetLabel).toBeVisible();
 
     // When
-    await page.getByTestId('search-box').fill('hsfgoisdhf');
-    await page.locator('#search-button').click();
+    await facetCheckBox.click();
 
     // Then
+    await expect(facetCheckBox).toBeChecked();
+    await expect(facetLabel).toContainText('(0)');
     await expect(facetCheckBox).not.toBeDisabled();
   });
 });
