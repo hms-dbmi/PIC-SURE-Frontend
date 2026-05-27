@@ -28,9 +28,12 @@ export type SearchResult = Indexable & {
   values?: string[];
   min?: number;
   max?: number;
-  meta?: Record<string, string> | null;
+  meta?: Record<string, unknown> | null;
   table?: SearchResult | null;
   study?: SearchResult | null;
+  fullName?: string;
+  ref?: string;
+  abbreviation?: string;
   type: 'Categorical' | 'Continuous' | 'AnyRecordOf';
   allowFiltering: boolean;
   children?: SearchResult[] | null;
