@@ -615,6 +615,8 @@ test.describe('Any record of filter', () => {
     await secondItem.click();
     const addFilterButton = page.getByTestId('add-filter');
     await addFilterButton.click();
+    await expect(page.locator('#modal-component')).not.toBeVisible();
+    await expect(page.getByTestId(/^any-record-of-filter-modal-.*-btn$/)).toBeVisible();
   });
   test('Adding an any record of filter adds the filter to the results panel', async ({ page }) => {
     await expect(page.locator('#results-panel')).toBeVisible();
@@ -656,7 +658,11 @@ test.describe('Any record of filter', () => {
     await addedFilter.click();
     const modal = page.getByTestId('any-record-of-filter-modal');
     await expect(modal).toBeVisible();
-    await page.locator('#modal-component').getByTestId('modal-close-button').click();
+    await page
+      .locator('#modal-component')
+      .filter({ has: modal })
+      .getByTestId('modal-close-button')
+      .click();
     await expect(modal).not.toBeVisible();
   });
   test('If there is only Any Record of filter, the distributions button is hidden', async ({
