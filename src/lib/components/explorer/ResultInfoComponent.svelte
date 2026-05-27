@@ -91,7 +91,11 @@
 {#snippet infoRows(rows: InfoRow[])}
   <div class="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-1">
     {#each rows as row}
-      <div class="min-w-0" class:md:col-span-2={row.layout !== 'top' && !row.isMeta} class:xl:col-span-3={row.layout !== 'top' && !row.isMeta}>
+      <div
+        class="min-w-0"
+        class:md:col-span-2={row.layout !== 'top' && !row.isMeta}
+        class:xl:col-span-3={row.layout !== 'top' && !row.isMeta}
+      >
         <div class="inline-flex gap-1 max-w-full">
           {@render rowContent(row)}
         </div>
