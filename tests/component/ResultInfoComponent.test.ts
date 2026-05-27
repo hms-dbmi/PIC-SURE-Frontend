@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import ResultInfoComponent from '$lib/components/explorer/ResultInfoComponent.svelte';
 import { branding } from '$lib/configuration';
@@ -178,5 +178,72 @@ describe('ResultInfoComponent', () => {
     );
 
     expect(screen.getByTestId('study-info')).toHaveTextContent('Study Name: Root Acronym');
+  });
+
+  it('renders meta key-value pairs in their corresponding sections', async () => {
+    await renderResultInfo(
+      makeDetail({
+        meta: {
+          values: '["0.0","100.0"]',
+          source: 'Variable Source',
+        },
+        table: {
+          ...makeDetail().table,
+          meta: {
+            dataType: 'Dataset Type',
+          },
+        } as SearchResult,
+        study: {
+          ...makeDetail().study,
+          meta: {
+            owner: 'Study Owner',
+          },
+        } as SearchResult,
+      }),
+    );
+
+    expect(screen.getByTestId('variable-info')).toHaveTextContent('values: ["0.0","100.0"]');
+    expect(screen.getByTestId('variable-info')).toHaveTextContent('source: Variable Source');
+    expect(screen.getByTestId('dataset-info')).toHaveTextContent('dataType: Dataset Type');
+    expect(screen.getByTestId('study-info')).toHaveTextContent('owner: Study Owner');
+  });
+
+  it('formats array and object meta values safely', async () => {
+    await renderResultInfo(
+      makeDetail({
+        meta: {
+          arrayValue: ['one', 'two'],
+          objectValue: { nested: 'value' },
+        } as unknown as Record<string, string>,
+      }),
+    );
+
+    expect(screen.getByTestId('variable-info')).toHaveTextContent('arrayValue: one, two');
+    expect(screen.getByTestId('variable-info')).toHaveTextContent(
+      'objectValue: {"nested":"value"}',
+    );
+  });
+
+  it('shows the first 10 total rows and toggles additional meta rows with show more', async () => {
+    await renderResultInfo(
+      makeDetail({
+        meta: Object.fromEntries(
+          Array.from({ length: 7 }, (_, index) => [`meta ${index + 1}`, `value ${index + 1}`]),
+        ),
+      }),
+    );
+
+    const variableInfo = screen.getByTestId('variable-info');
+    expect(variableInfo).toHaveTextContent('Name: Variable Display');
+    expect(variableInfo).toHaveTextContent('meta 6: value 6');
+    expect(variableInfo).not.toHaveTextContent('meta 7: value 7');
+
+    const showMoreButton = screen.getByTestId('show-more-variable-info');
+    expect(showMoreButton).toHaveTextContent('Show More');
+
+    await fireEvent.click(showMoreButton);
+
+    expect(variableInfo).toHaveTextContent('meta 7: value 7');
+    expect(showMoreButton).toHaveTextContent('Show Less');
   });
 });
