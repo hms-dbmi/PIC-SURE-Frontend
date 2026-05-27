@@ -62,6 +62,11 @@ export const branding: Branding = {
   footer: {} as FooterConfig,
   explorePage: {
     tourSearchTerm: import.meta.env?.EXPLORE_TOUR_SEARCH_TERM || 'age',
+    resultInfo: {
+      variableHeader: 'Variable Information',
+      datasetHeader: 'Dataset Information',
+      studyHeader: 'Study Information',
+    },
   } as ExplorePageConfig,
   landing: {} as LandingConfig,
   datasetRequestPage: {} as DatasetRequestPageConfig,
