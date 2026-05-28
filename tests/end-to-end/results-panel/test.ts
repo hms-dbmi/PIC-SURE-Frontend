@@ -340,6 +340,55 @@ test.describe('Results Panel', () => {
       await expect(page.getByTestId('distributions-btn')).toBeDisabled();
     });
 
+    test('re-enables distributions button when removing a zero-count filter restores cached counts', async ({
+      page,
+    }) => {
+      // Given
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      let countCalls = 0;
+      await page.route(countResultPath, async (route) => {
+        countCalls += 1;
+        await route.fulfill({ json: countCalls >= 2 ? '0' : '9999' });
+      });
+
+      await page.goto('/explorer?search=somedata');
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.locator('#row-0 button[title=Filter]').click();
+      const firstItem = await getOption(page);
+      await firstItem.click();
+      await page.getByTestId('add-filter').click();
+      await expect(page.locator('#result-count-number')).toHaveText('9,999');
+      await expect(page.getByTestId('distributions-btn')).toBeEnabled();
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat2.dataset}`,
+        detailResponseCat2,
+      );
+      await page.locator('#row-2 button[title=Filter]').click();
+      const secondItem = await getOption(page);
+      await secondItem.click();
+      await page.getByTestId('add-filter').click();
+      await expect(page.locator('#result-count-number')).toHaveText('0');
+      await expect(page.getByTestId('distributions-btn')).toBeDisabled();
+
+      // When
+      await page
+        .getByTestId(`added-filter-${detailResponseCat2.conceptPath}`)
+        .getByRole('button', { name: 'Remove Filter' })
+        .click();
+
+      // Then: the previous one-filter query is served from cache; button state should follow it.
+      await expect(page.locator('#result-count-number')).toHaveText('9,999');
+      await expect(page.getByTestId('distributions-btn')).toBeEnabled();
+    });
+
     test('disables distributions button on Discover when total cohort count is less than ten', async ({
       page,
     }) => {
