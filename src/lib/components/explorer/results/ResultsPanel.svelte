@@ -73,9 +73,7 @@
 
   let distributionsDisabled = $derived(
     $countsLoading ||
-      (isDiscoverPage
-        ? isObfuscatedLessThanTen($totalParticipants) || $totalParticipants < 10
-        : $totalParticipants === 0),
+      (isDiscoverPage ? isObfuscatedLessThanTen($totalParticipants) : $totalParticipants === 0),
   );
 
   let showCohortDetails = $derived(!isDiscoverPage && features.explorer.enableCohortDetails);
