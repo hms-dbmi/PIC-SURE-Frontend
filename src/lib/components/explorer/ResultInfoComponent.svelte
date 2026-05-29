@@ -96,7 +96,9 @@
         class:lg:col-span-2={row.layout !== 'top' && !row.isMeta}
         class:2xl:col-span-3={row.layout !== 'top' && !row.isMeta}
       >
-        <div class="grid max-w-full min-w-0 grid-cols-[max-content_minmax(0,1fr)] items-start gap-x-1">
+        <div
+          class="grid max-w-full min-w-0 grid-cols-[max-content_minmax(0,1fr)] items-start gap-x-1"
+        >
           {@render rowContent(row)}
         </div>
       </div>
