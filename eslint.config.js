@@ -58,14 +58,6 @@ export default [
   },
   {
     rules: {
-      '@typescript-eslint/no-unused-expressions': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
-      'no-useless-assignment': 'off',
-      'preserve-caught-error': 'off',
-      'svelte/no-navigation-without-resolve': 'off',
-      'svelte/no-useless-mustaches': 'off',
-      'svelte/prefer-svelte-reactivity': 'off',
-      'svelte/prefer-writable-derived': 'off',
       'svelte/require-each-key': 'off',
     },
   },
