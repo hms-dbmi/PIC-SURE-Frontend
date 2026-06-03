@@ -1,7 +1,7 @@
 import { type Indexable } from '$lib/types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isIndexable(value: any): value is Indexable {
+export function isIndexable(value: unknown): value is Indexable {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 

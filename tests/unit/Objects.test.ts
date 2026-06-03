@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 import { isIndexable, flatIndex } from '$lib/utilities/Objects';
 import type { Indexable } from '$lib/types';

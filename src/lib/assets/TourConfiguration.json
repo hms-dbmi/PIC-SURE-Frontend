@@ -100,8 +100,8 @@
       {
         "element": "#advanced-query-btn",
         "popover": {
-          "title": "Advanced Filtering",
-          "description": "After you've added filters, you can use the Advanced Filtering tool to build complex queries using \"and,\" \"or,\" and groups of filters.",
+          "title": "Build Advanced Queries",
+          "description": "After you've added filters, you can use the Advanced Query Builder to create complex queries using \"and,\" \"or,\" and groups of added filters.",
           "onPrevClick": "disablePrevious"
         }
       },
@@ -225,8 +225,8 @@
       {
         "element": "#advanced-query-btn",
         "popover": {
-          "title": "Advanced Filtering",
-          "description": "After you've added filters, you can use the Advanced Filtering tool to build complex queries using \"and,\" \"or,\" and groups of filters.",
+          "title": "Build Advanced Queries",
+          "description": "After you've added filters, you can use the Advanced Query Builder to create complex queries using \"and,\" \"or,\" and groups of added filters.",
           "onPrevClick": "disablePrevious"
         }
       },
@@ -325,8 +325,8 @@
       {
         "element": "#advanced-query-btn",
         "popover": {
-          "title": "Advanced Filtering",
-          "description": "After you've added filters, you can use the Advanced Filtering tool to build complex queries using \"and,\" \"or,\" and groups of filters.",
+          "title": "Build Advanced Queries",
+          "description": "After you've added filters, you can use the Advanced Query Builder to create complex queries using \"and,\" \"or,\" and groups of added filters.",
           "onPrevClick": "disablePrevious"
         }
       },
@@ -433,8 +433,8 @@
       {
         "element": "#advanced-query-btn",
         "popover": {
-          "title": "Advanced Filtering",
-          "description": "After you've added filters, you can use the Advanced Filtering tool to build complex queries using \"and,\" \"or,\" and groups of filters.",
+          "title": "Build Advanced Queries",
+          "description": "After you've added filters, you can use the Advanced Query Builder to create complex queries using \"and,\" \"or,\" and groups of added filters.",
           "onPrevClick": "disablePrevious"
         }
       },
@@ -558,8 +558,8 @@
       {
         "element": "#advanced-query-btn",
         "popover": {
-          "title": "Advanced Filtering",
-          "description": "After you've added filters, you can use the Advanced Filtering tool to build complex queries using \"and,\" \"or,\" and groups of filters.",
+          "title": "Build Advanced Queries",
+          "description": "After you've added filters, you can use the Advanced Query Builder to create complex queries using \"and,\" \"or,\" and groups of added filters.",
           "onPrevClick": "disablePrevious"
         }
       },
