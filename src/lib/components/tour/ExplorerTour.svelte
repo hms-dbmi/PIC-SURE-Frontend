@@ -3,6 +3,9 @@
   import 'driver.js/dist/driver.css';
   import '../../../styles/tour.css';
 
+  import { features } from '$lib/configuration';
+  import { flatIndex } from '$lib/utilities/Objects';
+
   import { searchTerm, selectedFacets, searchPromise } from '$lib/stores/Search';
   import { clearFilters } from '$lib/stores/Filter';
   import { clearExports } from '$lib/stores/Export';
@@ -141,35 +144,41 @@
   // It will map the function names in pop over to actual functions
   /* eslint-disable @typescript-eslint/no-explicit-any */
   function mapConfigurationToSteps(steps: any): DriveStep[] {
-    return steps.map((step: any) => {
-      const { popover, ...rest } = step;
-      const serializedStep: any = {
-        ...rest,
-        popover: {
-          ...popover,
-          title: replacePlaceholders(popover.title, tourConfig?.searchTerm),
-          description: replacePlaceholders(popover.description, tourConfig?.searchTerm),
-        },
-      };
+    const flatFeatures = flatIndex(features);
+    return steps
+      .filter(
+        ({ dependsOnFeature = '' }: { dependsOnFeature: string }) =>
+          !dependsOnFeature || flatFeatures[dependsOnFeature],
+      )
+      .map((step: any) => {
+        const { popover, dependsOnFeature, ...rest } = step;
+        const serializedStep: any = {
+          ...rest,
+          popover: {
+            ...popover,
+            title: replacePlaceholders(popover.title, tourConfig?.searchTerm),
+            description: replacePlaceholders(popover.description, tourConfig?.searchTerm),
+          },
+        };
 
-      if (popover.onPrevClick) {
-        serializedStep.popover.onPrevClick = functionMap[popover.onPrevClick];
-      }
+        if (popover.onPrevClick) {
+          serializedStep.popover.onPrevClick = functionMap[popover.onPrevClick];
+        }
 
-      if (popover.onNextClick) {
-        serializedStep.popover.onNextClick = functionMap[popover.onNextClick];
-      }
+        if (popover.onNextClick) {
+          serializedStep.popover.onNextClick = functionMap[popover.onNextClick];
+        }
 
-      if (step.onHighlightStarted) {
-        serializedStep.onHighlightStarted = functionMap[step.onHighlightStarted];
-      }
+        if (step.onHighlightStarted) {
+          serializedStep.onHighlightStarted = functionMap[step.onHighlightStarted];
+        }
 
-      if (step.removeHighlightClass) {
-        serializedStep.removeHighlightClass = functionMap[step.removeHighlightClass];
-      }
+        if (step.removeHighlightClass) {
+          serializedStep.removeHighlightClass = functionMap[step.removeHighlightClass];
+        }
 
-      return serializedStep;
-    });
+        return serializedStep;
+      });
   }
 
   // svelte-ignore state_referenced_locally

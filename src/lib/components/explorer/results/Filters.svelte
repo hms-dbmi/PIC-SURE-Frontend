@@ -37,13 +37,19 @@
             message="Advanced Query Builder is not available with only one non-genomic filter."
           >
             {#snippet trigger()}
-              <button data-testid="advanced-filtering-btn" class={aqbBtnClass} disabled>
+              <button
+                id="advanced-query-btn"
+                data-testid="advanced-filtering-btn"
+                class={aqbBtnClass}
+                disabled
+              >
                 Build Advanced Query
               </button>
             {/snippet}
           </Popover>
         {:else}
           <a
+            id="advanced-query-btn"
             href={`${isDiscoverPage ? '/discover' : '/explorer'}/advanced-filtering`}
             data-testid="advanced-filtering-btn"
             class="{aqbBtnClass} !mr-0 hover:preset-filled-primary-500"
