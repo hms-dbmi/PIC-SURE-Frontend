@@ -28,17 +28,13 @@ export type PlotlyNewPlot = (
   config?: Partial<Config>,
 ) => Promise<PlotlyHTMLElement>;
 
-// One chart value as produced by the visualization resource. The backend owns all
-// obfuscation: count is the bar height, display is the label (e.g. "45000", "222 ±3",
-// "< 10"), and variance (when present) is the half-width of the uncertainty band
-// rendered as [max(0, count - variance), count + variance].
 export type ObfuscatedCount = {
   count: number;
   display: string;
   variance?: number | null;
 };
 
-// Older backends sent plain numbers; normalize them into the rich shape.
+// For backwards compatibility
 export type CountValue = ObfuscatedCount | number;
 
 type CountMap = { [key: string]: CountValue };
@@ -97,9 +93,6 @@ export function normalizeCount(value: CountValue): ObfuscatedCount {
     : value;
 }
 
-// Split each value into the solid bar and the hatched uncertainty band stacked on
-// top of it. The band spans [max(0, count - variance), count + variance]; exact
-// values (no variance) render as a plain bar with no band.
 function toBars(values: ObfuscatedCount[]) {
   const solidBar: number[] = [];
   const hatchedBar: number[] = [];
@@ -193,15 +186,6 @@ export function createCategoryPlot(inData: CategoricalPlotData): PlotValues {
 }
 
 export function createContinuousPlot(inData: ContinuousPlotData): PlotValues {
-  /*
-   * The dataMap.continuousMap is an object with the key being the range and the value being the count.
-   * When converting the keys, which are a string of the range, to an array of numbers, we are not
-   * guaranteed that the keys will be in order. We need to sort the keys by the lower limit of the range.
-   * If the lower limit is NaN, then it is a single value. We need to sort the keys by the lower limit of
-   * the range.
-   *
-   * This doesn't happen when the data isn't obfuscated because the keys are the same as the values.
-   */
   const orderedKeys: string[] = [];
   const orderedValues: ObfuscatedCount[] = [];
   Object.keys(inData.continuousMap)
@@ -212,7 +196,7 @@ export function createContinuousPlot(inData: ContinuousPlotData): PlotValues {
 
       // If the lower limit is NaN, then it is a single value
       if (isNaN(aLowerLimit)) aLowerLimit = parseFloat(a.split(' +')[0]);
-      if (isNaN(bLowerLimit)) bLowerLimit = parseFloat(a.split(' +')[0]);
+      if (isNaN(bLowerLimit)) bLowerLimit = parseFloat(b.split(' +')[0]);
 
       return aLowerLimit - bLowerLimit;
     })

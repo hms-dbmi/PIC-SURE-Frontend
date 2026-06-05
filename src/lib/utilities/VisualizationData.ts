@@ -19,9 +19,8 @@ export function visualizationVariableLabel(filter: Filter) {
   return study ? `${study} - ${label}` : label;
 }
 
-// Sums the upper bound of each value's uncertainty band (count + variance), so a chart
-// whose only bucket is "< 10" (count 0, variance 9) still counts as potentially having
-// data. Plain-number values from older backends are normalized to exact counts.
+// Sums each value's band upper bound (count + variance) so a chart whose only
+// bucket is "< 10" (count 0, variance 9) still counts as having data
 export function totalMapCount(map?: Record<string, CountValue>) {
   return Object.values(map || {}).reduce((total: number, value) => {
     const { count, variance } = normalizeCount(value);
