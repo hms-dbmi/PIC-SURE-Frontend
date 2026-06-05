@@ -2,7 +2,6 @@ import type { PlotlyHTMLElement, Root, Data, Config, Layout } from 'plotly.js-ba
 import { settings } from '$lib/configuration';
 
 const MAX_TITLE_LENGTH = 60;
-const OBFUSCATION_RANGE = 6;
 const defaultColors = settings.distributionExplorer.graphColors;
 
 export const defaultPlotlyConfig: Partial<Config> = {
@@ -29,6 +28,21 @@ export type PlotlyNewPlot = (
   config?: Partial<Config>,
 ) => Promise<PlotlyHTMLElement>;
 
+// One chart value as produced by the visualization resource. The backend owns all
+// obfuscation: count is the bar height, display is the label (e.g. "45000", "222 ±3",
+// "< 10"), and variance (when present) is the half-width of the uncertainty band
+// rendered as [max(0, count - variance), count + variance].
+export type ObfuscatedCount = {
+  count: number;
+  display: string;
+  variance?: number | null;
+};
+
+// Older backends sent plain numbers; normalize them into the rich shape.
+export type CountValue = ObfuscatedCount | number;
+
+type CountMap = { [key: string]: CountValue };
+
 type PlotData = {
   title: string;
   conceptPath?: string;
@@ -37,18 +51,17 @@ type PlotData = {
   colors: string[];
   chartWidth: number;
   chartHeight: number;
-  categoricalMap: { [key: string]: number };
   obfuscated: boolean;
   xaxisName: string;
   yaxisName: string;
 };
 
 export type CategoricalPlotData = PlotData & {
-  categoricalMap: { [key: string]: number };
+  categoricalMap: CountMap;
 };
 
 export type ContinuousPlotData = PlotData & {
-  continuousMap: { [key: string]: number };
+  continuousMap: CountMap;
 };
 
 export type PlotMeta = {
@@ -78,49 +91,42 @@ function shortenTitle(title: string) {
   return title.length > MAX_TITLE_LENGTH ? title.substring(0, MAX_TITLE_LENGTH - 3) + '...' : title;
 }
 
-function obfuscateData(values: number[], obfuscated: boolean) {
-  // shaded area at top of bar chart
-  const topBar: number[] = Array(values.length).fill(OBFUSCATION_RANGE);
-  const bottomBar: string[] = [];
-
-  values.forEach((value, i) => {
-    // If the value is less than 10 and the section obfuscated, then we need to obfuscate the value
-    if (value < 10 && obfuscated) {
-      topBar[i] = 9;
-
-      // Set the text to < 10 so that it shows up in the bar chart
-      bottomBar[i] = '< 10';
-
-      // set the value in the topBar array to 0 so that it doesn't show up in the bar chart
-      values[i] = 0;
-    } else if (obfuscated) {
-      // The value has been obfuscated by +- obfuscationRange
-      bottomBar[i] = value + ' \u00B1 3';
-    } else {
-      topBar[i] = 0;
-      bottomBar[i] = value + '';
-    }
-  });
-  return { topBar, bottomBar };
+export function normalizeCount(value: CountValue): ObfuscatedCount {
+  return typeof value === 'number'
+    ? { count: value, display: String(value), variance: null }
+    : value;
 }
 
-function cutForShading(values: number[], obfuscated: boolean) {
-  return values.map((value) => (obfuscated && value > 0 ? value - OBFUSCATION_RANGE / 2 : value));
+// Split each value into the solid bar and the hatched uncertainty band stacked on
+// top of it. The band spans [max(0, count - variance), count + variance]; exact
+// values (no variance) render as a plain bar with no band.
+function toBars(values: ObfuscatedCount[]) {
+  const solidBar: number[] = [];
+  const hatchedBar: number[] = [];
+  const labels: string[] = [];
+
+  values.forEach(({ count, display, variance }) => {
+    const halfWidth = variance ?? 0;
+    const solid = Math.max(0, count - halfWidth);
+    solidBar.push(solid);
+    hatchedBar.push(count + halfWidth - solid);
+    labels.push(display);
+  });
+  return { solidBar, hatchedBar, labels };
 }
 
 export function createCategoryPlot(inData: CategoricalPlotData): PlotValues {
-  const values = Object.values(inData.categoricalMap);
-  const { topBar, bottomBar } = obfuscateData(values, inData.obfuscated);
+  const keys = Object.keys(inData.categoricalMap);
+  const values = Object.values(inData.categoricalMap).map(normalizeCount);
+  const { solidBar, hatchedBar, labels } = toBars(values);
 
   const colors: string[] = getColors(values.length);
   const title = shortenTitle(inData.title);
   const subtitle = getSubTitle(inData);
   const data: Data[] = [
     {
-      x: Object.keys(inData.categoricalMap),
-      // Remove half of the obfuscation range value from the top of the bar
-      // chart to make room for the shaded area
-      y: cutForShading(values, inData.obfuscated),
+      x: keys,
+      y: solidBar,
       name: title,
       type: 'bar',
       showlegend: false,
@@ -129,9 +135,9 @@ export function createCategoryPlot(inData: CategoricalPlotData): PlotValues {
       },
     },
     {
-      // Shaded portion
-      x: Object.keys(inData.categoricalMap),
-      y: topBar,
+      // Hatched uncertainty band stacked on the solid bar
+      x: keys,
+      y: hatchedBar,
       name: 'Obfuscated Data',
       showlegend: false,
       type: 'bar',
@@ -143,7 +149,7 @@ export function createCategoryPlot(inData: CategoricalPlotData): PlotValues {
           solidity: 0.5,
         },
       },
-      text: bottomBar,
+      text: labels,
       textposition: 'outside',
     },
   ];
@@ -187,8 +193,6 @@ export function createCategoryPlot(inData: CategoricalPlotData): PlotValues {
 }
 
 export function createContinuousPlot(inData: ContinuousPlotData): PlotValues {
-  const isObfuscated = inData.obfuscated;
-
   /*
    * The dataMap.continuousMap is an object with the key being the range and the value being the count.
    * When converting the keys, which are a string of the range, to an array of numbers, we are not
@@ -199,7 +203,7 @@ export function createContinuousPlot(inData: ContinuousPlotData): PlotValues {
    * This doesn't happen when the data isn't obfuscated because the keys are the same as the values.
    */
   const orderedKeys: string[] = [];
-  const orderedValues: number[] = [];
+  const orderedValues: ObfuscatedCount[] = [];
   Object.keys(inData.continuousMap)
     .sort((a, b) => {
       // sort the keys by the lower limit of the range
@@ -214,16 +218,16 @@ export function createContinuousPlot(inData: ContinuousPlotData): PlotValues {
     })
     .forEach((key) => {
       orderedKeys.push(key);
-      orderedValues.push(inData.continuousMap[key]);
+      orderedValues.push(normalizeCount(inData.continuousMap[key]));
     });
 
-  const { topBar, bottomBar } = obfuscateData(orderedValues, isObfuscated);
+  const { solidBar, hatchedBar, labels } = toBars(orderedValues);
   const title = shortenTitle(inData.title);
   const subtitle = getSubTitle(inData);
   const data: Data[] = [
     {
       x: orderedKeys,
-      y: cutForShading(orderedValues, inData.obfuscated),
+      y: solidBar,
       name: title,
       type: 'bar',
       showlegend: false,
@@ -236,8 +240,9 @@ export function createContinuousPlot(inData: ContinuousPlotData): PlotValues {
       },
     },
     {
+      // Hatched uncertainty band stacked on the solid bar
       x: orderedKeys,
-      y: topBar,
+      y: hatchedBar,
       name: 'Obfuscated Data',
       showlegend: false,
       type: 'bar',
@@ -253,7 +258,7 @@ export function createContinuousPlot(inData: ContinuousPlotData): PlotValues {
           width: 1,
         },
       },
-      text: bottomBar,
+      text: labels,
       textposition: 'outside',
     },
   ];
