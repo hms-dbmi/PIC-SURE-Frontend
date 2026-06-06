@@ -11,6 +11,7 @@
     altIcon?: string;
     'data-testid'?: string;
     class?: string;
+    oncopy?: () => void;
   }
 
   const {
@@ -22,6 +23,7 @@
     altIcon = 'fa-regular fa-square-check',
     'data-testid': testid = '',
     class: className = '',
+    oncopy = () => {},
   }: Props = $props();
 
   // svelte-ignore state_referenced_locally
@@ -40,6 +42,7 @@
       activeButtonText = altText;
     }
     navigator.clipboard.writeText(itemToCopy);
+    oncopy();
   }
 </script>
 
@@ -47,6 +50,7 @@
   data-testid={testid || 'copy'}
   triggerStyle="ml-4 {useIcon ? 'text-black-600 hover:text-primary-600' : 'btn'} {className}"
   onengage={updateButton}
+  onTriggerClick={(e) => e.stopPropagation()}
   color="secondary"
   placement="bottom"
 >
