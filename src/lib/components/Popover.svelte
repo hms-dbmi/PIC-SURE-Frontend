@@ -35,6 +35,7 @@
     trigger?: Snippet;
     children?: Snippet;
     onengage?: () => void;
+    onTriggerClick?: (event: MouseEvent) => void;
   }
 
   let {
@@ -51,6 +52,7 @@
     trigger,
     children,
     onengage = () => {},
+    onTriggerClick,
   }: Props = $props();
 
   let elemArrow: HTMLElement | null = $state(null);
@@ -112,7 +114,7 @@
   bind:this={floating.elements.reference}
   data-testid="{testid}-btn"
   class="cursor-pointer {triggerStyle}"
-  {...interactions.getReferenceProps()}
+  {...interactions.getReferenceProps({ onclick: onTriggerClick })}
   disabled={triggerDisabled}
 >
   {@render trigger?.()}

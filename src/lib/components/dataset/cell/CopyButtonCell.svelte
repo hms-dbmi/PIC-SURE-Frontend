@@ -5,17 +5,12 @@
   let { data = { cell: '', row: {} } } = $props();
 </script>
 
-<div
-  class="flex items-center"
-  role="button"
-  tabindex="-1"
-  onclick={(e) => {
-    e.stopPropagation();
-    log(createLog('ACTION', 'dataset.copy_id', { value: data.cell }));
-  }}
-  onkeydown={(e) =>
-    e.key === 'Enter' && log(createLog('ACTION', 'dataset.copy_id', { value: data.cell }))}
->
+<div class="flex items-center">
   <span class="monospace">{data.cell}</span>
-  <CopyButton data-testid="{data.cell}-copy" useIcon itemToCopy={data.cell} />
+  <CopyButton
+    data-testid="{data.cell}-copy"
+    useIcon
+    itemToCopy={data.cell}
+    oncopy={() => log(createLog('ACTION', 'dataset.copy_id', { value: data.cell }))}
+  />
 </div>
