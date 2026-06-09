@@ -258,4 +258,14 @@ describe('enrichFilterDetails', () => {
 
     expect(getConceptDetails).not.toHaveBeenCalled();
   });
+
+  it('does not fetch when the filter is already enriched with table details', () => {
+    const enriched = { ...mockSearchResult('\\demo\\numeric\\enriched\\') };
+    enriched.table = { display: 'Existing Dataset' } as SearchResult;
+    const filter = createNumericFilter(enriched, '0', '10');
+
+    enrichFilterDetails(filter, enriched.conceptPath, enriched.dataset);
+
+    expect(getConceptDetails).not.toHaveBeenCalled();
+  });
 });

@@ -163,7 +163,7 @@ export function updateFilter(existingUuid: string, filter: Filter) {
 }
 
 export function enrichFilterDetails(filter: Filter, conceptPath: string, dataset: string): void {
-  if (!filter.searchResult || !conceptPath || !dataset) return;
+  if (!filter.searchResult || filter.searchResult.table || !conceptPath || !dataset) return;
   getConceptDetails(conceptPath, dataset)
     .then((detail) => {
       if (!filter.searchResult) return;
