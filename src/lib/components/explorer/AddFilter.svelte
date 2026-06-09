@@ -108,7 +108,7 @@
     } else {
       addFilter(filter);
     }
-    // Categorical details are loaded on mount; fetch numeric dataset/study in the background.
+
     if (data.type !== 'Categorical') {
       enrichFilterDetails(filter, data.conceptPath, data.dataset);
     }
