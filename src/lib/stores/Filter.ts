@@ -169,9 +169,9 @@ export function enrichFilterDetails(filter: Filter, conceptPath: string, dataset
       if (!filter.searchResult) return;
       filter.searchResult.table = detail.table;
       filter.searchResult.study = detail.study;
-      const tree = get(filterTree);
-      tree.root.uuid = genericUUID();
-      filterTree.set(tree);
+      if (browser) {
+        sessionStorage.setItem('filterTree', get(filterTree).serialized);
+      }
     })
     .catch((error) => console.error('Failed to enrich filter details', error));
 }
