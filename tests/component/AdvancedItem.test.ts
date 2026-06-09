@@ -51,22 +51,50 @@ function renderAdvancedItem(searchResult: SearchResultFixture) {
 
 describe('AdvancedItem', () => {
   it('renders study and dataset metadata on one comma-separated line', () => {
-    renderAdvancedItem({ studyAcronym: 'demographics', dataset: 'pht12345' });
+    renderAdvancedItem({
+      studyAcronym: 'demographics',
+      table: { display: 'Demographics Dataset' } as SearchResult,
+    });
+
+    expect(
+      screen.getByText('Study: demographics, Dataset: Demographics Dataset'),
+    ).toBeInTheDocument();
+  });
+
+  it('renders only dataset metadata when studyAcronym is null', () => {
+    renderAdvancedItem({
+      studyAcronym: null,
+      table: { display: 'Demographics Dataset' } as SearchResult,
+    });
+
+    expect(screen.getByText('Dataset: Demographics Dataset')).toBeInTheDocument();
+    expect(screen.queryByText(/Study:/)).not.toBeInTheDocument();
+  });
+
+  it('prefers the table display name over the dataset id', () => {
+    renderAdvancedItem({
+      studyAcronym: 'demographics',
+      table: { display: 'Demographics Dataset', dataset: 'pht12345' } as SearchResult,
+    });
+
+    expect(
+      screen.getByText('Study: demographics, Dataset: Demographics Dataset'),
+    ).toBeInTheDocument();
+  });
+
+  it('falls back to the table dataset id when the display name is missing', () => {
+    renderAdvancedItem({
+      studyAcronym: 'demographics',
+      table: { dataset: 'pht12345' } as SearchResult,
+    });
 
     expect(screen.getByText('Study: demographics, Dataset: pht12345')).toBeInTheDocument();
   });
 
-  it('renders only dataset metadata when studyAcronym is null', () => {
-    renderAdvancedItem({ studyAcronym: null, dataset: 'pht12345' });
+  it('omits dataset metadata when the table is absent', () => {
+    renderAdvancedItem({ studyAcronym: 'demographics', table: null });
 
-    expect(screen.getByText('Dataset: pht12345')).toBeInTheDocument();
-    expect(screen.queryByText(/Study:/)).not.toBeInTheDocument();
-  });
-
-  it('does not duplicate dataset when it matches the study acronym', () => {
-    renderAdvancedItem({ studyAcronym: 'pht12345', dataset: 'pht12345' });
-
-    expect(screen.getByText('Study: pht12345')).toBeInTheDocument();
+    expect(screen.getByText('Study: demographics')).toBeInTheDocument();
     expect(screen.queryByText(/Dataset:/)).not.toBeInTheDocument();
   });
 });
