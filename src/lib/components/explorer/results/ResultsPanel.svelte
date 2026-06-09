@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
-  import type { Unsubscriber } from 'svelte/store';
   import { slide, scale } from 'svelte/transition';
 
   import { page } from '$app/state';
@@ -10,12 +9,8 @@
   import { features } from '$lib/configuration';
 
   import { allFilters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
-  import {
-    loadPatientCount,
-    hasNonZeroResult,
-    countsLoading,
-    totalParticipants,
-  } from '$lib/stores/ResultStore';
+  import { resultCountsState } from '$lib/state/resultCounts.svelte';
+  import { isObfuscatedBelowThreshold } from '$lib/services/counts/countFormat';
   import { exports, clearExports } from '$lib/stores/Export';
 
   import Filters from '$lib/components/explorer/results/Filters.svelte';
@@ -23,10 +18,8 @@
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
-  import { subscribeOnChange } from '$lib/utilities/Subscribers';
   import { log, createLog } from '$lib/logger';
 
-  let unsubFilters: Unsubscriber | null = null;
   let currentPage: string = $state(page.url.pathname);
   let isDiscoverPage = $derived(currentPage.includes('/discover'));
   let modalOpen: boolean = $state(false);
@@ -39,7 +32,7 @@
     features.explorer.allowExport &&
       !isDiscoverPage &&
       hasFilterOrExport &&
-      ($countsLoading || $hasNonZeroResult),
+      (resultCountsState.loading || resultCountsState.hasNonZero),
   );
 
   let hasValidDistributionFilters = $derived(
@@ -67,51 +60,33 @@
     !isDiscoverPage && features.explorer.variantExplorer && $hasGenomicFilter,
   );
 
-  function isObfuscatedLessThanTen(count: unknown) {
-    return typeof count === 'string' && count.trim().startsWith('<');
-  }
-
   let distributionsDisabled = $derived(
-    $countsLoading ||
-      (isDiscoverPage ? isObfuscatedLessThanTen($totalParticipants) : $totalParticipants === 0),
+    resultCountsState.loading ||
+      (isDiscoverPage
+        ? isObfuscatedBelowThreshold(resultCountsState.total)
+        : resultCountsState.total === 0),
   );
 
-  let showCohortDetails = $derived(!isDiscoverPage && features.explorer.enableCohortDetails);
-
-  function subscribe() {
-    unsubFilters = subscribeOnChange(allFilters, () => loadPatientCount(!isDiscoverPage));
-  }
-
-  function unsubscribe() {
-    if (unsubFilters) {
-      unsubFilters();
-      unsubFilters = null;
-    }
-  }
+  const getIsOpenAccess = () => isDiscoverPage;
 
   // The destroy/mount method is not called on page navigation if the page we're navigating to
   // has this same component. This can cause requests that may be pending on one page
   // to load on the next page. Example discover results displaying on explorer page.
-  // To fix this, we resubscribe on page navigation with the correct isOpenAccess flag
-  // for loadPatientCount method, dropping the previous results and sending a new request.
+  // To fix this, we restart on page navigation with the correct isOpenAccess flag,
+  // dropping the previous results and sending a new request.
   $effect(() => {
     if (!page.url.pathname.startsWith(currentPage)) {
-      // if the current path doesn't start with the saved page path,
-      // then it's not a child page and we should reset subscribers.
-      // Example- valid:   /explorer -> /explorer/cohort
-      //          invalid: /explorer/cohort -> /discover (like a back button action)
       currentPage = page.url.pathname;
-      unsubscribe();
-      loadPatientCount(!isDiscoverPage);
-      subscribe();
+      resultCountsState.start(getIsOpenAccess);
     }
   });
 
   onMount(() => {
-    loadPatientCount(!isDiscoverPage);
-    subscribe();
+    resultCountsState.start(getIsOpenAccess);
   });
-  onDestroy(unsubscribe);
+  onDestroy(() => {
+    resultCountsState.stop();
+  });
 </script>
 
 <Modal
@@ -139,7 +114,7 @@
         id="export-data-button"
         type="button"
         class="btn preset-filled-primary-500"
-        disabled={$countsLoading}
+        disabled={resultCountsState.loading}
         onclick={() => {
           log(createLog('ACTION', 'explorer.prepare_for_analysis'));
           goto('/explorer/export');
@@ -185,21 +160,11 @@
       </div>
     {/if}
   </div>
-  {#if showCohortDetails || showExplorerDistributions || showDiscoverDistributions || showVariantExplorer}
+  {#if showExplorerDistributions || showDiscoverDistributions || showVariantExplorer}
     <div class="flex flex-col items-center mt-7">
       <hr />
       <h5 class="text-center text-xl mt-7">Tool Suite</h5>
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
-        {#if showCohortDetails}
-          <CardButton
-            href="/explorer/cohort"
-            data-testid="cohort-details-btn"
-            title="Cohort Details"
-            icon="fa-solid fa-users"
-            size="md"
-            active={page.url.pathname.includes('explorer/cohort')}
-          />
-        {/if}
         {#if showExplorerDistributions}
           <CardButton
             href="/explorer/distributions"
