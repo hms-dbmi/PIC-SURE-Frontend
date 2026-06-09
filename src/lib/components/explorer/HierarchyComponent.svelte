@@ -3,7 +3,7 @@
   import type { NodeInterface } from '$lib/components/tree/types';
   import { type Filter, createAnyRecordOfFilter } from '$lib/models/Filter.svelte';
   import { activeRow } from '$lib/stores/ExpandableRow';
-  import { addFilter, enrichFilterDetails } from '$lib/stores/Filter';
+  import { addFilter } from '$lib/stores/Filter';
   import RadioTree from '$lib/components/tree/RadioTree.svelte';
   import { getConceptTree, getHierarchyConcepts, ENSURE_MAX_DEPTH } from '$lib/stores/Dictionary';
   import { panelOpen } from '$lib/stores/SidePanel';
@@ -104,7 +104,6 @@
       };
       filter = createAnyRecordOfFilter(searchResult, treeResult);
       addFilter(filter);
-      enrichFilterDetails(filter, data.conceptPath, data.dataset);
       finish();
     } catch (error: unknown) {
       if (error instanceof AnyRecordOfFilterError) {

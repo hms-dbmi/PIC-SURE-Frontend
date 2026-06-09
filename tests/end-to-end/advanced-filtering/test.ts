@@ -31,7 +31,7 @@ test.describe('Advanced Query Builder - Core Features', () => {
 
   test('AF-CORE-004: Filter metadata displays study and dataset on one line', async ({ page }) => {
     const firstFilterCard = afPage.getFilterCard(afPage.filterNames[0]);
-    await expect(firstFilterCard).toContainText('Study: TDS, Dataset: test_data_set');
+    await expect(firstFilterCard).toContainText('Study: TDS, Dataset: some_name_for_the_table');
 
     await afPage.closeModal();
     await page.evaluate(() => {
@@ -43,7 +43,7 @@ test.describe('Advanced Query Builder - Core Features', () => {
       if (!firstFilter?.searchResult) return;
 
       firstFilter.searchResult.studyAcronym = null;
-      firstFilter.searchResult.dataset = 'pht12345';
+      firstFilter.searchResult.table = { ...firstFilter.searchResult.table, display: 'pht12345' };
       sessionStorage.setItem('filterTree', JSON.stringify(tree));
     });
 
