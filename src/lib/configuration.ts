@@ -185,7 +185,6 @@ export const features: Indexable = {
     enablePfbExport: import.meta.env?.VITE_DOWNLOAD_AS_PFB !== 'false', // default true
     enableRedcapExport: import.meta.env?.VITE_ENABLE_REDCAP_EXPORT === 'true',
     enableSampleIdCheckbox: import.meta.env?.VITE_ENABLE_SAMPLE_ID_CHECKBOX === 'true',
-    enableCohortDetails: import.meta.env?.VITE_ENABLE_COHORT_DETAILS === 'true',
     showTreeStep: import.meta.env?.VITE_SHOW_TREE_STEP === 'true',
     enableExportTimeseries: import.meta.env?.VITE_EXPORT_TIMESERIES !== 'false', // default true
     exportSystemFields: (import.meta.env?.VITE_EXPORT_SYSTEM_FIELDS || '')

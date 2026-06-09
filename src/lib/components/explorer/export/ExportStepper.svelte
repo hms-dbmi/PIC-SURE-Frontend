@@ -8,7 +8,7 @@
   import type { DataSet } from '$lib/models/Dataset';
   import { exports } from '$lib/stores/Export';
   import { filters } from '$lib/stores/Filter';
-  import { totalParticipants } from '$lib/stores/ResultStore';
+  import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import { createDatasetName } from '$lib/services/datasets';
   import { federatedQueryMap } from '$lib/stores/Dataset.svelte';
   import { withBackoff } from '$lib/utilities/backoff';
@@ -173,7 +173,7 @@
       .filter((filter) => filter.filterType === 'AnyRecordOf')
       .reduce((acc, filter) => acc + filter.concepts.length, 0);
     let participantCount: number =
-      typeof $totalParticipants === 'number' ? $totalParticipants : MAX_DATA_POINTS_FOR_EXPORT + 1;
+      typeof resultCountsState.total === 'number' ? resultCountsState.total : MAX_DATA_POINTS_FOR_EXPORT + 1;
     let totalDataPoints: number =
       participantCount + ($filters.length + extraVariables) + $exports.length;
     return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
