@@ -23,7 +23,6 @@ export type Features = Indexable & {
     allowDownload: boolean;
     allowExport: boolean;
     distributionExplorer: boolean;
-    enableCohortDetails: boolean;
     enableExportTimeseries: boolean;
     enableHierarchy: boolean;
     enablePfbExport: boolean;
@@ -328,7 +327,6 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
       allowDownload: parse('ALLOW_DOWNLOAD', true),
       allowExport: parse('ALLOW_EXPORT', false),
       distributionExplorer: parse('DIST_EXPLORER', false),
-      enableCohortDetails: parse('ENABLE_COHORT_DETAILS', false),
       enableExportTimeseries: parse('EXPORT_TIMESERIES', true),
       enableHierarchy: parse('ENABLE_HIERARCHY', false),
       enablePfbExport: parse('DOWNLOAD_AS_PFB', true),

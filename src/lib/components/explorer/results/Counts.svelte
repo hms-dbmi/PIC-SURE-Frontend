@@ -1,8 +1,5 @@
 <script lang="ts">
-  import type { PatientCount, StatValue } from '$lib/models/Stat';
-  import { resultCounts } from '$lib/stores/ResultStore';
-  import { StatPromise } from '$lib/utilities/StatBuilder';
-  import { countResult } from '$lib/utilities/PatientCount';
+  import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
@@ -11,72 +8,47 @@
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
   const ERROR_VALUE = 'N/A';
-  let showErrorMessage = $state(false);
+  const LABEL = 'Participants';
 
-  function countSettled(counts: PromiseSettledResult<StatValue>[]) {
-    return countResult(counts.filter(StatPromise.fullfiled).map(({ value }) => value));
-  }
-
-  function hasErrorInCounts(counts: PromiseSettledResult<StatValue>[]) {
-    return counts.filter(StatPromise.fullfiled).length === 0 || counts.some(StatPromise.rejected);
-  }
-
-  $effect(() => {
-    showErrorMessage = false;
-    $resultCounts.forEach((stat) => {
-      Promise.allSettled(StatPromise.list(stat).map(({ promise }) => promise)).then(
-        (counts: PromiseSettledResult<StatValue>[]) => {
-          if (hasErrorInCounts(counts)) {
-            showErrorMessage = true;
-          }
-        },
-      );
-    });
-  });
+  let isLoading = $derived(resultCountsState.loading);
+  let snapshot = $derived(resultCountsState.snapshot);
+  let hasError = $derived(snapshot.summary.hasError);
+  let count = $derived(snapshot.summary.total);
+  let hasCount = $derived(snapshot.descriptorKey !== '');
 </script>
 
-{#each $resultCounts as stat}
-  <div class="flex flex-col items-center mt-2">
-    {#await Promise.allSettled(StatPromise.list(stat).map(({ promise }) => promise))}
-      <Loading ring size="mini" />
-    {:then counts}
-      {@const count: PatientCount = countSettled(counts)}
-      {@const hasError = hasErrorInCounts(counts)}
-      <span id="result-count">
-        {#if counts.filter(StatPromise.fullfiled).length === 0}
-          <span class="text-4xl font-bold">{ERROR_VALUE}</span>
-        {:else}
-          <div class="flex flex-row h-full">
-            <span id="result-count-number" class="text-4xl">{count}</span>
-            {#if hasError}
-              <HelpInfoPopup
-                type="exclamation"
-                color="warning"
-                id="result-count-error"
-                text={$filters.length !== 0
-                  ? config.branding.explorePage.filterErrorText
-                  : config.branding.explorePage.queryErrorText}
-              />
-            {/if}
-          </div>
-        {/if}
-      </span>
-    {/await}
-    <h4 class="text-center">{stat.label}</h4>
-  </div>
-{/each}
+<div class="flex flex-col items-center mt-2">
+  {#if isLoading}
+    <Loading ring size="mini" />
+  {:else}
+    <span id="result-count">
+      {#if !hasCount}
+        <span class="text-4xl font-bold">{ERROR_VALUE}</span>
+      {:else}
+        <div class="flex flex-row h-full">
+          <span id="result-count-number" class="text-4xl">{count}</span>
+          {#if hasError}
+            <HelpInfoPopup
+              type="exclamation"
+              color="warning"
+              id="result-count-error"
+              text={$filters.length !== 0
+                ? config.branding.explorePage.filterErrorText
+                : config.branding.explorePage.queryErrorText}
+            />
+          {/if}
+        </div>
+      {/if}
+    </span>
+  {/if}
+  <h4 class="text-center">{LABEL}</h4>
+</div>
 
-{#if showErrorMessage}
+{#if hasError}
   <ErrorAlert color="warning" iconSize="2xl">
     <p class="text-[0.6rem] !m-0">
-      {#if config.features.federated}
-        Some sites did not return patient counts for your query. See
-        <a href="/explorer/cohort" class="anchor font-bold">Cohort Details</a>
-        for more information.
-      {:else}
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        {@html sanitizeHTML(config.branding.explorePage.queryErrorText)}
-      {/if}
+      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+      {@html sanitizeHTML(config.branding.explorePage.queryErrorText)}
     </p>
   </ErrorAlert>
 {/if}
