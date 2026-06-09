@@ -162,8 +162,6 @@ export function updateFilter(existingUuid: string, filter: Filter) {
   filterTree.set(tree);
 }
 
-// The dictionary search endpoint omits table/study; fetch them in the background so adding a
-// filter stays snappy, then patch the stored filter for visualizations and the query builder.
 export function enrichFilterDetails(filter: Filter, conceptPath: string, dataset: string): void {
   if (!filter.searchResult || !conceptPath || !dataset) return;
   getConceptDetails(conceptPath, dataset)
