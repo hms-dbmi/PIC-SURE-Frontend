@@ -108,10 +108,7 @@
     } else {
       addFilter(filter);
     }
-
-    if (data.type !== 'Categorical') {
-      enrichFilterDetails(filter, data.conceptPath, data.dataset);
-    }
+    enrichFilterDetails(filter, data.conceptPath, data.dataset);
     finish();
   }
 
