@@ -37,7 +37,7 @@
   function getSubtitleByConceptPath(filters: Filter[]) {
     return new Map(
       filters.map((filter) => {
-        const dataset = filter.searchResult?.table?.dataset ?? filter.searchResult?.table?.display;
+        const dataset = filter.searchResult?.table?.display ?? filter.searchResult?.table?.dataset;
         return [
           filter.id,
           [
