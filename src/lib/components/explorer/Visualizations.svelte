@@ -36,15 +36,18 @@
 
   function getSubtitleByConceptPath(filters: Filter[]) {
     return new Map(
-      filters.map((filter) => [
-        filter.id,
-        [
-          filter.searchResult?.studyAcronym && `Study: ${filter.searchResult.studyAcronym}`,
-          filter.searchResult?.dataset && `Dataset: ${filter.searchResult.dataset}`,
-        ]
-          .filter(Boolean)
-          .join(' '),
-      ]),
+      filters.map((filter) => {
+        const dataset = filter.searchResult?.table?.dataset ?? filter.searchResult?.table?.display;
+        return [
+          filter.id,
+          [
+            filter.searchResult?.studyAcronym && `Study: ${filter.searchResult.studyAcronym}`,
+            dataset && `Dataset: ${dataset}`,
+          ]
+            .filter(Boolean)
+            .join(' '),
+        ];
+      }),
     );
   }
 
