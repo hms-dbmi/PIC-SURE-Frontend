@@ -20,7 +20,7 @@ FROM httpd:2.4.67-alpine3.23@sha256:0136c2d4462f3b8ecc92bea70efdfef4d06523999ae8
 RUN apk add --no-cache \
   libexpat=2.7.5-r0 \
   nodejs=24.14.1-r0 \
-  openssl=3.5.6-r0 \
+  openssl \
   sed=4.9-r2 \
   supervisor=4.3.0-r0 \
   zlib=1.3.2-r0
