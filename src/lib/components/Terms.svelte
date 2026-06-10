@@ -7,8 +7,9 @@
   import * as api from '$lib/api';
   import { Psama } from '$lib/paths';
   import { toaster } from '$lib/toaster';
-  import { login, logout, user, isLoggedIn, getToken } from '$lib/stores/User';
+  import { login, logout, user, isUserLoggedIn, getToken } from '$lib/stores/User';
   import { sanitizeHTML } from '$lib/utilities/HTML';
+  import { log, createLog } from '$lib/logger';
 
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -16,7 +17,7 @@
   let { modalOpen = $bindable(false) }: { modalOpen?: boolean } = $props();
   let terms: Promise<string> = $state(Promise.resolve(''));
   let enforceTerms: boolean = $derived(
-    config.features.enforceTermsOfService && $isLoggedIn && !$user.acceptedTOS,
+    config.features.enforceTermsOfService && isUserLoggedIn() && !$user.acceptedTOS,
   );
 
   function loadTermsHTML() {
@@ -25,6 +26,7 @@
 
   function accept() {
     if (browser) {
+      log(createLog('AUTH', 'tos.accept'));
       api
         .post(Psama.TOS + '/accept', {})
         .then(() => {
@@ -45,6 +47,7 @@
 
   function reject() {
     if (browser) {
+      log(createLog('AUTH', 'tos.reject'));
       logout().then(() => {
         if (config.branding.termsOfService.rejectionUrl) {
           window.location.href = config.branding.termsOfService.rejectionUrl;

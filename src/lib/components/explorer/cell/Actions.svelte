@@ -1,26 +1,30 @@
 <script lang="ts">
-  import { page } from '$app/state';
-
   import type { SearchResult } from '$lib/models/Search';
   import { setActiveRow } from '$lib/stores/ExpandableRow';
-  import type { ExportInterface } from '$lib/models/Export';
-  import ExportStore from '$lib/stores/Export';
+  import {
+    exports,
+    addExport,
+    removeExportByUuid,
+    mapSearchResultAsExport,
+  } from '$lib/stores/Export';
   import { panelOpen } from '$lib/stores/SidePanel';
   import { config } from '$lib/configuration.svelte';
-  import { genericUUID } from '$lib/utilities/UUID';
+  import { isOpenAccess } from '$lib/AccessState';
+  import { log, createLog, getPageContext } from '$lib/logger';
 
-  let { exports, addExport, removeExport } = ExportStore;
   let { data = {} as SearchResult } = $props();
-  let exportItem = $derived({
-    id: genericUUID(),
-    searchResult: data.row,
-    display: data.row.display || data.row.name,
-    conceptPath: data.row.conceptPath,
-  } as ExportInterface);
+  let exportItem = $derived(mapSearchResultAsExport(data.row));
 
   function updateActiveRow(componentName: string) {
     return (event: Event) => {
       event.stopPropagation();
+      log(
+        createLog('ACTION', `search_result.${componentName}`, {
+          variable: data.row.display || data.row.name,
+          conceptPath: data.row.conceptPath,
+          pageContext: getPageContext(),
+        }),
+      );
       setActiveRow({
         row: data.row.conceptPath,
         component: componentName,
@@ -36,17 +40,31 @@
   function insertExportContent(e: Event) {
     e.stopPropagation();
     if ($exports.includes(exportItem)) {
-      removeExport(exportItem.id);
+      log(
+        createLog('ACTION', 'search_result.export_remove', {
+          variable: data.row.display || data.row.name,
+          conceptPath: data.row.conceptPath,
+          pageContext: getPageContext(),
+        }),
+      );
+      removeExportByUuid(exportItem.id);
     } else {
+      log(
+        createLog('ACTION', 'search_result.export_add', {
+          variable: data.row.display || data.row.name,
+          conceptPath: data.row.conceptPath,
+          pageContext: getPageContext(),
+        }),
+      );
       addExport(exportItem);
       $panelOpen = true;
     }
   }
-  let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
+
   let isExported = $derived(
     $exports.map((exp) => exp.conceptPath).includes(exportItem.conceptPath),
   );
-  let shouldDisableFilter = $derived(isOpenAccess && !data.row.allowFiltering);
+  let shouldDisableFilter = $derived(isOpenAccess() && !data.row.allowFiltering);
 </script>
 
 <button type="button" title="Information" class="btn-icon-color" onclick={insertInfoContent}>
@@ -76,7 +94,7 @@
     <span class="sr-only">View Data Hierarchy</span>
   </button>
 {/if}
-{#if config.features.explorer.exportsEnableExport && !isOpenAccess}
+{#if config.features.explorer.exportsEnableExport && !isOpenAccess()}
   <button
     type="button"
     title={isExported ? 'Remove from Analysis' : 'Add for Analysis'}

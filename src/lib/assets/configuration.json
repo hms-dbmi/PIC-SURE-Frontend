@@ -74,6 +74,11 @@
         "dataElement": "name"
       }
     ],
+    "resultInfo": {
+      "variableHeader": "Variable Information",
+      "datasetHeader": "Dataset Information",
+      "studyHeader": "Study Information"
+    },
     "tourSearchIntro": "PIC-SURE Search allows you to search for variable level data.",
     "totalPatientsText": "Filtered Participants",
     "queryErrorText": "There was an error with your query. If this persists, please contact your PIC-SURE admin.",
@@ -104,7 +109,7 @@
         "icon": "fa-solid fa-magnifying-glass",
         "url": "/explorer",
         "btnText": "Start Exploring",
-        "isOpen": false,
+        "isOpen": true,
         "showIfLoggedIn": true
       },
       {
@@ -114,6 +119,15 @@
         "url": "/analyze/api",
         "btnText": "Prepare for Analysis",
         "isOpen": false,
+        "showIfLoggedIn": true
+      },
+      {
+        "title": "Help",
+        "description": "Documentation and videos",
+        "icon": "fa-solid fa-circle-info",
+        "url": "/help",
+        "btnText": "Go To Help Page",
+        "isOpen": true,
         "showIfLoggedIn": true
       }
     ],
@@ -144,6 +158,9 @@
       "instructions": {
         "connection": "To connect to the PIC-SURE Application Programming Interface (API), you will need your personal access token. Copy your token and save as a text file called \"token.txt\" in the working directory of your chosen analysis workspace.",
         "execution": "To start your analysis, copy and execute the following code in your preferred analysis environment to connect to the PIC-SURE API. Note that you will need your personal access token to complete the connection."
+      },
+      "example": {
+        "setup": "<p>First, you will need to set up your analysis workspace. To leverage the existing documentation and examples of how to use the PIC-SURE API, this workspace should have Python or R installed. You can access the publicly available examples on the <a class=\"anchor\" href=\"https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API/tree/master/CDC_National_Health_and_Nutrition_Examination_Survey\" target=\"_blank\">GitHub repository</a>.</p>"
       }
     },
     "analysis": {
@@ -187,7 +204,8 @@
     "showSiteName": false,
     "openPicsureLink": "/",
     "openPicsureLinkText": "Explore without Login",
-    "contactLink": "https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5"
+    "contactLink": "https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5",
+    "logoHeight": 7.5
   },
   "help": {
     "links": [

@@ -3,10 +3,14 @@
   import 'driver.js/dist/driver.css';
   import '../../../styles/tour.css';
 
+  import { config } from '$lib/configuration.svelte';
+  import { flatIndex } from '$lib/utilities/Objects';
+
   import { searchTerm, selectedFacets, searchPromise } from '$lib/stores/Search';
   import { clearFilters } from '$lib/stores/Filter';
   import { clearExports } from '$lib/stores/Export';
   import { sanitizeHTML } from '$lib/utilities/HTML';
+  import { log, createLog, getPageContext } from '$lib/logger';
 
   import Modal from '$lib/components/Modal.svelte';
   import Loading from '$lib/components/Loading.svelte';
@@ -140,37 +144,44 @@
   // It will map the function names in pop over to actual functions
   /* eslint-disable @typescript-eslint/no-explicit-any */
   function mapConfigurationToSteps(steps: any): DriveStep[] {
-    return steps.map((step: any) => {
-      const { popover, ...rest } = step;
-      const serializedStep: any = {
-        ...rest,
-        popover: {
-          ...popover,
-          title: replacePlaceholders(popover.title, tourConfig?.searchTerm),
-          description: replacePlaceholders(popover.description, tourConfig?.searchTerm),
-        },
-      };
+    const flatFeatures = flatIndex(config.features);
+    return steps
+      .filter(
+        ({ dependsOnFeature = '' }: { dependsOnFeature: string }) =>
+          !dependsOnFeature || flatFeatures[dependsOnFeature],
+      )
+      .map((step: any) => {
+        const { popover, dependsOnFeature, ...rest } = step;
+        const serializedStep: any = {
+          ...rest,
+          popover: {
+            ...popover,
+            title: replacePlaceholders(popover.title, tourConfig?.searchTerm),
+            description: replacePlaceholders(popover.description, tourConfig?.searchTerm),
+          },
+        };
 
-      if (popover.onPrevClick) {
-        serializedStep.popover.onPrevClick = functionMap[popover.onPrevClick];
-      }
+        if (popover.onPrevClick) {
+          serializedStep.popover.onPrevClick = functionMap[popover.onPrevClick];
+        }
 
-      if (popover.onNextClick) {
-        serializedStep.popover.onNextClick = functionMap[popover.onNextClick];
-      }
+        if (popover.onNextClick) {
+          serializedStep.popover.onNextClick = functionMap[popover.onNextClick];
+        }
 
-      if (step.onHighlightStarted) {
-        serializedStep.onHighlightStarted = functionMap[step.onHighlightStarted];
-      }
+        if (step.onHighlightStarted) {
+          serializedStep.onHighlightStarted = functionMap[step.onHighlightStarted];
+        }
 
-      if (step.removeHighlightClass) {
-        serializedStep.removeHighlightClass = functionMap[step.removeHighlightClass];
-      }
+        if (step.removeHighlightClass) {
+          serializedStep.removeHighlightClass = functionMap[step.removeHighlightClass];
+        }
 
-      return serializedStep;
-    });
+        return serializedStep;
+      });
   }
 
+  // svelte-ignore state_referenced_locally
   const steps = mapConfigurationToSteps(tourConfig.steps);
 
   // Notes:
@@ -191,7 +202,23 @@
     disableButtons: ['previous'],
 
     steps: steps,
+    onHighlightStarted: (_element, step, { state }) => {
+      if (state.activeIndex && state.activeIndex > 0) {
+        log(
+          createLog('ACTION', 'tour.next', {
+            pageContext: getPageContext(),
+            step: state.activeIndex,
+          }),
+        );
+      }
+    },
     onDestroyed: () => {
+      log(
+        createLog('ACTION', 'tour.exit', {
+          pageContext: getPageContext(),
+          lastStep: tourDriver.getActiveIndex(),
+        }),
+      );
       resetSearch();
       selectedFacets.set([]);
       const sidePanel = document.querySelector('#side-panel') as HTMLElement;
@@ -205,6 +232,7 @@
   });
 
   async function startTour() {
+    log(createLog('ACTION', 'tour.start', { pageContext: getPageContext() }));
     started = true;
     openDrawer();
     resetSearch();
@@ -251,10 +279,11 @@
   type="button"
   data-testid="explorer-tour-btn"
   id="tourBtn"
-  class="btn preset-filled-secondary-500 text-black hover:text-white"
+  class="btn preset-filled-secondary-500"
   onclick={() => {
     started = false;
     openModal = true;
+    log(createLog('ACTION', 'tour.open', { pageContext: getPageContext() }));
   }}
   >Take a Tour
 </button>

@@ -10,6 +10,7 @@
   import Loading from '$lib/components/Loading.svelte';
   import type { User } from '$lib/models/User';
   import { login, setToken } from '$lib/stores/User';
+  import { log, createLog } from '$lib/logger';
 
   async function attemptUserLogin() {
     let redirectTo = '/';
@@ -41,6 +42,8 @@
         throw new Error('User not found');
       }
 
+      log(createLog('LOGIN', 'login.success', { provider: providerType }, { status: 200 }));
+
       // api returns as string
       user.acceptedTOS = String(user.acceptedTOS) === 'true';
       if (config.features.enforceTermsOfService && !user.acceptedTOS) {
@@ -54,16 +57,8 @@
 
   onMount(async () => {
     panelOpen.set(false);
-    attemptUserLogin()
-    .then(() => {
-      // wait to delete from session storage, in case attemptUserLogin loads the filters and triggers the 
-      // session storage to be re-written
-      setTimeout(() => {
-        sessionStorage.removeItem('filterTree');
-        sessionStorage.removeItem('genomicFilters');
-      }, 500);
-    })
-    .catch((error) => {
+    attemptUserLogin().catch((error) => {
+      log(createLog('LOGIN', 'login.failure', { error: String(error) }, { status: 401 }));
       console.error('Login Error: ', error);
       goto('/login/error');
       return;

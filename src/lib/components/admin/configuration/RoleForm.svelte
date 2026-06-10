@@ -14,8 +14,11 @@
 
   let { role = undefined, privilegeList }: Props = $props();
 
+  // svelte-ignore state_referenced_locally
   let name = $state(role ? role.name : '');
+  // svelte-ignore state_referenced_locally
   let description = $state(role ? role.description : '');
+  // svelte-ignore state_referenced_locally
   let privileges = $state(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     privilegeList.map(([_name, uuid]) => ({

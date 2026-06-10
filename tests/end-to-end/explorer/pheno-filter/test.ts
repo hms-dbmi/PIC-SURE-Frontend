@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Route } from '@playwright/test';
 import { test, mockApiSuccess } from '../../custom-context';
 
 import {
@@ -12,12 +12,16 @@ import {
   detailResForAge,
   detailResForAge2,
   mockDataWithChildren,
+  hierarchyResponse,
 } from '../../mock-data';
 import { getOption, clickNthFilterIcon } from '../../utils';
-import { createCategoricalFilter, createNumericFilter } from '../../../../src/lib/models/Filter';
+import {
+  createCategoricalFilter,
+  createNumericFilter,
+} from '../../../../src/lib/models/Filter.svelte';
 import type { SearchResult } from '../../../../src/lib/models/Search';
 
-const countResultPath = '*/**/picsure/query/sync';
+const countResultPath = '*/**/picsure/v3/query/sync';
 
 test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, '*/**/api/config', {
@@ -36,7 +40,7 @@ test.describe('Add Filters', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   test('Add button is disabled when nothing is selected', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -53,7 +57,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -70,7 +74,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -90,7 +94,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -125,7 +129,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -165,7 +169,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -191,7 +195,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -220,7 +224,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -251,7 +255,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -279,7 +283,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${mockData.content[5].dataset}`,
       detailResForAge,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -314,7 +318,7 @@ test.describe('Add Filters', () => {
   });
   test('Fitlers with min and max display in the info panel', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -342,7 +346,7 @@ test.describe('Add Filters', () => {
   });
   test('Fitlers with no min display less than text', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -367,7 +371,7 @@ test.describe('Add Filters', () => {
   });
   test('Fitlers with no max display greater than text', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -392,7 +396,7 @@ test.describe('Add Filters', () => {
   });
   test('Fitlers where the min and max were left blank show the correct text', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -411,7 +415,7 @@ test.describe('Add Filters', () => {
   });
   test('Added Fitlers contain study acronym and dataset', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -437,7 +441,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -465,7 +469,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -491,7 +495,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -521,7 +525,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -552,7 +556,7 @@ test.describe('Add Filters', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -601,6 +605,10 @@ test.describe('Any record of filter', () => {
       `${conceptTreePath}/${mockData.content[0].dataset}?depth=100`,
       mockDataWithChildren,
     );
+    await page.route(
+      '*/**/picsure/proxy/dictionary-api/concepts/hierarchy/test_data_set',
+      async (route: Route) => route.fulfill({ json: hierarchyResponse }),
+    );
 
     await page.goto('/explorer?search=somedata');
 
@@ -611,10 +619,12 @@ test.describe('Any record of filter', () => {
     const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
     await hierarchyButton.click();
     await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-    const secondItem = page.getByTestId('radio:disease');
+    const secondItem = page.getByTestId('radio:Disease (disease)');
     await secondItem.click();
     const addFilterButton = page.getByTestId('add-filter');
     await addFilterButton.click();
+    await expect(page.locator('#modal-component')).not.toBeVisible();
+    await expect(page.getByTestId(/^any-record-of-filter-modal-.*-btn$/)).toBeVisible();
   });
   test('Adding an any record of filter adds the filter to the results panel', async ({ page }) => {
     await expect(page.locator('#results-panel')).toBeVisible();
@@ -629,14 +639,14 @@ test.describe('Any record of filter', () => {
     );
   });
   test('Clicking the Any Record of filter button opens the modal', async ({ page }) => {
-    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
+    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*-btn$/);
     await addedFilter.click();
     await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
   });
   test('Clicking the Any Record of filter modal has the correct number of variables', async ({
     page,
   }) => {
-    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
+    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*-btn$/);
     await addedFilter.click();
     await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
     await expect(
@@ -644,19 +654,24 @@ test.describe('Any record of filter', () => {
     ).toHaveText(`${mockDataWithChildren.children.length} variable(s) in disease category`);
   });
   test('Clicking the Any Record of filter modal has the correct variables', async ({ page }) => {
-    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
+    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*-btn$/);
     await addedFilter.click();
     await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
-    const variables = page.getByTestId('any-record-of-filter-modal').locator('div').all();
-    expect((await variables).length).toBe(mockDataWithChildren.children.length);
-    expect((await variables)[0]).toHaveText(mockDataWithChildren.children[0].conceptPath);
+    const variablesLocator = page.getByTestId('any-record-of-filter-modal').locator('div');
+    await expect(variablesLocator).toHaveCount(mockDataWithChildren.children.length);
+    await expect(variablesLocator.first()).toHaveText(mockDataWithChildren.children[0].conceptPath);
   });
   test('Clicking the close button closes the modal', async ({ page }) => {
-    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*$/);
+    const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*-btn$/);
     await addedFilter.click();
-    await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
-    await page.getByTestId('modal-close-button').click();
-    await expect(page.getByTestId('any-record-of-filter-modal')).not.toBeVisible();
+    const modal = page.getByTestId('any-record-of-filter-modal');
+    await expect(modal).toBeVisible();
+    await page
+      .locator('#modal-component')
+      .filter({ has: modal })
+      .getByTestId('modal-close-button')
+      .click();
+    await expect(modal).not.toBeVisible();
   });
   test('If there is only Any Record of filter, the distributions button is hidden', async ({
     page,
@@ -670,7 +685,7 @@ test.describe('User with no query scopes can add filters without error', () => {
 
   test('User can prepare data for analysis', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
 
     await page.goto('/explorer?search=somedata');
 
@@ -684,7 +699,7 @@ test.describe('User with no query scopes can add filters without error', () => {
   });
   test('User can view variable distirubtions', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
 
     await page.goto('/explorer?search=somedata');
 
@@ -697,13 +712,13 @@ test.describe('User with no query scopes can add filters without error', () => {
     await expect(page.locator('#discover-error-container')).not.toBeVisible();
   });
 });
-test.describe('Query V2 OR features', () => {
+test.describe('Query V3 OR features', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/noScopeUser.json' });
   let querySyncRequest: string[] = [];
 
   test.beforeEach(({ page }) => {
     page.on('request', (request) => {
-      if (request.url().includes('/picsure/query/sync')) {
+      if (request.url().includes('/picsure/v3/query/sync')) {
         const data = request.postData();
         if (data !== null) {
           querySyncRequest.push(data);
@@ -715,7 +730,7 @@ test.describe('Query V2 OR features', () => {
   test.afterEach(() => {
     querySyncRequest = [];
   });
-  test('sends request with QueryV2 structure', async ({ page }) => {
+  test('sends request with QueryV3 structure', async ({ page }) => {
     // Given
     await mockApiSuccess(
       page,
@@ -733,11 +748,11 @@ test.describe('Query V2 OR features', () => {
 
     // Then
     expect(querySyncRequest.length).toBe(1);
-    expect(querySyncRequest[0]).not.toContain('phenotypicClauses');
+    expect(querySyncRequest[0]).toContain('phenotypicClauses');
   });
-  test('does not have dropdowns on explorer', async ({ page }) => {
+  test('shows AND label between filters on explorer', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/picsure/query/sync', '9999');
+    await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
 
     // When
@@ -764,7 +779,7 @@ test.describe('Query V2 OR features', () => {
     await addFilterButton2.click();
 
     // Then
-    const filters = await page.locator('#export-filters .operator-select').all();
-    expect(filters.length).toBe(0);
+    await expect(page.getByTestId('operator-label')).toHaveCount(1);
+    await expect(page.getByTestId('operator-label').first()).toHaveText('AND');
   });
 });

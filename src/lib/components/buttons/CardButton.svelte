@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
   interface Props {
     title: string;
+    id?: string;
     icon?: string;
     href?: string;
     subtitle?: string;
@@ -15,6 +15,7 @@
 
   const {
     title,
+    id,
     icon = '',
     href = '',
     subtitle = '',
@@ -26,27 +27,40 @@
     onclick = () => {},
   }: Props = $props();
 
-  function clickEvent() {
-    if (href && href.startsWith('/')) {
-      goto(href);
-    } else if (href) {
-      window.open(href, '_blank');
-    } else {
-      onclick();
-    }
-  }
+  const cardClasses = $derived(
+    `card card-btn ${size !== 'other' ? 'card-btn-' + size : ''} ${className} hover:scale-110 hover:shadow-lg`,
+  );
 </script>
 
-<button
-  data-testid={testid}
-  type="button"
-  class={`card card-btn ${size !== 'other' ? 'card-btn-' + size : ''} ${className}`}
-  class:preset-filled-primary-500={active}
-  class:preset-outlined-primary-500={!active}
-  onclick={clickEvent}
-  {disabled}
->
-  {#if icon}<i class="icon {icon}"></i>{/if}
-  <div class="title">{title}</div>
-  {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
-</button>
+{#if href && !disabled}
+  <a
+    {href}
+    {id}
+    data-testid={testid}
+    target={href.startsWith('/') ? undefined : '_blank'}
+    class={cardClasses}
+    class:preset-filled-primary-500={active}
+    class:preset-outlined-primary-500={!active}
+    tabindex="0"
+    {onclick}
+  >
+    {#if icon}<i class="icon {icon}"></i>{/if}
+    <div class="title">{title}</div>
+    {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
+  </a>
+{:else}
+  <button
+    {id}
+    data-testid={testid}
+    type="button"
+    class={cardClasses}
+    class:preset-filled-primary-500={active}
+    class:preset-outlined-primary-500={!active}
+    {onclick}
+    {disabled}
+  >
+    {#if icon}<i class="icon {icon}"></i>{/if}
+    <div class="title">{title}</div>
+    {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
+  </button>
+{/if}

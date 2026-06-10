@@ -21,7 +21,6 @@ export default class AuthProvider implements AuthData {
   type: string;
   enabled: boolean;
   icon?: string | undefined;
-  loginurl?: string | undefined;
   logouturl?: string | undefined;
   callbackurl?: string | undefined;
   alt: boolean;

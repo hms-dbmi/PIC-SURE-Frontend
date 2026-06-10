@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { config } from '$lib/configuration.svelte';
   import { uuidInput } from '$lib/utilities/Forms';
+  import { log, createLog } from '$lib/logger';
   import type { QueryInterfaceV2 } from '$lib/models/query/Query';
   import { type Status, type Metadata, type DataType, UploadStatus } from '$lib/models/DataRequest';
   import {
@@ -79,6 +80,7 @@
   }
 
   async function search() {
+    log(createLog('DAR', 'data_request.search', { datasetId }));
     approved = null;
     errorFromSearch = undefined;
     searched = true;

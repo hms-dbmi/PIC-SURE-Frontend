@@ -13,6 +13,7 @@ import type {
 import type { Pageable } from '$lib/models/api/Pageable';
 import { user } from '$lib/stores/User';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
+import { log, createLog } from '$lib/logger';
 
 export type FacetSkeleton = {
   [facetCategory: string]: string[];
@@ -24,7 +25,7 @@ export const facetsPromise: Writable<Promise<DictionaryFacetResult[]>> = writabl
 export const openFacets: Writable<string[]> = writable([]);
 
 const dictonaryCacheMap = new Map<string, SearchResult>();
-const ENSURE_MAX_DEPTH = 100;
+export const ENSURE_MAX_DEPTH = 100;
 
 function cacheResult(key: string, value: SearchResult) {
   if (!key || !value) return;
@@ -80,6 +81,7 @@ export async function updateFacetsFromSearch(): Promise<DictionaryFacetResult[]>
   }
 
   try {
+    log(createLog('SEARCH', 'facets.load', { search, facets }));
     const response: DictionaryFacetResult[] = await api.post(Picsure.Facets, request);
     initializeHiddenFacets(response);
     processFacetResults(response);
@@ -142,6 +144,22 @@ export async function getConceptDetails(
   return response;
 }
 
+export async function getHierarchyConcepts(
+  dataset: string,
+  conceptPath: string,
+): Promise<SearchResult[]> {
+  const response: SearchResult[] = await api.post(
+    `${Picsure.Concept.Hierarchy}/${dataset}`,
+    conceptPath,
+  );
+
+  if (!response) {
+    throw new Error('No response');
+  }
+
+  return response;
+}
+
 export function addConsents(request: DictionarySearchRequest) {
   const queryTemplate = get(user)?.queryTemplate;
   if (queryTemplate) {
@@ -196,7 +214,6 @@ export async function getConceptTree(
 }
 
 export async function getInitialTree(depth: number = 1): Promise<SearchResult[]> {
-  console.log('getInitialTree depth', depth);
   if (depth > ENSURE_MAX_DEPTH) {
     depth = ENSURE_MAX_DEPTH;
   }

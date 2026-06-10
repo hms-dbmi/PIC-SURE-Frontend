@@ -10,5 +10,6 @@ export function genericUUID() {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function objectUUID(obj: any): string {
+  delete obj.uuid;
   return uuid.v5(JSON.stringify(obj), SESSION_NAMESPACE);
 }

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { config } from '$lib/configuration.svelte';
+  import { log, createLog } from '$lib/logger';
 
   type Acceptance = 'granted' | 'denied';
   interface Consent {
@@ -44,10 +45,10 @@
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-  function gtag(command: string, ...arg: any[]) {
+  function gtag(...args: any[]) {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
     if (!window.dataLayer) window.dataLayer = [];
-    window.dataLayer.push(arguments);
+    window.dataLayer.push(args);
   }
 
   function initialize() {
@@ -72,6 +73,7 @@
   }
 
   function updateConsent(accepted: boolean) {
+    log(createLog('ACTION', 'consent.update', { accepted }));
     consent = {
       ...consent,
       analytics_storage: accepted ? 'granted' : 'denied',

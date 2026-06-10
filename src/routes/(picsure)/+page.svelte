@@ -3,20 +3,16 @@
   import { goto } from '$app/navigation';
   import Searchbox from '$lib/components/Searchbox.svelte';
   import Stats from '$lib/components/landing/Stats.svelte';
-  import { browser } from '$app/environment';
+  import { isUserLoggedIn } from '$lib/stores/User';
+  import { log, createLog } from '$lib/logger';
+
   let searchTerm = $state('');
 
-  const isUserLoggedIn = () => {
-    if (browser) {
-      return !!localStorage.getItem('token');
-    }
-    return false;
-  };
-
   function search() {
-    isUserLoggedIn()
-      ? goto(`/explorer?search=${searchTerm}`)
-      : goto(`/discover?search=${searchTerm}`);
+    log(createLog('SEARCH', 'landing.search', { term: searchTerm }));
+    config.features.login.open && config.features.discover && !isUserLoggedIn()
+      ? goto(`/discover?search=${searchTerm}`)
+      : goto(`/explorer?search=${searchTerm}`);
   }
 
   const actionsToDisplay = config.branding.landing.actions.filter((action) => {
@@ -45,7 +41,11 @@
         <div class="text-3xl my-1">{title}</div>
         <i class="text-[5rem] my-3 text-secondary-600-400 {icon}"></i>
         <div class="subtitle my-3">{description}</div>
-        <a data-testid="landing-action-{title}-btn" href={url} class="btn preset-filled-primary-500"
+        <a
+          data-testid="landing-action-{title}-btn"
+          href={url}
+          class="btn preset-filled-primary-500"
+          onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
           >{btnText}</a
         >
       </div>

@@ -13,8 +13,11 @@
 
   let { privilege = undefined, applicationList }: Props = $props();
 
+  // svelte-ignore state_referenced_locally
   let name = $state(privilege ? privilege.name : '');
+  // svelte-ignore state_referenced_locally
   let description = $state(privilege ? privilege.description : '');
+  // svelte-ignore state_referenced_locally
   let application = $state(privilege ? privilege.application : '');
 
   async function savePrivilege(event: Event) {

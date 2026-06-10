@@ -3,6 +3,7 @@
   import { activeRow } from '$lib/stores/Dashboard';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '../Loading.svelte';
+  import { log, createLog } from '$lib/logger';
 
   const datasetId = ($activeRow?.dataset_id as string) || '';
   const title = ($activeRow?.name as string) || '';
@@ -59,7 +60,10 @@
         href={link || '#'}
         class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
         target="_blank"
-        onclick={(e) => e.stopPropagation()}>More Info</a
+        onclick={(e) => {
+          e.stopPropagation();
+          log(createLog('ACTION', 'dashboard.more_info_panel', { dataset: datasetId, url: link }));
+        }}>More Info</a
       >
     </div>
   {/if}

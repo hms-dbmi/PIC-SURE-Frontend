@@ -1,7 +1,7 @@
 import { error, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
 import { browser } from '$app/environment';
-import { page } from '$app/state';
+import { log, createLog, getSessionId } from '$lib/logger';
 
 const BEARER = 'Bearer ';
 
@@ -34,15 +34,15 @@ async function send({
     opts.headers = { ...opts.headers, ...headers };
   }
 
-  if (authenticate && browser) {
-    const token = localStorage.getItem('token');
+  if (browser) {
+    const token = authenticate ? localStorage.getItem('token') : null;
     if (token) {
       opts.headers['Authorization'] = `${BEARER}${token}`;
       opts.headers['request-source'] = 'Authorized';
-    }
-    if (page.url.pathname.includes('/discover')) {
+    } else {
       opts.headers['request-source'] = 'Open';
     }
+    opts.headers['X-Session-Id'] = getSessionId();
   }
 
   const res = await fetch(`${window.location.origin}/${path}`, opts);
@@ -81,19 +81,27 @@ async function handleResponse(res: Response) {
       return text; //TODO: Change this
     }
   } else if (res.status === 401) {
+    log(createLog('AUTH', 'session.unauthorized', undefined, { status: 401 }));
     browser &&
       sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
     logout(undefined, true);
     return;
   } else if (res.status === 403) {
+    log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
     if (browser) {
       sessionStorage.removeItem('logout-reason');
       sessionStorage.removeItem('filters');
     }
     logout(undefined, false);
   }
-
-  error(res.status as NumericRange<400, 599>, await res.text());
+  const resText = await res.text();
+  log(
+    createLog('ERROR', 'error.unknown', undefined, {
+      status: res.status,
+      error: { message: resText },
+    }),
+  );
+  error(res.status as NumericRange<400, 599>, resText);
 }
 
 function refreshToken(res: Response) {

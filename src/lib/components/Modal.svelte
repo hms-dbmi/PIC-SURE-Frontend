@@ -46,12 +46,16 @@
     trigger,
   }: Props = $props();
 
-  function modalClose() {
+  function modalClose(event?: MouseEvent) {
+    event?.stopPropagation();
+    event?.preventDefault();
     modalOpen = false;
     onclose();
   }
 
-  function confirm() {
+  function confirm(event?: MouseEvent) {
+    event?.stopPropagation();
+    event?.preventDefault();
     modalOpen = false;
     onconfirm && onconfirm();
   }
@@ -60,9 +64,11 @@
 <div class="inline">
   {#if !!trigger}
     <button
+      type="button"
       data-testid="{testid}-btn"
       onclick={(e) => {
         e.stopPropagation();
+        e.preventDefault();
         modalOpen = true;
       }}
       {disabled}
@@ -86,8 +92,9 @@
           data-testid="modal-wrapper-header"
           class="text-2xl font-bold block {title ? '' : 'text-right'}"
         >
-          {#if title}{title}{/if}
+          {#if title}<h2 class="inline text-black dark:text-white">{title}</h2>{/if}
           {#if closeable}<button
+              type="button"
               data-testid="modal-close-button"
               class="hover:text-secondary-500"
               class:float-right={title}

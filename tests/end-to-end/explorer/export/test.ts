@@ -1,22 +1,25 @@
-import { expect } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import { expect, type Route, type Page } from '@playwright/test';
 import { test, mockApiSuccess } from '../../custom-context';
 import {
+  conceptTreePath,
   conceptsDetailPath,
   detailResponseCat,
   detailResponseCatSameDataset,
   searchResults as mockData,
   searchResultPath,
+  searchResultPathForSampleIds,
   facetResultPath,
   facetsResponse,
   geneValues,
   newDatasetResponse,
   availableDatasetResponse,
   picsureUser,
+  mockDataWithChildren,
 } from '../../mock-data';
 import { getOption } from '../../utils';
 
-const countResultPath = '*/**/picsure/query/sync';
+const queryPathV3 = '*/**/picsure/v3/query';
+const countResultPath = `${queryPathV3}/sync`;
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 
 // Standard identifiers that should be present
@@ -44,6 +47,7 @@ async function setupExportPageAndAddFilterAndExport(
   page: Page,
   includeGenomicFilter: boolean = false,
 ) {
+  await mockApiSuccess(page, `${conceptTreePath}?depth=4`, mockDataWithChildren);
   await mockApiSuccess(
     page,
     `${conceptsDetailPath}/${detailResponseCat.dataset}`,
@@ -79,7 +83,7 @@ async function setupExportPageAndAddFilterAndExport(
     await expect(page.getByTestId('add-filter-btn')).not.toBeEnabled();
     const optionsContainer = page.locator('#options-container');
     await optionsContainer.getByLabel(geneValues.results[0]).click();
-    await mockApiSuccess(page, '*/**/picsure/query/sync', 200);
+    await mockApiSuccess(page, countResultPath, 200);
     await page.getByTestId('add-filter-btn').click();
   }
 
@@ -161,25 +165,38 @@ test.describe('Export Page', () => {
     const tableBody = page.locator('tbody');
     await expect(tableBody).toBeVisible();
 
-    // Verify first row content (filter) using detailResponseCat
-    await expect(page.locator('#row-0-col-0')).toHaveText(detailResponseCat.display);
-    await expect(page.locator('#row-0-col-1')).toHaveText(detailResponseCat.description);
-    await expect(page.locator('#row-0-col-2')).toHaveText(detailResponseCat.type);
-
-    // Verify second row content (export) using detailResponseCatSameDataset
-    await expect(page.locator('#row-1-col-0')).toHaveText(detailResponseCatSameDataset.display);
-    await expect(page.locator('#row-1-col-1')).toHaveText(detailResponseCatSameDataset.description);
-    await expect(page.locator('#row-1-col-2')).toHaveText(detailResponseCatSameDataset.type);
-
-    // Verify standard identifiers
+    // Verify standard identifiers come first (Patient ID hardcoded, then system fields from env)
     for (let i = 0; i < standardIdentifiers.length; i++) {
-      const rowIndex = i + 2; // Standard identifiers start at row 2
-      await expect(page.locator(`#row-${rowIndex}-col-0`)).toHaveText(standardIdentifiers[i].name);
-      await expect(page.locator(`#row-${rowIndex}-col-1`)).toHaveText(
-        standardIdentifiers[i].description,
-      );
-      await expect(page.locator(`#row-${rowIndex}-col-2`)).toHaveText(standardIdentifiers[i].type);
+      await expect(page.locator(`#row-${i}-col-0`)).toHaveText(standardIdentifiers[i].name);
+      await expect(page.locator(`#row-${i}-col-1`)).toHaveText(standardIdentifiers[i].description);
+      await expect(page.locator(`#row-${i}-col-2`)).toHaveText(standardIdentifiers[i].type);
     }
+
+    // System field from VITE_EXPORT_SYSTEM_FIELDS (_consents)
+    const systemFieldOffset = standardIdentifiers.length;
+    await expect(page.locator(`#row-${systemFieldOffset}-col-0`)).toHaveText('_consents');
+
+    // Filter row
+    const filterRowIndex = systemFieldOffset + 1;
+    await expect(page.locator(`#row-${filterRowIndex}-col-0`)).toHaveText(
+      detailResponseCat.display,
+    );
+    await expect(page.locator(`#row-${filterRowIndex}-col-1`)).toHaveText(
+      detailResponseCat.description,
+    );
+    await expect(page.locator(`#row-${filterRowIndex}-col-2`)).toHaveText(detailResponseCat.type);
+
+    // Export row
+    const exportRowIndex = filterRowIndex + 1;
+    await expect(page.locator(`#row-${exportRowIndex}-col-0`)).toHaveText(
+      detailResponseCatSameDataset.display,
+    );
+    await expect(page.locator(`#row-${exportRowIndex}-col-1`)).toHaveText(
+      detailResponseCatSameDataset.description,
+    );
+    await expect(page.locator(`#row-${exportRowIndex}-col-2`)).toHaveText(
+      detailResponseCatSameDataset.type,
+    );
   });
 
   test('All steps render as expected', async ({ page }) => {
@@ -210,7 +227,7 @@ test.describe('Export Page', () => {
     await expect(csvExportOption).toHaveClass(/preset-filled-primary-500/);
     await expect(pfbExportOption).toHaveClass(/preset-outlined-primary-500/);
     await expect(nextButton).not.toBeDisabled();
-    await mockApiSuccess(page, `*/**/picsure/query`, newDatasetResponse);
+    await mockApiSuccess(page, queryPathV3, newDatasetResponse);
     await nextButton.click();
 
     // Save Dataset ID
@@ -223,7 +240,7 @@ test.describe('Export Page', () => {
     await mockApiSuccess(page, `*/**/picsure/dataset/named`, newDatasetResponse);
     await mockApiSuccess(
       page,
-      `*/**/picsure/query/${newDatasetResponse.picsureResultId}/status`,
+      `${queryPathV3}/${newDatasetResponse.picsureResultId}/status`,
       availableDatasetResponse,
     );
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
@@ -251,5 +268,206 @@ test.describe('Export Page', () => {
     await expect(doneButton).toBeVisible();
     await doneButton.click();
     await expect(page).toHaveURL('/explorer');
+  });
+
+  test('Adds filters to select field for QueryV3', async ({ page }) => {
+    const conceptPaths = mockData.content.map((row) => row.conceptPath);
+    const addedFilterConcept = conceptPaths[0];
+    const addedExportConcept = conceptPaths[1];
+    const expectedSelectFields = [addedExportConcept, addedFilterConcept];
+    await setupExportPageAndAddFilterAndExport(page);
+    await expect(page).toHaveURL('/explorer/export');
+    const nextButton = page.getByTestId('next-btn');
+
+    // Review Cohort Details
+    await nextButton.click();
+
+    // Tree Step
+    await nextButton.click();
+
+    // Review and Save Dataset=
+    await page.getByTestId('csv-export-option').click();
+    await expect(nextButton).not.toBeDisabled();
+    await page.route(queryPathV3, (route: Route) => {
+      const request = route.request().postDataJSON();
+      const selects: string[] = request?.query?.select || [];
+      const allFiltersInSelect = expectedSelectFields.every((concept) => selects.includes(concept));
+
+      if (allFiltersInSelect) {
+        return route.fulfill({ json: newDatasetResponse });
+      }
+      return route.abort('Query did not include filter concept paths in QueryV3 select files');
+    });
+
+    await nextButton.click();
+  });
+
+  test('System fields from config appear on export page', async ({ page }) => {
+    await setupExportPageAndAddFilterAndExport(page);
+    await expect(page).toHaveURL('/explorer/export');
+
+    const tableBody = page.locator('tbody');
+    await expect(tableBody).toBeVisible();
+
+    // Patient ID is always shown as a hardcoded display row
+    await expect(tableBody.getByText('Patient ID', { exact: true })).toBeVisible();
+    // System fields configured via VITE_EXPORT_SYSTEM_FIELDS in .env.test (_consents)
+    await expect(tableBody.getByText('_consents', { exact: true })).toBeVisible();
+  });
+
+  test('System fields are included in query select on submit', async ({ page }) => {
+    await setupExportPageAndAddFilterAndExport(page);
+    await expect(page).toHaveURL('/explorer/export');
+    const nextButton = page.getByTestId('next-btn');
+
+    // Step through to save-dataset
+    await nextButton.click(); // Review Cohort Details
+    await nextButton.click(); // Tree Step
+
+    // Select CSV export type
+    await page.getByTestId('csv-export-option').click();
+    await expect(nextButton).not.toBeDisabled();
+
+    // Intercept the query request to verify system fields are included
+    let capturedQuery: { query: { select: string[] } } | null = null;
+    await page.route(queryPathV3, async (route: Route) => {
+      const request = route.request();
+      capturedQuery = request.postDataJSON();
+      await route.fulfill({ json: newDatasetResponse });
+    });
+
+    await nextButton.click(); // Submit query
+
+    // Wait for the dataset ID to appear (indicating query was submitted)
+    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+
+    // Verify the captured query contains the system fields but NOT patient_id
+    expect(capturedQuery).not.toBeNull();
+    expect(capturedQuery!.query.select).not.toContain('\\patient_id\\');
+    expect(capturedQuery!.query.select).toContain('\\_consents\\');
+  });
+
+  test('Sample IDs checkbox adds genomic concepts to exports and query', async ({ page }) => {
+    // Mock data for genomic concepts
+    const genomicConceptsResponse = {
+      totalPages: 1,
+      totalElements: 2,
+      pageable: {
+        pageNumber: 0,
+        pageSize: 10000,
+        sort: { unsorted: true, sorted: false, empty: true },
+        offset: 0,
+        unpaged: false,
+        paged: true,
+      },
+      numberOfElements: 2,
+      first: true,
+      last: true,
+      size: 10000,
+      content: [
+        {
+          conceptPath: '\\GENOMIC\\SAMPLE_ID\\Study1\\',
+          name: 'SAMPLE_ID_Study1',
+          display: 'Sample ID - Study 1',
+          dataset: 'genomic_data',
+          allowFiltering: true,
+          studyAcronym: 'GS1',
+          description: 'Genomic sample identifier for Study 1',
+          values: [],
+          children: null,
+          meta: null,
+          type: 'Categorical',
+        },
+        {
+          conceptPath: '\\GENOMIC\\SAMPLE_ID\\Study2\\',
+          name: 'SAMPLE_ID_Study2',
+          display: 'Sample ID - Study 2',
+          dataset: 'genomic_data',
+          allowFiltering: true,
+          studyAcronym: 'GS2',
+          description: 'Genomic sample identifier for Study 2',
+          values: [],
+          children: null,
+          meta: null,
+          type: 'Categorical',
+        },
+      ],
+    };
+
+    // Cross-count response showing both concepts have data
+    const crossCountResponse: Record<string, number> = {
+      '\\GENOMIC\\SAMPLE_ID\\Study1\\': 100,
+      '\\GENOMIC\\SAMPLE_ID\\Study2\\': 150,
+    };
+
+    // First set up the page
+    await setupExportPageAndAddFilterAndExport(page);
+    await expect(page).toHaveURL('/explorer/export');
+
+    // Now set up mocks for the sample IDs checkbox AFTER the page is loaded
+    // Unroute the existing count route and set up our own
+    await page.unroute(countResultPath);
+    await page.route(countResultPath, async (route) => {
+      const request = route.request();
+      const postData = request.postDataJSON();
+      if (postData?.query?.expectedResultType === 'CROSS_COUNT') {
+        await route.fulfill({ json: crossCountResponse });
+      } else {
+        await route.fulfill({ body: '9999' });
+      }
+    });
+
+    // Mock the genomic concepts search (page_size=10000 is used for sample IDs)
+    await page.route(searchResultPathForSampleIds, async (route) => {
+      await route.fulfill({ json: genomicConceptsResponse });
+    });
+
+    // Find and click the sample IDs checkbox
+    const sampleIdsCheckbox = page.getByTestId('sample-ids-checkbox');
+    await expect(sampleIdsCheckbox).toBeVisible();
+    await expect(sampleIdsCheckbox).not.toBeChecked();
+    await sampleIdsCheckbox.click();
+
+    // Wait for the loading to complete and verify checkbox is checked
+    await expect(sampleIdsCheckbox).toBeChecked({ timeout: 10000 });
+
+    // Verify the sample ID rows appear in the table
+    const tableBody = page.locator('tbody');
+    await expect(tableBody).toBeVisible();
+    await expect(tableBody.getByText('Genomic sample identifier for Study 1')).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(tableBody.getByText('Genomic sample identifier for Study 2')).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Now navigate to save-dataset step and capture the query
+    const nextButton = page.getByTestId('next-btn');
+
+    // Step through to save-dataset, capturing the query sent
+    await nextButton.click(); // Review -> Tree Step
+    await nextButton.click(); // Tree Step -> Select Type
+
+    // Select CSV export type
+    const csvExportOption = page.getByTestId('csv-export-option');
+    await csvExportOption.click();
+
+    // Intercept the query request to verify sample IDs are included
+    let capturedQuery: { query: { select: string[] } } | null = null;
+    await page.route(queryPathV3, async (route) => {
+      const request = route.request();
+      capturedQuery = request.postDataJSON();
+      await route.fulfill({ json: newDatasetResponse });
+    });
+
+    await nextButton.click(); // Select Type -> Save Dataset (this triggers submitQuery)
+
+    // Wait for the dataset ID to appear (indicating query was submitted)
+    await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
+
+    // Verify the captured query contains the sample ID fields
+    expect(capturedQuery).not.toBeNull();
+    expect(capturedQuery!.query.select).toContain('\\GENOMIC\\SAMPLE_ID\\Study1\\');
+    expect(capturedQuery!.query.select).toContain('\\GENOMIC\\SAMPLE_ID\\Study2\\');
   });
 });

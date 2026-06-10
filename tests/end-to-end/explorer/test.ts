@@ -10,6 +10,7 @@ import {
   searchResults as mockData,
   searchResultPath,
   facetResponseWithZeroCount,
+  hierarchyResponse,
 } from '../mock-data';
 import { type SearchResult } from '../../../src/lib/models/Search';
 import { getOption, clickNthFilterIcon } from '../utils';
@@ -83,7 +84,7 @@ test.describe('Explorer for authenticated users', () => {
   });
   test('Has search result table when search is executed', async ({ page }) => {
     // Given
-    await page.route('*/**/picsure/query/sync', async (route: Route) =>
+    await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
     );
     await page.goto('/explorer');
@@ -114,7 +115,7 @@ test.describe('Explorer for authenticated users', () => {
     test.describe('Info Actions', () => {
       test('Clicking a row opens info panel', async ({ page }) => {
         // Given
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -136,7 +137,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking the row again closes the info panel', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -162,7 +163,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking the info icon opens and then closes the info panel', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -191,7 +192,7 @@ test.describe('Explorer for authenticated users', () => {
       }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -211,37 +212,31 @@ test.describe('Explorer for authenticated users', () => {
         await expect(variableInfo).toBeVisible();
         // Check Variable Information
         await expect(variableInfo.getByText('Variable Information')).toBeVisible();
-        await expect(variableInfo.getByText('Name: ' + detailResponseCat.display)).toBeVisible();
-        await expect(variableInfo.getByText('Accession: ' + detailResponseCat.name)).toBeVisible();
-        await expect(variableInfo.getByText('Type: ' + detailResponseCat.type)).toBeVisible();
-        await expect(
-          variableInfo.getByText('Description: ' + detailResponseCat.description),
-        ).toBeVisible();
+        await expect(variableInfo).toContainText('Name: ' + detailResponseCat.display);
+        await expect(variableInfo).toContainText('Accession: ' + detailResponseCat.name);
+        await expect(variableInfo).toContainText('Type: ' + detailResponseCat.type);
+        await expect(variableInfo).toContainText('Description: ' + detailResponseCat.description);
 
         // Check Dataset Information
-        await expect(infoPanel.getByText('Dataset Information')).toBeVisible();
-        await expect(infoPanel.getByText('Name: ' + detailResponseCat.table.display)).toBeVisible();
-        await expect(
-          infoPanel.getByText('Accession: ' + detailResponseCat.table.name),
-        ).toBeVisible();
-        await expect(
-          infoPanel.getByText('Description: ' + detailResponseCat.table.description),
-        ).toBeVisible();
+        const datasetInfo = infoPanel.getByTestId('dataset-info');
+        await expect(datasetInfo.getByText('Dataset Information')).toBeVisible();
+        await expect(datasetInfo).toContainText('Name: ' + detailResponseCat.table.display);
+        await expect(datasetInfo).toContainText('Accession: ' + detailResponseCat.table.name);
+        await expect(datasetInfo).toContainText(
+          'Description: ' + detailResponseCat.table.description,
+        );
 
         // Check Study Information
-        await expect(infoPanel.getByText('Study Information')).toBeVisible();
-        await expect(
-          infoPanel.getByText('Study Name: ' + detailResponseCat.study.fullName),
-        ).toBeVisible();
-        await expect(
-          infoPanel.getByText('Study Accession: ' + detailResponseCat.study.ref),
-        ).toBeVisible();
+        const studyInfo = infoPanel.getByTestId('study-info');
+        await expect(studyInfo.getByText('Study Information')).toBeVisible();
+        await expect(studyInfo).toContainText('Study Name: ' + detailResponseCat.study.fullName);
+        await expect(studyInfo).toContainText('Study Accession: ' + detailResponseCat.study.ref);
       });
       test('Clicking a filter button opens the filter panel & then clicking another row opens the info panel', async ({
         page,
       }) => {
         // Given
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -254,6 +249,7 @@ test.describe('Explorer for authenticated users', () => {
         const thirdRow = tableBody.locator('tr').nth(2); // need 2 because expandable row is 1
         await expect(thirdRow).toBeVisible();
         await thirdRow.click();
+        await page.waitForTimeout(1000);
 
         // Then
         const infoPanel = tableBody.locator('tr.expandable-row').getByTestId('variable-info');
@@ -267,7 +263,7 @@ test.describe('Explorer for authenticated users', () => {
       }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -287,7 +283,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking the filter button opens the correct filter panel', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -310,7 +306,7 @@ test.describe('Explorer for authenticated users', () => {
         page,
       }) => {
         // Given
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -334,7 +330,7 @@ test.describe('Explorer for authenticated users', () => {
         const row = mockData.content[0] as SearchResult;
         const searchValue = 'No';
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.route(
@@ -369,7 +365,7 @@ test.describe('Explorer for authenticated users', () => {
         // Given
         const row = mockData.content[0] as SearchResult;
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.route(
@@ -393,7 +389,7 @@ test.describe('Explorer for authenticated users', () => {
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
           async (route: Route) => route.fulfill({ json: detailResponseCat }),
         );
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -428,7 +424,7 @@ test.describe('Explorer for authenticated users', () => {
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
           async (route: Route) => route.fulfill({ json: detailResponseCat }),
         );
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -477,7 +473,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking the export button flips the icon', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -500,7 +496,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking the export button opens result panel', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -520,7 +516,7 @@ test.describe('Explorer for authenticated users', () => {
       }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -542,7 +538,7 @@ test.describe('Explorer for authenticated users', () => {
         //todo check remove button class
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -566,7 +562,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking a second export adds a second export', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -593,7 +589,7 @@ test.describe('Explorer for authenticated users', () => {
       test('Exports remmain after closing and opening the results panel', async ({ page }) => {
         // Given
 
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
@@ -626,8 +622,12 @@ test.describe('Explorer for authenticated users', () => {
     });
     test.describe('Hierarchy Actions', () => {
       test.beforeEach(async ({ page }) => {
-        await page.route('*/**/picsure/query/sync', async (route: Route) =>
+        await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
+        );
+        await page.route(
+          '*/**/picsure/proxy/dictionary-api/concepts/hierarchy/test_data_set',
+          async (route: Route) => route.fulfill({ json: hierarchyResponse }),
         );
         await page.goto('/explorer?search=somedata');
         // When
@@ -657,21 +657,15 @@ test.describe('Explorer for authenticated users', () => {
       test('Hierarchy component data is expected', async ({ page }) => {
         // Then
         await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-
-        const rowData = mockData.content[0];
         const hierarchyComponent = page.getByTestId('hierarchy-component');
         const treeItems = await hierarchyComponent.locator('details').all();
-        const conceptPathItems = rowData.conceptPath.split('\\').filter((item) => item !== '');
+        const conceptPathItems = hierarchyResponse.reverse();
         for (let i = 0; i < conceptPathItems.length; i++) {
           const treeItem = treeItems[i];
           const treeItemText = await treeItem.locator('> summary label').textContent();
-          expect(treeItemText).toContain(conceptPathItems[i]);
+          expect(treeItemText).toContain(conceptPathItems[i].display);
+          expect(treeItemText).toContain(conceptPathItems[i].name);
         }
-      });
-      test('Hierarchy component has a hierarchy', async ({ page }) => {
-        // Then
-        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-        await expect(page.getByTestId('tree-item:SOMEDATA-\\SOMEDATA\\')).toBeVisible();
       });
       test("Hierarchy component's last item is the only one selected", async ({ page }) => {
         // Then

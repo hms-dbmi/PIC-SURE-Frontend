@@ -14,9 +14,11 @@
 
   let { index, data, meta, layout, newPlot }: Props = $props();
 
-  const screenReaderText = meta.isCategorical
-    ? 'Column chart showing the visualization of '
-    : 'Histogram showing the visualization of ';
+  const screenReaderText = $derived(
+    meta.isCategorical
+      ? 'Column chart showing the visualization of '
+      : 'Histogram showing the visualization of ',
+  );
 
   let plotContainer: Root = $state('');
 

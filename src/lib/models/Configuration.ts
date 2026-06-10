@@ -1,4 +1,4 @@
-import configJson from '../assets/configuration.json' assert { type: 'json' };
+import configJson from '../assets/configuration.json' with { type: 'json' };
 import { ExportType } from '$lib/models/Variant';
 import type { Column } from '$lib/components/datatable/types';
 import type { StatConfig, StatField } from '$lib/models/Stat';
@@ -36,6 +36,7 @@ export type Features = Indexable & {
     exportsEnableExport: boolean;
     showTreeStep: boolean;
     variantExplorer: boolean;
+    open: boolean;
   };
   federated: boolean;
   login: {
@@ -66,6 +67,7 @@ export type Settings = Indexable & {
     maxCount: number;
     type: ExportType;
   };
+  exportSystemFields: string[];
 };
 
 interface Link {
@@ -116,6 +118,11 @@ export type Branding = Indexable & {
       links: Array<Link>;
     };
     pfbExportUrls?: Link[];
+    resultInfo: {
+      variableHeader: string;
+      datasetHeader: string;
+      studyHeader: string;
+    };
   };
   landing: {
     searchPlaceholder: string;
@@ -146,6 +153,7 @@ export type Branding = Indexable & {
     openPicsureLink: string;
     openPicsureLinkText: string;
     contactLink: string;
+    logoHeight: number;
   };
   help: {
     links: Array<{
@@ -271,6 +279,7 @@ const defaultSettings: Indexable = {
   VARIANT_EXPLORER_MAX_COUNT: 10000,
   VARIANT_EXPLORER_TYPE: ExportType.Aggregate,
   DOTS_COLORS_CLASS: ['--color-primary-500', '--color-error-500', '--color-surface-400'],
+  EXPORT_SYSTEM_FIELDS: '',
 };
 
 const defaultBranding: Branding = {
@@ -317,6 +326,11 @@ const defaultBranding: Branding = {
       instructions: '',
       links: [],
     },
+    resultInfo: {
+      variableHeader: 'Variable Information',
+      datasetHeader: 'Dataset Information',
+      studyHeader: 'Study Information',
+    },
   },
   footer: {
     showSitemap: false,
@@ -340,6 +354,7 @@ const defaultBranding: Branding = {
     openPicsureLink: '',
     openPicsureLinkText: '',
     contactLink: '',
+    logoHeight: 7.5,
   },
   logo: {
     alt: import.meta.env?.VITE_LOGO_ALT || 'PIC-SURE',
@@ -448,6 +463,7 @@ export function mapFeatures(configs: ConfigObject[]): Features {
       exportsEnableExport: parse('ALLOW_EXPORT_ENABLED'),
       showTreeStep: parse('SHOW_TREE_STEP'),
       variantExplorer: parse('VARIANT_EXPLORER'),
+      open: parse('OPEN_EXPLORER'),
     },
     federated: parse('FEDERATED'),
     login: {
@@ -482,5 +498,11 @@ export function mapSettings(configs: ConfigObject[]): Settings {
       maxCount: parse.asInt('VARIANT_EXPLORER_MAX_COUNT'),
       type: (sm['VARIANT_EXPLORER_TYPE']?.value || ExportType.Aggregate) as ExportType,
     },
+    exportSystemFields: parse
+      .asString('EXPORT_SYSTEM_FIELDS')
+      .split(',')
+      .map((f: string) => f.trim())
+      .filter(Boolean)
+      .map((f: string) => `\\${f}\\`),
   };
 }

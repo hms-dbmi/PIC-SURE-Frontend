@@ -7,6 +7,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import Datatable from '$lib/components/datatable/StaticTable.svelte';
+  import { log, createLog } from '$lib/logger';
 
   let {
     count,
@@ -20,10 +21,11 @@
     onAggregateToggle: (checked: boolean) => void;
   } = $props();
 
-  let aggregateCheckbox: boolean = $state(exportType === ExportType.Full);
+  let aggregateCheckbox: boolean = $state(exportType === ExportType.Aggregate);
 
   function aggregateChange() {
     aggregateCheckbox = !aggregateCheckbox;
+    log(createLog('ACTION', 'variant.aggregate_toggle', { checked: aggregateCheckbox }));
     onAggregateToggle(aggregateCheckbox);
   }
 </script>
@@ -49,6 +51,7 @@
         columns={varData.columns}
         fullWidth
         searchable
+        searchLogAction="variant.search_table"
       >
         {#snippet tableActions()}
           {#if varData.downloadUrl}
@@ -57,6 +60,8 @@
               class="btn btn-sm preset-tonal-primary border border-primary-500"
               href={varData.downloadUrl}
               download="variantData.tsv"
+              onclick={() =>
+                log(createLog('EXPORT', 'variant.download', { exportType: exportType }))}
             >
               <i class="fa-solid fa-download"></i>
               Download Variant{aggregateCheckbox ? ' (Aggregate)' : ''} Data

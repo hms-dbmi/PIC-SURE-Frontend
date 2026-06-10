@@ -1,11 +1,17 @@
 <script lang="ts">
   import { TableHandler } from '@vincjo/datatables';
   import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
+  import { log, createLog } from '$lib/logger';
 
   let { handler }: { handler: TableHandler | RemoteTableHandler } = $props();
 
   const setPage = (value: 'previous' | 'next' | 'last' | number) => {
     handler.setPage(value);
+    log(
+      createLog('ACTION', 'search_result.page_change', {
+        pageNumber: typeof value === 'number' ? value : handler.currentPage,
+      }),
+    );
   };
 </script>
 

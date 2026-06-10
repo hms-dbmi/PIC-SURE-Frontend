@@ -1,7 +1,7 @@
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import type { DataSet } from '$lib/models/Dataset';
-import type { FederatedResourceInfo } from '$lib/stores/Dataset';
+import type { FederatedResourceInfo } from '$lib/stores/Dataset.svelte';
 
 interface DatasetRequest {
   queryId: string;

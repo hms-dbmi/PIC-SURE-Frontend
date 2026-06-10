@@ -1,5 +1,6 @@
 <script lang="ts">
   import Loading from './Loading.svelte';
+  import { log, createLog, getPageContext } from '$lib/logger';
 
   let searchInput: string = $state('');
 
@@ -96,6 +97,12 @@
       unselectedOptions = [];
       selectedOptionEndLocation = 20;
     }
+    log(
+      createLog('ACTION', 'filter.select_all', {
+        count: selectedOptions.length,
+        pageContext: getPageContext(),
+      }),
+    );
   }
 
   function getID(option: string) {

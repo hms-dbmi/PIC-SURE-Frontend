@@ -39,6 +39,7 @@
   let searchElement: HTMLInputElement;
   let warn: Warning | undefined = $state(undefined);
   let searching: boolean = $state(false);
+  // svelte-ignore state_referenced_locally
   let searchStringElement: string = $state(search);
   let validSNPString: boolean = $derived(validSnpPattern.test(searchStringElement));
   $effect(() => {

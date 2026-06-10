@@ -27,8 +27,8 @@ Psama.Logout = '*/**/psama/logout';
 
 const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use this site.</p>';
 
-test.beforeEach(async ({ page }) => {
-  await mockApiSuccess(page, '*/**/api/config', {
+test.beforeEach(({ page }) => {
+  mockApiSuccess(page, '*/**/api/config', {
     features: [
       { name: 'ANALYZE_ANALYSIS', value: 'false' },
       { name: 'ANALYZE_API', value: 'true' },
@@ -37,9 +37,10 @@ test.beforeEach(async ({ page }) => {
     ],
     settings: [],
   });
-  await mockApiSuccess(page, '*/**/picsure/query/sync', 99);
-  await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/concepts*', mockSearchResults);
-  await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
+  mockApiSuccess(page, 'https://www.googletagmanager.com/**/*', {});
+  mockApiSuccess(page, '*/**/picsure/v3/query/sync', 99);
+  mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/concepts*', mockSearchResults);
+  mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
 });
 
 test.describe('Not logged in', () => {

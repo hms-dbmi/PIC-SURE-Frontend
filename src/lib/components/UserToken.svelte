@@ -12,6 +12,7 @@
     refreshLongTermToken as refresh,
   } from '$lib/stores/User';
   import Loading from './Loading.svelte';
+  import { log, createLog } from '$lib/logger';
 
   const defaultRefreshText = 'Refresh';
   const placeHolderToken =
@@ -54,6 +55,7 @@
   }
 
   function refreshToken() {
+    log(createLog('ACTION', 'token.refresh'));
     refreshButtonDisabled = true;
     refreshPromise = refresh()
       .then(() => 'Refreshed!')
@@ -75,6 +77,7 @@
 
   function revealToken() {
     revealed = !revealed;
+    log(createLog('ACTION', 'token.reveal', { revealed }));
   }
 </script>
 
@@ -104,10 +107,17 @@
         </div>
       </section>
       <footer class="card-footer mt-2">
-        <CopyButton
-          itemToCopy={$user.token || ''}
-          class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-        />
+        <span
+          role="button"
+          tabindex="-1"
+          onclick={() => log(createLog('ACTION', 'token.copy'))}
+          onkeydown={(e) => e.key === 'Enter' && log(createLog('ACTION', 'token.copy'))}
+        >
+          <CopyButton
+            itemToCopy={$user.token || ''}
+            class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+          />
+        </span>
         <Modal
           data-testid="refresh"
           title="Please Confirm"

@@ -22,7 +22,7 @@
     12: 'grid-cols-12',
   };
 
-  const gridClass = gridClasses[columns as keyof typeof gridClasses] || 'grid-cols-1';
+  const gridClass = $derived(gridClasses[columns as keyof typeof gridClasses] || 'grid-cols-1');
 </script>
 
 <div class={`grid ${gridClass} divide-x py-4`}>

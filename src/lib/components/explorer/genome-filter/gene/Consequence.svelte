@@ -4,6 +4,17 @@
   import { addConsquence, removeConsequence } from '$lib/stores/GeneFilter';
   import variantData from '$lib/components/explorer/genome-filter/variant-data.json';
   import Tree from '$lib/components/tree/Tree.svelte';
+  import { log, createLog } from '$lib/logger';
+
+  function loggedAddConsequence(value: string) {
+    log(createLog('ACTION', 'genomic.consequence_select', { consequence: value }));
+    addConsquence(value);
+  }
+
+  function loggedRemoveConsequence(value: string) {
+    log(createLog('ACTION', 'genomic.consequence_select', { consequence: value }));
+    removeConsequence(value);
+  }
 
   let nodes: NodeInterface[] = $state(
     variantData.map(({ key, children }) => ({
@@ -22,4 +33,4 @@
   );
 </script>
 
-<Tree {nodes} onselect={addConsquence} onunselect={removeConsequence} />
+<Tree {nodes} onselect={loggedAddConsequence} onunselect={loggedRemoveConsequence} />

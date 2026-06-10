@@ -7,10 +7,11 @@
   import { browser } from '$app/environment';
 
   import { createInstance } from '$lib/AuthProviderRegistry.ts';
-  import { user, userRoutes, isLoggedIn, logout } from '$lib/stores/User';
+  import { user, userRoutes, isUserLoggedIn, logout } from '$lib/stores/User';
   import type { Route } from '$lib/models/Route';
   import type AuthData from '$lib/models/AuthProvider.ts';
   import type AuthProvider from '$lib/models/AuthProvider.ts';
+  import { log, createLog } from '$lib/logger';
 
   import Logo from '$lib/components/Logo.svelte';
   import Popover from '$lib/components/Popover.svelte';
@@ -52,7 +53,13 @@
 
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-950" toolbarClasses="flex-none z-10">
   {#snippet lead()}
-    <a href="/" aria-current="page" data-testid="logo-home-link" class="content-center">
+    <a
+      href="/"
+      aria-current="page"
+      data-testid="logo-home-link"
+      class="content-center"
+      onclick={() => log(createLog('NAVIGATION', 'logo.click'))}
+    >
       <Logo height={4} class="mx-1" />
     </a>
   {/snippet}
@@ -69,18 +76,20 @@
   </nav>
   {#snippet trail()}
     <div id="user-session-avatar" class="content-center">
-      {#if $user && $user.privileges && $user.email && $isLoggedIn}
+      {#if $user && $user.privileges && $user.email && isUserLoggedIn()}
         <!-- Logout -->
         <Popover>
           {#snippet trigger()}
             <Avatar
-              name={($user.email || '').toUpperCase()}
+              name={($user.email || 'unknown').toUpperCase()}
               background="preset-tonal-primary hover:preset-tonal-secondary"
               border="border hover:border-primary-400"
               font="text-2xl"
               size="size-12"
               classes="m-3"
-            />
+            >
+              {($user.email || '?').toUpperCase().charAt(0)}
+            </Avatar>
           {/snippet}
           <div class="flex flex-col items-center">
             <p class="pb-6">{$user.email}</p>
@@ -88,7 +97,10 @@
               id="user-logout-btn"
               class="btn preset-filled-primary-500 w-fit"
               title="Logout"
-              onclick={() => logout(providerInstance, false)}>Logout</button
+              onclick={() => {
+                log(createLog('AUTH', 'logout.click'));
+                logout(providerInstance, false);
+              }}>Logout</button
             >
           </div>
         </Popover>

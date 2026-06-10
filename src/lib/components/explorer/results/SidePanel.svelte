@@ -1,11 +1,11 @@
 <script lang="ts">
-  import ExportStore from '$lib/stores/Export';
+  import { exports } from '$lib/stores/Export';
   import ResultsPanel from '$lib/components/explorer/results/ResultsPanel.svelte';
   import { onDestroy, onMount } from 'svelte';
   import { type Unsubscriber } from 'svelte/store';
   import { filters } from '$lib/stores/Filter';
   import { panelOpen } from '$lib/stores/SidePanel';
-  let { exports } = ExportStore;
+  import { log, createLog } from '$lib/logger';
 
   let unsubFilterStore: Unsubscriber;
   let unsubExportStore: Unsubscriber;
@@ -15,13 +15,13 @@
   }
 
   onMount(() => {
-    unsubFilterStore = filters.subscribe(() => {
-      if ($filters?.length !== 0) {
+    unsubFilterStore = filters.subscribe((filterList) => {
+      if (filterList?.length !== 0) {
         openPanel();
       }
     });
-    unsubExportStore = ExportStore.subscribe(() => {
-      if ($exports?.length !== 0) {
+    unsubExportStore = exports.subscribe((exportList) => {
+      if (exportList?.length !== 0) {
         openPanel();
       }
     });
@@ -42,7 +42,10 @@
       class="btn-icon btn-icon-sm preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
       aria-label="Toggle Results Panel"
       onclick={() => {
-        panelOpen.update((value) => !value);
+        panelOpen.update((value) => {
+          log(createLog('ACTION', 'results_panel.toggle', { open: !value }));
+          return !value;
+        });
       }}
     >
       <i class="fa-solid {$panelOpen ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>

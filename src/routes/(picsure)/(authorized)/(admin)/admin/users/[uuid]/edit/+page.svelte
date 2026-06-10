@@ -25,7 +25,9 @@
 
   async function load() {
     await loadUsers();
-    user = await getUser(page.params.uuid);
+    if (page.params?.uuid) {
+      user = await getUser(page.params.uuid);
+    }
     await loadRoles();
     await loadConnections();
   }

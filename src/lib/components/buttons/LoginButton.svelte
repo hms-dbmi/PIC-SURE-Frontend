@@ -5,6 +5,7 @@
   import { sanitizeHTML } from '$lib/utilities/HTML';
   import type { AuthData } from '$lib/models/AuthProvider';
   import { resetSearch } from '$lib/stores/Search';
+  import { log, createLog } from '$lib/logger';
 
   interface Props {
     provider: AuthData | undefined;
@@ -22,20 +23,26 @@
     class: className = '',
   }: Props = $props();
 
-  const testId = `login-button-${provider?.name?.toLowerCase()}`;
-  let imageSrc: string | undefined = $state(undefined);
+  const testId = $derived(`login-button-${provider?.name?.toLowerCase()}`);
+  let imageSrc: string | undefined = $derived(
+    provider?.imagesrc ? './' + provider.imagesrc : undefined,
+  );
   let help: string = $state('');
 
   let login = async (redirectTo: string, providerType: string) => {
+    log(
+      createLog(
+        'AUTH_LOGIN',
+        'login.click',
+        { provider: providerType },
+        { idp: provider?.name ?? undefined },
+      ),
+    );
     let instance = await createInstance(provider!);
     instance.login(redirectTo, providerType).then(() => {
       resetSearch();
     });
   };
-
-  if (provider?.imagesrc) {
-    imageSrc = './' + provider.imagesrc;
-  }
 
   onMount(() => (help = sanitizeHTML(helpText)));
 </script>

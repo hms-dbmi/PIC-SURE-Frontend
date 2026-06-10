@@ -14,7 +14,7 @@
         },
         {
           "name": "user",
-          "value": "{\"uuid\":\"1234\",\"email\":\"test@pic-sure.org\",\"privileges\":[\"PIC_SURE_ANY_QUERY\"],\"acceptedTOS\":true,\"queryTemplate\":{}}"
+          "value": "{\"uuid\":\"1234\",\"email\":\"test@pic-sure.org\",\"privileges\":[\"PIC_SURE_ANY_QUERY\",\"NAMED_DATASET\",\"API_ACCESS\"],\"acceptedTOS\":true,\"queryTemplate\":{}}"
         },
         {
           "name": "datatableSettings",

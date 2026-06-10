@@ -1,13 +1,20 @@
 <script lang="ts">
   import { toaster } from '$lib/toaster';
 
-  import { toggleArchived } from '$lib/stores/Dataset';
+  import { toggleArchived } from '$lib/stores/Dataset.svelte';
+  import { log, createLog } from '$lib/logger';
 
   const { data = { cell: '', row: { archived: false } } } = $props();
   let toggleButton: HTMLButtonElement = $state() as HTMLButtonElement;
 
   async function toggleArchive(event: Event) {
     event.stopPropagation();
+    const isArchiving = !data.row.archived;
+    log(
+      createLog('DATASET', isArchiving ? 'dataset.archive' : 'dataset.restore', {
+        datasetId: data.cell,
+      }),
+    );
 
     try {
       toggleButton.disabled = true;

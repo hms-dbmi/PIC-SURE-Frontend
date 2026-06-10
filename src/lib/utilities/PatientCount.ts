@@ -1,5 +1,4 @@
 import type { PatientCount, StatValue } from '$lib/models/Stat';
-import { config } from '$lib/configuration.svelte';
 
 const PLUS_MINUS = '\u00B1';
 
@@ -23,12 +22,17 @@ function normalizeCounts(countInput: StatValue[]): PatientCount[] {
 
 export function countResult(results: StatValue[], asString = true): PatientCount {
   const counts = normalizeCounts(results);
-  if (counts.length === 0) return !config.features.federated ? undefined : asString ? '0' : 0;
+  if (counts.length === 0) return asString ? '0' : 0;
   if (counts.length === 1 && counts[0]?.toString().startsWith('<')) return counts[0];
 
   const parsed = counts.map(parseCount);
   const total = parsed.reduce((sum, { value }) => (value > 0 ? sum + value : sum), 0);
   const maxSuffix = Math.max(...parsed.map(({ suffix }) => suffix), 0);
+
+  // If any source reported a "< 10" style value and the numeric total is 0,
+  // prefer returning the original "< 10" string instead of formatting as "0±3".
+  if (asString && total === 0 && counts.some((c) => c?.toString().trim().startsWith('<')))
+    return counts.find((c) => c?.toString().trim().startsWith('<')) as PatientCount;
 
   if (!asString) return total;
 

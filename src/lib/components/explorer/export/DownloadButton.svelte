@@ -8,6 +8,8 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { toaster } from '$lib/toaster';
   import Loading from '$lib/components/Loading.svelte';
+  import { log, createLog } from '$lib/logger';
+  import { isHttpError } from '@sveltejs/kit';
   interface Props {
     query: QueryRequestInterface;
     datasetId: string | undefined;
@@ -41,12 +43,25 @@
     }
     try {
       isDownloading = true;
-      const res = await api.post(`${Picsure.QueryV2}/${datasetId}/result`, {});
-      const responseDataUrl = URL.createObjectURL(new Blob([res], { type: 'octet/stream' }));
+      log(
+        createLog('DOWNLOAD', 'export.download_clicked', {
+          type: query.query.expectedResultType,
+          datasetId,
+        }),
+      );
+      const startTime = performance.now();
+      const res = await api.post(`${Picsure.QueryV3}/${datasetId}/result`, {});
+      const duration = Math.round(performance.now() - startTime);
+      const blob = new Blob([res], { type: 'octet/stream' });
+
+      const responseDataUrl = URL.createObjectURL(blob);
       if (browser) {
         const link = document.createElement('a');
         link.href = responseDataUrl;
-        if (query.query.expectedResultType === 'DATAFRAME') {
+        if (
+          query.query.expectedResultType === 'DATAFRAME' ||
+          query.query.expectedResultType === 'DATAFRAME_TIMESERIES'
+        ) {
           link.download = 'pic-sure-data.csv';
         } else if (
           config.features.explorer.enablePfbExport &&
@@ -58,8 +73,27 @@
         link.click();
         document.body.removeChild(link);
       }
+      log(
+        createLog(
+          'DOWNLOAD',
+          'export.download_success',
+          { type: query.query.expectedResultType, datasetId },
+          { status: 200, bytes: blob.size, duration },
+        ),
+      );
     } catch (error) {
       console.error('Error in onCompleteHandler', error);
+      log(
+        createLog(
+          'DOWNLOAD',
+          'export.download_error',
+          { type: query.query.expectedResultType, datasetId },
+          {
+            status: isHttpError(error) ? error.status : undefined,
+            error: { message: (error as Error).message },
+          },
+        ),
+      );
     } finally {
       isDownloading = false;
     }

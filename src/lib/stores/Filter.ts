@@ -1,33 +1,40 @@
 import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
-import { genericUUID } from '$lib/utilities/UUID';
+import { genericUUID, objectUUID } from '$lib/utilities/UUID';
 
 import { browser } from '$app/environment';
-import { config } from '$lib/configuration.svelte';
+import { user } from '$lib/stores/User';
+import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
 
-import {
-  type Filter,
-  type FilterInterface,
-  type FilterGroupInterface,
-  createFilterGroup,
-} from '$lib/models/Filter';
+import { type Filter, type FilterInterface, createFilterGroup } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
 import type { OperatorType } from '$lib/models/query/Query';
-import { Tree, type TreeNode } from '$lib/models/Tree';
-import { user } from '$lib/stores/User';
-import { objectUUID } from '$lib/utilities/UUID';
+import { LogicTree } from '$lib/models/LogicTree.svelte';
 
 const genomicFilterTypes = ['snp', 'genomic'];
 
-const createGroup = (nodes: TreeNode<FilterInterface>[], operator: OperatorType) =>
-  createFilterGroup(nodes as FilterInterface[], operator);
+export const createGroup = (nodes: FilterInterface[], operator: OperatorType) =>
+  createFilterGroup(nodes, operator);
 
 export const genomicFilters: Writable<Filter[]> = writable(restoreGenomicFilters());
-export const filterTree: Writable<Tree<FilterInterface>> = writable(restoreFilterTree());
+export const filterTree: Writable<LogicTree<FilterInterface>> = writable(restoreFilterTree());
 
 export const filters: Readable<Filter[]> = derived(
   filterTree,
-  ($tree) => $tree.leafNodes as Filter[],
+  ($tree) => $tree.leafNodes as Filter[], // leafNodes returns FilterInterface[], narrow to Filter union
 );
+export const allFilters: Readable<Filter[]> = derived(
+  [filterTree, genomicFilters],
+  ([$tree, $genomicFilters]) => [...($tree.leafNodes as Filter[]), ...$genomicFilters],
+);
+
+export const associatedStudies: Readable<string[]> = derived(filters, ($f) => {
+  const studies = new Set<string>();
+  for (const filter of $f) {
+    if (filter.dataset) studies.add(filter.dataset);
+  }
+  return [...studies];
+});
+registerAssociatedStudies(associatedStudies);
 
 export const hasGenomicFilter: Readable<boolean> = derived(genomicFilters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => filter.filterType === 'genomic') : false,
@@ -62,7 +69,7 @@ export const activeFilter: Writable<Filter | undefined> = writable();
 export const activeSearch: Writable<SearchResult | undefined> = writable();
 export const filterWarning: Writable<string | undefined> = writable();
 
-filterTree.subscribe((tree: Tree<FilterInterface>) => {
+filterTree.subscribe((tree: LogicTree<FilterInterface>) => {
   if (browser) {
     sessionStorage.setItem('filterTree', tree.serialized);
   }
@@ -82,22 +89,21 @@ function restoreGenomicFilters(): Filter[] {
   return [];
 }
 
-function restoreFilterTree(): Tree<FilterInterface> {
-  const newTree = new Tree(createGroup);
+function restoreFilterTree(): LogicTree<FilterInterface> {
+  const newTree = new LogicTree(createGroup);
   if (browser && sessionStorage.getItem('filterTree')) {
     const serializedTree = sessionStorage.getItem('filterTree');
     if (!serializedTree) return newTree;
-    const oldTree = Tree.deserialize<FilterInterface>(serializedTree, createGroup);
+    const oldTree = LogicTree.deserialize<FilterInterface>(serializedTree, createGroup);
     return oldTree;
   }
   return newTree;
 }
 
 export function toggleOperator(siblingA: FilterInterface, siblingB: FilterInterface) {
-  if (!config.features.explorer.enableOrQueries) return;
   const tree = get(filterTree);
   tree.toggleOperator(siblingA, siblingB);
-  (tree.root as FilterGroupInterface).uuid = genericUUID();
+  tree.root.uuid = genericUUID();
   filterTree.set(tree);
 }
 
@@ -107,17 +113,52 @@ export function addFilter(filter: Filter) {
     filter.uuid = objectUUID(filter);
     geneFilters.push(filter);
     genomicFilters.set(geneFilters);
+    log(
+      createLog('FILTER', 'filter.add', {
+        filterType: filter.filterType,
+        displayType: filter.displayType,
+        variable: filter.variableName,
+        dataset: filter.dataset,
+        pageContext: getPageContext(),
+      }),
+    );
   } else {
     const tree = get(filterTree);
-    const oldNode = tree.find((node) => 'id' in node && node.id === filter.id);
-    if (oldNode) {
-      tree.update(oldNode, filter);
-    } else {
-      tree.add(filter);
-    }
-    (tree.root as FilterGroupInterface).uuid = genericUUID();
+    tree.add(filter);
+    tree.root.uuid = genericUUID();
     filterTree.set(tree);
+    log(
+      createLog('FILTER', 'filter.add', {
+        filterType: filter.filterType,
+        displayType: filter.displayType,
+        variable: filter.variableName,
+        dataset: filter.dataset,
+        valueCount: 'categoryValues' in filter ? filter.categoryValues?.length : undefined,
+        min: 'min' in filter ? filter.min : undefined,
+        max: 'max' in filter ? filter.max : undefined,
+        pageContext: getPageContext(),
+      }),
+    );
   }
+}
+
+export function updateFilter(existingUuid: string, filter: Filter) {
+  if ('filterType' in filter && genomicFilterTypes.includes(filter.filterType)) {
+    const geneFilters = get(genomicFilters);
+    const index = geneFilters.findIndex((f) => f.uuid === existingUuid);
+    if (index === -1) return;
+    filter.uuid = objectUUID(filter);
+    geneFilters[index] = filter;
+    genomicFilters.set(geneFilters);
+    return;
+  }
+  const tree = get(filterTree);
+  const oldNode = tree.find((node) => node.uuid === existingUuid);
+  if (!oldNode) return;
+  filter.uuid = existingUuid;
+  tree.update(oldNode, filter);
+  tree.root.uuid = genericUUID();
+  filterTree.set(tree);
 }
 
 export function removeFilter(removeUuid: string) {
@@ -126,30 +167,53 @@ export function removeFilter(removeUuid: string) {
   const oldGeneNode = geneFilters.find(isFilter);
   if (oldGeneNode) {
     genomicFilters.set(geneFilters.filter((node) => !isFilter(node)));
+    log(
+      createLog('FILTER', 'filter.remove', {
+        filterType: oldGeneNode.filterType,
+        variable: oldGeneNode.variableName,
+        dataset: oldGeneNode.dataset,
+        pageContext: getPageContext(),
+      }),
+    );
     return;
   }
   const tree = get(filterTree);
-  const oldTreeNode = tree.find((node) => isFilter(node as Filter));
+  const oldTreeNode = tree.find((node) => node.uuid === removeUuid);
   if (!oldTreeNode) return;
   tree.remove(oldTreeNode);
-  (tree.root as FilterGroupInterface).uuid = genericUUID();
+  tree.root.uuid = genericUUID();
   filterTree.set(tree);
+  const removed = oldTreeNode as Filter;
+  log(
+    createLog('FILTER', 'filter.remove', {
+      filterType: removed.filterType,
+      variable: removed.variableName,
+      dataset: removed.dataset,
+      pageContext: getPageContext(),
+    }),
+  );
 }
 
 export function removeGenomicFilters() {
+  const count = get(genomicFilters).length;
   genomicFilters.set([]);
+  if (count > 0) log(createLog('FILTER', 'filter.remove_genomic', { count }));
 }
 
 export function removeUnallowedFilters() {
   const isUnallowed = (node: Filter) => !node.allowFiltering;
   const geneFilters = get(genomicFilters);
+  const geneCount = geneFilters.filter((node) => isUnallowed(node)).length;
   genomicFilters.set(geneFilters.filter((node) => !isUnallowed(node)));
 
   const tree = get(filterTree);
-  const remove = tree.leafNodes.filter((node) => isUnallowed(node as Filter));
+  const remove = tree.leafNodes.filter((node) => !node.allowFiltering);
   tree.remove(...remove);
-  (tree.root as FilterGroupInterface).uuid = genericUUID();
+  tree.root.uuid = genericUUID();
   filterTree.set(tree);
+
+  const totalCount = geneCount + remove.length;
+  if (totalCount > 0) log(createLog('FILTER', 'filter.remove_unallowed', { count: totalCount }));
 }
 
 export function removeInvalidFilters(): void {
@@ -173,20 +237,31 @@ export function removeInvalidFilters(): void {
   };
 
   const geneFilters = get(genomicFilters);
+  const geneRemoveCount = geneFilters.filter((node) => !match(node)).length;
   genomicFilters.set(geneFilters.filter((node) => match(node)));
 
   const tree = get(filterTree);
   const remove = tree.leafNodes.filter((node) => !match(node as Filter));
   tree.remove(...remove);
-  (tree.root as FilterGroupInterface).uuid = genericUUID();
+  tree.root.uuid = genericUUID();
   filterTree.set(tree);
+
+  const totalRemoved = geneRemoveCount + remove.length;
+  if (totalRemoved > 0) log(createLog('FILTER', 'filter.remove_invalid', { count: totalRemoved }));
 }
 
 export function clearFilters() {
+  const count = get(allFilters).length;
   genomicFilters.set([]);
   const tree = get(filterTree);
   tree.root.children = [];
-  (tree.root as FilterGroupInterface).uuid = genericUUID();
+  tree.root.uuid = genericUUID();
+  filterTree.set(tree);
+  if (count > 0) log(createLog('FILTER', 'filter.clear', { count, pageContext: getPageContext() }));
+}
+
+export function setFilterTree(tree: LogicTree<FilterInterface>) {
+  tree.root.uuid = genericUUID();
   filterTree.set(tree);
 }
 

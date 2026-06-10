@@ -1,5 +1,5 @@
 import { expect, type Route } from '@playwright/test';
-import { mockApiFail, test } from '../../custom-context';
+import { mockApiFail, test, mockApiSuccess } from '../../custom-context';
 import {
   searchResults,
   facetsResponse,
@@ -60,8 +60,7 @@ test.describe('Facet Side Bar', () => {
     await expect(facetSideBar).toBeVisible();
     const accordionDiv = facetSideBar.getByTestId('accordion');
     await expect(accordionDiv).toBeVisible();
-    const facetCategoryElement = await facetSideBar.getByTestId('accordion-item').all();
-    expect(facetCategoryElement).toHaveLength(facetsResponse.length);
+    await expect(facetSideBar.getByTestId('accordion-item')).toHaveCount(facetsResponse.length);
 
     // Then
     const checkboxes = page.getByTestId('accordion-item').nth(1).locator('label');
@@ -85,7 +84,6 @@ test.describe('Facet Side Bar', () => {
     const accordionDiv = facetSideBar.getByTestId('accordion');
     await expect(accordionDiv).toBeVisible();
     const facetCategoryElement = await facetSideBar.getByTestId('accordion-item').all();
-    expect(facetCategoryElement).toHaveLength(facetsResponse.length);
 
     // Then
     for (let i = 0; i < facetCategoryElement.length; i++) {
@@ -120,6 +118,27 @@ test.describe('Facet Categories', () => {
     await expect(facetCategoryElement).toBeVisible();
     await expect(facetCategoryElement).toHaveText(facetsResponse[0].display);
   });
+  test('Facet categories render in the order the api serves them', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, searchResultPath, searchResults);
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await page.goto('/explorer?search=age');
+
+    // Then
+    await Promise.all(
+      facetsResponse
+        .map(({ display }) => display)
+        .map(async (categoryDisplay, index) => {
+          const categoryAtIndex = page
+            .getByTestId('accordion-item')
+            .nth(index)
+            .getByRole('button')
+            .getByTestId('accordion-control');
+
+          return expect(categoryAtIndex).toHaveText(categoryDisplay);
+        }),
+    );
+  });
   test('Facet Category has facets listed', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) =>
@@ -135,14 +154,13 @@ test.describe('Facet Categories', () => {
     for (let i = 0; i < facetsResponse.length; i++) {
       //When
       const facetList = page.getByTestId('accordion-item').nth(i);
-      const facetItems = await facetList.locator('label').all();
       const numFacets = facetsResponse[i].facets.length;
       // Then
       if (numFacets > MAX_FACETS_TO_SHOW) {
-        expect(facetItems).toHaveLength(MAX_FACETS_TO_SHOW);
+        await expect(facetList.locator('label')).toHaveCount(MAX_FACETS_TO_SHOW);
       } else {
         const facetsToExpect = facetsResponse[i].facets.filter((facet) => facet.count > 0);
-        expect(facetItems).toHaveLength(facetsToExpect.length);
+        await expect(facetList.locator('label')).toHaveCount(facetsToExpect.length);
       }
     }
   });
@@ -217,9 +235,10 @@ test.describe('Facet Categories', () => {
         const moreButton = facetList.getByTestId('show-more-facets');
         await expect(moreButton).toBeVisible();
         await moreButton.click();
-        const facetItems = await page.getByTestId('accordion-item').nth(i).locator('label').all();
         const facetsToExpect = facetsResponse[i].facets.filter((facet) => facet.count > 0);
-        expect(facetItems).toHaveLength(facetsToExpect.length);
+        await expect(page.getByTestId('accordion-item').nth(i).locator('label')).toHaveCount(
+          facetsToExpect.length,
+        );
       }
     }
   });
@@ -273,8 +292,9 @@ test.describe('Facet Categories', () => {
         await moreButton.click();
         await expect(moreButton).toHaveText('Show Less');
         await moreButton.click();
-        const facetItems = await page.getByTestId('accordion-item').nth(i).locator('label').all();
-        expect(facetItems).toHaveLength(MAX_FACETS_TO_SHOW);
+        await expect(page.getByTestId('accordion-item').nth(i).locator('label')).toHaveCount(
+          MAX_FACETS_TO_SHOW,
+        );
         await expect(moreButton).toHaveText('Show More');
       }
     }
@@ -398,10 +418,9 @@ test.describe('Facet Categories', () => {
         await searchInput.fill('NSRR CFS full name');
         await expect(searchInput).toHaveValue('NSRR CFS full name');
         const facetItems = await facetList.locator('label').all();
-        facetItems.forEach(async (facetItem) => {
-          const facetItemText = await facetItem.textContent();
-          expect(facetItemText).toContain('NSRR CFS');
-        });
+        for (const facetItem of facetItems) {
+          await expect(facetItem).toContainText('NSRR CFS');
+        }
       }
     }
   });
@@ -572,57 +591,62 @@ test.describe('Facet & search', () => {
   });
   test('Selected facet is not disabled when 0 count', async ({ page }) => {
     // Given
-    await page.route(searchResultPath, async (route: Route) =>
-      route.fulfill({ json: searchResults }),
-    );
-    await page.route(facetResultPath, async (route: Route) =>
-      route.fulfill({
-        json: [
-          {
-            ...facetsResponse[0],
-            facets: [facetsResponse[0].facets[0], facetsResponse[0].facets[1]],
-          },
-          facetsResponse[1],
-        ],
-      }),
-    );
-    await page.goto('/explorer');
-    await page.route(searchResultPath, async (route: Route) =>
-      route.fulfill({
-        json: {
-          ...searchResults,
-          totalElements: 0,
-          content: [],
-        },
-      }),
-    );
-    await page.route(facetResultPath, async (route: Route) =>
-      route.fulfill({
-        json: [
-          {
-            ...facetsResponse[0],
-            facets: [
-              {
-                ...facetsResponse[0].facets[0],
-                count: 0,
-              },
-              facetsResponse[0].facets[1],
-            ],
-          },
-          facetsResponse[1],
-        ],
-      }),
-    );
-
     const firstCheckName = facetsResponse[0].facets[0].name;
-    const facetCheckBox = page.getByTestId(`facet-${firstCheckName}-label`);
-    await facetCheckBox.click();
+    const initialFacets = [
+      {
+        ...facetsResponse[0],
+        facets: [facetsResponse[0].facets[0], facetsResponse[0].facets[1]],
+      },
+      facetsResponse[1],
+    ];
+    const zeroCountFacets = [
+      {
+        ...facetsResponse[0],
+        facets: [
+          {
+            ...facetsResponse[0].facets[0],
+            count: 0,
+          },
+          facetsResponse[0].facets[1],
+        ],
+      },
+      facetsResponse[1],
+    ];
+
+    await page.route(searchResultPath, async (route: Route) => {
+      const body = route.request().postDataJSON();
+      const selectedFacet = body.facets?.some(
+        (facet: { name: string }) => facet.name === firstCheckName,
+      );
+      await route.fulfill({
+        json: selectedFacet
+          ? {
+              ...searchResults,
+              totalElements: 0,
+              content: [],
+            }
+          : searchResults,
+      });
+    });
+    await page.route(facetResultPath, async (route: Route) => {
+      const body = route.request().postDataJSON();
+      const selectedFacet = body.facets?.some(
+        (facet: { name: string }) => facet.name === firstCheckName,
+      );
+      await route.fulfill({ json: selectedFacet ? zeroCountFacets : initialFacets });
+    });
+
+    await page.goto('/explorer');
+    const facetLabel = page.getByTestId(`facet-${firstCheckName}-label`);
+    const facetCheckBox = page.locator(`input#${firstCheckName}`);
+    await expect(facetLabel).toBeVisible();
 
     // When
-    await page.getByTestId('search-box').fill('hsfgoisdhf');
-    await page.locator('#search-button').click();
+    await facetCheckBox.click();
 
     // Then
+    await expect(facetCheckBox).toBeChecked();
+    await expect(facetLabel).toContainText('(0)');
     await expect(facetCheckBox).not.toBeDisabled();
   });
 });
@@ -667,6 +691,7 @@ test.describe('Nested Facets', () => {
     await expect(nestedFacetChildren).not.toBeVisible();
   });
 });
+
 test.describe('Hidden Facets', () => {
   test('Facets with zero counts are not displayed', async ({ page }) => {
     // Given
@@ -738,7 +763,6 @@ test.describe('Hidden Facets', () => {
     await emptyCategory.click();
 
     const emptyPanel = emptyCategory.locator('xpath=..').getByTestId('accordion-item');
-    const facetsInEmptyPanel = await emptyPanel.locator('label').all();
-    expect(facetsInEmptyPanel).toHaveLength(0);
+    await expect(emptyPanel.locator('label')).toHaveCount(0);
   });
 });

@@ -9,14 +9,13 @@
 
   import { config } from '$lib/configuration.svelte';
 
+  import { allFilters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import {
-    filters,
-    genomicFilters,
-    hasGenomicFilter,
-    clearFilters,
-    hasOrGroup,
-  } from '$lib/stores/Filter';
-  import { loadPatientCount, hasNonZeroResult, countsLoading } from '$lib/stores/ResultStore';
+    loadPatientCount,
+    hasNonZeroResult,
+    countsLoading,
+    totalParticipants,
+  } from '$lib/stores/ResultStore';
   import { exports, clearExports } from '$lib/stores/Export';
 
   import Filters from '$lib/components/explorer/results/Filters.svelte';
@@ -24,29 +23,29 @@
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import Counts from '$lib/components/explorer/results/Counts.svelte';
-  import Popover from '$lib/components/Popover.svelte';
+  import { subscribeOnChange } from '$lib/utilities/Subscribers';
+  import { log, createLog } from '$lib/logger';
 
   let unsubFilters: Unsubscriber | null = null;
-  let currentPage: string = page.url.pathname;
-  let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
-  let isExplorer = $derived(page.url.pathname.includes('/explorer'));
+  let currentPage: string = $state(page.url.pathname);
+  let isDiscoverPage = $derived(currentPage.includes('/discover'));
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
-    $filters.length !== 0 ||
+    $allFilters.length !== 0 ||
       (config.features.explorer.exportsEnableExport && $exports.length !== 0),
   );
 
   let showExportButton = $derived(
     config.features.explorer.allowExport &&
-      !isOpenAccess &&
+      !isDiscoverPage &&
       hasFilterOrExport &&
       ($countsLoading || $hasNonZeroResult),
   );
 
   let hasValidDistributionFilters = $derived(
-    $filters.length !== 0 &&
-      !$filters.every(
+    $allFilters.length !== 0 &&
+      !$allFilters.every(
         (filter) =>
           filter.filterType === 'genomic' ||
           filter.filterType === 'snp' ||
@@ -55,31 +54,35 @@
   );
 
   let showExplorerDistributions = $derived(
-    isExplorer && config.features.explorer.distributionExplorer && hasValidDistributionFilters,
+    !isDiscoverPage && config.features.explorer.distributionExplorer && hasValidDistributionFilters,
   );
 
   let showDiscoverDistributions = $derived(
-    isOpenAccess &&
-      config.features.discoverFeatures.distributionExplorer &&
+    isDiscoverPage &&
+      config.features.discover &&
+      config.features.discoverFeautures.distributionExplorer &&
       hasValidDistributionFilters,
   );
 
   let showVariantExplorer = $derived(
-    isExplorer && config.features.explorer.variantExplorer && $hasGenomicFilter,
+    !isDiscoverPage && config.features.explorer.variantExplorer && $hasGenomicFilter,
   );
 
-  let showCohortDetails = $derived(isExplorer && config.features.explorer.enableCohortDetails);
+  function isObfuscatedLessThanTen(count: unknown) {
+    return typeof count === 'string' && count.trim().startsWith('<');
+  }
 
-  let showToolSuite = $derived(
-    showCohortDetails ||
-      (($genomicFilters.length !== 0 || $filters.length !== 0 || $exports.length !== 0) &&
-        (showExplorerDistributions || showDiscoverDistributions || showVariantExplorer)),
+  let distributionsDisabled = $derived(
+    $countsLoading ||
+      (isDiscoverPage
+        ? isObfuscatedLessThanTen($totalParticipants) || $totalParticipants < 10
+        : $totalParticipants === 0),
   );
+
+  let showCohortDetails = $derived(!isDiscoverPage && config.features.explorer.enableCohortDetails);
 
   function subscribe() {
-    if (!unsubFilters) {
-      unsubFilters = filters.subscribe(() => loadPatientCount(isOpenAccess));
-    }
+    unsubFilters = subscribeOnChange(allFilters, () => loadPatientCount(!isDiscoverPage));
   }
 
   function unsubscribe() {
@@ -94,7 +97,6 @@
   // to load on the next page. Example discover results displaying on explorer page.
   // To fix this, we resubscribe on page navigation with the correct isOpenAccess flag
   // for loadPatientCount method, dropping the previous results and sending a new request.
-  // (Subscriber method runs on initial subscription.)
   $effect(() => {
     if (!page.url.pathname.startsWith(currentPage)) {
       // if the current path doesn't start with the saved page path,
@@ -103,11 +105,15 @@
       //          invalid: /explorer/cohort -> /discover (like a back button action)
       currentPage = page.url.pathname;
       unsubscribe();
+      loadPatientCount(!isDiscoverPage);
       subscribe();
     }
   });
 
-  onMount(subscribe);
+  onMount(() => {
+    loadPatientCount(!isDiscoverPage);
+    subscribe();
+  });
   onDestroy(unsubscribe);
 </script>
 
@@ -137,7 +143,10 @@
         type="button"
         class="btn preset-filled-primary-500"
         disabled={$countsLoading}
-        onclick={() => goto('/explorer/export')}
+        onclick={() => {
+          log(createLog('ACTION', 'explorer.prepare_for_analysis'));
+          goto('/explorer/export');
+        }}
         transition:scale={{ easing: elasticInOut }}
       >
         Prepare for Analysis
@@ -146,20 +155,31 @@
   {/if}
   <div id="export-filters" class="flex flex-col items-center mt-7 w-80">
     <hr />
-    <div class="flex content-center mt-7">
-      <h5 class="text-xl flex-auto mr-2 mb-2">Filtered Data Summary</h5>
+    <div class="flex content-center items-center mt-6">
+      <h5 class="text-xl flex-auto ml-9 mr-2 mb-2 pt-1">Filtered Data Summary</h5>
       {#if hasFilterOrExport}
         <button
           data-testid="clear-all-results-btn"
-          class="anchor text-sm flex-none"
+          class="btn btn-xs preset-tonal-error border border-error-500 hover:preset-filled-error-500 flex-none"
           onclick={() => (modalOpen = true)}>Reset</button
         >
       {/if}
     </div>
-    <Filters />
+    <Filters {isDiscoverPage} />
     {#if $exports.length > 0}
       <div class="px-4 mb-1 w-80">
-        <header class="text-left ml-1" data-testid="export-header">Added Variables</header>
+        <header class="text-left ml-1" data-testid="export-header">
+          Added Variables
+          {#if $exports.length > 10}
+            <button
+              data-testid="clear-all-results-btn"
+              class="anchor text-sm flex-none float-right mr-2"
+              onclick={() => {
+                $exports = [];
+              }}>Clear</button
+            >
+          {/if}
+        </header>
         <section class="py-1">
           {#each $exports as variable (variable.id)}
             <ExportedVariable {variable} />
@@ -168,7 +188,7 @@
       </div>
     {/if}
   </div>
-  {#if showToolSuite}
+  {#if showCohortDetails || showExplorerDistributions || showDiscoverDistributions || showVariantExplorer}
     <div class="flex flex-col items-center mt-7">
       <hr />
       <h5 class="text-center text-xl mt-7">Tool Suite</h5>
@@ -186,39 +206,24 @@
         {#if showExplorerDistributions}
           <CardButton
             href="/explorer/distributions"
+            id="explorer-distributions-btn"
             data-testid="distributions-btn"
             title="Variable Distributions"
             icon="fa-solid fa-chart-pie"
             size="md"
+            disabled={distributionsDisabled}
           />
         {/if}
         {#if showDiscoverDistributions}
-          {#if $hasOrGroup}
-            <Popover
-              triggerTypes={['hover', 'focus']}
-              placement="left"
-              message="Variable distributions currently not available with 'OR' queries."
-            >
-              {#snippet trigger()}
-                <CardButton
-                  href="/discover/distributions"
-                  data-testid="distributions-btn"
-                  title="Variable Distributions"
-                  icon="fa-solid fa-chart-pie"
-                  size="md"
-                  disabled
-                />
-              {/snippet}
-            </Popover>
-          {:else}
-            <CardButton
-              href="/discover/distributions"
-              data-testid="distributions-btn"
-              title="Variable Distributions"
-              icon="fa-solid fa-chart-pie"
-              size="md"
-            />
-          {/if}
+          <CardButton
+            href="/discover/distributions"
+            id="explorer-distributions-btn"
+            data-testid="distributions-btn"
+            title="Variable Distributions"
+            icon="fa-solid fa-chart-pie"
+            size="md"
+            disabled={distributionsDisabled}
+          />
         {/if}
         {#if showVariantExplorer}
           <CardButton

@@ -1,9 +1,10 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { config } from '$lib/configuration.svelte';
-  import { user, isLoggedIn } from '$lib/stores/User';
+  import { user, isUserLoggedIn } from '$lib/stores/User';
   import Terms from '$lib/components/Terms.svelte';
   import Modal from '$lib/components/Modal.svelte';
+  import { log, createLog } from '$lib/logger';
 
   let { showSitemap = config.branding.footer.showSitemap || false }: { showSitemap?: boolean } =
     $props();
@@ -24,10 +25,12 @@
   );
 
   let modalOpen: boolean = $state(
-    config.features.enforceTermsOfService && $isLoggedIn && !$user.acceptedTOS,
+    config.features.enforceTermsOfService && isUserLoggedIn() && !$user.acceptedTOS,
   );
   let modalClosable: boolean = $derived(
-    !config.features.enforceTermsOfService || !$isLoggedIn || ($isLoggedIn && !!$user?.acceptedTOS),
+    !config.features.enforceTermsOfService ||
+      !isUserLoggedIn() ||
+      (isUserLoggedIn() && !!$user?.acceptedTOS),
   );
 </script>
 
@@ -44,7 +47,15 @@
                   <a
                     target={link.newTab ? '_blank' : '_self'}
                     href={link.url}
-                    class="hover:underline">{link.title}</a
+                    class="hover:underline"
+                    onclick={() =>
+                      log(
+                        createLog('NAVIGATION', 'sitemap.link_click', {
+                          title: link.title,
+                          url: link.url,
+                          category: section.category,
+                        }),
+                      )}>{link.title}</a
                   >
                 </li>
               {/if}
@@ -59,19 +70,26 @@
   <ul>
     {#if config.features.termsOfService}
       <li>
-        <Modal
-          bind:open={modalOpen}
-          data-testid="terms-of-service"
-          width="w-3/4"
-          height="h-full"
-          triggerBase="hover:underline text-[0.74rem]"
-          withDefault={false}
-          footerButtons={false}
-          closeable={modalClosable}
+        <span
+          role="button"
+          tabindex="-1"
+          onclick={() => log(createLog('NAVIGATION', 'footer.tos_click'))}
+          onkeydown={(e) => e.key === 'Enter' && log(createLog('NAVIGATION', 'footer.tos_click'))}
         >
-          {#snippet trigger()}Terms of Service{/snippet}
-          <Terms bind:modalOpen />
-        </Modal>
+          <Modal
+            bind:open={modalOpen}
+            data-testid="terms-of-service"
+            width="w-3/4"
+            height="h-full"
+            triggerBase="hover:underline text-[0.74rem]"
+            withDefault={false}
+            footerButtons={false}
+            closeable={modalClosable}
+          >
+            {#snippet trigger()}Terms of Service{/snippet}
+            <Terms bind:modalOpen />
+          </Modal>
+        </span>
       </li>
     {/if}
     {#each config.branding.footer.links as link}
@@ -79,7 +97,10 @@
         <a
           class="hover:underline text-[0.74rem]"
           target={link.newTab ? '_blank' : '_self'}
-          href={link.url}>{link.title}</a
+          href={link.url}
+          onclick={() =>
+            log(createLog('NAVIGATION', 'footer.link_click', { title: link.title, url: link.url }))}
+          >{link.title}</a
         >
       </li>
     {/each}

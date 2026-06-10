@@ -9,7 +9,7 @@ import {
   type PhenotypicClause,
 } from '$lib/models/query/Query';
 import { config } from '$lib/configuration.svelte';
-import type { QueryRequestInterface } from '$lib/models/api/Request';
+import type { QueryRequestInterfaceV2, QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/User';
 import { filters, filterTree, genomicFilters, hasGenomicFilter } from '$lib/stores/Filter';
@@ -21,8 +21,9 @@ import type {
   FilterInterface,
   GenomicFilterInterface,
   SnpFilterInterface,
-} from '$lib/models/Filter';
-import { Tree, type TreeNode } from '$lib/models/Tree';
+  AnyRecordOfFilterInterface,
+} from '$lib/models/Filter.svelte';
+import { LogicTree } from '$lib/models/LogicTree.svelte';
 import type { GenomicFilterInterfacev3, OperatorType } from '$lib/models/query/Query';
 import type { ExportInterface } from '$lib/models/Export.ts';
 
@@ -37,7 +38,7 @@ export function getQueryRequestV2(
   resourceUUID = get(resources).hpdsAuth,
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV2) => QueryV2 = (q) => q,
-): QueryRequestInterface {
+): QueryRequestInterfaceV2 {
   return getBlankQueryRequestV2(
     !addConsents,
     resourceUUID,
@@ -80,7 +81,7 @@ export function getBlankQueryRequestV2(
   resourceUUID = get(resources).hpdsAuth,
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV2) => QueryV2 = (q) => q,
-): QueryRequestInterface {
+): QueryRequestInterfaceV2 {
   let query: QueryV2 = new QueryV2();
 
   if (config.features.useQueryTemplate && !isOpenAccess) {
@@ -153,7 +154,7 @@ function serializeQueryV3(query: QueryV3) {
   );
 }
 
-function getClausesFromTree(tree: Tree<FilterInterface>): PhenotypicClause | null {
+function getClausesFromTree(tree: LogicTree<FilterInterface>): PhenotypicClause | null {
   if (tree.root.children.length === 0) return null;
 
   const groupClause = (operator: OperatorType): PhenotypicSubqueryInterface => ({
@@ -162,7 +163,7 @@ function getClausesFromTree(tree: Tree<FilterInterface>): PhenotypicClause | nul
     phenotypicClauses: [],
     not: false,
   });
-  const mapNode = (node: TreeNode<FilterInterface>): PhenotypicClause => {
+  const mapNode = (node: FilterInterface): PhenotypicClause => {
     if (tree.isGroup(node)) {
       const newGroup = groupClause(node.operator);
       newGroup.phenotypicClauses = node.children.map(mapNode);
@@ -173,12 +174,38 @@ function getClausesFromTree(tree: Tree<FilterInterface>): PhenotypicClause | nul
   return mapNode(tree.root);
 }
 
+export function getFilterConcepts(query: QueryV3): string[] {
+  if (query.phenotypicClause == null) return [];
+
+  const concepts: string[] = [];
+
+  function mapClause(clause: PhenotypicClause): void {
+    if (clause.type === 'PhenotypicSubquery' && clause.phenotypicClauses.length > 0) {
+      clause.phenotypicClauses.forEach(mapClause);
+      return;
+    }
+    const thisFilter = clause as PhenotypicFilterInterface;
+    if (thisFilter.phenotypicFilterType === 'ANY_RECORD_OF') {
+      const anyRecordFilter = get(filters).find(
+        (filter) => filter.id === thisFilter.conceptPath,
+      ) as AnyRecordOfFilterInterface | undefined;
+      if (!anyRecordFilter) return;
+      anyRecordFilter.concepts.forEach((concept) => concepts.push(concept));
+    } else {
+      concepts.push(thisFilter.conceptPath);
+    }
+  }
+  mapClause(query.phenotypicClause);
+
+  return concepts;
+}
+
 export function getQueryRequestV3(
   addConsents = true,
   resourceUUID = get(resources).hpdsAuth,
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
-): QueryRequestInterface {
+): QueryRequestInterfaceV3 {
   return getBlankQueryRequestV3(
     !addConsents,
     resourceUUID,
@@ -206,7 +233,7 @@ export function getBlankQueryRequestV3(
   resourceUUID = get(resources).hpdsAuth,
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
-): QueryRequestInterface {
+): QueryRequestInterfaceV3 {
   let query: QueryV3 = new QueryV3();
   query.expectedResultType = expectedResultType;
 
@@ -298,7 +325,6 @@ const convertPhenotypicFilterToClause = (filter: Filter): PhenotypicFilterInterf
   switch (filter.filterType) {
     case 'AnyRecordOf':
       newFilterClause.phenotypicFilterType = 'ANY_RECORD_OF';
-      newFilterClause.values = filter.concepts;
       break;
 
     case 'required':

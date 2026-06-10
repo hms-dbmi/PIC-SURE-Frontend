@@ -11,6 +11,7 @@ import type { QueryInterfaceV2 } from '$lib/models/query/Query';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/state';
 import { resources } from '$lib/stores/Resources';
+import { log, createLog } from '$lib/logger';
 
 // Create a store that syncs with localStorage
 function createLocalStorageStore(key: string, initialValue: boolean) {
@@ -38,15 +39,16 @@ export const isAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.ADMIN);
 });
 
-export const isLoggedIn: Readable<boolean> = derived(tokenStatus, ($tokenStatus) => $tokenStatus);
-
-user.subscribe((user: User) => {
+// User data lives in sessionStorage (tab-scoped), not localStorage. Each tab has its own
+// isolated user state, so opening the app in multiple tabs or logging out in one tab
+// cannot leak stale admin/privileged data into another tab's UI. Token stays in
+// localStorage because the API client reads it on every request and a fresh tab needs
+// to know the user is already authenticated.
+user.subscribe(($user: User) => {
   if (browser) {
-    clearSessionTokenIfExpired();
-    const userCopy: User = { ...user };
-    // We don't want to save the long term token in local storage
-    userCopy.token = undefined;
-    localStorage.setItem('user', JSON.stringify(userCopy));
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { token: _, ...userWithoutToken } = $user;
+    sessionStorage.setItem('user', JSON.stringify(userWithoutToken));
   }
 });
 
@@ -64,22 +66,40 @@ export function removeToken() {
   tokenStatus.set(false);
 }
 
+/**
+ * Clear all client-side session state: token, persisted user blob, and the user store.
+ *
+ * DO NOT call this from module-init code paths (e.g. `restoreUser`). The `user` store
+ * does not exist yet at that point, so `user.set()` will throw. `restoreUser` instead
+ * clears localStorage inline and returns `{}` as the initial store value.
+ */
+export function clearSession() {
+  removeToken();
+  sessionStorage.removeItem('user');
+  user.set({});
+}
+
 function restoreUser() {
-  if (browser && localStorage.getItem('user')) {
-    clearSessionTokenIfExpired();
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!user || Object.keys(user).length === 0) {
-        return {};
-      }
-      console.log('Restored user from local storage: ', user);
-      return user;
-    } catch (error) {
-      console.error('Error reading user from local storage:  ' + error);
-      return {};
-    }
+  if (!browser) return {};
+
+  const token = localStorage.getItem('token');
+  if (token && isTokenExpired(token)) {
+    console.log('Clearing expired token from storage.');
+    removeToken();
+    sessionStorage.removeItem('user');
+    log(createLog('AUTH', 'session.expired'));
+    return {};
   }
-  return {};
+
+  try {
+    const stored = JSON.parse(sessionStorage.getItem('user') || '{}');
+    if (!stored || Object.keys(stored).length === 0) return {};
+    console.log('Restored user from session storage: ', stored);
+    return stored;
+  } catch (error) {
+    console.error('Error reading user from session storage: ' + error);
+    return {};
+  }
 }
 
 export function isUserLoggedIn() {
@@ -89,22 +109,20 @@ export function isUserLoggedIn() {
   return false;
 }
 
-function clearSessionTokenIfExpired() {
-  if (browser) {
-    const token = localStorage.getItem('token');
-    if (token && isTokenExpired(token)) {
-      console.log('Clearing expired token from local storage.');
-      removeToken();
-    }
-  }
-}
-
-export const userRoutes: Readable<Route[]> = derived([user, isLoggedIn], ([$user, $isLoggedIn]) => {
+export const userRoutes: Readable<Route[]> = derived([user], ([$user]) => {
   const userPrivileges: string[] = $user?.privileges || [];
 
-  if (userPrivileges.length === 0 || !$isLoggedIn) {
+  if (userPrivileges.length === 0 || !isUserLoggedIn()) {
     // Public routes for non-logged in user
-    return routes.filter((route) => !route.privilege);
+    const openRoutes = featureRoutes(routes.filter((route) => !route.privilege));
+    console.log('openRoutes', openRoutes);
+    if (config.features.login.open && !isUserLoggedIn() && !config.features.discover) {
+      openRoutes.unshift({
+        path: '/explorer',
+        text: 'Explore',
+      });
+    }
+    return openRoutes;
   }
 
   function featureRoutes(routeList: Route[]): Route[] {
@@ -169,16 +187,25 @@ export async function getQueryTemplate(): Promise<QueryInterfaceV2> {
   }
 }
 
+/**
+ * Populate the user store from PSAMA using the token in localStorage. Used by the login
+ * flow and by the authorized layout when a fresh tab has a valid token but no user data
+ * in sessionStorage (since sessionStorage is tab-scoped, each new tab starts empty).
+ */
+export async function hydrateUserFromToken() {
+  await getUser(true, false);
+  if (config.features.useQueryTemplate) {
+    const queryTemplate = await getQueryTemplate();
+    if (queryTemplate) {
+      user.set({ ...get(user), queryTemplate });
+    }
+  }
+}
+
 export async function login(token: string) {
   if (browser && token) {
     setToken(token);
-    await getUser(true, false);
-    if (config.features.useQueryTemplate) {
-      const queryTemplate = await getQueryTemplate();
-      if (queryTemplate) {
-        user.set({ ...get(user), queryTemplate });
-      }
-    }
+    await hydrateUserFromToken();
   }
 }
 
@@ -202,6 +229,7 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
     await authProvider
       .logout()
       .then((redirectURL) => {
+        log(createLog('AUTH', 'logout.success'));
         if (typeof redirectURL === 'string') {
           user.set({});
           location.replace(redirectURL);
@@ -218,6 +246,7 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
 
 function handleLogout(redirect: boolean) {
   user.set({});
+  log(createLog('AUTH', 'logout.success'));
   if (redirect) {
     goto(`/login?redirectTo=${encodeURIComponent(page.url.pathname)}`);
   } else {
@@ -230,6 +259,7 @@ export function isTokenExpired(token: string) {
     return getTokenExpiration(token) < new Date().getTime();
   } catch (error) {
     console.error('Error checking token expiration: ' + error);
+    log(createLog('AUTH', 'token.parse_error', { error: String(error) }));
     return true;
   }
 }

@@ -9,11 +9,13 @@
     getQueryResources,
   } from '$lib/stores/Resources';
   import { getVariantCount, getVariantData } from '$lib/utilities/Variants';
-  import { getQueryRequestV2 } from '$lib/utilities/QueryBuilder';
+  import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
+  import { config } from '$lib/configuration.svelte';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import VariantData from '$lib/components/explorer/variant/VariantData.svelte';
+  import { log, createLog } from '$lib/logger';
 
   let variantResults: VariantResult[] = $state([]);
   let tabGroup = $state('');
@@ -23,10 +25,10 @@
     await $resourcesPromise;
 
     variantResults = getQueryResources().map((resource) => {
-      const queryRequest = getQueryRequestV2(true, resource.uuid);
+      const queryRequest = getQueryRequestV3(true, resource.uuid);
       return {
         name: resource.name,
-        exportType: ExportType.Aggregate,
+        exportType: config.settings.variantExplorer.type || ExportType.Aggregate,
         count: getVariantCount(queryRequest),
         queryRequest,
       };
@@ -34,6 +36,7 @@
   }
 
   function changeTabGroup(newTab: string) {
+    log(createLog('ACTION', 'variant.site_change', { site: newTab }));
     tabGroup = newTab;
     const tabResult = variantResults.find((result) => result.name === tabGroup);
     if (tabResult && !tabResult.data) {

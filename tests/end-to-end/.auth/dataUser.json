@@ -14,7 +14,7 @@
         },
         {
           "name": "user",
-          "value": "{\"uuid\":\"1234\",\"email\":\"test@pic-sure.org\",\"privileges\":[\"PIC_SURE_ANY_QUERY\",\"DATA_ADMIN\"],\"queryScopes\":[\"Gene_with_variant\",\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"acceptedTOS\":true,\"queryTemplate\":{}}"
+          "value": "{\"uuid\":\"1234\",\"email\":\"test@pic-sure.org\",\"privileges\":[\"PIC_SURE_ANY_QUERY\",\"DATA_ADMIN\",\"NAMED_DATASET\",\"API_ACCESS\"],\"queryScopes\":[\"Gene_with_variant\",\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"acceptedTOS\":true,\"queryTemplate\":{}}"
         },
         {
           "name": "datatableSettings",

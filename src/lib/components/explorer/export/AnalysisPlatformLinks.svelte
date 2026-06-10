@@ -1,5 +1,6 @@
 <script lang="ts">
   import { config } from '$lib/configuration.svelte';
+  import { log, createLog } from '$lib/logger';
 </script>
 
 {#if config.branding.explorePage.goTo.links.length > 0}
@@ -8,7 +9,10 @@
       <a
         class="btn preset-tonal-primary border border-primary-500 m-2 hover:preset-filled-primary-500"
         href={link.url}
-        target={link.newTab ? '_blank' : '_self'}>{link.title}</a
+        target={link.newTab ? '_blank' : '_self'}
+        onclick={() =>
+          log(createLog('EXPORT', 'export.go_to_platform', { title: link.title, url: link.url }))}
+        >{link.title}</a
       >
     {/each}
   </div>

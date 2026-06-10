@@ -9,6 +9,8 @@
   import type { AuthData } from '$lib/models/AuthProvider';
   import { toaster } from '$lib/toaster';
 
+  import { log, createLog } from '$lib/logger';
+
   import LoginButton from '$lib/components/buttons/LoginButton.svelte';
   import Logo from '$lib/components/Logo.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -20,7 +22,7 @@
   const openPicsureLinkText = config.branding.login.openPicsureLinkText;
   let logoutReason: string | null;
   const loading = Promise.all([page.data?.providers, config.loading]).then(
-    ([providers]) => providers
+    ([providers]) => providers,
   );
 
   onMount(() => {
@@ -48,7 +50,7 @@
 >
   <div id="title-box" class="flex flex-col items-center text-center mb-8 max-w-3/4">
     <h1 data-testid="login-title" class="mb-6 w-full flex gap-2 items-center justify-center">
-      <Logo class="flex-none" height={7.5} />
+      <Logo class="flex-none" height={config.branding.login.logoHeight || 7.5} />
     </h1>
     <p data-testid="login-description" class="text-2xl">{description}</p>
   </div>
@@ -107,7 +109,12 @@
           <a
             href={config.branding.login.openPicsureLink || '/'}
             class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white mb-4 w-full"
-            >{openPicsureLinkText}</a
+            onclick={() =>
+              log(
+                createLog('NAVIGATION', 'login.explore_open', {
+                  url: config.branding.login.openPicsureLink || '/',
+                }),
+              )}>{openPicsureLinkText}</a
           >
         {/if}
         {#await page.data?.altProviders}

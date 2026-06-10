@@ -8,7 +8,6 @@
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   import { config } from '$lib/configuration.svelte';
   import { filters } from '$lib/stores/Filter';
-  import { get } from 'svelte/store';
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
   const ERROR_VALUE = 'N/A';
@@ -54,7 +53,7 @@
                 type="exclamation"
                 color="warning"
                 id="result-count-error"
-                text={get(filters).length !== 0
+                text={$filters.length !== 0
                   ? config.branding.explorePage.filterErrorText
                   : config.branding.explorePage.queryErrorText}
               />

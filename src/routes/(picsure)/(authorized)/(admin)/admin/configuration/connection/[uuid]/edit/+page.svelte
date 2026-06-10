@@ -19,7 +19,9 @@
   });
 
   async function load() {
-    connection = await getConnection(page.params.uuid);
+    if (page.params?.uuid) {
+      connection = await getConnection(page.params.uuid);
+    }
   }
 </script>
 
