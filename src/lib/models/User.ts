@@ -26,6 +26,10 @@ export interface OktaUser extends User {
   readonly oktaIdToken: string;
 }
 
+export interface RasUser extends User {
+  readonly idToken: string;
+}
+
 export interface UserRequest extends User {
   connection?: Connection;
   generalMetadata: string;
