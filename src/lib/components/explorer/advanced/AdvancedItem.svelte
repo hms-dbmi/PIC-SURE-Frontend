@@ -40,12 +40,13 @@
     actualIndex > 0 && filter.parent ? filter.parent.operator : undefined,
   );
   const showLeadingOperator = $derived(actualIndex > 0 && leadingOperator !== undefined);
+  const dataset = $derived(
+    filter.searchResult?.table?.display ?? filter.searchResult?.table?.dataset,
+  );
   const searchResultMetadata = $derived(
     [
       filter.searchResult?.studyAcronym && `Study: ${filter.searchResult.studyAcronym}`,
-      filter.searchResult?.dataset &&
-        filter.searchResult.dataset !== filter.searchResult?.studyAcronym &&
-        `Dataset: ${filter.searchResult.dataset}`,
+      dataset && `Dataset: ${dataset}`,
     ]
       .filter(Boolean)
       .join(', '),
