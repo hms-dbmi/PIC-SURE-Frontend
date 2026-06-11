@@ -55,7 +55,7 @@
     const plotFilters = get(filters);
     const visualizationFilters = plotFilters.filter(isVisualizationFilter);
     const subtitleByConceptPath = getSubtitleByConceptPath(plotFilters);
-    const minimumCount = isOpenAccess() ? 9 : 1;
+    const minimumCount = 1;
 
     const getSubtitle = (conceptPath?: string) =>
       conceptPath ? subtitleByConceptPath.get(conceptPath) : undefined;

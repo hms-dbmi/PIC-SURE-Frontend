@@ -1,4 +1,9 @@
-import type { CategoricalPlotData, ContinuousPlotData } from '$lib/utilities/Plotly';
+import {
+  normalizeCount,
+  type CategoricalPlotData,
+  type ContinuousPlotData,
+  type CountValue,
+} from '$lib/utilities/Plotly';
 import type { Filter } from '$lib/models/Filter.svelte';
 
 export type VisualizationPlotData = CategoricalPlotData | ContinuousPlotData;
@@ -14,8 +19,13 @@ export function visualizationVariableLabel(filter: Filter) {
   return study ? `${study} - ${label}` : label;
 }
 
-export function totalMapCount(map?: Record<string, number>) {
-  return Object.values(map || {}).reduce((total, value) => total + Number(value || 0), 0);
+// Sums each value's band upper bound (count + variance) so a chart whose only
+// bucket is "< 10" (count 0, variance 9) still counts as having data
+export function totalMapCount(map?: Record<string, CountValue>) {
+  return Object.values(map || {}).reduce((total: number, value) => {
+    const { count, variance } = normalizeCount(value);
+    return total + count + (variance ?? 0);
+  }, 0);
 }
 
 export function categoricalHasData(data: CategoricalPlotData, minimumCount: number) {
