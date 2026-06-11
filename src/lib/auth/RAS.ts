@@ -92,7 +92,7 @@ class RAS extends AuthProvider {
     }
     const endSessionUrl =
       this.logouturl +
-      `?id_token_hint=${idToken ?? ''}` +
+      `?id_token_hint=${encodeURIComponent(idToken ?? '')}` +
       `&post_logout_redirect_uri=${this.logoutRedirectUri}`;
     return Promise.resolve(endSessionUrl);
   };

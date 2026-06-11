@@ -75,6 +75,12 @@ describe('RAS auth provider (direct OIDC)', () => {
       mockGet.mockResolvedValue({});
       await expect(newProvider().login('/', 'RAS')).rejects.toThrow(/authorize URL/i);
     });
+
+    it('rejects (does not redirect) when the authorize-url fetch fails', async () => {
+      mockGet.mockRejectedValue(new Error('network down'));
+      await expect(newProvider().login('/', 'RAS')).rejects.toThrow();
+      expect(window.location.href).toBe('');
+    });
   });
 
   describe('authenticate', () => {
@@ -88,6 +94,20 @@ describe('RAS auth provider (direct OIDC)', () => {
         state: 'server-state-1',
       });
       expect(localStorage.setItem).toHaveBeenCalledWith('idToken', 'ras-id-token');
+      expect(user?.token).toBe('psama-jwt');
+    });
+
+    it('forwards the server state verbatim without any client-side state comparison', async () => {
+      // The client no longer generates/stores state; PSAMA validates it via one-time consume. So
+      // any state value from the callback is forwarded as-is and never gated against a local value.
+      mockPost.mockResolvedValue({ token: 'psama-jwt', idToken: 'ras-id-token' });
+
+      const user = await newProvider().authenticate(['code=c', 'state=an-arbitrary-server-state']);
+
+      expect(mockPost).toHaveBeenCalledWith('psama/authentication/ras', {
+        code: 'c',
+        state: 'an-arbitrary-server-state',
+      });
       expect(user?.token).toBe('psama-jwt');
     });
 

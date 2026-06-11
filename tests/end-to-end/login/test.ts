@@ -168,11 +168,15 @@ test.describe('Login page', () => {
   for (const providerName of enabledProviders) {
     const providerUrl: { [key: string]: string | undefined } = {
       AUTH0: 'https://avillachlab.auth0.com/',
-      OKTA: process.env.VITE_AUTH_PROVIDER_MODULE_OKTA_URI,
       FENCE: process.env.VITE_AUTH_PROVIDER_MODULE_FENCE_URI,
-      // Skipping test for RAS as the base functionality is similar - only the logout and psama url differ
     };
     test(`Clicking the ${providerName} login button opens the idp login page`, async ({ page }) => {
+      // RAS builds its authorize URL server-side (PSAMA generates state/nonce), so there is no
+      // static client-side URL to assert here; RAS login is covered by unit + backend integration tests.
+      test.skip(
+        providerName === 'RAS',
+        'RAS authorize URL is built server-side by PSAMA; covered by unit/integration tests',
+      );
       const url = providerUrl[providerName];
       if (!url) {
         throw new Error(providerName + ' not set in .env');
