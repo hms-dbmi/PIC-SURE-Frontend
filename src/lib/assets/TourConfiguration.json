@@ -93,7 +93,24 @@
         "element": "#sidebar-right",
         "popover": {
           "title": "Cohort Summary",
-          "description": "You can view the summary of the filtered cohort based on the applied variable filters. Additionally, you can also view variable distributions and prepare your cohort for analysis.",
+          "description": "You can view the summary of the filtered cohort based on the applied variable filters.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#advanced-query-btn",
+        "popover": {
+          "title": "Build Advanced Queries",
+          "description": "After you've added filters, you can use the Advanced Query Builder to create complex queries using \"and,\" \"or,\" and groups of added filters.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#explorer-distributions-btn",
+        "dependsOnFeature": "explorer.distributionExplorer",
+        "popover": {
+          "title": "Variable Distributions",
+          "description": "Use the Variable Distributions tool to visualize the data for the selected cohort.",
           "onPrevClick": "disablePrevious"
         }
       },
@@ -201,7 +218,24 @@
         "element": "#sidebar-right",
         "popover": {
           "title": "Cohort Summary",
-          "description": "You can view the summary of the filtered cohort based on the applied variable filters. Additionally, you can also view variable distributions and prepare your cohort for analysis.",
+          "description": "You can view the summary of the filtered cohort based on the applied variable filters.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#advanced-query-btn",
+        "popover": {
+          "title": "Build Advanced Queries",
+          "description": "After you've added filters, you can use the Advanced Query Builder to create complex queries using \"and,\" \"or,\" and groups of added filters.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#explorer-distributions-btn",
+        "dependsOnFeature": "explorer.distributionExplorer",
+        "popover": {
+          "title": "Variable Distributions",
+          "description": "Use the Variable Distributions tool to visualize the data for the selected cohort.",
           "onPrevClick": "disablePrevious"
         }
       },
@@ -284,7 +318,24 @@
         "element": "#sidebar-right",
         "popover": {
           "title": "Cohort Summary",
-          "description": "You can view the summary of the filtered cohort based on the applied variable filters. Additionally, you can also view variable distributions and counts per study. Note that this count is obfuscated to protect participant-level data.",
+          "description": "You can view the summary of the filtered cohort based on the applied variable filters.  Note that this count is obfuscated to protect participant-level data.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#advanced-query-btn",
+        "popover": {
+          "title": "Build Advanced Queries",
+          "description": "After you've added filters, you can use the Advanced Query Builder to create complex queries using \"and,\" \"or,\" and groups of added filters.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#explorer-distributions-btn",
+        "dependsOnFeature": "explorer.distributionExplorer",
+        "popover": {
+          "title": "Variable Distributions",
+          "description": "Use the Variable Distributions tool to visualize the data for the selected cohort.",
           "onPrevClick": "disablePrevious"
         }
       },
@@ -375,7 +426,24 @@
         "element": "#sidebar-right",
         "popover": {
           "title": "Cohort Summary",
-          "description": "You can view the summary of the filtered cohort based on the applied variable filters. Additionally, you can also view variable distributions and prepare your cohort for analysis.",
+          "description": "You can view the summary of the filtered cohort based on the applied variable filters.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#advanced-query-btn",
+        "popover": {
+          "title": "Build Advanced Queries",
+          "description": "After you've added filters, you can use the Advanced Query Builder to create complex queries using \"and,\" \"or,\" and groups of added filters.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#explorer-distributions-btn",
+        "dependsOnFeature": "explorer.distributionExplorer",
+        "popover": {
+          "title": "Variable Distributions",
+          "description": "Use the Variable Distributions tool to visualize the data for the selected cohort.",
           "onPrevClick": "disablePrevious"
         }
       },
@@ -483,7 +551,24 @@
         "element": "#sidebar-right",
         "popover": {
           "title": "Cohort Summary",
-          "description": "You can view the summary of the filtered cohort based on the applied variable filters. Additionally, you can also view the patient counts per site with varying biosample and genomic data types using the Cohort Details tool.",
+          "description": "You can view the summary of the filtered cohort based on the applied variable filters.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#advanced-query-btn",
+        "popover": {
+          "title": "Build Advanced Queries",
+          "description": "After you've added filters, you can use the Advanced Query Builder to create complex queries using \"and,\" \"or,\" and groups of added filters.",
+          "onPrevClick": "disablePrevious"
+        }
+      },
+      {
+        "element": "#explorer-distributions-btn",
+        "dependsOnFeature": "explorer.distributionExplorer",
+        "popover": {
+          "title": "Variable Distributions",
+          "description": "Use the Variable Distributions tool to visualize the data for the selected cohort.",
           "onPrevClick": "disablePrevious"
         }
       },

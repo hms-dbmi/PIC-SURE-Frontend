@@ -1,6 +1,7 @@
 <script lang="ts">
   interface Props {
     title: string;
+    id?: string;
     icon?: string;
     href?: string;
     subtitle?: string;
@@ -14,6 +15,7 @@
 
   const {
     title,
+    id,
     icon = '',
     href = '',
     subtitle = '',
@@ -33,6 +35,7 @@
 {#if href && !disabled}
   <a
     {href}
+    {id}
     data-testid={testid}
     target={href.startsWith('/') ? undefined : '_blank'}
     class={cardClasses}
@@ -47,6 +50,7 @@
   </a>
 {:else}
   <button
+    {id}
     data-testid={testid}
     type="button"
     class={cardClasses}

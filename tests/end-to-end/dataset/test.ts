@@ -174,6 +174,18 @@ test.describe('dataset', () => {
     // Then
     await expect(page).toHaveURL(new RegExp(`/dataset/${mockData[0].uuid}`));
   });
+  test('Dataset ID text click navigates to dataset detail page', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, datasetPath, mockData);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
+    await page.goto('/dataset');
+
+    // When
+    await page.getByText(mockData[0].query.uuid, { exact: true }).click();
+
+    // Then
+    await expect(page).toHaveURL(new RegExp(`/dataset/${mockData[0].uuid}`));
+  });
 });
 test.describe('dataset/[uuid]', () => {
   test('Dataset values present on page', async ({ page }) => {

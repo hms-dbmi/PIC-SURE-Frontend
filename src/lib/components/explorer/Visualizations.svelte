@@ -36,15 +36,18 @@
 
   function getSubtitleByConceptPath(filters: Filter[]) {
     return new Map(
-      filters.map((filter) => [
-        filter.id,
-        [
-          filter.searchResult?.studyAcronym && `Study: ${filter.searchResult.studyAcronym}`,
-          filter.searchResult?.dataset && `Dataset: ${filter.searchResult.dataset}`,
-        ]
-          .filter(Boolean)
-          .join(' '),
-      ]),
+      filters.map((filter) => {
+        const dataset = filter.searchResult?.table?.display ?? filter.searchResult?.table?.dataset;
+        return [
+          filter.id,
+          [
+            filter.searchResult?.studyAcronym && `Study: ${filter.searchResult.studyAcronym}`,
+            dataset && `Dataset: ${dataset}`,
+          ]
+            .filter(Boolean)
+            .join(' '),
+        ];
+      }),
     );
   }
 
@@ -52,7 +55,7 @@
     const plotFilters = get(filters);
     const visualizationFilters = plotFilters.filter(isVisualizationFilter);
     const subtitleByConceptPath = getSubtitleByConceptPath(plotFilters);
-    const minimumCount = isOpenAccess() ? 9 : 1;
+    const minimumCount = 1;
 
     const getSubtitle = (conceptPath?: string) =>
       conceptPath ? subtitleByConceptPath.get(conceptPath) : undefined;

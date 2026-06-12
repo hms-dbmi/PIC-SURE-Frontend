@@ -7,14 +7,14 @@ import {
   isVisualizationFilter,
   visualizationVariableLabel,
 } from '$lib/utilities/VisualizationData';
-import type { CategoricalPlotData, ContinuousPlotData } from '$lib/utilities/Plotly';
+import type { CategoricalPlotData, ContinuousPlotData, CountValue } from '$lib/utilities/Plotly';
 import type { Filter } from '$lib/models/Filter.svelte';
 
-function categorical(conceptPath: string | undefined, categoricalMap: Record<string, number>) {
+function categorical(conceptPath: string | undefined, categoricalMap: Record<string, CountValue>) {
   return { conceptPath, categoricalMap } as CategoricalPlotData;
 }
 
-function continuous(conceptPath: string | undefined, continuousMap: Record<string, number>) {
+function continuous(conceptPath: string | undefined, continuousMap: Record<string, CountValue>) {
   return { conceptPath, continuousMap } as ContinuousPlotData;
 }
 
@@ -44,6 +44,34 @@ describe('VisualizationData', () => {
     expect(categoricalHasData(categorical('cat', { Yes: 8 }), 9)).toBe(false);
     expect(continuousHasData(continuous('con', { '0 - 10': 9 }), 9)).toBe(true);
     expect(continuousHasData(continuous('con', { '0 - 10': 8 }), 9)).toBe(false);
+  });
+
+  it('sums the band upper bound of {count, display, variance} values', () => {
+    // A chart whose only bucket is below-threshold (count 0, variance 9) may still have data
+    expect(
+      categoricalHasData(
+        categorical('cat', { Other: { count: 0, display: '< 10', variance: 9 } }),
+        9,
+      ),
+    ).toBe(true);
+    expect(
+      categoricalHasData(
+        categorical('cat', { Yes: { count: 12000, display: '12000', variance: null } }),
+        9,
+      ),
+    ).toBe(true);
+    expect(
+      categoricalHasData(
+        categorical('cat', { Yes: { count: 0, display: '0', variance: null } }),
+        1,
+      ),
+    ).toBe(false);
+    expect(
+      continuousHasData(
+        continuous('con', { '0 - 10': { count: 222, display: '222 ±3', variance: 3 } }),
+        9,
+      ),
+    ).toBe(true);
   });
 
   it('excludes selected visualization filters missing from graphable response data', () => {

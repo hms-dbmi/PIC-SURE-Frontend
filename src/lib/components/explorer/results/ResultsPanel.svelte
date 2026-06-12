@@ -205,6 +205,7 @@
         {#if showExplorerDistributions}
           <CardButton
             href="/explorer/distributions"
+            id="explorer-distributions-btn"
             data-testid="distributions-btn"
             title="Variable Distributions"
             icon="fa-solid fa-chart-pie"
@@ -215,6 +216,7 @@
         {#if showDiscoverDistributions}
           <CardButton
             href="/discover/distributions"
+            id="explorer-distributions-btn"
             data-testid="distributions-btn"
             title="Variable Distributions"
             icon="fa-solid fa-chart-pie"
