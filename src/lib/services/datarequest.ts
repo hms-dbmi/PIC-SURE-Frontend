@@ -8,7 +8,9 @@ export async function searchForDataset(queryId: string): Promise<Metadata> {
   try {
     return api.get(`${Picsure.QueryV3}/${queryId}/metadata`);
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Unknown error occurred');
+    throw new Error(error instanceof Error ? error.message : 'Unknown error occurred', {
+      cause: error,
+    });
   }
 }
 
@@ -16,7 +18,9 @@ export async function getDatasetStatus(queryId: string): Promise<Status> {
   try {
     return api.get(`${Picsure.Uploader.Status}/${queryId}`);
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Unknown error occurred');
+    throw new Error(error instanceof Error ? error.message : 'Unknown error occurred', {
+      cause: error,
+    });
   }
 }
 
@@ -24,7 +28,9 @@ export async function approveDataset(queryId: string, date: string): Promise<voi
   try {
     return api.get(`${Picsure.Uploader.Status}/${queryId}/approve?date=${date}`);
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Unknown error occurred');
+    throw new Error(error instanceof Error ? error.message : 'Unknown error occurred', {
+      cause: error,
+    });
   }
 }
 
@@ -40,7 +46,9 @@ export async function sendData(
       picSureId: queryId,
     });
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Unknown error occurred');
+    throw new Error(error instanceof Error ? error.message : 'Unknown error occurred', {
+      cause: error,
+    });
   }
 }
 

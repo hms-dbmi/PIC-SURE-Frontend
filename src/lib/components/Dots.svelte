@@ -14,7 +14,7 @@
           import.meta.env.VITE_DOTS_COLORS_CLASS?.toString()?.toLowerCase(),
         ) as string[]) || []
       );
-    } catch (error) {
+    } catch {
       return [];
     }
   })();

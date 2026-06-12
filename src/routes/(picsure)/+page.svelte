@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { branding } from '$lib/configuration';
   import { goto } from '$app/navigation';
   import Searchbox from '$lib/components/Searchbox.svelte';
@@ -11,9 +12,11 @@
 
   function search() {
     log(createLog('SEARCH', 'landing.search', { term: searchTerm }));
-    features.login.open && features.discover && !isUserLoggedIn()
-      ? goto(`/discover?search=${searchTerm}`)
-      : goto(`/explorer?search=${searchTerm}`);
+    if (features.login.open && features.discover && !isUserLoggedIn()) {
+      goto(resolve(`/discover?search=${searchTerm}`));
+    } else {
+      goto(resolve(`/explorer?search=${searchTerm}`));
+    }
   }
 
   const actionsToDisplay = branding?.landing?.actions.filter((action) => {
@@ -45,6 +48,7 @@
         <a
           data-testid="landing-action-{title}-btn"
           href={url}
+          rel="external"
           class="btn preset-filled-primary-500"
           onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
           >{btnText}</a

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
@@ -48,9 +49,9 @@
       user.acceptedTOS = String(user.acceptedTOS) === 'true';
       if (features.enforceTermsOfService && !user.acceptedTOS) {
         setToken(user.token);
-        goto(redirectTo);
+        goto(resolve(redirectTo as '/'));
       } else {
-        login(user.token).then(() => goto(redirectTo));
+        login(user.token).then(() => goto(resolve(redirectTo as '/')));
       }
     });
   }
@@ -60,7 +61,7 @@
     attemptUserLogin().catch((error) => {
       log(createLog('LOGIN', 'login.failure', { error: String(error) }, { status: 401 }));
       console.error('Login Error: ', error);
-      goto('/login/error');
+      goto(resolve('/login/error'));
       return;
     });
   });

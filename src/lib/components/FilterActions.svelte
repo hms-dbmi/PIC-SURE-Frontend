@@ -4,6 +4,7 @@
   import { populateFromSNPFilter } from '$lib/stores/SNPFilter';
   import { activeFilter, activeSearch, removeFilter } from '$lib/stores/Filter';
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { Option } from '$lib/models/GenomeFilter';
   import Modal from '$lib/components/Modal.svelte';
   import AddFilter from '$lib/components/explorer/AddFilter.svelte';
@@ -17,10 +18,10 @@
   function editFilter() {
     if (filter.filterType === 'genomic') {
       populateFromGeneFilter(filter);
-      goto('/explorer/genome-filter?edit=' + Option.Genomic);
+      goto(resolve(`/explorer/genome-filter?edit=${Option.Genomic}`));
     } else if (filter.filterType === 'snp') {
       populateFromSNPFilter(filter);
-      goto('/explorer/genome-filter?edit=' + Option.SNP);
+      goto(resolve(`/explorer/genome-filter?edit=${Option.SNP}`));
     } else {
       $activeFilter = filter;
       $activeSearch = filter.searchResult;

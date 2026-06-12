@@ -122,6 +122,7 @@
             We use cookies to provide you with the best possible experience and to help us make the
             site more useful to visitors. To learn more, please visit our <a
               href={branding?.privacyPolicy?.url}
+              rel="external"
               target="_blank"
               class="anchor">{branding?.privacyPolicy?.title}</a
             >.

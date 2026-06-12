@@ -45,6 +45,7 @@ async function createCommonAreaUUID(query: QueryRequestInterfaceV3): Promise<str
   } catch (error) {
     throw new Error(
       `Failed to create common area UUID: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      { cause: error },
     );
   }
 }

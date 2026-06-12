@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
   import type { Connection } from '$lib/models/Connection';
@@ -45,7 +46,7 @@
       toaster.success({
         title: `Successfully saved ${newConnection && 'new '}connection '${label}'`,
       });
-      goto('/admin/configuration');
+      goto(resolve('/admin/configuration'));
     } catch (error) {
       console.error(error);
       toaster.error({
@@ -106,7 +107,7 @@
         Save
       </button>
       <a
-        href="/admin/configuration"
+        href={resolve('/admin/configuration')}
         data-testid="connection-cancel-btn"
         class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
       >

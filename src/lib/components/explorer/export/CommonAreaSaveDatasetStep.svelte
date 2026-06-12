@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { executeFederatedQuery } from '$lib/services/FederatedQueryService.svelte';
   import Summary from './Summary.svelte';
@@ -50,8 +51,8 @@
     <div class="w-full h-full m-2 card p-4">
       <header class="card-header">
         Common Area Save the information in your final data export by clicking the Save Dataset ID
-        button. Navigate to the <a class="anchor" href="/dataset">Manage Datasets page</a> to view or
-        manage your Dataset IDs.
+        button. Navigate to the <a class="anchor" href={resolve('/dataset')}>Manage Datasets page</a
+        > to view or manage your Dataset IDs.
       </header>
       <hr />
       <div class="card-body p-4 flex flex-col justify-center items-center">

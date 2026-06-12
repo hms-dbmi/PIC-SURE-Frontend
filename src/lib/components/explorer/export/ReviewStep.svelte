@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
@@ -173,7 +174,7 @@
         title="Warning"
         color="warning"
         closeText="Back"
-        onclose={() => goto('/explorer')}
+        onclose={() => goto(resolve('/explorer'))}
       >
         Warning: Your selected data exceeds 1,000,000 estimated data points, which is too large to
         export. Please reduce the data selection or the number of selected participants.

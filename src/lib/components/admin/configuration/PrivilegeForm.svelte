@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
   import type { Privilege } from '$lib/models/Privilege';
@@ -37,7 +38,7 @@
       toaster.success({
         title: `Successfully saved ${newPrivilege && 'new '}privilege '${name}'`,
       });
-      goto('/admin/configuration');
+      goto(resolve('/admin/configuration'));
     } catch (error) {
       console.error(error);
       toaster.error({
@@ -92,7 +93,7 @@
         Save
       </button>
       <a
-        href="/admin/configuration"
+        href={resolve('/admin/configuration')}
         data-testid="privilege-cancel-btn"
         class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
       >

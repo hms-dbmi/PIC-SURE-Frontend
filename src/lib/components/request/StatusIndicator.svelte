@@ -31,8 +31,7 @@
   class="flex flex-row items-center gap-2"
   data-testid={`status-indicator-${label?.replaceAll(' ', '-')?.toLowerCase()}`}
 >
-  <i class={`${getStatusIcon()} flex-none`} title={status} data-testid={`status-indicator-icon`}
-  ></i>
+  <i class={`${getStatusIcon()} flex-none`} title={status} data-testid="status-indicator-icon"></i>
   <span>{label}</span>
 </div>
 

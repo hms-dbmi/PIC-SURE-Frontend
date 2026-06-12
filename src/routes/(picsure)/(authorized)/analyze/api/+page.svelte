@@ -64,6 +64,7 @@
     {#each branding.analysisConfig.api.cards as card}
       <a
         href={card.link}
+        rel="external"
         target={card.link.startsWith('http') ? '_blank' : '_self'}
         class="p-4 basis-2/4 max-w-sm min-h-48 mb-8"
         onclick={() =>

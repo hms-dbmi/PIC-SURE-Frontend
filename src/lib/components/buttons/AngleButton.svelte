@@ -36,7 +36,7 @@
     data-testid={clean_testid}
     aria-disabled={disabled}
     class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {className}"
-    rel={disabled ? 'nofollow' : ''}
+    rel="external"
     {href}
   >
     {#if angle === 'left'}<i class="fa-solid fa-arrow-left mr-3"></i>{/if}

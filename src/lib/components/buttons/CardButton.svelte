@@ -38,6 +38,7 @@
     {id}
     data-testid={testid}
     target={href.startsWith('/') ? undefined : '_blank'}
+    rel="external"
     class={cardClasses}
     class:preset-filled-primary-500={active}
     class:preset-outlined-primary-500={!active}

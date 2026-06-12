@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import type { PatientCount, StatValue } from '$lib/models/Stat';
   import { resultCounts } from '$lib/stores/ResultStore';
   import { StatPromise } from '$lib/utilities/StatBuilder';
@@ -71,7 +72,7 @@
     <p class="text-[0.6rem] !m-0">
       {#if features.federated}
         Some sites did not return patient counts for your query. See
-        <a href="/explorer/cohort" class="anchor font-bold">Cohort Details</a>
+        <a href={resolve('/explorer/cohort')} class="anchor font-bold">Cohort Details</a>
         for more information.
       {:else}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->

@@ -4,6 +4,7 @@
   import { features } from '$lib/configuration';
   import { branding } from '$lib/configuration';
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { browser } from '$app/environment';
 
   const { currentStep = 0 } = $props<{
@@ -66,7 +67,7 @@
       return;
     }
     if (step.path && browser) {
-      goto(step.path);
+      goto(resolve(step.path as '/'));
     }
   }}
   width="w-3/4"

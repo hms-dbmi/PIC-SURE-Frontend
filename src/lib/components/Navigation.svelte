@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { AppBar, Avatar } from '@skeletonlabs/skeleton-svelte';
 
@@ -25,7 +26,7 @@
 
   function handleLogin(e: Event) {
     e.stopImmediatePropagation();
-    goto(`/login?redirectTo=${page.url.pathname}`);
+    goto(resolve(`/login?redirectTo=${page.url.pathname}` as '/'));
   }
 
   let currentPage = $derived((route: Route) => {
@@ -54,7 +55,7 @@
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-950" toolbarClasses="flex-none z-10">
   {#snippet lead()}
     <a
-      href="/"
+      href={resolve('/')}
       aria-current="page"
       data-testid="logo-home-link"
       class="content-center"
@@ -67,7 +68,11 @@
     <ul>
       {#each $userRoutes as route}
         <li>
-          <a class="nav-link" id={getId(route)} href={route.path} aria-current={currentPage(route)}
+          <a
+            class="nav-link"
+            id={getId(route)}
+            href={resolve(route.path as '/')}
+            aria-current={currentPage(route)}
             >{route.text}
           </a>
         </li>
