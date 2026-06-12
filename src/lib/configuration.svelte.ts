@@ -38,19 +38,19 @@ export const routes: Route[] = [
   {
     path: '/analyze/api',
     text: 'Prepare for Analysis',
-    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
+    privilege: [PicsurePrivileges.API_ACCESS, BDCPrivileges.AUTHORIZED_ACCESS],
     feature: 'analyzeApi',
   },
   {
     path: '/analyze/analysis',
     text: 'Analyze',
-    privilege: [PicsurePrivileges.QUERY],
+    privilege: [PicsurePrivileges.API_ACCESS],
     feature: 'analyzeAnalysis',
   },
   {
     path: '/dataset',
     text: 'Manage Datasets',
-    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.NAMED_DATASET],
+    privilege: [PicsurePrivileges.NAMED_DATASET, BDCPrivileges.NAMED_DATASET],
   },
   {
     path: '/dataset/request',
@@ -102,11 +102,6 @@ export async function getConfigs(): Promise<void> {
   loading = api.get(LocalServer.Configs).then((configResp: ConfigCache) => {
     features = mapFeatures(configResp.features);
     settings = mapSettings(configResp.settings);
-    console.log('New config data from server', {
-      features: { ...config.features },
-      settings: { ...config.settings },
-      branding: { ...config.branding },
-    });
   });
   return loading;
 }

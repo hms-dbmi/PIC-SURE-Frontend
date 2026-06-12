@@ -44,6 +44,7 @@ export type Features = Indexable & {
   };
   manualRole: boolean;
   requireConsents: boolean;
+  restoreV2queries: boolean;
   termsOfService: boolean;
   useQueryTemplate: boolean;
 };
@@ -262,6 +263,7 @@ const defaultFeatures: Indexable = {
   OPEN: false,
   OR_QUERIES: true,
   REQUIRE_CONSENTS: false,
+  RESTORE_V2_QUERY: false,
   SHOW_TREE_STEP: false,
   USE_QUERY_TEMPLATE: false,
   VARIANT_EXPLORER: false,
@@ -471,6 +473,7 @@ export function mapFeatures(configs: ConfigObject[]): Features {
     },
     manualRole: parse('MANUAL_ROLE'),
     requireConsents: parse('REQUIRE_CONSENTS'),
+    restoreV2queries: parse('RESTORE_V2_QUERY'),
     termsOfService: parse('ENABLE_TOS'),
     useQueryTemplate: parse('USE_QUERY_TEMPLATE'),
   };

@@ -15,7 +15,7 @@ let lastFetch: number = 0;
 const CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours
 
 // Retry configuration
-const MAX_RETRIES = import.meta.env?.VITE_MAX_CONFIG_RETRIES || 3;
+const MAX_RETRIES = Number(import.meta.env?.VITE_MAX_CONFIG_RETRIES ?? 3);
 const INITIAL_DELAY = 1000; // 1 second
 const MAX_DELAY = 60000; // 60 seconds
 let fetching: {
@@ -72,12 +72,7 @@ async function fetchWithRetry(
 export async function getConfig(force: boolean = false): Promise<ConfigCache> {
   // Return cached config if available and not expired
   const now = Date.now();
-  if (
-    !force &&
-    cached.settings.length > 0 &&
-    cached.features.length > 0 &&
-    now - lastFetch < CACHE_DURATION
-  ) {
+  if (!force && lastFetch > 0 && now - lastFetch < CACHE_DURATION) {
     console.log('Returning cached configs from server');
     return cached;
   }
@@ -97,16 +92,10 @@ export async function getConfig(force: boolean = false): Promise<ConfigCache> {
         console.error(
           `Failed fetching some configs - returned cached data might be defaults. Next request will retry.`,
         );
-      } else if (
-        results.every(
-          (val) => val.status === 'fulfilled' && val.value !== null && val.value.length > 0,
-        )
-      ) {
+      } else if (results.every((val) => val.status === 'fulfilled' && val.value !== null)) {
         lastFetch = now;
-        cached.features =
-          results[0].status === 'fulfilled' && results[0].value !== null ? results[0].value : [];
-        cached.settings =
-          results[1].status === 'fulfilled' && results[1].value !== null ? results[1].value : [];
+        cached.features = (results[0] as PromiseFulfilledResult<ConfigObject[]>).value ?? [];
+        cached.settings = (results[1] as PromiseFulfilledResult<ConfigObject[]>).value ?? [];
       }
       fetching = null;
     },
