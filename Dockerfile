@@ -15,7 +15,7 @@ RUN pnpm build \
   && pnpm prune --prod
 
 # Step 2: Serve the app with httpd
-FROM httpd:2.4.67-alpine3.23@sha256:0136c2d4462f3b8ecc92bea70efdfef4d06523999ae8d7aa533969dea6db4576
+FROM httpd:2.4.68-alpine3.23@sha256:4a15e9c73f25334bc03cfb3c692c9adfc103bb46ca89cee1f0b9a5fcbc7b21f6
 
 # Keeping these unpinned reduces the risk of alpine pulling the image and breaking deployment
 RUN apk add --no-cache \
