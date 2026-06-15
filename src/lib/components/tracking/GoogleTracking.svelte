@@ -24,10 +24,13 @@
   };
 
   const tagManagerSrc = 'https://www.googletagmanager.com/gtag/js?id=';
-  const googleTag = config.settings.google.tagManager;
-  const googleAnalyticsID = config.settings.google.analytics;
-  const enablePrompt =
-    googleTag && config.branding.privacyPolicy.url && config.branding.privacyPolicy.title;
+  const googleTag = $derived(config.settings.google.tagManager);
+  const googleAnalyticsID = $derived(config.settings.google.analytics);
+  const enablePrompt = $derived(
+    !!config.settings.google.tagManager &&
+      !!config.branding.privacyPolicy.url &&
+      !!config.branding.privacyPolicy.title,
+  );
 
   let consent: Consent = $state(defaultConsent);
   let consentPrompt: boolean = $state(false);
@@ -90,11 +93,15 @@
   onMount(() => {
     const localConsent = localStorage.getItem('consentMode') || '';
     consent = localConsent ? JSON.parse(localConsent) : defaultConsent;
+    // If config was already loaded before mount (uncommon), initialize tracking now.
+    if (enablePrompt && localConsent) initialize();
+  });
 
-    if (enablePrompt) {
-      // Open prompt if no local consent was saved
-      consentPrompt = !localConsent;
-      initialize();
+  // Config loads asynchronously after mount; open the prompt once enablePrompt becomes true.
+  $effect(() => {
+    if (!enablePrompt) return;
+    if (!localStorage.getItem('consentMode')) {
+      consentPrompt = true;
     }
   });
 </script>

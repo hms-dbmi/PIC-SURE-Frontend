@@ -81,6 +81,8 @@ let loading = $state(Promise.resolve());
 let features = $state(mapFeatures([]));
 let settings = $state(mapSettings([]));
 let branding = $state(defaults.branding);
+let configError = $state<string | null>(null);
+let configRequest: Promise<void> | null = null;
 
 export const config = {
   get loading() {
@@ -95,13 +97,23 @@ export const config = {
   get branding() {
     return branding;
   },
+  get error() {
+    return configError;
+  },
 };
 
 export async function getConfigs(): Promise<void> {
+  if (configRequest) return configRequest;
   branding = getBrandingFromJSON(PROJECT_HOSTNAME);
-  loading = api.get(LocalServer.Configs).then((configResp: ConfigCache) => {
-    features = mapFeatures(configResp.features);
-    settings = mapSettings(configResp.settings);
-  });
-  return loading;
+  configRequest = api
+    .get(LocalServer.Configs)
+    .then((configResp: ConfigCache) => {
+      features = mapFeatures(configResp.features);
+      settings = mapSettings(configResp.settings);
+    })
+    .catch(() => {
+      configError = 'Configuration could not be loaded. Some features may be unavailable.';
+    });
+  loading = configRequest;
+  return configRequest;
 }

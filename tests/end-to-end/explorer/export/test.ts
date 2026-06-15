@@ -29,16 +29,6 @@ const standardIdentifiers = [
     description: 'Patient identifier.',
     type: 'Categorical',
   },
-  {
-    name: 'TOPMed Study Accession with Subject ID',
-    description: 'TOPMed study accession number and subject identifier.',
-    type: 'Categorical',
-  },
-  {
-    name: 'Parent Study Accession with Subject ID',
-    description: 'Parent study accession number and subject identifier.',
-    type: 'Categorical',
-  },
 ];
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -139,7 +129,7 @@ test.describe('Export Page', () => {
         { name: 'EXPORT_TIMESERIES', value: 'false' },
         { name: 'USE_QUERY_TEMPLATE', value: 'true' },
       ],
-      settings: [],
+      settings: [{ name: 'EXPORT_SYSTEM_FIELDS', value: '_consents' }],
     });
   });
 
