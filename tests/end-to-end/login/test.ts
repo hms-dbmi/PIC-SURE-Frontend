@@ -168,7 +168,7 @@ test.describe('Login page', () => {
   for (const providerName of enabledProviders) {
     const providerUrl: { [key: string]: string | undefined } = {
       AUTH0: 'https://avillachlab.auth0.com/',
-      OKTA: process.env.VITE_AUTH_PROVIDER_MODULE_OKTA_URI,
+      AIMAHEAD: process.env.VITE_AUTH_PROVIDER_MODULE_AIMAHEAD_URI,
       FENCE: process.env.VITE_AUTH_PROVIDER_MODULE_FENCE_URI,
     };
     test(`Clicking the ${providerName} login button opens the idp login page`, async ({ page }) => {
