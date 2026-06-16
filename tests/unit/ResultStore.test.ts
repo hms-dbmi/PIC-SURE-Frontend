@@ -99,9 +99,8 @@ describe('ResultStore', () => {
   });
 
   it('restores totalParticipants and hasNonZeroResult when patient counts are served from cache', async () => {
-    const { loadPatientCount, totalParticipants, hasNonZeroResult } = await import(
-      '$lib/stores/ResultStore'
-    );
+    const { loadPatientCount, totalParticipants, hasNonZeroResult } =
+      await import('$lib/stores/ResultStore');
 
     mockState.filters.set([{ id: 'age', uuid: 'age-filter' }]);
     mockState.nextCount = '9999';

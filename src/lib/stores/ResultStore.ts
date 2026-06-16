@@ -78,13 +78,18 @@ export async function loadPatientCount(useAuth: boolean) {
     resultCounts.set(resultStats);
     countsLoading.set(true);
     log(createLog('QUERY', 'query.start_load_patient_count'));
-    updateDerivedCountStores(resultStats).then((results) => {
-      if (!results.some(StatPromise.rejected)) {
-        // Cache if no rejected requests
-        requestCache.set(cacheKey, resultStats);
-      }
-      countsLoading.set(false);
-    });
+    updateDerivedCountStores(resultStats)
+      .then((results) => {
+        if (!results.some(StatPromise.rejected)) {
+          // Cache if no rejected requests
+          requestCache.set(cacheKey, resultStats);
+        }
+        countsLoading.set(false);
+      })
+      .catch((error) => {
+        console.error(error);
+        countsLoading.set(false);
+      });
   } catch (error) {
     console.error(error);
     countsLoading.set(false);
