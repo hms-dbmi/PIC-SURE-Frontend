@@ -9,7 +9,7 @@ COPY src src
 COPY static static
 COPY .env svelte.config.js tsconfig.json vite.config.ts ./
 ARG THEME=picsure
-RUN sed -i 's/%sveltekit.assets%\/favicon.ico/%sveltekit.assets%\/'$THEME'-favicon.png/' ./src/app.html \
+RUN sed -i 's/%sveltekit.assets%\/favicon.png/%sveltekit.assets%\/'$THEME'-favicon.png/' ./src/app.html \
   && sed -i 's/data-theme="[^"]*"/data-theme=\"'$THEME'\"/' ./src/app.html
 RUN pnpm build \
   && pnpm prune --prod
