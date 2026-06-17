@@ -1,10 +1,9 @@
 <script lang="ts">
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
+  import { countResult } from '$lib/services/counts/countFormat';
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   import { config } from '$lib/configuration.svelte';
-  import { filters } from '$lib/stores/Filter';
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
   const ERROR_VALUE = 'N/A';
@@ -13,8 +12,14 @@
   let isLoading = $derived(resultCountsState.loading);
   let snapshot = $derived(resultCountsState.snapshot);
   let hasError = $derived(snapshot.summary.hasError);
-  let count = $derived(snapshot.summary.total);
-  let hasCount = $derived(snapshot.descriptorKey !== '');
+  // Format the raw count, not summary.total — the latter is the numeric form
+  // used by Summary/ExportStepper for arithmetic, and strips the ±N obfuscation
+  // suffix that the backend returns on the open-access cross-count path.
+  let count = $derived(countResult([snapshot.count]));
+  // Treat the error case the same as "never loaded" — the OLD multi-cell
+  // path showed N/A whenever every cell failed; in the single-cell rebuild,
+  // hasError IS the all-cells-failed case.
+  let hasCount = $derived(snapshot.descriptorKey !== '' && !hasError);
 </script>
 
 <div class="flex flex-col items-center mt-2">
@@ -27,16 +32,6 @@
       {:else}
         <div class="flex flex-row h-full">
           <span id="result-count-number" class="text-4xl">{count}</span>
-          {#if hasError}
-            <HelpInfoPopup
-              type="exclamation"
-              color="warning"
-              id="result-count-error"
-              text={$filters.length !== 0
-                ? config.branding.explorePage.filterErrorText
-                : config.branding.explorePage.queryErrorText}
-            />
-          {/if}
         </div>
       {/if}
     </span>
