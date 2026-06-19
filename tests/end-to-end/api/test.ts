@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess } from '../custom-context';
 import { picsureUser, roles as mockRoles, mockExpiredToken, mockToken } from '../mock-data';
+import { userIsLoggedIn } from '../utils';
 import type { Branding } from '../../../src/lib/configuration';
 import * as config from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 //TypeScript is confused by the JSON import so I am fxing it here
@@ -24,8 +25,11 @@ test.describe('API page', () => {
     // Given
     await mockApiFail(page, '*/**/psama/user/me?hasToken', 'accessdenied');
     await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
+
     // When
     const errorAlert = page.locator('[data-testid=error-alert]');
+
     // Then
     await expect(errorAlert).toBeVisible();
   });
@@ -34,9 +38,12 @@ test.describe('API page', () => {
     test(`Has expect card, ${card.header} from branding`, async ({ page }) => {
       // Given
       await page.goto('/analyze/api');
+      await userIsLoggedIn(page);
+
       // When
       const cardTitle = page.getByText(card.header);
       const cardBody = page.getByText(card.body);
+
       // Then
       await expect(cardTitle).toBeVisible();
       await expect(cardBody).toBeVisible();
@@ -45,6 +52,7 @@ test.describe('API page', () => {
   test('Has expected content', async ({ page }) => {
     // Given
     await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
 
     // When
     const userToken = page.locator('#user-token');
@@ -55,6 +63,7 @@ test.describe('API page', () => {
   test('Has expected badge and expiration', async ({ page }) => {
     // Given
     await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
 
     // When
     const expires = page.locator('#expires');
@@ -70,6 +79,7 @@ test.describe('API page', () => {
   test(`User account matches expected email of ${picsureUser.email}`, async ({ page }) => {
     // Given
     await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
 
     // When
     const userEmail = page.locator('#account');
@@ -81,6 +91,7 @@ test.describe('API page', () => {
   test('Token is hidden by default', async ({ page }) => {
     // Given
     await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
 
     // When
     const userToken = page.locator('#token');
@@ -92,6 +103,7 @@ test.describe('API page', () => {
   test('Buttons are displayed', async ({ page }) => {
     // Given
     await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
 
     // When
     const copyButton = page.getByTestId('copy-btn');
@@ -106,6 +118,7 @@ test.describe('API page', () => {
   test('Copy button copies token to clipboard', async ({ page }) => {
     // Given
     await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
 
     // When
     const copyButton = page.getByTestId('copy-btn');
@@ -124,6 +137,7 @@ test.describe('API page', () => {
   test('Token is visible when reveal button is clicked', async ({ page }) => {
     // Given
     await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
 
     // When
     const revealButton = page.getByTestId('reveal-btn');
@@ -137,6 +151,7 @@ test.describe('API page', () => {
   test('Reveal button text changes when clicked', async ({ page }) => {
     // Given
     await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
 
     // When
     const revealButton = page.getByTestId('reveal-btn');
@@ -148,6 +163,7 @@ test.describe('API page', () => {
   test('Refresh button changes token', async ({ page }) => {
     // Given
     await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
 
     // When
     const refreshButton = page.getByTestId('refresh-btn');
@@ -162,6 +178,7 @@ test.describe('API page', () => {
   }) => {
     // Given
     await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
     const newToken = mockToken;
     await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
       userLongTermToken: newToken,
@@ -189,6 +206,7 @@ test.describe('API page', () => {
   test('Canceling confirm modal does nothing to user', async ({ page }) => {
     // Given
     await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
 
     // When
     const userToken = page.locator('#token');

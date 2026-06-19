@@ -13,7 +13,7 @@ import {
   hierarchyResponse,
 } from '../mock-data';
 import { type SearchResult } from '../../../src/lib/models/Search';
-import { getOption, clickNthFilterIcon } from '../utils';
+import { getOption, clickNthFilterIcon, optionsHaveLoaded, userIsLoggedIn } from '../utils';
 
 test.describe('Explorer for authenticated users', () => {
   test.beforeEach(async ({ page }) => {
@@ -28,6 +28,7 @@ test.describe('Explorer for authenticated users', () => {
   test('Has filters, and searchbar', async ({ page }) => {
     // Given
     await page.goto('/explorer');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.locator('#search-bar')).toBeVisible();
@@ -46,6 +47,7 @@ test.describe('Explorer for authenticated users', () => {
   test('Has filters, and searchbar when a search is from the url', async ({ page }) => {
     // Given
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.locator('#search-bar')).toBeVisible();
@@ -57,6 +59,7 @@ test.describe('Explorer for authenticated users', () => {
     );
     // Given
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.locator('#facet-side-bar')).toBeVisible();
@@ -70,6 +73,7 @@ test.describe('Explorer for authenticated users', () => {
   test('Can search with empty search bar', async ({ page }) => {
     // Given
     await page.goto('/explorer');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.locator('#search-bar')).toBeVisible();
@@ -81,6 +85,7 @@ test.describe('Explorer for authenticated users', () => {
       route.fulfill({ body: '9999' }),
     );
     await page.goto('/explorer');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByTestId('search-box').fill('somedata');
@@ -93,6 +98,7 @@ test.describe('Explorer for authenticated users', () => {
     // Given
     await mockApiFail(page, searchResultPath, 'accessdenied');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.getByTestId('error-alert')).toBeVisible();
@@ -112,6 +118,7 @@ test.describe('Explorer for authenticated users', () => {
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await expect(page.locator('tbody')).toBeVisible();
@@ -129,11 +136,11 @@ test.describe('Explorer for authenticated users', () => {
       });
       test('Clicking the row again closes the info panel', async ({ page }) => {
         // Given
-
         await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         const tableBody = page.locator('tbody');
@@ -155,11 +162,11 @@ test.describe('Explorer for authenticated users', () => {
       });
       test('Clicking the info icon opens and then closes the info panel', async ({ page }) => {
         // Given
-
         await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await expect(page.locator('tbody')).toBeVisible();
@@ -184,11 +191,11 @@ test.describe('Explorer for authenticated users', () => {
         page,
       }) => {
         // Given
-
         await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await expect(page.locator('tbody')).toBeVisible();
@@ -233,6 +240,7 @@ test.describe('Explorer for authenticated users', () => {
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         const tableBody = page.locator('tbody');
@@ -255,11 +263,11 @@ test.describe('Explorer for authenticated users', () => {
         page,
       }) => {
         // Given
-
         await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await clickNthFilterIcon(page);
@@ -275,11 +283,11 @@ test.describe('Explorer for authenticated users', () => {
       });
       test('Clicking the filter button opens the correct filter panel', async ({ page }) => {
         // Given
-
         await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await clickNthFilterIcon(page);
@@ -303,6 +311,7 @@ test.describe('Explorer for authenticated users', () => {
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await clickNthFilterIcon(page, 2);
@@ -331,7 +340,9 @@ test.describe('Explorer for authenticated users', () => {
           async (route: Route) => route.fulfill({ body: JSON.stringify(row) }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
         await clickNthFilterIcon(page, 0);
+        await optionsHaveLoaded(page);
 
         // When
         await page
@@ -366,6 +377,7 @@ test.describe('Explorer for authenticated users', () => {
           async (route: Route) => route.fulfill({ body: JSON.stringify(row) }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
         await clickNthFilterIcon(page, 0);
 
         // When
@@ -386,16 +398,17 @@ test.describe('Explorer for authenticated users', () => {
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await clickNthFilterIcon(page);
         const firstItem = await getOption(page);
 
         // Then
-        const firstItemText: string = await firstItem.textContent();
+        const firstItemText: string | null = await firstItem.textContent();
         expect(firstItemText?.trim()).toBe(detailResponseCat.values[0]);
         // Close the filter panel
-        clickNthFilterIcon(page);
+        await clickNthFilterIcon(page);
 
         // Then Given
         await page.route(
@@ -407,11 +420,10 @@ test.describe('Explorer for authenticated users', () => {
 
         const secondItem = await getOption(page);
         // Then
-        const secondItemText: string = await secondItem.textContent();
+        const secondItemText: string | null = await secondItem.textContent();
         expect(secondItemText?.trim()).toBe(detailResponseCatSameDataset.values[0]);
       });
       test('The dictionary details are cached', async ({ page }) => {
-        // Given
         // Given
         await page.route(
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
@@ -421,16 +433,18 @@ test.describe('Explorer for authenticated users', () => {
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await clickNthFilterIcon(page);
         let firstItem = await getOption(page);
 
         // Then
-        const firstItemText: string = await firstItem.textContent();
+        const firstItemText: string | null = await firstItem.textContent();
         expect(firstItemText?.trim()).toBe(detailResponseCat.values[0]);
-        // Close the filter panel
-        clickNthFilterIcon(page);
+        // Close the filter panel and wait for it to fully disappear
+        await clickNthFilterIcon(page);
+        await expect(page.getByTestId('optional-selection-list')).toHaveCount(0);
 
         // Then Given
         await page.route(
@@ -442,12 +456,13 @@ test.describe('Explorer for authenticated users', () => {
 
         const secondItem = await getOption(page);
         // Then
-        const secondItemText: string = await secondItem.textContent();
+        const secondItemText: string | null = await secondItem.textContent();
         expect(secondItemText?.trim()).toBe(detailResponseCatSameDataset.values[0]);
 
         // Then Given
         // This should not be hit so I am putting detailResponseCat2 which is wrong
         await clickNthFilterIcon(page, 1);
+        await expect(page.getByTestId('optional-selection-list')).toHaveCount(0);
         await page.route(
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
           async (route: Route) => route.fulfill({ json: detailResponseCat2 }),
@@ -457,7 +472,7 @@ test.describe('Explorer for authenticated users', () => {
         await clickNthFilterIcon(page, 0);
         firstItem = await getOption(page);
         // Then
-        const sameString: string = await firstItem.textContent();
+        const sameString: string | null = await firstItem.textContent();
         expect(sameString?.trim()).toBe(detailResponseCat.values[0]);
         expect(sameString?.trim()).toBe(firstItemText?.trim());
       });
@@ -465,11 +480,11 @@ test.describe('Explorer for authenticated users', () => {
     test.describe('Export Actions', () => {
       test('Clicking the export button flips the icon', async ({ page }) => {
         // Given
-
         await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await expect(page.locator('tbody')).toBeVisible();
@@ -488,11 +503,11 @@ test.describe('Explorer for authenticated users', () => {
       });
       test('Clicking the export button opens result panel', async ({ page }) => {
         // Given
-
         await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await expect(page.locator('tbody')).toBeVisible();
@@ -508,11 +523,11 @@ test.describe('Explorer for authenticated users', () => {
         page,
       }) => {
         // Given
-
         await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await expect(page.locator('tbody')).toBeVisible();
@@ -530,11 +545,11 @@ test.describe('Explorer for authenticated users', () => {
       test('Clicking an export remove button removes the export', async ({ page }) => {
         //todo check remove button class
         // Given
-
         await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await expect(page.locator('tbody')).toBeVisible();
@@ -554,11 +569,11 @@ test.describe('Explorer for authenticated users', () => {
       });
       test('Clicking a second export adds a second export', async ({ page }) => {
         // Given
-
         await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await expect(page.locator('tbody')).toBeVisible();
@@ -581,11 +596,11 @@ test.describe('Explorer for authenticated users', () => {
       });
       test('Exports remmain after closing and opening the results panel', async ({ page }) => {
         // Given
-
         await page.route('*/**/picsure/v3/query/sync', async (route: Route) =>
           route.fulfill({ body: '9999' }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
 
         // When
         await expect(page.locator('tbody')).toBeVisible();
@@ -623,6 +638,7 @@ test.describe('Explorer for authenticated users', () => {
           async (route: Route) => route.fulfill({ json: hierarchyResponse }),
         );
         await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
         // When
         const tableBody = page.locator('tbody');
         const firstRow = tableBody.locator('tr').first();

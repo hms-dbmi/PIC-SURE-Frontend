@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { test, mockApiSuccess, mockApiSuccessByMethod, mockApiFail } from '../../custom-context';
 import { users as mockUsers, connections as mockConns, roles as mockRoles } from '../../mock-data';
+import { userIsLoggedIn } from '../../utils';
 
 const validationText = {
   invalidEmail: /([Pp]lease )?([Ee]nter|[Ii]nclude) an ('@' in the )?email address.?/,
@@ -19,6 +20,7 @@ test.describe('users', () => {
   test('Has Add user button', async ({ page }) => {
     // Given
     await page.goto('/admin/users');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.getByTestId('add-user-btn')).toBeVisible();
@@ -26,6 +28,7 @@ test.describe('users', () => {
   test('Displays multiple IDP tables', async ({ page }) => {
     // Given
     await page.goto('/admin/users');
+    await userIsLoggedIn(page);
 
     // Then
     await Promise.all(
@@ -37,6 +40,7 @@ test.describe('users', () => {
   test('Correct user goes to the right idp table', async ({ page }) => {
     // Given
     await page.goto('/admin/users');
+    await userIsLoggedIn(page);
 
     // Then
     await Promise.all(
@@ -50,6 +54,7 @@ test.describe('users', () => {
   test('Add user button takes user to new user page', async ({ page }) => {
     // Given
     await page.goto('/admin/users');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByTestId('add-user-btn').click();
@@ -61,6 +66,7 @@ test.describe('users', () => {
   test('User form has pre-populated roles', async ({ page }) => {
     // Given
     await page.goto('/admin/users/new');
+    await userIsLoggedIn(page);
     const checkboxes = page
       .getByTestId('privilege-checkboxes')
       .getByText(mockRoles[0].name, { exact: true });
@@ -71,6 +77,7 @@ test.describe('users', () => {
   test('User form cancel button navigates back to users page', async ({ page }) => {
     // Given
     await page.goto('/admin/users/new');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByText('Cancel', { exact: true }).click();
@@ -88,6 +95,7 @@ test.describe('users', () => {
     };
     await mockApiSuccessByMethod(page, '*/**/psama/user', 'POST', [newUser]);
     await page.goto('/admin/users/new');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByLabel('Active').check();
@@ -107,6 +115,7 @@ test.describe('users', () => {
     // Given
     await mockApiFail(page, '*/**/psama/user', 'failed');
     await page.goto('/admin/users/new');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByLabel('Active').check();
@@ -123,6 +132,7 @@ test.describe('users', () => {
   test('User form enforces required email format', async ({ page }) => {
     // Given
     await page.goto('/admin/users/new');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByLabel('Email').fill('cvfbfbd');
@@ -138,6 +148,7 @@ test.describe('users', () => {
   test('User form enforces connection selection', async ({ page }) => {
     // Given
     await page.goto('/admin/users/new');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByLabel('Email').fill('butter@cream.com');
@@ -152,6 +163,7 @@ test.describe('users', () => {
   test('User form enforces adding unique email and connection', async ({ page }) => {
     // Given
     await page.goto('/admin/users/new');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByLabel('Email').fill(mockUsers[0].email);
@@ -167,6 +179,7 @@ test.describe('users', () => {
   test('Clicking row takes user to edit priviledge form', async ({ page }) => {
     // Given
     await page.goto('/admin/users');
+    await userIsLoggedIn(page);
 
     // When
     await page
@@ -181,6 +194,7 @@ test.describe('users', () => {
   test('Edit row icon takes user to edit privilege form', async ({ page }) => {
     // Given
     await page.goto('/admin/users');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByTestId(`user-${mockUsers[0].uuid}-edit-btn`).click();

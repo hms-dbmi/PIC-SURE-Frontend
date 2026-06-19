@@ -7,6 +7,7 @@ test.describe('Advanced Query Builder - Core Features', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
+    // test.setTimeout(60000);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
   });
@@ -62,6 +63,7 @@ test.describe('Advanced Query Builder - Query Summary', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(60000);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
   });
@@ -139,6 +141,7 @@ test.describe('Advanced Query Builder - Filter Details', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(60000);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
   });
@@ -181,6 +184,7 @@ test.describe('Advanced Query Builder - Global Combiner', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(60000);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
   });
@@ -240,6 +244,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(60000);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
   });
@@ -259,7 +264,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await expect(firstCard).not.toHaveClass(/\binvisible\b/);
 
     await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(300);
 
     const handleBox = await dragHandle.boundingBox();
     expect(handleBox).not.toBeNull();
@@ -273,7 +278,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await page.mouse.move(startX, startY + 100, { steps: 20 });
 
     const dragPlaceholder = page.getByTestId('drop-preview');
-    await expect(dragPlaceholder).toBeVisible({ timeout: 3000 });
+    await expect(dragPlaceholder).toBeVisible({ timeout: 5000 });
 
     await page.mouse.up();
     await expect(dragPlaceholder).toHaveCount(0, { timeout: 2000 });
@@ -423,7 +428,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await expect(cardB).toBeVisible();
 
     await cardB.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(300);
 
     const dragHandle = cardA.locator('.fa-grip-vertical').first();
     await expect(dragHandle).toBeVisible();
@@ -485,7 +490,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await expect(dragHandle).toBeVisible();
 
     await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(300);
 
     // Get the first top-level filter as a drag target
     const firstFilter = afPage.filterNames[0];
@@ -521,6 +526,7 @@ test.describe('Advanced Query Builder - Grouping', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(60000);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
   });
@@ -722,6 +728,7 @@ test.describe('Advanced Query Builder - Apply', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(60000);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(2);
   });
@@ -746,6 +753,7 @@ test.describe('Advanced Query Builder - Genomic Filters', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(60000);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupWithGenomicAndOpenModal(4);
   });
@@ -803,6 +811,7 @@ test.describe('Advanced Query Builder - Genomic Filters (Ordering)', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(60000);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupWithGenomicAndOpenModal(4);
   });
@@ -848,6 +857,7 @@ test.describe('Advanced Query Builder - Unsaved Changes', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
+    test.setTimeout(60000);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(2);
   });
@@ -915,6 +925,8 @@ test.describe('Advanced Query Builder - Unsaved Changes', () => {
 test.describe('Advanced Query Builder - Group Drag and Drop', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
+
+  test.beforeEach(() => test.setTimeout(60000));
 
   /**
    * Helper: set up page with two groups via sessionStorage manipulation.

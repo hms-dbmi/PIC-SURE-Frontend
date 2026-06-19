@@ -11,7 +11,7 @@ import {
   detailResponseCat2,
   detailResForAge,
 } from '../mock-data';
-import { clickNthFilterIcon, getOption } from '../utils';
+import { clickNthFilterIcon, getOption, userIsLoggedIn } from '../utils';
 
 const SYNC_URL = '*/**/picsure/v3/query/sync';
 
@@ -123,6 +123,7 @@ export class AdvancedFilteringPage {
   async setupAndOpenModal(filterCount: number = 4) {
     await this.mockApis();
     await this.page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(this.page);
 
     // Add up to filterCount filters
     const addSteps: Array<() => Promise<void>> = [
@@ -178,6 +179,10 @@ export class AdvancedFilteringPage {
     // Verify the page navigated to Advanced Filtering
     await expect(this.modal).toBeVisible();
     await expect(this.modalTitle).toBeVisible();
+    // Wait for filter cards to finish rendering before returning
+    if (this.filterNames.length > 0) {
+      await this.expectFilterVisible(this.filterNames[0]);
+    }
   }
 
   /**
