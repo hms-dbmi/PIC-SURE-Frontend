@@ -29,7 +29,7 @@
     "@fortawesome/fontawesome-free": "^7.2.0",
     "@skeletonlabs/floating-ui-svelte": "^0.3.9",
     "@skeletonlabs/skeleton": "^3.2.0",
-    "@skeletonlabs/skeleton-svelte": "^1.5.1",
+    "@skeletonlabs/skeleton-svelte": "^4.15.2",
     "@vincjo/datatables": "^2.8.0",
     "auth0-js": "^10.0.0",
     "dompurify": "^3.4.3",
