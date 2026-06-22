@@ -87,16 +87,38 @@
 
     consentPrompt = false;
 
-    localStorage.setItem('consentMode', JSON.stringify(consent));
+    try {
+      localStorage.setItem('consentMode', JSON.stringify(consent));
+    } catch {
+      // Storage may be unavailable (sandbox/private mode); the choice still
+      // applies for this session via the consent update below.
+    }
 
     // gtag.js is already loaded (initialized on mount); send a consent update
     // rather than re-initializing, which would inject duplicate scripts.
     gtag('consent', 'update', consent);
   }
 
+  // Read persisted consent, failing safe to deny-all on malformed JSON, blocked
+  // storage access (sandbox/private mode), or a non-object value. Returns null
+  // when no valid consent is stored, so the prompt is (re)shown. This component
+  // renders in the root layout, so an unhandled throw here would break hydration.
+  function loadConsent(): Consent | null {
+    try {
+      const stored = localStorage.getItem('consentMode');
+      if (!stored) return null;
+      const parsed: unknown = JSON.parse(stored);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
+      // Merge onto defaults so a valid-but-incomplete value can't yield a malformed consent object.
+      return { ...defaultConsent, ...parsed };
+    } catch {
+      return null;
+    }
+  }
+
   onMount(() => {
-    const localConsent = localStorage.getItem('consentMode') || '';
-    consent = localConsent ? JSON.parse(localConsent) : defaultConsent;
+    const storedConsent = loadConsent();
+    consent = storedConsent ?? defaultConsent;
 
     // Always initialize tracking on load. Consent Mode (set inside initialize)
     // governs granted/denied behavior; gating this on the prompt previously
@@ -104,9 +126,9 @@
     initialize();
 
     // Open the consent prompt only when a privacy policy is configured and the
-    // user has not yet made a choice.
+    // user has not yet made (or no longer has) a valid stored choice.
     if (enablePrompt) {
-      consentPrompt = !localConsent;
+      consentPrompt = storedConsent === null;
     }
   });
 </script>
