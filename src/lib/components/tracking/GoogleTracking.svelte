@@ -26,13 +26,13 @@
   const tagManagerSrc = 'https://www.googletagmanager.com/gtag/js?id=';
   const googleTag = settings.google.tagManager;
   const googleAnalyticsID = settings.google.analytics;
-  const enablePrompt = googleTag && branding?.privacyPolicy?.url && branding?.privacyPolicy?.title;
+  const enablePrompt =
+    (googleTag || googleAnalyticsID) &&
+    branding?.privacyPolicy?.url &&
+    branding?.privacyPolicy?.title;
 
   let consent: Consent = $state(defaultConsent);
   let consentPrompt: boolean = $state(false);
-  let consentGranted: boolean = $derived(
-    [consent.personalization_storage, consent.analytics_storage].includes('granted'),
-  );
 
   function addScriptToHead(id: string, scriptId: string = '') {
     const { head } = document;
@@ -43,15 +43,21 @@
     head.insertBefore(script, head.firstChild);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-  function gtag(...args: any[]) {
+  // gtag.js recognizes a command ONLY when the raw `arguments` object is pushed
+  // onto dataLayer. Pushing a plain array (e.g. the `_args` rest param) is
+  // silently ignored and disables ALL tracking. `_args` exists only to type the
+  // call sites below
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function gtag(..._args: any[]) {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
     if (!window.dataLayer) window.dataLayer = [];
-    window.dataLayer.push(args);
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer.push(arguments);
   }
 
   function initialize() {
-    if (!consentGranted) return;
+    // Nothing to load if no tracking IDs are configured.
+    if (!googleTag && !googleAnalyticsID) return;
 
     if (googleTag) {
       addScriptToHead(googleTag, 'tag-manager');
@@ -83,17 +89,24 @@
 
     localStorage.setItem('consentMode', JSON.stringify(consent));
 
-    initialize();
+    // gtag.js is already loaded (initialized on mount); send a consent update
+    // rather than re-initializing, which would inject duplicate scripts.
+    gtag('consent', 'update', consent);
   }
 
   onMount(() => {
     const localConsent = localStorage.getItem('consentMode') || '';
     consent = localConsent ? JSON.parse(localConsent) : defaultConsent;
 
+    // Always initialize tracking on load. Consent Mode (set inside initialize)
+    // governs granted/denied behavior; gating this on the prompt previously
+    // disabled analytics entirely whenever the prompt was not shown.
+    initialize();
+
+    // Open the consent prompt only when a privacy policy is configured and the
+    // user has not yet made a choice.
     if (enablePrompt) {
-      // Open prompt if no local consent was saved
       consentPrompt = !localConsent;
-      initialize();
     }
   });
 </script>
