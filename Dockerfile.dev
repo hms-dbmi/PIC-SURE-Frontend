@@ -1,5 +1,5 @@
 # Step 1: Build the app with node
-FROM node:24.14.1-alpine3.23@sha256:01743339035a5c3c11a373cd7c83aeab6ed1457b55da6a69e014a95ac4e4700b AS builder
+FROM node:26.3.1-alpine3.23@sha256:bead114a5f13c3f193e6278d28bc10a3e0cd464cb1c764c1abac79b1cc15f64f AS builder
 RUN apk add --no-cache pnpm
 
 WORKDIR /app
