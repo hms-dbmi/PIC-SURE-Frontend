@@ -26,13 +26,13 @@
   const tagManagerSrc = 'https://www.googletagmanager.com/gtag/js?id=';
   const googleTag = settings.google.tagManager;
   const googleAnalyticsID = settings.google.analytics;
-  const enablePrompt = googleTag && branding?.privacyPolicy?.url && branding?.privacyPolicy?.title;
+  const enablePrompt =
+    (googleTag || googleAnalyticsID) &&
+    branding?.privacyPolicy?.url &&
+    branding?.privacyPolicy?.title;
 
   let consent: Consent = $state(defaultConsent);
   let consentPrompt: boolean = $state(false);
-  let consentGranted: boolean = $derived(
-    [consent.personalization_storage, consent.analytics_storage].includes('granted'),
-  );
 
   function addScriptToHead(id: string, scriptId: string = '') {
     const { head } = document;
@@ -43,15 +43,21 @@
     head.insertBefore(script, head.firstChild);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-  function gtag(...args: any[]) {
+  // gtag.js recognizes a command ONLY when the raw `arguments` object is pushed
+  // onto dataLayer. Pushing a plain array (e.g. the `_args` rest param) is
+  // silently ignored and disables ALL tracking. `_args` exists only to type the
+  // call sites below
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function gtag(..._args: any[]) {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
     if (!window.dataLayer) window.dataLayer = [];
-    window.dataLayer.push(args);
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer.push(arguments);
   }
 
   function initialize() {
-    if (!consentGranted) return;
+    // Nothing to load if no tracking IDs are configured.
+    if (!googleTag && !googleAnalyticsID) return;
 
     if (googleTag) {
       addScriptToHead(googleTag, 'tag-manager');
@@ -81,19 +87,48 @@
 
     consentPrompt = false;
 
-    localStorage.setItem('consentMode', JSON.stringify(consent));
+    try {
+      localStorage.setItem('consentMode', JSON.stringify(consent));
+    } catch {
+      // Storage may be unavailable (sandbox/private mode); the choice still
+      // applies for this session via the consent update below.
+    }
 
-    initialize();
+    // gtag.js is already loaded (initialized on mount); send a consent update
+    // rather than re-initializing, which would inject duplicate scripts.
+    gtag('consent', 'update', consent);
+  }
+
+  // Read persisted consent, failing safe to deny-all on malformed JSON, blocked
+  // storage access (sandbox/private mode), or a non-object value. Returns null
+  // when no valid consent is stored, so the prompt is (re)shown. This component
+  // renders in the root layout, so an unhandled throw here would break hydration.
+  function loadConsent(): Consent | null {
+    try {
+      const stored = localStorage.getItem('consentMode');
+      if (!stored) return null;
+      const parsed: unknown = JSON.parse(stored);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
+      // Merge onto defaults so a valid-but-incomplete value can't yield a malformed consent object.
+      return { ...defaultConsent, ...parsed };
+    } catch {
+      return null;
+    }
   }
 
   onMount(() => {
-    const localConsent = localStorage.getItem('consentMode') || '';
-    consent = localConsent ? JSON.parse(localConsent) : defaultConsent;
+    const storedConsent = loadConsent();
+    consent = storedConsent ?? defaultConsent;
 
+    // Always initialize tracking on load. Consent Mode (set inside initialize)
+    // governs granted/denied behavior; gating this on the prompt previously
+    // disabled analytics entirely whenever the prompt was not shown.
+    initialize();
+
+    // Open the consent prompt only when a privacy policy is configured and the
+    // user has not yet made (or no longer has) a valid stored choice.
     if (enablePrompt) {
-      // Open prompt if no local consent was saved
-      consentPrompt = !localConsent;
-      initialize();
+      consentPrompt = storedConsent === null;
     }
   });
 </script>
