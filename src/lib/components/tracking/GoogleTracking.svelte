@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { afterNavigate } from '$app/navigation';
   import { page } from '$app/state';
   import { branding, settings } from '$lib/configuration';
   import { log, createLog } from '$lib/logger';
@@ -94,15 +95,9 @@
       // applies for this session via the consent update below.
     }
 
-    // gtag.js is already loaded (initialized on mount); send a consent update
-    // rather than re-initializing, which would inject duplicate scripts.
     gtag('consent', 'update', consent);
   }
 
-  // Read persisted consent, failing safe to deny-all on malformed JSON, blocked
-  // storage access (sandbox/private mode), or a non-object value. Returns null
-  // when no valid consent is stored, so the prompt is (re)shown. This component
-  // renders in the root layout, so an unhandled throw here would break hydration.
   function loadConsent(): Consent | null {
     try {
       const stored = localStorage.getItem('consentMode');
@@ -120,16 +115,20 @@
     const storedConsent = loadConsent();
     consent = storedConsent ?? defaultConsent;
 
-    // Always initialize tracking on load. Consent Mode (set inside initialize)
-    // governs granted/denied behavior; gating this on the prompt previously
-    // disabled analytics entirely whenever the prompt was not shown.
     initialize();
 
-    // Open the consent prompt only when a privacy policy is configured and the
-    // user has not yet made (or no longer has) a valid stored choice.
     if (enablePrompt) {
       consentPrompt = storedConsent === null;
     }
+  });
+
+  afterNavigate((navigation) => {
+    if (navigation.type === 'enter' || !googleAnalyticsID) return;
+    gtag('event', 'page_view', {
+      page_title: document.title,
+      page_path: page.url.pathname,
+      page_location: page.url.href,
+    });
   });
 </script>
 
