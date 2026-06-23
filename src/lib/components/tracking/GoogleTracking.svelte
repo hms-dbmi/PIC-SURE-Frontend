@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { afterNavigate } from '$app/navigation';
   import { page } from '$app/state';
   import { branding, settings } from '$lib/configuration';
   import { log, createLog } from '$lib/logger';
@@ -130,6 +131,20 @@
     if (enablePrompt) {
       consentPrompt = storedConsent === null;
     }
+  });
+
+  // Send a page_view on each SvelteKit client-side navigation. initialize() only
+  // fires once on mount, so without this only the initial document load (and the
+  // server redirects to /explorer and /discover) reach GA — SPA navigations are
+  // never tracked. Skip the initial 'enter' navigation, already counted by the
+  // gtag('config', ...) call in initialize().
+  afterNavigate((navigation) => {
+    if (navigation.type === 'enter' || !googleAnalyticsID) return;
+    gtag('event', 'page_view', {
+      page_title: document.title,
+      page_path: page.url.pathname,
+      page_location: page.url.href,
+    });
   });
 </script>
 

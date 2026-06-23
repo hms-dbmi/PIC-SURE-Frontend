@@ -7,6 +7,19 @@ vi.mock('$app/state', () => ({
   page: { url: new URL('http://localhost/explorer') },
 }));
 
+// Capture the afterNavigate callback the component registers so tests can fire
+// navigations. The holder is created via vi.hoisted so the hoisted vi.mock
+// factory below can reference it.
+const navigation = vi.hoisted(() => ({
+  cb: undefined as ((nav: { type: string }) => void) | undefined,
+}));
+
+vi.mock('$app/navigation', () => ({
+  afterNavigate: (cb: (nav: { type: string }) => void) => {
+    navigation.cb = cb;
+  },
+}));
+
 // Analytics-only configuration (no tag manager) — also guards the regression
 // where the consent prompt was coupled to `tagManager` being set. The literal
 // must be inlined here because vi.mock factories are hoisted above module vars.
@@ -22,8 +35,18 @@ vi.mock('$lib/logger', () => ({
 }));
 
 import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
+import { page } from '$app/state';
 
 const ANALYTICS_ID = 'G-TEST123';
+
+// page.url is readonly on the real type; cast to mutate the mock between navigations.
+function setRoute(pathname: string) {
+  (page as unknown as { url: URL }).url = new URL(`http://localhost${pathname}`);
+}
+
+function pageViewEvents(): Command[] {
+  return dataLayer().filter((e) => e[0] === 'event' && e[1] === 'page_view');
+}
 
 type Command = IArguments & Record<number, unknown>;
 
@@ -146,5 +169,31 @@ describe('GoogleTracking', () => {
     const update = findCommand('consent', 'update');
     expect(update, 'expected a consent update even when persistence fails').toBeDefined();
     expect(update?.[2]).toMatchObject({ analytics_storage: 'granted' });
+  });
+
+  it('sends a page_view on client-side navigation (regression: SPA nav untracked)', () => {
+    setRoute('/explorer');
+    render(GoogleTracking);
+
+    // Initial load is tracked via gtag('config', …); no page_view event yet.
+    expect(pageViewEvents().length).toBe(0);
+
+    // Navigate client-side to a new route and let SvelteKit complete it.
+    setRoute('/dataset/42');
+    navigation.cb?.({ type: 'goto' });
+
+    const events = pageViewEvents();
+    expect(events.length).toBe(1);
+    expect(events[0][2]).toMatchObject({ page_path: '/dataset/42' });
+  });
+
+  it('does not double-count the initial load (skips the "enter" navigation)', () => {
+    setRoute('/explorer');
+    render(GoogleTracking);
+
+    // 'enter' is the initial mount, already counted by gtag('config', …).
+    navigation.cb?.({ type: 'enter' });
+
+    expect(pageViewEvents().length).toBe(0);
   });
 });
