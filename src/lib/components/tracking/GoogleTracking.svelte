@@ -126,18 +126,11 @@
     // disabled analytics entirely whenever the prompt was not shown.
     initialize();
 
-    // Open the consent prompt only when a privacy policy is configured and the
-    // user has not yet made (or no longer has) a valid stored choice.
     if (enablePrompt) {
       consentPrompt = storedConsent === null;
     }
   });
 
-  // Send a page_view on each SvelteKit client-side navigation. initialize() only
-  // fires once on mount, so without this only the initial document load (and the
-  // server redirects to /explorer and /discover) reach GA — SPA navigations are
-  // never tracked. Skip the initial 'enter' navigation, already counted by the
-  // gtag('config', ...) call in initialize().
   afterNavigate((navigation) => {
     if (navigation.type === 'enter' || !googleAnalyticsID) return;
     gtag('event', 'page_view', {
