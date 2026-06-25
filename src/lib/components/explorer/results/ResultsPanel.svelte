@@ -203,4 +203,31 @@
   hr {
     width: 88%;
   }
+
+  /* Slide-in on mount via pure CSS instead of Svelte's `transition:slide`.
+     A parent intro transition firing alongside this panel's child intro
+     transitions (export button, filter chips) during mount triggers an
+     effect-tree-detachment freeze on Svelte 5.39–5.55. CSS animations run on
+     element insertion without going through Svelte's effect/batch scheduler,
+     so they sidestep the regression while keeping the animation. */
+  #results-panel {
+    animation: results-panel-in 300ms ease-out;
+  }
+
+  @keyframes results-panel-in {
+    from {
+      transform: translateX(1.5rem);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #results-panel {
+      animation: none;
+    }
+  }
 </style>
