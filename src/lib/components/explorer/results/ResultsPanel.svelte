@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
-  import { slide, scale } from 'svelte/transition';
+  import { scale } from 'svelte/transition';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -63,7 +63,8 @@
   let distributionsDisabled = $derived(
     resultCountsState.loading ||
       (isDiscoverPage
-        ? isObfuscatedBelowThreshold(resultCountsState.total) || (resultCountsState.total as number) < 10
+        ? isObfuscatedBelowThreshold(resultCountsState.total) ||
+          (resultCountsState.total as number) < 10
         : resultCountsState.total === 0),
   );
 
@@ -102,11 +103,7 @@
 >
   Are you sure you want to clear all filters?
 </Modal>
-<section
-  id="results-panel"
-  class="flex flex-col items-center pt-8 pr-10 w-64"
-  transition:slide={{ axis: 'x' }}
->
+<section id="results-panel" class="flex flex-col items-center pt-8 pr-10 w-64">
   <Counts />
   {#if showExportButton}
     <div class="h-11 mt-4">
