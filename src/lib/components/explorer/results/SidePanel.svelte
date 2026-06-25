@@ -51,9 +51,10 @@
       <i class="fa-solid {$panelOpen ? 'fa-arrow-right' : 'fa-arrow-left'}"></i>
     </button>
   </div>
-  {#if $panelOpen}
-    <ResultsPanel />
-  {/if}
+  <!-- Always mounted: ResultsPanel collapses via a CSS class (see its <style>)
+       rather than `{#if}`, because a Svelte mount/unmount transition on it
+       triggers a 5.39–5.55 effect-detachment freeze. -->
+  <ResultsPanel />
 </div>
 
 <style>

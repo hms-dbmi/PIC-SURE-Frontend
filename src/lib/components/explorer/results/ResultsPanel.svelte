@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
-  import { fly, scale } from 'svelte/transition';
+  import { scale } from 'svelte/transition';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -12,6 +11,7 @@
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import { isObfuscatedBelowThreshold } from '$lib/services/counts/countFormat';
   import { exports, clearExports } from '$lib/stores/Export';
+  import { panelOpen } from '$lib/stores/SidePanel';
 
   import Filters from '$lib/components/explorer/results/Filters.svelte';
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
@@ -70,23 +70,23 @@
 
   const getIsOpenAccess = () => isDiscoverPage;
 
-  // The destroy/mount method is not called on page navigation if the page we're navigating to
-  // has this same component. This can cause requests that may be pending on one page
-  // to load on the next page. Example discover results displaying on explorer page.
-  // To fix this, we restart on page navigation with the correct isOpenAccess flag,
-  // dropping the previous results and sending a new request.
+  // ResultsPanel stays mounted (so the panel can animate closed via CSS — a
+  // Svelte mount/unmount transition here triggers a 5.39–5.55 effect-detachment
+  // freeze), so drive the count lifecycle off panel visibility instead of
+  // mount/destroy: load + subscribe only while open, matching prior behavior.
+  $effect(() => {
+    if (!$panelOpen) return;
+    resultCountsState.start(getIsOpenAccess);
+    return () => resultCountsState.stop();
+  });
+
+  // The panel persists across /discover <-> /explorer navigation, so re-request
+  // with the correct open-access flag when that navigation happens.
   $effect(() => {
     if (!page.url.pathname.startsWith(currentPage)) {
       currentPage = page.url.pathname;
-      resultCountsState.start(getIsOpenAccess);
+      if ($panelOpen) resultCountsState.start(getIsOpenAccess);
     }
-  });
-
-  onMount(() => {
-    resultCountsState.start(getIsOpenAccess);
-  });
-  onDestroy(() => {
-    resultCountsState.stop();
   });
 </script>
 
@@ -106,7 +106,7 @@
 <section
   id="results-panel"
   class="flex flex-col items-center pt-8 pr-10 w-64"
-  out:fly={{ x: 24, duration: 400 }}
+  class:panel-closed={!$panelOpen}
 >
   <Counts />
   {#if showExportButton}
@@ -208,32 +208,33 @@
     width: 88%;
   }
 
-  /* Open (mount) animates via pure CSS instead of Svelte's `transition:slide`.
-     A Svelte parent INTRO transition firing alongside this panel's child intro
-     transitions (export button, filter chips) during mount triggers an
-     effect-tree-detachment freeze on Svelte 5.39–5.55. CSS animations run on
-     element insertion without going through Svelte's effect/batch scheduler, so
-     they sidestep the regression. Close (unmount) uses Svelte `out:fly` in the
-     markup — an outro-only transition, which doesn't hit the regression and is
-     the only way to animate node removal. Keep both at the same duration. */
+  /* Open/close animate via pure CSS — NOT Svelte's `transition:`/`in:`/`out:`.
+     ANY Svelte transition directive on this element re-triggers an effect-tree
+     detachment freeze when the panel mounts with filter content (Svelte
+     5.39–5.55 regression). So the panel stays mounted (see SidePanel) and we
+     transition a `.panel-closed` class instead — CSS transitions run outside
+     Svelte's effect/batch scheduler. */
   #results-panel {
-    animation: results-panel-in 400ms ease-out;
+    transition:
+      width 400ms ease,
+      padding 400ms ease,
+      opacity 250ms ease,
+      transform 400ms ease;
   }
 
-  @keyframes results-panel-in {
-    from {
-      transform: translateX(1.5rem);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+  #results-panel.panel-closed {
+    width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateX(1.5rem);
+    pointer-events: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
     #results-panel {
-      animation: none;
+      transition: none;
     }
   }
 </style>
