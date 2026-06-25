@@ -30,7 +30,7 @@ export default defineConfig(async () => {
     },
     plugins,
     build: {
-      sourcemap: false,
+      sourcemap: true,
     },
   };
 });
