@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
-  import { scale } from 'svelte/transition';
+  import { fly, scale } from 'svelte/transition';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -103,7 +103,11 @@
 >
   Are you sure you want to clear all filters?
 </Modal>
-<section id="results-panel" class="flex flex-col items-center pt-8 pr-10 w-64">
+<section
+  id="results-panel"
+  class="flex flex-col items-center pt-8 pr-10 w-64"
+  out:fly={{ x: 24, duration: 400 }}
+>
   <Counts />
   {#if showExportButton}
     <div class="h-11 mt-4">
@@ -204,14 +208,16 @@
     width: 88%;
   }
 
-  /* Slide-in on mount via pure CSS instead of Svelte's `transition:slide`.
-     A parent intro transition firing alongside this panel's child intro
+  /* Open (mount) animates via pure CSS instead of Svelte's `transition:slide`.
+     A Svelte parent INTRO transition firing alongside this panel's child intro
      transitions (export button, filter chips) during mount triggers an
      effect-tree-detachment freeze on Svelte 5.39–5.55. CSS animations run on
-     element insertion without going through Svelte's effect/batch scheduler,
-     so they sidestep the regression while keeping the animation. */
+     element insertion without going through Svelte's effect/batch scheduler, so
+     they sidestep the regression. Close (unmount) uses Svelte `out:fly` in the
+     markup — an outro-only transition, which doesn't hit the regression and is
+     the only way to animate node removal. Keep both at the same duration. */
   #results-panel {
-    animation: results-panel-in 300ms ease-out;
+    animation: results-panel-in 400ms ease-out;
   }
 
   @keyframes results-panel-in {
