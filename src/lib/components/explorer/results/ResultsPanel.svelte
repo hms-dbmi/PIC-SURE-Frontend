@@ -127,11 +127,7 @@
 >
   Are you sure you want to clear all filters?
 </Modal>
-<section
-  id="results-panel"
-  class="flex flex-col items-center pt-8 pr-10 w-64"
-  transition:slide={{ axis: 'x' }}
->
+<section id="results-panel" class="flex flex-col items-center pt-8 pr-10 w-64">
   <Counts />
   {#if showExportButton}
     <div class="h-11 mt-4">
