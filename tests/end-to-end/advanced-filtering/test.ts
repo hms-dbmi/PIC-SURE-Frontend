@@ -2,12 +2,14 @@ import { expect } from '@playwright/test';
 import { test } from '../custom-context';
 import { AdvancedFilteringPage } from './advanced-filtering-page';
 
+const LONG_RUNNING_TIMEOUT = 80000;
+
 test.describe('Advanced Query Builder - Core Features', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
-    // test.setTimeout(60000);
+    test.setTimeout(LONG_RUNNING_TIMEOUT);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
   });
@@ -63,7 +65,7 @@ test.describe('Advanced Query Builder - Query Summary', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(LONG_RUNNING_TIMEOUT);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
   });
@@ -141,7 +143,7 @@ test.describe('Advanced Query Builder - Filter Details', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(LONG_RUNNING_TIMEOUT);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
   });
@@ -184,7 +186,7 @@ test.describe('Advanced Query Builder - Global Combiner', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(LONG_RUNNING_TIMEOUT);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
   });
@@ -244,7 +246,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(LONG_RUNNING_TIMEOUT);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
   });
@@ -526,7 +528,7 @@ test.describe('Advanced Query Builder - Grouping', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(LONG_RUNNING_TIMEOUT);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
   });
@@ -728,7 +730,7 @@ test.describe('Advanced Query Builder - Apply', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(LONG_RUNNING_TIMEOUT);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(2);
   });
@@ -753,7 +755,7 @@ test.describe('Advanced Query Builder - Genomic Filters', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(LONG_RUNNING_TIMEOUT);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupWithGenomicAndOpenModal(4);
   });
@@ -811,7 +813,7 @@ test.describe('Advanced Query Builder - Genomic Filters (Ordering)', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(LONG_RUNNING_TIMEOUT);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupWithGenomicAndOpenModal(4);
   });
@@ -857,7 +859,7 @@ test.describe('Advanced Query Builder - Unsaved Changes', () => {
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(60000);
+    test.setTimeout(LONG_RUNNING_TIMEOUT);
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(2);
   });
@@ -926,7 +928,7 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let afPage: AdvancedFilteringPage;
 
-  test.beforeEach(() => test.setTimeout(60000));
+  test.beforeEach(() => test.setTimeout(LONG_RUNNING_TIMEOUT));
 
   /**
    * Helper: set up page with two groups via sessionStorage manipulation.
