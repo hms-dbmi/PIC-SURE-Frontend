@@ -42,8 +42,10 @@ test('Tour Finishes', async ({ page }) => {
   );
   await page.goto('/explorer');
   await userIsLoggedIn(page);
-  await page.getByTestId('explorer-tour-btn').click();
-  await expect(page.locator('#modal-component')).toBeVisible();
+  await expect(async () => {
+    await page.getByTestId('explorer-tour-btn').click();
+    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
   await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
 
   // When

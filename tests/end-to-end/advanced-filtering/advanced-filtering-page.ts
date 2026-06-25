@@ -121,6 +121,8 @@ export class AdvancedFilteringPage {
    * Standard setup: navigate to explorer, add filters, open the Advanced Filtering page.
    */
   async setupAndOpenModal(filterCount: number = 4) {
+    this.filterNames = [];
+    this.studyAcronyms = [];
     await this.mockApis();
     await this.page.goto('/explorer?search=somedata');
     await userIsLoggedIn(this.page);

@@ -373,6 +373,7 @@ test.describe('Results Panel', () => {
       });
 
       await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
 
       await mockApiSuccess(
         page,
