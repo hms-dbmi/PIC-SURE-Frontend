@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
 
   import { toaster } from '$lib/toaster';
   import type { SearchResult } from '$lib/models/Search';
@@ -112,9 +112,18 @@
   }
 
   function finish() {
-    $activeRow = '';
     $panelOpen = true;
     onclose();
+    // Collapse the expanded row on the NEXT tick, not synchronously. Opening the
+    // panel here mounts ResultsPanel (`transition:slide` intro); collapsing the
+    // row unmounts this component (`transition:slide` outro). Running that intro
+    // and outro in the SAME flush — from inside this component's own click
+    // handler — intermittently leaves Svelte's effect tree detached and freezes
+    // all interactivity (regression in Svelte 5.39–5.55). Deferring the collapse
+    // splits them into separate flushes so they no longer collide.
+    tick().then(() => {
+      $activeRow = '';
+    });
   }
 
   function getNextValues(search: string = '') {

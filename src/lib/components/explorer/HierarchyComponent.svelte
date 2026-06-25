@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import type { SearchResult } from '$lib/models/Search';
   import type { NodeInterface } from '$lib/components/tree/types';
   import { type Filter, createAnyRecordOfFilter } from '$lib/models/Filter.svelte';
@@ -121,9 +122,17 @@
   }
 
   function finish() {
-    $activeRow = '';
     $panelOpen = true;
     onclose();
+    // Collapse the expanded row on the NEXT tick, not synchronously — see the
+    // matching note in AddFilter.finish(). Opening the panel mounts ResultsPanel
+    // (`transition:slide` intro) while collapsing the row unmounts this component
+    // (`transition:slide` outro); running both in one flush from this handler
+    // intermittently detaches Svelte's effect tree and freezes the UI (regression
+    // in Svelte 5.39–5.55). Deferring splits them into separate flushes.
+    tick().then(() => {
+      $activeRow = '';
+    });
   }
 </script>
 
