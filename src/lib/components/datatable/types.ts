@@ -26,4 +26,5 @@ export interface TableProps {
   rowClickHandler?: (row: Indexable) => void;
   tableActions?: import('svelte').Snippet;
   searchLogAction?: string;
+  rowClickLogAction?: string;
 }
