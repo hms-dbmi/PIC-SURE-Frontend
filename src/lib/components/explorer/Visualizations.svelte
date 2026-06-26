@@ -131,13 +131,13 @@
 />
 {#if excludedVariables.length}
   <div class="w-3/4 mx-auto my-4">
-    <ErrorAlert color="warning" iconSize="2xl" data-testid="excluded-visualizations-warning">
-      <p>
+    <ErrorAlert color="warning" iconSize="4xl" data-testid="excluded-visualizations-warning">
+      <p class="mb-1">
         Some variables were excluded from visualization because there was insufficient participant
         data for the selected query.
       </p>
-      <p class="font-bold mt-2">Variables not included:</p>
-      <ul class="list-disc list-inside">
+      <p class="font-bold py-0 my-0">Variables not included:</p>
+      <ul class="list-disc list-inside ml-8">
         {#each excludedVariables as variable}
           <li>{variable}</li>
         {/each}
