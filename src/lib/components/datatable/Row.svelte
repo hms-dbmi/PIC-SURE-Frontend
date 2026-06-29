@@ -14,6 +14,7 @@
     isClickable?: boolean;
     expandable?: boolean;
     rowClickHandler?: (row: Indexable) => void;
+    rowClickLogAction?: string;
   }
 
   let {
@@ -25,6 +26,7 @@
     isClickable = false,
     expandable = false,
     rowClickHandler = () => {},
+    rowClickLogAction,
   }: Props = $props();
 
   function onClick(row: Indexable) {
@@ -32,13 +34,15 @@
       $activeTable === tableName &&
       ($activeRow === row?.conceptPath || $activeRow === row.dataset_id)
     );
-    log(
-      createLog('ACTION', 'search_result.row_click', {
-        variable: row.conceptPath || row.dataset_id,
-        open: willOpen,
-        pageContext: getPageContext(),
-      }),
-    );
+    if (rowClickLogAction) {
+      log(
+        createLog('ACTION', rowClickLogAction, {
+          variable: row.conceptPath || row.dataset_id,
+          open: willOpen,
+          pageContext: getPageContext(),
+        }),
+      );
+    }
     setActiveRow({ row: row.conceptPath || row.dataset_id, table: tableName });
     rowClickHandler(row);
   }
