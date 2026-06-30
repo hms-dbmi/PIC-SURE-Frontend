@@ -1,6 +1,7 @@
-import type { HandleServerError } from '@sveltejs/kit';
+import type { HandleServerError, ServerInit } from '@sveltejs/kit';
 import { registerProviderData } from './lib/AuthProviderRegistry';
 import type { AuthData } from './lib/models/AuthProvider';
+import { getConfig } from './lib/server/configCache';
 
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
@@ -47,4 +48,9 @@ export const handleError: HandleServerError = async ({ error, event, status, mes
   return {
     message: message || 'An unknown server error occurred.',
   };
+};
+
+export const init: ServerInit = async () => {
+  // Pre-warm the cache when server starts, in dev mode it's on first request
+  await getConfig();
 };

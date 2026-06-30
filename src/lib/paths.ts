@@ -4,6 +4,11 @@ const QUERY = `${PREFIX}/query`;
 const UPLOADER = `${PREFIX}/proxy/uploader`;
 const VIZ = `${PREFIX}/proxy/visualization`;
 const API = '/api/v1';
+const LOCAL = 'api';
+
+export const LocalServer = {
+  Configs: `${LOCAL}/config`,
+};
 
 export const Picsure = {
   Concepts: `${DICT}/concepts`,
@@ -11,6 +16,10 @@ export const Picsure = {
     Detail: `${DICT}/concepts/detail`,
     Tree: `${DICT}/concepts/tree`,
     Hierarchy: `${DICT}/concepts/hierarchy`,
+  },
+  Configuration: {
+    Get: `${PREFIX}/configuration`,
+    Admin: `${PREFIX}/configuration/admin`,
   },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,

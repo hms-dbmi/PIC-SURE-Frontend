@@ -6,6 +6,7 @@ node_modules
 /playwright-report
 /test-results
 /package
+/.cache
 .env
 .env.*
 *.local

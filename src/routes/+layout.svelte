@@ -3,14 +3,14 @@
   import { afterNavigate } from '$app/navigation';
   import '@fortawesome/fontawesome-free/css/all.min.css';
   import '../styles/app.css';
-  import { initializeBranding } from '$lib/configuration';
   import { initSanitizeConfig } from '$lib/utilities/HTML';
   import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import { config } from '$lib/configuration.svelte';
   import { log, createLog } from '$lib/logger';
 
   let { children }: { children?: Snippet } = $props();
 
-  initializeBranding();
   onMount(initSanitizeConfig);
 
   afterNavigate(({ from, to, type }) => {
@@ -25,6 +25,11 @@
 </script>
 
 <main class="w-full h-full">
+  {#if config.error}
+    <ErrorAlert color="warning" title="Configuration Error">
+      {config.error}
+    </ErrorAlert>
+  {/if}
   {@render children?.()}
   <GoogleTracking />
 </main>
