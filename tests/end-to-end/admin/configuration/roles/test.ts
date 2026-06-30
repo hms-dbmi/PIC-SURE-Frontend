@@ -7,6 +7,7 @@ import {
   applications as mockApps,
   connections as mockConnections,
 } from '../../../mock-data';
+import { userIsLoggedIn } from '../../../utils';
 
 const validationText = {
   empty: /([Pp]lease )?[Ff]ill out this field.?/,
@@ -24,6 +25,7 @@ test.beforeEach(async ({ page }) => {
 test('Has Roles management table', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
 
   // Then
   await expect(page.locator('#role-table .table')).toBeVisible();
@@ -31,6 +33,7 @@ test('Has Roles management table', async ({ page }) => {
 test('Has add role button', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
 
   // Then
   await expect(page.getByTestId('add-role')).toBeVisible();
@@ -38,6 +41,7 @@ test('Has add role button', async ({ page }) => {
 test('Add role button takes user to new role page', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByTestId('add-role').click();
@@ -49,6 +53,7 @@ test('Add role button takes user to new role page', async ({ page }) => {
 test('Role form has pre-populated priviledges', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/role/new');
+  await userIsLoggedIn(page);
   const checkboxes = page
     .getByTestId('privilege-checkboxes')
     .getByText(mockPrivileges[0].name, { exact: true });
@@ -59,6 +64,7 @@ test('Role form has pre-populated priviledges', async ({ page }) => {
 test('Role form cancel button navigates back to configuration page', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/role/new');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByText('Cancel', { exact: true }).click();
@@ -76,6 +82,7 @@ test('Role form returns to configuration page with success message', async ({ pa
   };
   await mockApiSuccess(page, '*/**/psama/role', { content: [newRole] });
   await page.goto('/admin/configuration/role/new');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByLabel('Name').fill(newRole.name);
@@ -94,6 +101,7 @@ test('Role form returns error message on api fail', async ({ page }) => {
   // Given
   await mockApiFail(page, '*/**/psama/role', 'failed');
   await page.goto('/admin/configuration/role/new');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByLabel('Name').fill('coconut');
@@ -109,6 +117,7 @@ test('Role form returns error message on api fail', async ({ page }) => {
 test('Role form enforces required name length', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/role/new');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByLabel('Name').fill('');
@@ -124,6 +133,7 @@ test('Role form enforces required name length', async ({ page }) => {
 test('Role form enforces required description length', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/role/new');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByLabel('Name').fill('coconut');
@@ -139,6 +149,7 @@ test('Role form enforces required description length', async ({ page }) => {
 test('Role form enforces required at least one selected privilege', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/role/new');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByLabel('Name').fill('coconut');
@@ -151,6 +162,7 @@ test('Role form enforces required at least one selected privilege', async ({ pag
 test('Clicking row takes user to edit role form', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
 
   // When
   await page.locator('#role-table table tbody tr').first().click();
@@ -162,6 +174,7 @@ test('Clicking row takes user to edit role form', async ({ page }) => {
 test('Edit row icon takes user to edit role form', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByTestId(`role-${mockRoles[0].uuid}-edit-btn`).click();
@@ -174,6 +187,7 @@ test('Edit role form has pre-populated values', async ({ page }) => {
   // Given
   await mockApiSuccess(page, `*/**/psama/role/${mockRoles[0].uuid}`, mockRoles[0]);
   await page.goto(`/admin/configuration/role/${mockRoles[0].uuid}/edit`);
+  await userIsLoggedIn(page);
 
   // Then
   await expect(page.getByLabel('Name')).toHaveValue(mockRoles[0].name);
@@ -185,6 +199,7 @@ test('Delete row icon asks users to confirm or cancel', async ({ page }) => {
 
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByTestId(modalId + '-btn').click();
@@ -197,6 +212,7 @@ test('Delete gives success message', async ({ page }) => {
 
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
   await mockApiSuccess(page, `*/**/psama/role/${mockRoles[0].uuid}`, {});
 
   // When
@@ -213,6 +229,7 @@ test('Delete gives error message on api failure', async ({ page }) => {
 
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
   await mockApiFail(page, `*/**/psama/role/${mockRoles[0].uuid}`, 'failed');
 
   // When
@@ -230,6 +247,7 @@ test.describe('Admin on Configuration page', () => {
   test('Action and add button(s) are disabled when not top admin', async ({ page }) => {
     // Given
     await page.goto('/admin/configuration');
+    await userIsLoggedIn(page);
 
     // Then
     // Check that all edit buttons are disabled
@@ -247,6 +265,8 @@ test.describe('Admin on Configuration page', () => {
   test('Error alert is visible when not top admin', async ({ page }) => {
     // Given
     await page.goto('/admin/configuration');
+    await userIsLoggedIn(page);
+
     // Then
     await expect(page.getByTestId('error-alert')).toBeVisible();
   });
@@ -255,6 +275,8 @@ test.describe('Admin on Configuration page', () => {
   }) => {
     // Given
     await page.goto('/admin/configuration');
+    await userIsLoggedIn(page);
+
     // When
     await page.locator('#role-table table tbody tr').first().click();
     // Then

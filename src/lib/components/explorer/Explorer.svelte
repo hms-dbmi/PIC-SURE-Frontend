@@ -119,6 +119,7 @@
         {cellOverides}
         isLoading={$isLoading}
         expandable
+        rowClickLogAction="search_result.row_click"
       />
     {/if}
     {#if config.features.explorer.enableTour && $tour}

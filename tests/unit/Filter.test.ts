@@ -7,6 +7,9 @@ vi.mock('$lib/stores/User', () => ({
   user: { subscribe: vi.fn() },
   isUserLoggedIn: vi.fn(() => false),
 }));
+vi.mock('$lib/stores/Dictionary', () => ({
+  getConceptDetails: vi.fn(),
+}));
 
 import {
   addFilter,
@@ -15,7 +18,9 @@ import {
   filterTree,
   clearFilters,
   createGroup,
+  enrichFilterDetails,
 } from '$lib/stores/Filter';
+import { getConceptDetails } from '$lib/stores/Dictionary';
 import { createCategoricalFilter, createNumericFilter } from '$lib/models/Filter.svelte';
 import type { FilterInterface } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
@@ -204,5 +209,63 @@ describe('filterTree serialization round-trip', () => {
     expect(final.leafNodes.length).toBe(1);
     expect(final.leafNodes[0].id).toBe(original.leafNodes[0].id);
     expect(final.leafNodes[0].uuid).toBe(original.leafNodes[0].uuid);
+  });
+});
+
+describe('enrichFilterDetails', () => {
+  beforeEach(() => {
+    clearFilters();
+    vi.mocked(getConceptDetails).mockReset();
+  });
+
+  it('patches table/study onto the added filter once details resolve', async () => {
+    const search = mockSearchResult('\\demo\\numeric\\enrich\\');
+    const filter = createNumericFilter(search, '0', '10');
+    addFilter(filter);
+    expect(filter.searchResult?.table).toBeUndefined();
+
+    const table = { display: 'Dataset Display' } as SearchResult;
+    const study = { display: 'Study Display' } as SearchResult;
+    vi.mocked(getConceptDetails).mockResolvedValue({ ...search, table, study } as SearchResult);
+
+    enrichFilterDetails(filter, search.conceptPath, search.dataset);
+
+    await vi.waitFor(() => expect(filter.searchResult?.table).toBe(table));
+
+    const leaf = get(filterTree).leafNodes[0] as FilterInterface;
+    expect(leaf.searchResult?.table).toBe(table);
+    expect(leaf.searchResult?.study).toBe(study);
+    expect(getConceptDetails).toHaveBeenCalledWith(search.conceptPath, search.dataset);
+  });
+
+  it('leaves the filter unchanged when the detail fetch fails', async () => {
+    const search = mockSearchResult('\\demo\\numeric\\fail\\');
+    const filter = createNumericFilter(search, '0', '10');
+    addFilter(filter);
+    vi.mocked(getConceptDetails).mockRejectedValue(new Error('boom'));
+
+    enrichFilterDetails(filter, search.conceptPath, search.dataset);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(filter.searchResult?.table).toBeUndefined();
+  });
+
+  it('does not fetch when conceptPath or dataset is missing', () => {
+    const search = mockSearchResult('\\demo\\numeric\\guard\\');
+    const filter = createNumericFilter(search, '0', '10');
+
+    enrichFilterDetails(filter, '', search.dataset);
+
+    expect(getConceptDetails).not.toHaveBeenCalled();
+  });
+
+  it('does not fetch when the filter is already enriched with table details', () => {
+    const enriched = { ...mockSearchResult('\\demo\\numeric\\enriched\\') };
+    enriched.table = { display: 'Existing Dataset' } as SearchResult;
+    const filter = createNumericFilter(enriched, '0', '10');
+
+    enrichFilterDetails(filter, enriched.conceptPath, enriched.dataset);
+
+    expect(getConceptDetails).not.toHaveBeenCalled();
   });
 });

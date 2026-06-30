@@ -112,7 +112,7 @@
 
 <button
   bind:this={floating.elements.reference}
-  data-testid="{testid}-btn"
+  {...testid ? { 'data-testid': `${testid}-btn` } : {}}
   class="cursor-pointer {triggerStyle}"
   {...interactions.getReferenceProps({ onclick: onTriggerClick })}
   disabled={triggerDisabled}

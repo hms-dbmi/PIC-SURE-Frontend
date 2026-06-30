@@ -9,7 +9,7 @@ COPY src src
 COPY static static
 COPY .env svelte.config.js tsconfig.json vite.config.ts ./
 ARG THEME=picsure
-RUN sed -i 's/%sveltekit.assets%\/favicon.ico/%sveltekit.assets%\/'$THEME'-favicon.png/' ./src/app.html \
+RUN sed -i 's/%sveltekit.assets%\/favicon.png/%sveltekit.assets%\/'$THEME'-favicon.png/' ./src/app.html \
   && sed -i 's/data-theme="[^"]*"/data-theme=\"'$THEME'\"/' ./src/app.html
 RUN pnpm build \
   && pnpm prune --prod
@@ -17,13 +17,15 @@ RUN pnpm build \
 # Step 2: Serve the app with httpd
 FROM httpd:2.4.67-alpine3.23@sha256:0136c2d4462f3b8ecc92bea70efdfef4d06523999ae8d7aa533969dea6db4576
 
+# Keeping these unpinned reduces the risk of alpine pulling the image and breaking deployment
 RUN apk add --no-cache \
-  libexpat=2.7.5-r0 \
-  nodejs=24.14.1-r0 \
-  openssl=3.5.6-r0 \
-  sed=4.9-r2 \
-  supervisor=4.3.0-r0 \
-  zlib=1.3.2-r0
+  libexpat \
+  nodejs \
+  openssl \
+  sed \
+  supervisor \
+  zlib
+
 RUN mkdir -p ${HTTPD_PREFIX}/cert /usr/local/apache2/logs/ssl_mutex \
   && sed -i '/^#Include conf.extra.httpd-vhosts.conf/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf \
   && sed -i '/^#LoadModule proxy_module/s/^#//' ${HTTPD_PREFIX}/conf/httpd.conf \

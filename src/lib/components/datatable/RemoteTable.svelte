@@ -36,6 +36,7 @@
     rowClickHandler = () => {},
     tableActions,
     searchLogAction,
+    rowClickLogAction,
   }: Props = $props();
 
   $effect(() => {
@@ -107,6 +108,7 @@
             index={i}
             {row}
             {rowClickHandler}
+            {rowClickLogAction}
             {isClickable}
             {expandable}
           />

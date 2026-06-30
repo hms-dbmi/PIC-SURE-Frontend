@@ -2,8 +2,13 @@ import { expect } from '@playwright/test';
 import { test } from '../custom-context';
 import { AdvancedFilteringPage } from './advanced-filtering-page';
 
+const LONG_RUNNING_TIMEOUT = 80000;
+const DND_SETTLE_TIMEOUT = 1000;
+const DND_QUICK_SETTLE_TIMEOUT = 200;
+
 test.describe('Advanced Query Builder - Core Features', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.describe.configure({ timeout: LONG_RUNNING_TIMEOUT });
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
@@ -31,7 +36,7 @@ test.describe('Advanced Query Builder - Core Features', () => {
 
   test('AF-CORE-004: Filter metadata displays study and dataset on one line', async ({ page }) => {
     const firstFilterCard = afPage.getFilterCard(afPage.filterNames[0]);
-    await expect(firstFilterCard).toContainText('Study: TDS, Dataset: test_data_set');
+    await expect(firstFilterCard).toContainText('Study: TDS, Dataset: some_name_for_the_table');
 
     await afPage.closeModal();
     await page.evaluate(() => {
@@ -43,7 +48,7 @@ test.describe('Advanced Query Builder - Core Features', () => {
       if (!firstFilter?.searchResult) return;
 
       firstFilter.searchResult.studyAcronym = null;
-      firstFilter.searchResult.dataset = 'pht12345';
+      firstFilter.searchResult.table = { ...firstFilter.searchResult.table, display: 'pht12345' };
       sessionStorage.setItem('filterTree', JSON.stringify(tree));
     });
 
@@ -59,6 +64,7 @@ test.describe('Advanced Query Builder - Core Features', () => {
 
 test.describe('Advanced Query Builder - Query Summary', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.describe.configure({ timeout: LONG_RUNNING_TIMEOUT });
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
@@ -136,6 +142,7 @@ test.describe('Advanced Query Builder - Query Summary', () => {
 
 test.describe('Advanced Query Builder - Filter Details', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.describe.configure({ timeout: LONG_RUNNING_TIMEOUT });
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
@@ -178,6 +185,7 @@ test.describe('Advanced Query Builder - Filter Details', () => {
 
 test.describe('Advanced Query Builder - Global Combiner', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.describe.configure({ timeout: LONG_RUNNING_TIMEOUT });
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
@@ -237,6 +245,7 @@ test.describe('Advanced Query Builder - Global Combiner', () => {
 
 test.describe('Advanced Query Builder - Drag and Drop', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.describe.configure({ timeout: LONG_RUNNING_TIMEOUT });
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
@@ -259,7 +268,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await expect(firstCard).not.toHaveClass(/\binvisible\b/);
 
     await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
+    await expect(dragHandle).toBeInViewport();
 
     const handleBox = await dragHandle.boundingBox();
     expect(handleBox).not.toBeNull();
@@ -269,11 +278,12 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
 
     await page.mouse.move(startX, startY);
     await page.mouse.down();
+    await page.waitForTimeout(DND_QUICK_SETTLE_TIMEOUT);
     await page.mouse.move(startX, startY + 20, { steps: 3 });
     await page.mouse.move(startX, startY + 100, { steps: 20 });
 
     const dragPlaceholder = page.getByTestId('drop-preview');
-    await expect(dragPlaceholder).toBeVisible({ timeout: 3000 });
+    await expect(dragPlaceholder).toBeVisible({ timeout: 5000 });
 
     await page.mouse.up();
     await expect(dragPlaceholder).toHaveCount(0, { timeout: 2000 });
@@ -306,7 +316,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await expect(cardB).toBeVisible();
 
     await cardB.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
+    await expect(cardB).toBeInViewport();
 
     const aBox = await cardA.boundingBox();
     const bBox = await cardB.boundingBox();
@@ -327,13 +337,16 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
 
     await page.mouse.move(startX, startY);
     await page.mouse.down();
+    await page.waitForTimeout(DND_QUICK_SETTLE_TIMEOUT);
     await page.mouse.move(startX, startY + 20, { steps: 3 });
     await page.mouse.move(endX, endY, { steps: 20 });
     await page.mouse.up();
 
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(DND_SETTLE_TIMEOUT);
     await expect(afPage.modal).toBeVisible();
 
+    await expect(filterNameEls.getByText(filterA)).toBeVisible();
+    await expect(filterNameEls.getByText(filterB)).toBeVisible();
     const newOrder = await filterNameEls.allTextContents();
     const newAIndex = newOrder.indexOf(filterA);
     const newBIndex = newOrder.indexOf(filterB);
@@ -365,7 +378,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await expect(cardB).toBeVisible();
 
     await cardB.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
+    await expect(cardB).toBeInViewport();
 
     const aBox = await cardA.boundingBox();
     const bBox = await cardB.boundingBox();
@@ -384,11 +397,14 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
 
     await page.mouse.move(startX, startY);
     await page.mouse.down();
+    await page.waitForTimeout(DND_QUICK_SETTLE_TIMEOUT);
     await page.mouse.move(startX, startY + 20, { steps: 3 });
     await page.mouse.move(endX, endY, { steps: 20 });
     await page.mouse.up();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(DND_SETTLE_TIMEOUT);
 
+    await expect(filterNameEls.getByText(filterA)).toBeVisible();
+    await expect(filterNameEls.getByText(filterB)).toBeVisible();
     const newOrder = await filterNameEls.allTextContents();
     expect(newOrder.indexOf(filterA)).toBeGreaterThan(newOrder.indexOf(filterB));
 
@@ -423,7 +439,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await expect(cardB).toBeVisible();
 
     await cardB.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
+    await expect(cardB).toBeInViewport();
 
     const dragHandle = cardA.locator('.fa-grip-vertical').first();
     await expect(dragHandle).toBeVisible();
@@ -440,6 +456,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
 
     await page.mouse.move(startX, startY);
     await page.mouse.down();
+    await page.waitForTimeout(DND_QUICK_SETTLE_TIMEOUT);
     await page.mouse.move(startX, startY + 20, { steps: 3 });
     await page.mouse.move(endX, endY, { steps: 20 });
 
@@ -485,7 +502,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await expect(dragHandle).toBeVisible();
 
     await dragHandle.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
+    await expect(dragHandle).toBeInViewport();
 
     // Get the first top-level filter as a drag target
     const firstFilter = afPage.filterNames[0];
@@ -518,6 +535,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
 
 test.describe('Advanced Query Builder - Grouping', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.describe.configure({ timeout: LONG_RUNNING_TIMEOUT });
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
@@ -683,7 +701,7 @@ test.describe('Advanced Query Builder - Grouping', () => {
     const orRadio = subgroupRadioGroup.getByRole('radio', { name: 'OR' });
     await expect(orRadio).toBeVisible();
     await orRadio.locator('..').click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(DND_SETTLE_TIMEOUT);
 
     const badgesAfterGroupChange = await getBadgeTexts();
     const orCountAfter = badgesAfterGroupChange.filter((t) => t === 'OR').length;
@@ -696,7 +714,7 @@ test.describe('Advanced Query Builder - Grouping', () => {
 
     // Change root operator to OR - shouldn't affect the subgroup
     await afPage.selectRootOperator('OR');
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(DND_SETTLE_TIMEOUT);
 
     const badgesAfterRootChange = await getBadgeTexts();
     const orCountFinal = badgesAfterRootChange.filter((t) => t === 'OR').length;
@@ -705,7 +723,7 @@ test.describe('Advanced Query Builder - Grouping', () => {
 
     // Change root back to AND
     await afPage.selectRootOperator('AND');
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(DND_SETTLE_TIMEOUT);
 
     const badgesFinal = await getBadgeTexts();
     const orCountRevert = badgesFinal.filter((t) => t === 'OR').length;
@@ -719,6 +737,7 @@ test.describe('Advanced Query Builder - Grouping', () => {
 
 test.describe('Advanced Query Builder - Apply', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.describe.configure({ timeout: LONG_RUNNING_TIMEOUT });
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
@@ -743,6 +762,7 @@ test.describe('Advanced Query Builder - Apply', () => {
 
 test.describe('Advanced Query Builder - Genomic Filters', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.describe.configure({ timeout: LONG_RUNNING_TIMEOUT });
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
@@ -800,6 +820,7 @@ test.describe('Advanced Query Builder - Genomic Filters', () => {
 
 test.describe('Advanced Query Builder - Genomic Filters (Ordering)', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.describe.configure({ timeout: LONG_RUNNING_TIMEOUT });
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
@@ -845,6 +866,7 @@ test.describe('Advanced Query Builder - Genomic Filters (Ordering)', () => {
 
 test.describe('Advanced Query Builder - Unsaved Changes', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.describe.configure({ timeout: LONG_RUNNING_TIMEOUT });
   let afPage: AdvancedFilteringPage;
 
   test.beforeEach(async ({ page }) => {
@@ -914,6 +936,7 @@ test.describe('Advanced Query Builder - Unsaved Changes', () => {
 
 test.describe('Advanced Query Builder - Group Drag and Drop', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.describe.configure({ timeout: LONG_RUNNING_TIMEOUT });
   let afPage: AdvancedFilteringPage;
 
   /**

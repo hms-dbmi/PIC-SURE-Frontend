@@ -9,6 +9,7 @@ import {
   connections as mockConnections,
   picsureUser,
 } from '../mock-data';
+import { userIsLoggedIn } from '../utils';
 
 import type { Branding } from '../../../src/lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
@@ -44,6 +45,8 @@ test.beforeEach(({ page }) => {
 });
 
 test.describe('Not logged in', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
   test('Terms do not open when user is not logged in', async ({ page }) => {
     // When
     await page.goto('/');
@@ -68,6 +71,7 @@ test.describe('Not logged in', () => {
     mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
     await page.goto('/');
     await page.getByTestId('terms-of-service-btn').click();
+    await expect(page.locator('#terms-of-service')).toBeVisible();
 
     // When
     await page.keyboard.press('Escape');
@@ -117,8 +121,8 @@ test.describe('Logged in', () => {
       await page.goto('/');
 
       // Then
-      expect(tosLatestRequest).toBeTruthy();
       await expect(page.locator('#terms-of-service')).toBeVisible();
+      expect(tosLatestRequest).toBeTruthy();
     });
     test('Modal does not allow user to dismiss it', async ({ page }) => {
       // Given
@@ -143,9 +147,9 @@ test.describe('Logged in', () => {
       await page.getByTestId('terms-accept-btn').click();
 
       // Then
+      await expect(page.locator('#terms-of-service')).not.toBeVisible({ timeout: 10000 });
       expect(tosAcceptRequest).toBeTruthy();
       expect(meRequest).toBeTruthy();
-      await expect(page.locator('#terms-of-service')).not.toBeVisible({ timeout: 10000 });
     });
     test('Clicking the reject redirects the user', async ({ page }) => {
       // Given
@@ -161,9 +165,9 @@ test.describe('Logged in', () => {
       await page.getByTestId('terms-reject-btn').click();
 
       // Then
-      expect(logoutRequest).toBeTruthy();
       const rejectionUrl = RegExp('^' + branding.termsOfService.rejectionUrl);
       await expect(page).toHaveURL(rejectionUrl);
+      expect(logoutRequest).toBeTruthy();
     });
     test('TOS modal has close button after acceptance', async ({ page }) => {
       // Given
@@ -174,6 +178,7 @@ test.describe('Logged in', () => {
       await page.getByTestId('terms-accept-btn').click();
 
       // When
+      await userIsLoggedIn(page);
       await page.getByTestId('terms-of-service-btn').click();
 
       // Then
@@ -182,15 +187,19 @@ test.describe('Logged in', () => {
     });
     test('TOS modal is dismissable after acceptance', async ({ page }) => {
       // Given
-      mockApiSuccess(page, Psama.Me, picsureUser);
-      mockApiSuccess(page, Psama.Template, picsureUser.queryTemplate);
-      mockApiSuccess(page, Psama.Accept, '');
+      await mockApiSuccess(page, Psama.Me, picsureUser);
+      await mockApiSuccess(page, Psama.Template, picsureUser.queryTemplate);
+      await mockApiSuccess(page, Psama.Accept, '');
       await page.goto('/');
       await page.getByTestId('terms-accept-btn').click();
+      await expect(page.locator('#terms-of-service')).not.toBeVisible({ timeout: 10000 });
+      await userIsLoggedIn(page);
       await page.getByTestId('terms-of-service-btn').click();
+      await expect(page.locator('#terms-of-service')).toBeVisible();
+      await expect(page.getByTestId('modal-close-button')).toBeVisible();
 
       // When
-      await page.keyboard.press('Escape');
+      await page.getByTestId('modal-close-button').click();
 
       // Then
       await expect(page.locator('#terms-of-service')).not.toBeVisible();
@@ -222,6 +231,7 @@ test.describe('Logged in', () => {
     test('Commit button is disabled when no changes are made', async ({ page }) => {
       // When
       await page.goto('/admin/configuration/terms/edit');
+      await userIsLoggedIn(page);
 
       // Then
       await expect(page.getByTestId('publish-terms-btn')).toBeDisabled();
@@ -229,6 +239,7 @@ test.describe('Logged in', () => {
     test('Commit button is enabeld on content change', async ({ page }) => {
       // Given
       await page.goto('/admin/configuration/terms/edit');
+      await userIsLoggedIn(page);
 
       // When
       await page.locator('#editor div.ql-editor').fill('Some new text');
@@ -239,6 +250,7 @@ test.describe('Logged in', () => {
     test('Confirmation modal appears on commit', async ({ page }) => {
       // Given
       await page.goto('/admin/configuration/terms/edit');
+      await userIsLoggedIn(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
 
       // When
@@ -250,6 +262,7 @@ test.describe('Logged in', () => {
     test('Cancel button does not submit update', async ({ page }) => {
       // Given
       await page.goto('/admin/configuration/terms/edit');
+      await userIsLoggedIn(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
       await page.getByTestId('publish-terms-btn').click();
 
@@ -264,6 +277,7 @@ test.describe('Logged in', () => {
       // Given
       mockHTMLBodySuccess(page, Psama.Update, '');
       await page.goto('/admin/configuration/terms/edit');
+      await userIsLoggedIn(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
       await page.getByTestId('publish-terms-btn').click();
 
@@ -282,6 +296,7 @@ test.describe('Logged in', () => {
       // Given
       mockApiFail(page, Psama.Update, 'failed');
       await page.goto('/admin/configuration/terms/edit');
+      await userIsLoggedIn(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
       await page.getByTestId('publish-terms-btn').click();
 
@@ -304,6 +319,7 @@ test.describe('Logged in', () => {
     test('Non-super-admin user has error and publish is disabled', async ({ page }) => {
       // When
       await page.goto('/admin/configuration/terms/edit');
+      await userIsLoggedIn(page);
 
       // Then
       await expect(page.getByTestId('admin-warning')).toBeVisible();

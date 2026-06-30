@@ -8,6 +8,7 @@ import {
   conceptTreePath,
   conceptsDetailPath,
 } from '../mock-data';
+import { userIsLoggedIn } from '../utils';
 
 const datasetPath = '*/**/picsure/dataset/named';
 
@@ -50,6 +51,7 @@ test.describe('dataset', () => {
     // Given
     await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.getByTestId('ActiveDatasets-table')).toBeVisible();
@@ -59,6 +61,7 @@ test.describe('dataset', () => {
     // Given
     await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.getByTestId('ArchivedDatasets-table')).not.toBeVisible();
@@ -68,6 +71,7 @@ test.describe('dataset', () => {
     // Given
     await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
+    await userIsLoggedIn(page);
 
     // When
     const toggleButton = page.getByTestId('dataset-toggle-archive');
@@ -81,6 +85,7 @@ test.describe('dataset', () => {
     // Given
     await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
+    await userIsLoggedIn(page);
 
     // When
     const copyBtn = page.getByTestId(`${mockData[0].query.uuid}-copy-btn`);
@@ -97,6 +102,7 @@ test.describe('dataset', () => {
       archived: true,
     });
     await page.goto('/dataset');
+    await userIsLoggedIn(page);
 
     // When
     const archiveButton = page.getByTestId(`dataset-action-archive-${mockData[0].uuid}`);
@@ -116,6 +122,7 @@ test.describe('dataset', () => {
       archived: false,
     });
     await page.goto('/dataset');
+    await userIsLoggedIn(page);
     const toggleButton = page.getByTestId('dataset-toggle-archive');
     await toggleButton.click();
 
@@ -131,6 +138,7 @@ test.describe('dataset', () => {
     // Given
     await mockApiFail(page, datasetPath, 'accessdenied');
     await page.goto('/dataset');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.getByTestId('error-alert')).toBeVisible();
@@ -139,6 +147,7 @@ test.describe('dataset', () => {
     // Given
     await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.getByText(mockData[0].name, { exact: true })).toBeVisible();
@@ -147,6 +156,7 @@ test.describe('dataset', () => {
     // Given
     await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.getByTestId('dataset-toggle-archive')).toHaveText('Show deleted datasets');
@@ -155,6 +165,7 @@ test.describe('dataset', () => {
     // Given
     await mockApiSuccess(page, datasetPath, mockData);
     await page.goto('/dataset');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByTestId('dataset-toggle-archive').click();
@@ -167,6 +178,7 @@ test.describe('dataset', () => {
     await mockApiSuccess(page, datasetPath, mockData);
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto('/dataset');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByText(mockData[0].name, { exact: true }).click();
@@ -179,6 +191,7 @@ test.describe('dataset', () => {
     await mockApiSuccess(page, datasetPath, mockData);
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto('/dataset');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByText(mockData[0].query.uuid, { exact: true }).click();
@@ -192,6 +205,7 @@ test.describe('dataset/[uuid]', () => {
     // Given
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // Then
@@ -205,6 +219,7 @@ test.describe('dataset/[uuid]', () => {
     // Given
     await mockApiFail(page, `${datasetPath}/${mockData[0].uuid}`, 'accessdenied');
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.getByTestId('error-alert')).toBeVisible();
@@ -213,6 +228,7 @@ test.describe('dataset/[uuid]', () => {
     // Given
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // When
@@ -225,6 +241,7 @@ test.describe('dataset/[uuid]', () => {
     // Given
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // Then
@@ -234,6 +251,7 @@ test.describe('dataset/[uuid]', () => {
     // Given
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // Then
@@ -244,6 +262,7 @@ test.describe('dataset/[uuid]', () => {
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await mockApiFail(page, '*/**/picsure/proxy/dictionary-api/concepts/detail/**', 'failed');
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // Then
@@ -253,6 +272,7 @@ test.describe('dataset/[uuid]', () => {
     // Given
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // Then
@@ -274,6 +294,7 @@ test.describe('dataset/[uuid]', () => {
     };
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, unknownVersionDataset);
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.getByTestId('error-alert')).toBeVisible();
@@ -284,6 +305,7 @@ test.describe('dataset/[uuid]', () => {
     // Given
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // When - open modal and confirm
@@ -302,6 +324,7 @@ test.describe('dataset/[uuid]', () => {
     // Given
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
 
     // When - open modal and confirm
     await page.getByTestId('restore-filters-btn').click();
@@ -324,6 +347,7 @@ test.describe('dataset/[uuid]', () => {
     // Given - restore filters once to populate the filter store
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
     await page.getByTestId('restore-filters-btn').click();
     await page
@@ -349,6 +373,7 @@ test.describe('dataset/[uuid]', () => {
     // Given - restore filters once to populate the filter store
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
     await page.getByTestId('restore-filters-btn').click();
     await page
@@ -410,6 +435,7 @@ test.describe('dataset/[uuid]', () => {
 
     // When — restore filters
     await page.goto(`/dataset/${anyRecordOfDataset.uuid}`);
+    await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
     await page.getByTestId('restore-filters-btn').click();
     await page
@@ -427,6 +453,7 @@ test.describe('dataset/[uuid]', () => {
     // Given
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
     await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');
 
     // When

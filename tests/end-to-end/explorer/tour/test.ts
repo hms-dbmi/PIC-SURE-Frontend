@@ -8,6 +8,7 @@ import {
   tourSearchResults as mockData,
   conceptsDetailPath,
 } from '../../mock-data';
+import { userIsLoggedIn } from '../../utils';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -20,13 +21,15 @@ test.beforeEach(async ({ page }) => {
 test('Explorer tour button opens instruction modal', async ({ page }) => {
   // Given
   await page.goto('/explorer');
-
-  // When
+  await userIsLoggedIn(page);
   await expect(page.getByTestId('explorer-tour-btn')).toBeVisible();
-  await page.getByTestId('explorer-tour-btn').click();
 
-  // The
-  await expect(page.locator('#modal-component')).toBeVisible();
+  // When — retry click because Skeleton's click-outside handler can dismiss the modal
+  // on the same pointer event that opened it, so the first click sometimes doesn't stick
+  await expect(async () => {
+    await page.getByTestId('explorer-tour-btn').click();
+    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
 });
 test('Tour Finishes', async ({ page }) => {
   // Given
@@ -38,7 +41,11 @@ test('Tour Finishes', async ({ page }) => {
     route.fulfill({ json: detailResponseCat }),
   );
   await page.goto('/explorer');
-  await page.getByTestId('explorer-tour-btn').click();
+  await userIsLoggedIn(page);
+  await expect(async () => {
+    await page.getByTestId('explorer-tour-btn').click();
+    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
   await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
 
   // When
@@ -54,7 +61,8 @@ test('Tour Finishes', async ({ page }) => {
   for (let i = 0; i < stepCountInt + 1; i++) {
     // +1 to account for the Done button
     await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(500);
+    // fade-in and fade-out animations are 200ms, so we account for fade in, reposition, and out
+    await page.waitForTimeout(600);
   }
 
   // Then
@@ -63,19 +71,31 @@ test('Tour Finishes', async ({ page }) => {
 test('Explorer tour starts from modal', async ({ page }) => {
   // Given
   await page.goto('/explorer');
-  await page.getByTestId('explorer-tour-btn').click();
+  await userIsLoggedIn(page);
+  await expect(page.getByTestId('explorer-tour-btn')).toBeVisible();
+  await expect(async () => {
+    await page.getByTestId('explorer-tour-btn').click();
+    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
 
   // When
   await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
 
   // Then
-  await expect(page.locator('#driver-popover-content')).toBeVisible();
+  await expect(page.locator('#driver-popover-content')).toBeVisible({ timeout: 10000 });
 });
 test('Escape key closes tour', async ({ page }) => {
   // Given
   await page.goto('/explorer');
-  await page.getByTestId('explorer-tour-btn').click();
+  await userIsLoggedIn(page);
+  await expect(page.getByTestId('explorer-tour-btn')).toBeVisible();
+  // Retry the open — Skeleton's click-outside handler can dismiss the modal on the same pointer event
+  await expect(async () => {
+    await page.getByTestId('explorer-tour-btn').click();
+    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
   await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
+  await expect(page.locator('#driver-popover-content')).toBeVisible({ timeout: 10000 });
 
   // When
   await page.keyboard.press('Escape');

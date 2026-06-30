@@ -47,11 +47,6 @@ const config: PlaywrightTestConfig = {
       dependencies: ['setup'],
     },
   ],
-  use: {
-    launchOptions: {
-      slowMo: 200,
-    },
-  },
 };
 
 export default config;

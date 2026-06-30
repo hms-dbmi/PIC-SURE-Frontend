@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { afterNavigate } from '$app/navigation';
   import { page } from '$app/state';
   import { config } from '$lib/configuration.svelte';
   import { log, createLog } from '$lib/logger';
@@ -27,16 +28,13 @@
   const googleTag = $derived(config.settings.google.tagManager);
   const googleAnalyticsID = $derived(config.settings.google.analytics);
   const enablePrompt = $derived(
-    !!config.settings.google.tagManager &&
+    (googleTag || googleAnalyticsID) &&
       !!config.branding.privacyPolicy.url &&
       !!config.branding.privacyPolicy.title,
   );
 
   let consent: Consent = $state(defaultConsent);
   let consentPrompt: boolean = $state(false);
-  let consentGranted: boolean = $derived(
-    [consent.personalization_storage, consent.analytics_storage].includes('granted'),
-  );
 
   function addScriptToHead(id: string, scriptId: string = '') {
     const { head } = document;
@@ -47,15 +45,21 @@
     head.insertBefore(script, head.firstChild);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-  function gtag(...args: any[]) {
+  // gtag.js recognizes a command ONLY when the raw `arguments` object is pushed
+  // onto dataLayer. Pushing a plain array (e.g. the `_args` rest param) is
+  // silently ignored and disables ALL tracking. `_args` exists only to type the
+  // call sites below
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function gtag(..._args: any[]) {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
     if (!window.dataLayer) window.dataLayer = [];
-    window.dataLayer.push(args);
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer.push(arguments);
   }
 
   function initialize() {
-    if (!consentGranted) return;
+    // Nothing to load if no tracking IDs are configured.
+    if (!googleTag && !googleAnalyticsID) return;
 
     if (googleTag) {
       addScriptToHead(googleTag, 'tag-manager');
@@ -85,24 +89,47 @@
 
     consentPrompt = false;
 
-    localStorage.setItem('consentMode', JSON.stringify(consent));
+    try {
+      localStorage.setItem('consentMode', JSON.stringify(consent));
+    } catch {
+      // Storage may be unavailable (sandbox/private mode); the choice still
+      // applies for this session via the consent update below.
+    }
 
-    initialize();
+    gtag('consent', 'update', consent);
+  }
+
+  function loadConsent(): Consent | null {
+    try {
+      const stored = localStorage.getItem('consentMode');
+      if (!stored) return null;
+      const parsed: unknown = JSON.parse(stored);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
+      // Merge onto defaults so a valid-but-incomplete value can't yield a malformed consent object.
+      return { ...defaultConsent, ...parsed };
+    } catch {
+      return null;
+    }
   }
 
   onMount(() => {
-    const localConsent = localStorage.getItem('consentMode') || '';
-    consent = localConsent ? JSON.parse(localConsent) : defaultConsent;
-    // If config was already loaded before mount (uncommon), initialize tracking now.
-    if (enablePrompt && localConsent) initialize();
+    const storedConsent = loadConsent();
+    consent = storedConsent ?? defaultConsent;
+
+    initialize();
+
+    if (enablePrompt) {
+      consentPrompt = storedConsent === null;
+    }
   });
 
-  // Config loads asynchronously after mount; open the prompt once enablePrompt becomes true.
-  $effect(() => {
-    if (!enablePrompt) return;
-    if (!localStorage.getItem('consentMode')) {
-      consentPrompt = true;
-    }
+  afterNavigate((navigation) => {
+    if (navigation.type === 'enter' || !googleAnalyticsID) return;
+    gtag('event', 'page_view', {
+      page_title: document.title,
+      page_path: page.url.pathname,
+      page_location: page.url.href,
+    });
   });
 </script>
 

@@ -9,7 +9,7 @@ import {
   searchResults as mockData,
   searchResultPath,
 } from '../../mock-data';
-import { getOption } from '../../utils';
+import { getOption, userIsLoggedIn } from '../../utils';
 
 const countResultPath = '*/**/picsure/v3/query/sync';
 const distributionsPath = '*/**/picsure/proxy/visualization/distributions';
@@ -68,6 +68,7 @@ test.describe('Variable Distributions visualizations', () => {
     });
 
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
     await addFilterFromRow(page, 0);
     await addFilterFromRow(page, 2);
     await page.getByTestId('distributions-btn').click();
@@ -106,6 +107,7 @@ test.describe('Variable Distributions visualizations', () => {
     });
 
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
     await addFilterFromRow(page, 0);
     await page.getByTestId('distributions-btn').click();
 

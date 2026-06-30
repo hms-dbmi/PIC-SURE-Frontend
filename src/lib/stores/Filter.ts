@@ -3,6 +3,7 @@ import { genericUUID, objectUUID } from '$lib/utilities/UUID';
 
 import { browser } from '$app/environment';
 import { user } from '$lib/stores/User';
+import { getConceptDetails } from '$lib/stores/Dictionary';
 import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
 
 import { type Filter, type FilterInterface, createFilterGroup } from '$lib/models/Filter.svelte';
@@ -159,6 +160,20 @@ export function updateFilter(existingUuid: string, filter: Filter) {
   tree.update(oldNode, filter);
   tree.root.uuid = genericUUID();
   filterTree.set(tree);
+}
+
+export function enrichFilterDetails(filter: Filter, conceptPath: string, dataset: string): void {
+  if (!filter.searchResult || filter.searchResult.table || !conceptPath || !dataset) return;
+  getConceptDetails(conceptPath, dataset)
+    .then((detail) => {
+      if (!filter.searchResult) return;
+      filter.searchResult.table = detail.table;
+      filter.searchResult.study = detail.study;
+      if (browser) {
+        sessionStorage.setItem('filterTree', get(filterTree).serialized);
+      }
+    })
+    .catch((error) => console.error('Failed to enrich filter details', error));
 }
 
 export function removeFilter(removeUuid: string) {
