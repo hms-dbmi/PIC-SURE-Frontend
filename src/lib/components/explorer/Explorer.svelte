@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
   import { page } from '$app/state';
@@ -49,14 +50,16 @@
     if ($error) error.set('');
     searchTerm.set(searchInput);
 
-    goto(searchInput ? `${path}?search=${searchInput}` : `${path}`, { replaceState: true });
+    goto(resolve((searchInput ? `${path}?search=${searchInput}` : `${path}`) as '/'), {
+      replaceState: true,
+    });
   }
 
   function reset() {
     resetSearch();
     searchInput = '';
 
-    goto(path);
+    goto(resolve(path as '/'));
   }
 
   onMount(() => {
@@ -90,7 +93,7 @@
           <a
             data-testid="genomic-filter-btn"
             class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-            href="/explorer/genome-filter"
+            href={resolve('/explorer/genome-filter')}
             onclick={() => log(createLog('NAVIGATION', 'explorer.genomic_filter_click'))}
             >Genomic Filtering</a
           >

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
   import * as api from '$lib/api';
@@ -29,7 +30,7 @@
       .post(Psama.TOS + '/update', terms, { 'Content-Type': 'text/html' })
       .then(() => {
         toaster.success({ description: 'Terms have been successfully published.' });
-        goto('/admin/configuration');
+        goto(resolve('/admin/configuration'));
       })
       .catch(() =>
         toaster.error({

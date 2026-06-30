@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import { getDatasetId } from '$lib/ExportStepperManager.svelte';
 </script>
@@ -12,7 +13,8 @@
   <ul class="list-disc list-inside ml-8">
     <li>Selected all variables you would like to include in your export</li>
     <li>
-      <a href="/collaborate" class="anchor">Identified collaborators</a> if using data from other institutions.
+      <a href={resolve('/collaborate')} class="anchor">Identified collaborators</a> if using data from
+      other institutions.
     </li>
   </ul>
   <div class="flex flex-row items-center self-center card p-4 my-4">
@@ -29,6 +31,8 @@
   </p>
   <p>
     Once approved, access to patient-level data will be provisioned in the GIC Service Workbench. To
-    learn more about this, please refer to the <a href="/analyze" class="anchor">Analyze page</a>.
+    learn more about this, please refer to the <a href="/analyze" rel="external" class="anchor"
+      >Analyze page</a
+    >.
   </p>
 </section>

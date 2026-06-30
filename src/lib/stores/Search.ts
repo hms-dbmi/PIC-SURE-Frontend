@@ -65,7 +65,7 @@ export function initHandler() {
         facetsPromise.set(updateFacetsFromSearch());
       }
       return await search(state);
-    } catch (e) {
+    } catch {
       return [];
     } finally {
       loading.set(false);

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
   import type { Indexable } from '$lib/types';
@@ -64,7 +65,7 @@
 
   const rowClickHandler = (path: string) => (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(`/admin/configuration/${path}/${uuid}/edit`);
+    goto(resolve(`/admin/configuration/${path}/${uuid}/edit` as '/'));
   };
   const roleRowCLick = rowClickHandler('role');
   const privilegeRowClick = rowClickHandler('privilege');
@@ -96,7 +97,7 @@
             class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
               ? 'opacity-50 pointer-events-none'
               : ''}"
-            href="/admin/configuration/role/new"
+            href={resolve('/admin/configuration/role/new')}
           >
             + Add Role
           </a>
@@ -128,7 +129,7 @@
             class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
               ? 'opacity-50 pointer-events-none'
               : ''}"
-            href="/admin/configuration/privilege/new"
+            href={resolve('/admin/configuration/privilege/new')}
           >
             + Add Privilege
           </a>
@@ -160,7 +161,7 @@
             class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
               ? 'opacity-50 pointer-events-none'
               : ''}"
-            href="/admin/configuration/connection/new"
+            href={resolve('/admin/configuration/connection/new')}
           >
             + Add Connection
           </a>
@@ -183,7 +184,7 @@
   {#if features.termsOfService}
     <div id="misc-configs">
       <a
-        href="/admin/configuration/terms/edit"
+        href={resolve('/admin/configuration/terms/edit')}
         class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
         >Update Terms of Service</a
       >

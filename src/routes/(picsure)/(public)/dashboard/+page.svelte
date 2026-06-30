@@ -39,8 +39,8 @@
   });
 
   onDestroy(() => {
-    unsubColumns && unsubColumns();
-    unsubRows && unsubRows();
+    unsubColumns?.();
+    unsubRows?.();
   });
 
   function rowClickHandler(row: DashboardRow) {

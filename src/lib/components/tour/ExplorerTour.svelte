@@ -151,7 +151,8 @@
           !dependsOnFeature || flatFeatures[dependsOnFeature],
       )
       .map((step: any) => {
-        const { popover, dependsOnFeature, ...rest } = step;
+        const { popover, ...rest } = step;
+        delete rest.dependsOnFeature;
         const serializedStep: any = {
           ...rest,
           popover: {

@@ -12,6 +12,7 @@
 {:else}
   <a
     href={link || '#'}
+    rel="external"
     title={link ? 'More Info' : 'Link not available'}
     class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!link
       ? 'opacity-50 cursor-not-allowed'

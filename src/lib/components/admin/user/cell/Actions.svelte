@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
   import { toaster } from '$lib/toaster';
@@ -14,7 +15,7 @@
 
   function edit(event: Event) {
     event.stopPropagation();
-    goto(`/admin/users/${data.cell}/edit`);
+    goto(resolve(`/admin/users/${data.cell}/edit`));
   }
 
   async function toggleActivate(active: boolean) {

@@ -62,7 +62,7 @@ abstract class OktaBaseProvider extends AuthProvider implements OktaBaseData {
 
     const newUser: OktaUser = await api.post(this.psamaPath, { code });
     if (newUser && newUser?.oktaIdToken) {
-      newUser.oktaIdToken && localStorage.setItem('oktaIdToken', newUser.oktaIdToken);
+      localStorage.setItem('oktaIdToken', newUser.oktaIdToken);
       return newUser;
     }
 

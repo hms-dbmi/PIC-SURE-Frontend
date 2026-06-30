@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import * as api from '$lib/api';
@@ -160,10 +161,10 @@
         '_blank',
       );
       resetExportStepperState();
-      goto('/explorer');
+      goto(resolve('/explorer'));
     } else {
       resetExportStepperState();
-      goto('/explorer');
+      goto(resolve('/explorer'));
     }
   }
 

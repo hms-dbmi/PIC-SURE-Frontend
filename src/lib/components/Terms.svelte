@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
   import { goto } from '$app/navigation';
@@ -31,10 +32,11 @@
         .post(Psama.TOS + '/accept', {})
         .then(() => {
           const token = getToken();
-          !!token &&
+          if (token) {
             login(token).then(() => {
               modalOpen = false;
             });
+          }
         })
         .catch((err) => {
           console.error(err);
@@ -52,7 +54,7 @@
         if (branding.termsOfService.rejectionUrl) {
           window.location.href = branding.termsOfService.rejectionUrl;
         } else {
-          goto('/login');
+          goto(resolve('/login'));
         }
       });
     } else {

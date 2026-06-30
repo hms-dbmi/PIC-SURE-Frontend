@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
   import { toaster } from '$lib/toaster';
   import { features } from '$lib/configuration';
@@ -54,7 +55,7 @@
     toaster.success({
       description: `Filters restored for ${name ? name + ' dataset' : 'dataset'}.`,
     });
-    goto('/explorer');
+    goto(resolve('/explorer'));
   }
 
   let restoreQueryButton = $derived(

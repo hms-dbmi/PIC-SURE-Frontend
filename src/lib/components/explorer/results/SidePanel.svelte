@@ -28,8 +28,8 @@
   });
 
   onDestroy(() => {
-    unsubFilterStore && unsubFilterStore();
-    unsubExportStore && unsubExportStore();
+    unsubFilterStore?.();
+    unsubExportStore?.();
   });
 </script>
 

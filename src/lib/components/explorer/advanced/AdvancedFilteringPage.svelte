@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto, beforeNavigate } from '$app/navigation';
   import { onMount, onDestroy } from 'svelte';
   import { branding } from '$lib/configuration';
@@ -44,7 +45,7 @@
   function handleDiscard() {
     showUnsavedModal = false;
     bypassGuard = true;
-    goto(backUrl);
+    goto(resolve(backUrl as '/'));
   }
 
   function handleModalApply() {

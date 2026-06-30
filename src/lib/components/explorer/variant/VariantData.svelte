@@ -59,6 +59,7 @@
               data-testid="variant-download-btn"
               class="btn btn-sm preset-tonal-primary border border-primary-500"
               href={varData.downloadUrl}
+              rel="external"
               download="variantData.tsv"
               onclick={() =>
                 log(createLog('EXPORT', 'variant.download', { exportType: exportType }))}

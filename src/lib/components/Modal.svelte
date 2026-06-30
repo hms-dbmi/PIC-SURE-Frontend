@@ -57,7 +57,7 @@
     event?.stopPropagation();
     event?.preventDefault();
     modalOpen = false;
-    onconfirm && onconfirm();
+    onconfirm?.();
   }
 </script>
 

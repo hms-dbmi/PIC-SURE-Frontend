@@ -1,3 +1,4 @@
+import { resolve } from '$app/paths';
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/environment';
 import * as api from '$lib/api';
@@ -248,9 +249,9 @@ function handleLogout(redirect: boolean) {
   user.set({});
   log(createLog('AUTH', 'logout.success'));
   if (redirect) {
-    goto(`/login?redirectTo=${encodeURIComponent(page.url.pathname)}`);
+    goto(resolve(`/login?redirectTo=${encodeURIComponent(page.url.pathname)}`));
   } else {
-    goto('/login');
+    goto(resolve('/login'));
   }
 }
 
@@ -271,7 +272,7 @@ export function getTokenExpiration(token: string) {
   try {
     return JSON.parse(atob(token.split('.')[1])).exp * 1000;
   } catch (error) {
-    throw new Error('Error parsing token: ' + error);
+    throw new Error('Error parsing token: ' + error, { cause: error });
   }
 }
 
