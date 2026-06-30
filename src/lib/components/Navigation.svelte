@@ -78,7 +78,7 @@
     <div id="user-session-avatar" class="content-center">
       {#if $user && $user.privileges && $user.email && isUserLoggedIn()}
         <!-- Logout -->
-        <Popover>
+        <Popover data-testid="user-info">
           {#snippet trigger()}
             <Avatar
               name={($user.email || 'unknown').toUpperCase()}

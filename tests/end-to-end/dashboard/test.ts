@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import { test, mockApiSuccess } from '../custom-context';
 
 import { mockDashboard } from '../mock-data';
+import { userIsLoggedIn } from '../utils';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -13,6 +14,7 @@ test.describe('Dashboard page', () => {
     test('Has a dashboard once request loads', async ({ page }) => {
       // Given
       await page.goto('/dashboard');
+      await userIsLoggedIn(page);
 
       // Then
       await expect(page.locator('#data-container')).toBeVisible();
@@ -20,6 +22,7 @@ test.describe('Dashboard page', () => {
     test('Dashboard renders buttons', async ({ page }) => {
       // Given
       await page.goto('/dashboard');
+      await userIsLoggedIn(page);
 
       // Then
       await expect(page.getByText('More Info')).toHaveCount(mockDashboard.rows.length);
@@ -27,6 +30,7 @@ test.describe('Dashboard page', () => {
     test('Dashboard renders disabled buttons when link is not available', async ({ page }) => {
       // Given
       await page.goto('/dashboard');
+      await userIsLoggedIn(page);
 
       // Then
       await expect(page.getByText('More Info').last()).toHaveClass(
@@ -39,6 +43,7 @@ test.describe('Dashboard page', () => {
         dashboardDrawerList: [{ ...mockDashboard.rows[0] }],
       });
       await page.goto('/dashboard');
+      await userIsLoggedIn(page);
 
       // When
       await page.locator('#row-0-col-0').click();
@@ -55,6 +60,7 @@ test.describe('Dashboard page', () => {
         ...mockDashboard.rows[0],
       });
       await page.goto('/dashboard');
+      await userIsLoggedIn(page);
 
       // When
       await page.locator('#row-0-col-0').click();

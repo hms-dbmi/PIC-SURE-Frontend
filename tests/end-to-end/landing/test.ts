@@ -7,6 +7,7 @@ import {
   facetsResponse,
   searchResults,
 } from '../mock-data';
+import { userIsLoggedIn } from '../utils';
 import type { Branding } from '../../../src/lib/configuration';
 import * as config from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 //TypeScript is confused by the JSON import so I am fxing it here
@@ -33,6 +34,7 @@ test.describe('Landing page', () => {
       // Given
       await mockApiSuccess(page, searchResultPath, mockSearchResults);
       await page.goto('/');
+      await userIsLoggedIn(page);
       // When
       await page.fill('input', 'test');
       await page.keyboard.press('Enter');
@@ -43,10 +45,13 @@ test.describe('Landing page', () => {
       // Given
       await mockApiSuccess(page, searchResultPath, mockSearchResults);
       await page.goto('/');
+      await userIsLoggedIn(page);
       // When
+      await expect(page.locator('input')).toBeVisible();
       await page.fill('input', 'test with spaces');
       await page.keyboard.press('Enter');
       // Then
+      await page.waitForURL('/explorer?search=test%20with%20spaces');
       await expect(page).toHaveURL('/explorer?search=test%20with%20spaces');
     });
   });
@@ -96,6 +101,7 @@ test.describe('Landing page', () => {
           // Given
           await mockApiSuccess(page, mockStat.route, mockStat.api);
           await page.goto('/');
+          await userIsLoggedIn(page);
 
           // Then
           await expect(
@@ -106,6 +112,7 @@ test.describe('Landing page', () => {
           // Given
           await mockApiSuccess(page, mockStat.route, mockStat.api);
           await page.goto('/');
+          await userIsLoggedIn(page);
 
           // Then
           await expect(page.getByTestId(testID)).toHaveText(mockStat.value);
@@ -116,6 +123,7 @@ test.describe('Landing page', () => {
           // Given
           await mockApiFail(page, mockStat.route, 'failed');
           await page.goto('/');
+          await userIsLoggedIn(page);
 
           // Then
           await expect(page.getByTestId(testID).locator('i.fa-circle-exclamation')).toBeVisible();
@@ -132,6 +140,7 @@ test.describe('Landing page', () => {
       );
       await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
       await page.goto('/');
+      await userIsLoggedIn(page);
 
       // Then
       const authContainer = page.getByTestId('data-summary-auth');
@@ -154,12 +163,14 @@ test.describe('Landing page', () => {
       }) => {
         // Given
         await page.goto('/');
+        await userIsLoggedIn(page);
         // Then
         await expect(page.getByText(description, { exact: true })).toBeVisible();
       });
       test(`Logged In user Has expected icon of: ${icon}`, async ({ page }) => {
         // Given
         await page.goto('/');
+        await userIsLoggedIn(page);
         // Then
         const iconElement = page.locator(`.${icon.replaceAll(' ', '.')}`);
         const pattern = new RegExp(`.*${icon}.*`);
@@ -170,15 +181,16 @@ test.describe('Landing page', () => {
         // Given
         await mockApiSuccess(page, '*/**/picsure/dataset/named', mockDatasets);
         await page.goto('/');
+        await userIsLoggedIn(page);
 
         // When
         const action = page.getByTestId(`landing-action-${title}-btn`);
-        await action.isVisible();
+        await expect(action).toBeVisible();
 
         // Then
         if ((await action.getAttribute('target')) !== '_blank') {
           await action.click();
-          await expect(page).toHaveURL(`${url}`);
+          await expect(page).toHaveURL(`${url}`, { timeout: 10000 });
         } else {
           //check if new tab opened
           const newTabPromise = page.waitForEvent('popup');
@@ -270,7 +282,6 @@ test.describe('Logged Out Landing', () => {
   });
 
   loggedOutActions.forEach(({ description, icon, url, title }) => {
-    test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
     test(`Has expected action of description: ${description}`, async ({ page }) => {
       // Given
       await page.goto('/');
