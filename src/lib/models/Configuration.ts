@@ -222,14 +222,48 @@ export type ConfigMap = {
 
 export type ConfigCache = { settings: ConfigObject[]; features: ConfigObject[] };
 
-export const configKinds = {
-  features: 'ui:featureFlag',
-  settings: 'ui:setting',
-};
-
 // Defaults
 
 const defaultFeatures: Indexable = {
+  // NHanes Defaults
+  // ALLOW_DOWNLOAD: true,
+  // ALLOW_EXPORT_ENABLED: true,
+  // ALLOW_EXPORT: true,
+  // ANALYZE_ANALYSIS: false,
+  // ANALYZE_API: true,
+  // COLLABORATE: false,
+  // CONFIRM_DOWNLOAD: false,
+  // DASHBOARD_DRAWER: false,
+  // DASHBOARD: false,
+  // DATA_REQUESTS: false,
+  // DISCOVER: false,
+  // DIST_EXPLORER: true,
+  // DOWNLOAD_AS_PFB: true,
+  // ENABLE_COHORT_DETAILS: false,
+  // ENABLE_GENE_QUERY: false,
+  // ENABLE_HIERARCHY: true,
+  // ENABLE_METRICS: false,
+  // ENABLE_OR_QUERIES: false,
+  // ENABLE_REDCAP_EXPORT: false,
+  // ENABLE_SAMPLE_ID_CHECKBOX: false,
+  // ENABLE_SNP_QUERY: false,
+  // ENABLE_TERRA_EXPORT: false,
+  // ENABLE_TOS: true,
+  // ENFORCE_TOS_ACCEPT: false,
+  // EXPLORE_TOUR: true,
+  // EXPLORER_TOUR: true,
+  // EXPORT_TIMESERIES: true,
+  // FEDERATED: false,
+  // MANUAL_ROLE: false,
+  // OPEN_EXPLORER: true,
+  // OPEN: true,
+  // OR_QUERIES: true,
+  // REQUIRE_CONSENTS: false,
+  // RESTORE_V2_QUERY: false,
+  // SHOW_TREE_STEP: true,
+  // USE_QUERY_TEMPLATE: false,
+  // VARIANT_EXPLORER: true,
+
   ALLOW_DOWNLOAD: true,
   ALLOW_EXPORT_ENABLED: false,
   ALLOW_EXPORT: false,
@@ -276,10 +310,10 @@ const defaultSettings: Indexable = {
   GOOGLE_ANALYTICS_ID: '',
   GOOGLE_TAG_MANAGER_ID: '',
   MAX_DATA_POINTS_FOR_EXPORT: 1000000,
-  OPEN_TOUR_NAME: 'BDC-Open',
+  OPEN_TOUR_NAME: 'NHANES-Open',
   VARIANT_EXPLORER_EXCLUDE_COLUMNS: [],
   VARIANT_EXPLORER_MAX_COUNT: 10000,
-  VARIANT_EXPLORER_TYPE: ExportType.Aggregate,
+  VARIANT_EXPLORER_TYPE: ExportType.Full,
   DOTS_COLORS_CLASS: ['--color-primary-500', '--color-error-500', '--color-surface-400'],
   EXPORT_SYSTEM_FIELDS: '',
 };

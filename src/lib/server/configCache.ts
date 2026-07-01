@@ -1,8 +1,12 @@
 import { error, type NumericRange } from '@sveltejs/kit';
-import { type ConfigObject, configKinds } from '$lib/models/Configuration';
+import { type ConfigObject } from '$lib/models/Configuration';
 import { Picsure } from '$lib/paths';
 
 const ORIGIN = import.meta.env?.VITE_ORIGIN;
+const configKinds = {
+  features: import.meta.env.VITE_API_CONFIG_FEATURES || '',
+  settings: import.meta.env.VITE_API_CONFIG_SETTINGS || '',
+};
 
 type ConfigCache = { settings: ConfigObject[]; features: ConfigObject[] };
 
@@ -82,8 +86,8 @@ export async function getConfig(force: boolean = false): Promise<ConfigCache> {
     console.log('Reaching out to get configs from server');
     const configUrl = `${ORIGIN}/${Picsure.Configuration.Get}`;
     fetching = {
-      features: fetchWithRetry(`${configUrl}?kind=${configKinds.features}`, 'features'),
-      settings: fetchWithRetry(`${configUrl}?kind=${configKinds.settings}`, 'settings'),
+      features: configKinds.features ? fetchWithRetry(`${configUrl}?kind=${configKinds.features}`, 'features') : Promise.resolve([]),
+      settings: configKinds.settings ? fetchWithRetry(`${configUrl}?kind=${configKinds.settings}`, 'settings') : Promise.resolve([]),
     };
   }
   await Promise.allSettled([fetching.features, fetching.settings]).then(
