@@ -236,10 +236,13 @@
 </div>
 
 <style>
-  /* Full-viewport section panels. --panel-h is the measured height of the app
-     shell's scroll container (the nav bar sits outside it, so 100vh would
-     overshoot); without JS the sections fall back to natural height. */
   .api-panel {
     min-height: var(--panel-h, auto);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    :global(#page) {
+      scroll-behavior: smooth;
+    }
   }
 </style>
