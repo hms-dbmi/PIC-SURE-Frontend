@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
   import { branding } from '$lib/configuration';
@@ -50,6 +51,21 @@
 
   let tabSet: string = $state('Python');
 
+  // Sections render as full-height panels. The page scrolls inside the app shell
+  // (the nav bar is outside the scroll area), so the panel height is the scroll
+  // container's height, not 100vh.
+  let panelHeight: number = $state(0);
+
+  onMount(() => {
+    const scroller = document.getElementById('page');
+    if (!scroller) return;
+    const measure = () => (panelHeight = scroller.clientHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(scroller);
+    return () => observer.disconnect();
+  });
+
   function quickStart(workflow: Workflow) {
     tabSet = workflow.tab;
     log(createLog('NAVIGATION', 'api.quick_start', { workflow: workflow.id }));
@@ -60,56 +76,64 @@
   <title>{branding.applicationName} | API</title>
 </svelte:head>
 
-<div id="api-page" class="w-full pb-6">
-  <section id="api-header" class="w-full">
-    <div class="w-[70%] mx-auto pt-8 pb-6">
-      <h1>Programmatic Access with the PIC-SURE API</h1>
-      <p class="mx-0">
-        Search data and build cohorts directly with Python, R, or any HTTP client. Build
-        reproducible cohort-building pipelines.
-      </p>
-    </div>
-  </section>
-
-  <section id="choose-your-workflow" class="w-full bg-primary-50-950">
-    <div class="w-[70%] mx-auto py-8">
-      <h2>Choose Your Workflow</h2>
-      <p class="mx-0">Select the access method that fits your project.</p>
-      <div class="flex flex-wrap gap-6 mt-4">
-        {#each workflows as workflow}
-          <div
-            data-testid="workflow-card-{workflow.id}"
-            class="card border border-surface-200 bg-surface-50-950 p-6 flex flex-col flex-1 basis-64 min-h-64"
-          >
-            <header class="flex items-center justify-between gap-2">
-              <h3 class="text-xl font-bold">{workflow.title}</h3>
-              <span class="badge {workflow.badgeClass}">{workflow.badge}</span>
-            </header>
-            <ul class="list-inside list-disc space-y-2 my-4">
-              {#each workflow.bullets as bullet}
-                <li>{bullet}</li>
-              {/each}
-            </ul>
-            <a
-              href="#quick-start"
-              class="btn preset-filled-primary-500 mt-auto"
-              onclick={() => quickStart(workflow)}>Quick Start</a
-            >
-          </div>
-        {/each}
+<div
+  id="api-page"
+  class="w-full pb-6"
+  style:--panel-h={panelHeight ? `${panelHeight}px` : undefined}
+>
+  <div class="api-panel flex flex-col">
+    <section id="api-header" class="w-full">
+      <div class="w-[70%] mx-auto pt-12 pb-10">
+        <h1>Programmatic Access with the PIC-SURE API</h1>
+        <p class="mx-0">
+          Search data and build cohorts directly with Python, R, or any HTTP client. Build
+          reproducible cohort-building pipelines.
+        </p>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section id="authentication" class="w-full">
-    <div class="w-[70%] mx-auto py-8">
+    <section id="choose-your-workflow" class="w-full flex-1 bg-primary-50-950">
+      <div class="w-[70%] mx-auto py-12">
+        <h2>Choose Your Workflow</h2>
+        <p class="mx-0">Select the access method that fits your project.</p>
+        <div class="flex flex-wrap gap-6 mt-4">
+          {#each workflows as workflow}
+            <div
+              data-testid="workflow-card-{workflow.id}"
+              class="card border border-surface-200 bg-surface-50-950 p-6 flex flex-col flex-1 basis-64 min-h-96"
+            >
+              <header class="flex items-center justify-between gap-2">
+                <h3 class="text-xl font-bold">{workflow.title}</h3>
+                <span class="badge {workflow.badgeClass}">{workflow.badge}</span>
+              </header>
+              <ul class="list-inside list-disc space-y-2 my-4">
+                {#each workflow.bullets as bullet}
+                  <li>{bullet}</li>
+                {/each}
+              </ul>
+              <a
+                href="#quick-start"
+                class="btn preset-filled-primary-500 mt-auto"
+                onclick={() => quickStart(workflow)}>Quick Start</a
+              >
+            </div>
+          {/each}
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section id="authentication" class="api-panel w-full">
+    <div class="w-[70%] mx-auto py-12">
       <h2>Authentication</h2>
       <p class="mx-0">
         Your personal access token authenticates all programmatic requests to PIC-SURE.
       </p>
       <div class="flex flex-wrap gap-8 mt-4">
         {#if loggedIn}
-          <div class="card border border-surface-200 p-6 w-fit max-w-full overflow-x-auto">
+          <div
+            class="card border border-surface-200 p-6 basis-[60%] grow-0 min-h-80 max-w-full overflow-x-auto"
+          >
             <header class="flex items-center gap-4 mb-4">
               <i class="fa-solid fa-user-shield text-3xl text-success-500"></i>
               <div>
@@ -124,7 +148,7 @@
                behavior (public access key request) to be defined in an upcoming ticket. -->
           <div
             data-testid="public-access-placeholder"
-            class="card border border-surface-200 p-6 max-w-xl flex flex-col"
+            class="card border border-surface-200 p-6 basis-[60%] grow-0 min-h-80 flex flex-col"
           >
             <header class="flex items-center gap-4 mb-4">
               <i class="fa-solid fa-globe text-3xl text-primary-500"></i>
@@ -137,7 +161,7 @@
               A public key grants access to open resources, including aggregate counts for
               feasibility assessments.
             </p>
-            <button class="btn preset-filled-primary-500 mt-6 mx-auto" disabled
+            <button class="btn preset-filled-primary-500 my-auto mx-auto" disabled
               >Request Public Key</button
             >
           </div>
@@ -164,8 +188,8 @@
     </div>
   </section>
 
-  <section id="quick-start" class="w-full bg-primary-50-950">
-    <div class="w-[70%] mx-auto py-8">
+  <section id="quick-start" class="api-panel w-full bg-primary-50-950">
+    <div class="w-[70%] mx-auto py-12">
       <h2>Quick Start</h2>
       <p class="mx-0">Copy and run the example code to get started.</p>
       <Tabs
@@ -210,3 +234,12 @@
     </div>
   </section>
 </div>
+
+<style>
+  /* Full-viewport section panels. --panel-h is the measured height of the app
+     shell's scroll container (the nav bar sits outside it, so 100vh would
+     overshoot); without JS the sections fall back to natural height. */
+  .api-panel {
+    min-height: var(--panel-h, auto);
+  }
+</style>
