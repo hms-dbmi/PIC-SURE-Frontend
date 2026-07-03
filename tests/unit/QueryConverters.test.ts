@@ -180,6 +180,32 @@ describe('queryV2ToV3', () => {
       });
     });
 
+    it('strips categoryFilters entries matching exportSystemFields', () => {
+      // Given
+      features.explorer.exportSystemFields = ['\\\\_consents\\\\'];
+      const query = makeV2Query({
+        categoryFilters: {
+          '\\\\dataset\\\\sex\\\\': ['Male', 'Female'],
+          '\\\\_consents\\\\': ['phs000001.c1'],
+        },
+      });
+
+      try {
+        // When
+        const { phenotypicClause } = queryV2ToV3(query);
+
+        // Then
+        expect(phenotypicClause).toMatchObject({
+          type: 'PhenotypicFilter',
+          phenotypicFilterType: 'FILTER',
+          conceptPath: '\\\\dataset\\\\sex\\\\',
+          values: ['Male', 'Female'],
+        });
+      } finally {
+        features.explorer.exportSystemFields = [];
+      }
+    });
+
     it('maps numericFilters entries to FILTER PhenotypicFilters with numeric min/max', () => {
       // Given
       const query = makeV2Query({

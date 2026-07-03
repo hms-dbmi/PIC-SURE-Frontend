@@ -84,10 +84,12 @@ export function estimateV2(query: QueryV2): QueryEstimate {
 
 export function queryV2ToV3(query: QueryV2): QueryV3 {
   const clauses: PhenotypicFilterInterface[] = [];
+  const exportSystemFields = features.explorer.exportSystemFields || [];
 
   for (const [conceptPath, values] of Object.entries(
     query.categoryFilters as Record<string, string[]>,
   )) {
+    if (exportSystemFields.includes(conceptPath)) continue;
     clauses.push({
       type: 'PhenotypicFilter',
       phenotypicFilterType: 'FILTER',
