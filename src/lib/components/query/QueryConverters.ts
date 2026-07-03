@@ -1,3 +1,4 @@
+import { features } from '$lib/configuration';
 import {
   QueryV2,
   QueryV3,
@@ -316,6 +317,10 @@ export type QuerySummaryData = {
 export function loadQuerySummaryData(query: QueryV2 | QueryV3, version: string): QuerySummaryData {
   const q: QueryV3 =
     version === QueryVersion.V3 ? (query as QueryV3) : queryV2ToV3(query as QueryV2);
+
+  const exportSystemFields = features.explorer.exportSystemFields || [];
+  if (exportSystemFields.length > 0)
+    q.select = q.select.filter((select: string) => !exportSystemFields.includes(select));
 
   const errorsList: string[] = [];
   const filterTree = queryToFilterTree(q, errorsList);
