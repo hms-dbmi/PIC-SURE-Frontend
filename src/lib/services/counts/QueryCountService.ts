@@ -7,10 +7,7 @@ import { LRU } from '$lib/utilities/LRU';
 import { log, createLog } from '$lib/logger';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 
-export type CountTransport = (
-  path: string,
-  request: QueryRequestInterfaceV3,
-) => Promise<unknown>;
+export type CountTransport = (path: string, request: QueryRequestInterfaceV3) => Promise<unknown>;
 
 export interface QueryCountServiceOptions {
   transport: CountTransport;

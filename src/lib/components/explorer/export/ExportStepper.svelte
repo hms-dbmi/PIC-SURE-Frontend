@@ -173,7 +173,9 @@
       .filter((filter) => filter.filterType === 'AnyRecordOf')
       .reduce((acc, filter) => acc + filter.concepts.length, 0);
     let participantCount: number =
-      typeof resultCountsState.total === 'number' ? resultCountsState.total : MAX_DATA_POINTS_FOR_EXPORT + 1;
+      typeof resultCountsState.total === 'number'
+        ? resultCountsState.total
+        : MAX_DATA_POINTS_FOR_EXPORT + 1;
     let totalDataPoints: number =
       participantCount + ($filters.length + extraVariables) + $exports.length;
     return totalDataPoints > MAX_DATA_POINTS_FOR_EXPORT;
