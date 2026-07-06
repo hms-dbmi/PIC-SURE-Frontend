@@ -109,7 +109,9 @@
 </svelte:head>
 
 <div id="api-page" class="relative w-full pb-6">
-  <div class="absolute inset-y-0 left-0 w-[13%] hidden xl:block">
+  <div
+    class="absolute inset-y-0 left-0 w-[13%] hidden xl:block bg-surface-50-950 border-r border-surface-200"
+  >
     <nav aria-label="Table of contents" data-testid="toc" class="sticky top-8 pl-6 pr-2">
       <span class="text-sm font-bold">On this page</span>
       <ul class="mt-2 space-y-2 text-sm">
