@@ -2,6 +2,7 @@ import { get } from 'svelte/store';
 import type { Unsubscriber } from 'svelte/store';
 
 import * as api from '$lib/api';
+import { log, createLog } from '$lib/logger';
 import { isToastShowing, toaster } from '$lib/toaster';
 import { allFilters, filterTree, genomicFilters } from '$lib/stores/Filter';
 import {
@@ -85,6 +86,10 @@ export class ResultCounts {
       // Newer load() has superseded this one; committing now would race it.
       if (id !== this.#requestId) return { kind: 'stale' };
       this.#snapshot = snapshot;
+      // NIH compliance log: fires on every committed count, including
+      // LRU-cache hits (the service returns cached snapshots through the
+      // same path, so cache hits are not silent).
+      log(createLog('QUERY', 'query.count_returned', { count: snapshot.count }));
       if (snapshot.summary.hasError) {
         this.#status = 'error';
         return { kind: 'error', snapshot };
