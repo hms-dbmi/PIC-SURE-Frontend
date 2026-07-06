@@ -61,11 +61,9 @@ export function getQueryResources(isOpenAccess: boolean = false): QueryResource[
       ];
 }
 
-// Result counts are single-resource by design and deliberately ignore
-// features.federated: federated count fan-out was never implemented (the old
-// path silently used the first site's partial count as the total) and is now
-// out of scope for counts. The federated resource list still matters for the
-// export path via getQueryResources.
+// Counts always query the single HPDS resource, even when features.federated
+// is on — federated count fan-out was never implemented. Federated resources
+// are only used by the export path, via getQueryResources.
 export function getCountResource(isOpenAccess: boolean = false): QueryResource {
   const _resources = get(resources);
   return useOpenAccess(isOpenAccess)
