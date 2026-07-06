@@ -81,7 +81,7 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
-    const quickStartButtons = page.locator('a', { hasText: 'Quick Start' });
+    const quickStartButtons = page.locator('#choose-your-workflow a', { hasText: 'Quick Start' });
 
     // Then
     await expect(quickStartButtons).toHaveCount(3);
@@ -385,6 +385,77 @@ test.describe('API page logged out', () => {
         await expect(items.nth(index).locator('i.fa-circle-check')).toBeVisible();
       }
     }
+  });
+
+  test('Table of contents lists all page sections', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+
+    // When
+    const links = page.getByTestId('toc').locator('a');
+
+    // Then
+    const expected: Array<[string, string]> = [
+      ['Overview', '#api-header'],
+      ['Choose Your Workflow', '#choose-your-workflow'],
+      ['Authentication', '#authentication'],
+      ['Quick Start', '#quick-start'],
+      ['API Access', '#api-access'],
+    ];
+    await expect(links).toHaveCount(expected.length);
+    for (const [index, [label, href]] of expected.entries()) {
+      await expect(links.nth(index)).toHaveText(label);
+      await expect(links.nth(index)).toHaveAttribute('href', href);
+    }
+  });
+
+  test('Clicking a table of contents link scrolls to the section', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+
+    // When
+    await page.getByTestId('toc').getByRole('link', { name: 'Quick Start' }).click();
+
+    // Then
+    await expect(async () => {
+      const offset = await page.evaluate(() => {
+        const scroller = document.getElementById('page');
+        const section = document.getElementById('quick-start');
+        if (!scroller || !section) return NaN;
+        return Math.round(
+          section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
+        );
+      });
+      expect(Math.abs(offset)).toBeLessThan(4);
+    }).toPass({ timeout: 5000 });
+  });
+
+  test('Table of contents indicates the section in view', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    const authLink = page.getByTestId('toc').getByRole('link', { name: 'Authentication' });
+    await expect(authLink).not.toHaveAttribute('aria-current', 'true');
+
+    // When
+    await page.evaluate(() => {
+      const scroller = document.getElementById('page');
+      const section = document.getElementById('authentication');
+      if (!scroller || !section) return;
+      scroller.scrollTop +=
+        section.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    });
+
+    // Then
+    await expect(authLink).toHaveAttribute('aria-current', 'true');
+  });
+
+  test('Table of contents is hidden on narrow viewports', async ({ page }) => {
+    // Given
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await page.goto('/api');
+
+    // Then
+    await expect(page.getByTestId('toc')).toBeHidden();
   });
 
   test('Legacy /analyze/api redirects to /api when logged out', async ({ page }) => {
