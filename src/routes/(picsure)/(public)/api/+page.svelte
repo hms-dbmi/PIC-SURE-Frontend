@@ -60,50 +60,29 @@
   ];
   let activeSection: string = $state('api-header');
 
-  // Sections render as full-height panels. The page scrolls inside the app shell
-  // (the nav bar is outside the scroll area), so the panel height is the scroll
-  // container's height, not 100vh.
-  let panelHeight: number = $state(0);
-
   onMount(() => {
     const scroller = document.getElementById('page');
     if (!scroller) return;
-    const measure = () => (panelHeight = scroller.clientHeight);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(scroller);
 
-    // Track which section occupies the top 40% of the scroll viewport for the TOC.
-    const intersecting = new Set<string>();
-    let observed = activeSection;
+    // The TOC marks the last section whose top has crossed into the upper 40% of
+    // the scroll viewport. #api-access is too short to ever reach that band, so
+    // bottom-of-page counts as viewing it.
     const updateActive = () => {
-      // #api-access is too short to ever reach the top band; treat bottom-of-page
-      // as viewing it.
-      const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4;
-      activeSection = atBottom ? 'api-access' : observed;
+      if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) {
+        activeSection = 'api-access';
+        return;
+      }
+      const threshold = scroller.getBoundingClientRect().top + scroller.clientHeight * 0.4;
+      let current = tocEntries[0].id;
+      for (const { id } of tocEntries) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= threshold) current = id;
+      }
+      activeSection = current;
     };
-    const sectionObserver = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) intersecting.add(entry.target.id);
-          else intersecting.delete(entry.target.id);
-        }
-        observed = tocEntries.reduce((acc, t) => (intersecting.has(t.id) ? t.id : acc), observed);
-        updateActive();
-      },
-      { root: scroller, rootMargin: '0px 0px -60% 0px' },
-    );
-    tocEntries.forEach(({ id }) => {
-      const el = document.getElementById(id);
-      if (el) sectionObserver.observe(el);
-    });
+    updateActive();
     scroller.addEventListener('scroll', updateActive, { passive: true });
-
-    return () => {
-      observer.disconnect();
-      sectionObserver.disconnect();
-      scroller.removeEventListener('scroll', updateActive);
-    };
+    return () => scroller.removeEventListener('scroll', updateActive);
   });
 
   function quickStart(workflow: Workflow) {
@@ -121,11 +100,7 @@
   <title>{branding.applicationName} | API</title>
 </svelte:head>
 
-<div
-  id="api-page"
-  class="relative w-full pb-6"
-  style:--panel-h={panelHeight ? `${panelHeight}px` : undefined}
->
+<div id="api-page" class="relative w-full pb-6">
   <div class="absolute inset-y-0 left-0 w-[13%] hidden xl:block">
     <nav aria-label="Table of contents" data-testid="toc" class="sticky top-8 pl-6 pr-2">
       <span class="text-sm font-bold">On this page</span>
@@ -292,8 +267,10 @@
 </div>
 
 <style>
+  /* 100cqh = the height of the #page scroll viewport (a size container; see
+     app.css). 100vh would overshoot because the nav bar sits outside it. */
   .api-panel {
-    min-height: var(--panel-h, auto);
+    min-height: 100cqh;
   }
 
   @media (prefers-reduced-motion: no-preference) {
