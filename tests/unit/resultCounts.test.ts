@@ -247,6 +247,12 @@ describe('ResultCounts', () => {
     });
   });
 
+  it('does not log query.count_returned when the snapshot has an error', async () => {
+    mockService.getCount.mockResolvedValueOnce(snapshot(0, true));
+    await state.load(descriptor, false);
+    expect(mockState.logSpy).not.toHaveBeenCalled();
+  });
+
   it('does not log query.count_returned for a stale (superseded) load', async () => {
     const dA = deferred<ResultCountSnapshot>();
     const dB = deferred<ResultCountSnapshot>();

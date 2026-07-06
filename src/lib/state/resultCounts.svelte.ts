@@ -81,14 +81,14 @@ export class ResultCounts {
       // Newer load() has superseded this one; committing now would race it.
       if (id !== this.#requestId) return { kind: 'stale' };
       this.#snapshot = snapshot;
-      // NIH compliance log: fires on every committed count, including
-      // LRU-cache hits (the service returns cached snapshots through the
-      // same path, so cache hits are not silent).
-      log(createLog('QUERY', 'query.count_returned', { count: snapshot.count }));
       if (snapshot.summary.hasError) {
         this.#status = 'error';
         return { kind: 'error', snapshot };
       }
+      // NIH compliance log: must fire for every count shown to the user,
+      // including LRU-cache hits (cached snapshots return through this
+      // same path). Failures are logged by the service as query.cell_failed.
+      log(createLog('QUERY', 'query.count_returned', { count: snapshot.count }));
       this.#status = 'loaded';
       return { kind: 'committed', snapshot };
     } catch {
