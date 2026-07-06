@@ -95,10 +95,7 @@ describe('QueryCountService.getCount', () => {
   });
 
   it('does NOT cache when hasError is true (so a transient failure is retried)', async () => {
-    const transport = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('boom'))
-      .mockResolvedValueOnce(50);
+    const transport = vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(50);
     const service = createQueryCountService({ transport });
     const snap1 = await service.getCount(descriptor, makeProvider(), resource);
     expect(snap1.summary.hasError).toBe(true);

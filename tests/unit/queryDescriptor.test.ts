@@ -5,11 +5,7 @@ vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import { LogicTree } from '$lib/models/LogicTree.svelte';
-import {
-  createFilterGroup,
-  type FilterInterface,
-  type Filter,
-} from '$lib/models/Filter.svelte';
+import { createFilterGroup, type FilterInterface, type Filter } from '$lib/models/Filter.svelte';
 import {
   buildDescriptor,
   stableHash,

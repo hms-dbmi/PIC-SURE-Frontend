@@ -45,9 +45,7 @@ function stableStringify(value: unknown): string {
     .filter(([, v]) => v !== undefined)
     .sort(([a], [b]) => a.localeCompare(b));
   return (
-    '{' +
-    entries.map(([k, v]) => JSON.stringify(k) + ':' + stableStringify(v)).join(',') +
-    '}'
+    '{' + entries.map(([k, v]) => JSON.stringify(k) + ':' + stableStringify(v)).join(',') + '}'
   );
 }
 
