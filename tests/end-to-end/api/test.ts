@@ -449,6 +449,25 @@ test.describe('API page logged out', () => {
     await expect(authLink).toHaveAttribute('aria-current', 'true');
   });
 
+  test('Deep link pre-selects the quick start tab and scrolls to the section', async ({ page }) => {
+    // Given
+    await page.goto('/api#quick-start-r');
+
+    // Then
+    await expect(page.locator('#quick-start .code-block:visible')).toContainText('Requires R');
+    await expect(async () => {
+      const offset = await page.evaluate(() => {
+        const scroller = document.getElementById('page');
+        const section = document.getElementById('quick-start');
+        if (!scroller || !section) return NaN;
+        return Math.round(
+          section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
+        );
+      });
+      expect(Math.abs(offset)).toBeLessThan(4);
+    }).toPass({ timeout: 5000 });
+  });
+
   test('Table of contents is hidden on narrow viewports', async ({ page }) => {
     // Given
     await page.setViewportSize({ width: 1024, height: 800 });
