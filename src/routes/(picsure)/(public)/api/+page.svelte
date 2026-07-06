@@ -131,16 +131,7 @@
       </p>
       <div class="flex flex-wrap gap-8 mt-4">
         {#if loggedIn}
-          <div
-            class="card border border-surface-200 p-6 basis-[60%] grow-0 min-h-80 max-w-full overflow-x-auto"
-          >
-            <header class="flex items-center gap-4 mb-4">
-              <i class="fa-solid fa-user-shield text-3xl text-success-500"></i>
-              <div>
-                <div class="text-lg font-bold">Personal Access Token</div>
-                <div class="text-sm">Login confirmed</div>
-              </div>
-            </header>
+          <div class="basis-[60%] grow-0 min-w-0 max-w-full">
             <UserToken />
           </div>
         {:else}
