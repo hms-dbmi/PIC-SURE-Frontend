@@ -11,28 +11,20 @@ interface QueryResource {
   uuid: string;
 }
 
+// The single-resource HPDS UUID fork (hpdsAuth/hpdsOpen/hpdsOpenV3/search/visualization/aggregate and
+// their VITE_RESOURCE_* reads) is REMOVED: with path-based gateway routing (spec §3.3), the backend is
+// selected by URL path (`/hpds/auth` vs `/hpds/open`), not by a resource UUID. What remains is the
+// federated site registry (`queryable`, discovered via getResources) plus the PSAMA `application` id
+// used for the query template. Federated discovery has no path-based replacement yet and is being
+// removed from the UI separately — see the PR's open questions.
 export interface ResourceMap {
-  visualization: string;
   application: string;
-  aggregate: string;
-  search: string;
-  hpdsOpen: string;
-  hpdsOpenV3: string;
-  hpdsAuth: string;
   queryIdGen: string;
   queryable: QueryResource[];
 }
 
 const defaultResources: ResourceMap = {
-  visualization: (import.meta.env?.VITE_RESOURCE_VIZ || '') as string,
   application: (import.meta.env?.VITE_RESOURCE_APP || '') as string,
-  aggregate: (import.meta.env?.VITE_RESOURCE_AGGREGATE || '') as string,
-  search: (import.meta.env?.VITE_RESOURCE_SEARCH ||
-    import.meta.env?.VITE_RESOURCE_HPDS ||
-    '') as string,
-  hpdsOpen: (import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '') as string,
-  hpdsAuth: (import.meta.env?.VITE_RESOURCE_HPDS || '') as string,
-  hpdsOpenV3: (import.meta.env?.VITE_RESOURCE_OPEN_V3_HPDS || '') as string,
   queryIdGen: (import.meta.env?.VITE_RESOURCE_QUERY_ID_GEN || '') as string,
   queryable: [],
 };
@@ -52,13 +44,11 @@ export const resources: Writable<ResourceMap> = writable(defaultResources);
 
 export function getQueryResources(isOpenAccess: boolean = false): QueryResource[] {
   const _resources = get(resources);
+  // Non-federated: a single logical resource. The `uuid` is now vestigial — the query path selects the
+  // open/auth HPDS backend — so it is left empty; `name` still keys the per-resource stat/result maps.
   return features.federated
     ? _resources.queryable
-    : [
-        useOpenAccess(isOpenAccess)
-          ? { name: 'hpdsOpen', uuid: _resources.hpdsOpenV3 }
-          : { name: 'hpds', uuid: _resources.hpdsAuth },
-      ];
+    : [{ name: useOpenAccess(isOpenAccess) ? 'hpdsOpen' : 'hpds', uuid: '' }];
 }
 
 async function getResources() {

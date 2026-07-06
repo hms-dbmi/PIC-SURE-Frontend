@@ -1,4 +1,3 @@
-import { get } from 'svelte/store';
 import * as api from '$lib/api';
 import { branding, features } from '$lib/configuration';
 import { Picsure } from '$lib/paths';
@@ -26,7 +25,7 @@ import type {
 
 import { isUserLoggedIn } from '$lib/stores/User';
 import { addConsents } from '$lib/stores/Dictionary';
-import { getQueryResources, resources } from '$lib/stores/Resources';
+import { getQueryResources } from '$lib/stores/Resources';
 import { getQueryRequestV3, getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
@@ -139,7 +138,8 @@ async function getOpenPatientCount({
   addFilters,
   isOpenAccess,
 }: RequestMapOptions): Promise<PatientCount> {
-  const resource = get(resources).hpdsOpenV3;
+  // Open backend is selected by the `/hpds/open` path (QueryOpenSync); no resource UUID needed.
+  const resource = '';
   const request: QueryRequestInterfaceV3 = addFilters
     ? getQueryRequestV3(!isOpenAccess, resource, 'CROSS_COUNT')
     : getBlankQueryRequestV3(isOpenAccess, resource, 'CROSS_COUNT');
