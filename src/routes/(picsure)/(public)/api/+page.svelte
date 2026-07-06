@@ -51,6 +51,15 @@
 
   let tabSet: string = $state('Python');
 
+  const tocEntries = [
+    { id: 'api-header', label: 'Overview' },
+    { id: 'choose-your-workflow', label: 'Choose Your Workflow' },
+    { id: 'authentication', label: 'Authentication' },
+    { id: 'quick-start', label: 'Quick Start' },
+    { id: 'api-access', label: 'API Access' },
+  ];
+  let activeSection: string = $state('api-header');
+
   // Sections render as full-height panels. The page scrolls inside the app shell
   // (the nav bar is outside the scroll area), so the panel height is the scroll
   // container's height, not 100vh.
@@ -63,12 +72,48 @@
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(scroller);
-    return () => observer.disconnect();
+
+    // Track which section occupies the top 40% of the scroll viewport for the TOC.
+    const intersecting = new Set<string>();
+    let observed = activeSection;
+    const updateActive = () => {
+      // #api-access is too short to ever reach the top band; treat bottom-of-page
+      // as viewing it.
+      const atBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4;
+      activeSection = atBottom ? 'api-access' : observed;
+    };
+    const sectionObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) intersecting.add(entry.target.id);
+          else intersecting.delete(entry.target.id);
+        }
+        observed = tocEntries.reduce((acc, t) => (intersecting.has(t.id) ? t.id : acc), observed);
+        updateActive();
+      },
+      { root: scroller, rootMargin: '0px 0px -60% 0px' },
+    );
+    tocEntries.forEach(({ id }) => {
+      const el = document.getElementById(id);
+      if (el) sectionObserver.observe(el);
+    });
+    scroller.addEventListener('scroll', updateActive, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      sectionObserver.disconnect();
+      scroller.removeEventListener('scroll', updateActive);
+    };
   });
 
   function quickStart(workflow: Workflow) {
     tabSet = workflow.tab;
     log(createLog('NAVIGATION', 'api.quick_start', { workflow: workflow.id }));
+  }
+
+  function tocClick(id: string) {
+    activeSection = id;
+    log(createLog('NAVIGATION', 'api.toc_click', { section: id }));
   }
 </script>
 
@@ -78,9 +123,29 @@
 
 <div
   id="api-page"
-  class="w-full pb-6"
+  class="relative w-full pb-6"
   style:--panel-h={panelHeight ? `${panelHeight}px` : undefined}
 >
+  <div class="absolute inset-y-0 left-0 w-[13%] hidden xl:block">
+    <nav aria-label="Table of contents" data-testid="toc" class="sticky top-8 pl-6 pr-2">
+      <span class="text-sm font-bold">On this page</span>
+      <ul class="mt-2 space-y-2 text-sm">
+        {#each tocEntries as entry}
+          <li>
+            <a
+              href="#{entry.id}"
+              class="hover:underline {activeSection === entry.id
+                ? 'font-bold text-primary-500'
+                : ''}"
+              aria-current={activeSection === entry.id ? 'true' : undefined}
+              onclick={() => tocClick(entry.id)}>{entry.label}</a
+            >
+          </li>
+        {/each}
+      </ul>
+    </nav>
+  </div>
+
   <div class="api-panel flex flex-col">
     <section id="api-header" class="w-full">
       <div class="w-[70%] mx-auto pt-12 pb-10">
