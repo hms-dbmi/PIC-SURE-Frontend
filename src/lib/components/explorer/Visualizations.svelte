@@ -22,7 +22,6 @@
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { Picsure } from '$lib/paths';
-  import { resources } from '$lib/stores/Resources';
   import { isOpenAccess } from '$lib/AccessState';
   import LogicTreeSummary from '$lib/components/explorer/advanced/LogicTreeSummary.svelte';
   import { filters, filterTree, genomicFilters } from '$lib/stores/Filter';
@@ -66,14 +65,18 @@
       subtitle: getSubtitle(data.conceptPath),
     });
 
-    const query = getQueryRequestV3(!isOpenAccess(), $resources.visualization);
+    const query = getQueryRequestV3(!isOpenAccess());
 
+    // ⚠ GATEWAY GAP (see paths.ts VIZ): the visualization service still selects its HPDS backend from
+    // `hpdsResourceUUID` in the body, which came from the now-removed resource registry. This is left
+    // empty pending the wiring of the gateway `/visualization` route and the viz service's own
+    // migration to path-based backend selection. Tracked in the PR's open questions.
     await api
       .post(
         Picsure.Visualization.Distributions,
         {
           query: query.query,
-          hpdsResourceUUID: isOpenAccess() ? $resources.hpdsOpenV3 : $resources.hpdsAuth,
+          hpdsResourceUUID: '',
         },
         undefined,
         !isOpenAccess(),
