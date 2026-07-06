@@ -13,7 +13,7 @@ vi.mock('$lib/configuration.svelte', () => ({ config: { features: mockFeatures }
 vi.mock('$lib/api', () => ({ get: vi.fn(), post: vi.fn() }));
 vi.mock('$lib/toaster', () => ({ toaster: { add: vi.fn() } }));
 
-import { resources, getQueryResources } from '$lib/stores/Resources';
+import { resources, getQueryResources, getCountResource } from '$lib/stores/Resources';
 
 describe('getQueryResources', () => {
   const authUuid = 'auth-uuid-123';
@@ -92,6 +92,34 @@ describe('getQueryResources', () => {
 
     const result = getQueryResources(true);
     expect(result).toEqual(queryableResources);
+  });
+
+  describe('getCountResource (single-resource by design)', () => {
+    it('returns hpdsAuth when isOpenAccess is false', () => {
+      expect(getCountResource(false)).toEqual({ name: 'hpds', uuid: authUuid });
+    });
+
+    it('returns hpdsAuth by default (no argument)', () => {
+      expect(getCountResource()).toEqual({ name: 'hpds', uuid: authUuid });
+    });
+
+    it('returns hpdsOpenV3 when isOpenAccess is true and explore-without-login is disabled', () => {
+      expect(getCountResource(true)).toEqual({ name: 'hpdsOpen', uuid: openV3Uuid });
+    });
+
+    it('returns hpdsAuth when explore-without-login is enabled even if isOpenAccess is true', () => {
+      mockFeatures.explorer.open = true;
+      mockFeatures.login.open = true;
+
+      expect(getCountResource(true)).toEqual({ name: 'hpds', uuid: authUuid });
+    });
+
+    it('ignores the federated flag: still returns the single HPDS resource', () => {
+      mockFeatures.federated = true;
+
+      expect(getCountResource(false)).toEqual({ name: 'hpds', uuid: authUuid });
+      expect(getCountResource(true)).toEqual({ name: 'hpdsOpen', uuid: openV3Uuid });
+    });
   });
 
   describe('env without open HPDS resource (hpdsOpenV3 is blank)', () => {

@@ -11,7 +11,8 @@ const mockState = vi.hoisted(() => {
     toasterErrorSpy: vi.fn(),
     isToastShowingSpy: vi.fn().mockReturnValue(false),
     loadResourcesSpy: vi.fn(),
-    getQueryResourcesSpy: vi.fn().mockReturnValue([{ name: 'hpds', uuid: 'r1' }]),
+    getCountResourceSpy: vi.fn().mockReturnValue({ name: 'hpds', uuid: 'r1' }),
+    logSpy: vi.fn(),
     buildDescriptorSpy: vi.fn((inputs: { isOpenAccess: boolean }) => ({
       isOpenAccess: inputs.isOpenAccess,
       phenotypicClause: null,
@@ -38,7 +39,16 @@ vi.mock('$lib/stores/Filter', () => ({
 vi.mock('$lib/stores/Resources', () => ({
   loading: mockState.resourcesLoadingStore,
   loadResources: mockState.loadResourcesSpy,
-  getQueryResources: mockState.getQueryResourcesSpy,
+  getCountResource: mockState.getCountResourceSpy,
+}));
+
+vi.mock('$lib/logger', () => ({
+  log: mockState.logSpy,
+  createLog: vi.fn((category: string, event: string, data?: unknown) => ({
+    category,
+    event,
+    data,
+  })),
 }));
 
 vi.mock('$lib/services/counts/queryDescriptor.svelte', () => ({
@@ -104,7 +114,8 @@ describe('ResultCounts', () => {
     mockState.toasterErrorSpy.mockClear();
     mockState.isToastShowingSpy.mockClear().mockReturnValue(false);
     mockState.loadResourcesSpy.mockClear();
-    mockState.getQueryResourcesSpy.mockClear().mockReturnValue([{ name: 'hpds', uuid: 'r1' }]);
+    mockState.getCountResourceSpy.mockClear().mockReturnValue({ name: 'hpds', uuid: 'r1' });
+    mockState.logSpy.mockClear();
     mockState.buildDescriptorSpy.mockClear();
     mockState.allFiltersStore.set([]);
   });
@@ -216,12 +227,43 @@ describe('ResultCounts', () => {
     expect(state.snapshot.summary.total).toBe(2222);
   });
 
-  it('returns a committed empty snapshot when no resources are configured', async () => {
-    mockState.getQueryResourcesSpy.mockReturnValueOnce([]);
-    const result = await state.load(descriptor, false);
-    expect(result.kind).toBe('committed');
-    expect(state.snapshot.summary.total).toBe(0);
-    expect(mockService.getCount).not.toHaveBeenCalled();
+  it('queries the single count resource resolved by getCountResource', async () => {
+    mockService.getCount.mockResolvedValueOnce(snapshot(42));
+    await state.load(descriptor, true);
+    expect(mockState.getCountResourceSpy).toHaveBeenCalledWith(true);
+    expect(mockService.getCount).toHaveBeenCalledWith(descriptor, expect.anything(), {
+      name: 'hpds',
+      uuid: 'r1',
+    });
+  });
+
+  it('logs query.count_returned when a snapshot commits', async () => {
+    mockService.getCount.mockResolvedValueOnce(snapshot(42));
+    await state.load(descriptor, false);
+    expect(mockState.logSpy).toHaveBeenCalledWith({
+      category: 'QUERY',
+      event: 'query.count_returned',
+      data: { count: 42 },
+    });
+  });
+
+  it('does not log query.count_returned for a stale (superseded) load', async () => {
+    const dA = deferred<ResultCountSnapshot>();
+    const dB = deferred<ResultCountSnapshot>();
+    mockService.getCount.mockReturnValueOnce(dA.promise).mockReturnValueOnce(dB.promise);
+
+    const promiseA = state.load(descriptor, false);
+    const promiseB = state.load(descriptor, false);
+
+    dB.resolve(snapshot(2222));
+    await promiseB;
+    dA.resolve(snapshot(1111));
+    await promiseA;
+
+    expect(mockState.logSpy).toHaveBeenCalledTimes(1);
+    expect(mockState.logSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'query.count_returned', data: { count: 2222 } }),
+    );
   });
 
   it('clear() resets snapshot + status and forwards to service.clear()', () => {

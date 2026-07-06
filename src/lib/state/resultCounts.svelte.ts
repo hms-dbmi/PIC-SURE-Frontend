@@ -8,7 +8,7 @@ import { allFilters, filterTree, genomicFilters } from '$lib/stores/Filter';
 import {
   loading as resourcesPromise,
   loadResources,
-  getQueryResources,
+  getCountResource,
 } from '$lib/stores/Resources';
 import { subscribeOnChange } from '$lib/utilities/Subscribers';
 import { buildDescriptor, stableHash } from '$lib/services/counts/queryDescriptor.svelte';
@@ -76,12 +76,9 @@ export class ResultCounts {
     this.#status = 'loading';
     try {
       const provider = resultProviders['query:patientCount'];
-      const [resource] = getQueryResources(isOpenAccess);
-      if (!resource) {
-        if (id !== this.#requestId) return { kind: 'stale' };
-        this.#status = 'loaded';
-        return { kind: 'committed', snapshot: EMPTY_SNAPSHOT };
-      }
+      // Counts are single-resource by design (never federated) — see
+      // getCountResource for the rationale.
+      const resource = getCountResource(isOpenAccess);
       const snapshot = await this.#service.getCount(descriptor, provider, resource);
       // Newer load() has superseded this one; committing now would race it.
       if (id !== this.#requestId) return { kind: 'stale' };
