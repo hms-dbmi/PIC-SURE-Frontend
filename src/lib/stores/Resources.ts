@@ -51,14 +51,7 @@ export const loading: Writable<Promise<void>> = writable(Promise.resolve());
 export const resources: Writable<ResourceMap> = writable(defaultResources);
 
 export function getQueryResources(isOpenAccess: boolean = false): QueryResource[] {
-  const _resources = get(resources);
-  return config.features.federated
-    ? _resources.queryable
-    : [
-        useOpenAccess(isOpenAccess)
-          ? { name: 'hpdsOpen', uuid: _resources.hpdsOpenV3 }
-          : { name: 'hpds', uuid: _resources.hpdsAuth },
-      ];
+  return config.features.federated ? get(resources).queryable : [getCountResource(isOpenAccess)];
 }
 
 // Counts always query the single HPDS resource, even when features.federated
