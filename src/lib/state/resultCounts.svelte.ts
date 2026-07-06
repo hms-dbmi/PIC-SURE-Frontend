@@ -76,8 +76,6 @@ export class ResultCounts {
     this.#status = 'loading';
     try {
       const provider = resultProviders['query:patientCount'];
-      // Counts are single-resource by design (never federated) — see
-      // getCountResource for the rationale.
       const resource = getCountResource(isOpenAccess);
       const snapshot = await this.#service.getCount(descriptor, provider, resource);
       // Newer load() has superseded this one; committing now would race it.

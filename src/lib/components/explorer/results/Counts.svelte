@@ -16,9 +16,6 @@
   // used by Summary/ExportStepper for arithmetic, and strips the ±N obfuscation
   // suffix that the backend returns on the open-access cross-count path.
   let count = $derived(countResult([snapshot.count]));
-  // Treat the error case the same as "never loaded" — the OLD multi-cell
-  // path showed N/A whenever every cell failed; in the single-cell rebuild,
-  // hasError IS the all-cells-failed case.
   let hasCount = $derived(snapshot.descriptorKey !== '' && !hasError);
 </script>
 
