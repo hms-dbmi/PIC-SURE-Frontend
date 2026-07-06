@@ -61,6 +61,18 @@ export function getQueryResources(isOpenAccess: boolean = false): QueryResource[
       ];
 }
 
+// Result counts are single-resource by design and deliberately ignore
+// features.federated: federated count fan-out was never implemented (the old
+// path silently used the first site's partial count as the total) and is now
+// out of scope for counts. The federated resource list still matters for the
+// export path via getQueryResources.
+export function getCountResource(isOpenAccess: boolean = false): QueryResource {
+  const _resources = get(resources);
+  return useOpenAccess(isOpenAccess)
+    ? { name: 'hpdsOpen', uuid: _resources.hpdsOpenV3 }
+    : { name: 'hpds', uuid: _resources.hpdsAuth };
+}
+
 async function getResources() {
   if (get(resources).queryable.length > 0) return;
 
