@@ -64,6 +64,14 @@
     const scroller = document.getElementById('page');
     if (!scroller) return;
 
+    // Deep links like /api#quick-start-python pre-select the language tab. The
+    // suffixed ids have no DOM element, so scroll to the section ourselves.
+    const deepLink = window.location.hash.match(/^#quick-start-(python|r|api)$/);
+    if (deepLink) {
+      tabSet = { python: 'Python', r: 'R', api: 'API' }[deepLink[1]] ?? tabSet;
+      document.getElementById('quick-start')?.scrollIntoView({ behavior: 'instant' });
+    }
+
     // The TOC marks the last section whose top has crossed into the upper 40% of
     // the scroll viewport. #api-access is too short to ever reach that band, so
     // bottom-of-page counts as viewing it.
