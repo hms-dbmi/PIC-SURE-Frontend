@@ -2,14 +2,13 @@
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { features } from '$lib/configuration';
   import type AuthProvider from '$lib/models/AuthProvider';
   import { createInstance } from '$lib/AuthProviderRegistry';
   import { browser } from '$app/environment';
   import { panelOpen } from '$lib/stores/SidePanel';
   import Loading from '$lib/components/Loading.svelte';
   import type { User } from '$lib/models/User';
-  import { login, setToken } from '$lib/stores/User';
+  import { login } from '$lib/stores/User';
   import { log, createLog } from '$lib/logger';
 
   async function attemptUserLogin() {
@@ -37,21 +36,18 @@
       return new Error('Provider configuration error');
     }
 
-    await providerInstance.authenticate(hashParts).then((user: User | undefined) => {
+    await providerInstance.authenticate(hashParts).then(async (user: User | undefined) => {
       if (!user || !user?.token) {
         throw new Error('User not found');
       }
 
+      // Hydrate the user store (via login) BEFORE logging: createLog reads user_id/email/roles
+      // from the store, which is empty until login() runs — logging first yields a blank event.
+      await login(user.token);
+
       log(createLog('LOGIN', 'login.success', { provider: providerType }, { status: 200 }));
 
-      // api returns as string
-      user.acceptedTOS = String(user.acceptedTOS) === 'true';
-      if (features.enforceTermsOfService && !user.acceptedTOS) {
-        setToken(user.token);
-        goto(redirectTo);
-      } else {
-        login(user.token).then(() => goto(redirectTo));
-      }
+      goto(redirectTo);
     });
   }
 
