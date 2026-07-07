@@ -10,17 +10,13 @@
   import { clearFilters } from '$lib/stores/Filter';
   import { clearExports } from '$lib/stores/Export';
   import { sanitizeHTML } from '$lib/utilities/HTML';
+  import type { TourDataType } from '$lib/models/Tour';
   import { log, createLog, getPageContext } from '$lib/logger';
 
   import Modal from '$lib/components/Modal.svelte';
   import Loading from '$lib/components/Loading.svelte';
 
-  let {
-    tourConfig,
-  }: {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    tourConfig: any;
-  } = $props();
+  let { tourConfig }: { tourConfig: TourDataType } = $props();
 
   let started: boolean = $state(false);
   let openModal: boolean = $state(false);

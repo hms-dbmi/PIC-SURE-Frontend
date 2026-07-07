@@ -3,16 +3,14 @@
   import { config } from '$lib/configuration.svelte';
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import TourData from '$lib/assets/TourConfiguration.json';
+  import type { TourDataType } from '$lib/models/Tour';
 
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  const Tour: Record<string, any> = TourData;
-  const tourName = config.settings.tour.open;
+  const Tour: Record<string, TourDataType> = TourData;
+  const tourName = $derived(config.settings.tour.open);
 
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  let openTour: any = $state(undefined);
-  if (tourName !== undefined && tourName in Tour) {
-    openTour = Tour[tourName];
-  }
+  let openTour: TourDataType = $derived(
+    tourName !== undefined && tourName in Tour ? Tour[tourName] : Tour['NHANES-Auth'],
+  );
 </script>
 
 <svelte:head>

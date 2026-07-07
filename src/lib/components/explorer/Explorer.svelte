@@ -16,6 +16,7 @@
     resetSearch,
     loading as isLoading,
   } from '$lib/stores/Search';
+  import type { TourDataType } from '$lib/models/Tour';
 
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
   import SearchDatatable from '$lib/components/datatable/RemoteTable.svelte';
@@ -25,12 +26,7 @@
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
   import { log, createLog } from '$lib/logger';
 
-  interface Props {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    tourConfig: any;
-  }
-
-  let { tourConfig }: Props = $props();
+  let { tourConfig }: { tourConfig: TourDataType } = $props();
 
   let searchInput = $state(page.url.searchParams.get('search') || $searchTerm || '');
   const tableName = 'ExplorerTable';
