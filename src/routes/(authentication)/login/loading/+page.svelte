@@ -2,13 +2,14 @@
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { features } from '$lib/configuration';
   import type AuthProvider from '$lib/models/AuthProvider';
   import { createInstance } from '$lib/AuthProviderRegistry';
   import { browser } from '$app/environment';
   import { panelOpen } from '$lib/stores/SidePanel';
   import Loading from '$lib/components/Loading.svelte';
   import type { User } from '$lib/models/User';
-  import { login } from '$lib/stores/User';
+  import { login, setToken } from '$lib/stores/User';
   import { log, createLog } from '$lib/logger';
 
   async function attemptUserLogin() {
@@ -41,11 +42,29 @@
         throw new Error('User not found');
       }
 
-      // Hydrate the user store (via login) BEFORE logging: createLog reads user_id/email/roles
-      // from the store, which is empty until login() runs — logging first yields a blank event.
-      await login(user.token);
-
-      log(createLog('LOGIN', 'login.success', { provider: providerType }, { status: 200 }));
+      // api returns as string
+      user.acceptedTOS = String(user.acceptedTOS) === 'true';
+      if (features.enforceTermsOfService && !user.acceptedTOS) {
+        setToken(user.token);
+        log(
+          createLog(
+            'LOGIN',
+            'login.success',
+            { provider: providerType },
+            {
+              status: 200,
+              logged_in: true,
+              user_id: user.userId ?? user.email,
+              user_email: user.email?.includes('@') ? user.email : undefined,
+            },
+          ),
+        );
+      } else {
+        // Hydrate the store via login() before logging so createLog reads user_id/email/roles
+        // from it; without this the store is empty and the event is logged blank.
+        await login(user.token);
+        log(createLog('LOGIN', 'login.success', { provider: providerType }, { status: 200 }));
+      }
 
       goto(redirectTo);
     });
