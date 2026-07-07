@@ -67,10 +67,8 @@
 
     const query = getQueryRequestV3(!isOpenAccess());
 
-    // ⚠ GATEWAY GAP (see paths.ts VIZ): the visualization service still selects its HPDS backend from
-    // `hpdsResourceUUID` in the body, which came from the now-removed resource registry. This is left
-    // empty pending the wiring of the gateway `/visualization` route and the viz service's own
-    // migration to path-based backend selection. Tracked in the PR's open questions.
+    // `hpdsResourceUUID` is a legacy field: the viz service selects its HPDS backend by path and
+    // accepts UUID-less requests.
     await api
       .post(
         Picsure.Visualization.Distributions,

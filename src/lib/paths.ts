@@ -4,10 +4,6 @@
 const PREFIX = 'picsure';
 const DICT = `${PREFIX}/dictionary`;
 const UPLOADER = `${PREFIX}/uploader`;
-// ⚠ GATEWAY GAP: the deployed gateway application.yml does NOT yet declare a `/visualization` route
-// (only logging/dictionary/uploader/hpds/configuration/dataset + the legacy catch-all). Until that
-// route is wired (a separate pic-sure-gateway change), requests to `picsure/visualization` fall
-// through the catch-all to WildFly, which has no such endpoint, and 404. Tracked in the PR.
 const VIZ = `${PREFIX}/visualization`;
 // HPDS ingress is exactly two path prefixes (spec §3.4, decision S-M1): the backend is chosen by the
 // URL PATH — `/hpds/auth` (direct, non-obfuscated) vs `/hpds/open` (aggregate/obfuscated) — NOT by a
