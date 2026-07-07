@@ -88,7 +88,7 @@ jobs:
       - name: Run Svelte check
         run: pnpm run check
 
-  unit:
+  vitest:
     runs-on: ubuntu-22.04
     needs: setup
     steps:
