@@ -20,11 +20,6 @@ export const LocalServer = {
   Configs: `${LOCAL}/config`,
 };
 
-// The query-service search endpoints keep a `{resourceId}` path segment for contract parity, but it is
-// ignored for routing (the backend is selected by `/hpds/{auth,open}`). This nil placeholder fills that
-// segment now that clients no longer look up a resource UUID from the removed registry.
-export const NIL_RESOURCE_ID = '00000000-0000-0000-0000-000000000000';
-
 export const Picsure = {
   Concepts: `${DICT}/concepts`,
   Concept: {
@@ -42,6 +37,8 @@ export const Picsure = {
   Dictionary: DICT,
   Facets: `${DICT}/facets`,
   Search: `${HPDS_AUTH}/search`,
+  /** Genomic value search (paginated); the legacy `{resourceId}` placeholder segment is gone. */
+  SearchValues: `${HPDS_AUTH}/search/values`,
   QueryV2: `${HPDS_AUTH}/query`,
   QueryV2Sync: `${HPDS_AUTH}/query/sync`,
   /** Open access (discover) queries hit the obfuscated open backend. */
