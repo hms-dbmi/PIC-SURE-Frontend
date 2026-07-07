@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import * as api from '$lib/api';
   import { toaster } from '$lib/toaster';
-  import { Picsure, NIL_RESOURCE_ID } from '$lib/paths';
+  import { Picsure } from '$lib/paths';
   import { selectedGenes } from '$lib/stores/GeneFilter';
 
   import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
@@ -34,7 +34,7 @@
     loading = true;
     try {
       const response = await api.get(
-        `${Picsure.Search}/${NIL_RESOURCE_ID}/values/?` +
+        `${Picsure.SearchValues}?` +
           new URLSearchParams({
             genomicConceptPath: 'Gene_with_variant',
             query: search,
