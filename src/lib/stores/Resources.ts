@@ -12,7 +12,7 @@ interface QueryResource {
 }
 
 // The single-resource HPDS UUID fork (hpdsAuth/hpdsOpen/hpdsOpenV3/search/visualization/aggregate and
-// their VITE_RESOURCE_* reads) is REMOVED: with path-based gateway routing (spec §3.3), the backend is
+// their VITE_RESOURCE_* reads) is REMOVED: with path-based gateway routing, the backend is
 // selected by URL path (`/hpds/auth` vs `/hpds/open`), not by a resource UUID. What remains is the
 // federated site registry (`queryable`, discovered via getResources) plus the PSAMA `application` id
 // used for the query template. Federated discovery has no path-based replacement yet and is being

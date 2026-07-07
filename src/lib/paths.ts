@@ -1,11 +1,11 @@
 // httpd strips the leading `/picsure/` before the gateway sees the request, so the frontend keeps
 // the `picsure/` prefix and only the suffix changes. The legacy `/proxy/{container}` relay is gone —
-// each service now has a clean gateway prefix (spec §3.7): `/dictionary`, `/uploader`, `/logging`, …
+// each service now has a clean gateway prefix: `/dictionary`, `/uploader`, `/logging`, …
 const PREFIX = 'picsure';
 const DICT = `${PREFIX}/dictionary`;
 const UPLOADER = `${PREFIX}/uploader`;
 const VIZ = `${PREFIX}/visualization`;
-// HPDS ingress is exactly two path prefixes (spec §3.4, decision S-M1): the backend is chosen by the
+// HPDS ingress is exactly two path prefixes: the backend is chosen by the
 // URL PATH — `/hpds/auth` (direct, non-obfuscated) vs `/hpds/open` (aggregate/obfuscated) — NOT by a
 // resource UUID in the request body. The query-service selects HPDS_AUTH_URL/HPDS_OPEN_URL from the path.
 const HPDS_AUTH = `${PREFIX}/hpds/auth`;
