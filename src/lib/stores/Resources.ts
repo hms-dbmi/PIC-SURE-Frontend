@@ -8,7 +8,7 @@ interface QueryResource {
 }
 
 // The single-resource HPDS UUID fork (hpdsAuth/hpdsOpen/hpdsOpenV3/search/visualization/aggregate and
-// their VITE_RESOURCE_* reads) is REMOVED: with path-based gateway routing (spec §3.3), the backend is
+// their VITE_RESOURCE_* reads) is REMOVED: with path-based gateway routing, the backend is
 // selected by URL path (`/hpds/auth` vs `/hpds/open`), not by a resource UUID. The PSAMA `application`
 // id remains because it is used for the query template.
 export interface ResourceMap {
