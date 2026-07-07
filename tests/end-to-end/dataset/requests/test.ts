@@ -19,6 +19,7 @@ test.use({ storageState: 'tests/end-to-end/.auth/dataUser.json' });
 
 test.describe('data requests', () => {
   test.beforeEach(async ({ context }) => {
+    await mockApiSuccess(context, '*/**/api/config', { features: [], settings: [] });
     await mockApiSuccess(context, '*/**/picsure/proxy/uploader/sites', mockSites);
   });
   test.describe('step 1', () => {

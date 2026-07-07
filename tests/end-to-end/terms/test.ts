@@ -11,12 +11,9 @@ import {
 } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
 
-import type { Branding } from '../../../src/lib/configuration';
-import * as config from '../../../src/lib/assets/configuration.json' with { type: 'json' };
-
-//TypeScript is confused by the JSON import so I am fxing it here
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
+import type { Branding } from '../../../src/lib/models/Configuration';
+import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
+const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const Psama: { [key: string]: string } = {
   TOS: '*/**/psama/tos',
@@ -32,6 +29,15 @@ Psama.Logout = '*/**/psama/logout';
 const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use this site.</p>';
 
 test.beforeEach(({ page }) => {
+  mockApiSuccess(page, '*/**/api/config', {
+    features: [
+      { name: 'ANALYZE_ANALYSIS', value: 'false' },
+      { name: 'ANALYZE_API', value: 'true' },
+      { name: 'ENABLE_TOS', value: 'true' },
+      { name: 'ENFORCE_TOS_ACCEPT', value: 'true' },
+    ],
+    settings: [],
+  });
   mockApiSuccess(page, 'https://www.googletagmanager.com/**/*', {});
   mockApiSuccess(page, '*/**/picsure/v3/query/sync', 99);
   mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/concepts*', mockSearchResults);

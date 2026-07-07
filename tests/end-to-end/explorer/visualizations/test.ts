@@ -25,6 +25,10 @@ test.describe('Variable Distributions visualizations', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
   test.beforeEach(async ({ page }) => {
+    await mockApiSuccess(page, '*/**/api/config', {
+      features: [{ name: 'DIST_EXPLORER', value: 'true' }],
+      settings: [],
+    });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, countResultPath, '9999');

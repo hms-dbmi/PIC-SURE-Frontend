@@ -17,6 +17,14 @@ const queryResultPath = '*/**/picsure/v3/query/sync';
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('OptionalSelectionList', () => {
+  test.beforeEach(({ page }) =>
+    // DISCOVER is required because every test here navigates to /discover; the
+    // (public) layout guard redirects to /explorer when it's off.
+    mockApiSuccess(page, '*/**/api/config', {
+      features: [{ name: 'DISCOVER', value: 'true' }],
+      settings: [],
+    }),
+  );
   // TODO: Some feartures will be hidden in the future. Cannot use nth.
   // TODO: Test infinite scroll
   test('Renders', async ({ page }) => {
@@ -260,6 +268,13 @@ test.describe('OptionalSelectionList', () => {
   });
   test('Loads next values when scrolling when infinite scroll is enabled', async ({ page }) => {
     // Given
+    await mockApiSuccess(page, '*/**/api/config', {
+      features: [
+        { name: 'ENABLE_GENE_QUERY', value: 'true' },
+        { name: 'ENABLE_SNP_QUERY', value: 'true' },
+      ],
+      settings: [],
+    });
     const mockDataWithManyOptions = {
       ...detailResponseCat2,
       values: Array.from({ length: 100 }, (_, i) => `Option ${i + 1}`),

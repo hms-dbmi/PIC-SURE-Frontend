@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import ResultInfoComponent from '$lib/components/explorer/ResultInfoComponent.svelte';
-import { branding } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 import { getConceptDetails } from '$lib/stores/Dictionary';
 import type { SearchResult } from '$lib/models/Search';
 
@@ -64,7 +64,7 @@ async function renderResultInfo(detail: SearchResult) {
 describe('ResultInfoComponent', () => {
   beforeEach(() => {
     mockGetConceptDetails.mockReset();
-    branding.explorePage.resultInfo = {
+    config.branding.explorePage.resultInfo = {
       variableHeader: 'Variable Information',
       datasetHeader: 'Dataset Information',
       studyHeader: 'Study Information',
@@ -72,7 +72,7 @@ describe('ResultInfoComponent', () => {
   });
 
   it('renders configured section headers when the matching sections are present', async () => {
-    branding.explorePage.resultInfo = {
+    config.branding.explorePage.resultInfo = {
       variableHeader: 'Custom Variable Header',
       datasetHeader: 'Custom Dataset Header',
       studyHeader: 'Custom Study Header',

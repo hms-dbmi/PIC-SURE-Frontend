@@ -2,11 +2,9 @@ import { expect } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess } from '../custom-context';
 import { picsureUser, roles as mockRoles, mockExpiredToken, mockToken } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
-import type { Branding } from '../../../src/lib/configuration';
-import * as config from '../../../src/lib/assets/configuration.json' with { type: 'json' };
-//TypeScript is confused by the JSON import so I am fxing it here
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
+import type { Branding } from '../../../src/lib/models/Configuration';
+import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
+const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const placeHolderDots =
   '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
@@ -15,6 +13,7 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('API page', () => {
   test.beforeEach(async ({ context }) => {
+    await mockApiSuccess(context, '*/**/api/config', { features: [], settings: [] });
     await mockApiSuccess(context, '*/**/psama/role', mockRoles);
     const user = picsureUser;
     user.token = mockExpiredToken;
@@ -34,7 +33,7 @@ test.describe('API page', () => {
     await expect(errorAlert).toBeVisible();
   });
 
-  branding?.analysisConfig?.api?.cards?.forEach((card: { header: string; body: string }) => {
+  branding.analysisPage.api.cards.forEach((card: { header: string; body: string }) => {
     test(`Has expect card, ${card.header} from branding`, async ({ page }) => {
       // Given
       await page.goto('/analyze/api');

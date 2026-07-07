@@ -13,6 +13,7 @@ test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
 // TODO: Add api specific tests when api data is implemented
 test.describe('users', () => {
   test.beforeEach(async ({ context }) => {
+  await mockApiSuccess(context, '*/**/api/config', { features: [], settings: [] });
     await mockApiSuccess(context, '*/**/psama/user', mockUsers);
     await mockApiSuccess(context, '*/**/psama/role', mockRoles);
     await mockApiSuccess(context, '*/**/psama/connection', mockConns);

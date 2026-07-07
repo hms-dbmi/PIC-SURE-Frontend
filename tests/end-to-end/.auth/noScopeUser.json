@@ -14,7 +14,7 @@
         },
         {
           "name": "user",
-          "value": "{\"uuid\":\"1234\",\"email\":\"test@pic-sure.org\",\"privileges\":[\"PIC_SURE_ANY_QUERY\",\"NAMED_DATASET\",\"API_ACCESS\"],\"acceptedTOS\":true,\"queryTemplate\":{}}"
+          "value": "{\"uuid\":\"1234\",\"email\":\"test@pic-sure.org\",\"privileges\":[\"PIC_SURE_ANY_QUERY\",\"NAMED_DATASET\",\"API_ACCESS\"],\"acceptedTOS\":true,\"queryTemplate\":{\"categoryFilters\":{\"\\\\_consents\\\\\":[\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"\\\\_harmonized_consent\\\\\":[\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"\\\\_topmed_consents\\\\\":[\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"]},\"numericFilters\":{},\"requiredFields\":[],\"anyRecordOf\":[],\"variantInfoFilters\":[{\"categoryVariantInfoFilters\":{},\"numericVariantInfoFilters\":{}}],\"expectedResultType\":\"COUNT\",\"fields\":[],\"anyRecordOfMulti\":[]}}"
         },
         {
           "name": "datatableSettings",

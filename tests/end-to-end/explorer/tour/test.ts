@@ -13,6 +13,7 @@ import { userIsLoggedIn } from '../../utils';
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.beforeEach(async ({ page }) => {
+  await mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] });
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/concepts*', detailResponseCat);
   await mockApiSuccess(page, '*/**/picsure/v3/query/sync', '9999');

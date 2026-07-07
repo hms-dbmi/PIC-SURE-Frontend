@@ -40,6 +40,7 @@ function mockDictionaryAPI(
 }
 
 test.beforeEach(async ({ page }) => {
+  await mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] });
   mockDictionaryAPI(page, `${conceptsDetailPath}/*`, datasetDetails.concepts);
   mockDictionaryAPI(page, `${conceptTreePath}/*`, datasetDetails.tree);
   await mockApiSuccess(page, facetResultPath, facetsResponse);

@@ -1,7 +1,8 @@
 import { expect, type Route } from '@playwright/test';
-import { test, mockApiFail } from '../custom-context';
+import { test, mockApiFail, mockApiSuccess } from '../custom-context';
 import {
   conceptsDetailPath,
+  configPath,
   detailResponseCat,
   detailResponseCat2,
   detailResponseCatSameDataset,
@@ -13,10 +14,17 @@ import {
   hierarchyResponse,
 } from '../mock-data';
 import { type SearchResult } from '../../../src/lib/models/Search';
-import { getOption, clickNthFilterIcon, optionsHaveLoaded, userIsLoggedIn } from '../utils';
+import { getOption, clickNthFilterIcon, optionsHaveLoaded, userIsLoggedIn, userIsLoggedOut } from '../utils';
 
 test.describe('Explorer for authenticated users', () => {
   test.beforeEach(async ({ page }) => {
+    await mockApiSuccess(page, configPath, {
+      features: [
+        { name: 'ALLOW_EXPORT_ENABLED', value: 'true' },
+        { name: 'ENABLE_HIERARCHY', value: 'true' },
+      ],
+      settings: [],
+    });
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
     await page.route(facetResultPath, async (route: Route) =>
       route.fulfill({ json: facetsResponse }),
@@ -709,12 +717,45 @@ test.describe('Explorer for authenticated users', () => {
 
 test.describe('Explorer for unauthenticated users', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
-  test('User is prompted to login if not authenticated', async ({ page }) => {
+  test('Unauthenticated user can access explorer without being redirected to login', async ({
+    page,
+  }) => {
     // Given
+    // OPEN + OPEN_EXPLORER together are what let an unauthenticated user reach
+    // /explorer and use it directly, per "Explore Without Login" (see internal docs):
+    // unauthenticated OPEN_EXPLORER users get full search/facets/filtering/genomic/
+    // visualization access on this page, with no login gate.
+    await mockApiSuccess(page, configPath, {
+      features: [
+        { name: 'OPEN', value: 'true' },
+        { name: 'OPEN_EXPLORER', value: 'true' },
+      ],
+      settings: [],
+    });
     await page.goto('/explorer');
 
     // Then
-    await expect(page.locator('#search-bar')).not.toBeVisible();
-    await expect(page.locator('#login-box')).toBeVisible();
+    await expect(page).toHaveURL('/explorer');
+    await userIsLoggedOut(page);
+    await expect(page.locator('#search-bar')).toBeVisible();
+  });
+
+  test('User is prompted to login if not authenticated and explorer is not open', async ({
+    page,
+  }) => {
+    // Given
+    // Without OPEN_EXPLORER, /explorer's own layout redirects unauthenticated
+    // users to /login (see explorer/+layout.ts).
+    await mockApiSuccess(page, configPath, {
+      features: [
+        { name: 'OPEN', value: 'true' },
+        { name: 'OPEN_EXPLORER', value: 'false' },
+      ],
+      settings: [],
+    });
+    await page.goto('/explorer');
+
+    // Then
+    await expect(page).toHaveURL(/\/login\?redirectTo=%2Fexplorer/);
   });
 });

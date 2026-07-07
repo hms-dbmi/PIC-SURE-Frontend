@@ -17,6 +17,7 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
   test.beforeEach(async ({ page }) => {
+    await mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, SYNC_URL, '9999');
