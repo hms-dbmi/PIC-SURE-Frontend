@@ -85,9 +85,6 @@ export class ResultCounts {
         this.#status = 'error';
         return { kind: 'error', snapshot };
       }
-      // NIH compliance log: must fire for every count shown to the user,
-      // including LRU-cache hits (cached snapshots return through this
-      // same path). Failures are logged by the service as query.cell_failed.
       log(createLog('QUERY', 'query.count_returned', { count: snapshot.count }));
       this.#status = 'loaded';
       return { kind: 'committed', snapshot };
