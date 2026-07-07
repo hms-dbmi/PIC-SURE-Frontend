@@ -259,7 +259,7 @@ const defaultFeatures: Indexable = {
   EXPORT_TIMESERIES: true,
   FEDERATED: false,
   MANUAL_ROLE: false,
-  OPEN_EXPLORER: false,
+  OPEN_EXPLORER: true,
   OPEN: false,
   OR_QUERIES: true,
   REQUIRE_CONSENTS: false,

@@ -2,7 +2,7 @@
   import Summary from '$lib/components/explorer/export/Summary.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import { getActiveType, setActiveType } from '$lib/ExportStepperManager.svelte';
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { log, createLog } from '$lib/logger';
 </script>
 
@@ -21,7 +21,7 @@
         setActiveType('DATAFRAME');
       }}
     ></CardButton>
-    {#if features.explorer.enableExportTimeseries}
+    {#if config.features.explorer.enableExportTimeseries}
       <CardButton
         data-testid="timeseries-export-option"
         title="Export as Timeseries"

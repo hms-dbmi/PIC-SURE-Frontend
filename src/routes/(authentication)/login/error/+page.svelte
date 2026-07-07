@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { quintOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
 </script>
@@ -19,7 +19,7 @@
     <a
       class="btn preset-tonal-primary border border-primary-500 m-1"
       target="_blank"
-      href={branding.login.contactLink}>Contact Administrator</a
+      href={config.branding.login.contactLink}>Contact Administrator</a
     >
   </div>
 </section>

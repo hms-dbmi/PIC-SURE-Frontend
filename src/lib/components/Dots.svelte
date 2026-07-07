@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { config } from '$lib/configuration.svelte';
   let { class: className = '' }: { class: string } = $props();
   let primaryCircle = $state('--color-primary-500');
   let secondaryCircle = $state('--color-secondary-500');
@@ -9,11 +10,7 @@
 
   const dotsColorsClass: string[] = (() => {
     try {
-      return (
-        (JSON.parse(
-          import.meta.env.VITE_DOTS_COLORS_CLASS?.toString()?.toLowerCase(),
-        ) as string[]) || []
-      );
+      return config.settings.dotsColorsClass || [];
     } catch (error) {
       return [];
     }

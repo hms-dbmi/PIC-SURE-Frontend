@@ -1,8 +1,8 @@
 import type { PlotlyHTMLElement, Root, Data, Config, Layout } from 'plotly.js-basic-dist-min';
-import { settings } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 
 const MAX_TITLE_LENGTH = 60;
-const defaultColors = settings.distributionExplorer.graphColors;
+const defaultColors = config.settings.distributionExplorer.graphColors;
 
 export const defaultPlotlyConfig: Partial<Config> = {
   editable: true,

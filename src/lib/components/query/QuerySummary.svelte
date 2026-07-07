@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { toaster } from '$lib/toaster';
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   import {
     loadQuerySummaryData,
@@ -58,7 +58,8 @@
   }
 
   let restoreQueryButton = $derived(
-    version === QueryVersion.V3 || (version === QueryVersion.V2 && features.restoreV2queries),
+    version === QueryVersion.V3 ||
+      (version === QueryVersion.V2 && config.features.restoreV2queries),
   );
 </script>
 

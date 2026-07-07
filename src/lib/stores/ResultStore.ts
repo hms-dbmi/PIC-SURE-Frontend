@@ -1,7 +1,7 @@
 import { get, writable, type Writable } from 'svelte/store';
 
 import { isToastShowing, toaster } from '$lib/toaster';
-import { branding } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 import { getResultList, StatPromise } from '$lib/utilities/StatBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
 import { log, createLog } from '$lib/logger';
@@ -12,7 +12,6 @@ import { filters, genomicFilters } from '$lib/stores/Filter';
 import { objectUUID } from '$lib/utilities/UUID';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
 import { loading as resourcesPromise, loadResources } from '$lib/stores/Resources';
-import { features } from '$lib/configuration';
 
 const CACHE_MAX_ENTRIES = 100;
 const requestCache: Map<string, StatResult[]> = new Map();
@@ -33,7 +32,7 @@ async function updateDerivedCountStores(resultStats: StatResult[]) {
     ),
   );
 
-  const totalCount = resultStats.find((count) => count.key === branding?.results?.totalStatKey);
+  const totalCount = resultStats.find((count) => count.key === config.branding.results.totalStatKey);
   if (totalCount) {
     const totalResults = await Promise.allSettled(
       StatPromise.list(totalCount).map(({ promise }) => promise),
@@ -48,7 +47,7 @@ async function updateDerivedCountStores(resultStats: StatResult[]) {
 }
 
 export async function loadPatientCount(useAuth: boolean) {
-  const isOpenAccess = !useAuth && !features.explorer.open && features.discover;
+  const isOpenAccess = !useAuth && !config.features.explorer.open && config.features.discover;
   loadResources();
   try {
     if (requestCache.size >= CACHE_MAX_ENTRIES) {
@@ -74,7 +73,10 @@ export async function loadPatientCount(useAuth: boolean) {
     }
 
     await get(resourcesPromise);
-    const resultStats: StatResult[] = getResultList(isOpenAccess, branding?.results?.stats || []);
+    const resultStats: StatResult[] = getResultList(
+      isOpenAccess,
+      config.branding.results.stats || [],
+    );
     resultCounts.set(resultStats);
     countsLoading.set(true);
     log(createLog('QUERY', 'query.start_load_patient_count'));

@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
 
   import { goto } from '$app/navigation';
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { isToastShowing, toaster } from '$lib/toaster';
 
   import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
@@ -32,12 +32,12 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Variant Explorer</title>
+  <title>{config.branding.applicationName} | Variant Explorer</title>
 </svelte:head>
 
 <Content full backUrl="/explorer" backTitle="Back to Explore">
   <h2 class="text-center clear-both">Variant Explorer</h2>
-  {#if features.explorer.variantExplorer}
+  {#if config.features.explorer.variantExplorer}
     <VariantExplorer />
   {:else}
     <ErrorAlert title="Error">

@@ -3,7 +3,7 @@
   import 'driver.js/dist/driver.css';
   import '../../../styles/tour.css';
 
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { flatIndex } from '$lib/utilities/Objects';
 
   import { searchTerm, selectedFacets, searchPromise } from '$lib/stores/Search';
@@ -143,8 +143,8 @@
   // that driver.js can use for the tour steps
   // It will map the function names in pop over to actual functions
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  function mapConfigurationToSteps(steps: any): DriveStep[] {
-    const flatFeatures = flatIndex(features);
+  function mapConfigurationToSteps(steps: any = []): DriveStep[] {
+    const flatFeatures = flatIndex(config.features);
     return steps
       .filter(
         ({ dependsOnFeature = '' }: { dependsOnFeature: string }) =>
@@ -156,8 +156,8 @@
           ...rest,
           popover: {
             ...popover,
-            title: replacePlaceholders(popover.title, tourConfig?.searchTerm),
-            description: replacePlaceholders(popover.description, tourConfig?.searchTerm),
+            title: replacePlaceholders(popover.title, tourConfig.searchTerm),
+            description: replacePlaceholders(popover.description, tourConfig.searchTerm),
           },
         };
 
@@ -250,7 +250,7 @@
 
 <Modal
   bind:open={openModal}
-  title={tourConfig?.title}
+  title={tourConfig.title}
   confirmText="Start Tour"
   onconfirm={startTour}
   withDefault={false}
@@ -261,7 +261,7 @@
   {:else}
     <p>
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      {@html sanitizeHTML(tourConfig?.description)}
+      {@html sanitizeHTML(tourConfig.description)}
     </p>
     <footer class="modal-footer flex justify-end space-x-2 mt-6">
       <button

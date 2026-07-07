@@ -7,7 +7,7 @@ import { user } from '$lib/stores/User';
 import { get } from 'svelte/store';
 import type { User } from '$lib/models/User';
 import { browser } from '$app/environment';
-import { features } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 export const columns: Writable<Column[]> = writable([]);
 
 export type DashboardRow = Record<string, string | number | boolean | null>;
@@ -40,7 +40,8 @@ export async function loadDashboardData() {
   columns.set(dashboardData.columns);
 
   const loggedInUser: User = get(user);
-  const useConsents = features.useQueryTemplate && isUserLoggedIn() && loggedInUser?.queryTemplate;
+  const useConsents =
+    config.features.useQueryTemplate && isUserLoggedIn() && loggedInUser?.queryTemplate;
 
   let consents: string[] = [];
   if (useConsents) {

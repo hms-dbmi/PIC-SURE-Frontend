@@ -7,7 +7,7 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   import { allFilters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import {
@@ -32,11 +32,12 @@
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
-    $allFilters.length !== 0 || (features.explorer.exportsEnableExport && $exports.length !== 0),
+    $allFilters.length !== 0 ||
+      (config.features.explorer.exportsEnableExport && $exports.length !== 0),
   );
 
   let showExportButton = $derived(
-    features.explorer.allowExport &&
+    config.features.explorer.allowExport &&
       !isDiscoverPage &&
       hasFilterOrExport &&
       ($countsLoading || $hasNonZeroResult),
@@ -53,18 +54,18 @@
   );
 
   let showExplorerDistributions = $derived(
-    !isDiscoverPage && features.explorer.distributionExplorer && hasValidDistributionFilters,
+    !isDiscoverPage && config.features.explorer.distributionExplorer && hasValidDistributionFilters,
   );
 
   let showDiscoverDistributions = $derived(
     isDiscoverPage &&
-      features.discover &&
-      features.discoverFeautures.distributionExplorer &&
+      config.features.discover &&
+      config.features.discoverFeatures.distributionExplorer &&
       hasValidDistributionFilters,
   );
 
   let showVariantExplorer = $derived(
-    !isDiscoverPage && features.explorer.variantExplorer && $hasGenomicFilter,
+    !isDiscoverPage && config.features.explorer.variantExplorer && $hasGenomicFilter,
   );
 
   function isObfuscatedLessThanTen(count: unknown) {
@@ -76,7 +77,7 @@
       (isDiscoverPage ? isObfuscatedLessThanTen($totalParticipants) : $totalParticipants === 0),
   );
 
-  let showCohortDetails = $derived(!isDiscoverPage && features.explorer.enableCohortDetails);
+  let showCohortDetails = $derived(!isDiscoverPage && config.features.explorer.enableCohortDetails);
 
   function subscribe() {
     unsubFilters = subscribeOnChange(allFilters, () => loadPatientCount(!isDiscoverPage));

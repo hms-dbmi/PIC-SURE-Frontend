@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import * as api from '$lib/api';
-import { branding, features } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 import { Picsure } from '$lib/paths';
 
 import type {
@@ -56,8 +56,8 @@ export const StatPromise = {
 };
 
 export function getStatFields(key: string): StatField[] {
-  const statKeys = branding?.statFields ? Object.keys(branding?.statFields) : [];
-  return statKeys.includes(key) ? branding?.statFields[key] : [];
+  const statKeys = config.branding.statFields ? Object.keys(config.branding.statFields) : [];
+  return statKeys.includes(key) ? config.branding.statFields[key] : [];
 }
 
 function dictionaryRequest(isOpenAccess: boolean = false): DictionarySearchRequest {
@@ -265,7 +265,7 @@ export function getValidStatList(list: StatConfig[]): StatResult[] {
       });
     }
 
-    if (features.login.open && openUsers) {
+    if (config.features.login.open && openUsers) {
       statList.push({
         ...stat,
         auth: false,

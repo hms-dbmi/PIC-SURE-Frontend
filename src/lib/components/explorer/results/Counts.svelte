@@ -6,7 +6,7 @@
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { filters } from '$lib/stores/Filter';
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
@@ -54,8 +54,8 @@
                 color="warning"
                 id="result-count-error"
                 text={$filters.length !== 0
-                  ? branding?.explorePage?.filterErrorText
-                  : branding?.explorePage?.queryErrorText}
+                  ? config.branding.explorePage.filterErrorText
+                  : config.branding.explorePage.queryErrorText}
               />
             {/if}
           </div>
@@ -69,13 +69,13 @@
 {#if showErrorMessage}
   <ErrorAlert color="warning" iconSize="2xl">
     <p class="text-[0.6rem] !m-0">
-      {#if features.federated}
+      {#if config.features.federated}
         Some sites did not return patient counts for your query. See
         <a href="/explorer/cohort" class="anchor font-bold">Cohort Details</a>
         for more information.
       {:else}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        {@html sanitizeHTML(branding?.explorePage?.queryErrorText)}
+        {@html sanitizeHTML(config.branding.explorePage.queryErrorText)}
       {/if}
     </p>
   </ErrorAlert>

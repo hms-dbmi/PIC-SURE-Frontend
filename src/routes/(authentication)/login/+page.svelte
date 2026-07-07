@@ -5,7 +5,7 @@
   import { page } from '$app/state';
   import { browser } from '$app/environment';
 
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import type { AuthData } from '$lib/models/AuthProvider';
   import { toaster } from '$lib/toaster';
 
@@ -17,10 +17,13 @@
   import Loading from '$lib/components/Loading.svelte';
 
   const redirectTo = page.url.searchParams.get('redirectTo') || '/';
-  const siteName = branding?.applicationName;
-  const description = branding?.login.description;
-  const openPicsureLinkText = branding?.login.openPicsureLinkText;
+  const siteName = $derived(config.branding.applicationName);
+  const description = $derived(config.branding.login.description);
+  const openPicsureLinkText = $derived(config.branding.login.openPicsureLinkText);
   let logoutReason: string | null;
+  const loading = Promise.all([page.data?.providers, config.loading]).then(
+    ([providers]) => providers,
+  );
 
   onMount(() => {
     if (browser) {
@@ -47,16 +50,16 @@
 >
   <div id="title-box" class="flex flex-col items-center text-center mb-8 max-w-3/4">
     <h1 data-testid="login-title" class="mb-6 w-full flex gap-2 items-center justify-center">
-      <Logo class="flex-none" height={branding.login.logoHeight || 7.5} />
+      <Logo class="flex-none" height={config.branding.login.logoHeight || 7.5} />
     </h1>
     <p data-testid="login-description" class="text-2xl">{description}</p>
   </div>
-  {#await page.data?.providers}
+  {#await loading}
     <Loading ring size="medium" />
   {:then providers}
     <div id="login-box" class="w-max mt-2">
       <header class="flex flex-col items-center">
-        {#if branding?.login?.showSiteName}
+        {#if config.branding.login.showSiteName}
           <div>{siteName}</div>
         {/if}
       </header>
@@ -102,14 +105,14 @@
             {/each}
           {/if}
         </div>
-        {#if features.login.open}
+        {#if config.features.login.open}
           <a
-            href={branding?.login?.openPicsureLink || '/'}
+            href={config.branding.login.openPicsureLink || '/'}
             class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white mb-4 w-full"
             onclick={() =>
               log(
                 createLog('NAVIGATION', 'login.explore_open', {
-                  url: branding?.login?.openPicsureLink || '/',
+                  url: config.branding.login.openPicsureLink || '/',
                 }),
               )}>{openPicsureLinkText}</a
           >

@@ -4,7 +4,7 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import type { Column } from '$lib/components/datatable/types';
   import {
     searchTerm,
@@ -34,13 +34,13 @@
 
   let searchInput = $state(page.url.searchParams.get('search') || $searchTerm || '');
   const tableName = 'ExplorerTable';
-  const tableColumns = branding.explorePage.columns || [];
+  const tableColumns = config.branding.explorePage.columns || [];
   const columns: Column[] = [
     ...tableColumns,
     { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
   ];
   const cellOverides = { id: Actions };
-  const genomicFeaturesEnabled = features.enableGENEQuery || features.enableSNPQuery;
+  const genomicFeaturesEnabled = config.features.enableGENEQuery || config.features.enableSNPQuery;
   let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
   let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
   let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
@@ -122,7 +122,7 @@
         rowClickLogAction="search_result.row_click"
       />
     {/if}
-    {#if features.explorer.enableTour && $tour}
+    {#if config.features.explorer.enableTour && $tour}
       <div id="explorer-tour" class="text-center mt-4">
         <ExplorerTour {tourConfig} />
       </div>
