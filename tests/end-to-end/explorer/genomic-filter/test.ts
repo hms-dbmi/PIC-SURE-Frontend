@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { test, mockApiSuccess } from '../../custom-context';
 import { searchResults, facetsResponse, searchResultPath, facetResultPath } from '../../mock-data';
+import { userIsLoggedIn } from '../../utils';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -12,6 +13,7 @@ test.beforeEach(async ({ page }) => {
 test('Clicking the Genomic filter button navigates to genomic filter page', async ({ page }) => {
   // Given
   await page.goto('/explorer');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByTestId('genomic-filter-btn').click();

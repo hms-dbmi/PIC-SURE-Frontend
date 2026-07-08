@@ -37,21 +37,36 @@
       return new Error('Provider configuration error');
     }
 
-    await providerInstance.authenticate(hashParts).then((user: User | undefined) => {
+    await providerInstance.authenticate(hashParts).then(async (user: User | undefined) => {
       if (!user || !user?.token) {
         throw new Error('User not found');
       }
-
-      log(createLog('LOGIN', 'login.success', { provider: providerType }, { status: 200 }));
 
       // api returns as string
       user.acceptedTOS = String(user.acceptedTOS) === 'true';
       if (features.enforceTermsOfService && !user.acceptedTOS) {
         setToken(user.token);
-        goto(redirectTo);
+        log(
+          createLog(
+            'LOGIN',
+            'login.success',
+            { provider: providerType },
+            {
+              status: 200,
+              logged_in: true,
+              user_id: user.userId ?? user.email,
+              user_email: user.email?.includes('@') ? user.email : undefined,
+            },
+          ),
+        );
       } else {
-        login(user.token).then(() => goto(redirectTo));
+        // Hydrate the store via login() before logging so createLog reads user_id/email/roles
+        // from it; without this the store is empty and the event is logged blank.
+        await login(user.token);
+        log(createLog('LOGIN', 'login.success', { provider: providerType }, { status: 200 }));
       }
+
+      goto(redirectTo);
     });
   }
 

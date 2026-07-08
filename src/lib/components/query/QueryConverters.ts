@@ -1,3 +1,4 @@
+import { features } from '$lib/configuration';
 import {
   QueryV2,
   QueryV3,
@@ -83,10 +84,12 @@ export function estimateV2(query: QueryV2): QueryEstimate {
 
 export function queryV2ToV3(query: QueryV2): QueryV3 {
   const clauses: PhenotypicFilterInterface[] = [];
+  const exportSystemFields = features.explorer.exportSystemFields || [];
 
   for (const [conceptPath, values] of Object.entries(
     query.categoryFilters as Record<string, string[]>,
   )) {
+    if (exportSystemFields.includes(conceptPath)) continue;
     clauses.push({
       type: 'PhenotypicFilter',
       phenotypicFilterType: 'FILTER',
@@ -316,6 +319,10 @@ export type QuerySummaryData = {
 export function loadQuerySummaryData(query: QueryV2 | QueryV3, version: string): QuerySummaryData {
   const q: QueryV3 =
     version === QueryVersion.V3 ? (query as QueryV3) : queryV2ToV3(query as QueryV2);
+
+  const exportSystemFields = features.explorer.exportSystemFields || [];
+  if (exportSystemFields.length > 0)
+    q.select = q.select.filter((select: string) => !exportSystemFields.includes(select));
 
   const errorsList: string[] = [];
   const filterTree = queryToFilterTree(q, errorsList);

@@ -11,6 +11,8 @@ import {
   facetsResponse,
 } from '../../mock-data';
 
+import { userIsLoggedIn } from '../../utils';
+
 const SYNC_URL = '*/**/picsure/v3/query/sync';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -29,6 +31,7 @@ test('Cohort Details button is visible', async ({ page }) => {
   );
   await mockApiSuccess(page, SYNC_URL, '9999');
   await page.goto('/explorer?search=somedata');
+  await userIsLoggedIn(page);
 
   // When
   await clickNthFilterIcon(page);
@@ -36,12 +39,13 @@ test('Cohort Details button is visible', async ({ page }) => {
   await firstItem.click();
   const addFilterButton = page.getByTestId('add-filter');
   await addFilterButton.click();
+  await expect(page.locator('#results-panel')).toBeVisible();
 
   // Then
   await expect(page.getByTestId('cohort-details-btn')).toBeVisible();
   await expect(page.getByTestId('cohort-details-btn')).toBeEnabled();
 });
-test('Cohort Details page loads', async ({ page }) => {
+test('Cohort Details page loads', { tag: '@flaky' }, async ({ page }) => {
   // Given
   await mockApiSuccess(
     page,
@@ -50,6 +54,7 @@ test('Cohort Details page loads', async ({ page }) => {
   );
   await mockApiSuccess(page, SYNC_URL, '9999');
   await page.goto('/explorer?search=somedata');
+  await userIsLoggedIn(page);
   await clickNthFilterIcon(page);
   const firstItem = await getOption(page);
   await firstItem.click();
@@ -71,6 +76,7 @@ test('Cohort Details loads result total and site total', async ({ page }) => {
   );
   await mockApiSuccess(page, SYNC_URL, '9999');
   await page.goto('/explorer?search=somedata');
+  await userIsLoggedIn(page);
   await clickNthFilterIcon(page);
   const firstItem = await getOption(page);
   await firstItem.click();
@@ -80,7 +86,10 @@ test('Cohort Details loads result total and site total', async ({ page }) => {
   // When
   await page.getByTestId('cohort-details-btn').click();
 
-  // Then
+  // Then — wait for count data to load; async per-site counts arrive after navigation
+  await expect(page.locator('table tbody td').filter({ hasText: '9,999' }).first()).toBeVisible({
+    timeout: 10000,
+  });
   const tableCells = page.locator('table tbody tr').first().locator('td');
   await expect(tableCells.nth(1)).toContainText('9,999');
   await expect(tableCells.nth(2)).toContainText('9,999');

@@ -50,6 +50,26 @@ function getQueryVersion(query: string) {
   else return QueryVersion.UNKNOWN;
 }
 
+/**
+ * True if `value` is a string that is itself JSON-encoding an object/array —
+ * i.e. it's been through an extra JSON.stringify() and needs one more parse.
+ * A string that merely parses to a JSON primitive (a number, boolean, null,
+ * or quoted string) does NOT count — only object/array results indicate a
+ * real extra layer of nesting.
+ */
+function isDoubleEncoded(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return false; // not valid JSON at all -> not double-encoded
+  }
+
+  return parsed !== null && typeof parsed === 'object';
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapDataset(data: any) {
   let federated;
@@ -59,10 +79,11 @@ export function mapDataset(data: any) {
   else {
     try {
       const jsonQuery = JSON.parse(data.query.query);
+      const subquery = isDoubleEncoded(jsonQuery.query)
+        ? JSON.parse(jsonQuery.query)
+        : jsonQuery.query;
       query =
-        version === QueryVersion.V2
-          ? new QueryV2(jsonQuery.query)
-          : QueryV3.fromSerialized(jsonQuery.query);
+        version === QueryVersion.V2 ? new QueryV2(subquery) : QueryV3.fromSerialized(subquery);
       if (jsonQuery?.commonAreaUUID) {
         federated = {
           commonId: jsonQuery?.commonAreaUUID,

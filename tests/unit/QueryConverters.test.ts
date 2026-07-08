@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { QueryV2, QueryV3 } from '$lib/models/query/Query';
 import { QueryVersion } from '$lib/models/Dataset';
@@ -9,6 +9,7 @@ import type {
   GenomicFilterInterface,
 } from '$lib/models/Filter.svelte';
 import { getConceptDetails, getConceptTree } from '$lib/stores/Dictionary';
+import { features } from '$lib/configuration';
 
 import {
   queryV2ToV3,
@@ -34,6 +35,10 @@ vi.mock('$lib/stores/Filter', () => ({
     operator,
     parent: undefined,
   }),
+}));
+
+vi.mock('$lib/configuration', () => ({
+  features: { explorer: { exportSystemFields: [] as string[] } },
 }));
 
 const mockGetConceptDetails = vi.mocked(getConceptDetails);
@@ -173,6 +178,32 @@ describe('queryV2ToV3', () => {
         conceptPath: '\\\\dataset\\\\sex\\\\',
         values: ['Male', 'Female'],
       });
+    });
+
+    it('strips categoryFilters entries matching exportSystemFields', () => {
+      // Given
+      features.explorer.exportSystemFields = ['\\\\_consents\\\\'];
+      const query = makeV2Query({
+        categoryFilters: {
+          '\\\\dataset\\\\sex\\\\': ['Male', 'Female'],
+          '\\\\_consents\\\\': ['phs000001.c1'],
+        },
+      });
+
+      try {
+        // When
+        const { phenotypicClause } = queryV2ToV3(query);
+
+        // Then
+        expect(phenotypicClause).toMatchObject({
+          type: 'PhenotypicFilter',
+          phenotypicFilterType: 'FILTER',
+          conceptPath: '\\\\dataset\\\\sex\\\\',
+          values: ['Male', 'Female'],
+        });
+      } finally {
+        features.explorer.exportSystemFields = [];
+      }
     });
 
     it('maps numericFilters entries to FILTER PhenotypicFilters with numeric min/max', () => {
@@ -978,5 +1009,91 @@ describe('loadQuerySummaryData', () => {
     // Then — filter still created (degraded), path recorded in errors
     expect(data.errors).toEqual([failingPath]);
     expect(data.filterTree.leafNodes).toHaveLength(1);
+  });
+
+  describe('exportSystemFields filtering', () => {
+    afterEach(() => {
+      features.explorer.exportSystemFields = [];
+    });
+
+    it('does not filter select when exportSystemFields is empty', async () => {
+      // Given
+      const query = makeV3Query({
+        select: ['\\\\dataset\\\\age\\\\', '\\\\_consents\\\\'],
+      });
+
+      // When
+      const data = await allLoadQuerySummaryData(query, QueryVersion.V3);
+      const exports = data.exports.map(({ conceptPath }) => conceptPath);
+
+      // Then
+      expect(exports).toEqual(['\\\\dataset\\\\age\\\\', '\\\\_consents\\\\']);
+    });
+
+    it('filters configured system fields out of V3 select/exports', async () => {
+      // Given
+      features.explorer.exportSystemFields = ['\\\\_consents\\\\'];
+      const query = makeV3Query({
+        select: ['\\\\dataset\\\\age\\\\', '\\\\_consents\\\\'],
+      });
+
+      // When
+      const data = await allLoadQuerySummaryData(query, QueryVersion.V3);
+      const exports = data.exports.map(({ conceptPath }) => conceptPath);
+
+      // Then
+      expect(exports).toEqual(['\\\\dataset\\\\age\\\\']);
+    });
+
+    it('filters multiple configured system fields, leaving non-matching fields intact', async () => {
+      // Given
+      features.explorer.exportSystemFields = ['\\\\_consents\\\\', '\\\\_topmed_study\\\\'];
+      const query = makeV3Query({
+        select: [
+          '\\\\dataset\\\\age\\\\',
+          '\\\\_consents\\\\',
+          '\\\\_topmed_study\\\\',
+          '\\\\dataset\\\\sex\\\\',
+        ],
+      });
+
+      // When
+      const data = await allLoadQuerySummaryData(query, QueryVersion.V3);
+      const exports = data.exports.map(({ conceptPath }) => conceptPath);
+
+      // Then
+      expect(exports).toEqual(['\\\\dataset\\\\age\\\\', '\\\\dataset\\\\sex\\\\']);
+    });
+
+    it('filters configured system fields out of V2 queries after conversion to V3', async () => {
+      // Given
+      features.explorer.exportSystemFields = ['\\\\_consents\\\\'];
+      const query = makeV2Query({
+        fields: ['\\\\dataset\\\\age\\\\'],
+        crossCountFields: ['\\\\_consents\\\\'],
+      });
+
+      // When
+      const data = await allLoadQuerySummaryData(query, QueryVersion.V2);
+      const exports = data.exports.map(({ conceptPath }) => conceptPath);
+
+      // Then
+      expect(exports).toEqual(['\\\\dataset\\\\age\\\\']);
+    });
+
+    it('leaves select unchanged when none of the selected fields match exportSystemFields', async () => {
+      // Given
+      features.explorer.exportSystemFields = ['\\\\_consents\\\\'];
+      const query = makeV3Query({
+        select: ['\\\\dataset\\\\age\\\\', '\\\\dataset\\\\sex\\\\'],
+      });
+
+      // When
+      const data = await allLoadQuerySummaryData(query, QueryVersion.V3);
+      const exports = data.exports.map(({ conceptPath }) => conceptPath);
+
+      // Then
+      expect(exports).toEqual(['\\\\dataset\\\\age\\\\', '\\\\dataset\\\\sex\\\\']);
+    });
   });
 });

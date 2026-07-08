@@ -14,7 +14,7 @@ import {
   mockDataWithChildren,
   hierarchyResponse,
 } from '../../mock-data';
-import { getOption, clickNthFilterIcon } from '../../utils';
+import { getOption, clickNthFilterIcon, optionsHaveLoaded, userIsLoggedIn } from '../../utils';
 import {
   createCategoricalFilter,
   createNumericFilter,
@@ -34,6 +34,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
@@ -51,6 +52,7 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
@@ -68,6 +70,7 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
@@ -88,6 +91,7 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
@@ -123,6 +127,7 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
@@ -163,6 +168,7 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
@@ -189,6 +195,7 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
@@ -218,6 +225,7 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     const filter = createCategoricalFilter(
@@ -249,10 +257,12 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
     const component = page.getByTestId('optional-selection-list');
+    await optionsHaveLoaded(page);
     const selectAllButton = component.locator('#select-all');
     await selectAllButton.click();
 
@@ -277,6 +287,7 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page, 5);
@@ -312,6 +323,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     const filter = createNumericFilter(
@@ -340,6 +352,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     const filter = createNumericFilter(
@@ -365,6 +378,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     const filter = createNumericFilter(
@@ -390,6 +404,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page, 3);
@@ -409,6 +424,7 @@ test.describe('Add Filters', () => {
     // Given
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page, 3);
@@ -435,6 +451,7 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
@@ -463,6 +480,7 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
@@ -472,6 +490,7 @@ test.describe('Add Filters', () => {
     await addFilterButton.click();
     const searchResult = mockData.content[0];
     const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.conceptPath}`);
+    await expect(firstAddedFilter).toBeVisible();
     const edit = firstAddedFilter.locator('button').first();
     await edit.click();
 
@@ -489,16 +508,19 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
     const firstItem = await getOption(page);
-    const firstValue = await firstItem.textContent();
+    const firstValue: string | null = await firstItem.textContent();
+    expect(firstValue).not.toBeNull();
     await firstItem.click();
     const addFilterButton = page.getByTestId('add-filter');
     await addFilterButton.click();
     const searchResult = mockData.content[0];
     const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.conceptPath}`);
+    await expect(firstAddedFilter).toBeVisible();
     const edit = firstAddedFilter.locator('button').first();
     await edit.click();
     const modal = page.locator('#modal-component');
@@ -508,7 +530,7 @@ test.describe('Add Filters', () => {
 
     // Then
     await expect(firstSelectedOption).toBeVisible();
-    await expect(firstSelectedOption).toHaveText(firstValue);
+    await expect(firstSelectedOption).toHaveText(firstValue || 'NULL');
   });
   test('Edit modal maintains info on the top', async ({ page }) => {
     // Given
@@ -519,6 +541,7 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
@@ -528,6 +551,7 @@ test.describe('Add Filters', () => {
     await addFilterButton.click();
     const searchResult = mockData.content[0];
     const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.conceptPath}`);
+    await expect(firstAddedFilter).toBeVisible();
     const edit = firstAddedFilter.locator('button').first();
     await edit.click();
     const modal = page.locator('#modal-component');
@@ -550,6 +574,7 @@ test.describe('Add Filters', () => {
     );
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
@@ -559,11 +584,15 @@ test.describe('Add Filters', () => {
     await addFilterButton.click();
     const searchResult = mockData.content[0];
     const firstAddedFilter = page.getByTestId(`added-filter-${searchResult.conceptPath}`);
+    await expect(firstAddedFilter).toBeVisible();
     await firstAddedFilter.click();
-    const firstValueString = await firstAddedFilter.locator('section').innerText();
+    const section = firstAddedFilter.locator('section');
+    await expect(section).toBeVisible();
+    const firstValueString = await section.innerText();
     const edit = firstAddedFilter.locator('button').first();
     await edit.click();
     const modal = page.locator('#modal-component');
+    await expect(modal).toBeVisible();
     const selectedOptionContainer = modal.locator('#selected-options-container');
     const firstUnslectedOption = await getOption(modal);
     await firstUnslectedOption.click();
@@ -603,6 +632,7 @@ test.describe('Any record of filter', () => {
     );
 
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     const tableBody = page.locator('tbody');
     await expect(tableBody).toBeVisible();
@@ -639,11 +669,17 @@ test.describe('Any record of filter', () => {
     page,
   }) => {
     const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*-btn$/);
-    await addedFilter.click();
-    await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
-    await expect(
-      page.getByTestId('any-record-of-filter-modal').locator('header').locator('h1'),
-    ).toHaveText(`${mockDataWithChildren.children.length} variable(s) in disease category`);
+    await expect(addedFilter).toBeVisible({ timeout: 5000 });
+    // Retry click — click-outside handler can dismiss the modal on the same pointer event
+    await expect(async () => {
+      await addedFilter.click();
+      await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15000 });
+    const h1 = page.getByTestId('any-record-of-filter-modal').locator('header').locator('h1');
+    await expect(h1).toBeVisible();
+    await expect(h1).toHaveText(
+      `${mockDataWithChildren.children.length} variable(s) in disease category`,
+    );
   });
   test('Clicking the Any Record of filter modal has the correct variables', async ({ page }) => {
     const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*-btn$/);
@@ -655,6 +691,7 @@ test.describe('Any record of filter', () => {
   });
   test('Clicking the close button closes the modal', async ({ page }) => {
     const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*-btn$/);
+    await expect(addedFilter).toBeVisible();
     await addedFilter.click();
     const modal = page.getByTestId('any-record-of-filter-modal');
     await expect(modal).toBeVisible();
@@ -680,6 +717,7 @@ test.describe('User with no query scopes can add filters without error', () => {
     await mockApiSuccess(page, countResultPath, '9999');
 
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page, outOfScopeStudy);
@@ -694,6 +732,7 @@ test.describe('User with no query scopes can add filters without error', () => {
     await mockApiSuccess(page, countResultPath, '9999');
 
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page, outOfScopeStudy);
@@ -730,6 +769,7 @@ test.describe('Query V3 OR features', () => {
       detailResponseCat,
     );
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await clickNthFilterIcon(page);
@@ -746,6 +786,7 @@ test.describe('Query V3 OR features', () => {
     // Given
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await mockApiSuccess(
