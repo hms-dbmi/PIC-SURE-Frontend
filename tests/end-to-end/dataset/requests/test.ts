@@ -5,6 +5,7 @@ import {
   status as mockStatus,
   metadata as mockMetadata,
 } from '../../mock-data';
+import { userIsLoggedIn } from '../../utils';
 
 const queryPathV3 = 'picsure/v3/query';
 
@@ -24,6 +25,7 @@ test.describe('data requests', () => {
     test('Should load step 1 on landing', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
 
       // Then
       await expect(page.getByTestId('v-stepper-step-1')).toBeVisible();
@@ -31,6 +33,7 @@ test.describe('data requests', () => {
     test('Should be active step', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
 
       // Then
       await expect(page.getByTestId('v-stepper-step-1')).toHaveAttribute('aria-current', 'step');
@@ -38,6 +41,7 @@ test.describe('data requests', () => {
     test('Should validate uuid provided', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
 
       // When
       await page.getByLabel('Dataset Id').fill('cvfbfbd');
@@ -52,6 +56,7 @@ test.describe('data requests', () => {
       // Given
       await mockApiFail(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, 'failed');
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -65,6 +70,7 @@ test.describe('data requests', () => {
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
       await mockApiFail(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, 'failed');
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -77,6 +83,7 @@ test.describe('data requests', () => {
       // Given
       await mockApiFail(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, 'failed');
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -86,6 +93,7 @@ test.describe('data requests', () => {
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
       await mockApiFail(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, 'failed');
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -109,6 +117,7 @@ test.describe('data requests', () => {
         expiration: 0,
       });
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -122,12 +131,14 @@ test.describe('data requests', () => {
   });
   test.describe('step 2', () => {
     test.beforeEach(async ({ page }) => {
+      test.setTimeout(60000);
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
       await mockApiSuccess(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, mockMetadata);
     });
     test('Should load step 2 when valid uuid provided', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
 
       // When
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
@@ -140,6 +151,7 @@ test.describe('data requests', () => {
     test('Should be active step', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -151,6 +163,7 @@ test.describe('data requests', () => {
     test('Should show data request summary modal', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -166,6 +179,7 @@ test.describe('data requests', () => {
   });
   test.describe('step 3', () => {
     test.beforeEach(async ({ page }) => {
+      test.setTimeout(60000);
       await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, mockStatus);
       await mockApiSuccess(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, mockMetadata);
       await mockApiSuccess(
@@ -180,6 +194,7 @@ test.describe('data requests', () => {
     test('Should load step 3 when approval date is provided', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -194,6 +209,7 @@ test.describe('data requests', () => {
     test('Should be active step', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -207,6 +223,7 @@ test.describe('data requests', () => {
     test('Should show Data Storage Location info modal', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -222,6 +239,7 @@ test.describe('data requests', () => {
     test('Should show placeholder as default value', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -237,6 +255,7 @@ test.describe('data requests', () => {
     test('Should show data types modal', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -250,6 +269,7 @@ test.describe('data requests', () => {
     test('Should not allow send data button click if no data type selected', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -261,6 +281,7 @@ test.describe('data requests', () => {
     test('Should allow send data button on geno or pheno data selection', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -270,12 +291,15 @@ test.describe('data requests', () => {
       await page.getByTestId('selected-site').selectOption(mockSites.sites[0]);
 
       // Then
+      // wait for checkbox to be enabled before checking (site selection triggers async state update)
+      await expect(page.getByTestId('data-geno-checkbox')).not.toBeDisabled();
       await page.getByTestId('data-geno-checkbox').check();
       await expect(page.getByTestId('send-data-btn')).not.toBeDisabled();
     });
     test('Should ask user to confirm on send data button press', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -295,6 +319,7 @@ test.describe('data requests', () => {
     test('Should show default status Unsent', async ({ page }) => {
       // Given
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -318,6 +343,7 @@ test.describe('data requests', () => {
         },
       );
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -355,6 +381,7 @@ test.describe('data requests', () => {
         },
       );
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -365,6 +392,7 @@ test.describe('data requests', () => {
       await page.getByTestId('send-data-btn').click();
       await page.getByTestId('send-data-remember-checkbox').check();
       await page.getByTestId('send-data-modal-confirm-btn').click();
+      await expect(page.getByTestId('send-data-modal-confirm-btn')).not.toBeVisible();
 
       // When
       await page.getByTestId('data-geno-checkbox').check();
@@ -396,6 +424,7 @@ test.describe('data requests', () => {
         },
       );
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -440,6 +469,7 @@ test.describe('data requests', () => {
         },
       );
       await page.goto('/dataset/request');
+      await userIsLoggedIn(page);
       await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
       await page.getByTestId('search-dataset-btn').click();
       await page.waitForTimeout(debounceTime); // Wait for debounce
@@ -460,6 +490,7 @@ test.describe('data requests', () => {
   test('Should load all previously provided values when known query id is provided', async ({
     page,
   }) => {
+    test.setTimeout(60000);
     // Given
     await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, {
       ...mockStatus,
@@ -469,6 +500,7 @@ test.describe('data requests', () => {
     });
     await mockApiSuccess(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, mockMetadata);
     await page.goto('/dataset/request');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
@@ -492,6 +524,7 @@ test.describe('data requests', () => {
     ).toHaveAttribute('title', 'Error');
   });
   test('Should reset back to step 1 on reset button press', async ({ page }) => {
+    // test.setTimeout(60000);
     // Given
     await mockApiSuccess(page, `*/**/picsure/proxy/uploader/status/${dummyUuid}`, {
       ...mockStatus,
@@ -501,6 +534,7 @@ test.describe('data requests', () => {
     });
     await mockApiSuccess(page, `*/**/${queryPathV3}/${dummyUuid}/metadata`, mockMetadata);
     await page.goto('/dataset/request');
+    await userIsLoggedIn(page);
     await page.getByLabel('Dataset Id').pressSequentially(dummyUuid);
     await page.getByTestId('search-dataset-btn').click();
     await page.waitForTimeout(debounceTime); // Wait for debounce

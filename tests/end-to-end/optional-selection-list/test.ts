@@ -9,30 +9,40 @@ import {
   geneValues,
   geneValuesPage2,
 } from '../mock-data';
-import { getOption, clickNthFilterIcon } from '../utils';
+import { getOption, clickNthFilterIcon, optionsHaveLoaded, userIsLoggedIn } from '../utils';
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 const queryResultPath = '*/**/picsure/v3/query/sync';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
-test.describe('OptionaSelectionList', () => {
+test.describe('OptionalSelectionList', () => {
   // TODO: Some feartures will be hidden in the future. Cannot use nth.
   // TODO: Test infinite scroll
   test('Renders', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
     await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
     // Then
-    await expect(page.getByTestId('optional-selection-list')).toBeVisible();
+    await optionsHaveLoaded(page);
   });
   test('Search Box shows', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
     await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
 
@@ -46,19 +56,25 @@ test.describe('OptionaSelectionList', () => {
   test('Expected Options are shown and unchecked', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
     await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
 
     // When
     await clickNthFilterIcon(page);
-    const component = page.getByTestId('optional-selection-list');
-    const optionContainer = component.locator('#options-container');
-    const firstValues = mockData.content[0].values?.slice(0, 2) || [];
+    const firstValues = detailResponseCat.meta.values;
 
     // Then
-    await expect(optionContainer).toBeVisible();
+    await optionsHaveLoaded(page);
+    const component = page.getByTestId('optional-selection-list');
+    const optionContainer = component.locator('#options-container');
     const options = await optionContainer.getByRole('listitem').all();
 
+    expect(options.length).toBeGreaterThan(0);
     for (const option of options) {
       await expect(option).toBeVisible();
       await expect(option).not.toBeChecked();
@@ -68,6 +84,11 @@ test.describe('OptionaSelectionList', () => {
   test('Selected options is empty', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
     await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await page.goto('/discover?search=somedata');
 
@@ -77,6 +98,7 @@ test.describe('OptionaSelectionList', () => {
     const selectedOptionContainer = component.locator('#selected-options-container');
 
     // Then
+    await optionsHaveLoaded(page);
     const options = await selectedOptionContainer.getByRole('listitem').all();
     expect(options).toHaveLength(0);
   });
@@ -130,6 +152,7 @@ test.describe('OptionaSelectionList', () => {
 
     // Then
     await expect(selectedOptionContainer).toBeVisible();
+    expect(selectedOptions.length).toBeGreaterThan(0);
     for (const option of selectedOptions) {
       await expect(option).toBeVisible();
       await expect(option).toBeChecked();
@@ -213,7 +236,7 @@ test.describe('OptionaSelectionList', () => {
     const optionContainer = component.locator('#options-container');
 
     // Then
-    await expect(optionContainer).toBeVisible();
+    await optionsHaveLoaded(page);
 
     // Check initial load
     let visibleOptions = await optionContainer.getByRole('listitem').all();
@@ -254,15 +277,17 @@ test.describe('OptionaSelectionList', () => {
       },
     );
     await page.goto('/explorer');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible({ timeout: 10000 });
     await page.getByTestId('gene-variant-option').click();
     const component = page.getByTestId('optional-selection-list');
     const optionContainer = component.locator('#options-container');
 
     // Then
-    await expect(optionContainer).toBeVisible();
+    await optionsHaveLoaded(page);
 
     // Check initial load
     let visibleOptions = await optionContainer.getByRole('listitem').all();
@@ -307,6 +332,7 @@ test.describe('OptionaSelectionList', () => {
     // When
     await clickNthFilterIcon(page);
     const component = page.getByTestId('optional-selection-list');
+    await optionsHaveLoaded(page);
 
     // Select all options
     await component.locator('#select-all').click();
@@ -314,7 +340,7 @@ test.describe('OptionaSelectionList', () => {
     const selectedOptionsContainer = component.locator('#selected-options-container');
 
     // Then
-    await expect(selectedOptionsContainer).toBeVisible();
+    await optionsHaveLoaded(page, 'selected-options-container');
 
     // Check initial load of selected options
     let visibleSelectedOptions = await selectedOptionsContainer.getByRole('listitem').all();

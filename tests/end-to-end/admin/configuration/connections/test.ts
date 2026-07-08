@@ -7,6 +7,7 @@ import {
   applications as mockApps,
   connections as mockConnections,
 } from '../../../mock-data';
+import { userIsLoggedIn } from '../../../utils';
 
 const validationText = {
   empty: /([Pp]lease )?[Ff]ill out this field.?/,
@@ -24,6 +25,7 @@ test.beforeEach(async ({ page }) => {
 test('Has Connection management table', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
 
   // Then
   await expect(page.locator('#connection-table .table')).toBeVisible();
@@ -31,6 +33,7 @@ test('Has Connection management table', async ({ page }) => {
 test('Has add connection button', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
 
   // Then
   await expect(page.getByTestId('add-connection')).toBeVisible();
@@ -38,6 +41,7 @@ test('Has add connection button', async ({ page }) => {
 test('Add connection button takes user to new connection page', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByTestId('add-connection').click();
@@ -49,6 +53,7 @@ test('Add connection button takes user to new connection page', async ({ page })
 test('Connection form cancel button navigates back to configuration page', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/connection/new');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByTestId('connection-cancel-btn').click();
@@ -67,6 +72,7 @@ test('Connection form returns to configuration page with success message', async
     requiredFields: JSON.stringify([requiredField]),
   };
   await page.goto('/admin/configuration/connection/new');
+  await userIsLoggedIn(page);
   await mockApiSuccess(page, '*/**/psama/connection', { message: '', content: [newConenction] });
 
   // When
@@ -86,6 +92,7 @@ test('Connection form returns error message on api fail', async ({ page }) => {
   // Given
   await mockApiFail(page, '*/**/psama/connection', 'failed');
   await page.goto('/admin/configuration/connection/new');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByLabel('Label').first().fill('bananas');
@@ -101,6 +108,7 @@ test('Connection form returns error message on api fail', async ({ page }) => {
 test('Connection form enforces required Label min length', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/connection/new');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByLabel('Label').first().fill('');
@@ -118,6 +126,7 @@ test('Connection form enforces required Label min length', async ({ page }) => {
 test('Connection form enforces required ID min length', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/connection/new');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByLabel('Label').first().fill('banana');
@@ -135,6 +144,7 @@ test('Connection form enforces required ID min length', async ({ page }) => {
 test('Connection form enforces required Sub Prefix min length', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/connection/new');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByLabel('Label').first().fill('banana');
@@ -151,6 +161,7 @@ test('Connection form enforces required Sub Prefix min length', async ({ page })
 test('Clicking row takes user to edit connection form', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
 
   // When
   await page.locator('#connection-table table tbody tr').first().click();
@@ -162,6 +173,7 @@ test('Clicking row takes user to edit connection form', async ({ page }) => {
 test('Edit row icon takes user to edit connection form', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByTestId(`connection-${mockConnections[0].uuid}-edit-btn`).click();
@@ -176,6 +188,7 @@ test('Edit connection form has pre-populated values', async ({ page }) => {
 
   // Given
   await page.goto(`/admin/configuration/connection/${connection.uuid}/edit`);
+  await userIsLoggedIn(page);
 
   // Then
   await expect(page.getByLabel('Label').first()).toHaveValue(connection.label);
@@ -193,6 +206,7 @@ test('Delete row icon asks users to confirm or cancel', async ({ page }) => {
 
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
 
   // When
   await page.getByTestId(modalId + '-btn').click();
@@ -205,6 +219,7 @@ test('Delete gives success message', async ({ page }) => {
 
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
   await mockApiSuccess(page, `*/**/psama/connection/${mockConnections[0].id}`, {});
 
   // When
@@ -221,6 +236,7 @@ test('Delete gives error message on api failure', async ({ page }) => {
 
   // Given
   await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
   await mockApiFail(page, `*/**/psama/connection/${mockConnections[0].id}`, 'failed');
 
   // When
@@ -239,6 +255,7 @@ test.describe('Required Fields', () => {
   test('Save button is disabled when label is empty', async ({ page }) => {
     // Given
     await page.goto('/admin/configuration/connection/new');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByTestId('required-field-row-new').getByLabel('Label').fill(requiredField.label);
@@ -251,6 +268,7 @@ test.describe('Required Fields', () => {
   test('Save button is disabled when id is empty', async ({ page }) => {
     // Given
     await page.goto('/admin/configuration/connection/new');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByTestId('required-field-row-new').getByLabel('ID').fill(requiredField.id);
@@ -263,6 +281,7 @@ test.describe('Required Fields', () => {
   test('Save button is enabled when label and id are filled', async ({ page }) => {
     // Given
     await page.goto('/admin/configuration/connection/new');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByTestId('required-field-row-new').getByLabel('Label').fill(requiredField.label);
@@ -276,6 +295,7 @@ test.describe('Required Fields', () => {
   test('Reset button is hidden when field has not been given', async ({ page }) => {
     // Given
     await page.goto('/admin/configuration/connection/new');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(
@@ -285,6 +305,7 @@ test.describe('Required Fields', () => {
   test('Reset button is visible when field has been given', async ({ page }) => {
     // Given
     await page.goto('/admin/configuration/connection/new');
+    await userIsLoggedIn(page);
 
     // When
     await page.getByTestId('required-field-row-new').getByLabel('Label').fill(requiredField.label);
@@ -298,6 +319,7 @@ test.describe('Required Fields', () => {
     const field = JSON.parse(mockConnections[0].requiredFields)[0];
     // Given
     await page.goto(`/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
+    await userIsLoggedIn(page);
 
     // When
     await page
@@ -313,6 +335,7 @@ test.describe('Required Fields', () => {
 
     // Given
     await page.goto(`/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
+    await userIsLoggedIn(page);
 
     // When
     await page.getByTestId('required-field-edit-btn').click();
@@ -329,6 +352,7 @@ test.describe('Required Fields', () => {
   test('New button adds empty new row', async ({ page }) => {
     // Given
     await page.goto(`/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
+    await userIsLoggedIn(page);
 
     // When
     await page.getByTestId('required-field-new-btn').click();
@@ -339,6 +363,7 @@ test.describe('Required Fields', () => {
   test('Deleting new field removes new field row', async ({ page }) => {
     // Given
     await page.goto(`/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
+    await userIsLoggedIn(page);
 
     // When
     await page.getByTestId('required-field-new-btn').click();
@@ -352,6 +377,7 @@ test.describe('Required Fields', () => {
 
     // Given
     await page.goto(`/admin/configuration/connection/${mockConnections[0].uuid}/edit`);
+    await userIsLoggedIn(page);
 
     // When
     await page
@@ -365,6 +391,7 @@ test.describe('Required Fields', () => {
   test('A notice appears when two identical id values are added', async ({ page }) => {
     // Given
     await page.goto('/admin/configuration/connection/new');
+    await userIsLoggedIn(page);
     await page.getByTestId('required-field-row-new').getByLabel('Label').fill(requiredField.label);
     await page.getByTestId('required-field-row-new').getByLabel('ID').fill(requiredField.id);
     await page.getByTestId('required-field-row-new').getByTestId('required-field-save-btn').click();
@@ -385,6 +412,7 @@ test.describe('Admin on Configuration page', () => {
   test('Action and add button(s) are disabled when not top admin', async ({ page }) => {
     // Given
     await page.goto('/admin/configuration');
+    await userIsLoggedIn(page);
 
     // Then
     // Check that all edit buttons are disabled
@@ -402,6 +430,7 @@ test.describe('Admin on Configuration page', () => {
   test('Error alert is visible when not top admin', async ({ page }) => {
     // Given
     await page.goto('/admin/configuration');
+    await userIsLoggedIn(page);
     // Then
     await expect(page.getByTestId('error-alert')).toBeVisible();
   });
@@ -410,6 +439,7 @@ test.describe('Admin on Configuration page', () => {
   }) => {
     // Given
     await page.goto('/admin/configuration');
+    await userIsLoggedIn(page);
     // When
     await page.locator('#connection-table table tbody tr').first().click();
     // Then

@@ -9,7 +9,7 @@ import {
   detailResponseCat,
   detailResponseCatSameDataset,
 } from '../mock-data';
-import { clickNthFilterIcon, getOption } from '../utils';
+import { clickNthFilterIcon, getOption, userIsLoggedIn } from '../utils';
 
 const SYNC_URL = '*/**/picsure/query/sync';
 
@@ -31,6 +31,7 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
       detailResponseCat,
     );
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // Add first filter
     await clickNthFilterIcon(page, 0);
@@ -66,6 +67,7 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
       detailResponseCat,
     );
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // Add one filter
     await clickNthFilterIcon(page, 0);
@@ -90,6 +92,7 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
       detailResponseCat,
     );
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // Add first filter — button should be disabled (needs > 1)
     await clickNthFilterIcon(page, 0);
@@ -124,6 +127,7 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
       detailResponseCat,
     );
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // Add two filters to enable the button
     await clickNthFilterIcon(page, 0);
@@ -160,6 +164,7 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
       detailResponseCat,
     );
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // Add first filter
     await clickNthFilterIcon(page, 0);

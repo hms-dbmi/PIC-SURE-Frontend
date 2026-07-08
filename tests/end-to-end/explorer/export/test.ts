@@ -16,7 +16,7 @@ import {
   picsureUser,
   mockDataWithChildren,
 } from '../../mock-data';
-import { getOption } from '../../utils';
+import { getOption, userIsLoggedIn } from '../../utils';
 
 const queryPathV3 = '*/**/picsure/v3/query';
 const countResultPath = `${queryPathV3}/sync`;
@@ -48,6 +48,7 @@ async function setupExportPageAndAddFilterAndExport(
   await mockApiSuccess(page, countResultPath, 9999);
   await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
   await page.goto('/explorer?search=age');
+  await userIsLoggedIn(page);
 
   const expectedRowIds = mockData.content.map((row) => row.conceptPath);
   const tableBody = page.locator('tbody');
@@ -117,6 +118,7 @@ async function checkStepRenderedCorrectly(
 test.describe('Export Page', () => {
   test('Empty Export page renders', async ({ page }) => {
     await page.goto('/explorer/export');
+    await userIsLoggedIn(page);
     await expect(page).toHaveURL('/explorer/export');
     await expect(page.locator('h1')).toHaveText('Export Data for Research Analysis');
     await expect(page.getByRole('button', { name: 'Learn How' })).toBeVisible();

@@ -17,7 +17,6 @@ vite.config.ts.timestamp-*
 /httpd-docker-logs
 httpd-vhosts.conf
 .idea/
-.nvmrc
 *.iml
 supervisord.log
 supervisord.pid

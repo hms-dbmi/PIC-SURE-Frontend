@@ -11,7 +11,7 @@ import {
   searchResults as mockData,
   searchResultPath,
 } from '../../mock-data';
-import { getOption, clickNthFilterIcon } from '../../utils';
+import { getOption, clickNthFilterIcon, userIsLoggedIn } from '../../utils';
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 const SyncQueryV3 = '*/**/picsure/v3/query/sync';
@@ -51,11 +51,13 @@ test.describe('variant explorer', () => {
       await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
       // Add genomic filter steps
       await page.goto('/explorer');
+      await userIsLoggedIn(page);
       await mockSyncAPI(page, successResults);
       await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
       // open the sidebar to reduce locator time on result panel items during testing
       await page.locator('#results-panel-toggle').click();
       await page.getByTestId('genomic-filter-btn').click();
+      await expect(page.getByTestId('gene-variant-option')).toBeVisible();
       await page.getByTestId('gene-variant-option').click();
       await page.locator('#options-container').getByLabel(geneValues.results[0]).click();
       await page.getByTestId('add-filter-btn').click();
@@ -150,6 +152,7 @@ test.describe('variant explorer', () => {
       detailResponseCat,
     );
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // has one pheno filter
     await clickNthFilterIcon(page);

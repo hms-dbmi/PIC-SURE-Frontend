@@ -7,6 +7,7 @@ import {
   searchResultPath,
   facetResultPath,
 } from '../../mock-data';
+import { userIsLoggedIn } from '../../utils';
 import * as config from '../../../../src/lib/assets/configuration.json' with { type: 'json' };
 import type { Branding } from '$lib/configuration';
 //TypeScript is confused by the JSON import so I am fxing it here
@@ -22,14 +23,17 @@ test.beforeEach(async ({ page }) => {
   await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, searchResultPath, searchResults);
+
+  await page.goto('/explorer');
+  await userIsLoggedIn(page);
 });
 
 test('Selecting Gene option advances to gene filter options', async ({ page }) => {
   // Given
-  await page.goto('/explorer');
   await page.getByTestId('genomic-filter-btn').click();
 
   // When
+  await expect(page.getByTestId('gene-variant-option')).toBeVisible();
   await page.getByTestId('gene-variant-option').click();
 
   // Then
@@ -38,17 +42,18 @@ test('Selecting Gene option advances to gene filter options', async ({ page }) =
 test.describe('Gene selection', () => {
   test('Loads list of genes ', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
+    await expect(page.locator('#gene-search')).toBeVisible({ timeout: 10000 });
 
     // Then
     await expect(page.getByLabel(geneValues.results[0])).toBeVisible();
   });
   test('Can search genes', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     await expect(page.getByLabel(geneValues.results[0])).toBeVisible();
@@ -67,14 +72,15 @@ test.describe('Gene selection', () => {
   });
   test('Selected genes move to selected box', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     const optionsContainer = page.locator('#options-container');
     const selectedContainer = page.locator('#selected-options-container');
 
     // When
+    await expect(optionsContainer.getByLabel(geneValues.results[0])).toBeVisible();
     await optionsContainer.getByLabel(geneValues.results[0]).click();
 
     // Then
@@ -83,14 +89,15 @@ test.describe('Gene selection', () => {
   });
   test('Can clear selected genes', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     const optionsContainer = page.locator('#options-container');
     const selectedContainer = page.locator('#selected-options-container');
 
     // When
+    await expect(optionsContainer.getByLabel(geneValues.results[0])).toBeVisible();
     await optionsContainer.getByLabel(geneValues.results[0]).click();
     await page.getByTestId('clear-selected-genes-btn').click();
 
@@ -100,14 +107,17 @@ test.describe('Gene selection', () => {
   });
   test('Selecting a gene enables add filter button', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     const optionsContainer = page.locator('#options-container');
     const selectedContainer = page.locator('#selected-options-container');
 
-    // When
+    // When — wait for genes to load before clicking
+    await expect(optionsContainer.getByLabel(geneValues.results[0])).toBeVisible({
+      timeout: 10000,
+    });
     await optionsContainer.getByLabel(geneValues.results[0]).click();
 
     // Then
@@ -116,14 +126,17 @@ test.describe('Gene selection', () => {
   });
   test('Unselecting a gene disables add filter button', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     const optionsContainer = page.locator('#options-container');
     const selectedContainer = page.locator('#selected-options-container');
 
-    // When
+    // When — wait for genes to load before clicking
+    await expect(optionsContainer.getByLabel(geneValues.results[0])).toBeVisible({
+      timeout: 10000,
+    });
     await optionsContainer.getByLabel(geneValues.results[0]).click();
     await expect(page.getByTestId('add-filter-btn')).toBeEnabled();
 
@@ -135,8 +148,8 @@ test.describe('Gene selection', () => {
 test.describe('Frequency selection', () => {
   test('Frequency Help', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     await expect(page.getByTestId('freq-help-popup-content')).not.toBeVisible();
@@ -151,8 +164,8 @@ test.describe('Frequency selection', () => {
   });
   test('If only a frequency is selected, the add filter button is disabled', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     // When
@@ -165,8 +178,8 @@ test.describe('Frequency selection', () => {
     page,
   }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     // When
@@ -185,10 +198,12 @@ test.describe('Frequency selection', () => {
 test.describe('Consequnce selection', () => {
   test('Consequnce Help', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
+    // Wait for the gene filter panel to finish loading before interacting
+    await expect(page.locator('#gene-search')).toBeVisible({ timeout: 10000 });
     await expect(page.getByTestId('cons-help-popup-content')).not.toBeVisible();
 
     // When
@@ -201,8 +216,8 @@ test.describe('Consequnce selection', () => {
   });
   test('Selecting parent node selects all children nodes', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     const consPanel = page.getByTestId('select-calculated-consequence');
@@ -219,8 +234,8 @@ test.describe('Consequnce selection', () => {
   });
   test('Can select child nodes individually', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     const consPanel = page.getByTestId('select-calculated-consequence');
@@ -240,8 +255,8 @@ test.describe('Consequnce selection', () => {
   });
   test('When a gene is not selected, the add filter button is disabled', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     const consPanel = page.getByTestId('select-calculated-consequence');
@@ -259,8 +274,8 @@ test.describe('Consequnce selection', () => {
     page,
   }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     const consPanel = page.getByTestId('select-calculated-consequence');
@@ -284,8 +299,8 @@ test.describe('Consequnce selection', () => {
 test.describe('Summary panel', () => {
   test('Displays selected genes', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     const geneContainer = page.locator('#options-container');
@@ -303,8 +318,8 @@ test.describe('Summary panel', () => {
   });
   test('Displays selected frequencies', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     const freqContainer = page.getByTestId('select-variant-frequency');
@@ -322,8 +337,8 @@ test.describe('Summary panel', () => {
   });
   test('Displays selected consequences', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
     const consContainer = page.getByTestId('select-calculated-consequence');
@@ -343,10 +358,12 @@ test.describe('Summary panel', () => {
   });
   test('Clear button clears all selected values', async ({ page }) => {
     // Given
-    await page.goto('/explorer');
     await page.getByTestId('genomic-filter-btn').click();
+    await expect(page.getByTestId('gene-variant-option')).toBeVisible();
     await page.getByTestId('gene-variant-option').click();
 
+    // Wait for gene panel to fully load before interacting
+    await expect(page.locator('#gene-search')).toBeVisible({ timeout: 10000 });
     await page.getByTestId('select-variant-frequency').getByLabel('Rare').click();
     await page
       .getByTestId('select-calculated-consequence')
@@ -373,8 +390,8 @@ test.describe('Summary panel', () => {
 });
 test('Apply Filters button enables once a selection is made', async ({ page }) => {
   // Given
-  await page.goto('/explorer');
   await page.getByTestId('genomic-filter-btn').click();
+  await expect(page.getByTestId('gene-variant-option')).toBeVisible();
   await page.getByTestId('gene-variant-option').click();
 
   await expect(page.getByTestId('add-filter-btn')).not.toBeEnabled();
@@ -388,8 +405,8 @@ test('Apply Filters button enables once a selection is made', async ({ page }) =
 });
 test('Apply Filter adds to sidepanel', async ({ page }) => {
   // Given
-  await page.goto('/explorer');
   await page.getByTestId('genomic-filter-btn').click();
+  await expect(page.getByTestId('gene-variant-option')).toBeVisible();
   await page.getByTestId('gene-variant-option').click();
 
   const optionsContainer = page.locator('#options-container');
@@ -408,8 +425,8 @@ test('Clicking edit filter button in results panel returns to genomic filter wit
   page,
 }) => {
   // Given
-  await page.goto('/explorer');
   await page.getByTestId('genomic-filter-btn').click();
+  await expect(page.getByTestId('gene-variant-option')).toBeVisible();
   await page.getByTestId('gene-variant-option').click();
 
   const optionsContainer = page.locator('#options-container');
@@ -432,8 +449,8 @@ test('Clicking edit filter button in results panel returns to genomic filter wit
 });
 test('Editing filter from results panel updates results panel on save', async ({ page }) => {
   // Given
-  await page.goto('/explorer');
   await page.getByTestId('genomic-filter-btn').click();
+  await expect(page.getByTestId('gene-variant-option')).toBeVisible();
   await page.getByTestId('gene-variant-option').click();
   const optionsContainer = page.locator('#options-container');
   await optionsContainer.getByLabel(geneValues.results[0]).click();
@@ -465,8 +482,8 @@ test('Clicking Genomic Filtering after adding a gene filter navigates to edit fi
   page,
 }) => {
   // Given
-  await page.goto('/explorer');
   await page.getByTestId('genomic-filter-btn').click();
+  await expect(page.getByTestId('gene-variant-option')).toBeVisible();
   await page.getByTestId('gene-variant-option').click();
   const optionsContainer = page.locator('#options-container');
   const selectedContainer = page.locator('#selected-options-container');
@@ -478,6 +495,7 @@ test('Clicking Genomic Filtering after adding a gene filter navigates to edit fi
 
   // When
   await page.getByTestId('genomic-filter-btn').click();
+  await expect(page.getByTestId('gene-variant-option')).toBeVisible();
   await page.getByTestId('gene-variant-option').click();
 
   // Then

@@ -10,7 +10,7 @@ import {
   facetsResponse,
   crossCountSyncResponseInital,
 } from '../mock-data';
-import { getOption } from '../utils';
+import { getOption, userIsLoggedIn } from '../utils';
 
 const countResultPath = '*/**/picsure/v3/query/sync';
 const openCountResultPath = '*/**/picsure/query/sync';
@@ -24,6 +24,7 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // Then
     await expect(page.locator('#side-panel-bar')).toBeVisible();
@@ -36,6 +37,7 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     //When
     await page.locator('#results-panel-toggle').click();
@@ -55,6 +57,7 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
     await page.locator('#results-panel-toggle').click();
 
     // When
@@ -83,6 +86,7 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiFail(page, countResultPath, 'failed');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await page.locator('#results-panel-toggle').click();
@@ -101,7 +105,9 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
     await page.locator('#results-panel-toggle').click();
+    await expect(page.locator('#results-panel')).toBeVisible();
 
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
@@ -113,7 +119,9 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
     await page.locator('#results-panel-toggle').click();
+    await expect(page.locator('#results-panel')).toBeVisible();
 
     // Then
     await expect(page.getByText('No filters added')).toBeVisible();
@@ -124,6 +132,7 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await page.locator('#results-panel-toggle').click();
@@ -138,6 +147,7 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countResultPath, '0');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
 
     // When
     await page.locator('#results-panel-toggle').click();
@@ -152,6 +162,7 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
     await page.locator('#results-panel-toggle').click();
 
     // When
@@ -174,13 +185,16 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countResultPath, '9999');
+    await mockApiSuccess(page, openCountResultPath, '9999');
 
     // When
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
     await page.locator('#results-panel-toggle').click();
 
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
+    await expect(page.locator('#result-count')).toBeVisible({ timeout: 15000 });
     await expect(page.locator('#export-data-button')).not.toBeVisible();
   });
 
@@ -188,6 +202,7 @@ test.describe('Results Panel', () => {
     // Given
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, openCountResultPath, '9999');
     // Deterministic counts: fast for initial and first filter, delayed after second filter
     let countCalls = 0;
     await page.route(countResultPath, async (route) => {
@@ -198,7 +213,10 @@ test.describe('Results Panel', () => {
       await route.fulfill({ json: '9999' });
     });
     await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
     await page.locator('#results-panel-toggle').click();
+    await expect(page.locator('#results-panel')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#result-count')).toBeVisible({ timeout: 15000 });
     await mockApiSuccess(
       page,
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
@@ -239,6 +257,7 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countResultPath, '9999');
     await page.goto('/explorer?search=age');
+    await userIsLoggedIn(page);
 
     const expectedRowIds = mockData.content.map((row) => row.conceptPath);
     const tableBody = page.locator('tbody');
@@ -329,6 +348,7 @@ test.describe('Results Panel', () => {
         detailResponseCat,
       );
       await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
 
       // When
       await page.locator('#row-0 button[title=Filter]').click();
@@ -338,6 +358,56 @@ test.describe('Results Panel', () => {
 
       // Then
       await expect(page.getByTestId('distributions-btn')).toBeDisabled();
+    });
+
+    test('re-enables distributions button when removing a zero-count filter restores cached counts', async ({
+      page,
+    }) => {
+      // Given
+      await mockApiSuccess(page, facetResultPath, facetsResponse);
+      await mockApiSuccess(page, searchResultPath, mockData);
+      let countCalls = 0;
+      await page.route(countResultPath, async (route) => {
+        countCalls += 1;
+        await route.fulfill({ json: countCalls >= 2 ? '0' : '9999' });
+      });
+
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.locator('#row-0 button[title=Filter]').click();
+      const firstItem = await getOption(page);
+      await firstItem.click();
+      await page.getByTestId('add-filter').click();
+      await expect(page.locator('#result-count-number')).toHaveText('9,999');
+      await expect(page.getByTestId('distributions-btn')).toBeEnabled();
+
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat2.dataset}`,
+        detailResponseCat2,
+      );
+      await page.locator('#row-2 button[title=Filter]').click();
+      const secondItem = await getOption(page);
+      await secondItem.click();
+      await page.getByTestId('add-filter').click();
+      await expect(page.locator('#result-count-number')).toHaveText('0');
+      await expect(page.getByTestId('distributions-btn')).toBeDisabled();
+
+      // When
+      await page
+        .getByTestId(`added-filter-${detailResponseCat2.conceptPath}`)
+        .getByRole('button', { name: 'Remove Filter' })
+        .click();
+
+      // Then: the previous one-filter query is served from cache; button state should follow it.
+      await expect(page.locator('#result-count-number')).toHaveText('9,999');
+      await expect(page.getByTestId('distributions-btn')).toBeEnabled();
     });
 
     test('disables distributions button on Discover when total cohort count is less than ten', async ({
@@ -354,6 +424,7 @@ test.describe('Results Panel', () => {
         detailResponseCat,
       );
       await page.goto('/discover?search=somedata');
+      await userIsLoggedIn(page);
 
       // When
       await page.locator('#row-0 button[title=Filter]').click();
