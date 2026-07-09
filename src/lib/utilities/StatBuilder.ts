@@ -28,7 +28,7 @@ import { isUserLoggedIn } from '$lib/stores/User';
 import { addConsents } from '$lib/stores/Dictionary';
 import { getQueryResources, resources } from '$lib/stores/Resources';
 import { getQueryRequestV3, getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
-import { countResult } from '$lib/utilities/PatientCount';
+import { countResult } from '$lib/services/counts/countFormat';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { log, createLog } from '$lib/logger';
 import { useOpenAccess } from '$lib/AccessState';
