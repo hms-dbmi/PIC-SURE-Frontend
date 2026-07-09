@@ -4,7 +4,7 @@
 
   import { browser } from '$app/environment';
   import { StatPromise } from '$lib/utilities/StatBuilder';
-  import { countResult } from '$lib/utilities/PatientCount';
+  import { countResult } from '$lib/services/counts/countFormat';
   import { sanitizeHTML } from '$lib/utilities/HTML';
   import { features } from '$lib/configuration';
   import Loading from '$lib/components/Loading.svelte';
