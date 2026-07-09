@@ -61,7 +61,7 @@ vi.mock('$lib/services/counts/providers', () => ({
 }));
 
 import type { ResultCountSnapshot } from '$lib/services/counts/snapshot';
-import type { QueryCountService } from '$lib/services/counts/QueryCountService';
+import type { QueryCountService } from '$lib/services/counts/queryCountService';
 import type { QueryDescriptor } from '$lib/services/counts/queryDescriptor.svelte';
 import { ResultCounts } from '$lib/state/resultCounts.svelte';
 

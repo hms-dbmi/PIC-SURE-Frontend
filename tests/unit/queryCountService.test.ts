@@ -4,7 +4,7 @@ vi.mock('$app/environment', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
-import { createQueryCountService } from '$lib/services/counts/QueryCountService';
+import { createQueryCountService } from '$lib/services/counts/queryCountService';
 import type { CountProvider } from '$lib/services/counts/providers';
 import type { QueryDescriptor } from '$lib/services/counts/queryDescriptor.svelte';
 

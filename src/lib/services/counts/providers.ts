@@ -27,10 +27,8 @@ const patientCount: CountProvider = {
   id: 'query:patientCount',
   path: resolveCountPath,
   buildRequest(descriptor, resourceUUID) {
-    if (descriptor.isOpenAccess) {
-      return buildQueryRequestV3FromDescriptor(descriptor, resourceUUID, 'CROSS_COUNT');
-    }
-    return buildQueryRequestV3FromDescriptor(descriptor, resourceUUID, 'COUNT');
+    const resultType = descriptor.isOpenAccess ? 'CROSS_COUNT' : 'COUNT';
+    return buildQueryRequestV3FromDescriptor(descriptor, resourceUUID, resultType);
   },
   parse(raw) {
     if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
