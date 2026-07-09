@@ -466,8 +466,49 @@ function parsers(map: ConfigMap, defaults: Indexable) {
   };
 }
 
+// Env variable config layer
+//
+// Lets a deployment pin or seed individual features/settings via VITE_<KEY> env vars,
+// independent of whether the API is configured to return that config kind at all.
+// VITE_CONFIG_MODE decides who wins when both an env var and an API row are set for
+// the same field:
+//   seed (default): defaults -> env (if set) -> API (if set) wins
+//   override:       defaults -> API (if set) -> env (if set) wins
+// Either way, defaults remain the floor - parsers() already falls back to `defaults[name]`
+// when a key is absent from the map it's given, so this only needs to combine the sparse
+// env-derived and API-derived maps in the right order before handing them to parsers().
+
+export type ConfigMode = 'seed' | 'override';
+const VITE_ENV_PREFIX = 'VITE_';
+
+export function getConfigMode(): ConfigMode {
+  return import.meta.env?.VITE_CONFIG_MODE === 'override' ? 'override' : 'seed';
+}
+
+function envConfigMap(defaults: Indexable, envPrefix: string): ConfigMap {
+  const env = import.meta.env;
+  return Object.keys(defaults).reduce((map: ConfigMap, key: string) => {
+    const envKey = `${envPrefix}${key}`;
+    // Presence, not truthiness: an explicit empty-string override must still count as "set".
+    if (envKey in env) {
+      map[key] = { name: key, value: String(env[envKey]) };
+    }
+    return map;
+  }, {} as ConfigMap);
+}
+
+export function resolveConfigMap(
+  defaults: Indexable,
+  apiRows: ConfigObject[],
+  envPrefix: string = VITE_ENV_PREFIX,
+): ConfigMap {
+  const apiMap = apiRows.reduce(rowMap, {} as ConfigMap);
+  const envMap = envConfigMap(defaults, envPrefix);
+  return getConfigMode() === 'override' ? { ...apiMap, ...envMap } : { ...envMap, ...apiMap };
+}
+
 export function mapFeatures(configs: ConfigObject[]): Features {
-  const fm = configs.reduce(rowMap, {});
+  const fm = resolveConfigMap(defaultFeatures, configs);
   const parse = parsers(fm, defaultFeatures).asBoolean;
   return {
     analyzeAnalysis: parse('ANALYZE_ANALYSIS'),
@@ -514,7 +555,7 @@ export function mapFeatures(configs: ConfigObject[]): Features {
 }
 
 export function mapSettings(configs: ConfigObject[]): Settings {
-  const sm: ConfigMap = configs.reduce(rowMap, {});
+  const sm: ConfigMap = resolveConfigMap(defaultSettings, configs);
   const parse = parsers(sm, defaultSettings);
   return {
     distributionExplorer: {

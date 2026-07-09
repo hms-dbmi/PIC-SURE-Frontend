@@ -2,13 +2,22 @@ import type { PlaywrightTestConfig } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
 
+// This only pre-populates process.env - Vite's own build step would still unconditionally
+// load the project's root .env on top of it otherwise (a real, gitignored, developer-local
+// file), since Vite always loads the base .env regardless of mode. The webServer command
+// below passes --mode test, which vite.config.ts uses to redirect envDir away from the
+// project root during e2e builds, so only what's set here (and inherited process.env,
+// which always wins over file-based env) reaches the build.
 dotenv.config({ path: path.resolve('.env.test') });
 const isUI = process.argv.includes('--ui');
 const isDebug = !!process.env.PLAYWRIGHT_DEV || process.argv.includes('--debug');
 
 const config: PlaywrightTestConfig = {
   webServer: {
-    command: isUI && isDebug ? 'npm run dev -- --port 4173' : 'npm run build && npm run preview',
+    command:
+      isUI && isDebug
+        ? 'npm run dev -- --port 4173 --mode test'
+        : 'npm run build -- --mode test && npm run preview -- --mode test',
     port: 4173,
     reuseExistingServer: !process.env.CI,
     stdout: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
