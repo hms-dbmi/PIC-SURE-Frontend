@@ -10,7 +10,7 @@ import {
 } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
 
-const datasetPath = '*/**/picsure/dataset/named';
+const datasetPath = '*/**/picsure/operations/dataset/named';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 

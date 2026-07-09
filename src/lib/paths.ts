@@ -29,7 +29,7 @@ export const Picsure = {
   },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,
-  NamedDataSet: `${PREFIX}/dataset/named`,
+  NamedDataSet: `${PREFIX}/operations/dataset/named`,
   Dictionary: DICT,
   Facets: `${DICT}/facets`,
   Search: `${HPDS_AUTH}/search`,
