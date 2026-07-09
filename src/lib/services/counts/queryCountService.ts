@@ -40,8 +40,8 @@ interface CellOutcome {
 }
 
 export function createQueryCountService(options: QueryCountServiceOptions): QueryCountService {
-  const { transport } = options;
-  const cache = new LRU<string, ResultCountSnapshot>(options.maxCacheSize ?? 100);
+  const { transport, maxCacheSize = 100 } = options;
+  const cache = new LRU<string, ResultCountSnapshot>(maxCacheSize);
 
   async function executeOne(
     descriptor: QueryDescriptor,

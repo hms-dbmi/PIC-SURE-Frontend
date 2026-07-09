@@ -17,7 +17,7 @@ import type { QueryDescriptor } from '$lib/services/counts/queryDescriptor.svelt
 import {
   createQueryCountService,
   type QueryCountService,
-} from '$lib/services/counts/QueryCountService';
+} from '$lib/services/counts/queryCountService';
 import type { ResultCountSnapshot } from '$lib/services/counts/snapshot';
 
 export type ResultCountsStatus = 'idle' | 'loading' | 'loaded' | 'error';
