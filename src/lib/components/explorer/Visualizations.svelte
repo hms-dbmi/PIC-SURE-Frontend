@@ -67,18 +67,8 @@
 
     const query = getQueryRequestV3(!isOpenAccess());
 
-    // `hpdsResourceUUID` is a legacy field: the viz service selects its HPDS backend by path and
-    // accepts UUID-less requests.
     await api
-      .post(
-        Picsure.Visualization.Distributions,
-        {
-          query: query.query,
-          hpdsResourceUUID: '',
-        },
-        undefined,
-        !isOpenAccess(),
-      )
+      .post(Picsure.Visualization.Distributions, { query: query.query }, undefined, !isOpenAccess())
       .then((resp) => {
         const categoricalData = (resp?.categoricalData || []).filter((data: CategoricalPlotData) =>
           categoricalHasData(data, minimumCount),
