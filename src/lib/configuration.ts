@@ -14,6 +14,7 @@ import type {
   CodeBlockConfig,
   PrivacyConfig,
   AnalysisConfig,
+  ApiPageConfig,
   CollaborateConfig,
   DatasetRequestPageConfig,
   TermsOfServiceConfig,
@@ -44,6 +45,7 @@ export interface Branding {
   help: HelpConfig;
   privacyPolicy: PrivacyConfig;
   analysisConfig: AnalysisConfig;
+  apiPage: ApiPageConfig;
   collaborateConfig: CollaborateConfig;
   genomic?: {
     defaultGenomeBuild: string;
@@ -75,6 +77,7 @@ export const branding: Branding = {
   help: {} as HelpConfig,
   privacyPolicy: {} as PrivacyConfig,
   analysisConfig: {} as AnalysisConfig,
+  apiPage: { capabilities: [] } as ApiPageConfig,
   collaborateConfig: {} as CollaborateConfig,
   termsOfService: {} as TermsOfServiceConfig,
 };
@@ -105,6 +108,7 @@ export const initializeBranding = () => {
   branding.sitemap = configJson.sitemap as SiteMapConfig[];
   branding.privacyPolicy = configJson.privacyPolicy;
   branding.analysisConfig = configJson.analysisPage;
+  branding.apiPage = configJson.apiPage;
   branding.collaborateConfig = configJson.collaboratePage;
   branding.genomic = configJson.genomic;
   branding.termsOfService = configJson.termsOfService;
