@@ -133,9 +133,8 @@ export const routes: Route[] = [
     privilege: [PicsurePrivileges.QUERY],
   },
   {
-    path: '/analyze/api',
-    text: 'Prepare for Analysis',
-    privilege: [PicsurePrivileges.API_ACCESS, BDCPrivileges.AUTHORIZED_ACCESS],
+    path: '/api',
+    text: 'API',
     feature: 'analyzeApi',
   },
   {
