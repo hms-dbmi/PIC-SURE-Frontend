@@ -25,7 +25,7 @@
       "privilege": "PIC_SURE_ANY_QUERY",
       "links": [
         { "title": "Explore", "url": "/explorer" },
-        { "title": "Analyze", "url": "/analyze/api", "feature": "analyzeApi" },
+        { "title": "API", "url": "/api", "feature": "analyzeApi" },
         { "title": "Analyze", "url": "/analyze/analysis", "feature": "analyzeAnalysis" },
         { "title": "Manage Datasets", "url": "/dataset" }
       ]
@@ -113,12 +113,12 @@
         "showIfLoggedIn": true
       },
       {
-        "title": "Prepare for Analysis",
-        "description": "Use the PIC-SURE API to prepare data for analysis",
-        "icon": "fa-solid fa-chart-line",
-        "url": "/analyze/api",
-        "btnText": "Prepare for Analysis",
-        "isOpen": false,
+        "title": "API",
+        "description": "Search data and build cohorts programmatically with the PIC-SURE API",
+        "icon": "fa-solid fa-code",
+        "url": "/api",
+        "btnText": "Explore the API",
+        "isOpen": true,
         "showIfLoggedIn": true
       },
       {
@@ -147,22 +147,6 @@
     ]
   },
   "analysisPage": {
-    "api": {
-      "cards": [
-        {
-          "header": "Setting Up the PIC-SURE API",
-          "body": "Step-by-step instructions to get started using the PIC-SURE API",
-          "link": "/analyze/api/example"
-        }
-      ],
-      "instructions": {
-        "connection": "To connect to the PIC-SURE Application Programming Interface (API), you will need your personal access token. Copy your token and save as a text file called \"token.txt\" in the working directory of your chosen analysis workspace.",
-        "execution": "To start your analysis, copy and execute the following code in your preferred analysis environment to connect to the PIC-SURE API. Note that you will need your personal access token to complete the connection."
-      },
-      "example": {
-        "setup": "<p>First, you will need to set up your analysis workspace. To leverage the existing documentation and examples of how to use the PIC-SURE API, this workspace should have Python or R installed. You can access the publicly available examples on the <a class=\"anchor\" href=\"https://github.com/hms-dbmi/Access-to-Data-using-PIC-SURE-API/tree/master/CDC_National_Health_and_Nutrition_Examination_Survey\" target=\"_blank\">GitHub repository</a>.</p>"
-      }
-    },
     "analysis": {
       "platform": "Service Workbench",
       "introduction": "<section id=\"introduction\"><h2>Introduction to Service Workbench</h2><p>After you have identified patients for research using the <a class=\"anchor\" href=\"/explorer\">Cohort Builder</a>, found collaborators from other <a class=\"anchor\" href=\"/collaborate\">GIC sites</a>, submitted the <a class=\"anchor\" target=\"_blank\" href=\"https://redcap.tch.harvard.edu/redcap_edc/surveys/?s=EWYX8X8XX77TTWFR\">RedCap Request Form</a> for accessing data, and received approval from each site’s Sample and Data Access Committee (SDAC), you are ready to begin analysis. You can access and analyze patient-level data using Service Workbench.</p> <p>Service Workbench (SWB) is an open-source cloud computing platform from Amazon Web Services (AWS). This platform provides secure, repeatable, and federated control of access to data, tooling, and computing power. This allows you to easily access any cloud workspace from a catalog of pre-configured environments, leverage all AWS AI/ML and native security controls, and collaborate with researchers from other sites through a simple web application.</p></section>",

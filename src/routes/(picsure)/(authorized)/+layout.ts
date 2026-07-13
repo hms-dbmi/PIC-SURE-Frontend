@@ -51,15 +51,8 @@ export const load: LayoutLoad = async ({ url }) => {
       );
       redirect(302, '/');
     }
-    if (!features.analyzeApi && features.analyzeAnalysis && url.pathname.includes('/analyze/api')) {
-      redirect(302, '/analyze/analysis');
-    }
-    if (
-      !features.analyzeAnalysis &&
-      features.analyzeApi &&
-      url.pathname.includes('/analyze/analysis')
-    ) {
-      redirect(302, '/analyze/api');
+    if (!features.analyzeAnalysis && url.pathname.includes('/analyze/analysis')) {
+      redirect(302, features.analyzeApi ? '/api' : '/');
     }
   }
 };
