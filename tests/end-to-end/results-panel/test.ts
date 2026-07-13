@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiFail, mockApiSuccess } from '../custom-context';
+import { test, mockApiFail, mockApiSuccess, mockApiConfig } from '../custom-context';
 import {
   conceptsDetailPath,
   detailResponseCat,
@@ -18,7 +18,7 @@ const openCountResultPath = '*/**/picsure/query/sync';
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('Results Panel', () => {
-  test.beforeEach(({ page }) => mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] }));
+  test.beforeEach(({ page }) => mockApiConfig(page));
   test('Result panel bar and button shows', async ({ page }) => {
     // Given
     await mockApiSuccess(page, facetResultPath, facetsResponse);
@@ -201,9 +201,8 @@ test.describe('Results Panel', () => {
 
   test('Export button disabled during counts loading then enabled after', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/api/config', {
+    await mockApiConfig(page, {
       features: [{ name: 'ALLOW_EXPORT', value: 'true' }],
-      settings: [],
     });
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
@@ -253,9 +252,8 @@ test.describe('Results Panel', () => {
   });
   test('Clear All clears exports and filters', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/api/config', {
+    await mockApiConfig(page, {
       features: [{ name: 'ALLOW_EXPORT_ENABLED', value: 'true' }],
-      settings: [],
     });
     await mockApiSuccess(
       page,
@@ -300,12 +298,11 @@ test.describe('Results Panel', () => {
     test.beforeEach(async ({ page }) => {
       // DIST_EXPLORER gates the distributions-btn on both /explorer and /discover
       // (ResultsPanel.svelte's showExplorerDistributions/showDiscoverDistributions).
-      await mockApiSuccess(page, '*/**/api/config', {
+      await mockApiConfig(page, {
         features: [
           { name: 'ENABLE_OR_QUERIES', value: 'true' },
           { name: 'DIST_EXPLORER', value: 'true' },
         ],
-        settings: [],
       });
       page.on('request', (request) => {
         if (request.url().includes('/picsure/query/sync')) {
@@ -329,14 +326,13 @@ test.describe('Results Panel', () => {
       await mockApiSuccess(page, openCountResultPath, { '\\_studies_consents\\': 9999 });
       // Override the shared beforeEach config: DISCOVER keeps /discover from
       // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
-      await mockApiSuccess(page, '*/**/api/config', {
+      await mockApiConfig(page, {
         features: [
           { name: 'ENABLE_OR_QUERIES', value: 'true' },
           { name: 'DIST_EXPLORER', value: 'true' },
           { name: 'DISCOVER', value: 'true' },
           { name: 'OPEN_EXPLORER', value: 'false' },
         ],
-        settings: [],
       });
       await page.goto('/discover?search=somedata');
       await mockApiSuccess(
@@ -456,14 +452,13 @@ test.describe('Results Panel', () => {
       );
       // Override the shared beforeEach config: DISCOVER keeps /discover from
       // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
-      await mockApiSuccess(page, '*/**/api/config', {
+      await mockApiConfig(page, {
         features: [
           { name: 'ENABLE_OR_QUERIES', value: 'true' },
           { name: 'DIST_EXPLORER', value: 'true' },
           { name: 'DISCOVER', value: 'true' },
           { name: 'OPEN_EXPLORER', value: 'false' },
         ],
-        settings: [],
       });
       await page.goto('/discover?search=somedata');
       await userIsLoggedIn(page);
@@ -492,14 +487,13 @@ test.describe('Results Panel', () => {
       );
       // Override the shared beforeEach config: DISCOVER keeps /discover from
       // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
-      await mockApiSuccess(page, '*/**/api/config', {
+      await mockApiConfig(page, {
         features: [
           { name: 'ENABLE_OR_QUERIES', value: 'true' },
           { name: 'DIST_EXPLORER', value: 'true' },
           { name: 'DISCOVER', value: 'true' },
           { name: 'OPEN_EXPLORER', value: 'false' },
         ],
-        settings: [],
       });
       await page.goto('/discover?search=somedata');
 
@@ -528,14 +522,13 @@ test.describe('Results Panel', () => {
       );
       // Override the shared beforeEach config: DISCOVER keeps /discover from
       // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
-      await mockApiSuccess(page, '*/**/api/config', {
+      await mockApiConfig(page, {
         features: [
           { name: 'ENABLE_OR_QUERIES', value: 'true' },
           { name: 'DIST_EXPLORER', value: 'true' },
           { name: 'DISCOVER', value: 'true' },
           { name: 'OPEN_EXPLORER', value: 'false' },
         ],
-        settings: [],
       });
       await page.goto('/discover?search=somedata');
 
@@ -558,14 +551,13 @@ test.describe('Results Panel', () => {
       await mockApiSuccess(page, openCountResultPath, '9999');
       // Override the shared beforeEach config: DISCOVER keeps /discover from
       // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
-      await mockApiSuccess(page, '*/**/api/config', {
+      await mockApiConfig(page, {
         features: [
           { name: 'ENABLE_OR_QUERIES', value: 'true' },
           { name: 'DIST_EXPLORER', value: 'true' },
           { name: 'DISCOVER', value: 'true' },
           { name: 'OPEN_EXPLORER', value: 'false' },
         ],
-        settings: [],
       });
       await page.goto('/discover?search=somedata');
 

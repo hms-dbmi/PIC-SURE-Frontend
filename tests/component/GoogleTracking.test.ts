@@ -23,9 +23,11 @@ vi.mock('$app/navigation', () => ({
 // Analytics-only configuration (no tag manager) — also guards the regression
 // where the consent prompt was coupled to `tagManager` being set. The literal
 // must be inlined here because vi.mock factories are hoisted above module vars.
-vi.mock('$lib/configuration', () => ({
-  settings: { google: { analytics: 'G-TEST123', tagManager: '' } },
-  branding: { privacyPolicy: { url: 'https://example.org/privacy', title: 'Privacy Policy' } },
+vi.mock('$lib/configuration.svelte', () => ({
+  config: {
+    settings: { google: { analytics: 'G-TEST123', tagManager: '' } },
+    branding: { privacyPolicy: { url: 'https://example.org/privacy', title: 'Privacy Policy' } },
+  },
 }));
 
 vi.mock('$lib/logger', () => ({

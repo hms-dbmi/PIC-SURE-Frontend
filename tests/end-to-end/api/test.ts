@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiFail, mockApiSuccess } from '../custom-context';
+import { test, mockApiFail, mockApiSuccess, mockApiConfig } from '../custom-context';
 import { picsureUser, roles as mockRoles, mockExpiredToken, mockToken } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
 import type { Branding } from '../../../src/lib/models/Configuration';
@@ -13,7 +13,7 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('API page', () => {
   test.beforeEach(async ({ context }) => {
-    await mockApiSuccess(context, '*/**/api/config', { features: [], settings: [] });
+    await mockApiConfig(context);
     await mockApiSuccess(context, '*/**/psama/role', mockRoles);
     const user = picsureUser;
     user.token = mockExpiredToken;

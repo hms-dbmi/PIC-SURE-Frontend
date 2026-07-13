@@ -1,5 +1,11 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess, mockApiSuccessByMethod, mockApiFail } from '../../custom-context';
+import {
+  test,
+  mockApiSuccess,
+  mockApiSuccessByMethod,
+  mockApiFail,
+  mockApiConfig,
+} from '../../custom-context';
 import { users as mockUsers, connections as mockConns, roles as mockRoles } from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
 
@@ -13,7 +19,7 @@ test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
 // TODO: Add api specific tests when api data is implemented
 test.describe('users', () => {
   test.beforeEach(async ({ context }) => {
-  await mockApiSuccess(context, '*/**/api/config', { features: [], settings: [] });
+    await mockApiConfig(context);
     await mockApiSuccess(context, '*/**/psama/user', mockUsers);
     await mockApiSuccess(context, '*/**/psama/role', mockRoles);
     await mockApiSuccess(context, '*/**/psama/connection', mockConns);

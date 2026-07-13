@@ -1,5 +1,5 @@
 import { expect, type Route } from '@playwright/test';
-import { test, mockApiSuccess } from '../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../custom-context';
 import {
   conceptsDetailPath,
   detailResponseCat,
@@ -17,13 +17,11 @@ const queryResultPath = '*/**/picsure/v3/query/sync';
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('OptionalSelectionList', () => {
-  test.beforeEach(({ page }) =>
-    // DISCOVER is required because every test here navigates to /discover; the
-    // (public) layout guard redirects to /explorer when it's off.
-    mockApiSuccess(page, '*/**/api/config', {
-      features: [{ name: 'DISCOVER', value: 'true' }],
-      settings: [],
-    }),
+  test.beforeEach(
+    async ({ page }) =>
+      // DISCOVER is required because every test here navigates to /discover; the
+      // (public) layout guard redirects to /explorer when it's off.
+      await mockApiConfig(page, { features: [{ name: 'DISCOVER', value: 'true' }] }),
   );
   // TODO: Some feartures will be hidden in the future. Cannot use nth.
   // TODO: Test infinite scroll
@@ -268,12 +266,11 @@ test.describe('OptionalSelectionList', () => {
   });
   test('Loads next values when scrolling when infinite scroll is enabled', async ({ page }) => {
     // Given
-    await mockApiSuccess(page, '*/**/api/config', {
+    await mockApiConfig(page, {
       features: [
         { name: 'ENABLE_GENE_QUERY', value: 'true' },
         { name: 'ENABLE_SNP_QUERY', value: 'true' },
       ],
-      settings: [],
     });
     const mockDataWithManyOptions = {
       ...detailResponseCat2,

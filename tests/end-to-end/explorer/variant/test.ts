@@ -1,5 +1,5 @@
 import { expect, type Route, type BrowserContext, type Page } from '@playwright/test';
-import { mockApiSuccess, test } from '../../custom-context';
+import { mockApiSuccess, test, mockApiConfig } from '../../custom-context';
 import {
   geneValues,
   variantDataAggregate,
@@ -47,13 +47,12 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 test.describe('variant explorer', () => {
   test.describe('Genetic filter applied', () => {
     test.beforeEach(async ({ page }) => {
-      await mockApiSuccess(page, '*/**/api/config', {
+      await mockApiConfig(page, {
         features: [
           { name: 'ENABLE_GENE_QUERY', value: 'true' },
           { name: 'ENABLE_SNP_QUERY', value: 'true' },
           { name: 'VARIANT_EXPLORER', value: 'true' },
         ],
-        settings: [],
       });
       await mockApiSuccess(page, SyncQueryV3, '9999');
       await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
@@ -154,7 +153,7 @@ test.describe('variant explorer', () => {
     // This test sits outside the 'Genetic filter applied' describe, so it has no
     // api/config mock of its own; without one requests fall through to the real,
     // unmocked /api/config endpoint.
-    await mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] });
+    await mockApiConfig(page);
     await mockSyncAPI(page, successResults);
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);

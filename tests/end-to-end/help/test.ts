@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess } from '../custom-context';
+import { test, mockApiConfig } from '../custom-context';
 import type { Branding } from '../../../src/lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
@@ -7,9 +7,8 @@ const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 test.describe('Help page', () => {
   branding?.help?.links?.forEach(({ title }) => {
     test(`Has expected link to ${title}`, async ({ page }) => {
-      await mockApiSuccess(page, '*/**/api/config', {
+      await mockApiConfig(page, {
         features: [{ name: 'OPEN', value: 'true' }],
-        settings: [],
       });
 
       await page.goto('/help');

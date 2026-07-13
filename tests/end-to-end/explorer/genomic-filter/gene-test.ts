@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { mockApiSuccess, test } from '../../custom-context';
+import { mockApiSuccess, test, mockApiConfig } from '../../custom-context';
 import {
   geneValues,
   searchResults,
@@ -18,12 +18,11 @@ const QUERY = '*/**/picsure/v3/query/sync';
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.beforeEach(async ({ page }) => {
-  await mockApiSuccess(page, '*/**/api/config', {
+  await mockApiConfig(page, {
     features: [
       { name: 'ENABLE_GENE_QUERY', value: 'true' },
       { name: 'ENABLE_SNP_QUERY', value: 'true' },
     ],
-    settings: [],
   });
   await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
   await mockApiSuccess(page, facetResultPath, facetsResponse);

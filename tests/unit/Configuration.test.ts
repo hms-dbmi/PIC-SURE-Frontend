@@ -5,16 +5,16 @@ import {
   mapSettings,
   resolveConfigMap,
   getConfigMode,
-  defaults,
   type ConfigObject,
+  mapBranding,
 } from '$lib/models/Configuration';
 
 const TOUCHED_ENV_KEYS = [
   'VITE_CONFIG_MODE',
   'VITE_ANALYZE_ANALYSIS',
-  'VITE_OPEN',
-  'VITE_GOOGLE_ANALYTICS_ID',
+  'VITE_EXPLORE_TOUR_SEARCH_TERM',
   'VITE_MAX_DATA_POINTS_FOR_EXPORT',
+  'VITE_LOGO_ALT',
 ];
 
 const savedEnv: Record<string, string | undefined> = {};
@@ -62,56 +62,75 @@ describe('getConfigMode', () => {
   });
 });
 
-describe('mapFeatures / mapSettings - regression baseline', () => {
+describe('mapFeatures / mapSettings / mapBranding - regression baseline', () => {
   it('matches defaults when no API rows and no env vars are set', () => {
-    expect(mapFeatures([]).analyzeAnalysis).toBe(defaults.features.ANALYZE_ANALYSIS);
-    expect(mapSettings([]).maxDataPointsForExport).toBe(
-      defaults.settings.MAX_DATA_POINTS_FOR_EXPORT,
-    );
+    expect(mapFeatures([]).analyzeAnalysis).toBe(true);
+    expect(mapSettings([]).maxDataPointsForExport).toBe(1000000);
+    expect(mapBranding('', []).login.logoHeight).toBe(7.5);
   });
 });
 
 describe('resolveConfigMap - layering', () => {
-  const testDefaults = { ANALYZE_ANALYSIS: true };
+  // assumes default: ANALYZE_ANALYSIS = true
+  //assumes default: EXPLORE_TOUR_SEARCH_TERM = age
 
   it('env-only (seed mode): env value is used when API has nothing', () => {
     import.meta.env.VITE_ANALYZE_ANALYSIS = 'false';
-    const map = resolveConfigMap(testDefaults, []);
+    const map = resolveConfigMap([]);
     expect(map.ANALYZE_ANALYSIS.value).toBe('false');
   });
 
   it('API-only: API value is used regardless of mode, env layer is a no-op when absent', () => {
-    const map = resolveConfigMap(testDefaults, [apiRow('ANALYZE_ANALYSIS', 'false')]);
+    const map = resolveConfigMap([apiRow('ANALYZE_ANALYSIS', 'false')]);
     expect(map.ANALYZE_ANALYSIS.value).toBe('false');
   });
 
   it('seed mode (default): API wins over env when both are set', () => {
-    import.meta.env.VITE_ANALYZE_ANALYSIS = 'false';
-    const map = resolveConfigMap(testDefaults, [apiRow('ANALYZE_ANALYSIS', 'true')]);
-    expect(map.ANALYZE_ANALYSIS.value).toBe('true');
+    import.meta.env.VITE_EXPLORE_TOUR_SEARCH_TERM = 'cats';
+    const map = resolveConfigMap([apiRow('EXPLORE_TOUR_SEARCH_TERM', 'dogs')]);
+    expect(map.EXPLORE_TOUR_SEARCH_TERM.value).toBe('dogs');
   });
 
   it('override mode: env wins over API when both are set', () => {
     import.meta.env.VITE_CONFIG_MODE = 'override';
-    import.meta.env.VITE_ANALYZE_ANALYSIS = 'false';
-    const map = resolveConfigMap(testDefaults, [apiRow('ANALYZE_ANALYSIS', 'true')]);
-    expect(map.ANALYZE_ANALYSIS.value).toBe('false');
+    import.meta.env.VITE_EXPLORE_TOUR_SEARCH_TERM = 'cats';
+    const map = resolveConfigMap([apiRow('EXPLORE_TOUR_SEARCH_TERM', 'dogs')]);
+    expect(map.EXPLORE_TOUR_SEARCH_TERM.value).toBe('cats');
   });
 
   it('presence, not truthiness: an explicit empty-string env override wins in override mode', () => {
-    const settingsDefaults = { GOOGLE_ANALYTICS_ID: '' };
     import.meta.env.VITE_CONFIG_MODE = 'override';
-    import.meta.env.VITE_GOOGLE_ANALYTICS_ID = '';
-    const map = resolveConfigMap(settingsDefaults, [apiRow('GOOGLE_ANALYTICS_ID', 'UA-REAL-ID')]);
-    expect(map.GOOGLE_ANALYTICS_ID.value).toBe('');
+    import.meta.env.VITE_EXPLORE_TOUR_SEARCH_TERM = '';
+    const map = resolveConfigMap([apiRow('EXPLORE_TOUR_SEARCH_TERM', 'dogs')]);
+    expect(map.EXPLORE_TOUR_SEARCH_TERM.value).toBe('');
   });
 });
 
-describe('mapSettings - VARIANT_EXPLORER_TYPE direct access', () => {
-  it('resolves through the merged map via env override', () => {
+describe('mapBranding', () => {
+  it('replaces hostname when encountered', () => {
     import.meta.env.VITE_CONFIG_MODE = 'override';
     import.meta.env.VITE_MAX_DATA_POINTS_FOR_EXPORT = '42';
-    const settings = mapSettings([apiRow('MAX_DATA_POINTS_FOR_EXPORT', '1000')]);
-    expect(settings.maxDataPointsForExport).toBe(42);
+    const branding = mapBranding('', []);
+    expect(branding.explorePage.codeBlocks.PythonAPI).not.toContain('{{PICSURE_NETWORK_URL}}');
+  });
+  it('env overrides config json', () => {
+    import.meta.env.VITE_LOGO_ALT = 'SOME ALT VALUE';
+    const branding = mapBranding('', []);
+    expect(branding.logo.alt).toBe('SOME ALT VALUE');
+  });
+  it('api overrides config json', () => {
+    const branding = mapBranding('', [apiRow('LOGO_ALT', 'SOME ALT VALUE')]);
+    expect(branding.logo.alt).toBe('SOME ALT VALUE');
+  });
+  it('seed mode (default): API wins over env when both are set', () => {
+    import.meta.env.VITE_LOGO_ALT = 'cats';
+    const branding = mapBranding('', [apiRow('LOGO_ALT', 'dogs')]);
+    expect(branding.logo.alt).toBe('dogs');
+  });
+  it('override mode: env wins over API when both are set', () => {
+    import.meta.env.VITE_CONFIG_MODE = 'override';
+    import.meta.env.VITE_LOGO_ALT = 'cats';
+    const branding = mapBranding('', [apiRow('LOGO_ALT', 'dogs')]);
+    expect(branding.logo.alt).toBe('cats');
   });
 });

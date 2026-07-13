@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess, mockApiFail } from '../../../custom-context';
+import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../../../custom-context';
 
 import {
   privileges as mockPrivileges,
@@ -17,7 +17,7 @@ const validationText = {
 test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
 
 test.beforeEach(async ({ page }) => {
-  await mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] });
+  await mockApiConfig(page);
   await mockApiSuccess(page, '*/**/psama/role', mockRoles);
   await mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges);
   await mockApiSuccess(page, '*/**/psama/application', mockApps);

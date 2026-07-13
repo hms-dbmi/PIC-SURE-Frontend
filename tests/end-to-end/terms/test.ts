@@ -1,5 +1,11 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess, mockApiFail, mockHTMLBodySuccess } from '../custom-context';
+import {
+  test,
+  mockApiSuccess,
+  mockApiFail,
+  mockHTMLBodySuccess,
+  mockApiConfig,
+} from '../custom-context';
 import {
   searchResults as mockSearchResults,
   facetsResponse,
@@ -28,8 +34,8 @@ Psama.Logout = '*/**/psama/logout';
 
 const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use this site.</p>';
 
-test.beforeEach(({ page }) => {
-  mockApiSuccess(page, '*/**/api/config', {
+test.beforeEach(async ({ page }) => {
+  await mockApiConfig(page, {
     features: [
       { name: 'ANALYZE_ANALYSIS', value: 'false' },
       { name: 'ANALYZE_API', value: 'true' },
@@ -38,10 +44,10 @@ test.beforeEach(({ page }) => {
     ],
     settings: [],
   });
-  mockApiSuccess(page, 'https://www.googletagmanager.com/**/*', {});
-  mockApiSuccess(page, '*/**/picsure/v3/query/sync', 99);
-  mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/concepts*', mockSearchResults);
-  mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
+  await mockApiSuccess(page, 'https://www.googletagmanager.com/**/*', {});
+  await mockApiSuccess(page, '*/**/picsure/v3/query/sync', 99);
+  await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/concepts*', mockSearchResults);
+  await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
 });
 
 test.describe('Not logged in', () => {

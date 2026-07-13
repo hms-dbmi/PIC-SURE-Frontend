@@ -1,5 +1,5 @@
 import { expect, type Route } from '@playwright/test';
-import { test, mockApiSuccess } from '../../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import {
   conceptsDetailPath,
   detailResponseCat,
@@ -25,9 +25,8 @@ test.describe('Variable Distributions visualizations', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
   test.beforeEach(async ({ page }) => {
-    await mockApiSuccess(page, '*/**/api/config', {
+    await mockApiConfig(page, {
       features: [{ name: 'DIST_EXPLORER', value: 'true' }],
-      settings: [],
     });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);

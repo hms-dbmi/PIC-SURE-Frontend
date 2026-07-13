@@ -418,7 +418,6 @@ export const searchResultPathForSampleIds =
 export const facetResultPath = '*/**/picsure/proxy/dictionary-api/facets';
 export const conceptsDetailPath = '*/**/picsure/proxy/dictionary-api/concepts/detail'; // + name
 export const conceptTreePath = '*/**/picsure/proxy/dictionary-api/concepts/tree'; // + name
-export const configPath = '*/**/api/config';
 
 export const searchRequest = { facets: [], search: 'age' };
 

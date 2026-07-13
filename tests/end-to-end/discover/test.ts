@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess } from '../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../custom-context';
 import {
   facetResultPath,
   facetsResponse,
@@ -17,7 +17,7 @@ test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
 test.describe('Discover for unauthenticated users', () => {
   test.beforeEach(async ({ page }) => {
-    await mockApiSuccess(page, '*/**/api/config', {
+    await mockApiConfig(page, {
       features: [
         { name: 'OPEN', value: 'true' },
         { name: 'DISCOVER', value: 'true' },
@@ -28,7 +28,6 @@ test.describe('Discover for unauthenticated users', () => {
         // sync endpoint (picsure/query/sync) instead of v3/query/sync.
         { name: 'OPEN_EXPLORER', value: 'false' },
       ],
-      settings: [],
     });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);

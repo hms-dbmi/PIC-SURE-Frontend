@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess, mockApiFail } from '../custom-context';
+import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../custom-context';
 import {
   searchResults as mockSearchResults,
   searchResultPath,
@@ -27,7 +27,7 @@ interface MockLandingStat {
 
 test.describe('Landing page', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
-  test.beforeEach(({ page }) => mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] }));
+  test.beforeEach(({ page }) => mockApiConfig(page));
 
   test.describe('Search', () => {
     test('Has expected search to go to explorer', async ({ page }) => {
@@ -57,9 +57,8 @@ test.describe('Landing page', () => {
   });
   test.describe('Stats', () => {
     test.beforeEach(async ({ page }) => {
-      await mockApiSuccess(page, '*/**/api/config', {
+      await mockApiConfig(page, {
         features: [{ name: 'OPEN', value: 'true' }],
-        settings: [],
       });
     });
 
@@ -214,19 +213,19 @@ test.describe('Landing page', () => {
 
 test.describe('Logged Out Landing', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
-  test.beforeEach(({ page }) =>
-    // OPEN is required for unauthenticated users to reach any page at all; the
-    // root layout redirects to /login when it's off and there's no token.
-    // OPEN_EXPLORER defaults to true, and OPEN_EXPLORER + login.open together make
-    // useOpenAccess() route stat requests to the V3 sync endpoint instead of the
-    // plain open one these tests mock, so it must be explicitly disabled here.
-    mockApiSuccess(page, '*/**/api/config', {
-      features: [
-        { name: 'OPEN', value: 'true' },
-        { name: 'OPEN_EXPLORER', value: 'false' },
-      ],
-      settings: [],
-    }),
+  test.beforeEach(
+    async ({ page }) =>
+      // OPEN is required for unauthenticated users to reach any page at all; the
+      // root layout redirects to /login when it's off and there's no token.
+      // OPEN_EXPLORER defaults to true, and OPEN_EXPLORER + login.open together make
+      // useOpenAccess() route stat requests to the V3 sync endpoint instead of the
+      // plain open one these tests mock, so it must be explicitly disabled here.
+      await mockApiConfig(page, {
+        features: [
+          { name: 'OPEN', value: 'true' },
+          { name: 'OPEN_EXPLORER', value: 'false' },
+        ],
+      }),
   );
 
   test.describe('Stats (Logged Out)', () => {

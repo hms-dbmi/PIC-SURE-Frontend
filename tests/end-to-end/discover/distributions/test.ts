@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess } from '../../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import {
   facetResultPath,
   facetsResponse,
@@ -58,12 +58,11 @@ test.describe('Discover distributions', () => {
     // Given: the visualization endpoint returns the new wire shape
     // OPEN is required for unauthenticated access; DISCOVER keeps /discover/*
     // from being redirected to /explorer by the (public) layout guard.
-    await mockApiSuccess(page, '*/**/api/config', {
+    await mockApiConfig(page, {
       features: [
         { name: 'OPEN', value: 'true' },
         { name: 'DISCOVER', value: 'true' },
       ],
-      settings: [],
     });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);

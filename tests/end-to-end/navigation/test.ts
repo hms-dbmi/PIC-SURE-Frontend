@@ -1,10 +1,10 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess } from '../custom-context';
+import { test, mockApiConfig } from '../custom-context';
 import { picsureUser, userTypes } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
 import { routes } from '../../../src/lib/routes';
 import { PicsurePrivileges } from '../../../src/lib/models/Privilege';
-import type { Route } from '../../../src/lib/models/Route';
+import type { Route, RoutePrivilege } from '../../../src/lib/models/Route';
 
 // TODO: This should probably be moved to a component test, not an e2e/integration test.
 
@@ -13,13 +13,12 @@ test.describe('Public Routes Navigation', () => {
   test.beforeEach(({ page }) =>
     // OPEN lets unauthenticated users past the root redirect-to-login guard;
     // DASHBOARD/DISCOVER control whether those nav links render at all.
-    mockApiSuccess(page, '*/**/api/config', {
+    mockApiConfig(page, {
       features: [
         { name: 'OPEN', value: 'true' },
         { name: 'DASHBOARD', value: 'true' },
         { name: 'DISCOVER', value: 'true' },
       ],
-      settings: [],
     }),
   );
   routes
@@ -54,9 +53,8 @@ test.describe('Any logged in user', () => {
     // Given
     // OPEN is required so that after logout, '/' shows the inline login avatar
     // instead of the root layout hard-redirecting to /login.
-    await mockApiSuccess(page, '*/**/api/config', {
+    await mockApiConfig(page, {
       features: [{ name: 'OPEN', value: 'true' }],
-      settings: [],
     });
     await page.goto('/');
     await userIsLoggedIn(page);
@@ -143,18 +141,13 @@ Object.entries(testRoles).forEach(([userType, userData]) => {
     const hasPrivilege =
       !route.privilege ||
       isSuper ||
-      route.privilege.some((priv) => userData.privileges.includes(priv));
+      route.privilege.some((priv) => (userData.privileges as RoutePrivilege[]).includes(priv));
     return hasFeature && hasPrivilege;
   });
 
   test.describe(`${userType} Navigation`, () => {
     test.use({ storageState: `tests/end-to-end/.auth/${userType}.json` });
-    test.beforeEach(({ page }) =>
-      mockApiSuccess(page, '*/**/api/config', {
-        features: enabledFeatureFlags,
-        settings: [],
-      }),
-    );
+    test.beforeEach(({ page }) => mockApiConfig(page, { features: enabledFeatureFlags }));
 
     testRoutes
       .filter((route) => !route.children)
@@ -190,10 +183,7 @@ test.describe('Navigation', () => {
   test.beforeEach(({ page }) =>
     // OPEN is required for unauthenticated users to reach any page at all; the
     // root layout redirects to /login when it's off and there's no token.
-    mockApiSuccess(page, '*/**/api/config', {
-      features: [{ name: 'OPEN', value: 'true' }],
-      settings: [],
-    }),
+    mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] }),
   );
   test('Clicking the session avatar navigates to login when logged out', async ({ page }) => {
     // Given

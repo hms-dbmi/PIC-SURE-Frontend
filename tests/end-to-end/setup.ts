@@ -1,5 +1,5 @@
 import { picsureUser, mockToken, userTypes } from './mock-data';
-import { test, mockApiSuccess } from './custom-context';
+import { test, mockApiSuccess, mockApiConfig } from './custom-context';
 
 // Creates authenticated user contexts for tests using method noted at
 // https://playwright.dev/docs/auth
@@ -7,8 +7,7 @@ import { test, mockApiSuccess } from './custom-context';
 const userFile = (user: string) => `tests/end-to-end/.auth/${user}.json`;
 
 test.beforeEach(async ({ page }) => {
-  await mockApiSuccess(page, '*/**/api/config', {
-    features: [],
+  await mockApiConfig(page, {
     settings: [
       { name: 'GOOGLE_ANALYTICS_ID', value: 'someid' },
       { name: 'GOOGLE_TAG_MANAGER_ID', value: 'someid' },

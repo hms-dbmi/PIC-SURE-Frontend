@@ -1,8 +1,7 @@
 import { expect, type Route } from '@playwright/test';
-import { test, mockApiFail, mockApiSuccess } from '../custom-context';
+import { test, mockApiFail, mockApiConfig } from '../custom-context';
 import {
   conceptsDetailPath,
-  configPath,
   detailResponseCat,
   detailResponseCat2,
   detailResponseCatSameDataset,
@@ -14,16 +13,21 @@ import {
   hierarchyResponse,
 } from '../mock-data';
 import { type SearchResult } from '../../../src/lib/models/Search';
-import { getOption, clickNthFilterIcon, optionsHaveLoaded, userIsLoggedIn, userIsLoggedOut } from '../utils';
+import {
+  getOption,
+  clickNthFilterIcon,
+  optionsHaveLoaded,
+  userIsLoggedIn,
+  userIsLoggedOut,
+} from '../utils';
 
 test.describe('Explorer for authenticated users', () => {
   test.beforeEach(async ({ page }) => {
-    await mockApiSuccess(page, configPath, {
+    await mockApiConfig(page, {
       features: [
         { name: 'ALLOW_EXPORT_ENABLED', value: 'true' },
         { name: 'ENABLE_HIERARCHY', value: 'true' },
       ],
-      settings: [],
     });
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
     await page.route(facetResultPath, async (route: Route) =>
@@ -725,12 +729,11 @@ test.describe('Explorer for unauthenticated users', () => {
     // /explorer and use it directly, per "Explore Without Login" (see internal docs):
     // unauthenticated OPEN_EXPLORER users get full search/facets/filtering/genomic/
     // visualization access on this page, with no login gate.
-    await mockApiSuccess(page, configPath, {
+    await mockApiConfig(page, {
       features: [
         { name: 'OPEN', value: 'true' },
         { name: 'OPEN_EXPLORER', value: 'true' },
       ],
-      settings: [],
     });
     await page.goto('/explorer');
 
@@ -746,12 +749,11 @@ test.describe('Explorer for unauthenticated users', () => {
     // Given
     // Without OPEN_EXPLORER, /explorer's own layout redirects unauthenticated
     // users to /login (see explorer/+layout.ts).
-    await mockApiSuccess(page, configPath, {
+    await mockApiConfig(page, {
       features: [
         { name: 'OPEN', value: 'true' },
         { name: 'OPEN_EXPLORER', value: 'false' },
       ],
-      settings: [],
     });
     await page.goto('/explorer');
 

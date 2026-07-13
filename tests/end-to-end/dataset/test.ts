@@ -1,5 +1,5 @@
 import { expect, type Route, type BrowserContext, type Page } from '@playwright/test';
-import { test, mockApiSuccess, mockApiFail } from '../custom-context';
+import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../custom-context';
 import {
   datasets as mockData,
   datasetDetails,
@@ -40,7 +40,7 @@ function mockDictionaryAPI(
 }
 
 test.beforeEach(async ({ page }) => {
-  await mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] });
+  await mockApiConfig(page);
   mockDictionaryAPI(page, `${conceptsDetailPath}/*`, datasetDetails.concepts);
   mockDictionaryAPI(page, `${conceptTreePath}/*`, datasetDetails.tree);
   await mockApiSuccess(page, facetResultPath, facetsResponse);

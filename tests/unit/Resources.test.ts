@@ -9,7 +9,7 @@ const mockFeatures = vi.hoisted(() => ({
 vi.mock('$app/environment', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$lib/configuration', () => ({ features: mockFeatures }));
+vi.mock('$lib/configuration.svelte', () => ({ config: { features: mockFeatures } }));
 vi.mock('$lib/api', () => ({ get: vi.fn(), post: vi.fn() }));
 vi.mock('$lib/toaster', () => ({ toaster: { add: vi.fn() } }));
 

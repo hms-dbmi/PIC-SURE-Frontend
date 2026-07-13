@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess } from '../../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import { getOption, clickNthFilterIcon } from '../../utils';
 
 import {
@@ -19,14 +19,13 @@ test.describe('Explorer Cohort builder', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
   test.beforeEach(async ({ page }) => {
-    await mockApiSuccess(page, '*/**/api/config', {
+    await mockApiConfig(page, {
       features: [
         { name: 'ENABLE_COHORT_DETAILS', value: 'true' },
         { name: 'VARIANT_EXPLORER', value: 'true' },
         { name: 'OPEN', value: 'true' },
         { name: 'OPEN_EXPLORER', value: 'true' },
       ],
-      settings: [],
     });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);

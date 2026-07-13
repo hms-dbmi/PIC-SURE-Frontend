@@ -1,5 +1,6 @@
 import { test as base, type Route, type BrowserContext, type Page } from '@playwright/test';
 import type { TestInfo } from '@playwright/test';
+import type { ConfigCache } from '../../src/lib/models/Configuration';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function mockApiSuccess(context: BrowserContext | Page, path: string, json: any) {
@@ -47,59 +48,16 @@ export function mockHTMLBodySuccess(context: Page, path: string | RegExp, body: 
   return context.route(path, async (route: Route) => route.fulfill({ body }));
 }
 
-export const defaultTestFlags = [
-  // { name: 'RESOURCE_HPDS', value: '1' },
-  // { name: 'RESOURCE_OPEN_HPDS', value: '2' },
-  // { name: 'RESOURCE_OPEN_V3_HPDS', value: '2' },
-  // { name: 'RESOURCE_BASE_QUERY', value: '3' },
-  // { name: 'RESOURCE_VIZ', value: '4' },
-  // { name: 'RESOURCE_APPLICATION', value: '5' },
-  // { name: 'MAX_CONFIG_RETRIES', value: '0' },
-  { name: 'OPEN', value: 'true' },
-  { name: 'ALLOW_EXPORT', value: 'true' },
-  { name: 'ALLOW_DOWNLOAD', value: 'true' },
-  { name: 'ALLOW_EXPORT_ENABLED', value: 'true' },
-  { name: 'ENABLE_HIERARCHY', value: 'true' },
-  { name: 'DATA_REQUESTS', value: 'true' },
-  { name: 'DIST_EXPLORER', value: 'true' },
-  { name: 'ENABLE_SNP_QUERY', value: 'true' },
-  { name: 'ENABLE_GENE_QUERY', value: 'true' },
-  { name: 'VARIANT_EXPLORER', value: 'true' },
-  { name: 'EXPLORE_TOUR', value: 'true' },
-  { name: 'REQUIRE_CONSENTS', value: 'true' },
-  { name: 'USE_QUERY_TEMPLATE', value: 'true' },
-  { name: 'ANALYZE_API', value: 'true' },
-  { name: 'ANALYZE_ANALYSIS', value: 'false' },
-  { name: 'DISCOVER', value: 'true' },
-  { name: 'COLLABORATE', value: 'true' },
-  { name: 'DASHBOARD', value: 'true' },
-  { name: 'DASHBOARD_DRAWER', value: 'true' },
-  { name: 'ENABLE_SAMPLE_ID_CHECKBOX', value: 'true' },
-  { name: 'ENABLE_COHORT_DETAILS', value: 'true' },
-  { name: 'FEDERATED', value: 'false' },
-  { name: 'SHOW_TREE_STEP', value: 'true' },
-  { name: 'ENABLE_REDCAP_EXPORT', value: 'false' },
-  { name: 'ENABLE_TOS', value: 'true' },
-  { name: 'ENFORCE_TOS_ACCEPT', value: 'true' },
-  { name: 'OR_QUERIES', value: 'true' },
-  { name: 'RESTORE_V2_QUERY', value: 'true' },
-  { name: 'OPEN_EXPLORER', value: 'true' },
-];
-
-const defaultTestSettings = [
-  // { name: 'WEBSERVER_LOG_STDERR', value: 'ignore' },
-  // { name: 'WEBSERVER_LOG_STDOUT', value: 'ignore' },
-  // { name: 'PROJECT_HOST_NAME', value: 'pic-sure.org' },
-  { name: 'EXPLORE_TOUR_SEARCH_TERM', value: 'age' },
-  { name: 'VARIANT_EXPLORER_TYPE', value: 'aggregate' },
-  { name: 'VARIANT_EXPLORER_MAX_COUNT', value: '20' },
-  { name: 'VARIANT_EXPLORER_EXCLUDE_COLUMNS', value: "'[]'" },
-  { name: 'VARIANT_EXPLORER_EXCLUDE_COLUMNS', value: "'[]'" },
-  { name: 'AUTH_TOUR_NAME', value: 'NHANES-Auth' },
-  { name: 'OPEN_TOUR_NAME', value: 'BDC-Open' },
-  { name: 'EXPORT_SYSTEM_FIELDS', value: '_consents' },
-  { name: 'LOGGING_API_KEY', value: 'test-key' },
-];
+export function mockApiConfig(
+  context: BrowserContext | Page,
+  configItems: Partial<ConfigCache> = {},
+) {
+  return mockApiSuccess(context, '*/**/api/config', {
+    features: configItems.features ?? [],
+    settings: configItems.settings ?? [],
+    branding: configItems.branding ?? [],
+  });
+}
 
 async function screenshotOnFailure({ page }: { page: Page }, testInfo: TestInfo) {
   if (testInfo.status !== testInfo.expectedStatus) {
@@ -163,7 +121,6 @@ export const test = base.extend({
     use(context);
   },
   page: async ({ page }, use, testInfo) => {
-    // await mockApiSuccess(page, '*/**/api/config', { features: defaultTestFlags, settings: defaultTestSettings });
     await mockApiSuccess(page, 'https://www.googletagmanager.com/**/*', {});
     await use(page);
     // Take screenshot on failure

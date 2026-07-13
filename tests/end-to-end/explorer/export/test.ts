@@ -1,5 +1,5 @@
 import { expect, type Route, type Page } from '@playwright/test';
-import { test, mockApiSuccess } from '../../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import {
   conceptTreePath,
   conceptsDetailPath,
@@ -117,7 +117,7 @@ async function checkStepRenderedCorrectly(
 
 test.describe('Export Page', () => {
   test.beforeEach(async ({ page }) => {
-    await mockApiSuccess(page, '*/**/api/config', {
+    await mockApiConfig(page, {
       features: [
         { name: 'ALLOW_DOWNLOAD', value: 'true' },
         { name: 'ALLOW_EXPORT_ENABLED', value: 'true' },

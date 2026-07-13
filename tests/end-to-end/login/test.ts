@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockHTMLBodySuccess, mockApiSuccess } from '../custom-context';
+import { test, mockHTMLBodySuccess, mockApiSuccess, mockApiConfig } from '../custom-context';
 import type { Branding } from '$lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
@@ -9,8 +9,7 @@ const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
 test.describe('Google consent', () => {
   test.beforeEach(async ({ page }) => {
-    await mockApiSuccess(page, '*/**/api/config', {
-      features: [],
+    await mockApiConfig(page, {
       settings: [{ name: 'GOOGLE_TAG_MANAGER_ID', value: 'some-google-tag' }],
     });
   });
@@ -92,7 +91,7 @@ test.describe('Login page', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] });
+    await mockApiConfig(page);
   });
   test('No navigation bar before login', async ({ page }) => {
     // Given

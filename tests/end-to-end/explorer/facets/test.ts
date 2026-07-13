@@ -1,5 +1,5 @@
 import { expect, type Route } from '@playwright/test';
-import { mockApiFail, test, mockApiSuccess } from '../../custom-context';
+import { mockApiFail, test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import {
   searchResults,
   facetsResponse,
@@ -15,7 +15,7 @@ const MAX_FACETS_TO_SHOW = 5;
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('Facet Side Bar', () => {
-  test.beforeEach(({ page }) => mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] }));
+  test.beforeEach(({ page }) => mockApiConfig(page));
   test('Facet Side Bar is shown after loading', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) =>
@@ -103,7 +103,7 @@ test.describe('Facet Side Bar', () => {
 });
 
 test.describe('Facet Categories', () => {
-  test.beforeEach(({ page }) => mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] }));
+  test.beforeEach(({ page }) => mockApiConfig(page));
   test('Facet Category has a title', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) =>
@@ -447,7 +447,7 @@ test.describe('Facet Categories', () => {
 });
 
 test.describe('Facet & search', () => {
-  test.beforeEach(({ page }) => mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] }));
+  test.beforeEach(({ page }) => mockApiConfig(page));
   test('Facet toggles included icon on', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) =>
@@ -681,7 +681,7 @@ test.describe('Facet & search', () => {
 });
 
 test.describe('Nested Facets', () => {
-  test.beforeEach(({ page }) => mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] }));
+  test.beforeEach(({ page }) => mockApiConfig(page));
   test('Nested facets are displayed', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) =>
@@ -725,7 +725,7 @@ test.describe('Nested Facets', () => {
 });
 
 test.describe('Hidden Facets', () => {
-  test.beforeEach(({ page }) => mockApiSuccess(page, '*/**/api/config', { features: [], settings: [] }));
+  test.beforeEach(({ page }) => mockApiConfig(page));
   test('Facets with zero counts are not displayed', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) =>
