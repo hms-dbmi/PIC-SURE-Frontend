@@ -35,6 +35,7 @@ interface CodeBlock {
   RExport: string;
   PythonAPI: string;
   RAPI: string;
+  CurlAPI: string;
 }
 export interface ExplorePageConfig {
   columns: Column[];
@@ -146,6 +147,7 @@ export interface CodeBlockConfig extends Indexable {
   RExport: string;
   PythonAPI: string;
   RAPI: string;
+  CurlAPI: string;
 }
 
 export interface TermsOfServiceConfig {
