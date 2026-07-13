@@ -106,6 +106,15 @@ export interface PrivacyConfig {
   url: string;
 }
 
+export interface ApiCapability {
+  text: string;
+  requiresLogin?: boolean;
+}
+
+export interface ApiPageConfig {
+  capabilities: ApiCapability[];
+}
+
 export interface CodeBlockConfig extends Indexable {
   PythonExport: string;
   RExport: string;
