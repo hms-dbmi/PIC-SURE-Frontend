@@ -1,6 +1,6 @@
 export interface CodeBlockProps {
   code?: string;
-  lang?: 'console' | 'python' | 'r';
+  lang?: 'console' | 'python' | 'r' | 'bash';
   theme?: 'dark-plus';
   // Base Style Props
   base?: string;

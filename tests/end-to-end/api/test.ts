@@ -107,6 +107,25 @@ test.describe('API page', () => {
     await expect(page.locator('#quick-start .code-block').first()).toBeVisible();
   });
 
+  test('Quick start code connects to the authorized platform when logged in', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // When
+    const visibleCode = page.locator('#quick-start .code-block:visible');
+
+    // Then
+    await expect(visibleCode).toContainText('NHANES_AUTHORIZED');
+    await expect(visibleCode).toContainText('token.txt');
+
+    // When
+    await page.getByTestId('tabs-control').filter({ hasText: 'R' }).last().click();
+
+    // Then
+    await expect(visibleCode).toContainText('Platform$NHANES_AUTHORIZED');
+  });
+
   test('Has API Access section', async ({ page }) => {
     // Given
     await page.goto('/api');
@@ -386,6 +405,24 @@ test.describe('API page logged out', () => {
         await expect(items.nth(index).locator('i.fa-circle-check')).toBeVisible();
       }
     }
+  });
+
+  test('Quick start code connects to the open platform when logged out', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+
+    // When
+    const visibleCode = page.locator('#quick-start .code-block:visible');
+
+    // Then
+    await expect(visibleCode).toContainText('NHANES_OPEN');
+    await expect(visibleCode).toContainText('open_api_key.txt');
+
+    // When
+    await page.getByTestId('tabs-control').filter({ hasText: 'R' }).last().click();
+
+    // Then
+    await expect(visibleCode).toContainText('Platform$NHANES_OPEN');
   });
 
   test('Table of contents lists all page sections', async ({ page }) => {

@@ -4,6 +4,7 @@
   // Themes: https://shiki.style/themes
   import themeDarkPlus from 'shiki/themes/dark-plus.mjs';
   // Languages: https://shiki.style/languages
+  import bash from 'shiki/langs/bash.mjs';
   import console from 'shiki/langs/console.mjs';
   import python from 'shiki/langs/python.mjs';
   import r from 'shiki/langs/r.mjs';
@@ -11,7 +12,7 @@
   const shiki = createHighlighterCoreSync({
     engine: createJavaScriptRegexEngine(),
     themes: [themeDarkPlus],
-    langs: [console, python, r],
+    langs: [bash, console, python, r],
   });
 </script>
 
@@ -20,8 +21,7 @@
 
   let { code = '', lang = 'console', theme = 'dark-plus' }: CodeBlockProps = $props();
 
-  // svelte-ignore state_referenced_locally
-  const generatedHtml = shiki.codeToHtml(code, { lang, theme });
+  const generatedHtml = $derived(shiki.codeToHtml(code, { lang, theme }));
 </script>
 
 <div class="code-block">

@@ -13,6 +13,18 @@
   const loggedIn = isUserLoggedIn();
   const capabilities = branding.apiPage?.capabilities || [];
 
+  // Logged-in users connect with their personal token (AUTH); anonymous users
+  // connect to the OPEN platform with an api key. The open variant is the
+  // initial value so it matches the server render (login state is only known
+  // client-side); the swap happens after mount. The API tab is placeholder
+  // content until its ticket lands.
+  const codeBlocks = branding.explorePage.codeBlocks;
+  let quickStartCode = $state({
+    python: codeBlocks.PythonAPIOpen || 'Code not set',
+    r: codeBlocks.RAPIOpen || 'Code not set',
+    api: codeBlocks.CurlAPI || 'Code not set',
+  });
+
   interface Workflow {
     id: string;
     title: string;
@@ -61,6 +73,14 @@
   let activeSection: string = $state('api-header');
 
   onMount(() => {
+    if (loggedIn) {
+      quickStartCode = {
+        ...quickStartCode,
+        python: codeBlocks.PythonAPI || 'Code not set',
+        r: codeBlocks.RAPI || 'Code not set',
+      };
+    }
+
     const scroller = document.getElementById('page');
     if (!scroller) return;
 
@@ -232,7 +252,7 @@
   <section id="quick-start" class="api-panel w-full bg-primary-50-950">
     <div class="w-[70%] mx-auto py-12">
       <h2>Quick Start</h2>
-      <p class="mx-0">Copy and run the example code to get started.</p>
+      <p class="mx-0">Copy and run the example code below to get started.</p>
       <Tabs
         value={tabSet}
         onValueChange={(e) => {
@@ -247,19 +267,13 @@
         {/snippet}
         {#snippet content()}
           <Tabs.Panel value="Python">
-            <CodeBlock
-              lang="python"
-              code={branding.explorePage.codeBlocks.PythonAPI || 'Code not set'}
-            />
+            <CodeBlock lang="python" code={quickStartCode.python} />
           </Tabs.Panel>
           <Tabs.Panel value="R">
-            <CodeBlock lang="r" code={branding.explorePage.codeBlocks.RAPI || 'Code not set'} />
+            <CodeBlock lang="r" code={quickStartCode.r} />
           </Tabs.Panel>
           <Tabs.Panel value="API">
-            <CodeBlock
-              lang="console"
-              code={branding.explorePage.codeBlocks.CurlAPI || 'Code not set'}
-            />
+            <CodeBlock lang="bash" code={quickStartCode.api} />
           </Tabs.Panel>
         {/snippet}
       </Tabs>
