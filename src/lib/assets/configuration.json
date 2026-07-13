@@ -146,6 +146,15 @@
       }
     ]
   },
+  "apiPage": {
+    "capabilities": [
+      { "text": "Search publicly available data dictionary information" },
+      { "text": "Filter on phenotypic variables" },
+      { "text": "Retrieve counts for feasibility assessments" },
+      { "text": "Filter on genomic variants" },
+      { "text": "Retrieve authorized, participant-level data", "requiresLogin": true }
+    ]
+  },
   "analysisPage": {
     "analysis": {
       "platform": "Service Workbench",

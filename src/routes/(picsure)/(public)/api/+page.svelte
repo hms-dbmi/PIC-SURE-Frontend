@@ -1,6 +1,12 @@
 <script lang="ts">
   import { branding } from '$lib/configuration';
+  import { isUserLoggedIn } from '$lib/stores/User';
   import { log, createLog } from '$lib/logger';
+
+  import UserToken from '$lib/components/UserToken.svelte';
+
+  const loggedIn = isUserLoggedIn();
+  const capabilities = branding.apiPage?.capabilities || [];
 
   interface Workflow {
     id: string;
@@ -82,6 +88,69 @@
             >
           </div>
         {/each}
+      </div>
+    </div>
+  </section>
+
+  <section id="authentication" class="w-full">
+    <div class="w-[70%] mx-auto py-8">
+      <h2>Authentication</h2>
+      <p class="mx-0">
+        Your personal access token authenticates all programmatic requests to PIC-SURE.
+      </p>
+      <div class="flex flex-wrap gap-8 mt-4">
+        {#if loggedIn}
+          <div class="card border border-surface-200 p-6 w-fit max-w-full overflow-x-auto">
+            <header class="flex items-center gap-4 mb-4">
+              <i class="fa-solid fa-user-shield text-3xl text-success-500"></i>
+              <div>
+                <div class="text-lg font-bold">Personal Access Token</div>
+                <div class="text-sm">Login confirmed</div>
+              </div>
+            </header>
+            <UserToken />
+          </div>
+        {:else}
+          <!-- TODO: Placeholder for the logged-out authentication state; final design and
+               behavior (public access key request) to be defined in an upcoming ticket. -->
+          <div
+            data-testid="public-access-placeholder"
+            class="card border border-surface-200 p-6 max-w-xl flex flex-col"
+          >
+            <header class="flex items-center gap-4 mb-4">
+              <i class="fa-solid fa-globe text-3xl text-primary-500"></i>
+              <div>
+                <div class="text-lg font-bold">Public Access Key</div>
+                <div class="text-sm">No account required</div>
+              </div>
+            </header>
+            <p class="mx-0">
+              A public key grants access to open resources, including aggregate counts for
+              feasibility assessments.
+            </p>
+            <button class="btn preset-filled-primary-500 mt-6 mx-auto" disabled
+              >Request Public Key</button
+            >
+          </div>
+        {/if}
+        <div id="capabilities" class="flex-1 min-w-64">
+          <h3 class="text-lg font-bold mb-3">What you can do</h3>
+          <ul class="space-y-3">
+            {#each capabilities as capability}
+              {@const locked = !loggedIn && capability.requiresLogin}
+              <li data-testid="capability-item" class="flex items-center gap-3">
+                {#if locked}
+                  <i class="fa-regular fa-circle-xmark text-xl text-surface-400"></i>
+                {:else}
+                  <i class="fa-regular fa-circle-check text-xl text-success-500"></i>
+                {/if}
+                <span class={locked ? 'text-surface-500' : ''}>
+                  {capability.text}{#if capability.requiresLogin}&nbsp;(Requires login){/if}
+                </span>
+              </li>
+            {/each}
+          </ul>
+        </div>
       </div>
     </div>
   </section>
