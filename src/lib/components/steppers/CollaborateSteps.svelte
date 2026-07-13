@@ -43,7 +43,7 @@
         steps.push({
           label: 'Analyze with API',
           icon: 'fa-chart-simple',
-          path: '/analyze/api',
+          path: '/api',
         });
       }
       if (config.features['analyzeAnalysis' as keyof typeof config.features]) {

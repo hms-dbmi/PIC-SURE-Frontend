@@ -10,6 +10,13 @@ export const load: LayoutLoad = async ({ url, fetch, data }) => {
   // initial state agree, avoiding the hydration flash this used to cause.
   applyConfig(data.configCache);
 
+  if (url.pathname.startsWith('/analyze/api')) {
+    redirect(301, '/api');
+  }
+  if (url.pathname === '/analyze') {
+    redirect(302, config.features.analyzeAnalysis ? '/analyze/analysis' : '/api');
+  }
+
   if (!browser) return;
   if (
     !config.features.login.open &&

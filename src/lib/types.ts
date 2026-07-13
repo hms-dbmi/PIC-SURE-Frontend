@@ -111,20 +111,6 @@ export interface PrivacyConfig {
 }
 
 export interface AnalysisConfig {
-  api: {
-    cards: Array<{
-      header: string;
-      body: string;
-      link: string;
-    }>;
-    instructions: {
-      connection: string;
-      execution: string;
-    };
-    example: {
-      setup: string;
-    };
-  };
   analysis: {
     platform: string;
     introduction: string;

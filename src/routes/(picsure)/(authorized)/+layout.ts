@@ -56,18 +56,7 @@ export const load: LayoutLoad = async ({ url, parent }) => {
   // to have run yet by the time this load starts (sibling/child loads run
   // concurrently unless ordered via parent()), so wait for it before reading config.
   await parent();
-  if (
-    !config.features.analyzeApi &&
-    config.features.analyzeAnalysis &&
-    url.pathname.includes('/analyze/api')
-  ) {
-    redirect(302, '/analyze/analysis');
-  }
-  if (
-    !config.features.analyzeAnalysis &&
-    config.features.analyzeApi &&
-    url.pathname.includes('/analyze/analysis')
-  ) {
-    redirect(302, '/analyze/api');
+  if (!config.features.analyzeAnalysis && url.pathname.includes('/analyze/analysis')) {
+    redirect(302, config.features.analyzeApi ? '/api' : '/');
   }
 };
