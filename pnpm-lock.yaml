@@ -144,7 +144,7 @@ importers:
         version: 6.9.1
       '@testing-library/svelte':
         specifier: ^5.3.1
-        version: 5.3.1(svelte@5.56.4(@typescript-eslint/types@8.59.3))(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.6(@types/node@25.7.0)(happy-dom@20.9.0)(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0)))
+        version: 5.3.1(svelte@5.56.4(@typescript-eslint/types@8.59.3))(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.6(@types/node@25.7.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0)))
       '@types/auth0-js':
         specifier: ^9.21.6
         version: 9.21.6
@@ -179,8 +179,8 @@ importers:
         specifier: ^17.6.0
         version: 17.6.0
       happy-dom:
-        specifier: ^20.9.0
-        version: 20.9.0
+        specifier: ^20.10.6
+        version: 20.10.6
       prettier:
         specifier: ^3.8.3
         version: 3.8.3
@@ -210,7 +210,7 @@ importers:
         version: 8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0)
       vitest:
         specifier: ^4.1.6
-        version: 4.1.6(@types/node@25.7.0)(happy-dom@20.9.0)(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0))
+        version: 4.1.6(@types/node@25.7.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0))
 
 packages:
 
@@ -691,6 +691,7 @@ packages:
 
   '@skeletonlabs/floating-ui-svelte@0.3.9':
     resolution: {integrity: sha512-YjGAqVVD54v2biXgbVeZKTj40Zc1I7hS62NTpF72UBFzKsFrYN8+odexBaHNZ/4ScPYLF1ChA0vp3NClo8To1Q==}
+    deprecated: 'This project is no longer actively maintained. Please see this GitHub Discussion: https://github.com/skeletonlabs/floating-ui-svelte/discussions/169 for details about why it was deprecated and where to go next'
     peerDependencies:
       svelte: '>=5.53.5'
 
@@ -1190,6 +1191,10 @@ packages:
     resolution: {integrity: sha512-kLpxurY4Z4r9sgMsyG0Z9uzsBlgiU/EFKhj/h91/8yHu0edo7XuixOIH3VcJ8kkxs6/jPzoI6U9Vj3WqbMQ94g==}
     engines: {node: 18 || 20 || >=22}
 
+  buffer-image-size@0.6.4:
+    resolution: {integrity: sha512-nEh+kZOPY1w+gcCMobZ6ETUp9WfibndnosbpwB1iJk/8Gt5ZF2bhS6+B6bPYz424KtwsR6Rflc3tCz1/ghX2dQ==}
+    engines: {node: '>=4.0'}
+
   call-bind-apply-helpers@1.0.2:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
     engines: {node: '>= 0.4'}
@@ -1535,8 +1540,8 @@ packages:
   gtagjs@0.0.10:
     resolution: {integrity: sha512-b5FAp93DK5yVlXlHhMYzQo0+TRU/UURwTTg2hRn748Wd8Q7IqaoRJ3huihUsg9hhVoxlMzhGV2myV6Pn7PJWnA==}
 
-  happy-dom@20.9.0:
-    resolution: {integrity: sha512-GZZ9mKe8r646NUAf/zemnGbjYh4Bt8/MqASJY+pSm5ZDtc3YQox+4gsLI7yi1hba6o+eCsGxpHn5+iEVn31/FQ==}
+  happy-dom@20.10.6:
+    resolution: {integrity: sha512-6QD0ilzDDt93tX44y8tbmZdAcdTRYDhUP+Asgi6pC8Pp5IA3cvaZGyoVN/EGtlq9ziT65iPuBBn3ASLr6hCgVw==}
     engines: {node: '>=20.0.0'}
 
   has-symbols@1.1.0:
@@ -2934,14 +2939,14 @@ snapshots:
     dependencies:
       svelte: 5.56.4(@typescript-eslint/types@8.59.3)
 
-  '@testing-library/svelte@5.3.1(svelte@5.56.4(@typescript-eslint/types@8.59.3))(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.6(@types/node@25.7.0)(happy-dom@20.9.0)(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0)))':
+  '@testing-library/svelte@5.3.1(svelte@5.56.4(@typescript-eslint/types@8.59.3))(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.6(@types/node@25.7.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0)))':
     dependencies:
       '@testing-library/dom': 10.4.1
       '@testing-library/svelte-core': 1.0.0(svelte@5.56.4(@typescript-eslint/types@8.59.3))
       svelte: 5.56.4(@typescript-eslint/types@8.59.3)
     optionalDependencies:
       vite: 8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0)
-      vitest: 4.1.6(@types/node@25.7.0)(happy-dom@20.9.0)(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0))
+      vitest: 4.1.6(@types/node@25.7.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0))
 
   '@tybys/wasm-util@0.10.3':
     dependencies:
@@ -3420,6 +3425,10 @@ snapshots:
     dependencies:
       balanced-match: 4.0.4
 
+  buffer-image-size@0.6.4:
+    dependencies:
+      '@types/node': 25.7.0
+
   call-bind-apply-helpers@1.0.2:
     dependencies:
       es-errors: 1.3.0
@@ -3748,11 +3757,12 @@ snapshots:
 
   gtagjs@0.0.10: {}
 
-  happy-dom@20.9.0:
+  happy-dom@20.10.6:
     dependencies:
       '@types/node': 25.7.0
       '@types/whatwg-mimetype': 3.0.2
       '@types/ws': 8.18.1
+      buffer-image-size: 0.6.4
       entities: 7.0.1
       whatwg-mimetype: 3.0.0
       ws: 8.21.0
@@ -4453,7 +4463,7 @@ snapshots:
     optionalDependencies:
       vite: 8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0)
 
-  vitest@4.1.6(@types/node@25.7.0)(happy-dom@20.9.0)(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0)):
+  vitest@4.1.6(@types/node@25.7.0)(happy-dom@20.10.6)(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0)):
     dependencies:
       '@vitest/expect': 4.1.6
       '@vitest/mocker': 4.1.6(vite@8.1.2(@types/node@25.7.0)(jiti@2.7.0)(yaml@2.9.0))
@@ -4477,7 +4487,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 25.7.0
-      happy-dom: 20.9.0
+      happy-dom: 20.10.6
     transitivePeerDependencies:
       - msw
 
