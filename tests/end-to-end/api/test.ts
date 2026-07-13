@@ -6,6 +6,8 @@ import type { Branding } from '../../../src/lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
+const capabilities = branding?.apiPage?.capabilities || [];
+
 const placeHolderDots =
   '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
 
@@ -23,7 +25,7 @@ test.describe('API page', () => {
   test('Has expected error message', async ({ page }) => {
     // Given
     await mockApiFail(page, '*/**/psama/user/me?hasToken', 'accessdenied');
-    await page.goto('/analyze/api');
+    await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
@@ -33,24 +35,120 @@ test.describe('API page', () => {
     await expect(errorAlert).toBeVisible();
   });
 
-  branding.analysisPage.api.cards.forEach((card: { header: string; body: string }) => {
-    test(`Has expect card, ${card.header} from branding`, async ({ page }) => {
-      // Given
-      await page.goto('/analyze/api');
-      await userIsLoggedIn(page);
+  test('Has expected header content', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
 
-      // When
-      const cardTitle = page.getByText(card.header);
-      const cardBody = page.getByText(card.body);
-
-      // Then
-      await expect(cardTitle).toBeVisible();
-      await expect(cardBody).toBeVisible();
-    });
+    // Then
+    await expect(page.locator('h1')).toHaveText('Programmatic Access with the PIC-SURE API');
+    await expect(
+      page.getByText('Search data and build cohorts directly with Python, R, or any HTTP client.'),
+    ).toBeVisible();
   });
+
+  test('Has expected workflow cards', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // When
+    const pythonCard = page.getByTestId('workflow-card-python');
+    const rCard = page.getByTestId('workflow-card-r');
+    const httpCard = page.getByTestId('workflow-card-http');
+
+    // Then
+    await expect(page.locator('#choose-your-workflow h2')).toHaveText('Choose Your Workflow');
+    await expect(pythonCard).toBeVisible();
+    await expect(pythonCard).toContainText('Python Client');
+    await expect(pythonCard.locator('.badge')).toHaveText('Recommended');
+    await expect(pythonCard).toContainText('Requires Python version 3.10.20 or later');
+    await expect(rCard).toBeVisible();
+    await expect(rCard).toContainText('R Client');
+    await expect(rCard.locator('.badge')).toHaveText('Recommended');
+    await expect(rCard).toContainText('Requires R version 4.1 or later');
+    await expect(httpCard).toBeVisible();
+    await expect(httpCard).toContainText('Direct API Access');
+    await expect(httpCard.locator('.badge')).toHaveText('Advanced');
+    await expect(httpCard).toContainText('Interact directly with PIC-SURE API endpoints');
+  });
+
+  test('Workflow cards have Quick Start buttons linking to the quick start section', async ({
+    page,
+  }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // When
+    const quickStartButtons = page.locator('a', { hasText: 'Quick Start' });
+
+    // Then
+    await expect(quickStartButtons).toHaveCount(3);
+    for (const button of await quickStartButtons.all()) {
+      await expect(button).toHaveAttribute('href', '#quick-start');
+    }
+  });
+
+  test('Has quick start tabs for Python, R, and API', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // When
+    const tabs = page.getByTestId('tabs-control');
+
+    // Then
+    await expect(tabs).toHaveCount(3);
+    await expect(tabs.nth(0)).toContainText('Python');
+    await expect(tabs.nth(1)).toContainText('R');
+    await expect(tabs.nth(2)).toContainText('API');
+    await expect(page.locator('#quick-start .code-block').first()).toBeVisible();
+  });
+
+  test('Has API Access section', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // Then
+    await expect(page.locator('#api-access h2')).toHaveText('API Access');
+    await expect(page.getByText('Browse and use the PIC-SURE API endpoints.')).toBeVisible();
+  });
+
+  test('Shows all capabilities with success icons when logged in', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // When
+    const items = page.getByTestId('capability-item');
+
+    // Then
+    await expect(items).toHaveCount(capabilities.length);
+    for (const [index, capability] of capabilities.entries()) {
+      await expect(items.nth(index)).toContainText(capability.text);
+      await expect(items.nth(index).locator('i.fa-circle-check')).toBeVisible();
+      if (capability.requiresLogin) {
+        await expect(items.nth(index)).toContainText('(Requires login)');
+      }
+    }
+  });
+
+  test('Shows personal access token card with login confirmed', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // Then
+    await expect(page.getByText('Personal Access Token').first()).toBeVisible();
+    await expect(page.getByText('Login confirmed')).toBeVisible();
+    await expect(page.locator('i.fa-user-shield')).toBeVisible();
+  });
+
   test('Has expected content', async ({ page }) => {
     // Given
-    await page.goto('/analyze/api');
+    await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
@@ -61,7 +159,7 @@ test.describe('API page', () => {
   });
   test('Has expected badge and expiration', async ({ page }) => {
     // Given
-    await page.goto('/analyze/api');
+    await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
@@ -77,7 +175,7 @@ test.describe('API page', () => {
   });
   test(`User account matches expected email of ${picsureUser.email}`, async ({ page }) => {
     // Given
-    await page.goto('/analyze/api');
+    await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
@@ -89,7 +187,7 @@ test.describe('API page', () => {
   });
   test('Token is hidden by default', async ({ page }) => {
     // Given
-    await page.goto('/analyze/api');
+    await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
@@ -101,7 +199,7 @@ test.describe('API page', () => {
   });
   test('Buttons are displayed', async ({ page }) => {
     // Given
-    await page.goto('/analyze/api');
+    await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
@@ -116,7 +214,7 @@ test.describe('API page', () => {
   });
   test('Copy button copies token to clipboard', async ({ page }) => {
     // Given
-    await page.goto('/analyze/api');
+    await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
@@ -135,7 +233,7 @@ test.describe('API page', () => {
   });
   test('Token is visible when reveal button is clicked', async ({ page }) => {
     // Given
-    await page.goto('/analyze/api');
+    await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
@@ -149,7 +247,7 @@ test.describe('API page', () => {
   });
   test('Reveal button text changes when clicked', async ({ page }) => {
     // Given
-    await page.goto('/analyze/api');
+    await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
@@ -161,7 +259,7 @@ test.describe('API page', () => {
   });
   test('Refresh button changes token', async ({ page }) => {
     // Given
-    await page.goto('/analyze/api');
+    await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
@@ -176,7 +274,7 @@ test.describe('API page', () => {
     page,
   }) => {
     // Given
-    await page.goto('/analyze/api');
+    await page.goto('/api');
     await userIsLoggedIn(page);
     const newToken = mockToken;
     await mockApiSuccess(page, '*/**/psama/user/me/refresh_long_term_token', {
@@ -204,7 +302,7 @@ test.describe('API page', () => {
   });
   test('Canceling confirm modal does nothing to user', async ({ page }) => {
     // Given
-    await page.goto('/analyze/api');
+    await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
@@ -221,5 +319,80 @@ test.describe('API page', () => {
     await expect(refreshButton).not.toBeDisabled();
     expect(await userToken.innerText()).toBe(placeHolderDots);
     expect(await expires.innerText()).toContain('Mon Feb 01 2021');
+  });
+});
+
+test.describe('Legacy analyze routes redirect to /api', () => {
+  test.beforeEach(async ({ context }) => {
+    await mockApiSuccess(context, '*/**/psama/role', mockRoles);
+    const user = picsureUser;
+    user.token = mockExpiredToken;
+    await mockApiSuccess(context, '*/**/psama/user/me?hasToken', user);
+  });
+
+  ['/analyze/api', '/analyze/api/example', '/analyze'].forEach((legacyPath) => {
+    test(`${legacyPath} redirects to /api`, async ({ page }) => {
+      // When
+      await page.goto(legacyPath);
+
+      // Then
+      await page.waitForURL('/api');
+      await expect(page).toHaveURL('/api');
+    });
+  });
+});
+
+test.describe('API page logged out', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test('Has API nav link', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+
+    // When
+    const navLink = page.locator('#nav-link-api');
+
+    // Then
+    await expect(navLink).toBeVisible();
+    await expect(navLink).toHaveText('API');
+    await expect(navLink).toHaveAttribute('aria-current', 'page');
+  });
+
+  test('Shows public access placeholder instead of personal access token', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+
+    // Then
+    await expect(page.getByTestId('public-access-placeholder')).toBeVisible();
+    await expect(page.locator('#user-token')).not.toBeVisible();
+  });
+
+  test('Capabilities requiring login show an x icon and login text', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+
+    // When
+    const items = page.getByTestId('capability-item');
+
+    // Then
+    await expect(items).toHaveCount(capabilities.length);
+    for (const [index, capability] of capabilities.entries()) {
+      await expect(items.nth(index)).toContainText(capability.text);
+      if (capability.requiresLogin) {
+        await expect(items.nth(index).locator('i.fa-circle-xmark')).toBeVisible();
+        await expect(items.nth(index)).toContainText('(Requires login)');
+      } else {
+        await expect(items.nth(index).locator('i.fa-circle-check')).toBeVisible();
+      }
+    }
+  });
+
+  test('Legacy /analyze/api redirects to /api when logged out', async ({ page }) => {
+    // When
+    await page.goto('/analyze/api');
+
+    // Then
+    await page.waitForURL('/api');
+    await expect(page).toHaveURL('/api');
   });
 });
