@@ -32,7 +32,9 @@ async function updateDerivedCountStores(resultStats: StatResult[]) {
     ),
   );
 
-  const totalCount = resultStats.find((count) => count.key === config.branding.results.totalStatKey);
+  const totalCount = resultStats.find(
+    (count) => count.key === config.branding.results.totalStatKey,
+  );
   if (totalCount) {
     const totalResults = await Promise.allSettled(
       StatPromise.list(totalCount).map(({ promise }) => promise),

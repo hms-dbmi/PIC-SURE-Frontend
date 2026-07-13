@@ -1,19 +1,19 @@
 import { error, type NumericRange } from '@sveltejs/kit';
-import { type ConfigObject } from '$lib/models/Configuration';
+import type { ConfigObject, ConfigCache } from '$lib/models/Configuration';
 import { Picsure } from '$lib/paths';
 
 const ORIGIN = import.meta.env?.VITE_ORIGIN;
 const configKinds = {
   features: import.meta.env.VITE_API_CONFIG_FEATURES || '',
   settings: import.meta.env.VITE_API_CONFIG_SETTINGS || '',
+  branding: import.meta.env.VITE_API_CONFIG_BRANDING || '',
 };
-
-type ConfigCache = { settings: ConfigObject[]; features: ConfigObject[] };
 
 // Cache store
 let cached: ConfigCache = {
   settings: [],
   features: [],
+  branding: [],
 };
 let lastFetch: number = 0;
 const CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours
@@ -25,6 +25,7 @@ const MAX_DELAY = 60000; // 60 seconds
 let fetching: {
   features: Promise<ConfigObject[] | null>;
   settings: Promise<ConfigObject[] | null>;
+  branding: Promise<ConfigObject[] | null>;
 } | null = null;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,11 +87,18 @@ export async function getConfig(force: boolean = false): Promise<ConfigCache> {
     console.log('Reaching out to get configs from server');
     const configUrl = `${ORIGIN}/${Picsure.Configuration.Get}`;
     fetching = {
-      features: configKinds.features ? fetchWithRetry(`${configUrl}?kind=${configKinds.features}`, 'features') : Promise.resolve([]),
-      settings: configKinds.settings ? fetchWithRetry(`${configUrl}?kind=${configKinds.settings}`, 'settings') : Promise.resolve([]),
+      features: configKinds.features
+        ? fetchWithRetry(`${configUrl}?kind=${configKinds.features}`, 'features')
+        : Promise.resolve([]),
+      settings: configKinds.settings
+        ? fetchWithRetry(`${configUrl}?kind=${configKinds.settings}`, 'settings')
+        : Promise.resolve([]),
+      branding: configKinds.branding
+        ? fetchWithRetry(`${configUrl}?kind=${configKinds.branding}`, 'branding')
+        : Promise.resolve([]),
     };
   }
-  await Promise.allSettled([fetching.features, fetching.settings]).then(
+  await Promise.allSettled([fetching.features, fetching.settings, fetching.branding]).then(
     (results: PromiseSettledResult<ConfigObject[] | null>[]) => {
       if (results.some((val) => val.status === 'fulfilled' && val.value === null)) {
         console.error(
@@ -100,6 +108,7 @@ export async function getConfig(force: boolean = false): Promise<ConfigCache> {
         lastFetch = now;
         cached.features = (results[0] as PromiseFulfilledResult<ConfigObject[]>).value ?? [];
         cached.settings = (results[1] as PromiseFulfilledResult<ConfigObject[]>).value ?? [];
+        cached.branding = (results[2] as PromiseFulfilledResult<ConfigObject[]>).value ?? [];
       }
       fetching = null;
     },
@@ -109,6 +118,6 @@ export async function getConfig(force: boolean = false): Promise<ConfigCache> {
 
 // Optional: Function to invalidate cache
 export function invalidateConfig() {
-  cached = { settings: [], features: [] };
+  cached = { settings: [], features: [], branding: [] };
   lastFetch = 0;
 }

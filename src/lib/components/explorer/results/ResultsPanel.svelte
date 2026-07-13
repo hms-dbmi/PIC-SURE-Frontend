@@ -60,7 +60,7 @@
   let showDiscoverDistributions = $derived(
     isDiscoverPage &&
       config.features.discover &&
-      config.features.discoverFeatures.distributionExplorer &&
+      config.features.explorer.distributionExplorer &&
       hasValidDistributionFilters,
   );
 

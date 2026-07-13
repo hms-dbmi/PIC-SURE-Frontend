@@ -1,8 +1,7 @@
-import * as api from './api';
 import { LocalServer } from './paths';
 
 import type { ConfigCache } from './models/Configuration';
-import { mapFeatures, mapSettings, getBrandingFromJSON, defaults } from './models/Configuration';
+import { mapFeatures, mapSettings, mapBranding } from './models/Configuration';
 
 export { routes } from './routes';
 
@@ -20,7 +19,7 @@ export const auth = {
 let loading = $state(Promise.resolve());
 let features = $state(mapFeatures([]));
 let settings = $state(mapSettings([]));
-let branding = $state(defaults.branding);
+let branding = $state(mapBranding(PROJECT_HOSTNAME, []));
 let configError = $state<string | null>(null);
 let configRequest: Promise<void> | null = null;
 
@@ -44,12 +43,13 @@ export const config = {
 
 export async function getConfigs(): Promise<void> {
   if (configRequest) return configRequest;
-  branding = getBrandingFromJSON(PROJECT_HOSTNAME);
-  configRequest = api
-    .get(LocalServer.Configs)
+  configRequest = import('./api')
+    .then((api) => api.get(LocalServer.Configs))
     .then((configResp: ConfigCache) => {
-      features = mapFeatures(configResp.features);
-      settings = mapSettings(configResp.settings);
+      configResp.features.length > 0 && (features = mapFeatures(configResp.features));
+      configResp.settings.length > 0 && (settings = mapSettings(configResp.settings));
+      configResp.branding.length > 0 &&
+        (branding = mapBranding(PROJECT_HOSTNAME, configResp.branding));
     })
     .catch(() => {
       configError = 'Configuration could not be loaded. Some features may be unavailable.';

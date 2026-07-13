@@ -9,7 +9,7 @@ import { log, createLog } from '$lib/logger';
 
 export const prerender = false;
 
-export const load: LayoutLoad = async ({ url, parent }) => {
+export const load: LayoutLoad = async ({ url }) => {
   if (!browser) return;
 
   const token = localStorage.getItem('token');
