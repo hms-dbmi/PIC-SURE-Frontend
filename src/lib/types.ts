@@ -106,23 +106,6 @@ export interface PrivacyConfig {
   url: string;
 }
 
-export interface AnalysisConfig {
-  api: {
-    cards: Array<{
-      header: string;
-      body: string;
-      link: string;
-    }>;
-    instructions: {
-      connection: string;
-      execution: string;
-    };
-    example: {
-      setup: string;
-    };
-  };
-}
-
 export interface CodeBlockConfig extends Indexable {
   PythonExport: string;
   RExport: string;

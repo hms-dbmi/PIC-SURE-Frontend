@@ -3,10 +3,8 @@ import type { Redirect } from '@sveltejs/kit';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 
 const store = vi.hoisted(() => ({ value: {} as { privileges?: string[] } }));
-const mockConfig = vi.hoisted(() => ({ features: { analyzeApi: true } }));
 
 vi.mock('$app/environment', () => ({ browser: true }));
-vi.mock('$lib/configuration.svelte', () => ({ config: mockConfig }));
 vi.mock('$lib/stores/User', () => ({
   user: {
     subscribe: (fn: (v: unknown) => void) => {
@@ -37,7 +35,6 @@ async function captureRedirect(path: string): Promise<Redirect | null> {
 
 beforeEach(() => {
   store.value = {};
-  mockConfig.features.analyzeApi = true;
 });
 
 describe('analyze layout guard', () => {
@@ -69,22 +66,5 @@ describe('analyze layout guard', () => {
 
     expect(result).not.toBeNull();
     expect(result!.location).toBe('/');
-  });
-
-  // The privilege check runs before the config read, so an unauthorized user never reaches this.
-  it('sends an authorized user from /analyze to /analyze/api', async () => {
-    store.value = { privileges: [BDCPrivileges.AUTHORIZED_ACCESS] };
-
-    const result = await captureRedirect('/analyze');
-
-    expect(result).not.toBeNull();
-    expect(result!.location).toBe('/analyze/api');
-  });
-
-  it('leaves /analyze alone when the analyzeApi feature is off', async () => {
-    mockConfig.features.analyzeApi = false;
-    store.value = { privileges: [BDCPrivileges.AUTHORIZED_ACCESS] };
-
-    expect(await captureRedirect('/analyze')).toBeNull();
   });
 });

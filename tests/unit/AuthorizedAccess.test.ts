@@ -61,7 +61,7 @@ describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
     await getUser(true);
 
     expect(navPaths()).toContain('/explorer');
-    expect(navPaths()).toContain('/analyze/api');
+    expect(navPaths()).toContain('/api');
   });
 
   it('withholds them from an open access session', async () => {
@@ -70,7 +70,6 @@ describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
     await getUser(true);
 
     expect(navPaths()).not.toContain('/explorer');
-    expect(navPaths()).not.toContain('/analyze/api');
     expect(navPaths()).not.toContain('/dataset');
   });
 
@@ -85,7 +84,7 @@ describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
 
     expect(get(user).privileges).not.toContain('AUTHORIZED_ACCESS');
     expect(navPaths()).toContain('/explorer');
-    expect(navPaths()).toContain('/analyze/api');
+    expect(navPaths()).toContain('/api');
     expect(navPaths()).toContain('/dataset');
   });
 

@@ -163,20 +163,6 @@ export type Branding = Indexable & {
     url: string;
   };
   analysisPage: {
-    api: {
-      cards: Array<{
-        header: string;
-        body: string;
-        link: string;
-      }>;
-      instructions: {
-        connection: string;
-        execution: string;
-      };
-      example: {
-        setup: string;
-      };
-    };
     analysis: {
       platform: string;
       introduction: string;
@@ -802,16 +788,6 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
   const branding = deepMerge(
     {
       analysisPage: {
-        api: {
-          cards: [],
-          instructions: {
-            connection: '',
-            execution: '',
-          },
-          example: {
-            setup: '',
-          },
-        },
         analysis: {
           platform: '',
           introduction: '',
