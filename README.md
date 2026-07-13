@@ -142,6 +142,17 @@ Also refer to our [Code of Conduct](https://github.com/hms-dbmi/pic-sure-hpds/bl
 Some PIC-SURE text is configurable. We provide a configuration file that is used for custom text elements [here](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/assets/configuration.json).
 Feature flags and settings are stored in the picsure-db, accessing from the picsure api on route `GET:/picsure/configuration` and loaded into svelte on the server side which can be accessed by the client on route `GET:/api/config`. There are defaults located in [here](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/configuration.ts).
 
+### Config sources & precedence
+
+Features and settings are each resolved from up to three layers: hardcoded defaults, individual `VITE_<KEY>` env vars (see [`.env.example`](.env.example)), and rows fetched from the API.
+
+- `VITE_API_CONFIG_FEATURES` / `VITE_API_CONFIG_SETTINGS` / `VITE_API_CONFIG_BRANDING` set the `kind` used to fetch each category from `GET:/picsure/configuration` (defaults: `ui:featureFlag`, `ui:setting`, `ui:branding`). Leave one blank to skip fetching that category from the API entirely, relying on env vars and defaults only.
+- `VITE_CONFIG_MODE` decides who wins when both an env var and an API row are set for the same field:
+  - `seed` (default): defaults -> env (if set) -> API (if set) wins
+  - `override`: defaults -> API (if set) -> env (if set) wins
+
+**Branding is the exception to this layering.** It defaults to whatever is in [`configuration.json`](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/assets/configuration.json), and only a narrow set of fields — currently just the logo (`VITE_LOGO`/`LOGO` and `VITE_LOGO_ALT`/`LOGO_ALT`) — can be seeded/overridden via env var or the API. Everything else under branding (sitemap, footer, landing page copy, etc.) is sourced from `configuration.json` and isn't wired up to env/API resolution at this time.
+
 This system is under active development and subject to change.
 
 ## Support
