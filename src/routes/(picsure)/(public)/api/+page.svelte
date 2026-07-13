@@ -1,9 +1,13 @@
 <script lang="ts">
+  import { Tabs } from '@skeletonlabs/skeleton-svelte';
+
   import { branding } from '$lib/configuration';
   import { isUserLoggedIn } from '$lib/stores/User';
   import { log, createLog } from '$lib/logger';
 
   import UserToken from '$lib/components/UserToken.svelte';
+  import CodeBlock from '$lib/components/CodeBlock.svelte';
+  import TabItem from '$lib/components/TabItem.svelte';
 
   const loggedIn = isUserLoggedIn();
   const capabilities = branding.apiPage?.capabilities || [];
@@ -43,6 +47,13 @@
       tab: 'API',
     },
   ];
+
+  let tabSet: string = $state('Python');
+
+  function quickStart(workflow: Workflow) {
+    tabSet = workflow.tab;
+    log(createLog('NAVIGATION', 'api.quick_start', { workflow: workflow.id }));
+  }
 </script>
 
 <svelte:head>
@@ -82,9 +93,7 @@
             <a
               href="#quick-start"
               class="btn preset-filled-primary-500 mt-auto"
-              onclick={() =>
-                log(createLog('NAVIGATION', 'api.quick_start', { workflow: workflow.id }))}
-              >Quick Start</a
+              onclick={() => quickStart(workflow)}>Quick Start</a
             >
           </div>
         {/each}
@@ -152,6 +161,52 @@
           </ul>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section id="quick-start" class="w-full bg-primary-50-950">
+    <div class="w-[70%] mx-auto py-8">
+      <h2>Quick Start</h2>
+      <p class="mx-0">Copy and run the example code to get started.</p>
+      <Tabs
+        value={tabSet}
+        onValueChange={(e) => {
+          tabSet = e.value;
+          log(createLog('ACTION', 'api.tab_change', { tab: e.value }));
+        }}
+      >
+        {#snippet list()}
+          <TabItem bind:group={tabSet} value="Python">Python</TabItem>
+          <TabItem bind:group={tabSet} value="R">R</TabItem>
+          <TabItem bind:group={tabSet} value="API">API</TabItem>
+        {/snippet}
+        {#snippet content()}
+          <Tabs.Panel value="Python">
+            <CodeBlock
+              lang="python"
+              code={branding.explorePage.codeBlocks.PythonAPI || 'Code not set'}
+            />
+          </Tabs.Panel>
+          <Tabs.Panel value="R">
+            <CodeBlock lang="r" code={branding.explorePage.codeBlocks.RAPI || 'Code not set'} />
+          </Tabs.Panel>
+          <Tabs.Panel value="API">
+            <CodeBlock
+              lang="console"
+              code={branding.explorePage.codeBlocks.CurlAPI || 'Code not set'}
+            />
+          </Tabs.Panel>
+        {/snippet}
+      </Tabs>
+    </div>
+  </section>
+
+  <section id="api-access" class="w-full">
+    <div class="w-[70%] mx-auto py-8">
+      <h2>API Access</h2>
+      <!-- TODO: Section content (endpoint browser / documentation links) to be defined in an
+           upcoming ticket. -->
+      <p class="mx-0">Browse and use the PIC-SURE API endpoints.</p>
     </div>
   </section>
 </div>
