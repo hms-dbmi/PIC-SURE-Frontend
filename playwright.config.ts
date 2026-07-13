@@ -8,7 +8,7 @@ import path from 'path';
 // below passes --mode test, which vite.config.ts uses to redirect envDir away from the
 // project root during e2e builds, so only what's set here (and inherited process.env,
 // which always wins over file-based env) reaches the build.
-dotenv.config({ path: path.resolve('.env.test') });
+dotenv.config({ path: path.resolve('.env.test'), quiet: true });
 const isUI = process.argv.includes('--ui');
 const isDebug = !!process.env.PLAYWRIGHT_DEV || process.argv.includes('--debug');
 

@@ -145,7 +145,7 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps
       - name: Run Playwright tests
-        run: pnpm run test:integration --shard=${{ matrix.shard }} --reporter=blob
+        run: pnpm run test:integration --shard=${{ matrix.shard }} --reporter=blob,list
       - name: Upload blob report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
