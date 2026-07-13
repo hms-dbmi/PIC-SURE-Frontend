@@ -13,11 +13,6 @@
   const loggedIn = isUserLoggedIn();
   const capabilities = branding.apiPage?.capabilities || [];
 
-  // Logged-in users connect with their personal token (AUTH); anonymous users
-  // connect to the OPEN platform with an api key. The open variant is the
-  // initial value so it matches the server render (login state is only known
-  // client-side); the swap happens after mount. The API tab is placeholder
-  // content until its ticket lands.
   const codeBlocks = branding.explorePage.codeBlocks;
   let quickStartCode = $state({
     python: codeBlocks.PythonAPIOpen || 'Code not set',
