@@ -133,6 +133,42 @@ describe('PublicAccessKey', () => {
     expect(screen.getByRole('button', { name: 'Generate Key' })).toBeInTheDocument();
   });
 
+  it('falls back to a generic message when the error body is an HTML page', async () => {
+    post.mockRejectedValue({
+      status: 404,
+      body: {
+        message:
+          '<!doctype html> <html lang="en" class="light" data-theme="picsure"> <head><meta charset="utf-8" /><style>.fa-beat{animation-name:fa-beat}</style></head> <body>Not found</body> </html>',
+      },
+    });
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+    await submitForm();
+
+    const alert = await screen.findByTestId('error-alert');
+    expect(alert).toHaveTextContent(
+      'Unable to generate a public access key. Please try again later.',
+    );
+    expect(alert.textContent).not.toContain('<');
+  });
+
+  it('falls back to a generic message when the error body is overlong plain text', async () => {
+    post.mockRejectedValue({
+      status: 500,
+      body: { message: 'java.lang.NullPointerException at '.padEnd(500, 'x') },
+    });
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+    await submitForm();
+
+    const alert = await screen.findByTestId('error-alert');
+    expect(alert).toHaveTextContent(
+      'Unable to generate a public access key. Please try again later.',
+    );
+  });
+
   it('unwraps a JSON error body from the server', async () => {
     post.mockRejectedValue({
       status: 400,
