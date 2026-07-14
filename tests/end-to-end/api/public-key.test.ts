@@ -70,13 +70,14 @@ test.describe('Public access key generation', () => {
       await route.fulfill({ json: mockKeyResponse });
     });
     await page.goto('/api');
-    // A token appearing in localStorage after load (login in another tab, leftover expired
-    // token) must NOT be attached: api.ts reads localStorage at request time and a stale
-    // token 401s this public endpoint server-side
-    await page.evaluate(() => localStorage.setItem('token', 'stale.jwt.value'));
 
     // When
     await openForm(page);
+    // A token appearing in localStorage after load (login in another tab, leftover expired
+    // token) must NOT be attached: api.ts reads localStorage at request time and a stale
+    // token 401s this public endpoint server-side. Set it only after the form is open —
+    // if hydration sees the token first, the page renders logged-in and the form never exists.
+    await page.evaluate(() => localStorage.setItem('token', 'stale.jwt.value'));
     await page.getByLabel('Email (optional)').fill('researcher@example.org');
     await page.getByRole('button', { name: 'Generate Key' }).click();
     await expect(page.getByTestId('public-key-value')).toBeVisible();
