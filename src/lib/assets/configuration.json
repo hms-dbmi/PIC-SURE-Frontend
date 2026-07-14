@@ -154,7 +154,8 @@
       { "text": "Retrieve counts for feasibility assessments" },
       { "text": "Filter on genomic variants" },
       { "text": "Retrieve authorized, participant-level data", "requiresLogin": true }
-    ]
+    ],
+    "publicKeyEnabled": true
   },
   "analysisPage": {
     "analysis": {
