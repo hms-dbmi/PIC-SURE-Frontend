@@ -1,4 +1,4 @@
-import type { HandleServerError, ServerInit } from '@sveltejs/kit';
+import type { Handle, HandleServerError, ServerInit } from '@sveltejs/kit';
 import { registerProviderData } from './lib/AuthProviderRegistry';
 import type { AuthData } from './lib/models/AuthProvider';
 import { getConfig } from './lib/server/configCache';
@@ -42,6 +42,23 @@ async function registerEnabledProviders(enabledProviders: string[], viteProvider
 }
 
 registerEnabledProviders(enabledProviders, PROVIDER_PREFIX);
+
+// In test mode (Playwright's --mode test build), +layout.server.ts can apply a
+// per-request config override read from a cookie. configuration.svelte.ts's config
+// state is a module-scope singleton though - concurrent requests handled by this one
+// process would otherwise be able to interleave between "apply override" and
+// "render", leaking one test's config into another's SSR output. Serializing
+// request handling here closes that window. No-op outside test mode - production
+// config never varies per request, so nothing needs it.
+let requestQueue: Promise<unknown> = Promise.resolve();
+
+export const handle: Handle = async ({ event, resolve }) => {
+  if (import.meta.env.MODE !== 'test') return resolve(event);
+
+  const result = requestQueue.then(() => resolve(event));
+  requestQueue = result.catch(() => {});
+  return result;
+};
 
 export const handleError: HandleServerError = async ({ error, event, status, message }) => {
   console.error('Server error: ', error, event, status, message);

@@ -41,16 +41,27 @@ export const config = {
   },
 };
 
+export function applyConfig(cache: ConfigCache): void {
+  cache.features.length > 0 && (features = mapFeatures(cache.features));
+  cache.settings.length > 0 && (settings = mapSettings(cache.settings));
+  cache.branding.length > 0 && (branding = mapBranding(PROJECT_HOSTNAME, cache.branding));
+}
+
+// Unconditional reset to defaults - unlike applyConfig, which intentionally leaves
+// state untouched on empty input so a blank API response can't clobber good data in
+// prod. Tests need a real reset primitive between cases instead.
+export function resetConfig(): void {
+  features = mapFeatures([]);
+  settings = mapSettings([]);
+  branding = mapBranding(PROJECT_HOSTNAME, []);
+  configError = null;
+}
+
 export async function getConfigs(): Promise<void> {
   if (configRequest) return configRequest;
   configRequest = import('./api')
     .then((api) => api.get(LocalServer.Configs))
-    .then((configResp: ConfigCache) => {
-      configResp.features.length > 0 && (features = mapFeatures(configResp.features));
-      configResp.settings.length > 0 && (settings = mapSettings(configResp.settings));
-      configResp.branding.length > 0 &&
-        (branding = mapBranding(PROJECT_HOSTNAME, configResp.branding));
-    })
+    .then((configResp: ConfigCache) => applyConfig(configResp))
     .catch(() => {
       configError = 'Configuration could not be loaded. Some features may be unavailable.';
     });
