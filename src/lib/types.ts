@@ -30,15 +30,6 @@ export interface FooterConfig {
   links: Array<Link>;
 }
 
-interface CodeBlock {
-  PythonExport: string;
-  RExport: string;
-  PythonAPI: string;
-  RAPI: string;
-  PythonAPIOpen: string;
-  RAPIOpen: string;
-  CurlAPI: string;
-}
 export interface ExplorePageConfig {
   columns: Column[];
   tourSearchTerm: string;
@@ -49,7 +40,7 @@ export interface ExplorePageConfig {
   analysisExportText: string;
   confirmDownloadTitle: string;
   confirmDownloadMessage: string;
-  codeBlocks: CodeBlock;
+  codeBlocks: CodeBlockConfig;
   goTo: {
     instructions: string;
     links: Array<Link>;
