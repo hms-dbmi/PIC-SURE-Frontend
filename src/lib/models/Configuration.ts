@@ -269,16 +269,30 @@ export function resolveConfigMap(apiRows: ConfigObject[], envPrefix?: string): C
   return getConfigMode() === 'override' ? { ...apiMap, ...envMap } : { ...envMap, ...apiMap };
 }
 
-function parsers(map: ConfigMap) {
+// A blank (or whitespace-only) value is treated the same as an absent one - it
+// falls back to the default rather than being coerced/parsed. asString is the
+// one exception: an explicit empty string is a valid override there, so it
+// only checks presence, not blankness.
+function withNonBlank<T>(
+  map: ConfigMap,
+  name: string,
+  defaultValue: T,
+  transform: (value: string) => T,
+): T {
+  const value = map[name]?.value;
+  return value && value.trim() !== '' ? transform(value) : defaultValue;
+}
+
+export function parsers(map: ConfigMap) {
   return {
     asBoolean: function (name: string, defaultValue: boolean): boolean {
-      return map[name] ? map[name].value === 'true' : defaultValue;
+      return withNonBlank(map, name, defaultValue, (value) => value === 'true');
     },
     asInt: function (name: string, defaultValue: number): number {
-      return map[name] ? parseInt(map[name].value) : defaultValue;
+      return withNonBlank(map, name, defaultValue, (value) => parseInt(value));
     },
     asJson: function (name: string, defaultValue: unknown): unknown {
-      return map[name] ? JSON.parse(map[name].value) : defaultValue;
+      return withNonBlank(map, name, defaultValue, (value) => JSON.parse(value));
     },
     asString: function (name: string, defaultValue: string): string {
       return map[name] ? map[name].value : (defaultValue as string);
@@ -289,7 +303,7 @@ function parsers(map: ConfigMap) {
 export function mapFeatures(apiFeatures: ConfigObject[]): Features {
   const parse = parsers(resolveConfigMap(apiFeatures)).asBoolean;
   return {
-    analyzeAnalysis: parse('ANALYZE_ANALYSIS', true),
+    analyzeAnalysis: parse('ANALYZE_ANALYSIS', false),
     analyzeApi: parse('ANALYZE_API', true),
     collaborate: parse('COLLABORATE', false),
     confirmDownload: parse('CONFIRM_DOWNLOAD', false),
@@ -312,7 +326,7 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
       enablePfbExport: parse('DOWNLOAD_AS_PFB', true),
       enableRedcapExport: parse('ENABLE_REDCAP_EXPORT', false),
       enableSampleIdCheckbox: parse('ENABLE_SAMPLE_ID_CHECKBOX', false),
-      enableTour: parse('EXPLORER_TOUR', true),
+      enableTour: parse('EXPLORE_TOUR', true),
       exportsEnableExport: parse('ALLOW_EXPORT_ENABLED', false),
       showTreeStep: parse('SHOW_TREE_STEP', false),
       variantExplorer: parse('VARIANT_EXPLORER', false),
@@ -352,7 +366,7 @@ export function mapSettings(apiSettings: ConfigObject[]): Settings {
     maxDataPointsForExport: parse.asInt('MAX_DATA_POINTS_FOR_EXPORT', 1000000),
     tour: {
       auth: parse.asString('AUTH_TOUR_NAME', 'NHANES-Auth'),
-      open: parse.asString('OPEN_TOUR_NAME', 'NHANES-Open'),
+      open: parse.asString('OPEN_TOUR_NAME', 'BDC-Open'),
       searchTerm: parse.asString('EXPLORE_TOUR_SEARCH_TERM', 'age'),
     },
     variantExplorer: {

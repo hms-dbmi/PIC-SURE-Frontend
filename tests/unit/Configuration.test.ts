@@ -5,7 +5,9 @@ import {
   mapSettings,
   resolveConfigMap,
   getConfigMode,
+  parsers,
   type ConfigObject,
+  type ConfigMap,
   mapBranding,
 } from '$lib/models/Configuration';
 
@@ -40,6 +42,115 @@ function apiRow(name: string, value: string): ConfigObject {
   return { name, value };
 }
 
+describe('parsers', () => {
+  const map: ConfigMap = {
+    BOOL_TRUE: apiRow('BOOL_TRUE', 'true'),
+    BOOL_OTHER: apiRow('BOOL_OTHER', 'yes'),
+    BOOL_BLANK: apiRow('BOOL_BLANK', ''),
+    BOOL_WHITESPACE: apiRow('BOOL_WHITESPACE', '   '),
+    INT_VALID: apiRow('INT_VALID', '42'),
+    INT_INVALID: apiRow('INT_INVALID', 'not-a-number'),
+    INT_BLANK: apiRow('INT_BLANK', ''),
+    INT_WHITESPACE: apiRow('INT_WHITESPACE', '   '),
+    JSON_VALID: apiRow('JSON_VALID', '{"a":1}'),
+    JSON_INVALID: apiRow('JSON_INVALID', '{not json}'),
+    JSON_EMPTY_LIST: apiRow('JSON_EMPTY_LIST', '[]'),
+    JSON_BLANK: apiRow('JSON_BLANK', ''),
+    JSON_WHITESPACE: apiRow('JSON_WHITESPACE', '   '),
+    STRING_SET: apiRow('STRING_SET', 'hello'),
+    STRING_EMPTY: apiRow('STRING_EMPTY', ''),
+  };
+  const parse = parsers(map);
+
+  describe('asBoolean', () => {
+    it('returns the default when the key is absent', () => {
+      expect(parse.asBoolean('MISSING', true)).toBe(true);
+      expect(parse.asBoolean('MISSING', false)).toBe(false);
+    });
+
+    it('returns true only for the exact string "true"', () => {
+      expect(parse.asBoolean('BOOL_TRUE', false)).toBe(true);
+    });
+
+    it('returns false for any other string value, ignoring the default', () => {
+      expect(parse.asBoolean('BOOL_OTHER', true)).toBe(false);
+    });
+
+    it('returns the default when the value is blank, rather than coercing to false', () => {
+      expect(parse.asBoolean('BOOL_BLANK', true)).toBe(true);
+    });
+
+    it('returns the default when the value is whitespace-only, rather than coercing to false', () => {
+      expect(parse.asBoolean('BOOL_WHITESPACE', true)).toBe(true);
+    });
+  });
+
+  describe('asInt', () => {
+    it('returns the default when the key is absent', () => {
+      expect(parse.asInt('MISSING', 7)).toBe(7);
+    });
+
+    it('parses a numeric string', () => {
+      expect(parse.asInt('INT_VALID', 0)).toBe(42);
+    });
+
+    it('returns NaN (not the default) when the value is present but not numeric', () => {
+      expect(parse.asInt('INT_INVALID', 7)).toBeNaN();
+    });
+
+    it('returns the default when the value is blank, rather than NaN', () => {
+      expect(parse.asInt('INT_BLANK', 7)).toBe(7);
+    });
+
+    it('returns the default when the value is whitespace-only, rather than NaN', () => {
+      expect(parse.asInt('INT_WHITESPACE', 7)).toBe(7);
+    });
+  });
+
+  describe('asJson', () => {
+    it('returns the default when the key is absent', () => {
+      const fallback = { foo: 'bar' };
+      expect(parse.asJson('MISSING', fallback)).toBe(fallback);
+    });
+
+    it('parses valid JSON', () => {
+      expect(parse.asJson('JSON_VALID', {})).toEqual({ a: 1 });
+    });
+
+    it('throws when the value is present but not valid JSON', () => {
+      expect(() => parse.asJson('JSON_INVALID', {})).toThrow();
+    });
+
+    it('returns the default when the value is blank, rather than throwing', () => {
+      const fallback = ['default'];
+      expect(parse.asJson('JSON_BLANK', fallback)).toBe(fallback);
+    });
+
+    it('returns the default when the value is whitespace-only, rather than throwing', () => {
+      const fallback = ['default'];
+      expect(parse.asJson('JSON_WHITESPACE', fallback)).toBe(fallback);
+    });
+
+    it('respects a deliberately empty list, distinct from a blank value', () => {
+      expect(parse.asJson('JSON_EMPTY_LIST', ['default'])).toEqual([]);
+    });
+  });
+
+  describe('asString', () => {
+    it('returns the default when the key is absent', () => {
+      expect(parse.asString('MISSING', 'default')).toBe('default');
+    });
+
+    it('returns the value when present', () => {
+      expect(parse.asString('STRING_SET', 'default')).toBe('hello');
+    });
+
+    it('returns an explicit empty string rather than the default (presence, not truthiness)', () => {
+      expect(parse.asString('STRING_EMPTY', 'default')).toBe('');
+    });
+  });
+});
+
 describe('getConfigMode', () => {
   it('defaults to seed when unset', () => {
     expect(getConfigMode()).toBe('seed');
@@ -64,7 +175,7 @@ describe('getConfigMode', () => {
 
 describe('mapFeatures / mapSettings / mapBranding - regression baseline', () => {
   it('matches defaults when no API rows and no env vars are set', () => {
-    expect(mapFeatures([]).analyzeAnalysis).toBe(true);
+    expect(mapFeatures([]).analyzeAnalysis).toBe(false);
     expect(mapSettings([]).maxDataPointsForExport).toBe(1000000);
     expect(mapBranding('', []).login.logoHeight).toBe(7.5);
   });
