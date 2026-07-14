@@ -61,6 +61,28 @@ Settings are grouped into a few categories:
 
 For full configuration documentation, see the [PIC-SURE Frontend Configuration Guide](https://pic-sure.gitbook.io/pic-sure-developer-guide/configuring-pic-sure/pic-sure-frontend-configuration).
 
+Some PIC-SURE text is configurable. We provide a configuration file that is used for custom text elements [here](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/assets/configuration.json).
+
+Feature flags, settings, and branding are also fetched from the PICSURE API (`GET:/picsure/configuration`) and cached server-side on startup (`src/hooks.server.ts`'s `init`, `src/lib/server/configCache.ts`). Each request's SSR render and the client's hydration both resolve config from that same server-side cache: `src/routes/+layout.server.ts` reads it and passes it to `src/routes/+layout.ts`, which applies it to `configuration.svelte.ts`'s reactive `config` object via `applyConfig()` before anything renders. This mirrors the "bootstrap" pattern feature-flag services like LaunchDarkly and GrowthBook use to avoid a flash of default values on first load: the server evaluates once, and the client hydrates from that exact same payload instead of re-fetching. The cache is also available directly at `GET:/api/config`, and can be forced to refresh via `GET:/api/config/refresh`.
+
+### Config sources & precedence
+
+Features and settings are each resolved from up to three layers: hardcoded defaults, individual `VITE_<KEY>` env vars (see [`.env.example`](.env.example)), and rows fetched from the API.
+
+- `VITE_API_CONFIG_FEATURES` / `VITE_API_CONFIG_SETTINGS` / `VITE_API_CONFIG_BRANDING` set the `kind` used to fetch each category from `GET:/picsure/configuration` (defaults: `ui:featureFlag`, `ui:setting`, `ui:branding`). Leave one blank to skip fetching that category from the API entirely, relying on env vars and defaults only.
+- `VITE_CONFIG_MODE` decides who wins when both an env var and an API row are set for the same field:
+  - `seed` (default): defaults -> env (if set) -> API (if set) wins
+  - `override`: defaults -> API (if set) -> env (if set) wins
+
+**Branding is the exception to this layering.** It defaults to whatever is in [`configuration.json`](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/assets/configuration.json), and only a narrow set of fields — currently just the logo (`VITE_LOGO`/`LOGO` and `VITE_LOGO_ALT`/`LOGO_ALT`) — can be seeded/overridden via env var or the API. Everything else under branding (sitemap, footer, landing page copy, etc.) is sourced from `configuration.json` and isn't wired up to env/API resolution at this time.
+
+This system is under active development and subject to change.
+
+### Testing configuration
+
+- **e2e (Playwright):** use `mockApiConfig(page, { features, settings, branding })` from `tests/end-to-end/custom-context.ts` to set per-test feature/setting/branding rows. It works by seeding a cookie that `src/routes/+layout.server.ts` reads and applies to that `BrowserContext`'s requests only — real config, real backend calls, and other concurrent tests are unaffected. The override is only honored when the app is built/served with `--mode test` (how Playwright's `webServer` always runs it); it's inert in dev and production builds.
+- **Component tests (Vitest):** call `applyConfig(rows)` (from `$lib/configuration.svelte`) with raw `ConfigObject[]` rows to exercise the real API-row mapping/precedence pipeline, or mutate `config.features`/`config.settings`/`config.branding` fields directly for values not resolvable from API rows (e.g. `config.branding.explorePage.resultInfo`, sourced from `configuration.json`). `tests/component/setup.ts` calls `resetConfig()` after every test automatically, so tests don't need to clean up after themselves.
+
 ## Project Structure
 
 ### Tech Stack
@@ -136,24 +158,6 @@ pnpx playwright install
 Please refer to [CONTRIBUTING](https://github.com/hms-dbmi/pic-sure-all-in-one/blob/master/CONTRIBUTING.md) for guidelines on how to contribute, submit issues, and propose improvements.
 
 Also refer to our [Code of Conduct](https://github.com/hms-dbmi/pic-sure-hpds/blob/master/CODE_OF_CONDUCT.md).
-
-## Configuration
-
-Some PIC-SURE text is configurable. We provide a configuration file that is used for custom text elements [here](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/assets/configuration.json).
-Feature flags and settings are stored in the picsure-db, accessing from the picsure api on route `GET:/picsure/configuration` and loaded into svelte on the server side which can be accessed by the client on route `GET:/api/config`. There are defaults located in [here](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/configuration.ts).
-
-### Config sources & precedence
-
-Features and settings are each resolved from up to three layers: hardcoded defaults, individual `VITE_<KEY>` env vars (see [`.env.example`](.env.example)), and rows fetched from the API.
-
-- `VITE_API_CONFIG_FEATURES` / `VITE_API_CONFIG_SETTINGS` / `VITE_API_CONFIG_BRANDING` set the `kind` used to fetch each category from `GET:/picsure/configuration` (defaults: `ui:featureFlag`, `ui:setting`, `ui:branding`). Leave one blank to skip fetching that category from the API entirely, relying on env vars and defaults only.
-- `VITE_CONFIG_MODE` decides who wins when both an env var and an API row are set for the same field:
-  - `seed` (default): defaults -> env (if set) -> API (if set) wins
-  - `override`: defaults -> API (if set) -> env (if set) wins
-
-**Branding is the exception to this layering.** It defaults to whatever is in [`configuration.json`](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/assets/configuration.json), and only a narrow set of fields — currently just the logo (`VITE_LOGO`/`LOGO` and `VITE_LOGO_ALT`/`LOGO_ALT`) — can be seeded/overridden via env var or the API. Everything else under branding (sitemap, footer, landing page copy, etc.) is sourced from `configuration.json` and isn't wired up to env/API resolution at this time.
-
-This system is under active development and subject to change.
 
 ## Support
 

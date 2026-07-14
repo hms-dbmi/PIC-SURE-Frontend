@@ -4,8 +4,13 @@ import { redirect } from '@sveltejs/kit';
 import { isTokenExpired, isUserLoggedIn } from '$lib/stores/User';
 import { config } from '$lib/configuration.svelte';
 
-export const load: LayoutLoad = ({ url }) => {
-  if (!browser || config.features.explorer.open) {
+export const load: LayoutLoad = async ({ url, parent }) => {
+  if (!browser) return;
+  // Root layout's load applies config from data.configCache - it isn't guaranteed
+  // to have run yet by the time this load starts (sibling/child loads run
+  // concurrently unless ordered via parent()), so wait for it before reading config.
+  await parent();
+  if (config.features.explorer.open) {
     return;
   }
 

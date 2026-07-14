@@ -1,6 +1,7 @@
 import { test as base, type Route, type BrowserContext, type Page } from '@playwright/test';
 import type { TestInfo } from '@playwright/test';
 import type { ConfigCache } from '../../src/lib/models/Configuration';
+import { TEST_CONFIG_COOKIE } from '../../src/lib/testConfig';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function mockApiSuccess(context: BrowserContext | Page, path: string, json: any) {
@@ -48,15 +49,30 @@ export function mockHTMLBodySuccess(context: Page, path: string | RegExp, body: 
   return context.route(path, async (route: Route) => route.fulfill({ body }));
 }
 
-export function mockApiConfig(
+// SSR resolves config server-side (see src/routes/+layout.server.ts), so it's no
+// longer visible to Playwright as a browser-level fetch to mock. Instead, seed a
+// cookie that +layout.server.ts reads (only in test mode) to override the config
+// for this BrowserContext's requests only - safe under fullyParallel workers since
+// each context has its own isolated cookie jar.
+export async function mockApiConfig(
   context: BrowserContext | Page,
   configItems: Partial<ConfigCache> = {},
 ) {
-  return mockApiSuccess(context, '*/**/api/config', {
-    features: configItems.features ?? [],
-    settings: configItems.settings ?? [],
-    branding: configItems.branding ?? [],
-  });
+  const browserContext = 'context' in context ? context.context() : context;
+  await browserContext.addCookies([
+    {
+      name: TEST_CONFIG_COOKIE,
+      value: encodeURIComponent(
+        JSON.stringify({
+          features: configItems.features ?? [],
+          settings: configItems.settings ?? [],
+          branding: configItems.branding ?? [],
+        }),
+      ),
+      domain: 'localhost',
+      path: '/',
+    },
+  ]);
 }
 
 async function screenshotOnFailure({ page }: { page: Page }, testInfo: TestInfo) {

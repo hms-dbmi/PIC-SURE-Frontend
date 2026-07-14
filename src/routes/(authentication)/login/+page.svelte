@@ -21,9 +21,7 @@
   const description = $derived(config.branding.login.description);
   const openPicsureLinkText = $derived(config.branding.login.openPicsureLinkText);
   let logoutReason: string | null;
-  const loading = Promise.all([page.data?.providers, config.loading]).then(
-    ([providers]) => providers,
-  );
+  const loading = page.data?.providers;
 
   onMount(() => {
     if (browser) {
