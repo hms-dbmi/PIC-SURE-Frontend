@@ -52,7 +52,9 @@
       const parsed = JSON.parse(message);
       return typeof parsed === 'string' ? parsed : parsed?.message || fallback;
     } catch {
-      return message;
+      // Non-JSON bodies are server/proxy error pages (HTML documents, stack
+      // traces), not messages written for users
+      return message.trimStart().startsWith('<') || message.length > 200 ? fallback : message;
     }
   }
 
