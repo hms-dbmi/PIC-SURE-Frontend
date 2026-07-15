@@ -53,6 +53,11 @@ const USER = 'psama/user';
 
 export const Psama = {
   Application: 'psama/application',
+  ApiKey: {
+    Admin: 'psama/apiKey',
+    Platform: 'psama/apiKey/platform',
+    Open: 'psama/open/apiKey',
+  },
   Auth: 'psama/authentication',
   Open: {
     ApiKey: 'psama/open/apiKey',

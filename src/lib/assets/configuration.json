@@ -17,6 +17,7 @@
       "privilege": "ADMIN",
       "links": [
         { "title": "Manage Users", "url": "/admin/users" },
+        { "title": "API Keys", "url": "/admin/api-keys" },
         { "title": "Configuration", "url": "/admin/configuration" }
       ]
     },
