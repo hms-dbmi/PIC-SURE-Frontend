@@ -20,7 +20,7 @@ export interface CountProvider {
 }
 
 function resolveCountPath(descriptor: QueryDescriptor): string {
-  return useOpenAccess(descriptor.isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+  return useOpenAccess(descriptor.isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
 }
 
 const patientCount: CountProvider = {

@@ -64,4 +64,10 @@ describe('query:patientCount provider', () => {
   it('path() returns Picsure.QueryV3Sync for an authed descriptor (default features)', () => {
     expect(provider.path(descriptor)).toMatch(/query\/sync$/);
   });
+
+  it('path() returns the V3 aggregate endpoint for an open-access descriptor', () => {
+    expect(provider.path({ ...descriptor, isOpenAccess: true })).toBe(
+      'picsure/hpds/open/v3/query/sync',
+    );
+  });
 });
