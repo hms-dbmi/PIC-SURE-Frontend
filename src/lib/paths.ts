@@ -46,6 +46,7 @@ export const Picsure = {
 
 export const Internal = {
   Log: `${API}/log`,
+  OpenProxy: `${API}/open`,
 };
 
 const USER = 'psama/user';
