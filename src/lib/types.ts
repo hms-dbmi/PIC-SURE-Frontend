@@ -114,6 +114,7 @@ export interface ApiCapability {
 
 export interface ApiPageConfig {
   capabilities: ApiCapability[];
+  publicKeyEnabled?: boolean;
 }
 
 export interface CodeBlockConfig extends Indexable {
