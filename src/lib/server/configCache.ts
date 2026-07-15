@@ -20,8 +20,8 @@ const CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours
 
 // Retry configuration
 const MAX_RETRIES = Number(import.meta.env?.VITE_MAX_CONFIG_RETRIES ?? 3);
-const INITIAL_DELAY = 1000; // 1 second
-const MAX_DELAY = 60000; // 60 seconds
+const INITIAL_DELAY = 5000; // 5 second
+const MAX_DELAY = 600000; // 10 minutes
 let fetching: {
   features: Promise<ConfigObject[] | null>;
   settings: Promise<ConfigObject[] | null>;
@@ -50,18 +50,25 @@ async function handleResponse(res: Response): Promise<any> {
 async function fetchWithRetry(
   url: string,
   type: string,
-  retries = MAX_RETRIES,
+  retries = MAX_RETRIES + 1,
   delay = INITIAL_DELAY,
 ): Promise<ConfigObject[] | null> {
+  if (retries > MAX_RETRIES){
+    // Don't reach out on the first delay - let the app cool for a few seconds then try, 
+    // in case other resources are still loading up.
+    await new Promise((resolve) => setTimeout(resolve, INITIAL_DELAY * 2));
+    return fetchWithRetry(url, type, retries - 1, delay);
+  }
   return fetch(url, { method: 'GET' })
     .then(handleResponse)
-    .catch(async () => {
+    .catch(async (e) => {
+      console.error("Config failed with", e);
       if (retries <= 0) {
         return null;
       }
 
       console.warn(
-        `Config ${type} fetch failed, retrying in ${delay}ms... (${retries} attempts remaining)`,
+        `Config ${type} (${url}) fetch failed, retrying in ${delay}ms... (${retries} attempts remaining)`,
       );
 
       // Wait before retrying
@@ -78,13 +85,12 @@ export async function getConfig(force: boolean = false): Promise<ConfigCache> {
   // Return cached config if available and not expired
   const now = Date.now();
   if (!force && lastFetch > 0 && now - lastFetch < CACHE_DURATION) {
-    console.log('Returning cached configs from server');
     return cached;
   }
 
   if (fetching === null) {
     // Fetch fresh configs
-    console.log('Reaching out to get configs from server');
+    console.log('Attempting configuraiton cache hydration');
     const configUrl = `${ORIGIN}/${Picsure.Configuration.Get}`;
     fetching = {
       features: configKinds.features
@@ -102,13 +108,14 @@ export async function getConfig(force: boolean = false): Promise<ConfigCache> {
     (results: PromiseSettledResult<ConfigObject[] | null>[]) => {
       if (results.some((val) => val.status === 'fulfilled' && val.value === null)) {
         console.error(
-          `Failed fetching some configs - returned cached data might be defaults. Next request will retry.`,
+          'Configuration cache hydration failures: returned cached data might be defaults. Next request will retry.',
         );
       } else if (results.every((val) => val.status === 'fulfilled' && val.value !== null)) {
         lastFetch = now;
         cached.features = (results[0] as PromiseFulfilledResult<ConfigObject[]>).value ?? [];
         cached.settings = (results[1] as PromiseFulfilledResult<ConfigObject[]>).value ?? [];
         cached.branding = (results[2] as PromiseFulfilledResult<ConfigObject[]>).value ?? [];
+        console.log('Configuration cache hydration complete');
       }
       fetching = null;
     },
