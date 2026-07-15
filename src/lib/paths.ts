@@ -53,6 +53,9 @@ const USER = 'psama/user';
 export const Psama = {
   Application: 'psama/application',
   Auth: 'psama/authentication',
+  Open: {
+    ApiKey: 'psama/open/apiKey',
+  },
   Connection: 'psama/connection',
   Priviege: 'psama/privilege',
   StudyAccess: 'psama/studyAccess',

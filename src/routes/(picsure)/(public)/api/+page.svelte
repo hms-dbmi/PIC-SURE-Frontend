@@ -7,6 +7,7 @@
   import { log, createLog } from '$lib/logger';
 
   import UserToken from '$lib/components/UserToken.svelte';
+  import PublicAccessKey from '$lib/components/PublicAccessKey.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
   import TabItem from '$lib/components/TabItem.svelte';
 
@@ -185,26 +186,8 @@
             <UserToken />
           </div>
         {:else}
-          <!-- TODO: Placeholder for the logged-out authentication state; final design and
-               behavior (public access key request) to be defined in an upcoming ticket. -->
-          <div
-            data-testid="public-access-placeholder"
-            class="card border border-surface-200 p-6 basis-[60%] grow-0 min-h-80 flex flex-col"
-          >
-            <header class="flex items-center gap-4 mb-4">
-              <i class="fa-solid fa-globe text-3xl text-primary-500"></i>
-              <div>
-                <div class="text-lg font-bold">Public Access Key</div>
-                <div class="text-sm">No account required</div>
-              </div>
-            </header>
-            <p class="mx-0">
-              A public key grants access to open resources, including aggregate counts for
-              feasibility assessments.
-            </p>
-            <button class="btn preset-filled-primary-500 my-auto mx-auto" disabled
-              >Request Public Key</button
-            >
+          <div class="basis-[60%] grow-0 min-w-0 max-w-full">
+            <PublicAccessKey enabled={branding.apiPage?.publicKeyEnabled ?? false} />
           </div>
         {/if}
         <div id="capabilities" class="flex-1 min-w-64">
@@ -224,6 +207,13 @@
               </li>
             {/each}
           </ul>
+          {#if !loggedIn}
+            <hr class="my-4 border-surface-200" />
+            <p class="mx-0">
+              Looking for authorized access?
+              <a class="anchor" href="/login?redirectTo=/api" data-testid="api-login-link">Login</a>
+            </p>
+          {/if}
         </div>
       </div>
     </div>

@@ -144,6 +144,7 @@ test.describe('API page', () => {
     await expect(page.getByText('Personal Access Token').first()).toBeVisible();
     await expect(page.getByText('Login confirmed')).toBeVisible();
     await expect(page.locator('i.fa-user-shield')).toBeVisible();
+    await expect(page.getByTestId('public-access-key')).not.toBeVisible();
   });
 
   test('Has expected content', async ({ page }) => {
@@ -358,12 +359,12 @@ test.describe('API page logged out', () => {
     await expect(navLink).toHaveAttribute('aria-current', 'page');
   });
 
-  test('Shows public access placeholder instead of personal access token', async ({ page }) => {
+  test('Shows public access key card instead of personal access token', async ({ page }) => {
     // Given
     await page.goto('/api');
 
     // Then
-    await expect(page.getByTestId('public-access-placeholder')).toBeVisible();
+    await expect(page.getByTestId('public-access-key')).toBeVisible();
     await expect(page.locator('#user-token')).not.toBeVisible();
   });
 
