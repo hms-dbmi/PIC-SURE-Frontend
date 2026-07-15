@@ -30,8 +30,12 @@ export const Picsure = {
   Resources: `${PREFIX}/resource`,
   QueryV2: `${HPDS_AUTH}/query`,
   QueryV2Sync: `${HPDS_AUTH}/query/sync`,
-  /** Open access (discover) queries hit the obfuscated open backend. */
-  QueryOpenSync: `${HPDS_OPEN}/query/sync`,
+  /**
+   * Open access (discover) queries hit the obfuscated open backend. These are built as V3 requests
+   * (getQueryRequestV3), so they must target the V3 aggregate endpoint — the V1 open endpoint can't
+   * parse a V3 body and the query-service 502s forwarding it to HPDS.
+   */
+  QueryOpenV3Sync: `${HPDS_OPEN}/v3/query/sync`,
   QueryV3: `${HPDS_AUTH}/v3/query`,
   QueryV3Sync: `${HPDS_AUTH}/v3/query/sync`,
   Uploader: {
