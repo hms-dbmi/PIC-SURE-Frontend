@@ -8,7 +8,7 @@
   const { data = { cell: '', row: { prefix: '', status: '' } } } = $props();
 
   async function revoke() {
-    // defense-in-depth beyond the disabled trigger; matches the sibling admin action cells
+    // defense-in-depth beyond the disabled trigger
     if (!$isTopAdmin) return;
     try {
       await revokeApiKey(data.cell);
