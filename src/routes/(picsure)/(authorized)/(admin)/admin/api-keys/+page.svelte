@@ -18,10 +18,16 @@
       </p>
     </ErrorAlert>
   {/if}
-  <div class="flex gap-4 mb-6">
-    <div class="flex-auto">
+  <section class="mb-10">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="h3">Platform Keys</h2>
       <MintPlatformKeyModal />
     </div>
-  </div>
-  <ApiKeyTable />
+    <ApiKeyTable keyType="PLATFORM" tableName="PlatformApiKeys" />
+  </section>
+
+  <section>
+    <h2 class="h3 mb-3">User Keys</h2>
+    <ApiKeyTable keyType="USER" tableName="UserApiKeys" />
+  </section>
 </Content>

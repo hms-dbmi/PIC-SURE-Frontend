@@ -102,9 +102,9 @@ beforeEach(() => {
 });
 
 describe('ApiKeyTable', () => {
-  it('renders keys with masked prefix, type, and derived status', async () => {
+  it('renders keys with masked prefix and derived status', async () => {
     mockPage([activeKey, revokedKey, expiredKey]);
-    render(ApiKeyTable);
+    render(ApiKeyTable, { props: { keyType: 'USER', tableName: 'UserApiKeys' } });
 
     expect(await screen.findByText('picsure_abc12345…')).toBeInTheDocument();
     expect(screen.getByText('picsure_def67890…')).toBeInTheDocument();
@@ -114,23 +114,21 @@ describe('ApiKeyTable', () => {
     expect(screen.getByText('Revoked')).toBeInTheDocument();
     expect(screen.getByText('Expired')).toBeInTheDocument();
 
-    expect(screen.getByText('PLATFORM')).toBeInTheDocument();
-    expect(screen.getAllByText('USER')).toHaveLength(2);
     expect(screen.getByText('alice@example.org')).toBeInTheDocument();
     expect(screen.getAllByText('Never').length).toBeGreaterThan(0);
   });
 
-  it('requests the first server page using the table page size', async () => {
+  it('requests the first server page filtered by its key type', async () => {
     mockPage([activeKey]);
-    render(ApiKeyTable);
+    render(ApiKeyTable, { props: { keyType: 'PLATFORM', tableName: 'PlatformApiKeys' } });
 
     await screen.findByText('picsure_abc12345…');
-    expect(storeMocks.loadApiKeys).toHaveBeenCalledWith(0, expect.any(Number));
+    expect(storeMocks.loadApiKeys).toHaveBeenCalledWith(0, expect.any(Number), 'PLATFORM');
   });
 
   it('only offers revoke on active keys', async () => {
     mockPage([activeKey, revokedKey, expiredKey]);
-    render(ApiKeyTable);
+    render(ApiKeyTable, { props: { keyType: 'USER', tableName: 'UserApiKeys' } });
 
     await screen.findByText('picsure_abc12345…');
     expect(screen.getByTestId('api-key-uuid-active-revoke-btn')).toBeInTheDocument();
@@ -150,7 +148,7 @@ describe('ApiKeyTable', () => {
       refreshApiKeys();
       return { ...activeKey, revokedAt: '2026-07-14T00:00:00Z' };
     });
-    render(ApiKeyTable);
+    render(ApiKeyTable, { props: { keyType: 'USER', tableName: 'UserApiKeys' } });
 
     await fireEvent.click(await screen.findByTestId('api-key-uuid-active-revoke-btn'));
 
@@ -171,7 +169,7 @@ describe('ApiKeyTable', () => {
       status: 400,
       body: { message: JSON.stringify({ errorType: 'error', message: 'list failed' }) },
     });
-    render(ApiKeyTable);
+    render(ApiKeyTable, { props: { keyType: 'USER', tableName: 'UserApiKeys' } });
 
     const alert = await screen.findByTestId('api-key-list-error');
     expect(alert).toHaveTextContent('list failed');

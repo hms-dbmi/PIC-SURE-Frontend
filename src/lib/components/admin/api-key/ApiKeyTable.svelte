@@ -1,11 +1,10 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, untrack } from 'svelte';
   import { TableHandler, type State } from '@vincjo/datatables/server';
 
   import RemoteTable from '$lib/components/datatable/RemoteTable.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ApiKeyStatus from '$lib/components/admin/api-key/cell/ApiKeyStatus.svelte';
-  import ApiKeyType from '$lib/components/admin/api-key/cell/ApiKeyType.svelte';
   import ApiKeyActions from '$lib/components/admin/api-key/cell/ApiKeyActions.svelte';
 
   import { loadApiKeys, listVersion } from '$lib/stores/ApiKeys';
@@ -16,7 +15,6 @@
   interface ApiKeyRow {
     uuid: string;
     prefix: string;
-    keyType: string;
     name: string;
     email: string;
     created: string;
@@ -25,11 +23,12 @@
     status: string;
   }
 
+  const { keyType, tableName }: { keyType: 'USER' | 'PLATFORM'; tableName: string } = $props();
+
   let loadError = $state('');
 
   const columns = [
     { dataElement: 'prefix', label: 'Key' },
-    { dataElement: 'keyType', label: 'Type', class: 'w-28' },
     { dataElement: 'name', label: 'Name' },
     { dataElement: 'email', label: 'Email' },
     { dataElement: 'created', label: 'Created' },
@@ -40,23 +39,24 @@
   ];
 
   const cellOverides = {
-    keyType: ApiKeyType,
     status: ApiKeyStatus,
     uuid: ApiKeyActions,
   };
 
-  const handler = new TableHandler<ApiKeyRow>([], { rowsPerPage: getDefaultRows('ApiKeys') });
+  // tableName is a constant per instance; read it once for the initial page size
+  const handler = new TableHandler<ApiKeyRow>([], {
+    rowsPerPage: untrack(() => getDefaultRows(tableName)),
+  });
 
   handler.load(async (state: State) => {
     try {
       loadError = '';
-      const page = await loadApiKeys(state.currentPage - 1, state.rowsPerPage);
+      const page = await loadApiKeys(state.currentPage - 1, state.rowsPerPage, keyType);
       state.setTotalRows(page.totalCount);
       return page.keys.map(
         (key): ApiKeyRow => ({
           uuid: key.uuid,
           prefix: `picsure_${key.displayPrefix}…`,
-          keyType: key.keyType,
           name: key.name || '',
           email: key.email || '',
           created: formatInstant(key.createdAt),
@@ -82,5 +82,5 @@
 {#if loadError}
   <ErrorAlert title="API Error" data-testid="api-key-list-error">{loadError}</ErrorAlert>
 {:else}
-  <RemoteTable tableName="ApiKeys" {handler} {columns} {cellOverides} tableAuto={false} />
+  <RemoteTable {tableName} {handler} {columns} {cellOverides} tableAuto={false} />
 {/if}

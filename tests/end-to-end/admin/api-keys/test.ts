@@ -1,5 +1,5 @@
-import { expect, type Route } from '@playwright/test';
-import { test, mockApiSuccess, mockApiSuccessByMethod } from '../../custom-context';
+import { expect, type BrowserContext, type Route } from '@playwright/test';
+import { test, mockApiSuccessByMethod } from '../../custom-context';
 import { userIsLoggedIn } from '../../utils';
 import type { ApiKeyMetadata } from '../../../../src/lib/models/ApiKey';
 
@@ -58,37 +58,56 @@ const mintedResponse = {
 
 test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
 
+// The page renders one table per key type, each querying ?keyType=…; route by that param so a
+// key never appears in both tables (which would duplicate its testid).
+async function routeByKeyType(
+  context: BrowserContext,
+  platform: ApiKeyMetadata[],
+  user: ApiKeyMetadata[],
+) {
+  await context.route('**/psama/apiKey?*', (route: Route) => {
+    const keyType = new URL(route.request().url()).searchParams.get('keyType');
+    return route.fulfill({ json: keyPage(keyType === 'PLATFORM' ? platform : user) });
+  });
+}
+
 test.beforeEach(async ({ context }) => {
-  await mockApiSuccess(context, '*/**/psama/apiKey*', keyPage([activeKey, revokedKey, expiredKey]));
+  await routeByKeyType(context, [revokedKey], [activeKey, expiredKey]);
 });
 
 test.describe('api keys list', () => {
-  test('Displays keys with masked prefix, type, and derived status', async ({ page }) => {
+  test('Splits keys into platform and user tables with derived status', async ({ page }) => {
     // Given
     await page.goto('/admin/api-keys');
     await userIsLoggedIn(page);
 
     // Then
-    const table = page.getByTestId('ApiKeys-table');
-    await expect(table).toContainText('picsure_abc12345…');
-    await expect(table).toContainText('picsure_def67890…');
-    await expect(table).toContainText('picsure_ghi13579…');
-    await expect(table).toContainText('PLATFORM');
-    await expect(table).toContainText('Active');
-    await expect(table).toContainText('Revoked');
-    await expect(table).toContainText('Expired');
+    const platformTable = page.getByTestId('PlatformApiKeys-table');
+    await expect(platformTable).toContainText('picsure_def67890…');
+    await expect(platformTable).toContainText('Revoked');
+    await expect(platformTable).not.toContainText('picsure_abc12345…');
+
+    const userTable = page.getByTestId('UserApiKeys-table');
+    await expect(userTable).toContainText('picsure_abc12345…');
+    await expect(userTable).toContainText('picsure_ghi13579…');
+    await expect(userTable).toContainText('Active');
+    await expect(userTable).toContainText('Expired');
+    await expect(userTable).not.toContainText('picsure_def67890…');
   });
 
-  test('Shows the server total in the table footer', async ({ page }) => {
+  test('Shows the server total in the table footer', async ({ context, page }) => {
     // Given
-    await page.route('*/**/psama/apiKey*', (route: Route) =>
+    await routeByKeyType(context, [], [{ ...activeKey }]);
+    await context.route('**/psama/apiKey?*keyType=USER*', (route: Route) =>
       route.fulfill({ json: { ...keyPage([activeKey]), totalCount: 42 } }),
     );
     await page.goto('/admin/api-keys');
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.locator('.table-wrap footer')).toContainText('42');
+    await expect(
+      page.getByTestId('UserApiKeys-table').locator('..').locator('footer'),
+    ).toContainText('42');
   });
 
   test('Only active keys have a revoke button', async ({ page }) => {
@@ -107,12 +126,15 @@ test.describe('revoke flow', () => {
   test('Revoking requires confirmation and refreshes the list', async ({ page }) => {
     // Given
     let revoked = false;
-    await page.route('*/**/psama/apiKey*', (route: Route) =>
-      route.fulfill({
-        json: keyPage([revoked ? { ...activeKey, revokedAt: '2026-07-14T00:00:00Z' } : activeKey]),
-      }),
-    );
-    await page.route('*/**/psama/apiKey/*/revoke', (route: Route) => {
+    await page.route('**/psama/apiKey?*', (route: Route) => {
+      const keyType = new URL(route.request().url()).searchParams.get('keyType');
+      const userKeys =
+        keyType === 'USER'
+          ? [revoked ? { ...activeKey, revokedAt: '2026-07-14T00:00:00Z' } : activeKey]
+          : [];
+      return route.fulfill({ json: keyPage(userKeys) });
+    });
+    await page.route('**/psama/apiKey/*/revoke', (route: Route) => {
       revoked = true;
       return route.fulfill({ json: { ...activeKey, revokedAt: '2026-07-14T00:00:00Z' } });
     });
@@ -131,7 +153,7 @@ test.describe('revoke flow', () => {
 
     // Then
     await putRequest;
-    await expect(page.getByTestId('ApiKeys-table')).toContainText('Revoked');
+    await expect(page.getByTestId('UserApiKeys-table')).toContainText('Revoked');
     await expect(page.getByTestId('api-key-uuid-active-revoke-btn')).toHaveCount(0);
   });
 
@@ -175,16 +197,60 @@ test.describe('mint platform key flow', () => {
     await expect(reveal.getByTestId('minted-api-key')).toHaveText(FAKE_KEY);
     // the modal portals its content, so locate the warning by test id rather than a scoped role
     await expect(page.getByTestId('minted-key-warning')).toContainText(/shown only once/i);
-    // No accidental dismissal: no close button, and Escape does not close it
-    await expect(reveal.getByTestId('modal-close-button')).toHaveCount(0);
-    await page.keyboard.press('Escape');
-    await expect(reveal.getByTestId('minted-api-key')).toBeVisible();
 
     // When
-    await reveal.getByTestId('acknowledge-minted-key').click();
+    await reveal.getByTestId('done-minted-key').click();
 
     // Then
     await expect(page.getByTestId('minted-api-key')).toHaveCount(0);
+  });
+
+  test('The revealed key cannot be dismissed accidentally, only via Done', async ({ page }) => {
+    // Given
+    await mockApiSuccessByMethod(page, '*/**/psama/apiKey/platform', 'POST', mintedResponse);
+    await page.goto('/admin/api-keys');
+    await userIsLoggedIn(page);
+
+    // When
+    await page.getByTestId('mint-platform-key-btn').click();
+    await page.getByLabel(/name/i).fill('CI Pipeline');
+    await page.getByLabel(/email/i).fill('ops@example.org');
+    await page.getByRole('button', { name: 'Mint Key' }).click();
+    await expect(page.getByTestId('minted-api-key')).toBeVisible();
+
+    // Then: no × close button, and Escape does not discard the only copy of the key
+    await expect(page.getByTestId('modal-close-button')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('minted-api-key')).toBeVisible();
+
+    // Only Done closes it
+    await page.getByTestId('done-minted-key').click();
+    await expect(page.getByTestId('minted-api-key')).toHaveCount(0);
+  });
+
+  test('Cannot close the modal while the mint request is in flight', async ({ page }) => {
+    // Given a slow mint response
+    await page.route('**/psama/apiKey/platform', async (route: Route) => {
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      return route.fulfill({ json: mintedResponse });
+    });
+    await page.goto('/admin/api-keys');
+    await userIsLoggedIn(page);
+
+    // When minting is in progress
+    await page.getByTestId('mint-platform-key-btn').click();
+    await page.getByLabel(/name/i).fill('CI Pipeline');
+    await page.getByLabel(/email/i).fill('ops@example.org');
+    await page.getByRole('button', { name: 'Mint Key' }).click();
+
+    // Then Cancel is disabled and Escape does not close the modal (which would orphan the key)
+    await expect(page.getByRole('button', { name: 'Minting…' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('mint-platform-key')).toBeVisible();
+
+    // And once it resolves the key is revealed, not lost
+    await expect(page.getByTestId('minted-api-key')).toHaveText(FAKE_KEY);
   });
 
   test('Sends the expiry date as a UTC instant', async ({ page }) => {

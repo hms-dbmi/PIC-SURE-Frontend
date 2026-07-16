@@ -16,8 +16,13 @@ export function refreshApiKeys() {
   listVersion.update((version) => version + 1);
 }
 
-export async function loadApiKeys(page = 0, size = 100): Promise<ApiKeyPage> {
-  return api.get(`${Psama.ApiKey.Admin}?page=${page}&size=${size}`);
+export async function loadApiKeys(
+  page = 0,
+  size = 100,
+  keyType?: 'USER' | 'PLATFORM',
+): Promise<ApiKeyPage> {
+  const typeParam = keyType ? `&keyType=${keyType}` : '';
+  return api.get(`${Psama.ApiKey.Admin}?page=${page}&size=${size}${typeParam}`);
 }
 
 export async function revokeApiKey(uuid: string): Promise<ApiKeyMetadata> {

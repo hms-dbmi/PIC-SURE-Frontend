@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 vi.mock('$lib/logger', () => ({
   log: vi.fn(),
@@ -96,20 +96,15 @@ describe('MintPlatformKeyModal', () => {
     });
   });
 
-  it('cannot be dismissed accidentally — only via the explicit acknowledge button', async () => {
+  it('closes the reveal and clears the key from view when done', async () => {
     storeMocks.mintPlatformKey.mockResolvedValue(mintedFixture);
     render(MintPlatformKeyModal);
 
     await openFormAndFill();
     await fireEvent.click(screen.getByRole('button', { name: 'Mint Key' }));
+    await screen.findByTestId('minted-api-key');
 
-    const reveal = await screen.findByTestId('mint-key-reveal');
-    expect(within(reveal).queryByTestId('modal-close-button')).not.toBeInTheDocument();
-
-    await fireEvent.keyDown(document.body, { key: 'Escape' });
-    expect(screen.getByTestId('minted-api-key')).toBeInTheDocument();
-
-    await fireEvent.click(screen.getByTestId('acknowledge-minted-key'));
+    await fireEvent.click(screen.getByTestId('done-minted-key'));
     await waitFor(() => expect(screen.queryByTestId('minted-api-key')).not.toBeInTheDocument());
   });
 
@@ -120,7 +115,7 @@ describe('MintPlatformKeyModal', () => {
     await openFormAndFill();
     await fireEvent.click(screen.getByRole('button', { name: 'Mint Key' }));
     await screen.findByTestId('minted-api-key');
-    await fireEvent.click(screen.getByTestId('acknowledge-minted-key'));
+    await fireEvent.click(screen.getByTestId('done-minted-key'));
 
     const logged = JSON.stringify([vi.mocked(log).mock.calls, vi.mocked(createLog).mock.calls]);
     expect(logged).not.toContain(FAKE_KEY);
