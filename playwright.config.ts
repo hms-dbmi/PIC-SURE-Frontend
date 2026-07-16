@@ -23,7 +23,12 @@ const config: PlaywrightTestConfig = {
     stdout: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
     stderr: process.env.WEBSERVER_LOG_STDERR === 'ignore' ? 'ignore' : 'pipe',
   },
-  workers: process.env.CI ? 4 : undefined,
+  // GitHub-hosted ubuntu-22.04 runners have 2 vCPUs; workers: 4 oversubscribes them 2x,
+  // and with fullyParallel + 3 browser projects sharing one webServer, that contention was
+  // slowing the app past the default 30s test timeout under CI load (chromium/firefox/webkit
+  // all launching and navigating concurrently) - not a bug in the tests themselves.
+  workers: process.env.CI ? 2 : undefined,
+  timeout: process.env.CI ? 45000 : undefined,
   testDir: 'tests/end-to-end',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
   reporter: [['list'], ['html']],
