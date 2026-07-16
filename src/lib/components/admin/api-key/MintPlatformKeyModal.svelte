@@ -10,11 +10,13 @@
     formatInstant,
     toPlatformKeyRequest,
     type MintedPlatformKey,
+    type PlatformKeyExpiry,
   } from '$lib/models/ApiKey';
 
   let open = $state(false);
   let name = $state('');
   let email = $state('');
+  let expiryMode: PlatformKeyExpiry['mode'] = $state('default');
   let expiryDate = $state('');
   let mintError = $state('');
   let isSubmitting = $state(false);
@@ -31,6 +33,7 @@
   function clearState() {
     name = '';
     email = '';
+    expiryMode = 'default';
     expiryDate = '';
     mintError = '';
     minted = null;
@@ -53,8 +56,10 @@
 
     isSubmitting = true;
     mintError = '';
+    const expiry: PlatformKeyExpiry =
+      expiryMode === 'date' ? { mode: 'date', date: expiryDate } : { mode: expiryMode };
     try {
-      minted = await mintPlatformKey(toPlatformKeyRequest(name, email, expiryDate));
+      minted = await mintPlatformKey(toPlatformKeyRequest(name, email, expiry));
     } catch (error) {
       mintError = extractApiError(error);
     } finally {
@@ -123,10 +128,42 @@
           <span>Email:</span>
           <input type="email" bind:value={email} class="input" required maxlength="255" />
         </label>
-        <label class="label">
-          <span>Expiration date (optional, expires at 00:00 UTC):</span>
-          <input type="date" bind:value={expiryDate} class="input" min={minExpiryDate} />
-        </label>
+        <div class="grid gap-2" role="radiogroup" aria-label="Expiration">
+          <span class="font-semibold">Expiration:</span>
+          <label class="flex items-center gap-2">
+            <input type="radio" class="radio" bind:group={expiryMode} value="default" />
+            <span>Default (1 year)</span>
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="radio" class="radio" bind:group={expiryMode} value="date" />
+            <span>Custom date</span>
+          </label>
+          {#if expiryMode === 'date'}
+            <label class="label ml-7">
+              <span>Expiration date (expires at 00:00 UTC):</span>
+              <input
+                type="date"
+                bind:value={expiryDate}
+                class="input"
+                min={minExpiryDate}
+                required
+              />
+            </label>
+          {/if}
+          <label class="flex items-center gap-2">
+            <input
+              type="radio"
+              class="radio"
+              bind:group={expiryMode}
+              value="never"
+              data-testid="expiry-never"
+            />
+            <span>
+              Never expires
+              <span class="text-warning-600 font-semibold">— not recommended</span>
+            </span>
+          </label>
+        </div>
       </fieldset>
       <footer class="flex justify-end space-x-2 mt-6">
         <button

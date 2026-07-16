@@ -86,15 +86,23 @@ describe('toPlatformKeyRequest', () => {
     });
   });
 
-  it('omits expiresAt when no expiry date is given', () => {
-    const request = toPlatformKeyRequest('Pipeline', 'ops@example.org', '');
+  it('omits expiresAt and neverExpires for the default expiry', () => {
+    const request = toPlatformKeyRequest('Pipeline', 'ops@example.org', { mode: 'default' });
     expect('expiresAt' in request).toBe(false);
+    expect('neverExpires' in request).toBe(false);
   });
 
   it('converts a date input value to a UTC start-of-day instant', () => {
-    expect(toPlatformKeyRequest('Pipeline', 'ops@example.org', '2027-01-01').expiresAt).toBe(
-      '2027-01-01T00:00:00Z',
-    );
+    expect(
+      toPlatformKeyRequest('Pipeline', 'ops@example.org', { mode: 'date', date: '2027-01-01' })
+        .expiresAt,
+    ).toBe('2027-01-01T00:00:00Z');
+  });
+
+  it('sets neverExpires without an expiresAt for a never expiry', () => {
+    const request = toPlatformKeyRequest('Pipeline', 'ops@example.org', { mode: 'never' });
+    expect(request.neverExpires).toBe(true);
+    expect('expiresAt' in request).toBe(false);
   });
 });
 

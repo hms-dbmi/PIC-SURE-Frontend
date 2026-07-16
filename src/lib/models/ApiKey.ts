@@ -24,7 +24,13 @@ export interface PlatformKeyRequest {
   name: string;
   email: string;
   expiresAt?: string;
+  neverExpires?: boolean;
 }
+
+export type PlatformKeyExpiry =
+  | { mode: 'default' }
+  | { mode: 'date'; date: string }
+  | { mode: 'never' };
 
 export interface MintedPlatformKey {
   apiKey: string;
@@ -55,11 +61,13 @@ export function formatInstant(instant: string | null | undefined, fallback = '')
 export function toPlatformKeyRequest(
   name: string,
   email: string,
-  expiryDate?: string,
+  expiry: PlatformKeyExpiry = { mode: 'default' },
 ): PlatformKeyRequest {
   const request: PlatformKeyRequest = { name: name.trim(), email: email.trim() };
-  if (expiryDate) {
-    request.expiresAt = `${expiryDate}T00:00:00Z`;
+  if (expiry.mode === 'date' && expiry.date) {
+    request.expiresAt = `${expiry.date}T00:00:00Z`;
+  } else if (expiry.mode === 'never') {
+    request.neverExpires = true;
   }
   return request;
 }

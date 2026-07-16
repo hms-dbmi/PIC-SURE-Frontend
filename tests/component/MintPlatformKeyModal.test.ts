@@ -84,7 +84,8 @@ describe('MintPlatformKeyModal', () => {
     render(MintPlatformKeyModal);
 
     await openFormAndFill();
-    await fireEvent.input(screen.getByLabelText(/expiration date/i), {
+    await fireEvent.click(screen.getByLabelText(/custom date/i));
+    await fireEvent.input(await screen.findByLabelText(/expiration date/i), {
       target: { value: '2099-01-01' },
     });
     await fireEvent.click(screen.getByRole('button', { name: 'Mint Key' }));
@@ -93,6 +94,21 @@ describe('MintPlatformKeyModal', () => {
       name: 'CI Pipeline',
       email: 'ops@example.org',
       expiresAt: '2099-01-01T00:00:00Z',
+    });
+  });
+
+  it('sends neverExpires only when the never option is deliberately selected', async () => {
+    storeMocks.mintPlatformKey.mockResolvedValue(mintedFixture);
+    render(MintPlatformKeyModal);
+
+    await openFormAndFill();
+    await fireEvent.click(screen.getByTestId('expiry-never'));
+    await fireEvent.click(screen.getByRole('button', { name: 'Mint Key' }));
+
+    expect(storeMocks.mintPlatformKey).toHaveBeenCalledWith({
+      name: 'CI Pipeline',
+      email: 'ops@example.org',
+      neverExpires: true,
     });
   });
 

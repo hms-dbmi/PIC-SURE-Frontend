@@ -263,6 +263,7 @@ test.describe('mint platform key flow', () => {
     await page.getByTestId('mint-platform-key-btn').click();
     await page.getByLabel(/name/i).fill('CI Pipeline');
     await page.getByLabel(/email/i).fill('ops@example.org');
+    await page.getByLabel(/custom date/i).check();
     await page.getByLabel(/expiration date/i).fill('2099-01-01');
     const postRequest = page.waitForRequest(
       (request) => request.method() === 'POST' && request.url().includes('/psama/apiKey/platform'),
