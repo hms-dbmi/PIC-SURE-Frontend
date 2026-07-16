@@ -26,7 +26,6 @@ export type Features = Indexable & {
     enableCohortDetails: boolean;
     enableExportTimeseries: boolean;
     enableHierarchy: boolean;
-    enableOrQueries: boolean;
     enablePfbExport: boolean;
     enableRedcapExport: boolean;
     enableSampleIdCheckbox: boolean;
@@ -322,7 +321,6 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
       enableCohortDetails: parse('ENABLE_COHORT_DETAILS', false),
       enableExportTimeseries: parse('EXPORT_TIMESERIES', true),
       enableHierarchy: parse('ENABLE_HIERARCHY', false),
-      enableOrQueries: parse('ENABLE_OR_QUERIES', false),
       enablePfbExport: parse('DOWNLOAD_AS_PFB', true),
       enableRedcapExport: parse('ENABLE_REDCAP_EXPORT', false),
       enableSampleIdCheckbox: parse('ENABLE_SAMPLE_ID_CHECKBOX', false),

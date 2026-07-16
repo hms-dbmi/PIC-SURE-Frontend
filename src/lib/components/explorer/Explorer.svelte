@@ -30,13 +30,15 @@
 
   let searchInput = $state(page.url.searchParams.get('search') || $searchTerm || '');
   const tableName = 'ExplorerTable';
-  const tableColumns = config.branding.explorePage.columns || [];
-  const columns: Column[] = [
+  const tableColumns = $derived(config.branding.explorePage.columns || []);
+  const columns: Column[] = $derived([
     ...tableColumns,
     { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
-  ];
+  ]);
   const cellOverides = { id: Actions };
-  const genomicFeaturesEnabled = config.features.enableGENEQuery || config.features.enableSNPQuery;
+  const genomicFeaturesEnabled = $derived(
+    config.features.enableGENEQuery || config.features.enableSNPQuery,
+  );
   let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
   let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
   let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);

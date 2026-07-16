@@ -6,8 +6,8 @@
   import Modal from '$lib/components/Modal.svelte';
   import { log, createLog } from '$lib/logger';
 
-  let { showSitemap = config.branding.footer.showSitemap || false }: { showSitemap?: boolean } =
-    $props();
+  let { showSitemap: showSitemapProp }: { showSitemap?: boolean } = $props();
+  let showSitemap = $derived(showSitemapProp ?? (config.branding.footer.showSitemap || false));
 
   let hideSitemap = $derived(
     !showSitemap ||

@@ -73,6 +73,7 @@ Features and settings are each resolved from up to three layers: hardcoded defau
 - `VITE_CONFIG_MODE` decides who wins when both an env var and an API row are set for the same field:
   - `seed` (default): defaults -> env (if set) -> API (if set) wins
   - `override`: defaults -> API (if set) -> env (if set) wins
+- "Set" means a non-blank value for boolean/number/JSON-typed fields (a blank value falls back to the default, since blank isn't a valid number or JSON and isn't distinguishable from "off") - see [`.env.example`](.env.example)'s Config precedence section. String-typed fields are the exception: an explicit blank is honored as a deliberate override, not "unset".
 
 **Branding is the exception to this layering.** It defaults to whatever is in [`configuration.json`](https://github.com/hms-dbmi/PIC-SURE-Frontend/blob/dev/src/lib/assets/configuration.json), and only a narrow set of fields — currently just the logo (`VITE_LOGO`/`LOGO` and `VITE_LOGO_ALT`/`LOGO_ALT`) — can be seeded/overridden via env var or the API. Everything else under branding (sitemap, footer, landing page copy, etc.) is sourced from `configuration.json` and isn't wired up to env/API resolution at this time.
 

@@ -167,7 +167,7 @@
     }
   }
 
-  const MAX_DATA_POINTS_FOR_EXPORT = config.settings.maxDataPointsForExport || 1000000;
+  const MAX_DATA_POINTS_FOR_EXPORT = $derived(config.settings.maxDataPointsForExport || 1000000);
   function dataLimitExceeded(): boolean {
     const extraVariables = $filters
       .filter((filter) => filter.filterType === 'AnyRecordOf')

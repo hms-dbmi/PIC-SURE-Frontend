@@ -29,12 +29,12 @@
       type: filter.searchResult?.type,
     };
   });
-  const systemFieldRows: ExportRowInterface[] = config.settings.exportSystemFields.map(
-    (conceptPath: string) => ({
+  const systemFieldRows: ExportRowInterface[] = $derived(
+    config.settings.exportSystemFields.map((conceptPath: string) => ({
       selected: true,
       variableId: conceptPath,
       name: conceptPath.replace(/^\\/, '').replace(/\\$/, ''),
-    }),
+    })),
   );
   const patientIdRow: ExportRowInterface = {
     selected: true,

@@ -34,7 +34,7 @@
     },
   };
 
-  const genomeBuild = config.branding.genomic?.defaultGenomeBuild || 'GRCh38';
+  const genomeBuild = $derived(config.branding.genomic?.defaultGenomeBuild || 'GRCh38');
   const validSnpPattern = /^\w+,\d+,(A|T|C|G)+,(A|T|C|G)+$/;
   let searchElement: HTMLInputElement;
   let warn: Warning | undefined = $state(undefined);

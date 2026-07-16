@@ -42,15 +42,19 @@ export const config = {
 
 export function applyConfig(cache: ConfigCache): void {
   if (browser && configApplied) return;
-  cache.features.length > 0 && (features = mapFeatures(cache.features));
-  cache.settings.length > 0 && (settings = mapSettings(cache.settings));
-  cache.branding.length > 0 && (branding = mapBranding(PROJECT_HOSTNAME, cache.branding));
+  // Always derive from the payload, even when a category is empty - empty is a
+  // meaningful value (no rows for this category, or a test/refresh clearing it),
+  // not "skip this category". getConfig() (see $lib/server/configCache.ts) already
+  // preserves the last known-good cache on a failed fetch instead of wiping it to
+  // [], so a genuine fetch failure never reaches here as an empty array.
+  features = mapFeatures(cache.features);
+  settings = mapSettings(cache.settings);
+  branding = mapBranding(PROJECT_HOSTNAME, cache.branding);
   if (browser) configApplied = true;
 }
 
-// Unconditional reset to defaults - unlike applyConfig, which intentionally leaves
-// state untouched on empty input so a blank API response can't clobber good data in
-// prod. Tests need a real reset primitive between cases instead.
+// Unconditional reset to defaults, equivalent to applyConfig with all-empty
+// categories. Tests use this as an explicit reset primitive between cases.
 export function resetConfig(): void {
   features = mapFeatures([]);
   settings = mapSettings([]);

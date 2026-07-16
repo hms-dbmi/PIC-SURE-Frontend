@@ -8,33 +8,35 @@
   let errorCircle = $state('--color-error-500');
   let useFiveColors = $state(false);
 
-  const dotsColorsClass: string[] = (() => {
+  const dotsColorsClass: string[] = $derived.by(() => {
     try {
       return config.settings.dotsColorsClass || [];
     } catch (error) {
       return [];
     }
-  })();
+  });
 
-  switch (dotsColorsClass.length) {
-    case 0:
-      break;
-    case 3:
-      primaryCircle = dotsColorsClass[0];
-      secondaryCircle = dotsColorsClass[1];
-      tertiaryCircle = dotsColorsClass[2];
-      break;
-    case 5:
-      primaryCircle = dotsColorsClass[0];
-      secondaryCircle = dotsColorsClass[1];
-      tertiaryCircle = dotsColorsClass[2];
-      successCircle = dotsColorsClass[3];
-      errorCircle = dotsColorsClass[4];
-      useFiveColors = true;
-      break;
-    default:
-      break;
-  }
+  $effect(() => {
+    switch (dotsColorsClass.length) {
+      case 0:
+        break;
+      case 3:
+        primaryCircle = dotsColorsClass[0];
+        secondaryCircle = dotsColorsClass[1];
+        tertiaryCircle = dotsColorsClass[2];
+        break;
+      case 5:
+        primaryCircle = dotsColorsClass[0];
+        secondaryCircle = dotsColorsClass[1];
+        tertiaryCircle = dotsColorsClass[2];
+        successCircle = dotsColorsClass[3];
+        errorCircle = dotsColorsClass[4];
+        useFiveColors = true;
+        break;
+      default:
+        break;
+    }
+  });
 </script>
 
 <svg
