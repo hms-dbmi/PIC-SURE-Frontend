@@ -22,7 +22,6 @@
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { Picsure } from '$lib/paths';
-  import { resources } from '$lib/stores/Resources';
   import { isOpenAccess } from '$lib/AccessState';
   import LogicTreeSummary from '$lib/components/explorer/advanced/LogicTreeSummary.svelte';
   import { filters, filterTree, genomicFilters } from '$lib/stores/Filter';
@@ -66,18 +65,10 @@
       subtitle: getSubtitle(data.conceptPath),
     });
 
-    const query = getQueryRequestV3(!isOpenAccess(), $resources.visualization);
+    const query = getQueryRequestV3(!isOpenAccess());
 
     await api
-      .post(
-        Picsure.Visualization.Distributions,
-        {
-          query: query.query,
-          hpdsResourceUUID: isOpenAccess() ? $resources.hpdsOpenV3 : $resources.hpdsAuth,
-        },
-        undefined,
-        !isOpenAccess(),
-      )
+      .post(Picsure.Visualization.Distributions, { query: query.query }, undefined, !isOpenAccess())
       .then((resp) => {
         const categoricalData = (resp?.categoricalData || []).filter((data: CategoricalPlotData) =>
           categoricalHasData(data, minimumCount),

@@ -1,8 +1,15 @@
+// httpd strips the leading `/picsure/` before the gateway sees the request, so the frontend keeps
+// the `picsure/` prefix and only the suffix changes. The legacy `/proxy/{container}` relay is gone —
+// each service now has a clean gateway prefix: `/dictionary`, `/uploader`, `/logging`, …
 const PREFIX = 'picsure';
-const DICT = `${PREFIX}/proxy/dictionary-api`;
-const QUERY = `${PREFIX}/query`;
-const UPLOADER = `${PREFIX}/proxy/uploader`;
-const VIZ = `${PREFIX}/proxy/visualization`;
+const DICT = `${PREFIX}/dictionary`;
+const UPLOADER = `${PREFIX}/uploader`;
+const VIZ = `${PREFIX}/visualization`;
+// HPDS ingress is exactly two path prefixes: the backend is chosen by the
+// URL PATH — `/hpds/auth` (direct, non-obfuscated) vs `/hpds/open` (aggregate/obfuscated) — NOT by a
+// resource UUID in the request body. The query-service selects HPDS_AUTH_URL/HPDS_OPEN_URL from the path.
+const HPDS_AUTH = `${PREFIX}/hpds/auth`;
+const HPDS_OPEN = `${PREFIX}/hpds/open`;
 const API = '/api/v1';
 
 export const Picsure = {
@@ -14,17 +21,23 @@ export const Picsure = {
   },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,
-  NamedDataSet: `${PREFIX}/dataset/named`,
+  NamedDataSet: `${PREFIX}/operations/dataset/named`,
   Dictionary: DICT,
   Facets: `${DICT}/facets`,
-  Search: `${PREFIX}/search`,
+  Search: `${HPDS_AUTH}/search`,
+  /** Genomic value search (paginated); the legacy `{resourceId}` placeholder segment is gone. */
+  SearchValues: `${HPDS_AUTH}/search/values`,
   Resources: `${PREFIX}/resource`,
-  QueryV2: QUERY,
-  QueryV2Sync: `${QUERY}/sync`,
-  /** Open access (discover) queries use the V2 sync path, remove when backend is fixed. */
-  QueryOpenSync: `${QUERY}/sync`,
-  QueryV3: `${PREFIX}/v3/query`,
-  QueryV3Sync: `${PREFIX}/v3/query/sync`,
+  QueryV2: `${HPDS_AUTH}/query`,
+  QueryV2Sync: `${HPDS_AUTH}/query/sync`,
+  /**
+   * Open access (discover) queries hit the obfuscated open backend. These are built as V3 requests
+   * (getQueryRequestV3), so they must target the V3 aggregate endpoint — the V1 open endpoint can't
+   * parse a V3 body and the query-service 502s forwarding it to HPDS.
+   */
+  QueryOpenV3Sync: `${HPDS_OPEN}/v3/query/sync`,
+  QueryV3: `${HPDS_AUTH}/v3/query`,
+  QueryV3Sync: `${HPDS_AUTH}/v3/query/sync`,
   Uploader: {
     Upload: `${UPLOADER}/upload`,
     Sites: `${UPLOADER}/sites`,

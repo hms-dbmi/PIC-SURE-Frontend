@@ -42,7 +42,6 @@
   import { log, createLog } from '$lib/logger';
   import { getQueryRequestV3, getFilterConcepts } from '$lib/utilities/QueryBuilder';
   import { QueryV3 } from '$lib/models/query/Query';
-  import { resources } from '$lib/stores/Resources';
 
   const { rows = [] }: { rows?: ExportRowInterface[] } = $props();
 
@@ -69,7 +68,7 @@
 
   onMount(async () => {
     setQueryRequest(
-      getQueryRequestV3(true, $resources.hpdsAuth, 'COUNT', (query: QueryV3) => {
+      getQueryRequestV3(true, '', 'COUNT', (query: QueryV3) => {
         // populate selected export columns from filters
         query.select = [...new Set([...query.select, ...getFilterConcepts(query)])];
         return query;

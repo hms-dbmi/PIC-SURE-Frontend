@@ -39,7 +39,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
   }
 
   try {
-    const target = 'http://localhost/picsure/proxy/pic-sure-logging/audit';
+    const target = 'http://localhost/picsure/logging/audit';
     const upstream = await fetch(target, {
       method: 'POST',
       headers,

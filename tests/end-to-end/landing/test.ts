@@ -179,7 +179,7 @@ test.describe('Landing page', () => {
       });
       test(`Action button "${description}"'s click leads to ${url}`, async ({ page }) => {
         // Given
-        await mockApiSuccess(page, '*/**/picsure/dataset/named', mockDatasets);
+        await mockApiSuccess(page, '*/**/picsure/operations/dataset/named', mockDatasets);
         await page.goto('/');
         await userIsLoggedIn(page);
 
@@ -299,7 +299,7 @@ test.describe('Logged Out Landing', () => {
     });
     test(`Button "${description}"'s click leads to ${url}`, async ({ page }) => {
       // Given
-      await mockApiSuccess(page, '*/**/picsure/dataset/named', mockDatasets);
+      await mockApiSuccess(page, '*/**/picsure/operations/dataset/named', mockDatasets);
       await page.goto('/');
 
       // When

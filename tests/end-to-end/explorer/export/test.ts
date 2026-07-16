@@ -211,7 +211,7 @@ test.describe('Export Page', () => {
     await datasetNameInput.fill('test-dataset');
     await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
     await expect(nextButton).not.toBeDisabled();
-    await mockApiSuccess(page, `*/**/picsure/dataset/named`, newDatasetResponse);
+    await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
     await mockApiSuccess(
       page,
       `${queryPathV3}/${newDatasetResponse.picsureResultId}/status`,

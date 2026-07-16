@@ -1,4 +1,3 @@
-import { get } from 'svelte/store';
 import * as api from '$lib/api';
 import { branding, features } from '$lib/configuration';
 import { Picsure } from '$lib/paths';
@@ -26,7 +25,7 @@ import type {
 
 import { isUserLoggedIn } from '$lib/stores/User';
 import { addConsents } from '$lib/stores/Dictionary';
-import { getQueryResources, resources } from '$lib/stores/Resources';
+import { getQueryResources } from '$lib/stores/Resources';
 import { getQueryRequestV3, getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
 import { countResult } from '$lib/utilities/PatientCount';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
@@ -98,7 +97,7 @@ function blank({ addFilters, isOpenAccess, resource }: RequestMapOptions): Promi
   const request = addFilters
     ? getQueryRequestV3(!isOpenAccess, resource, 'COUNT')
     : getBlankQueryRequestV3(isOpenAccess, resource, 'COUNT');
-  const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+  const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
   return api.post(path, request).then(rejectIfQueryError);
 }
 
@@ -139,7 +138,8 @@ async function getOpenPatientCount({
   addFilters,
   isOpenAccess,
 }: RequestMapOptions): Promise<PatientCount> {
-  const resource = get(resources).hpdsOpenV3;
+  // Open backend is selected by the `/hpds/open` path (QueryOpenV3Sync); no resource UUID needed.
+  const resource = '';
   const request: QueryRequestInterfaceV3 = addFilters
     ? getQueryRequestV3(!isOpenAccess, resource, 'CROSS_COUNT')
     : getBlankQueryRequestV3(isOpenAccess, resource, 'CROSS_COUNT');
@@ -152,7 +152,7 @@ async function getOpenPatientCount({
     }),
   );
   return api
-    .post(Picsure.QueryOpenSync, request)
+    .post(Picsure.QueryOpenV3Sync, request)
     .then(rejectIfQueryError)
     .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }
@@ -192,7 +192,7 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(!isOpenAccess, resource, type, mapper)
       : getBlankQueryRequestV3(isOpenAccess, resource, type, mapper);
-    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
     log(
       createLog('QUERY', 'query.execute', {
         isOpenAccess,
@@ -227,7 +227,7 @@ function getConsentCount(type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(!isOpenAccess, resource, type, mapper)
       : getBlankQueryRequestV3(isOpenAccess, resource, type, mapper);
-    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
     return api.post(path, request).then(rejectIfQueryError);
   };
 }

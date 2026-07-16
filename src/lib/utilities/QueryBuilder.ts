@@ -14,7 +14,6 @@ import { get } from 'svelte/store';
 import { user } from '$lib/stores/User';
 import { filters, filterTree, genomicFilters, hasGenomicFilter } from '$lib/stores/Filter';
 import { exports } from '$lib/stores/Export';
-import { resources } from '$lib/stores/Resources';
 import type {
   Filter,
   FilterType,
@@ -35,7 +34,7 @@ const topmedConsentPath = '\\_topmed_consents\\';
 
 export function getQueryRequestV2(
   addConsents = true,
-  resourceUUID = get(resources).hpdsAuth,
+  resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV2) => QueryV2 = (q) => q,
 ): QueryRequestInterfaceV2 {
@@ -78,7 +77,7 @@ export function getQueryRequestV2(
 
 export function getBlankQueryRequestV2(
   isOpenAccess = false,
-  resourceUUID = get(resources).hpdsAuth,
+  resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV2) => QueryV2 = (q) => q,
 ): QueryRequestInterfaceV2 {
@@ -202,7 +201,7 @@ export function getFilterConcepts(query: QueryV3): string[] {
 
 export function getQueryRequestV3(
   addConsents = true,
-  resourceUUID = get(resources).hpdsAuth,
+  resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
 ): QueryRequestInterfaceV3 {
@@ -230,7 +229,7 @@ export function getQueryRequestV3(
 
 export function getBlankQueryRequestV3(
   isOpenAccess = false,
-  resourceUUID = get(resources).hpdsAuth,
+  resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
 ): QueryRequestInterfaceV3 {
