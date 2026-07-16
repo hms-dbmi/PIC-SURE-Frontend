@@ -10,7 +10,10 @@ import type { RequestHandler } from './$types';
  */
 const UPSTREAM_ORIGIN = 'http://localhost';
 
-const forward: RequestHandler = async ({ request, params, url }) => {
+// warn once, not per request: with the key unset every anonymous request would repeat it
+let warnedMissingKey = false;
+
+const forward: RequestHandler = async ({ request, params, url, getClientAddress }) => {
   // Resolve the target first, then validate its NORMALIZED pathname: checking the raw param
   // while fetching a string-concatenated URL is a parser differential — "picsure/../psama" (or
   // its %2e%2e form, which SvelteKit decodes) passes a raw startsWith check but resolves to a
@@ -21,11 +24,18 @@ const forward: RequestHandler = async ({ request, params, url }) => {
   }
   target.search = url.search;
 
-  if (!env.PICSURE_PLATFORM_API_KEY) {
+  if (!env.PICSURE_PLATFORM_API_KEY && !warnedMissingKey) {
+    warnedMissingKey = true;
     console.error('[open-proxy] PICSURE_PLATFORM_API_KEY not set; forwarding without an API key');
   }
 
   const headers: Record<string, string> = {};
+  // preserve the client's address across the hop: anonymous requests otherwise all reach the
+  // API as the frontend server, erasing per-client traceability in PSAMA's access logs
+  const forwardedFor = request.headers.get('X-Forwarded-For');
+  const clientAddress = getClientAddress();
+  headers['X-Forwarded-For'] = forwardedFor ? `${forwardedFor}, ${clientAddress}` : clientAddress;
+  headers['X-Forwarded-Host'] = url.host;
   const contentType = request.headers.get('Content-Type');
   if (contentType) {
     headers['Content-Type'] = contentType;

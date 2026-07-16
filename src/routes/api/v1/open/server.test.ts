@@ -25,7 +25,12 @@ function makeEvent(
     headers: options.headers,
     body: options.body,
   });
-  return { request, params: { path }, url } as unknown as Parameters<typeof POST>[0];
+  return {
+    request,
+    params: { path },
+    url,
+    getClientAddress: () => '203.0.113.9',
+  } as unknown as Parameters<typeof POST>[0];
 }
 
 function upstreamResponse(body = '{"ok":true}', status = 200) {
@@ -54,6 +59,19 @@ describe('+server /api/v1/open/[...path]', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toBe('application/json');
     await expect(response.text()).resolves.toBe('{"ok":true}');
+  });
+
+  it('forwards the client address and appends to an existing X-Forwarded-For chain', async () => {
+    const bare = makeEvent('GET', 'picsure/query/sync');
+    await GET(bare);
+    expect(fetchMock.mock.calls[0][1].headers['X-Forwarded-For']).toBe('203.0.113.9');
+    expect(fetchMock.mock.calls[0][1].headers['X-Forwarded-Host']).toBe('localhost');
+
+    const chained = makeEvent('GET', 'picsure/query/sync', {
+      headers: { 'X-Forwarded-For': '198.51.100.7' },
+    });
+    await GET(chained);
+    expect(fetchMock.mock.calls[1][1].headers['X-Forwarded-For']).toBe('198.51.100.7, 203.0.113.9');
   });
 
   it('forwards POST bodies and content type', async () => {
