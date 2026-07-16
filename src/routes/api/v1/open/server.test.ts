@@ -61,17 +61,34 @@ describe('+server /api/v1/open/[...path]', () => {
     await expect(response.text()).resolves.toBe('{"ok":true}');
   });
 
-  it('forwards the client address and appends to an existing X-Forwarded-For chain', async () => {
+  it('forwards only the trusted client address, discarding a spoofed X-Forwarded-For', async () => {
     const bare = makeEvent('GET', 'picsure/query/sync');
     await GET(bare);
     expect(fetchMock.mock.calls[0][1].headers['X-Forwarded-For']).toBe('203.0.113.9');
     expect(fetchMock.mock.calls[0][1].headers['X-Forwarded-Host']).toBe('localhost');
 
-    const chained = makeEvent('GET', 'picsure/query/sync', {
-      headers: { 'X-Forwarded-For': '198.51.100.7' },
+    const spoofed = makeEvent('GET', 'picsure/query/sync', {
+      headers: { 'X-Forwarded-For': '1.2.3.4' },
     });
-    await GET(chained);
-    expect(fetchMock.mock.calls[1][1].headers['X-Forwarded-For']).toBe('198.51.100.7, 203.0.113.9');
+    await GET(spoofed);
+    expect(fetchMock.mock.calls[1][1].headers['X-Forwarded-For']).toBe('203.0.113.9');
+  });
+
+  it('reaches the API through the configured internal origin', async () => {
+    mockEnv.PICSURE_INTERNAL_API_ORIGIN = 'http://api-host:8080';
+    const event = makeEvent('GET', 'picsure/query/sync');
+
+    await GET(event);
+
+    expect(String(fetchMock.mock.calls[0][0])).toBe('http://api-host:8080/picsure/query/sync');
+  });
+
+  it('still rejects traversal outside picsure under a custom internal origin', async () => {
+    mockEnv.PICSURE_INTERNAL_API_ORIGIN = 'http://api-host:8080';
+    const event = makeEvent('GET', 'picsure/../psama/user/me');
+
+    await expect(GET(event)).rejects.toMatchObject({ status: 404 });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('forwards POST bodies and content type', async () => {

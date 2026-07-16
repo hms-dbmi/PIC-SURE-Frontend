@@ -25,8 +25,9 @@
   let minted: MintedPlatformKey | null = $state(null);
 
   const minExpiryDate = (() => {
+    // keys expire at 00:00 UTC, so the earliest selectable day must be computed in UTC too
     const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
     return tomorrow.toISOString().slice(0, 10);
   })();
 
@@ -132,7 +133,7 @@
           <span class="font-semibold">Expiration:</span>
           <label class="flex items-center gap-2">
             <input type="radio" class="radio" bind:group={expiryMode} value="default" />
-            <span>Default (1 year)</span>
+            <span>Default (server policy)</span>
           </label>
           <label class="flex items-center gap-2">
             <input type="radio" class="radio" bind:group={expiryMode} value="date" />
