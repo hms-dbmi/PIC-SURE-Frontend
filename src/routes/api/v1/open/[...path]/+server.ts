@@ -39,6 +39,10 @@ const forward: RequestHandler = async ({ request, params, url, getClientAddress 
   if (contentType) {
     headers['Content-Type'] = contentType;
   }
+  const accept = request.headers.get('Accept');
+  if (accept) {
+    headers['Accept'] = accept;
+  }
   const sessionId = request.headers.get('X-Session-Id');
   if (sessionId) {
     headers['X-Session-Id'] = sessionId;
@@ -81,8 +85,6 @@ const forward: RequestHandler = async ({ request, params, url, getClientAddress 
   return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });
 };
 
-// mirror the methods api.ts routes through the proxy, so a token-less PUT/DELETE isn't a 405
+// only the methods token-less UI traffic actually uses; widening this widens the credentialed surface
 export const GET = forward;
 export const POST = forward;
-export const PUT = forward;
-export const DELETE = forward;

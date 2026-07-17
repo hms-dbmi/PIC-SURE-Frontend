@@ -106,6 +106,17 @@ describe('+server /api/v1/open/[...path]', () => {
     expect(new TextDecoder().decode(init.body)).toBe('{"query":{}}');
   });
 
+  it('forwards the Accept header for content negotiation', async () => {
+    const event = makeEvent('GET', 'picsure/query/sync', {
+      headers: { Accept: 'application/json' },
+    });
+
+    await GET(event);
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers['Accept']).toBe('application/json');
+  });
+
   it('never forwards Authorization or Cookie headers upstream', async () => {
     const event = makeEvent('GET', 'picsure/query/sync', {
       headers: { Authorization: 'Bearer stale.jwt', Cookie: 'session=abc' },
