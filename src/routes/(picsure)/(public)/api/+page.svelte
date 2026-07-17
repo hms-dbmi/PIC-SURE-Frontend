@@ -2,23 +2,69 @@
   import { onMount } from 'svelte';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
-  import { branding } from '$lib/configuration';
-  import { isUserLoggedIn } from '$lib/stores/User';
+  import { branding, features } from '$lib/configuration';
+  import { getApiConnectionResource } from '$lib/stores/Resources';
+  import { tokenStatus } from '$lib/stores/User';
   import { log, createLog } from '$lib/logger';
 
   import UserToken from '$lib/components/UserToken.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
   import TabItem from '$lib/components/TabItem.svelte';
 
-  const loggedIn = isUserLoggedIn();
+  let mounted = $state(false);
+  let loggedIn = $derived(mounted && $tokenStatus);
   const capabilities = branding.apiPage?.capabilities || [];
 
   const codeBlocks = branding.explorePage.codeBlocks;
-  let quickStartCode = $state({
-    python: codeBlocks.PythonAPIOpen || 'Code not set',
-    r: codeBlocks.RAPIOpen || 'Code not set',
-    api: codeBlocks.CurlAPI || 'Code not set',
-  });
+  type ApiLanguage = 'python' | 'r';
+
+  function booleanLiteral(value: boolean, language: ApiLanguage) {
+    if (language === 'python') return value ? 'True' : 'False';
+    return value ? 'TRUE' : 'FALSE';
+  }
+
+  interface ApiCodeBlockValues {
+    resourceUuid: string;
+    includeConsents: boolean;
+    requiresAuth: boolean;
+    supportsGenomic: boolean;
+  }
+
+  function renderApiCodeBlock(
+    code: string | undefined,
+    language: ApiLanguage,
+    values: ApiCodeBlockValues,
+  ) {
+    return (code || 'Code not set')
+      .replace('{{PICSURE_RESOURCE_UUID}}', values.resourceUuid)
+      .replace('{{INCLUDE_CONSENTS}}', booleanLiteral(values.includeConsents, language))
+      .replace('{{REQUIRES_AUTH}}', booleanLiteral(values.requiresAuth, language))
+      .replace('{{SUPPORTS_GENOMIC}}', booleanLiteral(values.supportsGenomic, language));
+  }
+
+  function getQuickStartCode(authenticated: boolean) {
+    const connection = getApiConnectionResource(authenticated);
+    const values: ApiCodeBlockValues = {
+      resourceUuid: connection.uuid,
+      includeConsents: connection.requiresAuth && Boolean(features.requireConsents),
+      requiresAuth: connection.requiresAuth,
+      supportsGenomic:
+        Boolean(features.enableGENEQuery || features.enableSNPQuery) &&
+        !connection.usesDistinctOpenResource,
+    };
+    const pythonTemplate = connection.requiresAuth
+      ? codeBlocks.PythonAPI
+      : codeBlocks.PythonAPIOpen;
+    const rTemplate = connection.requiresAuth ? codeBlocks.RAPI : codeBlocks.RAPIOpen;
+
+    return {
+      python: renderApiCodeBlock(pythonTemplate, 'python', values),
+      r: renderApiCodeBlock(rTemplate, 'r', values),
+      api: codeBlocks.CurlAPI || 'Code not set',
+    };
+  }
+
+  let quickStartCode = $derived(getQuickStartCode(loggedIn));
 
   interface Workflow {
     id: string;
@@ -68,13 +114,7 @@
   let activeSection: string = $state('api-header');
 
   onMount(() => {
-    if (loggedIn) {
-      quickStartCode = {
-        ...quickStartCode,
-        python: codeBlocks.PythonAPI || 'Code not set',
-        r: codeBlocks.RAPI || 'Code not set',
-      };
-    }
+    mounted = true;
 
     const scroller = document.getElementById('page');
     if (!scroller) return;

@@ -13,9 +13,14 @@ vi.mock('$lib/configuration', () => ({ features: mockFeatures }));
 vi.mock('$lib/api', () => ({ get: vi.fn(), post: vi.fn() }));
 vi.mock('$lib/toaster', () => ({ toaster: { add: vi.fn() } }));
 
-import { resources, getQueryResources } from '$lib/stores/Resources';
+import {
+  resources,
+  getQueryResources,
+  getCountResource,
+  getApiConnectionResource,
+} from '$lib/stores/Resources';
 
-describe('getQueryResources', () => {
+describe('Resources', () => {
   const authUuid = 'auth-uuid-123';
   const openV3Uuid = 'open-v3-uuid-456';
   const queryableResources = [
@@ -94,6 +99,77 @@ describe('getQueryResources', () => {
     expect(result).toEqual(queryableResources);
   });
 
+  describe('getCountResource (single-resource by design)', () => {
+    it('returns hpdsAuth when isOpenAccess is false', () => {
+      expect(getCountResource(false)).toEqual({ name: 'hpds', uuid: authUuid });
+    });
+
+    it('returns hpdsAuth by default (no argument)', () => {
+      expect(getCountResource()).toEqual({ name: 'hpds', uuid: authUuid });
+    });
+
+    it('returns hpdsOpenV3 when isOpenAccess is true and explore-without-login is disabled', () => {
+      expect(getCountResource(true)).toEqual({ name: 'hpdsOpen', uuid: openV3Uuid });
+    });
+
+    it('returns hpdsAuth when explore-without-login is enabled even if isOpenAccess is true', () => {
+      mockFeatures.explorer.open = true;
+      mockFeatures.login.open = true;
+
+      expect(getCountResource(true)).toEqual({ name: 'hpds', uuid: authUuid });
+    });
+
+    it('ignores the federated flag: still returns the single HPDS resource', () => {
+      mockFeatures.federated = true;
+
+      expect(getCountResource(false)).toEqual({ name: 'hpds', uuid: authUuid });
+      expect(getCountResource(true)).toEqual({ name: 'hpdsOpen', uuid: openV3Uuid });
+    });
+  });
+
+  describe('getApiConnectionResource', () => {
+    it('uses the authorized resource for authenticated users', () => {
+      expect(getApiConnectionResource(true)).toEqual({
+        name: 'hpds',
+        uuid: authUuid,
+        requiresAuth: true,
+        usesDistinctOpenResource: false,
+      });
+    });
+
+    it('uses a configured distinct open resource for anonymous users', () => {
+      expect(getApiConnectionResource(false)).toEqual({
+        name: 'hpdsOpen',
+        uuid: openV3Uuid,
+        requiresAuth: false,
+        usesDistinctOpenResource: true,
+      });
+    });
+
+    it('uses the authorized resource anonymously for explore-without-login', () => {
+      mockFeatures.explorer.open = true;
+      mockFeatures.login.open = true;
+
+      expect(getApiConnectionResource(false)).toEqual({
+        name: 'hpds',
+        uuid: authUuid,
+        requiresAuth: false,
+        usesDistinctOpenResource: false,
+      });
+    });
+
+    it('falls back to an authenticated resource when no open resource is configured', () => {
+      resources.update(($resources) => ({ ...$resources, hpdsOpenV3: '' }));
+
+      expect(getApiConnectionResource(false)).toEqual({
+        name: 'hpds',
+        uuid: authUuid,
+        requiresAuth: true,
+        usesDistinctOpenResource: false,
+      });
+    });
+  });
+
   describe('env without open HPDS resource (hpdsOpenV3 is blank)', () => {
     beforeEach(() => {
       resources.set({
@@ -113,15 +189,11 @@ describe('getQueryResources', () => {
       mockFeatures.explorer.open = true;
       mockFeatures.login.open = true;
 
-      const result = getQueryResources(true);
-      expect(result).toEqual([{ name: 'hpds', uuid: authUuid }]);
+      expect(getCountResource(true)).toEqual({ name: 'hpds', uuid: authUuid });
     });
 
-    it('returns blank hpdsOpenV3 only when explore-without-login is disabled and isOpenAccess is true', () => {
-      // This case shouldn't happen in practice — if hpdsOpenV3 is blank,
-      // the env shouldn't have explore-without-login disabled with open access callers.
-      const result = getQueryResources(true);
-      expect(result).toEqual([{ name: 'hpdsOpen', uuid: '' }]);
+    it('returns blank hpdsOpenV3 when open access is requested without a configured resource', () => {
+      expect(getCountResource(true)).toEqual({ name: 'hpdsOpen', uuid: '' });
     });
   });
 });

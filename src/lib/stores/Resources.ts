@@ -4,7 +4,7 @@ import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import { features } from '$lib/configuration';
 import { toaster } from '$lib/toaster';
-import { useOpenAccess } from '$lib/AccessState';
+import { isExploreWithoutLogin, useOpenAccess } from '$lib/AccessState';
 
 interface QueryResource {
   name: string;
@@ -51,14 +51,54 @@ export const loading: Writable<Promise<void>> = writable(Promise.resolve());
 export const resources: Writable<ResourceMap> = writable(defaultResources);
 
 export function getQueryResources(isOpenAccess: boolean = false): QueryResource[] {
+  return features.federated ? get(resources).queryable : [getCountResource(isOpenAccess)];
+}
+
+export function getCountResource(isOpenAccess: boolean = false): QueryResource {
   const _resources = get(resources);
-  return features.federated
-    ? _resources.queryable
-    : [
-        useOpenAccess(isOpenAccess)
-          ? { name: 'hpdsOpen', uuid: _resources.hpdsOpenV3 }
-          : { name: 'hpds', uuid: _resources.hpdsAuth },
-      ];
+  return useOpenAccess(isOpenAccess)
+    ? { name: 'hpdsOpen', uuid: _resources.hpdsOpenV3 }
+    : { name: 'hpds', uuid: _resources.hpdsAuth };
+}
+
+export interface ApiConnectionResource extends QueryResource {
+  requiresAuth: boolean;
+  usesDistinctOpenResource: boolean;
+}
+
+export function getApiConnectionResource(authenticated: boolean): ApiConnectionResource {
+  const authorizedResource = getCountResource(false);
+
+  if (authenticated) {
+    return {
+      ...authorizedResource,
+      requiresAuth: true,
+      usesDistinctOpenResource: false,
+    };
+  }
+
+  if (isExploreWithoutLogin()) {
+    return {
+      ...authorizedResource,
+      requiresAuth: false,
+      usesDistinctOpenResource: false,
+    };
+  }
+
+  const openResource = getCountResource(true);
+  if (openResource.uuid) {
+    return {
+      ...openResource,
+      requiresAuth: false,
+      usesDistinctOpenResource: true,
+    };
+  }
+
+  return {
+    ...authorizedResource,
+    requiresAuth: true,
+    usesDistinctOpenResource: false,
+  };
 }
 
 async function getResources() {
