@@ -2,7 +2,7 @@ import configJson from '../assets/configuration.json' with { type: 'json' };
 import { ExportType } from '../models/Variant';
 import type { Column } from '../components/datatable/types';
 import type { StatConfig, StatField } from '../models/Stat';
-import type { Indexable, Step } from '../types';
+import type { Indexable, Step, Indexed } from '../types';
 import { deepMerge } from '../utilities/Objects';
 
 // Types
@@ -200,11 +200,6 @@ export type Branding = Indexable & {
   };
 };
 
-export type ConfigData = {
-  features: Features;
-  settings: Settings;
-};
-
 export type ConfigObject = {
   uuid?: string;
   name: string;
@@ -214,9 +209,7 @@ export type ConfigObject = {
   markForDelete?: boolean;
 };
 
-export type ConfigMap = {
-  [key: string]: ConfigObject;
-};
+export type ConfigMap = Indexed<ConfigObject>;
 
 export type ConfigCache = {
   settings: ConfigObject[];
