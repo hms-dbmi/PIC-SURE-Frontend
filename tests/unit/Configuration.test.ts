@@ -94,8 +94,8 @@ describe('parsers', () => {
       expect(parse.asInt('INT_VALID', 0)).toBe(42);
     });
 
-    it('returns NaN (not the default) when the value is present but not numeric', () => {
-      expect(parse.asInt('INT_INVALID', 7)).toBeNaN();
+    it('returns the default when the value is present but not numeric, rather than NaN', () => {
+      expect(parse.asInt('INT_INVALID', 7)).toBe(7);
     });
 
     it('returns the default when the value is blank, rather than NaN', () => {

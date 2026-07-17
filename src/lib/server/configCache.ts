@@ -34,36 +34,45 @@ const MAX_RETRIES = Number(import.meta.env?.VITE_MAX_CONFIG_RETRIES ?? 3);
 const INITIAL_DELAY = 5000; // 5 second
 const MAX_DELAY = 600000; // 10 minutes
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function handleResponse(res: Response): Promise<any> {
-  if (res.ok || res.status === 422) {
-    const contentType = res.headers.get('Content-Type') || '';
-    if (contentType.includes('application/octet-stream')) {
-      return await res.arrayBuffer();
-    }
+// Applied only to the very first hydration attempt this process ever makes (see
+// getConfig()) - gives other resources a moment to finish starting up. Later
+// hydrations (a routine 4-hour cache refresh, or an admin-triggered /api/config/refresh)
+// have no reason to wait, so they skip straight to the fetch.
+const STARTUP_COOLDOWN = INITIAL_DELAY * 2;
 
-    const text = await res.text();
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      return text;
-    }
+// The config endpoint only ever returns a JSON array of config rows - unlike
+// api.ts's general-purpose handleResponse (which this was adapted from), there's no
+// binary/plain-text response to support here. Anything that isn't a parseable JSON
+// array is a failure, not data: throwing lets fetchWithRetry's catch retry it like
+// any other fetch failure, instead of getConfigKind caching unusable data as if it
+// were a real config payload.
+async function handleResponse(res: Response): Promise<ConfigObject[]> {
+  if (!(res.ok || res.status === 422)) {
+    error(res.status as NumericRange<400, 599>, await res.text());
   }
 
-  error(res.status as NumericRange<400, 599>, await res.text());
+  const text = await res.text();
+  const parsed = JSON.parse(text);
+  if (!Array.isArray(parsed)) {
+    throw new Error(`Expected an array of config rows, got ${typeof parsed}`);
+  }
+  return parsed;
 }
 
 async function fetchWithRetry(
   url: string,
   type: string,
-  retries = MAX_RETRIES + 1,
+  retries = MAX_RETRIES,
   delay = INITIAL_DELAY,
+  applyStartupCooldown = false,
 ): Promise<ConfigObject[] | null> {
-  if (retries > MAX_RETRIES) {
+  if (applyStartupCooldown) {
     // Don't reach out on the first delay - let the app cool for a few seconds then try,
-    // in case other resources are still loading up.
-    await new Promise((resolve) => setTimeout(resolve, INITIAL_DELAY * 2));
-    return fetchWithRetry(url, type, retries - 1, delay);
+    // in case other resources are still loading up. Only applies on cold start (see
+    // STARTUP_COOLDOWN callers) - later refreshes pass applyStartupCooldown = false, so
+    // they skip straight to the fetch below.
+    await new Promise((resolve) => setTimeout(resolve, STARTUP_COOLDOWN));
+    return fetchWithRetry(url, type, retries, delay, false);
   }
   return fetch(url, { method: 'GET' })
     .then(handleResponse)
@@ -87,7 +96,11 @@ async function fetchWithRetry(
     });
 }
 
-async function getConfigKind(kind: ConfigKind, force: boolean): Promise<void> {
+async function getConfigKind(
+  kind: ConfigKind,
+  force: boolean,
+  applyStartupCooldown: boolean,
+): Promise<void> {
   // Return cached config if available and not expired
   const now = Date.now();
   if (!force && lastKindFetch[kind] > 0 && now - lastKindFetch[kind] < CACHE_DURATION) {
@@ -99,7 +112,13 @@ async function getConfigKind(kind: ConfigKind, force: boolean): Promise<void> {
     console.log(`Attempting configuration cache hydration for ${kind}`);
     const configUrl = `${ORIGIN}/${Picsure.Configuration.Get}`;
     fetchingKind[kind] = configKinds[kind]
-      ? fetchWithRetry(`${configUrl}?kind=${configKinds[kind]}`, kind)
+      ? fetchWithRetry(
+          `${configUrl}?kind=${configKinds[kind]}`,
+          kind,
+          undefined,
+          undefined,
+          applyStartupCooldown,
+        )
       : Promise.resolve([]);
   }
 
@@ -120,11 +139,18 @@ async function getConfigKind(kind: ConfigKind, force: boolean): Promise<void> {
   return Promise.resolve();
 }
 
+// Set on the first call and never cleared - later calls (routine cache expiry,
+// or an admin-triggered refresh) are never the "cold start" case, even after
+// invalidateConfig() resets the per-kind fetch state below.
+let hasHydratedBefore = false;
+
 export async function getConfig(force: boolean = false): Promise<ConfigCache> {
+  const applyStartupCooldown = !hasHydratedBefore;
+  hasHydratedBefore = true;
   await Promise.allSettled([
-    getConfigKind('features', force),
-    getConfigKind('settings', force),
-    getConfigKind('branding', force),
+    getConfigKind('features', force, applyStartupCooldown),
+    getConfigKind('settings', force, applyStartupCooldown),
+    getConfigKind('branding', force, applyStartupCooldown),
   ]);
   return cached;
 }

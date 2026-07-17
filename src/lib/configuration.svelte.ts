@@ -46,7 +46,10 @@ export function applyConfig(cache: ConfigCache): void {
   // meaningful value (no rows for this category, or a test/refresh clearing it),
   // not "skip this category". getConfig() (see $lib/server/configCache.ts) already
   // preserves the last known-good cache on a failed fetch instead of wiping it to
-  // [], so a genuine fetch failure never reaches here as an empty array.
+  // [], so a genuine fetch failure never reaches here as an empty array. mapFeatures/
+  // mapSettings/mapBranding themselves fall back to defaults per-field on a bad row
+  // (see parsers()/withNonBlank in models/Configuration.ts) instead of throwing, so
+  // there's no need to guard against one of these calls failing here.
   features = mapFeatures(cache.features);
   settings = mapSettings(cache.settings);
   branding = mapBranding(PROJECT_HOSTNAME, cache.branding);

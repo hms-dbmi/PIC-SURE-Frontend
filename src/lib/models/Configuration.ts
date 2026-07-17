@@ -268,6 +268,10 @@ export function resolveConfigMap(apiRows: ConfigObject[], envPrefix?: string): C
 // falls back to the default rather than being coerced/parsed. asString is the
 // one exception: an explicit empty string is a valid override there, so it
 // only checks presence, not blankness.
+// Also the single place that guards against a value transform throwing (asJson on
+// invalid JSON) or otherwise failing to produce a usable value (asInt on a
+// non-numeric string) - falls back to defaultValue in either case, so a bad admin-
+// entered row degrades that one field instead of blowing up the whole config load.
 function withNonBlank<T>(
   map: ConfigMap,
   name: string,
@@ -275,7 +279,13 @@ function withNonBlank<T>(
   transform: (value: string) => T,
 ): T {
   const value = map[name]?.value;
-  return value && value.trim() !== '' ? transform(value) : defaultValue;
+  if (!value || value.trim() === '') return defaultValue;
+  try {
+    return transform(value);
+  } catch (e) {
+    console.warn(`Invalid config value for "${name}" ("${value}"), falling back to default.`, e);
+    return defaultValue;
+  }
 }
 
 export function parsers(map: ConfigMap) {
@@ -284,17 +294,14 @@ export function parsers(map: ConfigMap) {
       return withNonBlank(map, name, defaultValue, (value) => value === 'true');
     },
     asInt: function (name: string, defaultValue: number): number {
-      return withNonBlank(map, name, defaultValue, (value) => parseInt(value));
+      return withNonBlank(map, name, defaultValue, (value) => {
+        const parsed = parseInt(value);
+        if (Number.isNaN(parsed)) throw new Error(`"${value}" is not an integer`);
+        return parsed;
+      });
     },
     asJson: function (name: string, defaultValue: unknown): unknown {
-      return withNonBlank(map, name, defaultValue, (value) => {
-        try {
-          return JSON.parse(value);
-        } catch {
-          console.warn(`Invalid JSON config value for "${name}", falling back to default.`);
-          return defaultValue;
-        }
-      });
+      return withNonBlank(map, name, defaultValue, (value) => JSON.parse(value));
     },
     asString: function (name: string, defaultValue: string): string {
       return map[name] ? map[name].value : (defaultValue as string);
@@ -486,8 +493,11 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
     configJson,
   );
 
-  // Replace URLs in code blocks before assigning
-  const codeBlocks: CodeBlockConfig = { ...configJson.explorePage.codeBlocks };
+  // Replace URLs in code blocks before assigning. Operate on the already-merged
+  // branding.explorePage.codeBlocks (defaults + configJson), not configJson's alone,
+  // so a codeBlocks key missing from configJson still falls back to its merged
+  // default instead of becoming undefined.
+  const codeBlocks: CodeBlockConfig = { ...branding.explorePage.codeBlocks };
   const replaceHostname = (codeBlock: string) =>
     codeBlock.replace('{{PICSURE_NETWORK_URL}}', hostname);
   Object.keys(codeBlocks).forEach((key: string) => {
