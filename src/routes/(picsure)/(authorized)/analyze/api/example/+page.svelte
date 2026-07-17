@@ -10,7 +10,7 @@
   let setupInstructions = $state('');
 
   onMount(() => {
-    setupInstructions = sanitizeHTML(config.branding.analysisConfig.api.example.setup);
+    setupInstructions = sanitizeHTML(config.branding.analysisPage.api.example.setup);
   });
 </script>
 

@@ -33,16 +33,18 @@ vi.mock('$lib/toaster', () => ({
   toaster: { error: vi.fn() },
 }));
 
-vi.mock('$lib/configuration', () => ({
-  branding: {
-    results: {
-      totalStatKey: 'query:patientCount',
-      stats: [{ key: 'query:patientCount', label: 'Filtered Participants' }],
+vi.mock('$lib/configuration.svelte', () => ({
+  config: {
+    branding: {
+      results: {
+        totalStatKey: 'query:patientCount',
+        stats: [{ key: 'query:patientCount', label: 'Filtered Participants' }],
+      },
     },
-  },
-  features: {
-    explorer: { open: false },
-    discover: false,
+    features: {
+      explorer: { open: false },
+      discover: false,
+    },
   },
 }));
 

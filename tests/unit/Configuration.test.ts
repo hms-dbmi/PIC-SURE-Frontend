@@ -117,8 +117,9 @@ describe('parsers', () => {
       expect(parse.asJson('JSON_VALID', {})).toEqual({ a: 1 });
     });
 
-    it('throws when the value is present but not valid JSON', () => {
-      expect(() => parse.asJson('JSON_INVALID', {})).toThrow();
+    it('returns the default when the value is present but not valid JSON, rather than throwing', () => {
+      const fallback = { foo: 'bar' };
+      expect(parse.asJson('JSON_INVALID', fallback)).toBe(fallback);
     });
 
     it('returns the default when the value is blank, rather than throwing', () => {

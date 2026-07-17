@@ -17,6 +17,13 @@
   });
 
   $effect(() => {
+    primaryCircle = '--color-primary-500';
+    secondaryCircle = '--color-secondary-500';
+    tertiaryCircle = '--color-tertiary-500';
+    successCircle = '--color-success-500';
+    errorCircle = '--color-error-500';
+    useFiveColors = false;
+
     switch (dotsColorsClass.length) {
       case 0:
         break;

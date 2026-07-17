@@ -179,6 +179,9 @@ export type Branding = Indexable & {
         connection: string;
         execution: string;
       };
+      example: {
+        setup: string;
+      };
     };
     analysis: {
       platform: string;
@@ -284,7 +287,14 @@ export function parsers(map: ConfigMap) {
       return withNonBlank(map, name, defaultValue, (value) => parseInt(value));
     },
     asJson: function (name: string, defaultValue: unknown): unknown {
-      return withNonBlank(map, name, defaultValue, (value) => JSON.parse(value));
+      return withNonBlank(map, name, defaultValue, (value) => {
+        try {
+          return JSON.parse(value);
+        } catch {
+          console.warn(`Invalid JSON config value for "${name}", falling back to default.`);
+          return defaultValue;
+        }
+      });
     },
     asString: function (name: string, defaultValue: string): string {
       return map[name] ? map[name].value : (defaultValue as string);
@@ -383,6 +393,9 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
           instructions: {
             connection: '',
             execution: '',
+          },
+          example: {
+            setup: '',
           },
         },
         analysis: {
