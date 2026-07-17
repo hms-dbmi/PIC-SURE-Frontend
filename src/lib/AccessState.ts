@@ -7,11 +7,14 @@ export function isOpenAccess(): boolean {
   return (browser && page.url.pathname.includes('/discover')) || !isUserLoggedIn();
 }
 
+export function isExploreWithoutLogin(): boolean {
+  return Boolean(config.features.explorer.open && config.features.login.open);
+}
+
 export function useOpenAccess(isOpen?: boolean) {
   let openAccess = isOpen;
   if (typeof openAccess === 'undefined') {
     openAccess = isOpenAccess();
   }
-  const isExploreWithoutLogin = config.features.explorer.open && config.features.login.open;
-  return openAccess && !isExploreWithoutLogin;
+  return openAccess && !isExploreWithoutLogin();
 }

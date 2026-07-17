@@ -106,6 +106,32 @@ test.describe('API page', () => {
     await expect(page.locator('#quick-start .code-block').first()).toBeVisible();
   });
 
+  test('Quick start code connects to the authorized platform when logged in', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // When
+    const visibleCode = page.locator('#quick-start .code-block:visible');
+
+    // Then
+    await expect(visibleCode).toContainText('pip install picsure');
+    await expect(visibleCode).toContainText('resource_uuid="1"');
+    await expect(visibleCode).toContainText('include_consents=True');
+    await expect(visibleCode).toContainText('requires_auth=True');
+    await expect(visibleCode).toContainText('supports_genomic=True');
+    await expect(visibleCode).toContainText('token.txt');
+
+    // When
+    await page.getByTestId('tabs-control').filter({ hasText: 'R' }).last().click();
+
+    // Then
+    await expect(visibleCode).toContainText('resource_uuid="1"');
+    await expect(visibleCode).toContainText('include_consents=TRUE');
+    await expect(visibleCode).toContainText('requires_auth=TRUE');
+    await expect(visibleCode).toContainText('supports_genomic=TRUE');
+  });
+
   test('Has API Access section', async ({ page }) => {
     // Given
     await page.goto('/api');
@@ -386,6 +412,30 @@ test.describe('API page logged out', () => {
         await expect(items.nth(index).locator('i.fa-circle-check')).toBeVisible();
       }
     }
+  });
+
+  test('Quick start code connects to the open platform when logged out', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+
+    // When
+    const visibleCode = page.locator('#quick-start .code-block:visible');
+
+    // Then
+    await expect(visibleCode).toContainText('resource_uuid="2"');
+    await expect(visibleCode).toContainText('include_consents=False');
+    await expect(visibleCode).toContainText('requires_auth=False');
+    await expect(visibleCode).toContainText('supports_genomic=False');
+    await expect(visibleCode).toContainText('token.txt');
+
+    // When
+    await page.getByTestId('tabs-control').filter({ hasText: 'R' }).last().click();
+
+    // Then
+    await expect(visibleCode).toContainText('resource_uuid="2"');
+    await expect(visibleCode).toContainText('include_consents=FALSE');
+    await expect(visibleCode).toContainText('requires_auth=FALSE');
+    await expect(visibleCode).toContainText('supports_genomic=FALSE');
   });
 
   test('Table of contents lists all page sections', async ({ page }) => {
