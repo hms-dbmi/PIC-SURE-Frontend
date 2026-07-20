@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 import PublicAccessKey from '$lib/components/PublicAccessKey.svelte';
@@ -36,6 +36,12 @@ async function submitForm() {
 describe('PublicAccessKey', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // .env.test configures a sitekey for the e2e build; these tests cover the ungated flow
+    vi.stubEnv('VITE_TURNSTILE_SITE_KEY', '');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('starts idle with an enabled request button', () => {
@@ -181,5 +187,115 @@ describe('PublicAccessKey', () => {
 
     const alert = await screen.findByTestId('error-alert');
     expect(alert).toHaveTextContent('Public key generation is not enabled.');
+  });
+
+  it('renders no Turnstile widget when no sitekey is configured', async () => {
+    render(PublicAccessKey, { props: { enabled: true } });
+
+    await openForm();
+
+    expect(screen.queryByTestId('turnstile-widget')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Generate Key' })).toBeEnabled();
+  });
+
+  describe('with a Turnstile sitekey configured', () => {
+    type RenderOptions = {
+      callback: (token: string) => void;
+      'expired-callback': () => void;
+      'error-callback': () => void;
+    };
+    let renderOptions: RenderOptions | undefined;
+    const turnstileRender = vi.fn((_container: HTMLElement, options: RenderOptions) => {
+      renderOptions = options;
+      return 'widget-1';
+    });
+
+    beforeEach(() => {
+      vi.stubEnv('VITE_TURNSTILE_SITE_KEY', '1x00000000000000000000AA');
+      renderOptions = undefined;
+      vi.stubGlobal('turnstile', { render: turnstileRender, remove: vi.fn() });
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('disables Generate until the widget issues a token', async () => {
+      render(PublicAccessKey, { props: { enabled: true } });
+      await openForm();
+
+      expect(screen.getByTestId('turnstile-widget')).toBeInTheDocument();
+      const generate = screen.getByRole('button', { name: 'Generate Key' });
+      expect(generate).toBeDisabled();
+
+      renderOptions?.callback('turnstile-token-1');
+      await waitFor(() => expect(generate).toBeEnabled());
+    });
+
+    it('sends the widget token with the request', async () => {
+      post.mockResolvedValue(mockKeyResponse);
+      render(PublicAccessKey, { props: { enabled: true } });
+      await openForm();
+
+      renderOptions?.callback('turnstile-token-1');
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Generate Key' })).toBeEnabled(),
+      );
+      await submitForm();
+
+      expect(post).toHaveBeenCalledWith(
+        'psama/open/apiKey',
+        { captchaToken: 'turnstile-token-1', name: null, email: null },
+        undefined,
+        false,
+      );
+    });
+
+    it('re-disables Generate when the token expires', async () => {
+      render(PublicAccessKey, { props: { enabled: true } });
+      await openForm();
+
+      renderOptions?.callback('turnstile-token-1');
+      const generate = screen.getByRole('button', { name: 'Generate Key' });
+      await waitFor(() => expect(generate).toBeEnabled());
+
+      renderOptions?.['expired-callback']();
+      await waitFor(() => expect(generate).toBeDisabled());
+    });
+
+    it('shows a load-failure message when the widget cannot initialize', async () => {
+      vi.stubGlobal('turnstile', {
+        render: () => {
+          throw new Error('sitekey rejected');
+        },
+        remove: vi.fn(),
+      });
+      render(PublicAccessKey, { props: { enabled: true } });
+      await openForm();
+
+      const message = await screen.findByTestId('public-key-captcha-failed');
+      expect(message).toHaveTextContent('The security check could not be loaded.');
+      expect(screen.getByRole('button', { name: 'Generate Key' })).toBeDisabled();
+      expect(post).not.toHaveBeenCalled();
+    });
+
+    it('requests a fresh widget after a failed submit', async () => {
+      post.mockRejectedValue({ status: 400, body: { message: 'CAPTCHA verification failed.' } });
+      render(PublicAccessKey, { props: { enabled: true } });
+      await openForm();
+
+      renderOptions?.callback('turnstile-token-1');
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Generate Key' })).toBeEnabled(),
+      );
+      await submitForm();
+      await screen.findByTestId('error-alert');
+
+      // tokens are single-use: re-entering the form must re-render the widget and
+      // hold Generate disabled until a fresh token arrives
+      await fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+      expect(turnstileRender).toHaveBeenCalledTimes(2);
+      expect(screen.getByRole('button', { name: 'Generate Key' })).toBeDisabled();
+    });
   });
 });
