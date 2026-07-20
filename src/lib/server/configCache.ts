@@ -1,6 +1,7 @@
 import { error, type NumericRange } from '@sveltejs/kit';
 import type { ConfigObject, ConfigCache } from '$lib/models/Configuration';
 import { Picsure } from '$lib/paths';
+import { withBackoff } from '$lib/utilities/backoff';
 
 type ConfigKind = keyof ConfigCache;
 
@@ -59,41 +60,38 @@ async function handleResponse(res: Response): Promise<ConfigObject[]> {
   return parsed;
 }
 
-async function fetchWithRetry(
-  url: string,
-  type: string,
-  retries = MAX_RETRIES,
-  delay = INITIAL_DELAY,
-  applyStartupCooldown = false,
-): Promise<ConfigObject[] | null> {
-  if (applyStartupCooldown) {
-    // Don't reach out on the first delay - let the app cool for a few seconds then try,
-    // in case other resources are still loading up. Only applies on cold start (see
-    // STARTUP_COOLDOWN callers) - later refreshes pass applyStartupCooldown = false, so
-    // they skip straight to the fetch below.
-    await new Promise((resolve) => setTimeout(resolve, STARTUP_COOLDOWN));
-    return fetchWithRetry(url, type, retries, delay, false);
+// Cold-start-only delay - see STARTUP_COOLDOWN's own comment. Applied once, before
+// the retry sequence below even starts, not between individual retries.
+function startupDelay(apply: boolean): Promise<void> {
+  return apply
+    ? new Promise((resolve) => setTimeout(resolve, STARTUP_COOLDOWN))
+    : Promise.resolve();
+}
+
+async function fetchWithRetry(url: string, type: string): Promise<ConfigObject[] | null> {
+  try {
+    // maxAttempts counts the first attempt too, so +1 to keep MAX_RETRIES meaning
+    // "retries after the first failure", matching this module's env var name. This
+    // matters even at MAX_RETRIES = 0: without the +1, maxAttempts is 0, and
+    // withBackoff's `for (attempt = 0; attempt < maxAttempts; ...)` loop then never
+    // runs fn() at all - not even once.
+    return await withBackoff(
+      () => fetch(url, { method: 'GET' }).then(handleResponse),
+      MAX_RETRIES + 1,
+      INITIAL_DELAY,
+      MAX_DELAY,
+      (e, attempt) => {
+        console.warn(
+          `Config ${type} (${url}) fetch failed on attempt ${attempt + 1}/${MAX_RETRIES + 1}, retrying...`,
+          e,
+        );
+        return true;
+      },
+    );
+  } catch (e) {
+    console.error('Config failed with', e);
+    return null;
   }
-  return fetch(url, { method: 'GET' })
-    .then(handleResponse)
-    .catch(async (e) => {
-      console.error('Config failed with', e);
-      if (retries <= 0) {
-        return null;
-      }
-
-      console.warn(
-        `Config ${type} (${url}) fetch failed, retrying in ${delay}ms... (${retries} attempts remaining)`,
-      );
-
-      // Wait before retrying
-      await new Promise((resolve) => setTimeout(resolve, delay));
-
-      // Exponential backoff: double the delay, but cap at MAX_DELAY
-      const nextDelay = Math.min(delay * 2, MAX_DELAY);
-
-      return fetchWithRetry(url, type, retries - 1, nextDelay);
-    });
 }
 
 async function getConfigKind(
@@ -112,12 +110,8 @@ async function getConfigKind(
     console.log(`Attempting configuration cache hydration for ${kind}`);
     const configUrl = `${ORIGIN}/${Picsure.Configuration.Get}`;
     fetchingKind[kind] = configKinds[kind]
-      ? fetchWithRetry(
-          `${configUrl}?kind=${configKinds[kind]}`,
-          kind,
-          undefined,
-          undefined,
-          applyStartupCooldown,
+      ? startupDelay(applyStartupCooldown).then(() =>
+          fetchWithRetry(`${configUrl}?kind=${configKinds[kind]}`, kind),
         )
       : Promise.resolve([]);
   }
@@ -139,11 +133,16 @@ async function getConfigKind(
   return Promise.resolve();
 }
 
-// Set on the first call and never cleared - later calls (routine cache expiry,
-// or an admin-triggered refresh) are never the "cold start" case, even after
-// invalidateConfig() resets the per-kind fetch state below.
+// Set on the first call and never cleared - later calls (routine cache expiry, or
+// a force = true admin-triggered refresh) are never the "cold start" case.
 let hasHydratedBefore = false;
 
+// force = true (see /api/config/refresh) bypasses the TTL check below to fetch
+// regardless of freshness, but - like the routine TTL-expiry path - only touches
+// `cached`/`lastKindFetch` for a kind on a successful fetch (see getConfigKind's
+// fail-open handling). So a failed forced refresh never loses the last known-good
+// config: it just leaves that kind exactly as stale as it already was, to be
+// retried on the next request or the next explicit refresh.
 export async function getConfig(force: boolean = false): Promise<ConfigCache> {
   const applyStartupCooldown = !hasHydratedBefore;
   hasHydratedBefore = true;
@@ -153,10 +152,4 @@ export async function getConfig(force: boolean = false): Promise<ConfigCache> {
     getConfigKind('branding', force, applyStartupCooldown),
   ]);
   return cached;
-}
-
-// Optional: Function to invalidate cache
-export function invalidateConfig() {
-  (Object.keys(cached) as ConfigKind[]).forEach((k) => (cached[k] = []));
-  (Object.keys(lastKindFetch) as ConfigKind[]).forEach((k) => (lastKindFetch[k] = 0));
 }

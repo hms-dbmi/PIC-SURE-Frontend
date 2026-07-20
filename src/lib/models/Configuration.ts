@@ -380,7 +380,10 @@ export function mapSettings(apiSettings: ConfigObject[]): Settings {
     variantExplorer: {
       excludeColumns: parse.asJson('VARIANT_EXPLORER_EXCLUDE_COLUMNS', []) as string[],
       maxCount: parse.asInt('VARIANT_EXPLORER_MAX_COUNT', 10000),
-      type: (sm['VARIANT_EXPLORER_TYPE']?.value || ExportType.Aggregate) as ExportType,
+      type:
+        parse.asString('VARIANT_EXPLORER_TYPE', ExportType.Aggregate) === ExportType.Full
+          ? ExportType.Full
+          : ExportType.Aggregate,
     },
     exportSystemFields: parse
       .asString('EXPORT_SYSTEM_FIELDS', '')

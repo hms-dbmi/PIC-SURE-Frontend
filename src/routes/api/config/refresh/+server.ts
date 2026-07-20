@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getConfig, invalidateConfig } from '$lib/server/configCache';
+import { getConfig } from '$lib/server/configCache';
 import { Psama } from '$lib/paths';
 import { PicsurePrivileges } from '$lib/models/Privilege';
 import type { User } from '$lib/models/User';
@@ -32,8 +32,11 @@ export const GET: RequestHandler = async ({ request }) => {
   }
 
   try {
-    invalidateConfig();
-    const config = await getConfig();
+    // force = true so this actually fetches instead of serving whatever's cached.
+    // getConfigKind only overwrites a kind's cache entry on a successful fetch (see
+    // its comment in configCache.ts) - so a kind that fails here just keeps serving
+    // its last known-good value instead of losing it.
+    const config = await getConfig(true);
     return json(config);
   } catch (error) {
     return json({ error: 'Failed to load configuration' }, { status: 500 });

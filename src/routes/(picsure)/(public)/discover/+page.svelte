@@ -9,7 +9,7 @@
   const tourName = $derived(config.settings.tour.open);
 
   let openTour: TourDataType = $derived(
-    tourName !== undefined && tourName in Tour ? Tour[tourName] : Tour['NHANES-Auth'],
+    tourName !== undefined && tourName in Tour ? Tour[tourName] : Tour['BDC-Open'],
   );
 </script>
 

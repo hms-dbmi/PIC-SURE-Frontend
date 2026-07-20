@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 
-const mockInvalidateConfig = vi.fn();
 const mockGetConfig = vi.fn();
 vi.mock('$lib/server/configCache', () => ({
-  invalidateConfig: (...args: unknown[]) => mockInvalidateConfig(...args),
   getConfig: (...args: unknown[]) => mockGetConfig(...args),
 }));
 
@@ -37,7 +35,7 @@ describe('GET /api/config/refresh', () => {
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({ error: 'Unauthorized' });
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(mockInvalidateConfig).not.toHaveBeenCalled();
+    expect(mockGetConfig).not.toHaveBeenCalled();
   });
 
   it('returns 401 when the upstream user lookup rejects the token', async () => {
@@ -47,7 +45,7 @@ describe('GET /api/config/refresh', () => {
 
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({ error: 'Unauthorized' });
-    expect(mockInvalidateConfig).not.toHaveBeenCalled();
+    expect(mockGetConfig).not.toHaveBeenCalled();
   });
 
   it('returns 401 when the upstream user lookup throws', async () => {
@@ -57,7 +55,7 @@ describe('GET /api/config/refresh', () => {
 
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({ error: 'Unauthorized' });
-    expect(mockInvalidateConfig).not.toHaveBeenCalled();
+    expect(mockGetConfig).not.toHaveBeenCalled();
   });
 
   it('forwards the Authorization header to psama/user/me', async () => {
@@ -81,7 +79,7 @@ describe('GET /api/config/refresh', () => {
 
     expect(res.status).toBe(403);
     expect(await res.json()).toEqual({ error: 'Forbidden' });
-    expect(mockInvalidateConfig).not.toHaveBeenCalled();
+    expect(mockGetConfig).not.toHaveBeenCalled();
   });
 
   it('returns 403 when the user has no privileges at all', async () => {
@@ -91,17 +89,18 @@ describe('GET /api/config/refresh', () => {
 
     expect(res.status).toBe(403);
     expect(await res.json()).toEqual({ error: 'Forbidden' });
+    expect(mockGetConfig).not.toHaveBeenCalled();
   });
 
-  it('invalidates and returns fresh config for a SUPER privileged user', async () => {
+  it('forces a fresh fetch and returns it for a SUPER privileged user', async () => {
     fetchMock.mockResolvedValue(mockFetchResponse({ body: { privileges: ['SUPER_ADMIN'] } }));
     const freshConfig = { settings: [{ key: 'a' }], features: [], branding: [] };
     mockGetConfig.mockResolvedValue(freshConfig);
 
     const res = await GET(makeEvent({ Authorization: 'Bearer some-token' }));
 
-    expect(mockInvalidateConfig).toHaveBeenCalledTimes(1);
     expect(mockGetConfig).toHaveBeenCalledTimes(1);
+    expect(mockGetConfig).toHaveBeenCalledWith(true);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual(freshConfig);
   });

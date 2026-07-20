@@ -246,3 +246,42 @@ describe('mapBranding', () => {
     expect(branding.logo.alt).toBe('cats');
   });
 });
+
+describe('mapSettings - exportSystemFields', () => {
+  it('parses comma-separated fields into concept paths with slash wrappers', () => {
+    const settings = mapSettings([
+      apiRow(
+        'EXPORT_SYSTEM_FIELDS',
+        '_consents,_Parent Study Accession with Subject ID,_Topmed Study Accession with Subject ID',
+      ),
+    ]);
+    expect(settings.exportSystemFields).toEqual([
+      '\\_consents\\',
+      '\\_Parent Study Accession with Subject ID\\',
+      '\\_Topmed Study Accession with Subject ID\\',
+    ]);
+  });
+
+  it('returns empty array when no API row or env var is set', () => {
+    expect(mapSettings([]).exportSystemFields).toEqual([]);
+  });
+
+  it('returns empty array for an explicit empty string', () => {
+    expect(mapSettings([apiRow('EXPORT_SYSTEM_FIELDS', '')]).exportSystemFields).toEqual([]);
+  });
+
+  it('trims whitespace from field names', () => {
+    const settings = mapSettings([apiRow('EXPORT_SYSTEM_FIELDS', ' patient_id , _consents ')]);
+    expect(settings.exportSystemFields).toEqual(['\\patient_id\\', '\\_consents\\']);
+  });
+
+  it('filters out empty entries from trailing commas', () => {
+    const settings = mapSettings([apiRow('EXPORT_SYSTEM_FIELDS', 'patient_id,,_consents,')]);
+    expect(settings.exportSystemFields).toEqual(['\\patient_id\\', '\\_consents\\']);
+  });
+
+  it('handles a single field', () => {
+    const settings = mapSettings([apiRow('EXPORT_SYSTEM_FIELDS', 'patient_id')]);
+    expect(settings.exportSystemFields).toEqual(['\\patient_id\\']);
+  });
+});

@@ -48,8 +48,16 @@ registerEnabledProviders(enabledProviders, PROVIDER_PREFIX);
 // state is a module-scope singleton though - concurrent requests handled by this one
 // process would otherwise be able to interleave between "apply override" and
 // "render", leaking one test's config into another's SSR output. Serializing
-// request handling here closes that window. No-op outside test mode - production
-// config never varies per request, so nothing needs it.
+// request handling here closes that window.
+//
+// No-op outside test mode. Production config does change over time (the 4-hour
+// cache TTL, or an admin-triggered /api/config/refresh - see getConfig()'s comment
+// in $lib/server/configCache) but, unlike the test-mode cookie override, it's never
+// given different data for different concurrent requests: every request reads the
+// same shared cache, and a refresh replaces each config kind atomically, never by
+// mutating it in place. So a request either sees the value from before a refresh or
+// after it, consistently across the whole render - never a torn mix of the two -
+// which is the specific hazard this queue exists to prevent.
 let requestQueue: Promise<unknown> = Promise.resolve();
 
 export const handle: Handle = async ({ event, resolve }) => {
@@ -67,13 +75,19 @@ export const handleError: HandleServerError = async ({ error, event, status, mes
   };
 };
 
-export const init: ServerInit = async () => {
+export const init: ServerInit = () => {
   // Pre-warm the cache when server starts, in dev mode it's on first request.
   // Skipped in test mode: e2e tests supply config per-request via a cookie (see
   // +layout.server.ts's TEST_CONFIG_COOKIE handling), so the real API is never
-  // consulted there - pre-warming here would just block server startup retrying
-  // against a URL that doesn't resolve in the test environment (VITE_ORIGIN is
-  // intentionally blank in .env.test).
+  // consulted there - pre-warming here would just retry against a URL that doesn't
+  // resolve in the test environment (VITE_ORIGIN is intentionally blank in .env.test).
   if (import.meta.env.MODE === 'test') return;
-  await getConfig();
+  // Deliberately not awaited: adapter-node awaits init() before it starts listening,
+  // so awaiting this (plus its STARTUP_COOLDOWN and any retries - see configCache)
+  // would delay every process start from accepting traffic. getConfig() never
+  // rejects (Promise.allSettled, and each kind catches its own fetch failure), and
+  // any request that arrives before this resolves just awaits the same in-flight
+  // fetch via configCache's per-kind fetchingKind dedupe - so nothing is lost by
+  // not waiting here, only startup latency.
+  getConfig();
 };
