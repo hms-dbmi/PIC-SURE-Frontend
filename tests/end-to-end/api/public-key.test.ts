@@ -148,6 +148,38 @@ test.describe('Public access key generation', () => {
     await expect(page.getByRole('button', { name: 'Generate Key' })).toBeVisible();
   });
 
+  test('Rejects a malformed email without sending a request', async ({ page, context }) => {
+    // Given
+    let requestCount = 0;
+    await context.route(apiKeyPath, async (route: Route) => {
+      requestCount++;
+      await route.fulfill({ json: mockKeyResponse });
+    });
+    await page.goto('/api');
+    await openForm(page);
+
+    // When: type="email" catches shapes like "not-an-email"; the pattern attribute
+    // additionally requires a dot in the domain, which type="email" alone allows
+    const emailField = page.getByLabel('Email (optional)');
+    for (const invalid of ['not-an-email', 'name@nodot']) {
+      await emailField.fill(invalid);
+      await page.getByRole('button', { name: 'Generate Key' }).click();
+
+      // Then: native constraint validation blocks submission
+      await expect(emailField).toHaveJSProperty('validity.valid', false);
+      await expect(page.getByTestId('public-key-value')).not.toBeVisible();
+    }
+    expect(requestCount).toBe(0);
+
+    // When: a well-formed email passes
+    await emailField.fill('researcher@example.org');
+    await page.getByRole('button', { name: 'Generate Key' }).click();
+
+    // Then
+    await expect(page.getByTestId('public-key-value')).toBeVisible();
+    expect(requestCount).toBe(1);
+  });
+
   test('Generate stays disabled until the Turnstile widget issues a token', async ({
     page,
     context,

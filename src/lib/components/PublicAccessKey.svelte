@@ -158,6 +158,8 @@
           name="email"
           maxlength="255"
           placeholder="you@example.org"
+          pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
+          title="Enter an email address like you@example.org"
           aria-describedby="public-key-email-hint"
           bind:value={email}
           disabled={submitting}
