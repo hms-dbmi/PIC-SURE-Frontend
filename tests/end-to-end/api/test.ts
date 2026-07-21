@@ -133,6 +133,24 @@ test.describe('API page', () => {
     await expect(copyButton).toContainText('Copied!');
     //expect(await page.evaluate(() => navigator.clipboard.readText())).toEqual(mockUser.token);
   });
+  test('Code block copy button copies code and shows confirmation', async ({ page }) => {
+    // Given
+    await page.goto('/analyze/api');
+    await userIsLoggedIn(page);
+
+    // When
+    const copyButton = page.getByTestId('code-block-copy-btn').first();
+
+    // Then
+    await expect(copyButton).toBeVisible();
+    await expect(copyButton.locator('i')).toHaveClass(/fa-copy/);
+
+    // When
+    await copyButton.click();
+
+    // Then
+    await expect(copyButton.locator('i')).toHaveClass(/fa-square-check/);
+  });
   test('Token is visible when reveal button is clicked', async ({ page }) => {
     // Given
     await page.goto('/analyze/api');
