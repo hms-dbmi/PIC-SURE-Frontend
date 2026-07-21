@@ -41,3 +41,30 @@ if (typeof globalThis.localStorage === 'undefined') {
     writable: true,
   });
 }
+
+// happy-dom does not implement the Web Animations API, which Skeleton's Modal
+// (zag-js) calls when opening/closing. Provide a stub whose animations complete
+// immediately so components that wait on `finished`/`onfinish` can settle.
+if (typeof Element !== 'undefined' && typeof Element.prototype.animate === 'undefined') {
+  class ImmediateAnimation {
+    finished: Promise<ImmediateAnimation> = Promise.resolve(this);
+    #onfinish: (() => void) | null = null;
+    get onfinish() {
+      return this.#onfinish;
+    }
+    set onfinish(callback: (() => void) | null) {
+      this.#onfinish = callback;
+      if (callback) queueMicrotask(callback);
+    }
+    play() {}
+    pause() {}
+    finish() {}
+    cancel() {}
+    reverse() {}
+    addEventListener(type: string, listener: () => void) {
+      if (type === 'finish') queueMicrotask(listener);
+    }
+    removeEventListener() {}
+  }
+  Element.prototype.animate = () => new ImmediateAnimation() as unknown as Animation;
+}
