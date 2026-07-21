@@ -4,12 +4,11 @@ import { redirect } from '@sveltejs/kit';
 import { clearSession, hydrateUserFromToken, isTokenExpired, user } from '$lib/stores/User';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { get } from 'svelte/store';
-import { config } from '$lib/configuration.svelte';
 import { log, createLog } from '$lib/logger';
 
 export const prerender = false;
 
-export const load: LayoutLoad = async ({ url, parent }) => {
+export const load: LayoutLoad = async ({ url }) => {
   if (!browser) return;
 
   const token = localStorage.getItem('token');
@@ -51,23 +50,5 @@ export const load: LayoutLoad = async ({ url, parent }) => {
       }),
     );
     redirect(302, '/');
-  }
-  // Root layout's load applies config from data.configCache - it isn't guaranteed
-  // to have run yet by the time this load starts (sibling/child loads run
-  // concurrently unless ordered via parent()), so wait for it before reading config.
-  await parent();
-  if (
-    !config.features.analyzeApi &&
-    config.features.analyzeAnalysis &&
-    url.pathname.includes('/analyze/api')
-  ) {
-    redirect(302, '/analyze/analysis');
-  }
-  if (
-    !config.features.analyzeAnalysis &&
-    config.features.analyzeApi &&
-    url.pathname.includes('/analyze/analysis')
-  ) {
-    redirect(302, '/analyze/api');
   }
 };

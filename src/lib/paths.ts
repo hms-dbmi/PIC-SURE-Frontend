@@ -1,7 +1,6 @@
 const PREFIX = 'picsure';
 const DICT = `${PREFIX}/proxy/dictionary-api`;
 const QUERY = `${PREFIX}/query`;
-const UPLOADER = `${PREFIX}/proxy/uploader`;
 const VIZ = `${PREFIX}/proxy/visualization`;
 const API = '/api/v1';
 const LOCAL = 'api';
@@ -27,18 +26,12 @@ export const Picsure = {
   Dictionary: DICT,
   Facets: `${DICT}/facets`,
   Search: `${PREFIX}/search`,
-  Resources: `${PREFIX}/resource`,
   QueryV2: QUERY,
   QueryV2Sync: `${QUERY}/sync`,
   /** Open access (discover) queries use the V2 sync path, remove when backend is fixed. */
   QueryOpenSync: `${QUERY}/sync`,
   QueryV3: `${PREFIX}/v3/query`,
   QueryV3Sync: `${PREFIX}/v3/query/sync`,
-  Uploader: {
-    Upload: `${UPLOADER}/upload`,
-    Sites: `${UPLOADER}/sites`,
-    Status: `${UPLOADER}/status`,
-  },
   Visualization: {
     Distributions: `${VIZ}/distributions`,
   },

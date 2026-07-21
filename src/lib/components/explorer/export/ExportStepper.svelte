@@ -10,7 +10,6 @@
   import { filters } from '$lib/stores/Filter';
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import { createDatasetName } from '$lib/services/datasets';
-  import { federatedQueryMap } from '$lib/stores/Dataset.svelte';
   import { withBackoff } from '$lib/utilities/backoff';
   import Stepper from '$lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '$lib/components/steppers/horizontal/Step.svelte';
@@ -22,9 +21,7 @@
   import TreeStep from './TreeStep.svelte';
   import TypeStep from './TypeStep.svelte';
   import SaveDatasetStep from './SaveDatasetStep.svelte';
-  import CommonAreaSaveDatasetStep from './CommonAreaSaveDatasetStep.svelte';
   import TabbedAnalysisStep from './TabbedAnalysisStep.svelte';
-  import RedcapStep from './RedcapStep.svelte';
   import PfbExport from './PfbExport.svelte';
   import AnalysisPlatformLinks from './AnalysisPlatformLinks.svelte';
   import {
@@ -51,20 +48,17 @@
   let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
 
   const showTabbedAnalysisStep = $derived(
-    (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
-      getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
-      !config.features.explorer.enableRedcapExport,
+    getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
+      getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES',
   );
   const showPfbExportStep = $derived(
     getQueryRequest().query.expectedResultType === 'DATAFRAME_PFB' &&
-      config.features.explorer.enablePfbExport &&
-      !config.features.explorer.enableRedcapExport,
+      config.features.explorer.enablePfbExport,
   );
   const showUserToken = $derived(
     (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
       getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
-      config.features.analyzeApi &&
-      !config.features.explorer.enableRedcapExport,
+      config.features.analyzeApi,
   );
 
   onMount(async () => {
@@ -75,7 +69,6 @@
         return query;
       }),
     );
-    $federatedQueryMap = {};
     if (!config.features.explorer.enablePfbExport) {
       setActiveType('DATAFRAME');
     }
@@ -83,24 +76,12 @@
 
   async function onNextHandler(_step: number, stepName: string): Promise<void> {
     if (stepName === 'start') {
-      if (config.features.explorer.enableRedcapExport) {
-        setLockDownload(false);
-      }
-      const siteQueryIds = Object.values($federatedQueryMap)
-        .map((info) => ({ resourceId: info?.resourceId, name: info?.name, queryId: info?.queryId }))
-        .filter((v) => v.queryId);
       if (getDatasetId()) {
         saveDatasetPromise = createDatasetName(
           getDatasetId() ?? '',
           getDatasetNameInput() ?? '',
-          siteQueryIds.length > 0 ? siteQueryIds : undefined,
         ).then((data: DataSet) => {
-          if (config.features.federated) {
-            statusPromise = Promise.resolve();
-            return data;
-          } else {
-            statusPromise = checkExportStatus(getDatasetId());
-          }
+          statusPromise = checkExportStatus(getDatasetId());
           return data;
         });
       } else {
@@ -153,18 +134,8 @@
         resultType: getActiveType(),
       }),
     );
-    if (config.features.explorer.enableRedcapExport) {
-      log(createLog('EXPORT', 'export.open_redcap', { datasetId: getDatasetId() }));
-      window.open(
-        'https://redcap.tch.harvard.edu/redcap_edc/surveys/?s=EWYX8X8XX77TTWFR',
-        '_blank',
-      );
-      resetExportStepperState();
-      goto('/explorer');
-    } else {
-      resetExportStepperState();
-      goto('/explorer');
-    }
+    resetExportStepperState();
+    goto('/explorer');
   }
 
   const MAX_DATA_POINTS_FOR_EXPORT = $derived(config.settings.maxDataPointsForExport || 1000000);
@@ -186,7 +157,7 @@
   class="w-full h-full m-8"
   oncomplete={onComplete}
   onnext={onNextHandler}
-  buttonCompleteLabel={config.features.explorer.enableRedcapExport ? 'Request Access' : 'Done'}
+  buttonCompleteLabel="Done"
 >
   <Step name="review" locked={dataLimitExceeded()}>
     {#snippet header()}Review Cohort Details:{/snippet}
@@ -203,7 +174,7 @@
       <TreeStep />
     </Step>
   {/if}
-  {#if config.features.explorer.enablePfbExport && !config.features.federated}
+  {#if config.features.explorer.enablePfbExport}
     <Step name="select-type" locked={getActiveType() === undefined}>
       {#snippet header()}Review and Save Dataset:{/snippet}
       <TypeStep />
@@ -217,11 +188,7 @@
       !getSaveable()}
   >
     {#snippet header()}Save Dataset ID:{/snippet}
-    {#if config.features.federated}
-      <CommonAreaSaveDatasetStep />
-    {:else}
-      <SaveDatasetStep />
-    {/if}
+    <SaveDatasetStep />
   </Step>
   <Step name="start" locked={getLockDownload()}>
     {#snippet header()}Start Analysis:{/snippet}
@@ -236,8 +203,6 @@
             <TabbedAnalysisStep />
           {:else if showPfbExportStep}
             <PfbExport />
-          {:else if config.features.explorer.enableRedcapExport}
-            <RedcapStep />
           {/if}
           {#if showUserToken}
             <div class="flex justify-center">

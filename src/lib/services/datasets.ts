@@ -1,19 +1,13 @@
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import type { DataSet } from '$lib/models/Dataset';
-import type { FederatedResourceInfo } from '$lib/stores/Dataset.svelte';
 
 interface DatasetRequest {
   queryId: string;
   name: string;
-  metadata?: { saved: number; siteQueryIds: Omit<FederatedResourceInfo, 'status'>[] };
 }
 
-export async function createDatasetName(
-  queryId: string,
-  name: string,
-  siteQueryIds?: Omit<FederatedResourceInfo, 'status'>[],
-): Promise<DataSet> {
+export async function createDatasetName(queryId: string, name: string): Promise<DataSet> {
   if (name === '' && name.trim() === '') {
     throw 'Please input a Dataset ID name';
   }
@@ -26,9 +20,5 @@ export async function createDatasetName(
     queryId,
     name,
   };
-  if (siteQueryIds) {
-    request.metadata = { saved: new Date().valueOf(), siteQueryIds };
-  }
-
   return await api.post(Picsure.NamedDataSet, request);
 }

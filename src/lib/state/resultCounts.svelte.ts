@@ -5,11 +5,7 @@ import * as api from '$lib/api';
 import { log, createLog } from '$lib/logger';
 import { isToastShowing, toaster } from '$lib/toaster';
 import { allFilters, filterTree, genomicFilters } from '$lib/stores/Filter';
-import {
-  loading as resourcesPromise,
-  loadResources,
-  getCountResource,
-} from '$lib/stores/Resources';
+import { getCountResource } from '$lib/stores/Resources';
 import { subscribeOnChange } from '$lib/utilities/Subscribers';
 import { buildDescriptor, stableHash } from '$lib/services/counts/queryDescriptor.svelte';
 import { resultProviders } from '$lib/services/counts/providers';
@@ -149,9 +145,7 @@ export class ResultCounts {
     prebuiltDescriptor?: QueryDescriptor,
   ): Promise<void> {
     const isOpenAccess = getIsOpenAccess();
-    loadResources();
     try {
-      await get(resourcesPromise);
       const descriptor = prebuiltDescriptor ?? this.#buildCurrentDescriptor(isOpenAccess);
       const result = await this.load(descriptor, isOpenAccess);
       if (result.kind === 'error') this.#showErrorToast();

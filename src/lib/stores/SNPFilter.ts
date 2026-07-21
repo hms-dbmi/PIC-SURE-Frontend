@@ -4,11 +4,7 @@ import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import { Genotype, type SNP } from '$lib/models/GenomeFilter';
 import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter.svelte';
-import {
-  loading as resourcesPromise,
-  loadResources,
-  getQueryResources,
-} from '$lib/stores/Resources';
+import { getCountResource } from '$lib/stores/Resources';
 import type { GenomicFilterInterfacev3 } from '$lib/models/query/Query';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
@@ -39,18 +35,8 @@ function snpRequest(snp: SNP, resource: string): Promise<number> {
 }
 
 export async function getSNPCounts(check: SNP): Promise<{ count: number; errors: number }> {
-  loadResources();
-  await get(resourcesPromise);
-  const resources = getQueryResources();
-  const responses: Promise<number>[] = resources.map(({ uuid }) => snpRequest(check, uuid));
-  return Promise.allSettled(responses)
-    .then((results) => ({
-      count: results
-        .filter((result) => result.status === 'fulfilled')
-        .map((result) => result.value || 0)
-        .reduce((sum, value) => sum + value, 0),
-      errors: results.filter((result) => result.status !== 'fulfilled').length,
-    }))
+  return snpRequest(check, getCountResource().uuid)
+    .then((count) => ({ count: count || 0, errors: 0 }))
     .catch(() => ({ count: 0, errors: 1 }));
 }
 

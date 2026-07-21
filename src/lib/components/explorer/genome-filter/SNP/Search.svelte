@@ -21,17 +21,10 @@
     message: string;
   }
 
-  const Warnings: { [key: string]: Warning } = {
-    NoResults: {
-      color: 'error',
-      message:
-        "We couldn't find any results for your search term. Please check to ensure the information you have entered is correct or try a different search.",
-    },
-    SomeResults: {
-      color: 'warning',
-      message:
-        'Some sites did not return patient counts for your search. Click the Add Filter button to apply your filter and click Cohort Details for more information.',
-    },
+  const noResultsWarning: Warning = {
+    color: 'error',
+    message:
+      "We couldn't find any results for your search term. Please check to ensure the information you have entered is correct or try a different search.",
   };
 
   const genomeBuild = $derived(config.branding.genomic?.defaultGenomeBuild || 'GRCh38');
@@ -73,11 +66,8 @@
 
     if (errors === 0 && count > 0) {
       onvalid(snpOptions);
-    } else if (count > 0) {
-      warn = Warnings.SomeResults;
-      onvalid(snpOptions);
     } else {
-      warn = Warnings.NoResults;
+      warn = noResultsWarning;
     }
   }
 </script>

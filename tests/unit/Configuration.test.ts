@@ -176,7 +176,7 @@ describe('getConfigMode', () => {
 
 describe('mapFeatures / mapSettings / mapBranding - regression baseline', () => {
   it('matches defaults when no API rows and no env vars are set', () => {
-    expect(mapFeatures([]).analyzeAnalysis).toBe(false);
+    expect(mapFeatures([]).discover).toBe(false);
     expect(mapSettings([]).maxDataPointsForExport).toBe(1000000);
     expect(mapBranding('', []).login.logoHeight).toBe(7.5);
   });
