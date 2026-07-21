@@ -1,9 +1,5 @@
 import { get, writable, type Writable } from 'svelte/store';
 
-import * as api from '$lib/api';
-import { Picsure } from '$lib/paths';
-import { features } from '$lib/configuration';
-import { toaster } from '$lib/toaster';
 import { useOpenAccess } from '$lib/AccessState';
 
 interface QueryResource {
@@ -19,8 +15,6 @@ export interface ResourceMap {
   hpdsOpen: string;
   hpdsOpenV3: string;
   hpdsAuth: string;
-  queryIdGen: string;
-  queryable: QueryResource[];
 }
 
 const defaultResources: ResourceMap = {
@@ -33,55 +27,13 @@ const defaultResources: ResourceMap = {
   hpdsOpen: (import.meta.env?.VITE_RESOURCE_OPEN_HPDS || '') as string,
   hpdsAuth: (import.meta.env?.VITE_RESOURCE_HPDS || '') as string,
   hpdsOpenV3: (import.meta.env?.VITE_RESOURCE_OPEN_V3_HPDS || '') as string,
-  queryIdGen: (import.meta.env?.VITE_RESOURCE_QUERY_ID_GEN || '') as string,
-  queryable: [],
 };
 
-interface ResourceResponse {
-  uuid: string;
-  name: string;
-  description: string;
-  targetURL: string;
-  resourceRSPath: string;
-  hidden: boolean;
-  metadata: string;
-}
-
-export const loading: Writable<Promise<void>> = writable(Promise.resolve());
 export const resources: Writable<ResourceMap> = writable(defaultResources);
 
-export function getQueryResources(isOpenAccess: boolean = false): QueryResource[] {
-  return features.federated ? get(resources).queryable : [getCountResource(isOpenAccess)];
-}
-
-// Counts always query the single HPDS resource, even when features.federated
-// is on — federated count fan-out was never implemented. Federated resources
-// are only used by the export path, via getQueryResources.
 export function getCountResource(isOpenAccess: boolean = false): QueryResource {
-  const _resources = get(resources);
+  const resourceMap = get(resources);
   return useOpenAccess(isOpenAccess)
-    ? { name: 'hpdsOpen', uuid: _resources.hpdsOpenV3 }
-    : { name: 'hpds', uuid: _resources.hpdsAuth };
-}
-
-async function getResources() {
-  if (get(resources).queryable.length > 0) return;
-
-  const resourceMap: ResourceMap = defaultResources;
-  if (features.federated) {
-    await api
-      .get(Picsure.Resources)
-      .then((siteResources: ResourceResponse[]) => {
-        resourceMap.queryable = siteResources
-          .filter(({ hidden, resourceRSPath }) => !hidden && resourceRSPath.includes('passthru'))
-          .map(({ name, uuid }) => ({ name, uuid }));
-      })
-      .catch(() => toaster.error({ description: 'Failed to load remote resource list.' }));
-  }
-  resources.set(resourceMap);
-  console.debug('Resources', resourceMap);
-}
-
-export async function loadResources() {
-  loading.set(getResources());
+    ? { name: 'hpdsOpen', uuid: resourceMap.hpdsOpenV3 }
+    : { name: 'hpds', uuid: resourceMap.hpdsAuth };
 }

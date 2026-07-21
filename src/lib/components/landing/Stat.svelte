@@ -6,7 +6,6 @@
   import { StatPromise } from '$lib/utilities/StatBuilder';
   import { countResult } from '$lib/services/counts/countFormat';
   import { sanitizeHTML } from '$lib/utilities/HTML';
-  import { features } from '$lib/configuration';
   import Loading from '$lib/components/Loading.svelte';
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   interface Props {
@@ -55,37 +54,16 @@
           {#await Promise.allSettled(StatPromise.list(stat).map(({ promise }) => promise))}
             <Loading ring size="mini" />
           {:then counts}
-            {@const statPromises = StatPromise.list(stat)}
-            {@const countResults = counts.map((result, index) => ({
-              ...result,
-              resourceName: statPromises[index].resourceName,
-            }))}
             <div class="flex flex-row h-full">
               <strong class="p-1 mb-3">
                 {countResult(
-                  countResults
+                  counts
                     .filter(StatPromise.fullfiled)
                     .map((result) => (result.status === 'fulfilled' ? result.value : 0)),
                 )}
               </strong>
-              {#if features.federated}
-                {#if countResults.some(StatPromise.rejected)}
-                  {@const failedSites = countResults
-                    .filter(StatPromise.rejected)
-                    .map((result) => result.resourceName)
-                    .join(', ')}
-                  <HelpInfoPopup
-                    type="exclamation"
-                    color="warning"
-                    id="result-count-error"
-                    size="text-xs"
-                    popoverSize="text-sm"
-                    text="The following sites are not included as they did not return patient counts: {failedSites}."
-                  />
-                {/if}
-              {/if}
             </div>
-            {#if !features.federated && counts.some(StatPromise.rejected)}
+            {#if counts.some(StatPromise.rejected)}
               <HelpInfoPopup
                 type="exclamation"
                 color="warning"

@@ -10,7 +10,6 @@ const mockState = vi.hoisted(() => {
   return {
     toasterErrorSpy: vi.fn(),
     isToastShowingSpy: vi.fn().mockReturnValue(false),
-    loadResourcesSpy: vi.fn(),
     getCountResourceSpy: vi.fn().mockReturnValue({ name: 'hpds', uuid: 'r1' }),
     logSpy: vi.fn(),
     buildDescriptorSpy: vi.fn((inputs: { isOpenAccess: boolean }) => ({
@@ -21,7 +20,6 @@ const mockState = vi.hoisted(() => {
     allFiltersStore: writable<unknown[]>([]),
     filterTreeStore: writable<unknown>({ root: { children: [] } }),
     genomicFiltersStore: writable<unknown[]>([]),
-    resourcesLoadingStore: writable(Promise.resolve()),
   };
 });
 
@@ -37,8 +35,6 @@ vi.mock('$lib/stores/Filter', () => ({
 }));
 
 vi.mock('$lib/stores/Resources', () => ({
-  loading: mockState.resourcesLoadingStore,
-  loadResources: mockState.loadResourcesSpy,
   getCountResource: mockState.getCountResourceSpy,
 }));
 
@@ -113,7 +109,6 @@ describe('ResultCounts', () => {
     state = new ResultCounts(mockService);
     mockState.toasterErrorSpy.mockClear();
     mockState.isToastShowingSpy.mockClear().mockReturnValue(false);
-    mockState.loadResourcesSpy.mockClear();
     mockState.getCountResourceSpy.mockClear().mockReturnValue({ name: 'hpds', uuid: 'r1' });
     mockState.logSpy.mockClear();
     mockState.buildDescriptorSpy.mockClear();

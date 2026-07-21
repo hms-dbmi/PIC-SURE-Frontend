@@ -11,7 +11,7 @@
   import * as api from '$lib/api';
   import { Picsure } from '$lib/paths';
   import { toaster } from '$lib/toaster';
-  import { resources, loadResources } from '$lib/stores/Resources';
+  import { resources } from '$lib/stores/Resources';
 
   import Summary from './Summary.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -77,7 +77,6 @@
   });
 
   async function getGenomicConcepts() {
-    await loadResources();
     const concepts = await searchDictionary(
       '',
       [

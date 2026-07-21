@@ -84,7 +84,6 @@ test.describe('Any logged in user', () => {
 const testRoles = {
   generalUser: userTypes.generalUser,
   adminUser: userTypes.adminUser,
-  dataUser: userTypes.dataUser,
   superUser: userTypes.superUser,
 };
 

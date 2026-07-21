@@ -14,8 +14,6 @@ import type {
   CodeBlockConfig,
   PrivacyConfig,
   AnalysisConfig,
-  CollaborateConfig,
-  DatasetRequestPageConfig,
   TermsOfServiceConfig,
 } from './types';
 import type { StatField } from '$lib/models/Stat';
@@ -39,12 +37,10 @@ export interface Branding {
   explorePage: ExplorePageConfig;
   landing: LandingConfig;
   results: ResultsConfig;
-  datasetRequestPage: DatasetRequestPageConfig;
   login: LoginConfig;
   help: HelpConfig;
   privacyPolicy: PrivacyConfig;
   analysisConfig: AnalysisConfig;
-  collaborateConfig: CollaborateConfig;
   genomic?: {
     defaultGenomeBuild: string;
   };
@@ -69,13 +65,11 @@ export const branding: Branding = {
     },
   } as ExplorePageConfig,
   landing: {} as LandingConfig,
-  datasetRequestPage: {} as DatasetRequestPageConfig,
   results: {} as ResultsConfig,
   login: {} as LoginConfig,
   help: {} as HelpConfig,
   privacyPolicy: {} as PrivacyConfig,
   analysisConfig: {} as AnalysisConfig,
-  collaborateConfig: {} as CollaborateConfig,
   termsOfService: {} as TermsOfServiceConfig,
 };
 
@@ -98,14 +92,12 @@ export const initializeBranding = () => {
   branding.statFields = configJson.statFields;
   branding.landing = configJson.landing;
   branding.results = configJson.results;
-  branding.datasetRequestPage = configJson.datasetRequestPage;
   branding.login = configJson.login;
   branding.help = configJson.help;
   branding.footer = configJson.footer;
   branding.sitemap = configJson.sitemap as SiteMapConfig[];
   branding.privacyPolicy = configJson.privacyPolicy;
   branding.analysisConfig = configJson.analysisPage;
-  branding.collaborateConfig = configJson.collaboratePage;
   branding.genomic = configJson.genomic;
   branding.termsOfService = configJson.termsOfService;
 };
@@ -127,33 +119,15 @@ export const routes: Route[] = [
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
   },
   {
-    path: '/collaborate',
-    text: 'Collaborate',
-    feature: 'collaborate',
-    privilege: [PicsurePrivileges.QUERY],
-  },
-  {
     path: '/analyze/api',
     text: 'Prepare for Analysis',
     privilege: [PicsurePrivileges.API_ACCESS, BDCPrivileges.AUTHORIZED_ACCESS],
     feature: 'analyzeApi',
   },
   {
-    path: '/analyze/analysis',
-    text: 'Analyze',
-    privilege: [PicsurePrivileges.API_ACCESS],
-    feature: 'analyzeAnalysis',
-  },
-  {
     path: '/dataset',
     text: 'Manage Datasets',
     privilege: [PicsurePrivileges.NAMED_DATASET, BDCPrivileges.NAMED_DATASET],
-  },
-  {
-    path: '/dataset/request',
-    text: 'Data Request',
-    privilege: [PicsurePrivileges.DATA_ADMIN],
-    feature: 'dataRequests',
   },
   {
     path: '/admin/configuration',
@@ -171,7 +145,6 @@ export const routes: Route[] = [
 ];
 
 export const features: Indexable = {
-  federated: import.meta.env?.VITE_FEDERATED === 'true',
   explorer: {
     open: import.meta.env?.VITE_OPEN_EXPLORER === 'true' && import.meta.env?.VITE_OPEN === 'true',
     allowExport: import.meta.env?.VITE_ALLOW_EXPORT === 'true',
@@ -183,7 +156,6 @@ export const features: Indexable = {
     authTour: import.meta.env?.VITE_AUTH_TOUR_NAME ?? 'NHANES-Auth',
     enableHierarchy: import.meta.env?.VITE_ENABLE_HIERARCHY === 'true',
     enablePfbExport: import.meta.env?.VITE_DOWNLOAD_AS_PFB !== 'false', // default true
-    enableRedcapExport: import.meta.env?.VITE_ENABLE_REDCAP_EXPORT === 'true',
     enableSampleIdCheckbox: import.meta.env?.VITE_ENABLE_SAMPLE_ID_CHECKBOX === 'true',
     showTreeStep: import.meta.env?.VITE_SHOW_TREE_STEP === 'true',
     enableExportTimeseries: import.meta.env?.VITE_EXPORT_TIMESERIES !== 'false', // default true
@@ -197,15 +169,12 @@ export const features: Indexable = {
     open: import.meta.env?.VITE_OPEN === 'true',
   },
   analyzeApi: import.meta.env?.VITE_ANALYZE_API !== 'false', // default true,
-  analyzeAnalysis: import.meta.env?.VITE_ANALYZE_ANALYSIS === 'true', // default false,
-  dataRequests: import.meta.env?.VITE_DATA_REQUESTS === 'true',
   manualRole: import.meta.env?.VITE_MANUAL_ROLE === 'true',
   enableSNPQuery: import.meta.env?.VITE_ENABLE_SNP_QUERY === 'true',
   enableGENEQuery: import.meta.env?.VITE_ENABLE_GENE_QUERY === 'true',
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
   useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
   discover: import.meta.env?.VITE_DISCOVER === 'true',
-  collaborate: import.meta.env?.VITE_COLLABORATE === 'true',
   discoverFeautures: {
     enableTour: import.meta.env?.EXPLORER_TOUR !== 'false', // default true
     openTour: import.meta.env?.VITE_OPEN_TOUR_NAME ?? 'BDC-Open',

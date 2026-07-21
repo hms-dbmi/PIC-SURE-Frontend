@@ -1,11 +1,10 @@
-import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
+import { derived, writable, type Readable, type Writable } from 'svelte/store';
 
 import { isToastShowing, toaster } from '$lib/toaster';
 import { branding } from '$lib/configuration';
 import { getValidStatList, populateStatRequests, StatPromise } from '$lib/utilities/StatBuilder';
 
 import type { StatResult } from '$lib/models/Stat';
-import { loading as resourcesPromise, loadResources } from '$lib/stores/Resources';
 
 export const hasError: Writable<boolean> = writable(false);
 export const loaded: Writable<boolean> = writable(false);
@@ -19,7 +18,6 @@ export const authStats: Readable<StatResult[]> = derived(statData, ($s) =>
 let lastStatRequest: string = '';
 
 export async function loadLandingStats() {
-  loadResources();
   try {
     const validStats = getValidStatList(branding?.landing?.stats || []);
 
@@ -31,7 +29,6 @@ export async function loadLandingStats() {
     }
     lastStatRequest = thisStatRequest;
 
-    await get(resourcesPromise);
     loaded.set(false);
     hasError.set(false);
     const stats: StatResult[] = populateStatRequests(validStats);

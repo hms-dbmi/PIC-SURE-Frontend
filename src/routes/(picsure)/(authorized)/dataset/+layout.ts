@@ -9,16 +9,11 @@ export const prerender = false;
 
 export const load: LayoutLoad = ({ url }) => {
   if (browser) {
+    if (url.pathname === '/dataset/request') return;
+
     const userPrivileges = get(user)?.privileges || [];
     if (
-      url.pathname.includes('/dataset/request') &&
-      !userPrivileges.includes(PicsurePrivileges.DATA_ADMIN)
-    ) {
-      redirect(302, '/');
-    }
-    if (
       url.pathname.includes('/dataset') &&
-      !url.pathname.includes('/request') &&
       !(
         userPrivileges.includes(PicsurePrivileges.NAMED_DATASET) ||
         userPrivileges.includes(BDCPrivileges.NAMED_DATASET)

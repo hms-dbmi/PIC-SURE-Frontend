@@ -4,7 +4,6 @@ import { redirect } from '@sveltejs/kit';
 import { clearSession, hydrateUserFromToken, isTokenExpired, user } from '$lib/stores/User';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { get } from 'svelte/store';
-import { features } from '$lib/configuration';
 import { log, createLog } from '$lib/logger';
 
 export const prerender = false;
@@ -50,16 +49,6 @@ export const load: LayoutLoad = async ({ url }) => {
         }),
       );
       redirect(302, '/');
-    }
-    if (!features.analyzeApi && features.analyzeAnalysis && url.pathname.includes('/analyze/api')) {
-      redirect(302, '/analyze/analysis');
-    }
-    if (
-      !features.analyzeAnalysis &&
-      features.analyzeApi &&
-      url.pathname.includes('/analyze/analysis')
-    ) {
-      redirect(302, '/analyze/api');
     }
   }
 };

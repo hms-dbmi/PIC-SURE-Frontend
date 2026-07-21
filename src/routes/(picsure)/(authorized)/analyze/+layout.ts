@@ -17,23 +17,8 @@ export const load: LayoutLoad = ({ url }) => {
     ) {
       redirect(302, '/');
     }
-    if (
-      features.analyzeApi &&
-      url.pathname === '/analyze' &&
-      !url.pathname.includes('/api') &&
-      !url.pathname.includes('/analysis') &&
-      !url.pathname.includes('/example')
-    ) {
+    if (features.analyzeApi && url.pathname === '/analyze') {
       redirect(302, `/analyze/api`);
-    }
-    if (
-      features.analyzeAnalysis &&
-      url.pathname === '/analyze' &&
-      !url.pathname.includes('/api') &&
-      !url.pathname.includes('/analysis') &&
-      !url.pathname.includes('/example')
-    ) {
-      redirect(302, `/analyze/analysis`);
     }
   }
 };
