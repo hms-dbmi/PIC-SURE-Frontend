@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess, mockApiFail } from '../../custom-context';
+import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../../custom-context';
 import {
   sites as mockSites,
   status as mockStatus,
@@ -19,6 +19,7 @@ test.use({ storageState: 'tests/end-to-end/.auth/dataUser.json' });
 
 test.describe('data requests', () => {
   test.beforeEach(async ({ context }) => {
+    await mockApiConfig(context);
     await mockApiSuccess(context, '*/**/picsure/proxy/uploader/sites', mockSites);
   });
   test.describe('step 1', () => {

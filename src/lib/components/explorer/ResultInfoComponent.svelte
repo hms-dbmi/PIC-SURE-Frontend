@@ -3,7 +3,7 @@
   import { getConceptDetails } from '$lib/stores/Dictionary';
   import Loading from '$lib/components/Loading.svelte';
   import ShowMoreButton from '$lib/components/buttons/ShowMoreButton.svelte';
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   type InfoRow = {
     label: string;
@@ -112,7 +112,7 @@
       {@const variableRows = variableInfoRows(searchResultDetail)}
       <section data-testid="variable-info" class="flex flex-col w-full p-4">
         <h3 class="text-primary-500">
-          {branding.explorePage.resultInfo?.variableHeader || 'Variable Information'}
+          {config.branding.explorePage.resultInfo.variableHeader || 'Variable Information'}
         </h3>
         {@render infoRows(getVisibleRows(variableRows, showAllVariableInfo))}
         {#if variableRows.length > MAX_INFO_ROWS}
@@ -127,7 +127,7 @@
         {@const datasetRows = datasetInfoRows(searchResultDetail.table)}
         <section data-testid="dataset-info" class="flex flex-col w-full p-4">
           <h3 class="text-primary-500">
-            {branding.explorePage.resultInfo?.datasetHeader || 'Dataset Information'}
+            {config.branding.explorePage.resultInfo.datasetHeader || 'Dataset Information'}
           </h3>
           {@render infoRows(getVisibleRows(datasetRows, showAllDatasetInfo))}
           {#if datasetRows.length > MAX_INFO_ROWS}
@@ -143,7 +143,7 @@
         {@const studyRows = studyInfoRows(searchResultDetail)}
         <section data-testid="study-info" class="flex flex-col w-full p-4">
           <h3 class="text-primary-500">
-            {branding.explorePage.resultInfo?.studyHeader || 'Study Information'}
+            {config.branding.explorePage.resultInfo.studyHeader || 'Study Information'}
           </h3>
           {@render infoRows(getVisibleRows(studyRows, showAllStudyInfo))}
           {#if studyRows.length > MAX_INFO_ROWS}

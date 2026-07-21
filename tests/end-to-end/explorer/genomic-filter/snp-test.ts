@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess } from '../../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import {
   geneValues,
   searchResults,
@@ -22,6 +22,12 @@ const snpError =
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.beforeEach(async ({ page }) => {
+  await mockApiConfig(page, {
+    features: [
+      { name: 'ENABLE_GENE_QUERY', value: 'true' },
+      { name: 'ENABLE_SNP_QUERY', value: 'true' },
+    ],
+  });
   await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, searchResultPath, searchResults);

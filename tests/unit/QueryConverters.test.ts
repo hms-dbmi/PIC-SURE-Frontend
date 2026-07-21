@@ -9,7 +9,7 @@ import type {
   GenomicFilterInterface,
 } from '$lib/models/Filter.svelte';
 import { getConceptDetails, getConceptTree } from '$lib/stores/Dictionary';
-import { features } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 
 import {
   queryV2ToV3,
@@ -35,10 +35,6 @@ vi.mock('$lib/stores/Filter', () => ({
     operator,
     parent: undefined,
   }),
-}));
-
-vi.mock('$lib/configuration', () => ({
-  features: { explorer: { exportSystemFields: [] as string[] } },
 }));
 
 const mockGetConceptDetails = vi.mocked(getConceptDetails);
@@ -182,7 +178,7 @@ describe('queryV2ToV3', () => {
 
     it('strips categoryFilters entries matching exportSystemFields', () => {
       // Given
-      features.explorer.exportSystemFields = ['\\\\_consents\\\\'];
+      config.settings.exportSystemFields = ['\\\\_consents\\\\'];
       const query = makeV2Query({
         categoryFilters: {
           '\\\\dataset\\\\sex\\\\': ['Male', 'Female'],
@@ -202,7 +198,7 @@ describe('queryV2ToV3', () => {
           values: ['Male', 'Female'],
         });
       } finally {
-        features.explorer.exportSystemFields = [];
+        config.settings.exportSystemFields = [];
       }
     });
 
@@ -1013,7 +1009,7 @@ describe('loadQuerySummaryData', () => {
 
   describe('exportSystemFields filtering', () => {
     afterEach(() => {
-      features.explorer.exportSystemFields = [];
+      config.settings.exportSystemFields = [];
     });
 
     it('does not filter select when exportSystemFields is empty', async () => {
@@ -1032,7 +1028,7 @@ describe('loadQuerySummaryData', () => {
 
     it('filters configured system fields out of V3 select/exports', async () => {
       // Given
-      features.explorer.exportSystemFields = ['\\\\_consents\\\\'];
+      config.settings.exportSystemFields = ['\\\\_consents\\\\'];
       const query = makeV3Query({
         select: ['\\\\dataset\\\\age\\\\', '\\\\_consents\\\\'],
       });
@@ -1047,7 +1043,7 @@ describe('loadQuerySummaryData', () => {
 
     it('filters multiple configured system fields, leaving non-matching fields intact', async () => {
       // Given
-      features.explorer.exportSystemFields = ['\\\\_consents\\\\', '\\\\_topmed_study\\\\'];
+      config.settings.exportSystemFields = ['\\\\_consents\\\\', '\\\\_topmed_study\\\\'];
       const query = makeV3Query({
         select: [
           '\\\\dataset\\\\age\\\\',
@@ -1067,7 +1063,7 @@ describe('loadQuerySummaryData', () => {
 
     it('filters configured system fields out of V2 queries after conversion to V3', async () => {
       // Given
-      features.explorer.exportSystemFields = ['\\\\_consents\\\\'];
+      config.settings.exportSystemFields = ['\\\\_consents\\\\'];
       const query = makeV2Query({
         fields: ['\\\\dataset\\\\age\\\\'],
         crossCountFields: ['\\\\_consents\\\\'],
@@ -1083,7 +1079,7 @@ describe('loadQuerySummaryData', () => {
 
     it('leaves select unchanged when none of the selected fields match exportSystemFields', async () => {
       // Given
-      features.explorer.exportSystemFields = ['\\\\_consents\\\\'];
+      config.settings.exportSystemFields = ['\\\\_consents\\\\'];
       const query = makeV3Query({
         select: ['\\\\dataset\\\\age\\\\', '\\\\dataset\\\\sex\\\\'],
       });

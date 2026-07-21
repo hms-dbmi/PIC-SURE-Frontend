@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
+  import { onMount } from 'svelte';
 
   interface Props {
     height?: number;
@@ -10,8 +11,8 @@
 
   const { height, width, unit = 'rem', class: className = '' }: Props = $props();
 
-  const src = branding.logo.src;
-  const alt = branding.logo.alt;
+  const src = $derived(config.branding.logo.src);
+  const alt = $derived(config.branding.logo.alt);
 
   // If width or height is set, scale the image or svg to the larger size
   const imgSize = $derived(
@@ -55,7 +56,7 @@
     viewBox="0 0 1010 180"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <title>PIC‑SURE</title>
+    <title>{alt}</title>
     <g id="text" transform="translate(-46,-10)">
       <path
         id="text-P"

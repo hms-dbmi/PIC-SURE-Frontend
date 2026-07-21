@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { sanitizeHTML } from '$lib/utilities/HTML';
   import Content from '$lib/components/Content.svelte';
   import CollaborateSteps from '$lib/components/steppers/CollaborateSteps.svelte';
@@ -11,13 +11,13 @@
   let examples: string = $state('');
 
   onMount(() => {
-    introduction = sanitizeHTML(branding.analysisConfig.analysis.introduction);
-    access = sanitizeHTML(branding.analysisConfig.analysis.access);
-    examples = sanitizeHTML(branding.analysisConfig.analysis.examples);
+    introduction = sanitizeHTML(config.branding.analysisPage.analysis.introduction);
+    access = sanitizeHTML(config.branding.analysisPage.analysis.access);
+    examples = sanitizeHTML(config.branding.analysisPage.analysis.examples);
   });
 </script>
 
-<Content title={`Analyze with ${branding.analysisConfig.analysis.platform}`}>
+<Content title={`Analyze with ${config.branding.analysisPage.analysis.platform}`}>
   <section class="flex flex-col items-center w-full mt-8">
     <CollaborateSteps currentStep={3} />
   </section>

@@ -7,6 +7,10 @@ export const userIsLoggedIn = async (page: Page) => {
   await expect(page.locator('#user-session-avatar').getByTestId('user-info-btn')).toBeVisible();
 };
 
+export const userIsLoggedOut = async (page: Page) => {
+  await expect(page.locator('#user-session-avatar').locator('#user-login-btn')).toBeVisible();
+};
+
 export const optionsHaveLoaded = async (page: Page | Locator, container = 'options-container') => {
   await page
     .getByTestId('optional-selection-list')

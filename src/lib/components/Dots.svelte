@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { config } from '$lib/configuration.svelte';
   let { class: className = '' }: { class: string } = $props();
   let primaryCircle = $state('--color-primary-500');
   let secondaryCircle = $state('--color-secondary-500');
@@ -7,37 +8,42 @@
   let errorCircle = $state('--color-error-500');
   let useFiveColors = $state(false);
 
-  const dotsColorsClass: string[] = (() => {
+  const dotsColorsClass: string[] = $derived.by(() => {
     try {
-      return (
-        (JSON.parse(
-          import.meta.env.VITE_DOTS_COLORS_CLASS?.toString()?.toLowerCase(),
-        ) as string[]) || []
-      );
+      return config.settings.dotsColorsClass || [];
     } catch (error) {
       return [];
     }
-  })();
+  });
 
-  switch (dotsColorsClass.length) {
-    case 0:
-      break;
-    case 3:
-      primaryCircle = dotsColorsClass[0];
-      secondaryCircle = dotsColorsClass[1];
-      tertiaryCircle = dotsColorsClass[2];
-      break;
-    case 5:
-      primaryCircle = dotsColorsClass[0];
-      secondaryCircle = dotsColorsClass[1];
-      tertiaryCircle = dotsColorsClass[2];
-      successCircle = dotsColorsClass[3];
-      errorCircle = dotsColorsClass[4];
-      useFiveColors = true;
-      break;
-    default:
-      break;
-  }
+  $effect(() => {
+    primaryCircle = '--color-primary-500';
+    secondaryCircle = '--color-secondary-500';
+    tertiaryCircle = '--color-tertiary-500';
+    successCircle = '--color-success-500';
+    errorCircle = '--color-error-500';
+    useFiveColors = false;
+
+    switch (dotsColorsClass.length) {
+      case 0:
+        break;
+      case 3:
+        primaryCircle = dotsColorsClass[0];
+        secondaryCircle = dotsColorsClass[1];
+        tertiaryCircle = dotsColorsClass[2];
+        break;
+      case 5:
+        primaryCircle = dotsColorsClass[0];
+        secondaryCircle = dotsColorsClass[1];
+        tertiaryCircle = dotsColorsClass[2];
+        successCircle = dotsColorsClass[3];
+        errorCircle = dotsColorsClass[4];
+        useFiveColors = true;
+        break;
+      default:
+        break;
+    }
+  });
 </script>
 
 <svg

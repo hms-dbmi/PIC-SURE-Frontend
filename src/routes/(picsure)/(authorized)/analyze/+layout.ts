@@ -1,6 +1,6 @@
 import type { LayoutLoad } from './../$types';
 import { redirect } from '@sveltejs/kit';
-import { features } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 import { browser } from '$app/environment';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { user } from '$lib/stores/User';
@@ -8,7 +8,7 @@ import { get } from 'svelte/store';
 
 export const prerender = false;
 
-export const load: LayoutLoad = ({ url }) => {
+export const load: LayoutLoad = async ({ url, parent }) => {
   if (browser) {
     const userPrivileges = get(user)?.privileges || [];
     if (
@@ -17,8 +17,12 @@ export const load: LayoutLoad = ({ url }) => {
     ) {
       redirect(302, '/');
     }
+    // Root layout's load applies config from data.configCache - it isn't guaranteed
+    // to have run yet by the time this load starts (sibling/child loads run
+    // concurrently unless ordered via parent()), so wait for it before reading config.
+    await parent();
     if (
-      features.analyzeApi &&
+      config.features.analyzeApi &&
       url.pathname === '/analyze' &&
       !url.pathname.includes('/api') &&
       !url.pathname.includes('/analysis') &&
@@ -27,7 +31,7 @@ export const load: LayoutLoad = ({ url }) => {
       redirect(302, `/analyze/api`);
     }
     if (
-      features.analyzeAnalysis &&
+      config.features.analyzeAnalysis &&
       url.pathname === '/analyze' &&
       !url.pathname.includes('/api') &&
       !url.pathname.includes('/analysis') &&

@@ -10,7 +10,7 @@
   } from '$lib/stores/Resources';
   import { getVariantCount, getVariantData } from '$lib/utilities/Variants';
   import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
-  import { settings } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
@@ -28,7 +28,7 @@
       const queryRequest = getQueryRequestV3(true, resource.uuid);
       return {
         name: resource.name,
-        exportType: settings.variantExplorer.type || ExportType.Aggregate,
+        exportType: config.settings.variantExplorer.type || ExportType.Aggregate,
         count: getVariantCount(queryRequest),
         queryRequest,
       };

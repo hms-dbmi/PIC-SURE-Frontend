@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { mockApiSuccess } from '../custom-context';
+import { mockApiSuccess, mockApiConfig } from '../custom-context';
 import {
   searchResults as mockData,
   searchResultPath,
@@ -78,6 +78,7 @@ export class AdvancedFilteringPage {
    * Mock all required API endpoints for the explorer page.
    */
   async mockApis() {
+    await mockApiConfig(this.page);
     await mockApiSuccess(this.page, searchResultPath, mockData);
     await mockApiSuccess(this.page, facetResultPath, facetsResponse);
     await mockApiSuccess(this.page, SYNC_URL, '9999');

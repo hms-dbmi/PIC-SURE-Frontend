@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { mockApiSuccess, test } from '../../custom-context';
+import { mockApiSuccess, test, mockApiConfig } from '../../custom-context';
 import {
   geneValues,
   searchResults,
@@ -8,11 +8,9 @@ import {
   facetResultPath,
 } from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
-import * as config from '../../../../src/lib/assets/configuration.json' with { type: 'json' };
-import type { Branding } from '$lib/configuration';
-//TypeScript is confused by the JSON import so I am fxing it here
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
+import type { Branding } from '$lib/models/Configuration';
+import brandingJson from '../../../../src/lib/assets/configuration.json' with { type: 'json' };
+const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const HPDS = process.env.VITE_RESOURCE_HPDS;
 const QUERY = '*/**/picsure/v3/query/sync';
@@ -20,6 +18,12 @@ const QUERY = '*/**/picsure/v3/query/sync';
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.beforeEach(async ({ page }) => {
+  await mockApiConfig(page, {
+    features: [
+      { name: 'ENABLE_GENE_QUERY', value: 'true' },
+      { name: 'ENABLE_SNP_QUERY', value: 'true' },
+    ],
+  });
   await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, searchResultPath, searchResults);

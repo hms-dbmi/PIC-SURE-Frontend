@@ -1,5 +1,5 @@
 import { expect, type Route } from '@playwright/test';
-import { test, mockApiSuccess } from '../../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import {
   facetResultPath,
   facetsResponse,
@@ -13,6 +13,7 @@ import { userIsLoggedIn } from '../../utils';
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.beforeEach(async ({ page }) => {
+  await mockApiConfig(page);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/concepts*', detailResponseCat);
   await mockApiSuccess(page, '*/**/picsure/v3/query/sync', '9999');

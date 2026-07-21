@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { uuidInput } from '$lib/utilities/Forms';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
   import { log, createLog } from '$lib/logger';
   import type { QueryInterfaceV2 } from '$lib/models/query/Query';
   import { type Status, type Metadata, type DataType, UploadStatus } from '$lib/models/DataRequest';
@@ -246,7 +247,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Data Requests</title>
+  <title>{config.branding.applicationName} | Data Requests</title>
 </svelte:head>
 
 <Content title="Data Requests">
@@ -254,7 +255,7 @@
     <div class="flex flex-col items-center gap-3 mt-2 p-4 rounded bg-surface-100">
       <p>
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        {@html branding.datasetRequestPage.searchIntro ||
+        {@html sanitizeHTML(config.branding.datasetRequestPage.searchIntro) ||
           'Search for a dataset request ID to continue.'}
       </p>
       <div class="flex flex-row items-start gap-3">

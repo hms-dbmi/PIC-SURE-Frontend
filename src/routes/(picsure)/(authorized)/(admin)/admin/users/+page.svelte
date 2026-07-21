@@ -4,7 +4,7 @@
   import { goto } from '$app/navigation';
 
   import type { Indexable } from '$lib/types';
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/StaticTable.svelte';
@@ -81,7 +81,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Manage Users</title>
+  <title>{config.branding.applicationName} | Manage Users</title>
 </svelte:head>
 <Content title="Manage Users">
   {#await load()}<Loading />{:then}

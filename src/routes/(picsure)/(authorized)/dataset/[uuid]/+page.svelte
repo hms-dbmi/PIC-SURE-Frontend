@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   import { QueryVersion, type DataSet } from '$lib/models/Dataset';
   import { getDataset } from '$lib/stores/Dataset.svelte';
@@ -34,7 +34,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Dataset</title>
+  <title>{config.branding.applicationName} | Dataset</title>
 </svelte:head>
 
 <Content title="View Dataset" backUrl="/dataset" backTitle="Back to Datasets">

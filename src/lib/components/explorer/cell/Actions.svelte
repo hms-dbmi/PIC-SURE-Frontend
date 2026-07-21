@@ -8,7 +8,7 @@
     mapSearchResultAsExport,
   } from '$lib/stores/Export';
   import { panelOpen } from '$lib/stores/SidePanel';
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { isOpenAccess } from '$lib/AccessState';
   import { log, createLog, getPageContext } from '$lib/logger';
 
@@ -83,7 +83,7 @@
     >{shouldDisableFilter ? 'Filtering is not available for this variable' : 'View Filter'}</span
   >
 </button>
-{#if features.explorer.enableHierarchy}
+{#if config.features.explorer.enableHierarchy}
   <button
     type="button"
     title="Data Hierarchy"
@@ -94,7 +94,7 @@
     <span class="sr-only">View Data Hierarchy</span>
   </button>
 {/if}
-{#if features.explorer.exportsEnableExport && !isOpenAccess()}
+{#if config.features.explorer.exportsEnableExport && !isOpenAccess()}
   <button
     type="button"
     title={isExported ? 'Remove from Analysis' : 'Add for Analysis'}

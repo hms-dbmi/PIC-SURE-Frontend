@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
   import Content from '$lib/components/Content.svelte';
@@ -10,7 +10,7 @@
   let setupInstructions = $state('');
 
   onMount(() => {
-    setupInstructions = sanitizeHTML(branding.analysisConfig.api.example.setup);
+    setupInstructions = sanitizeHTML(config.branding.analysisPage.api.example.setup);
   });
 </script>
 

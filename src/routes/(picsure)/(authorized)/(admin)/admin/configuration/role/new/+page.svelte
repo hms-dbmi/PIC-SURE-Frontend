@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import RoleForm from '$lib/components/admin/configuration/RoleForm.svelte';
@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | New Role</title>
+  <title>{config.branding.applicationName} | New Role</title>
 </svelte:head>
 
 <Content title="New Role" backUrl="/admin/configuration" backTitle="Back to Configuration">

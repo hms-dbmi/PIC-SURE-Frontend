@@ -6,7 +6,7 @@
   import { StatPromise } from '$lib/utilities/StatBuilder';
   import { countResult } from '$lib/utilities/PatientCount';
   import { sanitizeHTML } from '$lib/utilities/HTML';
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   interface Props {
@@ -68,7 +68,7 @@
                     .map((result) => (result.status === 'fulfilled' ? result.value : 0)),
                 )}
               </strong>
-              {#if features.federated}
+              {#if config.features.federated}
                 {#if countResults.some(StatPromise.rejected)}
                   {@const failedSites = countResults
                     .filter(StatPromise.rejected)
@@ -85,7 +85,7 @@
                 {/if}
               {/if}
             </div>
-            {#if !features.federated && counts.some(StatPromise.rejected)}
+            {#if !config.features.federated && counts.some(StatPromise.rejected)}
               <HelpInfoPopup
                 type="exclamation"
                 color="warning"

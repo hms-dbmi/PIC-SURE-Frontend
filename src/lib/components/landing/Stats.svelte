@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { StatPromise, isStatValueEqual } from '$lib/utilities/StatBuilder';
   import type { StatResult } from '$lib/models/Stat';
   import { stats, authStats, loadLandingStats } from '$lib/stores/Stats';
@@ -65,10 +65,10 @@
   <h2 class="m-2">Data Summary</h2>
 
   {#if showAuthStats}
-    <Stat stats={authStats} auth description={branding?.landing?.authExplanation} />
+    <Stat stats={authStats} auth description={config.branding.landing.authExplanation} />
   {/if}
 
   {#if showPublicStats}
-    <Stat {stats} description={branding?.landing?.explanation} />
+    <Stat {stats} description={config.branding.landing.explanation} />
   {/if}
 </section>

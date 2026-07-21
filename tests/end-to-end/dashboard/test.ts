@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess } from '../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../custom-context';
 
 import { mockDashboard } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
@@ -8,6 +8,12 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('Dashboard page', () => {
   test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, {
+      features: [
+        { name: 'DASHBOARD_DRAWER', value: 'true' },
+        { name: 'DASHBOARD', value: 'true' },
+      ],
+    });
     await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/dashboard', mockDashboard);
   });
   test.describe('Dashboard table', () => {
