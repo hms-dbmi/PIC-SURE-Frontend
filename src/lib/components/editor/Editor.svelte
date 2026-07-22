@@ -74,7 +74,7 @@
       'ql-size-large': 'text-lg',
       'ql-size-huge': 'text-xl',
     }).forEach(([from, to]) => (text = text.replaceAll(from, to)));
-    return sanitizeHTML(text, { ADD_ATTR: ['target'] });
+    return sanitizeHTML(text);
   }
 
   onMount(async () => {

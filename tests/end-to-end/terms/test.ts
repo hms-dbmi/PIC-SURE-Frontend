@@ -21,6 +21,16 @@ import type { Branding } from '../../../src/lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
+// The terms editor moved from its own /admin/configuration/terms/edit route into a
+// tab on the shared /admin/configuration page (see TermsEditor.svelte).
+const clickTab = (page: import('@playwright/test').Page, name: string) =>
+  page.getByTestId('tabs-control').filter({ hasText: name }).click();
+const gotoTermsEditor = async (page: import('@playwright/test').Page) => {
+  await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
+  await clickTab(page, 'Terms of Service');
+};
+
 const Psama: { [key: string]: string } = {
   TOS: '*/**/psama/tos',
   User: '*/**/psama/user',
@@ -233,19 +243,25 @@ test.describe('Logged in', () => {
       mockApiSuccess(page, '*/**/psama/connection', mockConnections);
     });
 
-    // test('Admin can navigate to terms of service configuration page', async ({ page }) => {});
+    test('Admin can navigate to terms of service configuration page', async ({ page }) => {
+      // When
+      await page.goto('/admin/configuration');
+      await userIsLoggedIn(page);
+      await clickTab(page, 'Terms of Service');
+
+      // Then
+      await expect(page.getByTestId('publish-terms-btn')).toBeVisible();
+    });
     test('Commit button is disabled when no changes are made', async ({ page }) => {
       // When
-      await page.goto('/admin/configuration/terms/edit');
-      await userIsLoggedIn(page);
+      await gotoTermsEditor(page);
 
       // Then
       await expect(page.getByTestId('publish-terms-btn')).toBeDisabled();
     });
     test('Commit button is enabeld on content change', async ({ page }) => {
       // Given
-      await page.goto('/admin/configuration/terms/edit');
-      await userIsLoggedIn(page);
+      await gotoTermsEditor(page);
 
       // When
       await page.locator('#editor div.ql-editor').fill('Some new text');
@@ -255,8 +271,7 @@ test.describe('Logged in', () => {
     });
     test('Confirmation modal appears on commit', async ({ page }) => {
       // Given
-      await page.goto('/admin/configuration/terms/edit');
-      await userIsLoggedIn(page);
+      await gotoTermsEditor(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
 
       // When
@@ -267,8 +282,7 @@ test.describe('Logged in', () => {
     });
     test('Cancel button does not submit update', async ({ page }) => {
       // Given
-      await page.goto('/admin/configuration/terms/edit');
-      await userIsLoggedIn(page);
+      await gotoTermsEditor(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
       await page.getByTestId('publish-terms-btn').click();
 
@@ -282,8 +296,7 @@ test.describe('Logged in', () => {
     test('Confirm button submits updated terms, redirects, and success', async ({ page }) => {
       // Given
       mockHTMLBodySuccess(page, Psama.Update, '');
-      await page.goto('/admin/configuration/terms/edit');
-      await userIsLoggedIn(page);
+      await gotoTermsEditor(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
       await page.getByTestId('publish-terms-btn').click();
 
@@ -301,8 +314,7 @@ test.describe('Logged in', () => {
     test('Confirm button with api failure gives error and stays on page', async ({ page }) => {
       // Given
       mockApiFail(page, Psama.Update, 'failed');
-      await page.goto('/admin/configuration/terms/edit');
-      await userIsLoggedIn(page);
+      await gotoTermsEditor(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
       await page.getByTestId('publish-terms-btn').click();
 
@@ -315,17 +327,23 @@ test.describe('Logged in', () => {
       await expect(toast).toHaveAttribute('data-type', 'error');
       expect(tosUpdateRequest).toBeTruthy();
       await expect(page.getByTestId('publish-terms')).not.toBeVisible();
-      await expect(page).toHaveURL(RegExp('/admin/configuration/terms/edit$'));
+      await expect(page).toHaveURL(RegExp('/admin/configuration$'));
     });
   });
 
   test.describe('Non-SuperAdmin Users', () => {
     test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
 
+    test.beforeEach(({ page }) => {
+      mockApiSuccess(page, '*/**/psama/role', mockRoles);
+      mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges);
+      mockApiSuccess(page, '*/**/psama/application', mockApps);
+      mockApiSuccess(page, '*/**/psama/connection', mockConnections);
+    });
+
     test('Non-super-admin user has error and publish is disabled', async ({ page }) => {
       // When
-      await page.goto('/admin/configuration/terms/edit');
-      await userIsLoggedIn(page);
+      await gotoTermsEditor(page);
 
       // Then
       await expect(page.getByTestId('admin-warning')).toBeVisible();

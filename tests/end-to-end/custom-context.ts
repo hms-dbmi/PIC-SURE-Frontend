@@ -134,6 +134,14 @@ export const test = base.extend({
       route.fulfill({ status: 200, body: '<p>Test Terms of Service</p>' }),
     );
 
+    // The admin Configuration page mounts all of its tabs' content up front (see
+    // ConfigKindTab.svelte), so every test that visits /admin/configuration - not just
+    // the ones exercising config fields - triggers these GET requests. Default to "no
+    // admin overrides" so unrelated tests don't wait on/hit an unmocked endpoint. Tests
+    // that care about specific rows override per-kind via a page-level mockApiSuccess,
+    // which takes precedence over this context-level default.
+    await context.route('**/picsure/configuration?kind=*', (route) => route.fulfill({ json: [] }));
+
     use(context);
   },
   page: async ({ page }, use, testInfo) => {

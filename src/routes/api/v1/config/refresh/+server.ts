@@ -15,14 +15,16 @@ export const GET: RequestHandler = async ({ request }) => {
 
   let user: User;
   try {
-    const res = await fetch(`${ORIGIN}/${Psama.User.Me}`, {
+    const target = `${ORIGIN}/${Psama.User.Me}`;
+    const res = await fetch(target, {
       method: 'GET',
       headers: { Authorization: authorization },
     });
     if (!res.ok) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
-    user = await res.json();
+    const text = await res.text();
+    user = JSON.parse(text);
   } catch {
     return json({ error: 'Unauthorized' }, { status: 401 });
   }
