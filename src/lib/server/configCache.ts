@@ -99,32 +99,42 @@ async function getConfigKind(
     return Promise.resolve();
   }
 
+  // The completion handling below (cache write + log) is chained onto the
+  // fetch promise here, once, at creation time - not by each caller. Callers
+  // that find fetchingKind[kind] already set just await the same promise
+  // (see below); if they each attached their own .then(), every concurrent
+  // caller would re-log "complete" and re-run the cache write for a single
+  // underlying fetch.
   if (fetchingKind[kind] === null) {
     // Fetch fresh config for kind
     console.log(`Attempting configuration cache hydration for ${kind}`);
     const configUrl = `${ORIGIN}/${Picsure.Configuration.Get}`;
-    fetchingKind[kind] = CONFIG_API_KIND[kind]
-      ? startupDelay(applyStartupCooldown).then(() =>
-          fetchWithRetry(`${configUrl}?kind=${CONFIG_API_KIND[kind]}`, kind),
-        )
-      : Promise.resolve([]);
+    const errorMsg = `Configuration cache hydration failures: returned cached data for ${kind} might be defaults or outdated. Next request will retry.`;
+    fetchingKind[kind] = (
+      CONFIG_API_KIND[kind]
+        ? startupDelay(applyStartupCooldown).then(() =>
+            fetchWithRetry(`${configUrl}?kind=${CONFIG_API_KIND[kind]}`, kind),
+          )
+        : Promise.resolve([])
+    )
+      .then((results: ConfigObject[] | null) => {
+        if (results === null) {
+          console.error(errorMsg);
+        } else {
+          lastKindFetch[kind] = now;
+          cached[kind] = results ?? [];
+          console.log(`Configuration cache hydration complete for ${kind}`);
+        }
+        return results;
+      })
+      .catch(() => {
+        console.error(errorMsg);
+        return null;
+      })
+      .finally(() => (fetchingKind[kind] = null));
   }
 
-  const errorMsg = `Configuration cache hydration failures: returned cached data for ${kind} might be defaults or outdated. Next request will retry.`;
-  await fetchingKind[kind]
-    .then((results: ConfigObject[] | null) => {
-      if (results === null) {
-        console.error(errorMsg);
-      } else {
-        lastKindFetch[kind] = now;
-        cached[kind] = results ?? [];
-        console.log(`Configuration cache hydration complete for ${kind}`);
-      }
-    })
-    .catch(() => console.error(errorMsg))
-    .finally(() => (fetchingKind[kind] = null));
-
-  return Promise.resolve();
+  await fetchingKind[kind];
 }
 
 // Set on the first call and never cleared - later calls (routine cache expiry, or
