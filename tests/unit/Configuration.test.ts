@@ -241,9 +241,9 @@ describe('CONFIG_FIELD_SCHEMA - derived from CONFIG_FIELDS', () => {
       type: 'int',
       default: 1000000,
     });
-    expect(byName('settings', 'DOTS_COLORS_CLASS')).toMatchObject({ type: 'json' });
+    expect(byName('branding', 'DOTS_COLORS_CLASS')).toMatchObject({ type: 'json' });
     expect(byName('branding', 'LOGO_ALT')).toMatchObject({ type: 'string', default: 'PIC-SURE' });
-    expect(CONFIG_FIELD_SCHEMA.branding).toHaveLength(2);
+    expect(CONFIG_FIELD_SCHEMA.branding).toHaveLength(3);
   });
 
   it("mapFeatures actually uses CONFIG_FIELDS' declared default (not a second, hidden one)", () => {

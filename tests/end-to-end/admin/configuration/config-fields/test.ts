@@ -103,7 +103,7 @@ test('An invalid integer value disables Save and shows an inline error', async (
   await expect(page.getByTestId('config-field-save-MAX_DATA_POINTS_FOR_EXPORT')).toBeDisabled();
 });
 
-test('Branding tab only shows the two API/env-configurable fields plus a scope note', async ({
+test('Branding tab only shows the API/env-configurable fields plus a scope note', async ({
   page,
 }) => {
   await page.goto('/admin/configuration');
@@ -113,8 +113,9 @@ test('Branding tab only shows the two API/env-configurable fields plus a scope n
   await expect(page.getByTestId('config-branding-scope-note')).toBeVisible();
   await expect(page.getByTestId('config-field-row-LOGO_ALT')).toBeVisible();
   await expect(page.getByTestId('config-field-row-LOGO')).toBeVisible();
+  await expect(page.getByTestId('config-field-row-DOTS_COLORS_CLASS')).toBeVisible();
   const brandingTab = page.getByTestId('config-tab-branding');
-  await expect(brandingTab.getByTestId(/^config-field-row-/)).toHaveCount(2);
+  await expect(brandingTab.getByTestId(/^config-field-row-/)).toHaveCount(3);
 });
 
 test('Deprecated API rows are listed separately and can be deleted', async ({ page }) => {

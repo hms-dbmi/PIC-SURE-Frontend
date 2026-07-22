@@ -11,6 +11,7 @@ import {
   adminConfigRows,
   deleteConfigRow,
   addConfigRow,
+  invalidateConfigCache,
 } from '$lib/stores/AdminConfiguration';
 import type { ConfigFieldSchema, ConfigObject } from '$lib/models/Configuration';
 import type { FieldOrigin } from '$lib/models/ConfigResolution';
@@ -28,6 +29,7 @@ const {
   featureExportSchema,
   settingExportSchema,
   brandingSchema,
+  fillerSchemas,
 } = vi.hoisted(() => ({
   enabledFooSchema: {
     name: 'ENABLE_FOO',
@@ -75,6 +77,20 @@ const {
     description: 'The only field in its kind.',
     group: 'Only Group',
   } satisfies ConfigFieldSchema,
+  // ConfigKindTab only renders the search box once a tab has more than
+  // SEARCH_BOX_MIN_LENGTH (10) fields - pad "features" past that so the
+  // search-related tests below have a search box to interact with.
+  fillerSchemas: Array.from(
+    { length: 8 },
+    (_, i) =>
+      ({
+        name: `FILLER_${i}`,
+        type: 'boolean',
+        default: false,
+        description: `Filler field ${i}.`,
+        group: 'Filler',
+      }) satisfies ConfigFieldSchema,
+  ),
 }));
 
 vi.mock('$lib/models/Configuration', async () => {
@@ -84,7 +100,7 @@ vi.mock('$lib/models/Configuration', async () => {
   return {
     ...actual,
     CONFIG_FIELD_SCHEMA: {
-      features: [enabledFooSchema, enabledBarSchema, featureExportSchema],
+      features: [enabledFooSchema, enabledBarSchema, featureExportSchema, ...fillerSchemas],
       settings: [soloSchema, settingExportSchema],
       branding: [brandingSchema],
     },
@@ -103,6 +119,7 @@ vi.mock('$lib/stores/AdminConfiguration', async () => {
     isApiAvailable: vi.fn().mockReturnValue(true),
     deleteConfigRow: vi.fn(),
     addConfigRow: vi.fn(),
+    invalidateConfigCache: vi.fn(),
   };
 });
 
@@ -111,6 +128,7 @@ const mockLoadAdminConfig = vi.mocked(loadAdminConfig);
 const mockIsApiAvailable = vi.mocked(isApiAvailable);
 const mockDeleteConfigRow = vi.mocked(deleteConfigRow);
 const mockAddConfigRow = vi.mocked(addConfigRow);
+const mockInvalidateConfigCache = vi.mocked(invalidateConfigCache);
 const mockDeprecatedApiRows = vi.mocked(
   (await import('$lib/models/Configuration')).deprecatedApiRows,
 );
@@ -166,15 +184,19 @@ describe('ConfigKindTab (single kind)', () => {
     expect(screen.getByTestId('config-field-input-ENABLE_FOO')).toBeDisabled();
   });
 
-  it('re-fetches with force=true when Refresh is clicked', async () => {
+  it('invalidates the server-side cache and reloads when confirmed', async () => {
     mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
+    mockInvalidateConfigCache.mockResolvedValue({} as never);
+    const reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {});
 
     render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
     await screen.findByTestId('config-tab-features');
 
-    await fireEvent.click(screen.getByTestId('config-refresh-features'));
+    await fireEvent.click(screen.getByTestId('config-invalidate-cache-features-btn'));
+    await fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
 
-    expect(mockLoadAdminConfig).toHaveBeenLastCalledWith('features', true);
+    expect(mockInvalidateConfigCache).toHaveBeenCalled();
+    await vi.waitFor(() => expect(reloadSpy).toHaveBeenCalled());
   });
 
   it('lists deprecated rows and deletes one when requested', async () => {
@@ -263,8 +285,8 @@ describe('ConfigKindTab merged kinds (Settings & Features)', () => {
 
     await screen.findByTestId('config-tab-features-settings');
 
-    expect(mockLoadAdminConfig).toHaveBeenCalledWith('features', false);
-    expect(mockLoadAdminConfig).toHaveBeenCalledWith('settings', false);
+    expect(mockLoadAdminConfig).toHaveBeenCalledWith('features', true);
+    expect(mockLoadAdminConfig).toHaveBeenCalledWith('settings', true);
     expect(screen.getByTestId('config-field-row-ENABLE_FOO')).toBeInTheDocument();
     expect(screen.getByTestId('config-field-row-SOLO_FIELD')).toBeInTheDocument();
   });
@@ -306,13 +328,14 @@ describe('ConfigKindTab merged kinds (Settings & Features)', () => {
     expect(mockAddConfigRow).toHaveBeenCalledWith('settings', 'SOLO_FIELD', 'true');
   });
 
-  it('shows a per-kind API-unavailable warning only for the affected kind', async () => {
+  it('shows one combined warning naming only the affected kind', async () => {
     mockIsApiAvailable.mockImplementation((kind: string) => kind !== 'settings');
 
     render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
 
-    expect(await screen.findByTestId('config-api-unavailable-settings')).toBeInTheDocument();
-    expect(screen.queryByTestId('config-api-unavailable-features')).not.toBeInTheDocument();
+    const warning = await screen.findByTestId('config-api-unavailable-features-settings');
+    expect(warning).toHaveTextContent('settings');
+    expect(warning).not.toHaveTextContent('features in this environment');
     expect(screen.getByTestId('config-field-input-SOLO_FIELD')).toBeDisabled();
     expect(screen.getByTestId('config-field-input-ENABLE_FOO')).not.toBeDisabled();
   });

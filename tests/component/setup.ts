@@ -41,3 +41,16 @@ if (typeof globalThis.localStorage === 'undefined') {
     writable: true,
   });
 }
+
+if (typeof Element !== 'undefined' && typeof Element.prototype.animate !== 'function') {
+  Element.prototype.animate = function () {
+    return {
+      finished: Promise.resolve(),
+      cancel() {},
+      play() {},
+      pause() {},
+      addEventListener() {},
+      removeEventListener() {},
+    } as unknown as Animation;
+  };
+}

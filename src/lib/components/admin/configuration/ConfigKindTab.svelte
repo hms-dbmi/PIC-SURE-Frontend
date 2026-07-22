@@ -141,8 +141,8 @@
   {#if availableAPIKinds.length != kinds.length || activeConfigMode === 'override'}
     <ErrorAlert
       color="secondary"
-      iconSize="lg" 
-      data-testid="config-api-unavailable"
+      iconSize="lg"
+      data-testid={`config-api-unavailable-${testIdBase}`}
     >
       <span class="font-bold">Some values are disabled</span> and can't be edited here:
       <ul class="ml-4 list-disc">
