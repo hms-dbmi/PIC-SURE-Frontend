@@ -16,10 +16,9 @@ vi.mock('$lib/models/ConfigResolution', () => ({
 }));
 
 vi.mock('$lib/stores/AdminConfiguration', async () => {
-  const actual =
-    await vi.importActual<typeof import('$lib/stores/AdminConfiguration')>(
-      '$lib/stores/AdminConfiguration',
-    );
+  const actual = await vi.importActual<typeof import('$lib/stores/AdminConfiguration')>(
+    '$lib/stores/AdminConfiguration',
+  );
   return {
     ...actual,
     addConfigRow: vi.fn(),
@@ -38,6 +37,7 @@ const booleanSchema: ConfigFieldSchema = {
   type: 'boolean',
   default: false,
   description: 'Enables foo.',
+  group: 'Test Group',
 };
 
 const stringSchema: ConfigFieldSchema = {
@@ -45,6 +45,7 @@ const stringSchema: ConfigFieldSchema = {
   type: 'string',
   default: 'PIC-SURE',
   description: 'The application name.',
+  group: 'Test Group',
 };
 
 function baseProps(schema: ConfigFieldSchema, rows: ConfigObject[] = []) {
@@ -67,8 +68,8 @@ describe('ConfigFieldRow', () => {
 
     const checkbox = screen.getByTestId('config-field-input-ENABLE_FOO') as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
-    // Pre-populated, unedited state must not look dirty.
-    expect(screen.getByTestId('config-field-save-ENABLE_FOO')).toBeDisabled();
+    // Pre-populated, unedited state must not look dirty - Save stays hidden entirely.
+    expect(screen.queryByTestId('config-field-save-ENABLE_FOO')).not.toBeInTheDocument();
   });
 
   it('pre-populates a boolean field from its schema default when there is no API row or env var', () => {
@@ -78,7 +79,7 @@ describe('ConfigFieldRow', () => {
 
     const checkbox = screen.getByTestId('config-field-input-ENABLE_FOO') as HTMLInputElement;
     expect(checkbox.checked).toBe(true);
-    expect(screen.getByTestId('config-field-save-ENABLE_FOO')).toBeDisabled();
+    expect(screen.queryByTestId('config-field-save-ENABLE_FOO')).not.toBeInTheDocument();
   });
 
   it('pre-populates a text field from its schema default', () => {
@@ -88,7 +89,7 @@ describe('ConfigFieldRow', () => {
 
     const input = screen.getByTestId('config-field-input-APP_NAME') as HTMLInputElement;
     expect(input.value).toBe('PIC-SURE');
-    expect(screen.getByTestId('config-field-save-APP_NAME')).toBeDisabled();
+    expect(screen.queryByTestId('config-field-save-APP_NAME')).not.toBeInTheDocument();
   });
 
   it('prefers the API row value over env/default when origin is api', () => {
@@ -106,21 +107,20 @@ describe('ConfigFieldRow', () => {
     );
   });
 
-  it('marks the field dirty and enables Save once the pre-populated value is edited', async () => {
+  it('shows Save, enabled, once the pre-populated value is edited', async () => {
     mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
 
     render(ConfigFieldRow, baseProps(stringSchema));
 
     const input = screen.getByTestId('config-field-input-APP_NAME');
-    const saveButton = screen.getByTestId('config-field-save-APP_NAME');
-    expect(saveButton).toBeDisabled();
+    expect(screen.queryByTestId('config-field-save-APP_NAME')).not.toBeInTheDocument();
 
     await fireEvent.input(input, { target: { value: 'Something Else' } });
 
-    expect(saveButton).toBeEnabled();
+    expect(screen.getByTestId('config-field-save-APP_NAME')).toBeEnabled();
   });
 
-  it('disables inputs and Save when the field is disabled (env overrides in override mode)', () => {
+  it('disables inputs when the field is disabled (env overrides in override mode)', () => {
     mockDescribeConfigField.mockReturnValue({
       origin: 'env',
       envValue: 'true',
@@ -130,7 +130,8 @@ describe('ConfigFieldRow', () => {
     render(ConfigFieldRow, baseProps(booleanSchema));
 
     expect(screen.getByTestId('config-field-input-ENABLE_FOO')).toBeDisabled();
-    expect(screen.getByTestId('config-field-save-ENABLE_FOO')).toBeDisabled();
+    // Unedited (not dirty), so Save stays hidden regardless of the disabled state.
+    expect(screen.queryByTestId('config-field-save-ENABLE_FOO')).not.toBeInTheDocument();
   });
 
   it('saves an edited value by adding a new API row when none exists yet', async () => {
@@ -184,5 +185,46 @@ describe('ConfigFieldRow', () => {
     await fireEvent.click(screen.getByTestId('config-field-reset-APP_NAME'));
 
     expect(mockDeleteConfigRow).toHaveBeenCalledWith('features', 'row-1');
+  });
+
+  it('truncates a long description behind a Show more/Show less toggle', async () => {
+    mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
+    const longDescription = 'A'.repeat(120);
+
+    render(ConfigFieldRow, baseProps({ ...stringSchema, description: longDescription }));
+
+    const description = screen.getByTestId('config-field-description-APP_NAME');
+    expect(description.textContent?.length).toBeLessThan(longDescription.length);
+
+    await fireEvent.click(screen.getByTestId('config-field-expand-APP_NAME'));
+
+    expect(description.textContent).toBe(longDescription);
+  });
+
+  it('does not show a Show more toggle for a short description', () => {
+    mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
+
+    render(ConfigFieldRow, baseProps(stringSchema));
+
+    expect(screen.queryByTestId('config-field-expand-APP_NAME')).not.toBeInTheDocument();
+  });
+
+  it('reformats JSON via the Pretty-print action', async () => {
+    mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
+    const jsonSchema: ConfigFieldSchema = {
+      name: 'SOME_JSON',
+      type: 'json',
+      default: [],
+      description: 'Some JSON list.',
+      group: 'Test Group',
+    };
+
+    render(ConfigFieldRow, baseProps(jsonSchema));
+
+    const textarea = screen.getByTestId('config-field-input-SOME_JSON') as HTMLTextAreaElement;
+    await fireEvent.input(textarea, { target: { value: '{"a":1,"b":2}' } });
+    await fireEvent.click(screen.getByTestId('config-field-prettify-SOME_JSON'));
+
+    expect(textarea.value).toBe(JSON.stringify({ a: 1, b: 2 }, null, 2));
   });
 });

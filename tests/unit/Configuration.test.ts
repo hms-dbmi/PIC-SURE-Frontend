@@ -12,6 +12,8 @@ import {
   CONFIG_FIELD_SCHEMA,
   parsersFor,
   deprecatedApiRows,
+  groupedConfigFieldSchema,
+  type ConfigFieldSchema,
 } from '$lib/models/Configuration';
 
 const TOUCHED_ENV_KEYS = [
@@ -250,6 +252,45 @@ describe('CONFIG_FIELD_SCHEMA - derived from CONFIG_FIELDS', () => {
     expect(mapFeatures([]).analyzeApi).toBe(
       CONFIG_FIELD_SCHEMA.features.find((f) => f.name === 'ANALYZE_API')?.default,
     );
+  });
+
+  it('every field declares a non-empty group, for the admin UI section headers', () => {
+    for (const kind of ['features', 'settings', 'branding'] as const) {
+      for (const field of CONFIG_FIELD_SCHEMA[kind]) {
+        expect(field.group, `${kind}.${field.name} is missing a group`).toBeTruthy();
+      }
+    }
+  });
+});
+
+describe('groupedConfigFieldSchema', () => {
+  const field = (name: string, group: string): ConfigFieldSchema => ({
+    name,
+    group,
+    type: 'boolean',
+    default: false,
+    description: '',
+  });
+
+  it('buckets fields by group, in order of each group’s first appearance', () => {
+    const schema = [field('A', 'Group 1'), field('B', 'Group 2'), field('C', 'Group 1')];
+
+    expect(groupedConfigFieldSchema(schema)).toEqual([
+      { group: 'Group 1', fields: [schema[0], schema[2]] },
+      { group: 'Group 2', fields: [schema[1]] },
+    ]);
+  });
+
+  it('reflects CONFIG_FIELD_SCHEMA grouping - Google settings land in one group together', () => {
+    const groups = groupedConfigFieldSchema(CONFIG_FIELD_SCHEMA.settings);
+    const google = groups.find((g) => g.group === 'Google');
+    expect(google?.fields.map((f) => f.name)).toEqual(
+      expect.arrayContaining(['GOOGLE_ANALYTICS_ID', 'GOOGLE_TAG_MANAGER_ID']),
+    );
+  });
+
+  it('returns an empty array for an empty schema', () => {
+    expect(groupedConfigFieldSchema([])).toEqual([]);
   });
 });
 

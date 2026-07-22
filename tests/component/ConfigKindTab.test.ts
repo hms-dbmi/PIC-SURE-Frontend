@@ -21,12 +21,27 @@ vi.mock('$lib/models/ConfigResolution', () => ({
   describeConfigField: vi.fn(),
 }));
 
-const { enabledFooSchema } = vi.hoisted(() => ({
+const { enabledFooSchema, enabledBarSchema, soloSchema } = vi.hoisted(() => ({
   enabledFooSchema: {
     name: 'ENABLE_FOO',
     type: 'boolean',
     default: false,
     description: 'Enables foo.',
+    group: 'Group One',
+  } satisfies ConfigFieldSchema,
+  enabledBarSchema: {
+    name: 'ENABLE_BAR',
+    type: 'boolean',
+    default: false,
+    description: 'Enables bar.',
+    group: 'Group Two',
+  } satisfies ConfigFieldSchema,
+  soloSchema: {
+    name: 'SOLO_FIELD',
+    type: 'boolean',
+    default: false,
+    description: 'The only field in its kind.',
+    group: 'Solo Group',
   } satisfies ConfigFieldSchema,
 }));
 
@@ -36,17 +51,20 @@ vi.mock('$lib/models/Configuration', async () => {
   );
   return {
     ...actual,
-    CONFIG_FIELD_SCHEMA: { features: [enabledFooSchema], settings: [], branding: [] },
+    CONFIG_FIELD_SCHEMA: {
+      features: [enabledFooSchema, enabledBarSchema],
+      settings: [soloSchema],
+      branding: [],
+    },
     configApiEnvVarName: vi.fn().mockReturnValue('VITE_ADMIN_FEATURES_API'),
     deprecatedApiRows: vi.fn().mockReturnValue([]),
   };
 });
 
 vi.mock('$lib/stores/AdminConfiguration', async () => {
-  const actual =
-    await vi.importActual<typeof import('$lib/stores/AdminConfiguration')>(
-      '$lib/stores/AdminConfiguration',
-    );
+  const actual = await vi.importActual<typeof import('$lib/stores/AdminConfiguration')>(
+    '$lib/stores/AdminConfiguration',
+  );
   return {
     ...actual,
     loadAdminConfig: vi.fn().mockResolvedValue(undefined),
@@ -137,5 +155,60 @@ describe('ConfigKindTab', () => {
     await fireEvent.click(screen.getByTestId('config-deprecated-delete-OLD_FIELD'));
 
     expect(mockDeleteConfigRow).toHaveBeenCalledWith('features', 'old-1');
+  });
+});
+
+describe('ConfigKindTab grouping and search', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockLoadAdminConfig.mockResolvedValue(undefined);
+    mockIsApiAvailable.mockReturnValue(true);
+    mockDeprecatedApiRows.mockReturnValue([]);
+    mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
+    adminConfigRows.features.set([]);
+    adminConfigRows.settings.set([]);
+  });
+
+  it('renders a section header per group when a kind has more than one group', async () => {
+    render(ConfigKindTab, { kind: 'features' });
+
+    const tab = await screen.findByTestId('config-tab-features');
+    expect(tab).toHaveTextContent('Group One');
+    expect(tab).toHaveTextContent('Group Two');
+    expect(screen.getByTestId('config-field-row-ENABLE_FOO')).toBeInTheDocument();
+    expect(screen.getByTestId('config-field-row-ENABLE_BAR')).toBeInTheDocument();
+  });
+
+  it('hides the section header when a kind has exactly one group', async () => {
+    render(ConfigKindTab, { kind: 'settings' });
+
+    const tab = await screen.findByTestId('config-tab-settings');
+    expect(tab).not.toHaveTextContent('Solo Group');
+    expect(screen.getByTestId('config-field-row-SOLO_FIELD')).toBeInTheDocument();
+  });
+
+  it('filters fields by search query, hiding groups with no matches', async () => {
+    render(ConfigKindTab, { kind: 'features' });
+
+    await screen.findByTestId('config-field-row-ENABLE_FOO');
+
+    await fireEvent.input(screen.getByTestId('config-search-features'), {
+      target: { value: 'bar' },
+    });
+
+    expect(screen.queryByTestId('config-field-row-ENABLE_FOO')).not.toBeInTheDocument();
+    expect(screen.getByTestId('config-field-row-ENABLE_BAR')).toBeInTheDocument();
+  });
+
+  it('shows a no-results message when the search query matches nothing', async () => {
+    render(ConfigKindTab, { kind: 'features' });
+
+    await screen.findByTestId('config-field-row-ENABLE_FOO');
+
+    await fireEvent.input(screen.getByTestId('config-search-features'), {
+      target: { value: 'nonexistent-field' },
+    });
+
+    expect(await screen.findByTestId('config-no-results-features')).toBeInTheDocument();
   });
 });
