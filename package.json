@@ -41,6 +41,7 @@
     "gtagjs": "^0.0.10",
     "plotly.js-basic-dist-min": "^3.5.1",
     "quill": "^2.0.3",
+    "sanitize-html": "^2.17.6",
     "shiki": "^4.0.2",
     "uuid": "^14.0.0"
   },
@@ -59,6 +60,7 @@
     "@types/node": "24.13.3",
     "@types/plotly.js-basic-dist-min": "^2.12.4",
     "@types/quill": "^2.0.14",
+    "@types/sanitize-html": "^2.16.1",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",
     "dotenv": "^17.4.2",

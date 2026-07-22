@@ -41,7 +41,6 @@ export type Features = Indexable & {
 };
 
 export type Settings = Indexable & {
-  dotsColorsClass: string[];
   distributionExplorer: {
     graphColors: string[];
   };
@@ -79,6 +78,7 @@ interface CodeBlockConfig extends Indexable {
 
 export type Branding = Indexable & {
   applicationName: string;
+  dotsColorsClass: string[];
   logo: {
     alt: string;
     src: string;
@@ -227,14 +227,14 @@ export type ConfigCache = {
 // when a key is absent from the map it's given, so this only needs to combine the sparse
 // env-derived and API-derived maps in the right order before handing them to parsers().
 
-type ConfigMode = 'seed' | 'override';
+export type ConfigMode = 'seed' | 'override';
 const VITE_ENV_PREFIX = 'VITE_';
 
 export function getConfigMode(): ConfigMode {
   return import.meta.env?.VITE_CONFIG_MODE === 'override' ? 'override' : 'seed';
 }
 
-function envConfigMap(envPrefix: string = VITE_ENV_PREFIX): ConfigMap {
+export function envConfigMap(envPrefix: string = VITE_ENV_PREFIX): ConfigMap {
   const env = import.meta.env;
   return Object.keys(env).reduce((map: ConfigMap, key: string) => {
     if (!key.startsWith(envPrefix)) return map;
@@ -244,17 +244,403 @@ function envConfigMap(envPrefix: string = VITE_ENV_PREFIX): ConfigMap {
   }, {} as ConfigMap);
 }
 
-function apiConfigMap(apiRows: ConfigObject[]): ConfigMap {
+export function apiConfigMap(apiRows: ConfigObject[]): ConfigMap {
   return apiRows.reduce((map: ConfigMap, row: ConfigObject) => {
     map[row.name] = row;
     return map;
   }, {} as ConfigMap);
 }
 
-export function resolveConfigMap(apiRows: ConfigObject[], envPrefix?: string): ConfigMap {
-  const apiMap = apiConfigMap(apiRows);
-  const envMap = envConfigMap(envPrefix);
+// Combines an already-built API map and env map by precedence, so callers that need
+// to resolve just a handful of keys (e.g. the admin UI's per-field origin pill) aren't
+// forced to rebuild both maps from scratch just to reuse this rule - see
+// ConfigResolution.ts's describeConfigField.
+export function mergeConfigMaps(apiMap: ConfigMap, envMap: ConfigMap): ConfigMap {
   return getConfigMode() === 'override' ? { ...apiMap, ...envMap } : { ...envMap, ...apiMap };
+}
+
+export function resolveConfigMap(apiRows: ConfigObject[], envPrefix?: string): ConfigMap {
+  return mergeConfigMaps(apiConfigMap(apiRows), envConfigMap(envPrefix));
+}
+
+export type ConfigKind = 'features' | 'settings' | 'branding';
+
+// The "kind" value sent as ?kind=<value> to the backend and used to gate whether API
+// overrides are available at all for a config kind - empty means the deployment
+// hasn't wired up the API for that kind. Used both server-side (configCache.ts's SSR
+// bootstrap) and client-side (AdminConfiguration.ts's admin CRUD store,
+// ConfigKindTab.svelte's "unavailable" messaging) - centralized here so the env var
+// naming convention has exactly one place to change.
+export const CONFIG_API_KIND: Record<ConfigKind, string> = {
+  features: import.meta.env.VITE_API_CONFIG_FEATURES || '',
+  settings: import.meta.env.VITE_API_CONFIG_SETTINGS || '',
+  branding: import.meta.env.VITE_API_CONFIG_BRANDING || '',
+};
+
+type FieldType = 'boolean' | 'int' | 'json' | 'string';
+export interface ConfigFieldSchema {
+  name: string;
+  type: FieldType;
+  default: unknown;
+  description: string;
+  group: string;
+}
+interface FieldDef {
+  type: FieldType;
+  default: unknown;
+  description: string;
+  // Groups fields by relation (e.g. all Google settings together) rather than by type,
+  // for the admin UI's section headers. Order of the section headers falls out of
+  // declaration order below - fields are clustered by group for that reason - so there's
+  // no separate ordering list to keep in sync with this table.
+  group: string;
+}
+
+// Single source of truth for every field mapFeatures/mapSettings/mapBranding can
+// resolve. parsersFor() (below) looks up each field's type/default from here instead
+// of taking them as call-site arguments, so there is exactly one place a field's
+// default is declared - previously OPEN's default was written twice, once at each of
+// its two call sites, with nothing stopping them from drifting apart. This table also
+// *is* the admin UI's schema (see CONFIG_FIELD_SCHEMA below): no separate list, and no
+// need to run any mapper to introspect it.
+const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
+  features: {
+    // --- Analysis ---
+    ANALYZE_API: {
+      group: 'Analysis',
+      type: 'boolean',
+      default: true,
+      description:
+        "Enables the 'Prepare for Analysis' (API) page and navigation item, and defaults the export flow's code tab to Python when available.",
+    },
+
+    // --- Access & Login ---
+    // OPEN feeds both explorer.open (AND'd with OPEN_EXPLORER) and login.open below.
+    OPEN: {
+      group: 'Access & Login',
+      type: 'boolean',
+      default: false,
+      description:
+        "Allows unauthenticated access to the app (skips the forced login redirect) and, combined with OPEN_EXPLORER, makes the Explorer page reachable without logging in. Also shows the 'Explore without Login' entry point.",
+    },
+    OPEN_EXPLORER: {
+      group: 'Access & Login',
+      type: 'boolean',
+      default: false,
+      description:
+        'Combined with OPEN: when both are enabled, the Explorer page is reachable without logging in.',
+    },
+    DISCOVER: {
+      group: 'Access & Login',
+      type: 'boolean',
+      default: false,
+      description:
+        'Enables the public Discover page and navigation item; when disabled, /discover redirects to /explorer and anonymous searches route to /explorer instead.',
+    },
+    REQUIRE_CONSENTS: {
+      group: 'Access & Login',
+      type: 'boolean',
+      default: false,
+      description:
+        "Attaches the user's data-use consents as authorization filters on outgoing queries.",
+    },
+    ENFORCE_TOS_ACCEPT: {
+      group: 'Access & Login',
+      type: 'boolean',
+      default: false,
+      description:
+        "Forces logged-in users who haven't accepted the Terms of Service to accept it before continuing, blocking dismissal of the TOS modal.",
+    },
+    ENABLE_TOS: {
+      group: 'Access & Login',
+      type: 'boolean',
+      default: false,
+      description:
+        'Enables the Terms of Service feature: adds a footer link to view it, and an admin link to edit it.',
+    },
+    // --- Explorer & Search ---
+    ALLOW_EXPORT: {
+      group: 'Explorer & Search',
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows or hides the 'Export' option on the Explorer results panel that starts the export/analysis flow.",
+    },
+    ALLOW_EXPORT_ENABLED: {
+      group: 'Explorer & Search',
+      type: 'boolean',
+      default: false,
+      description:
+        'Shows a per-row action on search results to add that variable to the export, and contributes to the export button/badge visibility.',
+    },
+    DIST_EXPLORER: {
+      group: 'Explorer & Search',
+      type: 'boolean',
+      default: false,
+      description:
+        'Enables the Variable Distributions (visualizations) view on the Explorer and Discover results panels.',
+    },
+    ENABLE_HIERARCHY: {
+      group: 'Explorer & Search',
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows a 'Data Hierarchy' action on search results, letting users view a variable's hierarchy tree and build anyRecordOf queries.",
+    },
+    SHOW_TREE_STEP: {
+      group: 'Explorer & Search',
+      type: 'boolean',
+      default: false,
+      description: "Adds a 'Finalize Data' step to the export stepper flow.",
+    },
+    ENABLE_SAMPLE_ID_CHECKBOX: {
+      group: 'Explorer & Search',
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows an 'Include sample identifiers' checkbox in the export review step that adds sample IDs to the export/query.",
+    },
+    USE_QUERY_TEMPLATE: {
+      group: 'Explorer & Search',
+      type: 'boolean',
+      default: false,
+      description:
+        "Applies the logged-in user's saved query template (and its consent categories) as the base of new queries and dashboard filtering.",
+    },
+    RESTORE_V2_QUERY: {
+      group: 'Explorer & Search',
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows the 'Restore Filters' button for older (V2) saved queries; V3 queries always show it regardless.",
+    },
+
+    // --- Guided Tour --- (joined by AUTH_TOUR_NAME, OPEN_TOUR_NAME, and
+    // EXPLORE_TOUR_SEARCH_TERM from settings, once features+settings are merged in the
+    // admin UI)
+    EXPLORE_TOUR: {
+      group: 'Guided Tour',
+      type: 'boolean',
+      default: true,
+      description: 'Shows the guided walkthrough tour button on the Explorer/Discover pages.',
+    },
+
+    // --- Genomic Search ---
+    ENABLE_GENE_QUERY: {
+      group: 'Genomic Search',
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows the 'Variants by gene name' genomic search option and enables gene-based variant queries.",
+    },
+    ENABLE_SNP_QUERY: {
+      group: 'Genomic Search',
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows the 'Specific Variants' (SNP) genomic search option and enables SNP-based variant queries.",
+    },
+    VARIANT_EXPLORER: {
+      group: 'Genomic Search',
+      type: 'boolean',
+      default: false,
+      description:
+        "Enables the Variant Explorer feature; when disabled, the Variant Explorer page shows a 'not enabled' message instead of rendering.",
+    },
+
+    // --- Export ---
+    EXPORT_TIMESERIES: {
+      group: 'Export',
+      type: 'boolean',
+      default: true,
+      description: "Shows the 'Export as Timeseries' option in the export type selection step.",
+    },
+    DOWNLOAD_AS_PFB: {
+      group: 'Export',
+      type: 'boolean',
+      default: true,
+      description:
+        'Enables PFB (Avro) as an export format option alongside CSV in the export flow.',
+    },
+    CONFIRM_DOWNLOAD: {
+      group: 'Export',
+      type: 'boolean',
+      default: false,
+      description:
+        'Shows a confirmation dialog before downloading exported data, instead of downloading immediately.',
+    },
+    ALLOW_DOWNLOAD: {
+      group: 'Export',
+      type: 'boolean',
+      default: true,
+      description:
+        'Shows or hides the download button for exported CSV/PFB data in the export flow.',
+    },
+
+    // --- Dashboard ---
+    DASHBOARD: {
+      group: 'Dashboard',
+      type: 'boolean',
+      default: false,
+      description:
+        'Shows or hides the Data Dashboard navigation item (the /dashboard page itself is not currently guarded by this flag).',
+    },
+    DASHBOARD_DRAWER: {
+      group: 'Dashboard',
+      type: 'boolean',
+      default: false,
+      description:
+        'Makes Data Dashboard rows clickable, opening a drawer with more detail about the selected row.',
+    },
+
+    // --- Collaboration ---
+    MANUAL_ROLE: {
+      group: 'Collaboration',
+      type: 'boolean',
+      default: false,
+      description: "Enables the 'Manual Role' admin page and its navigation item (BDC-specific).",
+    },
+
+    // --- Navigation ---
+    CONFIRM_EXTERNAL_NAVIGATION: {
+      group: 'Navigation',
+      type: 'boolean',
+      default: false,
+      description:
+        'Shows a confirmation dialog before following links to external (off-site) destinations.',
+    },
+
+    // --- CAPTCHA ---
+    WAF_CAPTCHA_RECOVERY: {
+      group: 'Captcha',
+      type: 'boolean',
+      default: false,
+      description: 'Shows a CAPTCHA challenge on API and page requests.',
+    },
+  },
+  settings: {
+    // --- Google ---
+    GOOGLE_ANALYTICS_ID: {
+      group: 'Google',
+      type: 'string',
+      default: '',
+      description:
+        'Google Analytics measurement ID; when set (with a privacy policy configured), loads Google Analytics and triggers the cookie-consent prompt.',
+    },
+    GOOGLE_TAG_MANAGER_ID: {
+      group: 'Google',
+      type: 'string',
+      default: '',
+      description:
+        'Google Tag Manager container ID; when set, loads the GTM script/iframe alongside the same consent prompt.',
+    },
+
+    // --- Explorer & Search --- (joined by DIST_EXPLORER and others from features, once
+    // features+settings are merged in the admin UI)
+    DIST_EXPLORER_GRAPH_COLORS: {
+      group: 'Explorer & Search',
+      type: 'json',
+      default: ['#328FFF', '#675AFF', '#FFBC35'],
+      description:
+        'Color palette cycled through when rendering distribution/histogram charts in the Variable Distributions view.',
+    },
+
+    // --- Export ---
+    MAX_DATA_POINTS_FOR_EXPORT: {
+      group: 'Export',
+      type: 'int',
+      default: 1000000,
+      description:
+        'Maximum combined participant/filter/export count allowed before export; exceeding it blocks the review step with a warning.',
+    },
+    EXPORT_SYSTEM_FIELDS: {
+      group: 'Export',
+      type: 'string',
+      default: '',
+      description:
+        'Comma-separated concept paths automatically included in every export query and shown as non-removable rows in the export review table.',
+    },
+
+    // --- Guided Tour ---
+    AUTH_TOUR_NAME: {
+      group: 'Guided Tour',
+      type: 'string',
+      default: 'NHANES-Auth',
+      description:
+        'Name of the tour definition (from TourConfiguration.json) used for the guided tour on the authenticated Explorer page.',
+    },
+    OPEN_TOUR_NAME: {
+      group: 'Guided Tour',
+      type: 'string',
+      default: 'BDC-Open',
+      description:
+        'Name of the tour definition (from TourConfiguration.json) used for the guided tour on the public Discover page.',
+    },
+    EXPLORE_TOUR_SEARCH_TERM: {
+      group: 'Guided Tour',
+      type: 'string',
+      default: 'age',
+      description: 'Default search term the guided tour pre-fills/highlights in the search box.',
+    },
+
+    // --- Genomic Search --- (joined by ENABLE_GENE_QUERY, ENABLE_SNP_QUERY, and
+    // VARIANT_EXPLORER from features, once features+settings are merged in the admin UI)
+    VARIANT_EXPLORER_EXCLUDE_COLUMNS: {
+      group: 'Genomic Search',
+      type: 'json',
+      default: [],
+      description: "Column names to strip from the Variant Explorer's result table.",
+    },
+    VARIANT_EXPLORER_MAX_COUNT: {
+      group: 'Genomic Search',
+      type: 'int',
+      default: 10000,
+      description:
+        "Maximum number of variants the Variant Explorer will display before showing a 'Too many variants!' warning instead.",
+    },
+    VARIANT_EXPLORER_TYPE: {
+      group: 'Genomic Search',
+      type: 'string',
+      default: ExportType.Aggregate,
+      description:
+        "Default Variant Explorer export mode, 'aggregate' or 'full' ('full' additionally shows an extra column/checkbox).",
+    },
+  },
+  branding: {
+    // --- Logo ---
+    LOGO_ALT: {
+      group: 'Logo',
+      type: 'string',
+      default: 'PIC-SURE',
+      description: 'Alt/title text for the site logo image shown in the header and login page.',
+    },
+    LOGO: {
+      group: 'Logo',
+      type: 'string',
+      default: '',
+      description:
+        'URL of a custom logo image to display instead of the default PIC-SURE wordmark, in the header and login page.',
+    },
+    DOTS_COLORS_CLASS: {
+      group: 'Appearance',
+      type: 'json',
+      default: [],
+      description:
+        'Overrides the colors of the decorative dot graphic on the login page; must be an array of exactly 3 or 5 color values, otherwise the default is kept.',
+    },
+  },
+};
+
+// API rows whose name isn't (or is no longer) a key in CONFIG_FIELDS[kind] - e.g. a
+// feature flag that was removed from the app but whose row was never cleaned up in the
+// backend. These have no effect on anything mapFeatures/mapSettings/mapBranding
+// resolve (parsersFor only ever looks up registered names), so they're safe to delete;
+// the admin UI surfaces them precisely because there's no other way to notice they're
+// inert. Exact by construction: apiRows here is already the result of fetching
+// ?kind=<that kind's value>, so every row already belongs to `kind` - no guessing.
+export function deprecatedApiRows(kind: ConfigKind, apiRows: ConfigObject[]): ConfigObject[] {
+  const known = CONFIG_FIELDS[kind];
+  return apiRows.filter((row) => !(row.name in known));
 }
 
 // A blank (or whitespace-only) value is treated the same as an absent one - it
@@ -302,78 +688,92 @@ export function parsers(map: ConfigMap) {
   };
 }
 
-export function mapFeatures(apiFeatures: ConfigObject[]): Features {
-  const parse = parsers(resolveConfigMap(apiFeatures)).asBoolean;
+// Schema-driven convenience layer over parsers(): looks up each field's type/default
+// from CONFIG_FIELDS by name instead of taking them as call-site arguments, so
+// mapFeatures/mapSettings/mapBranding physically can't declare a default that isn't
+// also the one CONFIG_FIELD_SCHEMA shows the admin UI. Throws if a name isn't
+// registered - a forgotten CONFIG_FIELDS entry fails loudly the moment it's parsed,
+// instead of silently missing from the admin UI with no error anywhere.
+export function parsersFor(kind: ConfigKind, map: ConfigMap) {
+  const base = parsers(map);
+  const fields = CONFIG_FIELDS[kind];
+  function fieldDef(name: string): FieldDef {
+    const found = fields[name];
+    if (!found) throw new Error(`"${name}" is not registered in CONFIG_FIELDS.${kind}.`);
+    return found;
+  }
   return {
-    analyzeApi: parse('ANALYZE_API', true),
-    confirmDownload: parse('CONFIRM_DOWNLOAD', false),
-    confirmExternalNavigation: parse('CONFIRM_EXTERNAL_NAVIGATION', false),
-    discover: parse('DISCOVER', false),
-    dashboard: parse('DASHBOARD', false),
-    dashboardDrawer: parse('DASHBOARD_DRAWER', false),
-    enableGENEQuery: parse('ENABLE_GENE_QUERY', false),
-    enableSNPQuery: parse('ENABLE_SNP_QUERY', false),
-    enforceTermsOfService: parse('ENFORCE_TOS_ACCEPT', false),
+    asBoolean: (name: string): boolean => base.asBoolean(name, fieldDef(name).default as boolean),
+    asInt: (name: string): number => base.asInt(name, fieldDef(name).default as number),
+    asJson: (name: string): unknown => base.asJson(name, fieldDef(name).default),
+    asString: (name: string): string => base.asString(name, fieldDef(name).default as string),
+  };
+}
+
+export function mapFeatures(apiFeatures: ConfigObject[]): Features {
+  const parse = parsersFor('features', resolveConfigMap(apiFeatures)).asBoolean;
+  return {
+    analyzeApi: parse('ANALYZE_API'),
+    confirmDownload: parse('CONFIRM_DOWNLOAD'),
+    confirmExternalNavigation: parse('CONFIRM_EXTERNAL_NAVIGATION'),
+    discover: parse('DISCOVER'),
+    dashboard: parse('DASHBOARD'),
+    dashboardDrawer: parse('DASHBOARD_DRAWER'),
+    enableGENEQuery: parse('ENABLE_GENE_QUERY'),
+    enableSNPQuery: parse('ENABLE_SNP_QUERY'),
+    enforceTermsOfService: parse('ENFORCE_TOS_ACCEPT'),
     explorer: {
-      open: parse('OPEN_EXPLORER', false) && parse('OPEN', false),
-      allowDownload: parse('ALLOW_DOWNLOAD', true),
-      allowExport: parse('ALLOW_EXPORT', false),
-      distributionExplorer: parse('DIST_EXPLORER', false),
-      enableExportTimeseries: parse('EXPORT_TIMESERIES', true),
-      enableHierarchy: parse('ENABLE_HIERARCHY', false),
-      enablePfbExport: parse('DOWNLOAD_AS_PFB', true),
-      enableSampleIdCheckbox: parse('ENABLE_SAMPLE_ID_CHECKBOX', false),
-      enableTour: parse('EXPLORE_TOUR', true),
-      exportsEnableExport: parse('ALLOW_EXPORT_ENABLED', false),
-      showTreeStep: parse('SHOW_TREE_STEP', false),
-      variantExplorer: parse('VARIANT_EXPLORER', false),
+      open: parse('OPEN_EXPLORER') && parse('OPEN'),
+      allowDownload: parse('ALLOW_DOWNLOAD'),
+      allowExport: parse('ALLOW_EXPORT'),
+      distributionExplorer: parse('DIST_EXPLORER'),
+      enableExportTimeseries: parse('EXPORT_TIMESERIES'),
+      enableHierarchy: parse('ENABLE_HIERARCHY'),
+      enablePfbExport: parse('DOWNLOAD_AS_PFB'),
+      enableSampleIdCheckbox: parse('ENABLE_SAMPLE_ID_CHECKBOX'),
+      enableTour: parse('EXPLORE_TOUR'),
+      exportsEnableExport: parse('ALLOW_EXPORT_ENABLED'),
+      showTreeStep: parse('SHOW_TREE_STEP'),
+      variantExplorer: parse('VARIANT_EXPLORER'),
     },
     login: {
-      open: parse('OPEN', false),
+      open: parse('OPEN'),
     },
-    manualRole: parse('MANUAL_ROLE', false),
-    restoreV2queries: parse('RESTORE_V2_QUERY', false),
-    termsOfService: parse('ENABLE_TOS', false),
-    wafCaptchaRecovery: parse('WAF_CAPTCHA_RECOVERY', false),
+    manualRole: parse('MANUAL_ROLE'),
+    requireConsents: parse('REQUIRE_CONSENTS'),
+    restoreV2queries: parse('RESTORE_V2_QUERY'),
+    termsOfService: parse('ENABLE_TOS'),
+    useQueryTemplate: parse('USE_QUERY_TEMPLATE'),
+    wafCaptchaRecovery: parse('WAF_CAPTCHA_RECOVERY'),
   };
 }
 
 export function mapSettings(apiSettings: ConfigObject[]): Settings {
-  const sm: ConfigMap = resolveConfigMap(apiSettings);
-  const parse = parsers(sm);
+  const parse = parsersFor('settings', resolveConfigMap(apiSettings));
   return {
-    dotsColorsClass: parse.asJson('DOTS_COLORS_CLASS', [
-      '--color-primary-500',
-      '--color-error-500',
-      '--color-surface-400',
-    ]) as string[],
     distributionExplorer: {
-      graphColors: parse.asJson('DIST_EXPLORER_GRAPH_COLORS', [
-        '#328FFF',
-        '#675AFF',
-        '#FFBC35',
-      ]) as string[],
+      graphColors: parse.asJson('DIST_EXPLORER_GRAPH_COLORS') as string[],
     },
     google: {
-      analytics: parse.asString('GOOGLE_ANALYTICS_ID', ''),
-      tagManager: parse.asString('GOOGLE_TAG_MANAGER_ID', ''),
+      analytics: parse.asString('GOOGLE_ANALYTICS_ID'),
+      tagManager: parse.asString('GOOGLE_TAG_MANAGER_ID'),
     },
-    maxDataPointsForExport: parse.asInt('MAX_DATA_POINTS_FOR_EXPORT', 1000000),
+    maxDataPointsForExport: parse.asInt('MAX_DATA_POINTS_FOR_EXPORT'),
     tour: {
-      auth: parse.asString('AUTH_TOUR_NAME', 'NHANES-Auth'),
-      open: parse.asString('OPEN_TOUR_NAME', 'BDC-Open'),
-      searchTerm: parse.asString('EXPLORE_TOUR_SEARCH_TERM', 'age'),
+      auth: parse.asString('AUTH_TOUR_NAME'),
+      open: parse.asString('OPEN_TOUR_NAME'),
+      searchTerm: parse.asString('EXPLORE_TOUR_SEARCH_TERM'),
     },
     variantExplorer: {
-      excludeColumns: parse.asJson('VARIANT_EXPLORER_EXCLUDE_COLUMNS', []) as string[],
-      maxCount: parse.asInt('VARIANT_EXPLORER_MAX_COUNT', 10000),
+      excludeColumns: parse.asJson('VARIANT_EXPLORER_EXCLUDE_COLUMNS') as string[],
+      maxCount: parse.asInt('VARIANT_EXPLORER_MAX_COUNT'),
       type:
-        parse.asString('VARIANT_EXPLORER_TYPE', ExportType.Aggregate) === ExportType.Full
+        parse.asString('VARIANT_EXPLORER_TYPE') === ExportType.Full
           ? ExportType.Full
           : ExportType.Aggregate,
     },
     exportSystemFields: parse
-      .asString('EXPORT_SYSTEM_FIELDS', '')
+      .asString('EXPORT_SYSTEM_FIELDS')
       .split(',')
       .map((f: string) => f.trim())
       .filter(Boolean)
@@ -452,6 +852,7 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
         contactLink: '',
         logoHeight: 7.5,
       },
+      dotsColorsClass: [] as string[],
       logo: {
         alt: 'PIC-SURE',
         src: '',
@@ -497,9 +898,60 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
   branding.explorePage.codeBlocks = codeBlocks;
 
   // ENV or API overrides
-  const parser = parsers(resolveConfigMap(apiBranding));
-  branding.logo.alt = parser.asString('LOGO_ALT', 'PIC-SURE');
-  branding.logo.src = parser.asString('LOGO', '');
+  const parser = parsersFor('branding', resolveConfigMap(apiBranding));
+  branding.logo.alt = parser.asString('LOGO_ALT');
+  branding.logo.src = parser.asString('LOGO');
+  branding.dotsColorsClass = parser.asJson('DOTS_COLORS_CLASS') as string[];
 
   return branding;
+}
+
+// The admin UI's schema: a flat view over CONFIG_FIELDS, grouped by kind. Pure data -
+// no execution of the mappers involved, so this can never drift from what
+// mapFeatures/mapSettings/mapBranding actually resolve (they read the same table).
+export const CONFIG_FIELD_SCHEMA: Record<ConfigKind, ConfigFieldSchema[]> = (
+  Object.keys(CONFIG_FIELDS) as ConfigKind[]
+).reduce(
+  (acc, kind) => {
+    acc[kind] = Object.entries(CONFIG_FIELDS[kind]).map(([name, def]) => ({
+      name,
+      type: def.type,
+      default: def.default,
+      description: def.description,
+      group: def.group,
+    }));
+    return acc;
+  },
+  {} as Record<ConfigKind, ConfigFieldSchema[]>,
+);
+
+export interface ConfigFieldGroup<T extends { group: string } = ConfigFieldSchema> {
+  group: string;
+  fields: T[];
+}
+
+// Buckets a schema list by relation (Google settings together, Analysis features
+// together, etc.) instead of by type, for the admin UI's section headers. Section order
+// follows each group's first appearance in the given list, so CONFIG_FIELDS'
+// declaration order is the only place that ordering is controlled - no separate list.
+// Takes the field list rather than a ConfigKind so it stays a pure function of its
+// input - callers (and tests) pass whatever schema they have, mocked or not. Generic
+// over T (not hardcoded to ConfigFieldSchema) so the admin UI can also group a merged,
+// cross-kind list (e.g. features + settings fields tagged with which kind each came
+// from) - grouping only ever needs each item's `group`, nothing kind-specific.
+export function groupedConfigFieldSchema<T extends { group: string }>(
+  schema: T[],
+): ConfigFieldGroup<T>[] {
+  const groups: ConfigFieldGroup<T>[] = [];
+  const byName = new Map<string, ConfigFieldGroup<T>>();
+  for (const field of schema) {
+    let bucket = byName.get(field.group);
+    if (!bucket) {
+      bucket = { group: field.group, fields: [] };
+      byName.set(field.group, bucket);
+      groups.push(bucket);
+    }
+    bucket.fields.push(field);
+  }
+  return groups;
 }

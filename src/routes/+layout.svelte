@@ -4,7 +4,6 @@
   import '@fortawesome/fontawesome-free/css/all.min.css';
   import '../styles/app.css';
   import { config } from '$lib/configuration.svelte';
-  import { initSanitizeConfig } from '$lib/utilities/HTML';
   import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
   import ExternalLinkWarning from '$lib/components/ExternalLinkWarning.svelte';
   import { log, createLog } from '$lib/logger';
@@ -13,10 +12,8 @@
   let { children }: { children?: Snippet } = $props();
 
   onMount(() => {
-    initSanitizeConfig();
     if (config.features.wafCaptchaRecovery) resumeAfterWafCaptcha();
   });
-
   afterNavigate(({ from, to, type }) => {
     log(
       createLog('NAVIGATION', 'page.navigate', {
