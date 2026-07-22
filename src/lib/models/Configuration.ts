@@ -47,7 +47,6 @@ export type Features = Indexable & {
 };
 
 export type Settings = Indexable & {
-  dotsColorsClass: string[];
   distributionExplorer: {
     graphColors: string[];
   };
@@ -85,6 +84,7 @@ interface CodeBlockConfig extends Indexable {
 
 export type Branding = Indexable & {
   applicationName: string;
+  dotsColorsClass: string[];
   logo: {
     alt: string;
     src: string;
@@ -262,30 +262,6 @@ export function resolveConfigMap(apiRows: ConfigObject[], envPrefix?: string): C
   const apiMap = apiConfigMap(apiRows);
   const envMap = envConfigMap(envPrefix);
   return getConfigMode() === 'override' ? { ...apiMap, ...envMap } : { ...envMap, ...apiMap };
-}
-
-// A blank (or whitespace-only) value is treated the same as an absent one - it
-// falls back to the default rather than being coerced/parsed. asString is the
-// one exception: an explicit empty string is a valid override there, so it
-// only checks presence, not blankness.
-// Also the single place that guards against a value transform throwing (asJson on
-// invalid JSON) or otherwise failing to produce a usable value (asInt on a
-// non-numeric string) - falls back to defaultValue in either case, so a bad admin-
-// entered row degrades that one field instead of blowing up the whole config load.
-function withNonBlank<T>(
-  map: ConfigMap,
-  name: string,
-  defaultValue: T,
-  transform: (value: string) => T,
-): T {
-  const value = map[name]?.value;
-  if (!value || value.trim() === '') return defaultValue;
-  try {
-    return transform(value);
-  } catch (e) {
-    console.warn(`Invalid config value for "${name}" ("${value}"), falling back to default.`, e);
-    return defaultValue;
-  }
 }
 
 export type ConfigKind = 'features' | 'settings' | 'branding';
@@ -601,15 +577,6 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
         'Google Tag Manager container ID; when set, loads the GTM script/iframe alongside the same consent prompt.',
     },
 
-    // --- Appearance ---
-    DOTS_COLORS_CLASS: {
-      group: 'Appearance',
-      type: 'json',
-      default: ['--color-primary-500', '--color-error-500', '--color-surface-400'],
-      description:
-        'Overrides the colors of the decorative dot graphic on the login page; must be an array of exactly 3 or 5 color values, otherwise the default is kept.',
-    },
-
     // --- Explorer & Search --- (joined by DIST_EXPLORER and others from features, once
     // features+settings are merged in the admin UI)
     DIST_EXPLORER_GRAPH_COLORS: {
@@ -696,6 +663,13 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       description:
         'URL of a custom logo image to display instead of the default PIC-SURE wordmark, in the header and login page.',
     },
+    DOTS_COLORS_CLASS: {
+      group: 'Appearance',
+      type: 'json',
+      default: [],
+      description:
+        'Overrides the colors of the decorative dot graphic on the login page; must be an array of exactly 3 or 5 color values, otherwise the default is kept.',
+    },
   },
 };
 
@@ -709,6 +683,30 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
 export function deprecatedApiRows(kind: ConfigKind, apiRows: ConfigObject[]): ConfigObject[] {
   const known = CONFIG_FIELDS[kind];
   return apiRows.filter((row) => !(row.name in known));
+}
+
+// A blank (or whitespace-only) value is treated the same as an absent one - it
+// falls back to the default rather than being coerced/parsed. asString is the
+// one exception: an explicit empty string is a valid override there, so it
+// only checks presence, not blankness.
+// Also the single place that guards against a value transform throwing (asJson on
+// invalid JSON) or otherwise failing to produce a usable value (asInt on a
+// non-numeric string) - falls back to defaultValue in either case, so a bad admin-
+// entered row degrades that one field instead of blowing up the whole config load.
+function withNonBlank<T>(
+  map: ConfigMap,
+  name: string,
+  defaultValue: T,
+  transform: (value: string) => T,
+): T {
+  const value = map[name]?.value;
+  if (!value || value.trim() === '') return defaultValue;
+  try {
+    return transform(value);
+  } catch (e) {
+    console.warn(`Invalid config value for "${name}" ("${value}"), falling back to default.`, e);
+    return defaultValue;
+  }
 }
 
 export function parsers(map: ConfigMap) {
@@ -799,7 +797,6 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
 export function mapSettings(apiSettings: ConfigObject[]): Settings {
   const parse = parsersFor('settings', resolveConfigMap(apiSettings));
   return {
-    dotsColorsClass: parse.asJson('DOTS_COLORS_CLASS') as string[],
     distributionExplorer: {
       graphColors: parse.asJson('DIST_EXPLORER_GRAPH_COLORS') as string[],
     },
@@ -909,6 +906,7 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
         contactLink: '',
         logoHeight: 7.5,
       },
+      dotsColorsClass: [] as string[],
       logo: {
         alt: 'PIC-SURE',
         src: '',
@@ -950,6 +948,7 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
   const parser = parsersFor('branding', resolveConfigMap(apiBranding));
   branding.logo.alt = parser.asString('LOGO_ALT');
   branding.logo.src = parser.asString('LOGO');
+  branding.dotsColorsClass = parser.asJson('DOTS_COLORS_CLASS') as string[];
 
   return branding;
 }
