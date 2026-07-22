@@ -455,12 +455,6 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       default: false,
       description: "Adds a 'Finalize Data' step to the export stepper flow.",
     },
-    EXPLORE_TOUR: {
-      group: 'Explorer & Search',
-      type: 'boolean',
-      default: true,
-      description: 'Shows the guided walkthrough tour button on the Explorer/Discover pages.',
-    },
     ENABLE_SAMPLE_ID_CHECKBOX: {
       group: 'Explorer & Search',
       type: 'boolean',
@@ -481,6 +475,16 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       default: false,
       description:
         "Shows the 'Restore Filters' button for older (V2) saved queries; V3 queries always show it regardless.",
+    },
+
+    // --- Guided Tour --- (joined by AUTH_TOUR_NAME, OPEN_TOUR_NAME, and
+    // EXPLORE_TOUR_SEARCH_TERM from settings, once features+settings are merged in the
+    // admin UI)
+    EXPLORE_TOUR: {
+      group: 'Guided Tour',
+      type: 'boolean',
+      default: true,
+      description: 'Shows the guided walkthrough tour button on the Explorer/Discover pages.',
     },
 
     // --- Genomic Search ---
@@ -605,8 +609,11 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       description:
         'Overrides the colors of the decorative dot graphic on the login page; must be an array of exactly 3 or 5 color values, otherwise the default is kept.',
     },
+
+    // --- Explorer & Search --- (joined by DIST_EXPLORER and others from features, once
+    // features+settings are merged in the admin UI)
     DIST_EXPLORER_GRAPH_COLORS: {
-      group: 'Appearance',
+      group: 'Explorer & Search',
       type: 'json',
       default: ['#328FFF', '#675AFF', '#FFBC35'],
       description:
@@ -651,22 +658,23 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       description: 'Default search term the guided tour pre-fills/highlights in the search box.',
     },
 
-    // --- Variant Explorer ---
+    // --- Genomic Search --- (joined by ENABLE_GENE_QUERY, ENABLE_SNP_QUERY, and
+    // VARIANT_EXPLORER from features, once features+settings are merged in the admin UI)
     VARIANT_EXPLORER_EXCLUDE_COLUMNS: {
-      group: 'Variant Explorer',
+      group: 'Genomic Search',
       type: 'json',
       default: [],
       description: "Column names to strip from the Variant Explorer's result table.",
     },
     VARIANT_EXPLORER_MAX_COUNT: {
-      group: 'Variant Explorer',
+      group: 'Genomic Search',
       type: 'int',
       default: 10000,
       description:
         "Maximum number of variants the Variant Explorer will display before showing a 'Too many variants!' warning instead.",
     },
     VARIANT_EXPLORER_TYPE: {
-      group: 'Variant Explorer',
+      group: 'Genomic Search',
       type: 'string',
       default: ExportType.Aggregate,
       description:
@@ -965,9 +973,9 @@ export const CONFIG_FIELD_SCHEMA: Record<ConfigKind, ConfigFieldSchema[]> = (
   {} as Record<ConfigKind, ConfigFieldSchema[]>,
 );
 
-export interface ConfigFieldGroup {
+export interface ConfigFieldGroup<T extends { group: string } = ConfigFieldSchema> {
   group: string;
-  fields: ConfigFieldSchema[];
+  fields: T[];
 }
 
 // Buckets a schema list by relation (Google settings together, Analysis features
@@ -975,10 +983,15 @@ export interface ConfigFieldGroup {
 // follows each group's first appearance in the given list, so CONFIG_FIELDS'
 // declaration order is the only place that ordering is controlled - no separate list.
 // Takes the field list rather than a ConfigKind so it stays a pure function of its
-// input - callers (and tests) pass whatever schema they have, mocked or not.
-export function groupedConfigFieldSchema(schema: ConfigFieldSchema[]): ConfigFieldGroup[] {
-  const groups: ConfigFieldGroup[] = [];
-  const byName = new Map<string, ConfigFieldGroup>();
+// input - callers (and tests) pass whatever schema they have, mocked or not. Generic
+// over T (not hardcoded to ConfigFieldSchema) so the admin UI can also group a merged,
+// cross-kind list (e.g. features + settings fields tagged with which kind each came
+// from) - grouping only ever needs each item's `group`, nothing kind-specific.
+export function groupedConfigFieldSchema<T extends { group: string }>(
+  schema: T[],
+): ConfigFieldGroup<T>[] {
+  const groups: ConfigFieldGroup<T>[] = [];
+  const byName = new Map<string, ConfigFieldGroup<T>>();
   for (const field of schema) {
     let bucket = byName.get(field.group);
     if (!bucket) {

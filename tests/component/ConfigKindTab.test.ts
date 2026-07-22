@@ -2,7 +2,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import { writable } from 'svelte/store';
 
 import ConfigKindTab from '$lib/components/admin/configuration/ConfigKindTab.svelte';
 import { describeConfigField } from '$lib/models/ConfigResolution';
@@ -11,6 +10,7 @@ import {
   isApiAvailable,
   adminConfigRows,
   deleteConfigRow,
+  addConfigRow,
 } from '$lib/stores/AdminConfiguration';
 import type { ConfigFieldSchema, ConfigObject } from '$lib/models/Configuration';
 import type { FieldOrigin } from '$lib/models/ConfigResolution';
@@ -21,7 +21,14 @@ vi.mock('$lib/models/ConfigResolution', () => ({
   describeConfigField: vi.fn(),
 }));
 
-const { enabledFooSchema, enabledBarSchema, soloSchema } = vi.hoisted(() => ({
+const {
+  enabledFooSchema,
+  enabledBarSchema,
+  soloSchema,
+  featureExportSchema,
+  settingExportSchema,
+  brandingSchema,
+} = vi.hoisted(() => ({
   enabledFooSchema: {
     name: 'ENABLE_FOO',
     type: 'boolean',
@@ -43,6 +50,31 @@ const { enabledFooSchema, enabledBarSchema, soloSchema } = vi.hoisted(() => ({
     description: 'The only field in its kind.',
     group: 'Solo Group',
   } satisfies ConfigFieldSchema,
+  // Same group name on purpose, one per kind - exercises the merged tab bucketing a
+  // feature and a setting into the same relation-based section.
+  featureExportSchema: {
+    name: 'FEATURE_EXPORT_THING',
+    type: 'boolean',
+    default: false,
+    description: 'A feature related to export.',
+    group: 'Export',
+  } satisfies ConfigFieldSchema,
+  settingExportSchema: {
+    name: 'SETTING_EXPORT_THING',
+    type: 'string',
+    default: '',
+    description: 'A setting related to export.',
+    group: 'Export',
+  } satisfies ConfigFieldSchema,
+  // Its own kind (branding) so it stays the only field/group there - settings now has
+  // two groups (Solo Group, Export) to exercise cross-kind merging above.
+  brandingSchema: {
+    name: 'BRANDING_FIELD',
+    type: 'string',
+    default: '',
+    description: 'The only field in its kind.',
+    group: 'Only Group',
+  } satisfies ConfigFieldSchema,
 }));
 
 vi.mock('$lib/models/Configuration', async () => {
@@ -52,9 +84,9 @@ vi.mock('$lib/models/Configuration', async () => {
   return {
     ...actual,
     CONFIG_FIELD_SCHEMA: {
-      features: [enabledFooSchema, enabledBarSchema],
-      settings: [soloSchema],
-      branding: [],
+      features: [enabledFooSchema, enabledBarSchema, featureExportSchema],
+      settings: [soloSchema, settingExportSchema],
+      branding: [brandingSchema],
     },
     configApiEnvVarName: vi.fn().mockReturnValue('VITE_ADMIN_FEATURES_API'),
     deprecatedApiRows: vi.fn().mockReturnValue([]),
@@ -70,6 +102,7 @@ vi.mock('$lib/stores/AdminConfiguration', async () => {
     loadAdminConfig: vi.fn().mockResolvedValue(undefined),
     isApiAvailable: vi.fn().mockReturnValue(true),
     deleteConfigRow: vi.fn(),
+    addConfigRow: vi.fn(),
   };
 });
 
@@ -77,11 +110,12 @@ const mockDescribeConfigField = vi.mocked(describeConfigField);
 const mockLoadAdminConfig = vi.mocked(loadAdminConfig);
 const mockIsApiAvailable = vi.mocked(isApiAvailable);
 const mockDeleteConfigRow = vi.mocked(deleteConfigRow);
+const mockAddConfigRow = vi.mocked(addConfigRow);
 const mockDeprecatedApiRows = vi.mocked(
   (await import('$lib/models/Configuration')).deprecatedApiRows,
 );
 
-describe('ConfigKindTab', () => {
+describe('ConfigKindTab (single kind)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLoadAdminConfig.mockResolvedValue(undefined);
@@ -99,7 +133,7 @@ describe('ConfigKindTab', () => {
     } as FieldOrigin);
     adminConfigRows.features.set([apiRow]);
 
-    render(ConfigKindTab, { kind: 'features' });
+    render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
     const checkbox = (await screen.findByTestId(
       'config-field-input-ENABLE_FOO',
@@ -114,7 +148,7 @@ describe('ConfigKindTab', () => {
       disabled: false,
     } as FieldOrigin);
 
-    render(ConfigKindTab, { kind: 'features' });
+    render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
     const checkbox = (await screen.findByTestId(
       'config-field-input-ENABLE_FOO',
@@ -126,7 +160,7 @@ describe('ConfigKindTab', () => {
     mockIsApiAvailable.mockReturnValue(false);
     mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
 
-    render(ConfigKindTab, { kind: 'features' });
+    render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
     expect(await screen.findByTestId('config-api-unavailable-features')).toBeInTheDocument();
     expect(screen.getByTestId('config-field-input-ENABLE_FOO')).toBeDisabled();
@@ -135,7 +169,7 @@ describe('ConfigKindTab', () => {
   it('re-fetches with force=true when Refresh is clicked', async () => {
     mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
 
-    render(ConfigKindTab, { kind: 'features' });
+    render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
     await screen.findByTestId('config-tab-features');
 
     await fireEvent.click(screen.getByTestId('config-refresh-features'));
@@ -148,7 +182,7 @@ describe('ConfigKindTab', () => {
     const deprecatedRow: ConfigObject = { uuid: 'old-1', name: 'OLD_FIELD', value: 'x' };
     mockDeprecatedApiRows.mockReturnValue([deprecatedRow]);
 
-    render(ConfigKindTab, { kind: 'features' });
+    render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
     expect(await screen.findByTestId('config-deprecated-row-OLD_FIELD')).toBeInTheDocument();
 
@@ -158,7 +192,7 @@ describe('ConfigKindTab', () => {
   });
 });
 
-describe('ConfigKindTab grouping and search', () => {
+describe('ConfigKindTab grouping and search (single kind)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLoadAdminConfig.mockResolvedValue(undefined);
@@ -170,7 +204,7 @@ describe('ConfigKindTab grouping and search', () => {
   });
 
   it('renders a section header per group when a kind has more than one group', async () => {
-    render(ConfigKindTab, { kind: 'features' });
+    render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
     const tab = await screen.findByTestId('config-tab-features');
     expect(tab).toHaveTextContent('Group One');
@@ -180,15 +214,15 @@ describe('ConfigKindTab grouping and search', () => {
   });
 
   it('hides the section header when a kind has exactly one group', async () => {
-    render(ConfigKindTab, { kind: 'settings' });
+    render(ConfigKindTab, { kinds: ['branding'], title: 'Branding' });
 
-    const tab = await screen.findByTestId('config-tab-settings');
-    expect(tab).not.toHaveTextContent('Solo Group');
-    expect(screen.getByTestId('config-field-row-SOLO_FIELD')).toBeInTheDocument();
+    const tab = await screen.findByTestId('config-tab-branding');
+    expect(tab).not.toHaveTextContent('Only Group');
+    expect(screen.getByTestId('config-field-row-BRANDING_FIELD')).toBeInTheDocument();
   });
 
   it('filters fields by search query, hiding groups with no matches', async () => {
-    render(ConfigKindTab, { kind: 'features' });
+    render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
     await screen.findByTestId('config-field-row-ENABLE_FOO');
 
@@ -201,7 +235,7 @@ describe('ConfigKindTab grouping and search', () => {
   });
 
   it('shows a no-results message when the search query matches nothing', async () => {
-    render(ConfigKindTab, { kind: 'features' });
+    render(ConfigKindTab, { kinds: ['features'], title: 'Features' });
 
     await screen.findByTestId('config-field-row-ENABLE_FOO');
 
@@ -210,5 +244,97 @@ describe('ConfigKindTab grouping and search', () => {
     });
 
     expect(await screen.findByTestId('config-no-results-features')).toBeInTheDocument();
+  });
+});
+
+describe('ConfigKindTab merged kinds (Settings & Features)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockLoadAdminConfig.mockResolvedValue(undefined);
+    mockIsApiAvailable.mockReturnValue(true);
+    mockDeprecatedApiRows.mockReturnValue([]);
+    mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
+    adminConfigRows.features.set([]);
+    adminConfigRows.settings.set([]);
+  });
+
+  it('loads and renders fields from every given kind', async () => {
+    render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
+
+    await screen.findByTestId('config-tab-features-settings');
+
+    expect(mockLoadAdminConfig).toHaveBeenCalledWith('features', false);
+    expect(mockLoadAdminConfig).toHaveBeenCalledWith('settings', false);
+    expect(screen.getByTestId('config-field-row-ENABLE_FOO')).toBeInTheDocument();
+    expect(screen.getByTestId('config-field-row-SOLO_FIELD')).toBeInTheDocument();
+  });
+
+  it('buckets a feature and a setting sharing a group name into one section', async () => {
+    render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
+
+    const group = await screen.findByTestId('config-group-features-settings-Export');
+    expect(group).toHaveTextContent('Export');
+
+    const featureRow = screen.getByTestId('config-field-row-FEATURE_EXPORT_THING');
+    const settingRow = screen.getByTestId('config-field-row-SETTING_EXPORT_THING');
+    expect(group).toContainElement(featureRow);
+    expect(group).toContainElement(settingRow);
+  });
+
+  it('filters across kinds by search query', async () => {
+    render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
+
+    await screen.findByTestId('config-field-row-SOLO_FIELD');
+
+    await fireEvent.input(screen.getByTestId('config-search-features-settings'), {
+      target: { value: 'solo' },
+    });
+
+    expect(screen.queryByTestId('config-field-row-ENABLE_FOO')).not.toBeInTheDocument();
+    expect(screen.getByTestId('config-field-row-SOLO_FIELD')).toBeInTheDocument();
+  });
+
+  it('saves a settings-kind field via the settings API, not features', async () => {
+    mockAddConfigRow.mockResolvedValue({ uuid: 'new', name: 'SOLO_FIELD', value: 'true' });
+
+    render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
+
+    const checkbox = await screen.findByTestId('config-field-input-SOLO_FIELD');
+    await fireEvent.click(checkbox);
+    await fireEvent.click(screen.getByTestId('config-field-save-SOLO_FIELD'));
+
+    expect(mockAddConfigRow).toHaveBeenCalledWith('settings', 'SOLO_FIELD', 'true');
+  });
+
+  it('shows a per-kind API-unavailable warning only for the affected kind', async () => {
+    mockIsApiAvailable.mockImplementation((kind: string) => kind !== 'settings');
+
+    render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
+
+    expect(await screen.findByTestId('config-api-unavailable-settings')).toBeInTheDocument();
+    expect(screen.queryByTestId('config-api-unavailable-features')).not.toBeInTheDocument();
+    expect(screen.getByTestId('config-field-input-SOLO_FIELD')).toBeDisabled();
+    expect(screen.getByTestId('config-field-input-ENABLE_FOO')).not.toBeDisabled();
+  });
+
+  it('lists deprecated rows from every kind and deletes with the right kind', async () => {
+    const deprecatedFeatureRow: ConfigObject = {
+      uuid: 'old-feat',
+      name: 'OLD_FEATURE',
+      value: 'x',
+    };
+    const deprecatedSettingRow: ConfigObject = { uuid: 'old-set', name: 'OLD_SETTING', value: 'y' };
+    mockDeprecatedApiRows.mockImplementation((kind: string) =>
+      kind === 'features' ? [deprecatedFeatureRow] : [deprecatedSettingRow],
+    );
+
+    render(ConfigKindTab, { kinds: ['features', 'settings'], title: 'Settings & Features' });
+
+    expect(await screen.findByTestId('config-deprecated-row-OLD_FEATURE')).toBeInTheDocument();
+    expect(screen.getByTestId('config-deprecated-row-OLD_SETTING')).toBeInTheDocument();
+
+    await fireEvent.click(screen.getByTestId('config-deprecated-delete-OLD_SETTING'));
+
+    expect(mockDeleteConfigRow).toHaveBeenCalledWith('settings', 'old-set');
   });
 });

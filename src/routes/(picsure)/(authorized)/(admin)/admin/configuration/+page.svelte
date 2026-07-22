@@ -92,8 +92,7 @@
   <Tabs value={tabSet} onValueChange={(e: { value: string }) => (tabSet = e.value)}>
     {#snippet list()}
       <TabItem bind:group={tabSet} value="Access Control">Access Control</TabItem>
-      <TabItem bind:group={tabSet} value="Features">Features</TabItem>
-      <TabItem bind:group={tabSet} value="Settings">Settings</TabItem>
+      <TabItem bind:group={tabSet} value="Settings & Features">Settings & Features</TabItem>
       <TabItem bind:group={tabSet} value="Branding">Branding</TabItem>
     {/snippet}
     {#snippet content()}
@@ -204,19 +203,14 @@
           </div>
         {/if}
       </Tabs.Panel>
-      <Tabs.Panel value="Features">
+      <Tabs.Panel value="Settings & Features">
         <fieldset disabled={!$isTopAdmin}>
-          <ConfigKindTab kind="features" />
-        </fieldset>
-      </Tabs.Panel>
-      <Tabs.Panel value="Settings">
-        <fieldset disabled={!$isTopAdmin}>
-          <ConfigKindTab kind="settings" />
+          <ConfigKindTab kinds={['features', 'settings']} title="Settings & Features" />
         </fieldset>
       </Tabs.Panel>
       <Tabs.Panel value="Branding">
         <fieldset disabled={!$isTopAdmin}>
-          <ConfigKindTab kind="branding" />
+          <ConfigKindTab kinds={['branding']} title="Branding" />
         </fieldset>
       </Tabs.Panel>
     {/snippet}

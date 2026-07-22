@@ -189,7 +189,7 @@ describe('ConfigFieldRow', () => {
 
   it('truncates a long description behind a Show more/Show less toggle', async () => {
     mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
-    const longDescription = 'A'.repeat(120);
+    const longDescription = 'A'.repeat(200);
 
     render(ConfigFieldRow, baseProps({ ...stringSchema, description: longDescription }));
 

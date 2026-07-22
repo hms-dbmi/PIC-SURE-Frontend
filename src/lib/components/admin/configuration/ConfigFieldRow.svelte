@@ -170,6 +170,7 @@
           class="inline-flex items-center gap-2.5 relative {rowDisabled
             ? 'cursor-default'
             : 'cursor-pointer'}"
+          data-testid={`config-field-toggle-${schema.name}`}
         >
           <span
             class="w-9 h-[21px] rounded-full flex-none relative transition-colors {checked
