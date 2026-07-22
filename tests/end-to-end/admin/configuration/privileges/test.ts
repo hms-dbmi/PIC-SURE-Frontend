@@ -273,7 +273,7 @@ test.describe('Admin on Configuration page', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByTestId('error-alert')).toBeVisible();
+    await expect(page.getByTestId('top-admin-only-error')).toBeVisible();
   });
   test('Can still navigate to edit page but its actions and inputs are disabled', async ({
     page,

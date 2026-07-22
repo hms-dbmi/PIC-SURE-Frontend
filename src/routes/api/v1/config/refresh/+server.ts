@@ -5,8 +5,6 @@ import { PicsurePrivileges } from '$lib/models/Privilege';
 import type { User } from '$lib/models/User';
 import type { RequestHandler } from './$types';
 
-const ORIGIN = import.meta.env?.VITE_ORIGIN;
-
 export const GET: RequestHandler = async ({ request }) => {
   const authorization = request.headers.get('Authorization');
   if (!authorization) {
@@ -15,15 +13,17 @@ export const GET: RequestHandler = async ({ request }) => {
 
   let user: User;
   try {
-    const res = await fetch(`${ORIGIN}/${Psama.User.Me}`, {
+    const target = `https://localhost/${Psama.User.Me}`;
+    const res = await fetch(target, {
       method: 'GET',
       headers: { Authorization: authorization },
     });
     if (!res.ok) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
-    user = await res.json();
-  } catch {
+    const text = await res.text();
+    user = JSON.parse(text);
+  } catch (e) {
     return json({ error: 'Unauthorized' }, { status: 401 });
   }
 

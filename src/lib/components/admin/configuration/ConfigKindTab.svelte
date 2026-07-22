@@ -10,6 +10,7 @@
   import {
     adminConfigRows,
     deleteConfigRow,
+    invalidateConfigCache,
     isApiAvailable,
     loadAdminConfig,
     type AdminConfigKind,
@@ -17,8 +18,11 @@
   import ConfigFieldRow from './ConfigFieldRow.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
+  import Modal from '$lib/components/Modal.svelte';
   import { toaster } from '$lib/toaster';
   import { humanizeKey } from '$lib/utilities/Strings';
+
+  const SEARCH_BOX_MIN_LENGTH = 10;
 
   interface Props {
     // One tab can cover more than one config kind (e.g. Features + Settings merged into
@@ -115,6 +119,17 @@
   // admin can pull in rows another admin just added/changed without a full page reload.
   let refreshCount = $state(0);
   const refresh = () => (refreshCount += 1);
+
+  async function invalidateCache() {
+    try {
+      await invalidateConfigCache();
+      refresh();
+      toaster.success({ title: 'Server-side config cache invalidated' });
+    } catch (e) {
+      console.error(e);
+      toaster.error({ title: 'Failed to invalidate config cache' });
+    }
+  }
 </script>
 
 {#await Promise.all(kinds.map((kind) => loadAdminConfig(kind, refreshCount > 0)))}
@@ -136,39 +151,45 @@
     {/if}
   {/each}
   {#if kinds.includes('branding')}
-    <ErrorAlert title="Limited scope" color="secondary" data-testid="config-branding-scope-note">
-      <p>
-        Most branding (application name, page copy, links, etc.) is sourced from the build-time
-        configuration file and is not editable here — only Logo and Logo Alt Text are
-        API/env-configurable.
-      </p>
+    <ErrorAlert color="secondary" iconSize="lg" data-testid="config-branding-scope-note">
+      <span class="font-bold">Limited scope:</span> Most branding is sourced from the build-time configuration file.
     </ErrorAlert>
   {/if}
   <div class="flex items-center gap-3 my-3">
-    <div class="relative flex-1 max-w-sm">
-      <i
-        class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-50"
-      ></i>
-      <input
-        type="text"
-        class="input pl-8 w-full"
-        placeholder="Search fields…"
-        data-testid={`config-search-${testIdBase}`}
-        bind:value={query}
-      />
-    </div>
-    <span class="text-xs opacity-60 whitespace-nowrap">
-      {visibleCount} of {kindedSchema.length} fields
-    </span>
+  {#if kindedSchema.length > SEARCH_BOX_MIN_LENGTH}
+      <div class="relative flex-1 max-w-sm">
+        <i
+          class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-50"
+        ></i>
+        <input
+          type="text"
+          class="input pl-8 w-full"
+          placeholder="Search fields…"
+          data-testid={`config-search-${testIdBase}`}
+          bind:value={query}
+        />
+      </div>
+      <span class="text-xs opacity-60 whitespace-nowrap">
+        {visibleCount} of {kindedSchema.length} fields
+      </span>
+    {/if}
     <div class="flex-1"></div>
-    <button
-      type="button"
-      class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
-      data-testid={`config-refresh-${testIdBase}`}
-      onclick={refresh}
+    <Modal
+      data-testid={`config-invalidate-cache-${testIdBase}`}
+      title="Invalidate Cache?"
+      confirmText="Yes"
+      cancelText="No"
+      onconfirm={invalidateCache}
+      triggerBase="btn preset-tonal-surface border border-surface-500 hover:preset-filled-surface-500"
+      withDefault
     >
-      Refresh
-    </button>
+      {#snippet trigger()}
+        Invalidate Cache & Refresh
+      {/snippet}
+      Are you sure you want to invalidate the server-side config cache? This immediately forces
+      the app to refetch {title} from the backend for all users, instead of waiting for the routine
+      refresh (up to 4 hours).
+    </Modal>
   </div>
   <div data-testid={`config-tab-${testIdBase}`}>
     {#each filteredGroups as group (group.group)}

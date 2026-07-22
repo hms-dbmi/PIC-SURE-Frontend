@@ -1,8 +1,8 @@
 import { get, writable, type Writable } from 'svelte/store';
 import type { ConfigObject, ConfigKind } from '$lib/models/Configuration';
-import { CONFIG_API_KIND } from '$lib/models/Configuration';
+import { CONFIG_API_KIND, type ConfigCache } from '$lib/models/Configuration';
 import * as api from '$lib/api';
-import { Picsure } from '$lib/paths';
+import { Picsure, LocalServer } from '$lib/paths';
 
 export type AdminConfigKind = ConfigKind;
 
@@ -76,4 +76,12 @@ export async function deleteConfigRow(kind: AdminConfigKind, uuid: string): Prom
 
   const rows = get(adminConfigRows[kind]).filter((r) => r.uuid !== uuid);
   adminConfigRows[kind].set(rows);
+}
+
+// Forces the server-side config cache (used to build the app's own runtime config for
+// every session, see configCache.ts) to refetch immediately, instead of waiting for its
+// routine up-to-4-hour expiry. Distinct from loadAdminConfig's `force`, which only
+// re-reads this admin UI's own view of the rows.
+export function invalidateConfigCache(): Promise<ConfigCache> {
+  return api.get(LocalServer.ConfigRefresh);
 }

@@ -4,10 +4,10 @@ const QUERY = `${PREFIX}/query`;
 const UPLOADER = `${PREFIX}/proxy/uploader`;
 const VIZ = `${PREFIX}/proxy/visualization`;
 const API = '/api/v1';
-const LOCAL = 'api';
 
 export const LocalServer = {
-  Configs: `${LOCAL}/config`,
+  Configs: `${API}/config`,
+  ConfigRefresh: `${API}/config/refresh`,
 };
 
 export const Picsure = {

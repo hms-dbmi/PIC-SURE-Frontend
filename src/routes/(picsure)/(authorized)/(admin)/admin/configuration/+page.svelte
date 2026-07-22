@@ -82,7 +82,7 @@
 
 <Content title="Configuration">
   {#if !$isTopAdmin}
-    <ErrorAlert title="Top Administrator Only" color="warning">
+    <ErrorAlert data-testid="top-admin-only-error" title="Top Administrator Only" color="warning">
       <p>
         Configurations are READ ONLY for admin users. Please contact your administrator to make
         changes.
