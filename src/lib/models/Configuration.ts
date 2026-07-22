@@ -241,7 +241,7 @@ export function getConfigMode(): ConfigMode {
   return import.meta.env?.VITE_CONFIG_MODE === 'override' ? 'override' : 'seed';
 }
 
-function envConfigMap(envPrefix: string = VITE_ENV_PREFIX): ConfigMap {
+export function envConfigMap(envPrefix: string = VITE_ENV_PREFIX): ConfigMap {
   const env = import.meta.env;
   return Object.keys(env).reduce((map: ConfigMap, key: string) => {
     if (!key.startsWith(envPrefix)) return map;
@@ -251,7 +251,7 @@ function envConfigMap(envPrefix: string = VITE_ENV_PREFIX): ConfigMap {
   }, {} as ConfigMap);
 }
 
-function apiConfigMap(apiRows: ConfigObject[]): ConfigMap {
+export function apiConfigMap(apiRows: ConfigObject[]): ConfigMap {
   return apiRows.reduce((map: ConfigMap, row: ConfigObject) => {
     map[row.name] = row;
     return map;
@@ -288,6 +288,112 @@ function withNonBlank<T>(
   }
 }
 
+export type ConfigKind = 'features' | 'settings' | 'branding';
+
+// Which VITE_<KIND> env var controls whether the API is queried at all for a config
+// kind - used both server-side (configCache.ts's SSR bootstrap) and client-side
+// (AdminConfiguration.ts's admin CRUD store, ConfigKindTab.svelte's "unavailable"
+// messaging). Centralized so the env var naming convention has exactly one place to
+// change; previously this Record was declared independently in two files, with a third
+// place rebuilding the var *name* via a string template.
+const CONFIG_API_ENV_VAR_NAME: Record<ConfigKind, string> = {
+  features: 'VITE_API_CONFIG_FEATURES',
+  settings: 'VITE_API_CONFIG_SETTINGS',
+  branding: 'VITE_API_CONFIG_BRANDING',
+};
+
+export function configApiEnvVarName(kind: ConfigKind): string {
+  return CONFIG_API_ENV_VAR_NAME[kind];
+}
+
+// The "kind" value sent as ?kind=<value> to the backend and used to gate whether API
+// overrides are available at all for a config kind - empty means the deployment
+// hasn't wired up the API for that kind. Vite exposes VITE_-prefixed vars as real
+// properties on import.meta.env (see envConfigMap's Object.keys(env) above), so a
+// dynamic lookup by env var name works the same as a literal `import.meta.env.FOO`.
+export const CONFIG_API_KIND: Record<ConfigKind, string> = {
+  features: import.meta.env[CONFIG_API_ENV_VAR_NAME.features] || '',
+  settings: import.meta.env[CONFIG_API_ENV_VAR_NAME.settings] || '',
+  branding: import.meta.env[CONFIG_API_ENV_VAR_NAME.branding] || '',
+};
+
+type FieldType = 'boolean' | 'int' | 'json' | 'string';
+export interface ConfigFieldSchema {
+  name: string;
+  type: FieldType;
+  default: unknown;
+}
+interface FieldDef {
+  type: FieldType;
+  default: unknown;
+}
+
+// Single source of truth for every field mapFeatures/mapSettings/mapBranding can
+// resolve. parsersFor() (below) looks up each field's type/default from here instead
+// of taking them as call-site arguments, so there is exactly one place a field's
+// default is declared - previously OPEN's default was written twice, once at each of
+// its two call sites, with nothing stopping them from drifting apart. This table also
+// *is* the admin UI's schema (see CONFIG_FIELD_SCHEMA below): no separate list, and no
+// need to run any mapper to introspect it.
+const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
+  features: {
+    ANALYZE_ANALYSIS: { type: 'boolean', default: false },
+    ANALYZE_API: { type: 'boolean', default: true },
+    COLLABORATE: { type: 'boolean', default: false },
+    CONFIRM_DOWNLOAD: { type: 'boolean', default: false },
+    DATA_REQUESTS: { type: 'boolean', default: false },
+    DISCOVER: { type: 'boolean', default: false },
+    DASHBOARD: { type: 'boolean', default: false },
+    DASHBOARD_DRAWER: { type: 'boolean', default: false },
+    ENABLE_GENE_QUERY: { type: 'boolean', default: false },
+    ENABLE_SNP_QUERY: { type: 'boolean', default: false },
+    ENFORCE_TOS_ACCEPT: { type: 'boolean', default: false },
+    // OPEN feeds both explorer.open (AND'd with OPEN_EXPLORER) and login.open below.
+    OPEN_EXPLORER: { type: 'boolean', default: false },
+    OPEN: { type: 'boolean', default: false },
+    ALLOW_DOWNLOAD: { type: 'boolean', default: true },
+    ALLOW_EXPORT: { type: 'boolean', default: false },
+    DIST_EXPLORER: { type: 'boolean', default: false },
+    ENABLE_COHORT_DETAILS: { type: 'boolean', default: false },
+    EXPORT_TIMESERIES: { type: 'boolean', default: true },
+    ENABLE_HIERARCHY: { type: 'boolean', default: false },
+    DOWNLOAD_AS_PFB: { type: 'boolean', default: true },
+    ENABLE_REDCAP_EXPORT: { type: 'boolean', default: false },
+    ENABLE_SAMPLE_ID_CHECKBOX: { type: 'boolean', default: false },
+    EXPLORE_TOUR: { type: 'boolean', default: true },
+    ALLOW_EXPORT_ENABLED: { type: 'boolean', default: false },
+    SHOW_TREE_STEP: { type: 'boolean', default: false },
+    VARIANT_EXPLORER: { type: 'boolean', default: false },
+    FEDERATED: { type: 'boolean', default: false },
+    MANUAL_ROLE: { type: 'boolean', default: false },
+    REQUIRE_CONSENTS: { type: 'boolean', default: false },
+    RESTORE_V2_QUERY: { type: 'boolean', default: false },
+    ENABLE_TOS: { type: 'boolean', default: false },
+    USE_QUERY_TEMPLATE: { type: 'boolean', default: false },
+  },
+  settings: {
+    DOTS_COLORS_CLASS: {
+      type: 'json',
+      default: ['--color-primary-500', '--color-error-500', '--color-surface-400'],
+    },
+    DIST_EXPLORER_GRAPH_COLORS: { type: 'json', default: ['#328FFF', '#675AFF', '#FFBC35'] },
+    GOOGLE_ANALYTICS_ID: { type: 'string', default: '' },
+    GOOGLE_TAG_MANAGER_ID: { type: 'string', default: '' },
+    MAX_DATA_POINTS_FOR_EXPORT: { type: 'int', default: 1000000 },
+    AUTH_TOUR_NAME: { type: 'string', default: 'NHANES-Auth' },
+    OPEN_TOUR_NAME: { type: 'string', default: 'BDC-Open' },
+    EXPLORE_TOUR_SEARCH_TERM: { type: 'string', default: 'age' },
+    VARIANT_EXPLORER_EXCLUDE_COLUMNS: { type: 'json', default: [] },
+    VARIANT_EXPLORER_MAX_COUNT: { type: 'int', default: 10000 },
+    VARIANT_EXPLORER_TYPE: { type: 'string', default: ExportType.Aggregate },
+    EXPORT_SYSTEM_FIELDS: { type: 'string', default: '' },
+  },
+  branding: {
+    LOGO_ALT: { type: 'string', default: 'PIC-SURE' },
+    LOGO: { type: 'string', default: '' },
+  },
+};
+
 export function parsers(map: ConfigMap) {
   return {
     asBoolean: function (name: string, defaultValue: boolean): boolean {
@@ -309,84 +415,97 @@ export function parsers(map: ConfigMap) {
   };
 }
 
-export function mapFeatures(apiFeatures: ConfigObject[]): Features {
-  const parse = parsers(resolveConfigMap(apiFeatures)).asBoolean;
+// Schema-driven convenience layer over parsers(): looks up each field's type/default
+// from CONFIG_FIELDS by name instead of taking them as call-site arguments, so
+// mapFeatures/mapSettings/mapBranding physically can't declare a default that isn't
+// also the one CONFIG_FIELD_SCHEMA shows the admin UI. Throws if a name isn't
+// registered - a forgotten CONFIG_FIELDS entry fails loudly the moment it's parsed,
+// instead of silently missing from the admin UI with no error anywhere.
+export function parsersFor(kind: ConfigKind, map: ConfigMap) {
+  const base = parsers(map);
+  const fields = CONFIG_FIELDS[kind];
+  function fieldDef(name: string): FieldDef {
+    const found = fields[name];
+    if (!found) throw new Error(`"${name}" is not registered in CONFIG_FIELDS.${kind}.`);
+    return found;
+  }
   return {
-    analyzeAnalysis: parse('ANALYZE_ANALYSIS', false),
-    analyzeApi: parse('ANALYZE_API', true),
-    collaborate: parse('COLLABORATE', false),
-    confirmDownload: parse('CONFIRM_DOWNLOAD', false),
-    dataRequests: parse('DATA_REQUESTS', false),
-    discover: parse('DISCOVER', false),
-    dashboard: parse('DASHBOARD', false),
-    dashboardDrawer: parse('DASHBOARD_DRAWER', false),
-    enableGENEQuery: parse('ENABLE_GENE_QUERY', false),
-    enableSNPQuery: parse('ENABLE_SNP_QUERY', false),
-    enforceTermsOfService: parse('ENFORCE_TOS_ACCEPT', false),
+    asBoolean: (name: string): boolean => base.asBoolean(name, fieldDef(name).default as boolean),
+    asInt: (name: string): number => base.asInt(name, fieldDef(name).default as number),
+    asJson: (name: string): unknown => base.asJson(name, fieldDef(name).default),
+    asString: (name: string): string => base.asString(name, fieldDef(name).default as string),
+  };
+}
+
+export function mapFeatures(apiFeatures: ConfigObject[]): Features {
+  const parse = parsersFor('features', resolveConfigMap(apiFeatures)).asBoolean;
+  return {
+    analyzeAnalysis: parse('ANALYZE_ANALYSIS'),
+    analyzeApi: parse('ANALYZE_API'),
+    collaborate: parse('COLLABORATE'),
+    confirmDownload: parse('CONFIRM_DOWNLOAD'),
+    dataRequests: parse('DATA_REQUESTS'),
+    discover: parse('DISCOVER'),
+    dashboard: parse('DASHBOARD'),
+    dashboardDrawer: parse('DASHBOARD_DRAWER'),
+    enableGENEQuery: parse('ENABLE_GENE_QUERY'),
+    enableSNPQuery: parse('ENABLE_SNP_QUERY'),
+    enforceTermsOfService: parse('ENFORCE_TOS_ACCEPT'),
     explorer: {
-      open: parse('OPEN_EXPLORER', false) && parse('OPEN', false),
-      allowDownload: parse('ALLOW_DOWNLOAD', true),
-      allowExport: parse('ALLOW_EXPORT', false),
-      distributionExplorer: parse('DIST_EXPLORER', false),
-      enableCohortDetails: parse('ENABLE_COHORT_DETAILS', false),
-      enableExportTimeseries: parse('EXPORT_TIMESERIES', true),
-      enableHierarchy: parse('ENABLE_HIERARCHY', false),
-      enablePfbExport: parse('DOWNLOAD_AS_PFB', true),
-      enableRedcapExport: parse('ENABLE_REDCAP_EXPORT', false),
-      enableSampleIdCheckbox: parse('ENABLE_SAMPLE_ID_CHECKBOX', false),
-      enableTour: parse('EXPLORE_TOUR', true),
-      exportsEnableExport: parse('ALLOW_EXPORT_ENABLED', false),
-      showTreeStep: parse('SHOW_TREE_STEP', false),
-      variantExplorer: parse('VARIANT_EXPLORER', false),
+      open: parse('OPEN_EXPLORER') && parse('OPEN'),
+      allowDownload: parse('ALLOW_DOWNLOAD'),
+      allowExport: parse('ALLOW_EXPORT'),
+      distributionExplorer: parse('DIST_EXPLORER'),
+      enableCohortDetails: parse('ENABLE_COHORT_DETAILS'),
+      enableExportTimeseries: parse('EXPORT_TIMESERIES'),
+      enableHierarchy: parse('ENABLE_HIERARCHY'),
+      enablePfbExport: parse('DOWNLOAD_AS_PFB'),
+      enableRedcapExport: parse('ENABLE_REDCAP_EXPORT'),
+      enableSampleIdCheckbox: parse('ENABLE_SAMPLE_ID_CHECKBOX'),
+      enableTour: parse('EXPLORE_TOUR'),
+      exportsEnableExport: parse('ALLOW_EXPORT_ENABLED'),
+      showTreeStep: parse('SHOW_TREE_STEP'),
+      variantExplorer: parse('VARIANT_EXPLORER'),
     },
-    federated: parse('FEDERATED', false),
+    federated: parse('FEDERATED'),
     login: {
-      open: parse('OPEN', false),
+      open: parse('OPEN'),
     },
-    manualRole: parse('MANUAL_ROLE', false),
-    requireConsents: parse('REQUIRE_CONSENTS', false),
-    restoreV2queries: parse('RESTORE_V2_QUERY', false),
-    termsOfService: parse('ENABLE_TOS', false),
-    useQueryTemplate: parse('USE_QUERY_TEMPLATE', false),
+    manualRole: parse('MANUAL_ROLE'),
+    requireConsents: parse('REQUIRE_CONSENTS'),
+    restoreV2queries: parse('RESTORE_V2_QUERY'),
+    termsOfService: parse('ENABLE_TOS'),
+    useQueryTemplate: parse('USE_QUERY_TEMPLATE'),
   };
 }
 
 export function mapSettings(apiSettings: ConfigObject[]): Settings {
-  const sm: ConfigMap = resolveConfigMap(apiSettings);
-  const parse = parsers(sm);
+  const parse = parsersFor('settings', resolveConfigMap(apiSettings));
   return {
-    dotsColorsClass: parse.asJson('DOTS_COLORS_CLASS', [
-      '--color-primary-500',
-      '--color-error-500',
-      '--color-surface-400',
-    ]) as string[],
+    dotsColorsClass: parse.asJson('DOTS_COLORS_CLASS') as string[],
     distributionExplorer: {
-      graphColors: parse.asJson('DIST_EXPLORER_GRAPH_COLORS', [
-        '#328FFF',
-        '#675AFF',
-        '#FFBC35',
-      ]) as string[],
+      graphColors: parse.asJson('DIST_EXPLORER_GRAPH_COLORS') as string[],
     },
     google: {
-      analytics: parse.asString('GOOGLE_ANALYTICS_ID', ''),
-      tagManager: parse.asString('GOOGLE_TAG_MANAGER_ID', ''),
+      analytics: parse.asString('GOOGLE_ANALYTICS_ID'),
+      tagManager: parse.asString('GOOGLE_TAG_MANAGER_ID'),
     },
-    maxDataPointsForExport: parse.asInt('MAX_DATA_POINTS_FOR_EXPORT', 1000000),
+    maxDataPointsForExport: parse.asInt('MAX_DATA_POINTS_FOR_EXPORT'),
     tour: {
-      auth: parse.asString('AUTH_TOUR_NAME', 'NHANES-Auth'),
-      open: parse.asString('OPEN_TOUR_NAME', 'BDC-Open'),
-      searchTerm: parse.asString('EXPLORE_TOUR_SEARCH_TERM', 'age'),
+      auth: parse.asString('AUTH_TOUR_NAME'),
+      open: parse.asString('OPEN_TOUR_NAME'),
+      searchTerm: parse.asString('EXPLORE_TOUR_SEARCH_TERM'),
     },
     variantExplorer: {
-      excludeColumns: parse.asJson('VARIANT_EXPLORER_EXCLUDE_COLUMNS', []) as string[],
-      maxCount: parse.asInt('VARIANT_EXPLORER_MAX_COUNT', 10000),
+      excludeColumns: parse.asJson('VARIANT_EXPLORER_EXCLUDE_COLUMNS') as string[],
+      maxCount: parse.asInt('VARIANT_EXPLORER_MAX_COUNT'),
       type:
-        parse.asString('VARIANT_EXPLORER_TYPE', ExportType.Aggregate) === ExportType.Full
+        parse.asString('VARIANT_EXPLORER_TYPE') === ExportType.Full
           ? ExportType.Full
           : ExportType.Aggregate,
     },
     exportSystemFields: parse
-      .asString('EXPORT_SYSTEM_FIELDS', '')
+      .asString('EXPORT_SYSTEM_FIELDS')
       .split(',')
       .map((f: string) => f.trim())
       .filter(Boolean)
@@ -511,9 +630,26 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
   branding.explorePage.codeBlocks = codeBlocks;
 
   // ENV or API overrides
-  const parser = parsers(resolveConfigMap(apiBranding));
-  branding.logo.alt = parser.asString('LOGO_ALT', 'PIC-SURE');
-  branding.logo.src = parser.asString('LOGO', '');
+  const parser = parsersFor('branding', resolveConfigMap(apiBranding));
+  branding.logo.alt = parser.asString('LOGO_ALT');
+  branding.logo.src = parser.asString('LOGO');
 
   return branding;
 }
+
+// The admin UI's schema: a flat view over CONFIG_FIELDS, grouped by kind. Pure data -
+// no execution of the mappers involved, so this can never drift from what
+// mapFeatures/mapSettings/mapBranding actually resolve (they read the same table).
+export const CONFIG_FIELD_SCHEMA: Record<ConfigKind, ConfigFieldSchema[]> = (
+  Object.keys(CONFIG_FIELDS) as ConfigKind[]
+).reduce(
+  (acc, kind) => {
+    acc[kind] = Object.entries(CONFIG_FIELDS[kind]).map(([name, def]) => ({
+      name,
+      type: def.type,
+      default: def.default,
+    }));
+    return acc;
+  },
+  {} as Record<ConfigKind, ConfigFieldSchema[]>,
+);

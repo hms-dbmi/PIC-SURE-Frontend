@@ -1,16 +1,10 @@
 import { error, type NumericRange } from '@sveltejs/kit';
-import type { ConfigObject, ConfigCache } from '$lib/models/Configuration';
+import type { ConfigObject, ConfigCache, ConfigKind } from '$lib/models/Configuration';
+import { CONFIG_API_KIND } from '$lib/models/Configuration';
 import { Picsure } from '$lib/paths';
 import { withBackoff } from '$lib/utilities/backoff';
 
-type ConfigKind = keyof ConfigCache;
-
 const ORIGIN = import.meta.env?.VITE_ORIGIN;
-const configKinds: Record<ConfigKind, string> = {
-  features: import.meta.env.VITE_API_CONFIG_FEATURES || '',
-  settings: import.meta.env.VITE_API_CONFIG_SETTINGS || '',
-  branding: import.meta.env.VITE_API_CONFIG_BRANDING || '',
-};
 
 // Cache store
 const cached: ConfigCache = {
@@ -109,9 +103,9 @@ async function getConfigKind(
     // Fetch fresh config for kind
     console.log(`Attempting configuration cache hydration for ${kind}`);
     const configUrl = `${ORIGIN}/${Picsure.Configuration.Get}`;
-    fetchingKind[kind] = configKinds[kind]
+    fetchingKind[kind] = CONFIG_API_KIND[kind]
       ? startupDelay(applyStartupCooldown).then(() =>
-          fetchWithRetry(`${configUrl}?kind=${configKinds[kind]}`, kind),
+          fetchWithRetry(`${configUrl}?kind=${CONFIG_API_KIND[kind]}`, kind),
         )
       : Promise.resolve([]);
   }

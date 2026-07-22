@@ -9,6 +9,8 @@ import {
   type ConfigObject,
   type ConfigMap,
   mapBranding,
+  CONFIG_FIELD_SCHEMA,
+  parsersFor,
 } from '$lib/models/Configuration';
 
 const TOUCHED_ENV_KEYS = [
@@ -215,6 +217,50 @@ describe('resolveConfigMap - layering', () => {
     import.meta.env.VITE_EXPLORE_TOUR_SEARCH_TERM = '';
     const map = resolveConfigMap([apiRow('EXPLORE_TOUR_SEARCH_TERM', 'dogs')]);
     expect(map.EXPLORE_TOUR_SEARCH_TERM.value).toBe('');
+  });
+});
+
+describe('CONFIG_FIELD_SCHEMA - derived from CONFIG_FIELDS', () => {
+  it('has no duplicate names per kind (e.g. OPEN, parsed twice by mapFeatures, appears once)', () => {
+    for (const kind of ['features', 'settings', 'branding'] as const) {
+      const names = CONFIG_FIELD_SCHEMA[kind].map((f) => f.name);
+      expect(new Set(names).size).toBe(names.length);
+    }
+    expect(CONFIG_FIELD_SCHEMA.features.filter((f) => f.name === 'OPEN')).toHaveLength(1);
+  });
+
+  it('has the right type/default for a representative field per kind', () => {
+    const byName = (kind: 'features' | 'settings' | 'branding', name: string) =>
+      CONFIG_FIELD_SCHEMA[kind].find((f) => f.name === name);
+
+    expect(byName('features', 'ANALYZE_API')).toMatchObject({ type: 'boolean', default: true });
+    expect(byName('settings', 'MAX_DATA_POINTS_FOR_EXPORT')).toMatchObject({
+      type: 'int',
+      default: 1000000,
+    });
+    expect(byName('settings', 'DOTS_COLORS_CLASS')).toMatchObject({ type: 'json' });
+    expect(byName('branding', 'LOGO_ALT')).toMatchObject({ type: 'string', default: 'PIC-SURE' });
+    expect(CONFIG_FIELD_SCHEMA.branding).toHaveLength(2);
+  });
+
+  it("mapFeatures actually uses CONFIG_FIELDS' declared default (not a second, hidden one)", () => {
+    // If mapFeatures ever hardcoded its own default again instead of reading
+    // CONFIG_FIELDS, this would catch the two silently diverging.
+    expect(mapFeatures([]).analyzeApi).toBe(
+      CONFIG_FIELD_SCHEMA.features.find((f) => f.name === 'ANALYZE_API')?.default,
+    );
+  });
+});
+
+describe('parsersFor', () => {
+  it('throws for a name that is not registered in CONFIG_FIELDS for that kind', () => {
+    expect(() => parsersFor('features', {}).asBoolean('NOT_A_REAL_FIELD')).toThrow(
+      /not registered/,
+    );
+  });
+
+  it('resolves a registered field using its declared default when unset', () => {
+    expect(parsersFor('features', {}).asBoolean('ANALYZE_API')).toBe(true);
   });
 });
 
