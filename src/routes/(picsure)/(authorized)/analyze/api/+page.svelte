@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
   import { config } from '$lib/configuration.svelte';
@@ -12,13 +11,8 @@
   import TabItem from '$lib/components/TabItem.svelte';
 
   let tabSet: string = $state('Python');
-  let connection: string = $state('');
-  let execution: string = $state('');
-
-  onMount(() => {
-    connection = sanitizeHTML(config.branding.analysisPage.api.instructions.connection);
-    execution = sanitizeHTML(config.branding.analysisPage.api.instructions.execution);
-  });
+  const connection = $derived(config.branding.analysisPage.api.instructions.connection);
+  const execution = $derived(config.branding.analysisPage.api.instructions.execution);
 </script>
 
 <svelte:head>
@@ -32,10 +26,10 @@
       your choice. This API is available in both Python and R coding languages.
     </p>
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    <p>{@html connection}</p>
+    <p>{@html sanitizeHTML(connection)}</p>
     <div class="flex justify-center"><UserToken /></div>
     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    <p>{@html execution}</p>
+    <p>{@html sanitizeHTML(execution)}</p>
     <Tabs
       value={tabSet}
       onValueChange={(e) => {

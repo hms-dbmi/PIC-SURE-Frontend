@@ -59,6 +59,7 @@
       (dataType.phenotypic || dataType.genomic || dataType.patient) &&
       !isDataSent,
   );
+  const searchIntro = $derived(config.branding.datasetRequestPage.searchIntro);
 
   function updateStateFromInitialStatus(status: Status) {
     if (status) {
@@ -255,8 +256,7 @@
     <div class="flex flex-col items-center gap-3 mt-2 p-4 rounded bg-surface-100">
       <p>
         <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        {@html sanitizeHTML(config.branding.datasetRequestPage.searchIntro) ||
-          'Search for a dataset request ID to continue.'}
+        {@html sanitizeHTML(searchIntro) || 'Search for a dataset request ID to continue.'}
       </p>
       <div class="flex flex-row items-start gap-3">
         <label class="label required flex flex-row items-center w-fit" for="dataset-id">

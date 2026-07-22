@@ -1,17 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-
   import { config } from '$lib/configuration.svelte';
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
   import Content from '$lib/components/Content.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
 
-  let setupInstructions = $state('');
-
-  onMount(() => {
-    setupInstructions = sanitizeHTML(config.branding.analysisPage.api.example.setup);
-  });
+  const setupInstructions = $derived(config.branding.analysisPage.api.example.setup);
 </script>
 
 <Content backUrl="/analyze" title="Analyze Example">
@@ -37,7 +31,7 @@
 
       <h4 class="font-medium mt-8">1. Set up your analysis workspace</h4>
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      {@html setupInstructions}
+      {@html sanitizeHTML(setupInstructions)}
 
       <h4 class="font-medium mt-8">2. Get your Personal Access Token</h4>
       <p>
