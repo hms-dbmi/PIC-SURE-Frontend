@@ -322,10 +322,12 @@ export interface ConfigFieldSchema {
   name: string;
   type: FieldType;
   default: unknown;
+  description: string;
 }
 interface FieldDef {
   type: FieldType;
   default: unknown;
+  description: string;
 }
 
 // Single source of truth for every field mapFeatures/mapSettings/mapBranding can
@@ -337,60 +339,280 @@ interface FieldDef {
 // need to run any mapper to introspect it.
 const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
   features: {
-    ANALYZE_ANALYSIS: { type: 'boolean', default: false },
-    ANALYZE_API: { type: 'boolean', default: true },
-    COLLABORATE: { type: 'boolean', default: false },
-    CONFIRM_DOWNLOAD: { type: 'boolean', default: false },
-    DATA_REQUESTS: { type: 'boolean', default: false },
-    DISCOVER: { type: 'boolean', default: false },
-    DASHBOARD: { type: 'boolean', default: false },
-    DASHBOARD_DRAWER: { type: 'boolean', default: false },
-    ENABLE_GENE_QUERY: { type: 'boolean', default: false },
-    ENABLE_SNP_QUERY: { type: 'boolean', default: false },
-    ENFORCE_TOS_ACCEPT: { type: 'boolean', default: false },
+    ANALYZE_ANALYSIS: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Enables the Analyze page and its navigation item, and (together with ANALYZE_API) decides which /analyze view opens by default.',
+    },
+    ANALYZE_API: {
+      type: 'boolean',
+      default: true,
+      description:
+        "Enables the 'Prepare for Analysis' (API) page and navigation item, and defaults the export flow's code tab to Python when available.",
+    },
+    COLLABORATE: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Enables the Collaborate page and its navigation item; when disabled, /collaborate redirects to the home page.',
+    },
+    CONFIRM_DOWNLOAD: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Shows a confirmation dialog before downloading exported data, instead of downloading immediately.',
+    },
+    DATA_REQUESTS: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Enables the Data Requests page and navigation item, and a related step in the Collaborate flow.',
+    },
+    DISCOVER: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Enables the public Discover page and navigation item; when disabled, /discover redirects to /explorer and anonymous searches route to /explorer instead.',
+    },
+    DASHBOARD: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Shows or hides the Data Dashboard navigation item (the /dashboard page itself is not currently guarded by this flag).',
+    },
+    DASHBOARD_DRAWER: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Makes Data Dashboard rows clickable, opening a drawer with more detail about the selected row.',
+    },
+    ENABLE_GENE_QUERY: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows the 'Variants by gene name' genomic search option and enables gene-based variant queries.",
+    },
+    ENABLE_SNP_QUERY: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows the 'Specific Variants' (SNP) genomic search option and enables SNP-based variant queries.",
+    },
+    ENFORCE_TOS_ACCEPT: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Forces logged-in users who haven't accepted the Terms of Service to accept it before continuing, blocking dismissal of the TOS modal.",
+    },
     // OPEN feeds both explorer.open (AND'd with OPEN_EXPLORER) and login.open below.
-    OPEN_EXPLORER: { type: 'boolean', default: false },
-    OPEN: { type: 'boolean', default: false },
-    ALLOW_DOWNLOAD: { type: 'boolean', default: true },
-    ALLOW_EXPORT: { type: 'boolean', default: false },
-    DIST_EXPLORER: { type: 'boolean', default: false },
-    ENABLE_COHORT_DETAILS: { type: 'boolean', default: false },
-    EXPORT_TIMESERIES: { type: 'boolean', default: true },
-    ENABLE_HIERARCHY: { type: 'boolean', default: false },
-    DOWNLOAD_AS_PFB: { type: 'boolean', default: true },
-    ENABLE_REDCAP_EXPORT: { type: 'boolean', default: false },
-    ENABLE_SAMPLE_ID_CHECKBOX: { type: 'boolean', default: false },
-    EXPLORE_TOUR: { type: 'boolean', default: true },
-    ALLOW_EXPORT_ENABLED: { type: 'boolean', default: false },
-    SHOW_TREE_STEP: { type: 'boolean', default: false },
-    VARIANT_EXPLORER: { type: 'boolean', default: false },
-    FEDERATED: { type: 'boolean', default: false },
-    MANUAL_ROLE: { type: 'boolean', default: false },
-    REQUIRE_CONSENTS: { type: 'boolean', default: false },
-    RESTORE_V2_QUERY: { type: 'boolean', default: false },
-    ENABLE_TOS: { type: 'boolean', default: false },
-    USE_QUERY_TEMPLATE: { type: 'boolean', default: false },
+    OPEN_EXPLORER: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Combined with OPEN: when both are enabled, the Explorer page is reachable without logging in.',
+    },
+    OPEN: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Allows unauthenticated access to the app (skips the forced login redirect) and, combined with OPEN_EXPLORER, makes the Explorer page reachable without logging in. Also shows the 'Explore without Login' entry point.",
+    },
+    ALLOW_DOWNLOAD: {
+      type: 'boolean',
+      default: true,
+      description:
+        'Shows or hides the download button for exported CSV/PFB data in the export flow.',
+    },
+    ALLOW_EXPORT: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows or hides the 'Export' option on the Explorer results panel that starts the export/analysis flow.",
+    },
+    DIST_EXPLORER: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Enables the Variable Distributions (visualizations) view on the Explorer and Discover results panels.',
+    },
+    ENABLE_COHORT_DETAILS: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows the 'Cohort Details' link/section on the Explorer results panel (not shown on the Discover page).",
+    },
+    EXPORT_TIMESERIES: {
+      type: 'boolean',
+      default: true,
+      description: "Shows the 'Export as Timeseries' option in the export type selection step.",
+    },
+    ENABLE_HIERARCHY: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows a 'Data Hierarchy' action on search results, letting users view a variable's hierarchy tree and build anyRecordOf queries.",
+    },
+    DOWNLOAD_AS_PFB: {
+      type: 'boolean',
+      default: true,
+      description:
+        'Enables PFB (Avro) as an export format option alongside CSV in the export flow.',
+    },
+    ENABLE_REDCAP_EXPORT: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Redirects the final export step to an external REDCap survey/access-request link instead of the normal analysis or PFB export steps.',
+    },
+    ENABLE_SAMPLE_ID_CHECKBOX: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows an 'Include sample identifiers' checkbox in the export review step that adds sample IDs to the export/query.",
+    },
+    EXPLORE_TOUR: {
+      type: 'boolean',
+      default: true,
+      description: 'Shows the guided walkthrough tour button on the Explorer/Discover pages.',
+    },
+    ALLOW_EXPORT_ENABLED: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Shows a per-row action on search results to add that variable to the export, and contributes to the export button/badge visibility.',
+    },
+    SHOW_TREE_STEP: {
+      type: 'boolean',
+      default: false,
+      description: "Adds a 'Finalize Data' step to the export stepper flow.",
+    },
+    VARIANT_EXPLORER: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Enables the Variant Explorer feature; when disabled, the Variant Explorer page shows a 'not enabled' message instead of rendering.",
+    },
+    FEDERATED: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Enables federated (multi-site) behavior: queries across all connected sites' resources, swaps in per-site dataset save/export steps, and shows per-site status instead of one combined result.",
+    },
+    MANUAL_ROLE: {
+      type: 'boolean',
+      default: false,
+      description: "Enables the 'Manual Role' admin page and its navigation item (BDC-specific).",
+    },
+    REQUIRE_CONSENTS: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Attaches the user's data-use consents as authorization filters on outgoing queries.",
+    },
+    RESTORE_V2_QUERY: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Shows the 'Restore Filters' button for older (V2) saved queries; V3 queries always show it regardless.",
+    },
+    ENABLE_TOS: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Enables the Terms of Service feature: adds a footer link to view it, and an admin link to edit it.',
+    },
+    USE_QUERY_TEMPLATE: {
+      type: 'boolean',
+      default: false,
+      description:
+        "Applies the logged-in user's saved query template (and its consent categories) as the base of new queries and dashboard filtering.",
+    },
   },
   settings: {
     DOTS_COLORS_CLASS: {
       type: 'json',
       default: ['--color-primary-500', '--color-error-500', '--color-surface-400'],
+      description:
+        'Overrides the colors of the decorative dot graphic on the login page; must be an array of exactly 3 or 5 color values, otherwise the default is kept.',
     },
-    DIST_EXPLORER_GRAPH_COLORS: { type: 'json', default: ['#328FFF', '#675AFF', '#FFBC35'] },
-    GOOGLE_ANALYTICS_ID: { type: 'string', default: '' },
-    GOOGLE_TAG_MANAGER_ID: { type: 'string', default: '' },
-    MAX_DATA_POINTS_FOR_EXPORT: { type: 'int', default: 1000000 },
-    AUTH_TOUR_NAME: { type: 'string', default: 'NHANES-Auth' },
-    OPEN_TOUR_NAME: { type: 'string', default: 'BDC-Open' },
-    EXPLORE_TOUR_SEARCH_TERM: { type: 'string', default: 'age' },
-    VARIANT_EXPLORER_EXCLUDE_COLUMNS: { type: 'json', default: [] },
-    VARIANT_EXPLORER_MAX_COUNT: { type: 'int', default: 10000 },
-    VARIANT_EXPLORER_TYPE: { type: 'string', default: ExportType.Aggregate },
-    EXPORT_SYSTEM_FIELDS: { type: 'string', default: '' },
+    DIST_EXPLORER_GRAPH_COLORS: {
+      type: 'json',
+      default: ['#328FFF', '#675AFF', '#FFBC35'],
+      description:
+        'Color palette cycled through when rendering distribution/histogram charts in the Variable Distributions view.',
+    },
+    GOOGLE_ANALYTICS_ID: {
+      type: 'string',
+      default: '',
+      description:
+        'Google Analytics measurement ID; when set (with a privacy policy configured), loads Google Analytics and triggers the cookie-consent prompt.',
+    },
+    GOOGLE_TAG_MANAGER_ID: {
+      type: 'string',
+      default: '',
+      description:
+        'Google Tag Manager container ID; when set, loads the GTM script/iframe alongside the same consent prompt.',
+    },
+    MAX_DATA_POINTS_FOR_EXPORT: {
+      type: 'int',
+      default: 1000000,
+      description:
+        'Maximum combined participant/filter/export count allowed before export; exceeding it blocks the review step with a warning.',
+    },
+    AUTH_TOUR_NAME: {
+      type: 'string',
+      default: 'NHANES-Auth',
+      description:
+        'Name of the tour definition (from TourConfiguration.json) used for the guided tour on the authenticated Explorer page.',
+    },
+    OPEN_TOUR_NAME: {
+      type: 'string',
+      default: 'BDC-Open',
+      description:
+        'Name of the tour definition (from TourConfiguration.json) used for the guided tour on the public Discover page.',
+    },
+    EXPLORE_TOUR_SEARCH_TERM: {
+      type: 'string',
+      default: 'age',
+      description: 'Default search term the guided tour pre-fills/highlights in the search box.',
+    },
+    VARIANT_EXPLORER_EXCLUDE_COLUMNS: {
+      type: 'json',
+      default: [],
+      description: "Column names to strip from the Variant Explorer's result table.",
+    },
+    VARIANT_EXPLORER_MAX_COUNT: {
+      type: 'int',
+      default: 10000,
+      description:
+        "Maximum number of variants the Variant Explorer will display before showing a 'Too many variants!' warning instead.",
+    },
+    VARIANT_EXPLORER_TYPE: {
+      type: 'string',
+      default: ExportType.Aggregate,
+      description:
+        "Default Variant Explorer export mode, 'aggregate' or 'full' ('full' additionally shows an extra column/checkbox).",
+    },
+    EXPORT_SYSTEM_FIELDS: {
+      type: 'string',
+      default: '',
+      description:
+        'Comma-separated concept paths automatically included in every export query and shown as non-removable rows in the export review table.',
+    },
   },
   branding: {
-    LOGO_ALT: { type: 'string', default: 'PIC-SURE' },
-    LOGO: { type: 'string', default: '' },
+    LOGO_ALT: {
+      type: 'string',
+      default: 'PIC-SURE',
+      description: 'Alt/title text for the site logo image shown in the header and login page.',
+    },
+    LOGO: {
+      type: 'string',
+      default: '',
+      description:
+        'URL of a custom logo image to display instead of the default PIC-SURE wordmark, in the header and login page.',
+    },
   },
 };
 
@@ -648,6 +870,7 @@ export const CONFIG_FIELD_SCHEMA: Record<ConfigKind, ConfigFieldSchema[]> = (
       name,
       type: def.type,
       default: def.default,
+      description: def.description,
     }));
     return acc;
   },

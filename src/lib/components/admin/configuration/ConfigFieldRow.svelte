@@ -91,9 +91,14 @@
   class="flex flex-wrap items-center gap-4 p-3 odd:bg-surface-100-900 even:bg-surface-50-950"
   data-testid={`config-field-row-${schema.name}`}
 >
-  <div class="flex-1 min-w-48">
+  <div class="flex-1 min-w-64">
     <div class="font-semibold">{label}</div>
     <div class="text-xs opacity-60 font-mono">{schema.name}</div>
+    {#if schema.description}
+      <p class="text-xs opacity-80 mt-1" data-testid={`config-field-description-${schema.name}`}>
+        {schema.description}
+      </p>
+    {/if}
   </div>
 
   <span
