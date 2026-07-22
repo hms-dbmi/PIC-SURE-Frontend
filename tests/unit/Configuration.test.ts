@@ -11,6 +11,7 @@ import {
   mapBranding,
   CONFIG_FIELD_SCHEMA,
   parsersFor,
+  deprecatedApiRows,
 } from '$lib/models/Configuration';
 
 const TOUCHED_ENV_KEYS = [
@@ -249,6 +250,22 @@ describe('CONFIG_FIELD_SCHEMA - derived from CONFIG_FIELDS', () => {
     expect(mapFeatures([]).analyzeApi).toBe(
       CONFIG_FIELD_SCHEMA.features.find((f) => f.name === 'ANALYZE_API')?.default,
     );
+  });
+});
+
+describe('deprecatedApiRows', () => {
+  it('returns rows whose name is not registered in CONFIG_FIELDS for that kind', () => {
+    const rows = [apiRow('ANALYZE_API', 'true'), apiRow('REMOVED_OLD_FLAG', 'true')];
+    expect(deprecatedApiRows('features', rows)).toEqual([apiRow('REMOVED_OLD_FLAG', 'true')]);
+  });
+
+  it('returns an empty array when every row is still registered', () => {
+    const rows = [apiRow('ANALYZE_API', 'true'), apiRow('DISCOVER', 'false')];
+    expect(deprecatedApiRows('features', rows)).toEqual([]);
+  });
+
+  it('returns an empty array for no rows', () => {
+    expect(deprecatedApiRows('branding', [])).toEqual([]);
   });
 });
 

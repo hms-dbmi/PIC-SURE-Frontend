@@ -616,6 +616,18 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
   },
 };
 
+// API rows whose name isn't (or is no longer) a key in CONFIG_FIELDS[kind] - e.g. a
+// feature flag that was removed from the app but whose row was never cleaned up in the
+// backend. These have no effect on anything mapFeatures/mapSettings/mapBranding
+// resolve (parsersFor only ever looks up registered names), so they're safe to delete;
+// the admin UI surfaces them precisely because there's no other way to notice they're
+// inert. Exact by construction: apiRows here is already the result of fetching
+// ?kind=<that kind's value>, so every row already belongs to `kind` - no guessing.
+export function deprecatedApiRows(kind: ConfigKind, apiRows: ConfigObject[]): ConfigObject[] {
+  const known = CONFIG_FIELDS[kind];
+  return apiRows.filter((row) => !(row.name in known));
+}
+
 export function parsers(map: ConfigMap) {
   return {
     asBoolean: function (name: string, defaultValue: boolean): boolean {

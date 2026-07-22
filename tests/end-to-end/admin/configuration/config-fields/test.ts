@@ -110,6 +110,29 @@ test('Branding tab only shows the two API/env-configurable fields plus a scope n
   await expect(brandingTab.getByTestId(/^config-field-row-/)).toHaveCount(2);
 });
 
+test('Deprecated API rows are listed separately and can be deleted', async ({ page }) => {
+  await mockApiSuccess(page, '*/**/picsure/configuration?kind=ui%3AfeatureFlag', [
+    { uuid: 'row-analyze-api', name: 'ANALYZE_API', kind: 'ui:featureFlag', value: 'false' },
+    { uuid: 'row-old-flag', name: 'REMOVED_OLD_FLAG', kind: 'ui:featureFlag', value: 'true' },
+  ]);
+  await mockApiSuccess(page, '*/**/picsure/configuration/admin/row-old-flag/', {});
+
+  await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
+  await clickTab(page, 'Features');
+
+  await expect(page.getByTestId('config-deprecated-features')).toBeVisible();
+  await expect(page.getByTestId('config-deprecated-row-REMOVED_OLD_FLAG')).toBeVisible();
+  // Still-registered fields never show up in the deprecated table.
+  await expect(page.getByTestId('config-deprecated-row-ANALYZE_API')).toHaveCount(0);
+
+  await page.getByTestId('config-deprecated-delete-REMOVED_OLD_FLAG').click();
+
+  await expect(page.getByText('Deleted REMOVED_OLD_FLAG')).toBeVisible();
+  await expect(page.getByTestId('config-deprecated-row-REMOVED_OLD_FLAG')).toHaveCount(0);
+  await expect(page.getByTestId('config-deprecated-features')).toHaveCount(0);
+});
+
 test.describe('Admin on Configuration page', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
 
