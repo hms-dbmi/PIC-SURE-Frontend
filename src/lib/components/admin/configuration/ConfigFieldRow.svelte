@@ -26,8 +26,17 @@
   let fieldOrigin = $derived(describeConfigField(schema.name, rows));
   let rowDisabled = $derived(!apiAvailable || fieldOrigin.disabled);
 
-  let value: string = $derived(apiRow?.value ?? '');
-  let dirty = $derived(value !== (apiRow?.value ?? ''));
+  // The field's active value: whatever describeConfigField resolved (api > env >
+  // default), so the input/checkbox is pre-populated with what's actually in effect,
+  // not just what happens to be stored as an API row.
+  let resolvedValue = $derived.by(() => {
+    if (fieldOrigin.origin === 'api') return apiRow?.value ?? '';
+    if (fieldOrigin.origin === 'env') return fieldOrigin.envValue ?? '';
+    return typeof schema.default === 'string' ? schema.default : JSON.stringify(schema.default);
+  });
+
+  let value: string = $derived(resolvedValue);
+  let dirty = $derived(value !== resolvedValue);
 
   let jsonError = $derived.by(() => {
     if (schema.type !== 'json') return '';
@@ -40,12 +49,6 @@
   });
   let intValid = $derived(schema.type !== 'int' || /^-?\d+$/.test(value.trim()));
   let valid = $derived(!jsonError && intValid);
-
-  let resolvedValueDisplay = $derived.by(() => {
-    if (fieldOrigin.origin === 'api') return apiRow?.value ?? '';
-    if (fieldOrigin.origin === 'env') return fieldOrigin.envValue ?? '';
-    return typeof schema.default === 'string' ? schema.default : JSON.stringify(schema.default);
-  });
 
   function serialize(): string {
     if (schema.type === 'int') return String(parseInt(value.trim(), 10));
@@ -104,7 +107,7 @@
   <span
     class="badge {originClass[fieldOrigin.origin]}"
     data-testid={`config-field-origin-${schema.name}`}
-    title={`Resolved value: ${resolvedValueDisplay}`}
+    title={`Resolved value: ${resolvedValue}`}
   >
     {originLabel[fieldOrigin.origin]}
   </span>
