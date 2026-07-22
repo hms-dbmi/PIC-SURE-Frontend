@@ -234,7 +234,7 @@ export type ConfigCache = {
 // when a key is absent from the map it's given, so this only needs to combine the sparse
 // env-derived and API-derived maps in the right order before handing them to parsers().
 
-type ConfigMode = 'seed' | 'override';
+export type ConfigMode = 'seed' | 'override';
 const VITE_ENV_PREFIX = 'VITE_';
 
 export function getConfigMode(): ConfigMode {
@@ -277,10 +277,6 @@ const CONFIG_API_ENV_VAR_NAME: Record<ConfigKind, string> = {
   settings: 'VITE_API_CONFIG_SETTINGS',
   branding: 'VITE_API_CONFIG_BRANDING',
 };
-
-export function configApiEnvVarName(kind: ConfigKind): string {
-  return CONFIG_API_ENV_VAR_NAME[kind];
-}
 
 // The "kind" value sent as ?kind=<value> to the backend and used to gate whether API
 // overrides are available at all for a config kind - empty means the deployment

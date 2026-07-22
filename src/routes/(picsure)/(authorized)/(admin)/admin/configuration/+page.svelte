@@ -9,6 +9,7 @@
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/StaticTable.svelte';
   import TabItem from '$lib/components/TabItem.svelte';
+  import TermsEditor from '$lib/components/admin/configuration/TermsEditor.svelte';
   import RoleActions from '$lib/components/admin/configuration/cell/RoleActions.svelte';
   import PrivilegeActions from '$lib/components/admin/configuration/cell/PrivilegeActions.svelte';
   import ConnectionActions from '$lib/components/admin/configuration/cell/ConnectionActions.svelte';
@@ -94,6 +95,9 @@
       <TabItem bind:group={tabSet} value="Access Control">Access Control</TabItem>
       <TabItem bind:group={tabSet} value="Settings & Features">Settings & Features</TabItem>
       <TabItem bind:group={tabSet} value="Branding">Branding</TabItem>
+      {#if config.features.termsOfService}
+        <TabItem bind:group={tabSet} value="Terms of Service">Terms of Service</TabItem>
+      {/if}
     {/snippet}
     {#snippet content()}
       <Tabs.Panel value="Access Control">
@@ -193,15 +197,6 @@
             </ErrorAlert>
           {/await}
         </div>
-        {#if config.features.termsOfService}
-          <div id="misc-configs">
-            <a
-              href="/admin/configuration/terms/edit"
-              class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-              >Update Terms of Service</a
-            >
-          </div>
-        {/if}
       </Tabs.Panel>
       <Tabs.Panel value="Settings & Features">
         <fieldset disabled={!$isTopAdmin}>
@@ -213,6 +208,11 @@
           <ConfigKindTab kinds={['branding']} title="Branding" />
         </fieldset>
       </Tabs.Panel>
+      {#if config.features.termsOfService}
+        <Tabs.Panel value="Terms of Service">
+          <TermsEditor />
+        </Tabs.Panel>
+      {/if}
     {/snippet}
   </Tabs>
 </Content>

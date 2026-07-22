@@ -1,11 +1,12 @@
 <script lang="ts">
   import {
     CONFIG_FIELD_SCHEMA,
-    configApiEnvVarName,
     deprecatedApiRows,
     groupedConfigFieldSchema,
+    getConfigMode,
     type ConfigFieldSchema,
     type ConfigObject,
+    type ConfigMode,
   } from '$lib/models/Configuration';
   import {
     adminConfigRows,
@@ -46,12 +47,10 @@
   let kindedSchema: KindedField[] = $derived(
     kinds.flatMap((kind) => CONFIG_FIELD_SCHEMA[kind].map((field) => ({ ...field, kind }))),
   );
-  let apiAvailableByKind = $derived(
-    Object.fromEntries(kinds.map((kind) => [kind, isApiAvailable(kind)])) as Record<
-      AdminConfigKind,
-      boolean
-    >,
+  let availableAPIKinds: AdminConfigKind[] = $derived(
+    kinds.filter((kind) => isApiAvailable(kind)),
   );
+  let activeConfigMode: ConfigMode = $derived(getConfigMode());
 
   // Empty (not pre-seeded per kind) so this never reads `kinds` inside a $state
   // initializer - every read below falls back to `?? []` for a kind not loaded yet.
@@ -115,41 +114,48 @@
     }
   }
 
-  // Bumping this forces loadAdminConfig's `force` param true on the next await, so an
-  // admin can pull in rows another admin just added/changed without a full page reload.
-  let refreshCount = $state(0);
-  const refresh = () => (refreshCount += 1);
-
   async function invalidateCache() {
     try {
       await invalidateConfigCache();
-      refresh();
       toaster.success({ title: 'Server-side config cache invalidated' });
+      window.location.reload();
     } catch (e) {
       console.error(e);
       toaster.error({ title: 'Failed to invalidate config cache' });
     }
   }
+
+  function commaList(list: string[]){
+    switch(list.length){
+      case 0: return '';
+      case 1: return list[0];
+      case 2: return list.join(' and ');
+      default: return list.slice(0, -1).join(', ') + ' and ' + list.slice(-1);
+    }
+  }
 </script>
 
-{#await Promise.all(kinds.map((kind) => loadAdminConfig(kind, refreshCount > 0)))}
+{#await Promise.all(kinds.map((kind) => loadAdminConfig(kind, true)))}
   <Loading />
 {:then}
-  {#each kinds as kind (kind)}
-    {#if !apiAvailableByKind[kind]}
-      <ErrorAlert
-        title="API overrides unavailable"
-        color="warning"
-        data-testid={`config-api-unavailable-${kind}`}
-      >
-        <p>
-          API overrides are not available for {KIND_LABEL[kind]} in this environment (<code
-            >{configApiEnvVarName(kind)}</code
-          > is not set). Values below reflect env vars and defaults only, and can't be edited here.
-        </p>
-      </ErrorAlert>
-    {/if}
-  {/each}
+  {#if availableAPIKinds.length != kinds.length || activeConfigMode === 'override'}
+    <ErrorAlert
+      color="secondary"
+      iconSize="lg" 
+      data-testid="config-api-unavailable"
+    >
+      <span class="font-bold">Some values are disabled</span> and can't be edited here:
+      <ul class="ml-4 list-disc">
+        {#if activeConfigMode === 'override'}
+          <li>Environment variables are set to override api values.</li>
+        {/if}
+        {#if availableAPIKinds.length != kinds.length}
+        {@const notAvailable = kinds.filter(k => !availableAPIKinds.includes(k))}
+          <li>API overrides are not available for {commaList(notAvailable)} in this environment.</li>
+        {/if}
+      </ul>
+    </ErrorAlert>
+  {/if}
   {#if kinds.includes('branding')}
     <ErrorAlert color="secondary" iconSize="lg" data-testid="config-branding-scope-note">
       <span class="font-bold">Limited scope:</span> Most branding is sourced from the build-time configuration file.
@@ -175,6 +181,7 @@
     {/if}
     <div class="flex-1"></div>
     <Modal
+      width="w-1/3"
       data-testid={`config-invalidate-cache-${testIdBase}`}
       title="Invalidate Cache?"
       confirmText="Yes"
@@ -187,8 +194,9 @@
         Invalidate Cache & Refresh
       {/snippet}
       Are you sure you want to invalidate the server-side config cache? This immediately forces
-      the app to refetch {title} from the backend for all users, instead of waiting for the routine
-      refresh (up to 4 hours).
+      the app to refetch all cached values from the backend, instead of waiting for the routine 
+      refresh (up to 4 hours). Individual users will still need to refresh their browsers in 
+      order to see the changed values.
     </Modal>
   </div>
   <div data-testid={`config-tab-${testIdBase}`}>
@@ -206,7 +214,7 @@
             <ConfigFieldRow
               schema={field}
               rows={rowsByKind[field.kind] ?? []}
-              apiAvailable={apiAvailableByKind[field.kind]}
+              apiAvailable={availableAPIKinds.includes(field.kind)}
               kind={field.kind}
             />
           {/each}
@@ -223,8 +231,7 @@
     {/if}
   </div>
   <p class="text-xs opacity-60 mt-3">
-    Saved changes take effect on your next page load. Other users may not see them until their
-    session or the server-side config cache refreshes (up to 4 hours).
+    Users may not see changes until their browser session or the server-side config cache refreshes (up to 4 hours) unless you invalidate the cache.
   </p>
   {#if deprecated.length > 0}
     <div class="mt-6" data-testid={`config-deprecated-${testIdBase}`}>
