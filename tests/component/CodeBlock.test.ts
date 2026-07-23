@@ -46,4 +46,16 @@ describe('CodeBlock', () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(code);
     expect(button.querySelector('i')).toHaveClass('fa-square-check');
   });
+
+  it('keeps the idle icon when the clipboard write is rejected', async () => {
+    vi.mocked(navigator.clipboard.writeText).mockRejectedValue(new Error('copy denied'));
+    render(CodeBlock, { code, lang: 'python' });
+
+    const button = screen.getByTestId('code-block-copy-btn');
+    await fireEvent.click(button);
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(code);
+    expect(button.querySelector('i')).toHaveClass('fa-copy');
+    expect(button.querySelector('i')).not.toHaveClass('fa-square-check');
+  });
 });
