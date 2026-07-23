@@ -14,6 +14,7 @@ import {
   createQueryCountService,
   type QueryCountService,
 } from '$lib/services/counts/queryCountService';
+import { summarize } from '$lib/services/counts/snapshot';
 import type { ResultCountSnapshot } from '$lib/services/counts/snapshot';
 
 export type ResultCountsStatus = 'idle' | 'loading' | 'loaded' | 'error';
@@ -86,8 +87,17 @@ export class ResultCounts {
       return { kind: 'committed', snapshot };
     } catch {
       if (id !== this.#requestId) return { kind: 'stale' };
+      // Consumers key off snapshot.summary.hasError, not #status - leaving the
+      // previous snapshot here would keep showing a stale count with no error
+      // indication.
+      const snapshot: ResultCountSnapshot = {
+        descriptorKey: stableHash(descriptor),
+        count: 0,
+        summary: summarize(0, true),
+      };
+      this.#snapshot = snapshot;
       this.#status = 'error';
-      return { kind: 'error', snapshot: this.#snapshot };
+      return { kind: 'error', snapshot };
     }
   }
 
@@ -128,7 +138,14 @@ export class ResultCounts {
   async ensureLoaded(getIsOpenAccess: () => boolean): Promise<void> {
     const isOpenAccess = getIsOpenAccess();
     const descriptor = this.#buildCurrentDescriptor(isOpenAccess);
-    if (stableHash(descriptor) === this.#snapshot.descriptorKey) return;
+    // Error snapshots carry the attempted descriptorKey too, so a bare key
+    // match would treat a failure as loaded and never retry.
+    if (
+      stableHash(descriptor) === this.#snapshot.descriptorKey &&
+      !this.#snapshot.summary.hasError
+    ) {
+      return;
+    }
     await this.#runLoad(getIsOpenAccess, descriptor);
   }
 

@@ -42,6 +42,10 @@ interface CellOutcome {
 export function createQueryCountService(options: QueryCountServiceOptions): QueryCountService {
   const { transport, maxCacheSize = 100 } = options;
   const cache = new LRU<string, ResultCountSnapshot>(maxCacheSize);
+  const inflight = new Map<string, Promise<ResultCountSnapshot>>();
+  // Bumped by clear() so requests started before a clear cannot repopulate
+  // the cache with pre-clear data after it.
+  let generation = 0;
 
   async function executeOne(
     descriptor: QueryDescriptor,
@@ -92,28 +96,37 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
     return `${stableHash(descriptor)}|${provider.id}|${resource.uuid}`;
   }
 
-  async function getCount(
+  function getCount(
     descriptor: QueryDescriptor,
     provider: CountProvider,
     resource: { name: string; uuid: string },
   ): Promise<ResultCountSnapshot> {
     const key = cacheKeyFor(descriptor, provider, resource);
     const cached = cache.get(key);
-    if (cached) return cached;
+    if (cached) return Promise.resolve(cached);
+    const pending = inflight.get(key);
+    if (pending) return pending;
 
-    const outcome = await executeOne(descriptor, provider, resource);
-    const snapshot: ResultCountSnapshot = {
-      descriptorKey: stableHash(descriptor),
-      count: outcome.value,
-      summary: summarize(outcome.value, outcome.error),
-    };
-    if (!snapshot.summary.hasError) {
-      cache.set(key, snapshot);
-    }
-    return snapshot;
+    const startedGeneration = generation;
+    const promise = executeOne(descriptor, provider, resource)
+      .then((outcome) => {
+        const snapshot: ResultCountSnapshot = {
+          descriptorKey: stableHash(descriptor),
+          count: outcome.value,
+          summary: summarize(outcome.value, outcome.error),
+        };
+        if (!snapshot.summary.hasError && generation === startedGeneration) {
+          cache.set(key, snapshot);
+        }
+        return snapshot;
+      })
+      .finally(() => inflight.delete(key));
+    inflight.set(key, promise);
+    return promise;
   }
 
   function clear() {
+    generation++;
     cache.clear();
   }
 

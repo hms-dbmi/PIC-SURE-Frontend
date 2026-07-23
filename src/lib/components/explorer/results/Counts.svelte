@@ -23,7 +23,7 @@
   {#if isLoading}
     <Loading ring size="mini" />
   {:else}
-    <span id="result-count">
+    <div id="result-count">
       {#if !hasCount}
         <span class="text-4xl font-bold">{ERROR_VALUE}</span>
       {:else}
@@ -31,12 +31,12 @@
           <span id="result-count-number" class="text-4xl">{count}</span>
         </div>
       {/if}
-    </span>
+    </div>
   {/if}
   <h4 class="text-center">{LABEL}</h4>
 </div>
 
-{#if hasError}
+{#if hasError && !isLoading}
   <ErrorAlert color="warning" iconSize="2xl">
     <p class="text-[0.6rem] !m-0">
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->

@@ -127,6 +127,51 @@ describe('QueryCountService.getCount', () => {
     await service.getCount(descriptor, provider, resource);
     expect(transport).toHaveBeenCalledTimes(1);
   });
+
+  it('coalesces concurrent identical requests into one transport call', async () => {
+    let resolveTransport!: (value: number) => void;
+    const transport = vi
+      .fn()
+      .mockReturnValue(new Promise((resolve) => (resolveTransport = resolve)));
+    const provider = makeProvider();
+    const service = createQueryCountService({ transport });
+
+    const first = service.getCount(descriptor, provider, resource);
+    const second = service.getCount(descriptor, provider, resource);
+    resolveTransport(42);
+
+    const [snap1, snap2] = await Promise.all([first, second]);
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(snap1).toBe(snap2);
+    expect(snap1.count).toBe(42);
+  });
+
+  it('does not coalesce once the request has settled', async () => {
+    const transport = vi.fn().mockRejectedValue(new Error('boom'));
+    const service = createQueryCountService({ transport });
+    await service.getCount(descriptor, makeProvider(), resource);
+    await service.getCount(descriptor, makeProvider(), resource);
+    expect(transport).toHaveBeenCalledTimes(2);
+  });
+
+  it('a request started before clear() cannot repopulate the cache after it', async () => {
+    let resolveTransport!: (value: number) => void;
+    const transport = vi
+      .fn()
+      .mockReturnValue(new Promise((resolve) => (resolveTransport = resolve)));
+    const provider = makeProvider();
+    const service = createQueryCountService({ transport });
+
+    const preClear = service.getCount(descriptor, provider, resource);
+    service.clear();
+    resolveTransport(42);
+    await preClear;
+
+    transport.mockResolvedValue(43);
+    const snap = await service.getCount(descriptor, provider, resource);
+    expect(snap.count).toBe(43);
+    expect(transport).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('QueryCountService transport dispatch', () => {

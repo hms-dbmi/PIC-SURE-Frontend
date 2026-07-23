@@ -157,6 +157,18 @@ describe('ResultCounts', () => {
     expect(result.kind).toBe('error');
   });
 
+  it('publishes an error snapshot when the service rejects, replacing any previous count', async () => {
+    mockService.getCount.mockResolvedValueOnce(snapshot(42));
+    await state.load(descriptor, false);
+    expect(state.snapshot.summary.total).toBe(42);
+
+    mockService.getCount.mockRejectedValueOnce(new Error('boom'));
+    await state.load(descriptor, false);
+    expect(state.snapshot.summary.hasError).toBe(true);
+    expect(state.snapshot.summary.total).toBe(0);
+    expect(state.snapshot.descriptorKey).toBe('k');
+  });
+
   it('recovers from error to loaded on a subsequent successful load', async () => {
     mockService.getCount.mockRejectedValueOnce(new Error('boom'));
     await state.load(descriptor, false);
@@ -462,6 +474,24 @@ describe('ResultCounts', () => {
 
       await state.ensureLoaded(() => true);
       expect(mockService.getCount).toHaveBeenCalledTimes(1);
+    });
+
+    it('retries the load when the matching snapshot recorded an error', async () => {
+      mockService.getCount.mockResolvedValueOnce({
+        descriptorKey: 'k',
+        count: 0,
+        summary: { total: 0, hasNonZero: false, hasError: true },
+      });
+      await state.ensureLoaded(() => true);
+      expect(mockService.getCount).toHaveBeenCalledTimes(1);
+
+      // Same descriptor, but the previous attempt failed - must retry
+      mockService.getCount.mockResolvedValueOnce(fixedSnapshot);
+      await state.ensureLoaded(() => true);
+      expect(mockService.getCount).toHaveBeenCalledTimes(2);
+
+      await state.ensureLoaded(() => true);
+      expect(mockService.getCount).toHaveBeenCalledTimes(2);
     });
   });
 });
