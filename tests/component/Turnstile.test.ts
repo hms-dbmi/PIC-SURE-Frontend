@@ -54,18 +54,22 @@ describe('Turnstile', () => {
 
     it('reports tokens, expiry, and widget errors through onToken', async () => {
       const onToken = vi.fn();
-      render(Turnstile, { props: { sitekey: SITEKEY, onToken } });
+      const onError = vi.fn();
+      render(Turnstile, { props: { sitekey: SITEKEY, onToken, onError } });
       await waitFor(() => expect(turnstileRender).toHaveBeenCalledTimes(1));
 
       renderOptions?.callback('turnstile-token-1');
       expect(onToken).toHaveBeenLastCalledWith('turnstile-token-1');
 
+      // expiry is normal token lifecycle, not a failure
       renderOptions?.['expired-callback']();
       expect(onToken).toHaveBeenLastCalledWith(null);
+      expect(onError).not.toHaveBeenCalled();
 
       renderOptions?.callback('turnstile-token-2');
       renderOptions?.['error-callback']();
       expect(onToken).toHaveBeenLastCalledWith(null);
+      expect(onError).toHaveBeenCalledTimes(1);
     });
 
     it('removes the widget on unmount', async () => {

@@ -263,6 +263,20 @@ describe('PublicAccessKey', () => {
       await waitFor(() => expect(generate).toBeDisabled());
     });
 
+    it('shows the failure message when the widget errors after rendering', async () => {
+      render(PublicAccessKey, { props: { enabled: true } });
+      await openForm();
+
+      renderOptions?.callback('turnstile-token-1');
+      const generate = screen.getByRole('button', { name: 'Generate Key' });
+      await waitFor(() => expect(generate).toBeEnabled());
+
+      renderOptions?.['error-callback']();
+      await screen.findByTestId('public-key-captcha-failed');
+      await waitFor(() => expect(generate).toBeDisabled());
+      expect(post).not.toHaveBeenCalled();
+    });
+
     it('shows a load-failure message when the widget cannot initialize', async () => {
       vi.stubGlobal('turnstile', {
         render: () => {

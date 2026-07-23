@@ -53,7 +53,10 @@
           theme: 'auto',
           callback: (token: string) => onToken(token),
           'expired-callback': () => onToken(null),
-          'error-callback': () => onToken(null),
+          'error-callback': () => {
+            onToken(null);
+            onError?.();
+          },
         });
       })
       .catch(() => {
