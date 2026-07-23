@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ApiKeyTable from '$lib/components/admin/api-key/ApiKeyTable.svelte';
@@ -8,7 +8,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | API Keys</title>
+  <title>{config.branding.applicationName} | API Keys</title>
 </svelte:head>
 <Content title="API Keys">
   {#if !$isTopAdmin}
