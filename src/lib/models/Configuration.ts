@@ -2,7 +2,7 @@ import configJson from '../assets/configuration.json' with { type: 'json' };
 import { ExportType } from '../models/Variant';
 import type { Column } from '../components/datatable/types';
 import type { StatConfig, StatField } from '../models/Stat';
-import type { Indexable, Indexed } from '../types';
+import type { Indexable, Indexed, ApiPageConfig } from '../types';
 import { deepMerge } from '../utilities/Objects';
 
 // Types
@@ -170,6 +170,7 @@ export type Branding = Indexable & {
       examples: string;
     };
   };
+  apiPage: ApiPageConfig;
   genomic?: {
     defaultGenomeBuild: string;
   };
@@ -795,6 +796,7 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
           examples: '',
         },
       },
+      apiPage: { capabilities: [] } as ApiPageConfig,
       applicationName: 'PIC‑SURE',
       theme: 'picsure',
       explorePage: {

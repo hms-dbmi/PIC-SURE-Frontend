@@ -1,5 +1,5 @@
 import { expect, type Page, type Route } from '@playwright/test';
-import { test, mockApiSuccess } from '../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../custom-context';
 
 const apiKeyPath = '*/**/psama/open/apiKey';
 const mockKeyResponse = {
@@ -21,6 +21,11 @@ async function openForm(page: Page) {
 }
 
 test.describe('Public access key generation', () => {
+  test.beforeEach(async ({ page }) => {
+    // OPEN keeps the root layout from redirecting anonymous visitors to /login.
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+  });
+
   test('Logged-out api page shows the card with an enabled request button', async ({ page }) => {
     // Given
     await page.goto('/api');
