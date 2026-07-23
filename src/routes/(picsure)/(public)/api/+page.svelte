@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { getApiConnectionResource } from '$lib/stores/Resources';
   import { tokenStatus } from '$lib/stores/User';
   import { log, createLog } from '$lib/logger';
@@ -14,9 +14,9 @@
 
   let mounted = $state(false);
   let loggedIn = $derived(mounted && $tokenStatus);
-  const capabilities = branding.apiPage?.capabilities || [];
+  const capabilities = config.branding.apiPage?.capabilities || [];
 
-  const codeBlocks = branding.explorePage.codeBlocks;
+  const codeBlocks = config.branding.explorePage.codeBlocks;
   type ApiLanguage = 'python' | 'r';
 
   function booleanLiteral(value: boolean, language: ApiLanguage) {
@@ -47,10 +47,10 @@
     const connection = getApiConnectionResource(authenticated);
     const values: ApiCodeBlockValues = {
       resourceUuid: connection.uuid,
-      includeConsents: connection.requiresAuth && Boolean(features.requireConsents),
+      includeConsents: connection.requiresAuth && Boolean(config.features.requireConsents),
       requiresAuth: connection.requiresAuth,
       supportsGenomic:
-        Boolean(features.enableGENEQuery || features.enableSNPQuery) &&
+        Boolean(config.features.enableGENEQuery || config.features.enableSNPQuery) &&
         !connection.usesDistinctOpenResource,
     };
     const pythonTemplate = connection.requiresAuth
@@ -161,7 +161,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | API</title>
+  <title>{config.branding.applicationName} | API</title>
 </svelte:head>
 
 <div id="api-page" class="relative w-full pb-6">
@@ -242,7 +242,7 @@
           </div>
         {:else}
           <div class="basis-[60%] grow-0 min-w-0 max-w-full">
-            <PublicAccessKey enabled={branding.apiPage?.publicKeyEnabled ?? false} />
+            <PublicAccessKey enabled={config.branding.apiPage?.publicKeyEnabled ?? false} />
           </div>
         {/if}
         <div id="capabilities" class="flex-1 min-w-64">

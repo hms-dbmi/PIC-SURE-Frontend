@@ -51,8 +51,8 @@ function mockUserModule(overrides: Record<string, unknown> = {}) {
 function mockOtherModules() {
   vi.doMock('$app/environment', () => ({ browser: true }));
   vi.doMock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
-  vi.doMock('$lib/configuration', () => ({
-    features: { analyzeApi: false, analyzeAnalysis: false },
+  vi.doMock('$lib/configuration.svelte', () => ({
+    config: { features: { analyzeApi: false, analyzeAnalysis: false } },
   }));
   vi.doMock('$lib/models/Privilege', () => ({
     PicsurePrivileges: { QUERY: 'PRIV_QUERY' },

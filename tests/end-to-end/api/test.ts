@@ -15,7 +15,15 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('API page', () => {
   test.beforeEach(async ({ context }) => {
-    await mockApiConfig(context);
+    // Pre-config-API these came from live VITE_* vars in .env.test; the quick start
+    // code block assertions (include_consents/supports_genomic) depend on them.
+    await mockApiConfig(context, {
+      features: [
+        { name: 'REQUIRE_CONSENTS', value: 'true' },
+        { name: 'ENABLE_GENE_QUERY', value: 'true' },
+        { name: 'ENABLE_SNP_QUERY', value: 'true' },
+      ],
+    });
     await mockApiSuccess(context, '*/**/psama/role', mockRoles);
     const user = picsureUser;
     user.token = mockExpiredToken;
@@ -371,6 +379,12 @@ test.describe('Legacy analyze routes redirect to /api', () => {
 
 test.describe('API page logged out', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test.beforeEach(async ({ page }) => {
+    // OPEN keeps the root layout from redirecting anonymous visitors to /login.
+    // Gene/SNP/consents stay unset: the open quick start asserts them false.
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+  });
 
   test('Has API nav link', async ({ page }) => {
     // Given

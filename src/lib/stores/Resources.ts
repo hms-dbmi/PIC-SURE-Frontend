@@ -51,9 +51,7 @@ export const loading: Writable<Promise<void>> = writable(Promise.resolve());
 export const resources: Writable<ResourceMap> = writable(defaultResources);
 
 export function getQueryResources(isOpenAccess: boolean = false): QueryResource[] {
-  return config.features.federated
-    ? get(resources).queryable
-    : [getCountResource(isOpenAccess)];
+  return config.features.federated ? get(resources).queryable : [getCountResource(isOpenAccess)];
 }
 
 export function getCountResource(isOpenAccess: boolean = false): QueryResource {
