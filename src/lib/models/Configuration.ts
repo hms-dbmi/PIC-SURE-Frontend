@@ -10,6 +10,7 @@ import { deepMerge } from '../utilities/Objects';
 export type Features = Indexable & {
   analyzeApi: boolean;
   confirmDownload: boolean;
+  confirmExternalNavigation: boolean;
   dashboard: boolean;
   dashboardDrawer: boolean;
   discover: boolean;
@@ -187,6 +188,13 @@ export type Branding = Indexable & {
   termsOfService: {
     rejectionUrl: string;
   };
+  externalLinkWarning: {
+    title: string;
+    message: string;
+    newTabMessage: string;
+    okText: string;
+    cancelText: string;
+  };
 };
 
 export type ConfigObject = {
@@ -300,6 +308,7 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
   return {
     analyzeApi: parse('ANALYZE_API', true),
     confirmDownload: parse('CONFIRM_DOWNLOAD', false),
+    confirmExternalNavigation: parse('CONFIRM_EXTERNAL_NAVIGATION', false),
     discover: parse('DISCOVER', false),
     dashboard: parse('DASHBOARD', false),
     dashboardDrawer: parse('DASHBOARD_DRAWER', false),
@@ -463,6 +472,13 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
       statFields: {},
       termsOfService: {
         rejectionUrl: '',
+      },
+      externalLinkWarning: {
+        title: '',
+        message: '',
+        newTabMessage: '',
+        okText: 'OK',
+        cancelText: 'Cancel',
       },
     },
     configJson,

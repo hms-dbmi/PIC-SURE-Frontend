@@ -215,5 +215,12 @@
   },
   "termsOfService": {
     "rejectionUrl": "https://avillach-lab.hms.harvard.edu/pic-sure"
+  },
+  "externalLinkWarning": {
+    "title": "",
+    "message": "",
+    "newTabMessage": "",
+    "okText": "OK",
+    "cancelText": "Cancel"
   }
 }
