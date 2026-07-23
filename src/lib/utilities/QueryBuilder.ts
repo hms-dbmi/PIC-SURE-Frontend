@@ -154,7 +154,9 @@ function serializeQueryV3(query: QueryV3) {
   );
 }
 
-function getClausesFromTree(tree: LogicTree<FilterInterface>): PhenotypicClause | null {
+export function buildPhenotypicClauseFromTree(
+  tree: LogicTree<FilterInterface>,
+): PhenotypicClause | null {
   if (tree.root.children.length === 0) return null;
 
   const groupClause = (operator: OperatorType): PhenotypicSubqueryInterface => ({
@@ -172,6 +174,40 @@ function getClausesFromTree(tree: LogicTree<FilterInterface>): PhenotypicClause 
     return convertPhenotypicFilterToClause(node as Filter);
   };
   return mapNode(tree.root);
+}
+
+export function buildGenomicFiltersFromFilters(
+  genomicFilters: Filter[],
+): GenomicFilterInterfacev3[] {
+  const out: GenomicFilterInterfacev3[] = [];
+  genomicFilters.forEach((filter: Filter) => {
+    if (filter.filterType === 'snp') {
+      convertSnpFilterToClause(filter).forEach((g) => out.push(g));
+    } else if (filter.filterType === 'genomic') {
+      convertGenomicFilterToClause(filter).forEach((g) => out.push(g));
+    }
+  });
+  return out;
+}
+
+export function buildQueryRequestV3FromDescriptor(
+  descriptor: import('$lib/services/counts/queryDescriptor.svelte').QueryDescriptor,
+  resourceUUID: string,
+  expectedResultType: ExpectedResultType = 'COUNT',
+  mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
+): QueryRequestInterfaceV3 {
+  let query: QueryV3 = new QueryV3();
+  query.expectedResultType = expectedResultType;
+  // Defensive clone: QueryV3.addClause reassigns `phenotypicClauses` on the
+  // existing clause object, so an aliased descriptor.phenotypicClause would be
+  // mutated by mutateMethod. The descriptor must remain immutable so stableHash
+  // stays stable for cache lookups.
+  query.phenotypicClause = descriptor.phenotypicClause
+    ? structuredClone(descriptor.phenotypicClause)
+    : null;
+  descriptor.genomicFilters.forEach((g) => query.genomicFilters.push(structuredClone(g)));
+  query = mutateMethod(query);
+  return { query: serializeQueryV3(query), resourceUUID };
 }
 
 export function getFilterConcepts(query: QueryV3): string[] {
@@ -211,7 +247,7 @@ export function getQueryRequestV3(
     resourceUUID,
     expectedResultType,
     (query: QueryV3) => {
-      query.phenotypicClause = getClausesFromTree(get(filterTree));
+      query.phenotypicClause = buildPhenotypicClauseFromTree(get(filterTree));
       get(genomicFilters).forEach((filter: Filter) => {
         if (filter.filterType === 'snp') {
           convertSnpFilterToClause(filter).forEach((genomicFilter) => {

@@ -28,7 +28,6 @@ export function getSessionId(): string {
 const RELEVANT_PRIVILEGES = new Set([
   PicsurePrivileges.SUPER,
   PicsurePrivileges.ADMIN,
-  PicsurePrivileges.DATA_ADMIN,
   PicsurePrivileges.API_ACCESS,
   BDCPrivileges.AUTHORIZED_ACCESS,
 ]);

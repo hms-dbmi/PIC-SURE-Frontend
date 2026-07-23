@@ -18,33 +18,15 @@ export const routes: Route[] = [
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
   },
   {
-    path: '/collaborate',
-    text: 'Collaborate',
-    feature: 'collaborate',
-    privilege: [PicsurePrivileges.QUERY],
-  },
-  {
     path: '/analyze/api',
     text: 'Prepare for Analysis',
     privilege: [PicsurePrivileges.API_ACCESS, BDCPrivileges.AUTHORIZED_ACCESS],
     feature: 'analyzeApi',
   },
   {
-    path: '/analyze/analysis',
-    text: 'Analyze',
-    privilege: [PicsurePrivileges.API_ACCESS],
-    feature: 'analyzeAnalysis',
-  },
-  {
     path: '/dataset',
     text: 'Manage Datasets',
     privilege: [PicsurePrivileges.NAMED_DATASET, BDCPrivileges.NAMED_DATASET],
-  },
-  {
-    path: '/dataset/request',
-    text: 'Data Request',
-    privilege: [PicsurePrivileges.DATA_ADMIN],
-    feature: 'dataRequests',
   },
   {
     path: '/admin/configuration',

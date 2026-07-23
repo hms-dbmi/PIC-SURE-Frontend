@@ -17,7 +17,6 @@ import type {
   StatConfig,
   StatResult,
   StatValue,
-  StatResultMap,
   StatField,
   PatientCount,
   PatientCountMap,
@@ -26,9 +25,9 @@ import type {
 
 import { isUserLoggedIn } from '$lib/stores/User';
 import { addConsents } from '$lib/stores/Dictionary';
-import { getQueryResources, resources } from '$lib/stores/Resources';
+import { getCountResource, resources } from '$lib/stores/Resources';
 import { getQueryRequestV3, getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
-import { countResult } from '$lib/utilities/PatientCount';
+import { countResult } from '$lib/services/counts/countFormat';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { log, createLog } from '$lib/logger';
 import { useOpenAccess } from '$lib/AccessState';
@@ -280,18 +279,17 @@ export function getValidStatList(list: StatConfig[]): StatResult[] {
 export function populateStatRequests(validStats: StatResult[]): StatResult[] {
   return validStats.map((stat: StatResult) => {
     const isOpenAccess = !stat.auth;
+    const resource = getCountResource(isOpenAccess);
     return {
       ...stat,
-      result: getQueryResources(isOpenAccess).reduce((statMap: StatResultMap, { name, uuid }) => {
-        const newMap = { ...statMap };
-        newMap[name] = requestMap[stat.key]({
+      result: {
+        [resource.name]: requestMap[stat.key]({
           isOpenAccess,
           stat,
-          resource: uuid,
+          resource: resource.uuid,
           addFilters: false,
-        });
-        return newMap;
-      }, {}),
+        }),
+      },
     };
   });
 }
@@ -336,19 +334,18 @@ export function getResultList(isOpenAccess: boolean, list: StatConfig[]): StatRe
 
   return validStats.reduce((list: StatResult[], stat: StatConfig) => {
     const statList = [...list];
+    const resource = getCountResource(isOpenAccess);
     statList.push({
       ...stat,
       auth: !isOpenAccess,
-      result: getQueryResources(isOpenAccess).reduce((statMap: StatResultMap, { name, uuid }) => {
-        const newMap = { ...statMap };
-        newMap[name] = requestMap[stat.key]({
+      result: {
+        [resource.name]: requestMap[stat.key]({
           isOpenAccess,
           stat,
-          resource: uuid,
+          resource: resource.uuid,
           addFilters: true,
-        });
-        return newMap;
-      }, {}),
+        }),
+      },
     });
     return statList;
   }, []);

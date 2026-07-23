@@ -367,14 +367,6 @@ export const userTypes = {
       PicsurePrivileges.API_ACCESS,
     ],
   },
-  dataUser: {
-    privileges: [
-      PicsurePrivileges.QUERY,
-      PicsurePrivileges.DATA_ADMIN,
-      PicsurePrivileges.NAMED_DATASET,
-      PicsurePrivileges.API_ACCESS,
-    ],
-  },
   noTOS: { acceptedTOS: false },
 };
 
@@ -1629,42 +1621,6 @@ export const users = [
     active: true,
   },
 ];
-
-export const sites = { sites: ['site A', 'site B'], homeSite: 'site A', homeDisplay: 'Site A' };
-export const status = {
-  genomic: 'Unsent',
-  phenotypic: 'Unsent',
-  queryId: '1234',
-  approved: null,
-  site: '',
-};
-
-export const metadata = {
-  status: 'AVAILABLE',
-  picsureResultId: '1234',
-  resultMetadata: {
-    queryResultMetadata: '{"picsureQueryId":"p1234"}',
-    queryJson: {
-      query: {
-        categoryFilters: {},
-        numericFilters: {},
-        requiredFields: [],
-        anyRecordOf: [],
-        variantInfoFilters: [
-          {
-            categoryVariantInfoFilters: {},
-            numericVariantInfoFilters: {},
-          },
-        ],
-        expectedResultType: 'DATAFRAME',
-      },
-      resourceUUID: 'r1234',
-      requesterEmail: 'Example@example.com',
-      institutionOfOrigin: 'Unknown',
-      commonAreaUUID: '1234',
-    },
-  },
-};
 
 export const geneValues = {
   results: [

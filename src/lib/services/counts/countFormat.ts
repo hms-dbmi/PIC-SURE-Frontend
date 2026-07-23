@@ -1,6 +1,6 @@
 import type { PatientCount, StatValue } from '$lib/models/Stat';
 
-const PLUS_MINUS = '\u00B1';
+const PLUS_MINUS = '±';
 
 function parseCount(count: PatientCount): { value: number; suffix: number } {
   let value: number;
@@ -29,8 +29,8 @@ export function countResult(results: StatValue[], asString = true): PatientCount
   const total = parsed.reduce((sum, { value }) => (value > 0 ? sum + value : sum), 0);
   const maxSuffix = Math.max(...parsed.map(({ suffix }) => suffix), 0);
 
-  // If any source reported a "< 10" style value and the numeric total is 0,
-  // prefer returning the original "< 10" string instead of formatting as "0±3".
+  // Privacy-obfuscated `< 10` values must not collapse to a literal "0"
+  // when every contributing cell came in below the threshold.
   if (asString && total === 0 && counts.some((c) => c?.toString().trim().startsWith('<')))
     return counts.find((c) => c?.toString().trim().startsWith('<')) as PatientCount;
 
@@ -39,4 +39,38 @@ export function countResult(results: StatValue[], asString = true): PatientCount
   return maxSuffix > 0
     ? `${total.toLocaleString()}${PLUS_MINUS}${maxSuffix}`
     : total.toLocaleString();
+}
+
+export function isCountValueEqual(
+  a: StatValue | null | undefined,
+  b: StatValue | null | undefined,
+): boolean {
+  if (a === b) return true;
+
+  const normalize = (val: unknown) => {
+    if (typeof val === 'string') return val.replaceAll(',', '');
+    return val;
+  };
+
+  const normA = normalize(a);
+  const normB = normalize(b);
+
+  if (normA == normB) return true;
+
+  if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) return false;
+
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+
+  for (const key of keysA) {
+    const valA = (a as Record<string, unknown>)[key];
+    const valB = (b as Record<string, unknown>)[key];
+    if (normalize(valA) != normalize(valB)) return false;
+  }
+  return true;
+}
+
+export function isObfuscatedBelowThreshold(count: unknown): boolean {
+  return typeof count === 'string' && count.trim().startsWith('<');
 }

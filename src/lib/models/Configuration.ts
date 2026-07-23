@@ -2,20 +2,17 @@ import configJson from '../assets/configuration.json' with { type: 'json' };
 import { ExportType } from '../models/Variant';
 import type { Column } from '../components/datatable/types';
 import type { StatConfig, StatField } from '../models/Stat';
-import type { Indexable, Step, Indexed } from '../types';
+import type { Indexable, Indexed } from '../types';
 import { deepMerge } from '../utilities/Objects';
 
 // Types
 
 export type Features = Indexable & {
-  analyzeAnalysis: boolean;
   analyzeApi: boolean;
-  collaborate: boolean;
   confirmDownload: boolean;
   confirmExternalNavigation: boolean;
   dashboard: boolean;
   dashboardDrawer: boolean;
-  dataRequests: boolean;
   discover: boolean;
   enableGENEQuery: boolean;
   enableSNPQuery: boolean;
@@ -24,11 +21,9 @@ export type Features = Indexable & {
     allowDownload: boolean;
     allowExport: boolean;
     distributionExplorer: boolean;
-    enableCohortDetails: boolean;
     enableExportTimeseries: boolean;
     enableHierarchy: boolean;
     enablePfbExport: boolean;
-    enableRedcapExport: boolean;
     enableSampleIdCheckbox: boolean;
     enableTour: boolean;
     exportsEnableExport: boolean;
@@ -36,7 +31,6 @@ export type Features = Indexable & {
     variantExplorer: boolean;
     open: boolean;
   };
-  federated: boolean;
   login: {
     open: boolean;
   };
@@ -144,9 +138,6 @@ export type Branding = Indexable & {
     stats: StatConfig[];
     cohortDescription: string;
   };
-  datasetRequestPage: {
-    searchIntro: string;
-  };
   login: {
     description: string;
     showSiteName: boolean;
@@ -190,11 +181,6 @@ export type Branding = Indexable & {
       access: string;
       examples: string;
     };
-  };
-  collaboratePage: {
-    steps?: Step[];
-    introduction: string;
-    findCollaborators: string;
   };
   genomic?: {
     defaultGenomeBuild: string;
@@ -320,12 +306,9 @@ export function parsers(map: ConfigMap) {
 export function mapFeatures(apiFeatures: ConfigObject[]): Features {
   const parse = parsers(resolveConfigMap(apiFeatures)).asBoolean;
   return {
-    analyzeAnalysis: parse('ANALYZE_ANALYSIS', false),
     analyzeApi: parse('ANALYZE_API', true),
-    collaborate: parse('COLLABORATE', false),
     confirmDownload: parse('CONFIRM_DOWNLOAD', false),
     confirmExternalNavigation: parse('CONFIRM_EXTERNAL_NAVIGATION', false),
-    dataRequests: parse('DATA_REQUESTS', false),
     discover: parse('DISCOVER', false),
     dashboard: parse('DASHBOARD', false),
     dashboardDrawer: parse('DASHBOARD_DRAWER', false),
@@ -337,18 +320,15 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
       allowDownload: parse('ALLOW_DOWNLOAD', true),
       allowExport: parse('ALLOW_EXPORT', false),
       distributionExplorer: parse('DIST_EXPLORER', false),
-      enableCohortDetails: parse('ENABLE_COHORT_DETAILS', false),
       enableExportTimeseries: parse('EXPORT_TIMESERIES', true),
       enableHierarchy: parse('ENABLE_HIERARCHY', false),
       enablePfbExport: parse('DOWNLOAD_AS_PFB', true),
-      enableRedcapExport: parse('ENABLE_REDCAP_EXPORT', false),
       enableSampleIdCheckbox: parse('ENABLE_SAMPLE_ID_CHECKBOX', false),
       enableTour: parse('EXPLORE_TOUR', true),
       exportsEnableExport: parse('ALLOW_EXPORT_ENABLED', false),
       showTreeStep: parse('SHOW_TREE_STEP', false),
       variantExplorer: parse('VARIANT_EXPLORER', false),
     },
-    federated: parse('FEDERATED', false),
     login: {
       open: parse('OPEN', false),
     },
@@ -425,14 +405,6 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
         },
       },
       applicationName: 'PIC‑SURE',
-      collaboratePage: {
-        steps: [],
-        introduction: '',
-        findCollaborators: '',
-      },
-      datasetRequestPage: {
-        searchIntro: '',
-      },
       explorePage: {
         columns: [],
         tourSearchIntro: '',

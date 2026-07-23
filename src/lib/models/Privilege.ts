@@ -12,7 +12,6 @@ export enum PicsurePrivileges {
   API_ACCESS = 'API_ACCESS',
   NAMED_DATASET = 'NAMED_DATASET',
   ADMIN = 'ADMIN',
-  DATA_ADMIN = 'DATA_ADMIN',
   SUPER = 'SUPER_ADMIN',
 }
 
