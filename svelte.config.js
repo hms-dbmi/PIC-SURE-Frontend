@@ -39,7 +39,14 @@ const config = {
         'form-action': ['self'],
         'frame-ancestors': ['none'],
         'font-src': ['self', 'data:'],
-        'script-src': ['self', 'https://*.googletagmanager.com', ...extra('CSP_EXTRA_SCRIPT_SRC')],
+        'script-src': [
+          'self',
+          'https://*.googletagmanager.com',
+          // Turnstile loads api.js and renders its challenge in an iframe from this origin
+          'https://challenges.cloudflare.com',
+          ...extra('CSP_EXTRA_SCRIPT_SRC'),
+        ],
+        'frame-src': ['self', 'https://challenges.cloudflare.com'],
         'style-src': ['self', ...extra('CSP_EXTRA_STYLE_SRC')],
         'style-src-attr': ['unsafe-inline'],
         'img-src': [

@@ -5,6 +5,7 @@
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
+  import Turnstile from '$lib/components/Turnstile.svelte';
 
   interface PublicKey {
     apiKey: string;
@@ -19,9 +20,15 @@
   // deployment capability from branding config; the backend independently enforces its own flag
   let { enabled = false }: { enabled?: boolean } = $props();
 
+  // when a Turnstile sitekey is configured the widget gates submission; empty keeps the
+  // ungated flow (valid against a PSAMA running captcha.provider=disabled)
+  const turnstileSiteKey: string = import.meta.env?.VITE_TURNSTILE_SITE_KEY || '';
+
   let view: View = $state('idle');
   let name = $state('');
   let email = $state('');
+  let captchaToken: string | null = $state(null);
+  let captchaFailed = $state(false);
   let submitting = $state(false);
   let publicKey: PublicKey | undefined = $state();
   let errorMessage = $state('');
@@ -58,6 +65,14 @@
     }
   }
 
+  // tokens are single-use and expire after 5 minutes: every entry into the form view
+  // remounts the widget so a fresh token is issued
+  function openForm() {
+    captchaToken = null;
+    captchaFailed = false;
+    view = 'form';
+  }
+
   async function generateKey(event: SubmitEvent) {
     event.preventDefault();
     submitting = true;
@@ -65,7 +80,7 @@
     try {
       const response: PublicKey = await post(
         Psama.Open.ApiKey,
-        { captchaToken: null, name: name.trim() || null, email: email.trim() || null },
+        { captchaToken, name: name.trim() || null, email: email.trim() || null },
         undefined,
         false,
       );
@@ -109,7 +124,7 @@
       assessments.
     </p>
     {#if enabled}
-      <button class="btn preset-filled-primary-500 my-auto mx-auto" onclick={() => (view = 'form')}>
+      <button class="btn preset-filled-primary-500 my-auto mx-auto" onclick={openForm}>
         Request Public Key
       </button>
     {:else}
@@ -143,6 +158,8 @@
           name="email"
           maxlength="255"
           placeholder="you@example.org"
+          pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
+          title="Enter an email address like you@example.org"
           aria-describedby="public-key-email-hint"
           bind:value={email}
           disabled={submitting}
@@ -151,10 +168,34 @@
           Only used to contact you if there is a problem with your key. No account is created.
         </span>
       </div>
-      <!-- CAPTCHA insertion point: the Turnstile widget will mount here and supply the
-           captchaToken sent with the request (currently always null). -->
+      {#if turnstileSiteKey}
+        <div class="mx-auto">
+          <Turnstile
+            sitekey={turnstileSiteKey}
+            onToken={(token) => (captchaToken = token)}
+            onError={() => (captchaFailed = true)}
+          />
+        </div>
+        {#if captchaFailed}
+          <p data-testid="public-key-captcha-failed" role="alert" class="mx-0 text-center text-sm">
+            The security check could not be loaded. Check your connection and reload the page to try
+            again.
+          </p>
+        {:else if !captchaToken}
+          <span id="public-key-captcha-hint" class="sr-only">
+            Complete the security check to enable key generation.
+          </span>
+        {/if}
+      {/if}
       <div class="flex gap-4 justify-center mt-auto">
-        <button type="submit" class="btn preset-filled-primary-500" disabled={submitting}>
+        <button
+          type="submit"
+          class="btn preset-filled-primary-500"
+          disabled={submitting || (!!turnstileSiteKey && !captchaToken)}
+          aria-describedby={turnstileSiteKey && !captchaToken && !captchaFailed
+            ? 'public-key-captcha-hint'
+            : undefined}
+        >
           {#if submitting}
             <Loading ring size="micro" label="Generating" />
           {:else}
@@ -203,7 +244,7 @@
     <div role="alert">
       <ErrorAlert color="warning">{errorMessage}</ErrorAlert>
     </div>
-    <button class="btn preset-filled-primary-500 my-auto mx-auto" onclick={() => (view = 'form')}>
+    <button class="btn preset-filled-primary-500 my-auto mx-auto" onclick={openForm}>
       Try Again
     </button>
   {/if}

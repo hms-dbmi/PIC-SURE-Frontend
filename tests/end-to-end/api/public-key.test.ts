@@ -1,4 +1,4 @@
-import { expect, type Page, type Route } from '@playwright/test';
+import { expect, type BrowserContext, type Page, type Route } from '@playwright/test';
 import { test, mockApiSuccess, mockApiConfig } from '../custom-context';
 
 const apiKeyPath = '*/**/psama/open/apiKey';
@@ -10,7 +10,30 @@ const mockKeyResponse = {
   expiresAt: '2026-10-11T12:13:14Z',
 };
 
+// .env.test bakes a Turnstile sitekey into the build, so the widget is active in every
+// test here. Serve a stub api.js instead of Cloudflare's so CI stays hermetic: it issues
+// a token immediately, like the real managed widget does for a non-suspicious visitor.
+const stubToken = 'XXXX.DUMMY.TOKEN';
+async function stubTurnstile(context: BrowserContext) {
+  await context.route('**/challenges.cloudflare.com/turnstile/v0/api.js*', (route: Route) =>
+    route.fulfill({
+      contentType: 'text/javascript',
+      body: `window.turnstile = {
+        render: (container, options) => {
+          options.callback(${JSON.stringify(stubToken)});
+          return 'stub-widget';
+        },
+        remove: () => {},
+      };`,
+    }),
+  );
+}
+
 test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+test.beforeEach(async ({ context }) => {
+  await stubTurnstile(context);
+});
 
 // Clicks that land before Svelte hydration are silently dropped, so retry until the form opens
 async function openForm(page: Page) {
@@ -65,7 +88,7 @@ test.describe('Public access key generation', () => {
     await expect(page.getByTestId('public-key-expires')).not.toBeEmpty();
   });
 
-  test('Sends no Authorization header and a null captcha token', async ({ page, context }) => {
+  test('Sends no Authorization header and the Turnstile token', async ({ page, context }) => {
     // Given
     let headers: Record<string, string> | undefined;
     let body: string | null | undefined;
@@ -91,7 +114,7 @@ test.describe('Public access key generation', () => {
     expect(headers?.['authorization']).toBeUndefined();
     expect(headers?.['request-source']).toBe('Open');
     expect(JSON.parse(body || '{}')).toEqual({
-      captchaToken: null,
+      captchaToken: stubToken,
       name: null,
       email: 'researcher@example.org',
     });
@@ -123,6 +146,73 @@ test.describe('Public access key generation', () => {
 
     // Then
     await expect(page.getByRole('button', { name: 'Generate Key' })).toBeVisible();
+  });
+
+  test('Rejects a malformed email without sending a request', async ({ page, context }) => {
+    // Given
+    let requestCount = 0;
+    await context.route(apiKeyPath, async (route: Route) => {
+      requestCount++;
+      await route.fulfill({ json: mockKeyResponse });
+    });
+    await page.goto('/api');
+    await openForm(page);
+
+    // When: type="email" catches shapes like "not-an-email"; the pattern attribute
+    // additionally requires a dot in the domain, which type="email" alone allows
+    const emailField = page.getByLabel('Email (optional)');
+    for (const invalid of ['not-an-email', 'name@nodot']) {
+      await emailField.fill(invalid);
+      await page.getByRole('button', { name: 'Generate Key' }).click();
+
+      // Then: native constraint validation blocks submission
+      await expect(emailField).toHaveJSProperty('validity.valid', false);
+      await expect(page.getByTestId('public-key-value')).not.toBeVisible();
+    }
+    expect(requestCount).toBe(0);
+
+    // When: a well-formed email passes
+    await emailField.fill('researcher@example.org');
+    await page.getByRole('button', { name: 'Generate Key' }).click();
+
+    // Then
+    await expect(page.getByTestId('public-key-value')).toBeVisible();
+    expect(requestCount).toBe(1);
+  });
+
+  test('Generate stays disabled until the Turnstile widget issues a token', async ({
+    page,
+    context,
+  }) => {
+    // Given: a widget that waits (like managed mode showing a challenge) until told to pass
+    await context.route('**/challenges.cloudflare.com/turnstile/v0/api.js*', (route: Route) =>
+      route.fulfill({
+        contentType: 'text/javascript',
+        body: `window.turnstile = {
+          render: (container, options) => {
+            window.__resolveChallenge = () => options.callback(${JSON.stringify(stubToken)});
+            return 'stub-widget';
+          },
+          remove: () => {},
+        };`,
+      }),
+    );
+    await mockApiSuccess(context, apiKeyPath, mockKeyResponse);
+    await page.goto('/api');
+
+    // When
+    await openForm(page);
+
+    // Then
+    await expect(page.getByRole('button', { name: 'Generate Key' })).toBeDisabled();
+
+    // When
+    await page.evaluate(() =>
+      (window as { __resolveChallenge?: () => void }).__resolveChallenge?.(),
+    );
+
+    // Then
+    await expect(page.getByRole('button', { name: 'Generate Key' })).toBeEnabled();
   });
 
   test('Cancel returns to the idle state without a request', async ({ page, context }) => {
