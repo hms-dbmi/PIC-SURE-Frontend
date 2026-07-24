@@ -75,8 +75,8 @@ test.describe('AWS WAF CAPTCHA recovery', () => {
     await expect.poll(() => logActions).toContain('waf.captcha_resolved');
     await expect.poll(() => searchRequests).toBe(2); // 405'd once, retried by the reload
     expect(logActions.filter((action) => action === 'waf.captcha_shown')).toHaveLength(1);
+    expect(logActions.filter((action) => action === 'waf.captcha_resolved')).toHaveLength(1);
 
-    // App is functional after the reload
     await expect(page.locator('#search-bar')).toBeVisible();
 
     expect(await page.evaluate(() => sessionStorage.getItem('waf-captcha-pending'))).toBeNull();
@@ -92,6 +92,7 @@ test.describe('AWS WAF CAPTCHA recovery', () => {
 
     // The 405 takes today's generic error path, whose audit event marks completion
     await expect.poll(() => logActions).toContain('error.unknown');
+    await expect(page.getByText('An error occurred while searching')).toBeVisible();
 
     expect(logActions.filter((action) => action.startsWith('waf.'))).toHaveLength(0);
     expect(searchRequests).toBe(1); // no reload, so no retry

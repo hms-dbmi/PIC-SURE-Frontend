@@ -46,10 +46,9 @@ export function logWafCaptchaResolution(): void {
     const { ts, path, mode } = JSON.parse(pending);
     if (Date.now() - ts > STALE_PENDING_MS) return; // abandoned at the CAPTCHA; not a resolution
     log(createLog('ACTION', 'waf.captcha_resolved', { path, mode, durationMs: Date.now() - ts }));
-  } catch {
-    return;
-  } finally {
     // Anchor the loop-guard window to the completed reload, not the detection instant.
     sessionStorage.setItem(GUARD_KEY, String(Date.now()));
+  } catch {
+    return;
   }
 }

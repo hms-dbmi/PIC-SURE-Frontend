@@ -190,6 +190,7 @@ describe('wafCaptcha', () => {
 
       expect(mockLog).not.toHaveBeenCalled();
       expect(storage[PENDING_KEY]).toBeUndefined();
+      expect(storage[GUARD_KEY]).toBeUndefined();
     });
 
     it('survives corrupt pending state without throwing', () => {
@@ -198,6 +199,7 @@ describe('wafCaptcha', () => {
       expect(() => waf.logWafCaptchaResolution()).not.toThrow();
       expect(mockLog).not.toHaveBeenCalled();
       expect(storage[PENDING_KEY]).toBeUndefined();
+      expect(storage[GUARD_KEY]).toBeUndefined();
     });
   });
 });

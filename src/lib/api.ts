@@ -117,7 +117,7 @@ async function handleResponse(res: Response) {
       // page that's about to be replaced by the WAF interstitial.
       return new Promise(() => {});
     }
-    // Loop guard tripped: fall through to the generic ERROR log + error() below.
+    // Loop guard tripped: deliberately fall through to the normal error path.
   } else if (res.status === 401) {
     log(createLog('AUTH', 'session.unauthorized', undefined, { status: 401 }));
     browser &&
