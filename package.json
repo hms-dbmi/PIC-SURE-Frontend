@@ -33,7 +33,7 @@
     "@skeletonlabs/skeleton-svelte": "^1.5.1",
     "@vincjo/datatables": "^2.8.0",
     "auth0-js": "^10.2.0",
-    "dompurify": "^3.4.3",
+    "dompurify": "^3.4.12",
     "driver.js": "^1.4.0",
     "gtagjs": "^0.0.10",
     "plotly.js-basic-dist-min": "^3.5.1",
