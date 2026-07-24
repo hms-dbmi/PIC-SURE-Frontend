@@ -6,6 +6,12 @@ updates:
       interval: 'weekly'
     commit-message:
       prefix: '[pnpm] '
+    ignore:
+      # Node majors are adopted deliberately as a release engineering decision
+      # (next: Node 26 once it reaches LTS, ~Oct 2026), keeping .nvmrc, the
+      # Dockerfiles, and @types/node in sync in a single change.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: 'docker'
     directory: '/'
@@ -13,3 +19,7 @@ updates:
       interval: 'weekly'
     commit-message:
       prefix: '[docker] '
+    ignore:
+      # See the @types/node note above - runtime majors are upgraded manually.
+      - dependency-name: 'node'
+        update-types: ['version-update:semver-major']
