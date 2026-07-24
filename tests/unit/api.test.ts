@@ -30,6 +30,24 @@ vi.mock('@sveltejs/kit', () => ({
   },
 }));
 
+let mockWafFlag = false;
+vi.mock('$lib/configuration.svelte', () => ({
+  config: {
+    features: {
+      get wafCaptchaRecovery() {
+        return mockWafFlag;
+      },
+    },
+  },
+}));
+
+const mockIsWafCaptchaResponse = vi.fn<(...args: unknown[]) => boolean>(() => false);
+const mockHandleWafCaptcha = vi.fn<(...args: unknown[]) => boolean>(() => true);
+vi.mock('$lib/wafCaptcha', () => ({
+  isWafCaptchaResponse: (...args: unknown[]) => mockIsWafCaptchaResponse(...args),
+  handleWafCaptcha: (...args: unknown[]) => mockHandleWafCaptcha(...args),
+}));
+
 import { get, post, put, del, isAbortError } from '$lib/api';
 
 function mockFetchResponse(overrides: {
@@ -53,6 +71,7 @@ function mockFetchResponse(overrides: {
   return {
     ok,
     status,
+    url: 'https://example.com/picsure/test',
     headers: {
       get: (key: string) => headerMap.get(key) ?? null,
     },
@@ -67,6 +86,9 @@ describe('api', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockBrowser = true;
+    mockWafFlag = false;
+    mockIsWafCaptchaResponse.mockReturnValue(false);
+    mockHandleWafCaptcha.mockReturnValue(true);
     mockGetSessionId.mockReturnValue('test-session-id');
 
     fetchMock = vi.fn().mockResolvedValue(mockFetchResponse({}));
@@ -330,6 +352,85 @@ describe('api', () => {
         status: 500,
         error: { message: 'Server Error' },
       });
+    });
+  });
+
+  describe('WAF CAPTCHA recovery', () => {
+    const wafResponse = () =>
+      mockFetchResponse({
+        ok: false,
+        status: 405,
+        headers: { 'x-amzn-waf-action': 'captcha' },
+        body: '<html>waf interstitial</html>',
+        contentType: 'text/html',
+      });
+
+    it('never settles and stays silent when a reload is imminent', async () => {
+      mockWafFlag = true;
+      mockIsWafCaptchaResponse.mockReturnValue(true);
+      mockHandleWafCaptcha.mockReturnValue(true);
+      fetchMock.mockResolvedValue(wafResponse());
+
+      const outcome = await Promise.race([
+        get('picsure/test').then(
+          () => 'settled',
+          () => 'settled',
+        ),
+        new Promise((resolve) => setTimeout(() => resolve('pending'), 10)),
+      ]);
+
+      expect(outcome).toBe('pending');
+      expect(mockHandleWafCaptcha).toHaveBeenCalledWith('/picsure/test');
+      expect(mockCreateLog).not.toHaveBeenCalledWith(
+        'ERROR',
+        'error.unknown',
+        undefined,
+        expect.anything(),
+      );
+    });
+
+    it('falls through to the generic error when the loop guard trips', async () => {
+      mockWafFlag = true;
+      mockIsWafCaptchaResponse.mockReturnValue(true);
+      mockHandleWafCaptcha.mockReturnValue(false);
+      fetchMock.mockResolvedValue(wafResponse());
+
+      await expect(get('picsure/test')).rejects.toThrow('405');
+
+      expect(mockCreateLog).toHaveBeenCalledWith('ERROR', 'error.unknown', undefined, {
+        status: 405,
+        error: { message: '<html>waf interstitial</html>' },
+      });
+    });
+
+    it('takes the generic error path when the feature flag is off', async () => {
+      mockWafFlag = false;
+      fetchMock.mockResolvedValue(wafResponse());
+
+      await expect(get('picsure/test')).rejects.toThrow('405');
+
+      expect(mockIsWafCaptchaResponse).not.toHaveBeenCalled();
+      expect(mockHandleWafCaptcha).not.toHaveBeenCalled();
+    });
+
+    it('takes the generic error path outside the browser', async () => {
+      mockBrowser = false;
+      mockWafFlag = true;
+      fetchMock.mockResolvedValue(wafResponse());
+
+      await expect(get('picsure/test')).rejects.toThrow('405');
+
+      expect(mockHandleWafCaptcha).not.toHaveBeenCalled();
+    });
+
+    it('takes the generic error path when the response is not a WAF CAPTCHA', async () => {
+      mockWafFlag = true;
+      mockIsWafCaptchaResponse.mockReturnValue(false);
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 405, body: 'nope' }));
+
+      await expect(get('picsure/test')).rejects.toThrow('405: nope');
+
+      expect(mockHandleWafCaptcha).not.toHaveBeenCalled();
     });
   });
 

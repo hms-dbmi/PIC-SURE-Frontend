@@ -49,7 +49,7 @@ export function sanitizeLocation(): { url: string; query_string: string } {
   return { url: url.toString(), query_string: url.search };
 }
 
-export function log(event: LogEvent): void {
+export function log(event: LogEvent, opts?: { keepalive?: boolean }): void {
   if (!browser) return;
 
   const token = localStorage.getItem('token');
@@ -62,6 +62,7 @@ export function log(event: LogEvent): void {
     method: 'POST',
     headers,
     body: JSON.stringify(event),
+    keepalive: opts?.keepalive ?? false,
   }).catch((err) => {
     console.warn('[logger] Failed to send log event:', err);
   });
