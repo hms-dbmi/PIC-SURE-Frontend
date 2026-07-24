@@ -4,7 +4,7 @@ import { browser } from '$app/environment';
 import { log, createLog, getSessionId } from '$lib/logger';
 import { config } from '$lib/configuration.svelte';
 import { isWafCaptchaResponse, handleWafCaptcha } from '$lib/wafCaptcha';
-import { joinUrl } from '$lib/paths';
+import { Internal, joinUrl } from '$lib/paths';
 
 const BEARER = 'Bearer ';
 const CONSENT_DENIED = 'consent_denied';
@@ -57,6 +57,7 @@ async function send({
     opts.headers = { ...opts.headers, ...headers };
   }
 
+  let requestPath = path;
   if (browser) {
     const token = authenticate ? localStorage.getItem('token') : null;
     if (token) {
@@ -64,6 +65,13 @@ async function send({
       opts.headers['request-source'] = 'Authorized';
     } else {
       opts.headers['request-source'] = 'Open';
+      // Any token-less data request goes through the SvelteKit server proxy, which attaches the
+      // deployment's platform API key server-side so it never reaches the browser. This covers
+      // both "no token exists" and authenticate:false (a logged-in user querying the open
+      // variant). Non-picsure paths (e.g. psama key generation) are never proxied.
+      if (path.startsWith('picsure/')) {
+        requestPath = `${Internal.OpenProxy}/${path}`;
+      }
     }
     opts.headers['X-Session-Id'] = getSessionId();
   }
@@ -72,7 +80,7 @@ async function send({
     opts.signal = options.signal;
   }
 
-  const res = await fetch(joinUrl(window.location.origin, path), opts);
+  const res = await fetch(joinUrl(window.location.origin, requestPath), opts);
 
   return await handleResponse(res);
 }
