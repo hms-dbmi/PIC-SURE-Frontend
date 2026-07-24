@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
   import { allFilters } from '$lib/stores/Filter';
   import { exports } from '$lib/stores/Export';
@@ -61,7 +62,7 @@
         <button
           class="btn preset-filled-primary-500 m-4"
           onclick={() => {
-            goto('/login');
+            goto(resolve('/login'));
           }}>Go to Login</button
         >
       </div>
@@ -77,7 +78,7 @@
         <button
           class="btn preset-filled-primary-500 m-4"
           onclick={() => {
-            goto('/explorer?startTour=true');
+            goto(resolve('/explorer?startTour=true'));
           }}>Learn How</button
         >
       </div>

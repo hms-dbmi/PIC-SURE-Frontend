@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
   import type { Indexable } from '$lib/types';
@@ -32,7 +33,7 @@
 
   const rowClickHandler = (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(`/dataset/${uuid}`);
+    goto(resolve(`/dataset/${uuid}`));
   };
 </script>
 

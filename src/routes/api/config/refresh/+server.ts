@@ -38,7 +38,7 @@ export const GET: RequestHandler = async ({ request }) => {
     // its last known-good value instead of losing it.
     const config = await getConfig(true);
     return json(config);
-  } catch (error) {
+  } catch {
     return json({ error: 'Failed to load configuration' }, { status: 500 });
   }
 };

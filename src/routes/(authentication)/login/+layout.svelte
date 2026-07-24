@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { Toaster } from '@skeletonlabs/skeleton-svelte';
   import { toaster } from '$lib/toaster';
@@ -17,7 +18,7 @@
 
   onMount(() => {
     if ($user && $user.token) {
-      goto('/');
+      goto(resolve('/'));
     }
   });
 </script>

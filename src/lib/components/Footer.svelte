@@ -46,6 +46,7 @@
                 <li class="text-center">
                   <a
                     target={link.newTab ? '_blank' : '_self'}
+                    rel="external"
                     href={link.url}
                     class="hover:underline"
                     onclick={() =>
@@ -97,6 +98,7 @@
         <a
           class="hover:underline text-[0.74rem]"
           target={link.newTab ? '_blank' : '_self'}
+          rel="external"
           href={link.url}
           onclick={() =>
             log(createLog('NAVIGATION', 'footer.link_click', { title: link.title, url: link.url }))}

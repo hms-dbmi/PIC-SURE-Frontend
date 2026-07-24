@@ -11,7 +11,7 @@
   const dotsColorsClass: string[] = $derived.by(() => {
     try {
       return config.settings.dotsColorsClass || [];
-    } catch (error) {
+    } catch {
       return [];
     }
   });

@@ -45,17 +45,22 @@
     head.insertBefore(script, head.firstChild);
   }
 
-  // gtag.js recognizes a command ONLY when the raw `arguments` object is pushed
-  // onto dataLayer. Pushing a plain array (e.g. the `_args` rest param) is
-  // silently ignored and disables ALL tracking. `_args` exists only to type the
-  // call sites below
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function gtag(..._args: any[]) {
+  type GtagCommand =
+    | ['js', Date]
+    | ['config', string, Record<string, unknown>]
+    | ['event', string, Record<string, unknown>]
+    | ['consent', 'default' | 'update', Consent];
+
+  // The type annotation types every call site below, while the implementation
+  // declares no parameters: gtag.js recognizes a command ONLY when the raw
+  // `arguments` object is pushed onto dataLayer. Pushing a plain array is
+  // silently ignored and disables ALL tracking.
+  const gtag: (...args: GtagCommand) => void = function () {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
     if (!window.dataLayer) window.dataLayer = [];
     // eslint-disable-next-line prefer-rest-params
     window.dataLayer.push(arguments);
-  }
+  };
 
   function initialize() {
     // Nothing to load if no tracking IDs are configured.
@@ -157,6 +162,7 @@
             We use cookies to provide you with the best possible experience and to help us make the
             site more useful to visitors. To learn more, please visit our <a
               href={config.branding.privacyPolicy.url}
+              rel="external"
               target="_blank"
               class="anchor">{config.branding.privacyPolicy.title}</a
             >.

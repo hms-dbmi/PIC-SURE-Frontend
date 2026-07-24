@@ -38,7 +38,7 @@
           <p data-testid="logic-tree-text">
             {#each parts as part}
               {#if part.type === 'operator'}
-                {' '}<strong>{part.text}</strong>{' '}
+                <span> <strong>{part.text}</strong> </span>
               {:else}
                 {part.text}
               {/if}

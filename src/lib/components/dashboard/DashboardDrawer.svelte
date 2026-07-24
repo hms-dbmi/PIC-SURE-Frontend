@@ -58,6 +58,7 @@
     <div class="flex justify-center items-center mb-4">
       <a
         href={link || '#'}
+        rel="external"
         class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
         target="_blank"
         onclick={(e) => {

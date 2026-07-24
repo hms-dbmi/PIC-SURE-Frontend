@@ -24,7 +24,7 @@ export const load: LayoutLoad = async ({ url, fetch, data }) => {
     if (response.status === 404) {
       redirect(302, '/');
     }
-  } catch (error) {
+  } catch {
     redirect(302, '/');
   }
 };

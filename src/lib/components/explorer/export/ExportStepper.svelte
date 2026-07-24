@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import * as api from '$lib/api';
@@ -135,7 +136,7 @@
       }),
     );
     resetExportStepperState();
-    goto('/explorer');
+    goto(resolve('/explorer'));
   }
 
   const MAX_DATA_POINTS_FOR_EXPORT = $derived(config.settings.maxDataPointsForExport || 1000000);

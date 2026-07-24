@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
   import { isTopAdmin } from '$lib/stores/User';
@@ -10,7 +11,7 @@
 
   function editPrivilege(event: Event) {
     event.stopPropagation();
-    goto(`/admin/configuration/privilege/${data.cell}/edit`);
+    goto(resolve(`/admin/configuration/privilege/${data.cell}/edit`));
   }
 
   async function deleteRow() {
