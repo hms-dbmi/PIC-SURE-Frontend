@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onDestroy, onMount } from 'svelte';
 
   import { goto } from '$app/navigation';
@@ -23,7 +24,7 @@
           closable: true,
         });
       }
-      goto('/explorer');
+      goto(resolve('/explorer'));
     } else {
       $panelOpen = false;
     }

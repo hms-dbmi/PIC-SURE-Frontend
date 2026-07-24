@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
@@ -64,31 +65,48 @@
     </Tabs>
   </section>
   <section id="info-cards" class="w-full flex flex-wrap flex-row justify-center mt-6">
-    {#each config.branding.analysisPage.api.cards as card}
-      <a
-        href={card.link}
-        target={card.link.startsWith('http') ? '_blank' : '_self'}
-        class="p-4 basis-2/4 max-w-sm min-h-48 mb-8"
-        onclick={() =>
-          log(
-            createLog('NAVIGATION', 'analyze.learn_more', { title: card.header, url: card.link }),
-          )}
+    {#snippet infoCard(card: { header: string; body: string; link: string })}
+      <div
+        class="card card-hover border border-surface-200 bg-surface-100 hover:scale-105 hover:shadow-lg"
       >
-        <div
-          class="card card-hover border border-surface-200 bg-surface-100 hover:scale-105 hover:shadow-lg"
+        <header class="card-header flex flex-col items-center">
+          <h4 class="my-1" data-testid={card.header}>{card.header}</h4>
+          <hr />
+        </header>
+        <section class="p-4 whitespace-pre-wrap flex flex-col" data-testid={card.body}>
+          <div>{card.body}</div>
+          <div class="flex justify-center">
+            <div class="btn preset-filled-primary-500 mt-3 w-fit">Learn More</div>
+          </div>
+        </section>
+      </div>
+    {/snippet}
+    {#each config.branding.analysisPage.api.cards as card}
+      {#if card.link.startsWith('http')}
+        <a
+          href={card.link}
+          rel="external"
+          target="_blank"
+          class="p-4 basis-2/4 max-w-sm min-h-48 mb-8"
+          onclick={() =>
+            log(
+              createLog('NAVIGATION', 'analyze.learn_more', { title: card.header, url: card.link }),
+            )}
         >
-          <header class="card-header flex flex-col items-center">
-            <h4 class="my-1" data-testid={card.header}>{card.header}</h4>
-            <hr />
-          </header>
-          <section class="p-4 whitespace-pre-wrap flex flex-col" data-testid={card.body}>
-            <div>{card.body}</div>
-            <div class="flex justify-center">
-              <div class="btn preset-filled-primary-500 mt-3 w-fit">Learn More</div>
-            </div>
-          </section>
-        </div>
-      </a>
+          {@render infoCard(card)}
+        </a>
+      {:else}
+        <a
+          href={resolve(card.link as '/')}
+          class="p-4 basis-2/4 max-w-sm min-h-48 mb-8"
+          onclick={() =>
+            log(
+              createLog('NAVIGATION', 'analyze.learn_more', { title: card.header, url: card.link }),
+            )}
+        >
+          {@render infoCard(card)}
+        </a>
+      {/if}
     {/each}
   </section>
 </Content>

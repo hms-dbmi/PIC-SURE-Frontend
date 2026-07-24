@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onDestroy, onMount } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
   import { slide, scale } from 'svelte/transition';
@@ -118,7 +119,7 @@
         disabled={resultCountsState.loading}
         onclick={() => {
           log(createLog('ACTION', 'explorer.prepare_for_analysis'));
-          goto('/explorer/export');
+          goto(resolve('/explorer/export'));
         }}
         transition:scale={{ easing: elasticInOut }}
       >
@@ -168,7 +169,7 @@
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
         {#if showExplorerDistributions}
           <CardButton
-            href="/explorer/distributions"
+            href={resolve('/explorer/distributions')}
             id="explorer-distributions-btn"
             data-testid="distributions-btn"
             title="Variable Distributions"
@@ -179,7 +180,7 @@
         {/if}
         {#if showDiscoverDistributions}
           <CardButton
-            href="/discover/distributions"
+            href={resolve('/discover/distributions')}
             id="explorer-distributions-btn"
             data-testid="distributions-btn"
             title="Variable Distributions"
@@ -190,7 +191,7 @@
         {/if}
         {#if showVariantExplorer}
           <CardButton
-            href="/explorer/variant"
+            href={resolve('/explorer/variant')}
             data-testid="variant-explorer-btn"
             title="Variant Explorer"
             icon="fa-solid fa-dna"

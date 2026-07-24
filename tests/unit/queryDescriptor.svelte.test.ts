@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('$app/environment', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
 
 import { LogicTree } from '$lib/models/LogicTree.svelte';
 import { createFilterGroup, type FilterInterface } from '$lib/models/Filter.svelte';

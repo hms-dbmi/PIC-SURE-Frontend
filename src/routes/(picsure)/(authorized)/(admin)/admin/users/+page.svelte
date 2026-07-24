@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { derived, readable, type Readable } from 'svelte/store';
 
   import { goto } from '$app/navigation';
@@ -76,7 +77,7 @@
 
   const rowClickHandler = (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(`/admin/users/${uuid}/edit`);
+    goto(resolve(`/admin/users/${uuid}/edit`));
   };
 </script>
 
@@ -90,7 +91,7 @@
         <a
           data-testid="add-user-btn"
           class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          href="/admin/users/new"
+          href={resolve('/admin/users/new')}
         >
           + Add User
         </a>

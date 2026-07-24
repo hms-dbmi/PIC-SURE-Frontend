@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   interface Props {
     title: string;
     id?: string;
@@ -32,22 +33,42 @@
   );
 </script>
 
+{#snippet cardContent()}
+  {#if icon}<i class="icon {icon}"></i>{/if}
+  <div class="title">{title}</div>
+  {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
+{/snippet}
+
 {#if href && !disabled}
-  <a
-    {href}
-    {id}
-    data-testid={testid}
-    target={href.startsWith('/') ? undefined : '_blank'}
-    class={cardClasses}
-    class:preset-filled-primary-500={active}
-    class:preset-outlined-primary-500={!active}
-    tabindex="0"
-    {onclick}
-  >
-    {#if icon}<i class="icon {icon}"></i>{/if}
-    <div class="title">{title}</div>
-    {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
-  </a>
+  {#if href.startsWith('/')}
+    <a
+      href={resolve(href as '/')}
+      {id}
+      data-testid={testid}
+      class={cardClasses}
+      class:preset-filled-primary-500={active}
+      class:preset-outlined-primary-500={!active}
+      tabindex="0"
+      {onclick}
+    >
+      {@render cardContent()}
+    </a>
+  {:else}
+    <a
+      {href}
+      {id}
+      data-testid={testid}
+      target="_blank"
+      rel="external"
+      class={cardClasses}
+      class:preset-filled-primary-500={active}
+      class:preset-outlined-primary-500={!active}
+      tabindex="0"
+      {onclick}
+    >
+      {@render cardContent()}
+    </a>
+  {/if}
 {:else}
   <button
     {id}
@@ -59,8 +80,6 @@
     {onclick}
     {disabled}
   >
-    {#if icon}<i class="icon {icon}"></i>{/if}
-    <div class="title">{title}</div>
-    {#if subtitle && !['sm', 'md'].includes(size)}<div class="subtitle">{subtitle}</div>{/if}
+    {@render cardContent()}
   </button>
 {/if}

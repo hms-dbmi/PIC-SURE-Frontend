@@ -1,6 +1,5 @@
 <script lang="ts">
   import { config } from '$lib/configuration.svelte';
-  import { onMount } from 'svelte';
 
   interface Props {
     height?: number;

@@ -89,7 +89,7 @@ export function mapDataset(data: any) {
           commonId: jsonQuery?.commonAreaUUID,
         };
       }
-    } catch (_) {
+    } catch {
       query = null;
     }
   }

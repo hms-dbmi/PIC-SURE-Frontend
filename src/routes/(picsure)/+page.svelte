@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { config } from '$lib/configuration.svelte';
   import { goto } from '$app/navigation';
   import Searchbox from '$lib/components/Searchbox.svelte';
@@ -10,9 +11,11 @@
 
   function search() {
     log(createLog('SEARCH', 'landing.search', { term: searchTerm }));
-    config.features.login.open && config.features.discover && !isUserLoggedIn()
-      ? goto(`/discover?search=${searchTerm}`)
-      : goto(`/explorer?search=${searchTerm}`);
+    if (config.features.login.open && config.features.discover && !isUserLoggedIn()) {
+      goto(resolve(`/discover?search=${encodeURIComponent(searchTerm)}`));
+    } else {
+      goto(resolve(`/explorer?search=${encodeURIComponent(searchTerm)}`));
+    }
   }
 
   const actionsToDisplay = $derived(
@@ -43,13 +46,24 @@
         <div class="text-3xl my-1">{title}</div>
         <i class="text-[5rem] my-3 text-secondary-600-400 {icon}"></i>
         <div class="subtitle my-3">{description}</div>
-        <a
-          data-testid="landing-action-{title}-btn"
-          href={url}
-          class="btn preset-filled-primary-500"
-          onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
-          >{btnText}</a
-        >
+        {#if url.startsWith('/')}
+          <a
+            data-testid="landing-action-{title}-btn"
+            href={resolve(url as '/')}
+            class="btn preset-filled-primary-500"
+            onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
+            >{btnText}</a
+          >
+        {:else}
+          <a
+            data-testid="landing-action-{title}-btn"
+            href={url}
+            rel="external"
+            class="btn preset-filled-primary-500"
+            onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
+            >{btnText}</a
+          >
+        {/if}
       </div>
     {/each}
   </section>

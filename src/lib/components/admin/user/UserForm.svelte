@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
   import { Switch } from '@skeletonlabs/skeleton-svelte';
 
@@ -82,7 +83,7 @@
       toaster.success({
         title: `Successfully saved ${user ? '' : 'new '}user '${email}'`,
       });
-      goto('/admin/users');
+      goto(resolve('/admin/users'));
     } catch (error) {
       console.error(error);
       toaster.error({
@@ -164,7 +165,7 @@
         Save
       </button>
       <a
-        href="/admin/users"
+        href={resolve('/admin/users')}
         class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
       >
         Cancel

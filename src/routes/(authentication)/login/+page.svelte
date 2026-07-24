@@ -106,6 +106,7 @@
         {#if config.features.login.open}
           <a
             href={config.branding.login.openPicsureLink || '/'}
+            rel="external"
             class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white mb-4 w-full"
             onclick={() =>
               log(

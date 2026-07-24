@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockHTMLBodySuccess, mockApiSuccess, mockApiConfig } from '../custom-context';
+import { test, mockHTMLBodySuccess, mockApiConfig } from '../custom-context';
 import type { Branding } from '$lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));

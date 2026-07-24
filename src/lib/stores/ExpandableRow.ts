@@ -31,8 +31,6 @@ export function setActiveRow(options: { row: string; component?: string; table?:
   } else {
     activeRow.set(row);
     table && activeTable.set(table);
-    componentName
-      ? activeComponent.set(components[componentName]())
-      : activeComponent.set(get(defaultComponent));
+    activeComponent.set(componentName ? components[componentName]() : get(defaultComponent));
   }
 }

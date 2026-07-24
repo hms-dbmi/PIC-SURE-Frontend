@@ -6,7 +6,7 @@ export const GET: RequestHandler = async () => {
   try {
     const config = await getConfig();
     return json(config);
-  } catch (error) {
+  } catch {
     return json({ error: 'Failed to load configuration' }, { status: 500 });
   }
 };

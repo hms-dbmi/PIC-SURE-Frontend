@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
   import { config } from '$lib/configuration.svelte';
@@ -48,7 +49,7 @@
     addFilter(filter);
     clearFilters();
     $panelOpen = true;
-    goto('/explorer');
+    goto(resolve('/explorer'));
   }
 
   function populateExistingFilters() {
