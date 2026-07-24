@@ -41,3 +41,23 @@ if (typeof globalThis.localStorage === 'undefined') {
     writable: true,
   });
 }
+
+// happy-dom does not implement the Web Animations API, which zag-js (via
+// @skeletonlabs/skeleton-svelte dialogs) calls when opening/closing modals.
+// Provide a no-op stub so modal-based components can be exercised in tests.
+if (typeof Element !== 'undefined' && !Element.prototype.animate) {
+  Element.prototype.animate = function () {
+    return {
+      finished: Promise.resolve(),
+      cancel: () => {},
+      finish: () => {},
+      play: () => {},
+      pause: () => {},
+      reverse: () => {},
+      onfinish: null,
+      oncancel: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    } as unknown as Animation;
+  };
+}

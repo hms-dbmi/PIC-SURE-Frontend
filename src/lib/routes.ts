@@ -57,5 +57,6 @@ export const routes: Route[] = [
     feature: 'manualRole',
   },
   { path: '/admin/users', text: 'Manage Users', privilege: [PicsurePrivileges.ADMIN] },
+  { path: '/admin/api-keys', text: 'API Keys', privilege: [PicsurePrivileges.ADMIN] },
   { path: '/help', text: 'Help' },
 ];

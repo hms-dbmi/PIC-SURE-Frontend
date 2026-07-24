@@ -12,7 +12,7 @@
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",
     "test": "pnpm run test:vitest && pnpm run test:integration",
-    "test:vitest": "vitest run tests/unit tests/component",
+    "test:vitest": "vitest run tests/unit tests/component src/routes/api/v1/open",
     "test:unit": "vitest run tests/unit",
     "test:component": "vitest run tests/component",
     "test:integration": "playwright test",

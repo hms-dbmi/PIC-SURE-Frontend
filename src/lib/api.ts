@@ -2,6 +2,7 @@ import { error, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
 import { browser } from '$app/environment';
 import { log, createLog, getSessionId } from '$lib/logger';
+import { Internal } from '$lib/paths';
 
 const BEARER = 'Bearer ';
 
@@ -34,6 +35,7 @@ async function send({
     opts.headers = { ...opts.headers, ...headers };
   }
 
+  let requestPath = `/${path}`;
   if (browser) {
     const token = authenticate ? localStorage.getItem('token') : null;
     if (token) {
@@ -41,11 +43,18 @@ async function send({
       opts.headers['request-source'] = 'Authorized';
     } else {
       opts.headers['request-source'] = 'Open';
+      // Any token-less data request goes through the SvelteKit server proxy, which attaches the
+      // deployment's platform API key server-side so it never reaches the browser. This covers
+      // both "no token exists" and authenticate:false (a logged-in user querying the open
+      // variant). Non-picsure paths (e.g. psama key generation) are never proxied.
+      if (path.startsWith('picsure/')) {
+        requestPath = `${Internal.OpenProxy}/${path}`;
+      }
     }
     opts.headers['X-Session-Id'] = getSessionId();
   }
 
-  const res = await fetch(`${window.location.origin}/${path}`, opts);
+  const res = await fetch(`${window.location.origin}${requestPath}`, opts);
 
   return await handleResponse(res);
 }

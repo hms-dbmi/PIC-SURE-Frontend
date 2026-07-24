@@ -28,16 +28,20 @@
     goto(`/login?redirectTo=${page.url.pathname}`);
   }
 
+  const isActivePath = $derived((path: string) => {
+    return page.url.pathname === path || page.url.pathname.startsWith(`${path}/`);
+  });
+
   let currentPage = $derived((route: Route) => {
     if (route.children) {
       for (const child of route.children) {
-        if (page.url.pathname.includes(child.path)) {
+        if (isActivePath(child.path)) {
           return 'page';
         }
       }
       return undefined;
     }
-    return page.url.pathname.includes(route.path) ? 'page' : undefined;
+    return isActivePath(route.path) ? 'page' : undefined;
   });
 
   onMount(async () => {

@@ -98,7 +98,7 @@ describe('api', () => {
     it('get() sends a GET request', async () => {
       await get('picsure/query');
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/picsure/query',
+        'https://example.com/api/v1/open/picsure/query',
         expect.objectContaining({ method: 'GET' }),
       );
     });
@@ -106,7 +106,7 @@ describe('api', () => {
     it('post() sends a POST request', async () => {
       await post('picsure/query', { foo: 'bar' });
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/picsure/query',
+        'https://example.com/api/v1/open/picsure/query',
         expect.objectContaining({ method: 'POST' }),
       );
     });
@@ -114,7 +114,7 @@ describe('api', () => {
     it('put() sends a PUT request', async () => {
       await put('picsure/query', { foo: 'bar' });
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/picsure/query',
+        'https://example.com/api/v1/open/picsure/query',
         expect.objectContaining({ method: 'PUT' }),
       );
     });
@@ -122,7 +122,7 @@ describe('api', () => {
     it('del() sends a DELETE request', async () => {
       await del('picsure/query');
       expect(fetchMock).toHaveBeenCalledWith(
-        'https://example.com/picsure/query',
+        'https://example.com/api/v1/open/picsure/query',
         expect.objectContaining({ method: 'DELETE' }),
       );
     });
@@ -377,7 +377,57 @@ describe('api', () => {
       await get('picsure/query/sync');
 
       expect(fetchMock).toHaveBeenCalledWith(
+        'https://example.com/api/v1/open/picsure/query/sync',
+        expect.any(Object),
+      );
+    });
+  });
+
+  describe('open-access proxy routing', () => {
+    it('routes token-less picsure requests through the open proxy', async () => {
+      await get('picsure/query/sync');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://example.com/api/v1/open/picsure/query/sync',
+        expect.any(Object),
+      );
+    });
+
+    it('sends picsure requests directly when a token exists', async () => {
+      (localStorage.getItem as Mock).mockReturnValue('my-token');
+      await get('picsure/query/sync');
+
+      expect(fetchMock).toHaveBeenCalledWith(
         'https://example.com/picsure/query/sync',
+        expect.any(Object),
+      );
+    });
+
+    it('proxies token-less picsure requests even when authenticate:false suppresses the token', async () => {
+      // a logged-in user querying the open-access variant still needs the platform key
+      (localStorage.getItem as Mock).mockReturnValue('my-token');
+      await post('picsure/query/sync', {}, undefined, false);
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://example.com/api/v1/open/picsure/query/sync',
+        expect.any(Object),
+      );
+    });
+
+    it('does not attach a token to authenticate:false requests', async () => {
+      (localStorage.getItem as Mock).mockReturnValue('my-token');
+      await post('picsure/query/sync', {}, undefined, false);
+
+      const headers = fetchMock.mock.calls[0][1].headers;
+      expect(headers['Authorization']).toBeUndefined();
+      expect(headers['request-source']).toBe('Open');
+    });
+
+    it('never proxies non-picsure paths', async () => {
+      await get('psama/open/validate');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://example.com/psama/open/validate',
         expect.any(Object),
       );
     });
