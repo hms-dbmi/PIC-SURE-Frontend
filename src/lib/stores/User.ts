@@ -3,15 +3,13 @@ import { get, writable, derived, type Writable, type Readable } from 'svelte/sto
 import { browser } from '$app/environment';
 import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
-import type { User } from '$lib/models/User';
+import type { ConsentsMap, User } from '$lib/models/User';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, config } from '$lib/configuration.svelte';
 import { Psama } from '$lib/paths';
 import { goto } from '$app/navigation';
-import type { QueryInterfaceV2 } from '$lib/models/query/Query';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/state';
-import { resources } from '$lib/stores/Resources';
 import { log, createLog } from '$lib/logger';
 
 // Create a store that syncs with localStorage
@@ -39,6 +37,17 @@ export const isTopAdmin = derived(user, ($user: User) => {
 export const isAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.ADMIN);
 });
+
+/**
+ * `\_consents\` is the complete grant list; the harmonized and topmed keys are subsets the
+ * backend uses to authorize queries. Token-gated, so a logout in another tab cannot leave a
+ * restored sessionStorage blob reporting access the user no longer has.
+ */
+export const consentedStudies: Readable<string[]> = derived(
+  [user, tokenStatus],
+  ([$user, $hasToken]: [User, boolean]) =>
+    $hasToken ? ($user?.consents?.['\\_consents\\'] ?? []) : [],
+);
 
 // User data lives in sessionStorage (tab-scoped), not localStorage. Each tab has its own
 // isolated user state, so opening the app in multiple tabs or logging out in one tab
@@ -177,14 +186,24 @@ export function refreshLongTermToken() {
   });
 }
 
-export async function getQueryTemplate(): Promise<QueryInterfaceV2> {
+/**
+ * Deployments without consent-based access (all-in-one, GIC) have no user_consents row and
+ * PSAMA errors, so an empty map is an expected result there rather than a failure. That is
+ * why this fetch is not feature-flagged.
+ *
+ * An empty map is NOT uniformly fail-closed: the Dashboard Access column denies every row,
+ * but the dictionary drops its consent WHERE clause and returns every concept. That is what
+ * a deployment with no consents configured wants, but it also means a transient failure here
+ * degrades to unfiltered search for the rest of the session - this runs once per hydrate and
+ * does not retry.
+ */
+export async function getConsents(): Promise<ConsentsMap> {
   try {
-    const res = await api.get(Psama.User.Template + '/' + get(resources).application);
-    const queryTemplate = JSON.parse(res.queryTemplate) as QueryInterfaceV2;
-    return queryTemplate;
+    const res = await api.get(Psama.User.Consents);
+    return (res?.consents as ConsentsMap) || {};
   } catch (error) {
-    console.error('Error parsing query template: ' + error);
-    return {} as QueryInterfaceV2;
+    console.error('Error fetching user consents: ' + error);
+    return {};
   }
 }
 
@@ -194,13 +213,10 @@ export async function getQueryTemplate(): Promise<QueryInterfaceV2> {
  * in sessionStorage (since sessionStorage is tab-scoped, each new tab starts empty).
  */
 export async function hydrateUserFromToken() {
-  await getUser(true, false);
-  if (config.features.useQueryTemplate) {
-    const queryTemplate = await getQueryTemplate();
-    if (queryTemplate) {
-      user.set({ ...get(user), queryTemplate });
-    }
-  }
+  // Independent requests - both authenticate off the token already in localStorage. The
+  // final set runs after both settle, so it picks up whatever getUser wrote to the store.
+  const [, consents] = await Promise.all([getUser(true, false), getConsents()]);
+  user.set({ ...get(user), consents });
 }
 
 export async function login(token: string) {

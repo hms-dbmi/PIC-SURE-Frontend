@@ -11,7 +11,7 @@ import type {
   DictionarySearchRequest,
 } from '$lib/models/api/Dictionary';
 import type { Pageable } from '$lib/models/api/Pageable';
-import { user } from '$lib/stores/User';
+import { consentedStudies } from '$lib/stores/User';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
 import { log, createLog } from '$lib/logger';
 
@@ -161,13 +161,7 @@ export async function getHierarchyConcepts(
 }
 
 export function addConsents(request: DictionarySearchRequest) {
-  const queryTemplate = get(user)?.queryTemplate;
-  if (queryTemplate) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filters = (queryTemplate.categoryFilters as any) || {};
-    const consents = (filters['\\_consents\\'] as string[]) || [];
-    request.consents = consents;
-  }
+  request.consents = get(consentedStudies);
   return request;
 }
 

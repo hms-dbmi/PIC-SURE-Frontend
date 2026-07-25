@@ -53,7 +53,7 @@ export const Psama = {
   User: {
     Logout: 'psama/logout',
     Me: `${USER}/me`,
-    Template: `${USER}/me/queryTemplate`,
+    Consents: `${USER}/me/consents`,
     Refresh: `${USER}/me/refresh_long_term_token`,
   },
 };
