@@ -35,7 +35,6 @@ export type Features = Indexable & {
     open: boolean;
   };
   manualRole: boolean;
-  requireConsents: boolean;
   restoreV2queries: boolean;
   termsOfService: boolean;
   useQueryTemplate: boolean;
@@ -333,7 +332,6 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
       open: parse('OPEN', false),
     },
     manualRole: parse('MANUAL_ROLE', false),
-    requireConsents: parse('REQUIRE_CONSENTS', false),
     restoreV2queries: parse('RESTORE_V2_QUERY', false),
     termsOfService: parse('ENABLE_TOS', false),
     useQueryTemplate: parse('USE_QUERY_TEMPLATE', false),

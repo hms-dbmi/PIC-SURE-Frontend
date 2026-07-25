@@ -95,8 +95,8 @@ function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<PatientCo
 
 function blank({ addFilters, isOpenAccess, resource }: RequestMapOptions): Promise<PatientCount> {
   const request = addFilters
-    ? getQueryRequestV3(!isOpenAccess, resource, 'COUNT')
-    : getBlankQueryRequestV3(isOpenAccess, resource, 'COUNT');
+    ? getQueryRequestV3(resource, 'COUNT')
+    : getBlankQueryRequestV3(resource, 'COUNT');
   const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
   return api.post(path, request).then(rejectIfQueryError);
 }
@@ -134,14 +134,11 @@ const queryMappers = {
   },
 };
 
-async function getOpenPatientCount({
-  addFilters,
-  isOpenAccess,
-}: RequestMapOptions): Promise<PatientCount> {
+async function getOpenPatientCount({ addFilters }: RequestMapOptions): Promise<PatientCount> {
   const resource = get(resources).hpdsOpenV3;
   const request: QueryRequestInterfaceV3 = addFilters
-    ? getQueryRequestV3(!isOpenAccess, resource, 'CROSS_COUNT')
-    : getBlankQueryRequestV3(isOpenAccess, resource, 'CROSS_COUNT');
+    ? getQueryRequestV3(resource, 'CROSS_COUNT')
+    : getBlankQueryRequestV3(resource, 'CROSS_COUNT');
   log(
     createLog('QUERY', 'query.execute', {
       isOpenAccess: true,
@@ -156,14 +153,10 @@ async function getOpenPatientCount({
     .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }
 
-function getAuthPatientCount({
-  addFilters,
-  isOpenAccess,
-  resource,
-}: RequestMapOptions): Promise<PatientCount> {
+function getAuthPatientCount({ addFilters, resource }: RequestMapOptions): Promise<PatientCount> {
   const request = addFilters
-    ? getQueryRequestV3(!isOpenAccess, resource, 'COUNT')
-    : getBlankQueryRequestV3(isOpenAccess, resource, 'COUNT');
+    ? getQueryRequestV3(resource, 'COUNT')
+    : getBlankQueryRequestV3(resource, 'COUNT');
   log(
     createLog('QUERY', 'query.execute', {
       isOpenAccess: false,
@@ -189,8 +182,8 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     if (fields.length === 0) return Promise.reject(`${field} feilds were not configured`);
     const mapper = queryMappers.addCrossCountFields(fields);
     const request = addFilters
-      ? getQueryRequestV3(!isOpenAccess, resource, type, mapper)
-      : getBlankQueryRequestV3(isOpenAccess, resource, type, mapper);
+      ? getQueryRequestV3(resource, type, mapper)
+      : getBlankQueryRequestV3(resource, type, mapper);
     const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
     log(
       createLog('QUERY', 'query.execute', {
@@ -224,8 +217,8 @@ function getConsentCount(type: ExpectedResultType) {
 
     const mapper = queryMappers.addCategoryMap(categoryMap);
     const request = addFilters
-      ? getQueryRequestV3(!isOpenAccess, resource, type, mapper)
-      : getBlankQueryRequestV3(isOpenAccess, resource, type, mapper);
+      ? getQueryRequestV3(resource, type, mapper)
+      : getBlankQueryRequestV3(resource, type, mapper);
     const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
     return api.post(path, request).then(rejectIfQueryError);
   };
