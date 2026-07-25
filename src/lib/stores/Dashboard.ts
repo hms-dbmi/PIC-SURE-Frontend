@@ -3,7 +3,12 @@ import { writable, type Writable } from 'svelte/store';
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import type { Column } from '$lib/components/datatable/types';
-import { consentedStudies } from '$lib/stores/User';
+import {
+  accessUnavailable,
+  consentedStudies,
+  consentsSettled,
+  showAccessUnavailable,
+} from '$lib/stores/User';
 import { get } from 'svelte/store';
 export const columns: Writable<Column[]> = writable([]);
 
@@ -26,8 +31,12 @@ function fetchDashboard(): Promise<DashboardResp> {
 }
 
 export async function loadDashboardData() {
-  const dashboardData = await fetchDashboard();
+  // Computed once, so wait rather than render an all-denied column that never corrects itself.
+  const [dashboardData] = await Promise.all([fetchDashboard(), consentsSettled()]);
   columns.set(dashboardData.columns);
+
+  // All-denied is indistinguishable from having no access, so say why.
+  if (get(accessUnavailable)) showAccessUnavailable();
 
   const processedRows = dashboardData.rows.map(processRow(get(consentedStudies)));
 

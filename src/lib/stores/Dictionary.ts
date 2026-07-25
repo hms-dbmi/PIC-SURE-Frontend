@@ -11,7 +11,13 @@ import type {
   DictionarySearchRequest,
 } from '$lib/models/api/Dictionary';
 import type { Pageable } from '$lib/models/api/Pageable';
-import { consentedStudies } from '$lib/stores/User';
+import {
+  ACCESS_UNAVAILABLE_MESSAGE,
+  accessUnavailable,
+  consentedStudies,
+  consentsSettled,
+  showAccessUnavailable,
+} from '$lib/stores/User';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
 import { log, createLog } from '$lib/logger';
 
@@ -35,14 +41,14 @@ function cacheResult(key: string, value: SearchResult) {
   dictonaryCacheMap.set(key, value);
 }
 
-export function searchDictionary(
+export async function searchDictionary(
   searchTerm = '',
   facets: Facet[],
   pageable: Pageable,
 ): Promise<DictionaryConceptResult> {
   let request: DictionarySearchRequest = { facets, search: searchTerm };
   if (!page.url.pathname.includes('/discover')) {
-    request = addConsents(request);
+    request = await addConsents(request);
   }
   return api.post(
     `${Picsure.Concepts}?page_number=${pageable.pageNumber}&page_size=${pageable.pageSize}`,
@@ -77,7 +83,7 @@ export async function updateFacetsFromSearch(): Promise<DictionaryFacetResult[]>
   const facets = get(selectedFacets);
   let request: DictionarySearchRequest = { facets: facets, search: search };
   if (!page.url.pathname.includes('/discover')) {
-    request = addConsents(request);
+    request = await addConsents(request);
   }
 
   try {
@@ -160,7 +166,18 @@ export async function getHierarchyConcepts(
   return response;
 }
 
-export function addConsents(request: DictionarySearchRequest) {
+/**
+ * Waits for access rather than sending an empty list, which the dictionary reads as no filter
+ * and answers with every concept. Throws for the same reason when access is unknown.
+ */
+export async function addConsents(request: DictionarySearchRequest) {
+  await consentsSettled();
+  if (get(accessUnavailable)) {
+    // Raised here because Search.ts swallows this error in one path and replaces it with its
+    // own generic text in the other, and a reload has no login-time toast to fall back on.
+    showAccessUnavailable();
+    throw new Error(ACCESS_UNAVAILABLE_MESSAGE);
+  }
   request.consents = get(consentedStudies);
   return request;
 }
@@ -168,7 +185,7 @@ export function addConsents(request: DictionarySearchRequest) {
 export async function getConceptCount(isOpenAccess = false) {
   let request: DictionarySearchRequest = { facets: [], search: '', consents: [] };
   if (!isOpenAccess) {
-    request = addConsents(request);
+    request = await addConsents(request);
   }
   const res: DictionaryConceptResult = await api.post(
     `${Picsure.Concepts}?page_number=1&page_size=1`,
@@ -180,7 +197,7 @@ export async function getConceptCount(isOpenAccess = false) {
 export async function getFacetCategoryCount(isOpenAccess = false, category: string) {
   let request: DictionarySearchRequest = { facets: [], search: '', consents: [] };
   if (!isOpenAccess) {
-    request = addConsents(request);
+    request = await addConsents(request);
   }
   const res: DictionaryFacetResult[] = await api.post(Picsure.Facets, request);
   const facetCat = res.find((facetCat) => facetCat.name === category);

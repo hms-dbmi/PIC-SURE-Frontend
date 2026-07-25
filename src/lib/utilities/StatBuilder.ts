@@ -59,14 +59,14 @@ export function getStatFields(key: string): StatField[] {
   return statKeys.includes(key) ? config.branding.statFields[key] : [];
 }
 
-function dictionaryRequest(isOpenAccess: boolean = false): DictionarySearchRequest {
+function dictionaryRequest(isOpenAccess: boolean = false): Promise<DictionarySearchRequest> {
   const request: DictionarySearchRequest = { facets: [], search: '', consents: [] };
-  return !isOpenAccess ? addConsents(request) : request;
+  return !isOpenAccess ? addConsents(request) : Promise.resolve(request);
 }
 
 function getFacetCategoryCount(category: string) {
-  return function ({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
-    const request: DictionarySearchRequest = dictionaryRequest(isOpenAccess);
+  return async function ({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
+    const request: DictionarySearchRequest = await dictionaryRequest(isOpenAccess);
     return api
       .post(Picsure.Facets, request, undefined, !isOpenAccess)
       .then((res: DictionaryFacetResult[]) => {
@@ -84,8 +84,8 @@ function getFacetCategoryCount(category: string) {
   };
 }
 
-function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
-  const request: DictionarySearchRequest = dictionaryRequest(isOpenAccess);
+async function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
+  const request: DictionarySearchRequest = await dictionaryRequest(isOpenAccess);
   return api
     .post(`${Picsure.Concepts}?page_number=1&page_size=1`, request, undefined, !isOpenAccess)
     .then((res: DictionaryConceptResult) => {

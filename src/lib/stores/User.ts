@@ -11,6 +11,7 @@ import { goto } from '$app/navigation';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/state';
 import { log, createLog } from '$lib/logger';
+import { isToastShowing, toaster } from '$lib/toaster';
 
 // Create a store that syncs with localStorage
 function createLocalStorageStore(key: string, initialValue: boolean) {
@@ -47,6 +48,16 @@ export const consentedStudies: Readable<string[]> = derived(
   [user, tokenStatus],
   ([$user, $hasToken]: [User, boolean]) =>
     $hasToken ? ($user?.consents?.['\\_consents\\'] ?? []) : [],
+);
+
+/**
+ * Unknown access, not absent access: `{}` is loaded-with-none, missing is unknown.
+ * Derived from the data because `user` persists to sessionStorage and module state does not -
+ * a reload skips re-hydrating, so a status flag would reset to "fine" and fail open again.
+ */
+export const accessUnavailable: Readable<boolean> = derived(
+  [user, tokenStatus],
+  ([$user, $hasToken]: [User, boolean]) => $hasToken && $user?.consents === undefined,
 );
 
 // User data lives in sessionStorage (tab-scoped), not localStorage. Each tab has its own
@@ -186,25 +197,55 @@ export function refreshLongTermToken() {
   });
 }
 
+export const ACCESS_UNAVAILABLE_MESSAGE =
+  'We could not load which studies you have access to. Studies you are authorized for may not ' +
+  'be shown, and searching the data dictionary is unavailable. Please log out and log back in. ' +
+  'If the problem persists, please contact an administrator.';
+
+/** Delay before each attempt. Retry once straight away, then back off for a real outage. */
+const CONSENTS_RETRY_DELAYS_MS = [0, 0, 3_000];
+
 /**
- * Deployments without consent-based access (all-in-one, GIC) have no user_consents row and
- * PSAMA errors, so an empty map is an expected result there rather than a failure. That is
- * why this fetch is not feature-flagged.
- *
- * An empty map is NOT uniformly fail-closed: the Dashboard Access column denies every row,
- * but the dictionary drops its consent WHERE clause and returns every concept. That is what
- * a deployment with no consents configured wants, but it also means a transient failure here
- * degrades to unfiltered search for the rest of the session - this runs once per hydrate and
- * does not retry.
+ * Requires PSAMA to answer 200 with an empty map when a user has no consents; its 500 is
+ * indistinguishable from a transient failure. Throws once attempts are exhausted rather than
+ * returning `{}` - the dictionary treats an empty list as no filter and returns everything.
  */
 export async function getConsents(): Promise<ConsentsMap> {
-  try {
-    const res = await api.get(Psama.User.Consents);
-    return (res?.consents as ConsentsMap) || {};
-  } catch (error) {
-    console.error('Error fetching user consents: ' + error);
-    return {};
+  for (const [attempt, delay] of CONSENTS_RETRY_DELAYS_MS.entries()) {
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+    try {
+      const res = await api.get(Psama.User.Consents);
+      return (res?.consents as ConsentsMap) || {};
+    } catch (error) {
+      if (attempt === CONSENTS_RETRY_DELAYS_MS.length - 1) {
+        console.error(`Error fetching user consents after ${attempt + 1} attempts: ` + error);
+        throw error;
+      }
+    }
   }
+  throw new Error('unreachable');
+}
+
+let consentsRequest: Promise<void> = Promise.resolve();
+
+/** Resolves once the in-flight access fetch has succeeded or given up. Never rejects. */
+export const consentsSettled = () => consentsRequest;
+
+/** Leaves `consents` undefined on failure - see `accessUnavailable`. */
+export function loadConsents(): Promise<void> {
+  user.set({ ...get(user), consents: undefined });
+  consentsRequest = getConsents()
+    .then((consents) => {
+      user.set({ ...get(user), consents });
+    })
+    .catch(() => showAccessUnavailable());
+  return consentsRequest;
+}
+
+/** Idempotent per visible toast, so repeated blocked requests do not stack up alerts. */
+export function showAccessUnavailable() {
+  if (isToastShowing('access-unavailable')) return;
+  toaster.error({ id: 'access-unavailable', title: ACCESS_UNAVAILABLE_MESSAGE, closable: true });
 }
 
 /**
@@ -213,10 +254,9 @@ export async function getConsents(): Promise<ConsentsMap> {
  * in sessionStorage (since sessionStorage is tab-scoped, each new tab starts empty).
  */
 export async function hydrateUserFromToken() {
-  // Independent requests - both authenticate off the token already in localStorage. The
-  // final set runs after both settle, so it picks up whatever getUser wrote to the store.
-  const [, consents] = await Promise.all([getUser(true, false), getConsents()]);
-  user.set({ ...get(user), consents });
+  await getUser(true, false);
+  // Not awaited: see loadConsents. Consumers wait on consentsSettled() instead.
+  loadConsents();
 }
 
 export async function login(token: string) {
