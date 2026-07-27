@@ -54,7 +54,7 @@
     "@tailwindcss/forms": "0.5.11",
     "@tailwindcss/vite": "^4.3.0",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/svelte": "^5.3.1",
+    "@testing-library/svelte": "^5.4.2",
     "@types/auth0-js": "^9.21.6",
     "@types/node": "25.9.5",
     "@types/plotly.js-basic-dist-min": "^2.12.4",
