@@ -167,8 +167,11 @@ export async function getHierarchyConcepts(
 }
 
 /**
- * Waits for access rather than sending an empty list, which the dictionary reads as no filter
- * and answers with every concept. Throws for the same reason when access is unknown.
+ * Waits for access rather than sending an empty list before it lands - the dictionary reads an
+ * empty list as no filter and answers with every concept. Throws for the same reason when
+ * access is unknown. An empty list once access HAS loaded is deliberate and must stay
+ * permitted: it means the deployment has no consent model. BdcConsentsBuilder throws rather
+ * than emitting an empty `\_consents\`, so a consent-based deployment cannot reach here empty.
  */
 export async function addConsents(request: DictionarySearchRequest) {
   await consentsSettled();
