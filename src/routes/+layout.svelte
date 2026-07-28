@@ -10,6 +10,8 @@
 
   let { children }: { children?: Snippet } = $props();
 
+  let theme = $derived(config.branding.theme);
+
   afterNavigate(({ from, to, type }) => {
     log(
       createLog('NAVIGATION', 'page.navigate', {
@@ -21,7 +23,7 @@
   });
 </script>
 
-<main class="w-full h-full">
+<main class="w-full h-full" data-theme={theme}>
   {@render children?.()}
   <GoogleTracking />
   {#if config.features.confirmExternalNavigation}
