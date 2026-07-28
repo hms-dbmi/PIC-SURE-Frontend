@@ -78,6 +78,7 @@ interface CodeBlockConfig extends Indexable {
 
 export type Branding = Indexable & {
   applicationName: string;
+  theme: string;
   dotsColorsClass: string[];
   logo: {
     alt: string;
@@ -607,6 +608,12 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
     },
   },
   branding: {
+    THEME: {
+      group: 'Appearance',
+      type: 'string',
+      default: 'picsure',
+      description: 'The overal picsure theme colors.',
+    },
     // --- Logo ---
     LOGO_ALT: {
       group: 'Logo',
@@ -803,6 +810,7 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
         },
       },
       applicationName: 'PIC‑SURE',
+      theme: 'picsure',
       explorePage: {
         columns: [],
         tourSearchIntro: '',
@@ -899,6 +907,7 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
 
   // ENV or API overrides
   const parser = parsersFor('branding', resolveConfigMap(apiBranding));
+  branding.theme = parser.asString('THEME');
   branding.logo.alt = parser.asString('LOGO_ALT');
   branding.logo.src = parser.asString('LOGO');
   branding.dotsColorsClass = parser.asJson('DOTS_COLORS_CLASS') as string[];

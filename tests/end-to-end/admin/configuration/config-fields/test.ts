@@ -115,7 +115,7 @@ test('Branding tab only shows the API/env-configurable fields plus a scope note'
   await expect(page.getByTestId('config-field-row-LOGO')).toBeVisible();
   await expect(page.getByTestId('config-field-row-DOTS_COLORS_CLASS')).toBeVisible();
   const brandingTab = page.getByTestId('config-tab-branding');
-  await expect(brandingTab.getByTestId(/^config-field-row-/)).toHaveCount(3);
+  await expect(brandingTab.getByTestId(/^config-field-row-/)).toHaveCount(4);
 });
 
 test('Deprecated API rows are listed separately and can be deleted', async ({ page }) => {
