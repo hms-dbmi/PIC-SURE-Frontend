@@ -5,26 +5,21 @@ import { subscribeOnChange } from '$lib/utilities/Subscribers';
 import { TableHandler, type State } from '@vincjo/datatables/server';
 
 import { type Facet, type SearchResult } from '$lib/models/Search';
-import type { DictionaryConceptResult } from '$lib/models/api/Dictionary';
 import { searchDictionary } from '$lib/stores/Dictionary';
-import { updateFacetsFromSearch, facetsPromise } from '$lib/stores/Dictionary';
+import { updateFacetsFromSearch, facetsPromise, resetFacetState } from '$lib/stores/Dictionary';
 import { getDefaultRows } from '$lib/components/datatable/stores';
+import { isAbortError } from '$lib/api';
 import { log, createLog, getPageContext } from '$lib/logger';
 
 export const loading: Writable<boolean> = writable(false);
-export const searchPromise: Writable<Promise<DictionaryConceptResult | undefined>> = writable(
-  Promise.resolve(undefined),
-);
 export const searchTerm: Writable<string> = writable('');
 export const selectedFacets: Writable<Facet[]> = writable([]);
 export const tableHandler: TableHandler = new TableHandler([] as SearchResult[], {
   rowsPerPage: getDefaultRows('ExplorerTable'),
+  debounce: 250,
 });
 export const tour: Writable<boolean> = writable(true);
 export const error: Writable<string> = writable('');
-export const previousPage: Writable<number> = writable(1);
-export const previousSearchTerm: Writable<string> = writable('');
-export const previousRowsPerPage: Writable<number> = writable(getDefaultRows('ExplorerTable'));
 
 const emptyFn = () => {};
 const unsubscribers: { [key: string]: Unsubscriber } = {
@@ -34,52 +29,171 @@ const unsubscribers: { [key: string]: Unsubscriber } = {
 
 let isResetting = false;
 
-export function initHandler() {
-  Object.values(unsubscribers).forEach((unsub) => unsub());
+// Must stay separate: every load refetches concepts, only criteria changes
+// refetch facets. Merging them lets pagination discard a wanted facet response.
+let conceptGeneration = 0;
+let facetGeneration = 0;
+let conceptController: AbortController | undefined;
+let facetController: AbortController | undefined;
+let previousCriteria: string | null = null;
 
-  const resetPage = () => {
+let activeToken: symbol | null = null;
+
+function beginConceptLoad() {
+  conceptController?.abort();
+  conceptController = new AbortController();
+  return { generation: ++conceptGeneration, signal: conceptController.signal };
+}
+
+function supersedeConcepts() {
+  conceptController?.abort();
+  conceptController = undefined;
+  conceptGeneration++;
+}
+
+function beginFacetLoad() {
+  const controller = new AbortController();
+  const previous = facetController;
+  facetController = controller;
+  return { generation: ++facetGeneration, signal: controller.signal, previous };
+}
+
+const isConceptCurrent = (generation: number) => generation === conceptGeneration;
+const isFacetCurrent = (generation: number) => generation === facetGeneration;
+
+function criteriaKey(term: string, facets: Facet[]): string {
+  return JSON.stringify([term.trim(), facets.map((f) => `${f.category}:${f.name}`).sort()]);
+}
+
+export type SearchOutcome = 'loaded' | 'failed' | 'cancelled' | 'timeout';
+
+let settleWaiters: ((outcome: SearchOutcome) => void)[] = [];
+
+function settleSearch(outcome: SearchOutcome) {
+  const waiters = settleWaiters;
+  settleWaiters = [];
+  waiters.forEach((resolve) => resolve(outcome));
+}
+
+/** Resolves when the next non-superseded load finishes. Never rejects. */
+export function nextSearchSettled(timeoutMs = 30000): Promise<SearchOutcome> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      settleWaiters = settleWaiters.filter((w) => w !== waiter);
+      resolve('timeout');
+    }, timeoutMs);
+    const waiter = (outcome: SearchOutcome) => {
+      clearTimeout(timer);
+      resolve(outcome);
+    };
+    settleWaiters.push(waiter);
+  });
+}
+
+function teardown() {
+  activeToken = null;
+  conceptController?.abort();
+  facetController?.abort();
+  conceptController = undefined;
+  facetController = undefined;
+  conceptGeneration++;
+  facetGeneration++;
+  previousCriteria = null;
+  resetFacetState();
+  tableHandler.rows = [];
+  tableHandler.totalRows = 0;
+  facetsPromise.set(Promise.resolve([]));
+  error.set('');
+  loading.set(false);
+  settleSearch('cancelled');
+}
+
+/** Returns this instance's teardown; a stale instance's is a no-op. */
+export function initHandler(): () => void {
+  Object.values(unsubscribers).forEach((unsub) => unsub());
+  teardown();
+  const token = Symbol('explorer-search');
+  activeToken = token;
+
+  const onCriteriaChange = () => {
+    supersedeConcepts();
+    loading.set(true);
     if (!isResetting) tableHandler.setPage(1);
   };
 
-  unsubscribers.selectedFacets = subscribeOnChange(selectedFacets, resetPage);
-  unsubscribers.searchTerm = subscribeOnChange(searchTerm, resetPage);
+  unsubscribers.selectedFacets = subscribeOnChange(selectedFacets, onCriteriaChange);
+  unsubscribers.searchTerm = subscribeOnChange(searchTerm, onCriteriaChange);
 
-  tableHandler.load(async (state: State) => {
+  const loadRows = async (state: State): Promise<SearchResult[] | undefined> => {
+    if (activeToken !== token) return undefined;
+
     const term = get(searchTerm);
     const facets = get(selectedFacets);
+    const { generation, signal } = beginConceptLoad();
     loading.set(true);
+    error.set('');
     if (get(tour) && (term || facets.length > 0)) {
       tour.set(false);
     }
     try {
-      const pageChanged = get(previousPage) !== state.currentPage;
-      const rowsChanged = get(previousRowsPerPage) !== state.rowsPerPage;
-      const searchTermChanged = get(previousSearchTerm) !== term;
-      const isPaginationOnly = (pageChanged || rowsChanged) && !searchTermChanged;
-      previousSearchTerm.set(term);
+      const key = criteriaKey(term, facets);
+      // Starts null so the first load refetches: a bare /explorer visit has empty
+      // criteria but still needs the unfiltered facet list.
+      const criteriaChanged = key !== previousCriteria;
+      previousCriteria = key;
 
-      if (isPaginationOnly) {
-        previousPage.set(state.currentPage);
-        previousRowsPerPage.set(state.rowsPerPage);
-      } else {
-        facetsPromise.set(updateFacetsFromSearch());
+      if (criteriaChanged) {
+        const { generation: facetGen, signal: facetSignal, previous } = beginFacetLoad();
+        const next = updateFacetsFromSearch({
+          signal: facetSignal,
+          isCurrent: () => isFacetCurrent(facetGen),
+        });
+        next.catch((e) => {
+          // Rolled back so the next load retries: `key` was recorded before the
+          // request resolved, so unchanged criteria would otherwise never refetch.
+          if (!isAbortError(e) && isFacetCurrent(facetGen) && previousCriteria === key) {
+            previousCriteria = null;
+          }
+        });
+        // Publish before aborting: the {#await} must already track `next`, or the
+        // old promise rejects while still bound and flashes its catch branch.
+        facetsPromise.set(next);
+        previous?.abort();
       }
-      return await search(state);
+      return await search(state, generation, signal);
     } catch {
-      return [];
+      return undefined;
     } finally {
-      loading.set(false);
+      if (isConceptCurrent(generation)) {
+        loading.set(false);
+        settleSearch(get(error) ? 'failed' : 'loaded');
+      }
     }
-  });
+  };
+
+  // Returning undefined is how a superseded load declines to write: FetchHandler
+  // guards its assignment with `if (data)`. The library's types say Promise<T[]>
+  // and do not express that, so the cast is load-bearing - see
+  // @vincjo/datatables/dist/src/server/handlers/FetchHandler.svelte.js `trigger()`.
+  tableHandler.load(loadRows as (state: State) => Promise<SearchResult[]>);
+
+  return () => {
+    if (activeToken === token) teardown();
+  };
 }
 
-export async function search(state: State): Promise<SearchResult[]> {
+async function search(
+  state: State,
+  generation: number,
+  signal?: AbortSignal,
+): Promise<SearchResult[] | undefined> {
   const errorText =
     'An error occurred while searching. If the problem persists, please contact an administrator.';
   const facets = get(selectedFacets);
   const term = get(searchTerm);
   if (!term && !facets.length) {
     state.setTotalRows(0);
+    // Truthy on purpose: this is the reset case, where clearing the table is right.
     return [];
   }
   log(
@@ -91,26 +205,37 @@ export async function search(state: State): Promise<SearchResult[]> {
       pageSize: state.rowsPerPage,
     }),
   );
-  const search = searchDictionary(term.trim(), facets, {
-    pageNumber: state.currentPage - 1,
-    pageSize: state.rowsPerPage,
-  });
-  searchPromise.set(search);
+  const search = searchDictionary(
+    term.trim(),
+    facets,
+    {
+      pageNumber: state.currentPage - 1,
+      pageSize: state.rowsPerPage,
+    },
+    { signal },
+  );
   const response = await search.catch((e) => {
+    if (isAbortError(e) || !isConceptCurrent(generation)) {
+      throw e;
+    }
     console.error(e);
     state.setTotalRows(0);
     error.set(errorText);
     throw e;
   });
 
+  if (!isConceptCurrent(generation)) {
+    return undefined;
+  }
+
   if (!response) {
     error.set(errorText);
   }
   log(
     createLog('SEARCH', 'search.results', {
-      term: get(searchTerm),
+      term,
       totalResults: response?.totalElements ?? 0,
-      facetCount: get(selectedFacets).length,
+      facetCount: facets.length,
       pageContext: getPageContext(),
     }),
   );
@@ -119,7 +244,7 @@ export async function search(state: State): Promise<SearchResult[]> {
 }
 
 export async function updateFacets(facetsToUpdate: Facet[]) {
-  const currentFacets = get(selectedFacets);
+  const currentFacets = [...get(selectedFacets)];
   facetsToUpdate.forEach((facet) => {
     const facetIndex = currentFacets.findIndex((f) => f.name === facet.name);
     if (facetIndex !== -1) {
@@ -161,7 +286,6 @@ export default {
   selectedFacets,
   searchTerm,
   error,
-  search,
   updateFacets,
   resetSearch,
 };

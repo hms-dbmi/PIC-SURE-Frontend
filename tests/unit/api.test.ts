@@ -30,7 +30,7 @@ vi.mock('@sveltejs/kit', () => ({
   },
 }));
 
-import { get, post, put, del } from '$lib/api';
+import { get, post, put, del, isAbortError } from '$lib/api';
 
 function mockFetchResponse(overrides: {
   ok?: boolean;
@@ -382,4 +382,76 @@ describe('api', () => {
       );
     });
   });
+
+  describe('abort signal', () => {
+    it('forwards a signal to fetch when one is given', async () => {
+      const controller = new AbortController();
+
+      await post('picsure/query', { foo: 'bar' }, undefined, undefined, {
+        signal: controller.signal,
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://example.com/picsure/query',
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it.each([
+      ['get', () => get('picsure/query', undefined, undefined, { signal: makeSignal() })],
+      ['del', () => del('picsure/query', undefined, undefined, { signal: makeSignal() })],
+      ['put', () => put('picsure/query', {}, undefined, undefined, { signal: makeSignal() })],
+    ])('%s() forwards a signal', async (_name, call) => {
+      await call();
+      expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('omits signal entirely when none is given, so existing callers are unaffected', async () => {
+      await post('picsure/query', { foo: 'bar' });
+
+      const opts = fetchMock.mock.calls[0][1];
+      expect('signal' in opts).toBe(false);
+    });
+
+    it('omits signal when an options object is passed without one', async () => {
+      await post('picsure/query', { foo: 'bar' }, undefined, undefined, {});
+
+      expect('signal' in fetchMock.mock.calls[0][1]).toBe(false);
+    });
+
+    it('rejects with the abort error without running response handling', async () => {
+      const abortError = Object.assign(new Error('aborted'), { name: 'AbortError' });
+      fetchMock.mockRejectedValue(abortError);
+
+      await expect(get('picsure/test')).rejects.toThrow('aborted');
+
+      // An aborted fetch rejects before handleResponse, so none of the failure
+      // paths - logout, error logging - may fire.
+      expect(mockLogout).not.toHaveBeenCalled();
+      expect(mockLog).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('isAbortError', () => {
+    it('is true for the DOMException a real aborted fetch throws', () => {
+      expect(isAbortError(new DOMException('The operation was aborted.', 'AbortError'))).toBe(true);
+    });
+
+    it('is true for an error named AbortError', () => {
+      expect(isAbortError(Object.assign(new Error('x'), { name: 'AbortError' }))).toBe(true);
+    });
+
+    it('is false for an ordinary error', () => {
+      expect(isAbortError(new Error('boom'))).toBe(false);
+    });
+
+    it('is false for null and undefined', () => {
+      expect(isAbortError(null)).toBe(false);
+      expect(isAbortError(undefined)).toBe(false);
+    });
+  });
 });
+
+function makeSignal(): AbortSignal {
+  return new AbortController().signal;
+}
