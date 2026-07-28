@@ -612,7 +612,14 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       group: 'Appearance',
       type: 'string',
       default: 'picsure',
-      description: 'The overal picsure theme colors.',
+      description: 'The overall PIC-SURE theme colors.',
+    },
+    DOTS_COLORS_CLASS: {
+      group: 'Appearance',
+      type: 'json',
+      default: [],
+      description:
+        'Overrides the colors of the decorative dot graphic on the login page; must be an array of exactly 3 or 5 color values, otherwise the default is kept.',
     },
     // --- Logo ---
     LOGO_ALT: {
@@ -628,13 +635,6 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       description:
         'URL of a custom logo image to display instead of the default PIC-SURE wordmark, in the header and login page.',
     },
-    DOTS_COLORS_CLASS: {
-      group: 'Appearance',
-      type: 'json',
-      default: [],
-      description:
-        'Overrides the colors of the decorative dot graphic on the login page; must be an array of exactly 3 or 5 color values, otherwise the default is kept.',
-    },
   },
 };
 
@@ -647,7 +647,7 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
 // ?kind=<that kind's value>, so every row already belongs to `kind` - no guessing.
 export function deprecatedApiRows(kind: ConfigKind, apiRows: ConfigObject[]): ConfigObject[] {
   const known = CONFIG_FIELDS[kind];
-  return apiRows.filter((row) => !(row.name in known));
+  return apiRows.filter((row) => !Object.hasOwn(known, row.name));
 }
 
 // A blank (or whitespace-only) value is treated the same as an absent one - it
@@ -705,9 +705,9 @@ export function parsersFor(kind: ConfigKind, map: ConfigMap) {
   const base = parsers(map);
   const fields = CONFIG_FIELDS[kind];
   function fieldDef(name: string): FieldDef {
-    const found = fields[name];
-    if (!found) throw new Error(`"${name}" is not registered in CONFIG_FIELDS.${kind}.`);
-    return found;
+    if (!Object.hasOwn(fields, name))
+      throw new Error(`"${name}" is not registered in CONFIG_FIELDS.${kind}.`);
+    return fields[name];
   }
   return {
     asBoolean: (name: string): boolean => base.asBoolean(name, fieldDef(name).default as boolean),

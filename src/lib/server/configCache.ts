@@ -49,6 +49,19 @@ async function fetchWithRetry(url: string, type: string): Promise<ConfigObject[]
       INITIAL_DELAY,
       MAX_DELAY,
       (e, attempt) => {
+        const status = (e as { status?: number })?.status;
+        // 4xx (other than 408 Request Timeout / 429 Too Many Requests) won't succeed
+        // on retry - it's a misconfigured request (e.g. a bad ?kind=), not a transient
+        // failure, so don't burn the full backoff window on it.
+        if (
+          status !== undefined &&
+          status >= 400 &&
+          status < 500 &&
+          status !== 408 &&
+          status !== 429
+        ) {
+          return false;
+        }
         console.warn(
           `Config ${type} (${url}) fetch failed on attempt ${attempt + 1}/${MAX_RETRIES + 1}, retrying...`,
           e,

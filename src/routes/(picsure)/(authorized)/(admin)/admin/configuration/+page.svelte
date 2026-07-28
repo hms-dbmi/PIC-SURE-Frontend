@@ -200,14 +200,14 @@
         </div>
       </Tabs.Panel>
       <Tabs.Panel value="Settings & Features">
-        <fieldset disabled={!$isTopAdmin}>
-          <ConfigKindTab kinds={['features', 'settings']} title="Settings & Features" />
-        </fieldset>
+        <ConfigKindTab
+          kinds={['features', 'settings']}
+          title="Settings & Features"
+          readOnly={!$isTopAdmin}
+        />
       </Tabs.Panel>
       <Tabs.Panel value="Branding">
-        <fieldset disabled={!$isTopAdmin}>
-          <ConfigKindTab kinds={['branding']} title="Branding" />
-        </fieldset>
+        <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!$isTopAdmin} />
       </Tabs.Panel>
       {#if config.features.termsOfService}
         <Tabs.Panel value="Terms of Service">

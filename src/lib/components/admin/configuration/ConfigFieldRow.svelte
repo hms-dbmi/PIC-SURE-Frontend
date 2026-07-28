@@ -16,15 +16,20 @@
     envMap: ConfigMap;
     apiAvailable: boolean;
     kind: AdminConfigKind;
+    // Non-top-admins get read-only access: editing controls are disabled, but this
+    // is distinct from rowDisabled (API unavailable), so the "API unavailable" badge
+    // below stays accurate to its actual cause.
+    readOnly?: boolean;
   }
 
-  let { schema, apiMap, envMap, apiAvailable, kind }: Props = $props();
+  let { schema, apiMap, envMap, apiAvailable, kind, readOnly = false }: Props = $props();
 
   let label = $derived(humanizeKey(schema.name));
 
   let apiRow: ConfigObject | undefined = $derived(apiMap[schema.name]);
   let fieldOrigin = $derived(describeConfigField(schema.name, apiMap, envMap));
   let rowDisabled = $derived(!apiAvailable || fieldOrigin.disabled);
+  let editDisabled = $derived(rowDisabled || readOnly);
 
   // The field's active value: whatever describeConfigField resolved (api > env >
   // default), so the input/checkbox is pre-populated with what's actually in effect,
@@ -47,7 +52,7 @@
       return e instanceof Error ? e.message : 'Invalid JSON';
     }
   });
-  let intValid = $derived(schema.type !== 'int' || !Number.isNaN(parseInt(value.trim(), 10)));
+  let intValid = $derived(schema.type !== 'int' || /^-?\d+$/.test(value.trim()));
   let valid = $derived(!jsonError && intValid);
 
   function serialize(): string {
@@ -56,7 +61,11 @@
     return value;
   }
 
+  let saving = $state(false);
+
   async function saveField() {
+    if (saving) return;
+    saving = true;
     try {
       const serialized = serialize();
       if (apiRow?.uuid) {
@@ -68,6 +77,8 @@
     } catch (e) {
       console.error(e);
       toaster.error({ title: `Failed to save ${label}` });
+    } finally {
+      saving = false;
     }
   }
 
@@ -113,7 +124,7 @@
 </script>
 
 <div
-  class="card border bg-white border-surface-200-800 rounded-xl p-5 shadow-sm {rowDisabled
+  class="card border bg-white border-surface-200-800 rounded-xl p-5 shadow-sm {editDisabled
     ? 'opacity-55'
     : ''}"
   data-testid={`config-field-row-${schema.name}`}
@@ -167,13 +178,13 @@
       {#if schema.type === 'boolean'}
         {@const checked = value === 'true'}
         <label
-          class="inline-flex items-center gap-2.5 relative {rowDisabled
+          class="inline-flex items-center gap-2.5 relative {editDisabled
             ? 'cursor-default'
             : 'cursor-pointer'}"
           data-testid={`config-field-toggle-${schema.name}`}
         >
           <span
-            class="w-9 h-[21px] rounded-full flex-none relative transition-colors {checked
+            class="w-9 h-[21px] rounded-full flex-none relative transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary-500 has-[:focus-visible]:ring-offset-2 {checked
               ? 'bg-primary-500'
               : 'bg-surface-300-700'}"
           >
@@ -182,15 +193,15 @@
                 ? 'left-[17px]'
                 : 'left-0.5'}"
             ></span>
+            <input
+              type="checkbox"
+              class="sr-only"
+              data-testid={`config-field-input-${schema.name}`}
+              {checked}
+              disabled={editDisabled}
+              onchange={(e) => (value = e.currentTarget.checked ? 'true' : 'false')}
+            />
           </span>
-          <input
-            type="checkbox"
-            class="sr-only"
-            data-testid={`config-field-input-${schema.name}`}
-            {checked}
-            disabled={rowDisabled}
-            onchange={(e) => (value = e.currentTarget.checked ? 'true' : 'false')}
-          />
           <span class="text-[13.5px] font-medium opacity-80"
             >{checked ? 'Enabled' : 'Disabled'}</span
           >
@@ -201,7 +212,7 @@
             class="textarea font-mono text-sm border-0 rounded-none focus:outline-none"
             data-testid={`config-field-input-${schema.name}`}
             rows="4"
-            disabled={rowDisabled}
+            disabled={editDisabled}
             bind:value
           ></textarea>
           <div
@@ -211,7 +222,7 @@
               type="button"
               class="text-[11.5px] font-semibold text-primary-500 hover:underline px-1"
               data-testid={`config-field-prettify-${schema.name}`}
-              disabled={rowDisabled}
+              disabled={editDisabled}
               onclick={prettify}
             >
               Pretty-print
@@ -232,7 +243,7 @@
           inputmode="numeric"
           class="input {!intValid ? 'border-error-500' : ''}"
           data-testid={`config-field-input-${schema.name}`}
-          disabled={rowDisabled}
+          disabled={editDisabled}
           bind:value
         />
         {#if !intValid}
@@ -248,7 +259,7 @@
           type="text"
           class="input"
           data-testid={`config-field-input-${schema.name}`}
-          disabled={rowDisabled}
+          disabled={editDisabled}
           bind:value
         />
       {/if}
@@ -259,7 +270,7 @@
             type="button"
             class="btn btn-sm preset-filled-primary-500"
             data-testid={`config-field-save-${schema.name}`}
-            disabled={rowDisabled || !valid}
+            disabled={editDisabled || !valid || saving}
             onclick={saveField}
           >
             Save
@@ -270,7 +281,7 @@
             type="button"
             class="text-xs font-semibold opacity-70 hover:opacity-100 hover:underline"
             data-testid={`config-field-reset-${schema.name}`}
-            disabled={rowDisabled}
+            disabled={editDisabled}
             onclick={resetField}
           >
             Reset to default

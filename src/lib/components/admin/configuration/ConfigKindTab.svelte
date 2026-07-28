@@ -35,9 +35,13 @@
     // Save/Reset still hit the right admin API per-field.
     kinds: AdminConfigKind[];
     title: string;
+    // Disables editing (save/reset/delete) for non-top-admins, but leaves the field
+    // search and "Invalidate Cache & Refresh" affordance usable - those are read-only
+    // operations, not config edits.
+    readOnly?: boolean;
   }
 
-  let { kinds, title }: Props = $props();
+  let { kinds, title, readOnly = false }: Props = $props();
 
   const KIND_LABEL: Record<AdminConfigKind, string> = {
     features: 'Features',
@@ -126,7 +130,8 @@
     try {
       await invalidateConfigCache();
       toaster.success({ title: 'Server-side config cache invalidated' });
-      window.location.reload();
+      // Give the toast a moment to render before the reload tears down the page.
+      setTimeout(() => window.location.reload(), 750);
     } catch (e) {
       console.error(e);
       toaster.error({ title: 'Failed to invalidate config cache' });
@@ -186,6 +191,7 @@
           type="text"
           class="input pl-8 w-full"
           placeholder="Search fields…"
+          aria-label="Search fields"
           data-testid={`config-search-${testIdBase}`}
           bind:value={query}
         />
@@ -232,6 +238,7 @@
               {envMap}
               apiAvailable={availableAPIKinds.includes(field.kind)}
               kind={field.kind}
+              {readOnly}
             />
           {/each}
         </div>
@@ -284,6 +291,7 @@
                   title="Delete"
                   class="btn-icon-color"
                   data-testid={`config-deprecated-delete-${entry.row.name}`}
+                  disabled={readOnly}
                   onclick={() => deleteDeprecated(entry)}
                 >
                   <i class="fa-solid fa-trash fa-lg"></i>

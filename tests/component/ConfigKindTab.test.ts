@@ -104,7 +104,6 @@ vi.mock('$lib/models/Configuration', async () => {
       settings: [soloSchema, settingExportSchema],
       branding: [brandingSchema],
     },
-    configApiEnvVarName: vi.fn().mockReturnValue('VITE_ADMIN_FEATURES_API'),
     deprecatedApiRows: vi.fn().mockReturnValue([]),
   };
 });

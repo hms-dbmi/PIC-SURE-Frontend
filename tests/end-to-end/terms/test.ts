@@ -235,12 +235,13 @@ test.describe('Logged in', () => {
 
   test.describe('Terms edit', () => {
     test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
-
     test.beforeEach(async ({ page }) => {
-      await mockApiSuccess(page, '*/**/psama/role', mockRoles);
-      await mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges);
-      await mockApiSuccess(page, '*/**/psama/application', mockApps);
-      await mockApiSuccess(page, '*/**/psama/connection', mockConnections);
+      await Promise.all([
+        mockApiSuccess(page, '*/**/psama/role', mockRoles),
+        mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges),
+        mockApiSuccess(page, '*/**/psama/application', mockApps),
+        mockApiSuccess(page, '*/**/psama/connection', mockConnections),
+      ]);
     });
 
     test('Admin can navigate to terms of service configuration page', async ({ page }) => {
@@ -334,11 +335,13 @@ test.describe('Logged in', () => {
   test.describe('Non-SuperAdmin Users', () => {
     test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
 
-    test.beforeEach(({ page }) => {
-      mockApiSuccess(page, '*/**/psama/role', mockRoles);
-      mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges);
-      mockApiSuccess(page, '*/**/psama/application', mockApps);
-      mockApiSuccess(page, '*/**/psama/connection', mockConnections);
+    test.beforeEach(async ({ page }) => {
+      await Promise.all([
+        mockApiSuccess(page, '*/**/psama/role', mockRoles),
+        mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges),
+        mockApiSuccess(page, '*/**/psama/application', mockApps),
+        mockApiSuccess(page, '*/**/psama/connection', mockConnections),
+      ]);
     });
 
     test('Non-super-admin user has error and publish is disabled', async ({ page }) => {
