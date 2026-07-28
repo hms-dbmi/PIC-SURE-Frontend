@@ -8,12 +8,17 @@ import { loadQuerySummaryData } from '$lib/components/query/QueryConverters';
 import { QueryVersion } from '$lib/models/Dataset';
 import { LogicTree } from '$lib/models/LogicTree.svelte';
 import { QueryV3 } from '$lib/models/query/Query';
+import { config } from '$lib/configuration.svelte';
+import type { QueryV2 } from '$lib/compat/QueryV2';
 import type { FilterInterface, FilterGroupInterface } from '$lib/models/Filter.svelte';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('$lib/configuration.svelte', () => ({
-  config: { features: { restoreV2queries: false } },
+  config: {
+    features: { restoreV2queries: false },
+    settings: { exportSystemFields: [] },
+  },
 }));
 
 vi.mock('$lib/stores/Filter', async () => {
@@ -36,7 +41,6 @@ vi.mock('$lib/stores/Export', async () => {
 vi.mock('$lib/components/query/QueryConverters', () => ({
   loadQuerySummaryData: vi.fn(),
   pathToSearchResult: vi.fn(),
-  estimateV2: vi.fn().mockReturnValue({ filters: 3, exports: 3 }),
   estimateV3: vi.fn().mockReturnValue({ filters: 3, exports: 3 }),
 }));
 
@@ -66,12 +70,24 @@ const baseData = {
   errors: Promise.resolve([]),
 };
 
-// query value is only forwarded to the mocked loadQuerySummaryData, so shape doesn't matter
-const baseProps = { query: {} as QueryV3, version: QueryVersion.V3 };
+const baseProps = { query: new QueryV3(), version: QueryVersion.V3 };
+const queryV2: QueryV2 = {
+  fields: [],
+  categoryFilters: {},
+  numericFilters: {},
+  requiredFields: [],
+  anyRecordOf: [],
+  anyRecordOfMulti: [],
+  crossCountFields: [],
+  variantInfoFilters: [],
+  expectedResultType: 'COUNT',
+};
 
 describe('QuerySummary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    config.features.restoreV2queries = false;
+    config.settings.exportSystemFields = [];
   });
 
   it('shows the enabled Restore Filters button when there are no errors', async () => {
@@ -83,6 +99,28 @@ describe('QuerySummary', () => {
 
     expect(screen.getByTestId('restore-filters-btn')).toBeEnabled();
     expect(screen.queryByTestId('error-alert')).not.toBeInTheDocument();
+  });
+
+  it('filters system fields from a V3 summary without mutating the query prop', async () => {
+    config.settings.exportSystemFields = ['\\_consents\\'];
+    const query = new QueryV3({
+      select: ['\\dataset\\age\\', '\\_consents\\'],
+      authorizationFilters: [],
+      phenotypicClause: null,
+      genomicFilters: [],
+      expectedResultType: 'COUNT',
+      picsureId: null,
+      id: null,
+    });
+    mockLoadQuerySummaryData.mockReturnValue(baseData);
+
+    render(QuerySummary, { query, version: QueryVersion.V3 });
+    await screen.findByTestId('dataset-filters-container');
+
+    expect(mockLoadQuerySummaryData).toHaveBeenCalledWith(
+      expect.objectContaining({ select: ['\\dataset\\age\\'] }),
+    );
+    expect(query.select).toEqual(['\\dataset\\age\\', '\\_consents\\']);
   });
 
   it('disables the Restore Filters button and shows an error alert when data.errors is non-empty', async () => {
@@ -99,5 +137,25 @@ describe('QuerySummary', () => {
     expect(screen.getByTestId('restore-popover-btn')).toBeDisabled();
     expect(screen.getByTestId('error-alert')).toBeInTheDocument();
     expect(screen.getByTestId('error-alert')).toHaveTextContent('\\phs001\\');
+  });
+
+  it('keeps restoring a saved V2 query disabled when the compatibility flag is off', async () => {
+    mockLoadQuerySummaryData.mockReturnValue(baseData);
+    render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
+
+    await screen.findByTestId('dataset-filters-container');
+
+    expect(screen.queryByTestId('restore-filters-btn')).not.toBeInTheDocument();
+    expect(screen.getByTestId('restore-popover-btn')).toBeDisabled();
+  });
+
+  it('enables restoring a saved V2 query when the compatibility flag is on', async () => {
+    config.features.restoreV2queries = true;
+    mockLoadQuerySummaryData.mockReturnValue(baseData);
+    render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
+
+    await screen.findByTestId('dataset-filters-container');
+
+    expect(screen.getByTestId('restore-filters-btn')).toBeEnabled();
   });
 });

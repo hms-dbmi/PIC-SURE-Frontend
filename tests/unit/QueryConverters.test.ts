@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { QueryV2, QueryV3 } from '$lib/models/query/Query';
-import { QueryVersion } from '$lib/models/Dataset';
+import { QueryV3 } from '$lib/models/query/Query';
 import type { SearchResult } from '$lib/models/Search';
 import type {
   FilterGroupInterface,
@@ -9,10 +8,8 @@ import type {
   GenomicFilterInterface,
 } from '$lib/models/Filter.svelte';
 import { getConceptDetails, getConceptTree } from '$lib/stores/Dictionary';
-import { config } from '$lib/configuration.svelte';
 
 import {
-  queryV2ToV3,
   genomicV3ToFilter,
   pathToSearchResult,
   queryToFilterTree,
@@ -54,21 +51,6 @@ function makeSearchResult(overrides: Partial<SearchResult> = {}): SearchResult {
   };
 }
 
-function makeV2Query(overrides: Partial<ConstructorParameters<typeof QueryV2>[0]> = {}): QueryV2 {
-  return new QueryV2({
-    categoryFilters: {},
-    numericFilters: {},
-    requiredFields: [],
-    anyRecordOf: [],
-    anyRecordOfMulti: [],
-    fields: [],
-    crossCountFields: [],
-    variantInfoFilters: [],
-    expectedResultType: 'COUNT',
-    ...overrides,
-  });
-}
-
 function makeV3Query(overrides: Partial<ConstructorParameters<typeof QueryV3>[0]> = {}): QueryV3 {
   return new QueryV3({
     phenotypicClause: null,
@@ -81,275 +63,6 @@ function makeV3Query(overrides: Partial<ConstructorParameters<typeof QueryV3>[0]
     ...overrides,
   });
 }
-
-describe('queryV2ToV3', () => {
-  describe('select', () => {
-    it('maps fields to select', () => {
-      // Given
-      const query = makeV2Query({
-        fields: ['\\\\dataset\\\\apples\\\\', '\\\\dataset\\\\banana\\\\'],
-      });
-
-      // When
-      const result = queryV2ToV3(query);
-
-      // Then
-      expect(result.select).toEqual(['\\\\dataset\\\\apples\\\\', '\\\\dataset\\\\banana\\\\']);
-    });
-
-    it('merges fields and crossCountFields into select, deduplicating', () => {
-      // Given
-      const query = makeV2Query({
-        fields: ['\\\\dataset\\\\apples\\\\', '\\\\dataset\\\\banana\\\\'],
-        crossCountFields: ['\\\\dataset\\\\banana\\\\', '\\\\dataset\\\\cactus\\\\'],
-      });
-
-      // When
-      const result = queryV2ToV3(query);
-
-      // Then
-      expect(result.select).toEqual([
-        '\\\\dataset\\\\apples\\\\',
-        '\\\\dataset\\\\banana\\\\',
-        '\\\\dataset\\\\cactus\\\\',
-      ]);
-    });
-
-    it('produces empty select when fields and crossCountFields are empty', () => {
-      // Given / When / Then
-      expect(queryV2ToV3(makeV2Query()).select).toEqual([]);
-    });
-  });
-
-  describe('phenotypicClause', () => {
-    it('is null when query has no filters', () => {
-      // Given / When / Then
-      expect(queryV2ToV3(makeV2Query()).phenotypicClause).toBeNull();
-    });
-
-    it('is a single PhenotypicFilter when exactly one filter is present', () => {
-      // Given
-      const query = makeV2Query({ categoryFilters: { '\\\\dataset\\\\sex\\\\': ['Male'] } });
-
-      // When
-      const { phenotypicClause } = queryV2ToV3(query);
-
-      // Then
-      expect(phenotypicClause?.type).toBe('PhenotypicFilter');
-    });
-
-    it('is a PhenotypicSubquery(AND) when multiple filters are present', () => {
-      // Given
-      const query = makeV2Query({
-        categoryFilters: {
-          '\\\\dataset\\\\sex\\\\': ['Male'],
-          '\\\\dataset\\\\ancestry\\\\': ['EUR'],
-        },
-      });
-
-      // When
-      const { phenotypicClause } = queryV2ToV3(query);
-
-      // Then
-      expect(phenotypicClause?.type).toBe('PhenotypicSubquery');
-      if (phenotypicClause?.type === 'PhenotypicSubquery') {
-        expect(phenotypicClause.operator).toBe('AND');
-        expect(phenotypicClause.phenotypicClauses).toHaveLength(2);
-      }
-    });
-
-    it('maps categoryFilters entries to FILTER PhenotypicFilters with values', () => {
-      // Given
-      const query = makeV2Query({
-        categoryFilters: { '\\\\dataset\\\\sex\\\\': ['Male', 'Female'] },
-      });
-
-      // When
-      const { phenotypicClause } = queryV2ToV3(query);
-
-      // Then
-      expect(phenotypicClause).toMatchObject({
-        type: 'PhenotypicFilter',
-        phenotypicFilterType: 'FILTER',
-        conceptPath: '\\\\dataset\\\\sex\\\\',
-        values: ['Male', 'Female'],
-      });
-    });
-
-    it('strips categoryFilters entries matching exportSystemFields', () => {
-      // Given
-      config.settings.exportSystemFields = ['\\\\_consents\\\\'];
-      const query = makeV2Query({
-        categoryFilters: {
-          '\\\\dataset\\\\sex\\\\': ['Male', 'Female'],
-          '\\\\_consents\\\\': ['phs000001.c1'],
-        },
-      });
-
-      try {
-        // When
-        const { phenotypicClause } = queryV2ToV3(query);
-
-        // Then
-        expect(phenotypicClause).toMatchObject({
-          type: 'PhenotypicFilter',
-          phenotypicFilterType: 'FILTER',
-          conceptPath: '\\\\dataset\\\\sex\\\\',
-          values: ['Male', 'Female'],
-        });
-      } finally {
-        config.settings.exportSystemFields = [];
-      }
-    });
-
-    it('maps numericFilters entries to FILTER PhenotypicFilters with numeric min/max', () => {
-      // Given
-      const query = makeV2Query({
-        numericFilters: { '\\\\dataset\\\\age\\\\': { min: 18, max: 65 } },
-      });
-
-      // When
-      const { phenotypicClause } = queryV2ToV3(query);
-
-      // Then
-      expect(phenotypicClause).toMatchObject({
-        type: 'PhenotypicFilter',
-        phenotypicFilterType: 'FILTER',
-        conceptPath: '\\\\dataset\\\\age\\\\',
-        min: 18,
-        max: 65,
-      });
-    });
-
-    it('maps requiredFields entries to REQUIRED PhenotypicFilters', () => {
-      // Given
-      const query = makeV2Query({ requiredFields: ['\\\\dataset\\\\variable\\\\'] });
-
-      // When
-      const { phenotypicClause } = queryV2ToV3(query);
-
-      // Then
-      expect(phenotypicClause).toMatchObject({
-        type: 'PhenotypicFilter',
-        phenotypicFilterType: 'REQUIRED',
-        conceptPath: '\\\\dataset\\\\variable\\\\',
-      });
-    });
-
-    it('maps anyRecordOf entries to ANY_RECORD_OF PhenotypicFilters', () => {
-      // Given
-      const query = makeV2Query({ anyRecordOf: ['\\\\dataset\\\\variable\\\\'] });
-
-      // When
-      const { phenotypicClause } = queryV2ToV3(query);
-
-      // Then
-      expect(phenotypicClause).toMatchObject({
-        type: 'PhenotypicFilter',
-        phenotypicFilterType: 'ANY_RECORD_OF',
-        conceptPath: '\\\\dataset\\\\variable\\\\',
-      });
-    });
-
-    it('flattens anyRecordOfMulti entries into ANY_RECORD_OF PhenotypicFilters', () => {
-      // Given
-      const query = makeV2Query({
-        anyRecordOfMulti: [['\\\\dataset\\\\a\\\\', '\\\\dataset\\\\b\\\\']],
-      });
-
-      // When
-      const { phenotypicClause } = queryV2ToV3(query);
-
-      // Then — two ANY_RECORD_OF filters, one per path
-      expect(phenotypicClause?.type).toBe('PhenotypicSubquery');
-      if (phenotypicClause?.type === 'PhenotypicSubquery') {
-        expect(phenotypicClause.phenotypicClauses).toHaveLength(2);
-        expect(
-          phenotypicClause.phenotypicClauses.every(
-            (c) => c.type === 'PhenotypicFilter' && c.phenotypicFilterType === 'ANY_RECORD_OF',
-          ),
-        ).toBe(true);
-      }
-    });
-  });
-
-  describe('genomicFilters', () => {
-    it('is empty when variantInfoFilters is empty', () => {
-      // Given / When / Then
-      expect(queryV2ToV3(makeV2Query({ variantInfoFilters: [] })).genomicFilters).toHaveLength(0);
-    });
-
-    it('is empty when categoryVariantInfoFilters has no values', () => {
-      // Given
-      const query = makeV2Query({
-        variantInfoFilters: [{ categoryVariantInfoFilters: {}, numericVariantInfoFilters: {} }],
-      });
-
-      // When / Then
-      expect(queryV2ToV3(query).genomicFilters).toHaveLength(0);
-    });
-
-    it('maps Gene_with_variant to a genomicFilters entry', () => {
-      // Given
-      const query = makeV2Query({
-        variantInfoFilters: [
-          { categoryVariantInfoFilters: { Gene_with_variant: ['BRCA1', 'BRCA2'] } },
-        ],
-      });
-
-      // When
-      const { genomicFilters } = queryV2ToV3(query);
-
-      // Then
-      expect(genomicFilters).toHaveLength(1);
-      expect(genomicFilters[0]).toEqual({ key: 'Gene_with_variant', values: ['BRCA1', 'BRCA2'] });
-    });
-
-    it('maps all three category variant fields to separate genomicFilters entries', () => {
-      // Given
-      const query = makeV2Query({
-        variantInfoFilters: [
-          {
-            categoryVariantInfoFilters: {
-              Gene_with_variant: ['BRCA1'],
-              Variant_consequence_calculated: ['missense_variant'],
-              Variant_frequency_as_text: ['Common'],
-            },
-          },
-        ],
-      });
-
-      // When
-      const { genomicFilters } = queryV2ToV3(query);
-
-      // Then
-      expect(genomicFilters).toHaveLength(3);
-      expect(genomicFilters.find((g) => g.key === 'Gene_with_variant')?.values).toEqual(['BRCA1']);
-      expect(
-        genomicFilters.find((g) => g.key === 'Variant_consequence_calculated')?.values,
-      ).toEqual(['missense_variant']);
-      expect(genomicFilters.find((g) => g.key === 'Variant_frequency_as_text')?.values).toEqual([
-        'Common',
-      ]);
-    });
-  });
-
-  it('passes through a single expectedResultType value', () => {
-    // Given / When
-    const result = queryV2ToV3(makeV2Query({ expectedResultType: 'DATAFRAME' }));
-
-    // Then
-    expect(result.expectedResultType).toBe('DATAFRAME');
-  });
-
-  it('takes the first element when expectedResultType is an array', () => {
-    // Given / When
-    const result = queryV2ToV3(makeV2Query({ expectedResultType: ['COUNT', 'DATAFRAME'] }));
-
-    // Then
-    expect(result.expectedResultType).toBe('COUNT');
-  });
-});
 
 describe('genomicV3ToFilter', () => {
   it('maps Gene_with_variant values', () => {
@@ -865,8 +578,8 @@ describe('queryToFilterTree', () => {
   });
 });
 
-async function allLoadQuerySummaryData(query: QueryV2 | QueryV3, version: string) {
-  const data = loadQuerySummaryData(query, version);
+async function allLoadQuerySummaryData(query: QueryV3) {
+  const data = loadQuerySummaryData(query);
   return {
     exports: await data.exports,
     filterTree: await data.filterTree,
@@ -891,7 +604,7 @@ describe('loadQuerySummaryData', () => {
     });
 
     // When
-    const data = await allLoadQuerySummaryData(query, QueryVersion.V3);
+    const data = await allLoadQuerySummaryData(query);
     const exports = data.exports.map(({ conceptPath }) => conceptPath);
 
     // Then
@@ -914,182 +627,9 @@ describe('loadQuerySummaryData', () => {
     });
 
     // When
-    const data = await allLoadQuerySummaryData(query, QueryVersion.V3);
+    const data = await allLoadQuerySummaryData(query);
 
     // Then
     expect(data.filterTree.leafNodes).toHaveLength(1);
-  });
-
-  it('V2: builds filterTree from categoryFilters', async () => {
-    // Given
-    const query = makeV2Query({
-      categoryFilters: { '\\\\dataset\\\\sex\\\\': ['Male'] },
-      fields: ['\\\\dataset\\\\age\\\\'],
-    });
-
-    // When
-    const data = await allLoadQuerySummaryData(query, QueryVersion.V2);
-
-    // Then
-    expect(data.filterTree.leafNodes).toHaveLength(1);
-    expect(data.filterTree.leafNodes[0]).toMatchObject({ filterType: 'Categorical' });
-  });
-
-  it('V2: fields contains only fields and crossCountFields (not requiredFields or anyRecordOf)', async () => {
-    // Given
-    const query = makeV2Query({
-      fields: ['\\\\dataset\\\\age\\\\'],
-      crossCountFields: ['\\\\dataset\\\\sex\\\\'],
-      requiredFields: ['\\\\dataset\\\\required\\\\'],
-      anyRecordOf: ['\\\\dataset\\\\aro\\\\'],
-    });
-
-    // When
-    const data = await allLoadQuerySummaryData(query, QueryVersion.V2);
-    const exports = data.exports.map(({ conceptPath }) => conceptPath);
-
-    // Then — requiredFields and anyRecordOf are now filter nodes, not field selections
-    expect(exports).toEqual(['\\\\dataset\\\\age\\\\', '\\\\dataset\\\\sex\\\\']);
-  });
-
-  it('V2: requiredFields and anyRecordOf produce filter nodes in the filterTree', async () => {
-    // Given
-    const query = makeV2Query({
-      requiredFields: ['\\\\dataset\\\\required\\\\'],
-      anyRecordOf: ['\\\\dataset\\\\aro\\\\'],
-    });
-    mockGetConceptTree.mockResolvedValue(
-      makeSearchResult({
-        children: [makeSearchResult({ conceptPath: '\\\\dataset\\\\aro\\\\child\\\\' })],
-      }),
-    );
-
-    // When
-    const data = await allLoadQuerySummaryData(query, QueryVersion.V2);
-
-    // Then
-    expect(data.filterTree.leafNodes).toHaveLength(2);
-    const types = data.filterTree.leafNodes.map((n) => n.filterType);
-    expect(types).toContain('Categorical'); // required maps to Categorical displayType:'any'
-    expect(types).toContain('AnyRecordOf');
-  });
-
-  it('V2: maps variantInfoFilters to genomicFilters', async () => {
-    // Given
-    const query = makeV2Query({
-      variantInfoFilters: [
-        {
-          categoryVariantInfoFilters: { Gene_with_variant: ['BRCA1'] },
-          numericVariantInfoFilters: {},
-        },
-      ],
-    });
-
-    // When
-    const data = await allLoadQuerySummaryData(query, QueryVersion.V2);
-
-    // Then
-    expect(data.genomicFilters).toHaveLength(1);
-    expect(data.genomicFilters[0].filterType).toBe('genomic');
-  });
-
-  it('V2: records errors from concept detail API failures', async () => {
-    // Given
-    const failingPath = '\\\\dataset\\\\sex\\\\';
-    mockGetConceptDetails.mockRejectedValueOnce(new Error('detail API unavailable'));
-    const query = makeV2Query({ categoryFilters: { [failingPath]: ['Male'] } });
-
-    // When
-    const data = await allLoadQuerySummaryData(query, QueryVersion.V2);
-
-    // Then — filter still created (degraded), path recorded in errors
-    expect(data.errors).toEqual([failingPath]);
-    expect(data.filterTree.leafNodes).toHaveLength(1);
-  });
-
-  describe('exportSystemFields filtering', () => {
-    afterEach(() => {
-      config.settings.exportSystemFields = [];
-    });
-
-    it('does not filter select when exportSystemFields is empty', async () => {
-      // Given
-      const query = makeV3Query({
-        select: ['\\\\dataset\\\\age\\\\', '\\\\_consents\\\\'],
-      });
-
-      // When
-      const data = await allLoadQuerySummaryData(query, QueryVersion.V3);
-      const exports = data.exports.map(({ conceptPath }) => conceptPath);
-
-      // Then
-      expect(exports).toEqual(['\\\\dataset\\\\age\\\\', '\\\\_consents\\\\']);
-    });
-
-    it('filters configured system fields out of V3 select/exports', async () => {
-      // Given
-      config.settings.exportSystemFields = ['\\\\_consents\\\\'];
-      const query = makeV3Query({
-        select: ['\\\\dataset\\\\age\\\\', '\\\\_consents\\\\'],
-      });
-
-      // When
-      const data = await allLoadQuerySummaryData(query, QueryVersion.V3);
-      const exports = data.exports.map(({ conceptPath }) => conceptPath);
-
-      // Then
-      expect(exports).toEqual(['\\\\dataset\\\\age\\\\']);
-    });
-
-    it('filters multiple configured system fields, leaving non-matching fields intact', async () => {
-      // Given
-      config.settings.exportSystemFields = ['\\\\_consents\\\\', '\\\\_topmed_study\\\\'];
-      const query = makeV3Query({
-        select: [
-          '\\\\dataset\\\\age\\\\',
-          '\\\\_consents\\\\',
-          '\\\\_topmed_study\\\\',
-          '\\\\dataset\\\\sex\\\\',
-        ],
-      });
-
-      // When
-      const data = await allLoadQuerySummaryData(query, QueryVersion.V3);
-      const exports = data.exports.map(({ conceptPath }) => conceptPath);
-
-      // Then
-      expect(exports).toEqual(['\\\\dataset\\\\age\\\\', '\\\\dataset\\\\sex\\\\']);
-    });
-
-    it('filters configured system fields out of V2 queries after conversion to V3', async () => {
-      // Given
-      config.settings.exportSystemFields = ['\\\\_consents\\\\'];
-      const query = makeV2Query({
-        fields: ['\\\\dataset\\\\age\\\\'],
-        crossCountFields: ['\\\\_consents\\\\'],
-      });
-
-      // When
-      const data = await allLoadQuerySummaryData(query, QueryVersion.V2);
-      const exports = data.exports.map(({ conceptPath }) => conceptPath);
-
-      // Then
-      expect(exports).toEqual(['\\\\dataset\\\\age\\\\']);
-    });
-
-    it('leaves select unchanged when none of the selected fields match exportSystemFields', async () => {
-      // Given
-      config.settings.exportSystemFields = ['\\\\_consents\\\\'];
-      const query = makeV3Query({
-        select: ['\\\\dataset\\\\age\\\\', '\\\\dataset\\\\sex\\\\'],
-      });
-
-      // When
-      const data = await allLoadQuerySummaryData(query, QueryVersion.V3);
-      const exports = data.exports.map(({ conceptPath }) => conceptPath);
-
-      // Then
-      expect(exports).toEqual(['\\\\dataset\\\\age\\\\', '\\\\dataset\\\\sex\\\\']);
-    });
   });
 });
