@@ -68,16 +68,3 @@ if (typeof Element !== 'undefined' && typeof Element.prototype.animate === 'unde
   }
   Element.prototype.animate = () => new ImmediateAnimation() as unknown as Animation;
 }
-
-if (typeof Element !== 'undefined' && typeof Element.prototype.animate !== 'function') {
-  Element.prototype.animate = function () {
-    return {
-      finished: Promise.resolve(),
-      cancel() {},
-      play() {},
-      pause() {},
-      addEventListener() {},
-      removeEventListener() {},
-    } as unknown as Animation;
-  };
-}

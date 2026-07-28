@@ -209,6 +209,44 @@ describe('ConfigFieldRow', () => {
     expect(screen.queryByTestId('config-field-expand-APP_NAME')).not.toBeInTheDocument();
   });
 
+  it('disables Save for an invalid integer value', async () => {
+    mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
+    const intSchema: ConfigFieldSchema = {
+      name: 'MAX_ITEMS',
+      type: 'int',
+      default: 10,
+      description: 'Max items.',
+      group: 'Test Group',
+    };
+
+    render(ConfigFieldRow, baseProps(intSchema));
+
+    const input = screen.getByTestId('config-field-input-MAX_ITEMS') as HTMLInputElement;
+    await fireEvent.input(input, { target: { value: '12abc' } });
+
+    expect(screen.getByTestId('config-field-error-MAX_ITEMS')).toBeInTheDocument();
+    expect(screen.getByTestId('config-field-save-MAX_ITEMS')).toBeDisabled();
+  });
+
+  it('disables Save for malformed JSON', async () => {
+    mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
+    const jsonSchema: ConfigFieldSchema = {
+      name: 'BAD_JSON',
+      type: 'json',
+      default: [],
+      description: 'Some JSON list.',
+      group: 'Test Group',
+    };
+
+    render(ConfigFieldRow, baseProps(jsonSchema));
+
+    const textarea = screen.getByTestId('config-field-input-BAD_JSON') as HTMLTextAreaElement;
+    await fireEvent.input(textarea, { target: { value: '{not valid json' } });
+
+    expect(screen.getByTestId('config-field-error-BAD_JSON')).toBeInTheDocument();
+    expect(screen.getByTestId('config-field-save-BAD_JSON')).toBeDisabled();
+  });
+
   it('reformats JSON via the Pretty-print action', async () => {
     mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
     const jsonSchema: ConfigFieldSchema = {

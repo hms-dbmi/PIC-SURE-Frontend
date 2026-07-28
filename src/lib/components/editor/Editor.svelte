@@ -44,7 +44,7 @@
             [{ list: 'ordered' }, { list: 'bullet' }],
           ]
         : []),
-      embedOptions ? ['image', 'video', 'formula'] : undefined,
+      embedOptions ? ['image'] : undefined,
       fontOptions
         ? [
             { font: [] },

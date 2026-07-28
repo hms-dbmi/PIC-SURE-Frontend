@@ -12,6 +12,14 @@
 
   let theme = $derived(config.branding.theme);
 
+  // theme.css tokens live under [data-theme='...'], but toasts/modals/drawers are
+  // portaled onto document.documentElement rather than rendered inside <main> - so
+  // data-theme has to be set there too, or that portal UI falls back to unthemed
+  // defaults regardless of what <main> carries for its own (SSR-safe) content.
+  $effect(() => {
+    document.documentElement.dataset.theme = theme;
+  });
+
   afterNavigate(({ from, to, type }) => {
     log(
       createLog('NAVIGATION', 'page.navigate', {

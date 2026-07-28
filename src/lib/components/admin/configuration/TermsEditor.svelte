@@ -1,7 +1,4 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
-
   import * as api from '$lib/api';
   import { Psama } from '$lib/paths';
   import { toaster } from '$lib/toaster';
@@ -26,8 +23,8 @@
     await api
       .post(Psama.TOS + '/update', terms, { 'Content-Type': 'text/html' })
       .then(() => {
+        original = terms;
         toaster.success({ description: 'Terms have been successfully published.' });
-        goto(resolve('/admin/configuration'));
       })
       .catch(() =>
         toaster.error({
