@@ -94,6 +94,7 @@ async function getConfigKind(kind: ConfigKind, force: boolean): Promise<void> {
     )
       .then((results: ConfigObject[] | null) => {
         if (results === null) {
+          lastKindFetch[kind] = 0;
           console.error(errorMsg);
         } else {
           // Stamped on completion, not request, so backoff retries don't shorten
