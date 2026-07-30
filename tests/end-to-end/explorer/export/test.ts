@@ -33,6 +33,19 @@ const standardIdentifiers = [
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
+const baseExportFeatures = [
+  { name: 'ALLOW_DOWNLOAD', value: 'true' },
+  { name: 'ALLOW_EXPORT_ENABLED', value: 'true' },
+  { name: 'ALLOW_EXPORT', value: 'true' },
+  { name: 'ANALYZE_API', value: 'true' },
+  { name: 'DOWNLOAD_AS_PFB', value: 'true' },
+  { name: 'ENABLE_SAMPLE_ID_CHECKBOX', value: 'true' },
+  { name: 'SHOW_TREE_STEP', value: 'true' },
+  { name: 'EXPORT_TIMESERIES', value: 'false' },
+  { name: 'USE_QUERY_TEMPLATE', value: 'true' },
+];
+const baseExportSettings = [{ name: 'EXPORT_SYSTEM_FIELDS', value: '_consents' }];
+
 async function setupExportPageAndAddFilterAndExport(
   page: Page,
   includeGenomicFilter: boolean = false,
@@ -125,12 +138,16 @@ const exportFeatures = [
   { name: 'ENABLE_SAMPLE_ID_CHECKBOX', value: 'true' },
   { name: 'SHOW_TREE_STEP', value: 'true' },
   { name: 'EXPORT_TIMESERIES', value: 'false' },
+  { name: 'USE_QUERY_TEMPLATE', value: 'true' },
 ];
 const exportSettings = [{ name: 'EXPORT_SYSTEM_FIELDS', value: '_consents' }];
 
 test.describe('Export Page', () => {
   test.beforeEach(async ({ page }) => {
-    await mockApiConfig(page, { features: exportFeatures, settings: exportSettings });
+    await mockApiConfig(page, {
+      features: baseExportFeatures,
+      settings: baseExportSettings,
+    });
   });
 
   test('Empty Export page renders', async ({ page }) => {
@@ -491,5 +508,76 @@ test.describe('Export Page', () => {
     expect(capturedQuery).not.toBeNull();
     expect(capturedQuery!.query.select).toContain('\\GENOMIC\\SAMPLE_ID\\Study1\\');
     expect(capturedQuery!.query.select).toContain('\\GENOMIC\\SAMPLE_ID\\Study2\\');
+  });
+
+  async function navigateToDownloadTab(page: Page) {
+    await setupExportPageAndAddFilterAndExport(page);
+    const nextButton = page.getByTestId('next-btn');
+
+    await nextButton.click(); // Review Cohort Details -> Tree Step
+    await nextButton.click(); // Tree Step -> Select Type
+
+    await page.getByTestId('csv-export-option').click();
+    await mockApiSuccess(page, queryPathV3, newDatasetResponse);
+    await nextButton.click(); // Submit query -> Save Dataset ID
+
+    await page.locator('input#dataset-name').fill('test-dataset');
+    await mockApiSuccess(page, `*/**/picsure/dataset/named`, newDatasetResponse);
+    await mockApiSuccess(
+      page,
+      `${queryPathV3}/${newDatasetResponse.picsureResultId}/status`,
+      availableDatasetResponse,
+    );
+    await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
+    await nextButton.click(); // -> Start Analysis
+
+    const tabGroup = page.getByTestId('tabs-list');
+    await tabGroup.getByTestId('tabs-control').nth(2).click(); // Download tab
+  }
+
+  test('CONFIRM_DOWNLOAD=true opens a confirmation modal before downloading', async ({ page }) => {
+    // Given
+    await mockApiConfig(page, {
+      features: [...baseExportFeatures, { name: 'CONFIRM_DOWNLOAD', value: 'true' }],
+      settings: baseExportSettings,
+    });
+    await navigateToDownloadTab(page);
+    const downloadButton = page.getByRole('button', { name: 'Download as CSV' });
+    await expect(downloadButton).toBeVisible();
+    const downloadResult = page.waitForEvent('download', { timeout: 2000 }).catch(() => null);
+
+    // When
+    await downloadButton.click();
+
+    // Then
+    const modal = page.locator('#modal-component');
+    await expect(modal).toBeVisible();
+    await expect(modal.getByTestId('modal-wrapper-header')).toContainText(
+      'Are you sure you want to download data?',
+    );
+    expect(await downloadResult).toBeNull();
+  });
+
+  test('CONFIRM_DOWNLOAD=false downloads without a confirmation modal', async ({ page }) => {
+    // Given
+    await mockApiConfig(page, {
+      features: [...baseExportFeatures, { name: 'CONFIRM_DOWNLOAD', value: 'false' }],
+      settings: baseExportSettings,
+    });
+    await navigateToDownloadTab(page);
+    await mockApiSuccess(
+      page,
+      `${queryPathV3}/${newDatasetResponse.picsureResultId}/result`,
+      'csv,data',
+    );
+    const downloadButton = page.getByRole('button', { name: 'Download as CSV' });
+    await expect(downloadButton).toBeVisible();
+
+    // When
+    const [download] = await Promise.all([page.waitForEvent('download'), downloadButton.click()]);
+
+    // Then
+    expect(download).toBeTruthy();
+    await expect(page.locator('#modal-component')).not.toBeVisible();
   });
 });

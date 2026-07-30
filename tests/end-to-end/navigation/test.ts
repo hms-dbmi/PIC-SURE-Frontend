@@ -105,25 +105,18 @@ const testRoles = {
 
 // Every default-off feature that gates a route in src/lib/routes.ts, enabled
 // here so privilege — not feature flags — is the only variable under test.
-// (analyzeApi defaults true and doesn't need to be listed; analyzeAnalysis
-// defaults false, see Configuration.ts, so it must be listed explicitly.)
+// (analyzeApi defaults true and doesn't need to be listed.)
 const enabledFeatureFlags = [
   { name: 'DASHBOARD', value: 'true' },
   { name: 'DISCOVER', value: 'true' },
-  { name: 'COLLABORATE', value: 'true' },
-  { name: 'DATA_REQUESTS', value: 'true' },
   { name: 'MANUAL_ROLE', value: 'true' },
-  { name: 'ANALYZE_ANALYSIS', value: 'true' },
 ];
 
 // Mirrors config.features keys once enabledFeatureFlags above are applied.
 const featureEnabled: Record<string, boolean> = {
   dashboard: true,
   discover: true,
-  collaborate: true,
   analyzeApi: true,
-  analyzeAnalysis: true,
-  dataRequests: true,
   manualRole: true,
 };
 

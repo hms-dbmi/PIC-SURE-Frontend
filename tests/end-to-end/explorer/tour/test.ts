@@ -104,3 +104,16 @@ test('Escape key closes tour', async ({ page }) => {
   // Then
   await expect(page.locator('#driver-popover-content')).not.toBeVisible();
 });
+test('EXPLORE_TOUR=false hides the tour button entirely', async ({ page }) => {
+  // Given
+  await mockApiConfig(page, {
+    features: [{ name: 'EXPLORE_TOUR', value: 'false' }],
+  });
+
+  // When
+  await page.goto('/explorer');
+  await userIsLoggedIn(page);
+
+  // Then
+  await expect(page.getByTestId('explorer-tour-btn')).not.toBeVisible();
+});

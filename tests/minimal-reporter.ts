@@ -6,7 +6,7 @@ import type { Reporter, TestCase, TestResult, FullResult, Suite } from '@playwri
 type FailureEntry = {
   title: string;
   message: string;
-  location: string,
+  location: string;
 };
 
 class MinimalReporter implements Reporter {
@@ -37,6 +37,7 @@ class MinimalReporter implements Reporter {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onEnd(_result: FullResult): void {
     if (this.failures.length) {
       for (const { title, message, location } of this.failures) {
@@ -54,12 +55,16 @@ class MinimalReporter implements Reporter {
 
     const elapsed = ((Date.now() - this.startMs) / 1000).toFixed(1);
     const total = this.passed + this.failed + this.skipped;
-    console.log([
-      (this.passed ? `${this.passed} passed` : ''),
-      (this.failed ? `${this.failed} failed` : ''),
-      (this.skipped ? `${this.skipped} skipped` : ''),
-      `${total} total tests in ${elapsed}s`
-    ].filter(Boolean).join(' '));
+    console.log(
+      [
+        this.passed ? `${this.passed} passed` : '',
+        this.failed ? `${this.failed} failed` : '',
+        this.skipped ? `${this.skipped} skipped` : '',
+        `${total} total tests in ${elapsed}s`,
+      ]
+        .filter(Boolean)
+        .join(' '),
+    );
   }
 
   private extractMessage(result: TestResult): string {
