@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
 
 vi.mock('$app/environment', () => ({ browser: false }));
@@ -38,6 +38,17 @@ function mockSearchResult(conceptPath: string): SearchResult {
     children: [],
   } as SearchResult;
 }
+const console_def = console;
+
+beforeEach(() => {
+  console.error = () => {};
+  console.warn = () => {};
+});
+
+afterEach(() => {
+  console.error = console_def.error;
+  console.warn = console_def.warn;
+});
 
 describe('addFilter - duplicate filters', () => {
   beforeEach(() => {

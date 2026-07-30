@@ -241,3 +241,39 @@ test.describe('Navigation', () => {
     await expect(page.locator('#page-navigation')).not.toBeVisible();
   });
 });
+
+test.describe('Access control', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test('Unauthenticated user is redirected to /login when OPEN is off', async ({ page }) => {
+    // Given — OPEN off is the default, but set it explicitly so the test still
+    // documents the branch under test if that default ever changes.
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'false' }] });
+
+    // When
+    await page.goto('/');
+
+    // Then
+    await expect(page).toHaveURL('/login');
+  });
+
+  test('/discover redirects to /explorer when DISCOVER is off', async ({ page }) => {
+    // Given — OPEN on so the root layout's login guard doesn't fire first; OPEN_EXPLORER
+    // also on since config.features.explorer.open is OPEN_EXPLORER && OPEN (both default
+    // false, see Configuration.ts) and landing on /explorer while it's off would bounce
+    // an unauthenticated user straight to /login, masking the redirect under test.
+    await mockApiConfig(page, {
+      features: [
+        { name: 'OPEN', value: 'true' },
+        { name: 'OPEN_EXPLORER', value: 'true' },
+        { name: 'DISCOVER', value: 'false' },
+      ],
+    });
+
+    // When
+    await page.goto('/discover');
+
+    // Then
+    await expect(page).toHaveURL('/explorer');
+  });
+});
