@@ -4,3 +4,8 @@ package-lock.json
 yarn.lock
 
 tests/end-to-end/.auth
+
+# Golden contract fixtures, copied verbatim from the server monorepo's
+# pic-sure-contracts test resources. They must stay byte-identical to the
+# server's copy so the two can be diffed; do not reformat or hand-edit them.
+tests/fixtures/contracts
