@@ -28,13 +28,15 @@ export async function getRole(uuid: string) {
 }
 
 export async function addRole(role: Role) {
+  // The admin CRUD success body is the bare DTO list now; the
+  // { message, content } wrapper is gone.
   const res = await api.post(Psama.Role, [
     {
       ...role,
       privileges: role.privileges.map((p) => ({ uuid: p })),
     },
   ]);
-  const newRole = mapRole(res.content[0]);
+  const newRole = mapRole(res[0]);
 
   const store: Role[] = get(roles);
   store.push(newRole);
@@ -48,7 +50,7 @@ export async function updateRole(role: Role) {
       privileges: role.privileges.map((p) => ({ uuid: p })),
     },
   ]);
-  const newRole = mapRole(res.content[0]);
+  const newRole = mapRole(res[0]);
 
   const store: Role[] = get(roles);
   const roleIndex: number = store.findIndex((r) => r.uuid === newRole.uuid);
@@ -72,7 +74,8 @@ export async function deleteRole(uuid: string) {
 }
 
 export async function addManualRole(studyId: string) {
-  const res = await api.post(Psama.StudyAccess, studyId);
+  // StudyAccessRequest: a JSON object, not the bare identifier string.
+  const res = await api.post(Psama.StudyAccess, { studyIdentifier: studyId });
   if (res.status !== 200) {
     throw new Error('Failed to add manual role');
   }

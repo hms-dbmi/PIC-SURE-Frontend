@@ -34,9 +34,10 @@ export async function getConnection(uuid: string) {
 }
 
 export async function addConnection(connection: Connection) {
-  type AddConnectionResponse = { message: string; content: Connection[] };
-  const res: AddConnectionResponse = await api.post(Psama.Connection, [connection]);
-  const newConnection = res.content[0];
+  // Bare DTO list: the { message, content } success wrapper is gone, which
+  // also makes this symmetrical with updateConnection below.
+  const res: Connection[] = await api.post(Psama.Connection, [connection]);
+  const newConnection = res[0];
 
   const store: Connection[] = get(connections);
   store.push(newConnection);
