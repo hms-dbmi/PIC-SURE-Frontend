@@ -6,6 +6,7 @@ import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import type { Facet, SearchResult } from '$lib/models/Search';
 import type {
+  ConceptPathRequest,
   DictionaryConceptResult,
   DictionaryFacetResult,
   DictionarySearchRequest,
@@ -134,7 +135,10 @@ export async function getConceptDetails(
     return dictonaryCacheMap.get(rawConceptPath) as SearchResult;
   }
 
-  const response: SearchResult = await api.post(url, rawConceptPath);
+  // A ConceptPathRequest object, not the raw path as the whole body: the
+  // backslashes have to be JSON-escaped, which JSON.stringify does for us.
+  const body: ConceptPathRequest = { conceptPath: rawConceptPath };
+  const response: SearchResult = await api.post(url, body);
 
   if (!response) {
     throw new Error('No response');
@@ -148,10 +152,8 @@ export async function getHierarchyConcepts(
   dataset: string,
   conceptPath: string,
 ): Promise<SearchResult[]> {
-  const response: SearchResult[] = await api.post(
-    `${Picsure.Concept.Hierarchy}/${dataset}`,
-    conceptPath,
-  );
+  const body: ConceptPathRequest = { conceptPath };
+  const response: SearchResult[] = await api.post(`${Picsure.Concept.Hierarchy}/${dataset}`, body);
 
   if (!response) {
     throw new Error('No response');
@@ -180,7 +182,7 @@ export async function getConceptCount(isOpenAccess = false) {
     `${Picsure.Concepts}?page_number=1&page_size=1`,
     request,
   );
-  return res.totalElements || Promise.reject('total not found');
+  return res.total || Promise.reject('total not found');
 }
 
 export async function getFacetCategoryCount(isOpenAccess = false, category: string) {
@@ -210,7 +212,8 @@ export async function getConceptTree(
   conceptPath: string,
 ): Promise<SearchResult> {
   const url = `${Picsure.Concept.Tree}/${dataset}?depth=${depth}`;
-  return api.post(url, conceptPath);
+  const body: ConceptPathRequest = { conceptPath };
+  return api.post(url, body);
 }
 
 export async function getInitialTree(depth: number = 1): Promise<SearchResult[]> {

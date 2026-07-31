@@ -109,13 +109,13 @@ export async function search(state: State): Promise<SearchResult[]> {
   log(
     createLog('SEARCH', 'search.results', {
       term: get(searchTerm),
-      totalResults: response?.totalElements ?? 0,
+      totalResults: response?.total ?? 0,
       facetCount: get(selectedFacets).length,
       pageContext: getPageContext(),
     }),
   );
-  state.setTotalRows(response?.totalElements ?? 0);
-  return response?.content ?? [];
+  state.setTotalRows(response?.total ?? 0);
+  return response?.results ?? [];
 }
 
 export async function updateFacets(facetsToUpdate: Facet[]) {
