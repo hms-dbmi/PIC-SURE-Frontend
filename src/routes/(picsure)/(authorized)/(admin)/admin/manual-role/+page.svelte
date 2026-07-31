@@ -33,12 +33,13 @@
     }
 
     try {
-      const newRole = await addManualRole(encodedStudyId);
-      if (newRole.status === 200) {
-        toaster.success({
-          title: `Role added successfully`,
-        });
-      }
+      // No status to check: the api layer resolves with the parsed body and
+      // throws on any non-2xx, so reaching this line IS the success case.
+      // /studyAccess answers a bare string.
+      await addManualRole(encodedStudyId);
+      toaster.success({
+        title: `Role added successfully`,
+      });
     } catch (error) {
       toaster.error({
         title: 'Error: Failed to add role',
