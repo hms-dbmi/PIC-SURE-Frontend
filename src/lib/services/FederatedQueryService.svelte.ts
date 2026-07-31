@@ -4,7 +4,7 @@ import type { QueryInterfaceV3 } from '$lib/models/query/Query';
 import { commonAreaUUID, federatedQueryMap } from '$lib/stores/Dataset.svelte';
 import { Picsure } from '$lib/paths';
 import * as api from '$lib/api';
-import { getQueryResources, loadResources, resources } from '$lib/stores/Resources';
+import { getQueryResources, loadResources } from '$lib/stores/Resources';
 import { QueryV3 } from '$lib/models/query/Query';
 
 // Both replies are QueryStatusResponse: the id is picsureId (picsureResultId
@@ -28,14 +28,14 @@ async function createCommonAreaUUID(query: FederatedQueryRequestInterface): Prom
     return currentUUID;
   }
 
-  const uuidQuery = new QueryV3();
-  const uuidQueryRequest: FederatedQueryRequestInterface = {
-    query: uuidQuery,
-    resourceUUID: get(resources).queryIdGen,
-  };
+  // The bare v3 Query IS the body. `/hpds/{backend}/v3/query` binds the Query
+  // record itself and deserializes strictly, so the old { query, resourceUUID }
+  // envelope is a 400 — and the resource UUID has nothing to select anyway now
+  // that the backend comes from the URL path.
+  const uuidQuery: QueryInterfaceV3 = new QueryV3();
 
   try {
-    const res: FederatedResponse = await api.post(Picsure.QueryV3, uuidQueryRequest);
+    const res: FederatedResponse = await api.post(Picsure.QueryV3, uuidQuery);
     const commonAreaDatasetId = res.picsureId;
 
     if (!commonAreaDatasetId) {
@@ -139,10 +139,15 @@ async function executeSiteQueries(
 }
 
 /**
- * Federated fan-out. Unlike every other query call, this still sends the
- * legacy envelope: `?isInstitute=true` is a separate, not-yet-retyped surface
- * that needs `resourceUUID`, `commonAreaUUID` and `@type` per site. It takes
- * the BARE query and wraps it here, so the envelope never escapes this module.
+ * Federated fan-out — DEAD against the current server.
+ *
+ * Federation was removed server-side: `HpdsQueryV3Controller` no longer reads
+ * `?isInstitute`, and the `FederatedQueryRequest` subtype went with the query
+ * envelope. The per-site POSTs below still send that envelope and will 400.
+ * Retiring the federation feature (this module, `federatedQueryMap`,
+ * `features.federated`, `CommonAreaSaveDatasetStep`) is a separate change, so
+ * the envelope is at least confined here rather than spread across callers —
+ * this takes the BARE query and wraps it.
  */
 export async function executeFederatedQuery(
   bareQuery: QueryInterfaceV3,

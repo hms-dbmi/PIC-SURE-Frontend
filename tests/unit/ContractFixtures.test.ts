@@ -23,7 +23,12 @@ vi.mock('$lib/toaster', () => ({ toaster: { add: vi.fn(), error: vi.fn() } }));
 
 import { getBlankQueryRequestV3, getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
 import { Picsure } from '$lib/paths';
-import type { QueryStatusResponse, SignedUrlResponse } from '$lib/models/api/QueryStatus';
+import type {
+  PaginatedResponse,
+  QueryStatus,
+  QueryStatusResponse,
+  SignedUrlResponse,
+} from '$lib/models/api/QueryStatus';
 import type { DictionaryConceptResult } from '$lib/models/api/Dictionary';
 import type { SearchRequest } from '$lib/models/api/Dictionary';
 
@@ -49,7 +54,15 @@ const V3_QUERY_FIELDS = [
 ];
 
 describe('QueryStatusResponse', () => {
-  const status: QueryStatusResponse = queryStatusResponse as unknown as QueryStatusResponse;
+  // A real typed binding, not a double cast: every member of the fixture is
+  // checked against the hand-written model, so svelte-check fails if either
+  // side drifts. Only `status` is narrowed — importing JSON widens its string
+  // literal, which no assertion here can recover — and the runtime check below
+  // covers exactly that field.
+  const status: QueryStatusResponse = {
+    ...queryStatusResponse,
+    status: queryStatusResponse.status as QueryStatus,
+  };
 
   it('has exactly the contract fields', () => {
     expect(Object.keys(queryStatusResponse).sort()).toEqual(
@@ -93,8 +106,9 @@ describe('QueryStatusResponse', () => {
 });
 
 describe('SignedUrlResponse', () => {
+  const res: SignedUrlResponse = signedUrlResponse;
+
   it('is an object, not the bare URL string it used to be', () => {
-    const res: SignedUrlResponse = signedUrlResponse as SignedUrlResponse;
     expect(typeof signedUrlResponse).toBe('object');
     expect(Object.keys(signedUrlResponse)).toEqual(['signedUrl']);
     expect(res.signedUrl).toMatch(/^https:\/\//);
@@ -102,14 +116,19 @@ describe('SignedUrlResponse', () => {
 });
 
 describe('SearchRequest', () => {
+  const req: SearchRequest = searchRequest;
+
   it('is a single free-text query member', () => {
-    const req: SearchRequest = searchRequest as SearchRequest;
     expect(Object.keys(searchRequest)).toEqual(['query']);
     expect(typeof req.query).toBe('string');
   });
 });
 
 describe('PaginatedResponse', () => {
+  // Typed binding against the generic envelope — this fixture is the shared
+  // paging record, not a dictionary page, so its `results` stay generic.
+  const page: PaginatedResponse<{ id: string; name: string }> = paginatedResponse;
+
   it('has exactly results / page / total', () => {
     expect(Object.keys(paginatedResponse).sort()).toEqual(['page', 'results', 'total']);
   });
@@ -131,10 +150,20 @@ describe('PaginatedResponse', () => {
     }
   });
 
-  it('is what the dictionary concept result reads', () => {
-    const page = paginatedResponse as unknown as DictionaryConceptResult;
+  it('reports a total consistent with the page it carries', () => {
+    // No assertion on the VALUE of `page`: the base is defined by the serving
+    // endpoint, not by this record (the dictionary's /concepts is 0-based,
+    // HPDS's /search/values is 1-based), so a regen with page:1 is not drift.
     expect(page.results).toHaveLength(page.total);
-    expect(page.page).toBe(0); // /concepts is ZERO-based
+    expect(typeof page.page).toBe('number');
+  });
+
+  it('is the envelope the dictionary concept result reads', () => {
+    // Type-level: the paging members carry straight into the dictionary's own
+    // result type, so a drift back to the Spring Page shape fails to compile.
+    const conceptPage: DictionaryConceptResult = { ...paginatedResponse, results: [] };
+    expect(conceptPage.total).toBe(page.total);
+    expect(conceptPage.page).toBe(page.page);
   });
 });
 

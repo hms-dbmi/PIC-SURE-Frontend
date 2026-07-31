@@ -19,9 +19,14 @@ export interface QueryRequestInterfaceV2 {
  * `resourceCredentials`, `@type` and the federation fields are unknown members
  * and produce a 400.
  *
- * It survives only for the FEDERATED fan-out (`?isInstitute=true`), which is a
- * separate surface that the contract work has not retyped — see
- * `FederatedQueryService`. Send the bare `QueryInterfaceV3` everywhere else.
+ * NO ENDPOINT ACCEPTS THIS ANY MORE. Federated queries were REMOVED
+ * server-side: `HpdsQueryV3Controller` dropped `?isInstitute` along with its
+ * 410 guard, and the `FederatedQueryRequest` subtype went with the envelope.
+ * The only remaining producer is `FederatedQueryService`'s per-site fan-out,
+ * which is dead code against this server and is kept solely so removing the
+ * federation feature stays a separate, deliberate change.
+ *
+ * Send the bare `QueryInterfaceV3`. Do not add callers.
  */
 export interface FederatedQueryRequestInterface {
   resourceUUID: string;
