@@ -1,11 +1,8 @@
-import type { ExpectedResultType } from '$lib/models/query/Query.ts';
-import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+import type { ExpectedResultType, QueryInterfaceV3 } from '$lib/models/query/Query.ts';
 import { QueryV3 } from '$lib/models/query/Query';
 
-let queryRequest: QueryRequestInterfaceV3 = $state({
-  resourceUUID: '',
-  query: new QueryV3(),
-});
+// The BARE v3 query: what the query endpoints now bind. No envelope.
+let queryRequest: QueryInterfaceV3 = $state(new QueryV3());
 
 let activeType: ExpectedResultType | undefined = $state(undefined);
 let datasetId: string | undefined = $state(undefined);
@@ -49,7 +46,7 @@ export function getQueryRequest() {
   return queryRequest;
 }
 
-export function setQueryRequest(q: QueryRequestInterfaceV3) {
+export function setQueryRequest(q: QueryInterfaceV3) {
   queryRequest = q;
 }
 
@@ -67,8 +64,5 @@ export function resetExportStepperState() {
   setDatasetNameInput(undefined);
   setLockDownload(true);
   setSaveable(false);
-  setQueryRequest({
-    resourceUUID: '',
-    query: new QueryV3(),
-  });
+  setQueryRequest(new QueryV3());
 }

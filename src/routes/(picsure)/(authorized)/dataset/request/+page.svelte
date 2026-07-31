@@ -102,9 +102,15 @@
         return;
       }
       if (metadata.resultMetadata.queryJson) {
-        query = metadata.resultMetadata.queryJson.query as QueryInterfaceV2;
-        requesterEmail = metadata.resultMetadata.queryJson.requesterEmail;
-        datasetStorageLocation = metadata.resultMetadata.queryJson.commonAreaUUID;
+        // queryJson IS the stored query now: the server unwraps the legacy
+        // envelope (and strips credentials) before returning it.
+        query = metadata.resultMetadata.queryJson as QueryInterfaceV2;
+        // TODO(contract): requesterEmail and commonAreaUUID lived on that
+        // envelope and no longer reach the client on any endpoint. The
+        // federated data-request view needs a server-side home for them
+        // before it can show them again.
+        requesterEmail = undefined;
+        datasetStorageLocation = undefined;
       }
     } catch (error) {
       errorFromSearch = `Error searching for dataset metadata: ${error instanceof Error ? error.message : 'Unknown error'}`;

@@ -6,8 +6,9 @@
 
   let { metadata }: { metadata: Metadata | undefined } = $props();
 
-  let queryId = $derived(metadata?.picsureResultId || '');
-  let query = $derived(metadata?.resultMetadata?.queryJson?.query);
+  let queryId = $derived(metadata?.picsureId || '');
+  // queryJson IS the stored query now -- the server strips the envelope.
+  let query = $derived(metadata?.resultMetadata?.queryJson);
 </script>
 
 <section data-testid="dataset-summary-container" class="m-3">

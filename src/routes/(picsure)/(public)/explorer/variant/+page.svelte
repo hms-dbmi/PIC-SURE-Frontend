@@ -5,7 +5,7 @@
   import { branding, features } from '$lib/configuration';
   import { isToastShowing, toaster } from '$lib/toaster';
 
-  import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+  import type { QueryInterfaceV3 } from '$lib/models/query/Query';
   import { panelOpen } from '$lib/stores/SidePanel';
 
   import Content from '$lib/components/Content.svelte';
@@ -14,8 +14,8 @@
   import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
 
   onMount(() => {
-    const request: QueryRequestInterfaceV3 = getQueryRequestV3(true);
-    if (request.query.genomicFilters.length === 0) {
+    const request: QueryInterfaceV3 = getQueryRequestV3(true);
+    if (request.genomicFilters.length === 0) {
       if (!isToastShowing('no-query')) {
         toaster.error({
           id: 'no-query',

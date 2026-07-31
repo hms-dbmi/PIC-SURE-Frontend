@@ -25,7 +25,7 @@
     await $resourcesPromise;
 
     variantResults = getQueryResources().map((resource) => {
-      const queryRequest = getQueryRequestV3(true, resource.uuid);
+      const queryRequest = getQueryRequestV3(true);
       return {
         name: resource.name,
         exportType: settings.variantExplorer.type || ExportType.Aggregate,

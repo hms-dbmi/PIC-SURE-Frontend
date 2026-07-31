@@ -42,6 +42,7 @@
   import { log, createLog } from '$lib/logger';
   import { getQueryRequestV3, getFilterConcepts } from '$lib/utilities/QueryBuilder';
   import { QueryV3 } from '$lib/models/query/Query';
+  import type { QueryStatusResponse } from '$lib/models/api/QueryStatus';
 
   const { rows = [] }: { rows?: ExportRowInterface[] } = $props();
 
@@ -50,25 +51,25 @@
   let saveDatasetPromise: Promise<void | DataSet> = $state(Promise.resolve());
 
   const showTabbedAnalysisStep = $derived(
-    (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
-      getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
+    (getQueryRequest().expectedResultType === 'DATAFRAME' ||
+      getQueryRequest().expectedResultType === 'DATAFRAME_TIMESERIES') &&
       !features.explorer.enableRedcapExport,
   );
   const showPfbExportStep = $derived(
-    getQueryRequest().query.expectedResultType === 'DATAFRAME_PFB' &&
+    getQueryRequest().expectedResultType === 'DATAFRAME_PFB' &&
       features.explorer.enablePfbExport &&
       !features.explorer.enableRedcapExport,
   );
   const showUserToken = $derived(
-    (getQueryRequest().query.expectedResultType === 'DATAFRAME' ||
-      getQueryRequest().query.expectedResultType === 'DATAFRAME_TIMESERIES') &&
+    (getQueryRequest().expectedResultType === 'DATAFRAME' ||
+      getQueryRequest().expectedResultType === 'DATAFRAME_TIMESERIES') &&
       features.analyzeApi &&
       !features.explorer.enableRedcapExport,
   );
 
   onMount(async () => {
     setQueryRequest(
-      getQueryRequestV3(true, '', 'COUNT', (query: QueryV3) => {
+      getQueryRequestV3(true, 'COUNT', (query: QueryV3) => {
         // populate selected export columns from filters
         query.select = [...new Set([...query.select, ...getFilterConcepts(query)])];
         return query;
@@ -109,24 +110,23 @@
     return;
   }
 
-  async function checkExportStatus(lastPicsureResultId?: string): Promise<void> {
-    const statusId = lastPicsureResultId || getDatasetId();
+  async function checkExportStatus(lastPicsureId?: string): Promise<void> {
+    const statusId = lastPicsureId || getDatasetId();
     const queryFragment = `/${statusId}/status`;
 
     return withBackoff(
       async () => {
-        const res = (await api.post(`${Picsure.QueryV3}${queryFragment}`, getQueryRequest())) as {
-          picsureResultId: string;
-          status: string;
-          resultMetadata: { picsureQueryId: string };
-        };
+        // GET with no body: the status read is a pure lookup by id. It used
+        // to be a POST that re-sent the whole query.
+        const res = (await api.get(`${Picsure.QueryV3}${queryFragment}`)) as QueryStatusResponse;
 
         if (res.status === 'ERROR') {
           setLockDownload(true);
           throw new Error(`Export failed with status: ${res.status}`);
         }
 
-        if (res.status !== 'SUCCESS' && res.status !== 'AVAILABLE') {
+        // The only real status values are QUEUED, PENDING, ERROR, AVAILABLE.
+        if (res.status !== 'AVAILABLE') {
           throw new Error(`Export not ready. Status: ${res.status}`);
         }
 

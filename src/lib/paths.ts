@@ -8,6 +8,8 @@ const VIZ = `${PREFIX}/visualization`;
 // HPDS ingress is exactly two path prefixes: the backend is chosen by the
 // URL PATH — `/hpds/auth` (direct, non-obfuscated) vs `/hpds/open` (aggregate/obfuscated) — NOT by a
 // resource UUID in the request body. The query-service selects HPDS_AUTH_URL/HPDS_OPEN_URL from the path.
+// Every HPDS route is `/v3`: the non-versioned aliases (`/hpds/{backend}/query*`,
+// `/hpds/{backend}/search[/values]`) were DELETED server-side, open access included.
 const HPDS_AUTH = `${PREFIX}/hpds/auth`;
 const HPDS_OPEN = `${PREFIX}/hpds/open`;
 const API = '/api/v1';
@@ -24,14 +26,17 @@ export const Picsure = {
   NamedDataSet: `${PREFIX}/operations/dataset/named`,
   Dictionary: DICT,
   Facets: `${DICT}/facets`,
-  Search: `${HPDS_AUTH}/search`,
-  /** Genomic value search (paginated); the legacy `{resourceId}` placeholder segment is gone. */
-  SearchValues: `${HPDS_AUTH}/search/values`,
+  /**
+   * Genomic value search: GET with pure query params
+   * (`genomicConceptPath`, `query`, `page`, `size`) answering a
+   * `PaginatedResponse`. `page` is ONE-BASED here — unlike the dictionary's
+   * `/concepts`, which is zero-based. The legacy `{resourceId}` placeholder
+   * segment is gone.
+   */
+  SearchValues: `${HPDS_AUTH}/v3/search/values`,
   Resources: `${PREFIX}/resource`,
-  QueryV2: `${HPDS_AUTH}/query`,
-  QueryV2Sync: `${HPDS_AUTH}/query/sync`,
   /** Open access (discover) queries hit the obfuscated open backend. */
-  QueryOpenSync: `${HPDS_OPEN}/query/sync`,
+  QueryOpenSync: `${HPDS_OPEN}/v3/query/sync`,
   QueryV3: `${HPDS_AUTH}/v3/query`,
   QueryV3Sync: `${HPDS_AUTH}/v3/query/sync`,
   Uploader: {

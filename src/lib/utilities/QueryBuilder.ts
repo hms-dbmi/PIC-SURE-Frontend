@@ -7,9 +7,10 @@ import {
   type PhenotypicSubqueryInterface,
   type PhenotypicFilterType,
   type PhenotypicClause,
+  type QueryInterfaceV3,
 } from '$lib/models/query/Query';
 import { features } from '$lib/configuration';
-import type { QueryRequestInterfaceV2, QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+import type { QueryRequestInterfaceV2 } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/User';
 import { filters, filterTree, genomicFilters, hasGenomicFilter } from '$lib/stores/Filter';
@@ -144,7 +145,11 @@ const parseNumber = (input: string | number | null | undefined): number | undefi
 
 // -------------------------------- V3 Query -------------------------------- //
 
-function serializeQueryV3(query: QueryV3) {
+/**
+ * Strip the client-only `type` discriminator from phenotypic clauses: the
+ * server infers clause kind structurally and rejects unknown members.
+ */
+function serializeQueryV3(query: QueryV3): QueryInterfaceV3 {
   return JSON.parse(
     JSON.stringify(query, (key, value) => {
       if (key === 'type') return undefined;
@@ -199,40 +204,43 @@ export function getFilterConcepts(query: QueryV3): string[] {
   return concepts;
 }
 
+/**
+ * Build the request body for a v3 query endpoint.
+ *
+ * Returns the BARE v3 `Query`. There is no `{ query, resourceUUID }` envelope
+ * any more: the server binds this object directly and deserializes strictly,
+ * so an envelope (or any other unknown member) is a 400. The HPDS backend is
+ * chosen by URL path — `/hpds/auth` vs `/hpds/open` — which is why no
+ * resource UUID is threaded through here.
+ */
 export function getQueryRequestV3(
   addConsents = true,
-  resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
-): QueryRequestInterfaceV3 {
-  return getBlankQueryRequestV3(
-    !addConsents,
-    resourceUUID,
-    expectedResultType,
-    (query: QueryV3) => {
-      query.phenotypicClause = getClausesFromTree(get(filterTree));
-      get(genomicFilters).forEach((filter: Filter) => {
-        if (filter.filterType === 'snp') {
-          convertSnpFilterToClause(filter).forEach((genomicFilter) => {
-            query.genomicFilters.push(genomicFilter);
-          });
-        } else if (filter.filterType === 'genomic') {
-          convertGenomicFilterToClause(filter).forEach((genomicFilter) => {
-            query.genomicFilters.push(genomicFilter);
-          });
-        }
-      });
-      return mutateMethod(query);
-    },
-  );
+): QueryInterfaceV3 {
+  return getBlankQueryRequestV3(!addConsents, expectedResultType, (query: QueryV3) => {
+    query.phenotypicClause = getClausesFromTree(get(filterTree));
+    get(genomicFilters).forEach((filter: Filter) => {
+      if (filter.filterType === 'snp') {
+        convertSnpFilterToClause(filter).forEach((genomicFilter) => {
+          query.genomicFilters.push(genomicFilter);
+        });
+      } else if (filter.filterType === 'genomic') {
+        convertGenomicFilterToClause(filter).forEach((genomicFilter) => {
+          query.genomicFilters.push(genomicFilter);
+        });
+      }
+    });
+    return mutateMethod(query);
+  });
 }
 
+/** As {@link getQueryRequestV3}, but without the current filter/genomic state. */
 export function getBlankQueryRequestV3(
   isOpenAccess = false,
-  resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
-): QueryRequestInterfaceV3 {
+): QueryInterfaceV3 {
   let query: QueryV3 = new QueryV3();
   query.expectedResultType = expectedResultType;
 
@@ -242,10 +250,7 @@ export function getBlankQueryRequestV3(
     addAuthorizationFiltersV3(query);
   }
 
-  return {
-    query: serializeQueryV3(query),
-    resourceUUID,
-  };
+  return serializeQueryV3(query);
 }
 
 function addAuthorizationFiltersV3(query: QueryV3): void {

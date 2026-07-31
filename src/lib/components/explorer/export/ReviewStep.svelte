@@ -18,10 +18,10 @@
   import Loading from '$lib/components/Loading.svelte';
   import Datatable from '$lib/components/datatable/StaticTable.svelte';
   import { log, createLog } from '$lib/logger';
-  import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+  import type { QueryInterfaceV3 } from '$lib/models/query/Query';
 
   export interface PrepareProps {
-    query: QueryRequestInterfaceV3;
+    query: QueryInterfaceV3;
     rows: ExportRowInterface[];
     preparePromise: Promise<void>;
     dataLimitExceeded: boolean;
@@ -92,23 +92,24 @@
       { pageNumber: 0, pageSize: 10000 },
     );
 
-    if (concepts.content.length === 0) {
+    if (concepts.results.length === 0) {
       return [];
     }
 
     // Get sample ID counts via cross counts query
-    const crossCountQuery = new QueryV3(structuredClone($state.snapshot(query).query));
+    const crossCountQuery = new QueryV3(structuredClone($state.snapshot(query)));
     crossCountQuery.expectedResultType = 'CROSS_COUNT';
-    const crossCountFields = concepts.content.map((concept) => concept.conceptPath);
+    const crossCountFields = concepts.results.map((concept) => concept.conceptPath);
     crossCountQuery.select = crossCountFields;
 
-    const crossCountResponse: Record<string, number> = await api.post(Picsure.QueryV3Sync, {
-      query: crossCountQuery,
-      resourceUUID: '',
-    });
+    // The bare query IS the body; the { query, resourceUUID } envelope is a 400.
+    const crossCountResponse: Record<string, number> = await api.post(
+      Picsure.QueryV3Sync,
+      crossCountQuery,
+    );
 
     // Filter and return only concepts with counts > 0
-    return concepts.content.filter((concept) => crossCountResponse[concept.conceptPath] > 0);
+    return concepts.results.filter((concept) => crossCountResponse[concept.conceptPath] > 0);
   }
 
   async function toggleSampleIds() {

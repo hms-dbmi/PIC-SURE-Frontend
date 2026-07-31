@@ -1,4 +1,4 @@
-import type { QueryInterfaceV2 } from '$lib/models/query/Query';
+import type { QueryInterfaceV2, QueryInterfaceV3 } from '$lib/models/query/Query';
 
 export enum UploadStatus {
   Uploading = 'Uploading',
@@ -26,21 +26,21 @@ export type Sites = {
   homeDisplay: string;
 } | null;
 
+/**
+ * `GET /hpds/{backend}/v3/query/{id}/metadata` — a QueryStatusResponse whose
+ * `resultMetadata.queryJson` IS the bare stored query. The server unwraps the
+ * legacy `{ query: ... }` envelope and strips `resourceUUID` /
+ * `resourceCredentials` before emitting it, whatever the age of the row, so
+ * there is no nested `query` member to dig through and no `resourceID`.
+ */
 export type Metadata = {
   status: string;
-  resourceID: string;
   resourceStatus: string | null;
-  picsureResultId: string;
+  picsureId: string;
   resourceResultId: string;
   resultMetadata: {
-    queryJson: {
-      type: string;
-      resourceUUID: string;
-      commonAreaUUID: string;
-      query: QueryInterfaceV2;
-      institutionOfOrigin: string;
-      requesterEmail: string;
-    };
+    queryJson: QueryInterfaceV2 | QueryInterfaceV3;
+    queryResultMetadata?: string;
   };
 } | null;
 

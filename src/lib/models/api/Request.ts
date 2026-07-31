@@ -10,7 +10,20 @@ export interface QueryRequestInterfaceV2 {
   resourceCredentials?: Record<string, string>;
 }
 
-export interface QueryRequestInterfaceV3 {
+/**
+ * The legacy query envelope.
+ *
+ * PIC-SURE's query endpoints no longer accept it. `/hpds/{backend}/v3/query`,
+ * `/query/sync` and `/visualization/distributions` all bind the BARE v3
+ * `Query` and deserialize STRICTLY, so `query`, `resourceUUID`,
+ * `resourceCredentials`, `@type` and the federation fields are unknown members
+ * and produce a 400.
+ *
+ * It survives only for the FEDERATED fan-out (`?isInstitute=true`), which is a
+ * separate surface that the contract work has not retyped — see
+ * `FederatedQueryService`. Send the bare `QueryInterfaceV3` everywhere else.
+ */
+export interface FederatedQueryRequestInterface {
   resourceUUID: string;
   query: QueryV3;
   '@type'?: string;
@@ -19,5 +32,3 @@ export interface QueryRequestInterfaceV3 {
   requesterEmail?: string;
   resourceCredentials?: Record<string, string>;
 }
-
-export type QueryRequestInterface = QueryRequestInterfaceV2 | QueryRequestInterfaceV3;

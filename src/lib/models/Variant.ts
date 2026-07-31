@@ -1,5 +1,5 @@
 import type { Indexable } from '$lib/types';
-import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+import type { QueryInterfaceV3 } from '$lib/models/query/Query';
 import type { Column } from '$lib/components/datatable/types';
 
 export enum ExportType {
@@ -15,7 +15,7 @@ export interface VariantData {
 
 export interface VariantResult {
   name: string;
-  queryRequest: QueryRequestInterfaceV3;
+  queryRequest: QueryInterfaceV3;
   exportType: ExportType;
   count: Promise<number>;
   data?: Promise<VariantData>;

@@ -1,17 +1,20 @@
 import { get } from 'svelte/store';
-import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+import type { FederatedQueryRequestInterface } from '$lib/models/api/Request';
+import type { QueryInterfaceV3 } from '$lib/models/query/Query';
 import { commonAreaUUID, federatedQueryMap } from '$lib/stores/Dataset.svelte';
 import { Picsure } from '$lib/paths';
 import * as api from '$lib/api';
 import { getQueryResources, loadResources, resources } from '$lib/stores/Resources';
 import { QueryV3 } from '$lib/models/query/Query';
 
+// Both replies are QueryStatusResponse: the id is picsureId (picsureResultId
+// was renamed and resourceID is gone).
 export interface QueryResponse {
-  picsureResultId: string;
+  picsureId: string;
 }
 
 export interface FederatedResponse {
-  picsureResultId: string;
+  picsureId: string;
 }
 
 export interface FederatedQueryResult {
@@ -19,21 +22,21 @@ export interface FederatedQueryResult {
   datasetId: string;
 }
 
-async function createCommonAreaUUID(query: QueryRequestInterfaceV3): Promise<string> {
+async function createCommonAreaUUID(query: FederatedQueryRequestInterface): Promise<string> {
   const currentUUID = get(commonAreaUUID);
   if (currentUUID) {
     return currentUUID;
   }
 
   const uuidQuery = new QueryV3();
-  const uuidQueryRequest: QueryRequestInterfaceV3 = {
+  const uuidQueryRequest: FederatedQueryRequestInterface = {
     query: uuidQuery,
     resourceUUID: get(resources).queryIdGen,
   };
 
   try {
     const res: FederatedResponse = await api.post(Picsure.QueryV3, uuidQueryRequest);
-    const commonAreaDatasetId = res.picsureResultId;
+    const commonAreaDatasetId = res.picsureId;
 
     if (!commonAreaDatasetId) {
       throw new Error('Failed to generate common area UUID');
@@ -49,7 +52,9 @@ async function createCommonAreaUUID(query: QueryRequestInterfaceV3): Promise<str
   }
 }
 
-async function executeSiteQueries(query: QueryRequestInterfaceV3): Promise<Record<string, string>> {
+async function executeSiteQueries(
+  query: FederatedQueryRequestInterface,
+): Promise<Record<string, string>> {
   const responses: Record<string, string> = {};
   const resources = getQueryResources();
 
@@ -64,14 +69,14 @@ async function executeSiteQueries(query: QueryRequestInterfaceV3): Promise<Recor
       return api
         .post(Picsure.QueryV3 + '?isInstitute=true', resourceQuery)
         .then((response: QueryResponse) => {
-          if (response.picsureResultId) {
+          if (response.picsureId) {
             return {
               resourceName: resource.name,
-              picsureResultId: response.picsureResultId,
+              picsureId: response.picsureId,
               success: true,
             };
           } else {
-            console.warn(`No picsureResultId for resource: ${resource.name}`);
+            console.warn(`No picsureId for resource: ${resource.name}`);
             return {
               resourceName: resource.name,
               error: 'No result ID returned',
@@ -97,13 +102,13 @@ async function executeSiteQueries(query: QueryRequestInterfaceV3): Promise<Recor
   queryResults.forEach((result) => {
     if (result.status === 'fulfilled') {
       const queryResult = result.value;
-      if (queryResult.success && 'picsureResultId' in queryResult && queryResult.picsureResultId) {
-        responses[queryResult.resourceName] = queryResult.picsureResultId;
+      if (queryResult.success && 'picsureId' in queryResult && queryResult.picsureId) {
+        responses[queryResult.resourceName] = queryResult.picsureId;
         federatedQueryMap.update((current) => ({
           ...current,
           [queryResult.resourceName]: {
             ...(current[queryResult.resourceName] || {}),
-            queryId: queryResult.picsureResultId,
+            queryId: queryResult.picsureId,
             status: 'COMPLETE',
           },
         }));
@@ -133,9 +138,19 @@ async function executeSiteQueries(query: QueryRequestInterfaceV3): Promise<Recor
   return responses;
 }
 
+/**
+ * Federated fan-out. Unlike every other query call, this still sends the
+ * legacy envelope: `?isInstitute=true` is a separate, not-yet-retyped surface
+ * that needs `resourceUUID`, `commonAreaUUID` and `@type` per site. It takes
+ * the BARE query and wraps it here, so the envelope never escapes this module.
+ */
 export async function executeFederatedQuery(
-  query: QueryRequestInterfaceV3,
+  bareQuery: QueryInterfaceV3,
 ): Promise<FederatedQueryResult> {
+  const query: FederatedQueryRequestInterface = {
+    query: bareQuery as FederatedQueryRequestInterface['query'],
+    resourceUUID: '',
+  };
   await loadResources();
 
   const allResources = getQueryResources();

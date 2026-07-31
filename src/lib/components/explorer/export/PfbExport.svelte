@@ -7,6 +7,7 @@
   import { toaster } from '$lib/toaster';
   import { getDatasetId, getQueryRequest } from '$lib/ExportStepperManager.svelte';
   import { log, createLog } from '$lib/logger';
+  import type { SignedUrlResponse } from '$lib/models/api/QueryStatus';
   let exportLoading: boolean = $state(false);
 
   async function exportSignedToUrl(url?: string) {
@@ -35,7 +36,10 @@
   async function getSignedUrl(): Promise<string | null> {
     const path = `${Picsure.QueryV3}/${getDatasetId()}/signed-url`;
     try {
-      const res = await api.post(path, getQueryRequest());
+      // POST with an EMPTY body: the signed URL is identified entirely by the
+      // {id} path segment. The reply is a SignedUrlResponse object, not the
+      // bare URL string it used to pass through.
+      const res: SignedUrlResponse = await api.post(path, {});
       return res.signedUrl || null;
     } catch (error) {
       console.error('Error getting signed URL:', error);

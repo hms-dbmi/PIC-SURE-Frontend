@@ -12,7 +12,7 @@
   let currentExports: ExportInterface[] = $state($exports);
   exports.subscribe((newExports) => (currentExports = newExports));
 
-  let disabledConcepts: string[] = $derived(getQueryRequest().query.select);
+  let disabledConcepts: string[] = $derived(getQueryRequest().select);
   let selectedConcepts: string[] = $derived([
     ...currentExports.map(({ conceptPath }) => conceptPath),
     ...disabledConcepts,

@@ -24,7 +24,8 @@ export type DataSet = Indexable & {
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 export interface DataSetResponse {
-  picsureResultId?: string;
+  /** QueryStatusResponse.picsureId — renamed from picsureResultId. */
+  picsureId?: string;
 }
 
 export interface DatasetError {

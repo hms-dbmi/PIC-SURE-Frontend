@@ -2,7 +2,7 @@
   import * as api from '$lib/api';
   import { branding, features } from '$lib/configuration';
   import { browser } from '$app/environment';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
+  import type { QueryInterfaceV3 } from '$lib/models/query/Query';
   import { Picsure } from '$lib/paths';
   import Modal from '$lib/components/Modal.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -11,7 +11,7 @@
   import { log, createLog } from '$lib/logger';
   import { isHttpError } from '@sveltejs/kit';
   interface Props {
-    query: QueryRequestInterface;
+    query: QueryInterfaceV3;
     datasetId: string | undefined;
   }
 
@@ -20,10 +20,9 @@
   let isDownloading: boolean = $state(false);
 
   const downloadText = $derived(
-    query.query.expectedResultType === 'DATAFRAME' ||
-      query.query.expectedResultType === 'DATAFRAME_TIMESERIES'
+    query.expectedResultType === 'DATAFRAME' || query.expectedResultType === 'DATAFRAME_TIMESERIES'
       ? 'Download as CSV'
-      : query.query.expectedResultType === 'DATAFRAME_PFB' && features.explorer.enablePfbExport
+      : query.expectedResultType === 'DATAFRAME_PFB' && features.explorer.enablePfbExport
         ? 'Download as PFB'
         : 'Download is Disabled',
   );
@@ -44,7 +43,7 @@
       isDownloading = true;
       log(
         createLog('DOWNLOAD', 'export.download_clicked', {
-          type: query.query.expectedResultType,
+          type: query.expectedResultType,
           datasetId,
         }),
       );
@@ -58,13 +57,13 @@
         const link = document.createElement('a');
         link.href = responseDataUrl;
         if (
-          query.query.expectedResultType === 'DATAFRAME' ||
-          query.query.expectedResultType === 'DATAFRAME_TIMESERIES'
+          query.expectedResultType === 'DATAFRAME' ||
+          query.expectedResultType === 'DATAFRAME_TIMESERIES'
         ) {
           link.download = 'pic-sure-data.csv';
         } else if (
           features.explorer.enablePfbExport &&
-          query.query.expectedResultType === 'DATAFRAME_PFB'
+          query.expectedResultType === 'DATAFRAME_PFB'
         ) {
           link.download = 'pic-sure-data.avro';
         }
@@ -76,7 +75,7 @@
         createLog(
           'DOWNLOAD',
           'export.download_success',
-          { type: query.query.expectedResultType, datasetId },
+          { type: query.expectedResultType, datasetId },
           { status: 200, bytes: blob.size, duration },
         ),
       );
@@ -86,7 +85,7 @@
         createLog(
           'DOWNLOAD',
           'export.download_error',
-          { type: query.query.expectedResultType, datasetId },
+          { type: query.expectedResultType, datasetId },
           {
             status: isHttpError(error) ? error.status : undefined,
             error: { message: (error as Error).message },
