@@ -67,8 +67,10 @@
 
     const query = getQueryRequestV3(!isOpenAccess());
 
+    // /visualization/distributions binds the BARE v3 Query too: the
+    // { query: ... } wrapper it used to take is now an unknown member.
     await api
-      .post(Picsure.Visualization.Distributions, { query: query.query }, undefined, !isOpenAccess())
+      .post(Picsure.Visualization.Distributions, query, undefined, !isOpenAccess())
       .then((resp) => {
         const categoricalData = (resp?.categoricalData || []).filter((data: CategoricalPlotData) =>
           categoricalHasData(data, minimumCount),
