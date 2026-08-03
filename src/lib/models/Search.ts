@@ -11,6 +11,28 @@ export type Facet = Indexable & {
   parentRef?: ShallowFacetCategory;
 };
 
+/**
+ * The only two members of a facet the server accepts as a *filter*.
+ *
+ * The dictionary service binds request bodies strictly
+ * (`FAIL_ON_UNKNOWN_PROPERTIES`) and its nested `Facet` record —
+ * `Facet(name, display, description, fullName, count, children, category, meta)`
+ * — is NOT tolerant of extra members, unlike the top-level `Filter`. The UI-only
+ * `categoryRef` / `parentRef` back-references that {@link Facet} carries are
+ * therefore a 400 the moment a selected facet is echoed back to
+ * `POST /dictionary/facets` or `POST /dictionary/concepts`.
+ *
+ * `(name, category)` is the filter key — the Java record has a convenience
+ * constructor for exactly that pair — and everything else on a response facet
+ * (display, count, children) is meaningless as an input. Build outbound facets
+ * with `toFacetFilter` in `$lib/stores/Dictionary`, never by hand: `Facet` is
+ * structurally assignable to this type, so the compiler will not catch it for you.
+ */
+export type FacetFilter = {
+  name: string;
+  category: string;
+};
+
 export type PreviousCategoriesForPlaceholder = {
   numFacets: number;
   showSearchAndButton?: boolean;

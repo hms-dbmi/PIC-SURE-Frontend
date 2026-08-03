@@ -4,7 +4,7 @@ import { page } from '$app/state';
 
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
-import type { Facet, SearchResult } from '$lib/models/Search';
+import type { Facet, FacetFilter, SearchResult } from '$lib/models/Search';
 import type {
   ConceptPathRequest,
   DictionaryConceptResult,
@@ -36,12 +36,29 @@ function cacheResult(key: string, value: SearchResult) {
   dictonaryCacheMap.set(key, value);
 }
 
+/**
+ * Narrows selected facets to the `(name, category)` pair the server filters on.
+ *
+ * The facets we hold in `selectedFacets` came from `POST /dictionary/facets`
+ * and have since been decorated with `categoryRef` / `parentRef` by
+ * `processFacetResults` for the UI's benefit. The dictionary service binds
+ * strictly and its nested `Facet` record rejects unknown members, so sending
+ * one back untouched is a 400 on every search that has a facet selected. The
+ * rest of a response facet — display, description, count, children — has no
+ * meaning as a filter anyway.
+ *
+ * Every outbound `DictionarySearchRequest` must route its facets through here.
+ */
+export function toFacetFilter(facets: Facet[] = []): FacetFilter[] {
+  return facets.map(({ name, category }) => ({ name, category }));
+}
+
 export function searchDictionary(
   searchTerm = '',
   facets: Facet[],
   pageable: Pageable,
 ): Promise<DictionaryConceptResult> {
-  let request: DictionarySearchRequest = { facets, search: searchTerm };
+  let request: DictionarySearchRequest = { facets: toFacetFilter(facets), search: searchTerm };
   if (!page.url.pathname.includes('/discover')) {
     request = addConsents(request);
   }
@@ -76,7 +93,7 @@ function initializeHiddenFacets(response: DictionaryFacetResult[]) {
 export async function updateFacetsFromSearch(): Promise<DictionaryFacetResult[]> {
   const search = get(searchTerm);
   const facets = get(selectedFacets);
-  let request: DictionarySearchRequest = { facets: facets, search: search };
+  let request: DictionarySearchRequest = { facets: toFacetFilter(facets), search: search };
   if (!page.url.pathname.includes('/discover')) {
     request = addConsents(request);
   }
@@ -162,13 +179,39 @@ export async function getHierarchyConcepts(
   return response;
 }
 
+let warnedAboutMalformedConsents = false;
+
+/**
+ * Copies the user's consent list out of their query template onto the request.
+ *
+ * `consents` binds to `List<String>` on the server, which binds strictly: a
+ * template carrying anything else under `\_consents\` — an object, a list of
+ * numbers, a bare string — is a 400 on every dictionary call, including the
+ * ones the dashboard fires on first paint. A malformed template is a data
+ * problem we cannot fix from here, so we omit the field and let the request
+ * succeed unfiltered rather than fail outright.
+ */
 export function addConsents(request: DictionarySearchRequest) {
   const queryTemplate = get(user)?.queryTemplate;
   if (queryTemplate) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filters = (queryTemplate.categoryFilters as any) || {};
-    const consents = (filters['\\_consents\\'] as string[]) || [];
-    request.consents = consents;
+    const consents = filters['\\_consents\\'];
+    if (consents === undefined || consents === null) {
+      request.consents = [];
+    } else if (Array.isArray(consents) && consents.every((c) => typeof c === 'string')) {
+      request.consents = consents;
+    } else {
+      delete request.consents;
+      if (!warnedAboutMalformedConsents) {
+        warnedAboutMalformedConsents = true;
+        console.warn(
+          'Query template has a malformed `\\_consents\\` category filter (expected an array of ' +
+            'strings); omitting consents from dictionary requests.',
+          consents,
+        );
+      }
+    }
   }
   return request;
 }

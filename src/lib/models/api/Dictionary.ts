@@ -1,6 +1,6 @@
 import { type SearchResult } from '$lib/models/Search';
 import type { PaginatedResponse } from '$lib/models/api/QueryStatus';
-import type { Facet } from '$lib/models/Search';
+import type { Facet, FacetFilter } from '$lib/models/Search';
 
 /**
  * `POST /dictionary/concepts` — a PaginatedResponse, not a Spring `Page`.
@@ -37,8 +37,21 @@ export interface DictionaryFacetResult {
   facets: Facet[];
 }
 
+/**
+ * The body of `POST /dictionary/facets` and `POST /dictionary/concepts`.
+ *
+ * `facets` is a list of {@link FacetFilter}, NOT the {@link Facet} objects the
+ * facets endpoint hands back: the server's nested `Facet` record rejects
+ * unknown members, so echoing a selected facet — with the UI-only
+ * `categoryRef` / `parentRef` — is a 400. Produce this list with
+ * `toFacetFilter`; `Facet` is structurally assignable to `FacetFilter`, so the
+ * type alone is documentation, not enforcement.
+ *
+ * `consents` maps to `List<String>` on the server. Omit it rather than sending
+ * a malformed value — a non-list, or a list of non-strings, is a 400 at bind time.
+ */
 export interface DictionarySearchRequest {
-  facets: Facet[];
+  facets: FacetFilter[];
   search: string;
   consents?: string[];
 }
