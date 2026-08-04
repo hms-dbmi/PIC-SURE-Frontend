@@ -60,7 +60,6 @@ export const Psama = {
   Auth: 'psama/authentication',
   Connection: 'psama/connection',
   Priviege: 'psama/privilege',
-  StudyAccess: 'psama/studyAccess',
   Role: 'psama/role',
   TOS: 'psama/tos',
   Users: USER,

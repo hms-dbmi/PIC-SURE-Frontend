@@ -73,16 +73,6 @@ export async function deleteRole(uuid: string) {
   }
 }
 
-export async function addManualRole(studyId: string) {
-  // StudyAccessRequest: a JSON object, not the bare identifier string.
-  //
-  // api.post resolves with the PARSED BODY, never a Response, and throws on
-  // any non-2xx. Reaching this return already means success, so there is no
-  // status to check — the old `res.status !== 200` guard read `undefined` off
-  // the body and therefore threw on every successful call. /studyAccess
-  // answers a bare string, so there is no success field to test either.
-  return api.post(Psama.StudyAccess, { studyIdentifier: studyId });
-}
 export default {
   subscribe: roles.subscribe,
   roles,
