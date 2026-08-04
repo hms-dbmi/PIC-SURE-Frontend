@@ -8,6 +8,7 @@ import {
   applications as mockApps,
   connections as mockConnections,
   picsureUser,
+  mockUserConsents,
 } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
 
@@ -26,7 +27,7 @@ Psama.Latest = Psama.TOS + '/latest';
 Psama.Accept = Psama.TOS + '/accept';
 Psama.Update = Psama.TOS + '/update';
 Psama.Me = Psama.User + '/me';
-Psama.Template = Psama.User + '/me/queryTemplate*';
+Psama.Consents = Psama.User + '/me/consents';
 Psama.Logout = '*/**/psama/logout';
 
 const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use this site.</p>';
@@ -133,7 +134,7 @@ test.describe('Logged in', () => {
     test('Clicking the accept sends request', async ({ page }) => {
       // Given
       mockApiSuccess(page, Psama.Me, picsureUser);
-      mockApiSuccess(page, Psama.Template, picsureUser.queryTemplate);
+      mockApiSuccess(page, Psama.Consents, mockUserConsents);
       mockApiSuccess(page, Psama.Accept, '');
       await page.goto('/');
 
@@ -166,7 +167,7 @@ test.describe('Logged in', () => {
     test('TOS modal has close button after acceptance', async ({ page }) => {
       // Given
       mockApiSuccess(page, Psama.Me, picsureUser);
-      mockApiSuccess(page, Psama.Template, picsureUser.queryTemplate);
+      mockApiSuccess(page, Psama.Consents, mockUserConsents);
       mockApiSuccess(page, Psama.Accept, '');
       await page.goto('/');
       await page.getByTestId('terms-accept-btn').click();
@@ -182,7 +183,7 @@ test.describe('Logged in', () => {
     test('TOS modal is dismissable after acceptance', async ({ page }) => {
       // Given
       await mockApiSuccess(page, Psama.Me, picsureUser);
-      await mockApiSuccess(page, Psama.Template, picsureUser.queryTemplate);
+      await mockApiSuccess(page, Psama.Consents, mockUserConsents);
       await mockApiSuccess(page, Psama.Accept, '');
       await page.goto('/');
       await page.getByTestId('terms-accept-btn').click();

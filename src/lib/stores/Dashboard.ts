@@ -6,8 +6,8 @@ import type { Column } from '$lib/components/datatable/types';
 import { user } from '$lib/stores/User';
 import { get } from 'svelte/store';
 import type { User } from '$lib/models/User';
+import { CONSENTS_PATH, consentValues } from '$lib/models/UserConsents';
 import { browser } from '$app/environment';
-import { features } from '$lib/configuration';
 export const columns: Writable<Column[]> = writable([]);
 
 export type DashboardRow = Record<string, string | number | boolean | null>;
@@ -40,13 +40,12 @@ export async function loadDashboardData() {
   columns.set(dashboardData.columns);
 
   const loggedInUser: User = get(user);
-  const useConsents = features.useQueryTemplate && isUserLoggedIn() && loggedInUser?.queryTemplate;
 
-  let consents: string[] = [];
-  if (useConsents) {
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    consents = (loggedInUser.queryTemplate?.categoryFilters as any)?.['\\_consents\\'] || [];
-  }
+  // An open-access visitor has no consents at all, so every study lands in the
+  // "not granted" bucket — which is the honest answer, not a degraded one.
+  const consents = isUserLoggedIn()
+    ? consentValues(loggedInUser?.consents, CONSENTS_PATH) || []
+    : [];
 
   const processedRows = dashboardData.rows.map(processRow(consents));
 

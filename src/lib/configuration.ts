@@ -197,7 +197,6 @@ export const features: Indexable = {
   enableSNPQuery: import.meta.env?.VITE_ENABLE_SNP_QUERY === 'true',
   enableGENEQuery: import.meta.env?.VITE_ENABLE_GENE_QUERY === 'true',
   requireConsents: import.meta.env?.VITE_REQUIRE_CONSENTS === 'true',
-  useQueryTemplate: import.meta.env?.VITE_USE_QUERY_TEMPLATE === 'true',
   discover: import.meta.env?.VITE_DISCOVER === 'true',
   collaborate: import.meta.env?.VITE_COLLABORATE === 'true',
   discoverFeautures: {

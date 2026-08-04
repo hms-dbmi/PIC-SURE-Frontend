@@ -7,10 +7,9 @@ import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, features } from '$lib/configuration';
 import { Psama } from '$lib/paths';
 import { goto } from '$app/navigation';
-import type { QueryInterfaceV2 } from '$lib/models/query/Query';
+import type { ConsentsMap, UserConsentsResponse } from '$lib/models/UserConsents';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/state';
-import { resources } from '$lib/stores/Resources';
 import { log, createLog } from '$lib/logger';
 
 // Create a store that syncs with localStorage
@@ -176,14 +175,24 @@ export function refreshLongTermToken() {
   });
 }
 
-export async function getQueryTemplate(): Promise<QueryInterfaceV2> {
+/**
+ * The caller's study authorizations, the single source every consent-aware call site
+ * reads from. Replaces the deleted `/me/queryTemplate` fetch, which pulled the same map
+ * out of a v2 query template and had to `JSON.parse` a string-encoded body to get at it;
+ * `/me/consents` answers the typed map directly.
+ *
+ * Never throws. A user with no stored record gets an empty map from the server, and a
+ * request that fails outright degrades to the same empty map — this runs inside the
+ * authorized layout's hydration, where throwing would bounce the user to /login over
+ * what is only a missing consent list.
+ */
+export async function getUserConsents(): Promise<ConsentsMap> {
   try {
-    const res = await api.get(Psama.User.Template + '/' + get(resources).application);
-    const queryTemplate = JSON.parse(res.queryTemplate) as QueryInterfaceV2;
-    return queryTemplate;
+    const res: UserConsentsResponse = await api.get(Psama.User.Consents);
+    return res?.consents || {};
   } catch (error) {
-    console.error('Error parsing query template: ' + error);
-    return {} as QueryInterfaceV2;
+    console.error('Error fetching user consents: ' + error);
+    return {};
   }
 }
 
@@ -191,15 +200,14 @@ export async function getQueryTemplate(): Promise<QueryInterfaceV2> {
  * Populate the user store from PSAMA using the token in localStorage. Used by the login
  * flow and by the authorized layout when a fresh tab has a valid token but no user data
  * in sessionStorage (since sessionStorage is tab-scoped, each new tab starts empty).
+ *
+ * Consents are fetched here and only here, so open-access and discover flows — which
+ * never hydrate, because they have no token — never touch the authenticated endpoint.
  */
 export async function hydrateUserFromToken() {
   await getUser(true, false);
-  if (features.useQueryTemplate) {
-    const queryTemplate = await getQueryTemplate();
-    if (queryTemplate) {
-      user.set({ ...get(user), queryTemplate });
-    }
-  }
+  const consents = await getUserConsents();
+  user.set({ ...get(user), consents });
 }
 
 export async function login(token: string) {

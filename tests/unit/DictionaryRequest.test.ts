@@ -163,8 +163,11 @@ describe('outbound facets', () => {
 });
 
 describe('addConsents', () => {
-  function withTemplate(categoryFilters: unknown) {
-    stores.user.set({ queryTemplate: { categoryFilters } });
+  // The source is the user store's `consents` map, filled once at hydration from
+  // GET /psama/user/me/consents. It replaces the deleted query template, which
+  // carried the identical map as its `categoryFilters`.
+  function withConsents(consents: unknown) {
+    stores.user.set({ consents });
   }
 
   function request(): DictionarySearchRequest {
@@ -172,47 +175,68 @@ describe('addConsents', () => {
   }
 
   it('sends a well-formed string list through untouched', () => {
-    withTemplate({ '\\_consents\\': ['phs000007.c1', 'phs000007.c2'] });
+    withConsents({ '\\_consents\\': ['phs000007.c1', 'phs000007.c2'] });
 
     const body = JSON.parse(JSON.stringify(addConsents(request())));
     expect(body.consents).toEqual(['phs000007.c1', 'phs000007.c2']);
   });
 
-  it('omits consents when the template carries an object instead of a list', () => {
-    withTemplate({ '\\_consents\\': { phs000007: 'c1' } });
+  it('reads only the consents path, ignoring the harmonized and topmed entries', () => {
+    withConsents({
+      '\\_consents\\': ['phs000007.c1'],
+      '\\_harmonized_consent\\': ['phs000007.c1'],
+      '\\_topmed_consents\\': ['phs000007.c1'],
+    });
+
+    const body = JSON.parse(JSON.stringify(addConsents(request())));
+    expect(body.consents).toEqual(['phs000007.c1']);
+  });
+
+  it('omits consents when the map carries an object instead of a list', () => {
+    withConsents({ '\\_consents\\': { phs000007: 'c1' } });
 
     const body = JSON.parse(JSON.stringify(addConsents(request())));
     expect(body).not.toHaveProperty('consents');
   });
 
   it('omits consents when the list holds non-strings', () => {
-    withTemplate({ '\\_consents\\': ['phs000007.c1', 42] });
+    withConsents({ '\\_consents\\': ['phs000007.c1', 42] });
 
     const body = JSON.parse(JSON.stringify(addConsents(request())));
     expect(body).not.toHaveProperty('consents');
   });
 
-  it('omits consents when the template carries a bare string', () => {
-    withTemplate({ '\\_consents\\': 'phs000007.c1' });
+  it('omits consents when the map carries a bare string', () => {
+    withConsents({ '\\_consents\\': 'phs000007.c1' });
 
     const body = JSON.parse(JSON.stringify(addConsents(request())));
     expect(body).not.toHaveProperty('consents');
   });
 
-  it('sends an empty list when the template has no consents filter at all', () => {
-    withTemplate({});
+  it('sends an empty list when the map has no consents entry at all', () => {
+    withConsents({});
 
     const body = JSON.parse(JSON.stringify(addConsents(request())));
     expect(body.consents).toEqual([]);
   });
 
-  it('warns about a malformed template exactly once, however many calls follow', async () => {
+  it('sends an empty list for a user with no consents record', () => {
+    // PSAMA answers `{ userId, consents: {} }` rather than erroring, and an
+    // un-hydrated open-access visitor has no `consents` member at all. Both mean
+    // "nothing authorized", not "something went wrong".
+    withConsents(undefined);
+
+    const body = JSON.parse(JSON.stringify(addConsents(request())));
+    expect(body.consents).toEqual([]);
+  });
+
+  it('warns about a malformed consents map exactly once, however many calls follow', async () => {
     // A fresh module instance: the "warn once" latch is module state, and an
     // earlier test in this file may already have tripped it.
     vi.resetModules();
     const fresh = await import('$lib/stores/Dictionary');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    withTemplate({ '\\_consents\\': { nope: true } });
+    withConsents({ '\\_consents\\': { nope: true } });
 
     fresh.addConsents(request());
     fresh.addConsents(request());
@@ -222,8 +246,8 @@ describe('addConsents', () => {
     warn.mockRestore();
   });
 
-  it('keeps a malformed template out of the request the dashboard fires on load', async () => {
-    withTemplate({ '\\_consents\\': { phs000007: 'c1' } });
+  it('keeps a malformed consents map out of the request the dashboard fires on load', async () => {
+    withConsents({ '\\_consents\\': { phs000007: 'c1' } });
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     post.mockResolvedValue({ results: [], total: 7 });
 

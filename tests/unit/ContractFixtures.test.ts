@@ -8,7 +8,6 @@ import dispatchResponse from '../fixtures/contracts/dispatch-response.json';
 
 const mockFeatures = vi.hoisted(() => ({
   requireConsents: false,
-  useQueryTemplate: false,
   explorer: { open: false },
   login: { open: false },
   federated: false,
@@ -180,7 +179,6 @@ describe('dispatch queryJson', () => {
 describe('the query request body is the bare v3 Query', () => {
   beforeEach(() => {
     mockFeatures.requireConsents = false;
-    mockFeatures.useQueryTemplate = false;
   });
 
   it('has no { query, resourceUUID } envelope', () => {

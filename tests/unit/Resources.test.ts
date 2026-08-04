@@ -31,7 +31,6 @@ describe('getQueryResources', () => {
     mockFeatures.federated = false;
 
     resources.set({
-      application: '',
       queryIdGen: '',
       queryable: queryableResources,
     });

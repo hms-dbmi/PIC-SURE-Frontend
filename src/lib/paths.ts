@@ -66,7 +66,14 @@ export const Psama = {
   User: {
     Logout: 'psama/logout',
     Me: `${USER}/me`,
-    Template: `${USER}/me/queryTemplate`,
+    /**
+     * The caller's study authorizations. This replaces `/me/queryTemplate`, which
+     * was deleted along with the rest of the v2 query machinery: the template only
+     * ever existed to smuggle the consent list to the client, and this endpoint
+     * hands over that list directly. Self-scoped — the subject comes from the
+     * token, so there is no user id to pass and no way to read anyone else's.
+     */
+    Consents: `${USER}/me/consents`,
     Refresh: `${USER}/me/refresh_long_term_token`,
   },
 };

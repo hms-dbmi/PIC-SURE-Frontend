@@ -14,17 +14,16 @@ interface QueryResource {
 // The single-resource HPDS UUID fork (hpdsAuth/hpdsOpen/hpdsOpenV3/search/visualization/aggregate and
 // their VITE_RESOURCE_* reads) is REMOVED: with path-based gateway routing, the backend is
 // selected by URL path (`/hpds/auth` vs `/hpds/open`), not by a resource UUID. What remains is the
-// federated site registry (`queryable`, discovered via getResources) plus the PSAMA `application` id
-// used for the query template. Federated discovery has no path-based replacement yet and is being
-// removed from the UI separately — see the PR's open questions.
+// federated site registry (`queryable`, discovered via getResources). Federated discovery has no
+// path-based replacement yet and is being removed from the UI separately — see the PR's open
+// questions. The PSAMA `application` id went with the query template: it existed only to address
+// `/user/me/queryTemplate/{applicationId}`, and `/user/me/consents` is self-scoped.
 export interface ResourceMap {
-  application: string;
   queryIdGen: string;
   queryable: QueryResource[];
 }
 
 const defaultResources: ResourceMap = {
-  application: (import.meta.env?.VITE_RESOURCE_APP || '') as string,
   queryIdGen: (import.meta.env?.VITE_RESOURCE_QUERY_ID_GEN || '') as string,
   queryable: [],
 };

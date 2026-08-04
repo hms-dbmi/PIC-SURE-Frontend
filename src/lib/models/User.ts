@@ -1,7 +1,7 @@
 import type { Role } from '$lib/models/Role';
 import type { Connection } from '$lib/models/Connection';
 
-import type { QueryInterfaceV2 } from './query/Query';
+import type { ConsentsMap } from './UserConsents';
 
 export interface User {
   uuid?: string;
@@ -11,7 +11,12 @@ export interface User {
   queryScopes?: string[];
   token?: string;
   acceptedTOS?: boolean;
-  readonly queryTemplate?: QueryInterfaceV2;
+  /**
+   * Study authorizations from `GET /psama/user/me/consents`, fetched once at
+   * hydration. Absent for anyone who has not been hydrated — an open-access
+   * visitor, or a user whose consents fetch failed.
+   */
+  readonly consents?: ConsentsMap;
 }
 
 export interface ExtendedUser extends User {

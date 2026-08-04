@@ -2,7 +2,6 @@ import {
   QueryV2,
   QueryV3,
   type ExpectedResultType,
-  type QueryInterfaceV2,
   type PhenotypicFilterInterface,
   type PhenotypicSubqueryInterface,
   type PhenotypicFilterType,
@@ -24,12 +23,23 @@ import type {
   AnyRecordOfFilterInterface,
 } from '$lib/models/Filter.svelte';
 import { LogicTree } from '$lib/models/LogicTree.svelte';
+import {
+  CONSENTS_PATH,
+  HARMONIZED_CONSENTS_PATH,
+  TOPMED_CONSENTS_PATH,
+  consentValues,
+} from '$lib/models/UserConsents';
 import type { GenomicFilterInterfacev3, OperatorType } from '$lib/models/query/Query';
 import type { ExportInterface } from '$lib/models/Export.ts';
 
 const harmonizedPath = '\\DCC Harmonized data set';
-const harmonizedConsentPath = '\\_harmonized_consent\\';
-const topmedConsentPath = '\\_topmed_consents\\';
+
+/**
+ * The consent concept paths, in the order they are emitted. Both query versions
+ * read the same three keys off the user's consents map, so the paths live in the
+ * model that decodes that map rather than being restated here.
+ */
+const consentPaths = [CONSENTS_PATH, HARMONIZED_CONSENTS_PATH, TOPMED_CONSENTS_PATH] as const;
 
 // -------------------------------- V2 Query -------------------------------- //
 
@@ -84,11 +94,17 @@ export function getBlankQueryRequestV2(
 ): QueryRequestInterfaceV2 {
   let query: QueryV2 = new QueryV2();
 
-  if (features.useQueryTemplate && !isOpenAccess) {
-    const queryTemplate: QueryInterfaceV2 = get(user).queryTemplate as QueryInterfaceV2;
-    if (queryTemplate) {
-      query = new QueryV2(structuredClone(queryTemplate));
-    }
+  // The v2 query template used to arrive pre-seeded with exactly these three
+  // category filters — carrying them was the only reason it was fetched — so
+  // seeding them from the consents map reproduces the old body.
+  if (features.requireConsents && !isOpenAccess) {
+    const consents = get(user)?.consents;
+    consentPaths.forEach((conceptPath) => {
+      const values = consentValues(consents, conceptPath);
+      if (values && values.length > 0) {
+        query.addCategoryFilter(conceptPath, values);
+      }
+    });
   }
 
   query = mutateMethod(query);
@@ -112,11 +128,11 @@ export const updateConsentFilters = (query: QueryV2) => {
     !fieldsIncludeHarmonizedPath(query.fields) &&
     !fieldsIncludeHarmonizedPath(query.requiredFields)
   ) {
-    query.removeCategoryFilter(harmonizedConsentPath);
+    query.removeCategoryFilter(HARMONIZED_CONSENTS_PATH);
   }
 
   if (!get(hasGenomicFilter)) {
-    query.removeCategoryFilter(topmedConsentPath);
+    query.removeCategoryFilter(TOPMED_CONSENTS_PATH);
   }
 
   return query;
@@ -253,37 +269,23 @@ export function getBlankQueryRequestV3(
   return serializeQueryV3(query);
 }
 
+/**
+ * Emit the user's study authorizations as v3 `authorizationFilters`.
+ *
+ * The wire shape is pinned by server-side tests: an ordered array of
+ * `{ conceptPath, values }`, one entry per consent path, and a path with no
+ * values is OMITTED rather than sent with an empty list. Malformed consents are
+ * treated as no consents — `consentValues` returns null and the entry is
+ * skipped — because a non-`List<String>` `values` is a 400 on the whole query.
+ */
 function addAuthorizationFiltersV3(query: QueryV3): void {
-  if (features.useQueryTemplate) {
-    const queryTemplate: QueryInterfaceV2 = get(user).queryTemplate as QueryInterfaceV2;
-    if (queryTemplate) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const consents = queryTemplate.categoryFilters as any;
-      if (consents) {
-        const consentsValues = (consents['\\_consents\\'] as string[]) || [];
-        if (consentsValues.length > 0) {
-          query.authorizationFilters.push({
-            conceptPath: '\\_consents\\',
-            values: consentsValues,
-          });
-        }
-        const harmonizedConsents = (consents['\\_harmonized_consent\\'] as string[]) || [];
-        if (harmonizedConsents.length > 0) {
-          query.authorizationFilters.push({
-            conceptPath: '\\_harmonized_consent\\',
-            values: harmonizedConsents,
-          });
-        }
-        const topmedConsents = (consents['\\_topmed_consents\\'] as string[]) || [];
-        if (topmedConsents.length > 0) {
-          query.authorizationFilters.push({
-            conceptPath: '\\_topmed_consents\\',
-            values: topmedConsents,
-          });
-        }
-      }
+  const consents = get(user)?.consents;
+  consentPaths.forEach((conceptPath) => {
+    const values = consentValues(consents, conceptPath);
+    if (values && values.length > 0) {
+      query.authorizationFilters.push({ conceptPath, values });
     }
-  }
+  });
 
   if (features.requireConsents) {
     const hasHarmonizedInSelect = selectIncludesHarmonizedPathV3(query.select || []);
@@ -292,14 +294,14 @@ function addAuthorizationFiltersV3(query: QueryV3): void {
 
     if (!hasAnyHarmonized) {
       query.authorizationFilters = (query.authorizationFilters || []).filter(
-        (af) => af.conceptPath !== harmonizedConsentPath,
+        (af) => af.conceptPath !== HARMONIZED_CONSENTS_PATH,
       );
     }
 
     const hasGenomic = (query.genomicFilters || []).length > 0;
     if (!hasGenomic) {
       query.authorizationFilters = (query.authorizationFilters || []).filter(
-        (af) => af.conceptPath !== topmedConsentPath,
+        (af) => af.conceptPath !== TOPMED_CONSENTS_PATH,
       );
     }
   }

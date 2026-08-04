@@ -12,6 +12,7 @@ import type {
   DictionarySearchRequest,
 } from '$lib/models/api/Dictionary';
 import type { Pageable } from '$lib/models/api/Pageable';
+import { CONSENTS_PATH, consentValues } from '$lib/models/UserConsents';
 import { user } from '$lib/stores/User';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
 import { log, createLog } from '$lib/logger';
@@ -182,36 +183,29 @@ export async function getHierarchyConcepts(
 let warnedAboutMalformedConsents = false;
 
 /**
- * Copies the user's consent list out of their query template onto the request.
+ * Copies the user's consent list from the user store onto the request.
  *
  * `consents` binds to `List<String>` on the server, which binds strictly: a
- * template carrying anything else under `\_consents\` — an object, a list of
- * numbers, a bare string — is a 400 on every dictionary call, including the
- * ones the dashboard fires on first paint. A malformed template is a data
+ * consents map carrying anything else under `\_consents\` — an object, a list
+ * of numbers, a bare string — is a 400 on every dictionary call, including the
+ * ones the dashboard fires on first paint. Malformed consents are a data
  * problem we cannot fix from here, so we omit the field and let the request
  * succeed unfiltered rather than fail outright.
  */
 export function addConsents(request: DictionarySearchRequest) {
-  const queryTemplate = get(user)?.queryTemplate;
-  if (queryTemplate) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filters = (queryTemplate.categoryFilters as any) || {};
-    const consents = filters['\\_consents\\'];
-    if (consents === undefined || consents === null) {
-      request.consents = [];
-    } else if (Array.isArray(consents) && consents.every((c) => typeof c === 'string')) {
-      request.consents = consents;
-    } else {
-      delete request.consents;
-      if (!warnedAboutMalformedConsents) {
-        warnedAboutMalformedConsents = true;
-        console.warn(
-          'Query template has a malformed `\\_consents\\` category filter (expected an array of ' +
-            'strings); omitting consents from dictionary requests.',
-          consents,
-        );
-      }
+  const consents = consentValues(get(user)?.consents, CONSENTS_PATH);
+  if (consents === null) {
+    delete request.consents;
+    if (!warnedAboutMalformedConsents) {
+      warnedAboutMalformedConsents = true;
+      console.warn(
+        'User consents carry a malformed `\\_consents\\` entry (expected an array of strings); ' +
+          'omitting consents from dictionary requests.',
+        get(user)?.consents?.[CONSENTS_PATH],
+      );
     }
+  } else {
+    request.consents = consents;
   }
   return request;
 }
