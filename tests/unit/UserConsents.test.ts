@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
  * `GET /psama/user/me/consents` is the sole client-side source of study
  * authorizations now that `/user/me/queryTemplate` is deleted.
  *
- * The wire shape is PSAMA's `UserConsents` entity: `{ uuid?, userId, consents }`
+ * The wire shape is PSAMA's `UserConsentsResponse` contract: `{ userId, consents }`
  * where `consents` is `Map<String, Set<String>>` keyed by CONCEPT PATH — the
  * three keys `BdcConsentsBuilder` writes — and valued with the consent
  * identifiers verbatim (`phs000007.c1`, `open_access-1000Genomes`, …). These
@@ -120,7 +120,7 @@ describe('getUserConsents', () => {
     // The template arrived as a JSON STRING under `queryTemplate` and had to be
     // parsed; `/me/consents` answers the typed object directly.
     const consents = { [CONSENTS_PATH]: ['phs000007.c1'] };
-    get.mockResolvedValue({ uuid: 'abc', userId: '1234', consents });
+    get.mockResolvedValue({ userId: '1234', consents } satisfies UserConsentsResponse);
 
     expect(await getUserConsents()).toEqual(consents);
   });

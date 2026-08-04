@@ -5,6 +5,7 @@ import signedUrlResponse from '../fixtures/contracts/signed-url-response.json';
 import searchRequest from '../fixtures/contracts/search-request.json';
 import paginatedResponse from '../fixtures/contracts/paginated-response.json';
 import dispatchResponse from '../fixtures/contracts/dispatch-response.json';
+import userConsentsResponse from '../fixtures/contracts/user-consents-response.json';
 
 const mockFeatures = vi.hoisted(() => ({
   requireConsents: false,
@@ -29,6 +30,13 @@ import type {
   SignedUrlResponse,
 } from '$lib/models/api/QueryStatus';
 import type { DictionaryConceptResult } from '$lib/models/api/Dictionary';
+import {
+  CONSENTS_PATH,
+  HARMONIZED_CONSENTS_PATH,
+  TOPMED_CONSENTS_PATH,
+  consentValues,
+  type UserConsentsResponse,
+} from '$lib/models/UserConsents';
 import type { SearchRequest } from '$lib/models/api/Dictionary';
 
 /**
@@ -213,6 +221,49 @@ describe('the query request body is the bare v3 Query', () => {
     // server infers clause kind structurally and rejects the extra member.
     const body = getQueryRequestV3(false, 'COUNT');
     expect(JSON.stringify(body)).not.toContain('"type"');
+  });
+});
+
+describe('UserConsentsResponse', () => {
+  // A real typed binding, not a cast: the fixture is checked member by member
+  // against the hand-written model, so svelte-check fails if either side drifts.
+  const consents: UserConsentsResponse = userConsentsResponse;
+
+  it('has exactly the contract fields', () => {
+    // Two keys. The response used to be PSAMA's `user_consents` JPA entity,
+    // which also shipped the persisted row's own `uuid`; that is storage, not
+    // answer, and reading it would bind this client to PSAMA's schema.
+    expect(Object.keys(userConsentsResponse).sort()).toEqual(['consents', 'userId']);
+    expect(userConsentsResponse).not.toHaveProperty('uuid');
+  });
+
+  it('is keyed by the concept paths BdcConsentsBuilder writes, byte for byte', () => {
+    // The client's constants are the only thing that reaches into this map. A
+    // drift on either side reads as "no consents" and silently drops every
+    // authorization filter rather than failing.
+    expect(Object.keys(consents.consents ?? {}).sort()).toEqual(
+      [CONSENTS_PATH, HARMONIZED_CONSENTS_PATH, TOPMED_CONSENTS_PATH].sort(),
+    );
+  });
+
+  it('parses each concept path through the real helper, identifiers verbatim', () => {
+    // Consent ids are matched against dictionary values and put into a v3
+    // query's authorizationFilters as-is — never parsed or reformatted.
+    expect(consentValues(consents.consents, CONSENTS_PATH)).toEqual([
+      'phs000007.c1',
+      'phs000179.c2',
+      'open_access-1000Genomes',
+    ]);
+    expect(consentValues(consents.consents, HARMONIZED_CONSENTS_PATH)).toEqual(['phs000007.c1']);
+    expect(consentValues(consents.consents, TOPMED_CONSENTS_PATH)).toEqual([
+      'phs000179.c2',
+      'open_access-1000Genomes',
+    ]);
+  });
+
+  it('reads an unknown concept path as nothing authorized, not as an error', () => {
+    // The server documents its keys as KNOWN, not exhaustive.
+    expect(consentValues(consents.consents, '\\_future_consent\\')).toEqual([]);
   });
 });
 

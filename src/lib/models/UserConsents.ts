@@ -1,5 +1,6 @@
 /**
- * The wire shape of `GET /psama/user/me/consents` (PSAMA's `UserConsents` entity).
+ * The wire shape of `GET /psama/user/me/consents` — PSAMA's
+ * `UserConsentsResponse` contract record.
  *
  * The map is keyed by CONCEPT PATH, not by study accession: PSAMA's
  * `BdcConsentsBuilder` files every authorized consent under `\_consents\`, the
@@ -15,9 +16,12 @@
  * A user with no stored consent record gets `{ userId, consents: {} }` rather
  * than an error, so an empty map is a normal, expected answer meaning "nothing
  * authorized" — never a failure to be retried.
+ *
+ * Two keys, and no more: the response used to be the JPA entity, which also
+ * carried the `user_consents` row's own `uuid`. That is PSAMA storage, not
+ * answer, and it is off the wire — nothing here may read it back.
  */
 export interface UserConsentsResponse {
-  uuid?: string;
   userId?: string;
   consents?: ConsentsMap;
 }
