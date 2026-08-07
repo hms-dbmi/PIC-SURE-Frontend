@@ -17,10 +17,6 @@
   let expansionKey = $derived(`${facetCategory.name}:${facet.name}`);
   let open = $derived($expandedNestedFacets.includes(expansionKey));
 
-  function toggleOpen() {
-    toggleNestedFacet(expansionKey);
-  }
-
   function getCurrentlySelectedChildren() {
     return (
       facet.children?.filter((child) => $selectedFacets.some((f) => f.name === child.name)) ?? []
@@ -99,7 +95,7 @@
       aria-label="{open ? 'Collapse' : 'Expand'} {facet.display} children"
       aria-expanded={open}
       data-testId={`facet-${facet.name}-arrow`}
-      onclick={toggleOpen}
+      onclick={() => toggleNestedFacet(expansionKey)}
     >
       <i class="fa-solid {open ? 'fa-angle-down' : 'fa-angle-right'}"></i>
     </button>
