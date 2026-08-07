@@ -3,6 +3,7 @@
   import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
   import type { Facet } from '$lib/models/Search';
   import SearchStore from '$lib/stores/Search';
+  import { expandedNestedFacets, toggleNestedFacet } from '$lib/stores/NestedFacets';
   let { updateFacets, selectedFacets } = SearchStore;
 
   interface Props {
@@ -13,10 +14,10 @@
 
   let { facet, facetCategory, textFilterValue }: Props = $props();
 
-  let open = $state(false);
+  let open = $derived($expandedNestedFacets.includes(facet.name));
 
   function toggleOpen() {
-    open = !open;
+    toggleNestedFacet(facet.name);
   }
 
   function getCurrentlySelectedChildren() {
