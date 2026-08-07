@@ -29,8 +29,6 @@ export const hiddenFacets: Writable<FacetSkeleton> = writable({});
 export const facetsPromise: Writable<Promise<DictionaryFacetResult[]>> = writable(
   Promise.resolve([]),
 );
-// Category accordion sections currently open; nested-facet expansion within a
-// category lives in NestedFacets.ts.
 export const openFacets: Writable<string[]> = writable([]);
 
 let lastAutoOpened: string | null = null;
