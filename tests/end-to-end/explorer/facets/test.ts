@@ -735,7 +735,9 @@ test.describe('Nested Facets', () => {
     await page.getByTestId('facet-nested_facet-arrow').click();
 
     // When
+    const facetsReloaded = page.waitForResponse(facetResultPath);
     await page.getByTestId('facet-nested_facet_child-label').locator('input').click();
+    await facetsReloaded;
 
     // Then
     await expect(page.getByTestId('facet-nested_facet-children')).toBeVisible();

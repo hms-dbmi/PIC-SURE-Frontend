@@ -7,6 +7,7 @@
   import { flatIndex } from '$lib/utilities/Objects';
 
   import { searchTerm, selectedFacets, nextSearchSettled } from '$lib/stores/Search';
+  import { expandedNestedFacets } from '$lib/stores/NestedFacets';
   import { isToastShowing, toaster } from '$lib/toaster';
   import { clearFilters } from '$lib/stores/Filter';
   import { clearExports } from '$lib/stores/Export';
@@ -48,6 +49,7 @@
 
   function resetSearch() {
     searchTerm.set('');
+    expandedNestedFacets.set([]);
     clearFilters();
     clearExports();
   }

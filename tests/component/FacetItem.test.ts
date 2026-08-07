@@ -16,37 +16,36 @@ vi.mock('$lib/stores/Search', async () => {
   return { default: { updateFacets, selectedFacets }, updateFacets, selectedFacets };
 });
 
-const facetCategory = {
+const facetCategory: DictionaryFacetResult = {
   name: 'test-category',
   display: 'Test Category',
   description: '',
   facets: [],
-} as DictionaryFacetResult;
+};
 
-const makeFacet = (name: string): Facet =>
-  ({
-    name,
-    display: `${name} display`,
-    description: '',
-    count: 10,
-    category: 'test-category',
-    children: [
-      {
-        name: `${name}-child-1`,
-        display: `${name} child 1`,
-        description: '',
-        count: 6,
-        category: 'test-category',
-      },
-      {
-        name: `${name}-child-2`,
-        display: `${name} child 2`,
-        description: '',
-        count: 4,
-        category: 'test-category',
-      },
-    ],
-  }) as Facet;
+const makeFacet = (name: string): Facet => ({
+  name,
+  display: `${name} display`,
+  description: '',
+  count: 10,
+  category: 'test-category',
+  children: [
+    {
+      name: `${name}-child-1`,
+      display: `${name} child 1`,
+      description: '',
+      count: 6,
+      category: 'test-category',
+    },
+    {
+      name: `${name}-child-2`,
+      display: `${name} child 2`,
+      description: '',
+      count: 4,
+      category: 'test-category',
+    },
+  ],
+});
 
 const renderFacetItem = (name = 'parent-facet') =>
   render(FacetItem, {
@@ -69,7 +68,7 @@ describe('FacetItem nested facet expansion', () => {
 
     expect(screen.getByTestId('facet-parent-facet-children')).toBeInTheDocument();
     expect(screen.getByTestId('facet-parent-facet-child-1-label')).toBeInTheDocument();
-    expect(get(expandedNestedFacets)).toContain('parent-facet');
+    expect(get(expandedNestedFacets)).toContain('test-category:parent-facet');
   });
 
   it('keeps children expanded when the component remounts, as on a facet reload', async () => {
@@ -92,11 +91,18 @@ describe('FacetItem nested facet expansion', () => {
     await view.rerender({ facet: makeFacet('other-facet') });
 
     expect(screen.queryByTestId('facet-other-facet-children')).not.toBeInTheDocument();
-    expect(get(expandedNestedFacets)).toEqual(['parent-facet']);
+    expect(get(expandedNestedFacets)).toEqual(['test-category:parent-facet']);
+  });
+
+  it('keys expansion by category, so a same-named facet in another category stays collapsed', async () => {
+    expandedNestedFacets.set(['some-other-category:parent-facet']);
+    renderFacetItem();
+
+    expect(screen.queryByTestId('facet-parent-facet-children')).not.toBeInTheDocument();
   });
 
   it('collapses children and removes the facet from expandedNestedFacets on a second click', async () => {
-    expandedNestedFacets.set(['parent-facet']);
+    expandedNestedFacets.set(['test-category:parent-facet']);
     renderFacetItem();
 
     expect(screen.getByTestId('facet-parent-facet-children')).toBeInTheDocument();
@@ -104,11 +110,11 @@ describe('FacetItem nested facet expansion', () => {
     await fireEvent.click(screen.getByTestId('facet-parent-facet-arrow'));
 
     expect(screen.queryByTestId('facet-parent-facet-children')).not.toBeInTheDocument();
-    expect(get(expandedNestedFacets)).not.toContain('parent-facet');
+    expect(get(expandedNestedFacets)).not.toContain('test-category:parent-facet');
   });
 
   it('keeps an explicitly collapsed facet collapsed across a remount', async () => {
-    expandedNestedFacets.set(['parent-facet']);
+    expandedNestedFacets.set(['test-category:parent-facet']);
     const first = renderFacetItem();
     await fireEvent.click(screen.getByTestId('facet-parent-facet-arrow'));
     first.unmount();

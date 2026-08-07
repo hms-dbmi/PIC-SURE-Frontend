@@ -14,10 +14,11 @@
 
   let { facet, facetCategory, textFilterValue }: Props = $props();
 
-  let open = $derived($expandedNestedFacets.includes(facet.name));
+  let expansionKey = $derived(`${facetCategory.name}:${facet.name}`);
+  let open = $derived($expandedNestedFacets.includes(expansionKey));
 
   function toggleOpen() {
-    toggleNestedFacet(facet.name);
+    toggleNestedFacet(expansionKey);
   }
 
   function getCurrentlySelectedChildren() {
@@ -95,7 +96,8 @@
     <button
       type="button"
       class="arrow-button"
-      aria-label="Toggle Facet {open ? 'open' : 'closed'}"
+      aria-label="{open ? 'Collapse' : 'Expand'} {facet.display} children"
+      aria-expanded={open}
       data-testId={`facet-${facet.name}-arrow`}
       onclick={toggleOpen}
     >
