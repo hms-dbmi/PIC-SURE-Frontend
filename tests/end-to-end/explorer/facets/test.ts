@@ -722,6 +722,25 @@ test.describe('Nested Facets', () => {
     await nestedFacetArrow.click();
     await expect(nestedFacetChildren).not.toBeVisible();
   });
+  test('Nested facets stay expanded after selecting a child', async ({ page }) => {
+    // Given
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: nestedFacetsResponse }),
+    );
+    await page.goto('/explorer?search=age');
+    await userIsLoggedIn(page);
+    await page.getByTestId('facet-nested_facet-arrow').click();
+
+    // When
+    await page.getByTestId('facet-nested_facet_child-label').locator('input').click();
+
+    // Then
+    await expect(page.getByTestId('facet-nested_facet-children')).toBeVisible();
+    await expect(page.getByTestId('facet-nested_facet_child_2-label')).toBeVisible();
+  });
 });
 
 test.describe('Hidden Facets', () => {
