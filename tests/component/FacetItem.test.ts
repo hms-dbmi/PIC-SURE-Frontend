@@ -5,7 +5,7 @@ import { get } from 'svelte/store';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import FacetItem from '$lib/components/explorer/FacetItem.svelte';
-import { expandedNestedFacets } from '$lib/stores/NestedFacets';
+import { expandedNestedFacets, nestedFacetKey } from '$lib/stores/NestedFacets';
 import type { Facet } from '$lib/models/Search';
 import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
 
@@ -68,7 +68,7 @@ describe('FacetItem nested facet expansion', () => {
 
     expect(screen.getByTestId('facet-parent-facet-children')).toBeInTheDocument();
     expect(screen.getByTestId('facet-parent-facet-child-1-label')).toBeInTheDocument();
-    expect(get(expandedNestedFacets)).toContain('test-category:parent-facet');
+    expect(get(expandedNestedFacets)).toContain(nestedFacetKey('test-category', 'parent-facet'));
   });
 
   it('keeps children expanded when the component remounts, as on a facet reload', async () => {
@@ -91,18 +91,18 @@ describe('FacetItem nested facet expansion', () => {
     await view.rerender({ facet: makeFacet('other-facet') });
 
     expect(screen.queryByTestId('facet-other-facet-children')).not.toBeInTheDocument();
-    expect(get(expandedNestedFacets)).toEqual(['test-category:parent-facet']);
+    expect(get(expandedNestedFacets)).toEqual([nestedFacetKey('test-category', 'parent-facet')]);
   });
 
   it('keys expansion by category, so a same-named facet in another category stays collapsed', async () => {
-    expandedNestedFacets.set(['some-other-category:parent-facet']);
+    expandedNestedFacets.set([nestedFacetKey('some-other-category', 'parent-facet')]);
     renderFacetItem();
 
     expect(screen.queryByTestId('facet-parent-facet-children')).not.toBeInTheDocument();
   });
 
   it('collapses children and removes the facet from expandedNestedFacets on a second click', async () => {
-    expandedNestedFacets.set(['test-category:parent-facet']);
+    expandedNestedFacets.set([nestedFacetKey('test-category', 'parent-facet')]);
     renderFacetItem();
 
     expect(screen.getByTestId('facet-parent-facet-children')).toBeInTheDocument();
@@ -110,11 +110,13 @@ describe('FacetItem nested facet expansion', () => {
     await fireEvent.click(screen.getByTestId('facet-parent-facet-arrow'));
 
     expect(screen.queryByTestId('facet-parent-facet-children')).not.toBeInTheDocument();
-    expect(get(expandedNestedFacets)).not.toContain('test-category:parent-facet');
+    expect(get(expandedNestedFacets)).not.toContain(
+      nestedFacetKey('test-category', 'parent-facet'),
+    );
   });
 
   it('keeps an explicitly collapsed facet collapsed across a remount', async () => {
-    expandedNestedFacets.set(['test-category:parent-facet']);
+    expandedNestedFacets.set([nestedFacetKey('test-category', 'parent-facet')]);
     const first = renderFacetItem();
     await fireEvent.click(screen.getByTestId('facet-parent-facet-arrow'));
     first.unmount();
