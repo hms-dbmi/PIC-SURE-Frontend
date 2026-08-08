@@ -116,7 +116,7 @@
   >
 </label>
 {#if open && facetsToDisplay !== undefined && facetsToDisplay?.length > 0}
-  <div class="flex flex-col ml-4" data-testId={`facet-${facet.name}-children`}>
+  <div class="flex flex-col ml-8" data-testId={`facet-${facet.name}-children`}>
     {#each facetsToDisplay as child}
       <FacetItem facet={child} {facetCategory} {textFilterValue} />
     {/each}
