@@ -15,7 +15,7 @@ export type CountValue = PatientCount | PatientCountMap;
 export interface CountProvider {
   id: string;
   path(descriptor: QueryDescriptor): string;
-  buildRequest(descriptor: QueryDescriptor, resourceUUID: string): QueryRequestInterfaceV3;
+  buildRequest(descriptor: QueryDescriptor): QueryRequestInterfaceV3;
   parse(raw: unknown): CountValue;
 }
 
@@ -26,9 +26,9 @@ function resolveCountPath(descriptor: QueryDescriptor): string {
 const patientCount: CountProvider = {
   id: 'query:patientCount',
   path: resolveCountPath,
-  buildRequest(descriptor, resourceUUID) {
+  buildRequest(descriptor) {
     const resultType = descriptor.isOpenAccess ? 'CROSS_COUNT' : 'COUNT';
-    return buildQueryRequestV3FromDescriptor(descriptor, resourceUUID, resultType);
+    return buildQueryRequestV3FromDescriptor(descriptor, resultType);
   },
   parse(raw) {
     if (raw && typeof raw === 'object' && !Array.isArray(raw)) {

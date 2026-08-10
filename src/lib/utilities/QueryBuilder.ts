@@ -34,50 +34,43 @@ const topmedConsentPath = '\\_topmed_consents\\';
 
 export function getQueryRequestV2(
   addConsents = true,
-  resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV2) => QueryV2 = (q) => q,
 ): QueryRequestInterfaceV2 {
-  return getBlankQueryRequestV2(
-    !addConsents,
-    resourceUUID,
-    expectedResultType,
-    (query: QueryV2) => {
-      [...get(genomicFilters), ...get(filters)].forEach((filter: Filter) => {
-        if (filter.filterType === 'Categorical') {
-          if (filter.displayType === 'restrict') {
-            query.addCategoryFilter(filter.id, filter.categoryValues);
-          } else {
-            query.addRequiredField(filter.id);
-          }
-        } else if (filter.filterType === 'numeric') {
-          query.addNumericFilter(filter.id, filter.min || '', filter.max || '');
-        } else if (filter.filterType === 'genomic') {
-          query.addCategoryVariantInfoFilters({
-            Gene_with_variant: filter.Gene_with_variant,
-            Variant_consequence_calculated: filter.Variant_consequence_calculated,
-            Variant_frequency_as_text: filter.Variant_frequency_as_text,
-          });
-        } else if (filter.filterType === 'snp') {
-          query.addSnpFilter(filter.snpValues);
-        } else if (filter.filterType === 'AnyRecordOf') {
-          query.addAnyRecordOfMulti(filter.concepts);
+  return getBlankQueryRequestV2(!addConsents, expectedResultType, (query: QueryV2) => {
+    [...get(genomicFilters), ...get(filters)].forEach((filter: Filter) => {
+      if (filter.filterType === 'Categorical') {
+        if (filter.displayType === 'restrict') {
+          query.addCategoryFilter(filter.id, filter.categoryValues);
+        } else {
+          query.addRequiredField(filter.id);
         }
-      });
+      } else if (filter.filterType === 'numeric') {
+        query.addNumericFilter(filter.id, filter.min || '', filter.max || '');
+      } else if (filter.filterType === 'genomic') {
+        query.addCategoryVariantInfoFilters({
+          Gene_with_variant: filter.Gene_with_variant,
+          Variant_consequence_calculated: filter.Variant_consequence_calculated,
+          Variant_frequency_as_text: filter.Variant_frequency_as_text,
+        });
+      } else if (filter.filterType === 'snp') {
+        query.addSnpFilter(filter.snpValues);
+      } else if (filter.filterType === 'AnyRecordOf') {
+        query.addAnyRecordOfMulti(filter.concepts);
+      }
+    });
 
-      (get(exports) as ExportInterface[]).forEach((exportedField) => {
-        if (exportedField.conceptPath) {
-          query.addField(exportedField.conceptPath);
-        }
-      });
-      return mutateMethod(query);
-    },
-  );
+    (get(exports) as ExportInterface[]).forEach((exportedField) => {
+      if (exportedField.conceptPath) {
+        query.addField(exportedField.conceptPath);
+      }
+    });
+    return mutateMethod(query);
+  });
 }
 
 export function getBlankQueryRequestV2(
   isOpenAccess = false,
-  resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV2) => QueryV2 = (q) => q,
 ): QueryRequestInterfaceV2 {
@@ -100,7 +93,6 @@ export function getBlankQueryRequestV2(
 
   return {
     query,
-    resourceUUID,
   };
 }
 
@@ -191,7 +183,6 @@ export function buildGenomicFiltersFromFilters(
 
 export function buildQueryRequestV3FromDescriptor(
   descriptor: import('$lib/services/counts/queryDescriptor.svelte').QueryDescriptor,
-  resourceUUID: string,
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
 ): QueryRequestInterfaceV3 {
@@ -206,7 +197,7 @@ export function buildQueryRequestV3FromDescriptor(
     : null;
   descriptor.genomicFilters.forEach((g) => query.genomicFilters.push(structuredClone(g)));
   query = mutateMethod(query);
-  return { query: serializeQueryV3(query), resourceUUID };
+  return { query: serializeQueryV3(query) };
 }
 
 export function getFilterConcepts(query: QueryV3): string[] {
@@ -237,35 +228,28 @@ export function getFilterConcepts(query: QueryV3): string[] {
 
 export function getQueryRequestV3(
   addConsents = true,
-  resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
 ): QueryRequestInterfaceV3 {
-  return getBlankQueryRequestV3(
-    !addConsents,
-    resourceUUID,
-    expectedResultType,
-    (query: QueryV3) => {
-      query.phenotypicClause = buildPhenotypicClauseFromTree(get(filterTree));
-      get(genomicFilters).forEach((filter: Filter) => {
-        if (filter.filterType === 'snp') {
-          convertSnpFilterToClause(filter).forEach((genomicFilter) => {
-            query.genomicFilters.push(genomicFilter);
-          });
-        } else if (filter.filterType === 'genomic') {
-          convertGenomicFilterToClause(filter).forEach((genomicFilter) => {
-            query.genomicFilters.push(genomicFilter);
-          });
-        }
-      });
-      return mutateMethod(query);
-    },
-  );
+  return getBlankQueryRequestV3(!addConsents, expectedResultType, (query: QueryV3) => {
+    query.phenotypicClause = buildPhenotypicClauseFromTree(get(filterTree));
+    get(genomicFilters).forEach((filter: Filter) => {
+      if (filter.filterType === 'snp') {
+        convertSnpFilterToClause(filter).forEach((genomicFilter) => {
+          query.genomicFilters.push(genomicFilter);
+        });
+      } else if (filter.filterType === 'genomic') {
+        convertGenomicFilterToClause(filter).forEach((genomicFilter) => {
+          query.genomicFilters.push(genomicFilter);
+        });
+      }
+    });
+    return mutateMethod(query);
+  });
 }
 
 export function getBlankQueryRequestV3(
   isOpenAccess = false,
-  resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
 ): QueryRequestInterfaceV3 {
@@ -280,7 +264,6 @@ export function getBlankQueryRequestV3(
 
   return {
     query: serializeQueryV3(query),
-    resourceUUID,
   };
 }
 
