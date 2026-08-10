@@ -3,6 +3,7 @@
   import { fade, scale, slide } from 'svelte/transition';
 
   import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
 
   import { Option } from '$lib/models/GenomeFilter';
   import {
@@ -32,10 +33,10 @@
     log(createLog('ACTION', 'filter.edit_click', { variable: filter.variableName }));
     if (filter.filterType === 'genomic') {
       populateFromGeneFilter(filter);
-      goto('/explorer/genome-filter?edit=' + Option.Genomic);
+      goto(resolve(`/explorer/genome-filter?edit=${Option.Genomic}`));
     } else if (filter.filterType === 'snp') {
       populateFromSNPFilter(filter);
-      goto('/explorer/genome-filter?edit=' + Option.SNP);
+      goto(resolve(`/explorer/genome-filter?edit=${Option.SNP}`));
     } else {
       $activeFilter = filter;
       $activeSearch = filter.searchResult;

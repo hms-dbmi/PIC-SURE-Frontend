@@ -15,6 +15,7 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 vi.mock('$app/environment', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
 vi.mock('$lib/api', () => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), del: vi.fn() }));
 vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn(), getSessionId: () => 'test' }));
 

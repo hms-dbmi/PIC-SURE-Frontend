@@ -31,7 +31,6 @@
   let currentlyLoadingSelected: boolean = $state(false);
   let unselectedOptionsContainer: HTMLElement = $state() as HTMLElement;
   let selectedOptionsContainer: HTMLElement = $state() as HTMLElement;
-  let allSelectedOptionsLoaded: boolean = $state(false);
 
   function shouldLoadMore(element: HTMLElement, allLoaded: boolean) {
     const scrollTop = element.scrollTop;
@@ -116,11 +115,9 @@
     infiniteScroll ? allOptionsLoaded : unselectedOptions.length >= totalAvailableOptions,
   );
   let displayedSelectedOptions = $derived(selectedOptions.slice(0, selectedOptionEndLocation));
-  $effect(() => {
-    allSelectedOptionsLoaded = infiniteScroll
-      ? allSelectedOptionsLoaded
-      : displayedSelectedOptions.length >= selectedOptions.length;
-  });
+  let allSelectedOptionsLoaded = $derived(
+    displayedSelectedOptions.length >= selectedOptions.length,
+  );
 </script>
 
 <div data-testid="optional-selection-list" class="flex w-full">

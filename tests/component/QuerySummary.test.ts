@@ -12,7 +12,9 @@ import type { FilterInterface, FilterGroupInterface } from '$lib/models/Filter.s
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('$lib/configuration', () => ({ features: { restoreV2queries: false } }));
+vi.mock('$lib/configuration.svelte', () => ({
+  config: { features: { restoreV2queries: false } },
+}));
 
 vi.mock('$lib/stores/Filter', async () => {
   const { writable } = await import('svelte/store');

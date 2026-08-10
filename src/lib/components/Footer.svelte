@@ -1,40 +1,40 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { user, isUserLoggedIn } from '$lib/stores/User';
   import Terms from '$lib/components/Terms.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import { log, createLog } from '$lib/logger';
 
-  let { showSitemap = branding?.footer?.showSitemap || false }: { showSitemap?: boolean } =
-    $props();
+  let { showSitemap: showSitemapProp }: { showSitemap?: boolean } = $props();
+  let showSitemap = $derived(showSitemapProp ?? (config.branding.footer.showSitemap || false));
 
   let hideSitemap = $derived(
     !showSitemap ||
-      branding?.footer?.excludeSitemapOn?.find((hide) => page.url.pathname.includes(hide)),
+      config.branding.footer.excludeSitemapOn.find((hide) => page.url.pathname.includes(hide)),
   );
 
   let sitemap = $derived(
-    branding?.sitemap?.map((section) => ({
+    config.branding.sitemap.map((section) => ({
       ...section,
       show:
         (!section.privilege ||
           ($user.privileges && $user.privileges.includes(section.privilege))) &&
-        (!section.feature || features[section.feature as keyof typeof features]),
+        (!section.feature || config.features[section.feature as keyof typeof config.features]),
     })),
   );
 
   let modalOpen: boolean = $state(
-    features.enforceTermsOfService && isUserLoggedIn() && !$user.acceptedTOS,
+    config.features.enforceTermsOfService && isUserLoggedIn() && !$user.acceptedTOS,
   );
   let modalClosable: boolean = $derived(
-    !features.enforceTermsOfService ||
+    !config.features.enforceTermsOfService ||
       !isUserLoggedIn() ||
       (isUserLoggedIn() && !!$user?.acceptedTOS),
   );
 </script>
 
-{#if !hideSitemap && branding?.sitemap?.length > 0}
+{#if !hideSitemap && config.branding.sitemap.length > 0}
   <div id="sitemap-footer">
     <div class="flex flex-wrap place-content-center">
       {#each sitemap as section}
@@ -42,10 +42,11 @@
           <ul class="basis-1/8">
             <li class="font-bold text-center">{section.category}</li>
             {#each section.links as link}
-              {#if !link.feature || features[link.feature]}
+              {#if !link.feature || config.features[link.feature]}
                 <li class="text-center">
                   <a
                     target={link.newTab ? '_blank' : '_self'}
+                    rel="external"
                     href={link.url}
                     class="hover:underline"
                     onclick={() =>
@@ -68,7 +69,7 @@
 {/if}
 <footer id="main-footer" class="flex relativem mt-4">
   <ul>
-    {#if features.termsOfService}
+    {#if config.features.termsOfService}
       <li>
         <span
           role="button"
@@ -92,11 +93,12 @@
         </span>
       </li>
     {/if}
-    {#each branding?.footer?.links as link}
+    {#each config.branding.footer.links as link}
       <li>
         <a
           class="hover:underline text-[0.74rem]"
           target={link.newTab ? '_blank' : '_self'}
+          rel="external"
           href={link.url}
           onclick={() =>
             log(createLog('NAVIGATION', 'footer.link_click', { title: link.title, url: link.url }))}

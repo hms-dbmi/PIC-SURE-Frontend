@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { derived, readable, type Readable } from 'svelte/store';
 
   import { goto } from '$app/navigation';
 
   import type { Indexable } from '$lib/types';
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/StaticTable.svelte';
@@ -76,12 +77,12 @@
 
   const rowClickHandler = (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(`/admin/users/${uuid}/edit`);
+    goto(resolve(`/admin/users/${uuid}/edit`));
   };
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Manage Users</title>
+  <title>{config.branding.applicationName} | Manage Users</title>
 </svelte:head>
 <Content title="Manage Users">
   {#await load()}<Loading />{:then}
@@ -90,7 +91,7 @@
         <a
           data-testid="add-user-btn"
           class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          href="/admin/users/new"
+          href={resolve('/admin/users/new')}
         >
           + Add User
         </a>

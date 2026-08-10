@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
   import type { Indexable } from '$lib/types';
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import {
     active,
     archived,
@@ -32,12 +33,12 @@
 
   const rowClickHandler = (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(`/dataset/${uuid}`);
+    goto(resolve(`/dataset/${uuid}`));
   };
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Datasets</title>
+  <title>{config.branding.applicationName} | Datasets</title>
 </svelte:head>
 
 <Content title="Manage Datasets">

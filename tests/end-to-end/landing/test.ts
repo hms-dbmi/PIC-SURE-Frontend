@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess, mockApiFail } from '../custom-context';
+import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../custom-context';
 import {
   searchResults as mockSearchResults,
   searchResultPath,
@@ -8,11 +8,10 @@ import {
   searchResults,
 } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
-import type { Branding } from '../../../src/lib/configuration';
-import * as config from '../../../src/lib/assets/configuration.json' with { type: 'json' };
-//TypeScript is confused by the JSON import so I am fxing it here
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-const branding: Branding = JSON.parse(JSON.stringify((config as any).default));
+import type { Branding } from '../../../src/lib/models/Configuration';
+import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
+const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
+
 const loggedInActions = branding?.landing?.actions?.filter((action) => action.showIfLoggedIn);
 const loggedOutActions = branding?.landing?.actions?.filter(
   (action) => !action.showIfLoggedIn || action.isOpen,
@@ -28,6 +27,7 @@ interface MockLandingStat {
 
 test.describe('Landing page', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+  test.beforeEach(({ page }) => mockApiConfig(page));
 
   test.describe('Search', () => {
     test('Has expected search to go to explorer', async ({ page }) => {
@@ -56,6 +56,12 @@ test.describe('Landing page', () => {
     });
   });
   test.describe('Stats', () => {
+    test.beforeEach(async ({ page }) => {
+      await mockApiConfig(page, {
+        features: [{ name: 'OPEN', value: 'true' }],
+      });
+    });
+
     const stats: MockLandingStat[] = [
       { key: 'query:blank', route: '*/**/picsure/v3/query/sync', api: '88', value: '88' },
       {
@@ -207,6 +213,20 @@ test.describe('Landing page', () => {
 
 test.describe('Logged Out Landing', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+  test.beforeEach(
+    async ({ page }) =>
+      // OPEN is required for unauthenticated users to reach any page at all; the
+      // root layout redirects to /login when it's off and there's no token.
+      // OPEN_EXPLORER defaults to true, and OPEN_EXPLORER + login.open together make
+      // useOpenAccess() route stat requests to the V3 sync endpoint instead of the
+      // plain open one these tests mock, so it must be explicitly disabled here.
+      await mockApiConfig(page, {
+        features: [
+          { name: 'OPEN', value: 'true' },
+          { name: 'OPEN_EXPLORER', value: 'false' },
+        ],
+      }),
+  );
 
   test.describe('Stats (Logged Out)', () => {
     const stats: MockLandingStat[] = [

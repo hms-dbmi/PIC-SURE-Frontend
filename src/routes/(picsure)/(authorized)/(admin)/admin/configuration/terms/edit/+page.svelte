@@ -1,9 +1,10 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
   import * as api from '$lib/api';
   import { Psama } from '$lib/paths';
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { toaster } from '$lib/toaster';
   import { isTopAdmin } from '$lib/stores/User';
   import { sanitizeHTML } from '$lib/utilities/HTML';
@@ -29,7 +30,7 @@
       .post(Psama.TOS + '/update', terms, { 'Content-Type': 'text/html' })
       .then(() => {
         toaster.success({ description: 'Terms have been successfully published.' });
-        goto('/admin/configuration');
+        goto(resolve('/admin/configuration'));
       })
       .catch(() =>
         toaster.error({
@@ -41,7 +42,7 @@
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Edit Terms of Service</title>
+  <title>{config.branding.applicationName} | Edit Terms of Service</title>
 </svelte:head>
 
 <Content

@@ -1,7 +1,8 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto, beforeNavigate } from '$app/navigation';
   import { onMount, onDestroy } from 'svelte';
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import Content from '$lib/components/Content.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
@@ -44,7 +45,7 @@
   function handleDiscard() {
     showUnsavedModal = false;
     bypassGuard = true;
-    goto(backUrl);
+    goto(resolve(backUrl as '/'));
   }
 
   function handleModalApply() {
@@ -62,7 +63,7 @@
 <svelte:window onbeforeunload={handleBeforeUnload} />
 
 <svelte:head>
-  <title>{branding.applicationName} | Advanced Query Builder</title>
+  <title>{config.branding.applicationName} | Advanced Query Builder</title>
 </svelte:head>
 
 <Modal bind:open={showUnsavedModal} title="Unsaved Changes" closeable={true} onclose={handleCancel}>

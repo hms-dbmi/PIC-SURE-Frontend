@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import type { Snippet } from 'svelte';
   import { beforeNavigate, goto } from '$app/navigation';
   import { clearSession, isTokenExpired } from '$lib/stores/User';
@@ -15,7 +16,7 @@
       cancel();
       log(createLog('AUTH', 'auth.redirect_token_expired', { targetUrl: to?.url.pathname }));
       clearSession();
-      goto(`/login?redirectTo=${encodeURIComponent(to?.url.pathname || '/')}`);
+      goto(resolve(`/login?redirectTo=${encodeURIComponent(to?.url.pathname || '/')}`));
     }
   });
 </script>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   interface Props {
     href?: string;
     angle?: 'right' | 'left';
@@ -31,18 +32,33 @@
   const clean_testid = $derived(testid || name.replaceAll(' ', '-').toLowerCase() + '-btn');
 </script>
 
+{#snippet label()}
+  {#if angle === 'left'}<i class="fa-solid fa-arrow-left mr-3"></i>{/if}
+  {@render children?.()}
+  {#if angle === 'right'}<i class="fa-solid fa-arrow-right ml-3"></i>{/if}
+{/snippet}
+
 {#if href}
-  <a
-    data-testid={clean_testid}
-    aria-disabled={disabled}
-    class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {className}"
-    rel={disabled ? 'nofollow' : ''}
-    {href}
-  >
-    {#if angle === 'left'}<i class="fa-solid fa-arrow-left mr-3"></i>{/if}
-    {@render children?.()}
-    {#if angle === 'right'}<i class="fa-solid fa-arrow-right ml-3"></i>{/if}
-  </a>
+  {#if href.startsWith('/')}
+    <a
+      data-testid={clean_testid}
+      aria-disabled={disabled}
+      class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {className}"
+      href={resolve(href as '/')}
+    >
+      {@render label()}
+    </a>
+  {:else}
+    <a
+      data-testid={clean_testid}
+      aria-disabled={disabled}
+      class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {className}"
+      rel="external"
+      {href}
+    >
+      {@render label()}
+    </a>
+  {/if}
 {:else}
   <button
     data-testid={clean_testid}

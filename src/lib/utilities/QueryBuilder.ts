@@ -8,7 +8,7 @@ import {
   type PhenotypicClause,
   type QueryInterfaceV3,
 } from '$lib/models/query/Query';
-import { features } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 import type { QueryRequestInterfaceV2 } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/User';
@@ -97,7 +97,7 @@ export function getBlankQueryRequestV2(
   // The v2 query template used to arrive pre-seeded with exactly these three
   // category filters — carrying them was the only reason it was fetched — so
   // seeding them from the consents map reproduces the old body.
-  if (features.requireConsents && !isOpenAccess) {
+  if (config.features.requireConsents && !isOpenAccess) {
     const consents = get(user)?.consents;
     consentPaths.forEach((conceptPath) => {
       const values = consentValues(consents, conceptPath);
@@ -109,7 +109,7 @@ export function getBlankQueryRequestV2(
 
   query = mutateMethod(query);
 
-  if (features.requireConsents && !isOpenAccess) {
+  if (config.features.requireConsents && !isOpenAccess) {
     query = updateConsentFilters(query);
   }
 
@@ -174,7 +174,9 @@ function serializeQueryV3(query: QueryV3): QueryInterfaceV3 {
   );
 }
 
-function getClausesFromTree(tree: LogicTree<FilterInterface>): PhenotypicClause | null {
+export function buildPhenotypicClauseFromTree(
+  tree: LogicTree<FilterInterface>,
+): PhenotypicClause | null {
   if (tree.root.children.length === 0) return null;
 
   const groupClause = (operator: OperatorType): PhenotypicSubqueryInterface => ({
@@ -192,6 +194,40 @@ function getClausesFromTree(tree: LogicTree<FilterInterface>): PhenotypicClause 
     return convertPhenotypicFilterToClause(node as Filter);
   };
   return mapNode(tree.root);
+}
+
+export function buildGenomicFiltersFromFilters(
+  genomicFilters: Filter[],
+): GenomicFilterInterfacev3[] {
+  const out: GenomicFilterInterfacev3[] = [];
+  genomicFilters.forEach((filter: Filter) => {
+    if (filter.filterType === 'snp') {
+      convertSnpFilterToClause(filter).forEach((g) => out.push(g));
+    } else if (filter.filterType === 'genomic') {
+      convertGenomicFilterToClause(filter).forEach((g) => out.push(g));
+    }
+  });
+  return out;
+}
+
+export function buildQueryRequestV3FromDescriptor(
+  descriptor: import('$lib/services/counts/queryDescriptor.svelte').QueryDescriptor,
+  expectedResultType: ExpectedResultType = 'COUNT',
+  mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
+): QueryInterfaceV3 {
+  let query: QueryV3 = new QueryV3();
+  query.expectedResultType = expectedResultType;
+  // Defensive clone: QueryV3.addClause reassigns `phenotypicClauses` on the
+  // existing clause object, so an aliased descriptor.phenotypicClause would be
+  // mutated by mutateMethod. The descriptor must remain immutable so stableHash
+  // stays stable for cache lookups.
+  query.phenotypicClause = descriptor.phenotypicClause
+    ? structuredClone(descriptor.phenotypicClause)
+    : null;
+  descriptor.genomicFilters.forEach((g) => query.genomicFilters.push(structuredClone(g)));
+  query = mutateMethod(query);
+  // The bare query IS the body — no { query, resourceUUID } envelope.
+  return serializeQueryV3(query);
 }
 
 export function getFilterConcepts(query: QueryV3): string[] {
@@ -235,7 +271,7 @@ export function getQueryRequestV3(
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
 ): QueryInterfaceV3 {
   return getBlankQueryRequestV3(!addConsents, expectedResultType, (query: QueryV3) => {
-    query.phenotypicClause = getClausesFromTree(get(filterTree));
+    query.phenotypicClause = buildPhenotypicClauseFromTree(get(filterTree));
     get(genomicFilters).forEach((filter: Filter) => {
       if (filter.filterType === 'snp') {
         convertSnpFilterToClause(filter).forEach((genomicFilter) => {
@@ -262,7 +298,7 @@ export function getBlankQueryRequestV3(
 
   query = mutateMethod(query);
 
-  if (features.requireConsents && !isOpenAccess) {
+  if (config.features.requireConsents && !isOpenAccess) {
     addAuthorizationFiltersV3(query);
   }
 
@@ -287,7 +323,7 @@ function addAuthorizationFiltersV3(query: QueryV3): void {
     }
   });
 
-  if (features.requireConsents) {
+  if (config.features.requireConsents) {
     const hasHarmonizedInSelect = selectIncludesHarmonizedPathV3(query.select || []);
     const hasHarmonizedInPhenotype = phenotypicClauseIncludesHarmonizedPath(query.phenotypicClause);
     const hasAnyHarmonized = hasHarmonizedInSelect || hasHarmonizedInPhenotype;

@@ -17,7 +17,10 @@ const mockFeatures = vi.hoisted(() => ({
 vi.mock('$app/environment', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$lib/configuration', () => ({ features: mockFeatures, branding: {}, settings: {} }));
+vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
+vi.mock('$lib/configuration.svelte', () => ({
+  config: { features: mockFeatures, branding: {}, settings: {} },
+}));
 vi.mock('$lib/api', () => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), del: vi.fn() }));
 vi.mock('$lib/toaster', () => ({ toaster: { add: vi.fn(), error: vi.fn() } }));
 
@@ -270,7 +273,7 @@ describe('UserConsentsResponse', () => {
 describe('HPDS routes are all /v3', () => {
   it('routes open-access queries through /hpds/open/v3', () => {
     // The non-versioned aliases were deleted server-side, open access included.
-    expect(Picsure.QueryOpenSync).toBe('picsure/hpds/open/v3/query/sync');
+    expect(Picsure.QueryOpenV3Sync).toBe('picsure/hpds/open/v3/query/sync');
   });
 
   it('routes genomic value search through /hpds/auth/v3', () => {

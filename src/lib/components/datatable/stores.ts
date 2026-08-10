@@ -21,7 +21,7 @@ function restoreSettings() {
     try {
       return JSON.parse(localStorage.getItem(SETTING_NAME) || '{}');
     } catch (e) {
-      console.error('restoring user datatable settings failed');
+      console.error('restoring user datatable settings failed: ', e);
       localStorage.setItem(SETTING_NAME, '{}');
     }
   }

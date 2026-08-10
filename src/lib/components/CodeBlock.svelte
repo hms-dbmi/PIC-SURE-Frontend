@@ -16,6 +16,7 @@
 </script>
 
 <script lang="ts">
+  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
   import type { CodeBlockProps } from '$lib/models/CodeBlock';
 
   let { code = '', lang = 'console', theme = 'dark-plus' }: CodeBlockProps = $props();
@@ -24,7 +25,13 @@
   const generatedHtml = shiki.codeToHtml(code, { lang, theme });
 </script>
 
-<div class="code-block">
+<div class="code-block relative">
+  <CopyButton
+    useIcon
+    itemToCopy={code}
+    data-testid="code-block-copy"
+    class="absolute top-2 right-2 text-surface-300"
+  />
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html generatedHtml}
 </div>

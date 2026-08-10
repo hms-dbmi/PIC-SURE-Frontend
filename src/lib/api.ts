@@ -77,7 +77,7 @@ async function handleResponse(res: Response) {
     const text = await res.text();
     try {
       return JSON.parse(text);
-    } catch (e) {
+    } catch {
       return text; //TODO: Change this
     }
   } else if (res.status === 401) {

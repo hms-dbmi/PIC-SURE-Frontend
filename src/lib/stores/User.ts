@@ -1,10 +1,11 @@
+import { resolve } from '$app/paths';
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/environment';
 import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
 import type { User } from '$lib/models/User';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
-import { routes, features } from '$lib/configuration';
+import { routes, config } from '$lib/configuration.svelte';
 import { Psama } from '$lib/paths';
 import { goto } from '$app/navigation';
 import type { ConsentsMap, UserConsentsResponse } from '$lib/models/UserConsents';
@@ -115,7 +116,7 @@ export const userRoutes: Readable<Route[]> = derived([user], ([$user]) => {
     // Public routes for non-logged in user
     const openRoutes = featureRoutes(routes.filter((route) => !route.privilege));
     console.log('openRoutes', openRoutes);
-    if (features.login.open && !isUserLoggedIn() && !features.discover) {
+    if (config.features.login.open && !isUserLoggedIn() && !config.features.discover) {
       openRoutes.unshift({
         path: '/explorer',
         text: 'Explore',
@@ -126,7 +127,7 @@ export const userRoutes: Readable<Route[]> = derived([user], ([$user]) => {
 
   function featureRoutes(routeList: Route[]): Route[] {
     return routeList
-      .filter((route) => (route.feature ? !!features[route.feature] : true))
+      .filter((route) => (route.feature ? config.features[route.feature] : true))
       .map((route: Route) =>
         route.children ? { ...route, children: featureRoutes(route.children) } : route,
       );
@@ -256,9 +257,9 @@ function handleLogout(redirect: boolean) {
   user.set({});
   log(createLog('AUTH', 'logout.success'));
   if (redirect) {
-    goto(`/login?redirectTo=${encodeURIComponent(page.url.pathname)}`);
+    goto(resolve(`/login?redirectTo=${encodeURIComponent(page.url.pathname)}`));
   } else {
-    goto('/login');
+    goto(resolve('/login'));
   }
 }
 
@@ -279,7 +280,7 @@ export function getTokenExpiration(token: string) {
   try {
     return JSON.parse(atob(token.split('.')[1])).exp * 1000;
   } catch (error) {
-    throw new Error('Error parsing token: ' + error);
+    throw new Error('Error parsing token: ' + error, { cause: error });
   }
 }
 

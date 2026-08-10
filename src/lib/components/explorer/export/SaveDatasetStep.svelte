@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import Summary from '$lib/components/explorer/export/Summary.svelte';
   import Loading from '$lib/components/Loading.svelte';
@@ -18,7 +19,7 @@
     getQueryRequest,
   } from '$lib/ExportStepperManager.svelte';
   import { log, createLog } from '$lib/logger';
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   const PROMISE_WAIT_INTERVAL = 7;
   let processingMessage: string = $state('');
@@ -59,7 +60,7 @@
         // Make a copy so we don't add exports to selected for the loaded query
         const request = structuredClone($state.snapshot(getQueryRequest()));
         request.select = [
-          ...(features.explorer.exportSystemFields as string[]),
+          ...config.settings.exportSystemFields,
           ...request.select,
           ...$exports.map(({ conceptPath }) => conceptPath),
         ];
@@ -104,8 +105,8 @@
     <div class="w-full h-full m-2 card p-4">
       <header class="card-header">
         Save the information in your final data export by clicking the Save Dataset ID button.
-        Navigate to the <a class="anchor" href="/dataset">Manage Datasets page</a> to view or manage your
-        Dataset IDs.
+        Navigate to the <a class="anchor" href={resolve('/dataset')}>Manage Datasets page</a> to view
+        or manage your Dataset IDs.
       </header>
       <hr />
       <div class="card-body p-4 flex flex-col justify-center items-center">

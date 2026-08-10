@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { afterNavigate } from '$app/navigation';
   import { page } from '$app/state';
-  import { branding, settings } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { log, createLog } from '$lib/logger';
 
   type Acceptance = 'granted' | 'denied';
@@ -25,12 +25,13 @@
   };
 
   const tagManagerSrc = 'https://www.googletagmanager.com/gtag/js?id=';
-  const googleTag = settings.google.tagManager;
-  const googleAnalyticsID = settings.google.analytics;
-  const enablePrompt =
+  const googleTag = $derived(config.settings.google.tagManager);
+  const googleAnalyticsID = $derived(config.settings.google.analytics);
+  const enablePrompt = $derived(
     (googleTag || googleAnalyticsID) &&
-    branding?.privacyPolicy?.url &&
-    branding?.privacyPolicy?.title;
+      !!config.branding.privacyPolicy.url &&
+      !!config.branding.privacyPolicy.title,
+  );
 
   let consent: Consent = $state(defaultConsent);
   let consentPrompt: boolean = $state(false);
@@ -44,17 +45,22 @@
     head.insertBefore(script, head.firstChild);
   }
 
-  // gtag.js recognizes a command ONLY when the raw `arguments` object is pushed
-  // onto dataLayer. Pushing a plain array (e.g. the `_args` rest param) is
-  // silently ignored and disables ALL tracking. `_args` exists only to type the
-  // call sites below
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function gtag(..._args: any[]) {
+  type GtagCommand =
+    | ['js', Date]
+    | ['config', string, Record<string, unknown>]
+    | ['event', string, Record<string, unknown>]
+    | ['consent', 'default' | 'update', Consent];
+
+  // The type annotation types every call site below, while the implementation
+  // declares no parameters: gtag.js recognizes a command ONLY when the raw
+  // `arguments` object is pushed onto dataLayer. Pushing a plain array is
+  // silently ignored and disables ALL tracking.
+  const gtag: (...args: GtagCommand) => void = function () {
     if (typeof window === 'undefined' || typeof document === 'undefined') return;
     if (!window.dataLayer) window.dataLayer = [];
     // eslint-disable-next-line prefer-rest-params
     window.dataLayer.push(arguments);
-  }
+  };
 
   function initialize() {
     // Nothing to load if no tracking IDs are configured.
@@ -155,9 +161,10 @@
           <p>
             We use cookies to provide you with the best possible experience and to help us make the
             site more useful to visitors. To learn more, please visit our <a
-              href={branding?.privacyPolicy?.url}
+              href={config.branding.privacyPolicy.url}
+              rel="external"
               target="_blank"
-              class="anchor">{branding?.privacyPolicy?.title}</a
+              class="anchor">{config.branding.privacyPolicy.title}</a
             >.
           </p>
         </div>

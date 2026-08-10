@@ -1,11 +1,12 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import ExportStepper from '$lib/components/explorer/export/ExportStepper.svelte';
   import { allFilters } from '$lib/stores/Filter';
   import { exports } from '$lib/stores/Export';
   import { stepperState } from '$lib/stores/Stepper';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
   import Content from '$lib/components/Content.svelte';
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { isUserLoggedIn } from '$lib/stores/User';
   import { goto } from '$app/navigation';
 
@@ -29,13 +30,13 @@
       type: filter.searchResult?.type,
     };
   });
-  const systemFieldRows: ExportRowInterface[] = (
-    features.explorer.exportSystemFields as string[]
-  ).map((conceptPath: string) => ({
-    selected: true,
-    variableId: conceptPath,
-    name: conceptPath.replace(/^\\/, '').replace(/\\$/, ''),
-  }));
+  const systemFieldRows: ExportRowInterface[] = $derived(
+    config.settings.exportSystemFields.map((conceptPath: string) => ({
+      selected: true,
+      variableId: conceptPath,
+      name: conceptPath.replace(/^\\/, '').replace(/\\$/, ''),
+    })),
+  );
   const patientIdRow: ExportRowInterface = {
     selected: true,
     variableId: '\\_Patient ID\\',
@@ -61,7 +62,7 @@
         <button
           class="btn preset-filled-primary-500 m-4"
           onclick={() => {
-            goto('/login');
+            goto(resolve('/login'));
           }}>Go to Login</button
         >
       </div>
@@ -77,7 +78,7 @@
         <button
           class="btn preset-filled-primary-500 m-4"
           onclick={() => {
-            goto('/explorer?startTour=true');
+            goto(resolve('/explorer?startTour=true'));
           }}>Learn How</button
         >
       </div>

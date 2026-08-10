@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { Modal } from '@skeletonlabs/skeleton-svelte';
 
   import { goto } from '$app/navigation';
@@ -58,7 +59,7 @@
     const back = warning.back;
     filterWarning.set(undefined);
     open = false;
-    goto(back, { keepFocus: false });
+    goto(resolve(back as '/'), { keepFocus: false });
   }
 
   function reset() {
@@ -67,7 +68,7 @@
     panelOpen.set(false);
     filterWarning.set(undefined);
     open = false;
-    goto(path, { keepFocus: false });
+    goto(resolve(path as '/'), { keepFocus: false });
   }
 </script>
 

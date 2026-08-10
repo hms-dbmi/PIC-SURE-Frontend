@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { branding } from '$lib/configuration';
+  import { resolve } from '$app/paths';
+  import { config } from '$lib/configuration.svelte';
   import { quintOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
 </script>
@@ -13,13 +14,14 @@
   <p class="m-1">If the problem persists contact an administrator.</p>
 
   <div class="flex flex-col justify-between mt-5">
-    <a class="btn preset-filled-primary-500 m-1" href="/login"
+    <a class="btn preset-filled-primary-500 m-1" href={resolve('/login')}
       >Back to Login <i class="fa-solid fa-arrow-right ml-3"></i></a
     >
     <a
       class="btn preset-tonal-primary border border-primary-500 m-1"
       target="_blank"
-      href={branding.login.contactLink}>Contact Administrator</a
+      href={config.branding.login.contactLink}
+      rel="external">Contact Administrator</a
     >
   </div>
 </section>

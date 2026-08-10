@@ -289,11 +289,13 @@
       const group = getGroupNodeByContainerId(containerId);
       if (!group) continue;
 
-      const nodeMap = new Map(group.children.map((child) => [child.uuid, child]));
+      const nodeById: Record<string, FilterInterface> = Object.fromEntries(
+        group.children.map((child) => [child.uuid, child]),
+      );
 
-      const needsToMoveHere = orderedIds.includes(activeUuid) && !nodeMap.has(activeUuid);
+      const needsToMoveHere = orderedIds.includes(activeUuid) && !nodeById[activeUuid];
       if (needsToMoveHere) {
-        nodeMap.set(activeUuid, activeNode);
+        nodeById[activeUuid] = activeNode;
 
         if (!removedFromOldParent && oldParent && oldParent !== group) {
           const oldIndex = oldParent.children.findIndex((child) => child.uuid === activeUuid);
@@ -308,7 +310,7 @@
       }
 
       const reorderedChildren = orderedIds
-        .map((uuid) => nodeMap.get(uuid))
+        .map((uuid) => nodeById[uuid])
         .filter((node): node is FilterInterface => node !== undefined)
         .map((node) => {
           node.parent = group;
@@ -493,7 +495,7 @@
     const isDraggingGroup = activeNode && isFilterGroup(activeNode);
 
     const baseOrder = buildSortableOrder();
-    let nextOrder = baseOrder;
+    let nextOrder: Record<string, string[]>;
 
     if (isDropZone) {
       const targetGroupId = getDropZoneGroupId(target, targetId);

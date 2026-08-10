@@ -18,7 +18,7 @@ export function parseFieldsFromJSON(json: string) {
     const requiredFields: RequiredField[] = JSON.parse(json);
     return requiredFields;
   } catch (e) {
-    console.error('Error parsing JSON required fields object.');
+    console.error('Error parsing JSON required fields object: ', e);
     return [];
   }
 }

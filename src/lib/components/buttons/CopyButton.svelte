@@ -1,6 +1,5 @@
 <script lang="ts">
   import Popover from '$lib/components/Popover.svelte';
-  import { debounce } from '$lib/utilities/Forms';
 
   interface Props {
     itemToCopy: string;
@@ -26,22 +25,21 @@
     oncopy = () => {},
   }: Props = $props();
 
-  // svelte-ignore state_referenced_locally
-  let activeIcon: string = $state(icon);
-  // svelte-ignore state_referenced_locally
-  let activeButtonText: string = $state(text);
+  let copied = $state(false);
+  let resetTimer: ReturnType<typeof setTimeout>;
 
-  function updateButton() {
-    if (useIcon) {
-      const iconText = icon;
-      debounce(() => (activeIcon = iconText), 4500)();
-      activeIcon = altIcon;
-    } else {
-      const btnText = text;
-      debounce(() => (activeButtonText = btnText), 4500)();
-      activeButtonText = altText;
+  const activeIcon = $derived(copied ? altIcon : icon);
+  const activeButtonText = $derived(copied ? altText : text);
+
+  async function updateButton() {
+    try {
+      await navigator.clipboard.writeText(itemToCopy);
+    } catch {
+      return;
     }
-    navigator.clipboard.writeText(itemToCopy);
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(() => (copied = false), 4500);
+    copied = true;
     oncopy();
   }
 </script>

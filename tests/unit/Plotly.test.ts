@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('$lib/configuration', () => ({
-  settings: { distributionExplorer: { graphColors: ['#111111', '#222222'] } },
+vi.mock('$lib/configuration.svelte', () => ({
+  config: { settings: { distributionExplorer: { graphColors: ['#111111', '#222222'] } } },
 }));
 
 import {

@@ -81,10 +81,6 @@ export interface ResultsConfig {
   cohortDescription: string;
 }
 
-export interface DatasetRequestPageConfig {
-  searchIntro: string;
-}
-
 export interface LoginConfig {
   description: string;
   showSiteName: boolean;
@@ -125,25 +121,6 @@ export interface AnalysisConfig {
       setup: string;
     };
   };
-  analysis: {
-    platform: string;
-    introduction: string;
-    access: string;
-    examples: string;
-  };
-}
-
-export interface Step {
-  label: string;
-  icon: string;
-  description?: string;
-  path?: string;
-}
-
-export interface CollaborateConfig {
-  steps: Step[];
-  introduction: string;
-  findCollaborators: string;
 }
 
 export interface CodeBlockConfig extends Indexable {

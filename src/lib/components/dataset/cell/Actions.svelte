@@ -20,7 +20,7 @@
       toggleButton.disabled = true;
       toggleArchived(data.cell);
       toggleButton.disabled = false;
-    } catch (error) {
+    } catch {
       toaster.error({ title: 'An error occured when updating dataset.' });
     }
   }

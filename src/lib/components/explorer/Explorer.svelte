@@ -1,10 +1,11 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import type { Column } from '$lib/components/datatable/types';
   import {
     searchTerm,
@@ -16,6 +17,7 @@
     resetSearch,
     loading as isLoading,
   } from '$lib/stores/Search';
+  import type { TourDataType } from '$lib/models/Tour';
 
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
   import SearchDatatable from '$lib/components/datatable/RemoteTable.svelte';
@@ -25,22 +27,19 @@
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
   import { log, createLog } from '$lib/logger';
 
-  interface Props {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    tourConfig: any;
-  }
-
-  let { tourConfig }: Props = $props();
+  let { tourConfig }: { tourConfig: TourDataType } = $props();
 
   let searchInput = $state(page.url.searchParams.get('search') || $searchTerm || '');
   const tableName = 'ExplorerTable';
-  const tableColumns = branding.explorePage.columns || [];
-  const columns: Column[] = [
+  const tableColumns = $derived(config.branding.explorePage.columns || []);
+  const columns: Column[] = $derived([
     ...tableColumns,
     { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
-  ];
+  ]);
   const cellOverides = { id: Actions };
-  const genomicFeaturesEnabled = features.enableGENEQuery || features.enableSNPQuery;
+  const genomicFeaturesEnabled = $derived(
+    config.features.enableGENEQuery || config.features.enableSNPQuery,
+  );
   let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
   let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
   let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
@@ -49,14 +48,21 @@
     if ($error) error.set('');
     searchTerm.set(searchInput);
 
-    goto(searchInput ? `${path}?search=${searchInput}` : `${path}`, { replaceState: true });
+    goto(
+      resolve(
+        (searchInput ? `${path}?search=${encodeURIComponent(searchInput)}` : `${path}`) as '/',
+      ),
+      {
+        replaceState: true,
+      },
+    );
   }
 
   function reset() {
     resetSearch();
     searchInput = '';
 
-    goto(path);
+    goto(resolve(path as '/'));
   }
 
   onMount(() => {
@@ -90,7 +96,7 @@
           <a
             data-testid="genomic-filter-btn"
             class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-            href="/explorer/genome-filter"
+            href={resolve('/explorer/genome-filter')}
             onclick={() => log(createLog('NAVIGATION', 'explorer.genomic_filter_click'))}
             >Genomic Filtering</a
           >
@@ -122,7 +128,7 @@
         rowClickLogAction="search_result.row_click"
       />
     {/if}
-    {#if features.explorer.enableTour && $tour}
+    {#if config.features.explorer.enableTour && $tour}
       <div id="explorer-tour" class="text-center mt-4">
         <ExplorerTour {tourConfig} />
       </div>

@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
-  import { features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { exports, addExports, removeExports, mapSearchResultAsExport } from '$lib/stores/Export';
   import type { ExportInterface } from '$lib/models/Export';
   import type { ExportRowInterface } from '$lib/models/ExportRow';
@@ -11,7 +12,6 @@
   import * as api from '$lib/api';
   import { Picsure } from '$lib/paths';
   import { toaster } from '$lib/toaster';
-  import { loadResources } from '$lib/stores/Resources';
 
   import Summary from './Summary.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -77,7 +77,6 @@
   });
 
   async function getGenomicConcepts() {
-    await loadResources();
     const concepts = await searchDictionary(
       '',
       [
@@ -174,14 +173,14 @@
         title="Warning"
         color="warning"
         closeText="Back"
-        onclose={() => goto('/explorer')}
+        onclose={() => goto(resolve('/explorer'))}
       >
         Warning: Your selected data exceeds 1,000,000 estimated data points, which is too large to
         export. Please reduce the data selection or the number of selected participants.
       </ErrorAlert>
     {:else if !loadingSampleIds}
       <Datatable tableName="ExportSummary" data={activeRows} {columns} />
-      {#if features.explorer.enableSampleIdCheckbox}
+      {#if config.features.explorer.enableSampleIdCheckbox}
         <div>
           <label for="sample-ids-checkbox" class="flex items-center" data-testid="sample-ids-label">
             {#if checkingSampleIds}

@@ -1,5 +1,5 @@
 import { expect, type Route } from '@playwright/test';
-import { test, mockApiSuccess } from '../../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 
 import {
   conceptTreePath,
@@ -24,6 +24,13 @@ import type { SearchResult } from '../../../../src/lib/models/Search';
 const countResultPath = '*/**/picsure/v3/query/sync';
 
 test.beforeEach(async ({ page }) => {
+  await mockApiConfig(page, {
+    features: [
+      { name: 'ENABLE_HIERARCHY', value: 'true' },
+      { name: 'ALLOW_EXPORT', value: 'true' },
+      { name: 'DIST_EXPLORER', value: 'true' },
+    ],
+  });
   await mockApiSuccess(page, searchResultPath, mockData);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
 });

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from '$app/paths';
   import type { FilterGroupInterface } from '$lib/models/Filter.svelte';
   import { page } from '$app/state';
   import { filterTree, filters, genomicFilters } from '$lib/stores/Filter';
@@ -50,7 +51,7 @@
         {:else}
           <a
             id="advanced-query-btn"
-            href={`${isDiscoverPage ? '/discover' : '/explorer'}/advanced-filtering`}
+            href={resolve(`${isDiscoverPage ? '/discover' : '/explorer'}/advanced-filtering`)}
             data-testid="advanced-filtering-btn"
             class="{aqbBtnClass} !mr-0 hover:preset-filled-primary-500"
           >

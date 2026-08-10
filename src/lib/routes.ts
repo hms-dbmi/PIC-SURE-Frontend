@@ -1,0 +1,38 @@
+import { BDCPrivileges, PicsurePrivileges } from './models/Privilege';
+import type { Route } from './models/Route';
+
+export const routes: Route[] = [
+  {
+    path: '/dashboard',
+    text: 'Data Dashboard',
+    feature: 'dashboard',
+  },
+  {
+    path: '/discover',
+    text: 'Discover',
+    feature: 'discover',
+  },
+  {
+    path: '/explorer',
+    text: 'Explore',
+    privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
+  },
+  {
+    path: '/analyze/api',
+    text: 'Prepare for Analysis',
+    privilege: [PicsurePrivileges.API_ACCESS, BDCPrivileges.AUTHORIZED_ACCESS],
+    feature: 'analyzeApi',
+  },
+  {
+    path: '/dataset',
+    text: 'Manage Datasets',
+    privilege: [PicsurePrivileges.NAMED_DATASET, BDCPrivileges.NAMED_DATASET],
+  },
+  {
+    path: '/admin/configuration',
+    text: 'Configuration',
+    privilege: [PicsurePrivileges.SUPER],
+  },
+  { path: '/admin/users', text: 'Manage Users', privilege: [PicsurePrivileges.ADMIN] },
+  { path: '/help', text: 'Help' },
+];

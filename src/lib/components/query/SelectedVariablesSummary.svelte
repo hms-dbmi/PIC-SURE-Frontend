@@ -6,19 +6,26 @@
 
   type PathNode = {
     label: string;
-    children: Map<string, PathNode>;
+    children: PathNode[];
   };
 
-  function buildTree(paths: string[]): Map<string, PathNode> {
-    const root = new Map<string, PathNode>();
+  function getOrCreateNode(nodes: PathNode[], label: string): PathNode {
+    const existingNode = nodes.find((node) => node.label === label);
+    if (existingNode) return existingNode;
+
+    const newNode = { label, children: [] };
+    nodes.push(newNode);
+    return newNode;
+  }
+
+  function buildTree(paths: string[]): PathNode[] {
+    const root: PathNode[] = [];
     for (const path of paths) {
       const parts = path.split('\\').filter(Boolean);
       let level = root;
       for (const part of parts) {
-        if (!level.has(part)) {
-          level.set(part, { label: part, children: new Map() });
-        }
-        level = level.get(part)!.children;
+        const node = getOrCreateNode(level, part);
+        level = node.children;
       }
     }
     return root;
@@ -27,10 +34,9 @@
   const tree = $derived(buildTree(paths));
 </script>
 
-{#snippet nodeChildren(children: Map<string, PathNode>)}
-  {@const entries = [...children.values()]}
-  {@const leaves = entries.filter((n) => n.children.size === 0)}
-  {@const branches = entries.filter((n) => n.children.size > 0)}
+{#snippet nodeChildren(children: PathNode[])}
+  {@const leaves = children.filter((n) => n.children.length === 0)}
+  {@const branches = children.filter((n) => n.children.length > 0)}
 
   {#if leaves.length > 0}
     <div class="flex flex-wrap gap-1.5">
@@ -55,9 +61,8 @@
 {#if paths.length === 0}
   <p class="text-sm text-surface-700">No additional variables</p>
 {:else}
-  {@const entries = [...tree.values()]}
-  {@const rootLeaves = entries.filter((n) => n.children.size === 0)}
-  {@const rootBranches = entries.filter((n) => n.children.size > 0)}
+  {@const rootLeaves = tree.filter((n) => n.children.length === 0)}
+  {@const rootBranches = tree.filter((n) => n.children.length > 0)}
 
   {#if rootLeaves.length > 0}
     <div class="flex flex-wrap gap-1.5 mb-3">

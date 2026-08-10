@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
 
 vi.mock('$app/environment', () => ({ browser: false }));
-vi.mock('$lib/configuration', () => ({ features: { explorer: { enableOrQueries: false } } }));
 vi.mock('$lib/stores/User', () => ({
   user: { subscribe: vi.fn() },
   isUserLoggedIn: vi.fn(() => false),

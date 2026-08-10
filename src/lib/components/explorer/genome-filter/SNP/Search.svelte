@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { SNP } from '$lib/models/GenomeFilter';
   import { getSNPCounts } from '$lib/stores/SNPFilter';
-  import { branding } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
@@ -21,20 +21,13 @@
     message: string;
   }
 
-  const Warnings: { [key: string]: Warning } = {
-    NoResults: {
-      color: 'error',
-      message:
-        "We couldn't find any results for your search term. Please check to ensure the information you have entered is correct or try a different search.",
-    },
-    SomeResults: {
-      color: 'warning',
-      message:
-        'Some sites did not return patient counts for your search. Click the Add Filter button to apply your filter and click Cohort Details for more information.',
-    },
+  const noResultsWarning: Warning = {
+    color: 'error',
+    message:
+      "We couldn't find any results for your search term. Please check to ensure the information you have entered is correct or try a different search.",
   };
 
-  const genomeBuild = branding.genomic?.defaultGenomeBuild || 'GRCh38';
+  const genomeBuild = $derived(config.branding.genomic?.defaultGenomeBuild || 'GRCh38');
   const validSnpPattern = /^\w+,\d+,(A|T|C|G)+,(A|T|C|G)+$/;
   let searchElement: HTMLInputElement;
   let warn: Warning | undefined = $state(undefined);
@@ -73,11 +66,8 @@
 
     if (errors === 0 && count > 0) {
       onvalid(snpOptions);
-    } else if (count > 0) {
-      warn = Warnings.SomeResults;
-      onvalid(snpOptions);
     } else {
-      warn = Warnings.NoResults;
+      warn = noResultsWarning;
     }
   }
 </script>

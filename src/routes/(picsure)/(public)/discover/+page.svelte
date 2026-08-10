@@ -1,22 +1,20 @@
 <script lang="ts">
   import Content from '$lib/components/Content.svelte';
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import Explorer from '$lib/components/explorer/Explorer.svelte';
   import TourData from '$lib/assets/TourConfiguration.json';
+  import type { TourDataType } from '$lib/models/Tour';
 
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  const Tour: Record<string, any> = TourData;
-  const tourName = features.discoverFeautures.openTour;
+  const Tour: Record<string, TourDataType> = TourData;
+  const tourName = $derived(config.settings.tour.open);
 
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  let openTour: any = $state(undefined);
-  if (tourName !== undefined && tourName in Tour) {
-    openTour = Tour[tourName];
-  }
+  let openTour: TourDataType = $derived(
+    tourName !== undefined && tourName in Tour ? Tour[tourName] : Tour['BDC-Open'],
+  );
 </script>
 
 <svelte:head>
-  <title>{branding.applicationName} | Discover</title>
+  <title>{config.branding.applicationName} | Discover</title>
 </svelte:head>
 
 <Content full>

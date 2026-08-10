@@ -77,7 +77,10 @@
 
   function getHover(context: FloatingContext): ElementProps | undefined {
     if (triggerTypes.includes('hover')) {
-      return useHover(context, { move: false });
+      // restMs requires the pointer to dwell on the trigger before opening, so a fast
+      // pass-through (e.g. WebKit's real stepped pointer-move events during an unrelated
+      // click elsewhere) doesn't pop the tooltip open.
+      return useHover(context, { move: false, restMs: 150 });
     }
     return undefined;
   }

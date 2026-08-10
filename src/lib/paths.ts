@@ -3,7 +3,6 @@
 // each service now has a clean gateway prefix: `/dictionary`, `/uploader`, `/logging`, …
 const PREFIX = 'picsure';
 const DICT = `${PREFIX}/dictionary`;
-const UPLOADER = `${PREFIX}/uploader`;
 const VIZ = `${PREFIX}/visualization`;
 // HPDS ingress is exactly two path prefixes: the backend is chosen by the
 // URL PATH — `/hpds/auth` (direct, non-obfuscated) vs `/hpds/open` (aggregate/obfuscated) — NOT by a
@@ -13,6 +12,11 @@ const VIZ = `${PREFIX}/visualization`;
 const HPDS_AUTH = `${PREFIX}/hpds/auth`;
 const HPDS_OPEN = `${PREFIX}/hpds/open`;
 const API = '/api/v1';
+const LOCAL = 'api';
+
+export const LocalServer = {
+  Configs: `${LOCAL}/config`,
+};
 
 export const Picsure = {
   Concepts: `${DICT}/concepts`,
@@ -20,6 +24,10 @@ export const Picsure = {
     Detail: `${DICT}/concepts/detail`,
     Tree: `${DICT}/concepts/tree`,
     Hierarchy: `${DICT}/concepts/hierarchy`,
+  },
+  Configuration: {
+    Get: `${PREFIX}/configuration`,
+    Admin: `${PREFIX}/configuration/admin`,
   },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,
@@ -34,16 +42,14 @@ export const Picsure = {
    * segment is gone.
    */
   SearchValues: `${HPDS_AUTH}/v3/search/values`,
-  Resources: `${PREFIX}/resource`,
-  /** Open access (discover) queries hit the obfuscated open backend. */
-  QueryOpenSync: `${HPDS_OPEN}/v3/query/sync`,
+  /**
+   * Open access (discover) queries hit the obfuscated open backend. These are built as V3 requests
+   * (getQueryRequestV3), so they must target the V3 aggregate endpoint — the V1 open endpoint can't
+   * parse a V3 body and the query-service 502s forwarding it to HPDS.
+   */
+  QueryOpenV3Sync: `${HPDS_OPEN}/v3/query/sync`,
   QueryV3: `${HPDS_AUTH}/v3/query`,
   QueryV3Sync: `${HPDS_AUTH}/v3/query/sync`,
-  Uploader: {
-    Upload: `${UPLOADER}/upload`,
-    Sites: `${UPLOADER}/sites`,
-    Status: `${UPLOADER}/status`,
-  },
   Visualization: {
     Distributions: `${VIZ}/distributions`,
   },

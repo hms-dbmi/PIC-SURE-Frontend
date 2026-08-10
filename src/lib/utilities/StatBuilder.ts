@@ -1,5 +1,5 @@
 import * as api from '$lib/api';
-import { branding, features } from '$lib/configuration';
+import { config } from '$lib/configuration.svelte';
 import { Picsure } from '$lib/paths';
 
 import type {
@@ -17,7 +17,6 @@ import type {
   StatConfig,
   StatResult,
   StatValue,
-  StatResultMap,
   StatField,
   PatientCount,
   PatientCountMap,
@@ -26,9 +25,9 @@ import type {
 
 import { isUserLoggedIn } from '$lib/stores/User';
 import { addConsents } from '$lib/stores/Dictionary';
-import { getQueryResources } from '$lib/stores/Resources';
+import { getCountResource } from '$lib/stores/Resources';
 import { getQueryRequestV3, getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
-import { countResult } from '$lib/utilities/PatientCount';
+import { countResult } from '$lib/services/counts/countFormat';
 import { log, createLog } from '$lib/logger';
 import { useOpenAccess } from '$lib/AccessState';
 
@@ -55,8 +54,8 @@ export const StatPromise = {
 };
 
 export function getStatFields(key: string): StatField[] {
-  const statKeys = branding?.statFields ? Object.keys(branding?.statFields) : [];
-  return statKeys.includes(key) ? branding?.statFields[key] : [];
+  const statKeys = config.branding.statFields ? Object.keys(config.branding.statFields) : [];
+  return statKeys.includes(key) ? config.branding.statFields[key] : [];
 }
 
 function dictionaryRequest(isOpenAccess: boolean = false): DictionarySearchRequest {
@@ -97,7 +96,7 @@ function blank({ addFilters, isOpenAccess }: RequestMapOptions): Promise<Patient
   const request = addFilters
     ? getQueryRequestV3(!isOpenAccess, 'COUNT')
     : getBlankQueryRequestV3(isOpenAccess, 'COUNT');
-  const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+  const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
   return api.post(path, request).then(rejectIfQueryError);
 }
 
@@ -138,7 +137,7 @@ async function getOpenPatientCount({
   addFilters,
   isOpenAccess,
 }: RequestMapOptions): Promise<PatientCount> {
-  // Open backend is selected by the `/hpds/open` path (QueryOpenSync); no resource UUID needed.
+  // Open backend is selected by the `/hpds/open` path (QueryOpenV3Sync); no resource UUID needed.
   const request: QueryInterfaceV3 = addFilters
     ? getQueryRequestV3(!isOpenAccess, 'CROSS_COUNT')
     : getBlankQueryRequestV3(isOpenAccess, 'CROSS_COUNT');
@@ -150,7 +149,7 @@ async function getOpenPatientCount({
     }),
   );
   return api
-    .post(Picsure.QueryOpenSync, request)
+    .post(Picsure.QueryOpenV3Sync, request)
     .then(rejectIfQueryError)
     .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }
@@ -184,7 +183,7 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(!isOpenAccess, type, mapper)
       : getBlankQueryRequestV3(isOpenAccess, type, mapper);
-    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
     log(
       createLog('QUERY', 'query.execute', {
         isOpenAccess,
@@ -214,7 +213,7 @@ function getConsentCount(type: ExpectedResultType) {
     const request = addFilters
       ? getQueryRequestV3(!isOpenAccess, type, mapper)
       : getBlankQueryRequestV3(isOpenAccess, type, mapper);
-    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenSync : Picsure.QueryV3Sync;
+    const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
     return api.post(path, request).then(rejectIfQueryError);
   };
 }
@@ -252,7 +251,7 @@ export function getValidStatList(list: StatConfig[]): StatResult[] {
       });
     }
 
-    if (features.login.open && openUsers) {
+    if (config.features.login.open && openUsers) {
       statList.push({
         ...stat,
         auth: false,
@@ -267,18 +266,17 @@ export function getValidStatList(list: StatConfig[]): StatResult[] {
 export function populateStatRequests(validStats: StatResult[]): StatResult[] {
   return validStats.map((stat: StatResult) => {
     const isOpenAccess = !stat.auth;
+    const resource = getCountResource(isOpenAccess);
     return {
       ...stat,
-      result: getQueryResources(isOpenAccess).reduce((statMap: StatResultMap, { name, uuid }) => {
-        const newMap = { ...statMap };
-        newMap[name] = requestMap[stat.key]({
+      result: {
+        [resource.name]: requestMap[stat.key]({
           isOpenAccess,
           stat,
-          resource: uuid,
+          resource: resource.uuid,
           addFilters: false,
-        });
-        return newMap;
-      }, {}),
+        }),
+      },
     };
   });
 }
@@ -323,19 +321,18 @@ export function getResultList(isOpenAccess: boolean, list: StatConfig[]): StatRe
 
   return validStats.reduce((list: StatResult[], stat: StatConfig) => {
     const statList = [...list];
+    const resource = getCountResource(isOpenAccess);
     statList.push({
       ...stat,
       auth: !isOpenAccess,
-      result: getQueryResources(isOpenAccess).reduce((statMap: StatResultMap, { name, uuid }) => {
-        const newMap = { ...statMap };
-        newMap[name] = requestMap[stat.key]({
+      result: {
+        [resource.name]: requestMap[stat.key]({
           isOpenAccess,
           stat,
-          resource: uuid,
+          resource: resource.uuid,
           addFilters: true,
-        });
-        return newMap;
-      }, {}),
+        }),
+      },
     });
     return statList;
   }, []);

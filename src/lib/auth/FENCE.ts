@@ -33,9 +33,8 @@ class Fence extends AuthProvider implements FenceData {
   };
 
   login = async (redirectTo: string, type: string): Promise<void> => {
-    let redirectUrl = '/';
     if (browser) {
-      redirectUrl = this.getRedirectURI();
+      const redirectUrl = this.getRedirectURI();
       this.saveState(redirectTo, type, this.idp);
       const fenceUrl =
         this.uri +

@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess } from '../../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import {
   facetResultPath,
   facetsResponse,
@@ -56,6 +56,14 @@ test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 test.describe('Discover distributions', () => {
   test('renders charts with backend-provided count, display, and variance', async ({ page }) => {
     // Given: the visualization endpoint returns the new wire shape
+    // OPEN is required for unauthenticated access; DISCOVER keeps /discover/*
+    // from being redirected to /explorer by the (public) layout guard.
+    await mockApiConfig(page, {
+      features: [
+        { name: 'OPEN', value: 'true' },
+        { name: 'DISCOVER', value: 'true' },
+      ],
+    });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);

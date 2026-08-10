@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { branding, features } from '$lib/configuration';
+  import { config } from '$lib/configuration.svelte';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
   import TabItem from '$lib/components/TabItem.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
@@ -7,13 +7,17 @@
   import { getDatasetId, getQueryRequest } from '$lib/ExportStepperManager.svelte';
   import { log, createLog } from '$lib/logger';
 
-  let tabSet: string = $state(
-    features.analyzeApi ? 'Python' : features.explorer.allowDownload ? 'Download' : '',
+  let tabSet: string = $derived(
+    config.features.analyzeApi
+      ? 'Python'
+      : config.features.explorer.allowDownload
+        ? 'Download'
+        : '',
   );
 </script>
 
-{#if branding.explorePage.analysisExportText && branding.explorePage.analysisExportText.length > 0}
-  <p class="mt-4">{branding.explorePage.analysisExportText}</p>
+{#if config.branding.explorePage.analysisExportText && config.branding.explorePage.analysisExportText.length > 0}
+  <p class="mt-4">{config.branding.explorePage.analysisExportText}</p>
 {/if}
 <Tabs
   value={tabSet}
@@ -23,11 +27,11 @@
   }}
 >
   {#snippet list()}
-    {#if features.analyzeApi}
+    {#if config.features.analyzeApi}
       <TabItem bind:group={tabSet} value="Python">Python</TabItem>
       <TabItem bind:group={tabSet} value="R">R</TabItem>
     {/if}
-    {#if features.explorer.allowDownload}
+    {#if config.features.explorer.allowDownload}
       <TabItem bind:group={tabSet} value="Download">Download</TabItem>
     {/if}
   {/snippet}
@@ -35,7 +39,7 @@
     <Tabs.Panel value="Python">
       <CodeBlock
         lang="python"
-        code={branding.explorePage.codeBlocks.PythonExport.replace(
+        code={config.branding.explorePage.codeBlocks.PythonExport.replace(
           '{{queryId}}',
           getDatasetId() ?? 'DATASET_ID_MISSING',
         ) || 'Code not set for Python in configuration'}
@@ -44,13 +48,13 @@
     <Tabs.Panel value="R">
       <CodeBlock
         lang="r"
-        code={branding.explorePage.codeBlocks.RExport.replace(
+        code={config.branding.explorePage.codeBlocks.RExport.replace(
           '{{queryId}}',
           getDatasetId() ?? 'DATASET_ID_MISSING',
         ) || 'Code not set for R in configuration'}
       />
     </Tabs.Panel>
-    {#if features.explorer.allowDownload}
+    {#if config.features.explorer.allowDownload}
       <Tabs.Panel value="Download">
         <div class="flex justify-center w-full">
           <DownloadButton query={getQueryRequest()} datasetId={getDatasetId()} />
@@ -59,6 +63,6 @@
     {/if}
   {/snippet}
 </Tabs>
-{#if branding.explorePage.goTo.instructions && branding.explorePage.goTo.instructions.length > 0}
-  <p>{branding.explorePage.goTo.instructions}</p>
+{#if config.branding.explorePage.goTo.instructions && config.branding.explorePage.goTo.instructions.length > 0}
+  <p>{config.branding.explorePage.goTo.instructions}</p>
 {/if}

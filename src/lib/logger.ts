@@ -6,7 +6,8 @@ import { get } from 'svelte/store';
 import { v4 as uuidv4 } from 'uuid';
 import { BDCPrivileges, PicsurePrivileges } from './models/Privilege';
 import type { User } from './models/User';
-import { routes } from '$lib/configuration';
+import { routes } from '$lib/configuration.svelte';
+
 // Registered lazily by Filter.ts to avoid circular dependency: Filter → logger → Filter
 let _associatedStudies: import('svelte/store').Readable<string[]> | undefined;
 export function registerAssociatedStudies(store: import('svelte/store').Readable<string[]>) {
@@ -27,7 +28,6 @@ export function getSessionId(): string {
 const RELEVANT_PRIVILEGES = new Set([
   PicsurePrivileges.SUPER,
   PicsurePrivileges.ADMIN,
-  PicsurePrivileges.DATA_ADMIN,
   PicsurePrivileges.API_ACCESS,
   BDCPrivileges.AUTHORIZED_ACCESS,
 ]);

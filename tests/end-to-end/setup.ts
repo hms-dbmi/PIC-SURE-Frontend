@@ -1,11 +1,19 @@
 import { picsureUser, mockToken, userTypes } from './mock-data';
-import { test, mockApiSuccess } from './custom-context';
+import { test, mockApiSuccess, mockApiConfig } from './custom-context';
 
 // Creates authenticated user contexts for tests using method noted at
 // https://playwright.dev/docs/auth
 
 const userFile = (user: string) => `tests/end-to-end/.auth/${user}.json`;
 
+test.beforeEach(async ({ page }) => {
+  await mockApiConfig(page, {
+    settings: [
+      { name: 'GOOGLE_ANALYTICS_ID', value: 'someid' },
+      { name: 'GOOGLE_TAG_MANAGER_ID', value: 'someid' },
+    ],
+  });
+});
 Object.entries(userTypes).forEach(async ([user, userVariation]) => {
   test(`authenticate as ${user}`, async ({ page }) => {
     const userData = { ...picsureUser, ...userVariation };
@@ -48,7 +56,8 @@ test('unauthenticated user', async ({ page }) => {
   const acceptConsentButton = page.getByTestId('acceptGoogleConsent');
   await acceptConsentButton.click();
 
-  await page.waitForURL('/');
+  // Unauthenticated users are redirected to /login; accepting consent doesn't navigate away.
+  await page.waitForURL('/login');
 
   await page.evaluate(() => {
     const user = sessionStorage.getItem('user');

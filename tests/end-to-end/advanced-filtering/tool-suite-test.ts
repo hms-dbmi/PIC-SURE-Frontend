@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiSuccess } from '../custom-context';
+import { test, mockApiSuccess, mockApiConfig } from '../custom-context';
 import {
   searchResults as mockData,
   searchResultPath,
@@ -17,6 +17,7 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
   test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page);
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, SYNC_URL, '9999');
