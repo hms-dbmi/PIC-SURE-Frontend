@@ -34,6 +34,7 @@ Object.entries(userTypes).forEach(async ([user, userVariation]) => {
     await mockApiSuccess(page, '*/**/psama/authentication/fence', userData);
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', userData);
     await mockApiSuccess(page, '*/**/psama/user/me', userData);
+    await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: userData.consents });
     await page.goto(mockLoginResponse);
 
     await page.waitForURL('/');

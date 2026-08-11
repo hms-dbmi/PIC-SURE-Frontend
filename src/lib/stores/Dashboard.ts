@@ -3,11 +3,13 @@ import { writable, type Writable } from 'svelte/store';
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import type { Column } from '$lib/components/datatable/types';
-import { user } from '$lib/stores/User';
+import {
+  accessUnavailable,
+  consentedStudies,
+  consentsSettled,
+  showAccessUnavailable,
+} from '$lib/stores/User';
 import { get } from 'svelte/store';
-import type { User } from '$lib/models/User';
-import { browser } from '$app/environment';
-import { config } from '$lib/configuration.svelte';
 export const columns: Writable<Column[]> = writable([]);
 
 export type DashboardRow = Record<string, string | number | boolean | null>;
@@ -28,28 +30,15 @@ function fetchDashboard(): Promise<DashboardResp> {
   return api.get(Picsure.Dashboard);
 }
 
-function isUserLoggedIn() {
-  if (browser) {
-    return !!localStorage.getItem('token');
-  }
-  return false;
-}
-
 export async function loadDashboardData() {
-  const dashboardData = await fetchDashboard();
+  // Computed once, so wait rather than render an all-denied column that never corrects itself.
+  const [dashboardData] = await Promise.all([fetchDashboard(), consentsSettled()]);
   columns.set(dashboardData.columns);
 
-  const loggedInUser: User = get(user);
-  const useConsents =
-    config.features.useQueryTemplate && isUserLoggedIn() && loggedInUser?.queryTemplate;
+  // All-denied is indistinguishable from having no access, so say why.
+  if (get(accessUnavailable)) showAccessUnavailable();
 
-  let consents: string[] = [];
-  if (useConsents) {
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    consents = (loggedInUser.queryTemplate?.categoryFilters as any)?.['\\_consents\\'] || [];
-  }
-
-  const processedRows = dashboardData.rows.map(processRow(consents));
+  const processedRows = dashboardData.rows.map(processRow(get(consentedStudies)));
 
   const sortedRows = processedRows.sort((a, b) => {
     const aIsAnvil = (a.program_name?.toString().toLowerCase() || '') === 'anvil';

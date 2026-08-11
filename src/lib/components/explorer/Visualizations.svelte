@@ -65,7 +65,7 @@
       subtitle: getSubtitle(data.conceptPath),
     });
 
-    const query = getQueryRequestV3(!isOpenAccess());
+    const query = getQueryRequestV3();
 
     await api
       .post(Picsure.Visualization.Distributions, { query: query.query }, undefined, !isOpenAccess())

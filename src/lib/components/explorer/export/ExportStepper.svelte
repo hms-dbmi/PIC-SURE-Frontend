@@ -63,7 +63,7 @@
 
   onMount(async () => {
     setQueryRequest(
-      getQueryRequestV3(true, 'COUNT', (query: QueryV3) => {
+      getQueryRequestV3('COUNT', (query: QueryV3) => {
         // populate selected export columns from filters
         query.select = [...new Set([...query.select, ...getFilterConcepts(query)])];
         return query;

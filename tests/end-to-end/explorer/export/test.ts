@@ -128,7 +128,6 @@ test.describe('Export Page', () => {
         { name: 'ENABLE_SAMPLE_ID_CHECKBOX', value: 'true' },
         { name: 'SHOW_TREE_STEP', value: 'true' },
         { name: 'EXPORT_TIMESERIES', value: 'false' },
-        { name: 'USE_QUERY_TEMPLATE', value: 'true' },
       ],
       settings: [{ name: 'EXPORT_SYSTEM_FIELDS', value: '_consents' }],
     });

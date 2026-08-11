@@ -1,5 +1,16 @@
 {
-  "cookies": [],
+  "cookies": [
+    {
+      "name": "picsure-test-config",
+      "value": "%7B%22features%22%3A%5B%5D%2C%22settings%22%3A%5B%7B%22name%22%3A%22GOOGLE_ANALYTICS_ID%22%2C%22value%22%3A%22someid%22%7D%2C%7B%22name%22%3A%22GOOGLE_TAG_MANAGER_ID%22%2C%22value%22%3A%22someid%22%7D%5D%2C%22branding%22%3A%5B%5D%7D",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
   "origins": [
     {
       "origin": "http://localhost:4173",
