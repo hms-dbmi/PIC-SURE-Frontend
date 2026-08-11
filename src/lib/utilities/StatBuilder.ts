@@ -137,8 +137,6 @@ async function getOpenPatientCount({
   addFilters,
   isOpenAccess,
 }: RequestMapOptions): Promise<PatientCount> {
-  // Open backend is selected by the `/hpds/open` path (QueryOpenV3Sync); no resource UUID needed.
-  const resource = '';
   const request: QueryRequestInterfaceV3 = addFilters
     ? getQueryRequestV3(!isOpenAccess, 'CROSS_COUNT')
     : getBlankQueryRequestV3(isOpenAccess, 'CROSS_COUNT');
@@ -146,7 +144,6 @@ async function getOpenPatientCount({
     createLog('QUERY', 'query.execute', {
       isOpenAccess: true,
       type: 'patientCount',
-      resourceUUID: resource,
       expectedResultType: request.query.expectedResultType,
     }),
   );
@@ -159,7 +156,6 @@ async function getOpenPatientCount({
 function getAuthPatientCount({
   addFilters,
   isOpenAccess,
-  resource,
 }: RequestMapOptions): Promise<PatientCount> {
   const request = addFilters
     ? getQueryRequestV3(!isOpenAccess, 'COUNT')
@@ -168,7 +164,6 @@ function getAuthPatientCount({
     createLog('QUERY', 'query.execute', {
       isOpenAccess: false,
       type: 'patientCount',
-      resourceUUID: resource,
       expectedResultType: request.query.expectedResultType,
     }),
   );
@@ -180,11 +175,7 @@ function patientCount(options: RequestMapOptions): Promise<PatientCount> {
 }
 
 function getCrossCounts(field: string, type: ExpectedResultType) {
-  return function ({
-    addFilters,
-    isOpenAccess,
-    resource,
-  }: RequestMapOptions): Promise<PatientCountMap> {
+  return function ({ addFilters, isOpenAccess }: RequestMapOptions): Promise<PatientCountMap> {
     const fields: string[] = getStatFields(field).map((f) => f.conceptPath);
     if (fields.length === 0) return Promise.reject(`${field} feilds were not configured`);
     const mapper = queryMappers.addCrossCountFields(fields);
@@ -196,7 +187,6 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
       createLog('QUERY', 'query.execute', {
         isOpenAccess,
         type: field,
-        resourceUUID: resource,
         expectedResultType: request.query.expectedResultType,
         crossCountFieldCount: fields.length,
       }),
@@ -282,7 +272,6 @@ export function populateStatRequests(validStats: StatResult[]): StatResult[] {
         [resource.name]: requestMap[stat.key]({
           isOpenAccess,
           stat,
-          resource: resource.uuid,
           addFilters: false,
         }),
       },
@@ -338,7 +327,6 @@ export function getResultList(isOpenAccess: boolean, list: StatConfig[]): StatRe
         [resource.name]: requestMap[stat.key]({
           isOpenAccess,
           stat,
-          resource: resource.uuid,
           addFilters: true,
         }),
       },
