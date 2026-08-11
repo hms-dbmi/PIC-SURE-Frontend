@@ -103,7 +103,6 @@
 
     const crossCountResponse: Record<string, number> = await api.post(Picsure.QueryV3Sync, {
       query: crossCountQuery,
-      resourceUUID: '',
     });
 
     // Filter and return only concepts with counts > 0

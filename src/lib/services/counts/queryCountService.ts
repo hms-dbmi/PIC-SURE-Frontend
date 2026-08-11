@@ -53,7 +53,7 @@ export function createQueryCountService(options: QueryCountServiceOptions): Quer
     resource: { name: string; uuid: string },
   ): Promise<CellOutcome> {
     try {
-      const request = provider.buildRequest(descriptor, resource.uuid);
+      const request = provider.buildRequest(descriptor);
       const path = provider.path(descriptor);
       log(
         createLog('QUERY', 'query.execute', {

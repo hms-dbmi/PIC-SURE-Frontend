@@ -31,7 +31,6 @@ export interface StatResult {
 }
 
 export interface RequestMapOptions {
-  resource: string;
   isOpenAccess: boolean;
   stat: StatConfig;
   addFilters: boolean;
