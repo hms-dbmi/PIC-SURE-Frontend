@@ -56,6 +56,24 @@ describe('configCache', () => {
     }
   });
 
+  it('hydrates from the gateway public config read at /picsure/operations/configuration', async () => {
+    // The gateway's no-token carve-out (PsamaIntrospectionFilter#isPublicConfigurationRead)
+    // matches ONLY GET /operations/configuration — httpd strips the /picsure prefix. Any
+    // other path is introspected and 401s, since this fetch deliberately sends no token.
+    fetchMock.mockImplementation(() => Promise.resolve(jsonResponse([])));
+
+    const { getConfig } = await loadConfigCache();
+
+    const pending = getConfig();
+    await vi.runAllTimersAsync();
+    await pending;
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://origin.test/picsure/operations/configuration?kind=ui:branding',
+      { method: 'GET' },
+    );
+  });
+
   it('caches a kind that succeeds even though another kind fails', async () => {
     const featuresData = [{ name: 'FEATURE_A', value: 'true' }];
     fetchMock.mockImplementation((url: string) => {

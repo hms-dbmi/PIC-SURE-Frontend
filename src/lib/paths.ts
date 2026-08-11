@@ -25,9 +25,13 @@ export const Picsure = {
     Tree: `${DICT}/concepts/tree`,
     Hierarchy: `${DICT}/concepts/hierarchy`,
   },
+  // Configuration lives in operations-service (context-path /operations). The bare
+  // /configuration path was retired when the gateway consolidated onto a single
+  // /operations route — only GET /operations/configuration[/{id}] is public
+  // (no-token) at the gateway; /admin and all writes stay introspected.
   Configuration: {
-    Get: `${PREFIX}/configuration`,
-    Admin: `${PREFIX}/configuration/admin`,
+    Get: `${PREFIX}/operations/configuration`,
+    Admin: `${PREFIX}/operations/configuration/admin`,
   },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,
