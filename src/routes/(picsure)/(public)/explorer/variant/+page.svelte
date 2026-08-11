@@ -15,7 +15,7 @@
   import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
 
   onMount(() => {
-    const request: QueryRequestInterfaceV3 = getQueryRequestV3(true);
+    const request: QueryRequestInterfaceV3 = getQueryRequestV3();
     if (request.query.genomicFilters.length === 0) {
       if (!isToastShowing('no-query')) {
         toaster.error({

@@ -66,7 +66,7 @@
       subtitle: getSubtitle(data.conceptPath),
     });
 
-    const query = getQueryRequestV3(!isOpenAccess(), $resources.visualization);
+    const query = getQueryRequestV3($resources.visualization);
 
     await api
       .post(

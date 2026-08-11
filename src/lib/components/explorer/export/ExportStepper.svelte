@@ -64,7 +64,7 @@
 
   onMount(async () => {
     setQueryRequest(
-      getQueryRequestV3(true, $resources.hpdsAuth, 'COUNT', (query: QueryV3) => {
+      getQueryRequestV3($resources.hpdsAuth, 'COUNT', (query: QueryV3) => {
         // populate selected export columns from filters
         query.select = [...new Set([...query.select, ...getFilterConcepts(query)])];
         return query;

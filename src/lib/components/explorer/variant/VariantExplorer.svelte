@@ -16,7 +16,7 @@
 
   async function loadVariants() {
     const resource = getCountResource();
-    const queryRequest = getQueryRequestV3(true, resource.uuid);
+    const queryRequest = getQueryRequestV3(resource.uuid);
     variantResults = [
       {
         name: resource.name,

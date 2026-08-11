@@ -26,8 +26,6 @@ export const Picsure = {
   Dictionary: DICT,
   Facets: `${DICT}/facets`,
   Search: `${PREFIX}/search`,
-  QueryV2: QUERY,
-  QueryV2Sync: `${QUERY}/sync`,
   /** Open access (discover) queries use the V2 sync path, remove when backend is fixed. */
   QueryOpenSync: `${QUERY}/sync`,
   QueryV3: `${PREFIX}/v3/query`,
@@ -55,7 +53,7 @@ export const Psama = {
   User: {
     Logout: 'psama/logout',
     Me: `${USER}/me`,
-    Template: `${USER}/me/queryTemplate`,
+    Consents: `${USER}/me/consents`,
     Refresh: `${USER}/me/refresh_long_term_token`,
   },
 };
