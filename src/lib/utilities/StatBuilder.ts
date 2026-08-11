@@ -92,10 +92,8 @@ async function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<Pat
     });
 }
 
-function blank({ addFilters, isOpenAccess, resource }: RequestMapOptions): Promise<PatientCount> {
-  const request = addFilters
-    ? getQueryRequestV3(resource, 'COUNT')
-    : getBlankQueryRequestV3(resource, 'COUNT');
+function blank({ addFilters, isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
+  const request = addFilters ? getQueryRequestV3('COUNT') : getBlankQueryRequestV3('COUNT');
   const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
   return api.post(path, request).then(rejectIfQueryError);
 }
@@ -134,16 +132,13 @@ const queryMappers = {
 };
 
 async function getOpenPatientCount({ addFilters }: RequestMapOptions): Promise<PatientCount> {
-  // Open backend is selected by the `/hpds/open` path (QueryOpenV3Sync); no resource UUID needed.
-  const resource = '';
   const request: QueryRequestInterfaceV3 = addFilters
-    ? getQueryRequestV3(resource, 'CROSS_COUNT')
-    : getBlankQueryRequestV3(resource, 'CROSS_COUNT');
+    ? getQueryRequestV3('CROSS_COUNT')
+    : getBlankQueryRequestV3('CROSS_COUNT');
   log(
     createLog('QUERY', 'query.execute', {
       isOpenAccess: true,
       type: 'patientCount',
-      resourceUUID: request.resourceUUID,
       expectedResultType: request.query.expectedResultType,
     }),
   );
@@ -153,15 +148,12 @@ async function getOpenPatientCount({ addFilters }: RequestMapOptions): Promise<P
     .then((counts) => countResult([counts['\\_studies_consents\\'] || 0]));
 }
 
-function getAuthPatientCount({ addFilters, resource }: RequestMapOptions): Promise<PatientCount> {
-  const request = addFilters
-    ? getQueryRequestV3(resource, 'COUNT')
-    : getBlankQueryRequestV3(resource, 'COUNT');
+function getAuthPatientCount({ addFilters }: RequestMapOptions): Promise<PatientCount> {
+  const request = addFilters ? getQueryRequestV3('COUNT') : getBlankQueryRequestV3('COUNT');
   log(
     createLog('QUERY', 'query.execute', {
       isOpenAccess: false,
       type: 'patientCount',
-      resourceUUID: request.resourceUUID,
       expectedResultType: request.query.expectedResultType,
     }),
   );
@@ -173,23 +165,18 @@ function patientCount(options: RequestMapOptions): Promise<PatientCount> {
 }
 
 function getCrossCounts(field: string, type: ExpectedResultType) {
-  return function ({
-    addFilters,
-    isOpenAccess,
-    resource,
-  }: RequestMapOptions): Promise<PatientCountMap> {
+  return function ({ addFilters, isOpenAccess }: RequestMapOptions): Promise<PatientCountMap> {
     const fields: string[] = getStatFields(field).map((f) => f.conceptPath);
     if (fields.length === 0) return Promise.reject(`${field} feilds were not configured`);
     const mapper = queryMappers.addCrossCountFields(fields);
     const request = addFilters
-      ? getQueryRequestV3(resource, type, mapper)
-      : getBlankQueryRequestV3(resource, type, mapper);
+      ? getQueryRequestV3(type, mapper)
+      : getBlankQueryRequestV3(type, mapper);
     const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
     log(
       createLog('QUERY', 'query.execute', {
         isOpenAccess,
         type: field,
-        resourceUUID: request.resourceUUID,
         expectedResultType: request.query.expectedResultType,
         crossCountFieldCount: fields.length,
       }),
@@ -199,11 +186,7 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
 }
 
 function getConsentCount(type: ExpectedResultType) {
-  return function ({
-    addFilters,
-    isOpenAccess,
-    resource,
-  }: RequestMapOptions): Promise<PatientCount> {
+  return function ({ addFilters, isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
     const fields: StatField[] = getStatFields('query:consent');
     if (fields.length === 0) return Promise.reject('consent feilds were not configured');
 
@@ -217,8 +200,8 @@ function getConsentCount(type: ExpectedResultType) {
 
     const mapper = queryMappers.addCategoryMap(categoryMap);
     const request = addFilters
-      ? getQueryRequestV3(resource, type, mapper)
-      : getBlankQueryRequestV3(resource, type, mapper);
+      ? getQueryRequestV3(type, mapper)
+      : getBlankQueryRequestV3(type, mapper);
     const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
     return api.post(path, request).then(rejectIfQueryError);
   };
@@ -279,7 +262,6 @@ export function populateStatRequests(validStats: StatResult[]): StatResult[] {
         [resource.name]: requestMap[stat.key]({
           isOpenAccess,
           stat,
-          resource: resource.uuid,
           addFilters: false,
         }),
       },
@@ -335,7 +317,6 @@ export function getResultList(isOpenAccess: boolean, list: StatConfig[]): StatRe
         [resource.name]: requestMap[stat.key]({
           isOpenAccess,
           stat,
-          resource: resource.uuid,
           addFilters: true,
         }),
       },

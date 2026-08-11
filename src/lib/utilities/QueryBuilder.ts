@@ -82,7 +82,6 @@ export function buildGenomicFiltersFromFilters(
 
 export function buildQueryRequestV3FromDescriptor(
   descriptor: import('$lib/services/counts/queryDescriptor.svelte').QueryDescriptor,
-  resourceUUID: string,
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
 ): QueryRequestInterfaceV3 {
@@ -97,7 +96,7 @@ export function buildQueryRequestV3FromDescriptor(
     : null;
   descriptor.genomicFilters.forEach((g) => query.genomicFilters.push(structuredClone(g)));
   query = mutateMethod(query);
-  return { query: serializeQueryV3(query), resourceUUID };
+  return { query: serializeQueryV3(query) };
 }
 
 export function getFilterConcepts(query: QueryV3): string[] {
@@ -127,11 +126,10 @@ export function getFilterConcepts(query: QueryV3): string[] {
 }
 
 export function getQueryRequestV3(
-  resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
 ): QueryRequestInterfaceV3 {
-  return getBlankQueryRequestV3(resourceUUID, expectedResultType, (query: QueryV3) => {
+  return getBlankQueryRequestV3(expectedResultType, (query: QueryV3) => {
     query.phenotypicClause = buildPhenotypicClauseFromTree(get(filterTree));
     get(genomicFilters).forEach((filter: Filter) => {
       if (filter.filterType === 'snp') {
@@ -149,7 +147,6 @@ export function getQueryRequestV3(
 }
 
 export function getBlankQueryRequestV3(
-  resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
 ): QueryRequestInterfaceV3 {
@@ -160,7 +157,6 @@ export function getBlankQueryRequestV3(
 
   return {
     query: serializeQueryV3(query),
-    resourceUUID,
   };
 }
 
