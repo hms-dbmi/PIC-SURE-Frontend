@@ -2,7 +2,7 @@
   import * as api from '$lib/api';
   import { config } from '$lib/configuration.svelte';
   import { browser } from '$app/environment';
-  import type { QueryRequestInterface } from '$lib/models/api/Request';
+  import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
   import { Picsure } from '$lib/paths';
   import Modal from '$lib/components/Modal.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -11,7 +11,7 @@
   import { log, createLog } from '$lib/logger';
   import { isHttpError } from '@sveltejs/kit';
   interface Props {
-    query: QueryRequestInterface;
+    query: QueryRequestInterfaceV3;
     datasetId: string | undefined;
   }
 

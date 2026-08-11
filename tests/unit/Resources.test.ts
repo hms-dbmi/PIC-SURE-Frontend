@@ -14,7 +14,7 @@ vi.mock('$lib/configuration.svelte', () => ({ config: { features: mockFeatures }
 import { resources, getCountResource } from '$lib/stores/Resources';
 
 describe('getCountResource', () => {
-// With path-based gateway routing the non-federated resource UUID is gone: the query PATH
+  // With path-based gateway routing the non-federated resource UUID is gone: the query PATH
   // (`/hpds/auth` vs `/hpds/open`) selects the backend, so the resource UUID is always empty.
 
   beforeEach(() => {

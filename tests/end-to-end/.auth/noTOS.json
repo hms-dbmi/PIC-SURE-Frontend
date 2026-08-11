@@ -1,5 +1,16 @@
 {
-  "cookies": [],
+  "cookies": [
+    {
+      "name": "picsure-test-config",
+      "value": "%7B%22features%22%3A%5B%5D%2C%22settings%22%3A%5B%7B%22name%22%3A%22GOOGLE_ANALYTICS_ID%22%2C%22value%22%3A%22someid%22%7D%2C%7B%22name%22%3A%22GOOGLE_TAG_MANAGER_ID%22%2C%22value%22%3A%22someid%22%7D%5D%2C%22branding%22%3A%5B%5D%7D",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
   "origins": [
     {
       "origin": "http://localhost:4173",
@@ -14,7 +25,7 @@
         },
         {
           "name": "user",
-          "value": "{\"uuid\":\"1234\",\"email\":\"test@pic-sure.org\",\"privileges\":[\"PIC_SURE_ANY_QUERY\",\"MANAGED_PRIV_DICTIONARY\",\"AUTHORIZED_ACCESS\",\"MANAGED_PRIV_OPEN_ACCESS\",\"MANUAL_PRIV_NAMED_DATASET\",\"API_ACCESS\"],\"queryScopes\":[\"Gene_with_variant\",\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"acceptedTOS\":false,\"queryTemplate\":{\"categoryFilters\":{\"\\\\_consents\\\\\":[\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"\\\\_harmonized_consent\\\\\":[\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"\\\\_topmed_consents\\\\\":[\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"]},\"numericFilters\":{},\"requiredFields\":[],\"anyRecordOf\":[],\"variantInfoFilters\":[{\"categoryVariantInfoFilters\":{},\"numericVariantInfoFilters\":{}}],\"expectedResultType\":\"COUNT\",\"fields\":[],\"anyRecordOfMulti\":[]}}"
+          "value": "{\"uuid\":\"1234\",\"email\":\"test@pic-sure.org\",\"privileges\":[\"PIC_SURE_ANY_QUERY\",\"MANAGED_PRIV_DICTIONARY\",\"AUTHORIZED_ACCESS\",\"MANAGED_PRIV_OPEN_ACCESS\",\"MANUAL_PRIV_NAMED_DATASET\",\"API_ACCESS\"],\"queryScopes\":[\"Gene_with_variant\",\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"acceptedTOS\":false,\"consents\":{\"\\\\_consents\\\\\":[\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"\\\\_harmonized_consent\\\\\":[\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"],\"\\\\_topmed_consents\\\\\":[\"test_data_set\",\"STUDY123\",\"phs001\",\"phs123\"]}}"
         },
         {
           "name": "datatableSettings",

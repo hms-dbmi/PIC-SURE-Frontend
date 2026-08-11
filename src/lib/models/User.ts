@@ -1,7 +1,8 @@
 import type { Role } from '$lib/models/Role';
 import type { Connection } from '$lib/models/Connection';
 
-import type { QueryInterfaceV2 } from './query/Query';
+/** Consent concept path (e.g. `\_consents\`) to the study identifiers granted under it. */
+export type ConsentsMap = Record<string, string[]>;
 
 export interface User {
   uuid?: string;
@@ -11,7 +12,7 @@ export interface User {
   queryScopes?: string[];
   token?: string;
   acceptedTOS?: boolean;
-  readonly queryTemplate?: QueryInterfaceV2;
+  readonly consents?: ConsentsMap;
 }
 
 export interface ExtendedUser extends User {

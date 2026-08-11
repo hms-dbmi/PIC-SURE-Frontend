@@ -1,19 +1,14 @@
 import {
-  QueryV2,
   QueryV3,
   type ExpectedResultType,
-  type QueryInterfaceV2,
   type PhenotypicFilterInterface,
   type PhenotypicSubqueryInterface,
   type PhenotypicFilterType,
   type PhenotypicClause,
 } from '$lib/models/query/Query';
-import { config } from '$lib/configuration.svelte';
-import type { QueryRequestInterfaceV2, QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
-import { user } from '$lib/stores/User';
-import { filters, filterTree, genomicFilters, hasGenomicFilter } from '$lib/stores/Filter';
-import { exports } from '$lib/stores/Export';
+import { filters, filterTree, genomicFilters } from '$lib/stores/Filter';
 import type {
   Filter,
   FilterType,
@@ -24,110 +19,6 @@ import type {
 } from '$lib/models/Filter.svelte';
 import { LogicTree } from '$lib/models/LogicTree.svelte';
 import type { GenomicFilterInterfacev3, OperatorType } from '$lib/models/query/Query';
-import type { ExportInterface } from '$lib/models/Export.ts';
-
-const harmonizedPath = '\\DCC Harmonized data set';
-const harmonizedConsentPath = '\\_harmonized_consent\\';
-const topmedConsentPath = '\\_topmed_consents\\';
-
-// -------------------------------- V2 Query -------------------------------- //
-
-export function getQueryRequestV2(
-  addConsents = true,
-  resourceUUID = '',
-  expectedResultType: ExpectedResultType = 'COUNT',
-  mutateMethod: (query: QueryV2) => QueryV2 = (q) => q,
-): QueryRequestInterfaceV2 {
-  return getBlankQueryRequestV2(
-    !addConsents,
-    resourceUUID,
-    expectedResultType,
-    (query: QueryV2) => {
-      [...get(genomicFilters), ...get(filters)].forEach((filter: Filter) => {
-        if (filter.filterType === 'Categorical') {
-          if (filter.displayType === 'restrict') {
-            query.addCategoryFilter(filter.id, filter.categoryValues);
-          } else {
-            query.addRequiredField(filter.id);
-          }
-        } else if (filter.filterType === 'numeric') {
-          query.addNumericFilter(filter.id, filter.min || '', filter.max || '');
-        } else if (filter.filterType === 'genomic') {
-          query.addCategoryVariantInfoFilters({
-            Gene_with_variant: filter.Gene_with_variant,
-            Variant_consequence_calculated: filter.Variant_consequence_calculated,
-            Variant_frequency_as_text: filter.Variant_frequency_as_text,
-          });
-        } else if (filter.filterType === 'snp') {
-          query.addSnpFilter(filter.snpValues);
-        } else if (filter.filterType === 'AnyRecordOf') {
-          query.addAnyRecordOfMulti(filter.concepts);
-        }
-      });
-
-      (get(exports) as ExportInterface[]).forEach((exportedField) => {
-        if (exportedField.conceptPath) {
-          query.addField(exportedField.conceptPath);
-        }
-      });
-      return mutateMethod(query);
-    },
-  );
-}
-
-export function getBlankQueryRequestV2(
-  isOpenAccess = false,
-  resourceUUID = '',
-  expectedResultType: ExpectedResultType = 'COUNT',
-  mutateMethod: (query: QueryV2) => QueryV2 = (q) => q,
-): QueryRequestInterfaceV2 {
-  let query: QueryV2 = new QueryV2();
-
-  if (config.features.useQueryTemplate && !isOpenAccess) {
-    const queryTemplate: QueryInterfaceV2 = get(user).queryTemplate as QueryInterfaceV2;
-    if (queryTemplate) {
-      query = new QueryV2(structuredClone(queryTemplate));
-    }
-  }
-
-  query = mutateMethod(query);
-
-  if (config.features.requireConsents && !isOpenAccess) {
-    query = updateConsentFilters(query);
-  }
-
-  query.expectedResultType = expectedResultType;
-
-  return {
-    query,
-    resourceUUID,
-  };
-}
-
-export const updateConsentFilters = (query: QueryV2) => {
-  if (
-    !hasHarmonizedPath(query.categoryFilters) &&
-    !hasHarmonizedPath(query.numericFilters) &&
-    !fieldsIncludeHarmonizedPath(query.fields) &&
-    !fieldsIncludeHarmonizedPath(query.requiredFields)
-  ) {
-    query.removeCategoryFilter(harmonizedConsentPath);
-  }
-
-  if (!get(hasGenomicFilter)) {
-    query.removeCategoryFilter(topmedConsentPath);
-  }
-
-  return query;
-};
-
-const hasHarmonizedPath = (obj: object): boolean => {
-  return Object.keys(obj).some((concept) => concept.includes(harmonizedPath));
-};
-
-const fieldsIncludeHarmonizedPath = (arr: string[]): boolean => {
-  return arr.some((concept) => concept.includes(harmonizedPath));
-};
 
 const parseNumber = (input: string | number | null | undefined): number | undefined => {
   if (input === null || input === undefined) return undefined;
@@ -236,35 +127,28 @@ export function getFilterConcepts(query: QueryV3): string[] {
 }
 
 export function getQueryRequestV3(
-  addConsents = true,
   resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
 ): QueryRequestInterfaceV3 {
-  return getBlankQueryRequestV3(
-    !addConsents,
-    resourceUUID,
-    expectedResultType,
-    (query: QueryV3) => {
-      query.phenotypicClause = buildPhenotypicClauseFromTree(get(filterTree));
-      get(genomicFilters).forEach((filter: Filter) => {
-        if (filter.filterType === 'snp') {
-          convertSnpFilterToClause(filter).forEach((genomicFilter) => {
-            query.genomicFilters.push(genomicFilter);
-          });
-        } else if (filter.filterType === 'genomic') {
-          convertGenomicFilterToClause(filter).forEach((genomicFilter) => {
-            query.genomicFilters.push(genomicFilter);
-          });
-        }
-      });
-      return mutateMethod(query);
-    },
-  );
+  return getBlankQueryRequestV3(resourceUUID, expectedResultType, (query: QueryV3) => {
+    query.phenotypicClause = buildPhenotypicClauseFromTree(get(filterTree));
+    get(genomicFilters).forEach((filter: Filter) => {
+      if (filter.filterType === 'snp') {
+        convertSnpFilterToClause(filter).forEach((genomicFilter) => {
+          query.genomicFilters.push(genomicFilter);
+        });
+      } else if (filter.filterType === 'genomic') {
+        convertGenomicFilterToClause(filter).forEach((genomicFilter) => {
+          query.genomicFilters.push(genomicFilter);
+        });
+      }
+    });
+    return mutateMethod(query);
+  });
 }
 
 export function getBlankQueryRequestV3(
-  isOpenAccess = false,
   resourceUUID = '',
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
@@ -274,81 +158,11 @@ export function getBlankQueryRequestV3(
 
   query = mutateMethod(query);
 
-  if (config.features.requireConsents && !isOpenAccess) {
-    addAuthorizationFiltersV3(query);
-  }
-
   return {
     query: serializeQueryV3(query),
     resourceUUID,
   };
 }
-
-function addAuthorizationFiltersV3(query: QueryV3): void {
-  if (config.features.useQueryTemplate) {
-    const queryTemplate: QueryInterfaceV2 = get(user).queryTemplate as QueryInterfaceV2;
-    if (queryTemplate) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const consents = queryTemplate.categoryFilters as any;
-      if (consents) {
-        const consentsValues = (consents['\\_consents\\'] as string[]) || [];
-        if (consentsValues.length > 0) {
-          query.authorizationFilters.push({
-            conceptPath: '\\_consents\\',
-            values: consentsValues,
-          });
-        }
-        const harmonizedConsents = (consents['\\_harmonized_consent\\'] as string[]) || [];
-        if (harmonizedConsents.length > 0) {
-          query.authorizationFilters.push({
-            conceptPath: '\\_harmonized_consent\\',
-            values: harmonizedConsents,
-          });
-        }
-        const topmedConsents = (consents['\\_topmed_consents\\'] as string[]) || [];
-        if (topmedConsents.length > 0) {
-          query.authorizationFilters.push({
-            conceptPath: '\\_topmed_consents\\',
-            values: topmedConsents,
-          });
-        }
-      }
-    }
-  }
-
-  if (config.features.requireConsents) {
-    const hasHarmonizedInSelect = selectIncludesHarmonizedPathV3(query.select || []);
-    const hasHarmonizedInPhenotype = phenotypicClauseIncludesHarmonizedPath(query.phenotypicClause);
-    const hasAnyHarmonized = hasHarmonizedInSelect || hasHarmonizedInPhenotype;
-
-    if (!hasAnyHarmonized) {
-      query.authorizationFilters = (query.authorizationFilters || []).filter(
-        (af) => af.conceptPath !== harmonizedConsentPath,
-      );
-    }
-
-    const hasGenomic = (query.genomicFilters || []).length > 0;
-    if (!hasGenomic) {
-      query.authorizationFilters = (query.authorizationFilters || []).filter(
-        (af) => af.conceptPath !== topmedConsentPath,
-      );
-    }
-  }
-}
-
-const selectIncludesHarmonizedPathV3 = (arr: string[]): boolean => {
-  return arr.some((concept) => concept.includes(harmonizedPath));
-};
-
-const phenotypicClauseIncludesHarmonizedPath = (clause: PhenotypicClause | null): boolean => {
-  if (!clause) return false;
-  if (clause.type === 'PhenotypicFilter') {
-    const filterClause = clause as PhenotypicFilterInterface;
-    return !!filterClause.conceptPath && filterClause.conceptPath.includes(harmonizedPath);
-  }
-  const sub = clause as PhenotypicSubqueryInterface;
-  return (sub.phenotypicClauses || []).some(phenotypicClauseIncludesHarmonizedPath);
-};
 
 const convertPhenotypicFilterToClause = (filter: Filter): PhenotypicFilterInterface => {
   const newFilterClause: PhenotypicFilterInterface = {

@@ -29,7 +29,7 @@ Psama.Latest = Psama.TOS + '/latest';
 Psama.Accept = Psama.TOS + '/accept';
 Psama.Update = Psama.TOS + '/update';
 Psama.Me = Psama.User + '/me';
-Psama.Template = Psama.User + '/me/queryTemplate*';
+Psama.Consents = Psama.User + '/me/consents';
 Psama.Logout = '*/**/psama/logout';
 
 const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use this site.</p>';
@@ -62,7 +62,7 @@ test.describe('Not logged in', () => {
   });
   test('Terms link displays close button', async ({ page }) => {
     // Given
-    mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
+    await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
     await page.goto('/');
 
     // When
@@ -74,7 +74,7 @@ test.describe('Not logged in', () => {
   });
   test('Terms link opens dismissable modal', async ({ page }) => {
     // Given
-    mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
+    await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
     await page.goto('/');
     await page.getByTestId('terms-of-service-btn').click();
     await expect(page.locator('#terms-of-service')).toBeVisible();
@@ -94,8 +94,8 @@ test.describe('Logged in', () => {
   let meRequest = false;
   let logoutRequest = false;
 
-  test.beforeEach(({ page }) => {
-    mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
+  test.beforeEach(async ({ page }) => {
+    await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
     page.on('request', (request) => {
       if (request.url().includes('/psama/tos/latest')) {
         tosLatestRequest = true;
@@ -144,9 +144,9 @@ test.describe('Logged in', () => {
     });
     test('Clicking the accept sends request', async ({ page }) => {
       // Given
-      mockApiSuccess(page, Psama.Me, picsureUser);
-      mockApiSuccess(page, Psama.Template, picsureUser.queryTemplate);
-      mockApiSuccess(page, Psama.Accept, '');
+      await mockApiSuccess(page, Psama.Me, picsureUser);
+      await mockApiSuccess(page, Psama.Consents, { consents: picsureUser.consents });
+      await mockApiSuccess(page, Psama.Accept, '');
       await page.goto('/');
 
       // When
@@ -159,8 +159,8 @@ test.describe('Logged in', () => {
     });
     test('Clicking the reject redirects the user', async ({ page }) => {
       // Given
-      mockApiSuccess(page, Psama.Logout, {});
-      mockHTMLBodySuccess(
+      await mockApiSuccess(page, Psama.Logout, {});
+      await mockHTMLBodySuccess(
         page,
         branding.termsOfService.rejectionUrl,
         '<h1>Some Rejection Information Page</h1>',
@@ -177,9 +177,9 @@ test.describe('Logged in', () => {
     });
     test('TOS modal has close button after acceptance', async ({ page }) => {
       // Given
-      mockApiSuccess(page, Psama.Me, picsureUser);
-      mockApiSuccess(page, Psama.Template, picsureUser.queryTemplate);
-      mockApiSuccess(page, Psama.Accept, '');
+      await mockApiSuccess(page, Psama.Me, picsureUser);
+      await mockApiSuccess(page, Psama.Consents, { consents: picsureUser.consents });
+      await mockApiSuccess(page, Psama.Accept, '');
       await page.goto('/');
       await page.getByTestId('terms-accept-btn').click();
 
@@ -194,7 +194,7 @@ test.describe('Logged in', () => {
     test('TOS modal is dismissable after acceptance', async ({ page }) => {
       // Given
       await mockApiSuccess(page, Psama.Me, picsureUser);
-      await mockApiSuccess(page, Psama.Template, picsureUser.queryTemplate);
+      await mockApiSuccess(page, Psama.Consents, { consents: picsureUser.consents });
       await mockApiSuccess(page, Psama.Accept, '');
       await page.goto('/');
       await page.getByTestId('terms-accept-btn').click();
@@ -212,7 +212,7 @@ test.describe('Logged in', () => {
     });
     test('Displays an error box when api fails', async ({ page }) => {
       // Given
-      mockApiFail(page, Psama.Latest, 'failed');
+      await mockApiFail(page, Psama.Latest, 'failed');
 
       // When
       await page.goto('/');
@@ -226,11 +226,11 @@ test.describe('Logged in', () => {
   test.describe('Terms edit', () => {
     test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
 
-    test.beforeEach(({ page }) => {
-      mockApiSuccess(page, '*/**/psama/role', mockRoles);
-      mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges);
-      mockApiSuccess(page, '*/**/psama/application', mockApps);
-      mockApiSuccess(page, '*/**/psama/connection', mockConnections);
+    test.beforeEach(async ({ page }) => {
+      await mockApiSuccess(page, '*/**/psama/role', mockRoles);
+      await mockApiSuccess(page, '*/**/psama/privilege', mockPrivileges);
+      await mockApiSuccess(page, '*/**/psama/application', mockApps);
+      await mockApiSuccess(page, '*/**/psama/connection', mockConnections);
     });
 
     // test('Admin can navigate to terms of service configuration page', async ({ page }) => {});
@@ -281,7 +281,7 @@ test.describe('Logged in', () => {
     });
     test('Confirm button submits updated terms, redirects, and success', async ({ page }) => {
       // Given
-      mockHTMLBodySuccess(page, Psama.Update, '');
+      await mockHTMLBodySuccess(page, Psama.Update, '');
       await page.goto('/admin/configuration/terms/edit');
       await userIsLoggedIn(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
@@ -300,7 +300,7 @@ test.describe('Logged in', () => {
     });
     test('Confirm button with api failure gives error and stays on page', async ({ page }) => {
       // Given
-      mockApiFail(page, Psama.Update, 'failed');
+      await mockApiFail(page, Psama.Update, 'failed');
       await page.goto('/admin/configuration/terms/edit');
       await userIsLoggedIn(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');

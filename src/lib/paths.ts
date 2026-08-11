@@ -28,8 +28,6 @@ export const Picsure = {
   Facets: `${DICT}/facets`,
   Search: `${HPDS_AUTH}/search`,
   SearchValues: `${HPDS_AUTH}/search/values`,
-  QueryV2: `${HPDS_AUTH}/query`,
-  QueryV2Sync: `${HPDS_AUTH}/query/sync`,
   QueryOpenV3Sync: `${HPDS_OPEN}/v3/query/sync`,
   QueryV3: `${HPDS_AUTH}/v3/query`,
   QueryV3Sync: `${HPDS_AUTH}/v3/query/sync`,
@@ -56,7 +54,7 @@ export const Psama = {
   User: {
     Logout: 'psama/logout',
     Me: `${USER}/me`,
-    Template: `${USER}/me/queryTemplate`,
+    Consents: `${USER}/me/consents`,
     Refresh: `${USER}/me/refresh_long_term_token`,
   },
 };

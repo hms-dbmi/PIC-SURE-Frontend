@@ -29,7 +29,7 @@ function snpRequest(snp: SNP, resource: string): Promise<number> {
     key: snp.search,
     values: [Genotype.Heterozygous, Genotype.Homozygous],
   };
-  const searchRequest: QueryRequestInterfaceV3 = getBlankQueryRequestV3(false, resource);
+  const searchRequest: QueryRequestInterfaceV3 = getBlankQueryRequestV3(resource);
   searchRequest.query.genomicFilters.push(filter);
   return api.post(Picsure.QueryV3Sync, searchRequest);
 }
