@@ -65,7 +65,7 @@
       subtitle: getSubtitle(data.conceptPath),
     });
 
-    const query = getQueryRequestV3(!isOpenAccess());
+    const query = getQueryRequestV3();
 
     // /visualization/distributions binds the BARE v3 Query too: the
     // { query: ... } wrapper it used to take is now an unknown member.

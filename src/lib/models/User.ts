@@ -1,7 +1,8 @@
 import type { Role } from '$lib/models/Role';
 import type { Connection } from '$lib/models/Connection';
 
-import type { ConsentsMap } from './UserConsents';
+/** Consent concept path (e.g. `\_consents\`) to the study identifiers granted under it. */
+export type ConsentsMap = Record<string, string[]>;
 
 export interface User {
   uuid?: string;
@@ -11,11 +12,6 @@ export interface User {
   queryScopes?: string[];
   token?: string;
   acceptedTOS?: boolean;
-  /**
-   * Study authorizations from `GET /psama/user/me/consents`, fetched once at
-   * hydration. Absent for anyone who has not been hydrated — an open-access
-   * visitor, or a user whose consents fetch failed.
-   */
   readonly consents?: ConsentsMap;
 }
 

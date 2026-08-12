@@ -1,5 +1,4 @@
 import {
-  QueryV2,
   QueryV3,
   type ExpectedResultType,
   type PhenotypicFilterInterface,
@@ -9,11 +8,9 @@ import {
   type QueryInterfaceV3,
 } from '$lib/models/query/Query';
 import { config } from '$lib/configuration.svelte';
-import type { QueryRequestInterfaceV2 } from '$lib/models/api/Request';
 import { get } from 'svelte/store';
 import { user } from '$lib/stores/User';
-import { filters, filterTree, genomicFilters, hasGenomicFilter } from '$lib/stores/Filter';
-import { exports } from '$lib/stores/Export';
+import { filters, filterTree, genomicFilters } from '$lib/stores/Filter';
 import type {
   Filter,
   FilterType,
@@ -30,121 +27,15 @@ import {
   consentValues,
 } from '$lib/models/UserConsents';
 import type { GenomicFilterInterfacev3, OperatorType } from '$lib/models/query/Query';
-import type { ExportInterface } from '$lib/models/Export.ts';
 
 const harmonizedPath = '\\DCC Harmonized data set';
 
 /**
- * The consent concept paths, in the order they are emitted. Both query versions
- * read the same three keys off the user's consents map, so the paths live in the
- * model that decodes that map rather than being restated here.
+ * The consent concept paths, in the order they are emitted as v3
+ * `authorizationFilters`. The paths live in the model that decodes the user's
+ * consents map rather than being restated here.
  */
 const consentPaths = [CONSENTS_PATH, HARMONIZED_CONSENTS_PATH, TOPMED_CONSENTS_PATH] as const;
-
-// -------------------------------- V2 Query -------------------------------- //
-
-export function getQueryRequestV2(
-  addConsents = true,
-  resourceUUID = '',
-  expectedResultType: ExpectedResultType = 'COUNT',
-  mutateMethod: (query: QueryV2) => QueryV2 = (q) => q,
-): QueryRequestInterfaceV2 {
-  return getBlankQueryRequestV2(
-    !addConsents,
-    resourceUUID,
-    expectedResultType,
-    (query: QueryV2) => {
-      [...get(genomicFilters), ...get(filters)].forEach((filter: Filter) => {
-        if (filter.filterType === 'Categorical') {
-          if (filter.displayType === 'restrict') {
-            query.addCategoryFilter(filter.id, filter.categoryValues);
-          } else {
-            query.addRequiredField(filter.id);
-          }
-        } else if (filter.filterType === 'numeric') {
-          query.addNumericFilter(filter.id, filter.min || '', filter.max || '');
-        } else if (filter.filterType === 'genomic') {
-          query.addCategoryVariantInfoFilters({
-            Gene_with_variant: filter.Gene_with_variant,
-            Variant_consequence_calculated: filter.Variant_consequence_calculated,
-            Variant_frequency_as_text: filter.Variant_frequency_as_text,
-          });
-        } else if (filter.filterType === 'snp') {
-          query.addSnpFilter(filter.snpValues);
-        } else if (filter.filterType === 'AnyRecordOf') {
-          query.addAnyRecordOfMulti(filter.concepts);
-        }
-      });
-
-      (get(exports) as ExportInterface[]).forEach((exportedField) => {
-        if (exportedField.conceptPath) {
-          query.addField(exportedField.conceptPath);
-        }
-      });
-      return mutateMethod(query);
-    },
-  );
-}
-
-export function getBlankQueryRequestV2(
-  isOpenAccess = false,
-  resourceUUID = '',
-  expectedResultType: ExpectedResultType = 'COUNT',
-  mutateMethod: (query: QueryV2) => QueryV2 = (q) => q,
-): QueryRequestInterfaceV2 {
-  let query: QueryV2 = new QueryV2();
-
-  // The v2 query template used to arrive pre-seeded with exactly these three
-  // category filters — carrying them was the only reason it was fetched — so
-  // seeding them from the consents map reproduces the old body.
-  if (config.features.requireConsents && !isOpenAccess) {
-    const consents = get(user)?.consents;
-    consentPaths.forEach((conceptPath) => {
-      const values = consentValues(consents, conceptPath);
-      if (values && values.length > 0) {
-        query.addCategoryFilter(conceptPath, values);
-      }
-    });
-  }
-
-  query = mutateMethod(query);
-
-  if (config.features.requireConsents && !isOpenAccess) {
-    query = updateConsentFilters(query);
-  }
-
-  query.expectedResultType = expectedResultType;
-
-  return {
-    query,
-    resourceUUID,
-  };
-}
-
-export const updateConsentFilters = (query: QueryV2) => {
-  if (
-    !hasHarmonizedPath(query.categoryFilters) &&
-    !hasHarmonizedPath(query.numericFilters) &&
-    !fieldsIncludeHarmonizedPath(query.fields) &&
-    !fieldsIncludeHarmonizedPath(query.requiredFields)
-  ) {
-    query.removeCategoryFilter(HARMONIZED_CONSENTS_PATH);
-  }
-
-  if (!get(hasGenomicFilter)) {
-    query.removeCategoryFilter(TOPMED_CONSENTS_PATH);
-  }
-
-  return query;
-};
-
-const hasHarmonizedPath = (obj: object): boolean => {
-  return Object.keys(obj).some((concept) => concept.includes(harmonizedPath));
-};
-
-const fieldsIncludeHarmonizedPath = (arr: string[]): boolean => {
-  return arr.some((concept) => concept.includes(harmonizedPath));
-};
 
 const parseNumber = (input: string | number | null | undefined): number | undefined => {
   if (input === null || input === undefined) return undefined;

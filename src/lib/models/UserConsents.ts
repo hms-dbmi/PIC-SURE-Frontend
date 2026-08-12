@@ -1,3 +1,5 @@
+import type { ConsentsMap } from './User';
+
 /**
  * The wire shape of `GET /psama/user/me/consents` — PSAMA's
  * `UserConsentsResponse` contract record.
@@ -26,8 +28,8 @@ export interface UserConsentsResponse {
   consents?: ConsentsMap;
 }
 
-/** Concept path -> the consent identifiers authorized under it. */
-export type ConsentsMap = Record<string, string[]>;
+/** Concept path -> the consent identifiers authorized under it. Defined on the User model. */
+export type { ConsentsMap };
 
 export const CONSENTS_PATH = '\\_consents\\';
 export const HARMONIZED_CONSENTS_PATH = '\\_harmonized_consent\\';

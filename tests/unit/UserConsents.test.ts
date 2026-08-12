@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 /**
  * `GET /psama/user/me/consents` is the sole client-side source of study
@@ -9,25 +9,16 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
  * three keys `BdcConsentsBuilder` writes — and valued with the consent
  * identifiers verbatim (`phs000007.c1`, `open_access-1000Genomes`, …). These
  * tests pin that decoding, because every consent-aware call site in the app
- * reads through it.
+ * reads through it. The fetch/retry behavior itself is covered in
+ * Consents.test.ts.
  */
 
-vi.mock('$app/environment', () => ({ browser: false }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
-vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
-vi.mock('$lib/api', () => ({ get: vi.fn(), post: vi.fn(), put: vi.fn(), del: vi.fn() }));
-vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn(), getSessionId: () => 'test' }));
-
-import * as api from '$lib/api';
 import {
   CONSENTS_PATH,
   HARMONIZED_CONSENTS_PATH,
   TOPMED_CONSENTS_PATH,
   consentValues,
-  type UserConsentsResponse,
 } from '$lib/models/UserConsents';
-import { getUserConsents } from '$lib/stores/User';
 import { Psama } from '$lib/paths';
 
 describe('the consent concept paths', () => {
@@ -100,45 +91,8 @@ describe('consentValues', () => {
   });
 });
 
-describe('getUserConsents', () => {
-  const get = api.get as Mock;
-
-  beforeEach(() => {
-    get.mockReset();
-  });
-
-  it('reads the self-scoped consents endpoint', async () => {
-    get.mockResolvedValue({ userId: '1234', consents: {} } satisfies UserConsentsResponse);
-
-    await getUserConsents();
-
-    // Self-scoped: no user id in the path. The subject comes from the token.
-    expect(get).toHaveBeenCalledWith(Psama.User.Consents);
+describe('the consents endpoint path', () => {
+  it('is self-scoped: no user id in the path, the subject comes from the token', () => {
     expect(Psama.User.Consents).toBe('psama/user/me/consents');
-  });
-
-  it('hands back the map straight off the typed body, with no JSON.parse step', async () => {
-    // The template arrived as a JSON STRING under `queryTemplate` and had to be
-    // parsed; `/me/consents` answers the typed object directly.
-    const consents = { [CONSENTS_PATH]: ['phs000007.c1'] };
-    get.mockResolvedValue({ userId: '1234', consents } satisfies UserConsentsResponse);
-
-    expect(await getUserConsents()).toEqual(consents);
-  });
-
-  it('returns an empty map for a user with no stored consents', async () => {
-    get.mockResolvedValue({ userId: '1234', consents: {} });
-
-    expect(await getUserConsents()).toEqual({});
-  });
-
-  it('degrades to an empty map instead of throwing when the request fails', async () => {
-    // This runs inside the authorized layout's hydration, where a throw bounces
-    // the user to /login. A missing consent list must not cost them the session.
-    get.mockRejectedValue(new Error('503'));
-    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    expect(await getUserConsents()).toEqual({});
-    error.mockRestore();
   });
 });

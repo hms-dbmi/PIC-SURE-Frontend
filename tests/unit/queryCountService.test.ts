@@ -173,19 +173,18 @@ describe('QueryCountService.getCount', () => {
 });
 
 describe('QueryCountService transport dispatch', () => {
-  it('calls transport with provider.path(descriptor) and provider.buildRequest(descriptor)', async () => {
+  it('builds and transports a bare query request without a resource UUID', async () => {
     const transport = vi.fn().mockResolvedValue(0);
+    const buildRequest = vi.fn(() => ({ expectedResultType: 'COUNT' }) as never);
     const provider: CountProvider = {
       id: 'query:patientCount',
       path: (d) => (d.isOpenAccess ? '/open' : '/auth'),
-      buildRequest: () => ({ expectedResultType: 'COUNT' }) as never,
+      buildRequest,
       parse: (raw) => raw as number,
     };
     const service = createQueryCountService({ transport });
     await service.getCount(descriptor, provider, resource);
-    expect(transport).toHaveBeenCalledWith(
-      '/auth',
-      expect.objectContaining({ expectedResultType: 'COUNT' }),
-    );
+    expect(buildRequest).toHaveBeenCalledWith(descriptor);
+    expect(transport).toHaveBeenCalledWith('/auth', { expectedResultType: 'COUNT' });
   });
 });

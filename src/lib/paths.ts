@@ -1,6 +1,3 @@
-// httpd strips the leading `/picsure/` before the gateway sees the request, so the frontend keeps
-// the `picsure/` prefix and only the suffix changes. The legacy `/proxy/{container}` relay is gone —
-// each service now has a clean gateway prefix: `/dictionary`, `/uploader`, `/logging`, …
 const PREFIX = 'picsure';
 const DICT = `${PREFIX}/dictionary`;
 const VIZ = `${PREFIX}/visualization`;

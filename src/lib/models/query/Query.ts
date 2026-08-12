@@ -1,6 +1,3 @@
-import type { Indexable } from '$lib/types';
-import { type SNP } from '$lib/models/GenomeFilter';
-
 export type ExpectedResultType =
   | 'COUNT'
   | 'CROSS_COUNT'
@@ -12,8 +9,6 @@ export type ExpectedResultType =
   | 'VCF_EXCERPT'
   | 'VARIANT_COUNT_FOR_QUERY'
   | 'SECRET_ADMIN_DATAFRAME';
-
-export type QueryInterface = QueryInterfaceV2 | QueryInterfaceV3;
 
 export interface QueryInterfaceV2 {
   fields: string[];
@@ -67,89 +62,6 @@ export class QueryV2 implements QueryInterfaceV2 {
     };
     this.variantInfoFilters = [variantInfoFilter];
     this.expectedResultType = newQuery?.expectedResultType || 'COUNT';
-  }
-
-  addCategoryFilter(key: string, value: string[]) {
-    (this.categoryFilters as Indexable)[key] = value;
-  }
-
-  removeCategoryFilter(key: string) {
-    delete (this.categoryFilters as Indexable)[key];
-  }
-
-  addNumericFilter(key: string, min: string, max: string) {
-    (this.numericFilters as Indexable)[key] = {
-      min: min.toString(),
-      max: max.toString(),
-    };
-  }
-
-  addCategoryVariantInfoFilters(filter: {
-    Gene_with_variant?: string[];
-    Variant_consequence_calculated?: string[];
-    Variant_frequency_as_text?: string[];
-  }) {
-    this.variantInfoFilters[0].categoryVariantInfoFilters = {
-      Gene_with_variant: filter.Gene_with_variant,
-      Variant_consequence_calculated: filter.Variant_consequence_calculated,
-      Variant_frequency_as_text: filter.Variant_frequency_as_text,
-    };
-  }
-
-  addAnyRecordOfMulti(field: Array<string>) {
-    this.anyRecordOfMulti.push(field);
-  }
-
-  setCrossCountFields(fields: string[]) {
-    this.crossCountFields = fields;
-  }
-
-  addSnpFilter(snps: SNP[]) {
-    snps.forEach((snp) => {
-      {
-        (this.categoryFilters as Indexable)[snp.search] = snp.constraint.split(',');
-      }
-    });
-  }
-
-  addRequiredField(field: string) {
-    if (!this.requiredFields.includes(field)) {
-      this.requiredFields.push(field);
-    }
-  }
-
-  addField(field: string) {
-    if (!this.fields.includes(field)) {
-      this.fields.push(field);
-    }
-  }
-
-  addAnyRecordOf(field: string) {
-    if (!this.anyRecordOf.includes(field)) {
-      this.anyRecordOf.push(field);
-    }
-  }
-
-  hasGenomicFilter() {
-    const Gene_with_variant =
-      this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Gene_with_variant?.length || 0;
-    const Variant_consequence_calculated =
-      this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Variant_consequence_calculated
-        ?.length || 0;
-    const Variant_frequency_as_text =
-      this.variantInfoFilters[0]?.categoryVariantInfoFilters?.Variant_frequency_as_text?.length ||
-      0;
-    return Gene_with_variant + Variant_consequence_calculated + Variant_frequency_as_text;
-  }
-
-  hasFilter() {
-    return (
-      Object.keys(this.categoryFilters).length +
-      Object.keys(this.numericFilters).length +
-      this.hasGenomicFilter() +
-      this.requiredFields.length +
-      this.anyRecordOf.length
-    );
   }
 }
 

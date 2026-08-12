@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import type { Writable } from 'svelte/store';
 
 import type { Facet } from '$lib/models/Search';
-import type { DictionarySearchRequest } from '$lib/models/api/Dictionary';
 
 /**
  * The dictionary service binds request bodies strictly
@@ -33,6 +32,8 @@ const stores = vi.hoisted(() => {
   return {} as {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     user: Writable<any>;
+    consentedStudies: Writable<string[]>;
+    accessUnavailable: Writable<boolean>;
     searchTerm: Writable<string>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     selectedFacets: Writable<any[]>;
@@ -42,7 +43,18 @@ const stores = vi.hoisted(() => {
 vi.mock('$lib/stores/User', async () => {
   const { writable } = await import('svelte/store');
   stores.user = writable(undefined);
-  return { user: stores.user, logout: vi.fn(), login: vi.fn() };
+  stores.consentedStudies = writable([]);
+  stores.accessUnavailable = writable(false);
+  return {
+    user: stores.user,
+    consentedStudies: stores.consentedStudies,
+    accessUnavailable: stores.accessUnavailable,
+    consentsSettled: () => Promise.resolve(),
+    showAccessUnavailable: vi.fn(),
+    ACCESS_UNAVAILABLE_MESSAGE: 'access unavailable',
+    logout: vi.fn(),
+    login: vi.fn(),
+  };
 });
 
 vi.mock('$lib/stores/Search', async () => {
@@ -53,13 +65,7 @@ vi.mock('$lib/stores/Search', async () => {
 });
 
 import * as api from '$lib/api';
-import {
-  addConsents,
-  getConceptCount,
-  searchDictionary,
-  toFacetFilter,
-  updateFacetsFromSearch,
-} from '$lib/stores/Dictionary';
+import { searchDictionary, toFacetFilter, updateFacetsFromSearch } from '$lib/stores/Dictionary';
 
 const post = api.post as Mock;
 
@@ -104,6 +110,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   post.mockResolvedValue({ results: [], total: 0 });
   stores.user.set(undefined);
+  stores.consentedStudies.set([]);
+  stores.accessUnavailable.set(false);
   stores.searchTerm.set('');
   stores.selectedFacets.set([]);
   mockPage.url = new URL('http://localhost/explorer');
@@ -159,100 +167,5 @@ describe('outbound facets', () => {
 
     expect(decoratedFacet.categoryRef).toBeDefined();
     expect(decoratedFacet.count).toBe(4321);
-  });
-});
-
-describe('addConsents', () => {
-  // The source is the user store's `consents` map, filled once at hydration from
-  // GET /psama/user/me/consents. It replaces the deleted query template, which
-  // carried the identical map as its `categoryFilters`.
-  function withConsents(consents: unknown) {
-    stores.user.set({ consents });
-  }
-
-  function request(): DictionarySearchRequest {
-    return { facets: [], search: '', consents: [] };
-  }
-
-  it('sends a well-formed string list through untouched', () => {
-    withConsents({ '\\_consents\\': ['phs000007.c1', 'phs000007.c2'] });
-
-    const body = JSON.parse(JSON.stringify(addConsents(request())));
-    expect(body.consents).toEqual(['phs000007.c1', 'phs000007.c2']);
-  });
-
-  it('reads only the consents path, ignoring the harmonized and topmed entries', () => {
-    withConsents({
-      '\\_consents\\': ['phs000007.c1'],
-      '\\_harmonized_consent\\': ['phs000007.c1'],
-      '\\_topmed_consents\\': ['phs000007.c1'],
-    });
-
-    const body = JSON.parse(JSON.stringify(addConsents(request())));
-    expect(body.consents).toEqual(['phs000007.c1']);
-  });
-
-  it('omits consents when the map carries an object instead of a list', () => {
-    withConsents({ '\\_consents\\': { phs000007: 'c1' } });
-
-    const body = JSON.parse(JSON.stringify(addConsents(request())));
-    expect(body).not.toHaveProperty('consents');
-  });
-
-  it('omits consents when the list holds non-strings', () => {
-    withConsents({ '\\_consents\\': ['phs000007.c1', 42] });
-
-    const body = JSON.parse(JSON.stringify(addConsents(request())));
-    expect(body).not.toHaveProperty('consents');
-  });
-
-  it('omits consents when the map carries a bare string', () => {
-    withConsents({ '\\_consents\\': 'phs000007.c1' });
-
-    const body = JSON.parse(JSON.stringify(addConsents(request())));
-    expect(body).not.toHaveProperty('consents');
-  });
-
-  it('sends an empty list when the map has no consents entry at all', () => {
-    withConsents({});
-
-    const body = JSON.parse(JSON.stringify(addConsents(request())));
-    expect(body.consents).toEqual([]);
-  });
-
-  it('sends an empty list for a user with no consents record', () => {
-    // PSAMA answers `{ userId, consents: {} }` rather than erroring, and an
-    // un-hydrated open-access visitor has no `consents` member at all. Both mean
-    // "nothing authorized", not "something went wrong".
-    withConsents(undefined);
-
-    const body = JSON.parse(JSON.stringify(addConsents(request())));
-    expect(body.consents).toEqual([]);
-  });
-
-  it('warns about a malformed consents map exactly once, however many calls follow', async () => {
-    // A fresh module instance: the "warn once" latch is module state, and an
-    // earlier test in this file may already have tripped it.
-    vi.resetModules();
-    const fresh = await import('$lib/stores/Dictionary');
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    withConsents({ '\\_consents\\': { nope: true } });
-
-    fresh.addConsents(request());
-    fresh.addConsents(request());
-    fresh.addConsents(request());
-
-    expect(warn).toHaveBeenCalledTimes(1);
-    warn.mockRestore();
-  });
-
-  it('keeps a malformed consents map out of the request the dashboard fires on load', async () => {
-    withConsents({ '\\_consents\\': { phs000007: 'c1' } });
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    post.mockResolvedValue({ results: [], total: 7 });
-
-    await getConceptCount();
-
-    expect(sentBody()).not.toHaveProperty('consents');
   });
 });

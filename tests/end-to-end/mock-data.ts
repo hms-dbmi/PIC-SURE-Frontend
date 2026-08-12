@@ -1,6 +1,5 @@
-import type { User } from '../../src/lib/models/User';
+import type { ConsentsMap, User } from '../../src/lib/models/User';
 import { PicsurePrivileges, BDCPrivileges } from '../../src/lib/models/Privilege';
-import type { UserConsentsResponse } from '$lib/models/UserConsents';
 import type { DashboardResp } from '$lib/stores/Dashboard';
 import type { Indexable } from '$lib/types';
 
@@ -297,15 +296,10 @@ export const mockDashboard: DashboardResp = {
   ],
 };
 
-// The body of GET /psama/user/me/consents. Keyed by concept path, exactly as
-// PSAMA's BdcConsentsBuilder files them.
-export const mockUserConsents: UserConsentsResponse = {
-  userId: '1234',
-  consents: {
-    '\\_consents\\': ['test_data_set', 'STUDY123', 'phs001', 'phs123'],
-    '\\_harmonized_consent\\': ['test_data_set', 'STUDY123', 'phs001', 'phs123'],
-    '\\_topmed_consents\\': ['test_data_set', 'STUDY123', 'phs001', 'phs123'],
-  },
+export const mockConsents: ConsentsMap = {
+  '\\_consents\\': ['test_data_set', 'STUDY123', 'phs001', 'phs123'],
+  '\\_harmonized_consent\\': ['test_data_set', 'STUDY123', 'phs001', 'phs123'],
+  '\\_topmed_consents\\': ['test_data_set', 'STUDY123', 'phs001', 'phs123'],
 };
 
 export const picsureUser: User = {
@@ -323,7 +317,7 @@ export const picsureUser: User = {
   // expired token
   token: mockToken,
   acceptedTOS: true,
-  consents: mockUserConsents.consents,
+  consents: mockConsents,
 };
 
 export const userTypes = {

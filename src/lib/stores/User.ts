@@ -3,15 +3,15 @@ import { get, writable, derived, type Writable, type Readable } from 'svelte/sto
 import { browser } from '$app/environment';
 import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
-import type { User } from '$lib/models/User';
+import type { ConsentsMap, User } from '$lib/models/User';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, config } from '$lib/configuration.svelte';
 import { Psama } from '$lib/paths';
 import { goto } from '$app/navigation';
-import type { ConsentsMap, UserConsentsResponse } from '$lib/models/UserConsents';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/state';
 import { log, createLog } from '$lib/logger';
+import { isToastShowing, toaster } from '$lib/toaster';
 
 // Create a store that syncs with localStorage
 function createLocalStorageStore(key: string, initialValue: boolean) {
@@ -38,6 +38,27 @@ export const isTopAdmin = derived(user, ($user: User) => {
 export const isAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.ADMIN);
 });
+
+/**
+ * `\_consents\` is the complete grant list; the harmonized and topmed keys are subsets the
+ * backend uses to authorize queries. Token-gated, so a logout in another tab cannot leave a
+ * restored sessionStorage blob reporting access the user no longer has.
+ */
+export const consentedStudies: Readable<string[]> = derived(
+  [user, tokenStatus],
+  ([$user, $hasToken]: [User, boolean]) =>
+    $hasToken ? ($user?.consents?.['\\_consents\\'] ?? []) : [],
+);
+
+/**
+ * Unknown access, not absent access: `{}` is loaded-with-none, missing is unknown.
+ * Derived from the data because `user` persists to sessionStorage and module state does not -
+ * a reload skips re-hydrating, so a status flag would reset to "fine" and fail open again.
+ */
+export const accessUnavailable: Readable<boolean> = derived(
+  [user, tokenStatus],
+  ([$user, $hasToken]: [User, boolean]) => $hasToken && $user?.consents === undefined,
+);
 
 // User data lives in sessionStorage (tab-scoped), not localStorage. Each tab has its own
 // isolated user state, so opening the app in multiple tabs or logging out in one tab
@@ -176,39 +197,66 @@ export function refreshLongTermToken() {
   });
 }
 
+export const ACCESS_UNAVAILABLE_MESSAGE =
+  'We could not load which studies you have access to. Studies you are authorized for may not ' +
+  'be shown, and searching the data dictionary is unavailable. Please log out and log back in. ' +
+  'If the problem persists, please contact an administrator.';
+
+/** Delay before each attempt. Retry once straight away, then back off for a real outage. */
+const CONSENTS_RETRY_DELAYS_MS = [0, 0, 3_000];
+
 /**
- * The caller's study authorizations, the single source every consent-aware call site
- * reads from. Replaces the deleted `/me/queryTemplate` fetch, which pulled the same map
- * out of a v2 query template and had to `JSON.parse` a string-encoded body to get at it;
- * `/me/consents` answers the typed map directly.
- *
- * Never throws. A user with no stored record gets an empty map from the server, and a
- * request that fails outright degrades to the same empty map — this runs inside the
- * authorized layout's hydration, where throwing would bounce the user to /login over
- * what is only a missing consent list.
+ * Requires PSAMA to answer 200 with an empty map when a user has no consents; its 500 is
+ * indistinguishable from a transient failure. Throws once attempts are exhausted rather than
+ * returning `{}` - the dictionary treats an empty list as no filter and returns everything.
  */
-export async function getUserConsents(): Promise<ConsentsMap> {
-  try {
-    const res: UserConsentsResponse = await api.get(Psama.User.Consents);
-    return res?.consents || {};
-  } catch (error) {
-    console.error('Error fetching user consents: ' + error);
-    return {};
+export async function getConsents(): Promise<ConsentsMap> {
+  for (const [attempt, delay] of CONSENTS_RETRY_DELAYS_MS.entries()) {
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+    try {
+      const res = await api.get(Psama.User.Consents);
+      return (res?.consents as ConsentsMap) || {};
+    } catch (error) {
+      if (attempt === CONSENTS_RETRY_DELAYS_MS.length - 1) {
+        console.error(`Error fetching user consents after ${attempt + 1} attempts: ` + error);
+        throw error;
+      }
+    }
   }
+  throw new Error('unreachable');
+}
+
+let consentsRequest: Promise<void> = Promise.resolve();
+
+/** Resolves once the in-flight access fetch has succeeded or given up. Never rejects. */
+export const consentsSettled = () => consentsRequest;
+
+/** Leaves `consents` undefined on failure - see `accessUnavailable`. */
+export function loadConsents(): Promise<void> {
+  user.set({ ...get(user), consents: undefined });
+  consentsRequest = getConsents()
+    .then((consents) => {
+      user.set({ ...get(user), consents });
+    })
+    .catch(() => showAccessUnavailable());
+  return consentsRequest;
+}
+
+/** Idempotent per visible toast, so repeated blocked requests do not stack up alerts. */
+export function showAccessUnavailable() {
+  if (isToastShowing('access-unavailable')) return;
+  toaster.error({ id: 'access-unavailable', title: ACCESS_UNAVAILABLE_MESSAGE, closable: true });
 }
 
 /**
  * Populate the user store from PSAMA using the token in localStorage. Used by the login
  * flow and by the authorized layout when a fresh tab has a valid token but no user data
  * in sessionStorage (since sessionStorage is tab-scoped, each new tab starts empty).
- *
- * Consents are fetched here and only here, so open-access and discover flows — which
- * never hydrate, because they have no token — never touch the authenticated endpoint.
  */
 export async function hydrateUserFromToken() {
   await getUser(true, false);
-  const consents = await getUserConsents();
-  user.set({ ...get(user), consents });
+  // Not awaited: see loadConsents. Consumers wait on consentsSettled() instead.
+  loadConsents();
 }
 
 export async function login(token: string) {
