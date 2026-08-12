@@ -1,7 +1,15 @@
-import { expect } from '@playwright/test';
-import { test, mockHTMLBodySuccess, mockApiConfig } from '../custom-context';
+import { expect, type Route } from '@playwright/test';
+import { test, mockHTMLBodySuccess, mockApiConfig, mockApiSuccess } from '../custom-context';
 import type { Branding } from '$lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
+import {
+  mockToken,
+  picsureUser,
+  searchResultPath,
+  searchResults,
+  facetResultPath,
+  facetsResponse,
+} from '../mock-data';
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
@@ -199,4 +207,61 @@ test.describe('Login page', () => {
       await expect(page).toHaveURL(urlMatcher);
     });
   }
+});
+
+test.describe('Login redirect preserves search state', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+    await mockApiSuccess(page, '*/**/psama/authentication', picsureUser);
+    await mockApiSuccess(page, '*/**/psama/authentication/auth0', picsureUser);
+    await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
+    await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
+    await page.route(searchResultPath, async (route: Route) =>
+      route.fulfill({ json: searchResults }),
+    );
+    await page.route(facetResultPath, async (route: Route) =>
+      route.fulfill({ json: facetsResponse }),
+    );
+  });
+
+  test('Search survives the redirect through login and back', async ({ page, browserName }) => {
+    // Simulating the /login/loading callback this way (jumping straight to the
+    // #access_token hash) is inherently racy on firefox/webkit - setup.ts uses the same
+    // technique and is restricted to chromium in playwright.config.ts for that reason.
+    test.skip(
+      browserName !== 'chromium',
+      'Login callback simulation is chromium-only, see setup.ts',
+    );
+
+    // Given: an unauthenticated user has an in-progress search and gets bounced to login
+    await page.goto('/explorer?search=somedata');
+    await page.waitForURL(/\/login\?redirectTo=/);
+    const loginUrl = new URL(page.url());
+    expect(loginUrl.pathname).toBe('/login');
+    const redirectTo = loginUrl.searchParams.get('redirectTo');
+    expect(redirectTo).toBe('/explorer?search=somedata');
+
+    // When: login completes - saveState() would have recorded redirectTo before leaving
+    // for the IdP, so seed it the same way rather than driving a real IdP redirect.
+    // addInitScript (not evaluate) so the value survives the full-page navigation below.
+    await page.addInitScript((redirect) => {
+      sessionStorage.setItem('redirect', redirect as string);
+      sessionStorage.setItem('type', 'AUTH0');
+    }, redirectTo);
+    const mockLoginResponse =
+      '/login/loading/#access_token=' +
+      mockToken +
+      '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G';
+    // The app's own client-side goto() back to redirectTo can fire before this
+    // navigation's load event settles (esp. firefox/webkit), aborting it - that's fine,
+    // waitForURL below is what actually confirms we landed on the right page.
+    await page.goto(mockLoginResponse).catch(() => {});
+
+    // Then: the user lands back on the same search, and it re-runs automatically
+    await page.waitForURL('/explorer?search=somedata');
+    await expect(page.getByTestId('search-box')).toHaveValue('somedata');
+    await expect(page.locator('table')).toBeVisible();
+  });
 });

@@ -10,6 +10,7 @@ import { Psama } from '$lib/paths';
 import { goto } from '$app/navigation';
 import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/state';
+import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
 import { log, createLog } from '$lib/logger';
 import { isToastShowing, toaster } from '$lib/toaster';
 
@@ -314,7 +315,7 @@ function handleLogout(redirect: boolean) {
   user.set({});
   log(createLog('AUTH', 'logout.success'));
   if (redirect) {
-    goto(resolve(`/login?redirectTo=${encodeURIComponent(page.url.pathname)}`));
+    goto(resolve(loginRedirectPath(page.url) as '/'));
   } else {
     goto(resolve('/login'));
   }
