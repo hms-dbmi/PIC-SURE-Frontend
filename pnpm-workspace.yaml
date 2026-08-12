@@ -1,9 +1,6 @@
 allowBuilds:
-  esbuild: set this to true or false
-
-onlyBuiltDependencies:
-  - '@tailwindcss/oxide'
-  - esbuild
+  '@tailwindcss/oxide': true
+  esbuild: true
 
 auditConfig:
   ignoreGhsas:
