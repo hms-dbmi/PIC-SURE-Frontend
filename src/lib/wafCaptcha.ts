@@ -1,3 +1,5 @@
+import { goto } from '$app/navigation';
+import { resolve } from '$app/paths';
 import { log, createLog } from '$lib/logger';
 import { isOpenAccess } from '$lib/AccessState';
 
@@ -27,7 +29,8 @@ export function handleWafCaptcha(path: string): boolean {
   }
 
   reloadInitiated = true;
-  sessionStorage.setItem(PENDING_KEY, JSON.stringify({ ts: Date.now(), path, mode }));
+  const route = window.location.pathname + window.location.search;
+  sessionStorage.setItem(PENDING_KEY, JSON.stringify({ ts: Date.now(), path, mode, route }));
   sessionStorage.setItem(GUARD_KEY, String(Date.now()));
   // keepalive so the reload below doesn't abort this POST.
   log(createLog('ACTION', 'waf.captcha_shown', { path, mode }, { status: 405 }), {
@@ -37,17 +40,22 @@ export function handleWafCaptcha(path: string): boolean {
   return true;
 }
 
-export function logWafCaptchaResolution(): void {
+export function resumeAfterWafCaptcha(): void {
   const pending = sessionStorage.getItem(PENDING_KEY);
   if (!pending) return;
   sessionStorage.removeItem(PENDING_KEY);
 
   try {
-    const { ts, path, mode } = JSON.parse(pending);
+    const { ts, path, mode, route } = JSON.parse(pending);
     if (Date.now() - ts > STALE_PENDING_MS) return; // abandoned at the CAPTCHA; not a resolution
     log(createLog('ACTION', 'waf.captcha_resolved', { path, mode, durationMs: Date.now() - ts }));
     // Anchor the loop-guard window to the completed reload, not the detection instant.
     sessionStorage.setItem(GUARD_KEY, String(Date.now()));
+    // The reload normally lands back on the same URL; goto only fires when boot
+    // logic redirected elsewhere in the meantime.
+    if (route && route !== window.location.pathname + window.location.search) {
+      goto(resolve(route as '/'));
+    }
   } catch {
     return;
   }

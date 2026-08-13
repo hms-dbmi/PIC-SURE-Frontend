@@ -12,6 +12,14 @@ vi.mock('$lib/AccessState', () => ({
   isOpenAccess: () => mockIsOpen,
 }));
 
+const mockGoto = vi.fn();
+vi.mock('$app/navigation', () => ({
+  goto: (...args: unknown[]) => mockGoto(...args),
+}));
+vi.mock('$app/paths', () => ({
+  resolve: (path: string) => path,
+}));
+
 const PENDING_KEY = 'waf-captcha-pending';
 const GUARD_KEY = 'waf-captcha-guard';
 const NOW = 1_700_000_000_000;
@@ -36,7 +44,9 @@ describe('wafCaptcha', () => {
     mockIsOpen = true;
 
     reloadSpy = vi.fn();
-    vi.stubGlobal('window', { location: { reload: reloadSpy } });
+    vi.stubGlobal('window', {
+      location: { reload: reloadSpy, pathname: '/discover', search: '?search=somedata' },
+    });
 
     storage = {};
     vi.stubGlobal('sessionStorage', {
@@ -95,6 +105,7 @@ describe('wafCaptcha', () => {
         ts: NOW,
         path: '/picsure/query/sync',
         mode: 'open',
+        route: '/discover?search=somedata',
       });
       expect(storage[GUARD_KEY]).toBe(String(NOW));
       expect(mockCreateLog).toHaveBeenCalledWith(
@@ -153,11 +164,12 @@ describe('wafCaptcha', () => {
     });
   });
 
-  describe('logWafCaptchaResolution', () => {
+  describe('resumeAfterWafCaptcha', () => {
     it('does nothing when no pending state exists', () => {
-      waf.logWafCaptchaResolution();
+      waf.resumeAfterWafCaptcha();
 
       expect(mockLog).not.toHaveBeenCalled();
+      expect(mockGoto).not.toHaveBeenCalled();
       expect(storage[GUARD_KEY]).toBeUndefined();
     });
 
@@ -166,9 +178,10 @@ describe('wafCaptcha', () => {
         ts: NOW - 45_000,
         path: '/picsure/query/sync',
         mode: 'open',
+        route: '/discover?search=somedata',
       });
 
-      waf.logWafCaptchaResolution();
+      waf.resumeAfterWafCaptcha();
 
       expect(mockCreateLog).toHaveBeenCalledWith('ACTION', 'waf.captcha_resolved', {
         path: '/picsure/query/sync',
@@ -179,16 +192,57 @@ describe('wafCaptcha', () => {
       expect(storage[GUARD_KEY]).toBe(String(NOW));
     });
 
-    it('treats stale pending state as abandoned: cleared, no resolved log', () => {
+    it('does not navigate when the stored route matches the current location', () => {
       storage[PENDING_KEY] = JSON.stringify({
-        ts: NOW - 11 * 60_000,
+        ts: NOW - 45_000,
+        path: '/picsure/query/sync',
+        mode: 'open',
+        route: '/discover?search=somedata',
+      });
+
+      waf.resumeAfterWafCaptcha();
+
+      expect(mockGoto).not.toHaveBeenCalled();
+    });
+
+    it('restores the stored route when boot landed somewhere else', () => {
+      storage[PENDING_KEY] = JSON.stringify({
+        ts: NOW - 45_000,
+        path: '/picsure/query/sync',
+        mode: 'open',
+        route: '/explorer?filters=abc',
+      });
+
+      waf.resumeAfterWafCaptcha();
+
+      expect(mockGoto).toHaveBeenCalledWith('/explorer?filters=abc');
+    });
+
+    it('tolerates pending state without a route (no navigation)', () => {
+      storage[PENDING_KEY] = JSON.stringify({
+        ts: NOW - 45_000,
         path: '/picsure/query/sync',
         mode: 'open',
       });
 
-      waf.logWafCaptchaResolution();
+      waf.resumeAfterWafCaptcha();
+
+      expect(mockLog).toHaveBeenCalledTimes(1);
+      expect(mockGoto).not.toHaveBeenCalled();
+    });
+
+    it('treats stale pending state as abandoned: cleared, no resolved log, no navigation', () => {
+      storage[PENDING_KEY] = JSON.stringify({
+        ts: NOW - 11 * 60_000,
+        path: '/picsure/query/sync',
+        mode: 'open',
+        route: '/explorer?filters=abc',
+      });
+
+      waf.resumeAfterWafCaptcha();
 
       expect(mockLog).not.toHaveBeenCalled();
+      expect(mockGoto).not.toHaveBeenCalled();
       expect(storage[PENDING_KEY]).toBeUndefined();
       expect(storage[GUARD_KEY]).toBeUndefined();
     });
@@ -196,7 +250,7 @@ describe('wafCaptcha', () => {
     it('survives corrupt pending state without throwing', () => {
       storage[PENDING_KEY] = 'not json{';
 
-      expect(() => waf.logWafCaptchaResolution()).not.toThrow();
+      expect(() => waf.resumeAfterWafCaptcha()).not.toThrow();
       expect(mockLog).not.toHaveBeenCalled();
       expect(storage[PENDING_KEY]).toBeUndefined();
       expect(storage[GUARD_KEY]).toBeUndefined();
