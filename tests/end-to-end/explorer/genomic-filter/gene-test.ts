@@ -12,8 +12,7 @@ import type { Branding } from '$lib/models/Configuration';
 import brandingJson from '../../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
-const HPDS = process.env.VITE_RESOURCE_HPDS;
-const QUERY = '*/**/picsure/v3/query/sync';
+const QUERY = '*/**/picsure/hpds/auth/v3/query/sync';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -24,7 +23,7 @@ test.beforeEach(async ({ page }) => {
       { name: 'ENABLE_SNP_QUERY', value: 'true' },
     ],
   });
-  await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
+  await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, geneValues);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, searchResultPath, searchResults);
 
@@ -64,7 +63,7 @@ test.describe('Gene selection', () => {
 
     // When
     const mockSearchResults = ['G123Z', 'G234Z'];
-    await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, {
+    await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, {
       ...geneValues,
       results: mockSearchResults,
     });

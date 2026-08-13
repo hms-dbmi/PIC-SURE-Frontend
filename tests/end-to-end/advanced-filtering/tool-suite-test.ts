@@ -11,7 +11,7 @@ import {
 } from '../mock-data';
 import { clickNthFilterIcon, getOption, userIsLoggedIn } from '../utils';
 
-const SYNC_URL = '*/**/picsure/query/sync';
+const SYNC_URL = '*/**/picsure/hpds/open/v3/query/sync';
 
 test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });

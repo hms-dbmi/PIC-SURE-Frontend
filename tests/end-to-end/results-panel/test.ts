@@ -12,8 +12,8 @@ import {
 } from '../mock-data';
 import { getOption, userIsLoggedIn } from '../utils';
 
-const countResultPath = '*/**/picsure/v3/query/sync';
-const openCountResultPath = '*/**/picsure/query/sync';
+const countResultPath = '*/**/picsure/hpds/auth/v3/query/sync';
+const openCountResultPath = '*/**/picsure/hpds/open/v3/query/sync';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -305,7 +305,7 @@ test.describe('Results Panel', () => {
         ],
       });
       page.on('request', (request) => {
-        if (request.url().includes('/picsure/query/sync')) {
+        if (request.url().includes('/picsure/hpds/open/v3/query/sync')) {
           const data = request.postData();
           if (data !== null) {
             querySyncRequest.push(data);

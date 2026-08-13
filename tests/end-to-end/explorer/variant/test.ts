@@ -13,8 +13,7 @@ import {
 } from '../../mock-data';
 import { getOption, clickNthFilterIcon, userIsLoggedIn } from '../../utils';
 
-const HPDS = process.env.VITE_RESOURCE_HPDS;
-const SyncQueryV3 = '*/**/picsure/v3/query/sync';
+const SyncQueryV3 = '*/**/picsure/hpds/auth/v3/query/sync';
 
 interface Results {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,12 +54,12 @@ test.describe('variant explorer', () => {
         ],
       });
       await mockApiSuccess(page, SyncQueryV3, '9999');
-      await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
+      await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
       // Add genomic filter steps
       await page.goto('/explorer');
       await userIsLoggedIn(page);
       await mockSyncAPI(page, successResults);
-      await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
+      await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, geneValues);
       // open the sidebar to reduce locator time on result panel items during testing
       await page.locator('#results-panel-toggle').click();
       await page.getByTestId('genomic-filter-btn').click();

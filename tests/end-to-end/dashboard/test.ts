@@ -14,7 +14,7 @@ test.describe('Dashboard page', () => {
         { name: 'DASHBOARD', value: 'true' },
       ],
     });
-    await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/dashboard', mockDashboard);
+    await mockApiSuccess(page, '*/**/picsure/dictionary/dashboard', mockDashboard);
   });
   test.describe('Dashboard table', () => {
     test('Has a dashboard once request loads', async ({ page }) => {
@@ -45,7 +45,7 @@ test.describe('Dashboard page', () => {
     });
     test('Dashboard rows are clickable and open drawer', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/dashboard-drawer/1', {
+      await mockApiSuccess(page, '*/**/picsure/dictionary/dashboard-drawer/1', {
         dashboardDrawerList: [{ ...mockDashboard.rows[0] }],
       });
       await page.goto('/dashboard');
@@ -62,7 +62,7 @@ test.describe('Dashboard page', () => {
     });
     test('Dashboard drawer displays correct data', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/dashboard-drawer/1', {
+      await mockApiSuccess(page, '*/**/picsure/dictionary/dashboard-drawer/1', {
         ...mockDashboard.rows[0],
       });
       await page.goto('/dashboard');

@@ -13,7 +13,7 @@ import {
 } from '../mock-data';
 import { clickNthFilterIcon, getOption, userIsLoggedIn } from '../utils';
 
-const SYNC_URL = '*/**/picsure/v3/query/sync';
+const SYNC_URL = '*/**/picsure/hpds/auth/v3/query/sync';
 
 /**
  * Page Object Model for the Advanced Filtering feature.

@@ -11,8 +11,7 @@ import {
 } from '../mock-data';
 import { getOption, clickNthFilterIcon, optionsHaveLoaded, userIsLoggedIn } from '../utils';
 
-const HPDS = process.env.VITE_RESOURCE_HPDS;
-const queryResultPath = '*/**/picsure/v3/query/sync';
+const queryResultPath = '*/**/picsure/hpds/auth/v3/query/sync';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -283,7 +282,7 @@ test.describe('OptionalSelectionList', () => {
     await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
     await mockApiSuccess(
       page,
-      `*/**/picsure/search/${HPDS}/values/?genomicConceptPath=Gene_with_variant&query=&page=1&size=20`,
+      `*/**/picsure/hpds/auth/search/values?genomicConceptPath=Gene_with_variant&query=&page=1&size=20`,
       {
         ...geneValues,
       },
@@ -307,7 +306,7 @@ test.describe('OptionalSelectionList', () => {
 
     await mockApiSuccess(
       page,
-      `*/**/picsure/search/${HPDS}/values/?genomicConceptPath=Gene_with_variant&query=&page=2&size=20`,
+      `*/**/picsure/hpds/auth/search/values?genomicConceptPath=Gene_with_variant&query=&page=2&size=20`,
       {
         ...geneValuesPage2,
       },
