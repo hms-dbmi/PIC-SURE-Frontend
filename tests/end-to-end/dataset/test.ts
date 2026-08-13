@@ -10,7 +10,7 @@ import {
 } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
 
-const datasetPath = '*/**/picsure/dataset/named';
+const datasetPath = '*/**/picsure/operations/dataset/named';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -44,7 +44,7 @@ test.beforeEach(async ({ page }) => {
   mockDictionaryAPI(page, `${conceptsDetailPath}/*`, datasetDetails.concepts);
   mockDictionaryAPI(page, `${conceptTreePath}/*`, datasetDetails.tree);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
-  await mockApiSuccess(page, '*/**/picsure/v3/query/sync', '9999');
+  await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', '9999');
 });
 
 test.describe('dataset', () => {
@@ -261,7 +261,7 @@ test.describe('dataset/[uuid]', () => {
   test('Filter cards are visible even on detail request failure', async ({ page }) => {
     // Given
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
-    await mockApiFail(page, '*/**/picsure/proxy/dictionary-api/concepts/detail/**', 'failed');
+    await mockApiFail(page, '*/**/picsure/dictionary/concepts/detail/**', 'failed');
     await page.goto(`/dataset/${mockData[0].uuid}`);
     await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');

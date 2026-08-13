@@ -9,8 +9,7 @@ import {
 } from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
 
-const HPDS = process.env.VITE_RESOURCE_HPDS;
-const queryResultPathV3 = '*/**/picsure/v3/query/sync';
+const queryResultPathV3 = '*/**/picsure/hpds/auth/v3/query/sync';
 
 const validSnp = 'chr17,35269878,GT,A';
 const validSnpConstraint = 'Heterozygous';
@@ -28,7 +27,7 @@ test.beforeEach(async ({ page }) => {
       { name: 'ENABLE_SNP_QUERY', value: 'true' },
     ],
   });
-  await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
+  await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, geneValues);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, searchResultPath, searchResults);
 });

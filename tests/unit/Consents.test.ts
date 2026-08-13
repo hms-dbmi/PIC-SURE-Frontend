@@ -18,6 +18,7 @@ vi.mock('$lib/toaster', () => ({ toaster: mockToaster, isToastShowing: () => fal
 import {
   ACCESS_UNAVAILABLE_MESSAGE,
   accessUnavailable,
+  clearSession,
   getConsents,
   loadConsents,
   user,
@@ -125,6 +126,57 @@ describe('loadConsents', () => {
     expect(mockToaster.error).toHaveBeenCalledWith(
       expect.objectContaining({ title: ACCESS_UNAVAILABLE_MESSAGE }),
     );
+  });
+
+  it('ignores a superseded response that resolves after a later request settled', async () => {
+    let resolveStale!: (value: unknown) => void;
+    mockApi.get
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveStale = resolve)))
+      .mockResolvedValueOnce({ consents });
+
+    const stale = loadConsents();
+    const fresh = loadConsents();
+    await fresh;
+
+    resolveStale({ consents: { '\\_consents\\': ['prior-user-study'] } });
+    await stale;
+
+    expect(get(user).consents).toEqual(consents);
+  });
+
+  it('does not toast when a superseded request exhausts its retries', async () => {
+    vi.useFakeTimers();
+    mockApi.get
+      .mockRejectedValueOnce(new Error('500'))
+      .mockRejectedValueOnce(new Error('500'))
+      .mockResolvedValueOnce({ consents })
+      .mockRejectedValueOnce(new Error('500'));
+
+    const stale = loadConsents();
+    // Flush the two immediate attempts so the stale request is parked in its back-off.
+    await vi.advanceTimersByTimeAsync(0);
+    const fresh = loadConsents();
+    await fresh;
+    await runOutRetries();
+    await stale;
+    vi.useRealTimers();
+
+    expect(get(user).consents).toEqual(consents);
+    expect(mockToaster.error).not.toHaveBeenCalled();
+  });
+
+  it('drops an in-flight response when the session is cleared', async () => {
+    vi.stubGlobal('sessionStorage', { removeItem: vi.fn() });
+    let resolveStale!: (value: unknown) => void;
+    mockApi.get.mockImplementationOnce(() => new Promise((resolve) => (resolveStale = resolve)));
+
+    const stale = loadConsents();
+    clearSession();
+    resolveStale({ consents });
+    await stale;
+
+    expect(get(user).consents).toBeUndefined();
+    vi.unstubAllGlobals();
   });
 });
 

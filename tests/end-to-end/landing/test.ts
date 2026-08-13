@@ -63,29 +63,34 @@ test.describe('Landing page', () => {
     });
 
     const stats: MockLandingStat[] = [
-      { key: 'query:blank', route: '*/**/picsure/v3/query/sync', api: '88', value: '88' },
+      { key: 'query:blank', route: '*/**/picsure/hpds/auth/v3/query/sync', api: '88', value: '88' },
       {
         key: 'query:genomic',
-        route: '*/**/picsure/v3/query/sync',
+        route: '*/**/picsure/hpds/auth/v3/query/sync',
         api: { 'some-genome': 4 },
         value: '4',
       },
       {
         key: 'query:biosample',
-        route: '*/**/picsure/v3/query/sync',
+        route: '*/**/picsure/hpds/auth/v3/query/sync',
         api: { 'some-sample': 12 },
         value: '12',
       },
-      { key: 'query:consent', route: '*/**/picsure/v3/query/sync', api: '50', value: '50' },
+      {
+        key: 'query:consent',
+        route: '*/**/picsure/hpds/auth/v3/query/sync',
+        api: '50',
+        value: '50',
+      },
       {
         key: 'dict:concepts',
-        route: '*/**/picsure/proxy/dictionary-api/concepts?page_number=1&page_size=1',
+        route: '*/**/picsure/dictionary/concepts?page_number=1&page_size=1',
         api: searchResults,
         value: searchResults.totalElements.toLocaleString(),
       },
       {
         key: 'dict:facets:dataset_id',
-        route: '*/**/picsure/proxy/dictionary-api/facets',
+        route: '*/**/picsure/dictionary/facets',
         api: facetsResponse,
         value: facetsResponse[1].facets.length.toLocaleString(),
       },
@@ -138,13 +143,13 @@ test.describe('Landing page', () => {
 
     test('Shows only auth stats when sets match; both when different', async ({ page }) => {
       // Given
-      await mockApiSuccess(page, '*/**/picsure/v3/query/sync', '88');
+      await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', '88');
       await mockApiSuccess(
         page,
-        '*/**/picsure/proxy/dictionary-api/concepts?page_number=1&page_size=1',
+        '*/**/picsure/dictionary/concepts?page_number=1&page_size=1',
         searchResults,
       );
-      await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/facets', facetsResponse);
+      await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
       await page.goto('/');
       await userIsLoggedIn(page);
 
@@ -185,7 +190,7 @@ test.describe('Landing page', () => {
       });
       test(`Action button "${description}"'s click leads to ${url}`, async ({ page }) => {
         // Given
-        await mockApiSuccess(page, '*/**/picsure/dataset/named', mockDatasets);
+        await mockApiSuccess(page, '*/**/picsure/operations/dataset/named', mockDatasets);
         await page.goto('/');
         await userIsLoggedIn(page);
 
@@ -230,29 +235,34 @@ test.describe('Logged Out Landing', () => {
 
   test.describe('Stats (Logged Out)', () => {
     const stats: MockLandingStat[] = [
-      { key: 'query:blank', route: '*/**/picsure/query/sync', api: '88', value: '88' },
+      { key: 'query:blank', route: '*/**/picsure/hpds/open/v3/query/sync', api: '88', value: '88' },
       {
         key: 'query:genomic',
-        route: '*/**/picsure/query/sync',
+        route: '*/**/picsure/hpds/open/v3/query/sync',
         api: { 'some-genome': 4 },
         value: '4',
       },
       {
         key: 'query:biosample',
-        route: '*/**/picsure/query/sync',
+        route: '*/**/picsure/hpds/open/v3/query/sync',
         api: { 'some-sample': 12 },
         value: '12',
       },
-      { key: 'query:consent', route: '*/**/picsure/query/sync', api: '50', value: '50' },
+      {
+        key: 'query:consent',
+        route: '*/**/picsure/hpds/open/v3/query/sync',
+        api: '50',
+        value: '50',
+      },
       {
         key: 'dict:concepts',
-        route: '*/**/picsure/proxy/dictionary-api/concepts?page_number=1&page_size=1',
+        route: '*/**/picsure/dictionary/concepts?page_number=1&page_size=1',
         api: searchResults,
         value: searchResults.totalElements.toLocaleString(),
       },
       {
         key: 'dict:facets:dataset_id',
-        route: '*/**/picsure/proxy/dictionary-api/facets',
+        route: '*/**/picsure/dictionary/facets',
         api: facetsResponse,
         value: facetsResponse[1].facets.length.toLocaleString(),
       },
@@ -319,7 +329,7 @@ test.describe('Logged Out Landing', () => {
     });
     test(`Button "${description}"'s click leads to ${url}`, async ({ page }) => {
       // Given
-      await mockApiSuccess(page, '*/**/picsure/dataset/named', mockDatasets);
+      await mockApiSuccess(page, '*/**/picsure/operations/dataset/named', mockDatasets);
       await page.goto('/');
 
       // When

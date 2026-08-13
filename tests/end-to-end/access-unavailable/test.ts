@@ -27,7 +27,7 @@ test.describe('Access unavailable', () => {
         { name: 'DASHBOARD_DRAWER', value: 'true' },
       ],
     });
-    await mockApiSuccess(page, '*/**/picsure/proxy/dictionary-api/dashboard', mockDashboard);
+    await mockApiSuccess(page, '*/**/picsure/dictionary/dashboard', mockDashboard);
     await mockApiSuccess(page, searchResultPath, searchResults);
     await mockApiSuccess(page, facetResultPath, []);
   });
@@ -50,7 +50,7 @@ test.describe('Access unavailable', () => {
     await mockApiFail(page, consentsPath, 'connectionfailed');
 
     let conceptRequests = 0;
-    await page.route('**/picsure/proxy/dictionary-api/concepts**', (route) => {
+    await page.route('**/picsure/dictionary/concepts**', (route) => {
       conceptRequests++;
       return route.abort();
     });

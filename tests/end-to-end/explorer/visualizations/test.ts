@@ -11,8 +11,8 @@ import {
 } from '../../mock-data';
 import { getOption, userIsLoggedIn } from '../../utils';
 
-const countResultPath = '*/**/picsure/v3/query/sync';
-const distributionsPath = '*/**/picsure/proxy/visualization/distributions';
+const countResultPath = '*/**/picsure/hpds/auth/v3/query/sync';
+const distributionsPath = '*/**/picsure/visualization/distributions';
 
 async function addFilterFromRow(page: import('@playwright/test').Page, rowIndex: number) {
   await page.locator(`#row-${rowIndex} button[title=Filter]`).click();

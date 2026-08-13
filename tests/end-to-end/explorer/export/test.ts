@@ -18,9 +18,8 @@ import {
 } from '../../mock-data';
 import { getOption, userIsLoggedIn } from '../../utils';
 
-const queryPathV3 = '*/**/picsure/v3/query';
+const queryPathV3 = '*/**/picsure/hpds/auth/v3/query';
 const countResultPath = `${queryPathV3}/sync`;
-const HPDS = process.env.VITE_RESOURCE_HPDS;
 
 // Standard identifiers that should be present
 const standardIdentifiers = [
@@ -46,7 +45,7 @@ async function setupExportPageAndAddFilterAndExport(
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, searchResultPath, mockData);
   await mockApiSuccess(page, countResultPath, 9999);
-  await mockApiSuccess(page, `*/**/picsure/search/${HPDS}/values/*`, geneValues);
+  await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, geneValues);
   await page.goto('/explorer?search=age');
   await userIsLoggedIn(page);
 
@@ -228,7 +227,7 @@ test.describe('Export Page', () => {
     await datasetNameInput.fill('test-dataset');
     await expect(page.locator('div#dataset-id')).toHaveText(newDatasetResponse.picsureResultId);
     await expect(nextButton).not.toBeDisabled();
-    await mockApiSuccess(page, `*/**/picsure/dataset/named`, newDatasetResponse);
+    await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
     await mockApiSuccess(
       page,
       `${queryPathV3}/${newDatasetResponse.picsureResultId}/status`,

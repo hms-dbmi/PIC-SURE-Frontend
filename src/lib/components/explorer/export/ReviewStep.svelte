@@ -12,7 +12,6 @@
   import * as api from '$lib/api';
   import { Picsure } from '$lib/paths';
   import { toaster } from '$lib/toaster';
-  import { resources } from '$lib/stores/Resources';
 
   import Summary from './Summary.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -104,7 +103,6 @@
 
     const crossCountResponse: Record<string, number> = await api.post(Picsure.QueryV3Sync, {
       query: crossCountQuery,
-      resourceUUID: $resources.hpdsAuth,
     });
 
     // Filter and return only concepts with counts > 0

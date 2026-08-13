@@ -4,7 +4,6 @@ import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import { Genotype, type SNP } from '$lib/models/GenomeFilter';
 import { createSnpsFilter, type SnpFilterInterface } from '$lib/models/Filter.svelte';
-import { getCountResource } from '$lib/stores/Resources';
 import type { GenomicFilterInterfacev3 } from '$lib/models/query/Query';
 import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
@@ -24,18 +23,18 @@ export function clearSnpFilters() {
   selectedSNPs.set([]);
 }
 
-function snpRequest(snp: SNP, resource: string): Promise<number> {
+function snpRequest(snp: SNP): Promise<number> {
   const filter: GenomicFilterInterfacev3 = {
     key: snp.search,
     values: [Genotype.Heterozygous, Genotype.Homozygous],
   };
-  const searchRequest: QueryRequestInterfaceV3 = getBlankQueryRequestV3(resource);
+  const searchRequest: QueryRequestInterfaceV3 = getBlankQueryRequestV3();
   searchRequest.query.genomicFilters.push(filter);
   return api.post(Picsure.QueryV3Sync, searchRequest);
 }
 
 export async function getSNPCounts(check: SNP): Promise<{ count: number; errors: number }> {
-  return snpRequest(check, getCountResource().uuid)
+  return snpRequest(check)
     .then((count) => ({ count: count || 0, errors: 0 }))
     .catch(() => ({ count: 0, errors: 1 }));
 }

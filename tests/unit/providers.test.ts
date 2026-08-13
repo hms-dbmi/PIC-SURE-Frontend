@@ -33,14 +33,15 @@ describe('query:patientCount provider', () => {
   const provider: CountProvider = resultProviders['query:patientCount'];
 
   it('builds a COUNT request for the auth (non-open) path', () => {
-    const req = provider.buildRequest(descriptor, 'res-1');
-    expect(req.resourceUUID).toBe('res-1');
+    const req = provider.buildRequest(descriptor);
+    expect(req).not.toHaveProperty('resourceUUID');
     expect(req.query.expectedResultType).toBe('COUNT');
   });
 
   it('builds a CROSS_COUNT request for the open-access path', () => {
     const openDescriptor: QueryDescriptor = { ...descriptor, isOpenAccess: true };
-    const req = provider.buildRequest(openDescriptor, 'res-open');
+    const req = provider.buildRequest(openDescriptor);
+    expect(req).not.toHaveProperty('resourceUUID');
     expect(req.query.expectedResultType).toBe('CROSS_COUNT');
   });
 
@@ -63,5 +64,11 @@ describe('query:patientCount provider', () => {
 
   it('path() returns Picsure.QueryV3Sync for an authed descriptor (default features)', () => {
     expect(provider.path(descriptor)).toMatch(/query\/sync$/);
+  });
+
+  it('path() returns the V3 aggregate endpoint for an open-access descriptor', () => {
+    expect(provider.path({ ...descriptor, isOpenAccess: true })).toBe(
+      'picsure/hpds/open/v3/query/sync',
+    );
   });
 });

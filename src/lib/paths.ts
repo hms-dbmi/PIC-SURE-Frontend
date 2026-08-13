@@ -1,7 +1,8 @@
 const PREFIX = 'picsure';
-const DICT = `${PREFIX}/proxy/dictionary-api`;
-const QUERY = `${PREFIX}/query`;
-const VIZ = `${PREFIX}/proxy/visualization`;
+const DICT = `${PREFIX}/dictionary`;
+const VIZ = `${PREFIX}/visualization`;
+const HPDS_AUTH = `${PREFIX}/hpds/auth`;
+const HPDS_OPEN = `${PREFIX}/hpds/open`;
 const API = '/api/v1';
 const LOCAL = 'api';
 
@@ -22,14 +23,14 @@ export const Picsure = {
   },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,
-  NamedDataSet: `${PREFIX}/dataset/named`,
+  NamedDataSet: `${PREFIX}/operations/dataset/named`,
   Dictionary: DICT,
   Facets: `${DICT}/facets`,
-  Search: `${PREFIX}/search`,
-  /** Open access (discover) queries use the V2 sync path, remove when backend is fixed. */
-  QueryOpenSync: `${QUERY}/sync`,
-  QueryV3: `${PREFIX}/v3/query`,
-  QueryV3Sync: `${PREFIX}/v3/query/sync`,
+  Search: `${HPDS_AUTH}/search`,
+  SearchValues: `${HPDS_AUTH}/search/values`,
+  QueryOpenV3Sync: `${HPDS_OPEN}/v3/query/sync`,
+  QueryV3: `${HPDS_AUTH}/v3/query`,
+  QueryV3Sync: `${HPDS_AUTH}/v3/query/sync`,
   Visualization: {
     Distributions: `${VIZ}/distributions`,
   },

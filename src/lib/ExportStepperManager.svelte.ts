@@ -3,7 +3,6 @@ import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 import { QueryV3 } from '$lib/models/query/Query';
 
 let queryRequest: QueryRequestInterfaceV3 = $state({
-  resourceUUID: '',
   query: new QueryV3(),
 });
 
@@ -68,7 +67,6 @@ export function resetExportStepperState() {
   setLockDownload(true);
   setSaveable(false);
   setQueryRequest({
-    resourceUUID: '',
     query: new QueryV3(),
   });
 }

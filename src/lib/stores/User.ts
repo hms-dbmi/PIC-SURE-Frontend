@@ -88,13 +88,14 @@ export function removeToken() {
 }
 
 /**
- * Clear all client-side session state: token, persisted user blob, and the user store.
+ * Clear all client-side session state.
  *
  * DO NOT call this from module-init code paths (e.g. `restoreUser`). The `user` store
  * does not exist yet at that point, so `user.set()` will throw. `restoreUser` instead
  * clears localStorage inline and returns `{}` as the initial store value.
  */
 export function clearSession() {
+  discardPendingConsents();
   removeToken();
   sessionStorage.removeItem('user');
   user.set({});
@@ -231,15 +232,22 @@ let consentsRequest: Promise<void> = Promise.resolve();
 /** Resolves once the in-flight access fetch has succeeded or given up. Never rejects. */
 export const consentsSettled = () => consentsRequest;
 
+function discardPendingConsents() {
+  consentsRequest = Promise.resolve();
+}
+
 /** Leaves `consents` undefined on failure - see `accessUnavailable`. */
 export function loadConsents(): Promise<void> {
   user.set({ ...get(user), consents: undefined });
-  consentsRequest = getConsents()
+  const request: Promise<void> = getConsents()
     .then((consents) => {
-      user.set({ ...get(user), consents });
+      if (consentsRequest === request) user.set({ ...get(user), consents });
     })
-    .catch(() => showAccessUnavailable());
-  return consentsRequest;
+    .catch(() => {
+      if (consentsRequest === request) showAccessUnavailable();
+    });
+  consentsRequest = request;
+  return request;
 }
 
 /** Idempotent per visible toast, so repeated blocked requests do not stack up alerts. */
@@ -267,6 +275,7 @@ export async function login(token: string) {
 }
 
 export async function logout(authProvider?: AuthProvider, redirect = false) {
+  discardPendingConsents();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function handleErrors(error: any) {
     console.error('Error logging out: ' + error);
