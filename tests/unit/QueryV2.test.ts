@@ -220,10 +220,14 @@ describe('queryV2ToV3', () => {
     });
   });
 
-  it('does not mutate the normalized saved query', () => {
+  it('excludes system paths from every V2 location without mutating the saved query', () => {
     const query = parseQueryV2(
       makeQueryV2({
         categoryFilters: { '\\_consents\\': ['phs001'] },
+        numericFilters: { '\\_consents\\': { min: 1 } },
+        requiredFields: ['\\_consents\\'],
+        anyRecordOf: ['\\_consents\\', '\\dataset\\a\\'],
+        anyRecordOfMulti: [['\\_consents\\'], ['\\_consents\\', '\\dataset\\b\\']],
         fields: ['\\dataset\\age\\', '\\_consents\\'],
       }),
     );
@@ -234,6 +238,9 @@ describe('queryV2ToV3', () => {
 
     expect(query).toEqual(before);
     expect(converted.select).toEqual(['\\dataset\\age\\']);
-    expect(converted.phenotypicClause).toBeNull();
+    expect(converted.leaves.map(({ conceptPath }) => conceptPath)).toEqual([
+      '\\dataset\\a\\',
+      '\\dataset\\b\\',
+    ]);
   });
 });

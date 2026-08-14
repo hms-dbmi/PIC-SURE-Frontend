@@ -256,6 +256,7 @@ export function queryV2ToV3(query: QueryV2, excludedConceptPaths: string[] = [])
   }
 
   for (const [conceptPath, range] of Object.entries(query.numericFilters)) {
+    if (excludedConceptPaths.includes(conceptPath)) continue;
     clauses.push({
       type: 'PhenotypicFilter',
       phenotypicFilterType: 'FILTER',
@@ -267,6 +268,7 @@ export function queryV2ToV3(query: QueryV2, excludedConceptPaths: string[] = [])
   }
 
   for (const conceptPath of query.requiredFields) {
+    if (excludedConceptPaths.includes(conceptPath)) continue;
     clauses.push({
       type: 'PhenotypicFilter',
       phenotypicFilterType: 'REQUIRED',
@@ -277,7 +279,9 @@ export function queryV2ToV3(query: QueryV2, excludedConceptPaths: string[] = [])
 
   const legacyAnyRecordOfGroups = [query.anyRecordOf, ...query.anyRecordOfMulti];
   for (const group of legacyAnyRecordOfGroups) {
-    const convertedGroup = anyRecordOfGroup(group);
+    const convertedGroup = anyRecordOfGroup(
+      group.filter((conceptPath) => !excludedConceptPaths.includes(conceptPath)),
+    );
     if (convertedGroup) clauses.push(convertedGroup);
   }
 
