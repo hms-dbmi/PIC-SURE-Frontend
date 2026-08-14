@@ -3,6 +3,7 @@
   import type { Snippet } from 'svelte';
   import { beforeNavigate, goto } from '$app/navigation';
   import { clearSession, isTokenExpired } from '$lib/stores/User';
+  import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
   import { log, createLog } from '$lib/logger';
 
   let { children }: { children?: Snippet } = $props();
@@ -11,12 +12,13 @@
   // won't re-run it when navigating to the same URL (e.g. clicking "Explorer" while already
   // on /explorer). beforeNavigate fires on every navigation attempt, catching that gap.
   beforeNavigate(({ to, cancel }) => {
+    if (to && to.url.origin !== location.origin) return;
     const token = localStorage.getItem('token');
     if (token && isTokenExpired(token)) {
       cancel();
       log(createLog('AUTH', 'auth.redirect_token_expired', { targetUrl: to?.url.pathname }));
       clearSession();
-      goto(resolve(`/login?redirectTo=${encodeURIComponent(to?.url.pathname || '/')}`));
+      goto(resolve(loginRedirectPath(to?.url ?? { pathname: '/', search: '' }) as '/'));
     }
   });
 </script>

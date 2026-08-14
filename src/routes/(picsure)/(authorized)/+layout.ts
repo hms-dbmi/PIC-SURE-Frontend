@@ -2,6 +2,7 @@ import type { LayoutLoad } from './$types';
 import { browser } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
 import { clearSession, hydrateUserFromToken, isTokenExpired, user } from '$lib/stores/User';
+import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { get } from 'svelte/store';
 import { log, createLog } from '$lib/logger';
@@ -15,7 +16,7 @@ export const load: LayoutLoad = async ({ url }) => {
   if (!token || token.trim() === '') {
     log(createLog('AUTH', 'auth.redirect_no_token', { targetUrl: url.pathname }));
     clearSession();
-    redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
+    redirect(302, loginRedirectPath(url));
   }
   // isTokenExpired handles its own parse errors internally (returns true on failure),
   // so we don't need a try/catch here — the only other thing that throws is redirect()
@@ -23,7 +24,7 @@ export const load: LayoutLoad = async ({ url }) => {
   if (isTokenExpired(token)) {
     log(createLog('AUTH', 'auth.redirect_token_expired', { targetUrl: url.pathname }));
     clearSession();
-    redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
+    redirect(302, loginRedirectPath(url));
   }
   // user lives in sessionStorage (tab-scoped), so a fresh tab with a valid token has an
   // empty user store. Hydrate from PSAMA before the privilege check — otherwise the user
@@ -35,7 +36,7 @@ export const load: LayoutLoad = async ({ url }) => {
       console.error('Failed to hydrate user from token:', error);
       log(createLog('AUTH', 'auth.hydrate_failed', { error: String(error) }));
       clearSession();
-      redirect(302, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
+      redirect(302, loginRedirectPath(url));
     }
   }
   const userPrivileges = get(user)?.privileges || [];

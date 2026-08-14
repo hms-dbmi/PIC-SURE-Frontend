@@ -67,7 +67,17 @@
         log(createLog('LOGIN', 'login.success', { provider: providerType }, { status: 200 }));
       }
 
-      goto(resolve(redirectTo as '/'));
+      const isAppPath = redirectTo.startsWith('/') && !redirectTo.startsWith('//');
+      if (isAppPath) {
+        const queryStart = redirectTo.indexOf('?');
+        const pathname = queryStart === -1 ? redirectTo : redirectTo.slice(0, queryStart);
+        const search = queryStart === -1 ? '' : redirectTo.slice(queryStart);
+        // The path portion IS resolved; the rule can't model an appended query string.
+        // eslint-disable-next-line svelte/no-navigation-without-resolve
+        goto(`${resolve(pathname as '/')}${search}`);
+      } else {
+        goto(resolve('/'));
+      }
     });
   }
 

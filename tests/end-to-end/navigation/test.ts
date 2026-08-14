@@ -196,7 +196,27 @@ test.describe('Navigation', () => {
     await loginButton.click();
 
     // Then
-    await expect(page).toHaveURL('/login?redirectTo=/');
+    await page.waitForURL(/\/login\?redirectTo=/);
+    const url = new URL(page.url());
+    expect(url.pathname).toBe('/login');
+    expect(url.searchParams.get('redirectTo')).toBe('/');
+  });
+  test('Clicking the session avatar preserves query params in the login redirect', async ({
+    page,
+  }) => {
+    // Given
+    await page.goto('/?search=somedata');
+
+    // When
+    const loginButton = page.locator('#user-login-btn');
+    await expect(loginButton).toBeVisible();
+    await loginButton.click();
+
+    // Then
+    await page.waitForURL(/\/login\?redirectTo=/);
+    const url = new URL(page.url());
+    expect(url.pathname).toBe('/login');
+    expect(url.searchParams.get('redirectTo')).toBe('/?search=somedata');
   });
   test('Clicking the logo navigates to the landing page', async ({ page }) => {
     // Given
