@@ -6,7 +6,8 @@
   import { config } from '$lib/configuration.svelte';
   import { flatIndex } from '$lib/utilities/Objects';
 
-  import { searchTerm, selectedFacets, searchPromise } from '$lib/stores/Search';
+  import { searchTerm, selectedFacets, nextSearchSettled } from '$lib/stores/Search';
+  import { isToastShowing, toaster } from '$lib/toaster';
   import { clearFilters } from '$lib/stores/Filter';
   import { clearExports } from '$lib/stores/Export';
   import { sanitizeHTML } from '$lib/utilities/HTML';
@@ -17,6 +18,8 @@
   import Loading from '$lib/components/Loading.svelte';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
+
+  const TOUR_ERROR_TOAST = 'tour-search-error';
 
   let started: boolean = $state(false);
   let openModal: boolean = $state(false);
@@ -234,14 +237,27 @@
     openDrawer();
     resetSearch();
 
-    // Load search in bg then start tour
     const searchBox = document.querySelector('#explorer-search-box') as HTMLInputElement;
     searchBox.value = tourConfig.searchTerm;
+
     $searchTerm = tourConfig.searchTerm;
 
-    await $searchPromise
-      .then(() => tourDriver.drive())
-      .catch(() => console.error('API returned error during tour.'));
+    const outcome = await nextSearchSettled();
+    if (outcome !== 'loaded') {
+      console.error(`Search did not load during tour (${outcome}).`);
+      started = false;
+      if (!isToastShowing(TOUR_ERROR_TOAST)) {
+        toaster.error({
+          id: TOUR_ERROR_TOAST,
+          duration: 5000,
+          title:
+            'We could not load the example search needed for the tour. Please try again in a moment.',
+          closable: true,
+        });
+      }
+      return;
+    }
+    tourDriver.drive();
   }
 </script>
 
