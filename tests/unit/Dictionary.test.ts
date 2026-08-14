@@ -10,10 +10,12 @@ const mockState = vi.hoisted(() => {
   return {
     postSpy: vi.fn(),
     logSpy: vi.fn(),
-    consoleErrorSpy: vi.fn(),
+    consentsSettledSpy: vi.fn().mockResolvedValue(undefined),
+    showAccessUnavailableSpy: vi.fn(),
     searchTermStore: writable('age'),
     selectedFacetsStore: writable<unknown[]>([]),
-    userStore: writable<unknown>({ queryTemplate: undefined }),
+    accessUnavailableStore: writable(false),
+    consentedStudiesStore: writable<string[]>([]),
   };
 });
 
@@ -27,7 +29,13 @@ vi.mock('$lib/stores/Search', () => ({
   selectedFacets: mockState.selectedFacetsStore,
 }));
 
-vi.mock('$lib/stores/User', () => ({ user: mockState.userStore }));
+vi.mock('$lib/stores/User', () => ({
+  ACCESS_UNAVAILABLE_MESSAGE: 'Access unavailable',
+  accessUnavailable: mockState.accessUnavailableStore,
+  consentedStudies: mockState.consentedStudiesStore,
+  consentsSettled: mockState.consentsSettledSpy,
+  showAccessUnavailable: mockState.showAccessUnavailableSpy,
+}));
 
 vi.mock('$lib/logger', () => ({
   log: mockState.logSpy,
