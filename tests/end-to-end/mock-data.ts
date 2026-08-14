@@ -1374,12 +1374,14 @@ export const nestedFacetsResponse = [
         display: 'Nested Facet',
         description: 'Nested Facet Description',
         count: 8,
+        category: 'nested_category',
         children: [
           {
             name: 'nested_facet_child',
             display: 'Nested Facet Child',
             description: 'Nested Facet Child Description',
             count: 2,
+            category: 'nested_category',
             children: null,
           },
           {
@@ -1387,6 +1389,7 @@ export const nestedFacetsResponse = [
             display: 'Nested Facet Child 2',
             description: 'Nested Facet Child 2 Description',
             count: 5,
+            category: 'nested_category',
             children: null,
           },
           {
@@ -1394,6 +1397,7 @@ export const nestedFacetsResponse = [
             display: 'Nested Facet Child 3',
             description: 'Nested Facet Child 3 Description',
             count: 1,
+            category: 'nested_category',
             children: null,
           },
         ],
@@ -1403,6 +1407,7 @@ export const nestedFacetsResponse = [
         display: 'Nested Facet 2',
         description: 'Nested Facet 2 Description',
         count: 1,
+        category: 'nested_category',
         children: null,
       },
       {
@@ -1410,12 +1415,14 @@ export const nestedFacetsResponse = [
         display: 'Nested Facet 3',
         description: 'Nested Facet 3 Description',
         count: 10,
+        category: 'nested_category',
         children: [
           {
             name: 'nested_facet_child_4',
             display: 'Nested Facet Child 4',
             description: 'Nested Facet Child 4 Description',
             count: 1,
+            category: 'nested_category',
             children: null,
           },
           {
@@ -1423,6 +1430,7 @@ export const nestedFacetsResponse = [
             display: 'Nested Facet Child 5',
             description: 'Nested Facet Child 5 Description',
             count: 1,
+            category: 'nested_category',
             children: null,
           },
           {
@@ -1430,6 +1438,7 @@ export const nestedFacetsResponse = [
             display: 'Nested Facet Child 6',
             description: 'Nested Facet Child 6 Description',
             count: 5,
+            category: 'nested_category',
             children: null,
           },
           {
@@ -1437,6 +1446,7 @@ export const nestedFacetsResponse = [
             display: 'Nested Facet Child 7',
             description: 'Nested Facet Child 7 Description',
             count: 3,
+            category: 'nested_category',
             children: null,
           },
         ],
@@ -1446,6 +1456,7 @@ export const nestedFacetsResponse = [
         display: 'Nested Facet 4',
         description: 'Nested Facet 4 Description',
         count: 300,
+        category: 'nested_category',
         children: null,
       },
     ],

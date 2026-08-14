@@ -7,6 +7,7 @@ import { TableHandler, type State } from '@vincjo/datatables/server';
 import { type Facet, type SearchResult } from '$lib/models/Search';
 import { searchDictionary } from '$lib/stores/Dictionary';
 import { updateFacetsFromSearch, facetsPromise, resetFacetState } from '$lib/stores/Dictionary';
+import { expandedNestedFacets } from '$lib/stores/NestedFacets';
 import { getDefaultRows } from '$lib/components/datatable/stores';
 import { isAbortError } from '$lib/api';
 import { log, createLog, getPageContext } from '$lib/logger';
@@ -276,6 +277,7 @@ export function resetSearch() {
   isResetting = true;
   searchTerm.set('');
   selectedFacets.set([]);
+  expandedNestedFacets.set([]);
   error.set('');
   tour.set(true);
   isResetting = false;

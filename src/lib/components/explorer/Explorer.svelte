@@ -87,7 +87,7 @@
 </script>
 
 <section id="search-container" class="flex gap-9">
-  <div id="facet-side-bar" class="flex-none flex-col items-center w-64">
+  <div id="facet-side-bar" class="flex-none flex-col items-center w-80">
     <FacetSideBar />
   </div>
   <div id="search-results-col" class="flex-auto">
