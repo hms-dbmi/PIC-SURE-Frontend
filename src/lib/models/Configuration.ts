@@ -37,6 +37,7 @@ export type Features = Indexable & {
   manualRole: boolean;
   restoreV2queries: boolean;
   termsOfService: boolean;
+  wafCaptchaRecovery: boolean;
 };
 
 export type Settings = Indexable & {
@@ -333,6 +334,7 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
     manualRole: parse('MANUAL_ROLE', false),
     restoreV2queries: parse('RESTORE_V2_QUERY', false),
     termsOfService: parse('ENABLE_TOS', false),
+    wafCaptchaRecovery: parse('WAF_CAPTCHA_RECOVERY', false),
   };
 }
 

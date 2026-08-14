@@ -8,10 +8,14 @@
   import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
   import ExternalLinkWarning from '$lib/components/ExternalLinkWarning.svelte';
   import { log, createLog } from '$lib/logger';
+  import { resumeAfterWafCaptcha } from '$lib/wafCaptcha';
 
   let { children }: { children?: Snippet } = $props();
 
-  onMount(initSanitizeConfig);
+  onMount(() => {
+    initSanitizeConfig();
+    if (config.features.wafCaptchaRecovery) resumeAfterWafCaptcha();
+  });
 
   afterNavigate(({ from, to, type }) => {
     log(

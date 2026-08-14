@@ -2,6 +2,8 @@ import { error, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
 import { browser } from '$app/environment';
 import { log, createLog, getSessionId } from '$lib/logger';
+import { config } from '$lib/configuration.svelte';
+import { isWafCaptchaResponse, handleWafCaptcha } from '$lib/wafCaptcha';
 
 const BEARER = 'Bearer ';
 
@@ -109,6 +111,13 @@ async function handleResponse(res: Response) {
     } catch {
       return text; //TODO: Change this
     }
+  } else if (browser && config.features.wafCaptchaRecovery && isWafCaptchaResponse(res)) {
+    if (handleWafCaptcha(new URL(res.url).pathname)) {
+      // Reload is imminent; never settle so callers don't toast/render for a
+      // page that's about to be replaced by the WAF interstitial.
+      return new Promise(() => {});
+    }
+    // Loop guard tripped: deliberately fall through to the normal error path.
   } else if (res.status === 401) {
     log(createLog('AUTH', 'session.unauthorized', undefined, { status: 401 }));
     browser &&
