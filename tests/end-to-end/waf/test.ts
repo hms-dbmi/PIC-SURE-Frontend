@@ -56,7 +56,7 @@ test.describe('AWS WAF CAPTCHA recovery', () => {
   test.beforeEach(async ({ page }) => {
     searchRequests = 0;
     page.on('request', (request) => {
-      if (request.url().includes('dictionary-api/concepts?')) searchRequests++;
+      if (request.url().includes('dictionary/concepts?')) searchRequests++;
     });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
