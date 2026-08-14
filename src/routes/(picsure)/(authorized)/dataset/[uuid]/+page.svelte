@@ -41,7 +41,7 @@
   {#await loadDataset()}
     <Loading />
   {:then}
-    {#if dataset?.query && dataset?.queryId}
+    {#if dataset?.queryId}
       <section data-testid="dataset-summary-container" class="my-4">
         <h2 class="text-left h4 mb-2 mt-6">Dataset ID Summary</h2>
         <table class="table bg-transparent">
@@ -64,6 +64,8 @@
           </tbody>
         </table>
       </section>
+    {/if}
+    {#if dataset?.query && dataset?.queryId}
       <QuerySummary query={dataset.query} version={dataset.version} name={dataset.name} />
     {:else}
       <ErrorAlert color="warning">Invalid query object.</ErrorAlert>

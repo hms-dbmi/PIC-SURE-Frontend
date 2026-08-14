@@ -298,8 +298,88 @@ test.describe('dataset/[uuid]', () => {
     await userIsLoggedIn(page);
 
     // Then
+    await expect(page.getByTestId('dataset-summary-container')).toBeVisible();
+    await expect(page.getByTestId('dataset-summary-uuid')).toContainText(mockData[0].query.uuid);
     await expect(page.getByTestId('error-alert')).toBeVisible();
   });
+  test('Saved V2 filters are visible but cannot be restored when compatibility is disabled', async ({
+    page,
+  }) => {
+    // Given
+    const savedV2Dataset = {
+      ...mockData[0],
+      query: {
+        ...mockData[0].query,
+        query: JSON.stringify({
+          query: {
+            categoryFilters: { [datasetDetails.paths.GENDER]: ['Undisclosed'] },
+            numericFilters: {},
+            requiredFields: [],
+            anyRecordOf: [],
+            anyRecordOfMulti: [],
+            fields: [datasetDetails.paths.HEIGHT],
+            crossCountFields: [],
+            variantInfoFilters: [],
+            expectedResultType: 'DATAFRAME',
+          },
+          resourceUUID: mockData[0].query.resource.uuid,
+        }),
+      },
+    };
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, savedV2Dataset);
+
+    // When
+    await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
+
+    // Then
+    await expect(page.getByTestId('dataset-filters-container')).toBeVisible();
+    await expect(page.getByTestId('restore-filters-btn')).not.toBeVisible();
+    await expect(page.getByTestId('restore-popover-btn')).toBeDisabled();
+  });
+
+  test('Saved V2 filters can be restored when compatibility is enabled', async ({ page }) => {
+    // Given
+    await mockApiConfig(page, {
+      features: [{ name: 'RESTORE_V2_QUERY', value: 'true' }],
+    });
+    const savedV2Dataset = {
+      ...mockData[0],
+      query: {
+        ...mockData[0].query,
+        query: JSON.stringify({
+          query: {
+            categoryFilters: { [datasetDetails.paths.GENDER]: ['Undisclosed'] },
+            numericFilters: {},
+            requiredFields: [],
+            anyRecordOf: [],
+            anyRecordOfMulti: [],
+            fields: [datasetDetails.paths.HEIGHT],
+            crossCountFields: [],
+            variantInfoFilters: [],
+            expectedResultType: 'DATAFRAME',
+          },
+          resourceUUID: mockData[0].query.resource.uuid,
+        }),
+      },
+    };
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, savedV2Dataset);
+    await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
+
+    // When
+    await page.getByTestId('restore-filters-btn').click();
+    await page
+      .getByTestId('restore-filters')
+      .getByRole('button', { name: 'Restore Filters' })
+      .click();
+    await page.waitForURL('**/explorer');
+
+    // Then
+    await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
+    await expect(page.getByTestId(`added-export-${datasetDetails.paths.HEIGHT}`)).toBeVisible();
+  });
+
   test('Restore Filters confirms, shows success toast, and navigates to explorer', async ({
     page,
   }) => {

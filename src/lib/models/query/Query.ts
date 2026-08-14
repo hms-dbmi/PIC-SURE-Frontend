@@ -10,61 +10,6 @@ export type ExpectedResultType =
   | 'VARIANT_COUNT_FOR_QUERY'
   | 'SECRET_ADMIN_DATAFRAME';
 
-export interface QueryInterfaceV2 {
-  fields: string[];
-  categoryFilters: object; //TODO: define type
-  numericFilters: object;
-  requiredFields: string[];
-  anyRecordOf: string[];
-  anyRecordOfMulti: string[][];
-  crossCountFields?: string[];
-  variantInfoFilters: VariantInfoFilters[];
-  expectedResultType: ExpectedResultType | ExpectedResultType[];
-}
-
-interface CategoryVariantInfoFilterInterface {
-  Gene_with_variant?: string[];
-  Variant_consequence_calculated?: string[];
-  Variant_frequency_as_text?: string[];
-}
-
-interface NumericVariantInfoFiltersInterface {
-  Variant_frequency_as_number?: number[];
-}
-
-interface VariantInfoFilters {
-  categoryVariantInfoFilters?: CategoryVariantInfoFilterInterface;
-  numericVariantInfoFilters?: NumericVariantInfoFiltersInterface;
-}
-
-export class QueryV2 implements QueryInterfaceV2 {
-  categoryFilters: object;
-  numericFilters: object;
-  requiredFields: string[];
-  anyRecordOf: string[];
-  anyRecordOfMulti: string[][];
-  fields: string[];
-  crossCountFields?: string[];
-  variantInfoFilters: VariantInfoFilters[];
-  expectedResultType: ExpectedResultType | ExpectedResultType[];
-
-  constructor(newQuery?: QueryInterfaceV2) {
-    this.categoryFilters = newQuery?.categoryFilters || {};
-    this.numericFilters = newQuery?.numericFilters || {};
-    this.requiredFields = newQuery?.requiredFields || [];
-    this.anyRecordOf = newQuery?.anyRecordOf || [];
-    this.anyRecordOfMulti = newQuery?.anyRecordOfMulti || [];
-    this.crossCountFields = newQuery?.crossCountFields || [];
-    this.fields = newQuery?.fields || [];
-    const variantInfoFilter = newQuery?.variantInfoFilters?.[0] || {
-      categoryVariantInfoFilters: {},
-      numericVariantInfoFilters: {},
-    };
-    this.variantInfoFilters = [variantInfoFilter];
-    this.expectedResultType = newQuery?.expectedResultType || 'COUNT';
-  }
-}
-
 // -------------------------------- V3 Query -------------------------------- //
 
 type UUID = `${string}-${string}-${string}-${string}-${string}` | null;
