@@ -641,10 +641,18 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
 // API rows whose name isn't (or is no longer) a key in CONFIG_FIELDS[kind] - e.g. a
 // feature flag that was removed from the app but whose row was never cleaned up in the
 // backend. These have no effect on anything mapFeatures/mapSettings/mapBranding
-// resolve (parsersFor only ever looks up registered names), so they're safe to delete;
-// the admin UI surfaces them precisely because there's no other way to notice they're
-// inert. Exact by construction: apiRows here is already the result of fetching
+// resolve (parsersFor only ever looks up registered names), so they're usually safe to
+// delete; the admin UI surfaces them precisely because there's no other way to notice
+// they're inert. Exact by construction: apiRows here is already the result of fetching
 // ?kind=<that kind's value>, so every row already belongs to `kind` - no guessing.
+//
+// One case this can't distinguish from genuine dead rows: moving a field from one kind
+// to another in CONFIG_FIELDS (e.g. DOTS_COLORS_CLASS moving from settings to branding)
+// orphans any existing API row under the old kind - it starts showing up here as
+// "deprecated" even though it still holds a real admin-entered value, and deleting it
+// does not migrate that value. There is no dual-read across kinds, so a field move needs
+// a rollout note (or manual admin action) telling deployments to re-enter the value
+// under the new kind.
 export function deprecatedApiRows(kind: ConfigKind, apiRows: ConfigObject[]): ConfigObject[] {
   const known = CONFIG_FIELDS[kind];
   return apiRows.filter((row) => !Object.hasOwn(known, row.name));

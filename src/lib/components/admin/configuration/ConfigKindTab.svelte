@@ -261,8 +261,9 @@
     <div class="mt-6" data-testid={`config-deprecated-${testIdBase}`}>
       <h3 class="font-semibold text-sm opacity-80 mb-1">Deprecated Keys</h3>
       <p class="text-xs opacity-60 mb-2">
-        These stored values do not correspond to a known {title} field. They have no effect on the app
-        and can be safely deleted.
+        These stored values do not correspond to a known {title} field, so they are not read by the app
+        under this kind. This includes genuinely unused keys, but also a key that was moved to a different
+        kind - check the value before deleting.
       </p>
       <table class="table">
         <thead>
