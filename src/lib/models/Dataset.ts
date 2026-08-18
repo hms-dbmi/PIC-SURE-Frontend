@@ -80,9 +80,12 @@ export function mapDataset(data: any) {
   else {
     try {
       const jsonQuery = JSON.parse(data.query.query);
-      const subquery = isDoubleEncoded(jsonQuery.query)
-        ? JSON.parse(jsonQuery.query)
-        : jsonQuery.query;
+      const subquery =
+        version === QueryVersion.V3 && jsonQuery?.phenotypicClause !== undefined
+          ? jsonQuery
+          : isDoubleEncoded(jsonQuery.query)
+            ? JSON.parse(jsonQuery.query)
+            : jsonQuery.query;
       query =
         version === QueryVersion.V2 ? new QueryV2(subquery) : QueryV3.fromSerialized(subquery);
       if (jsonQuery?.commonAreaUUID) {

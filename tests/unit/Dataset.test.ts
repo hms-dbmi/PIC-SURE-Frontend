@@ -49,6 +49,25 @@ function doubleEncode(innerQuery: object, extra: object = {}) {
 }
 
 describe('mapDataset', () => {
+  it('maps a bare V3 query returned by the well-defined contract', () => {
+    // Given
+    const data = makeData(JSON.stringify(V3_INNER_QUERY));
+
+    // When
+    const dataset = mapDataset(data);
+
+    // Then
+    expect(dataset.version).toBe(QueryVersion.V3);
+    expect(dataset.query).toBeInstanceOf(QueryV3);
+    const query = dataset.query as QueryV3;
+    expect(query.select).toEqual(V3_INNER_QUERY.select);
+    expect(query.phenotypicClause).toMatchObject({
+      type: 'PhenotypicFilter',
+      conceptPath: '\\\\dataset\\\\sex\\\\',
+      values: ['Male'],
+    });
+  });
+
   describe('single-encoded query.query.query (normal path)', () => {
     it('maps a V2 query', () => {
       // Given
