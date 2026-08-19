@@ -2,7 +2,6 @@
   import ExportStore from '$lib/stores/Export';
   import { onMount } from 'svelte';
   import { allFilters } from '$lib/stores/Filter';
-  import { config } from '$lib/configuration.svelte';
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import type { AnyRecordOfFilterInterface } from '$lib/models/Filter.svelte';
 
@@ -24,8 +23,12 @@
   );
 
   onMount(async () => {
-    const isOpenAccess = !config.features.explorer.open && config.features.discover;
-    await resultCountsState.ensureLoaded(() => isOpenAccess);
+    // The export flow is authorized-only: the export page renders a login prompt
+    // instead of the stepper when the user is logged out, and there is no
+    // /discover/export route. Deriving this from deployment feature flags sent the
+    // count through the open-access provider (POST /hpds/open/v3/query/sync as a
+    // CROSS_COUNT), which 500s as soon as a genomic filter is in the query.
+    await resultCountsState.ensureLoaded(() => false);
   });
 </script>
 
