@@ -39,9 +39,16 @@ test.describe('Dashboard page', () => {
       await userIsLoggedIn(page);
 
       // Then
-      await expect(page.getByText('More Info').last()).toHaveClass(
-        'btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 opacity-50 cursor-not-allowed',
-      );
+      const unavailableLink = page.getByRole('button', { name: 'More Info' });
+      await expect(unavailableLink).toBeDisabled();
+      await expect(unavailableLink).toHaveAttribute('title', 'Link not available');
+
+      // When
+      await unavailableLink.click({ force: true });
+
+      // Then
+      await expect(page).toHaveURL(/\/dashboard$/);
+      await expect(page.locator('#drawer')).not.toBeVisible();
     });
     test('Dashboard rows are clickable and open drawer', async ({ page }) => {
       // Given
