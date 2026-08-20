@@ -9,11 +9,11 @@
   import { Psama } from '$lib/paths';
   import { toaster } from '$lib/toaster';
   import { login, logout, user, isUserLoggedIn, getToken } from '$lib/stores/User';
-  import { sanitizeHTML } from '$lib/utilities/HTML';
   import { log, createLog } from '$lib/logger';
 
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import TermsPreview from '$lib/components/TermsPreview.svelte';
 
   let { modalOpen = $bindable(false) }: { modalOpen?: boolean } = $props();
   let terms: Promise<string> = $state(Promise.resolve(''));
@@ -74,10 +74,7 @@
 {#await terms}
   <Loading />
 {:then termsHTML}
-  <div id="terms-of-service">
-    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-    {@html sanitizeHTML(termsHTML)}
-  </div>
+  <TermsPreview terms={termsHTML} />
   <footer class="modal-footer flex justify-end space-x-2 mt-6">
     {#if enforceTerms}
       <button

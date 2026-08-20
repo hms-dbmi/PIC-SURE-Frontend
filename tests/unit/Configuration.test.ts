@@ -9,6 +9,11 @@ import {
   type ConfigObject,
   type ConfigMap,
   mapBranding,
+  CONFIG_FIELD_SCHEMA,
+  parsersFor,
+  deprecatedApiRows,
+  groupedConfigFieldSchema,
+  type ConfigFieldSchema,
 } from '$lib/models/Configuration';
 
 const TOUCHED_ENV_KEYS = [
@@ -216,6 +221,105 @@ describe('resolveConfigMap - layering', () => {
     import.meta.env.VITE_EXPLORE_TOUR_SEARCH_TERM = '';
     const map = resolveConfigMap([apiRow('EXPLORE_TOUR_SEARCH_TERM', 'dogs')]);
     expect(map.EXPLORE_TOUR_SEARCH_TERM.value).toBe('');
+  });
+});
+
+describe('CONFIG_FIELD_SCHEMA - derived from CONFIG_FIELDS', () => {
+  it('has no duplicate names per kind (e.g. OPEN, parsed twice by mapFeatures, appears once)', () => {
+    for (const kind of ['features', 'settings', 'branding'] as const) {
+      const names = CONFIG_FIELD_SCHEMA[kind].map((f) => f.name);
+      expect(new Set(names).size).toBe(names.length);
+    }
+    expect(CONFIG_FIELD_SCHEMA.features.filter((f) => f.name === 'OPEN')).toHaveLength(1);
+  });
+
+  it('has the right type/default for a representative field per kind', () => {
+    const byName = (kind: 'features' | 'settings' | 'branding', name: string) =>
+      CONFIG_FIELD_SCHEMA[kind].find((f) => f.name === name);
+
+    expect(byName('features', 'ANALYZE_API')).toMatchObject({ type: 'boolean', default: true });
+    expect(byName('settings', 'MAX_DATA_POINTS_FOR_EXPORT')).toMatchObject({
+      type: 'int',
+      default: 1000000,
+    });
+    expect(byName('branding', 'DOTS_COLORS_CLASS')).toMatchObject({ type: 'json' });
+    expect(byName('branding', 'LOGO_ALT')).toMatchObject({ type: 'string', default: 'PIC-SURE' });
+    expect(CONFIG_FIELD_SCHEMA.branding).toHaveLength(4);
+  });
+
+  it("mapFeatures actually uses CONFIG_FIELDS' declared default (not a second, hidden one)", () => {
+    // If mapFeatures ever hardcoded its own default again instead of reading
+    // CONFIG_FIELDS, this would catch the two silently diverging.
+    expect(mapFeatures([]).analyzeApi).toBe(
+      CONFIG_FIELD_SCHEMA.features.find((f) => f.name === 'ANALYZE_API')?.default,
+    );
+  });
+
+  it('every field declares a non-empty group, for the admin UI section headers', () => {
+    for (const kind of ['features', 'settings', 'branding'] as const) {
+      for (const field of CONFIG_FIELD_SCHEMA[kind]) {
+        expect(field.group, `${kind}.${field.name} is missing a group`).toBeTruthy();
+      }
+    }
+  });
+});
+
+describe('groupedConfigFieldSchema', () => {
+  const field = (name: string, group: string): ConfigFieldSchema => ({
+    name,
+    group,
+    type: 'boolean',
+    default: false,
+    description: '',
+  });
+
+  it('buckets fields by group, in order of each group’s first appearance', () => {
+    const schema = [field('A', 'Group 1'), field('B', 'Group 2'), field('C', 'Group 1')];
+
+    expect(groupedConfigFieldSchema(schema)).toEqual([
+      { group: 'Group 1', fields: [schema[0], schema[2]] },
+      { group: 'Group 2', fields: [schema[1]] },
+    ]);
+  });
+
+  it('reflects CONFIG_FIELD_SCHEMA grouping - Google settings land in one group together', () => {
+    const groups = groupedConfigFieldSchema(CONFIG_FIELD_SCHEMA.settings);
+    const google = groups.find((g) => g.group === 'Google');
+    expect(google?.fields.map((f) => f.name)).toEqual(
+      expect.arrayContaining(['GOOGLE_ANALYTICS_ID', 'GOOGLE_TAG_MANAGER_ID']),
+    );
+  });
+
+  it('returns an empty array for an empty schema', () => {
+    expect(groupedConfigFieldSchema([])).toEqual([]);
+  });
+});
+
+describe('deprecatedApiRows', () => {
+  it('returns rows whose name is not registered in CONFIG_FIELDS for that kind', () => {
+    const rows = [apiRow('ANALYZE_API', 'true'), apiRow('REMOVED_OLD_FLAG', 'true')];
+    expect(deprecatedApiRows('features', rows)).toEqual([apiRow('REMOVED_OLD_FLAG', 'true')]);
+  });
+
+  it('returns an empty array when every row is still registered', () => {
+    const rows = [apiRow('ANALYZE_API', 'true'), apiRow('DISCOVER', 'false')];
+    expect(deprecatedApiRows('features', rows)).toEqual([]);
+  });
+
+  it('returns an empty array for no rows', () => {
+    expect(deprecatedApiRows('branding', [])).toEqual([]);
+  });
+});
+
+describe('parsersFor', () => {
+  it('throws for a name that is not registered in CONFIG_FIELDS for that kind', () => {
+    expect(() => parsersFor('features', {}).asBoolean('NOT_A_REAL_FIELD')).toThrow(
+      /not registered/,
+    );
+  });
+
+  it('resolves a registered field using its declared default when unset', () => {
+    expect(parsersFor('features', {}).asBoolean('ANALYZE_API')).toBe(true);
   });
 });
 
