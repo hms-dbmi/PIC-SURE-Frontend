@@ -1,6 +1,7 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
+  import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
   import type { Indexable } from '$lib/types';
   import { config } from '$lib/configuration.svelte';
@@ -8,11 +9,14 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/StaticTable.svelte';
+  import TabItem from '$lib/components/TabItem.svelte';
+  import TermsEditor from '$lib/components/admin/configuration/TermsEditor.svelte';
   import RoleActions from '$lib/components/admin/configuration/cell/RoleActions.svelte';
   import PrivilegeActions from '$lib/components/admin/configuration/cell/PrivilegeActions.svelte';
   import ConnectionActions from '$lib/components/admin/configuration/cell/ConnectionActions.svelte';
   import Application from '$lib/components/admin/configuration/cell/Application.svelte';
   import RequiredFields from '$lib/components/admin/configuration/cell/RequiredFields.svelte';
+  import ConfigKindTab from '$lib/components/admin/configuration/ConfigKindTab.svelte';
 
   import { privileges, loadPrivileges } from '$lib/stores/Privileges';
   import { roles, loadRoles } from '$lib/stores/Roles';
@@ -21,6 +25,8 @@
   import { isTopAdmin } from '$lib/stores/User';
 
   import Loading from '$lib/components/Loading.svelte';
+
+  let tabSet: string = $state('Access Control');
 
   const roleTable = {
     columns: [
@@ -78,116 +84,136 @@
 
 <Content title="Configuration">
   {#if !$isTopAdmin}
-    <ErrorAlert title="Top Administrator Only" color="warning">
+    <ErrorAlert data-testid="top-admin-only-error" title="Top Administrator Only" color="warning">
       <p>
         Configurations are READ ONLY for admin users. Please contact your administrator to make
         changes.
       </p>
     </ErrorAlert>
   {/if}
-  <div id="role-table" class="mb-10">
-    <h2>Roles Management</h2>
-    {#await loadRoles()}
-      <Loading />
-    {:then}
-      <div class="flex gap-4 my-6">
-        <div class="flex-auto">
-          <a
-            data-testid="add-role"
-            class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
-              ? 'opacity-50 pointer-events-none'
-              : ''}"
-            href={resolve('/admin/configuration/role/new')}
-          >
-            + Add Role
-          </a>
+  <Tabs value={tabSet} onValueChange={(e: { value: string }) => (tabSet = e.value)}>
+    {#snippet list()}
+      <TabItem bind:group={tabSet} value="Access Control">Access Control</TabItem>
+      <TabItem bind:group={tabSet} value="Settings & Features">Settings & Features</TabItem>
+      <TabItem bind:group={tabSet} value="Branding">Branding</TabItem>
+      {#if config.features.termsOfService}
+        <TabItem bind:group={tabSet} value="Terms of Service">Terms of Service</TabItem>
+      {/if}
+    {/snippet}
+    {#snippet content()}
+      <Tabs.Panel value="Access Control">
+        <div id="role-table" class="mb-10">
+          <h2>Roles Management</h2>
+          {#await loadRoles()}
+            <Loading />
+          {:then}
+            <div class="flex gap-4 my-6">
+              <div class="flex-auto">
+                <a
+                  data-testid="add-role"
+                  class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
+                    ? 'opacity-50 pointer-events-none'
+                    : ''}"
+                  href={resolve('/admin/configuration/role/new')}
+                >
+                  + Add Role
+                </a>
+              </div>
+            </div>
+            <Datatable
+              tableName="Roles"
+              data={$roles}
+              columns={roleTable.columns}
+              cellOverides={roleTable.overrides}
+              rowClickHandler={roleRowCLick}
+              isClickable
+            />
+          {:catch}
+            <ErrorAlert title="API Error">
+              Something went wrong when sending your request for roles.
+            </ErrorAlert>
+          {/await}
         </div>
-      </div>
-      <Datatable
-        tableName="Roles"
-        data={$roles}
-        columns={roleTable.columns}
-        cellOverides={roleTable.overrides}
-        rowClickHandler={roleRowCLick}
-        isClickable
-      />
-    {:catch}
-      <ErrorAlert title="API Error">
-        Something went wrong when sending your request for roles.
-      </ErrorAlert>
-    {/await}
-  </div>
-  <div id="privilege-table" class="mb-10">
-    <h2>Privileges Management</h2>
-    {#await loadAppsAndPriv()}
-      <Loading />
-    {:then}
-      <div class="flex gap-4 my-6">
-        <div class="flex-auto">
-          <a
-            data-testid="add-privilege"
-            class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
-              ? 'opacity-50 pointer-events-none'
-              : ''}"
-            href={resolve('/admin/configuration/privilege/new')}
-          >
-            + Add Privilege
-          </a>
+        <div id="privilege-table" class="mb-10">
+          <h2>Privileges Management</h2>
+          {#await loadAppsAndPriv()}
+            <Loading />
+          {:then}
+            <div class="flex gap-4 my-6">
+              <div class="flex-auto">
+                <a
+                  data-testid="add-privilege"
+                  class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
+                    ? 'opacity-50 pointer-events-none'
+                    : ''}"
+                  href={resolve('/admin/configuration/privilege/new')}
+                >
+                  + Add Privilege
+                </a>
+              </div>
+            </div>
+            <Datatable
+              tableName="Privileges"
+              data={$privileges}
+              columns={privilegesTable.columns}
+              cellOverides={privilegesTable.overrides}
+              rowClickHandler={privilegeRowClick}
+              isClickable
+            />
+          {:catch}
+            <ErrorAlert title="API Error">
+              Something went wrong when sending your request for priviledges and applications.
+            </ErrorAlert>
+          {/await}
         </div>
-      </div>
-      <Datatable
-        tableName="Privileges"
-        data={$privileges}
-        columns={privilegesTable.columns}
-        cellOverides={privilegesTable.overrides}
-        rowClickHandler={privilegeRowClick}
-        isClickable
-      />
-    {:catch}
-      <ErrorAlert title="API Error">
-        Something went wrong when sending your request for priviledges and applications.
-      </ErrorAlert>
-    {/await}
-  </div>
-  <div id="connection-table" class="mb-10">
-    <h2>Connections Management</h2>
-    {#await loadConnections()}
-      <Loading />
-    {:then}
-      <div class="flex gap-4 my-6">
-        <div class="flex-auto">
-          <a
-            data-testid="add-connection"
-            class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
-              ? 'opacity-50 pointer-events-none'
-              : ''}"
-            href={resolve('/admin/configuration/connection/new')}
-          >
-            + Add Connection
-          </a>
+        <div id="connection-table" class="mb-10">
+          <h2>Connections Management</h2>
+          {#await loadConnections()}
+            <Loading />
+          {:then}
+            <div class="flex gap-4 my-6">
+              <div class="flex-auto">
+                <a
+                  data-testid="add-connection"
+                  class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!$isTopAdmin
+                    ? 'opacity-50 pointer-events-none'
+                    : ''}"
+                  href={resolve('/admin/configuration/connection/new')}
+                >
+                  + Add Connection
+                </a>
+              </div>
+            </div>
+            <Datatable
+              tableName="Connections"
+              data={$connections}
+              columns={connectionTable.columns}
+              cellOverides={connectionTable.overrides}
+              rowClickHandler={connectionRowClick}
+              isClickable
+            />
+          {:catch}
+            <ErrorAlert title="API Error">
+              Something went wrong when sending your request for connections.
+            </ErrorAlert>
+          {/await}
         </div>
-      </div>
-      <Datatable
-        tableName="Connections"
-        data={$connections}
-        columns={connectionTable.columns}
-        cellOverides={connectionTable.overrides}
-        rowClickHandler={connectionRowClick}
-        isClickable
-      />
-    {:catch}
-      <ErrorAlert title="API Error">
-        Something went wrong when sending your request for connections.
-      </ErrorAlert>
-    {/await}
-  </div>
-  {#if config.features.termsOfService}
-    <div id="misc-configs">
-      <a
-        href={resolve('/admin/configuration/terms/edit')}
-        class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-        >Update Terms of Service</a
-      >
-    </div>
-  {/if}
+      </Tabs.Panel>
+      <Tabs.Panel value="Settings & Features">
+        <ConfigKindTab
+          kinds={['features', 'settings']}
+          title="Settings & Features"
+          readOnly={!$isTopAdmin}
+        />
+      </Tabs.Panel>
+      <Tabs.Panel value="Branding">
+        <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!$isTopAdmin} />
+      </Tabs.Panel>
+      {#if config.features.termsOfService}
+        <Tabs.Panel value="Terms of Service">
+          <TermsEditor />
+        </Tabs.Panel>
+      {/if}
+    {/snippet}
+  </Tabs>
 </Content>

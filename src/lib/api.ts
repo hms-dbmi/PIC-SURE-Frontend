@@ -97,6 +97,10 @@ export function put(
   return send({ method: 'PUT', path, data, headers, authenticate, options });
 }
 
+export function patch(path: string, data: any, headers?: any, authenticate?: boolean) {
+  return send({ method: 'PATCH', path, data, headers, authenticate });
+}
+
 async function handleResponse(res: Response) {
   if (res.ok || res.status === 422) {
     refreshToken(res);
