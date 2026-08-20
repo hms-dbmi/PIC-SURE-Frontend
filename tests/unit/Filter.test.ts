@@ -32,6 +32,7 @@ import {
   updateFilter,
   removeFilter,
   filterTree,
+  genomicFilters,
   clearFilters,
   createGroup,
   enrichFilterDetails,
@@ -39,7 +40,11 @@ import {
   removeInvalidFilters,
 } from '$lib/stores/Filter';
 import { getConceptDetails } from '$lib/stores/Dictionary';
-import { createCategoricalFilter, createNumericFilter } from '$lib/models/Filter.svelte';
+import {
+  createCategoricalFilter,
+  createGenomicFilter,
+  createNumericFilter,
+} from '$lib/models/Filter.svelte';
 import type { FilterInterface } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
 import { LogicTree } from '$lib/models/LogicTree.svelte';
@@ -87,6 +92,19 @@ describe('consent-based filter access', () => {
     expect(get(filterTree).leafNodes.map((filter) => filter.dataset)).toEqual([
       'authorized-dataset',
     ]);
+  });
+
+  it('detects and removes a standalone genomic filter without consent', () => {
+    mockUser.set({ consents: { '\\_consents\\': ['authorized-dataset'] } });
+    addFilter(createGenomicFilter({ Gene_with_variant: ['BRCA1'] }));
+
+    expect(get(filterTree).leafNodes).toHaveLength(0);
+    expect(get(genomicFilters)).toHaveLength(1);
+    expect(get(hasInvalidFilter)).toBe(true);
+
+    removeInvalidFilters();
+
+    expect(get(genomicFilters)).toHaveLength(0);
   });
 });
 

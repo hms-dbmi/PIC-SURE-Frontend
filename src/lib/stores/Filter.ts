@@ -54,12 +54,15 @@ function hasConsentForFilter(filter: Filter, consents: string[]): boolean {
   return filterDataset.length > 0 && consents.some((consent) => consent.includes(filterDataset));
 }
 
-export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$user, $filters]) => {
-  const consents = $user?.consents?.['\\_consents\\'];
-  if ($filters.length === 0 || !consents) return false;
+export const hasInvalidFilter: Readable<boolean> = derived(
+  [user, allFilters],
+  ([$user, $allFilters]) => {
+    const consents = $user?.consents?.['\\_consents\\'];
+    if ($allFilters.length === 0 || !consents) return false;
 
-  return $filters.some((filter) => !hasConsentForFilter(filter, consents));
-});
+    return $allFilters.some((filter) => !hasConsentForFilter(filter, consents));
+  },
+);
 
 export const hasOrGroup: Readable<boolean> = derived(filterTree, ($ft) => $ft.hasOr);
 
@@ -232,11 +235,11 @@ export function removeUnallowedFilters() {
 export function removeInvalidFilters(): void {
   const currentUser = get(user);
   const currentFilters = get(filters);
+  const geneFilters = get(genomicFilters);
   const consents = currentUser?.consents?.['\\_consents\\'];
 
-  if (currentFilters.length === 0 || !consents) return;
+  if ((currentFilters.length === 0 && geneFilters.length === 0) || !consents) return;
 
-  const geneFilters = get(genomicFilters);
   const geneRemoveCount = geneFilters.filter((node) => !hasConsentForFilter(node, consents)).length;
   genomicFilters.set(geneFilters.filter((node) => hasConsentForFilter(node, consents)));
 
