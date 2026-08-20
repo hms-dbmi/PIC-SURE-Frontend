@@ -190,11 +190,6 @@ test.describe('Export Page', () => {
     );
   });
 
-  // ALS-12768: the export Summary used to derive open access from deployment feature
-  // flags, so any deployment with DISCOVER on and the open explorer off sent its
-  // participant count to the open aggregate endpoint as a CROSS_COUNT. Genomic filters
-  // ride along into that open backend and 500. Summary mounts once per stepper step, so
-  // the failure repeated on every step - walk the steps to cover all of them.
   test('never queries the open endpoint, even with DISCOVER enabled', async ({ page }) => {
     await mockApiConfig(page, {
       features: [
