@@ -20,6 +20,7 @@ import { getOption, userIsLoggedIn } from '../../utils';
 
 const queryPathV3 = '*/**/picsure/hpds/auth/v3/query';
 const countResultPath = `${queryPathV3}/sync`;
+const openCountResultPath = '*/**/picsure/hpds/open/v3/query/sync';
 
 // Standard identifiers that should be present
 const standardIdentifiers = [
@@ -114,22 +115,22 @@ async function checkStepRenderedCorrectly(
   }
 }
 
+const exportFeatures = [
+  { name: 'ALLOW_DOWNLOAD', value: 'true' },
+  { name: 'ALLOW_EXPORT_ENABLED', value: 'true' },
+  { name: 'ALLOW_EXPORT', value: 'true' },
+  { name: 'ANALYZE_API', value: 'true' },
+  { name: 'DOWNLOAD_AS_PFB', value: 'true' },
+  { name: 'ENABLE_REDCAP_EXPORT', value: 'false' },
+  { name: 'ENABLE_SAMPLE_ID_CHECKBOX', value: 'true' },
+  { name: 'SHOW_TREE_STEP', value: 'true' },
+  { name: 'EXPORT_TIMESERIES', value: 'false' },
+];
+const exportSettings = [{ name: 'EXPORT_SYSTEM_FIELDS', value: '_consents' }];
+
 test.describe('Export Page', () => {
   test.beforeEach(async ({ page }) => {
-    await mockApiConfig(page, {
-      features: [
-        { name: 'ALLOW_DOWNLOAD', value: 'true' },
-        { name: 'ALLOW_EXPORT_ENABLED', value: 'true' },
-        { name: 'ALLOW_EXPORT', value: 'true' },
-        { name: 'ANALYZE_API', value: 'true' },
-        { name: 'DOWNLOAD_AS_PFB', value: 'true' },
-        { name: 'ENABLE_REDCAP_EXPORT', value: 'false' },
-        { name: 'ENABLE_SAMPLE_ID_CHECKBOX', value: 'true' },
-        { name: 'SHOW_TREE_STEP', value: 'true' },
-        { name: 'EXPORT_TIMESERIES', value: 'false' },
-      ],
-      settings: [{ name: 'EXPORT_SYSTEM_FIELDS', value: '_consents' }],
-    });
+    await mockApiConfig(page, { features: exportFeatures, settings: exportSettings });
   });
 
   test('Empty Export page renders', async ({ page }) => {
@@ -187,6 +188,37 @@ test.describe('Export Page', () => {
     await expect(page.locator(`#row-${exportRowIndex}-col-2`)).toHaveText(
       detailResponseCatSameDataset.type,
     );
+  });
+
+  test('never queries the open endpoint, even with DISCOVER enabled', async ({ page }) => {
+    await mockApiConfig(page, {
+      features: [
+        ...exportFeatures,
+        { name: 'DISCOVER', value: 'true' },
+        // Required for the Genomic Filtering entry point to render at all.
+        { name: 'ENABLE_GENE_QUERY', value: 'true' },
+        { name: 'ENABLE_SNP_QUERY', value: 'true' },
+      ],
+      settings: exportSettings,
+    });
+
+    const openQueryUrls: string[] = [];
+    await page.route(openCountResultPath, async (route: Route) => {
+      openQueryUrls.push(route.request().url());
+      await route.fulfill({ json: { '\\_studies_consents\\': 9999 } });
+    });
+
+    await setupExportPageAndAddFilterAndExport(page, true);
+    await expect(page).toHaveURL('/explorer/export');
+
+    const nextButton = page.getByTestId('next-btn');
+    await checkStepRenderedCorrectly(page, 1, 'Review Cohort Details:', false, 'Next', true);
+    await nextButton.click();
+    await checkStepRenderedCorrectly(page, 2, 'Finalize Data:', false, 'Next', true);
+    await nextButton.click();
+    await checkStepRenderedCorrectly(page, 3, 'Review and Save Dataset:', true, 'Next', true);
+
+    expect(openQueryUrls).toEqual([]);
   });
 
   test('All steps render as expected', async ({ page }) => {
