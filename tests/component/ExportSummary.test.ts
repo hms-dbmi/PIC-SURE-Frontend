@@ -50,10 +50,6 @@ describe('export Summary.svelte access selection', () => {
     mockState.ensureLoadedSpy.mockClear();
   });
 
-  // ALS-12768: the export flow is authorized-only (the page renders a login prompt
-  // when the user is logged out), so its participant count must never resolve to
-  // the open-access provider - that routes to /picsure/hpds/open/v3/query/sync AND
-  // switches expectedResultType to CROSS_COUNT, which 500s on genomic filters.
   it('requests an authorized count when DISCOVER is on and the open explorer is off', async () => {
     mockState.features = { discover: true, explorer: { open: false } };
     render(Summary);

@@ -194,7 +194,6 @@ test.describe('Export Page', () => {
     await mockApiConfig(page, {
       features: [
         ...exportFeatures,
-        // DISCOVER is what flipped the old flag-derived open-access check to true.
         { name: 'DISCOVER', value: 'true' },
         // Required for the Genomic Filtering entry point to render at all.
         { name: 'ENABLE_GENE_QUERY', value: 'true' },
