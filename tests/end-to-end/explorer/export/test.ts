@@ -522,7 +522,7 @@ test.describe('Export Page', () => {
     await nextButton.click(); // Submit query -> Save Dataset ID
 
     await page.locator('input#dataset-name').fill('test-dataset');
-    await mockApiSuccess(page, `*/**/picsure/dataset/named`, newDatasetResponse);
+    await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
     await mockApiSuccess(
       page,
       `${queryPathV3}/${newDatasetResponse.picsureResultId}/status`,
