@@ -8,18 +8,16 @@ import { loadQuerySummaryData } from '$lib/components/query/QueryConverters';
 import { QueryVersion } from '$lib/models/Dataset';
 import { LogicTree } from '$lib/models/LogicTree.svelte';
 import { QueryV3 } from '$lib/models/query/Query';
-import { config } from '$lib/configuration.svelte';
 import type { QueryV2 } from '$lib/compat/QueryV2';
 import type { FilterInterface, FilterGroupInterface } from '$lib/models/Filter.svelte';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('$lib/configuration.svelte', () => ({
-  config: {
-    features: { restoreV2queries: false },
-    settings: { exportSystemFields: [] },
-  },
+const mockConfig = vi.hoisted(() => ({
+  features: { restoreV2queries: false },
+  settings: { exportSystemFields: [] as string[] },
 }));
+vi.mock('$lib/configuration.svelte', () => ({ config: mockConfig }));
 
 vi.mock('$lib/stores/Filter', async () => {
   const { writable } = await import('svelte/store');
@@ -86,8 +84,8 @@ const queryV2: QueryV2 = {
 describe('QuerySummary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    config.features.restoreV2queries = false;
-    config.settings.exportSystemFields = [];
+    mockConfig.features.restoreV2queries = false;
+    mockConfig.settings.exportSystemFields = [];
   });
 
   it('shows the enabled Restore Filters button when there are no errors', async () => {
@@ -102,7 +100,7 @@ describe('QuerySummary', () => {
   });
 
   it('filters system fields from a V3 summary without mutating the query prop', async () => {
-    config.settings.exportSystemFields = ['\\_consents\\'];
+    mockConfig.settings.exportSystemFields = ['\\_consents\\'];
     const query = new QueryV3({
       select: ['\\dataset\\age\\', '\\_consents\\'],
       authorizationFilters: [],
@@ -150,12 +148,36 @@ describe('QuerySummary', () => {
   });
 
   it('enables restoring a saved V2 query when the compatibility flag is on', async () => {
-    config.features.restoreV2queries = true;
+    mockConfig.features.restoreV2queries = true;
     mockLoadQuerySummaryData.mockReturnValue(baseData);
     render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
 
     await screen.findByTestId('dataset-filters-container');
 
     expect(screen.getByTestId('restore-filters-btn')).toBeEnabled();
+  });
+
+  it('hides the Restore Filters button for V2 queries when restoreV2queries is false', async () => {
+    mockConfig.features.restoreV2queries = false;
+    mockLoadQuerySummaryData.mockReturnValue(baseData);
+    render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
+
+    await screen.findByTestId('dataset-filters-container');
+
+    expect(screen.queryByTestId('restore-filters-btn')).not.toBeInTheDocument();
+    const popover = screen.getByTestId('restore-popover-btn');
+    expect(popover).toBeDisabled();
+    expect(popover).toHaveTextContent('Restore Filters');
+  });
+
+  it('shows the enabled Restore Filters button for V2 queries when restoreV2queries is true', async () => {
+    mockConfig.features.restoreV2queries = true;
+    mockLoadQuerySummaryData.mockReturnValue(baseData);
+    render(QuerySummary, { query: queryV2, version: QueryVersion.V2 });
+
+    await screen.findByTestId('dataset-filters-container');
+
+    expect(screen.getByTestId('restore-filters-btn')).toBeEnabled();
+    expect(screen.queryByTestId('restore-popover-btn')).not.toBeInTheDocument();
   });
 });

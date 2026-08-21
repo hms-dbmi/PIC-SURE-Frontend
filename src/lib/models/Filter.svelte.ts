@@ -240,7 +240,7 @@ export function createGenomicFilter(geneFilter: {
     orJoin('Gene with variant', geneFilter.Gene_with_variant),
     orJoin('Variant frequency', geneFilter.Variant_frequency_as_text),
     orJoin('Consequence Group by severity', geneFilter.Variant_consequence_calculated),
-  ].filter((x) => x);
+  ].filter(Boolean);
 
   // Add min/max description if present
   if (geneFilter.min !== undefined || geneFilter.max !== undefined) {
