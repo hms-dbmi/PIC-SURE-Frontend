@@ -166,7 +166,7 @@ describe('updateFacetsFromSearch', () => {
       expect.any(String),
       expect.anything(),
       undefined,
-      undefined,
+      true,
       { signal: controller.signal },
     );
   });
@@ -209,7 +209,7 @@ describe('searchDictionary', () => {
       expect.stringContaining('page_number=0'),
       expect.objectContaining({ search: 'age' }),
       undefined,
-      undefined,
+      true,
       { signal: controller.signal },
     );
   });
@@ -223,7 +223,7 @@ describe('searchDictionary', () => {
       expect.any(String),
       expect.anything(),
       undefined,
-      undefined,
+      true,
       undefined,
     );
   });

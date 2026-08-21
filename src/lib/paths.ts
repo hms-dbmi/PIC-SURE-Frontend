@@ -36,6 +36,14 @@ export const Picsure = {
   },
 };
 
+/**
+ * True for the open-access HPDS ingress. Same segment-boundary rule as the gateway's `open-path-prefixes`, so
+ * `picsure/hpds/openx` is not open access. Callers use it to drop the bearer token, which these endpoints never read.
+ */
+export function isOpenAccessPath(path: string): boolean {
+  return path === HPDS_OPEN || path.startsWith(`${HPDS_OPEN}/`);
+}
+
 export const Internal = {
   Log: `${API}/log`,
 };

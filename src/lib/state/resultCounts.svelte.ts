@@ -2,6 +2,7 @@ import { get } from 'svelte/store';
 import type { Unsubscriber } from 'svelte/store';
 
 import * as api from '$lib/api';
+import { isOpenAccessPath } from '$lib/paths';
 import { log, createLog } from '$lib/logger';
 import { isToastShowing, toaster } from '$lib/toaster';
 import { allFilters, filterTree, genomicFilters } from '$lib/stores/Filter';
@@ -16,6 +17,7 @@ import {
 } from '$lib/services/counts/queryCountService';
 import { summarize } from '$lib/services/counts/snapshot';
 import type { ResultCountSnapshot } from '$lib/services/counts/snapshot';
+import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
 
 export type ResultCountsStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
@@ -188,8 +190,16 @@ export class ResultCounts {
 // or `ensureLoaded()` from server code without per-request scoping (SvelteKit
 // Context) — `start()` installs a long-lived filter-store subscription on the
 // singleton, and the load paths read filter stores via `get()`.
+/**
+ * The provider picks the open or authorized path from the descriptor, so the path carries the openness signal, the
+ * same one the gateway uses. Open-access counts go out anonymously. Authorized counts carry the token.
+ */
+export function countTransport(path: string, request: QueryRequestInterfaceV3) {
+  return api.post(path, request, undefined, !isOpenAccessPath(path));
+}
+
 export const resultCountsState = new ResultCounts(
   createQueryCountService({
-    transport: (path, request) => api.post(path, request),
+    transport: countTransport,
   }),
 );

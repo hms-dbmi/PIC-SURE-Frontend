@@ -55,14 +55,16 @@ export async function searchDictionary(
   options?: RequestOptions,
 ): Promise<DictionaryConceptResult> {
   let request: DictionarySearchRequest = { facets, search: searchTerm };
-  if (!page.url.pathname.includes('/discover')) {
+  // Discover is open access, so there are no consents to add and no token to send.
+  const onDiscover = page.url.pathname.includes('/discover');
+  if (!onDiscover) {
     request = await addConsents(request);
   }
   return api.post(
     `${Picsure.Concepts}?page_number=${pageable.pageNumber}&page_size=${pageable.pageSize}`,
     request,
     undefined,
-    undefined,
+    !onDiscover,
     options,
   );
 }
@@ -95,7 +97,9 @@ export async function updateFacetsFromSearch(
   const search = get(searchTerm);
   const facets = get(selectedFacets);
   let request: DictionarySearchRequest = { facets: facets, search: search };
-  if (!page.url.pathname.includes('/discover')) {
+  // /dictionary/facets serves open and authorized traffic on one URL, so this decides openness, not the gateway.
+  const onDiscover = page.url.pathname.includes('/discover');
+  if (!onDiscover) {
     request = await addConsents(request);
   }
 
@@ -105,7 +109,7 @@ export async function updateFacetsFromSearch(
       Picsure.Facets,
       request,
       undefined,
-      undefined,
+      !onDiscover,
       { signal: options?.signal },
     );
     if (options?.isCurrent && !options.isCurrent()) {
@@ -222,6 +226,8 @@ export async function getConceptCount(isOpenAccess = false) {
   const res: DictionaryConceptResult = await api.post(
     `${Picsure.Concepts}?page_number=1&page_size=1`,
     request,
+    undefined,
+    !isOpenAccess,
   );
   return res.totalElements || Promise.reject('total not found');
 }
@@ -231,7 +237,12 @@ export async function getFacetCategoryCount(isOpenAccess = false, category: stri
   if (!isOpenAccess) {
     request = await addConsents(request);
   }
-  const res: DictionaryFacetResult[] = await api.post(Picsure.Facets, request);
+  const res: DictionaryFacetResult[] = await api.post(
+    Picsure.Facets,
+    request,
+    undefined,
+    !isOpenAccess,
+  );
   const facetCat = res.find((facetCat) => facetCat.name === category);
   if (!facetCat) {
     return 0;

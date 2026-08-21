@@ -1,6 +1,6 @@
 import * as api from '$lib/api';
 import { config } from '$lib/configuration.svelte';
-import { Picsure } from '$lib/paths';
+import { Picsure, isOpenAccessPath } from '$lib/paths';
 
 import type {
   ExpectedResultType,
@@ -95,7 +95,7 @@ async function getConceptCount({ isOpenAccess }: RequestMapOptions): Promise<Pat
 function blank({ addFilters, isOpenAccess }: RequestMapOptions): Promise<PatientCount> {
   const request = addFilters ? getQueryRequestV3('COUNT') : getBlankQueryRequestV3('COUNT');
   const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
-  return api.post(path, request).then(rejectIfQueryError);
+  return api.post(path, request, undefined, !isOpenAccessPath(path)).then(rejectIfQueryError);
 }
 
 function hardcoded({ stat }: RequestMapOptions) {
@@ -181,7 +181,7 @@ function getCrossCounts(field: string, type: ExpectedResultType) {
         crossCountFieldCount: fields.length,
       }),
     );
-    return api.post(path, request).then(rejectIfQueryError);
+    return api.post(path, request, undefined, !isOpenAccessPath(path)).then(rejectIfQueryError);
   };
 }
 
@@ -203,7 +203,7 @@ function getConsentCount(type: ExpectedResultType) {
       ? getQueryRequestV3(type, mapper)
       : getBlankQueryRequestV3(type, mapper);
     const path = useOpenAccess(isOpenAccess) ? Picsure.QueryOpenV3Sync : Picsure.QueryV3Sync;
-    return api.post(path, request).then(rejectIfQueryError);
+    return api.post(path, request, undefined, !isOpenAccessPath(path)).then(rejectIfQueryError);
   };
 }
 
