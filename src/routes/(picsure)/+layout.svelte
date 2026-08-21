@@ -35,7 +35,10 @@
   );
 
   beforeNavigate(({ to, cancel }) => {
-    const notAuthorized = to?.url.pathname.includes('/explorer') && $hasInvalidFilter;
+    const notAuthorized =
+      page.url.pathname.includes('/discover') &&
+      to?.url.pathname.includes('/explorer') &&
+      $hasInvalidFilter;
     const stigmatizing =
       to?.url.pathname.includes('/discover') && ($hasGenomicFilter || $hasUnallowedFilter);
 
