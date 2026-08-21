@@ -147,6 +147,86 @@ test.describe('variant explorer', () => {
       await expect(page.getByTestId('error-alert')).toContainText('Error');
     });
   });
+  test.describe('Variant Explorer settings', () => {
+    async function setupVariantExplorer(
+      page: Page,
+      settings: { name: string; value: string }[] = [],
+    ) {
+      await mockApiConfig(page, {
+        features: [
+          { name: 'ENABLE_GENE_QUERY', value: 'true' },
+          { name: 'ENABLE_SNP_QUERY', value: 'true' },
+          { name: 'VARIANT_EXPLORER', value: 'true' },
+        ],
+        settings,
+      });
+      await mockApiSuccess(page, SyncQueryV3, '9999');
+      await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
+      await page.goto('/explorer');
+      await userIsLoggedIn(page);
+      await mockSyncAPI(page, successResults);
+      await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, geneValues);
+      await page.locator('#results-panel-toggle').click();
+      await page.getByTestId('genomic-filter-btn').click();
+      await expect(page.getByTestId('gene-variant-option')).toBeVisible();
+      await page.getByTestId('gene-variant-option').click();
+      await page.locator('#options-container').getByLabel(geneValues.results[0]).click();
+      await page.getByTestId('add-filter-btn').click();
+      await expect(page).toHaveURL('/explorer');
+      await page.getByTestId('variant-explorer-btn').click();
+      await expect(page).toHaveURL('/explorer/variant');
+    }
+
+    test('VARIANT_EXPLORER_MAX_COUNT below the result count shows a warning instead of the table', async ({
+      page,
+    }) => {
+      // Given/When - the mocked count (5) exceeds this max count of 3
+      await setupVariantExplorer(page, [{ name: 'VARIANT_EXPLORER_MAX_COUNT', value: '3' }]);
+
+      // Then
+      await expect(page.getByTestId('error-alert')).toContainText('Too many variants!');
+      await expect(page.getByTestId('error-alert')).toContainText('cannot display more than');
+      await expect(page.getByTestId('variant-explorer-table')).not.toBeVisible();
+    });
+
+    test('VARIANT_EXPLORER_TYPE=full requests full variant data and shows the aggregate-toggle checkbox', async ({
+      page,
+    }) => {
+      // Given/When
+      await setupVariantExplorer(page, [{ name: 'VARIANT_EXPLORER_TYPE', value: 'full' }]);
+
+      // Then
+      await expect(page.getByTestId('variant-explorer-table')).toBeVisible();
+      await expect(page.getByText('Aggregate data')).toBeVisible();
+    });
+
+    test('VARIANT_EXPLORER_TYPE=aggregate (default) hides the aggregate-toggle checkbox', async ({
+      page,
+    }) => {
+      // Given/When
+      await setupVariantExplorer(page);
+
+      // Then
+      await expect(page.getByTestId('variant-explorer-table')).toBeVisible();
+      await expect(page.getByText('Aggregate data')).not.toBeVisible();
+    });
+
+    test('VARIANT_EXPLORER_EXCLUDE_COLUMNS removes the listed columns from the result table', async ({
+      page,
+    }) => {
+      // Given/When
+      await setupVariantExplorer(page, [
+        { name: 'VARIANT_EXPLORER_EXCLUDE_COLUMNS', value: JSON.stringify(['REF', 'ALT']) },
+      ]);
+
+      // Then
+      const table = page.getByTestId('variant-explorer-table');
+      await expect(table).toBeVisible();
+      await expect(table.locator('thead').getByText('CHROM', { exact: true })).toBeVisible();
+      await expect(table.locator('thead').getByText('REF', { exact: true })).not.toBeVisible();
+      await expect(table.locator('thead').getByText('ALT', { exact: true })).not.toBeVisible();
+    });
+  });
   test('Display notice when no genomic query exists', async ({ page }) => {
     // Given
     // This test sits outside the 'Genetic filter applied' describe, so it has no

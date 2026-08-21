@@ -37,3 +37,49 @@ test.describe('Branding overrides', () => {
     await expect(logo.locator('title')).toHaveText('PIC-SURE');
   });
 });
+
+test.describe('Theme', () => {
+  test('Without a THEME override, the default picsure theme and favicon are used', async ({
+    page,
+  }) => {
+    // Given
+    await mockApiConfig(page);
+
+    // When
+    await page.goto('/login');
+
+    // Then
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'picsure');
+    await expect(page.locator('main')).toHaveAttribute('data-theme', 'picsure');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /picsure-favicon\.png$/);
+  });
+
+  test('A recognized THEME override sets data-theme and swaps in the theme-specific favicon', async ({
+    page,
+  }) => {
+    // Given
+    await mockApiConfig(page, { branding: [{ name: 'THEME', value: 'bdc' }] });
+
+    // When
+    await page.goto('/login');
+
+    // Then
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'bdc');
+    await expect(page.locator('main')).toHaveAttribute('data-theme', 'bdc');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /bdc-favicon\.png$/);
+  });
+
+  test('An unrecognized THEME override still sets data-theme but falls back to the default favicon', async ({
+    page,
+  }) => {
+    // Given
+    await mockApiConfig(page, { branding: [{ name: 'THEME', value: 'some-other-theme' }] });
+
+    // When
+    await page.goto('/login');
+
+    // Then
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'some-other-theme');
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', /\/favicon\.png$/);
+  });
+});

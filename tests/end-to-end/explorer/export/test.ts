@@ -164,6 +164,24 @@ test.describe('Export Page', () => {
     await expect(page).toHaveURL('/explorer/export');
   });
 
+  test('MAX_DATA_POINTS_FOR_EXPORT below the participant count locks the review step with a warning', async ({
+    page,
+  }) => {
+    // Given - the mocked participant count (9999) exceeds this max of 10
+    await mockApiConfig(page, {
+      features: baseExportFeatures,
+      settings: [...baseExportSettings, { name: 'MAX_DATA_POINTS_FOR_EXPORT', value: '10' }],
+    });
+
+    // When
+    await setupExportPageAndAddFilterAndExport(page);
+
+    // Then
+    await expect(page).toHaveURL('/explorer/export');
+    await expect(page.getByTestId('landing-error')).toBeVisible();
+    await expect(page.getByTestId('next-btn')).toBeDisabled();
+  });
+
   test('Export page renders expected data', async ({ page }) => {
     await setupExportPageAndAddFilterAndExport(page);
     await expect(page).toHaveURL('/explorer/export');
