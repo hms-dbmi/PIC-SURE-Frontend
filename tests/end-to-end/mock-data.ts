@@ -394,6 +394,7 @@ export const searchResultPathForSampleIds =
 export const facetResultPath = '*/**/picsure/dictionary/facets';
 export const conceptsDetailPath = '*/**/picsure/dictionary/concepts/detail'; // + name
 export const conceptTreePath = '*/**/picsure/dictionary/concepts/tree'; // + name
+export const configurationPath = '*/**/picsure/operations/configuration';
 
 export const searchRequest = { facets: [], search: 'age' };
 
