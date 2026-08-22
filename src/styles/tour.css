@@ -44,8 +44,7 @@
   .fa-solid,
   .far,
   .fas {
-    /* ".driver-popover *" class overrides the font-family, so we reset font-awesome here. */
-    font-family: 'Font Awesome 6 Free';
+    font-family: var(--fa-style-family-classic);
   }
 }
 
