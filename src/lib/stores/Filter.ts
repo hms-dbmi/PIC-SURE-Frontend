@@ -45,23 +45,24 @@ export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => !filter.allowFiltering) : false,
 );
 
-export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$user, $filters]) => {
-  if ($filters.length === 0 || !$user?.queryScopes) return false;
+function hasConsentForFilter(filter: Filter, consents: string[]): boolean {
+  let filterDataset = filter.dataset || '';
+  if (genomicFilterTypes.includes(filter.filterType)) {
+    filterDataset = 'Gene_with_variant';
+  }
 
-  return $filters.some((filter) => {
-    let filterDataset = filter.dataset || '';
-    if (genomicFilterTypes.includes(filter.filterType)) {
-      filterDataset = 'Gene_with_variant';
-    }
+  return filterDataset.length > 0 && consents.some((consent) => consent.includes(filterDataset));
+}
 
-    const isValidFilter = $user?.queryScopes?.some((scope) => {
-      const isMatch = filterDataset.length > 0 && scope.includes(filterDataset);
-      return isMatch;
-    });
+export const hasInvalidFilter: Readable<boolean> = derived(
+  [user, allFilters],
+  ([$user, $allFilters]) => {
+    const consents = $user?.consents?.['\\_consents\\'];
+    if ($allFilters.length === 0 || !consents) return false;
 
-    return !isValidFilter;
-  });
-});
+    return $allFilters.some((filter) => !hasConsentForFilter(filter, consents));
+  },
+);
 
 export const hasOrGroup: Readable<boolean> = derived(filterTree, ($ft) => $ft.hasOr);
 
@@ -234,29 +235,16 @@ export function removeUnallowedFilters() {
 export function removeInvalidFilters(): void {
   const currentUser = get(user);
   const currentFilters = get(filters);
-
-  if (!currentUser || currentFilters.length === 0) return;
-
-  const match = (filter: Filter) => {
-    let filterDataset = filter.dataset || '';
-    if (genomicFilterTypes.includes(filter.filterType)) {
-      filterDataset = 'Gene_with_variant';
-    }
-
-    const isValidFilter = currentUser.queryScopes?.some((scope) => {
-      const isMatch = filterDataset.length > 0 && scope.includes(filterDataset);
-      return isMatch;
-    });
-
-    return isValidFilter;
-  };
-
   const geneFilters = get(genomicFilters);
-  const geneRemoveCount = geneFilters.filter((node) => !match(node)).length;
-  genomicFilters.set(geneFilters.filter((node) => match(node)));
+  const consents = currentUser?.consents?.['\\_consents\\'];
+
+  if ((currentFilters.length === 0 && geneFilters.length === 0) || !consents) return;
+
+  const geneRemoveCount = geneFilters.filter((node) => !hasConsentForFilter(node, consents)).length;
+  genomicFilters.set(geneFilters.filter((node) => hasConsentForFilter(node, consents)));
 
   const tree = get(filterTree);
-  const remove = tree.leafNodes.filter((node) => !match(node as Filter));
+  const remove = tree.leafNodes.filter((node) => !hasConsentForFilter(node as Filter, consents));
   tree.remove(...remove);
   tree.root.uuid = genericUUID();
   filterTree.set(tree);

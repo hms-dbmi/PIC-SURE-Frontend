@@ -1,9 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
 
+const mockUser = vi.hoisted(() => {
+  let value = {};
+  const subscribers = new Set<(user: object) => void>();
+
+  return {
+    subscribe(run: (user: object) => void) {
+      subscribers.add(run);
+      run(value);
+      return () => subscribers.delete(run);
+    },
+    set(user: object) {
+      value = user;
+      subscribers.forEach((run) => run(value));
+    },
+  };
+});
+
 vi.mock('$app/environment', () => ({ browser: false }));
 vi.mock('$lib/stores/User', () => ({
-  user: { subscribe: vi.fn() },
+  user: mockUser,
   isUserLoggedIn: vi.fn(() => false),
 }));
 vi.mock('$lib/stores/Dictionary', () => ({
@@ -15,17 +32,24 @@ import {
   updateFilter,
   removeFilter,
   filterTree,
+  genomicFilters,
   clearFilters,
   createGroup,
   enrichFilterDetails,
+  hasInvalidFilter,
+  removeInvalidFilters,
 } from '$lib/stores/Filter';
 import { getConceptDetails } from '$lib/stores/Dictionary';
-import { createCategoricalFilter, createNumericFilter } from '$lib/models/Filter.svelte';
+import {
+  createCategoricalFilter,
+  createGenomicFilter,
+  createNumericFilter,
+} from '$lib/models/Filter.svelte';
 import type { FilterInterface } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
 import { LogicTree } from '$lib/models/LogicTree.svelte';
 
-function mockSearchResult(conceptPath: string): SearchResult {
+function mockSearchResult(conceptPath: string, dataset = 'test-dataset'): SearchResult {
   return {
     conceptPath,
     name: conceptPath.split('\\').pop() || conceptPath,
@@ -33,11 +57,56 @@ function mockSearchResult(conceptPath: string): SearchResult {
     type: 'Categorical',
     description: '',
     allowFiltering: true,
-    dataset: 'test-dataset',
+    dataset,
     studyAcronym: 'TEST',
     children: [],
   } as SearchResult;
 }
+
+describe('consent-based filter access', () => {
+  beforeEach(() => {
+    clearFilters();
+    mockUser.set({});
+  });
+
+  it('marks a Discover filter invalid using endpoint consents when query scopes are absent', () => {
+    mockUser.set({ consents: { '\\_consents\\': ['authorized-dataset'] } });
+    addFilter(createCategoricalFilter(mockSearchResult('\\demo\\denied\\'), ['value']));
+
+    expect(get(hasInvalidFilter)).toBe(true);
+  });
+
+  it('removes only filters missing from the endpoint consent list', () => {
+    mockUser.set({ consents: { '\\_consents\\': ['authorized-dataset'] } });
+    addFilter(
+      createCategoricalFilter(mockSearchResult('\\demo\\authorized\\', 'authorized-dataset'), [
+        'value',
+      ]),
+    );
+    addFilter(
+      createCategoricalFilter(mockSearchResult('\\demo\\denied\\', 'denied-dataset'), ['value']),
+    );
+
+    removeInvalidFilters();
+
+    expect(get(filterTree).leafNodes.map((filter) => filter.dataset)).toEqual([
+      'authorized-dataset',
+    ]);
+  });
+
+  it('detects and removes a standalone genomic filter without consent', () => {
+    mockUser.set({ consents: { '\\_consents\\': ['authorized-dataset'] } });
+    addFilter(createGenomicFilter({ Gene_with_variant: ['BRCA1'] }));
+
+    expect(get(filterTree).leafNodes).toHaveLength(0);
+    expect(get(genomicFilters)).toHaveLength(1);
+    expect(get(hasInvalidFilter)).toBe(true);
+
+    removeInvalidFilters();
+
+    expect(get(genomicFilters)).toHaveLength(0);
+  });
+});
 
 describe('addFilter - duplicate filters', () => {
   beforeEach(() => {
