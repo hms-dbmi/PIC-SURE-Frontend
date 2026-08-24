@@ -21,7 +21,7 @@
     backTo: string;
     path: string;
     back: string;
-    resetQuery: () => void;
+    resetQuery: () => void | Promise<void>;
   }
 
   const filterWarnings: { [key: string]: Warning } = {
@@ -62,9 +62,9 @@
     goto(resolve(back as '/'), { keepFocus: false });
   }
 
-  function reset() {
+  async function reset() {
     const path = warning.path;
-    warning.resetQuery();
+    await warning.resetQuery();
     panelOpen.set(false);
     filterWarning.set(undefined);
     open = false;

@@ -17,10 +17,12 @@ const mockUser = vi.hoisted(() => {
     },
   };
 });
+const mockEnsureConsentsLoaded = vi.hoisted(() => vi.fn());
 
 vi.mock('$app/environment', () => ({ browser: false }));
 vi.mock('$lib/stores/User', () => ({
   user: mockUser,
+  ensureConsentsLoaded: mockEnsureConsentsLoaded,
   isUserLoggedIn: vi.fn(() => false),
 }));
 vi.mock('$lib/stores/Dictionary', () => ({
@@ -67,6 +69,7 @@ describe('consent-based filter access', () => {
   beforeEach(() => {
     clearFilters();
     mockUser.set({});
+    mockEnsureConsentsLoaded.mockReset();
   });
 
   it('marks a Discover filter invalid using endpoint consents when query scopes are absent', () => {
@@ -76,7 +79,7 @@ describe('consent-based filter access', () => {
     expect(get(hasInvalidFilter)).toBe(true);
   });
 
-  it('removes only filters missing from the endpoint consent list', () => {
+  it('removes only filters missing from the endpoint consent list', async () => {
     mockUser.set({ consents: { '\\_consents\\': ['authorized-dataset'] } });
     addFilter(
       createCategoricalFilter(mockSearchResult('\\demo\\authorized\\', 'authorized-dataset'), [
@@ -87,14 +90,17 @@ describe('consent-based filter access', () => {
       createCategoricalFilter(mockSearchResult('\\demo\\denied\\', 'denied-dataset'), ['value']),
     );
 
-    removeInvalidFilters();
+    mockEnsureConsentsLoaded.mockResolvedValue({
+      '\\_consents\\': ['authorized-dataset'],
+    });
+    await removeInvalidFilters();
 
     expect(get(filterTree).leafNodes.map((filter) => filter.dataset)).toEqual([
       'authorized-dataset',
     ]);
   });
 
-  it('detects and removes a standalone genomic filter without consent', () => {
+  it('detects and removes a standalone genomic filter without consent', async () => {
     mockUser.set({ consents: { '\\_consents\\': ['authorized-dataset'] } });
     addFilter(createGenomicFilter({ Gene_with_variant: ['BRCA1'] }));
 
@@ -102,9 +108,24 @@ describe('consent-based filter access', () => {
     expect(get(genomicFilters)).toHaveLength(1);
     expect(get(hasInvalidFilter)).toBe(true);
 
-    removeInvalidFilters();
+    mockEnsureConsentsLoaded.mockResolvedValue({
+      '\\_consents\\': ['authorized-dataset'],
+    });
+    await removeInvalidFilters();
 
     expect(get(genomicFilters)).toHaveLength(0);
+  });
+
+  it('loads missing consents before removing invalid filters', async () => {
+    mockEnsureConsentsLoaded.mockResolvedValue({
+      '\\_consents\\': ['authorized-dataset'],
+    });
+    addFilter(createCategoricalFilter(mockSearchResult('\\demo\\denied\\'), ['value']));
+
+    await removeInvalidFilters();
+
+    expect(mockEnsureConsentsLoaded).toHaveBeenCalledOnce();
+    expect(get(filterTree).leafNodes).toHaveLength(0);
   });
 });
 

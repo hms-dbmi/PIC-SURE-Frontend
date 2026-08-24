@@ -2,7 +2,7 @@ import { get, derived, writable, type Readable, type Writable } from 'svelte/sto
 import { genericUUID, objectUUID } from '$lib/utilities/UUID';
 
 import { browser } from '$app/environment';
-import { user } from '$lib/stores/User';
+import { ensureConsentsLoaded, user } from '$lib/stores/User';
 import { getConceptDetails } from '$lib/stores/Dictionary';
 import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
 
@@ -232,13 +232,15 @@ export function removeUnallowedFilters() {
   if (totalCount > 0) log(createLog('FILTER', 'filter.remove_unallowed', { count: totalCount }));
 }
 
-export function removeInvalidFilters(): void {
-  const currentUser = get(user);
+export async function removeInvalidFilters(): Promise<void> {
   const currentFilters = get(filters);
   const geneFilters = get(genomicFilters);
-  const consents = currentUser?.consents?.['\\_consents\\'];
+  if (currentFilters.length === 0 && geneFilters.length === 0) return;
 
-  if ((currentFilters.length === 0 && geneFilters.length === 0) || !consents) return;
+  const consentsMap = await ensureConsentsLoaded();
+  const consents = consentsMap?.['\\_consents\\'];
+
+  if (!consents) return;
 
   const geneRemoveCount = geneFilters.filter((node) => !hasConsentForFilter(node, consents)).length;
   genomicFilters.set(geneFilters.filter((node) => hasConsentForFilter(node, consents)));

@@ -53,6 +53,41 @@ test.describe('Filter warning navigation', () => {
     );
   });
 
+  test('warns after leaving Discover before moving to Explore with an unconsented filter', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem(
+        'filterTree',
+        JSON.stringify({
+          uuid: 'root',
+          operator: 'AND',
+          children: [
+            {
+              uuid: 'denied-filter',
+              id: '\\denied-study\\variable\\',
+              filterType: 'Categorical',
+              displayType: 'restrict',
+              variableName: 'Denied variable',
+              allowFiltering: true,
+              dataset: 'denied-study',
+              categoryValues: ['Yes'],
+            },
+          ],
+        }),
+      );
+    });
+
+    await page.goto('/discover');
+    await page.locator('#nav-link-analyze-api').click();
+    await expect(page).toHaveURL(/\/analyze\/api$/);
+
+    await page.locator('#nav-link-explorer').click();
+
+    await expect(page).toHaveURL(/\/analyze\/api$/);
+    await expect(page.getByTestId('sendfilter-warning')).toBeVisible();
+  });
+
   test('warns for a standalone genomic filter without consent', async ({ page }) => {
     await page.addInitScript(() => {
       sessionStorage.setItem(
