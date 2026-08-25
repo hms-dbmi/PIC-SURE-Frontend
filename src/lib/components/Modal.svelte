@@ -17,7 +17,9 @@
     disabled?: boolean;
     class?: string;
     triggerBase?: string;
+    triggerTitle?: string;
     'data-testid'?: string;
+    'data-key'?: string;
     onclose?: () => void;
     onconfirm?: () => void;
     children: Snippet;
@@ -39,7 +41,9 @@
     disabled = false,
     class: className = '',
     triggerBase = '',
+    triggerTitle,
     'data-testid': testid = '',
+    'data-key': dataKey,
     onclose = () => {},
     onconfirm,
     children,
@@ -66,6 +70,8 @@
     <button
       type="button"
       data-testid="{testid}-btn"
+      title={triggerTitle}
+      data-key={dataKey}
       onclick={(e) => {
         e.stopPropagation();
         e.preventDefault();

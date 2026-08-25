@@ -135,6 +135,51 @@ test.describe('dataset', () => {
     // Then
     await expect(page.getByText(mockData[1].query.uuid, { exact: true })).toBeVisible();
   });
+  test('Keyboard: arrow keys move row focus and Enter opens the dataset page', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, datasetPath, mockData);
+    await page.goto('/dataset');
+    await userIsLoggedIn(page);
+
+    // When
+    const table = page.getByTestId('ActiveDatasets-table');
+    const firstRow = table.locator('tr[id^="row-"]').first();
+    await expect(firstRow).toBeVisible();
+    await firstRow.focus();
+
+    // Then: a single-row, single-page table does not move or wrap at the edges
+    await page.keyboard.press('ArrowDown');
+    await expect(firstRow).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(firstRow).toBeFocused();
+
+    // When
+    await page.keyboard.press('Enter');
+
+    // Then
+    await page.waitForURL(/\/dataset\/.+/);
+  });
+  test('Keyboard: "d" shortcut archives the focused dataset row', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, datasetPath, mockData);
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, {
+      ...mockData[0],
+      archived: true,
+    });
+    await page.goto('/dataset');
+    await userIsLoggedIn(page);
+
+    // When
+    const archiveButton = page.getByTestId(`dataset-action-archive-${mockData[0].uuid}`);
+    await expect(archiveButton).toBeVisible();
+    const row = page.locator('tr[id^="row-"]', { has: archiveButton }).first();
+    await row.focus();
+    await page.keyboard.press('d');
+    await page.getByTestId('dataset-toggle-archive').click();
+
+    // Then
+    await expect(page.getByTestId(`dataset-action-restore-${mockData[0].uuid}`)).toBeVisible();
+  });
   test('Error message on api error', async ({ page }) => {
     // Given
     await mockApiFail(page, datasetPath, 'accessdenied');

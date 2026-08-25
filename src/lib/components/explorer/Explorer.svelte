@@ -123,6 +123,7 @@
     {:else if $searchTerm || $selectedFacets.length > 0}
       <SearchDatatable
         isClickable
+        ariaLabel="Search results"
         {tableName}
         {handler}
         {columns}

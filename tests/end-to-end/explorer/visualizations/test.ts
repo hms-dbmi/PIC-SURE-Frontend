@@ -15,7 +15,7 @@ const countResultPath = '*/**/picsure/hpds/auth/v3/query/sync';
 const distributionsPath = '*/**/picsure/visualization/distributions';
 
 async function addFilterFromRow(page: import('@playwright/test').Page, rowIndex: number) {
-  await page.locator(`#row-${rowIndex} button[title=Filter]`).click();
+  await page.locator(`#row-${rowIndex} button[title^=Filter]`).click();
   const firstItem = await getOption(page);
   await firstItem.click();
   await page.getByTestId('add-filter').click();

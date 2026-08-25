@@ -91,4 +91,106 @@ describe('Datatable Row', () => {
 
     expect(rowClickActions()).toContain('search_result.row_click');
   });
+
+  it('activates the row on Enter and Space through the same click path (logging included)', async () => {
+    const rowClickHandler = vi.fn();
+
+    const { container } = render(Row, {
+      tableName: 'ExplorerTable',
+      columns,
+      index: 0,
+      row,
+      isClickable: true,
+      rowClickHandler,
+      rowClickLogAction: 'search_result.row_click',
+    });
+
+    const tr = container.querySelector('#row-0')!;
+    await fireEvent.keyDown(tr, { key: 'Enter' });
+    await fireEvent.keyDown(tr, { key: ' ' });
+
+    expect(rowClickHandler).toHaveBeenCalledTimes(2);
+    expect(rowClickActions().filter((a) => a === 'search_result.row_click')).toHaveLength(2);
+  });
+
+  it('treats configured rowClickKeys as row activation shortcuts', async () => {
+    const rowClickHandler = vi.fn();
+
+    const { container } = render(Row, {
+      tableName: 'ActiveDatasets',
+      columns,
+      index: 0,
+      row,
+      isClickable: true,
+      rowClickHandler,
+      rowClickKeys: ['v'],
+    });
+
+    const tr = container.querySelector('#row-0')!;
+    await fireEvent.keyDown(tr, { key: 'v' });
+    expect(rowClickHandler).toHaveBeenCalledTimes(1);
+
+    // A letter with no configured shortcut and no matching action button is a no-op.
+    await fireEvent.keyDown(tr, { key: 'z' });
+    expect(rowClickHandler).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores shortcuts when a modifier key is held', async () => {
+    const rowClickHandler = vi.fn();
+
+    const { container } = render(Row, {
+      tableName: 'ActiveDatasets',
+      columns,
+      index: 0,
+      row,
+      isClickable: true,
+      rowClickHandler,
+      rowClickKeys: ['v'],
+    });
+
+    const tr = container.querySelector('#row-0')!;
+    await fireEvent.keyDown(tr, { key: 'v', ctrlKey: true });
+    await fireEvent.keyDown(tr, { key: 'v', metaKey: true });
+    await fireEvent.keyDown(tr, { key: 'v', shiftKey: true });
+    expect(rowClickHandler).not.toHaveBeenCalled();
+  });
+
+  it('ignores keyboard activation entirely when the table is not clickable', async () => {
+    const rowClickHandler = vi.fn();
+
+    const { container } = render(Row, {
+      tableName: 'ActiveDatasets',
+      columns,
+      index: 0,
+      row,
+      isClickable: false,
+      rowClickHandler,
+      rowClickKeys: ['v'],
+    });
+
+    const tr = container.querySelector('#row-0')!;
+    await fireEvent.keyDown(tr, { key: 'Enter' });
+    await fireEvent.keyDown(tr, { key: 'v' });
+    expect(rowClickHandler).not.toHaveBeenCalled();
+  });
+
+  it('does not rapid-fire activations while a key is held (event.repeat)', async () => {
+    const rowClickHandler = vi.fn();
+
+    const { container } = render(Row, {
+      tableName: 'ActiveDatasets',
+      columns,
+      index: 0,
+      row,
+      isClickable: true,
+      rowClickHandler,
+      rowClickKeys: ['v'],
+    });
+
+    const tr = container.querySelector('#row-0')!;
+    await fireEvent.keyDown(tr, { key: 'v' });
+    await fireEvent.keyDown(tr, { key: 'v', repeat: true });
+    await fireEvent.keyDown(tr, { key: 'Enter', repeat: true });
+    expect(rowClickHandler).toHaveBeenCalledTimes(1);
+  });
 });

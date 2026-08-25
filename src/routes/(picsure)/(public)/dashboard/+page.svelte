@@ -60,6 +60,7 @@
     {:then}
       <Datatable
         {tableName}
+        ariaLabel="Data dashboard"
         data={currentRows}
         columns={currentColumns}
         {cellOverides}

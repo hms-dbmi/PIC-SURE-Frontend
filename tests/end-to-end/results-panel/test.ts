@@ -68,7 +68,7 @@ test.describe('Results Panel', () => {
       detailResponseCat,
     );
     await mockApiFail(page, countResultPath, 'failed');
-    await page.locator('#row-0 button[title=Filter]').click();
+    await page.locator('#row-0 button[title^=Filter]').click();
     await page.locator('#options-container label:nth-child(1)').click();
     await page.getByTestId('add-filter').click();
 
@@ -173,7 +173,7 @@ test.describe('Results Panel', () => {
       detailResponseCat,
     );
     await mockApiFail(page, countResultPath, 'failed');
-    await page.locator('#row-0 button[title=Filter]').click();
+    await page.locator('#row-0 button[title^=Filter]').click();
     await page.locator('#options-container label:nth-child(1)').click();
     await page.getByTestId('add-filter').click();
 
@@ -226,7 +226,7 @@ test.describe('Results Panel', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await page.locator('#row-0 button[title=Filter]').click();
+    await page.locator('#row-0 button[title^=Filter]').click();
     await page.locator('#options-container label:nth-child(1)').click();
     await page.getByTestId('add-filter').click();
     const exportButton = page.locator('#export-data-button');
@@ -239,7 +239,7 @@ test.describe('Results Panel', () => {
       `${conceptsDetailPath}/${detailResponseCat2.dataset}`,
       detailResponseCat2,
     );
-    await page.locator('#row-2 button[title=Filter]').click();
+    await page.locator('#row-2 button[title^=Filter]').click();
     await page.locator('#select-all').click();
     await page.getByTestId('add-filter').click();
 
@@ -340,7 +340,7 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat,
       );
-      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#row-0 button[title^=Filter]').click();
       await page.locator('#options-container label:nth-child(1)').click();
       const firstItem = await getOption(page);
       await firstItem.click();
@@ -351,7 +351,7 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat2,
       );
-      await page.locator('#row-2 button[title=Filter]').click();
+      await page.locator('#row-2 button[title^=Filter]').click();
       await page.locator('#options-container label:nth-child(1)').click();
       const secondItem = await getOption(page);
       await secondItem.click();
@@ -378,7 +378,7 @@ test.describe('Results Panel', () => {
       await userIsLoggedIn(page);
 
       // When
-      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#row-0 button[title^=Filter]').click();
       const firstItem = await getOption(page);
       await firstItem.click();
       await page.getByTestId('add-filter').click();
@@ -407,7 +407,7 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat,
       );
-      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#row-0 button[title^=Filter]').click();
       const firstItem = await getOption(page);
       await firstItem.click();
       await page.getByTestId('add-filter').click();
@@ -419,7 +419,7 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat2.dataset}`,
         detailResponseCat2,
       );
-      await page.locator('#row-2 button[title=Filter]').click();
+      await page.locator('#row-2 button[title^=Filter]').click();
       const secondItem = await getOption(page);
       await secondItem.click();
       await page.getByTestId('add-filter').click();
@@ -464,7 +464,7 @@ test.describe('Results Panel', () => {
       await userIsLoggedIn(page);
 
       // When
-      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#row-0 button[title^=Filter]').click();
       await page.locator('#options-container label:nth-child(1)').click();
       const firstItem = await getOption(page);
       await firstItem.click();
@@ -498,7 +498,7 @@ test.describe('Results Panel', () => {
       await page.goto('/discover?search=somedata');
 
       // When
-      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#row-0 button[title^=Filter]').click();
       await page.locator('#options-container label:nth-child(1)').click();
       const firstItem = await getOption(page);
       await firstItem.click();
@@ -533,7 +533,7 @@ test.describe('Results Panel', () => {
       await page.goto('/discover?search=somedata');
 
       // When
-      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#row-0 button[title^=Filter]').click();
       await page.locator('#options-container label:nth-child(1)').click();
       const firstItem = await getOption(page);
       await firstItem.click();
@@ -567,7 +567,7 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat,
       );
-      await page.locator('#row-0 button[title=Filter]').click();
+      await page.locator('#row-0 button[title^=Filter]').click();
       await page.locator('#options-container label:nth-child(1)').click();
       const firstItem = await getOption(page);
       await firstItem.click();
@@ -579,7 +579,7 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat2,
       );
-      await page.locator('#row-2 button[title=Filter]').click();
+      await page.locator('#row-2 button[title^=Filter]').click();
       await page.locator('#options-container label:nth-child(1)').click();
       const secondItem = await getOption(page);
       await secondItem.click();
