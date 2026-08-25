@@ -3,10 +3,16 @@
   import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
   import { log, createLog } from '$lib/logger';
 
-  let { handler }: { handler: TableHandler | RemoteTableHandler } = $props();
+  interface Props {
+    handler: TableHandler | RemoteTableHandler;
+    onPageChange?: () => void;
+  }
+
+  let { handler, onPageChange = () => {} }: Props = $props();
 
   const setPage = (value: 'previous' | 'next' | 'last' | number) => {
     handler.setPage(value);
+    onPageChange();
     log(
       createLog('ACTION', 'search_result.page_change', {
         pageNumber: typeof value === 'number' ? value : handler.currentPage,

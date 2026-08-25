@@ -106,6 +106,49 @@ test.describe('Explorer for authenticated users', () => {
     // Then
     await expect(page.locator('table')).toBeVisible();
   });
+  test('Scrolls to the top of the search results when changing pages', async ({ page }) => {
+    const pageOfResults = {
+      ...mockData,
+      totalPages: 2,
+      totalElements: 200,
+      numberOfElements: 100,
+      size: 100,
+      content: Array.from({ length: 100 }, (_, index) => ({
+        ...mockData.content[index % mockData.content.length],
+        conceptPath: `\\test\\result-${index}\\`,
+        name: `result-${index}`,
+      })),
+    };
+    await page.route(
+      searchResultPath.replace('page_size=10', 'page_size=100'),
+      async (route: Route) => route.fulfill({ json: pageOfResults }),
+    );
+    await page.route(
+      searchResultPath.replace('page_number=0&page_size=10', 'page_number=1&page_size=100'),
+      async (route: Route) => route.fulfill({ json: pageOfResults }),
+    );
+    await page.goto('/explorer?search=sex');
+    await userIsLoggedIn(page);
+
+    await page.getByLabel('Rows per page').selectOption('100');
+    await expect(page.locator('#ExplorerTable-table tbody tr[id^="row-"]')).toHaveCount(100);
+    const scrollContainer = page.locator('#page');
+    await scrollContainer.evaluate((element) => element.scrollTo(0, element.scrollHeight));
+    expect(await scrollContainer.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
+    await page.getByLabel('Next', { exact: true }).click();
+    await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+    await expect
+      .poll(() =>
+        page.locator('#ExplorerTable-table').evaluate((table) => {
+          const container = document.querySelector('#page');
+          return Math.abs(
+            table.getBoundingClientRect().top - (container?.getBoundingClientRect().top ?? 0),
+          );
+        }),
+      )
+      .toBeLessThan(2);
+  });
   test('Error message on api error', async ({ page }) => {
     // Given
     await mockApiFail(page, searchResultPath, 'accessdenied');
