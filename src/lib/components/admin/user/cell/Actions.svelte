@@ -63,7 +63,7 @@
   </button>
 {/if}
 <Modal
-  data-testid="user-{data.cell}-{active ? 'D' : 'R'}eactivate-btn"
+  data-testid="user-{data.cell}-{active ? 'D' : 'R'}eactivate"
   title="{active ? 'D' : 'R'}eactivate User?"
   confirmText="{active ? 'D' : 'R'}eactivate"
   triggerTitle={active ? 'Deactivate user (d)' : 'Reactivate user (r)'}

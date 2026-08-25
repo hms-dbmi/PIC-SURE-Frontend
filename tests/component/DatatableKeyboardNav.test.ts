@@ -42,7 +42,7 @@ vi.mock('$lib/stores/ExpandableRow', () => {
 import { TableHandler as ServerTableHandler } from '@vincjo/datatables/server';
 
 import RemoteTable from '$lib/components/datatable/RemoteTable.svelte';
-import { isTextEntryField } from '$lib/components/datatable/keyboard';
+import { isTextEntryField, tableIdPrefix } from '$lib/components/datatable/keyboard';
 import { activeTable, activeRow, activeComponent, closeActiveRow } from '$lib/stores/ExpandableRow';
 import KeyButtonCell from './fixtures/KeyButtonCell.svelte';
 import PanelInputCell from './fixtures/PanelInputCell.svelte';
@@ -265,6 +265,32 @@ describe('Datatable keyboard navigation', () => {
     await fireEvent.keyDown(pageRows[2], { key: 'Escape' });
     expect(vi.mocked(closeActiveRow)).toHaveBeenCalledTimes(1);
     expect(document.activeElement?.id).toBe('KbdTest-row-2');
+  });
+
+  it("leaves focus alone when Escape arrives from another row's action button", async () => {
+    const { container } = renderTable(7, undefined, true);
+    activeTable.set('KbdTest');
+    activeRow.set('ds-0');
+
+    await waitFor(() => expect(container.querySelector('tr.expandable-row')).not.toBeNull());
+    const pageRows = rows(container);
+    pageRows[2].focus();
+    await fireEvent.keyDown(pageRows[2], { key: 'ArrowRight' });
+    const action = document.activeElement!;
+    expect(action.tagName).toBe('BUTTON');
+
+    await fireEvent.keyDown(action, { key: 'Escape' });
+    expect(vi.mocked(closeActiveRow)).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(action);
+  });
+});
+
+describe('tableIdPrefix', () => {
+  it('keeps selector-safe names intact and escapes the rest without collapsing them', () => {
+    expect(tableIdPrefix('ActiveDatasets')).toBe('ActiveDatasets');
+    expect(tableIdPrefix('Users-Site A')).toBe('Users-Site_20_A');
+    expect(tableIdPrefix('Users-A/B')).not.toBe(tableIdPrefix('Users-A?B'));
+    expect(tableIdPrefix('Users-"quoted"')).not.toContain('"');
   });
 });
 

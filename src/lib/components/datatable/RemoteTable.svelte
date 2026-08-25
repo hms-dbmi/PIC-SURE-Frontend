@@ -172,8 +172,11 @@
     // Only pull focus back to the opener row when focus was on it or inside the
     // closing panel; if the user has arrowed to another row, leave them there.
     const current = document.activeElement;
+    const currentRow = current instanceof HTMLElement ? current.closest('tr') : null;
     const onAnotherRow =
-      current instanceof HTMLTableRowElement && current !== owner && dataRows().includes(current);
+      currentRow instanceof HTMLTableRowElement &&
+      currentRow !== owner &&
+      dataRows().includes(currentRow);
     closeActiveRow();
     if (!onAnotherRow) owner?.focus();
   }
