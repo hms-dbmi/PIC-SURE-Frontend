@@ -3,7 +3,7 @@
   import type { Column } from '$lib/components/datatable/types';
   import type { Indexable } from '$lib/types';
   import { activeTable, activeRow, activeComponent, setActiveRow } from '$lib/stores/ExpandableRow';
-  import { isFormField } from '$lib/components/datatable/keyboard';
+  import { isFormField, tableIdPrefix } from '$lib/components/datatable/keyboard';
   import { log, createLog, getPageContext } from '$lib/logger';
 
   interface Props {
@@ -36,9 +36,8 @@
 
   let rowElement: HTMLTableRowElement | undefined = $state();
 
-  // Element ids must be page-unique (multiple tables can render together) and
-  // must not contain whitespace (user tables are named after connection labels).
-  const idPrefix = $derived(tableName.replaceAll(' ', '_'));
+  // Element ids must be page-unique (multiple tables can render together).
+  const idPrefix = $derived(tableIdPrefix(tableName));
 
   function onClick(row: Indexable) {
     const willOpen = !(

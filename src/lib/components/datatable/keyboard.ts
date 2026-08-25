@@ -1,3 +1,10 @@
+// Row element ids are built from the free-form table name (user tables embed
+// admin-entered connection labels), so restrict it to characters that are safe
+// in both HTML ids and CSS selectors.
+export function tableIdPrefix(tableName: string): string {
+  return tableName.replace(/[^A-Za-z0-9_-]/g, '_');
+}
+
 export function isFormField(target: EventTarget | null): boolean {
   return (
     target instanceof HTMLElement &&

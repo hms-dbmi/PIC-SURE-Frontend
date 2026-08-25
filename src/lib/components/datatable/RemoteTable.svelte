@@ -5,7 +5,7 @@
   import type { TableProps } from './types';
 
   import { activeTable, activeRow, closeActiveRow } from '$lib/stores/ExpandableRow';
-  import { isFormField, isTextEntryField } from '$lib/components/datatable/keyboard';
+  import { isFormField, isTextEntryField, tableIdPrefix } from '$lib/components/datatable/keyboard';
   import { log, createLog } from '$lib/logger';
   import ExpandableRow from '$lib/components/datatable/Row.svelte';
   import ThFilter from '$lib/components/datatable/accessories/Filter.svelte';
@@ -69,11 +69,12 @@
       announceTimer = setTimeout(() => (announcement = ''), 5000);
     }, 30);
   }
-  let pendingPageFocus: { target: 'first' | 'last'; page: number } | null = null;
-  // Element ids must be page-unique and must not contain whitespace (user
-  // tables are named after free-form connection labels); aria-describedby is
-  // a space-separated IDREF list. Must match Row.svelte's id prefix.
-  const idPrefix = $derived(tableName.replaceAll(' ', '_'));
+  let pendingPageFocus: {
+    target: 'first' | 'last';
+    page: number;
+    rowsAtRequest: unknown;
+  } | null = null;
+  const idPrefix = $derived(tableIdPrefix(tableName));
   const helpId = $derived(`${idPrefix}-kbd-help`);
 
   function dataRows(): HTMLTableRowElement[] {
@@ -115,17 +116,30 @@
   });
 
   // After a keyboard-initiated page change, focus the first/last row of the new
-  // page once it has rendered (the Explorer replaces rows after a server fetch).
-  // The page check discards a stale pending focus if the data changed for some
-  // other reason in the meantime (e.g. a new search reset the page).
+  // page once it has rendered. The server handler updates currentPage
+  // synchronously but replaces rows only after a debounced fetch (with a
+  // loading placeholder in between), so the request stays pending until the
+  // rows identity actually changes; a page mismatch at that point means the
+  // data changed for another reason (e.g. a new search) and the focus request
+  // is stale.
   $effect(() => {
     void handler.rows;
+    void isLoading;
     if (!isClickable || !pendingPageFocus) return;
-    const { target, page } = pendingPageFocus;
-    pendingPageFocus = null;
-    if (handler.currentPage !== page) return;
+    const { target, page, rowsAtRequest } = pendingPageFocus;
+    if (handler.rows === rowsAtRequest) return;
+    if (handler.currentPage !== page) {
+      pendingPageFocus = null;
+      return;
+    }
     const rows = dataRows();
-    if (!rows.length) return;
+    if (!rows.length) {
+      // The loading placeholder is still rendered; retry when it clears.
+      if (isLoading) return;
+      pendingPageFocus = null;
+      return;
+    }
+    pendingPageFocus = null;
     const index = target === 'first' ? 0 : rows.length - 1;
     focusRow(rows[index], index);
     announce(`Page ${handler.currentPage} of ${handler.pages?.length ?? 1}`);
@@ -139,6 +153,7 @@
     pendingPageFocus = {
       target: direction === 'next' ? 'first' : 'last',
       page: handler.currentPage + (direction === 'next' ? 1 : -1),
+      rowsAtRequest: handler.rows,
     };
     handler.setPage(direction);
     log(createLog('ACTION', 'search_result.page_change', { pageNumber: handler.currentPage }));
