@@ -107,25 +107,48 @@ test.describe('Explorer for authenticated users', () => {
     await expect(page.locator('table')).toBeVisible();
   });
   test('Scrolls to the top of the search results only when changing pages', async ({ page }) => {
-    const pageOfResults = {
+    const pageOneResults = {
       ...mockData,
       totalPages: 2,
       totalElements: 200,
       numberOfElements: 100,
+      number: 0,
+      first: true,
+      last: false,
       size: 100,
+      pageable: {
+        ...mockData.pageable,
+        pageSize: 100,
+      },
       content: Array.from({ length: 100 }, (_, index) => ({
         ...mockData.content[index % mockData.content.length],
-        conceptPath: `\\test\\result-${index}\\`,
-        name: `result-${index}`,
+        conceptPath: `\\test\\page-one-result-${index}\\`,
+        name: `page-one-result-${index}`,
+      })),
+    };
+    const pageTwoResults = {
+      ...pageOneResults,
+      number: 1,
+      first: false,
+      last: true,
+      pageable: {
+        ...pageOneResults.pageable,
+        pageNumber: 1,
+        offset: 100,
+      },
+      content: Array.from({ length: 100 }, (_, index) => ({
+        ...mockData.content[index % mockData.content.length],
+        conceptPath: `\\test\\page-two-result-${index}\\`,
+        name: `page-two-result-${index}`,
       })),
     };
     await page.route(
       searchResultPath.replace('page_size=10', 'page_size=100'),
-      async (route: Route) => route.fulfill({ json: pageOfResults }),
+      async (route: Route) => route.fulfill({ json: pageOneResults }),
     );
     await page.route(
       searchResultPath.replace('page_number=0&page_size=10', 'page_number=1&page_size=100'),
-      async (route: Route) => route.fulfill({ json: pageOfResults }),
+      async (route: Route) => route.fulfill({ json: pageTwoResults }),
     );
     await page.goto('/explorer?search=sex');
     await userIsLoggedIn(page);
@@ -138,6 +161,7 @@ test.describe('Explorer for authenticated users', () => {
 
     await page.getByLabel('Next', { exact: true }).click();
     await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByText('page-two-result-0', { exact: true })).toBeVisible();
     await expect
       .poll(() =>
         page.locator('#ExplorerTable-table').evaluate((table) => {
