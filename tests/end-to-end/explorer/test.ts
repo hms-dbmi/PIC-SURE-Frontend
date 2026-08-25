@@ -123,6 +123,64 @@ test.describe('Explorer for authenticated users', () => {
         async (route: Route) => route.fulfill({ json: detailResponseCat }),
       );
     });
+    test.describe('Keyboard navigation', () => {
+      test('Enter expands the info panel and Escape closes it', async ({ page }) => {
+        // Given
+        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
+
+        // When
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        await expect(firstRow).toBeVisible();
+        await firstRow.focus();
+        await page.keyboard.press('Enter');
+
+        // Then
+        const infoPanel = tableBody
+          .locator('tr.expandable-row')
+          .first()
+          .getByTestId('variable-info');
+        await expect(infoPanel).toBeVisible();
+
+        // When
+        await page.keyboard.press('Escape');
+
+        // Then
+        await expect(infoPanel).not.toBeVisible();
+        await expect(firstRow).toBeFocused();
+      });
+      test('Arrow keys move row focus and "f" opens the filter panel', async ({ page }) => {
+        // Given
+        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
+
+        // When
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        await expect(firstRow).toBeVisible();
+        await firstRow.focus();
+        await page.keyboard.press('ArrowDown');
+
+        // Then
+        await expect(tableBody.locator('#row-1')).toBeFocused();
+
+        // When
+        await page.keyboard.press('ArrowUp');
+        await expect(tableBody.locator('#row-0')).toBeFocused();
+        await page.keyboard.press('f');
+
+        // Then
+        await expect(tableBody.locator('tr.expandable-row').first()).toBeVisible();
+        await expect(page.getByTestId('categoical-filter')).toBeVisible();
+      });
+    });
     test.describe('Info Actions', () => {
       test('Clicking a row opens info panel', async ({ page }) => {
         // Given

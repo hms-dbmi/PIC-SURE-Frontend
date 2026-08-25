@@ -32,6 +32,8 @@
     color?: string;
     size?: string;
     'data-testid'?: string;
+    'data-key'?: string;
+    triggerTitle?: string;
     trigger?: Snippet;
     children?: Snippet;
     onengage?: () => void;
@@ -49,6 +51,8 @@
     color = 'surface',
     size = 'text-sm',
     'data-testid': testid = '',
+    'data-key': dataKey,
+    triggerTitle,
     trigger,
     children,
     onengage = () => {},
@@ -118,6 +122,9 @@
   {...testid ? { 'data-testid': `${testid}-btn` } : {}}
   class="cursor-pointer {triggerStyle}"
   {...interactions.getReferenceProps({ onclick: onTriggerClick })}
+  title={triggerTitle}
+  aria-label={triggerTitle}
+  data-key={dataKey}
   disabled={triggerDisabled}
 >
   {@render trigger?.()}

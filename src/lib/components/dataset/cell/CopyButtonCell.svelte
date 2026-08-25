@@ -10,6 +10,8 @@
   <CopyButton
     data-testid="{data.cell}-copy"
     useIcon
+    triggerTitle="Copy dataset ID (c)"
+    data-key="c"
     itemToCopy={data.cell}
     oncopy={() => log(createLog('ACTION', 'dataset.copy_id', { value: data.cell }))}
   />

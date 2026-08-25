@@ -13,6 +13,7 @@ export interface TableProps {
   isLoading?: boolean;
   searchable?: boolean;
   title?: string;
+  ariaLabel?: string;
   fullWidth?: boolean;
   options?: number[];
   columns?: Column[];
@@ -24,6 +25,7 @@ export interface TableProps {
   isClickable?: boolean;
   expandable?: boolean;
   rowClickHandler?: (row: Indexable) => void;
+  rowClickKeys?: string[];
   tableActions?: import('svelte').Snippet;
   searchLogAction?: string;
   rowClickLogAction?: string;
