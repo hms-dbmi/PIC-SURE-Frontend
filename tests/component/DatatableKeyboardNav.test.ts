@@ -178,27 +178,42 @@ describe('Datatable keyboard navigation', () => {
   });
 
   it('restores focus onto the new first row across an async server-side page change', async () => {
+    // Mirrors the Explorer: currentPage updates synchronously, the fetch is
+    // delayed, and a loading placeholder replaces (destroys) the focused row
+    // DOM while the fetch is in flight.
     const allRows = makeRows(7);
+    let resolvePageTwo!: (pageRows: ReturnType<typeof makeRows>) => void;
     const handler = new ServerTableHandler(makeRows(0), { rowsPerPage: 5 });
-    handler.load(async (state) => {
+    handler.load((state) => {
       handler.totalRows = allRows.length;
-      const start = (state.currentPage - 1) * state.rowsPerPage;
-      return allRows.slice(start, start + state.rowsPerPage);
+      if (state.currentPage === 1) return Promise.resolve(allRows.slice(0, 5));
+      return new Promise((resolve) => (resolvePageTwo = resolve));
     });
     handler.invalidate();
 
-    const { container } = render(RemoteTable, {
+    const { container, rerender } = render(RemoteTable, {
       tableName: 'KbdTest',
       handler,
       columns,
       cellOverides: { id: KeyButtonCell },
       isClickable: true,
+      isLoading: false,
     });
     await waitFor(() => expect(rows(container)).toHaveLength(5));
 
     const pageRows = rows(container);
     pageRows[4].focus();
     await fireEvent.keyDown(pageRows[4], { key: 'ArrowDown' });
+
+    // Loading placeholder destroys the row DOM before the new page arrives.
+    await rerender({ isLoading: true });
+    expect(rows(container)).toHaveLength(0);
+
+    // The handler dispatches the (debounced) fetch on a later task.
+    await waitFor(() => expect(resolvePageTwo).toBeDefined());
+    resolvePageTwo(allRows.slice(5));
+    await waitFor(() => expect(handler.rows).toHaveLength(2));
+    await rerender({ isLoading: false });
 
     await waitFor(() => {
       expect(document.activeElement?.id).toBe('KbdTest-row-0');
