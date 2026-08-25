@@ -33,7 +33,7 @@ export interface FilterInterface extends LogicNode<FilterInterface> {
   displayType: DisplayType;
   searchResult?: SearchResult;
   variableName: string;
-  description?: string;
+  description?: string | null;
   isHarmonized?: boolean;
   topmed?: boolean;
   sites?: string[];
