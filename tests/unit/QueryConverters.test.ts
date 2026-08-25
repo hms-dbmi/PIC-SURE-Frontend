@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { QueryV3 } from '$lib/models/query/Query';
+import { QueryV3, type GenomicFilterInterfacev3 } from '$lib/models/query/Query';
 import type { SearchResult } from '$lib/models/Search';
 import type {
   FilterGroupInterface,
@@ -135,6 +135,18 @@ describe('genomicV3ToFilter', () => {
     expect(filter.max).toBeUndefined();
   });
 
+  it('omits min/max when the saved query carries them as null', () => {
+    // Given / When
+    const filter = genomicV3ToFilter([
+      { key: 'Gene_with_variant', values: ['HTR6'], min: null, max: null },
+    ] as unknown as GenomicFilterInterfacev3[]) as GenomicFilterInterface;
+
+    // Then
+    expect(filter.Gene_with_variant).toEqual(['HTR6']);
+    expect(filter.min).toBeUndefined();
+    expect(filter.max).toBeUndefined();
+  });
+
   it('does not crash on an unknown key', () => {
     // Given / When
     const filter = genomicV3ToFilter([
@@ -234,6 +246,37 @@ describe('queryToFilterTree', () => {
     // Then
     expect(errors).toHaveLength(0);
     expect(tree.leafNodes).toHaveLength(0);
+  });
+
+  it('keeps a saved categorical filter categorical when the API sends null bounds', async () => {
+    // Given
+    const query = QueryV3.fromSerialized({
+      phenotypicClause: {
+        not: false,
+        operator: 'AND',
+        phenotypicClauses: [
+          {
+            phenotypicFilterType: 'FILTER',
+            conceptPath: '\\\\dataset\\\\sex\\\\',
+            values: ['Male'],
+            min: null,
+            max: null,
+            not: false,
+          },
+        ],
+      },
+    });
+    const errors: string[] = [];
+
+    // When
+    const tree = await queryToFilterTree(query, errors);
+
+    // Then
+    expect(errors).toHaveLength(0);
+    expect(tree.leafNodes[0]).toMatchObject({
+      filterType: 'Categorical',
+      categoryValues: ['Male'],
+    });
   });
 
   it('handles a single top-level PhenotypicFilter', async () => {

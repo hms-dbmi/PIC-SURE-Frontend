@@ -161,8 +161,8 @@ export function genomicV3ToFilter(gfs: GenomicFilterInterfacev3[]): Filter {
         geneFilter.Variant_consequence_calculated = values;
       else if (key === 'Variant_frequency_as_text') geneFilter.Variant_frequency_as_text = values;
     }
-    if (min !== undefined) geneFilter.min = min.toString();
-    if (max !== undefined) geneFilter.max = max.toString();
+    if (min !== undefined && min !== null) geneFilter.min = min.toString();
+    if (max !== undefined && max !== null) geneFilter.max = max.toString();
   });
 
   return createGenomicFilter(geneFilter);
