@@ -106,7 +106,7 @@ test.describe('Explorer for authenticated users', () => {
     // Then
     await expect(page.locator('table')).toBeVisible();
   });
-  test('Scrolls to the top of the search results when changing pages', async ({ page }) => {
+  test('Scrolls to the top of the search results only when changing pages', async ({ page }) => {
     const pageOfResults = {
       ...mockData,
       totalPages: 2,
@@ -148,6 +148,19 @@ test.describe('Explorer for authenticated users', () => {
         }),
       )
       .toBeLessThan(2);
+
+    const currentPageButton = page.getByLabel('Page 2');
+    await currentPageButton.scrollIntoViewIfNeeded();
+    const currentPageScroll = await currentPageButton.evaluate((button) => {
+      const container = document.querySelector('#page');
+      if (!container) throw new Error('Page scroll container not found');
+
+      const before = container.scrollTop;
+      (button as HTMLButtonElement).click();
+      return { before, after: container.scrollTop };
+    });
+    expect(currentPageScroll.before).toBeGreaterThan(0);
+    expect(currentPageScroll.after).toBe(currentPageScroll.before);
   });
   test('Error message on api error', async ({ page }) => {
     // Given

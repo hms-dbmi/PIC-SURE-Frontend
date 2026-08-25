@@ -11,8 +11,9 @@
   let { handler, onPageChange = () => {} }: Props = $props();
 
   const setPage = (value: 'previous' | 'next' | 'last' | number) => {
+    const previousPage = handler.currentPage;
     handler.setPage(value);
-    onPageChange();
+    if (handler.currentPage !== previousPage) onPageChange();
     log(
       createLog('ACTION', 'search_result.page_change', {
         pageNumber: typeof value === 'number' ? value : handler.currentPage,
