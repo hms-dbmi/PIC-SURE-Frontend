@@ -70,13 +70,17 @@
     }, 30);
   }
   let pendingPageFocus: { target: 'first' | 'last'; page: number } | null = null;
-  // aria-describedby is a space-separated IDREF list, so the id must not
-  // contain whitespace (user tables are named after free-form connection labels).
-  const helpId = $derived(`${tableName.replaceAll(' ', '_')}-kbd-help`);
+  // Element ids must be page-unique and must not contain whitespace (user
+  // tables are named after free-form connection labels); aria-describedby is
+  // a space-separated IDREF list. Must match Row.svelte's id prefix.
+  const idPrefix = $derived(tableName.replaceAll(' ', '_'));
+  const helpId = $derived(`${idPrefix}-kbd-help`);
 
   function dataRows(): HTMLTableRowElement[] {
     if (!tbodyElement) return [];
-    return Array.from(tbodyElement.querySelectorAll<HTMLTableRowElement>('tr[id^="row-"]'));
+    return Array.from(
+      tbodyElement.querySelectorAll<HTMLTableRowElement>(`tr[id^="${idPrefix}-row-"]`),
+    );
   }
 
   function focusRow(rowElement: HTMLTableRowElement, index: number) {

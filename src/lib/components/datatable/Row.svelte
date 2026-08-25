@@ -36,6 +36,10 @@
 
   let rowElement: HTMLTableRowElement | undefined = $state();
 
+  // Element ids must be page-unique (multiple tables can render together) and
+  // must not contain whitespace (user tables are named after connection labels).
+  const idPrefix = $derived(tableName.replaceAll(' ', '_'));
+
   function onClick(row: Indexable) {
     const willOpen = !(
       $activeTable === tableName &&
@@ -85,7 +89,7 @@
 
 <tr
   bind:this={rowElement}
-  id="row-{index.toString()}"
+  id="{idPrefix}-row-{index.toString()}"
   onclick={() => onClick(row)}
   onkeydown={onKeydown}
   class={isClickable ? 'cursor-pointer' : ''}
@@ -94,7 +98,7 @@
 >
   {#each columns as column, colIndex}
     <td
-      id="row-{index.toString()}-col-{colIndex.toString()}"
+      id="{idPrefix}-row-{index.toString()}-col-{colIndex.toString()}"
       class={column?.class?.includes('text-center') ? 'text-center' : ''}
     >
       {#if cellOverides[column.dataElement]}
@@ -108,7 +112,7 @@
 </tr>
 
 {#if expandable && active && !!$activeRow}
-  <tr id="active-row-{index.toString()}" class="expandable-row">
+  <tr id="{idPrefix}-active-row-{index.toString()}" class="expandable-row">
     <td colspan={columns.length}>
       <div transition:slide={{ axis: 'y' }}>
         {#if $activeComponent}

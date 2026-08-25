@@ -75,7 +75,7 @@ function renderTable(rowCount = 7, onAction?: () => void, expandable = false) {
 }
 
 function rows(container: HTMLElement): HTMLTableRowElement[] {
-  return Array.from(container.querySelectorAll('tr[id^="row-"]'));
+  return Array.from(container.querySelectorAll('tr[id^="KbdTest-row-"]'));
 }
 
 afterEach(() => {
@@ -105,16 +105,16 @@ describe('Datatable keyboard navigation', () => {
     pageRows[0].focus();
 
     await fireEvent.keyDown(pageRows[0], { key: 'ArrowDown' });
-    expect(document.activeElement?.id).toBe('row-1');
+    expect(document.activeElement?.id).toBe('KbdTest-row-1');
 
     await fireEvent.keyDown(document.activeElement!, { key: 'ArrowUp' });
-    expect(document.activeElement?.id).toBe('row-0');
+    expect(document.activeElement?.id).toBe('KbdTest-row-0');
 
     await fireEvent.keyDown(document.activeElement!, { key: 'End' });
-    expect(document.activeElement?.id).toBe('row-4');
+    expect(document.activeElement?.id).toBe('KbdTest-row-4');
 
     await fireEvent.keyDown(document.activeElement!, { key: 'Home' });
-    expect(document.activeElement?.id).toBe('row-0');
+    expect(document.activeElement?.id).toBe('KbdTest-row-0');
   });
 
   it('advances to the next page from the last row and focuses its first row', async () => {
@@ -126,7 +126,7 @@ describe('Datatable keyboard navigation', () => {
 
     await waitFor(() => {
       expect(handler.currentPage).toBe(2);
-      expect(document.activeElement?.id).toBe('row-0');
+      expect(document.activeElement?.id).toBe('KbdTest-row-0');
     });
     // Second page has rows 5 and 6 of the 7-row dataset.
     expect(document.activeElement?.textContent).toContain('Row 5');
@@ -135,7 +135,7 @@ describe('Datatable keyboard navigation', () => {
     await fireEvent.keyDown(document.activeElement!, { key: 'ArrowUp' });
     await waitFor(() => {
       expect(handler.currentPage).toBe(1);
-      expect(document.activeElement?.id).toBe('row-4');
+      expect(document.activeElement?.id).toBe('KbdTest-row-4');
     });
   });
 
@@ -146,12 +146,12 @@ describe('Datatable keyboard navigation', () => {
 
     await fireEvent.keyDown(pageRows[0], { key: 'ArrowUp' });
     expect(handler.currentPage).toBe(1);
-    expect(document.activeElement?.id).toBe('row-0');
+    expect(document.activeElement?.id).toBe('KbdTest-row-0');
 
     await fireEvent.keyDown(document.activeElement!, { key: 'End' });
     await fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' });
     expect(handler.currentPage).toBe(1);
-    expect(document.activeElement?.id).toBe('row-2');
+    expect(document.activeElement?.id).toBe('KbdTest-row-2');
   });
 
   it('reaches row action buttons with ArrowRight and returns with ArrowLeft', async () => {
@@ -164,7 +164,7 @@ describe('Datatable keyboard navigation', () => {
     expect(document.activeElement?.getAttribute('data-key')).toBe('x');
 
     await fireEvent.keyDown(document.activeElement!, { key: 'ArrowLeft' });
-    expect(document.activeElement?.id).toBe('row-0');
+    expect(document.activeElement?.id).toBe('KbdTest-row-0');
   });
 
   it('fires a row action via its single-letter shortcut', async () => {
@@ -201,7 +201,7 @@ describe('Datatable keyboard navigation', () => {
     await fireEvent.keyDown(pageRows[4], { key: 'ArrowDown' });
 
     await waitFor(() => {
-      expect(document.activeElement?.id).toBe('row-0');
+      expect(document.activeElement?.id).toBe('KbdTest-row-0');
       expect(document.activeElement?.textContent).toContain('Row 5');
     });
   });
@@ -217,7 +217,7 @@ describe('Datatable keyboard navigation', () => {
 
     await fireEvent.keyDown(pageRows[0], { key: 'Escape' });
     expect(vi.mocked(closeActiveRow)).toHaveBeenCalledTimes(1);
-    expect(document.activeElement?.id).toBe('row-0');
+    expect(document.activeElement?.id).toBe('KbdTest-row-0');
   });
 
   it('Escape from a text field steps back to the owner row first, then closes on repeat', async () => {
@@ -232,7 +232,7 @@ describe('Datatable keyboard navigation', () => {
 
     await fireEvent.keyDown(input, { key: 'Escape' });
     expect(vi.mocked(closeActiveRow)).not.toHaveBeenCalled();
-    expect(document.activeElement?.id).toBe('row-0');
+    expect(document.activeElement?.id).toBe('KbdTest-row-0');
 
     await fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
     expect(vi.mocked(closeActiveRow)).toHaveBeenCalledTimes(1);
@@ -249,7 +249,7 @@ describe('Datatable keyboard navigation', () => {
 
     await fireEvent.keyDown(pageRows[2], { key: 'Escape' });
     expect(vi.mocked(closeActiveRow)).toHaveBeenCalledTimes(1);
-    expect(document.activeElement?.id).toBe('row-2');
+    expect(document.activeElement?.id).toBe('KbdTest-row-2');
   });
 });
 

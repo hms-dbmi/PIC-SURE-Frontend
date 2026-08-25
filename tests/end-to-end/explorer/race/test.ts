@@ -30,7 +30,7 @@ const supersededResults = () => resultsWith(SUPERSEDED_ROWS, SUPERSEDED_TOTAL);
 const currentResults = () => resultsWith(CURRENT_ROWS, CURRENT_TOTAL);
 
 function resultRows(page: Page) {
-  return page.locator('#ExplorerTable-table tbody tr[id^="row-"]');
+  return page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]');
 }
 
 // Cancellation surfaces only as a requestfailed event. Assert the count, not the
