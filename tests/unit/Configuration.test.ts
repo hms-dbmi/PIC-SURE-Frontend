@@ -243,7 +243,7 @@ describe('CONFIG_FIELD_SCHEMA - derived from CONFIG_FIELDS', () => {
       default: 1000000,
     });
     expect(byName('branding', 'DOTS_COLORS_CLASS')).toMatchObject({ type: 'json' });
-    expect(byName('branding', 'LOGO_ALT')).toMatchObject({ type: 'string', default: 'PIC-SURE' });
+    expect(byName('branding', 'LOGO_ALT')).toMatchObject({ type: 'string', default: '' });
     expect(CONFIG_FIELD_SCHEMA.branding).toHaveLength(4);
   });
 
@@ -329,6 +329,10 @@ describe('mapBranding', () => {
     import.meta.env.VITE_MAX_DATA_POINTS_FOR_EXPORT = '42';
     const branding = mapBranding('', []);
     expect(branding.explorePage.codeBlocks.PythonAPI).not.toContain('{{PICSURE_NETWORK_URL}}');
+  });
+  it('falls back to the application name when no logo alt is configured', () => {
+    const branding = mapBranding('', []);
+    expect(branding.logo.alt).toBe(branding.applicationName);
   });
   it('env overrides config json', () => {
     import.meta.env.VITE_LOGO_ALT = 'SOME ALT VALUE';
