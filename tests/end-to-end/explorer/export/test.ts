@@ -158,34 +158,44 @@ test.describe('Export Page', () => {
 
     // Verify standard identifiers come first (Patient ID hardcoded, then system fields from env)
     for (let i = 0; i < standardIdentifiers.length; i++) {
-      await expect(page.locator(`#row-${i}-col-0`)).toHaveText(standardIdentifiers[i].name);
-      await expect(page.locator(`#row-${i}-col-1`)).toHaveText(standardIdentifiers[i].description);
-      await expect(page.locator(`#row-${i}-col-2`)).toHaveText(standardIdentifiers[i].type);
+      await expect(page.locator(`#ExportSummary-row-${i}-col-0`)).toHaveText(
+        standardIdentifiers[i].name,
+      );
+      await expect(page.locator(`#ExportSummary-row-${i}-col-1`)).toHaveText(
+        standardIdentifiers[i].description,
+      );
+      await expect(page.locator(`#ExportSummary-row-${i}-col-2`)).toHaveText(
+        standardIdentifiers[i].type,
+      );
     }
 
     // System field from VITE_EXPORT_SYSTEM_FIELDS (_consents)
     const systemFieldOffset = standardIdentifiers.length;
-    await expect(page.locator(`#row-${systemFieldOffset}-col-0`)).toHaveText('_consents');
+    await expect(page.locator(`#ExportSummary-row-${systemFieldOffset}-col-0`)).toHaveText(
+      '_consents',
+    );
 
     // Filter row
     const filterRowIndex = systemFieldOffset + 1;
-    await expect(page.locator(`#row-${filterRowIndex}-col-0`)).toHaveText(
+    await expect(page.locator(`#ExportSummary-row-${filterRowIndex}-col-0`)).toHaveText(
       detailResponseCat.display,
     );
-    await expect(page.locator(`#row-${filterRowIndex}-col-1`)).toHaveText(
+    await expect(page.locator(`#ExportSummary-row-${filterRowIndex}-col-1`)).toHaveText(
       detailResponseCat.description,
     );
-    await expect(page.locator(`#row-${filterRowIndex}-col-2`)).toHaveText(detailResponseCat.type);
+    await expect(page.locator(`#ExportSummary-row-${filterRowIndex}-col-2`)).toHaveText(
+      detailResponseCat.type,
+    );
 
     // Export row
     const exportRowIndex = filterRowIndex + 1;
-    await expect(page.locator(`#row-${exportRowIndex}-col-0`)).toHaveText(
+    await expect(page.locator(`#ExportSummary-row-${exportRowIndex}-col-0`)).toHaveText(
       detailResponseCatSameDataset.display,
     );
-    await expect(page.locator(`#row-${exportRowIndex}-col-1`)).toHaveText(
+    await expect(page.locator(`#ExportSummary-row-${exportRowIndex}-col-1`)).toHaveText(
       detailResponseCatSameDataset.description,
     );
-    await expect(page.locator(`#row-${exportRowIndex}-col-2`)).toHaveText(
+    await expect(page.locator(`#ExportSummary-row-${exportRowIndex}-col-2`)).toHaveText(
       detailResponseCatSameDataset.type,
     );
   });

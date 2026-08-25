@@ -59,7 +59,7 @@ test.describe('Dashboard page', () => {
       await userIsLoggedIn(page);
 
       // When
-      await page.locator('#row-0-col-0').click();
+      await page.locator('#ExplorerTable-row-0-col-0').click();
 
       // Then
       await expect(page.locator('#drawer')).toBeVisible();
@@ -76,7 +76,7 @@ test.describe('Dashboard page', () => {
       await userIsLoggedIn(page);
 
       // When
-      await page.locator('#row-0-col-0').click();
+      await page.locator('#ExplorerTable-row-0-col-0').click();
 
       // Then
       await expect(page.locator('#drawer')).toBeVisible();

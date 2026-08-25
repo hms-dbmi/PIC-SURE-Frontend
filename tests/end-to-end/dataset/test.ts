@@ -143,7 +143,7 @@ test.describe('dataset', () => {
 
     // When
     const table = page.getByTestId('ActiveDatasets-table');
-    const firstRow = table.locator('tr[id^="row-"]').first();
+    const firstRow = table.locator('tr[id^="ActiveDatasets-row-"]').first();
     await expect(firstRow).toBeVisible();
     await firstRow.focus();
 
@@ -172,7 +172,7 @@ test.describe('dataset', () => {
     // When
     const archiveButton = page.getByTestId(`dataset-action-archive-${mockData[0].uuid}`);
     await expect(archiveButton).toBeVisible();
-    const row = page.locator('tr[id^="row-"]', { has: archiveButton }).first();
+    const row = page.locator('tr[id^="ActiveDatasets-row-"]', { has: archiveButton }).first();
     await row.focus();
     await page.keyboard.press('d');
     await page.getByTestId('dataset-toggle-archive').click();

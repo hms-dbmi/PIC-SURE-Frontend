@@ -68,7 +68,7 @@ describe('Datatable Row', () => {
       rowClickHandler,
     });
 
-    await fireEvent.click(container.querySelector('#row-0')!);
+    await fireEvent.click(container.querySelector('tr[id$="-row-0"]')!);
 
     // The consumer's handler runs (the dashboard logs dashboard.row_click itself).
     expect(rowClickHandler).toHaveBeenCalledTimes(1);
@@ -87,7 +87,7 @@ describe('Datatable Row', () => {
       rowClickLogAction: 'search_result.row_click',
     });
 
-    await fireEvent.click(container.querySelector('#row-0')!);
+    await fireEvent.click(container.querySelector('tr[id$="-row-0"]')!);
 
     expect(rowClickActions()).toContain('search_result.row_click');
   });
@@ -105,7 +105,7 @@ describe('Datatable Row', () => {
       rowClickLogAction: 'search_result.row_click',
     });
 
-    const tr = container.querySelector('#row-0')!;
+    const tr = container.querySelector('tr[id$="-row-0"]')!;
     await fireEvent.keyDown(tr, { key: 'Enter' });
     await fireEvent.keyDown(tr, { key: ' ' });
 
@@ -126,7 +126,7 @@ describe('Datatable Row', () => {
       rowClickKeys: ['v'],
     });
 
-    const tr = container.querySelector('#row-0')!;
+    const tr = container.querySelector('tr[id$="-row-0"]')!;
     await fireEvent.keyDown(tr, { key: 'v' });
     expect(rowClickHandler).toHaveBeenCalledTimes(1);
 
@@ -148,7 +148,7 @@ describe('Datatable Row', () => {
       rowClickKeys: ['v'],
     });
 
-    const tr = container.querySelector('#row-0')!;
+    const tr = container.querySelector('tr[id$="-row-0"]')!;
     await fireEvent.keyDown(tr, { key: 'v', ctrlKey: true });
     await fireEvent.keyDown(tr, { key: 'v', metaKey: true });
     await fireEvent.keyDown(tr, { key: 'v', shiftKey: true });
@@ -168,7 +168,7 @@ describe('Datatable Row', () => {
       rowClickKeys: ['v'],
     });
 
-    const tr = container.querySelector('#row-0')!;
+    const tr = container.querySelector('tr[id$="-row-0"]')!;
     await fireEvent.keyDown(tr, { key: 'Enter' });
     await fireEvent.keyDown(tr, { key: 'v' });
     expect(rowClickHandler).not.toHaveBeenCalled();
@@ -187,7 +187,7 @@ describe('Datatable Row', () => {
       rowClickKeys: ['v'],
     });
 
-    const tr = container.querySelector('#row-0')!;
+    const tr = container.querySelector('tr[id$="-row-0"]')!;
     await fireEvent.keyDown(tr, { key: 'v' });
     await fireEvent.keyDown(tr, { key: 'v', repeat: true });
     await fireEvent.keyDown(tr, { key: 'Enter', repeat: true });
