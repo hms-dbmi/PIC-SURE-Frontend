@@ -1,8 +1,9 @@
 // Row element ids are built from the free-form table name (user tables embed
 // admin-entered connection labels), so restrict it to characters that are safe
-// in both HTML ids and CSS selectors.
+// in both HTML ids and CSS selectors. Unsafe characters are escaped rather than
+// dropped so two labels differing only in punctuation cannot claim the same ids.
 export function tableIdPrefix(tableName: string): string {
-  return tableName.replace(/[^A-Za-z0-9_-]/g, '_');
+  return tableName.replace(/[^A-Za-z0-9-]/g, (char) => `_${char.codePointAt(0)!.toString(16)}_`);
 }
 
 export function isFormField(target: EventTarget | null): boolean {
