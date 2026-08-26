@@ -42,7 +42,7 @@ test('Settings & Features tab lists known fields, showing API-sourced value with
 test('Toggling a feature and saving sends the change and shows a success toast', async ({
   page,
 }) => {
-  await mockApiSuccess(page, `${configurationPath}/admin/row-analyze-api/`, {
+  await mockApiSuccess(page, `${configurationPath}/admin/row-analyze-api`, {
     uuid: 'row-analyze-api',
     name: 'ANALYZE_API',
     kind: 'ui:featureFlag',
@@ -64,7 +64,7 @@ test('Toggling a feature and saving sends the change and shows a success toast',
 });
 
 test('Reset to default deletes the API row for a field', async ({ page }) => {
-  await mockApiSuccess(page, `${configurationPath}/admin/row-analyze-api/`, {});
+  await mockApiSuccess(page, `${configurationPath}/admin/row-analyze-api`, {});
 
   await page.goto('/admin/configuration');
   await userIsLoggedIn(page);
@@ -78,7 +78,7 @@ test('Reset to default deletes the API row for a field', async ({ page }) => {
 });
 
 test('A save failure keeps the edited value and shows an error toast', async ({ page }) => {
-  await mockApiFail(page, `${configurationPath}/admin/row-analyze-api/`, 'failed');
+  await mockApiFail(page, `${configurationPath}/admin/row-analyze-api`, 'failed');
 
   await page.goto('/admin/configuration');
   await userIsLoggedIn(page);
@@ -124,7 +124,7 @@ test('Deprecated API rows are listed separately and can be deleted', async ({ pa
     { uuid: 'row-analyze-api', name: 'ANALYZE_API', kind: 'ui:featureFlag', value: 'false' },
     { uuid: 'row-old-flag', name: 'REMOVED_OLD_FLAG', kind: 'ui:featureFlag', value: 'true' },
   ]);
-  await mockApiSuccess(page, `${configurationPath}/admin/row-old-flag/`, {});
+  await mockApiSuccess(page, `${configurationPath}/admin/row-old-flag`, {});
 
   await page.goto('/admin/configuration');
   await userIsLoggedIn(page);
