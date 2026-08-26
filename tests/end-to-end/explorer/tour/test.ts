@@ -104,3 +104,69 @@ test('Escape key closes tour', async ({ page }) => {
   // Then
   await expect(page.locator('#driver-popover-content')).not.toBeVisible();
 });
+test('EXPLORE_TOUR=false hides the tour button entirely', async ({ page }) => {
+  // Given
+  await mockApiConfig(page, {
+    features: [{ name: 'EXPLORE_TOUR', value: 'false' }],
+  });
+
+  // When
+  await page.goto('/explorer');
+  await userIsLoggedIn(page);
+
+  // Then
+  await expect(page.getByTestId('explorer-tour-btn')).not.toBeVisible();
+});
+
+test.describe('AUTH_TOUR_NAME', () => {
+  test('Without an override, the default NHANES-Auth tour is used', async ({ page }) => {
+    // Given
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+
+    // When
+    await expect(async () => {
+      await page.getByTestId('explorer-tour-btn').click();
+      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15000 });
+
+    // Then
+    await expect(page.getByTestId('modal-wrapper-header')).toContainText('Welcome to PIC-SURE');
+  });
+
+  test('A recognized AUTH_TOUR_NAME override swaps in that tour', async ({ page }) => {
+    // Given
+    await mockApiConfig(page, { settings: [{ name: 'AUTH_TOUR_NAME', value: 'BDC-Auth' }] });
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+
+    // When
+    await expect(async () => {
+      await page.getByTestId('explorer-tour-btn').click();
+      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15000 });
+
+    // Then
+    await expect(page.getByTestId('modal-wrapper-header')).toContainText(
+      'Welcome to BioData Catalyst Powered by PIC-SURE',
+    );
+  });
+
+  test('An unrecognized AUTH_TOUR_NAME override falls back to the default NHANES-Auth tour', async ({
+    page,
+  }) => {
+    // Given
+    await mockApiConfig(page, { settings: [{ name: 'AUTH_TOUR_NAME', value: 'not-a-real-tour' }] });
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+
+    // When
+    await expect(async () => {
+      await page.getByTestId('explorer-tour-btn').click();
+      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15000 });
+
+    // Then
+    await expect(page.getByTestId('modal-wrapper-header')).toContainText('Welcome to PIC-SURE');
+  });
+});
