@@ -395,3 +395,27 @@ describe('mapSettings - exportSystemFields', () => {
     expect(settings.exportSystemFields).toEqual(['\\patient_id\\']);
   });
 });
+
+describe('mapSettings - dataset.bypassConceptLookup', () => {
+  it('parses comma-separated fields into concept paths with slash wrappers', () => {
+    const settings = mapSettings([apiRow('DATASET_BYPASS_CONCEPT_LOOKUP', '_consents,patient_id')]);
+    expect(settings.dataset.bypassConceptLookup).toEqual(['\\_consents\\', '\\patient_id\\']);
+  });
+
+  it('returns empty array when no API row or env var is set', () => {
+    expect(mapSettings([]).dataset.bypassConceptLookup).toEqual([]);
+  });
+
+  it('returns empty array for an explicit empty string', () => {
+    expect(
+      mapSettings([apiRow('DATASET_BYPASS_CONCEPT_LOOKUP', '')]).dataset.bypassConceptLookup,
+    ).toEqual([]);
+  });
+
+  it('trims whitespace from field names', () => {
+    const settings = mapSettings([
+      apiRow('DATASET_BYPASS_CONCEPT_LOOKUP', ' patient_id , _consents '),
+    ]);
+    expect(settings.dataset.bypassConceptLookup).toEqual(['\\patient_id\\', '\\_consents\\']);
+  });
+});

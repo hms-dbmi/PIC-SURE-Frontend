@@ -35,22 +35,11 @@
     name?: string;
   } = $props();
 
-  function visibleQueryV3(): QueryV3 {
-    const exportSystemFields = config.settings.exportSystemFields || [];
-    if (version === QueryVersion.V2) {
-      return queryV2ToV3(query as QueryV2, exportSystemFields);
-    }
-
-    const currentQuery = query as QueryV3;
-    return new QueryV3({
-      ...currentQuery,
-      select: currentQuery.select.filter((select) => !exportSystemFields.includes(select)),
-    });
-  }
-
   let modal = $state(false);
   let hasExistingFilters = $derived($allFilters.length > 0);
-  let queryV3: QueryV3 = $derived(visibleQueryV3());
+  let queryV3: QueryV3 = $derived(
+    new QueryV3(version === QueryVersion.V2 ? queryV2ToV3(query as QueryV2) : (query as QueryV3)),
+  );
   let estimate: QueryEstimate = $derived(estimateV3(queryV3));
   let queryData: QuerySummaryData = $derived(loadQuerySummaryData(queryV3));
 
