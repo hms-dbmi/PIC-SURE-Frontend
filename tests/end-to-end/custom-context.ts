@@ -2,6 +2,7 @@ import { test as base, type Route, type BrowserContext, type Page } from '@playw
 import type { TestInfo } from '@playwright/test';
 import type { ConfigCache } from '../../src/lib/models/Configuration';
 import { TEST_CONFIG_COOKIE } from '../../src/lib/testConfig';
+import { configurationPath } from './mock-data';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function mockApiSuccess(context: BrowserContext | Page, path: string, json: any) {
@@ -140,7 +141,7 @@ export const test = base.extend({
     // admin overrides" so unrelated tests don't wait on/hit an unmocked endpoint. Tests
     // that care about specific rows override per-kind via a page-level mockApiSuccess,
     // which takes precedence over this context-level default.
-    await context.route('**/picsure/configuration?kind=*', (route) => route.fulfill({ json: [] }));
+    await context.route(`${configurationPath}?kind=*`, (route) => route.fulfill({ json: [] }));
 
     use(context);
   },
