@@ -63,6 +63,12 @@ export interface GenomicFilterInterfacev3 {
   max?: number;
 }
 
+// The API echoes saved queries back with every field present, so unset bounds and
+// value lists arrive as explicit `null`. Downstream code only tests for `undefined`.
+function undefinedIfNull<T>(value: unknown): T | undefined {
+  return value === null ? undefined : (value as T);
+}
+
 export class QueryV3 implements QueryInterfaceV3 {
   select: string[];
   authorizationFilters: AuthorizationFilterInterface[];
@@ -145,9 +151,20 @@ export class QueryV3 implements QueryInterfaceV3 {
       phenotypicFilterType: clause.phenotypicFilterType as PhenotypicFilterType,
       conceptPath: clause.conceptPath as string,
       not: (clause.not as boolean) ?? false,
-      values: clause.values as string[] | undefined,
-      min: clause.min as number | undefined,
-      max: clause.max as number | undefined,
+      values: undefinedIfNull<string[]>(clause.values),
+      min: undefinedIfNull<number>(clause.min),
+      max: undefinedIfNull<number>(clause.max),
+    };
+  }
+
+  private static deserializeGenomicFilter(
+    filter: GenomicFilterInterfacev3,
+  ): GenomicFilterInterfacev3 {
+    return {
+      key: filter.key,
+      values: undefinedIfNull<string[]>(filter.values),
+      min: undefinedIfNull<number>(filter.min),
+      max: undefinedIfNull<number>(filter.max),
     };
   }
 
@@ -166,7 +183,7 @@ export class QueryV3 implements QueryInterfaceV3 {
       phenotypicClause: data.phenotypicClause
         ? QueryV3.deserializeClause(data.phenotypicClause as Record<string, unknown>)
         : null,
-      genomicFilters: data.genomicFilters || [],
+      genomicFilters: (data.genomicFilters || []).map(QueryV3.deserializeGenomicFilter),
       expectedResultType: data.expectedResultType || 'COUNT',
       picsureId: data.picsureId ?? null,
       id: data.id ?? null,

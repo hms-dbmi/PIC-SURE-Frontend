@@ -3,7 +3,7 @@ import type { Indexable } from '$lib/types';
 export type Facet = Indexable & {
   name: string;
   display: string;
-  description: string;
+  description: string | null;
   count: number;
   children?: Facet[];
   category: string;
@@ -24,7 +24,7 @@ export type SearchResult = Indexable & {
   name: string;
   display: string;
   studyAcronym: string;
-  description: string;
+  description: string | null;
   values?: string[];
   min?: number;
   max?: number;
