@@ -52,7 +52,6 @@ export type Settings = Indexable & {
   tour: {
     auth: string;
     open: string;
-    searchTerm: string;
   };
   variantExplorer: {
     excludeColumns: string[];
@@ -338,13 +337,6 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       description:
         'Enables the public Discover page and navigation item; when disabled, /discover redirects to /explorer and anonymous searches route to /explorer instead.',
     },
-    REQUIRE_CONSENTS: {
-      group: 'Access & Login',
-      type: 'boolean',
-      default: false,
-      description:
-        "Attaches the user's data-use consents as authorization filters on outgoing queries.",
-    },
     ENFORCE_TOS_ACCEPT: {
       group: 'Access & Login',
       type: 'boolean',
@@ -577,12 +569,6 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       description:
         'Name of the tour definition (from TourConfiguration.json) used for the guided tour on the public Discover page.',
     },
-    EXPLORE_TOUR_SEARCH_TERM: {
-      group: 'Guided Tour',
-      type: 'string',
-      default: 'age',
-      description: 'Default search term the guided tour pre-fills/highlights in the search box.',
-    },
 
     // --- Genomic Search --- (joined by ENABLE_GENE_QUERY, ENABLE_SNP_QUERY, and
     // VARIANT_EXPLORER from features, once features+settings are merged in the admin UI)
@@ -755,7 +741,6 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
       open: parse('OPEN'),
     },
     manualRole: parse('MANUAL_ROLE'),
-    requireConsents: parse('REQUIRE_CONSENTS'),
     restoreV2queries: parse('RESTORE_V2_QUERY'),
     termsOfService: parse('ENABLE_TOS'),
     useQueryTemplate: parse('USE_QUERY_TEMPLATE'),
@@ -777,7 +762,6 @@ export function mapSettings(apiSettings: ConfigObject[]): Settings {
     tour: {
       auth: parse.asString('AUTH_TOUR_NAME'),
       open: parse.asString('OPEN_TOUR_NAME'),
-      searchTerm: parse.asString('EXPLORE_TOUR_SEARCH_TERM'),
     },
     variantExplorer: {
       excludeColumns: parse.asJson('VARIANT_EXPLORER_EXCLUDE_COLUMNS') as string[],
