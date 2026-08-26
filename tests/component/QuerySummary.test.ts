@@ -11,19 +11,31 @@ import { QueryV3 } from '$lib/models/query/Query';
 import type { QueryV2 } from '$lib/compat/QueryV2';
 import type { FilterInterface, FilterGroupInterface } from '$lib/models/Filter.svelte';
 
+const mockBypassPath = 'some_path';
+
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 const mockConfig = vi.hoisted(() => ({
   features: { restoreV2queries: false },
+  settings: { dataset: { bypassConceptLookup: ['\\some_path\\'] } },
 }));
 vi.mock('$lib/configuration.svelte', () => ({ config: mockConfig }));
 
 vi.mock('$lib/stores/Filter', async () => {
   const { writable } = await import('svelte/store');
+  const { createFilterGroup } = await import('$lib/models/Filter.svelte');
   return {
     allFilters: writable([]),
     genomicFilters: writable([]),
     setFilterTree: vi.fn(),
+    createGroup: createFilterGroup,
+  };
+});
+
+const mockConceptPath = vi.fn();
+vi.mock('$lib/stores/Dictionary', async () => {
+  return {
+    getConceptDetails: mockConceptPath,
   };
 });
 
@@ -31,7 +43,7 @@ vi.mock('$lib/stores/Export', async () => {
   const { writable } = await import('svelte/store');
   return {
     exports: writable([]),
-    mapSearchResultAsExport: vi.fn().mockReturnValue({}),
+    mapSearchResultAsExport: vi.fn((searchResult) => ({ conceptPath: searchResult?.conceptPath })),
   };
 });
 
@@ -116,6 +128,30 @@ describe('QuerySummary', () => {
       expect.objectContaining({ select: ['\\dataset\\age\\', '\\_consents\\'] }),
     );
     expect(query.select).toEqual(['\\dataset\\age\\', '\\_consents\\']);
+  });
+
+  it('passes a V3 summary through to loadQuerySummaryData not reaching out to bypassed fields', async () => {
+    const select = ['\\dataset\\age\\', '\\_consents\\', `\\${mockBypassPath}\\`];
+    const query = new QueryV3({
+      select,
+      authorizationFilters: [],
+      phenotypicClause: null,
+      genomicFilters: [],
+      expectedResultType: 'COUNT',
+      picsureId: null,
+      id: null,
+    });
+    const actual = await vi.importActual<typeof import('$lib/components/query/QueryConverters')>(
+      '$lib/components/query/QueryConverters',
+    );
+    mockLoadQuerySummaryData.mockImplementation(actual.loadQuerySummaryData);
+
+    render(QuerySummary, { query, version: QueryVersion.V3 });
+    await screen.findByTestId('dataset-filters-container');
+
+    expect(mockConceptPath).toHaveBeenCalledWith(select[0], 'dataset');
+    expect(mockConceptPath).toHaveBeenCalledWith(select[1], '_consents');
+    expect(mockConceptPath).not.toHaveBeenCalledWith(select[2], mockBypassPath);
   });
 
   it('disables the Restore Filters button and shows an error alert when data.errors is non-empty', async () => {
