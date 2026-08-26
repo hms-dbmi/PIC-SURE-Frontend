@@ -12,7 +12,7 @@ import {
 import { getOption, userIsLoggedIn } from '../../utils';
 
 const countResultPath = '*/**/picsure/hpds/auth/v3/query/sync';
-const distributionsPath = '*/**/picsure/visualization/distributions';
+const distributionsPath = '*/**/picsure/visualization/auth/distributions';
 
 async function addFilterFromRow(page: import('@playwright/test').Page, rowIndex: number) {
   await page.locator(`#row-${rowIndex} button[title=Filter]`).click();

@@ -8,7 +8,7 @@ import {
   crossCountSyncResponseInital,
 } from '../../mock-data';
 
-const distributionsPath = '*/**/picsure/visualization/distributions';
+const distributionsPath = '*/**/picsure/visualization/open/distributions';
 const openCountResultPath = '*/**/picsure/hpds/open/v3/query/sync';
 
 // Visualization resource response in the {count, display, variance} wire shape:
