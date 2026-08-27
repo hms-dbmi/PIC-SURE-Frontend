@@ -30,7 +30,11 @@
 
   const appearances = new Set<BannerAppearance>(Object.keys(toneClasses) as BannerAppearance[]);
   const icons = new Set<BannerIcon>(Object.keys(iconClasses) as BannerIcon[]);
-  const audiences = new Set<BannerAudience>(['EVERYONE', 'SIGNED_IN', 'SIGNED_OUT']);
+  const audiences: Record<BannerAudience, true> = {
+    EVERYONE: true,
+    SIGNED_IN: true,
+    SIGNED_OUT: true,
+  };
 
   let banners: ActiveBanner[] = $state([]);
 
@@ -45,7 +49,7 @@
       appearances.has(banner.appearance as BannerAppearance) &&
       icons.has(banner.icon as BannerIcon) &&
       typeof banner.dismissible === 'boolean' &&
-      audiences.has(banner.audience as BannerAudience) &&
+      audiences[banner.audience as BannerAudience] === true &&
       banner.placement === 'SITE_TOP' &&
       Array.isArray(banner.pageTargets) &&
       typeof banner.priority === 'number' &&
@@ -63,10 +67,17 @@
       if (!response.ok) throw new Error(`Banner feed returned HTTP ${response.status}`);
 
       const feed: unknown = await response.json();
-      if (!Array.isArray(feed) || !feed.every(isActiveBanner)) {
-        throw new Error('Banner feed returned an invalid response');
+      if (!Array.isArray(feed)) throw new Error('Banner feed returned an invalid response');
+
+      banners = feed.filter(isActiveBanner);
+      const skippedRecords = feed.length - banners.length;
+      if (skippedRecords > 0) {
+        log(
+          createLog('ERROR', 'banner.feed_records_skipped', {
+            skipped_records: skippedRecords,
+          }),
+        );
       }
-      banners = feed;
     } catch (error) {
       banners = [];
       log(

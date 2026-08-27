@@ -103,6 +103,48 @@ describe('SiteBannerRegion', () => {
     ).toEqual(['First from server', 'Second from server']);
   });
 
+  it('retains valid records in server order when another record is malformed', async () => {
+    const secondBanner = {
+      ...banner,
+      uuid: '22222222-2222-2222-2222-222222222222',
+      title: 'Second valid banner',
+    };
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify([banner, { ...banner, appearance: 'NEON' }, secondBanner]), {
+        status: 200,
+      }),
+    );
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+
+    expect(
+      screen.getAllByTestId('site-banner').map((element) => element.getAttribute('aria-label')),
+    ).toEqual(['Maintenance', 'Second valid banner']);
+    expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_records_skipped', {
+      skipped_records: 1,
+    });
+    expect(log).toHaveBeenCalledOnce();
+    expect(JSON.stringify(vi.mocked(createLog).mock.calls)).not.toContain('Scheduled maintenance');
+  });
+
+  it('skips an unsupported future placement without discarding a site-top banner', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify([{ ...banner, placement: 'PAGE_INLINE' }, banner]), {
+        status: 200,
+      }),
+    );
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+
+    expect(screen.getAllByTestId('site-banner')).toHaveLength(1);
+    expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_records_skipped', {
+      skipped_records: 1,
+    });
+    expect(log).toHaveBeenCalledOnce();
+  });
+
   it.each([
     ['missing appearance', without('appearance')],
     ['unknown appearance', { ...banner, appearance: 'NEON' }],
@@ -112,11 +154,46 @@ describe('SiteBannerRegion', () => {
     ['missing html', without('htmlContent')],
     ['invalid placement', { ...banner, placement: 'PAGE_INLINE' }],
     ['nonnumeric priority', { ...banner, priority: 'first' }],
-  ])('treats %s as a feed failure and clears the region', async (_description, malformed) => {
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner]), { status: 200 }));
-    fetchMock.mockResolvedValueOnce(
-      new Response(JSON.stringify([banner, malformed]), { status: 200 }),
+  ])(
+    'skips %s and clears the region when no valid record remains',
+    async (_description, malformed) => {
+      fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner]), { status: 200 }));
+      fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([malformed]), { status: 200 }));
+      render(SiteBannerRegion);
+
+      await navigation.callback?.();
+      expect(screen.getByTestId('site-banner-region')).toBeInTheDocument();
+
+      await navigation.callback?.();
+
+      expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+      expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_records_skipped', {
+        skipped_records: 1,
+      });
+      expect(log).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('emits one skip diagnostic when every record is invalid', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify([without('uuid'), { ...banner, icon: 'BELL' }]), {
+        status: 200,
+      }),
     );
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+
+    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_records_skipped', {
+      skipped_records: 2,
+    });
+    expect(log).toHaveBeenCalledOnce();
+  });
+
+  it('treats a non-array response as a feed failure', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner]), { status: 200 }));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ banner }), { status: 200 }));
     render(SiteBannerRegion);
 
     await navigation.callback?.();
