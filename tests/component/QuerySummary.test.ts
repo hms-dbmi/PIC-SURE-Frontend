@@ -32,7 +32,7 @@ vi.mock('$lib/stores/Filter', async () => {
   };
 });
 
-const mockConceptPath = vi.fn();
+const mockConceptPath = vi.hoisted(() => vi.fn());
 vi.mock('$lib/stores/Dictionary', async () => {
   return {
     getConceptDetails: mockConceptPath,
