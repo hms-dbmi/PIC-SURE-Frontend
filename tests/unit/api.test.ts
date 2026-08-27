@@ -333,6 +333,26 @@ describe('api', () => {
       expect(mockLogout).toHaveBeenCalledWith(undefined, false);
     });
 
+    it('reports consent denial without logging out', async () => {
+      fetchMock.mockResolvedValue(
+        mockFetchResponse({
+          ok: false,
+          status: 403,
+          body: JSON.stringify({
+            errorType: 'consent_denied',
+            message: 'You no longer have consent for this saved result',
+          }),
+        }),
+      );
+
+      await expect(get('picsure/test')).rejects.toThrow(
+        '403: You no longer have consent for this saved result',
+      );
+
+      expect(mockLogout).not.toHaveBeenCalled();
+      expect(sessionStorage.removeItem).not.toHaveBeenCalled();
+    });
+
     it('throws error with status for other error codes', async () => {
       fetchMock.mockResolvedValue(
         mockFetchResponse({ ok: false, status: 500, body: 'Internal Server Error' }),

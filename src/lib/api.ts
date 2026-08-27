@@ -6,11 +6,16 @@ import { config } from '$lib/configuration.svelte';
 import { isWafCaptchaResponse, handleWafCaptcha } from '$lib/wafCaptcha';
 
 const BEARER = 'Bearer ';
+export const CONSENT_DENIED_MESSAGE = 'You no longer have consent for this saved result';
 
 export type RequestOptions = { signal?: AbortSignal };
 
 export function isAbortError(e: unknown): boolean {
   return (e as Error | undefined)?.name === 'AbortError';
+}
+
+export function isConsentDeniedError(e: unknown): boolean {
+  return (e as Error | undefined)?.message?.includes(CONSENT_DENIED_MESSAGE) === true;
 }
 
 // TODO: fix any types
@@ -122,13 +127,20 @@ async function handleResponse(res: Response) {
       return new Promise(() => {});
     }
     // Loop guard tripped: deliberately fall through to the normal error path.
-  } else if (res.status === 401) {
+  }
+
+  const resText = await res.text();
+  if (res.status === 401) {
     log(createLog('AUTH', 'session.unauthorized', undefined, { status: 401 }));
     browser &&
       sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
     logout(undefined, true);
     return;
   } else if (res.status === 403) {
+    const consentMessage = consentDeniedMessage(resText);
+    if (consentMessage) {
+      error(res.status, consentMessage);
+    }
     log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
     if (browser) {
       sessionStorage.removeItem('logout-reason');
@@ -136,7 +148,6 @@ async function handleResponse(res: Response) {
     }
     logout(undefined, false);
   }
-  const resText = await res.text();
   log(
     createLog('ERROR', 'error.unknown', undefined, {
       status: res.status,
@@ -144,6 +155,15 @@ async function handleResponse(res: Response) {
     }),
   );
   error(res.status as NumericRange<400, 599>, resText);
+}
+
+function consentDeniedMessage(responseBody: string): string | undefined {
+  try {
+    const body = JSON.parse(responseBody) as { errorType?: string; message?: string };
+    return body.errorType === 'consent_denied' ? body.message || CONSENT_DENIED_MESSAGE : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function refreshToken(res: Response) {

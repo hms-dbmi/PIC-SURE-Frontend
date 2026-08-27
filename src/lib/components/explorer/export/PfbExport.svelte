@@ -26,7 +26,12 @@
       }
     } catch (error) {
       console.error('Error during export:', error);
-      toaster.error({ title: 'Export failed. Please try again.', closable: true });
+      toaster.error({
+        title: api.isConsentDeniedError(error)
+          ? api.CONSENT_DENIED_MESSAGE
+          : 'Export failed. Please try again.',
+        closable: true,
+      });
     } finally {
       exportLoading = false;
     }

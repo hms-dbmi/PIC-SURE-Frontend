@@ -83,6 +83,9 @@
       );
     } catch (error) {
       console.error('Error in onCompleteHandler', error);
+      if (api.isConsentDeniedError(error)) {
+        toaster.error({ title: api.CONSENT_DENIED_MESSAGE, closable: true });
+      }
       log(
         createLog(
           'DOWNLOAD',
