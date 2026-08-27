@@ -75,6 +75,7 @@ test.describe('Site banner workflow 1', () => {
     page,
   }) => {
     let published = false;
+    let publicationRequests = 0;
     let submitted: Record<string, unknown> | undefined;
     const authoritativeBanner = {
       ...banner,
@@ -102,6 +103,7 @@ test.describe('Site banner workflow 1', () => {
     );
     await page.route('**/picsure/operations/banners', async (route) => {
       if (route.request().method() !== 'POST') return route.fallback();
+      publicationRequests += 1;
       submitted = route.request().postDataJSON();
       published = true;
       await route.fulfill({ status: 201, json: authoritativeBanner });
@@ -145,6 +147,19 @@ test.describe('Site banner workflow 1', () => {
     );
     await expect(page.getByRole('combobox', { name: 'Icon' })).toHaveValue('ERROR');
     await expect(page.getByRole('radio', { name: 'Permanent' })).toBeChecked();
+    await expect(bannerForm.getByRole('status')).toContainText('Published maintenance notice');
+    await expect(page.getByRole('button', { name: 'Published' })).toBeDisabled();
+    expect(publicationRequests).toBe(1);
+
+    await page.getByRole('button', { name: 'Create another banner' }).click();
+    await expect(bannerForm.getByRole('status')).toHaveCount(0);
+    await expect(editor).toHaveText('');
+    await expect(page.getByRole('radio', { name: 'Primary' })).toBeChecked();
+    await expect(page.getByRole('radio', { name: 'Dismissible' })).toBeChecked();
+    await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('');
+    await expect(page.getByRole('combobox', { name: 'Icon' })).toHaveValue('NONE');
+    await expect(page.getByRole('button', { name: 'Publish now' })).toBeDisabled();
+    expect(publicationRequests).toBe(1);
 
     await page.goto('/');
     await expect(page.getByRole('region', { name: 'Published maintenance notice' })).toContainText(

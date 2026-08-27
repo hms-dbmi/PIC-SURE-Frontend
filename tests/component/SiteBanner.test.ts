@@ -27,8 +27,9 @@ import type { BannerAppearance, BannerPresentation } from '$lib/models/Banner';
 
 const banner: BannerPresentation = {
   htmlContent:
-    '<p class="fixed"><a href="https://example.org/page" target="_blank">External</a> ' +
-    '<a href="/help">Help</a> <a href="mailto:help@example.org">Email</a>' +
+    '<p class="fixed"><a href="https://example.org/page" target="_blank" rel="noopener noreferrer">External</a> ' +
+    '<a href="/help" target="_blank" rel="noopener noreferrer">Help</a> ' +
+    '<a href="mailto:help@example.org" target="_blank" rel="noopener noreferrer">Email</a>' +
     '<img src="https://example.org/image.png"></p>',
   title: 'Maintenance',
   appearance: 'PRIMARY',
@@ -91,9 +92,11 @@ describe('SiteBanner', () => {
       'noopener,noreferrer',
     );
     for (const name of ['Help', 'Email']) {
-      const event = new MouseEvent('click', { bubbles: true, cancelable: true });
-      await fireEvent(screen.getByRole('link', { name }), event);
-      expect(event.defaultPrevented).toBe(false);
+      expect(screen.getByRole('link', { name })).toHaveAttribute('target', '_blank');
+      expect(screen.getByRole('link', { name })).toHaveAttribute('rel', 'noopener noreferrer');
+      window.addEventListener('click', (event) => event.preventDefault(), { once: true });
+      await fireEvent.click(screen.getByRole('link', { name }));
+      expect(screen.queryByTestId('external-link-warning')).not.toBeInTheDocument();
     }
   });
 });

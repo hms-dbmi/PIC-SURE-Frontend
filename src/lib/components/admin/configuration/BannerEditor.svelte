@@ -55,6 +55,7 @@
   });
 
   async function publish() {
+    if (publishing || publishedBanner) return;
     const draft: BannerDraft = {
       ...preview,
       title,
@@ -79,6 +80,15 @@
     } finally {
       publishing = false;
     }
+  }
+
+  function startAnother() {
+    htmlContent = '';
+    title = '';
+    appearance = 'PRIMARY';
+    icon = 'NONE';
+    dismissible = true;
+    publishedBanner = null;
   }
 </script>
 
@@ -110,6 +120,8 @@
         </div>
         <p class="mt-1 text-sm text-surface-600">
           Basic formatting, lists, relative links, HTTPS links, and email links are supported.
+        </p>
+        <p class="text-sm text-surface-600" aria-live="polite">
           {sanitizedLength}/5,000 characters
         </p>
       </div>
@@ -152,7 +164,7 @@
         aria-labelledby="banner-preview-title"
       >
         <h3 id="banner-preview-title" class="mb-3">Banner preview</h3>
-        <SiteBanner banner={preview} ondismiss={() => {}} />
+        <SiteBanner banner={preview} titleLevel={3} />
       </section>
 
       <details class="rounded border border-surface-300 p-4">
@@ -174,13 +186,23 @@
       </details>
     </div>
 
+    {#if publishedBanner}
+      <div class="mt-6 rounded border border-success-500 p-4" role="status">
+        <p class="font-bold">Published: {publishedBanner.title || 'Site announcement'}</p>
+        <p class="text-sm">Published at {publishedBanner.publishedAt}</p>
+        <button type="button" class="btn preset-tonal-primary mt-3" onclick={startAnother}>
+          Create another banner
+        </button>
+      </div>
+    {/if}
+
     <div class="mt-6 flex justify-end">
       <button
         type="submit"
         class="btn preset-filled-primary-500"
-        disabled={publishing || !hasContent || sanitizedLength > 5_000}
+        disabled={publishing || publishedBanner !== null || !hasContent || sanitizedLength > 5_000}
       >
-        {publishing ? 'Publishing...' : 'Publish now'}
+        {publishing ? 'Publishing...' : publishedBanner ? 'Published' : 'Publish now'}
       </button>
     </div>
   </form>

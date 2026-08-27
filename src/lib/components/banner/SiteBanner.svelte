@@ -5,9 +5,11 @@
   let {
     banner,
     ondismiss,
+    titleLevel = 2,
   }: {
     banner: BannerPresentation;
     ondismiss?: () => void;
+    titleLevel?: 2 | 3;
   } = $props();
 
   const toneClasses: Record<BannerAppearance, string> = {
@@ -39,7 +41,13 @@
       <i class="fa-solid {iconClasses[banner.icon]} mt-1 flex-none text-xl" aria-hidden="true"></i>
     {/if}
     <div class="min-w-0 flex-1">
-      {#if banner.title}<h2 class="h4 mb-1">{banner.title}</h2>{/if}
+      {#if banner.title}
+        {#if titleLevel === 3}
+          <h3 class="h4 mb-1">{banner.title}</h3>
+        {:else}
+          <h2 class="h4 mb-1">{banner.title}</h2>
+        {/if}
+      {/if}
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
       <div class="site-banner-content">{@html sanitizeBannerHTML(banner.htmlContent)}</div>
     </div>
