@@ -5,7 +5,13 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 // the AIO - their policy is fully covered by the directives below. AIM-AHEAD sets these to
 // add its own domains without widening every other deployment's policy.
 const extra = (name) => {
-  const sources = (process.env[name] ?? '').split(/\s+/).filter(Boolean);
+  const sources = (process.env[name] ?? '')
+    .split(/\s+/)
+    .filter(Boolean)
+    // Strip surrounding quotes first. SvelteKit only re-quotes keywords it recognises, and it
+    // recognises them unquoted - so a pre-quoted "'unsafe-eval'" would slip past the check below
+    // and still be emitted verbatim into the header.
+    .map((source) => source.replace(/^'(.*)'$/, '$1'));
   const unsafe = sources.filter((source) => source.startsWith('unsafe-'));
   if (unsafe.length) {
     throw new Error(`${name} must not reintroduce ${unsafe.join(', ')} (ALS-9583)`);

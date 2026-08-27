@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -58,5 +58,38 @@ describe('kit.csp carries no unsafe source outside style-src-attr', () => {
 
   it('confines the only exception to style-src-attr', () => {
     expect(directives['style-src-attr']).toEqual(['unsafe-inline']);
+  });
+});
+
+// The CSP_EXTRA_* build vars widen the policy for a deployment served across sibling domains.
+// They must not be able to hand back what ALS-9583 removed. A pre-quoted token is the subtle
+// case: SvelteKit only re-quotes keywords it recognises, and it recognises them unquoted, so
+// "'unsafe-eval'" would be emitted into the header verbatim.
+describe('CSP_EXTRA_* build vars cannot reintroduce an unsafe source', () => {
+  const configUrl = new URL('../../svelte.config.js', import.meta.url).href;
+  let counter = 0;
+
+  // Each import needs a fresh module instance, since the config reads process.env at load.
+  const loadWith = (name: string, value: string) => {
+    process.env[name] = value;
+    return import(/* @vite-ignore */ `${configUrl}?case=${counter++}`);
+  };
+
+  afterEach(() => {
+    delete process.env.CSP_EXTRA_SCRIPT_SRC;
+    delete process.env.CSP_EXTRA_CONNECT_SRC;
+  });
+
+  for (const token of ['unsafe-eval', "'unsafe-eval'", 'unsafe-inline', "'unsafe-inline'"]) {
+    it(`rejects ${token}`, async () => {
+      await expect(loadWith('CSP_EXTRA_SCRIPT_SRC', token)).rejects.toThrow(/ALS-9583/);
+    });
+  }
+
+  it('still accepts a legitimate host, with quotes normalised for SvelteKit', async () => {
+    const module = await loadWith('CSP_EXTRA_CONNECT_SRC', "'self' https://example.test");
+    const connectSrc = module.default.kit.csp.directives['connect-src'];
+    expect(connectSrc).toContain('https://example.test');
+    expect(connectSrc).not.toContain("'self'");
   });
 });
