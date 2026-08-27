@@ -30,15 +30,18 @@
 
   const appearances = new Set<BannerAppearance>(Object.keys(toneClasses) as BannerAppearance[]);
   const icons = new Set<BannerIcon>(Object.keys(iconClasses) as BannerIcon[]);
-  const audiences: Record<BannerAudience, true> = {
+  const audienceValues: Record<BannerAudience, true> = {
     EVERYONE: true,
     SIGNED_IN: true,
     SIGNED_OUT: true,
   };
+  const audiences = new Set<BannerAudience>(Object.keys(audienceValues) as BannerAudience[]);
+
+  type BannerFeedRecord = Omit<ActiveBanner, 'placement'> & { placement: string };
 
   let banners: ActiveBanner[] = $state([]);
 
-  function isActiveBanner(value: unknown): value is ActiveBanner {
+  function isBannerFeedRecord(value: unknown): value is BannerFeedRecord {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
     const banner = value as Record<string, unknown>;
 
@@ -49,8 +52,8 @@
       appearances.has(banner.appearance as BannerAppearance) &&
       icons.has(banner.icon as BannerIcon) &&
       typeof banner.dismissible === 'boolean' &&
-      audiences[banner.audience as BannerAudience] === true &&
-      banner.placement === 'SITE_TOP' &&
+      audiences.has(banner.audience as BannerAudience) &&
+      typeof banner.placement === 'string' &&
       Array.isArray(banner.pageTargets) &&
       typeof banner.priority === 'number' &&
       Number.isFinite(banner.priority) &&
@@ -69,12 +72,15 @@
       const feed: unknown = await response.json();
       if (!Array.isArray(feed)) throw new Error('Banner feed returned an invalid response');
 
-      banners = feed.filter(isActiveBanner);
-      const skippedRecords = feed.length - banners.length;
+      const validRecords = feed.filter(isBannerFeedRecord);
+      banners = validRecords.filter(
+        (banner): banner is ActiveBanner => banner.placement === 'SITE_TOP',
+      );
+      const skippedRecords = feed.length - validRecords.length;
       if (skippedRecords > 0) {
         log(
           createLog('ERROR', 'banner.feed_records_skipped', {
-            skipped_records: skippedRecords,
+            skippedRecords,
           }),
         );
       }

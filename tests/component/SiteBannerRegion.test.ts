@@ -67,11 +67,15 @@ describe('SiteBannerRegion', () => {
     const notice = screen.getByRole('region', { name: 'Maintenance' });
     expect(notice.tagName).toBe('SECTION');
     expect(notice).toHaveTextContent('Scheduled maintenance details');
+    expect(createLog).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
 
     await navigation.callback?.();
 
     await waitFor(() => expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument());
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(createLog).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
   });
 
   it('keeps the server order even when priorities are not ascending', async () => {
@@ -122,7 +126,7 @@ describe('SiteBannerRegion', () => {
       screen.getAllByTestId('site-banner').map((element) => element.getAttribute('aria-label')),
     ).toEqual(['Maintenance', 'Second valid banner']);
     expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_records_skipped', {
-      skipped_records: 1,
+      skippedRecords: 1,
     });
     expect(log).toHaveBeenCalledOnce();
     expect(JSON.stringify(vi.mocked(createLog).mock.calls)).not.toContain('Scheduled maintenance');
@@ -139,10 +143,8 @@ describe('SiteBannerRegion', () => {
     await navigation.callback?.();
 
     expect(screen.getAllByTestId('site-banner')).toHaveLength(1);
-    expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_records_skipped', {
-      skipped_records: 1,
-    });
-    expect(log).toHaveBeenCalledOnce();
+    expect(createLog).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -152,7 +154,7 @@ describe('SiteBannerRegion', () => {
     ['unknown icon', { ...banner, icon: 'BELL' }],
     ['missing uuid', without('uuid')],
     ['missing html', without('htmlContent')],
-    ['invalid placement', { ...banner, placement: 'PAGE_INLINE' }],
+    ['missing placement', without('placement')],
     ['nonnumeric priority', { ...banner, priority: 'first' }],
   ])(
     'skips %s and clears the region when no valid record remains',
@@ -168,7 +170,7 @@ describe('SiteBannerRegion', () => {
 
       expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
       expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_records_skipped', {
-        skipped_records: 1,
+        skippedRecords: 1,
       });
       expect(log).toHaveBeenCalledOnce();
     },
@@ -186,7 +188,7 @@ describe('SiteBannerRegion', () => {
 
     expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
     expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_records_skipped', {
-      skipped_records: 2,
+      skippedRecords: 2,
     });
     expect(log).toHaveBeenCalledOnce();
   });
@@ -220,6 +222,8 @@ describe('SiteBannerRegion', () => {
     await navigation.callback?.();
 
     expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(createLog).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
   });
 
   it('records a failed feed and leaves rendering and later navigation available', async () => {
