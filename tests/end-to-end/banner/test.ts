@@ -57,3 +57,87 @@ test.describe('Site banner delivery', () => {
     await expect(bannerRegion).toBeVisible();
   });
 });
+
+test.describe('Site banner workflow 1', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
+
+  test('creates, previews, publishes, and renders the authoritative banner above navigation', async ({
+    page,
+  }) => {
+    await mockApiConfig(page);
+    for (const path of ['role', 'privilege', 'application', 'connection']) {
+      await page.route(`**/psama/${path}`, (route) => route.fulfill({ json: [] }));
+    }
+
+    let published = false;
+    let submitted: Record<string, unknown> | undefined;
+    const authoritativeBanner = {
+      ...banner,
+      uuid: '99999999-9999-9999-9999-999999999999',
+      htmlContent:
+        '<p><a href="https://example.org/status" rel="noopener noreferrer" target="_blank">System maintenance status page</a></p>',
+      title: 'Planned maintenance',
+      appearance: 'WARNING',
+      icon: 'WARNING',
+      priority: 42,
+      presentationHash: 'server-computed-hash',
+      status: 'PUBLISHED',
+      startAt: '2026-08-27T12:00:00Z',
+      endAt: null,
+      createdAt: '2026-08-27T12:00:00Z',
+      createdBy: 'admin-id',
+      updatedAt: '2026-08-27T12:00:00Z',
+      updatedBy: 'admin-id',
+      publishedAt: '2026-08-27T12:00:00Z',
+      publishedBy: 'admin-id',
+    };
+    await page.route('**/picsure/operations/banners/active', (route) =>
+      route.fulfill({ json: published ? [authoritativeBanner] : [] }),
+    );
+    await page.route('**/picsure/operations/banners', async (route) => {
+      if (route.request().method() !== 'POST') return route.fallback();
+      submitted = route.request().postDataJSON();
+      published = true;
+      await route.fulfill({ status: 201, json: authoritativeBanner });
+    });
+
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    const editor = page.locator('.ql-editor');
+    await editor.fill('System maintenance status page');
+    await editor.press('ControlOrMeta+a');
+    await page.getByRole('button', { name: 'link' }).click();
+    await page.locator('.ql-tooltip input[data-link]').fill('https://example.org/status');
+    await page.locator('.ql-tooltip input[data-link]').press('Enter');
+    await page.getByRole('radio', { name: 'Warning' }).check();
+    await page.getByText('Advanced options').click();
+    await page.getByRole('textbox', { name: 'Title' }).fill('Planned maintenance');
+    await page.getByRole('combobox', { name: 'Icon' }).selectOption('WARNING');
+
+    const preview = page.getByRole('region', { name: 'Planned maintenance' });
+    await expect(preview).toHaveClass(/preset-tonal-warning/);
+    await expect(
+      preview.getByRole('link', { name: 'System maintenance status page' }),
+    ).toBeVisible();
+    await expect(preview.locator('img')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Publish now' }).click();
+
+    await expect(page).toHaveURL('/');
+    await expect(page.getByTestId('toast-root')).toHaveAttribute('data-type', 'success');
+    await expect(page.getByRole('region', { name: 'Planned maintenance' })).toContainText(
+      'System maintenance status page',
+    );
+    expect(submitted).toMatchObject({
+      htmlContent:
+        '<p><a href="https://example.org/status" rel="noopener noreferrer" target="_blank">System maintenance status page</a></p>',
+      title: 'Planned maintenance',
+      appearance: 'WARNING',
+      icon: 'WARNING',
+      dismissible: true,
+      audience: 'EVERYONE',
+      placement: 'SITE_TOP',
+      pageTargets: [{ kind: 'ALL' }],
+    });
+  });
+});

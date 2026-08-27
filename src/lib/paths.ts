@@ -23,6 +23,7 @@ export const Picsure = {
   },
   Banners: {
     Active: `${PREFIX}/operations/banners/active`,
+    Manage: `${PREFIX}/operations/banners`,
   },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,

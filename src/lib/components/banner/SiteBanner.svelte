@@ -1,0 +1,83 @@
+<script lang="ts">
+  import type { BannerAppearance, BannerIcon, BannerPresentation } from '$lib/models/Banner';
+  import { sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
+
+  let {
+    banner,
+    ondismiss,
+  }: {
+    banner: BannerPresentation;
+    ondismiss?: () => void;
+  } = $props();
+
+  const toneClasses: Record<BannerAppearance, string> = {
+    PRIMARY: 'preset-tonal-primary border-primary-500',
+    SECONDARY: 'preset-tonal-secondary border-secondary-500',
+    TERTIARY: 'preset-tonal-tertiary border-tertiary-500',
+    SUCCESS: 'preset-tonal-success border-success-500',
+    WARNING: 'preset-tonal-warning border-warning-500',
+    ERROR: 'preset-tonal-error border-error-500',
+    SURFACE: 'preset-tonal-surface border-surface-500',
+  };
+
+  const iconClasses: Record<BannerIcon, string | undefined> = {
+    NONE: undefined,
+    INFORMATION: 'fa-circle-info',
+    SUCCESS: 'fa-circle-check',
+    WARNING: 'fa-triangle-exclamation',
+    ERROR: 'fa-circle-exclamation',
+  };
+</script>
+
+<section
+  aria-label={banner.title || 'Site announcement'}
+  data-testid="site-banner"
+  class="w-full border-l-8 px-4 py-3 {toneClasses[banner.appearance]}"
+>
+  <div class="mx-auto flex w-full items-start gap-3">
+    {#if iconClasses[banner.icon]}
+      <i class="fa-solid {iconClasses[banner.icon]} mt-1 flex-none text-xl" aria-hidden="true"></i>
+    {/if}
+    <div class="min-w-0 flex-1">
+      {#if banner.title}<h2 class="h4 mb-1">{banner.title}</h2>{/if}
+      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+      <div class="site-banner-content">{@html sanitizeBannerHTML(banner.htmlContent)}</div>
+    </div>
+    {#if banner.dismissible && ondismiss}
+      <button
+        type="button"
+        class="btn-icon h-11 w-11 flex-none rounded-full border border-current"
+        aria-label="Dismiss {banner.title || 'site announcement'}"
+        title="Dismiss"
+        onclick={ondismiss}
+      >
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    {/if}
+  </div>
+</section>
+
+<style>
+  .site-banner-content :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .site-banner-content :global(ul) {
+    list-style: disc;
+  }
+
+  .site-banner-content :global(ol) {
+    list-style: decimal;
+  }
+
+  .site-banner-content :global(ul),
+  .site-banner-content :global(ol) {
+    margin-left: 1.5rem;
+  }
+
+  .site-banner-content :global(a) {
+    color: inherit;
+    font-weight: 650;
+    text-decoration: underline;
+  }
+</style>

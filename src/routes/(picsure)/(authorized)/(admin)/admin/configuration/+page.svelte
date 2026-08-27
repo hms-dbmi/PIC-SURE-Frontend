@@ -17,6 +17,7 @@
   import Application from '$lib/components/admin/configuration/cell/Application.svelte';
   import RequiredFields from '$lib/components/admin/configuration/cell/RequiredFields.svelte';
   import ConfigKindTab from '$lib/components/admin/configuration/ConfigKindTab.svelte';
+  import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
 
   import { privileges, loadPrivileges } from '$lib/stores/Privileges';
   import { roles, loadRoles } from '$lib/stores/Roles';
@@ -83,7 +84,7 @@
 </svelte:head>
 
 <Content title="Configuration">
-  {#if !$isTopAdmin}
+  {#if !$isTopAdmin && tabSet !== 'Site banners'}
     <ErrorAlert data-testid="top-admin-only-error" title="Top Administrator Only" color="warning">
       <p>
         Configurations are READ ONLY for admin users. Please contact your administrator to make
@@ -96,6 +97,7 @@
       <TabItem bind:group={tabSet} value="Access Control">Access Control</TabItem>
       <TabItem bind:group={tabSet} value="Settings & Features">Settings & Features</TabItem>
       <TabItem bind:group={tabSet} value="Branding">Branding</TabItem>
+      <TabItem bind:group={tabSet} value="Site banners">Site banners</TabItem>
       {#if config.features.termsOfService}
         <TabItem bind:group={tabSet} value="Terms of Service">Terms of Service</TabItem>
       {/if}
@@ -208,6 +210,9 @@
       </Tabs.Panel>
       <Tabs.Panel value="Branding">
         <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!$isTopAdmin} />
+      </Tabs.Panel>
+      <Tabs.Panel value="Site banners">
+        <BannerEditor />
       </Tabs.Panel>
       {#if config.features.termsOfService}
         <Tabs.Panel value="Terms of Service">

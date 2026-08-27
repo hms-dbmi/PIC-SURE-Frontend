@@ -8,28 +8,30 @@
     BannerIcon,
   } from '$lib/models/Banner';
   import { Picsure } from '$lib/paths';
-  import { sanitizeHTML } from '$lib/utilities/HTML';
+  import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
 
-  const toneClasses: Record<BannerAppearance, string> = {
-    PRIMARY: 'preset-tonal-primary border-primary-500',
-    SECONDARY: 'preset-tonal-secondary border-secondary-500',
-    TERTIARY: 'preset-tonal-tertiary border-tertiary-500',
-    SUCCESS: 'preset-tonal-success border-success-500',
-    WARNING: 'preset-tonal-warning border-warning-500',
-    ERROR: 'preset-tonal-error border-error-500',
-    SURFACE: 'preset-tonal-surface border-surface-500',
-  };
+  const appearances = new Set<BannerAppearance>(
+    Object.keys({
+      PRIMARY: true,
+      SECONDARY: true,
+      TERTIARY: true,
+      SUCCESS: true,
+      WARNING: true,
+      ERROR: true,
+      SURFACE: true,
+    } satisfies Record<BannerAppearance, true>) as BannerAppearance[],
+  );
 
-  const iconClasses: Record<BannerIcon, string | undefined> = {
-    NONE: undefined,
-    INFORMATION: 'fa-circle-info',
-    SUCCESS: 'fa-circle-check',
-    WARNING: 'fa-triangle-exclamation',
-    ERROR: 'fa-circle-exclamation',
-  };
+  const icons = new Set<BannerIcon>(
+    Object.keys({
+      NONE: true,
+      INFORMATION: true,
+      SUCCESS: true,
+      WARNING: true,
+      ERROR: true,
+    } satisfies Record<BannerIcon, true>) as BannerIcon[],
+  );
 
-  const appearances = new Set<BannerAppearance>(Object.keys(toneClasses) as BannerAppearance[]);
-  const icons = new Set<BannerIcon>(Object.keys(iconClasses) as BannerIcon[]);
   const audiences = new Set<BannerAudience>(
     Object.keys({
       EVERYONE: true,
@@ -50,7 +52,9 @@
       typeof banner.uuid === 'string' &&
       typeof banner.htmlContent === 'string' &&
       (banner.title === null || typeof banner.title === 'string') &&
+      typeof banner.appearance === 'string' &&
       appearances.has(banner.appearance as BannerAppearance) &&
+      typeof banner.icon === 'string' &&
       icons.has(banner.icon as BannerIcon) &&
       typeof banner.dismissible === 'boolean' &&
       audiences.has(banner.audience as BannerAudience) &&
@@ -101,23 +105,7 @@
 {#if banners.length > 0}
   <div class="w-full flex-none" data-testid="site-banner-region">
     {#each banners as banner (banner.uuid)}
-      <section
-        aria-label={banner.title || 'Site announcement'}
-        data-testid="site-banner"
-        class="w-full border-l-8 px-4 py-3 {toneClasses[banner.appearance]}"
-      >
-        <div class="mx-auto flex w-full items-start gap-3">
-          {#if iconClasses[banner.icon]}
-            <i class="fa-solid {iconClasses[banner.icon]} mt-1 flex-none text-xl" aria-hidden="true"
-            ></i>
-          {/if}
-          <div class="min-w-0">
-            {#if banner.title}<h2 class="h4 mb-1">{banner.title}</h2>{/if}
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-            <div class="site-banner-content">{@html sanitizeHTML(banner.htmlContent)}</div>
-          </div>
-        </div>
-      </section>
+      <SiteBanner {banner} />
     {/each}
   </div>
 {/if}

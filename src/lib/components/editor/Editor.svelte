@@ -13,12 +13,18 @@
     fontOptions = false,
     headerDropdown = true,
     alignOptions = true,
+    basicToolbar = false,
+    sanitizer = sanitizeHTML,
+    ariaLabel = 'Rich text editor',
   }: {
     content: string;
     embedOptions?: boolean;
     fontOptions?: boolean;
     headerDropdown?: boolean;
     alignOptions?: boolean;
+    basicToolbar?: boolean;
+    sanitizer?: (dirty: string) => string;
+    ariaLabel?: string;
   } = $props();
 
   const colors = [
@@ -34,27 +40,34 @@
   );
 
   const toolbarOptions = $derived(
-    [
-      headerDropdown ? [{ header: [1, 2, 3, 4, 5, 6, false] }] : [{ header: 1 }, { header: 2 }],
-      ['bold', 'italic', 'underline', 'strike', { script: 'sub' }, { script: 'super' }],
-      ...(alignOptions
-        ? [
-            [{ align: [] }, { indent: '-1' }, { indent: '+1' }],
-            ['link', 'blockquote', 'code-block'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-          ]
-        : []),
-      embedOptions ? ['image'] : undefined,
-      fontOptions
-        ? [
-            { font: [] },
-            { size: ['small', false, 'large', 'huge'] },
-            { color: colors },
-            { background: colors },
-          ]
-        : undefined,
-      ['clean'],
-    ].filter((x) => x !== undefined),
+    basicToolbar
+      ? [
+          ['bold', 'italic', 'underline', 'strike'],
+          ['link'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['clean'],
+        ]
+      : [
+          headerDropdown ? [{ header: [1, 2, 3, 4, 5, 6, false] }] : [{ header: 1 }, { header: 2 }],
+          ['bold', 'italic', 'underline', 'strike', { script: 'sub' }, { script: 'super' }],
+          ...(alignOptions
+            ? [
+                [{ align: [] }, { indent: '-1' }, { indent: '+1' }],
+                ['link', 'blockquote', 'code-block'],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+              ]
+            : []),
+          embedOptions ? ['image'] : undefined,
+          fontOptions
+            ? [
+                { font: [] },
+                { size: ['small', false, 'large', 'huge'] },
+                { color: colors },
+                { background: colors },
+              ]
+            : undefined,
+          ['clean'],
+        ].filter((x) => x !== undefined),
   );
 
   // Swap known Quill format classes for tailwind classes and nbsp for spaces, then sanitize
@@ -74,20 +87,21 @@
       'ql-size-large': 'text-lg',
       'ql-size-huge': 'text-xl',
     }).forEach(([from, to]) => (text = text.replaceAll(from, to)));
-    return sanitizeHTML(text);
+    return sanitizer(text);
   }
+
+  let container: HTMLDivElement;
 
   onMount(async () => {
     const { default: Quill } = await import('quill');
-    let container = document.getElementById('editor');
     if (container) {
-      container.innerHTML = content;
       let quill = new Quill(container, {
         theme: 'snow',
         modules: {
           toolbar: toolbarOptions,
         },
       });
+      quill.clipboard.dangerouslyPasteHTML(content);
       quill.on('text-change', () => {
         content = swapAndClean(quill.getSemanticHTML());
       });
@@ -95,4 +109,4 @@
   });
 </script>
 
-<div id="editor" class="bg-white dark:bg-black"></div>
+<div bind:this={container} aria-label={ariaLabel} class="bg-white dark:bg-black"></div>
