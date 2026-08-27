@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -65,8 +65,10 @@
     goto(resolve(path as '/'));
   }
 
+  let releaseHandler: (() => void) | undefined;
+
   onMount(() => {
-    initHandler();
+    releaseHandler = initHandler();
     if (searchInput && searchInput !== $searchTerm) {
       searchTerm.set(searchInput);
     } else {
@@ -80,10 +82,12 @@
       }
     }
   });
+
+  onDestroy(() => releaseHandler?.());
 </script>
 
 <section id="search-container" class="flex gap-9">
-  <div id="facet-side-bar" class="flex-none flex-col items-center w-64">
+  <div id="facet-side-bar" class="flex-none flex-col items-center w-80">
     <FacetSideBar />
   </div>
   <div id="search-results-col" class="flex-auto">

@@ -4,10 +4,10 @@ const VIZ = `${PREFIX}/visualization`;
 const HPDS_AUTH = `${PREFIX}/hpds/auth`;
 const HPDS_OPEN = `${PREFIX}/hpds/open`;
 const API = '/api/v1';
-const LOCAL = 'api';
 
 export const LocalServer = {
-  Configs: `${LOCAL}/config`,
+  Configs: `${API}/config`,
+  ConfigRefresh: `${API}/config/refresh`,
 };
 
 export const Picsure = {
@@ -18,8 +18,8 @@ export const Picsure = {
     Hierarchy: `${DICT}/concepts/hierarchy`,
   },
   Configuration: {
-    Get: `${PREFIX}/configuration`,
-    Admin: `${PREFIX}/configuration/admin`,
+    Get: `${PREFIX}/operations/configuration`,
+    Admin: `${PREFIX}/operations/configuration/admin`,
   },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,

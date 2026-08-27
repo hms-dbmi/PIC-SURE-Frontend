@@ -30,7 +30,25 @@ vi.mock('@sveltejs/kit', () => ({
   },
 }));
 
-import { get, post, put, del } from '$lib/api';
+let mockWafFlag = false;
+vi.mock('$lib/configuration.svelte', () => ({
+  config: {
+    features: {
+      get wafCaptchaRecovery() {
+        return mockWafFlag;
+      },
+    },
+  },
+}));
+
+const mockIsWafCaptchaResponse = vi.fn<(...args: unknown[]) => boolean>(() => false);
+const mockHandleWafCaptcha = vi.fn<(...args: unknown[]) => boolean>(() => true);
+vi.mock('$lib/wafCaptcha', () => ({
+  isWafCaptchaResponse: (...args: unknown[]) => mockIsWafCaptchaResponse(...args),
+  handleWafCaptcha: (...args: unknown[]) => mockHandleWafCaptcha(...args),
+}));
+
+import { get, post, put, del, isAbortError } from '$lib/api';
 
 function mockFetchResponse(overrides: {
   ok?: boolean;
@@ -53,6 +71,7 @@ function mockFetchResponse(overrides: {
   return {
     ok,
     status,
+    url: 'https://example.com/picsure/test',
     headers: {
       get: (key: string) => headerMap.get(key) ?? null,
     },
@@ -67,6 +86,9 @@ describe('api', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockBrowser = true;
+    mockWafFlag = false;
+    mockIsWafCaptchaResponse.mockReturnValue(false);
+    mockHandleWafCaptcha.mockReturnValue(true);
     mockGetSessionId.mockReturnValue('test-session-id');
 
     fetchMock = vi.fn().mockResolvedValue(mockFetchResponse({}));
@@ -333,6 +355,85 @@ describe('api', () => {
     });
   });
 
+  describe('WAF CAPTCHA recovery', () => {
+    const wafResponse = () =>
+      mockFetchResponse({
+        ok: false,
+        status: 405,
+        headers: { 'x-amzn-waf-action': 'captcha' },
+        body: '<html>waf interstitial</html>',
+        contentType: 'text/html',
+      });
+
+    it('never settles and stays silent when a reload is imminent', async () => {
+      mockWafFlag = true;
+      mockIsWafCaptchaResponse.mockReturnValue(true);
+      mockHandleWafCaptcha.mockReturnValue(true);
+      fetchMock.mockResolvedValue(wafResponse());
+
+      const outcome = await Promise.race([
+        get('picsure/test').then(
+          () => 'settled',
+          () => 'settled',
+        ),
+        new Promise((resolve) => setTimeout(() => resolve('pending'), 10)),
+      ]);
+
+      expect(outcome).toBe('pending');
+      expect(mockHandleWafCaptcha).toHaveBeenCalledWith('/picsure/test');
+      expect(mockCreateLog).not.toHaveBeenCalledWith(
+        'ERROR',
+        'error.unknown',
+        undefined,
+        expect.anything(),
+      );
+    });
+
+    it('falls through to the generic error when the loop guard trips', async () => {
+      mockWafFlag = true;
+      mockIsWafCaptchaResponse.mockReturnValue(true);
+      mockHandleWafCaptcha.mockReturnValue(false);
+      fetchMock.mockResolvedValue(wafResponse());
+
+      await expect(get('picsure/test')).rejects.toThrow('405');
+
+      expect(mockCreateLog).toHaveBeenCalledWith('ERROR', 'error.unknown', undefined, {
+        status: 405,
+        error: { message: '<html>waf interstitial</html>' },
+      });
+    });
+
+    it('takes the generic error path when the feature flag is off', async () => {
+      mockWafFlag = false;
+      fetchMock.mockResolvedValue(wafResponse());
+
+      await expect(get('picsure/test')).rejects.toThrow('405');
+
+      expect(mockIsWafCaptchaResponse).not.toHaveBeenCalled();
+      expect(mockHandleWafCaptcha).not.toHaveBeenCalled();
+    });
+
+    it('takes the generic error path outside the browser', async () => {
+      mockBrowser = false;
+      mockWafFlag = true;
+      fetchMock.mockResolvedValue(wafResponse());
+
+      await expect(get('picsure/test')).rejects.toThrow('405');
+
+      expect(mockHandleWafCaptcha).not.toHaveBeenCalled();
+    });
+
+    it('takes the generic error path when the response is not a WAF CAPTCHA', async () => {
+      mockWafFlag = true;
+      mockIsWafCaptchaResponse.mockReturnValue(false);
+      fetchMock.mockResolvedValue(mockFetchResponse({ ok: false, status: 405, body: 'nope' }));
+
+      await expect(get('picsure/test')).rejects.toThrow('405: nope');
+
+      expect(mockHandleWafCaptcha).not.toHaveBeenCalled();
+    });
+  });
+
   describe('non-browser context', () => {
     beforeEach(() => {
       mockBrowser = false;
@@ -382,4 +483,76 @@ describe('api', () => {
       );
     });
   });
+
+  describe('abort signal', () => {
+    it('forwards a signal to fetch when one is given', async () => {
+      const controller = new AbortController();
+
+      await post('picsure/query', { foo: 'bar' }, undefined, undefined, {
+        signal: controller.signal,
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://example.com/picsure/query',
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it.each([
+      ['get', () => get('picsure/query', undefined, undefined, { signal: makeSignal() })],
+      ['del', () => del('picsure/query', undefined, undefined, { signal: makeSignal() })],
+      ['put', () => put('picsure/query', {}, undefined, undefined, { signal: makeSignal() })],
+    ])('%s() forwards a signal', async (_name, call) => {
+      await call();
+      expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('omits signal entirely when none is given, so existing callers are unaffected', async () => {
+      await post('picsure/query', { foo: 'bar' });
+
+      const opts = fetchMock.mock.calls[0][1];
+      expect('signal' in opts).toBe(false);
+    });
+
+    it('omits signal when an options object is passed without one', async () => {
+      await post('picsure/query', { foo: 'bar' }, undefined, undefined, {});
+
+      expect('signal' in fetchMock.mock.calls[0][1]).toBe(false);
+    });
+
+    it('rejects with the abort error without running response handling', async () => {
+      const abortError = Object.assign(new Error('aborted'), { name: 'AbortError' });
+      fetchMock.mockRejectedValue(abortError);
+
+      await expect(get('picsure/test')).rejects.toThrow('aborted');
+
+      // An aborted fetch rejects before handleResponse, so none of the failure
+      // paths - logout, error logging - may fire.
+      expect(mockLogout).not.toHaveBeenCalled();
+      expect(mockLog).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('isAbortError', () => {
+    it('is true for the DOMException a real aborted fetch throws', () => {
+      expect(isAbortError(new DOMException('The operation was aborted.', 'AbortError'))).toBe(true);
+    });
+
+    it('is true for an error named AbortError', () => {
+      expect(isAbortError(Object.assign(new Error('x'), { name: 'AbortError' }))).toBe(true);
+    });
+
+    it('is false for an ordinary error', () => {
+      expect(isAbortError(new Error('boom'))).toBe(false);
+    });
+
+    it('is false for null and undefined', () => {
+      expect(isAbortError(null)).toBe(false);
+      expect(isAbortError(undefined)).toBe(false);
+    });
+  });
 });
+
+function makeSignal(): AbortSignal {
+  return new AbortController().signal;
+}

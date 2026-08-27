@@ -6,14 +6,14 @@
 
   import {
     loadQuerySummaryData,
-    estimateV2,
     estimateV3,
     type QuerySummaryData,
     type QueryEstimate,
   } from './QueryConverters';
 
-  import type { QueryV2, QueryV3 } from '$lib/models/query/Query';
+  import { QueryV3 } from '$lib/models/query/Query';
   import { QueryVersion } from '$lib/models/Dataset';
+  import { queryV2ToV3, type QueryV2 } from '$lib/compat/QueryV2';
 
   import { genomicFilters, allFilters, setFilterTree } from '$lib/stores/Filter';
   import { exports } from '$lib/stores/Export';
@@ -35,12 +35,24 @@
     name?: string;
   } = $props();
 
+  function visibleQueryV3(): QueryV3 {
+    const exportSystemFields = config.settings.exportSystemFields || [];
+    if (version === QueryVersion.V2) {
+      return queryV2ToV3(query as QueryV2, exportSystemFields);
+    }
+
+    const currentQuery = query as QueryV3;
+    return new QueryV3({
+      ...currentQuery,
+      select: currentQuery.select.filter((select) => !exportSystemFields.includes(select)),
+    });
+  }
+
   let modal = $state(false);
   let hasExistingFilters = $derived($allFilters.length > 0);
-  let estimate: QueryEstimate = $derived(
-    version === QueryVersion.V2 ? estimateV2(query as QueryV2) : estimateV3(query as QueryV3),
-  );
-  let queryData: QuerySummaryData = $derived(loadQuerySummaryData(query, version));
+  let queryV3: QueryV3 = $derived(visibleQueryV3());
+  let estimate: QueryEstimate = $derived(estimateV3(queryV3));
+  let queryData: QuerySummaryData = $derived(loadQuerySummaryData(queryV3));
 
   async function setFilters() {
     modal = false;

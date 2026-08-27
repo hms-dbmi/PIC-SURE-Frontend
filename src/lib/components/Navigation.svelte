@@ -9,6 +9,7 @@
 
   import { createInstance } from '$lib/AuthProviderRegistry.ts';
   import { user, userRoutes, isUserLoggedIn, logout } from '$lib/stores/User';
+  import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
   import type { Route } from '$lib/models/Route';
   import type AuthData from '$lib/models/AuthProvider.ts';
   import type AuthProvider from '$lib/models/AuthProvider.ts';
@@ -26,7 +27,7 @@
 
   function handleLogin(e: Event) {
     e.stopImmediatePropagation();
-    goto(resolve(`/login?redirectTo=${page.url.pathname}` as '/'));
+    goto(resolve(loginRedirectPath(page.url) as '/'));
   }
 
   let currentPage = $derived((route: Route) => {

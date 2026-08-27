@@ -36,7 +36,20 @@ function getRelevantPrivileges(userData: User): string[] {
   return userData.privileges?.filter((p) => RELEVANT_PRIVILEGES.has(p as PicsurePrivileges)) ?? [];
 }
 
-export function log(event: LogEvent): void {
+// The auth callback (/login/loading) carries credentials in the URL fragment or
+// query string; those must never reach the logging service.
+const REDACTED_PARAMS = ['access_token', 'id_token', 'refresh_token', 'token', 'code'];
+
+export function sanitizeLocation(): { url: string; query_string: string } {
+  const url = new URL(window.location.href);
+  url.hash = '';
+  for (const param of REDACTED_PARAMS) {
+    if (url.searchParams.has(param)) url.searchParams.set(param, 'redacted');
+  }
+  return { url: url.toString(), query_string: url.search };
+}
+
+export function log(event: LogEvent, opts?: { keepalive?: boolean }): void {
   if (!browser) return;
 
   const token = localStorage.getItem('token');
@@ -49,6 +62,7 @@ export function log(event: LogEvent): void {
     method: 'POST',
     headers,
     body: JSON.stringify(event),
+    keepalive: opts?.keepalive ?? false,
   }).catch((err) => {
     console.warn('[logger] Failed to send log event:', err);
   });
@@ -87,8 +101,9 @@ export function createLog(
     event.hostname = window.location.hostname;
     event.http_user_agent = navigator.userAgent;
     event.referrer = document.referrer || undefined;
-    event.url = window.location.href;
-    event.query_string = window.location.search;
+    const { url, query_string } = sanitizeLocation();
+    event.url = url;
+    event.query_string = query_string;
   }
 
   if (overrides) Object.assign(event, overrides);

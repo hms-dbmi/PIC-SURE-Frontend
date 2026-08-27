@@ -5,12 +5,17 @@ vi.mock('$lib/server/configCache', () => ({
   getConfig: (...args: unknown[]) => mockGetConfig(...args),
 }));
 
-import { GET } from '../../src/routes/api/config/refresh/+server';
-import type { RequestEvent } from '../../.svelte-kit/types/src/routes/api/config/refresh/$types';
+import { GET } from '../../src/routes/api/v1/config/refresh/+server';
+import type { RequestEvent } from '../../.svelte-kit/types/src/routes/api/v1/config/refresh/$types';
 
 function mockFetchResponse(overrides: { ok?: boolean; status?: number; body?: unknown }) {
   const { ok = true, status = 200, body = {} } = overrides;
-  return { ok, status, json: vi.fn().mockResolvedValue(body) };
+  return {
+    ok,
+    status,
+    json: vi.fn().mockResolvedValue(body),
+    text: vi.fn().mockResolvedValue(JSON.stringify(body)),
+  };
 }
 
 function makeEvent(headers?: Record<string, string>): RequestEvent {

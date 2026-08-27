@@ -33,7 +33,7 @@ export interface FilterInterface extends LogicNode<FilterInterface> {
   displayType: DisplayType;
   searchResult?: SearchResult;
   variableName: string;
-  description?: string;
+  description?: string | null;
   isHarmonized?: boolean;
   topmed?: boolean;
   sites?: string[];
@@ -240,7 +240,7 @@ export function createGenomicFilter(geneFilter: {
     orJoin('Gene with variant', geneFilter.Gene_with_variant),
     orJoin('Variant frequency', geneFilter.Variant_frequency_as_text),
     orJoin('Consequence Group by severity', geneFilter.Variant_consequence_calculated),
-  ].filter((x) => x);
+  ].filter(Boolean);
 
   // Add min/max description if present
   if (geneFilter.min !== undefined || geneFilter.max !== undefined) {

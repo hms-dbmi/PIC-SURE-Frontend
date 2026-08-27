@@ -2,7 +2,6 @@
   import ExportStore from '$lib/stores/Export';
   import { onMount } from 'svelte';
   import { allFilters } from '$lib/stores/Filter';
-  import { config } from '$lib/configuration.svelte';
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import type { AnyRecordOfFilterInterface } from '$lib/models/Filter.svelte';
 
@@ -24,8 +23,7 @@
   );
 
   onMount(async () => {
-    const isOpenAccess = !config.features.explorer.open && config.features.discover;
-    await resultCountsState.ensureLoaded(() => isOpenAccess);
+    await resultCountsState.ensureLoaded(() => false);
   });
 </script>
 

@@ -105,25 +105,18 @@ const testRoles = {
 
 // Every default-off feature that gates a route in src/lib/routes.ts, enabled
 // here so privilege — not feature flags — is the only variable under test.
-// (analyzeApi defaults true and doesn't need to be listed; analyzeAnalysis
-// defaults false, see Configuration.ts, so it must be listed explicitly.)
+// (analyzeApi defaults true and doesn't need to be listed.)
 const enabledFeatureFlags = [
   { name: 'DASHBOARD', value: 'true' },
   { name: 'DISCOVER', value: 'true' },
-  { name: 'COLLABORATE', value: 'true' },
-  { name: 'DATA_REQUESTS', value: 'true' },
   { name: 'MANUAL_ROLE', value: 'true' },
-  { name: 'ANALYZE_ANALYSIS', value: 'true' },
 ];
 
 // Mirrors config.features keys once enabledFeatureFlags above are applied.
 const featureEnabled: Record<string, boolean> = {
   dashboard: true,
   discover: true,
-  collaborate: true,
   analyzeApi: true,
-  analyzeAnalysis: true,
-  dataRequests: true,
   manualRole: true,
 };
 
@@ -196,7 +189,27 @@ test.describe('Navigation', () => {
     await loginButton.click();
 
     // Then
-    await expect(page).toHaveURL('/login?redirectTo=/');
+    await page.waitForURL(/\/login\?redirectTo=/);
+    const url = new URL(page.url());
+    expect(url.pathname).toBe('/login');
+    expect(url.searchParams.get('redirectTo')).toBe('/');
+  });
+  test('Clicking the session avatar preserves query params in the login redirect', async ({
+    page,
+  }) => {
+    // Given
+    await page.goto('/?search=somedata');
+
+    // When
+    const loginButton = page.locator('#user-login-btn');
+    await expect(loginButton).toBeVisible();
+    await loginButton.click();
+
+    // Then
+    await page.waitForURL(/\/login\?redirectTo=/);
+    const url = new URL(page.url());
+    expect(url.pathname).toBe('/login');
+    expect(url.searchParams.get('redirectTo')).toBe('/?search=somedata');
   });
   test('Clicking the logo navigates to the landing page', async ({ page }) => {
     // Given
@@ -219,5 +232,41 @@ test.describe('Navigation', () => {
 
     // Then
     await expect(page.locator('#page-navigation')).not.toBeVisible();
+  });
+});
+
+test.describe('Access control', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test('Unauthenticated user is redirected to /login when OPEN is off', async ({ page }) => {
+    // Given — OPEN off is the default, but set it explicitly so the test still
+    // documents the branch under test if that default ever changes.
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'false' }] });
+
+    // When
+    await page.goto('/');
+
+    // Then
+    await expect(page).toHaveURL('/login');
+  });
+
+  test('/discover redirects to /explorer when DISCOVER is off', async ({ page }) => {
+    // Given — OPEN on so the root layout's login guard doesn't fire first; OPEN_EXPLORER
+    // also on since config.features.explorer.open is OPEN_EXPLORER && OPEN (both default
+    // false, see Configuration.ts) and landing on /explorer while it's off would bounce
+    // an unauthenticated user straight to /login, masking the redirect under test.
+    await mockApiConfig(page, {
+      features: [
+        { name: 'OPEN', value: 'true' },
+        { name: 'OPEN_EXPLORER', value: 'true' },
+        { name: 'DISCOVER', value: 'false' },
+      ],
+    });
+
+    // When
+    await page.goto('/discover');
+
+    // Then
+    await expect(page).toHaveURL('/explorer');
   });
 });

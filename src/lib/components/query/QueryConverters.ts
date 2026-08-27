@@ -1,14 +1,10 @@
-import { config } from '$lib/configuration.svelte';
 import {
-  QueryV2,
   QueryV3,
   type QueryInterfaceV3,
   type PhenotypicFilterInterface,
   type PhenotypicClause,
   type GenomicFilterInterfacev3,
-  Operator,
 } from '$lib/models/query/Query';
-import { QueryVersion } from '$lib/models/Dataset';
 import {
   type Filter,
   type FilterInterface,
@@ -57,124 +53,6 @@ export async function pathToSearchResult(
 export interface QueryEstimate {
   filters: number;
   exports: number;
-}
-
-// -------------------------------- V2 Query -------------------------------- //
-
-export function estimateV2(query: QueryV2): QueryEstimate {
-  const category = query.variantInfoFilters?.[0]?.categoryVariantInfoFilters;
-  return {
-    filters: [
-      Object.keys(query.categoryFilters).length,
-      Object.keys(query.numericFilters).length,
-      query.requiredFields.length,
-      query.anyRecordOf.length,
-      query.anyRecordOfMulti.flat().length,
-      (category?.Gene_with_variant?.length || 0) > 1 ||
-      (category?.Variant_consequence_calculated?.length || 0) > 1 ||
-      (category?.Variant_frequency_as_text?.length || 0) > 1
-        ? 1
-        : 0,
-    ]
-      .filter(Boolean)
-      .reduce((a, t) => t + a, 0),
-    exports: query.fields.length + (query.crossCountFields?.length || 0),
-  };
-}
-
-export function queryV2ToV3(query: QueryV2): QueryV3 {
-  const clauses: PhenotypicFilterInterface[] = [];
-  const exportSystemFields = config.settings.exportSystemFields || [];
-
-  for (const [conceptPath, values] of Object.entries(
-    query.categoryFilters as Record<string, string[]>,
-  )) {
-    if (exportSystemFields.includes(conceptPath)) continue;
-    clauses.push({
-      type: 'PhenotypicFilter',
-      phenotypicFilterType: 'FILTER',
-      conceptPath,
-      values,
-      not: false,
-    });
-  }
-
-  for (const [conceptPath, range] of Object.entries(
-    query.numericFilters as Record<string, { min?: number; max?: number }>,
-  )) {
-    clauses.push({
-      type: 'PhenotypicFilter',
-      phenotypicFilterType: 'FILTER',
-      conceptPath,
-      min: range.min !== undefined ? Number(range.min) : undefined,
-      max: range.max !== undefined ? Number(range.max) : undefined,
-      not: false,
-    });
-  }
-
-  for (const conceptPath of query.requiredFields ?? []) {
-    clauses.push({
-      type: 'PhenotypicFilter',
-      phenotypicFilterType: 'REQUIRED',
-      conceptPath,
-      not: false,
-    });
-  }
-
-  for (const conceptPath of [
-    ...(query.anyRecordOf ?? []),
-    ...(query.anyRecordOfMulti?.flat() ?? []),
-  ]) {
-    clauses.push({
-      type: 'PhenotypicFilter',
-      phenotypicFilterType: 'ANY_RECORD_OF',
-      conceptPath,
-      not: false,
-    });
-  }
-
-  const category = query.variantInfoFilters?.[0]?.categoryVariantInfoFilters;
-  const genomicFilters: GenomicFilterInterfacev3[] = [];
-  if (category) {
-    if (category.Gene_with_variant?.length)
-      genomicFilters.push({ key: 'Gene_with_variant', values: category.Gene_with_variant });
-    if (category.Variant_consequence_calculated?.length)
-      genomicFilters.push({
-        key: 'Variant_consequence_calculated',
-        values: category.Variant_consequence_calculated,
-      });
-    if (category.Variant_frequency_as_text?.length)
-      genomicFilters.push({
-        key: 'Variant_frequency_as_text',
-        values: category.Variant_frequency_as_text,
-      });
-  }
-
-  let phenotypicClause: PhenotypicClause | null = null;
-  if (clauses.length === 1) {
-    phenotypicClause = clauses[0];
-  } else if (clauses.length > 1) {
-    phenotypicClause = {
-      type: 'PhenotypicSubquery',
-      phenotypicClauses: clauses,
-      operator: Operator.AND,
-      not: false,
-    };
-  }
-
-  const select = [...new Set([...(query.fields ?? []), ...(query.crossCountFields ?? [])])];
-
-  return new QueryV3({
-    select,
-    authorizationFilters: [],
-    phenotypicClause,
-    genomicFilters,
-    expectedResultType: Array.isArray(query.expectedResultType)
-      ? query.expectedResultType[0]
-      : query.expectedResultType,
-    picsureId: null,
-    id: null,
-  });
 }
 
 // -------------------------------- V3 Query -------------------------------- //
@@ -283,8 +161,8 @@ export function genomicV3ToFilter(gfs: GenomicFilterInterfacev3[]): Filter {
         geneFilter.Variant_consequence_calculated = values;
       else if (key === 'Variant_frequency_as_text') geneFilter.Variant_frequency_as_text = values;
     }
-    if (min !== undefined) geneFilter.min = min.toString();
-    if (max !== undefined) geneFilter.max = max.toString();
+    if (min !== undefined && min !== null) geneFilter.min = min.toString();
+    if (max !== undefined && max !== null) geneFilter.max = max.toString();
   });
 
   return createGenomicFilter(geneFilter);
@@ -316,20 +194,13 @@ export type QuerySummaryData = {
   errors: Promise<string[]>;
 };
 
-export function loadQuerySummaryData(query: QueryV2 | QueryV3, version: string): QuerySummaryData {
-  const q: QueryV3 =
-    version === QueryVersion.V3 ? (query as QueryV3) : queryV2ToV3(query as QueryV2);
-
-  const exportSystemFields = config.settings.exportSystemFields || [];
-  if (exportSystemFields.length > 0)
-    q.select = q.select.filter((select: string) => !exportSystemFields.includes(select));
-
+export function loadQuerySummaryData(query: QueryV3): QuerySummaryData {
   const errorsList: string[] = [];
-  const filterTree = queryToFilterTree(q, errorsList);
+  const filterTree = queryToFilterTree(query, errorsList);
   const genomicFilters = Promise.resolve(
-    q.genomicFilters.length ? [genomicV3ToFilter(q.genomicFilters)] : [],
+    query.genomicFilters.length ? [genomicV3ToFilter(query.genomicFilters)] : [],
   );
-  const exports = getExports(q, errorsList);
+  const exports = getExports(query, errorsList);
   const errors = Promise.all([filterTree, exports]).then(() => errorsList);
 
   return {

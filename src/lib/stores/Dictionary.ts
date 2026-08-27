@@ -3,6 +3,7 @@ import { get, writable, type Writable } from 'svelte/store';
 import { page } from '$app/state';
 
 import * as api from '$lib/api';
+import { isAbortError, type RequestOptions } from '$lib/api';
 import { Picsure } from '$lib/paths';
 import type { Facet, SearchResult } from '$lib/models/Search';
 import type {
@@ -30,6 +31,12 @@ export const facetsPromise: Writable<Promise<DictionaryFacetResult[]>> = writabl
 );
 export const openFacets: Writable<string[]> = writable([]);
 
+let lastAutoOpened: string | null = null;
+
+export function resetFacetState() {
+  lastAutoOpened = null;
+}
+
 const dictonaryCacheMap = new Map<string, SearchResult>();
 export const ENSURE_MAX_DEPTH = 100;
 
@@ -45,6 +52,7 @@ export async function searchDictionary(
   searchTerm = '',
   facets: Facet[],
   pageable: Pageable,
+  options?: RequestOptions,
 ): Promise<DictionaryConceptResult> {
   let request: DictionarySearchRequest = { facets, search: searchTerm };
   if (!page.url.pathname.includes('/discover')) {
@@ -53,6 +61,9 @@ export async function searchDictionary(
   return api.post(
     `${Picsure.Concepts}?page_number=${pageable.pageNumber}&page_size=${pageable.pageSize}`,
     request,
+    undefined,
+    undefined,
+    options,
   );
 }
 
@@ -78,7 +89,9 @@ function initializeHiddenFacets(response: DictionaryFacetResult[]) {
   hiddenFacets.set(facetsWithZeroConcepts);
 }
 
-export async function updateFacetsFromSearch(): Promise<DictionaryFacetResult[]> {
+export async function updateFacetsFromSearch(
+  options?: RequestOptions & { isCurrent?: () => boolean },
+): Promise<DictionaryFacetResult[]> {
   const search = get(searchTerm);
   const facets = get(selectedFacets);
   let request: DictionarySearchRequest = { facets: facets, search: search };
@@ -88,16 +101,32 @@ export async function updateFacetsFromSearch(): Promise<DictionaryFacetResult[]>
 
   try {
     log(createLog('SEARCH', 'facets.load', { search, facets }));
-    const response: DictionaryFacetResult[] = await api.post(Picsure.Facets, request);
+    const response: DictionaryFacetResult[] = await api.post(
+      Picsure.Facets,
+      request,
+      undefined,
+      undefined,
+      { signal: options?.signal },
+    );
+    if (options?.isCurrent && !options.isCurrent()) {
+      return response;
+    }
     initializeHiddenFacets(response);
     processFacetResults(response);
     const nonZero = response
       .map((category) => (category.facets.some((facet) => facet.count > 0) ? category.name : ''))
       .filter((c) => c);
-    openFacets.set(nonZero);
+    // Re-applying the same set would reopen categories the user collapsed.
+    const autoOpenKey = JSON.stringify([...nonZero].sort());
+    if (autoOpenKey !== lastAutoOpened) {
+      lastAutoOpened = autoOpenKey;
+      openFacets.set(nonZero);
+    }
     return response;
   } catch (error) {
-    console.error('Failed to update facets from search:', error);
+    if (!isAbortError(error)) {
+      console.error('Failed to update facets from search:', error);
+    }
     throw error;
   }
 }

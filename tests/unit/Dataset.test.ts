@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
 import { mapDataset, QueryVersion } from '$lib/models/Dataset';
-import { QueryV2, QueryV3 } from '$lib/models/query/Query';
+import { QueryV3 } from '$lib/models/query/Query';
+import type { QueryV2 } from '$lib/compat/QueryV2';
 
 const V2_INNER_QUERY = {
   categoryFilters: { '\\\\dataset\\\\sex\\\\': ['Male'] },
@@ -59,7 +60,6 @@ describe('mapDataset', () => {
 
       // Then
       expect(dataset.version).toBe(QueryVersion.V2);
-      expect(dataset.query).toBeInstanceOf(QueryV2);
       const query = dataset.query as QueryV2;
       expect(query.categoryFilters).toEqual(V2_INNER_QUERY.categoryFilters);
       expect(query.fields).toEqual(V2_INNER_QUERY.fields);
@@ -96,7 +96,6 @@ describe('mapDataset', () => {
 
       // Then
       expect(dataset.version).toBe(QueryVersion.V2);
-      expect(dataset.query).toBeInstanceOf(QueryV2);
       const query = dataset.query as QueryV2;
       expect(query.categoryFilters).toEqual(V2_INNER_QUERY.categoryFilters);
       expect(query.fields).toEqual(V2_INNER_QUERY.fields);
@@ -172,29 +171,115 @@ describe('mapDataset', () => {
     });
 
     it('returns a null query when query.query.query is not valid JSON', () => {
-      // Given — string still contains 'categoryFilters' so version detection succeeds,
-      // but the outer JSON.parse itself fails
+      // Given
       const data = makeData('{not valid json, categoryFilters');
 
       // When
       const dataset = mapDataset(data);
 
       // Then
+      expect(dataset.version).toBe(QueryVersion.UNKNOWN);
       expect(dataset.query).toBeNull();
     });
 
-    it('does not treat a plain string value of query.query.query.query as double-encoded', () => {
-      // Given — jsonQuery.query parses to a JSON string primitive ("foo"), not an object,
-      // so it should be left as-is rather than parsed again
+    it('does not mistake a categoryFilters string marker for a V2 query', () => {
+      // Given
       const data = makeData(JSON.stringify({ query: '"categoryFilters-marker"' }));
 
       // When
       const dataset = mapDataset(data);
 
-      // Then — falls through to QueryV2 constructor with a string, which yields defaults
+      // Then
+      expect(dataset.version).toBe(QueryVersion.UNKNOWN);
+      expect(dataset.query).toBeNull();
+    });
+
+    it('accepts a historical V2 query with null categoryFilters', () => {
+      // Given
+      const data = makeData(
+        JSON.stringify({ query: { categoryFilters: null, fields: ['\\\\dataset\\\\age\\\\'] } }),
+      );
+
+      // When
+      const dataset = mapDataset(data);
+
+      // Then
       expect(dataset.version).toBe(QueryVersion.V2);
-      expect(dataset.query).toBeInstanceOf(QueryV2);
-      expect((dataset.query as QueryV2).categoryFilters).toEqual({});
+      expect(dataset.query).toMatchObject({
+        categoryFilters: {},
+        fields: ['\\\\dataset\\\\age\\\\'],
+      });
+    });
+
+    it('rejects a V2-shaped query whose categoryFilters value is not an object', () => {
+      // Given
+      const data = makeData(JSON.stringify({ query: { categoryFilters: 'invalid' } }));
+
+      // When
+      const dataset = mapDataset(data);
+
+      // Then
+      expect(dataset.version).toBe(QueryVersion.UNKNOWN);
+      expect(dataset.query).toBeNull();
+    });
+
+    it('normalizes the explicit nulls the API returns for unset v3 fields', () => {
+      // Given
+      const data = makeData(
+        doubleEncode({
+          select: ['\\\\dataset\\\\age\\\\'],
+          authorizationFilters: [],
+          phenotypicClause: {
+            not: false,
+            operator: 'AND',
+            phenotypicClauses: [
+              {
+                phenotypicFilterType: 'REQUIRED',
+                conceptPath: '\\\\dataset\\\\age\\\\',
+                values: null,
+                min: null,
+                max: null,
+                not: false,
+              },
+            ],
+          },
+          genomicFilters: [{ key: 'Gene_with_variant', values: ['HTR6'], min: null, max: null }],
+          expectedResultType: 'DATAFRAME',
+          picsureId: null,
+          id: null,
+        }),
+      );
+
+      // When
+      const dataset = mapDataset(data);
+
+      // Then
+      const query = dataset.query as QueryV3;
+      expect(query.genomicFilters[0].min).toBeUndefined();
+      expect(query.genomicFilters[0].max).toBeUndefined();
+      expect(query.genomicFilters[0].values).toEqual(['HTR6']);
+      const leaf = query.leaves[0];
+      expect(leaf.min).toBeUndefined();
+      expect(leaf.max).toBeUndefined();
+      expect(leaf.values).toBeUndefined();
+    });
+
+    it('resets the version when a malformed V3 query cannot be deserialized', () => {
+      // Given
+      const data = makeData(
+        JSON.stringify({
+          query: {
+            phenotypicClause: { operator: 'AND', phenotypicClauses: 'invalid' },
+          },
+        }),
+      );
+
+      // When
+      const dataset = mapDataset(data);
+
+      // Then
+      expect(dataset.version).toBe(QueryVersion.UNKNOWN);
+      expect(dataset.query).toBeNull();
     });
   });
 

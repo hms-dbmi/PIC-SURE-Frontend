@@ -2,7 +2,7 @@ import type { Handle, HandleServerError, ServerInit } from '@sveltejs/kit';
 import { registerProviderData } from './lib/AuthProviderRegistry';
 import type { AuthData } from './lib/models/AuthProvider';
 import { getConfig } from './lib/server/configCache';
-import { runWithConfig } from './lib/configuration.svelte';
+import { runWithConfig } from './lib/server/configuration';
 
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
@@ -45,7 +45,7 @@ async function registerEnabledProviders(enabledProviders: string[], viteProvider
 registerEnabledProviders(enabledProviders, PROVIDER_PREFIX);
 
 // Wraps each request in an isolated config store so concurrent requests can't
-// observe each other's config (see configuration.svelte.ts).
+// observe each other's config (see lib/server/configuration.ts).
 export const handle: Handle = async ({ event, resolve }) => {
   return runWithConfig(() => resolve(event));
 };

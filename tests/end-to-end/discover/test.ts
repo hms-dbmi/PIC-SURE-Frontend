@@ -186,3 +186,73 @@ test.describe('Discover for unauthenticated users', () => {
     await expect(page.locator('#variant-explorer-btn')).not.toBeVisible();
   });
 });
+
+test.describe('OPEN_TOUR_NAME', () => {
+  const tourFeatures = [
+    { name: 'OPEN', value: 'true' },
+    { name: 'DISCOVER', value: 'true' },
+    { name: 'OPEN_EXPLORER', value: 'false' },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+  });
+
+  test('Without an override, the default BDC-Open tour is used', async ({ page }) => {
+    // Given
+    await mockApiConfig(page, { features: tourFeatures });
+    await page.goto('/discover');
+
+    // When
+    await expect(async () => {
+      await page.getByTestId('explorer-tour-btn').click();
+      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15000 });
+
+    // Then
+    await expect(page.getByTestId('modal-wrapper-header')).toContainText(
+      'Welcome to BioData Catalyst Powered by PIC-SURE',
+    );
+  });
+
+  test('A recognized OPEN_TOUR_NAME override swaps in that tour', async ({ page }) => {
+    // Given
+    await mockApiConfig(page, {
+      features: tourFeatures,
+      settings: [{ name: 'OPEN_TOUR_NAME', value: 'Aim-Ahead' }],
+    });
+    await page.goto('/discover');
+
+    // When
+    await expect(async () => {
+      await page.getByTestId('explorer-tour-btn').click();
+      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15000 });
+
+    // Then
+    await expect(page.getByTestId('modal-wrapper-header')).toContainText('Welcome to PIC-SURE');
+  });
+
+  test('An unrecognized OPEN_TOUR_NAME override falls back to the default BDC-Open tour', async ({
+    page,
+  }) => {
+    // Given
+    await mockApiConfig(page, {
+      features: tourFeatures,
+      settings: [{ name: 'OPEN_TOUR_NAME', value: 'not-a-real-tour' }],
+    });
+    await page.goto('/discover');
+
+    // When
+    await expect(async () => {
+      await page.getByTestId('explorer-tour-btn').click();
+      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
+    }).toPass({ timeout: 15000 });
+
+    // Then
+    await expect(page.getByTestId('modal-wrapper-header')).toContainText(
+      'Welcome to BioData Catalyst Powered by PIC-SURE',
+    );
+  });
+});

@@ -15,14 +15,17 @@
   let previousCategories = $state([] as PreviousCategoriesForPlaceholder[]);
 
   $effect(() => {
-    $facetsPromise?.then((newFacets) => {
-      if (newFacets?.length > 0) {
-        previousCategories = newFacets.map((category) => ({
-          numFacets: category.facets.length,
-          showSearchAndButton: category.facets.length > 5,
-        }));
-      }
-    });
+    $facetsPromise?.then(
+      (newFacets) => {
+        if (newFacets?.length > 0) {
+          previousCategories = newFacets.map((category) => ({
+            numFacets: category.facets.length,
+            showSearchAndButton: category.facets.length > 5,
+          }));
+        }
+      },
+      () => {},
+    );
   });
 
   function recreateFacetCategories(): DictionaryFacetResult[] {

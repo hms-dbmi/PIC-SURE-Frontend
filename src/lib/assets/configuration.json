@@ -1,5 +1,6 @@
 {
   "applicationName": "PIC‑SURE",
+  "theme": "picsure",
   "statFields": {},
   "results": {
     "totalStatKey": "query:patientCount",

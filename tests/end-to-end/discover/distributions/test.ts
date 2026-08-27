@@ -84,4 +84,36 @@ test.describe('Discover distributions', () => {
     await expect(visualizations).toContainText('12000');
     await expect(visualizations).toContainText('600 ±3');
   });
+
+  test('DIST_EXPLORER_GRAPH_COLORS overrides the categorical chart bar colors', async ({
+    page,
+  }) => {
+    // Given
+    await mockApiConfig(page, {
+      features: [
+        { name: 'OPEN', value: 'true' },
+        { name: 'DISCOVER', value: 'true' },
+      ],
+      settings: [
+        {
+          name: 'DIST_EXPLORER_GRAPH_COLORS',
+          value: JSON.stringify(['#ff0000', '#00ff00', '#0000ff']),
+        },
+      ],
+    });
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
+    await mockApiSuccess(page, openCountResultPath, '9999');
+    await mockApiSuccess(page, distributionsPath, distributionsResponse);
+
+    // When
+    await page.goto('/discover/distributions');
+    await expect(page.locator('#plot-0')).toBeVisible();
+
+    // Then - the categorical plot's bars pick up the configured palette in order
+    const bars = page.locator('#plot-0 .point path');
+    await expect(bars.first()).toHaveAttribute('style', /fill:\s*rgb\(255,\s*0,\s*0\)/);
+    await expect(bars.nth(1)).toHaveAttribute('style', /fill:\s*rgb\(0,\s*255,\s*0\)/);
+  });
 });

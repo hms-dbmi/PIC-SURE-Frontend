@@ -10,61 +10,6 @@ export type ExpectedResultType =
   | 'VARIANT_COUNT_FOR_QUERY'
   | 'SECRET_ADMIN_DATAFRAME';
 
-export interface QueryInterfaceV2 {
-  fields: string[];
-  categoryFilters: object; //TODO: define type
-  numericFilters: object;
-  requiredFields: string[];
-  anyRecordOf: string[];
-  anyRecordOfMulti: string[][];
-  crossCountFields?: string[];
-  variantInfoFilters: VariantInfoFilters[];
-  expectedResultType: ExpectedResultType | ExpectedResultType[];
-}
-
-interface CategoryVariantInfoFilterInterface {
-  Gene_with_variant?: string[];
-  Variant_consequence_calculated?: string[];
-  Variant_frequency_as_text?: string[];
-}
-
-interface NumericVariantInfoFiltersInterface {
-  Variant_frequency_as_number?: number[];
-}
-
-interface VariantInfoFilters {
-  categoryVariantInfoFilters?: CategoryVariantInfoFilterInterface;
-  numericVariantInfoFilters?: NumericVariantInfoFiltersInterface;
-}
-
-export class QueryV2 implements QueryInterfaceV2 {
-  categoryFilters: object;
-  numericFilters: object;
-  requiredFields: string[];
-  anyRecordOf: string[];
-  anyRecordOfMulti: string[][];
-  fields: string[];
-  crossCountFields?: string[];
-  variantInfoFilters: VariantInfoFilters[];
-  expectedResultType: ExpectedResultType | ExpectedResultType[];
-
-  constructor(newQuery?: QueryInterfaceV2) {
-    this.categoryFilters = newQuery?.categoryFilters || {};
-    this.numericFilters = newQuery?.numericFilters || {};
-    this.requiredFields = newQuery?.requiredFields || [];
-    this.anyRecordOf = newQuery?.anyRecordOf || [];
-    this.anyRecordOfMulti = newQuery?.anyRecordOfMulti || [];
-    this.crossCountFields = newQuery?.crossCountFields || [];
-    this.fields = newQuery?.fields || [];
-    const variantInfoFilter = newQuery?.variantInfoFilters?.[0] || {
-      categoryVariantInfoFilters: {},
-      numericVariantInfoFilters: {},
-    };
-    this.variantInfoFilters = [variantInfoFilter];
-    this.expectedResultType = newQuery?.expectedResultType || 'COUNT';
-  }
-}
-
 // -------------------------------- V3 Query -------------------------------- //
 
 type UUID = `${string}-${string}-${string}-${string}-${string}` | null;
@@ -116,6 +61,12 @@ export interface GenomicFilterInterfacev3 {
   values?: string[];
   min?: number;
   max?: number;
+}
+
+// The API echoes saved queries back with every field present, so unset bounds and
+// value lists arrive as explicit `null`. Downstream code only tests for `undefined`.
+function undefinedIfNull<T>(value: unknown): T | undefined {
+  return value === null ? undefined : (value as T);
 }
 
 export class QueryV3 implements QueryInterfaceV3 {
@@ -200,9 +151,20 @@ export class QueryV3 implements QueryInterfaceV3 {
       phenotypicFilterType: clause.phenotypicFilterType as PhenotypicFilterType,
       conceptPath: clause.conceptPath as string,
       not: (clause.not as boolean) ?? false,
-      values: clause.values as string[] | undefined,
-      min: clause.min as number | undefined,
-      max: clause.max as number | undefined,
+      values: undefinedIfNull<string[]>(clause.values),
+      min: undefinedIfNull<number>(clause.min),
+      max: undefinedIfNull<number>(clause.max),
+    };
+  }
+
+  private static deserializeGenomicFilter(
+    filter: GenomicFilterInterfacev3,
+  ): GenomicFilterInterfacev3 {
+    return {
+      key: filter.key,
+      values: undefinedIfNull<string[]>(filter.values),
+      min: undefinedIfNull<number>(filter.min),
+      max: undefinedIfNull<number>(filter.max),
     };
   }
 
@@ -221,7 +183,7 @@ export class QueryV3 implements QueryInterfaceV3 {
       phenotypicClause: data.phenotypicClause
         ? QueryV3.deserializeClause(data.phenotypicClause as Record<string, unknown>)
         : null,
-      genomicFilters: data.genomicFilters || [],
+      genomicFilters: (data.genomicFilters || []).map(QueryV3.deserializeGenomicFilter),
       expectedResultType: data.expectedResultType || 'COUNT',
       picsureId: data.picsureId ?? null,
       id: data.id ?? null,

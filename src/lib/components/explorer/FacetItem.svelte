@@ -3,6 +3,11 @@
   import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
   import type { Facet } from '$lib/models/Search';
   import SearchStore from '$lib/stores/Search';
+  import {
+    expandedNestedFacets,
+    nestedFacetKey,
+    toggleNestedFacet,
+  } from '$lib/stores/NestedFacets';
   let { updateFacets, selectedFacets } = SearchStore;
 
   interface Props {
@@ -13,11 +18,8 @@
 
   let { facet, facetCategory, textFilterValue }: Props = $props();
 
-  let open = $state(false);
-
-  function toggleOpen() {
-    open = !open;
-  }
+  let expansionKey = $derived(nestedFacetKey(facetCategory.name, facet.name));
+  let open = $derived($expandedNestedFacets.includes(expansionKey));
 
   function getCurrentlySelectedChildren() {
     return (
@@ -94,9 +96,10 @@
     <button
       type="button"
       class="arrow-button"
-      aria-label="Toggle Facet {open ? 'open' : 'closed'}"
+      aria-label="{open ? 'Collapse' : 'Expand'} {facet.display} children"
+      aria-expanded={open}
       data-testId={`facet-${facet.name}-arrow`}
-      onclick={toggleOpen}
+      onclick={() => toggleNestedFacet(expansionKey)}
     >
       <i class="fa-solid {open ? 'fa-angle-down' : 'fa-angle-right'}"></i>
     </button>
@@ -117,7 +120,7 @@
   >
 </label>
 {#if open && facetsToDisplay !== undefined && facetsToDisplay?.length > 0}
-  <div class="flex flex-col ml-4" data-testId={`facet-${facet.name}-children`}>
+  <div class="flex flex-col ml-8" data-testId={`facet-${facet.name}-children`}>
     {#each facetsToDisplay as child}
       <FacetItem facet={child} {facetCategory} {textFilterValue} />
     {/each}
