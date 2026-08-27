@@ -13,6 +13,7 @@ function parse(styles: Styles): Declaration[] {
       priority: '',
     }));
   }
+  // Parse via the browser so values and !important survive the replay through setProperty.
   probe ??= document.createElement('div');
   probe.style.cssText = styles;
   return Array.from(probe.style).map((property) => ({
