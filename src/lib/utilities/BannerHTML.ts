@@ -27,8 +27,6 @@ export function hasBannerContent(dirty: string): boolean {
   const visibleText = sanitizeHtml(sanitizeBannerHTML(dirty), {
     allowedTags: [],
     allowedAttributes: {},
-  })
-    .replace(/&(?:nbsp|#160|#x0*a0);/gi, ' ')
-    .replace(/[\s\u200b]/gu, '');
+  }).replace(/[\s\u200b]/gu, '');
   return visibleText.length > 0;
 }

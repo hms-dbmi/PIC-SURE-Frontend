@@ -114,16 +114,26 @@
             id="banner-content-editor"
             basicToolbar
             sanitizer={sanitizeBannerHTML}
+            convertQuillClasses={false}
+            reconcileSanitizedDocument
             ariaLabel="Banner content"
+            ariaDescribedBy="banner-content-help"
             bind:content={htmlContent}
           />
         </div>
-        <p class="mt-1 text-sm text-surface-600">
-          Basic formatting, lists, relative links, HTTPS links, and email links are supported.
-        </p>
-        <p class="text-sm text-surface-600">
-          {sanitizedLength}/5,000 characters
-        </p>
+        <div id="banner-content-help" class="text-sm text-surface-600">
+          <p class="mt-1">
+            Basic formatting, lists, relative links, HTTPS links, and email links are supported.
+          </p>
+          <p>
+            {sanitizedLength}/5,000 characters.
+            {#if sanitizedLength > 5_000}
+              <span class="text-error-700">
+                Content exceeds the 5,000-character limit. Shorten it before publishing.
+              </span>
+            {/if}
+          </p>
+        </div>
       </div>
 
       <fieldset>

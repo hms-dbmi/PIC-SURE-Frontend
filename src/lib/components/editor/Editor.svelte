@@ -15,7 +15,10 @@
     alignOptions = true,
     basicToolbar = false,
     sanitizer = sanitizeHTML,
+    convertQuillClasses = true,
+    reconcileSanitizedDocument = false,
     ariaLabel = 'Rich text editor',
+    ariaDescribedBy,
     id = 'editor',
   }: {
     content: string;
@@ -25,7 +28,10 @@
     alignOptions?: boolean;
     basicToolbar?: boolean;
     sanitizer?: (dirty: string) => string;
+    convertQuillClasses?: boolean;
+    reconcileSanitizedDocument?: boolean;
     ariaLabel?: string;
+    ariaDescribedBy?: string;
     id?: string;
   } = $props();
 
@@ -72,25 +78,30 @@
         ].filter((x) => x !== undefined),
   );
 
-  // Preserve the full editor's established class conversion; the basic banner editor strips classes.
-  function swapAndClean(content: string) {
-    let text = content.replaceAll('&nbsp;', ' ');
-    if (!basicToolbar) {
-      Object.entries({
-        'ql-indent-1': 'ml-2',
-        'ql-indent-2': 'ml-4',
-        'ql-indent-3': 'ml-6',
-        'ql-align-right': 'text-right',
-        'ql-align-center': 'text-center',
-        'ql-align-justify': 'text-justify',
-        'ql-font-serif': 'font-serif',
-        'ql-font-monospace': 'font-mono',
-        'ql-size-small': 'text-sm',
-        'ql-size-large': 'text-lg',
-        'ql-size-huge': 'text-xl',
-      }).forEach(([from, to]) => (text = text.replaceAll(from, to)));
-    }
-    return sanitizer(text);
+  function convertClasses(content: string) {
+    if (!convertQuillClasses) return content;
+    let converted = content;
+    Object.entries({
+      '&nbsp;': ' ',
+      'ql-indent-1': 'ml-2',
+      'ql-indent-2': 'ml-4',
+      'ql-indent-3': 'ml-6',
+      'ql-align-right': 'text-right',
+      'ql-align-center': 'text-center',
+      'ql-align-justify': 'text-justify',
+      'ql-font-serif': 'font-serif',
+      'ql-font-monospace': 'font-mono',
+      'ql-size-small': 'text-sm',
+      'ql-size-large': 'text-lg',
+      'ql-size-huge': 'text-xl',
+    }).forEach(([from, to]) => (converted = converted.replaceAll(from, to)));
+    return converted;
+  }
+
+  function canonicalHTML(content: string) {
+    const template = document.createElement('template');
+    template.innerHTML = content;
+    return template.innerHTML;
   }
 
   let container: HTMLDivElement;
@@ -108,7 +119,7 @@
   onMount(async () => {
     const { default: Quill } = await import('quill');
     if (container) {
-      // Quill must initialize from the supplied DOM to preserve the established Terms content semantics.
+      // Initialize from supplied content before Quill takes ownership of the container.
       // eslint-disable-next-line svelte/no-dom-manipulating
       container.innerHTML = content;
       quill = new Quill(container, {
@@ -120,14 +131,25 @@
       quill.root.setAttribute('role', 'textbox');
       quill.root.setAttribute('aria-multiline', 'true');
       quill.root.setAttribute('aria-label', ariaLabel);
+      if (ariaDescribedBy) {
+        quill.root.setAttribute('aria-describedby', ariaDescribedBy);
+      }
       quill.on('text-change', () => {
         if (!quill) return;
         const semanticContent = quill.getSemanticHTML();
-        let nextContent = swapAndClean(semanticContent);
-        if (basicToolbar && nextContent !== semanticContent) {
+        const convertedContent = convertClasses(semanticContent);
+        let nextContent = sanitizer(convertedContent);
+        const sanitizedDocument =
+          reconcileSanitizedDocument && convertedContent !== semanticContent
+            ? sanitizer(semanticContent)
+            : nextContent;
+        if (
+          reconcileSanitizedDocument &&
+          canonicalHTML(sanitizedDocument) !== canonicalHTML(semanticContent)
+        ) {
           const selection = quill.getSelection();
           quill.clipboard.dangerouslyPasteHTML(nextContent, 'silent');
-          nextContent = swapAndClean(quill.getSemanticHTML());
+          nextContent = sanitizer(convertClasses(quill.getSemanticHTML()));
           if (selection) {
             const finalIndex = Math.max(0, quill.getLength() - 1);
             const index = Math.min(selection.index, finalIndex);

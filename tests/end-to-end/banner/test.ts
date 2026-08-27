@@ -71,6 +71,33 @@ test.describe('Site banner workflow 1', () => {
     );
   });
 
+  test('keeps sentence spaces, Enter, and a second paragraph while editing', async ({ page }) => {
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    const bannerForm = page.getByTestId('banner-editor-form');
+    const editor = bannerForm.locator('#banner-content-editor .ql-editor');
+
+    await editor.fill('First sentence with spaces');
+    await editor.press('End');
+    await editor.press('Enter');
+    await editor.type('Second  paragraph');
+
+    await expect(editor.locator('p')).toHaveCount(2);
+    expect((await editor.locator('p').nth(0).textContent())?.replaceAll('\u00a0', ' ')).toBe(
+      'First sentence with spaces',
+    );
+    expect((await editor.locator('p').nth(1).textContent())?.replaceAll('\u00a0', ' ')).toBe(
+      'Second  paragraph',
+    );
+    const previewContent = page
+      .getByRole('region', { name: 'Site announcement' })
+      .locator('.site-banner-content');
+    await expect(previewContent.locator('p')).toHaveCount(2);
+    expect(
+      (await previewContent.locator('p').nth(1).textContent())?.replaceAll('\u00a0', ' '),
+    ).toBe('Second  paragraph');
+  });
+
   test('creates, previews, publishes, and renders the authoritative banner above navigation', async ({
     page,
   }) => {
@@ -167,7 +194,7 @@ test.describe('Site banner workflow 1', () => {
     );
     expect(submitted).toMatchObject({
       htmlContent:
-        '<p><a href="https://example.org/status" rel="noopener noreferrer" target="_blank">System maintenance status page</a></p>',
+        '<p><a href="https://example.org/status" rel="noopener noreferrer" target="_blank">System\u00a0maintenance\u00a0status\u00a0page</a></p>',
       title: 'Planned maintenance',
       appearance: 'WARNING',
       icon: 'WARNING',

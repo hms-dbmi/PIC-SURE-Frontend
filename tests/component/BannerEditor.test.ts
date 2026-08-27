@@ -71,8 +71,14 @@ describe('BannerEditor', () => {
     expect(screen.getByRole('button', { name: 'Publish now' })).toBeInTheDocument();
     expect(container.querySelector('#banner-content-editor')).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.getByRole('textbox', { name: 'Banner content' })).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: 'Banner content' })).toHaveAttribute(
+        'aria-describedby',
+        'banner-content-help',
+      );
     });
+    const contentHelp = container.querySelector('#banner-content-help');
+    expect(contentHelp).toHaveTextContent('0/5,000 characters');
+    expect(contentHelp).not.toHaveAttribute('aria-live');
   });
 
   it('locks a published occurrence against duplicate submission and resets deliberately', async () => {
@@ -103,23 +109,59 @@ describe('BannerEditor', () => {
     expect(publishBanner).toHaveBeenCalledOnce();
   });
 
+  it('keeps allowed whitespace and blank paragraphs without rebuilding the editor', async () => {
+    render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+
+    editor.innerHTML = '<p>First&nbsp;sentence with  two spaces<br></p><p><br></p>';
+    await fireEvent.input(editor);
+
+    await waitFor(() => expect(editor.querySelectorAll('p')).toHaveLength(2));
+    expect(editor.querySelector('p')?.textContent?.replaceAll('\u00a0', ' ')).toBe(
+      'First sentence with  two spaces',
+    );
+    const preview = screen.getByRole('region', { name: 'Site announcement' });
+    expect(preview.querySelectorAll('p')).toHaveLength(2);
+    expect(preview.querySelector('p')?.textContent?.replaceAll('\u00a0', ' ')).toBe(
+      'First sentence with  two spaces',
+    );
+  });
+
   it('reconciles sanitizer-stripped pasted markup into the editor and preview', async () => {
-    const { container } = render(BannerEditor);
+    render(BannerEditor);
     const editor = await screen.findByRole('textbox', { name: 'Banner content' });
 
     editor.innerHTML =
-      '<h1 class="ql-align-center">Visible heading</h1><p>Safe<img src="https://example.org/tracker.png"></p>';
+      '<h1 class="ql-align-center">Visible heading</h1><p>Safe ql-align-center<img src="https://example.org/tracker.png"></p>';
     await fireEvent.input(editor);
 
     await waitFor(() => {
       expect(editor.querySelector('h1')).not.toBeInTheDocument();
       expect(editor.querySelector('img')).not.toBeInTheDocument();
-      expect(editor).toHaveTextContent('Visible headingSafe');
+      expect(editor).toHaveTextContent('Visible headingSafe ql-align-center');
     });
     const preview = screen.getByRole('region', { name: 'Site announcement' });
-    expect(preview).toHaveTextContent('Visible headingSafe');
+    expect(preview).toHaveTextContent('Visible headingSafe ql-align-center');
+    expect(preview).not.toHaveTextContent('text-center');
     expect(preview.querySelector('h1')).not.toBeInTheDocument();
     expect(preview.querySelector('img')).not.toBeInTheDocument();
-    expect(container.querySelector('.text-center')).not.toBeInTheDocument();
+  });
+
+  it('associates a non-live over-limit explanation with the editor', async () => {
+    const { container } = render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+
+    editor.innerHTML = `<p>${'x'.repeat(5_001)}</p>`;
+    await fireEvent.input(editor);
+
+    const contentHelp = container.querySelector('#banner-content-help');
+    await waitFor(() => {
+      expect(contentHelp).toHaveTextContent(
+        'Content exceeds the 5,000-character limit. Shorten it before publishing.',
+      );
+    });
+    expect(editor).toHaveAttribute('aria-describedby', 'banner-content-help');
+    expect(contentHelp).not.toHaveAttribute('aria-live');
+    expect(screen.getByRole('button', { name: 'Publish now' })).toBeDisabled();
   });
 });
