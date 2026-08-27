@@ -66,4 +66,14 @@ describe('publishBanner', () => {
     );
     expect(api.post).not.toHaveBeenCalled();
   });
+
+  it.each(['<p></p>', '<p> \n</p>', '<p>&nbsp;</p>'])(
+    'rejects semantically blank banner content before calling the API: %s',
+    async (htmlContent) => {
+      await expect(publishBanner({ ...draft, htmlContent })).rejects.toThrow(
+        'Banner content is required',
+      );
+      expect(api.post).not.toHaveBeenCalled();
+    },
+  );
 });

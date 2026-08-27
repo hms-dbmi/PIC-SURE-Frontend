@@ -1,14 +1,22 @@
-export type BannerAppearance =
-  | 'PRIMARY'
-  | 'SECONDARY'
-  | 'TERTIARY'
-  | 'SUCCESS'
-  | 'WARNING'
-  | 'ERROR'
-  | 'SURFACE';
+export const BANNER_APPEARANCES = [
+  'PRIMARY',
+  'SECONDARY',
+  'TERTIARY',
+  'SUCCESS',
+  'WARNING',
+  'ERROR',
+  'SURFACE',
+] as const;
+export type BannerAppearance = (typeof BANNER_APPEARANCES)[number];
 
-export type BannerIcon = 'NONE' | 'INFORMATION' | 'SUCCESS' | 'WARNING' | 'ERROR';
-export type BannerAudience = 'EVERYONE' | 'SIGNED_IN' | 'SIGNED_OUT';
+export const BANNER_ICONS = ['NONE', 'INFORMATION', 'SUCCESS', 'WARNING', 'ERROR'] as const;
+export type BannerIcon = (typeof BANNER_ICONS)[number];
+
+export const BANNER_AUDIENCES = ['EVERYONE', 'SIGNED_IN', 'SIGNED_OUT'] as const;
+export type BannerAudience = (typeof BANNER_AUDIENCES)[number];
+
+export const BANNER_PLACEMENTS = ['SITE_TOP'] as const;
+export type BannerPlacement = (typeof BANNER_PLACEMENTS)[number];
 
 export interface BannerPresentation {
   htmlContent: string;
@@ -21,7 +29,7 @@ export interface BannerPresentation {
 export interface ActiveBanner extends BannerPresentation {
   uuid: string;
   audience: BannerAudience;
-  placement: 'SITE_TOP';
+  placement: BannerPlacement;
   pageTargets: unknown[];
   priority: number;
   presentationHash: string;
@@ -30,7 +38,7 @@ export interface ActiveBanner extends BannerPresentation {
 export interface BannerDraft extends BannerPresentation {
   title: string;
   audience: BannerAudience;
-  placement: 'SITE_TOP';
+  placement: BannerPlacement;
   pageTargets: unknown[];
 }
 

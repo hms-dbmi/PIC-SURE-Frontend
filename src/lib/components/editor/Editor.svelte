@@ -16,6 +16,7 @@
     basicToolbar = false,
     sanitizer = sanitizeHTML,
     ariaLabel = 'Rich text editor',
+    id = 'editor',
   }: {
     content: string;
     embedOptions?: boolean;
@@ -25,6 +26,7 @@
     basicToolbar?: boolean;
     sanitizer?: (dirty: string) => string;
     ariaLabel?: string;
+    id?: string;
   } = $props();
 
   const colors = [
@@ -91,22 +93,40 @@
   }
 
   let container: HTMLDivElement;
+  let quill: import('quill').default | undefined;
+  let editorContent = content;
+
+  $effect(() => {
+    const nextContent = content;
+    if (quill && nextContent !== editorContent) {
+      editorContent = nextContent;
+      quill.clipboard.dangerouslyPasteHTML(nextContent, 'silent');
+    }
+  });
 
   onMount(async () => {
     const { default: Quill } = await import('quill');
     if (container) {
-      let quill = new Quill(container, {
+      // Quill must initialize from the supplied DOM to preserve the established Terms content semantics.
+      // eslint-disable-next-line svelte/no-dom-manipulating
+      container.innerHTML = content;
+      quill = new Quill(container, {
         theme: 'snow',
         modules: {
           toolbar: toolbarOptions,
         },
       });
-      quill.clipboard.dangerouslyPasteHTML(content);
+      quill.root.setAttribute('role', 'textbox');
+      quill.root.setAttribute('aria-multiline', 'true');
+      quill.root.setAttribute('aria-label', ariaLabel);
       quill.on('text-change', () => {
-        content = swapAndClean(quill.getSemanticHTML());
+        if (!quill) return;
+        const nextContent = swapAndClean(quill.getSemanticHTML());
+        editorContent = nextContent;
+        content = nextContent;
       });
     }
   });
 </script>
 
-<div bind:this={container} aria-label={ariaLabel} class="bg-white dark:bg-black"></div>
+<div {id} bind:this={container} class="bg-white dark:bg-black"></div>

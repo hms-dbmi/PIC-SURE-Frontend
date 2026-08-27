@@ -22,3 +22,13 @@ const bannerOptions: IOptions = {
 };
 
 export const sanitizeBannerHTML = (dirty: string): string => sanitizeHtml(dirty, bannerOptions);
+
+export function hasBannerContent(dirty: string): boolean {
+  const visibleText = sanitizeHtml(sanitizeBannerHTML(dirty), {
+    allowedTags: [],
+    allowedAttributes: {},
+  })
+    .replace(/&(?:nbsp|#160|#x0*a0);/gi, ' ')
+    .replace(/[\s\u00a0\u200b\ufeff]/gu, '');
+  return visibleText.length > 0;
+}

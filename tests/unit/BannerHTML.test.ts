@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
+import { hasBannerContent, sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
 
 describe('sanitizeBannerHTML', () => {
   it('keeps approved basic formatting, lists, and relative, HTTPS, and mailto links', () => {
@@ -38,5 +38,19 @@ describe('sanitizeBannerHTML', () => {
     );
 
     expect(sanitized).toBe('<p>Safe</p>HeadingQuote');
+  });
+
+  it.each([
+    '<p></p>',
+    '<p> \t\n</p>',
+    '<p>&nbsp;</p>',
+    '<p>&#160;&#xA0;</p>',
+    '<p>\u200b\ufeff</p>',
+  ])('treats semantically blank Quill markup as empty: %s', (html) => {
+    expect(hasBannerContent(html)).toBe(false);
+  });
+
+  it('recognizes visible formatted content', () => {
+    expect(hasBannerContent('<p><strong>Important</strong></p>')).toBe(true);
   });
 });

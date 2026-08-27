@@ -1,7 +1,4 @@
 <script lang="ts">
-  import { resolve } from '$app/paths';
-  import { goto } from '$app/navigation';
-
   import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
   import Editor from '$lib/components/editor/Editor.svelte';
   import type {
@@ -9,28 +6,35 @@
     BannerDraft,
     BannerIcon,
     BannerPresentation,
+    PublishedBanner,
   } from '$lib/models/Banner';
+  import { BANNER_APPEARANCES, BANNER_ICONS } from '$lib/models/Banner';
   import { publishBanner } from '$lib/services/BannerManagement';
   import { toaster } from '$lib/toaster';
-  import { sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
+  import { hasBannerContent, sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
 
-  const appearanceOptions = [
-    { value: 'PRIMARY', label: 'Primary' },
-    { value: 'SECONDARY', label: 'Secondary' },
-    { value: 'TERTIARY', label: 'Tertiary' },
-    { value: 'SUCCESS', label: 'Success' },
-    { value: 'WARNING', label: 'Warning' },
-    { value: 'ERROR', label: 'Error' },
-    { value: 'SURFACE', label: 'Surface' },
-  ] satisfies { value: BannerAppearance; label: string }[];
+  const appearanceDetails: Record<BannerAppearance, { label: string; swatchClass: string }> = {
+    PRIMARY: { label: 'Primary', swatchClass: 'bg-primary-500' },
+    SECONDARY: { label: 'Secondary', swatchClass: 'bg-secondary-500' },
+    TERTIARY: { label: 'Tertiary', swatchClass: 'bg-tertiary-500' },
+    SUCCESS: { label: 'Success', swatchClass: 'bg-success-500' },
+    WARNING: { label: 'Warning', swatchClass: 'bg-warning-500' },
+    ERROR: { label: 'Error', swatchClass: 'bg-error-500' },
+    SURFACE: { label: 'Surface', swatchClass: 'bg-surface-500' },
+  };
+  const appearanceOptions = BANNER_APPEARANCES.map((value) => ({
+    value,
+    ...appearanceDetails[value],
+  }));
 
-  const iconOptions = [
-    { value: 'NONE', label: 'None' },
-    { value: 'INFORMATION', label: 'Information' },
-    { value: 'SUCCESS', label: 'Success' },
-    { value: 'WARNING', label: 'Warning' },
-    { value: 'ERROR', label: 'Error' },
-  ] satisfies { value: BannerIcon; label: string }[];
+  const iconLabels: Record<BannerIcon, string> = {
+    NONE: 'None',
+    INFORMATION: 'Information',
+    SUCCESS: 'Success',
+    WARNING: 'Warning',
+    ERROR: 'Error',
+  };
+  const iconOptions = BANNER_ICONS.map((value) => ({ value, label: iconLabels[value] }));
 
   let htmlContent = $state('');
   let title = $state('');
@@ -38,8 +42,10 @@
   let icon: BannerIcon = $state('NONE');
   let dismissible = $state(true);
   let publishing = $state(false);
+  let publishedBanner: PublishedBanner | null = $state(null);
 
   const sanitizedLength = $derived(sanitizeBannerHTML(htmlContent).length);
+  const hasContent = $derived(hasBannerContent(htmlContent));
   const preview: BannerPresentation = $derived({
     htmlContent,
     title: title.trim() || null,
@@ -58,18 +64,17 @@
     };
     publishing = true;
     try {
-      const published = await publishBanner(draft);
-      htmlContent = published.htmlContent;
-      title = published.title ?? '';
-      appearance = published.appearance;
-      icon = published.icon;
-      dismissible = published.dismissible;
+      publishedBanner = await publishBanner(draft);
+      htmlContent = publishedBanner.htmlContent;
+      title = publishedBanner.title ?? '';
+      appearance = publishedBanner.appearance;
+      icon = publishedBanner.icon;
+      dismissible = publishedBanner.dismissible;
       toaster.success({ title: 'Banner published' });
-      await goto(resolve('/'));
-    } catch (error) {
+    } catch {
       toaster.error({
         title: 'Banner could not be published',
-        description: error instanceof Error ? error.message : String(error),
+        description: 'The banner was not published. Check your connection and try again.',
       });
     } finally {
       publishing = false;
@@ -84,6 +89,7 @@
   </header>
 
   <form
+    data-testid="banner-editor-form"
     class="card border border-surface-300 p-6"
     onsubmit={(event) => {
       event.preventDefault();
@@ -92,9 +98,10 @@
   >
     <div class="grid gap-6">
       <div>
-        <label class="font-bold" for="banner-editor">Banner content</label>
-        <div id="banner-editor" class="mt-2">
+        <span class="font-bold">Banner content</span>
+        <div class="mt-2">
           <Editor
+            id="banner-content-editor"
             basicToolbar
             sanitizer={sanitizeBannerHTML}
             ariaLabel="Banner content"
@@ -117,7 +124,7 @@
               <input type="radio" name="appearance" value={option.value} bind:group={appearance} />
               <span
                 data-testid="appearance-swatch"
-                class="h-3 w-3 rounded-full bg-{option.value.toLowerCase()}-500"
+                class="h-3 w-3 rounded-full {option.swatchClass}"
                 aria-hidden="true"
               ></span>
               <span>{option.label}</span>
@@ -171,7 +178,7 @@
       <button
         type="submit"
         class="btn preset-filled-primary-500"
-        disabled={publishing || sanitizedLength === 0 || sanitizedLength > 5_000}
+        disabled={publishing || !hasContent || sanitizedLength > 5_000}
       >
         {publishing ? 'Publishing...' : 'Publish now'}
       </button>

@@ -1,44 +1,14 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
   import { createLog, log } from '$lib/logger';
-  import type {
-    ActiveBanner,
-    BannerAppearance,
-    BannerAudience,
-    BannerIcon,
-  } from '$lib/models/Banner';
+  import type { ActiveBanner } from '$lib/models/Banner';
+  import { BANNER_APPEARANCES, BANNER_AUDIENCES, BANNER_ICONS } from '$lib/models/Banner';
   import { Picsure } from '$lib/paths';
   import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
 
-  const appearances = new Set<BannerAppearance>(
-    Object.keys({
-      PRIMARY: true,
-      SECONDARY: true,
-      TERTIARY: true,
-      SUCCESS: true,
-      WARNING: true,
-      ERROR: true,
-      SURFACE: true,
-    } satisfies Record<BannerAppearance, true>) as BannerAppearance[],
-  );
-
-  const icons = new Set<BannerIcon>(
-    Object.keys({
-      NONE: true,
-      INFORMATION: true,
-      SUCCESS: true,
-      WARNING: true,
-      ERROR: true,
-    } satisfies Record<BannerIcon, true>) as BannerIcon[],
-  );
-
-  const audiences = new Set<BannerAudience>(
-    Object.keys({
-      EVERYONE: true,
-      SIGNED_IN: true,
-      SIGNED_OUT: true,
-    } satisfies Record<BannerAudience, true>) as BannerAudience[],
-  );
+  const appearances = new Set<unknown>(BANNER_APPEARANCES);
+  const icons = new Set<unknown>(BANNER_ICONS);
+  const audiences = new Set<unknown>(BANNER_AUDIENCES);
 
   type BannerFeedRecord = Omit<ActiveBanner, 'placement'> & { placement: string };
 
@@ -52,12 +22,10 @@
       typeof banner.uuid === 'string' &&
       typeof banner.htmlContent === 'string' &&
       (banner.title === null || typeof banner.title === 'string') &&
-      typeof banner.appearance === 'string' &&
-      appearances.has(banner.appearance as BannerAppearance) &&
-      typeof banner.icon === 'string' &&
-      icons.has(banner.icon as BannerIcon) &&
+      appearances.has(banner.appearance) &&
+      icons.has(banner.icon) &&
       typeof banner.dismissible === 'boolean' &&
-      audiences.has(banner.audience as BannerAudience) &&
+      audiences.has(banner.audience) &&
       typeof banner.placement === 'string' &&
       Array.isArray(banner.pageTargets) &&
       typeof banner.priority === 'number' &&

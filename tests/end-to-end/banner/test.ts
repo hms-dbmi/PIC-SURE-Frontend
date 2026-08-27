@@ -61,24 +61,30 @@ test.describe('Site banner delivery', () => {
 test.describe('Site banner workflow 1', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
 
-  test('creates, previews, publishes, and renders the authoritative banner above navigation', async ({
-    page,
-  }) => {
+  test.beforeEach(async ({ page }) => {
     await mockApiConfig(page);
     for (const path of ['role', 'privilege', 'application', 'connection']) {
       await page.route(`**/psama/${path}`, (route) => route.fulfill({ json: [] }));
     }
+    await page.route('**/picsure/operations/banners/active', (route) =>
+      route.fulfill({ json: [] }),
+    );
+  });
 
+  test('creates, previews, publishes, and renders the authoritative banner above navigation', async ({
+    page,
+  }) => {
     let published = false;
     let submitted: Record<string, unknown> | undefined;
     const authoritativeBanner = {
       ...banner,
       uuid: '99999999-9999-9999-9999-999999999999',
       htmlContent:
-        '<p><a href="https://example.org/status" rel="noopener noreferrer" target="_blank">System maintenance status page</a></p>',
-      title: 'Planned maintenance',
-      appearance: 'WARNING',
-      icon: 'WARNING',
+        '<p><strong>Server-confirmed window</strong> <a href="https://example.org/status" rel="noopener noreferrer" target="_blank">View status</a></p>',
+      title: 'Published maintenance notice',
+      appearance: 'ERROR',
+      icon: 'ERROR',
+      dismissible: false,
       priority: 42,
       presentationHash: 'server-computed-hash',
       status: 'PUBLISHED',
@@ -103,7 +109,9 @@ test.describe('Site banner workflow 1', () => {
 
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
-    const editor = page.locator('.ql-editor');
+    const bannerForm = page.getByTestId('banner-editor-form');
+    const editor = bannerForm.locator('#banner-content-editor .ql-editor');
+    await expect(editor).toHaveAttribute('aria-label', 'Banner content');
     await editor.fill('System maintenance status page');
     await editor.press('ControlOrMeta+a');
     await page.getByRole('button', { name: 'link' }).click();
@@ -123,10 +131,24 @@ test.describe('Site banner workflow 1', () => {
 
     await page.getByRole('button', { name: 'Publish now' }).click();
 
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL(/\/admin\/configuration$/);
     await expect(page.getByTestId('toast-root')).toHaveAttribute('data-type', 'success');
-    await expect(page.getByRole('region', { name: 'Planned maintenance' })).toContainText(
-      'System maintenance status page',
+    await expect(editor).toContainText('Server-confirmed window View status');
+    const reconciledPreview = page.getByRole('region', {
+      name: 'Published maintenance notice',
+    });
+    await expect(reconciledPreview).toHaveClass(/preset-tonal-error/);
+    await expect(reconciledPreview).toContainText('Server-confirmed window View status');
+    await expect(reconciledPreview.getByRole('button', { name: /Dismiss/ })).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue(
+      'Published maintenance notice',
+    );
+    await expect(page.getByRole('combobox', { name: 'Icon' })).toHaveValue('ERROR');
+    await expect(page.getByRole('radio', { name: 'Permanent' })).toBeChecked();
+
+    await page.goto('/');
+    await expect(page.getByRole('region', { name: 'Published maintenance notice' })).toContainText(
+      'Server-confirmed window View status',
     );
     expect(submitted).toMatchObject({
       htmlContent:
@@ -139,5 +161,33 @@ test.describe('Site banner workflow 1', () => {
       placement: 'SITE_TOP',
       pageTargets: [{ kind: 'ALL' }],
     });
+  });
+
+  test('keeps editor state and shows a stable error when publication fails', async ({ page }) => {
+    await page.route('**/picsure/operations/banners', async (route) => {
+      if (route.request().method() !== 'POST') return route.fallback();
+      await route.fulfill({ status: 503, json: { error: 'internal details must not be shown' } });
+    });
+
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    const bannerForm = page.getByTestId('banner-editor-form');
+    const editor = bannerForm.locator('#banner-content-editor .ql-editor');
+    await editor.fill('Preserve this announcement');
+    await page.getByText('Advanced options').click();
+    await page.getByRole('textbox', { name: 'Title' }).fill('Preserve this title');
+
+    await page.getByRole('button', { name: 'Publish now' }).click();
+
+    await expect(page).toHaveURL(/\/admin\/configuration$/);
+    const toast = page.getByTestId('toast-root');
+    await expect(toast).toHaveAttribute('data-type', 'error');
+    await expect(toast).toContainText('Banner could not be published');
+    await expect(toast).toContainText(
+      'The banner was not published. Check your connection and try again.',
+    );
+    await expect(toast).not.toContainText('internal details');
+    await expect(editor).toContainText('Preserve this announcement');
+    await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Preserve this title');
   });
 });

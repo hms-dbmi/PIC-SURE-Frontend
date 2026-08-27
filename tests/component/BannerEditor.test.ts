@@ -1,17 +1,16 @@
 // @vitest-environment happy-dom
 
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, waitFor } from '@testing-library/svelte';
 
-vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('$lib/services/BannerManagement', () => ({ publishBanner: vi.fn() }));
 
 import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
 
 describe('BannerEditor', () => {
-  it('shows the approved defaults, accessible appearance names and swatches, and a shared preview', () => {
-    render(BannerEditor);
+  it('shows the approved defaults, accessible appearance names and swatches, and a shared preview', async () => {
+    const { container } = render(BannerEditor);
 
     expect(screen.getByRole('heading', { name: 'Create banner' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Primary' })).toBeChecked();
@@ -40,5 +39,9 @@ describe('BannerEditor', () => {
     );
     expect(screen.getByRole('button', { name: 'Dismiss site announcement' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Publish now' })).toBeInTheDocument();
+    expect(container.querySelector('#banner-content-editor')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('textbox', { name: 'Banner content' })).toBeInTheDocument();
+    });
   });
 });
