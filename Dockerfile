@@ -8,9 +8,6 @@ RUN CI=true pnpm install
 COPY src src
 COPY static static
 COPY .env svelte.config.js tsconfig.json vite.config.ts ./
-# Deployment-specific CSP sources for kit.csp (see svelte.config.js). Empty for BDC and the AIO,
-# whose policy the built-in directives already cover; a deployment served across sibling domains
-# passes them with --build-arg. Declared ARGs reach the build as environment variables.
 ARG CSP_EXTRA_SCRIPT_SRC=""
 ARG CSP_EXTRA_STYLE_SRC=""
 ARG CSP_EXTRA_IMG_SRC=""

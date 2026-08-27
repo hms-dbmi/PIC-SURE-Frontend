@@ -51,10 +51,6 @@ export const handle: Handle = async ({ event, resolve }) => {
   const response = await runWithConfig(() => resolve(event));
   const csp = withStyleNonce(response.headers.get('content-security-policy'));
   if (csp) response.headers.set('content-security-policy', csp);
-
-  // Fail loudly rather than shipping subtly-wrong charts: this breaks silently, and upgrades are
-  // frequent. Dev throws so it cannot be missed; production only logs, because a header problem
-  // is not worth taking the site down for.
   const problem = findStyleNonceProblem(csp);
   if (problem) {
     const message = `CSP cannot authorise the Plotly stylesheet seeded in app.html: ${problem}`;

@@ -23,9 +23,6 @@ describe('withStyleNonce', () => {
     expect(withStyleNonce(csp)).toContain("style-src-attr 'unsafe-inline'");
   });
 
-  // SvelteKit relaxes style-src to 'unsafe-inline' in dev so Vite can inject stylesheets. A nonce
-  // in the same directive makes browsers ignore 'unsafe-inline' (CSP3), which left `pnpm dev`
-  // rendering unstyled.
   it("makes no change in dev, where style-src already carries 'unsafe-inline'", () => {
     const dev = prod("'self' 'unsafe-inline'");
     expect(withStyleNonce(dev)).toBe(dev);
@@ -55,13 +52,11 @@ describe('findStyleNonceProblem', () => {
     expect(findStyleNonceProblem(prod("'self' 'unsafe-inline'"))).toBeNull();
   });
 
-  // Dropping 'style-src' from kit.csp to lean on default-src leaves the seed unauthorised.
   it('reports a policy with no style-src directive', () => {
     const csp = `default-src 'self'; script-src 'self' 'nonce-${NONCE}'`;
     expect(findStyleNonceProblem(csp)).toMatch(/no style-src/);
   });
 
-  // Adding 'unsafe-inline' to script-src stops SvelteKit emitting a nonce anywhere at all.
   it('reports a style-src that never received a nonce', () => {
     const csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'";
     expect(findStyleNonceProblem(csp)).toMatch(/no nonce/);
