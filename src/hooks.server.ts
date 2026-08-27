@@ -3,6 +3,7 @@ import { registerProviderData } from './lib/AuthProviderRegistry';
 import type { AuthData } from './lib/models/AuthProvider';
 import { getConfig } from './lib/server/configCache';
 import { runWithConfig } from './lib/server/configuration';
+import { findStyleNonceProblem, withStyleNonce } from './lib/server/csp';
 
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
@@ -47,7 +48,21 @@ registerEnabledProviders(enabledProviders, PROVIDER_PREFIX);
 // Wraps each request in an isolated config store so concurrent requests can't
 // observe each other's config (see lib/server/configuration.ts).
 export const handle: Handle = async ({ event, resolve }) => {
-  return runWithConfig(() => resolve(event));
+  const response = await runWithConfig(() => resolve(event));
+  const csp = withStyleNonce(response.headers.get('content-security-policy'));
+  if (csp) response.headers.set('content-security-policy', csp);
+
+  // Fail loudly rather than shipping subtly-wrong charts: this breaks silently, and upgrades are
+  // frequent. Dev throws so it cannot be missed; production only logs, because a header problem
+  // is not worth taking the site down for.
+  const problem = findStyleNonceProblem(csp);
+  if (problem) {
+    const message = `CSP cannot authorise the Plotly stylesheet seeded in app.html: ${problem}`;
+    if (import.meta.env.DEV) throw new Error(message);
+    console.error(message);
+  }
+
+  return response;
 };
 
 export const handleError: HandleServerError = async ({ error, event, status, message }) => {

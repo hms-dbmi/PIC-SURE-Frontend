@@ -115,7 +115,7 @@
     aria-checked={checked}
     onclick={onClick}
   />
-  <span class:opacity-75={facet.count === 0} style="word-wrap: break-word; overflow-wrap: anywhere;"
+  <span class:opacity-75={facet.count === 0} class="wrap-anywhere"
     >{`${facet.display} (${facet.count?.toLocaleString()})`}</span
   >
 </label>

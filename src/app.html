@@ -4,21 +4,11 @@
     <meta charset="utf-8" />
     <meta name="color-scheme" content="light" />
     <meta name="viewport" content="width=device-width" />
-    <style id="antiClickjack">
-      body {
-        display: none !important;
-      }
-    </style>
-    <script type="text/javascript">
-      if (self === top) {
-        document.getElementById('antiClickjack').parentNode.removeChild(antiClickjack);
-      } else {
-        top.location = self.location;
-      }
-    </script>
+    <!-- Seeds Plotly's stylesheet element; see $lib/server/csp. -->
+    <style id="plotly.js-style-global" nonce="%sveltekit.nonce%"></style>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover" class="">
-    <div style="display: contents">%sveltekit.body%</div>
+    <div class="contents">%sveltekit.body%</div>
   </body>
 </html>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { css } from '$lib/utilities/style';
   import type { RadioNodeInterface } from '$lib/components/tree/types';
   import RadioTreeNode from '$lib/components/tree/RadioTreeNode.svelte';
 
@@ -25,7 +26,7 @@
     {#if !isRoot}
       <i
         class="fa-solid fa-angle-left fa-xl -rotate-45 self-center"
-        style="margin-left: {(index + 1) * 9}px;"
+        {@attach css({ 'margin-left': `${(index + 1) * 9}px` })}
       ></i>
     {/if}
     <input
