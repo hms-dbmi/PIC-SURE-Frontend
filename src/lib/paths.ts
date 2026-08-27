@@ -21,6 +21,9 @@ export const Picsure = {
     Get: `${PREFIX}/operations/configuration`,
     Admin: `${PREFIX}/operations/configuration/admin`,
   },
+  Banners: {
+    Active: `${PREFIX}/operations/banners/active`,
+  },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,
   NamedDataSet: `${PREFIX}/operations/dataset/named`,
