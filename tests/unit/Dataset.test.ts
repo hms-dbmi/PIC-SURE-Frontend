@@ -223,6 +223,47 @@ describe('mapDataset', () => {
       expect(dataset.query).toBeNull();
     });
 
+    it('normalizes the explicit nulls the API returns for unset v3 fields', () => {
+      // Given
+      const data = makeData(
+        doubleEncode({
+          select: ['\\\\dataset\\\\age\\\\'],
+          authorizationFilters: [],
+          phenotypicClause: {
+            not: false,
+            operator: 'AND',
+            phenotypicClauses: [
+              {
+                phenotypicFilterType: 'REQUIRED',
+                conceptPath: '\\\\dataset\\\\age\\\\',
+                values: null,
+                min: null,
+                max: null,
+                not: false,
+              },
+            ],
+          },
+          genomicFilters: [{ key: 'Gene_with_variant', values: ['HTR6'], min: null, max: null }],
+          expectedResultType: 'DATAFRAME',
+          picsureId: null,
+          id: null,
+        }),
+      );
+
+      // When
+      const dataset = mapDataset(data);
+
+      // Then
+      const query = dataset.query as QueryV3;
+      expect(query.genomicFilters[0].min).toBeUndefined();
+      expect(query.genomicFilters[0].max).toBeUndefined();
+      expect(query.genomicFilters[0].values).toEqual(['HTR6']);
+      const leaf = query.leaves[0];
+      expect(leaf.min).toBeUndefined();
+      expect(leaf.max).toBeUndefined();
+      expect(leaf.values).toBeUndefined();
+    });
+
     it('resets the version when a malformed V3 query cannot be deserialized', () => {
       // Given
       const data = makeData(

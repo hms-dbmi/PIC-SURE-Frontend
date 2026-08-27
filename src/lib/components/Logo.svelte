@@ -30,7 +30,7 @@
 
   const sizeStyle = $derived(
     [imgSize.width && 'width:' + imgSize.width, imgSize.height && 'height:' + imgSize.height]
-      .filter((x) => x)
+      .filter(Boolean)
       .join(';'),
   );
 </script>

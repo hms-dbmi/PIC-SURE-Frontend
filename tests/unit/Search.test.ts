@@ -1,5 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
+
+const console_def = console;
 
 vi.mock('$app/environment', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
@@ -118,6 +120,8 @@ let load: LoadCallback;
 let release: () => void;
 
 beforeEach(() => {
+  console.error = () => {};
+  console.log = () => {};
   mockState.searchDictionarySpy.mockReset();
   mockState.updateFacetsSpy.mockReset().mockImplementation(() => Promise.resolve([]));
   mockState.logSpy.mockClear();
@@ -133,6 +137,10 @@ beforeEach(() => {
   });
   release = initHandler();
   loadSpy.mockRestore();
+});
+afterEach(() => {
+  console.error = console_def.error;
+  console.log = console_def.log;
 });
 
 describe('concept request race', () => {

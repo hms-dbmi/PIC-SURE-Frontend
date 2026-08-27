@@ -1,5 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
+
+const console_def = console;
 
 vi.mock('$app/environment', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
@@ -76,11 +78,17 @@ function facetResponse(categoryName: string, zeroCountFacet = 'empty'): Dictiona
 }
 
 beforeEach(() => {
+  console.log = () => {};
+  console.debug = () => {};
   mockState.postSpy.mockReset();
   mockState.logSpy.mockClear();
   hiddenFacets.set({});
   openFacets.set([]);
   resetFacetState();
+});
+afterEach(() => {
+  console.log = console_def.log;
+  console.debug = console_def.debug;
 });
 
 describe('updateFacetsFromSearch', () => {

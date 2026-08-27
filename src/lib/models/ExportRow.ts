@@ -7,6 +7,6 @@ export interface ExportRowInterface {
   selected?: boolean;
   variableId?: string;
   name?: string;
-  description?: string;
+  description?: string | null;
   type?: ExportType;
 }

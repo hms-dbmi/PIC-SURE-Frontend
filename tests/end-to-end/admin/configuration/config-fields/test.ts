@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { test, mockApiSuccess, mockApiConfig, mockApiFail } from '../../../custom-context';
 import { userIsLoggedIn } from '../../../utils';
+import { configurationPath } from '../../../mock-data';
 
 test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
 
@@ -9,11 +10,11 @@ const clickTab = (page: import('@playwright/test').Page, name: string) =>
 
 test.beforeEach(async ({ page }) => {
   await mockApiConfig(page);
-  await mockApiSuccess(page, '*/**/picsure/configuration?kind=ui%3AfeatureFlag', [
+  await mockApiSuccess(page, `${configurationPath}?kind=ui%3AfeatureFlag`, [
     { uuid: 'row-analyze-api', name: 'ANALYZE_API', kind: 'ui:featureFlag', value: 'false' },
   ]);
-  await mockApiSuccess(page, '*/**/picsure/configuration?kind=ui%3Asetting', []);
-  await mockApiSuccess(page, '*/**/picsure/configuration?kind=ui%3Abranding', [
+  await mockApiSuccess(page, `${configurationPath}?kind=ui%3Asetting`, []);
+  await mockApiSuccess(page, `${configurationPath}?kind=ui%3Abranding`, [
     { uuid: 'row-logo-alt', name: 'LOGO_ALT', kind: 'ui:branding', value: 'Custom Alt Text' },
   ]);
 });
@@ -41,7 +42,7 @@ test('Settings & Features tab lists known fields, showing API-sourced value with
 test('Toggling a feature and saving sends the change and shows a success toast', async ({
   page,
 }) => {
-  await mockApiSuccess(page, '*/**/picsure/configuration/admin/row-analyze-api/', {
+  await mockApiSuccess(page, `${configurationPath}/admin/row-analyze-api`, {
     uuid: 'row-analyze-api',
     name: 'ANALYZE_API',
     kind: 'ui:featureFlag',
@@ -63,7 +64,7 @@ test('Toggling a feature and saving sends the change and shows a success toast',
 });
 
 test('Reset to default deletes the API row for a field', async ({ page }) => {
-  await mockApiSuccess(page, '*/**/picsure/configuration/admin/row-analyze-api/', {});
+  await mockApiSuccess(page, `${configurationPath}/admin/row-analyze-api`, {});
 
   await page.goto('/admin/configuration');
   await userIsLoggedIn(page);
@@ -77,7 +78,7 @@ test('Reset to default deletes the API row for a field', async ({ page }) => {
 });
 
 test('A save failure keeps the edited value and shows an error toast', async ({ page }) => {
-  await mockApiFail(page, '*/**/picsure/configuration/admin/row-analyze-api/', 'failed');
+  await mockApiFail(page, `${configurationPath}/admin/row-analyze-api`, 'failed');
 
   await page.goto('/admin/configuration');
   await userIsLoggedIn(page);
@@ -119,11 +120,11 @@ test('Branding tab only shows the API/env-configurable fields plus a scope note'
 });
 
 test('Deprecated API rows are listed separately and can be deleted', async ({ page }) => {
-  await mockApiSuccess(page, '*/**/picsure/configuration?kind=ui%3AfeatureFlag', [
+  await mockApiSuccess(page, `${configurationPath}?kind=ui%3AfeatureFlag`, [
     { uuid: 'row-analyze-api', name: 'ANALYZE_API', kind: 'ui:featureFlag', value: 'false' },
     { uuid: 'row-old-flag', name: 'REMOVED_OLD_FLAG', kind: 'ui:featureFlag', value: 'true' },
   ]);
-  await mockApiSuccess(page, '*/**/picsure/configuration/admin/row-old-flag/', {});
+  await mockApiSuccess(page, `${configurationPath}/admin/row-old-flag`, {});
 
   await page.goto('/admin/configuration');
   await userIsLoggedIn(page);

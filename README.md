@@ -129,21 +129,32 @@ src/lib/
 
 ### Commands
 
-| Command           | What it does                                   |
-| ----------------- | ---------------------------------------------- |
-| `pnpm run dev`    | Start dev server with hot reload               |
-| `pnpm run build`  | Production build                               |
-| `pnpm run check`  | Svelte and TypeScript checks                   |
-| `pnpm run format` | Format code with Prettier                      |
-| `pnpm run lint`   | Lint with Prettier + ESLint                    |
-| `pnpm run test`   | Run all tests (unit + component + integration) |
+| Command                          | What it does                                                                      |
+| -------------------------------- | --------------------------------------------------------------------------------- |
+| `pnpm run dev`                   | Start dev server with hot reload                                                  |
+| `pnpm run build`                 | Production build                                                                  |
+| `pnpm run preview`               | Preview the production build locally                                              |
+| `pnpm run check`                 | Svelte and TypeScript checks                                                      |
+| `pnpm run check:watch`           | `check`, re-run on file changes                                                   |
+| `pnpm run format`                | Format code with Prettier                                                         |
+| `pnpm run lint`                  | Lint with Prettier + ESLint                                                       |
+| `pnpm run clean`                 | `format` + `lint`                                                                 |
+| `pnpm run test`                  | Run all tests (`test:vitest` + `test:integration`)                                |
+| `pnpm run test:vitest`           | Run unit + component tests (Vitest)                                               |
+| `pnpm run test:unit`             | Run unit tests only                                                               |
+| `pnpm run test:component`        | Run component tests only                                                          |
+| `pnpm run test:integration`      | Run integration/e2e tests (Playwright, all browsers)                              |
+| `pnpm run test:integration:slim` | Playwright, Chromium only, minimal reporter, `--retries=1` — faster local/CI runs |
+| `pnpm run playwright`            | Open Playwright's UI mode against the built app                                   |
+| `pnpm run playwright:dev`        | Playwright UI mode against the dev server (`PLAYWRIGHT_DEV=1`)                    |
+| `pnpm run precommit`             | `format` + `lint` + `check` + `test` — the full pre-PR check                      |
 
 ### Before Submitting
 
 Run all checks before submitting a PR:
 
 ```bash
-pnpm run format && pnpm run lint && pnpm run check && pnpm run test
+pnpm run precommit
 ```
 
 ### Integration Tests

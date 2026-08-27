@@ -9,18 +9,23 @@
 
 {#if consentGranted}
   <i class="fa-regular fa-circle-check text-3xl text-success-500"></i>
-{:else}
+{:else if link}
   <a
-    href={link || '#'}
+    href={link}
     rel="external"
-    title={link ? 'More Info' : 'Link not available'}
-    class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 {!link
-      ? 'opacity-50 cursor-not-allowed'
-      : ''}"
+    title="More Info"
+    class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
     target="_blank"
     onclick={(e) => {
       e.stopPropagation();
       log(createLog('ACTION', 'dashboard.more_info_table', { dataset, url: link }));
     }}>More Info</a
+  >
+{:else}
+  <button
+    type="button"
+    title="Link not available"
+    class="btn preset-tonal-primary border border-primary-500 opacity-50"
+    disabled>More Info</button
   >
 {/if}

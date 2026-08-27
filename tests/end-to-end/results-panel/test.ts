@@ -299,10 +299,7 @@ test.describe('Results Panel', () => {
       // DIST_EXPLORER gates the distributions-btn on both /explorer and /discover
       // (ResultsPanel.svelte's showExplorerDistributions/showDiscoverDistributions).
       await mockApiConfig(page, {
-        features: [
-          { name: 'ENABLE_OR_QUERIES', value: 'true' },
-          { name: 'DIST_EXPLORER', value: 'true' },
-        ],
+        features: [{ name: 'DIST_EXPLORER', value: 'true' }],
       });
       page.on('request', (request) => {
         if (request.url().includes('/picsure/hpds/open/v3/query/sync')) {
@@ -328,7 +325,6 @@ test.describe('Results Panel', () => {
       // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
       await mockApiConfig(page, {
         features: [
-          { name: 'ENABLE_OR_QUERIES', value: 'true' },
           { name: 'DIST_EXPLORER', value: 'true' },
           { name: 'DISCOVER', value: 'true' },
           { name: 'OPEN_EXPLORER', value: 'false' },
@@ -454,7 +450,6 @@ test.describe('Results Panel', () => {
       // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
       await mockApiConfig(page, {
         features: [
-          { name: 'ENABLE_OR_QUERIES', value: 'true' },
           { name: 'DIST_EXPLORER', value: 'true' },
           { name: 'DISCOVER', value: 'true' },
           { name: 'OPEN_EXPLORER', value: 'false' },
@@ -489,7 +484,6 @@ test.describe('Results Panel', () => {
       // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
       await mockApiConfig(page, {
         features: [
-          { name: 'ENABLE_OR_QUERIES', value: 'true' },
           { name: 'DIST_EXPLORER', value: 'true' },
           { name: 'DISCOVER', value: 'true' },
           { name: 'OPEN_EXPLORER', value: 'false' },
@@ -524,7 +518,6 @@ test.describe('Results Panel', () => {
       // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
       await mockApiConfig(page, {
         features: [
-          { name: 'ENABLE_OR_QUERIES', value: 'true' },
           { name: 'DIST_EXPLORER', value: 'true' },
           { name: 'DISCOVER', value: 'true' },
           { name: 'OPEN_EXPLORER', value: 'false' },
@@ -553,7 +546,6 @@ test.describe('Results Panel', () => {
       // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
       await mockApiConfig(page, {
         features: [
-          { name: 'ENABLE_OR_QUERIES', value: 'true' },
           { name: 'DIST_EXPLORER', value: 'true' },
           { name: 'DISCOVER', value: 'true' },
           { name: 'OPEN_EXPLORER', value: 'false' },

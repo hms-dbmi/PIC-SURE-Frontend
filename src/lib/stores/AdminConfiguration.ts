@@ -60,7 +60,7 @@ export async function updateConfigRow(
   kind: AdminConfigKind,
   row: ConfigObject,
 ): Promise<ConfigObject> {
-  const updated: ConfigObject = await api.patch(`${Picsure.Configuration.Admin}/${row.uuid}/`, row);
+  const updated: ConfigObject = await api.patch(`${Picsure.Configuration.Admin}/${row.uuid}`, row);
 
   const rows = get(adminConfigRows[kind]).map((r) => (r.uuid === updated.uuid ? updated : r));
   adminConfigRows[kind].set(rows);
@@ -68,7 +68,7 @@ export async function updateConfigRow(
 }
 
 export async function deleteConfigRow(kind: AdminConfigKind, uuid: string): Promise<void> {
-  await api.del(`${Picsure.Configuration.Admin}/${uuid}/`);
+  await api.del(`${Picsure.Configuration.Admin}/${uuid}`);
 
   const rows = get(adminConfigRows[kind]).filter((r) => r.uuid !== uuid);
   adminConfigRows[kind].set(rows);

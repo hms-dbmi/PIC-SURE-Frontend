@@ -18,8 +18,8 @@ export const Picsure = {
     Hierarchy: `${DICT}/concepts/hierarchy`,
   },
   Configuration: {
-    Get: `${PREFIX}/configuration`,
-    Admin: `${PREFIX}/configuration/admin`,
+    Get: `${PREFIX}/operations/configuration`,
+    Admin: `${PREFIX}/operations/configuration/admin`,
   },
   Dashboard: `${DICT}/dashboard`,
   DashboardDrawer: `${DICT}/dashboard-drawer`,
