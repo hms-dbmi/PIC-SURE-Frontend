@@ -1,7 +1,12 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
   import { createLog, log } from '$lib/logger';
-  import type { ActiveBanner, BannerAppearance, BannerIcon } from '$lib/models/Banner';
+  import type {
+    ActiveBanner,
+    BannerAppearance,
+    BannerAudience,
+    BannerIcon,
+  } from '$lib/models/Banner';
   import { Picsure } from '$lib/paths';
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
@@ -23,7 +28,31 @@
     ERROR: 'fa-circle-exclamation',
   };
 
+  const appearances = new Set<BannerAppearance>(Object.keys(toneClasses) as BannerAppearance[]);
+  const icons = new Set<BannerIcon>(Object.keys(iconClasses) as BannerIcon[]);
+  const audiences = new Set<BannerAudience>(['EVERYONE', 'SIGNED_IN', 'SIGNED_OUT']);
+
   let banners: ActiveBanner[] = $state([]);
+
+  function isActiveBanner(value: unknown): value is ActiveBanner {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    const banner = value as Record<string, unknown>;
+
+    return (
+      typeof banner.uuid === 'string' &&
+      typeof banner.htmlContent === 'string' &&
+      (banner.title === null || typeof banner.title === 'string') &&
+      appearances.has(banner.appearance as BannerAppearance) &&
+      icons.has(banner.icon as BannerIcon) &&
+      typeof banner.dismissible === 'boolean' &&
+      audiences.has(banner.audience as BannerAudience) &&
+      banner.placement === 'SITE_TOP' &&
+      Array.isArray(banner.pageTargets) &&
+      typeof banner.priority === 'number' &&
+      Number.isFinite(banner.priority) &&
+      typeof banner.presentationHash === 'string'
+    );
+  }
 
   async function refreshBanners(): Promise<void> {
     try {
@@ -34,8 +63,10 @@
       if (!response.ok) throw new Error(`Banner feed returned HTTP ${response.status}`);
 
       const feed: unknown = await response.json();
-      if (!Array.isArray(feed)) throw new Error('Banner feed returned an invalid response');
-      banners = (feed as ActiveBanner[]).filter((banner) => banner.placement === 'SITE_TOP');
+      if (!Array.isArray(feed) || !feed.every(isActiveBanner)) {
+        throw new Error('Banner feed returned an invalid response');
+      }
+      banners = feed;
     } catch (error) {
       banners = [];
       log(
@@ -52,8 +83,7 @@
 {#if banners.length > 0}
   <div class="w-full flex-none" data-testid="site-banner-region">
     {#each banners as banner (banner.uuid)}
-      <aside
-        role="region"
+      <section
         aria-label={banner.title || 'Site announcement'}
         data-testid="site-banner"
         class="w-full border-l-8 px-4 py-3 {toneClasses[banner.appearance]}"
@@ -69,7 +99,7 @@
             <div class="site-banner-content">{@html sanitizeHTML(banner.htmlContent)}</div>
           </div>
         </div>
-      </aside>
+      </section>
     {/each}
   </div>
 {/if}

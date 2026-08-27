@@ -37,6 +37,12 @@ const banner = {
 
 const fetchMock = vi.fn();
 
+function without(field: string): Record<string, unknown> {
+  const malformed: Record<string, unknown> = { ...banner };
+  delete malformed[field];
+  return malformed;
+}
+
 beforeEach(() => {
   navigation.callback = undefined;
   fetchMock.mockReset();
@@ -58,9 +64,9 @@ describe('SiteBannerRegion', () => {
       headers: { Accept: 'application/json' },
     });
     expect(screen.getByTestId('site-banner-region')).toHaveClass('w-full');
-    expect(screen.getByRole('region', { name: 'Maintenance' })).toHaveTextContent(
-      'Scheduled maintenance details',
-    );
+    const notice = screen.getByRole('region', { name: 'Maintenance' });
+    expect(notice.tagName).toBe('SECTION');
+    expect(notice).toHaveTextContent('Scheduled maintenance details');
 
     await navigation.callback?.();
 
@@ -68,22 +74,21 @@ describe('SiteBannerRegion', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('keeps the returned priority order and omits non-site-top placements', async () => {
+  it('keeps the server order even when priorities are not ascending', async () => {
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify([
-          banner,
           {
             ...banner,
             uuid: '22222222-2222-2222-2222-222222222222',
-            title: 'Second',
+            title: 'First from server',
             priority: 20,
           },
           {
             ...banner,
             uuid: '33333333-3333-3333-3333-333333333333',
-            title: 'Different placement',
-            placement: 'PAGE_INLINE',
+            title: 'Second from server',
+            priority: 10,
           },
         ]),
         { status: 200 },
@@ -95,7 +100,40 @@ describe('SiteBannerRegion', () => {
 
     expect(
       screen.getAllByTestId('site-banner').map((element) => element.getAttribute('aria-label')),
-    ).toEqual(['Maintenance', 'Second']);
+    ).toEqual(['First from server', 'Second from server']);
+  });
+
+  it.each([
+    ['missing appearance', without('appearance')],
+    ['unknown appearance', { ...banner, appearance: 'NEON' }],
+    ['missing icon', without('icon')],
+    ['unknown icon', { ...banner, icon: 'BELL' }],
+    ['missing uuid', without('uuid')],
+    ['missing html', without('htmlContent')],
+    ['invalid placement', { ...banner, placement: 'PAGE_INLINE' }],
+    ['nonnumeric priority', { ...banner, priority: 'first' }],
+  ])('treats %s as a feed failure and clears the region', async (_description, malformed) => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner]), { status: 200 }));
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify([banner, malformed]), { status: 200 }),
+    );
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+    expect(screen.getByTestId('site-banner-region')).toBeInTheDocument();
+
+    await navigation.callback?.();
+
+    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(createLog).toHaveBeenCalledWith(
+      'ERROR',
+      'banner.feed_failed',
+      undefined,
+      expect.objectContaining({
+        error: { message: 'Banner feed returned an invalid response' },
+      }),
+    );
+    expect(log).toHaveBeenCalledOnce();
   });
 
   it('renders no container or gap for an empty feed', async () => {
