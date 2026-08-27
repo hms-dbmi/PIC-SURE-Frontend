@@ -102,4 +102,24 @@ describe('BannerEditor', () => {
     expect(screen.getByRole('button', { name: 'Publish now' })).toBeDisabled();
     expect(publishBanner).toHaveBeenCalledOnce();
   });
+
+  it('reconciles sanitizer-stripped pasted markup into the editor and preview', async () => {
+    const { container } = render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+
+    editor.innerHTML =
+      '<h1 class="ql-align-center">Visible heading</h1><p>Safe<img src="https://example.org/tracker.png"></p>';
+    await fireEvent.input(editor);
+
+    await waitFor(() => {
+      expect(editor.querySelector('h1')).not.toBeInTheDocument();
+      expect(editor.querySelector('img')).not.toBeInTheDocument();
+      expect(editor).toHaveTextContent('Visible headingSafe');
+    });
+    const preview = screen.getByRole('region', { name: 'Site announcement' });
+    expect(preview).toHaveTextContent('Visible headingSafe');
+    expect(preview.querySelector('h1')).not.toBeInTheDocument();
+    expect(preview.querySelector('img')).not.toBeInTheDocument();
+    expect(container.querySelector('.text-center')).not.toBeInTheDocument();
+  });
 });

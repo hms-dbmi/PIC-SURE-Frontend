@@ -121,7 +121,7 @@
         <p class="mt-1 text-sm text-surface-600">
           Basic formatting, lists, relative links, HTTPS links, and email links are supported.
         </p>
-        <p class="text-sm text-surface-600" aria-live="polite">
+        <p class="text-sm text-surface-600">
           {sanitizedLength}/5,000 characters
         </p>
       </div>
