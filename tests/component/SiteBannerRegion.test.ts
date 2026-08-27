@@ -125,24 +125,31 @@ describe('SiteBannerRegion', () => {
     expect(
       screen.getAllByTestId('site-banner').map((element) => element.getAttribute('aria-label')),
     ).toEqual(['Maintenance', 'Second valid banner']);
-    expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_records_skipped', {
-      skippedRecords: 1,
+    expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_malformed_records', {
+      malformedRecords: 1,
     });
     expect(log).toHaveBeenCalledOnce();
     expect(JSON.stringify(vi.mocked(createLog).mock.calls)).not.toContain('Scheduled maintenance');
   });
 
   it('skips an unsupported future placement without discarding a site-top banner', async () => {
+    const inlineBanner = {
+      ...banner,
+      uuid: '44444444-4444-4444-4444-444444444444',
+      title: 'Future inline announcement',
+      placement: 'PAGE_INLINE',
+    };
     fetchMock.mockResolvedValue(
-      new Response(JSON.stringify([{ ...banner, placement: 'PAGE_INLINE' }, banner]), {
-        status: 200,
-      }),
+      new Response(JSON.stringify([inlineBanner, banner]), { status: 200 }),
     );
     render(SiteBannerRegion);
 
     await navigation.callback?.();
 
-    expect(screen.getAllByTestId('site-banner')).toHaveLength(1);
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('region', { name: 'Future inline announcement' }),
+    ).not.toBeInTheDocument();
     expect(createLog).not.toHaveBeenCalled();
     expect(log).not.toHaveBeenCalled();
   });
@@ -169,8 +176,8 @@ describe('SiteBannerRegion', () => {
       await navigation.callback?.();
 
       expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
-      expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_records_skipped', {
-        skippedRecords: 1,
+      expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_malformed_records', {
+        malformedRecords: 1,
       });
       expect(log).toHaveBeenCalledOnce();
     },
@@ -187,8 +194,8 @@ describe('SiteBannerRegion', () => {
     await navigation.callback?.();
 
     expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
-    expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_records_skipped', {
-      skippedRecords: 2,
+    expect(createLog).toHaveBeenCalledWith('ERROR', 'banner.feed_malformed_records', {
+      malformedRecords: 2,
     });
     expect(log).toHaveBeenCalledOnce();
   });

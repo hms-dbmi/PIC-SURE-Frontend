@@ -30,12 +30,13 @@
 
   const appearances = new Set<BannerAppearance>(Object.keys(toneClasses) as BannerAppearance[]);
   const icons = new Set<BannerIcon>(Object.keys(iconClasses) as BannerIcon[]);
-  const audienceValues: Record<BannerAudience, true> = {
-    EVERYONE: true,
-    SIGNED_IN: true,
-    SIGNED_OUT: true,
-  };
-  const audiences = new Set<BannerAudience>(Object.keys(audienceValues) as BannerAudience[]);
+  const audiences = new Set<BannerAudience>(
+    Object.keys({
+      EVERYONE: true,
+      SIGNED_IN: true,
+      SIGNED_OUT: true,
+    } satisfies Record<BannerAudience, true>) as BannerAudience[],
+  );
 
   type BannerFeedRecord = Omit<ActiveBanner, 'placement'> & { placement: string };
 
@@ -76,11 +77,11 @@
       banners = validRecords.filter(
         (banner): banner is ActiveBanner => banner.placement === 'SITE_TOP',
       );
-      const skippedRecords = feed.length - validRecords.length;
-      if (skippedRecords > 0) {
+      const malformedRecords = feed.length - validRecords.length;
+      if (malformedRecords > 0) {
         log(
-          createLog('ERROR', 'banner.feed_records_skipped', {
-            skippedRecords,
+          createLog('ERROR', 'banner.feed_malformed_records', {
+            malformedRecords,
           }),
         );
       }
