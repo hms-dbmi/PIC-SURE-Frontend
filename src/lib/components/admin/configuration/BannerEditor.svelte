@@ -39,6 +39,7 @@
   import { validateBannerPageTarget } from '$lib/utilities/BannerPageTargets';
 
   type TargetedPage = Exclude<BannerPageTarget, { kind: 'ALL' }>;
+  const MAX_TIMEOUT_MS = 2_147_483_647;
 
   interface Props {
     banner?: ManagedBanner | null;
@@ -123,6 +124,8 @@
   let pendingCancel = false;
   let pendingTabChange: string | null = $state(null);
   let bypassGuard = false;
+  let restoreValidationNow = $state(Date.now());
+  let restoreStartTimeout: number | undefined;
 
   const sanitizedLength = $derived(sanitizeBannerHTML(htmlContent).length);
   const hasContent = $derived(hasBannerContent(htmlContent));
@@ -148,11 +151,7 @@
       editorMode === 'restore' ? null : (banner?.endAt ?? null),
     ),
   );
-  const restoreStartNotFuture = $derived(
-    editorMode === 'restore' &&
-      resolvedStart !== null &&
-      new Date(resolvedStart).getTime() <= Date.now(),
-  );
+  const restoreStartNotFuture = $derived(restoreStartIsNotFuture(restoreValidationNow));
   const scheduleInvalid = $derived(
     (editorMode === 'edit' && banner?.status === 'PUBLISHED' && resolvedStart === null) ||
       (startLocal !== '' && resolvedStart === null) ||
@@ -202,6 +201,32 @@
     return null;
   }
 
+  function restoreStartIsNotFuture(now: number) {
+    return (
+      editorMode === 'restore' && resolvedStart !== null && new Date(resolvedStart).getTime() <= now
+    );
+  }
+
+  function clearRestoreStartTimeout() {
+    if (restoreStartTimeout === undefined) return;
+    window.clearTimeout(restoreStartTimeout);
+    restoreStartTimeout = undefined;
+  }
+
+  function scheduleRestoreStartCheck(startAt: number) {
+    const now = Date.now();
+    restoreValidationNow = now;
+    const delay = startAt - now;
+    if (delay <= 0) return;
+    restoreStartTimeout = window.setTimeout(
+      () => {
+        restoreStartTimeout = undefined;
+        scheduleRestoreStartCheck(startAt);
+      },
+      Math.min(delay, MAX_TIMEOUT_MS),
+    );
+  }
+
   function utcText(instant: string) {
     return `Resolved UTC: ${instant.slice(0, 16).replace('T', ' ')} UTC`;
   }
@@ -244,6 +269,15 @@
   });
 
   $effect(() => {
+    const startAt = resolvedStart;
+    clearRestoreStartTimeout();
+    restoreValidationNow = Date.now();
+    if (editorMode === 'restore' && startAt !== null) {
+      scheduleRestoreStartCheck(new Date(startAt).getTime());
+    }
+  });
+
+  $effect(() => {
     if (tabchangerequest) {
       pendingTabChange = tabchangerequest;
       pendingCancel = false;
@@ -252,7 +286,10 @@
     }
   });
 
-  onDestroy(() => ondirtychange(false));
+  onDestroy(() => {
+    clearRestoreStartTimeout();
+    ondirtychange(false);
+  });
 
   beforeNavigate(({ to, cancel, willUnload }) => {
     if (!bypassGuard && dirty && !willUnload) {
@@ -329,6 +366,11 @@
 
   async function publish() {
     if (working) return;
+    const submitNow = Date.now();
+    if (restoreStartIsNotFuture(submitNow)) {
+      restoreValidationNow = submitNow;
+      return;
+    }
     working = 'publish';
     try {
       const published =

@@ -88,6 +88,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
@@ -598,6 +599,80 @@ describe('BannerEditor', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Schedule banner' })).toBeDisabled();
     expect(restoreBanner).not.toHaveBeenCalled();
+  });
+
+  it('invalidates an untouched future restore start when its minute arrives', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-28T16:00:30Z'));
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    render(BannerEditor, { props: { banner: disabled, mode: 'restore' } });
+    await fireEvent.input(screen.getByLabelText('Start'), {
+      target: { value: '2026-08-28T12:01' },
+    });
+    const schedule = screen.getByRole('button', { name: 'Schedule banner' });
+    expect(schedule).toBeEnabled();
+
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(
+      screen.getByText('Start must be in the future. Leave Start blank to restore now.'),
+    ).toBeInTheDocument();
+    expect(schedule).toBeDisabled();
+    await fireEvent.click(schedule);
+    expect(restoreBanner).not.toHaveBeenCalled();
+  });
+
+  it('rechecks a future restore start during submit when its boundary callback is delayed', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-28T16:00:30Z'));
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    render(BannerEditor, { props: { banner: disabled, mode: 'restore' } });
+    await fireEvent.input(screen.getByLabelText('Start'), {
+      target: { value: '2026-08-28T12:01' },
+    });
+    const schedule = screen.getByRole('button', { name: 'Schedule banner' });
+    expect(schedule).toBeEnabled();
+
+    vi.setSystemTime(new Date('2026-08-28T16:01:00Z'));
+    await fireEvent.click(schedule);
+
+    expect(restoreBanner).not.toHaveBeenCalled();
+    expect(
+      screen.getByText('Start must be in the future. Leave Start blank to restore now.'),
+    ).toBeInTheDocument();
+    expect(schedule).toBeDisabled();
+  });
+
+  it('cleans up the restore start boundary callback when the editor is destroyed', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-28T16:00:30Z'));
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    const { unmount } = render(BannerEditor, {
+      props: { banner: disabled, mode: 'restore' },
+    });
+    await fireEvent.input(screen.getByLabelText('Start'), {
+      target: { value: '2026-08-28T12:01' },
+    });
+    expect(vi.getTimerCount()).toBe(1);
+
+    unmount();
+
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it.each(audienceCases)('submits %s as %s', async (label, audience) => {
