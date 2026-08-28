@@ -19,6 +19,13 @@ export async function updateSavedBanner(uuid: string, draft: BannerDraft): Promi
   return api.put(`${Picsure.Banners.Manage}/${uuid}`, authorablePayload(draft));
 }
 
+export async function updatePublishedBanner(
+  uuid: string,
+  draft: BannerDraft,
+): Promise<ManagedBanner> {
+  return api.put(`${Picsure.Banners.Manage}/${uuid}`, authorablePayload(draft));
+}
+
 export async function publishSavedBanner(uuid: string, draft: BannerDraft): Promise<ManagedBanner> {
   return api.post(`${Picsure.Banners.Manage}/${uuid}/publish`, authorablePayload(draft));
 }

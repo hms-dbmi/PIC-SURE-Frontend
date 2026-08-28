@@ -11,11 +11,13 @@ vi.mock('$lib/services/BannerManagement', () => ({
   publishBanner: vi.fn(),
   publishSavedBanner: vi.fn(),
   saveBanner: vi.fn(),
+  updatePublishedBanner: vi.fn(),
   updateSavedBanner: vi.fn(),
 }));
 
 import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
-import { publishBanner } from '$lib/services/BannerManagement';
+import { publishBanner, updatePublishedBanner } from '$lib/services/BannerManagement';
+import { toaster } from '$lib/toaster';
 
 const published = {
   uuid: '99999999-9999-9999-9999-999999999999',
@@ -45,6 +47,9 @@ beforeEach(() => {
   vi.mocked(publishBanner).mockReset();
   navigation.beforeNavigate.mockReset();
   navigation.goto.mockReset();
+  vi.mocked(updatePublishedBanner).mockReset();
+  vi.mocked(toaster.success).mockReset();
+  vi.mocked(toaster.error).mockReset();
 });
 
 describe('BannerEditor', () => {
@@ -106,6 +111,29 @@ describe('BannerEditor', () => {
 
     await waitFor(() => expect(onsuccess).toHaveBeenCalledWith(published));
     expect(publishBanner).toHaveBeenCalledOnce();
+  });
+
+  it('updates a published row through the editor without exposing history controls', async () => {
+    const corrected = {
+      ...published,
+      htmlContent: '<p>Corrected content</p>',
+      presentationHash: 'corrected-hash',
+    };
+    vi.mocked(updatePublishedBanner).mockResolvedValue(corrected);
+    const onsuccess = vi.fn();
+    render(BannerEditor, { props: { banner: published, onsuccess } });
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Corrected content</p>';
+    await fireEvent.input(editor);
+
+    expect(screen.queryByText(/version history/i)).not.toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(onsuccess).toHaveBeenCalledWith(corrected));
+    expect(updatePublishedBanner).toHaveBeenCalledWith(
+      published.uuid,
+      expect.objectContaining({ htmlContent: '<p>Corrected content</p>' }),
+    );
   });
 
   it('asks before discarding a dirty editor through its cancel action', async () => {
@@ -214,6 +242,22 @@ describe('BannerEditor', () => {
     const preview = screen.getByRole('region', { name: 'Site announcement' });
     expect(preview.querySelectorAll('p')).toHaveLength(2);
     expect(preview.querySelector('p')?.textContent).toBe('First sentence with  two spaces');
+  });
+
+  it('keeps a failed published correction in the editor', async () => {
+    vi.mocked(updatePublishedBanner).mockRejectedValue(new Error('private server detail'));
+    render(BannerEditor, { props: { banner: published } });
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Keep this correction</p>';
+    await fireEvent.input(editor);
+    await fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(updatePublishedBanner).toHaveBeenCalledOnce());
+    expect(editor).toHaveTextContent('Keep this correction');
+    expect(toaster.error).toHaveBeenCalledWith({
+      title: 'Banner could not be updated',
+      description: 'The changes were not saved. Check your connection and try again.',
+    });
   });
 
   it('reconciles sanitizer-stripped pasted markup into the editor and preview', async () => {

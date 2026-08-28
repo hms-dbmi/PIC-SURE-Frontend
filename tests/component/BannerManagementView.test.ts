@@ -8,6 +8,7 @@ vi.mock('$lib/services/BannerManagement', () => ({
   publishBanner: vi.fn(),
   publishSavedBanner: vi.fn(),
   saveBanner: vi.fn(),
+  updatePublishedBanner: vi.fn(),
   updateSavedBanner: vi.fn(),
 }));
 
@@ -153,10 +154,19 @@ describe('BannerManagementView', () => {
       'Last changed by admin-id',
     );
     expect(screen.queryByRole('region', { name: 'Maintenance' })).not.toBeInTheDocument();
-
     await fireEvent.click(details[1]);
     await waitFor(() => expect(details[0]).toHaveAttribute('aria-expanded', 'false'));
     expect(details[1]).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('keeps published editing reachable from the management list', async () => {
+    render(BannerManagementView);
+    await fireEvent.click(await screen.findByRole('button', { name: 'Details' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit banner' }));
+
+    expect(screen.getByRole('heading', { name: 'Edit published banner' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+    expect(screen.queryByText(/version history/i)).not.toBeInTheDocument();
   });
 
   it('shows the standard API error when the management list fails', async () => {

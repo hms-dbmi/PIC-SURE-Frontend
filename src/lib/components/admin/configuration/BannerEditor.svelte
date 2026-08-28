@@ -17,6 +17,7 @@
     publishBanner,
     publishSavedBanner,
     saveBanner,
+    updatePublishedBanner,
     updateSavedBanner,
   } from '$lib/services/BannerManagement';
   import { toaster } from '$lib/toaster';
@@ -183,17 +184,29 @@
     if (working) return;
     working = 'publish';
     try {
-      const published = banner
-        ? await publishSavedBanner(banner.uuid, draft())
-        : await publishBanner(draft());
+      const published =
+        banner?.status === 'PUBLISHED'
+          ? await updatePublishedBanner(banner.uuid, draft())
+          : banner
+            ? await publishSavedBanner(banner.uuid, draft())
+            : await publishBanner(draft());
       initialSnapshot = snapshot();
-      toaster.success({ title: 'Banner published' });
+      toaster.success({
+        title: banner?.status === 'PUBLISHED' ? 'Banner updated' : 'Banner published',
+      });
       onsuccess(published);
     } catch {
-      toaster.error({
-        title: 'Banner could not be published',
-        description: 'The banner was not published. Check your connection and try again.',
-      });
+      if (banner?.status === 'PUBLISHED') {
+        toaster.error({
+          title: 'Banner could not be updated',
+          description: 'The changes were not saved. Check your connection and try again.',
+        });
+      } else {
+        toaster.error({
+          title: 'Banner could not be published',
+          description: 'The banner was not published. Check your connection and try again.',
+        });
+      }
     } finally {
       working = null;
     }
@@ -223,11 +236,19 @@
 
 <section class="mx-auto max-w-5xl" aria-labelledby="banner-editor-title">
   <header class="mb-6">
-    <h2 id="banner-editor-title">{banner ? 'Edit saved banner' : 'Create banner'}</h2>
+    <h2 id="banner-editor-title">
+      {banner?.status === 'PUBLISHED'
+        ? 'Edit published banner'
+        : banner
+          ? 'Edit saved banner'
+          : 'Create banner'}
+    </h2>
     <p>
-      {banner
-        ? 'Update this reusable draft or publish it across PIC-SURE.'
-        : 'Save this announcement for later or publish it across PIC-SURE.'}
+      {banner?.status === 'PUBLISHED'
+        ? 'Correct this published banner. Saving creates an immutable revision.'
+        : banner
+          ? 'Update this reusable draft or publish it across PIC-SURE.'
+          : 'Save this announcement for later or publish it across PIC-SURE.'}
     </p>
   </header>
 
@@ -334,20 +355,31 @@
       <button type="button" class="btn preset-tonal-primary mr-auto" onclick={requestCancel}>
         Cancel
       </button>
-      <button
-        type="button"
-        class="btn border preset-tonal-primary"
-        disabled={working !== null || !dirty || !hasContent || sanitizedLength > 5_000}
-        onclick={saveForLater}
-      >
-        {working === 'save' ? 'Saving...' : banner ? 'Save changes' : 'Save for later'}
-      </button>
+      {#if banner?.status !== 'PUBLISHED'}
+        <button
+          type="button"
+          class="btn border preset-tonal-primary"
+          disabled={working !== null || !dirty || !hasContent || sanitizedLength > 5_000}
+          onclick={saveForLater}
+        >
+          {working === 'save' ? 'Saving...' : banner ? 'Save changes' : 'Save for later'}
+        </button>
+      {/if}
       <button
         type="submit"
         class="btn preset-filled-primary-500"
-        disabled={working !== null || !hasContent || sanitizedLength > 5_000}
+        disabled={working !== null ||
+          (banner?.status === 'PUBLISHED' && !dirty) ||
+          !hasContent ||
+          sanitizedLength > 5_000}
       >
-        {working === 'publish' ? 'Publishing...' : 'Publish now'}
+        {working === 'publish'
+          ? banner?.status === 'PUBLISHED'
+            ? 'Saving...'
+            : 'Publishing...'
+          : banner?.status === 'PUBLISHED'
+            ? 'Save changes'
+            : 'Publish now'}
       </button>
     </div>
   </form>

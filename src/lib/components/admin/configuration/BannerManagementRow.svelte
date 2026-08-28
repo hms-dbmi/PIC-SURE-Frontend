@@ -129,7 +129,7 @@
         <p>{new Date(banner.updatedAt).toLocaleString()}</p>
         <p>Last changed by {banner.updatedBy}</p>
       </div>
-      {#if banner.lifecycle === 'SAVED'}
+      {#if banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED'}
         <div class="sm:col-span-2">
           <button type="button" class="btn preset-tonal-primary" onclick={onedit}>
             Edit banner

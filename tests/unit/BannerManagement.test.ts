@@ -8,6 +8,7 @@ import {
   publishBanner,
   publishSavedBanner,
   saveBanner,
+  updatePublishedBanner,
   updateSavedBanner,
 } from '$lib/services/BannerManagement';
 import type { BannerDraft, ManagedBanner } from '$lib/models/Banner';
@@ -102,6 +103,32 @@ describe('draft banner management', () => {
       expect(api.put).not.toHaveBeenCalled();
     },
   );
+});
+
+describe('updatePublishedBanner', () => {
+  it('sanitizes authorable fields and returns the authoritative updated occurrence', async () => {
+    const corrected = {
+      ...published,
+      htmlContent: '<p>Corrected content</p>',
+      title: 'Corrected',
+      presentationHash: 'corrected-hash',
+      updatedAt: '2026-08-27T13:00:00Z',
+    };
+    vi.mocked(api.put).mockResolvedValue(corrected);
+
+    await expect(
+      updatePublishedBanner(published.uuid, {
+        ...draft,
+        htmlContent: '<p class="removed">Corrected content</p>',
+        title: ' Corrected ',
+      }),
+    ).resolves.toBe(corrected);
+    expect(api.put).toHaveBeenCalledWith(`picsure/operations/banners/${published.uuid}`, {
+      ...draft,
+      htmlContent: '<p>Corrected content</p>',
+      title: 'Corrected',
+    });
+  });
 });
 
 describe('publishBanner', () => {

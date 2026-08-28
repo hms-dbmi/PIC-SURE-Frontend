@@ -204,8 +204,10 @@ test.describe('Site banner workflow 1', () => {
   }) => {
     let published = false;
     let publicationRequests = 0;
+    let updateRequests = 0;
     let submitted: Record<string, unknown> | undefined;
     let managedRecords: Record<string, unknown>[] = [];
+    let updateSubmitted: Record<string, unknown> | undefined;
     const savedBanner = {
       ...banner,
       uuid: '99999999-9999-9999-9999-999999999999',
@@ -249,8 +251,18 @@ test.describe('Site banner workflow 1', () => {
       publishedAt: '2026-08-27T12:00:00Z',
       publishedBy: 'admin-id',
     };
+    const correctedBanner = {
+      ...authoritativeBanner,
+      htmlContent: '<p><strong>Corrected visitor notice</strong></p>',
+      title: 'Corrected maintenance notice',
+      appearance: 'SECONDARY',
+      presentationHash: 'server-computed-corrected-hash',
+      updatedAt: '2026-08-27T13:00:00Z',
+      updatedBy: 'second-admin-id',
+    };
+    let activeBanner = authoritativeBanner;
     await page.route('**/picsure/operations/banners/active', (route) =>
-      route.fulfill({ json: published ? [authoritativeBanner] : [] }),
+      route.fulfill({ json: published ? [activeBanner] : [] }),
     );
     await page.route('**/picsure/operations/banners**', async (route) => {
       const url = new URL(route.request().url());
@@ -264,6 +276,13 @@ test.describe('Site banner workflow 1', () => {
       }
       if (method === 'PUT' && url.pathname.endsWith(`/banners/${savedBanner.uuid}`)) {
         const update = route.request().postDataJSON();
+        if (published) {
+          updateRequests += 1;
+          updateSubmitted = update;
+          activeBanner = correctedBanner;
+          managedRecords = [correctedBanner];
+          return route.fulfill({ json: correctedBanner });
+        }
         const updatedBanner = {
           ...savedBanner,
           ...update,
@@ -357,11 +376,26 @@ test.describe('Site banner workflow 1', () => {
     await expect(publishedRow).toBeVisible();
     await expect(publishedRow).toContainText('Server-confirmed window View status');
     await expect(publishedRow).toContainText('Active');
+
+    await publishedRow.getByRole('button', { name: 'Details' }).click();
+    await publishedRow.getByRole('button', { name: 'Edit banner' }).click();
+    await expect(page.getByRole('heading', { name: 'Edit published banner' })).toBeVisible();
+    const publishedEditor = page.getByRole('textbox', { name: 'Banner content' });
+    await publishedEditor.fill('Corrected visitor notice');
+    await page.getByRole('radio', { name: 'Secondary' }).check();
+    await page.getByText('Advanced options').click();
+    await page.getByRole('textbox', { name: 'Title' }).fill('Correction submitted by admin');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+
+    const correctedRow = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
+    await expect(correctedRow).toContainText('Corrected visitor notice');
+    await expect(page.getByText(/version history/i)).toHaveCount(0);
+    expect(updateRequests).toBe(1);
     expect(publicationRequests).toBe(1);
 
     await page.goto('/');
-    await expect(page.getByRole('region', { name: 'Published maintenance notice' })).toContainText(
-      'Server-confirmed window View status',
+    await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toContainText(
+      'Corrected visitor notice',
     );
     expect(submitted).toMatchObject({
       htmlContent: '<p>Server-confirmed saved draft</p>',
@@ -369,6 +403,16 @@ test.describe('Site banner workflow 1', () => {
       appearance: 'WARNING',
       icon: 'WARNING',
       dismissible: true,
+      audience: 'EVERYONE',
+      placement: 'SITE_TOP',
+      pageTargets: [{ kind: 'ALL' }],
+    });
+    expect(updateSubmitted).toMatchObject({
+      htmlContent: '<p>Corrected visitor notice</p>',
+      title: 'Correction submitted by admin',
+      appearance: 'SECONDARY',
+      icon: 'ERROR',
+      dismissible: false,
       audience: 'EVERYONE',
       placement: 'SITE_TOP',
       pageTargets: [{ kind: 'ALL' }],
