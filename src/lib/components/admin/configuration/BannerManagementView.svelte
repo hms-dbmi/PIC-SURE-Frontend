@@ -188,7 +188,7 @@
       // introduce or discard unsaved order changes.
       orderUuids = orderUuids.filter((orderUuid) => orderUuid !== archived.uuid);
       savedOrderUuids = savedOrderUuids.filter((orderUuid) => orderUuid !== archived.uuid);
-      openUuid = null;
+      if (openUuid === archived.uuid) openUuid = null;
       if (editingBanner?.uuid === archived.uuid) {
         mode = 'list';
         editingBanner = null;

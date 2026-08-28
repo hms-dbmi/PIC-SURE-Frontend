@@ -615,7 +615,7 @@ describe('BannerManagementView', () => {
     expect(document.getElementById(`banner-${disabled.uuid}-details`)).not.toBeInTheDocument();
   });
 
-  it('blocks archived row actions while pending and preserves an unrelated editor', async () => {
+  it('blocks archived row actions while pending and preserves unrelated row state', async () => {
     const saved = records[1];
     const archived = {
       uuid: saved.uuid,
@@ -649,12 +649,16 @@ describe('BannerManagementView', () => {
 
     await fireEvent.click(screen.getByRole('tab', { name: /Active & scheduled/ }));
     const activeRow = await openDetailsFor('System maintenance tonight');
+    expect(document.getElementById(`banner-${base.uuid}-details`)).toBeInTheDocument();
     await fireEvent.click(within(activeRow).getByRole('button', { name: 'Edit banner' }));
     expect(screen.getByRole('heading', { name: 'Edit published banner' })).toBeInTheDocument();
 
     resolveArchive(archived);
     await waitFor(() => expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner archived' }));
     expect(screen.getByRole('heading', { name: 'Edit published banner' })).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await screen.findByText('System maintenance tonight');
+    expect(document.getElementById(`banner-${base.uuid}-details`)).toBeInTheDocument();
   });
 
   it('shows the empty state once the last banner in a tab is archived', async () => {
