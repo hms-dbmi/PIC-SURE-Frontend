@@ -25,9 +25,11 @@ vi.mock('$lib/logger', () => ({
 }));
 
 vi.mock('@sveltejs/kit', () => ({
-  error: (status: number, message: string) => {
-    throw new Error(`${status}: ${message}`);
+  error: (status: number, body: string | { message: string }) => {
+    throw new Error(`${status}: ${typeof body === 'string' ? body : body.message}`);
   },
+  // Unused here; consentError.test.ts covers the real HttpError shape.
+  isHttpError: () => false,
 }));
 
 let mockWafFlag = false;

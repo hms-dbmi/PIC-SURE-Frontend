@@ -1,4 +1,4 @@
-import { error, type NumericRange } from '@sveltejs/kit';
+import { error, isHttpError, type NumericRange } from '@sveltejs/kit';
 import { logout, login } from '$lib/stores/User';
 import { browser } from '$app/environment';
 import { log, createLog, getSessionId } from '$lib/logger';
@@ -6,6 +6,7 @@ import { config } from '$lib/configuration.svelte';
 import { isWafCaptchaResponse, handleWafCaptcha } from '$lib/wafCaptcha';
 
 const BEARER = 'Bearer ';
+const CONSENT_DENIED = 'consent_denied';
 export const CONSENT_DENIED_MESSAGE = 'You no longer have consent for this saved result';
 
 export type RequestOptions = { signal?: AbortSignal };
@@ -14,8 +15,9 @@ export function isAbortError(e: unknown): boolean {
   return (e as Error | undefined)?.name === 'AbortError';
 }
 
-export function isConsentDeniedError(e: unknown): boolean {
-  return (e as Error | undefined)?.message?.includes(CONSENT_DENIED_MESSAGE) === true;
+// HttpError carries its text at body.message; it has no message of its own.
+export function consentDeniedMessage(e: unknown): string | undefined {
+  return isHttpError(e, 403) && e.body.errorType === CONSENT_DENIED ? e.body.message : undefined;
 }
 
 // TODO: fix any types
@@ -127,19 +129,17 @@ async function handleResponse(res: Response) {
       return new Promise(() => {});
     }
     // Loop guard tripped: deliberately fall through to the normal error path.
-  }
-
-  const resText = await res.text();
-  if (res.status === 401) {
+  } else if (res.status === 401) {
     log(createLog('AUTH', 'session.unauthorized', undefined, { status: 401 }));
     browser &&
       sessionStorage.setItem('logout-reason', 'Your session has timed out. Please log in.');
     logout(undefined, true);
     return;
   } else if (res.status === 403) {
-    const consentMessage = consentDeniedMessage(resText);
+    const resText = await res.text();
+    const consentMessage = parseConsentDenial(resText);
     if (consentMessage) {
-      error(res.status, consentMessage);
+      error(res.status, { message: consentMessage, errorType: CONSENT_DENIED });
     }
     log(createLog('AUTH', 'session.forbidden', undefined, { status: 403 }));
     if (browser) {
@@ -147,20 +147,21 @@ async function handleResponse(res: Response) {
       sessionStorage.removeItem('filters');
     }
     logout(undefined, false);
+    fail(res.status, resText);
   }
-  log(
-    createLog('ERROR', 'error.unknown', undefined, {
-      status: res.status,
-      error: { message: resText },
-    }),
-  );
-  error(res.status as NumericRange<400, 599>, resText);
+
+  fail(res.status, await res.text());
 }
 
-function consentDeniedMessage(responseBody: string): string | undefined {
+function fail(status: number, resText: string): never {
+  log(createLog('ERROR', 'error.unknown', undefined, { status, error: { message: resText } }));
+  error(status as NumericRange<400, 599>, resText);
+}
+
+function parseConsentDenial(responseBody: string): string | undefined {
   try {
     const body = JSON.parse(responseBody) as { errorType?: string; message?: string };
-    return body.errorType === 'consent_denied' ? body.message || CONSENT_DENIED_MESSAGE : undefined;
+    return body.errorType === CONSENT_DENIED ? body.message || CONSENT_DENIED_MESSAGE : undefined;
   } catch {
     return undefined;
   }
