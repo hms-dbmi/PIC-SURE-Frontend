@@ -231,6 +231,19 @@ describe('BannerManagementView', () => {
     expect(excerpt).toHaveTextContent(/…$/);
   });
 
+  it('does not split an emoji at the collapsed excerpt boundary', async () => {
+    const prefix = 'A'.repeat(158);
+    vi.mocked(getManagedBanners).mockResolvedValue([
+      { ...base, htmlContent: `<p>${prefix}😀 trailing text</p>` },
+    ]);
+    const { container } = render(BannerManagementView);
+
+    await screen.findByRole('button', { name: 'Details' });
+    const excerpt = container.querySelector('p.font-bold');
+    expect(excerpt).toHaveTextContent(`${prefix}😀…`);
+    expect(Array.from(excerpt?.textContent ?? '')).toHaveLength(160);
+  });
+
   it('uses static tone classes and bounds generic target values without raw JSON', async () => {
     vi.mocked(getManagedBanners).mockResolvedValue([
       {

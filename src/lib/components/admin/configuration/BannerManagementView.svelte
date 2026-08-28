@@ -77,9 +77,13 @@
 
   function present(banner: ManagedBanner): ManagementRecord {
     const plainText = bannerPlainText(banner.htmlContent);
+    const characters = Array.from(plainText);
     const excerpt =
-      plainText.length > MAX_EXCERPT_LENGTH
-        ? `${plainText.slice(0, MAX_EXCERPT_LENGTH - 1).trimEnd()}…`
+      characters.length > MAX_EXCERPT_LENGTH
+        ? `${characters
+            .slice(0, MAX_EXCERPT_LENGTH - 1)
+            .join('')
+            .trimEnd()}…`
         : plainText;
     return { ...banner, excerpt };
   }
