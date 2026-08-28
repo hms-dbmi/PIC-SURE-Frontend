@@ -59,8 +59,6 @@
   const panelId = $derived(`banner-${banner.uuid}-details`);
   const editable = $derived(banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED');
   const disableable = $derived(banner.lifecycle === 'ACTIVE' || banner.lifecycle === 'SCHEDULED');
-  const editable = $derived(banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED');
-  const disableable = $derived(banner.lifecycle === 'ACTIVE' || banner.lifecycle === 'SCHEDULED');
 
   function scheduleSummary() {
     if (banner.lifecycle === 'SAVED') return 'Not published';

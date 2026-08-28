@@ -218,6 +218,56 @@ describe('BannerManagementView', () => {
     expect(reorderBanners).toHaveBeenCalledWith([third.uuid, scheduled.uuid]);
   });
 
+  it('removes a disabled middle banner from both queues without discarding an unsaved reorder', async () => {
+    const third = {
+      ...base,
+      uuid: '66666666-6666-6666-6666-666666666666',
+      htmlContent: '<p>Third active notice</p>',
+      title: 'Third notice',
+      priority: 12,
+    };
+    const disabled = {
+      ...scheduled,
+      status: 'DISABLED' as const,
+      lifecycle: 'DISABLED' as const,
+      updatedAt: '2026-08-27T13:00:00Z',
+      updatedBy: 'super-id',
+      disabledAt: '2026-08-27T13:00:00Z',
+      disabledBy: 'super-id',
+    };
+    vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, third]);
+    vi.mocked(disableBanner).mockResolvedValue(disabled);
+    vi.mocked(reorderBanners).mockResolvedValue([
+      { ...third, priority: 1 },
+      { ...base, priority: 2 },
+    ]);
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+
+    await drag(third.uuid, base.uuid);
+    await drag(scheduled.uuid, base.uuid);
+    expect(bannerRowOrder()).toEqual([third.uuid, scheduled.uuid, base.uuid]);
+
+    const scheduledRow = document.querySelector<HTMLElement>(
+      `[data-banner-row="${scheduled.uuid}"]`,
+    )!;
+    await fireEvent.click(within(scheduledRow).getByRole('button', { name: 'Details' }));
+    await fireEvent.click(within(scheduledRow).getByRole('button', { name: 'Disable banner' }));
+    await fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
+    );
+
+    await waitFor(() => expect(bannerRowOrder()).toEqual([third.uuid, base.uuid]));
+    expect(screen.getByText('Position 1')).toBeInTheDocument();
+    expect(screen.getByText('Position 2')).toBeInTheDocument();
+    expect(screen.queryByText('Position 3')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save order' })).toBeEnabled();
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
+    expect(reorderBanners).toHaveBeenCalledOnce();
+    expect(reorderBanners).toHaveBeenCalledWith([third.uuid, base.uuid]);
+  });
+
   it('groups loaded rows under lifecycle tabs and filters plain text without pagination', async () => {
     const parse = vi.spyOn(DOMParser.prototype, 'parseFromString');
     render(BannerManagementView);

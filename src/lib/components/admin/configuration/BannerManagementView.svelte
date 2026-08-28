@@ -158,6 +158,8 @@
       records = records.map((record) =>
         record.uuid === disabled.uuid ? present(disabled) : record,
       );
+      orderUuids = orderUuids.filter((orderUuid) => orderUuid !== disabled.uuid);
+      savedOrderUuids = savedOrderUuids.filter((orderUuid) => orderUuid !== disabled.uuid);
       openUuid = null;
       toaster.success({ title: 'Banner disabled' });
     } catch {
