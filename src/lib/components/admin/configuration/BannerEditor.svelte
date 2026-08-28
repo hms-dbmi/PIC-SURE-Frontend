@@ -126,7 +126,7 @@
             Basic formatting, lists, relative links, HTTPS links, and email links are supported.
           </p>
           <p>
-            {sanitizedLength}/5,000 characters.
+            {sanitizedLength}/5,000 sanitized HTML characters.
             {#if sanitizedLength > 5_000}
               <span class="text-error-700">
                 Content exceeds the 5,000-character limit. Shorten it before publishing.

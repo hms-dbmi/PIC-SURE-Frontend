@@ -77,7 +77,7 @@ describe('BannerEditor', () => {
       );
     });
     const contentHelp = container.querySelector('#banner-content-help');
-    expect(contentHelp).toHaveTextContent('0/5,000 characters');
+    expect(contentHelp).toHaveTextContent('0/5,000 sanitized HTML characters');
     expect(contentHelp).not.toHaveAttribute('aria-live');
   });
 
@@ -122,9 +122,7 @@ describe('BannerEditor', () => {
     );
     const preview = screen.getByRole('region', { name: 'Site announcement' });
     expect(preview.querySelectorAll('p')).toHaveLength(2);
-    expect(preview.querySelector('p')?.textContent?.replaceAll('\u00a0', ' ')).toBe(
-      'First sentence with  two spaces',
-    );
+    expect(preview.querySelector('p')?.textContent).toBe('First sentence with  two spaces');
   });
 
   it('reconciles sanitizer-stripped pasted markup into the editor and preview', async () => {
@@ -160,8 +158,12 @@ describe('BannerEditor', () => {
         'Content exceeds the 5,000-character limit. Shorten it before publishing.',
       );
     });
+    const overLimitExplanation = screen.getByText(
+      'Content exceeds the 5,000-character limit. Shorten it before publishing.',
+    );
     expect(editor).toHaveAttribute('aria-describedby', 'banner-content-help');
     expect(contentHelp).not.toHaveAttribute('aria-live');
+    expect(overLimitExplanation).not.toHaveAttribute('aria-live');
     expect(screen.getByRole('button', { name: 'Publish now' })).toBeDisabled();
   });
 });

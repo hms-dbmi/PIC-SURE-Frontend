@@ -93,9 +93,31 @@ test.describe('Site banner workflow 1', () => {
       .getByRole('region', { name: 'Site announcement' })
       .locator('.site-banner-content');
     await expect(previewContent.locator('p')).toHaveCount(2);
-    expect(
-      (await previewContent.locator('p').nth(1).textContent())?.replaceAll('\u00a0', ' '),
-    ).toBe('Second  paragraph');
+    await expect(previewContent.locator('p').nth(0)).toHaveText('First sentence with spaces');
+    expect(await previewContent.locator('p').nth(1).textContent()).toBe('Second  paragraph');
+  });
+
+  test('keeps a bullet list stable while adding items', async ({ page }) => {
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    const bannerForm = page.getByTestId('banner-editor-form');
+    const editor = bannerForm.locator('#banner-content-editor .ql-editor');
+
+    await editor.click();
+    await bannerForm.locator('button.ql-list[value="bullet"]').click();
+    await editor.type('First item');
+    await editor.press('Enter');
+    await editor.type('Second item');
+
+    await expect(editor.locator('li')).toHaveCount(2);
+    await expect(editor.locator('li').nth(0)).toHaveText('First item');
+    await expect(editor.locator('li').nth(1)).toHaveText('Second item');
+    const previewList = page
+      .getByRole('region', { name: 'Site announcement' })
+      .locator('.site-banner-content ul');
+    await expect(previewList.locator('li')).toHaveCount(2);
+    await expect(previewList.locator('li').nth(0)).toHaveText('First item');
+    await expect(previewList.locator('li').nth(1)).toHaveText('Second item');
   });
 
   test('creates, previews, publishes, and renders the authoritative banner above navigation', async ({
@@ -194,7 +216,7 @@ test.describe('Site banner workflow 1', () => {
     );
     expect(submitted).toMatchObject({
       htmlContent:
-        '<p><a href="https://example.org/status" rel="noopener noreferrer" target="_blank">System\u00a0maintenance\u00a0status\u00a0page</a></p>',
+        '<p><a href="https://example.org/status" rel="noopener noreferrer" target="_blank">System maintenance status page</a></p>',
       title: 'Planned maintenance',
       appearance: 'WARNING',
       icon: 'WARNING',

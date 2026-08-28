@@ -82,7 +82,6 @@
     if (!convertQuillClasses) return content;
     let converted = content;
     Object.entries({
-      '&nbsp;': ' ',
       'ql-indent-1': 'ml-2',
       'ql-indent-2': 'ml-4',
       'ql-indent-3': 'ml-6',
@@ -96,6 +95,10 @@
       'ql-size-huge': 'text-xl',
     }).forEach(([from, to]) => (converted = converted.replaceAll(from, to)));
     return converted;
+  }
+
+  function normalizeNonBreakingSpaces(content: string) {
+    return content.replaceAll('&nbsp;', ' ').replaceAll('\u00a0', ' ');
   }
 
   function canonicalHTML(content: string) {
@@ -119,7 +122,7 @@
   onMount(async () => {
     const { default: Quill } = await import('quill');
     if (container) {
-      // Initialize from supplied content before Quill takes ownership of the container.
+      // Quill reads initial markup only from its container during construction.
       // eslint-disable-next-line svelte/no-dom-manipulating
       container.innerHTML = content;
       quill = new Quill(container, {
@@ -138,18 +141,14 @@
         if (!quill) return;
         const semanticContent = quill.getSemanticHTML();
         const convertedContent = convertClasses(semanticContent);
-        let nextContent = sanitizer(convertedContent);
-        const sanitizedDocument =
-          reconcileSanitizedDocument && convertedContent !== semanticContent
-            ? sanitizer(semanticContent)
-            : nextContent;
+        let sanitizedContent = sanitizer(convertedContent);
         if (
           reconcileSanitizedDocument &&
-          canonicalHTML(sanitizedDocument) !== canonicalHTML(semanticContent)
+          canonicalHTML(sanitizedContent) !== canonicalHTML(convertedContent)
         ) {
           const selection = quill.getSelection();
-          quill.clipboard.dangerouslyPasteHTML(nextContent, 'silent');
-          nextContent = sanitizer(convertClasses(quill.getSemanticHTML()));
+          quill.clipboard.dangerouslyPasteHTML(sanitizedContent, 'silent');
+          sanitizedContent = sanitizer(convertClasses(quill.getSemanticHTML()));
           if (selection) {
             const finalIndex = Math.max(0, quill.getLength() - 1);
             const index = Math.min(selection.index, finalIndex);
@@ -157,6 +156,7 @@
             quill.setSelection(index, length, 'silent');
           }
         }
+        const nextContent = normalizeNonBreakingSpaces(sanitizedContent);
         editorContent = nextContent;
         content = nextContent;
       });
