@@ -1,16 +1,17 @@
-import type { BannerPageTarget } from '$lib/models/Banner';
+import { BANNER_PAGE_TARGET_KINDS, type BannerPageTarget } from '$lib/models/Banner';
 
 const parameterSegment = /^\[[A-Za-z_][A-Za-z0-9_]*\]$/;
+const canonicalKindOrder = new Map(BANNER_PAGE_TARGET_KINDS.map((kind, index) => [kind, index]));
 
 export function validateBannerPageTarget(target: BannerPageTarget): string | null {
   if (target.kind === 'ALL') return null;
 
   const path = trimOuterSpaces(target.path);
+  if (path.includes('\\') || [...path].some(isControlCharacter))
+    return 'The pathname contains unsupported characters.';
   if (!path.startsWith('/')) return 'Enter an absolute path starting with /.';
   if (path.includes('?') || path.includes('#'))
     return 'Enter a pathname without a query or fragment.';
-  if (path.includes('\\') || [...path].some(isControlCharacter))
-    return 'The pathname contains unsupported characters.';
 
   const normalizedPath = normalizePathname(path);
   const segments = normalizedPath === '/' ? [] : normalizedPath.slice(1).split('/');
@@ -45,7 +46,8 @@ export function validateBannerPageTarget(target: BannerPageTarget): string | nul
 export function normalizeBannerPageTargets(targets: BannerPageTarget[]): BannerPageTarget[] {
   if (targets.length === 0) throw new Error('Add at least one page target.');
   if (targets.some((target) => target.kind === 'ALL')) {
-    if (targets.length !== 1) throw new Error('All pages cannot be combined with targeted pages.');
+    if (!targets.every((target) => target.kind === 'ALL'))
+      throw new Error('All pages cannot be combined with targeted pages.');
     return [{ kind: 'ALL' }];
   }
 
@@ -59,7 +61,10 @@ export function normalizeBannerPageTargets(targets: BannerPageTarget[]): BannerP
   });
   const unique = new Map(normalized.map((target) => [`${target.kind}\0${target.path}`, target]));
   return [...unique.values()].sort(
-    (left, right) => compareText(left.kind, right.kind) || compareText(left.path, right.path),
+    (left, right) =>
+      (canonicalKindOrder.get(left.kind) ?? Number.MAX_SAFE_INTEGER) -
+        (canonicalKindOrder.get(right.kind) ?? Number.MAX_SAFE_INTEGER) ||
+      compareText(left.path, right.path),
   );
 }
 
@@ -87,15 +92,15 @@ export function matchesBannerPageTargets(
   });
 }
 
-export function isBannerPageTargets(value: unknown): value is BannerPageTarget[] {
-  if (!Array.isArray(value) || value.length === 0) return false;
+export function parseBannerPageTargets(value: unknown): BannerPageTarget[] | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
   const targets: BannerPageTarget[] = [];
   for (const candidate of value) {
-    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return false;
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null;
     const fields = Object.keys(candidate);
     const target = candidate as Record<string, unknown>;
     if (target.kind === 'ALL') {
-      if (fields.length !== 1) return false;
+      if (fields.length !== 1) return null;
       targets.push({ kind: 'ALL' });
     } else if (
       (target.kind === 'EXACT' || target.kind === 'SUBTREE' || target.kind === 'PARAMETERIZED') &&
@@ -106,14 +111,14 @@ export function isBannerPageTargets(value: unknown): value is BannerPageTarget[]
     ) {
       targets.push({ kind: target.kind, path: target.path });
     } else {
-      return false;
+      return null;
     }
   }
 
   try {
-    return JSON.stringify(normalizeBannerPageTargets(targets)) === JSON.stringify(targets);
+    return normalizeBannerPageTargets(targets);
   } catch {
-    return false;
+    return null;
   }
 }
 

@@ -24,7 +24,7 @@ test.describe('Site banner delivery', () => {
 
   test('renders above navigation and refreshes after client navigation', async ({ page }) => {
     let feedRequests = 0;
-    await page.route('**/picsure/operations/banners/active', async (route) => {
+    await page.route('**/picsure/operations/banners/active/v2', async (route) => {
       feedRequests += 1;
       await route.fulfill({ json: [banner] });
     });
@@ -75,7 +75,7 @@ test.describe('Site banner closed-login delivery', () => {
       title: 'Signed-out notice',
       audience: 'SIGNED_OUT',
     };
-    await page.route('**/picsure/operations/banners/active', (route) =>
+    await page.route('**/picsure/operations/banners/active/v2', (route) =>
       route.fulfill({ json: [banner, signedIn, signedOut] }),
     );
 
@@ -120,7 +120,7 @@ test.describe('Site banner closed-login delivery', () => {
       priority: (index + 1) * 10,
       presentationHash: `signed-out-${index + 1}`,
     }));
-    await page.route('**/picsure/operations/banners/active', (route) =>
+    await page.route('**/picsure/operations/banners/active/v2', (route) =>
       route.fulfill({ json: notices }),
     );
 
@@ -198,7 +198,7 @@ test.describe('Site banner workflow 3', () => {
     let submitted: Record<string, unknown> | undefined;
     let credentialedFeedRequests = 0;
     const servedAudiences: string[][] = [];
-    await page.route('**/picsure/operations/banners/active', (route) => {
+    await page.route('**/picsure/operations/banners/active/v2', (route) => {
       if (route.request().headers()['authorization']) credentialedFeedRequests += 1;
       servedAudiences.push(feed.map((record) => record.audience));
       return route.fulfill({ json: feed });
@@ -282,7 +282,7 @@ test.describe('Site banner workflow 1', () => {
     for (const path of ['role', 'privilege', 'application', 'connection']) {
       await page.route(`**/psama/${path}`, (route) => route.fulfill({ json: [] }));
     }
-    await page.route('**/picsure/operations/banners/active', (route) =>
+    await page.route('**/picsure/operations/banners/active/v2', (route) =>
       route.fulfill({ json: [] }),
     );
     await page.route('**/picsure/operations/banners', (route) => {
@@ -492,7 +492,7 @@ test.describe('Site banner workflow 1', () => {
       disabledBy: 'super-id',
     };
     let activeBanner = authoritativeBanner;
-    await page.route('**/picsure/operations/banners/active', (route) =>
+    await page.route('**/picsure/operations/banners/active/v2', (route) =>
       route.fulfill({ json: published ? [activeBanner] : [] }),
     );
     await page.route('**/picsure/operations/banners**', async (route) => {
@@ -797,7 +797,7 @@ test.describe('Site banner workflow 2', () => {
     };
     const authoritative = () => (scheduled ? { ...scheduled, lifecycle: lifecycle() } : null);
 
-    await page.route('**/picsure/operations/banners/active', (route) => {
+    await page.route('**/picsure/operations/banners/active/v2', (route) => {
       const banner = authoritative();
       return route.fulfill({ json: banner && lifecycle() === 'ACTIVE' ? [banner] : [] });
     });
@@ -941,7 +941,7 @@ test.describe('Site banner workflow 5', () => {
     await page.route('**/picsure/operations/banners**', async (route) => {
       const request = route.request();
       const pathname = new URL(request.url()).pathname;
-      if (request.method() === 'GET' && pathname.endsWith('/banners/active')) {
+      if (request.method() === 'GET' && pathname.endsWith('/banners/active/v2')) {
         return route.fulfill({
           json: saved.map((record) => ({
             uuid: record.uuid,

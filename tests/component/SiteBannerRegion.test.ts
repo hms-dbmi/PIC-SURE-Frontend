@@ -76,7 +76,7 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(fetchMock).toHaveBeenCalledWith('/picsure/operations/banners/active', {
+    expect(fetchMock).toHaveBeenCalledWith('/picsure/operations/banners/active/v2', {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
     });
@@ -271,6 +271,22 @@ describe('SiteBannerRegion', () => {
 
     expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
   });
+
+  it('fails safely without banners when an old backend does not have the versioned feed', async () => {
+    fetchMock.mockResolvedValue(new Response('', { status: 404 }));
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+
+    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(createLog).toHaveBeenCalledWith(
+      'ERROR',
+      'banner.feed_failed',
+      undefined,
+      expect.objectContaining({ error: { message: 'Banner feed returned HTTP 404' } }),
+    );
+    expect(log).toHaveBeenCalledOnce();
+  });
 });
 
 const audienceCases: [BannerAudience, boolean, boolean][] = [
@@ -377,6 +393,31 @@ describe('SiteBannerRegion audience targeting', () => {
     expect(
       screen.getAllByTestId('site-banner').map((element) => element.getAttribute('aria-label')),
     ).toEqual(['First matching page', 'Second matching page']);
+  });
+
+  it('accepts and normalizes well-formed noncanonical targets from the versioned feed', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          {
+            ...banner,
+            pageTargets: [
+              { kind: 'SUBTREE', path: '/admin/' },
+              { kind: 'EXACT', path: '/admin/users' },
+              { kind: 'EXACT', path: '/admin/users' },
+            ],
+          },
+        ]),
+        { status: 200 },
+      ),
+    );
+    render(SiteBannerRegion);
+
+    await navigation.callback?.({ to: { url: new URL('https://picsure.example/admin/users') } });
+
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(createLog).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
   });
 
   it('uses the new pathname on each SvelteKit navigation', async () => {

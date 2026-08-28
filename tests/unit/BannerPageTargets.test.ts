@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   matchesBannerPageTargets,
   normalizeBannerPageTargets,
+  parseBannerPageTargets,
   validateBannerPageTarget,
 } from '$lib/utilities/BannerPageTargets';
 import type { BannerPageTarget } from '$lib/models/Banner';
@@ -23,7 +24,9 @@ describe('normalizeBannerPageTargets', () => {
   });
 
   it('keeps All pages in its one canonical shape', () => {
-    expect(normalizeBannerPageTargets([{ kind: 'ALL' }])).toEqual([{ kind: 'ALL' }]);
+    expect(normalizeBannerPageTargets([{ kind: 'ALL' }, { kind: 'ALL' }])).toEqual([
+      { kind: 'ALL' },
+    ]);
   });
 
   it('uses backend-compatible code-unit ordering instead of locale collation', () => {
@@ -47,7 +50,7 @@ describe('validateBannerPageTarget', () => {
     [{ kind: 'PARAMETERIZED', path: '/studies/[study]' }, null],
     [{ kind: 'PARAMETERIZED', path: '/studies/[study]/participants/[participant]' }, null],
     [{ kind: 'EXACT', path: 'help' }, 'Enter an absolute path starting with /.'],
-    [{ kind: 'EXACT', path: '\t/help' }, 'Enter an absolute path starting with /.'],
+    [{ kind: 'EXACT', path: '\t/help' }, 'The pathname contains unsupported characters.'],
     [
       { kind: 'EXACT', path: '/help?topic=banners' },
       'Enter a pathname without a query or fragment.',
@@ -69,6 +72,32 @@ describe('validateBannerPageTarget', () => {
     ],
   ] satisfies [BannerPageTarget, string | null][])('validates %o', (target, error) => {
     expect(validateBannerPageTarget(target)).toBe(error);
+  });
+});
+
+describe('parseBannerPageTargets', () => {
+  it('accepts and canonicalizes well-formed noncanonical feed values', () => {
+    expect(
+      parseBannerPageTargets([
+        { kind: 'SUBTREE', path: '/admin/' },
+        { kind: 'EXACT', path: '/help' },
+        { kind: 'EXACT', path: '/help' },
+      ]),
+    ).toEqual([
+      { kind: 'EXACT', path: '/help' },
+      { kind: 'SUBTREE', path: '/admin' },
+    ]);
+  });
+
+  const malformedFeedValues: unknown[] = [
+    [],
+    [{ kind: 'EXACT' }],
+    [{ kind: 'EXACT', path: '/help', extra: true }],
+    [{ kind: 'ALL' }, { kind: 'EXACT', path: '/help' }],
+  ];
+
+  it.each(malformedFeedValues)('rejects malformed feed value %j', (value) => {
+    expect(parseBannerPageTargets(value)).toBeNull();
   });
 });
 

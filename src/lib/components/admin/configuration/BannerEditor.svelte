@@ -187,7 +187,7 @@
   }
 
   function addPageTarget() {
-    pageTargets = [...pageTargets, { kind: 'EXACT', path: '/' }];
+    pageTargets = [...pageTargets, { kind: 'EXACT', path: '' }];
   }
 
   function removePageTarget(index: number) {
@@ -207,6 +207,13 @@
       htmlContent: sanitizeBannerHTML(value.htmlContent),
       scheduleInput: { startLocal, endLocal, startChoice, endChoice },
     });
+  }
+
+  function adoptAuthoritativePageTargets(authoritative: ManagedBanner) {
+    allPages = authoritative.pageTargets.some((target) => target.kind === 'ALL');
+    pageTargets = authoritative.pageTargets
+      .filter((target): target is TargetedPage => target.kind !== 'ALL')
+      .map((target) => ({ ...target }));
   }
 
   let initialSnapshot = $state(snapshot());
@@ -286,6 +293,7 @@
       const saved = banner
         ? await updateSavedBanner(banner.uuid, draft())
         : await saveBanner(draft());
+      adoptAuthoritativePageTargets(saved);
       initialSnapshot = snapshot();
       toaster.success({ title: banner ? 'Banner changes saved' : 'Banner saved for later' });
       onsuccess(saved);
@@ -309,6 +317,7 @@
           : banner
             ? await publishSavedBanner(banner.uuid, draft())
             : await publishBanner(draft());
+      adoptAuthoritativePageTargets(published);
       initialSnapshot = snapshot();
       toaster.success({
         title:

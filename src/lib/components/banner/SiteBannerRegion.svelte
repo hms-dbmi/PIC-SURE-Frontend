@@ -6,7 +6,10 @@
   import { Picsure } from '$lib/paths';
   import { hasValidToken } from '$lib/stores/User';
   import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
-  import { isBannerPageTargets, matchesBannerPageTargets } from '$lib/utilities/BannerPageTargets';
+  import {
+    matchesBannerPageTargets,
+    parseBannerPageTargets,
+  } from '$lib/utilities/BannerPageTargets';
 
   const appearances = new Set<unknown>(BANNER_APPEARANCES);
   const icons = new Set<unknown>(BANNER_ICONS);
@@ -31,11 +34,12 @@
     return true;
   }
 
-  function isBannerFeedRecord(value: unknown): value is BannerFeedRecord {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  function normalizeBannerFeedRecord(value: unknown): BannerFeedRecord | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
     const banner = value as Record<string, unknown>;
+    const pageTargets = parseBannerPageTargets(banner.pageTargets);
 
-    return (
+    if (
       typeof banner.uuid === 'string' &&
       typeof banner.htmlContent === 'string' &&
       (banner.title === null || typeof banner.title === 'string') &&
@@ -44,11 +48,14 @@
       typeof banner.dismissible === 'boolean' &&
       audiences.has(banner.audience) &&
       typeof banner.placement === 'string' &&
-      isBannerPageTargets(banner.pageTargets) &&
+      pageTargets !== null &&
       typeof banner.priority === 'number' &&
       Number.isFinite(banner.priority) &&
       typeof banner.presentationHash === 'string'
-    );
+    ) {
+      return { ...banner, pageTargets } as BannerFeedRecord;
+    }
+    return null;
   }
 
   async function refreshBanners(currentPathname: string): Promise<void> {
@@ -63,7 +70,7 @@
       const feed: unknown = await response.json();
       if (!Array.isArray(feed)) throw new Error('Banner feed returned an invalid response');
 
-      const validRecords = feed.filter(isBannerFeedRecord);
+      const validRecords = feed.map(normalizeBannerFeedRecord).filter((record) => record !== null);
       banners = validRecords.filter(
         (banner): banner is ActiveBanner => banner.placement === 'SITE_TOP',
       );

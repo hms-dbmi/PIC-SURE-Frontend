@@ -549,6 +549,39 @@ describe('BannerEditor', () => {
     await waitFor(() => expect(ondirtychange).toHaveBeenLastCalledWith(true));
   });
 
+  it('adds an empty page target that requires an intentional path', async () => {
+    render(BannerEditor);
+    await fireEvent.click(screen.getByRole('radio', { name: 'Specific pages' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Add page target' }));
+
+    expect(screen.getByRole('textbox', { name: 'Target 1 path' })).toHaveValue('');
+    expect(screen.getByText('Enter an absolute path starting with /.')).toBeInTheDocument();
+  });
+
+  it('adopts authoritative target normalization before marking a saved edit clean', async () => {
+    const targeted = {
+      ...published,
+      pageTargets: [{ kind: 'EXACT' as const, path: '/help' }],
+    };
+    const normalized = {
+      ...targeted,
+      pageTargets: [{ kind: 'EXACT' as const, path: '/status' }],
+    };
+    vi.mocked(updatePublishedBanner).mockResolvedValue(normalized);
+    const ondirtychange = vi.fn();
+    render(BannerEditor, { props: { banner: targeted, ondirtychange } });
+
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Target 1 path' }), {
+      target: { value: ' /status/ ' },
+    });
+    await fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('textbox', { name: 'Target 1 path' })).toHaveValue('/status');
+      expect(ondirtychange).toHaveBeenLastCalledWith(false);
+    });
+  });
+
   it('reopens targeted pages and removes individual entries', async () => {
     const targeted = {
       ...published,
