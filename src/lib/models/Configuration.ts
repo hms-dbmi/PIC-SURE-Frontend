@@ -59,6 +59,9 @@ export type Settings = Indexable & {
     type: ExportType;
   };
   exportSystemFields: string[];
+  dataset: {
+    bypassConceptLookup: string[];
+  };
 };
 
 interface Link {
@@ -538,6 +541,14 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
         'Color palette cycled through when rendering distribution/histogram charts in the Variable Distributions view.',
     },
 
+    DATASET_BYPASS_CONCEPT_LOOKUP: {
+      group: 'Dataset Management',
+      type: 'string',
+      default: '',
+      description:
+        'System fields to bypass dictionary lookup on dataset view and restore. (Loads from dictionary/concepts/detail/{conceptPathDataset} otherwise.)',
+    },
+
     // --- Export ---
     MAX_DATA_POINTS_FOR_EXPORT: {
       group: 'Export',
@@ -748,6 +759,14 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
   };
 }
 
+function asFieldList(list: string): string[] {
+  return list
+    .split(',')
+    .map((f: string) => f.trim())
+    .filter(Boolean)
+    .map((f: string) => `\\${f}\\`);
+}
+
 export function mapSettings(apiSettings: ConfigObject[]): Settings {
   const parse = parsersFor('settings', resolveConfigMap(apiSettings));
   return {
@@ -771,12 +790,10 @@ export function mapSettings(apiSettings: ConfigObject[]): Settings {
           ? ExportType.Full
           : ExportType.Aggregate,
     },
-    exportSystemFields: parse
-      .asString('EXPORT_SYSTEM_FIELDS')
-      .split(',')
-      .map((f: string) => f.trim())
-      .filter(Boolean)
-      .map((f: string) => `\\${f}\\`),
+    exportSystemFields: asFieldList(parse.asString('EXPORT_SYSTEM_FIELDS')),
+    dataset: {
+      bypassConceptLookup: asFieldList(parse.asString('DATASET_BYPASS_CONCEPT_LOOKUP')),
+    },
   };
 }
 

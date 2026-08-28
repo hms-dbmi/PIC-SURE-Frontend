@@ -1,3 +1,4 @@
+import { config } from '$lib/configuration.svelte';
 import {
   QueryV3,
   type QueryInterfaceV3,
@@ -24,7 +25,7 @@ import type { ExportInterface } from '$lib/models/Export';
 
 const defaultSearchResult = (conceptPath: string, type: string = 'Categorical') => {
   const paths: string[] = conceptPath.split('\\').filter(Boolean);
-  const name = paths.pop();
+  const name = paths[paths.length - 1];
   return {
     conceptPath,
     dataset: paths[0],
@@ -42,12 +43,14 @@ export async function pathToSearchResult(
   type: SearchResult['type'] = 'Categorical',
 ): Promise<SearchResult> {
   const dataset = conceptPath.split('\\').filter(Boolean)[0] || conceptPath;
+  const defaultData = defaultSearchResult(conceptPath, type);
 
-  const raw = await getConceptDetails(conceptPath, dataset);
-  return {
-    ...defaultSearchResult(conceptPath, type),
-    ...raw,
-  };
+  return config.settings.dataset.bypassConceptLookup.includes(conceptPath)
+    ? defaultData
+    : {
+        ...defaultData,
+        ...(await getConceptDetails(conceptPath, dataset)),
+      };
 }
 
 export interface QueryEstimate {

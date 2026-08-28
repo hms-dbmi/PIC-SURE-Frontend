@@ -8,6 +8,7 @@ import type {
   GenomicFilterInterface,
 } from '$lib/models/Filter.svelte';
 import { getConceptDetails, getConceptTree } from '$lib/stores/Dictionary';
+import { config } from '$lib/configuration.svelte';
 
 import {
   genomicV3ToFilter,
@@ -24,6 +25,12 @@ vi.mock('$lib/stores/Dictionary', () => ({
   getConceptDetails: vi.fn(),
   getConceptTree: vi.fn(),
   ENSURE_MAX_DEPTH: 100,
+}));
+
+vi.mock('$lib/configuration.svelte', () => ({
+  config: {
+    settings: { dataset: { bypassConceptLookup: [] as string[] } },
+  },
 }));
 
 vi.mock('$lib/stores/Filter', () => ({
@@ -162,6 +169,7 @@ describe('genomicV3ToFilter', () => {
 describe('pathToSearchResult', () => {
   beforeEach(() => {
     mockGetConceptDetails.mockResolvedValue(makeSearchResult());
+    config.settings.dataset.bypassConceptLookup = [];
   });
 
   it('extracts dataset from the first path segment', async () => {
@@ -219,6 +227,38 @@ describe('pathToSearchResult', () => {
 
     // Then
     expect(result.type).toBe('Categorical');
+  });
+
+  it('skips the dictionary lookup for a concept path in the bypass list', async () => {
+    // Given
+    const path = '\\\\_Topmed Study Accession with Subject ID\\\\';
+    config.settings.dataset.bypassConceptLookup = [path];
+
+    // When
+    const result = await pathToSearchResult(path);
+
+    // Then
+    expect(mockGetConceptDetails).not.toHaveBeenCalledWith(path, expect.anything());
+    expect(result).toMatchObject({
+      conceptPath: path,
+      dataset: '_Topmed Study Accession with Subject ID',
+      name: '_Topmed Study Accession with Subject ID',
+      allowFiltering: false,
+    });
+  });
+
+  it('still looks up concept details for paths not in the bypass list', async () => {
+    // Given
+    config.settings.dataset.bypassConceptLookup = [
+      '\\\\_Topmed Study Accession with Subject ID\\\\',
+    ];
+    const path = '\\\\dataset\\\\variable\\\\';
+
+    // When
+    await pathToSearchResult(path);
+
+    // Then
+    expect(mockGetConceptDetails).toHaveBeenCalledWith(path, 'dataset');
   });
 });
 
