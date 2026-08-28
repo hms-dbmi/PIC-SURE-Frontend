@@ -459,3 +459,99 @@ test.describe('Site banner workflow 1', () => {
     await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Preserve this title');
   });
 });
+
+test.describe('Site banner workflow 2', () => {
+  test.use({
+    storageState: 'tests/end-to-end/.auth/adminUser.json',
+    timezoneId: 'America/New_York',
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page);
+    for (const path of ['role', 'privilege', 'application', 'connection']) {
+      await page.route(`**/psama/${path}`, (route) => route.fulfill({ json: [] }));
+    }
+  });
+
+  test('moves a scheduled banner through Scheduled, Active, and Expired without waiting', async ({
+    page,
+  }) => {
+    const startAt = '2026-08-28T13:01:00.000Z';
+    const endAt = '2026-08-28T13:02:00.000Z';
+    let serverNow = '2026-08-28T13:00:00.000Z';
+    let scheduled: Record<string, unknown> | null = null;
+    await page.clock.install({ time: new Date(serverNow) });
+
+    const lifecycle = () => {
+      if (serverNow < startAt) return 'SCHEDULED';
+      if (serverNow >= endAt) return 'EXPIRED';
+      return 'ACTIVE';
+    };
+    const authoritative = () => (scheduled ? { ...scheduled, lifecycle: lifecycle() } : null);
+
+    await page.route('**/picsure/operations/banners/active', (route) => {
+      const banner = authoritative();
+      return route.fulfill({ json: banner && lifecycle() === 'ACTIVE' ? [banner] : [] });
+    });
+    await page.route('**/picsure/operations/banners', async (route) => {
+      if (route.request().method() === 'GET') {
+        const banner = authoritative();
+        return route.fulfill({ json: banner ? [banner] : [] });
+      }
+      if (route.request().method() === 'POST') {
+        const submitted = route.request().postDataJSON();
+        expect(submitted).toMatchObject({ startAt, endAt });
+        scheduled = {
+          ...banner,
+          ...submitted,
+          uuid: '88888888-8888-8888-8888-888888888888',
+          status: 'PUBLISHED',
+          lifecycle: 'SCHEDULED',
+          priority: 1,
+          presentationHash: 'scheduled-hash',
+          startAt,
+          endAt,
+          createdAt: serverNow,
+          createdBy: 'admin-id',
+          updatedAt: serverNow,
+          updatedBy: 'admin-id',
+          publishedAt: serverNow,
+          publishedBy: 'admin-id',
+        };
+        return route.fulfill({ status: 201, json: scheduled });
+      }
+      return route.fallback();
+    });
+
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.getByRole('button', { name: '+ Create banner' }).click();
+    const form = page.getByTestId('banner-editor-form');
+    await form.locator('#banner-content-editor .ql-editor').fill('Minute-boundary maintenance');
+    await form.getByLabel('Start').fill('2026-08-28T09:01');
+    await form.getByLabel('End').fill('2026-08-28T09:02');
+    await expect(form.getByText('Resolved UTC: 2026-08-28 13:01 UTC')).toBeVisible();
+    await expect(form.getByText('Resolved UTC: 2026-08-28 13:02 UTC')).toBeVisible();
+    await form.getByRole('button', { name: 'Schedule banner' }).click();
+
+    const row = page.locator('[data-banner-row="88888888-8888-8888-8888-888888888888"]');
+    await expect(row).toContainText('Scheduled');
+
+    serverNow = startAt;
+    await page.clock.setFixedTime(new Date(serverNow));
+    await page.goto('/help');
+    await expect(page.getByTestId('site-banner')).toContainText('Minute-boundary maintenance');
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await expect(row).toContainText('Active');
+
+    serverNow = endAt;
+    await page.clock.setFixedTime(new Date(serverNow));
+    await page.reload();
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.getByRole('tab', { name: 'Expired' }).click();
+    await expect(row).toContainText('Expired');
+    await page.goto('/help');
+    await expect(page.getByTestId('site-banner')).toHaveCount(0);
+  });
+});

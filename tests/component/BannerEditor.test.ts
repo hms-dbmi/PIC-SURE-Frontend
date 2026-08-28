@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 const navigation = vi.hoisted(() => ({ beforeNavigate: vi.fn(), goto: vi.fn() }));
@@ -50,6 +50,10 @@ beforeEach(() => {
   vi.mocked(updatePublishedBanner).mockReset();
   vi.mocked(toaster.success).mockReset();
   vi.mocked(toaster.error).mockReset();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe('BannerEditor', () => {
@@ -116,6 +120,95 @@ describe('BannerEditor', () => {
     expect(publishBanner).toHaveBeenCalledOnce();
   });
 
+  it('shows resolved UTC and schedules a future local minute with the selected end', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    vi.mocked(publishBanner).mockResolvedValue({
+      ...published,
+      lifecycle: 'SCHEDULED',
+      startAt: '2026-08-28T13:15:00Z',
+      endAt: '2026-08-28T14:45:00Z',
+    });
+    render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Scheduled content</p>';
+    await fireEvent.input(editor);
+
+    await fireEvent.input(screen.getByLabelText('Start'), {
+      target: { value: '2026-08-28T09:15' },
+    });
+    await fireEvent.input(screen.getByLabelText('End'), {
+      target: { value: '2026-08-28T10:45' },
+    });
+
+    expect(screen.getByText('Resolved UTC: 2026-08-28 13:15 UTC')).toBeInTheDocument();
+    expect(screen.getByText('Resolved UTC: 2026-08-28 14:45 UTC')).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Schedule banner' }));
+
+    await waitFor(() =>
+      expect(publishBanner).toHaveBeenCalledWith(
+        expect.objectContaining({
+          startAt: '2026-08-28T13:15:00.000Z',
+          endAt: '2026-08-28T14:45:00.000Z',
+        }),
+      ),
+    );
+  });
+
+  it('rejects a nonexistent spring-forward minute before submission', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Gap content</p>';
+    await fireEvent.input(editor);
+
+    await fireEvent.input(screen.getByLabelText('Start'), {
+      target: { value: '2026-03-08T02:30' },
+    });
+
+    expect(
+      screen.getByText('This local time does not exist because the clock moves forward.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Schedule banner' })).toBeDisabled();
+  });
+
+  it('requires an explicit offset for an ambiguous fall-back minute', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Fold content</p>';
+    await fireEvent.input(editor);
+
+    await fireEvent.input(screen.getByLabelText('Start'), {
+      target: { value: '2026-11-01T01:30' },
+    });
+
+    const offset = screen.getByRole('combobox', { name: 'Start UTC offset' });
+    expect(offset).toHaveTextContent('UTC-04:00');
+    expect(offset).toHaveTextContent('UTC-05:00');
+    expect(screen.getByRole('button', { name: 'Schedule banner' })).toBeDisabled();
+    await fireEvent.change(offset, { target: { value: '2026-11-01T06:30:00.000Z' } });
+    expect(offset).toHaveValue('2026-11-01T06:30:00.000Z');
+    await waitFor(() => {
+      expect(screen.getByText('Resolved UTC: 2026-11-01 06:30 UTC')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Schedule banner' })).toBeEnabled();
+    });
+  });
+
   it('updates a published row through the editor without exposing history controls', async () => {
     const corrected = {
       ...published,
@@ -143,6 +236,7 @@ describe('BannerEditor', () => {
         name: /version|history|revisions?|restore|revert|rollback/i,
       }),
     ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Start')).not.toBeInTheDocument();
     await fireEvent.input(editor);
 
     expect(screen.queryByText(/version history/i)).not.toBeInTheDocument();

@@ -24,6 +24,8 @@ const draft: BannerDraft = {
   audience: 'EVERYONE',
   placement: 'SITE_TOP',
   pageTargets: [{ kind: 'ALL' }],
+  startAt: null,
+  endAt: null,
 };
 
 const published: ManagedBanner = {

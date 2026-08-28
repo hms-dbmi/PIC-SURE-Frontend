@@ -22,6 +22,11 @@
   } from '$lib/services/BannerManagement';
   import { toaster } from '$lib/toaster';
   import { hasBannerContent, sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
+  import {
+    formatInstantAsLocalMinute,
+    resolveLocalMinute,
+    type LocalMinuteResolution,
+  } from '$lib/utilities/BannerSchedule';
 
   interface Props {
     banner?: ManagedBanner | null;
@@ -52,12 +57,25 @@
     ERROR: 'Error',
   };
   const iconOptions = BANNER_ICONS.map((value) => ({ value, label: iconLabels[value] }));
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   let htmlContent = $state(untrack(() => banner?.htmlContent ?? ''));
   let title = $state(untrack(() => banner?.title ?? ''));
   let appearance: BannerAppearance = $state(untrack(() => banner?.appearance ?? 'PRIMARY'));
   let icon: BannerIcon = $state(untrack(() => banner?.icon ?? 'NONE'));
   let dismissible = $state(untrack(() => banner?.dismissible ?? true));
+  let startLocal = $state(
+    untrack(() => (banner?.startAt ? formatInstantAsLocalMinute(banner.startAt, timeZone) : '')),
+  );
+  let endLocal = $state(
+    untrack(() => (banner?.endAt ? formatInstantAsLocalMinute(banner.endAt, timeZone) : '')),
+  );
+  let startChoice = $state(
+    untrack(() => (banner?.startAt ? new Date(banner.startAt).toISOString() : '')),
+  );
+  let endChoice = $state(
+    untrack(() => (banner?.endAt ? new Date(banner.endAt).toISOString() : '')),
+  );
   let working: 'save' | 'publish' | null = $state(null);
   let showUnsavedModal = $state(false);
   let pendingUrl: URL | null = null;
@@ -67,6 +85,15 @@
 
   const sanitizedLength = $derived(sanitizeBannerHTML(htmlContent).length);
   const hasContent = $derived(hasBannerContent(htmlContent));
+  const startResolution = $derived(startLocal ? resolveLocalMinute(startLocal, timeZone) : null);
+  const endResolution = $derived(endLocal ? resolveLocalMinute(endLocal, timeZone) : null);
+  const resolvedStart = $derived(selectedInstant(startResolution, startChoice));
+  const resolvedEnd = $derived(selectedInstant(endResolution, endChoice));
+  const scheduleInvalid = $derived(
+    (startLocal !== '' && resolvedStart === null) ||
+      (endLocal !== '' && resolvedEnd === null) ||
+      (resolvedStart !== null && resolvedEnd !== null && resolvedEnd <= resolvedStart),
+  );
   const preview: BannerPresentation = $derived({
     htmlContent,
     title: title.trim() || null,
@@ -82,7 +109,22 @@
       audience: banner?.audience ?? 'EVERYONE',
       placement: banner?.placement ?? 'SITE_TOP',
       pageTargets: banner?.pageTargets ?? [{ kind: 'ALL' }],
+      startAt: banner?.status === 'PUBLISHED' ? banner.startAt : resolvedStart,
+      endAt: banner?.status === 'PUBLISHED' ? banner.endAt : resolvedEnd,
     };
+  }
+
+  function selectedInstant(resolution: LocalMinuteResolution | null, choice: string) {
+    if (!resolution) return null;
+    if (resolution.status === 'resolved') return resolution.options[0].instant;
+    if (resolution.status === 'ambiguous') {
+      return resolution.options.some((option) => option.instant === choice) ? choice : null;
+    }
+    return null;
+  }
+
+  function utcText(instant: string) {
+    return `Resolved UTC: ${instant.slice(0, 16).replace('T', ' ')} UTC`;
   }
 
   function snapshot() {
@@ -192,7 +234,12 @@
             : await publishBanner(draft());
       initialSnapshot = snapshot();
       toaster.success({
-        title: banner?.status === 'PUBLISHED' ? 'Banner updated' : 'Banner published',
+        title:
+          banner?.status === 'PUBLISHED'
+            ? 'Banner updated'
+            : startLocal
+              ? 'Banner scheduled'
+              : 'Banner published',
       });
       onsuccess(published);
     } catch {
@@ -203,8 +250,10 @@
         });
       } else {
         toaster.error({
-          title: 'Banner could not be published',
-          description: 'The banner was not published. Check your connection and try again.',
+          title: startLocal ? 'Banner could not be scheduled' : 'Banner could not be published',
+          description: startLocal
+            ? 'The banner was not scheduled. Check your connection and try again.'
+            : 'The banner was not published. Check your connection and try again.',
         });
       }
     } finally {
@@ -332,6 +381,99 @@
         <SiteBanner banner={preview} titleLevel={3} />
       </section>
 
+      {#if banner?.status !== 'PUBLISHED'}
+        <fieldset>
+          <legend class="font-bold">Schedule</legend>
+          <p class="mt-1 text-sm text-surface-600">
+            Times use your local timezone ({timeZone}) at minute precision. Leave Start blank to
+            publish immediately using the server's current UTC time.
+          </p>
+          <div class="mt-3 grid gap-4 sm:grid-cols-2">
+            <div class="grid content-start gap-1">
+              <label class="font-bold" for="banner-start">Start</label>
+              <input
+                id="banner-start"
+                class="input"
+                type="datetime-local"
+                step="60"
+                bind:value={startLocal}
+                aria-describedby="banner-start-help"
+              />
+              <div id="banner-start-help" class="text-sm text-surface-600">
+                {#if !startLocal}
+                  Server UTC when published.
+                {:else if startResolution?.status === 'nonexistent'}
+                  <span class="text-error-700">
+                    This local time does not exist because the clock moves forward.
+                  </span>
+                {:else if startResolution?.status === 'invalid'}
+                  <span class="text-error-700">Enter a valid local date and time.</span>
+                {:else if resolvedStart}
+                  {utcText(resolvedStart)}
+                {/if}
+              </div>
+              {#if startResolution?.status === 'ambiguous'}
+                <label class="mt-1 grid gap-1">
+                  <span class="font-bold">Start UTC offset</span>
+                  <select
+                    class="select"
+                    value={startChoice}
+                    onchange={(event) => (startChoice = event.currentTarget.value)}
+                  >
+                    <option value="">Choose an offset</option>
+                    {#each startResolution.options as option}
+                      <option value={option.instant}>UTC{option.offset}</option>
+                    {/each}
+                  </select>
+                </label>
+              {/if}
+            </div>
+            <div class="grid content-start gap-1">
+              <label class="font-bold" for="banner-end">End</label>
+              <input
+                id="banner-end"
+                class="input"
+                type="datetime-local"
+                step="60"
+                bind:value={endLocal}
+                aria-describedby="banner-end-help"
+              />
+              <div id="banner-end-help" class="text-sm text-surface-600">
+                {#if !endLocal}
+                  No end date.
+                {:else if endResolution?.status === 'nonexistent'}
+                  <span class="text-error-700">
+                    This local time does not exist because the clock moves forward.
+                  </span>
+                {:else if endResolution?.status === 'invalid'}
+                  <span class="text-error-700">Enter a valid local date and time.</span>
+                {:else if resolvedEnd}
+                  {utcText(resolvedEnd)}
+                {/if}
+              </div>
+              {#if endResolution?.status === 'ambiguous'}
+                <label class="mt-1 grid gap-1">
+                  <span class="font-bold">End UTC offset</span>
+                  <select
+                    class="select"
+                    value={endChoice}
+                    onchange={(event) => (endChoice = event.currentTarget.value)}
+                  >
+                    <option value="">Choose an offset</option>
+                    {#each endResolution.options as option}
+                      <option value={option.instant}>UTC{option.offset}</option>
+                    {/each}
+                  </select>
+                </label>
+              {/if}
+            </div>
+          </div>
+          {#if resolvedStart && resolvedEnd && resolvedEnd <= resolvedStart}
+            <p class="mt-2 text-sm text-error-700">End must be after start.</p>
+          {/if}
+        </fieldset>
+      {/if}
+
       <details class="rounded border border-surface-300 p-4">
         <summary class="font-bold">Advanced options</summary>
         <div class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -359,7 +501,11 @@
         <button
           type="button"
           class="btn border preset-tonal-primary"
-          disabled={working !== null || !dirty || !hasContent || sanitizedLength > 5_000}
+          disabled={working !== null ||
+            !dirty ||
+            !hasContent ||
+            sanitizedLength > 5_000 ||
+            scheduleInvalid}
           onclick={saveForLater}
         >
           {working === 'save' ? 'Saving...' : banner ? 'Save changes' : 'Save for later'}
@@ -371,15 +517,20 @@
         disabled={working !== null ||
           (banner?.status === 'PUBLISHED' && !dirty) ||
           !hasContent ||
-          sanitizedLength > 5_000}
+          sanitizedLength > 5_000 ||
+          scheduleInvalid}
       >
         {working === 'publish'
           ? banner?.status === 'PUBLISHED'
             ? 'Saving...'
-            : 'Publishing...'
+            : startLocal
+              ? 'Scheduling...'
+              : 'Publishing...'
           : banner?.status === 'PUBLISHED'
             ? 'Save changes'
-            : 'Publish now'}
+            : startLocal
+              ? 'Schedule banner'
+              : 'Publish now'}
       </button>
     </div>
   </form>

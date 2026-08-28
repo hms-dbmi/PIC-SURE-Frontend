@@ -53,6 +53,8 @@ export interface BannerDraft extends BannerPresentation {
   audience: BannerAudience;
   placement: BannerPlacement;
   pageTargets: unknown[];
+  startAt: string | null;
+  endAt: string | null;
 }
 
 export type BannerStatus = 'SAVED' | 'PUBLISHED' | 'DISABLED' | 'ARCHIVED';
