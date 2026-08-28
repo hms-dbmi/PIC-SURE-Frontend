@@ -1,5 +1,5 @@
 import * as api from '$lib/api';
-import type { BannerDraft, ManagedBanner } from '$lib/models/Banner';
+import type { ArchivedBanner, BannerDraft, ManagedBanner } from '$lib/models/Banner';
 import { Picsure } from '$lib/paths';
 import { hasBannerContent, sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
 
@@ -36,6 +36,10 @@ export async function publishSavedBanner(uuid: string, draft: BannerDraft): Prom
 
 export async function disableBanner(uuid: string): Promise<ManagedBanner> {
   return api.post(`${Picsure.Banners.Manage}/${uuid}/disable`, undefined);
+}
+
+export async function archiveBanner(uuid: string): Promise<ArchivedBanner> {
+  return api.post(`${Picsure.Banners.Manage}/${uuid}/archive`, undefined);
 }
 
 function authorablePayload(

@@ -14,6 +14,7 @@
     ontoggle: () => void;
     onedit: () => void;
     ondisable: () => void;
+    onarchive: () => void;
     orderable?: boolean;
     position?: number | null;
     index?: number;
@@ -27,6 +28,7 @@
     ontoggle,
     onedit,
     ondisable,
+    onarchive,
     orderable = false,
     position = null,
     index = 0,
@@ -58,6 +60,11 @@
   const panelId = $derived(`banner-${banner.uuid}-details`);
   const editable = $derived(banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED');
   const disableable = $derived(banner.lifecycle === 'ACTIVE' || banner.lifecycle === 'SCHEDULED');
+  const archiveable = $derived(
+    banner.lifecycle === 'SAVED' ||
+      banner.lifecycle === 'DISABLED' ||
+      banner.lifecycle === 'EXPIRED',
+  );
 
   function scheduleSummary() {
     if (banner.lifecycle === 'SAVED') return 'Not published';
@@ -185,7 +192,7 @@
           <p>{new Date(banner.updatedAt).toLocaleString()}</p>
           <p>Last changed by {banner.updatedBy}</p>
         </div>
-        {#if editable || disableable}
+        {#if editable || disableable || archiveable}
           <div class="flex flex-wrap gap-2 sm:col-span-2">
             {#if editable}
               <button type="button" class="btn preset-tonal-primary" onclick={onedit}>
@@ -207,6 +214,24 @@
                 {/snippet}
                 Are you sure you want to disable this banner? It stops appearing to visitors immediately
                 and moves to Saved &amp; disabled. Its content and history are kept.
+              </Modal>
+            {/if}
+            {#if archiveable}
+              <Modal
+                data-testid="banner-{banner.uuid}-archive"
+                title="Archive banner?"
+                confirmText="Yes"
+                cancelText="No"
+                onconfirm={onarchive}
+                triggerBase="btn preset-tonal-error"
+                withDefault
+              >
+                {#snippet trigger()}
+                  Archive banner
+                {/snippet}
+                Are you sure you want to archive this banner? It leaves normal management and can no longer
+                be edited, published, or reordered here. Its content and version history are retained
+                in the database for records purposes.
               </Modal>
             {/if}
           </div>

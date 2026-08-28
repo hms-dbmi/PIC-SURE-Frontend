@@ -4,6 +4,7 @@ vi.mock('$lib/api', () => ({ get: vi.fn(), post: vi.fn(), put: vi.fn() }));
 
 import * as api from '$lib/api';
 import {
+  archiveBanner,
   disableBanner,
   getManagedBanners,
   publishBanner,
@@ -166,6 +167,25 @@ describe('disableBanner', () => {
     await expect(disableBanner(published.uuid)).resolves.toBe(disabled);
     expect(api.post).toHaveBeenCalledWith(
       `picsure/operations/banners/${published.uuid}/disable`,
+      undefined,
+    );
+    expect(api.put).not.toHaveBeenCalled();
+  });
+});
+
+describe('archiveBanner', () => {
+  it('posts to the dedicated archive route without a body and returns the authoritative result', async () => {
+    const archived = {
+      uuid: published.uuid,
+      status: 'ARCHIVED' as const,
+      archivedAt: '2026-08-28T13:00:00Z',
+      archivedBy: 'super-id',
+    };
+    vi.mocked(api.post).mockResolvedValue(archived);
+
+    await expect(archiveBanner(published.uuid)).resolves.toBe(archived);
+    expect(api.post).toHaveBeenCalledWith(
+      `picsure/operations/banners/${published.uuid}/archive`,
       undefined,
     );
     expect(api.put).not.toHaveBeenCalled();

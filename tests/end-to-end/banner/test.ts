@@ -409,6 +409,7 @@ test.describe('Site banner workflow 1', () => {
     let publicationRequests = 0;
     let updateRequests = 0;
     let disableRequests = 0;
+    let archiveRequests = 0;
     let submitted: Record<string, unknown> | undefined;
     let managedRecords: Record<string, unknown>[] = [];
     let updateSubmitted: Record<string, unknown> | undefined;
@@ -515,6 +516,19 @@ test.describe('Site banner workflow 1', () => {
         published = false;
         managedRecords = [disabledBanner];
         return route.fulfill({ json: disabledBanner });
+      }
+      if (method === 'POST' && url.pathname.endsWith(`/banners/${savedBanner.uuid}/archive`)) {
+        archiveRequests += 1;
+        published = false;
+        managedRecords = [];
+        return route.fulfill({
+          json: {
+            uuid: savedBanner.uuid,
+            status: 'ARCHIVED',
+            archivedAt: '2026-08-27T15:00:00Z',
+            archivedBy: 'super-id',
+          },
+        });
       }
       if (method === 'POST' && url.pathname.endsWith(`/banners/${savedBanner.uuid}/publish`)) {
         publicationRequests += 1;
@@ -668,6 +682,39 @@ test.describe('Site banner workflow 1', () => {
     await page.getByRole('tab', { name: /Saved & disabled/ }).click();
     await expect(page.locator(`[data-banner-row="${savedBanner.uuid}"]`)).toContainText('Disabled');
     expect(disableRequests).toBe(1);
+
+    await page.goto('/');
+    await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
+
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.getByRole('tab', { name: /Saved & disabled/ }).click();
+    const rowToArchive = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
+    await rowToArchive.getByRole('button', { name: 'Details' }).click();
+    await rowToArchive.getByRole('button', { name: 'Archive banner' }).click();
+
+    const archiveConfirmation = page.getByRole('dialog');
+    await expect(
+      archiveConfirmation.getByRole('heading', { name: 'Archive banner?' }),
+    ).toBeVisible();
+    await expect(archiveConfirmation.getByRole('textbox')).toHaveCount(0);
+    await expect(archiveConfirmation).toContainText('leaves normal management');
+    await expect(archiveConfirmation).toContainText('retained');
+    await archiveConfirmation.getByRole('button', { name: 'Yes' }).click();
+
+    await expect(page.getByTestId('toast-root')).toHaveAttribute('data-type', 'success');
+    await expect(page.locator(`[data-banner-row="${savedBanner.uuid}"]`)).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: /Saved & disabled/ })).toContainText('0');
+    await expect(page.getByText('No banners in this section.')).toBeVisible();
+    expect(archiveRequests).toBe(1);
+
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    for (const tab of [/Active & scheduled/, /Saved & disabled/, /Expired/]) {
+      await page.getByRole('tab', { name: tab }).click();
+      await expect(page.locator(`[data-banner-row="${savedBanner.uuid}"]`)).toHaveCount(0);
+    }
 
     await page.goto('/');
     await expect(page.getByTestId('site-banner-region')).toHaveCount(0);

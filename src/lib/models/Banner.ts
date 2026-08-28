@@ -87,4 +87,15 @@ export interface ManagedBanner extends BannerPresentation {
   disabledBy: string | null;
 }
 
+/**
+ * Authoritative result of archiving an occurrence. Archived rows leave normal management entirely, so the server returns only the
+ * identity and provenance the list needs to reconcile itself.
+ */
+export interface ArchivedBanner {
+  uuid: string;
+  status: 'ARCHIVED';
+  archivedAt: string;
+  archivedBy: string;
+}
+
 export type ManagementRecord = ManagedBanner & { excerpt: string };

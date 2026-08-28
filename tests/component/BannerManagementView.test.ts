@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 
 vi.mock('$lib/services/BannerManagement', () => ({
+  archiveBanner: vi.fn(),
   disableBanner: vi.fn(),
   getManagedBanners: vi.fn(),
   publishBanner: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }
 
 import BannerManagementView from '$lib/components/admin/configuration/BannerManagementView.svelte';
 import {
+  archiveBanner,
   disableBanner,
   getManagedBanners,
   reorderBanners,
@@ -103,6 +105,7 @@ beforeEach(() => {
   vi.mocked(reorderBanners).mockReset();
   vi.mocked(updatePublishedBanner).mockReset();
   vi.mocked(disableBanner).mockReset();
+  vi.mocked(archiveBanner).mockReset();
   vi.mocked(toaster.success).mockReset();
   vi.mocked(toaster.error).mockReset();
 });
@@ -519,6 +522,171 @@ describe('BannerManagementView', () => {
     expect(screen.getByRole('tab', { name: /Active & scheduled/ })).toHaveTextContent('1');
     expect(screen.getByRole('tab', { name: /Saved & disabled/ })).toHaveTextContent('1');
     expect(screen.getByText('System maintenance tonight')).toBeInTheDocument();
+  });
+
+  it('offers archive only for saved, disabled, and expired occurrences', async () => {
+    vi.mocked(getManagedBanners).mockResolvedValue([
+      ...records,
+      {
+        ...base,
+        uuid: '44444444-4444-4444-4444-444444444444',
+        lifecycle: 'SCHEDULED',
+        htmlContent: '<p>Upcoming outage</p>',
+        startAt: '2026-08-28T12:00:00Z',
+      },
+      {
+        ...base,
+        uuid: '55555555-5555-5555-5555-555555555555',
+        status: 'DISABLED',
+        lifecycle: 'DISABLED',
+        htmlContent: '<p>Previously disabled</p>',
+        disabledAt: '2026-08-27T12:30:00Z',
+        disabledBy: 'admin-id',
+      },
+    ]);
+    render(BannerManagementView);
+
+    for (const displayed of ['System maintenance tonight', 'Upcoming outage']) {
+      const row = await openDetailsFor(displayed);
+      expect(within(row).queryByRole('button', { name: 'Archive banner' })).not.toBeInTheDocument();
+      expect(within(row).getByRole('button', { name: 'Disable banner' })).toBeInTheDocument();
+    }
+
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    for (const inactive of ['Reusable enrollment notice', 'Previously disabled']) {
+      const row = await openDetailsFor(inactive);
+      expect(within(row).getByRole('button', { name: 'Archive banner' })).toBeInTheDocument();
+    }
+
+    await fireEvent.click(screen.getByRole('tab', { name: /Expired/ }));
+    const expired = await openDetailsFor('Past outage');
+    expect(within(expired).getByRole('button', { name: 'Archive banner' })).toBeInTheDocument();
+    expect(
+      within(expired).queryByRole('button', { name: /Reorder banner/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('confirms without typed input and removes only the returned uuid from normal management', async () => {
+    const disabled: ManagedBanner = {
+      ...base,
+      uuid: '55555555-5555-5555-5555-555555555555',
+      status: 'DISABLED',
+      lifecycle: 'DISABLED',
+      htmlContent: '<p>Previously disabled</p>',
+      disabledAt: '2026-08-27T12:30:00Z',
+      disabledBy: 'admin-id',
+    };
+    vi.mocked(getManagedBanners).mockResolvedValue([...records, disabled]);
+    vi.mocked(archiveBanner).mockResolvedValue({
+      uuid: disabled.uuid,
+      status: 'ARCHIVED',
+      archivedAt: '2026-08-28T13:00:00Z',
+      archivedBy: 'super-id',
+    });
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    const row = await openDetailsFor('Previously disabled');
+    expect(row.closest('[data-banner-row]')).toBeInTheDocument();
+
+    await fireEvent.click(within(row).getByRole('button', { name: 'Archive banner' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByRole('heading', { name: 'Archive banner?' })).toBeInTheDocument();
+    expect(within(dialog).queryByRole('textbox')).not.toBeInTheDocument();
+    expect(dialog).toHaveTextContent(/leaves normal management/i);
+    expect(dialog).toHaveTextContent(/retained/i);
+
+    await fireEvent.click(within(dialog).getByRole('button', { name: 'No' }));
+    expect(archiveBanner).not.toHaveBeenCalled();
+    expect(screen.getByText('Previously disabled')).toBeInTheDocument();
+
+    await fireEvent.click(within(row).getByRole('button', { name: 'Archive banner' }));
+    await fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
+    );
+
+    expect(archiveBanner).toHaveBeenCalledWith(disabled.uuid);
+    await waitFor(() => expect(screen.queryByText('Previously disabled')).not.toBeInTheDocument());
+    expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner archived' });
+    expect(screen.getByRole('tab', { name: /Saved & disabled/ })).toHaveTextContent('1');
+    expect(screen.getByRole('tab', { name: /Active & scheduled/ })).toHaveTextContent('1');
+    expect(screen.getByRole('tab', { name: /Expired/ })).toHaveTextContent('1');
+    expect(screen.getByText('Reusable enrollment notice')).toBeInTheDocument();
+    expect(document.getElementById(`banner-${disabled.uuid}-details`)).not.toBeInTheDocument();
+  });
+
+  it('shows the empty state once the last banner in a tab is archived', async () => {
+    vi.mocked(getManagedBanners).mockResolvedValue([records[2]]);
+    vi.mocked(archiveBanner).mockResolvedValue({
+      uuid: records[2].uuid,
+      status: 'ARCHIVED',
+      archivedAt: '2026-08-28T13:00:00Z',
+      archivedBy: 'admin-id',
+    });
+    render(BannerManagementView);
+    await fireEvent.click(await screen.findByRole('tab', { name: /Expired/ }));
+    const row = await openDetailsFor('Past outage');
+
+    await fireEvent.click(within(row).getByRole('button', { name: 'Archive banner' }));
+    await fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
+    );
+
+    expect(await screen.findByText('No banners in this section.')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Expired/ })).toHaveTextContent('0');
+  });
+
+  it('leaves management unchanged and uses the existing error treatment when archive fails', async () => {
+    vi.mocked(archiveBanner).mockRejectedValue(new Error('offline'));
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+    await fireEvent.click(screen.getByRole('tab', { name: /Expired/ }));
+    const row = await openDetailsFor('Past outage');
+
+    await fireEvent.click(within(row).getByRole('button', { name: 'Archive banner' }));
+    await fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
+    );
+
+    await waitFor(() =>
+      expect(toaster.error).toHaveBeenCalledWith({
+        title: 'Banner could not be archived',
+        description: 'The banner is unchanged. Check your connection and try again.',
+      }),
+    );
+    expect(toaster.success).not.toHaveBeenCalled();
+    expect(screen.getByRole('tab', { name: /Expired/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /Expired/ })).toHaveTextContent('1');
+    expect(screen.getByRole('tab', { name: /Active & scheduled/ })).toHaveTextContent('1');
+    expect(screen.getByText('Past outage')).toBeInTheDocument();
+    expect(document.getElementById(`banner-${records[2].uuid}-details`)).toBeInTheDocument();
+  });
+
+  it('archiving an inactive banner does not make the saved order dirty', async () => {
+    const expired = records[2];
+    vi.mocked(archiveBanner).mockResolvedValue({
+      uuid: expired.uuid,
+      status: 'ARCHIVED',
+      archivedAt: '2026-08-28T13:00:00Z',
+      archivedBy: 'admin-id',
+    });
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+    expect(screen.queryByRole('button', { name: 'Save order' })).not.toBeInTheDocument();
+
+    await fireEvent.click(screen.getByRole('tab', { name: /Expired/ }));
+    const row = await openDetailsFor('Past outage');
+    await fireEvent.click(within(row).getByRole('button', { name: 'Archive banner' }));
+    await fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
+    );
+
+    await waitFor(() => expect(screen.queryByText('Past outage')).not.toBeInTheDocument());
+    await fireEvent.click(screen.getByRole('tab', { name: /Active & scheduled/ }));
+    expect(screen.queryByRole('button', { name: 'Save order' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel order changes' })).not.toBeInTheDocument();
+    expect(bannerRowOrder()).toEqual([base.uuid]);
+    expect(reorderBanners).not.toHaveBeenCalled();
   });
 
   it('names the existing v1 all-pages target without exposing its object shape', async () => {

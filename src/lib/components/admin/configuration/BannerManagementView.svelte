@@ -8,7 +8,12 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import type { BannerLifecycle, ManagedBanner, ManagementRecord } from '$lib/models/Banner';
-  import { disableBanner, getManagedBanners, reorderBanners } from '$lib/services/BannerManagement';
+  import {
+    archiveBanner,
+    disableBanner,
+    getManagedBanners,
+    reorderBanners,
+  } from '$lib/services/BannerManagement';
   import { bannerPlainText } from '$lib/utilities/BannerHTML';
   import { toaster } from '$lib/toaster';
   import {
@@ -56,6 +61,7 @@
   const sensors = [KeyboardSensor, PointerSensor];
   const orderDirty = $derived(orderUuids.join() !== savedOrderUuids.join());
   let disablingUuid: string | null = null;
+  let archivingUuid: string | null = null;
 
   const counts = $derived({
     orderable: records.filter((banner) => inTab(banner.lifecycle, 'orderable')).length,
@@ -169,6 +175,28 @@
       });
     } finally {
       disablingUuid = null;
+    }
+  }
+
+  async function archive(uuid: string) {
+    if (archivingUuid) return;
+    archivingUuid = uuid;
+    try {
+      const archived = await archiveBanner(uuid);
+      records = records.filter((record) => record.uuid !== archived.uuid);
+      // An archiveable occurrence is never in the orderable queue, so these stay no-ops that cannot
+      // introduce or discard unsaved order changes.
+      orderUuids = orderUuids.filter((orderUuid) => orderUuid !== archived.uuid);
+      savedOrderUuids = savedOrderUuids.filter((orderUuid) => orderUuid !== archived.uuid);
+      openUuid = null;
+      toaster.success({ title: 'Banner archived' });
+    } catch {
+      toaster.error({
+        title: 'Banner could not be archived',
+        description: 'The banner is unchanged. Check your connection and try again.',
+      });
+    } finally {
+      archivingUuid = null;
     }
   }
 
@@ -365,6 +393,7 @@
                   ontoggle={() => (openUuid = openUuid === banner.uuid ? null : banner.uuid)}
                   onedit={() => editBanner(banner)}
                   ondisable={() => disable(banner.uuid)}
+                  onarchive={() => archive(banner.uuid)}
                   orderable={activeTab === 'orderable' && !search.trim()}
                   position={activeTab === 'orderable' ? orderUuids.indexOf(banner.uuid) + 1 : null}
                   index={orderUuids.indexOf(banner.uuid)}
@@ -384,6 +413,7 @@
                 ontoggle={() => {}}
                 onedit={() => {}}
                 ondisable={() => {}}
+                onarchive={() => {}}
                 orderable={true}
                 position={orderUuids.indexOf(activeBanner.uuid) + 1}
                 index={orderUuids.indexOf(activeBanner.uuid)}
