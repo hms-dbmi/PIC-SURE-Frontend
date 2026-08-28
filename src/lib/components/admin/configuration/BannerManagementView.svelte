@@ -159,6 +159,9 @@
     if (inTab(banner.lifecycle, 'orderable') && !orderUuids.includes(banner.uuid)) {
       orderUuids = [...orderUuids, banner.uuid];
       savedOrderUuids = [...savedOrderUuids, banner.uuid];
+    } else if (!inTab(banner.lifecycle, 'orderable')) {
+      orderUuids = orderUuids.filter((uuid) => uuid !== banner.uuid);
+      savedOrderUuids = savedOrderUuids.filter((uuid) => uuid !== banner.uuid);
     }
     arrivalUuid = banner.uuid;
     await tick();

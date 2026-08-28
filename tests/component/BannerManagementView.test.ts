@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 
 vi.mock('$lib/services/BannerManagement', () => ({
   getManagedBanners: vi.fn(),
@@ -26,7 +26,12 @@ vi.mock('@dnd-kit-svelte/svelte/sortable', () => ({
 vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 
 import BannerManagementView from '$lib/components/admin/configuration/BannerManagementView.svelte';
-import { getManagedBanners, reorderBanners, saveBanner } from '$lib/services/BannerManagement';
+import {
+  getManagedBanners,
+  reorderBanners,
+  saveBanner,
+  updatePublishedBanner,
+} from '$lib/services/BannerManagement';
 import { toaster } from '$lib/toaster';
 import type { ManagedBanner } from '$lib/models/Banner';
 
@@ -92,6 +97,7 @@ beforeEach(() => {
   vi.mocked(getManagedBanners).mockReset().mockResolvedValue(records);
   vi.mocked(saveBanner).mockReset();
   vi.mocked(reorderBanners).mockReset();
+  vi.mocked(updatePublishedBanner).mockReset();
   vi.mocked(toaster.error).mockReset();
 });
 
@@ -153,6 +159,50 @@ describe('BannerManagementView', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Cancel order changes' }));
     expect(bannerRowOrder()).toEqual([base.uuid, scheduled.uuid]);
     expect(reorderBanners).toHaveBeenCalledTimes(1);
+  });
+
+  it('removes an authoritatively expired edit from both ordering queues before the next save', async () => {
+    const third = {
+      ...base,
+      uuid: '66666666-6666-6666-6666-666666666666',
+      htmlContent: '<p>Third active notice</p>',
+      title: 'Third notice',
+      priority: 12,
+    };
+    const expired = {
+      ...base,
+      lifecycle: 'EXPIRED' as const,
+      htmlContent: '<p>Authoritatively expired notice</p>',
+      endAt: '2026-08-27T12:30:00Z',
+    };
+    vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, third]);
+    vi.mocked(updatePublishedBanner).mockResolvedValue(expired);
+    vi.mocked(reorderBanners).mockResolvedValue([
+      { ...third, priority: 1 },
+      { ...scheduled, priority: 2 },
+    ]);
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+
+    const baseRow = document.querySelector<HTMLElement>(`[data-banner-row="${base.uuid}"]`)!;
+    await fireEvent.click(within(baseRow).getByRole('button', { name: 'Details' }));
+    await fireEvent.click(within(baseRow).getByRole('button', { name: 'Edit banner' }));
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Title' }), {
+      target: { value: 'Edited title' },
+    });
+    const saveChanges = screen.getByRole('button', { name: 'Save changes' });
+    await waitFor(() => expect(saveChanges).toBeEnabled());
+    await fireEvent.click(saveChanges);
+
+    expect(await screen.findByText('Authoritatively expired notice')).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('tab', { name: /Active & scheduled/ }));
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, third.uuid]);
+    expect(screen.queryByRole('button', { name: 'Save order' })).not.toBeInTheDocument();
+
+    await drag(scheduled.uuid, third.uuid);
+    await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
+    expect(reorderBanners).toHaveBeenCalledOnce();
+    expect(reorderBanners).toHaveBeenCalledWith([third.uuid, scheduled.uuid]);
   });
 
   it('groups loaded rows under lifecycle tabs and filters plain text without pagination', async () => {
