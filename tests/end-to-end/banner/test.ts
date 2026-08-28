@@ -904,6 +904,8 @@ test.describe('Site banner workflow 2', () => {
     let endAt: string | null = initialEndAt;
     let serverNow = '2026-08-28T13:00:00.000Z';
     let scheduled: Record<string, unknown> | null = null;
+    let restored: Record<string, unknown> | null = null;
+    let sourceLookupRequests = 0;
     await page.clock.install({ time: new Date(serverNow) });
 
     const lifecycle = () => {
@@ -914,14 +916,15 @@ test.describe('Site banner workflow 2', () => {
     const authoritative = () => (scheduled ? { ...scheduled, lifecycle: lifecycle() } : null);
 
     await page.route('**/picsure/operations/banners/active/v2', (route) => {
+      if (restored) return route.fulfill({ json: [restored] });
       const banner = authoritative();
       return route.fulfill({ json: banner && lifecycle() === 'ACTIVE' ? [banner] : [] });
     });
     await page.route('**/picsure/operations/banners**', async (route) => {
       const pathname = new URL(route.request().url()).pathname;
       if (route.request().method() === 'GET' && pathname.endsWith('/banners')) {
-        const banner = authoritative();
-        return route.fulfill({ json: banner ? [banner] : [] });
+        const managed = restored ?? authoritative();
+        return route.fulfill({ json: managed ? [managed] : [] });
       }
       if (route.request().method() === 'POST' && pathname.endsWith('/banners')) {
         const submitted = route.request().postDataJSON();
@@ -967,6 +970,40 @@ test.describe('Site banner workflow 2', () => {
           updatedBy: 'admin-id',
         };
         return route.fulfill({ json: scheduled });
+      }
+      if (
+        route.request().method() === 'POST' &&
+        pathname.endsWith('/banners/88888888-8888-8888-8888-888888888888/restore')
+      ) {
+        const submitted = route.request().postDataJSON();
+        expect(submitted).toMatchObject({ startAt: null, endAt: null });
+        restored = {
+          ...scheduled,
+          ...submitted,
+          uuid: '99999999-9999-9999-9999-999999999999',
+          status: 'PUBLISHED',
+          lifecycle: 'ACTIVE',
+          priority: 1,
+          presentationHash: 'restored-hash',
+          startAt: serverNow,
+          endAt: null,
+          createdAt: serverNow,
+          createdBy: 'admin-id',
+          updatedAt: serverNow,
+          updatedBy: 'admin-id',
+          publishedAt: serverNow,
+          publishedBy: 'admin-id',
+          disabledAt: null,
+          disabledBy: null,
+          restoredFromUuid: '88888888-8888-8888-8888-888888888888',
+        };
+        return route.fulfill({ status: 201, json: restored });
+      }
+      if (
+        route.request().method() === 'GET' &&
+        pathname.includes('88888888-8888-8888-8888-888888888888')
+      ) {
+        sourceLookupRequests += 1;
       }
       return route.fallback();
     });
@@ -1018,6 +1055,31 @@ test.describe('Site banner workflow 2', () => {
     await expect(row).toContainText('Expired');
     await page.goto('/help');
     await expect(page.getByTestId('site-banner')).toHaveCount(0);
+
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.getByRole('tab', { name: 'Expired' }).click();
+    await row.getByRole('button', { name: 'Details' }).click();
+    await row.getByRole('button', { name: 'Restore banner' }).click();
+    const restoreForm = page.getByTestId('banner-editor-form');
+    await expect(page.getByRole('heading', { name: 'Restore banner' })).toBeVisible();
+    await expect(restoreForm.getByLabel('Start')).toHaveValue('');
+    await expect(restoreForm.getByLabel('End')).toHaveValue('');
+    await expect(restoreForm.getByRole('button', { name: 'Save for later' })).toHaveCount(0);
+    await restoreForm.locator('#banner-content-editor .ql-editor').fill('Restored maintenance');
+    await restoreForm.getByRole('button', { name: 'Bring back now' }).click();
+
+    const restoredRow = page.locator('[data-banner-row="99999999-9999-9999-9999-999999999999"]');
+    await expect(restoredRow).toContainText('Active');
+    await expect(restoredRow.getByRole('button', { name: 'Details' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    await expect(restoredRow).toContainText('Restored from 88888888-8888-8888-8888-888888888888');
+    await expect(row).toHaveCount(0);
+    expect(sourceLookupRequests).toBe(0);
+    await page.goto('/help');
+    await expect(page.getByTestId('site-banner')).toContainText('Restored maintenance');
   });
 });
 

@@ -58,7 +58,7 @@
   let activeTab: LifecycleTab = $state('orderable');
   let search = $state('');
   let openUuid: string | null = $state(null);
-  let mode: 'list' | 'create' | 'edit' = $state('list');
+  let mode: 'list' | 'create' | 'edit' | 'restore' = $state('list');
   let editingBanner: ManagedBanner | null = $state(null);
   let arrivalUuid: string | null = $state(null);
   let arrivalTimeout: number | undefined;
@@ -198,6 +198,11 @@
   function openEditor(banner: ManagedBanner) {
     editingBanner = banner;
     mode = 'edit';
+  }
+
+  function restoreBanner(banner: ManagedBanner) {
+    editingBanner = banner;
+    mode = 'restore';
   }
 
   function selectLifecycleTab(tab: LifecycleTab, focus = false) {
@@ -342,6 +347,44 @@
     }, 1_800);
   }
 
+  async function handleRestoreSuccess(banner: ManagedBanner) {
+    const sourceUuid = editingBanner?.uuid;
+    if (!sourceUuid) return;
+    records = [
+      ...records.filter((record) => record.uuid !== sourceUuid && record.uuid !== banner.uuid),
+      present(banner),
+    ];
+    activeTab = tabFor(banner.lifecycle);
+    search = '';
+    openUuid = banner.uuid;
+    mode = 'list';
+    editingBanner = null;
+    if (inTab(banner.lifecycle, 'orderable')) {
+      orderUuids = [
+        ...orderUuids.filter((uuid) => uuid !== sourceUuid && uuid !== banner.uuid),
+        banner.uuid,
+      ];
+      savedOrderUuids = [
+        ...savedOrderUuids.filter((uuid) => uuid !== sourceUuid && uuid !== banner.uuid),
+        banner.uuid,
+      ];
+    } else {
+      orderUuids = orderUuids.filter((uuid) => uuid !== sourceUuid && uuid !== banner.uuid);
+      savedOrderUuids = savedOrderUuids.filter(
+        (uuid) => uuid !== sourceUuid && uuid !== banner.uuid,
+      );
+    }
+    arrivalUuid = banner.uuid;
+    await tick();
+    document.querySelector(`[data-banner-row="${banner.uuid}"]`)?.scrollIntoView({
+      block: 'center',
+    });
+    if (arrivalTimeout !== undefined) window.clearTimeout(arrivalTimeout);
+    arrivalTimeout = window.setTimeout(() => {
+      if (arrivalUuid === banner.uuid) arrivalUuid = null;
+    }, 1_800);
+  }
+
   function handleDragStart(event: any) {
     const source = event?.operation?.source;
     if (!source || savingOrder || activeTab !== 'orderable' || search.trim()) return;
@@ -427,10 +470,11 @@
 {#if mode !== 'list'}
   <BannerEditor
     banner={editingBanner}
+    {mode}
     ondirtychange={(dirty) => (editorDirty = dirty)}
     {tabchangerequest}
     {ontabchangerequestresolve}
-    onsuccess={handleSuccess}
+    onsuccess={mode === 'restore' ? handleRestoreSuccess : handleSuccess}
     oncancel={() => {
       mode = 'list';
       editingBanner = null;
@@ -555,6 +599,7 @@
                   onedit={() => editBanner(banner)}
                   ondisable={() => disable(banner.uuid)}
                   onarchive={() => archive(banner.uuid)}
+                  onrestore={() => restoreBanner(banner)}
                   orderable={activeTab === 'orderable' &&
                     !search.trim() &&
                     !savingOrder &&
@@ -583,6 +628,7 @@
                 onedit={() => {}}
                 ondisable={() => {}}
                 onarchive={() => {}}
+                onrestore={() => {}}
                 orderable={true}
                 position={orderUuids.indexOf(activeBanner.uuid) + 1}
                 index={orderUuids.indexOf(activeBanner.uuid)}

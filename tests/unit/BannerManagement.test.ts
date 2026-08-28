@@ -10,6 +10,7 @@ import {
   publishBanner,
   publishSavedBanner,
   reorderBanners,
+  restoreBanner,
   saveBanner,
   updatePublishedBanner,
   updateSavedBanner,
@@ -50,6 +51,7 @@ const published: ManagedBanner = {
   publishedBy: 'admin-id',
   disabledAt: null,
   disabledBy: null,
+  restoredFromUuid: null,
 };
 
 beforeEach(() => {
@@ -189,6 +191,33 @@ describe('archiveBanner', () => {
       undefined,
     );
     expect(api.put).not.toHaveBeenCalled();
+  });
+});
+
+describe('restoreBanner', () => {
+  it('posts sanitized authorable fields to the source occurrence restore route', async () => {
+    const restored = {
+      ...published,
+      uuid: '22222222-2222-2222-2222-222222222222',
+      restoredFromUuid: published.uuid,
+    };
+    vi.mocked(api.post).mockResolvedValue(restored);
+
+    await expect(
+      restoreBanner(published.uuid, {
+        ...draft,
+        htmlContent: '<p class="removed">Restored content</p>',
+        title: ' Restored ',
+      }),
+    ).resolves.toBe(restored);
+
+    expect(api.post).toHaveBeenCalledWith(
+      `picsure/operations/banners/${published.uuid}/restore`,
+      expect.objectContaining({
+        htmlContent: '<p>Restored content</p>',
+        title: 'Restored',
+      }),
+    );
   });
 });
 

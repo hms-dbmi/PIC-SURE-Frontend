@@ -27,6 +27,7 @@
     saveBanner,
     updatePublishedBanner,
     updateSavedBanner,
+    restoreBanner,
   } from '$lib/services/BannerManagement';
   import { toaster } from '$lib/toaster';
   import { hasBannerContent, sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
@@ -41,6 +42,7 @@
 
   interface Props {
     banner?: ManagedBanner | null;
+    mode?: 'create' | 'edit' | 'restore';
     onsuccess?: (banner: ManagedBanner) => void;
     oncancel?: () => void;
     ondirtychange?: (dirty: boolean) => void;
@@ -50,12 +52,14 @@
 
   let {
     banner = null,
+    mode = undefined,
     onsuccess = () => {},
     oncancel = () => {},
     ondirtychange = () => {},
     tabchangerequest = null,
     ontabchangerequestresolve = () => {},
   }: Props = $props();
+  const editorMode = untrack(() => mode ?? (banner ? 'edit' : 'create'));
   const appearanceOptions = BANNER_APPEARANCES.map((value) => ({
     value,
     ...BANNER_APPEARANCE_DETAILS[value],
@@ -74,20 +78,30 @@
   }));
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const initialStartLocal = untrack(() =>
-    banner?.startAt ? formatInstantAsLocalMinute(banner.startAt, timeZone) : '',
+    editorMode !== 'restore' && banner?.startAt
+      ? formatInstantAsLocalMinute(banner.startAt, timeZone)
+      : '',
   );
   const initialEndLocal = untrack(() =>
-    banner?.endAt ? formatInstantAsLocalMinute(banner.endAt, timeZone) : '',
+    editorMode !== 'restore' && banner?.endAt
+      ? formatInstantAsLocalMinute(banner.endAt, timeZone)
+      : '',
   );
   const initialStartChoice = untrack(() =>
-    banner?.startAt ? new Date(banner.startAt).toISOString() : '',
+    editorMode !== 'restore' && banner?.startAt ? new Date(banner.startAt).toISOString() : '',
   );
   const initialEndChoice = untrack(() =>
-    banner?.endAt ? new Date(banner.endAt).toISOString() : '',
+    editorMode !== 'restore' && banner?.endAt ? new Date(banner.endAt).toISOString() : '',
   );
   const initialPageTargets = untrack(() => banner?.pageTargets ?? [{ kind: 'ALL' as const }]);
 
-  let htmlContent = $state(untrack(() => banner?.htmlContent ?? ''));
+  let htmlContent = $state(
+    untrack(() =>
+      editorMode === 'restore'
+        ? sanitizeBannerHTML(banner?.htmlContent ?? '')
+        : (banner?.htmlContent ?? ''),
+    ),
+  );
   let title = $state(untrack(() => banner?.title ?? ''));
   let appearance: BannerAppearance = $state(untrack(() => banner?.appearance ?? 'PRIMARY'));
   let icon: BannerIcon = $state(untrack(() => banner?.icon ?? 'NONE'));
@@ -121,7 +135,7 @@
       startLocal,
       initialStartLocal,
       initialStartChoice,
-      banner?.startAt ?? null,
+      editorMode === 'restore' ? null : (banner?.startAt ?? null),
     ),
   );
   const resolvedEnd = $derived(
@@ -131,11 +145,11 @@
       endLocal,
       initialEndLocal,
       initialEndChoice,
-      banner?.endAt ?? null,
+      editorMode === 'restore' ? null : (banner?.endAt ?? null),
     ),
   );
   const scheduleInvalid = $derived(
-    (banner?.status === 'PUBLISHED' && resolvedStart === null) ||
+    (editorMode === 'edit' && banner?.status === 'PUBLISHED' && resolvedStart === null) ||
       (startLocal !== '' && resolvedStart === null) ||
       (endLocal !== '' && resolvedEnd === null) ||
       (resolvedStart !== null && resolvedEnd !== null && resolvedEnd <= resolvedStart),
@@ -217,7 +231,7 @@
   }
 
   let initialSnapshot = $state(snapshot());
-  const dirty = $derived(snapshot() !== initialSnapshot);
+  const dirty = $derived(editorMode === 'restore' || snapshot() !== initialSnapshot);
 
   $effect(() => {
     ondirtychange(dirty);
@@ -312,24 +326,35 @@
     working = 'publish';
     try {
       const published =
-        banner?.status === 'PUBLISHED'
-          ? await updatePublishedBanner(banner.uuid, draft())
-          : banner
-            ? await publishSavedBanner(banner.uuid, draft())
-            : await publishBanner(draft());
+        editorMode === 'restore' && banner
+          ? await restoreBanner(banner.uuid, draft())
+          : banner?.status === 'PUBLISHED'
+            ? await updatePublishedBanner(banner.uuid, draft())
+            : banner
+              ? await publishSavedBanner(banner.uuid, draft())
+              : await publishBanner(draft());
       adoptAuthoritativePageTargets(published);
       initialSnapshot = snapshot();
       toaster.success({
         title:
-          banner?.status === 'PUBLISHED'
-            ? 'Banner updated'
-            : startLocal
+          editorMode === 'restore'
+            ? startLocal
               ? 'Banner scheduled'
-              : 'Banner published',
+              : 'Banner restored'
+            : banner?.status === 'PUBLISHED'
+              ? 'Banner updated'
+              : startLocal
+                ? 'Banner scheduled'
+                : 'Banner published',
       });
       onsuccess(published);
     } catch {
-      if (banner?.status === 'PUBLISHED') {
+      if (editorMode === 'restore') {
+        toaster.error({
+          title: startLocal ? 'Banner could not be scheduled' : 'Banner could not be restored',
+          description: 'The source banner is unchanged. Your copied changes are still here.',
+        });
+      } else if (banner?.status === 'PUBLISHED') {
         toaster.error({
           title: 'Banner could not be updated',
           description: 'The changes were not saved. Check your connection and try again.',
@@ -372,18 +397,22 @@
 <section class="mx-auto max-w-5xl" aria-labelledby="banner-editor-title">
   <header class="mb-6">
     <h2 id="banner-editor-title">
-      {banner?.status === 'PUBLISHED'
-        ? 'Edit published banner'
-        : banner
-          ? 'Edit saved banner'
-          : 'Create banner'}
+      {editorMode === 'restore'
+        ? 'Restore banner'
+        : banner?.status === 'PUBLISHED'
+          ? 'Edit published banner'
+          : banner
+            ? 'Edit saved banner'
+            : 'Create banner'}
     </h2>
     <p>
-      {banner?.status === 'PUBLISHED'
-        ? 'Correct the published announcement. Saved changes take effect immediately.'
-        : banner
-          ? 'Update this reusable draft or publish it across PIC-SURE.'
-          : 'Save this announcement for later or publish it across PIC-SURE.'}
+      {editorMode === 'restore'
+        ? 'Review this copy and choose when it should return. Restoring creates a new occurrence and archives the source after success.'
+        : banner?.status === 'PUBLISHED'
+          ? 'Correct the published announcement. Saved changes take effect immediately.'
+          : banner
+            ? 'Update this reusable draft or publish it across PIC-SURE.'
+            : 'Save this announcement for later or publish it across PIC-SURE.'}
     </p>
   </header>
 
@@ -467,11 +496,14 @@
         <SiteBanner banner={preview} titleLevel={3} />
       </section>
 
-      <fieldset disabled={banner?.lifecycle === 'EXPIRED'}>
+      <fieldset disabled={editorMode !== 'restore' && banner?.lifecycle === 'EXPIRED'}>
         <legend class="font-bold">Schedule</legend>
         <p class="mt-1 text-sm text-surface-600">
-          {#if banner?.lifecycle === 'EXPIRED'}
+          {#if editorMode !== 'restore' && banner?.lifecycle === 'EXPIRED'}
             Expired banner schedules cannot be changed.
+          {:else if editorMode === 'restore'}
+            Times use your local timezone ({timeZone}) at minute precision. Leave Start blank to
+            bring the copied banner back immediately using the server's current UTC time.
           {:else if banner?.status === 'PUBLISHED'}
             Times use your local timezone ({timeZone}) at minute precision. Change Start to move
             this occurrence; leave End blank to keep it active until it is disabled.
@@ -493,7 +525,7 @@
             />
             <div id="banner-start-help" class="text-sm text-surface-600">
               {#if !startLocal}
-                {#if banner?.status === 'PUBLISHED'}
+                {#if editorMode === 'edit' && banner?.status === 'PUBLISHED'}
                   <span class="text-error-700">A published banner needs a start time.</span>
                 {:else}
                   Server UTC when published.
@@ -687,7 +719,7 @@
       <button type="button" class="btn preset-tonal-primary mr-auto" onclick={requestCancel}>
         Cancel
       </button>
-      {#if banner?.status !== 'PUBLISHED'}
+      {#if editorMode !== 'restore' && banner?.status !== 'PUBLISHED'}
         <button
           type="button"
           class="btn border preset-tonal-primary"
@@ -706,23 +738,31 @@
         type="submit"
         class="btn preset-filled-primary-500"
         disabled={working !== null ||
-          (banner?.status === 'PUBLISHED' && !dirty) ||
+          (editorMode === 'edit' && banner?.status === 'PUBLISHED' && !dirty) ||
           !hasContent ||
           sanitizedLength > 5_000 ||
           scheduleInvalid ||
           pageTargetsInvalid}
       >
         {working === 'publish'
-          ? banner?.status === 'PUBLISHED'
-            ? 'Saving...'
-            : startLocal
+          ? editorMode === 'restore'
+            ? startLocal
               ? 'Scheduling...'
-              : 'Publishing...'
-          : banner?.status === 'PUBLISHED'
-            ? 'Save changes'
-            : startLocal
+              : 'Restoring...'
+            : banner?.status === 'PUBLISHED'
+              ? 'Saving...'
+              : startLocal
+                ? 'Scheduling...'
+                : 'Publishing...'
+          : editorMode === 'restore'
+            ? startLocal
               ? 'Schedule banner'
-              : 'Publish now'}
+              : 'Bring back now'
+            : banner?.status === 'PUBLISHED'
+              ? 'Save changes'
+              : startLocal
+                ? 'Schedule banner'
+                : 'Publish now'}
       </button>
     </div>
   </form>

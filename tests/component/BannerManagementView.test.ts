@@ -14,6 +14,7 @@ vi.mock('$lib/services/BannerManagement', () => ({
   publishBanner: vi.fn(),
   publishSavedBanner: vi.fn(),
   reorderBanners: vi.fn(),
+  restoreBanner: vi.fn(),
   saveBanner: vi.fn(),
   updatePublishedBanner: vi.fn(),
   updateSavedBanner: vi.fn(),
@@ -37,6 +38,7 @@ import {
   disableBanner,
   getManagedBanners,
   reorderBanners,
+  restoreBanner,
   saveBanner,
   updatePublishedBanner,
 } from '$lib/services/BannerManagement';
@@ -67,6 +69,7 @@ const base: ManagedBanner = {
   publishedBy: 'admin-id',
   disabledAt: null,
   disabledBy: null,
+  restoredFromUuid: null,
 };
 
 const scheduled: ManagedBanner = {
@@ -112,6 +115,7 @@ beforeEach(() => {
   vi.mocked(updatePublishedBanner).mockReset();
   vi.mocked(disableBanner).mockReset();
   vi.mocked(archiveBanner).mockReset();
+  vi.mocked(restoreBanner).mockReset();
   vi.mocked(toaster.success).mockReset();
   vi.mocked(toaster.error).mockReset();
 });
@@ -649,6 +653,135 @@ describe('BannerManagementView', () => {
     expect(screen.getByRole('heading', { name: 'Edit published banner' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
     expect(screen.queryByText(/version history/i)).not.toBeInTheDocument();
+  });
+
+  it('offers restore only for disabled and expired occurrences', async () => {
+    const disabled: ManagedBanner = {
+      ...base,
+      uuid: '44444444-4444-4444-4444-444444444444',
+      status: 'DISABLED',
+      lifecycle: 'DISABLED',
+      htmlContent: '<p>Previously disabled</p>',
+      disabledAt: '2026-08-27T12:30:00Z',
+      disabledBy: 'admin-id',
+    };
+    vi.mocked(getManagedBanners).mockResolvedValue([...records, disabled, scheduled]);
+    render(BannerManagementView);
+
+    for (const unavailable of ['System maintenance tonight', 'Scheduled enrollment notice']) {
+      const row = await openDetailsFor(unavailable);
+      expect(within(row).queryByRole('button', { name: 'Restore banner' })).not.toBeInTheDocument();
+    }
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    const savedRow = await openDetailsFor('Reusable enrollment notice');
+    expect(
+      within(savedRow).queryByRole('button', { name: 'Restore banner' }),
+    ).not.toBeInTheDocument();
+    const disabledRow = await openDetailsFor('Previously disabled');
+    expect(within(disabledRow).getByRole('button', { name: 'Restore banner' })).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('tab', { name: /Expired/ }));
+    const expiredRow = await openDetailsFor('Past outage');
+    expect(within(expiredRow).getByRole('button', { name: 'Restore banner' })).toBeInTheDocument();
+    expect(within(expiredRow).getByRole('button', { name: 'Edit banner' })).toBeInTheDocument();
+  });
+
+  it('reconciles a restored occurrence at the bottom while preserving dirty and saved order snapshots', async () => {
+    const disabled: ManagedBanner = {
+      ...base,
+      uuid: '44444444-4444-4444-4444-444444444444',
+      status: 'DISABLED',
+      lifecycle: 'DISABLED',
+      htmlContent: '<p>Previously disabled</p>',
+      disabledAt: '2026-08-27T12:30:00Z',
+      disabledBy: 'admin-id',
+    };
+    const restored: ManagedBanner = {
+      ...disabled,
+      uuid: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      status: 'PUBLISHED',
+      lifecycle: 'ACTIVE',
+      htmlContent: '<p>Authoritative restored notice</p>',
+      priority: 99,
+      startAt: '2026-08-28T12:00:00Z',
+      endAt: null,
+      disabledAt: null,
+      disabledBy: null,
+      restoredFromUuid: disabled.uuid,
+    };
+    vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, disabled]);
+    vi.mocked(restoreBanner).mockResolvedValue(restored);
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+
+    await drag(scheduled.uuid, base.uuid);
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, base.uuid]);
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    await fireEvent.input(screen.getByRole('searchbox', { name: 'Search banner text' }), {
+      target: { value: 'Previously' },
+    });
+    const sourceRow = await openDetailsFor('Previously disabled');
+    await fireEvent.click(within(sourceRow).getByRole('button', { name: 'Restore banner' }));
+
+    expect(screen.getByRole('heading', { name: 'Restore banner' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Bring back now' }));
+
+    await waitFor(() =>
+      expect(restoreBanner).toHaveBeenCalledWith(disabled.uuid, expect.any(Object)),
+    );
+    expect(await screen.findByText('Authoritative restored notice')).toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: 'Search banner text' })).toHaveValue('');
+    expect(screen.queryByText('Previously disabled')).not.toBeInTheDocument();
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, base.uuid, restored.uuid]);
+    const restoredRow = document.querySelector<HTMLElement>(
+      `[data-banner-row="${restored.uuid}"]`,
+    )!;
+    expect(restoredRow).toHaveClass('banner-arrival');
+    expect(within(restoredRow).getByRole('button', { name: 'Details' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(restoredRow).toHaveTextContent(`Restored from ${disabled.uuid}`);
+    expect(screen.getByRole('button', { name: 'Save order' })).toBeEnabled();
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel order changes' }));
+    expect(bannerRowOrder()).toEqual([base.uuid, scheduled.uuid, restored.uuid]);
+  });
+
+  it('keeps the copied restore editor and source unchanged when restore fails', async () => {
+    const disabled: ManagedBanner = {
+      ...base,
+      uuid: '44444444-4444-4444-4444-444444444444',
+      status: 'DISABLED',
+      lifecycle: 'DISABLED',
+      htmlContent: '<p>Previously disabled</p>',
+      disabledAt: '2026-08-27T12:30:00Z',
+      disabledBy: 'admin-id',
+    };
+    vi.mocked(getManagedBanners).mockResolvedValue([base, disabled]);
+    vi.mocked(restoreBanner).mockRejectedValue(new Error('offline'));
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    const sourceRow = await openDetailsFor('Previously disabled');
+    await fireEvent.click(within(sourceRow).getByRole('button', { name: 'Restore banner' }));
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Title' }), {
+      target: { value: 'Copied changes' },
+    });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Bring back now' }));
+
+    await waitFor(() =>
+      expect(toaster.error).toHaveBeenCalledWith({
+        title: 'Banner could not be restored',
+        description: 'The source banner is unchanged. Your copied changes are still here.',
+      }),
+    );
+    expect(screen.getByRole('heading', { name: 'Restore banner' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('Copied changes');
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+    expect(await screen.findByText('Previously disabled')).toBeInTheDocument();
   });
 
   it('shows the standard API error when the management list fails', async () => {

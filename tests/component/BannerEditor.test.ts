@@ -10,6 +10,7 @@ vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }
 vi.mock('$lib/services/BannerManagement', () => ({
   publishBanner: vi.fn(),
   publishSavedBanner: vi.fn(),
+  restoreBanner: vi.fn(),
   saveBanner: vi.fn(),
   updatePublishedBanner: vi.fn(),
   updateSavedBanner: vi.fn(),
@@ -17,7 +18,11 @@ vi.mock('$lib/services/BannerManagement', () => ({
 
 import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
 import type { BannerAudience, ManagedBanner } from '$lib/models/Banner';
-import { publishBanner, updatePublishedBanner } from '$lib/services/BannerManagement';
+import {
+  publishBanner,
+  restoreBanner,
+  updatePublishedBanner,
+} from '$lib/services/BannerManagement';
 import { toaster } from '$lib/toaster';
 
 const audienceCases: [string, BannerAudience][] = [
@@ -50,6 +55,7 @@ const published: ManagedBanner = {
   publishedBy: 'admin-id',
   disabledAt: null,
   disabledBy: null,
+  restoredFromUuid: null,
 };
 
 const saved = {
@@ -68,6 +74,7 @@ beforeEach(() => {
   navigation.beforeNavigate.mockReset();
   navigation.goto.mockReset();
   vi.mocked(updatePublishedBanner).mockReset();
+  vi.mocked(restoreBanner).mockReset();
   vi.mocked(toaster.success).mockReset();
   vi.mocked(toaster.error).mockReset();
 });
@@ -438,6 +445,63 @@ describe('BannerEditor', () => {
       expired.uuid,
       expect.objectContaining({ startAt: expired.startAt, endAt: expired.endAt }),
     );
+  });
+
+  it('uses explicit restore mode to copy sanitized material and targets into a new unscheduled occurrence', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    const expired = {
+      ...published,
+      htmlContent: '<p class="removed">Restorable <strong>content</strong></p>',
+      lifecycle: 'EXPIRED' as const,
+      audience: 'SIGNED_IN' as const,
+      pageTargets: [{ kind: 'EXACT' as const, path: '/help' }],
+      endAt: '2026-08-27T13:00:00Z',
+    };
+    const restored = {
+      ...expired,
+      uuid: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      lifecycle: 'ACTIVE' as const,
+      startAt: '2026-08-28T12:00:00Z',
+      endAt: null,
+      restoredFromUuid: expired.uuid,
+    };
+    vi.mocked(restoreBanner).mockResolvedValue(restored);
+    const onsuccess = vi.fn();
+
+    render(BannerEditor, { props: { banner: expired, mode: 'restore', onsuccess } });
+
+    expect(screen.getByRole('heading', { name: 'Restore banner' })).toBeInTheDocument();
+    expect(screen.getByText(/new occurrence/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('Start')).toHaveValue('');
+    expect(screen.getByLabelText('End')).toHaveValue('');
+    expect(screen.getByLabelText('Start')).toBeEnabled();
+    expect(screen.getByRole('radio', { name: 'Signed-in users' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Specific pages' })).toBeChecked();
+    expect(screen.getByDisplayValue('/help')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /save for later|save changes/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Bring back now' })).toBeEnabled();
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Bring back now' }));
+
+    await waitFor(() => expect(onsuccess).toHaveBeenCalledWith(restored));
+    expect(restoreBanner).toHaveBeenCalledWith(
+      expired.uuid,
+      expect.objectContaining({
+        htmlContent: '<p>Restorable <strong>content</strong></p>',
+        audience: 'SIGNED_IN',
+        pageTargets: [{ kind: 'EXACT', path: '/help' }],
+        startAt: null,
+        endAt: null,
+      }),
+    );
+    expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner restored' });
   });
 
   it.each(audienceCases)('submits %s as %s', async (label, audience) => {

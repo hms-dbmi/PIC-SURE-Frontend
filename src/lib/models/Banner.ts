@@ -91,6 +91,7 @@ export interface ManagedBanner extends BannerPresentation {
   publishedBy: string | null;
   disabledAt: string | null;
   disabledBy: string | null;
+  restoredFromUuid: string | null;
 }
 
 /**

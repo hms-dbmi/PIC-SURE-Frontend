@@ -15,6 +15,7 @@
     onedit: () => void;
     ondisable: () => void;
     onarchive: () => void;
+    onrestore: () => void;
     orderable?: boolean;
     position?: number | null;
     index?: number;
@@ -32,6 +33,7 @@
     onedit,
     ondisable,
     onarchive,
+    onrestore,
     orderable = false,
     position = null,
     index = 0,
@@ -71,6 +73,7 @@
       banner.lifecycle === 'DISABLED' ||
       banner.lifecycle === 'EXPIRED',
   );
+  const restorable = $derived(banner.lifecycle === 'DISABLED' || banner.lifecycle === 'EXPIRED');
 
   function scheduleSummary() {
     if (banner.lifecycle === 'SAVED') return 'Not published';
@@ -166,8 +169,11 @@
           <h3 class="text-sm font-bold uppercase tracking-wide">Last change</h3>
           <p>{new Date(banner.updatedAt).toLocaleString()}</p>
           <p>Last changed by {banner.updatedBy}</p>
+          {#if banner.restoredFromUuid}
+            <p>Restored from {banner.restoredFromUuid}</p>
+          {/if}
         </div>
-        {#if editable || disableable || archiveable}
+        {#if editable || disableable || archiveable || restorable}
           <div class="flex flex-wrap gap-2 sm:col-span-2">
             {#if editable}
               <button
@@ -196,6 +202,16 @@
                 Are you sure you want to disable this banner? It stops appearing to visitors immediately
                 and moves to Saved &amp; disabled. Its content and history are kept.
               </Modal>
+            {/if}
+            {#if restorable}
+              <button
+                type="button"
+                class="btn preset-tonal-primary"
+                disabled={busy}
+                onclick={onrestore}
+              >
+                Restore banner
+              </button>
             {/if}
             {#if archiveable}
               <Modal

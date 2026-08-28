@@ -43,6 +43,10 @@ export async function archiveBanner(uuid: string): Promise<ArchivedBanner> {
   return api.post(`${Picsure.Banners.Manage}/${uuid}/archive`, undefined);
 }
 
+export async function restoreBanner(uuid: string, draft: BannerDraft): Promise<ManagedBanner> {
+  return api.post(`${Picsure.Banners.Manage}/${uuid}/restore`, authorablePayload(draft));
+}
+
 function authorablePayload(
   draft: BannerDraft,
 ): Omit<BannerDraft, 'title'> & { title: string | null } {
