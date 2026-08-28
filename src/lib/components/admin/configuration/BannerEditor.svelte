@@ -129,7 +129,11 @@
 
   function snapshot() {
     const value = draft();
-    return JSON.stringify({ ...value, htmlContent: sanitizeBannerHTML(value.htmlContent) });
+    return JSON.stringify({
+      ...value,
+      htmlContent: sanitizeBannerHTML(value.htmlContent),
+      scheduleInput: { startLocal, endLocal, startChoice, endChoice },
+    });
   }
 
   let initialSnapshot = $state(snapshot());

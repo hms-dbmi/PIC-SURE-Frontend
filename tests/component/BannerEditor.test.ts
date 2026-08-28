@@ -43,6 +43,17 @@ const published = {
   publishedBy: 'admin-id',
 };
 
+const saved = {
+  ...published,
+  status: 'SAVED' as const,
+  lifecycle: 'SAVED' as const,
+  startAt: null,
+  endAt: null,
+  priority: null,
+  publishedAt: null,
+  publishedBy: null,
+};
+
 beforeEach(() => {
   vi.mocked(publishBanner).mockReset();
   navigation.beforeNavigate.mockReset();
@@ -208,6 +219,35 @@ describe('BannerEditor', () => {
       expect(screen.getByRole('button', { name: 'Schedule banner' })).toBeEnabled();
     });
   });
+
+  it.each([
+    ['ambiguous fall-back', '2026-11-01T01:30'],
+    ['nonexistent spring-forward', '2026-03-08T02:30'],
+    ['invalid sub-minute', '2026-08-28T09:15:30'],
+  ])(
+    'treats an unresolved %s schedule edit as dirty while keeping it unsavable',
+    async (_case, localStart) => {
+      vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+        locale: 'en-US',
+        calendar: 'gregory',
+        numberingSystem: 'latn',
+        timeZone: 'America/New_York',
+      });
+      const oncancel = vi.fn();
+      render(BannerEditor, { props: { banner: saved, oncancel } });
+
+      const start = screen.getByLabelText('Start');
+      await fireEvent.input(start, { target: { value: localStart } });
+
+      expect(start).toHaveValue(localStart);
+      expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Schedule banner' })).toBeDisabled();
+      await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      expect(screen.getByRole('heading', { name: 'Unsaved Changes' })).toBeInTheDocument();
+      expect(oncancel).not.toHaveBeenCalled();
+    },
+  );
 
   it('updates a published row through the editor without exposing history controls', async () => {
     const corrected = {
