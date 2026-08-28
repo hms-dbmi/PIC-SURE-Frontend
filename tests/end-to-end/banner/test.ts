@@ -78,7 +78,12 @@ test.describe('Site banner workflow 1', () => {
   test('loads management on tab selection and protects dirty configuration-tab changes', async ({
     page,
   }) => {
+    let accessControlLoads = 0;
     let managementLoads = 0;
+    await page.route('**/psama/role', (route) => {
+      accessControlLoads += 1;
+      return route.fulfill({ json: [] });
+    });
     await page.route('**/picsure/operations/banners', (route) => {
       if (route.request().method() === 'GET') {
         managementLoads += 1;
@@ -88,7 +93,7 @@ test.describe('Site banner workflow 1', () => {
     });
 
     await page.goto('/admin/configuration');
-    await expect(page.getByTestId('configuration-hydrated')).toBeAttached();
+    await expect.poll(() => accessControlLoads).toBeGreaterThan(0);
     expect(managementLoads).toBe(0);
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await expect.poll(() => managementLoads).toBe(1);
@@ -102,11 +107,36 @@ test.describe('Site banner workflow 1', () => {
 
     await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toBeVisible();
     await expect(page.getByTestId('banner-editor-form')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toBeVisible();
+    await page.mouse.click(5, 5);
+    await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toBeVisible();
     await page.getByRole('button', { name: 'Keep editing' }).click();
     await expect(page.getByTestId('banner-editor-form')).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Branding' }).click();
+    await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toBeVisible();
+    await page.getByRole('button', { name: 'Keep editing' }).click();
+
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toBeVisible();
+    await expect(page.getByRole('dialog')).not.toContainText('open Branding');
+    await page.getByRole('button', { name: 'Keep editing' }).click();
+
+    await page.getByRole('link', { name: 'Help' }).click();
+    await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/configuration$/);
+    await page.getByRole('button', { name: 'Keep editing' }).click();
+
     await page.getByRole('tab', { name: 'Branding' }).click();
     await page.getByRole('button', { name: 'Discard changes' }).click();
     await expect(page.getByTestId('banner-editor-form')).not.toBeVisible();
+    await expect(page.getByTestId('config-tab-branding')).toBeVisible();
+    await expect(page.getByTestId('config-branding-scope-note')).toContainText('Limited scope');
+    await expect(page.getByRole('tab', { name: 'Branding' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   });
 
   test('keeps sentence spaces, Enter, and a second paragraph while editing', async ({ page }) => {

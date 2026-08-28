@@ -135,9 +135,17 @@ describe('BannerEditor', () => {
 
     expect(screen.getAllByRole('heading', { name: 'Unsaved Changes' })).toHaveLength(1);
     expect(screen.getByRole('dialog')).toHaveTextContent('Discard them to open Branding');
+    expect(screen.queryByTestId('modal-close-button')).not.toBeInTheDocument();
+    await fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.getByRole('dialog')).toHaveTextContent('Discard them to open Branding');
     await fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
     expect(ontabchangerequestresolve).toHaveBeenCalledOnce();
     expect(ontabchangerequestresolve).toHaveBeenCalledWith(null);
+
+    await view.rerender({ tabchangerequest: null, ontabchangerequestresolve });
+    await view.rerender({ tabchangerequest: 'Branding', ontabchangerequestresolve });
+    expect(screen.getByRole('dialog')).toHaveTextContent('Discard them to open Branding');
+    expect(screen.getAllByRole('heading', { name: 'Unsaved Changes' })).toHaveLength(1);
   });
 
   it('leaves external unloads to the native prompt without disabling later navigation guards', async () => {

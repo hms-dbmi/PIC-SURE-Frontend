@@ -6,13 +6,11 @@
   import BannerManagementRow from '$lib/components/admin/configuration/BannerManagementRow.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
-  import type { BannerLifecycle, ManagedBanner } from '$lib/models/Banner';
+  import type { BannerLifecycle, ManagedBanner, ManagementRecord } from '$lib/models/Banner';
   import { getManagedBanners } from '$lib/services/BannerManagement';
   import { bannerPlainText } from '$lib/utilities/BannerHTML';
 
   type LifecycleTab = 'orderable' | 'saved' | 'expired';
-  type ManagementRecord = ManagedBanner & { excerpt: string };
-
   interface Props {
     ondirtychange?: (dirty: boolean) => void;
     tabchangerequest?: string | null;
@@ -189,6 +187,7 @@
               class:banner-arrival={arrivalUuid === banner.uuid}
               in:scale={{
                 start: 0.97,
+                opacity: 1,
                 duration: arrivalUuid === banner.uuid ? 450 : 0,
                 easing: elasticInOut,
               }}

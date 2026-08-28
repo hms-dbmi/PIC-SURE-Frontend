@@ -176,15 +176,17 @@ describe('BannerManagementView', () => {
     timeout.mockRestore();
   });
 
-  it('uses static tone classes and names selected target routes without raw JSON', async () => {
+  it('uses static tone classes and bounds generic target values without raw JSON', async () => {
     vi.mocked(getManagedBanners).mockResolvedValue([
       {
         ...base,
         pageTargets: [
-          { kind: 'EXACT', route: '/explorer' },
-          { kind: 'SUBTREE', route: '/help' },
-          { kind: 'PARAMETERIZED', route: '/datasets/[slug]' },
-          { kind: 'PATH', path: '/search' },
+          {
+            arbitrary: '/explorer',
+            nested: { enabled: true, priority: 2 },
+            another: '/help',
+            overflow: '/not-shown',
+          },
         ],
       },
     ]);
@@ -195,10 +197,10 @@ describe('BannerManagementView', () => {
     expect(container.querySelector('[aria-label="Warning tone"]')).not.toBeInTheDocument();
     await fireEvent.click(details);
     expect(document.getElementById(`banner-${base.uuid}-details`)).toHaveTextContent(
-      'Pages: /explorer, /help/**, /datasets/[slug], /search',
+      'Pages: /explorer · true · 2 · /help · + more',
     );
     expect(document.getElementById(`banner-${base.uuid}-details`)).not.toHaveTextContent(
-      /"kind"|\{|\}/,
+      /arbitrary|nested|enabled|priority|another|overflow|"|\{|\}|not-shown/,
     );
   });
 });

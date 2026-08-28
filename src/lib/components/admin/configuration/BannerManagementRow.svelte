@@ -1,9 +1,9 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
-  import { BANNER_APPEARANCE_DETAILS, type ManagedBanner } from '$lib/models/Banner';
+  import { BANNER_APPEARANCE_DETAILS, type ManagementRecord } from '$lib/models/Banner';
 
   interface Props {
-    banner: ManagedBanner & { excerpt: string };
+    banner: ManagementRecord;
     open: boolean;
     ontoggle: () => void;
     onedit: () => void;
@@ -32,34 +32,42 @@
   }
 
   function pageTargetSummary() {
-    if (
-      banner.pageTargets.some(
-        (target) =>
-          typeof target === 'object' &&
-          target !== null &&
-          'kind' in target &&
-          target.kind === 'ALL',
-      )
-    ) {
-      return 'All pages';
-    }
     if (banner.pageTargets.length === 0) return 'No pages selected';
 
-    const routes = banner.pageTargets.flatMap((target) => {
-      if (typeof target === 'string') return target.trim() ? [target] : [];
-      if (typeof target !== 'object' || target === null) return [];
+    const values: string[] = [];
+    const visited: object[] = [];
+    let inspectedNodes = 0;
+    let omitted = false;
 
-      const record = target as Record<string, unknown>;
-      const route = [record.route, record.path, record.value, record.pattern].find(
-        (value): value is string => typeof value === 'string' && value.trim().length > 0,
-      );
-      if (!route) return [];
-      if (record.kind === 'SUBTREE' && !route.endsWith('/**')) {
-        return [`${route.replace(/\/$/, '')}/**`];
+    function add(value: string) {
+      if (values.length === 4) {
+        omitted = true;
+        return;
       }
-      return [route];
-    });
-    return routes.length > 0 ? routes.join(', ') : 'Selected pages unavailable';
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      values.push(trimmed.length > 48 ? `${trimmed.slice(0, 47)}…` : trimmed);
+    }
+
+    function visit(value: unknown, depth: number) {
+      if (typeof value === 'string') return add(value);
+      if (typeof value === 'number' || typeof value === 'boolean') return add(String(value));
+      if (value === null || typeof value !== 'object') return;
+      if (depth === 4 || inspectedNodes === 24 || visited.includes(value)) {
+        omitted = true;
+        return;
+      }
+
+      inspectedNodes += 1;
+      visited.push(value);
+      for (const child of Array.isArray(value) ? value : Object.values(value)) {
+        visit(child, depth + 1);
+      }
+    }
+
+    visit(banner.pageTargets, 0);
+    if (values.length === 0) return 'Selected page values unavailable';
+    return `${values.join(' · ')}${omitted ? ' · + more' : ''}`;
   }
 </script>
 

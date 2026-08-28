@@ -202,7 +202,7 @@
 
 <svelte:window onbeforeunload={handleBeforeUnload} />
 
-<Modal bind:open={showUnsavedModal} title="Unsaved Changes" closeable onclose={keepEditing}>
+<Modal bind:open={showUnsavedModal} title="Unsaved Changes" closeable={false}>
   <p class="mb-6">
     {#if pendingTabChange ?? tabchangerequest}
       You have unsaved banner changes. Discard them to open {pendingTabChange ?? tabchangerequest},

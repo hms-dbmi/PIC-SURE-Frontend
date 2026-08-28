@@ -2,7 +2,6 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
-  import { onMount } from 'svelte';
 
   import type { Indexable } from '$lib/types';
   import { config } from '$lib/configuration.svelte';
@@ -32,11 +31,6 @@
   let requestedTab: string = $state('Access Control');
   let bannerEditorDirty = $state(false);
   let pendingTab: string | null = $state(null);
-  let hydrated = $state(false);
-
-  onMount(() => {
-    hydrated = true;
-  });
 
   $effect(() => {
     if (requestedTab !== tabSet) {
@@ -112,10 +106,6 @@
 <svelte:head>
   <title>{config.branding.applicationName} | Configuration</title>
 </svelte:head>
-
-{#if hydrated}
-  <span data-testid="configuration-hydrated" hidden></span>
-{/if}
 
 <Content title="Configuration">
   {#if !$isTopAdmin && tabSet !== 'Site banners'}
