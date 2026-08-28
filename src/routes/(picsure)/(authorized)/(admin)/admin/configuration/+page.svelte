@@ -2,6 +2,7 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
+  import { onMount } from 'svelte';
 
   import type { Indexable } from '$lib/types';
   import { config } from '$lib/configuration.svelte';
@@ -26,37 +27,33 @@
   import { isTopAdmin } from '$lib/stores/User';
 
   import Loading from '$lib/components/Loading.svelte';
-  import Modal from '$lib/components/Modal.svelte';
 
   let tabSet: string = $state('Access Control');
   let requestedTab: string = $state('Access Control');
   let bannerEditorDirty = $state(false);
-  let showBannerTabModal = $state(false);
-  let pendingTab: string | null = null;
+  let pendingTab: string | null = $state(null);
+  let hydrated = $state(false);
 
-  $effect(() => {
-    if (requestedTab === tabSet) return;
-    if (tabSet === 'Site banners' && bannerEditorDirty) {
-      pendingTab = requestedTab;
-      requestedTab = tabSet;
-      showBannerTabModal = true;
-      return;
-    }
-    tabSet = requestedTab;
+  onMount(() => {
+    hydrated = true;
   });
 
-  function keepEditingBanner() {
+  $effect(() => {
+    if (requestedTab !== tabSet) {
+      if (tabSet === 'Site banners' && bannerEditorDirty) {
+        pendingTab = requestedTab;
+        requestedTab = tabSet;
+      } else {
+        tabSet = requestedTab;
+      }
+    }
+  });
+
+  function resolveBannerTabChange(destination: string | null) {
     pendingTab = null;
     requestedTab = tabSet;
-    showBannerTabModal = false;
-  }
-
-  function discardBannerAndChangeTab() {
-    const destination = pendingTab;
-    pendingTab = null;
-    bannerEditorDirty = false;
-    showBannerTabModal = false;
     if (destination) {
+      bannerEditorDirty = false;
       tabSet = destination;
       requestedTab = destination;
     }
@@ -116,17 +113,9 @@
   <title>{config.branding.applicationName} | Configuration</title>
 </svelte:head>
 
-<Modal bind:open={showBannerTabModal} title="Unsaved Changes" closeable onclose={keepEditingBanner}>
-  <p class="mb-6">You have unsaved banner changes. Discard them or keep editing.</p>
-  <footer class="flex justify-end gap-2">
-    <button type="button" class="btn border preset-tonal-primary" onclick={keepEditingBanner}>
-      Keep editing
-    </button>
-    <button type="button" class="btn preset-filled-error-500" onclick={discardBannerAndChangeTab}>
-      Discard changes
-    </button>
-  </footer>
-</Modal>
+{#if hydrated}
+  <span data-testid="configuration-hydrated" hidden></span>
+{/if}
 
 <Content title="Configuration">
   {#if !$isTopAdmin && tabSet !== 'Site banners'}
@@ -258,7 +247,11 @@
       </Tabs.Panel>
       <Tabs.Panel value="Site banners">
         {#if tabSet === 'Site banners'}
-          <BannerManagementView ondirtychange={(dirty) => (bannerEditorDirty = dirty)} />
+          <BannerManagementView
+            ondirtychange={(dirty) => (bannerEditorDirty = dirty)}
+            tabchangerequest={pendingTab}
+            ontabchangerequestresolve={resolveBannerTabChange}
+          />
         {/if}
       </Tabs.Panel>
       {#if config.features.termsOfService}

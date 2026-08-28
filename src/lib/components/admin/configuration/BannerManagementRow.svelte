@@ -3,14 +3,13 @@
   import { BANNER_APPEARANCE_DETAILS, type ManagedBanner } from '$lib/models/Banner';
 
   interface Props {
-    banner: ManagedBanner;
-    excerpt: string;
+    banner: ManagedBanner & { excerpt: string };
     open: boolean;
     ontoggle: () => void;
     onedit: () => void;
   }
 
-  let { banner, excerpt, open, ontoggle, onedit }: Props = $props();
+  let { banner, open, ontoggle, onedit }: Props = $props();
   const audienceLabels = {
     EVERYONE: 'Everyone',
     SIGNED_IN: 'Signed-in users',
@@ -44,9 +43,23 @@
     ) {
       return 'All pages';
     }
-    const count = banner.pageTargets.length;
-    if (count === 0) return 'No pages selected';
-    return `${count} selected ${count === 1 ? 'page' : 'pages'}`;
+    if (banner.pageTargets.length === 0) return 'No pages selected';
+
+    const routes = banner.pageTargets.flatMap((target) => {
+      if (typeof target === 'string') return target.trim() ? [target] : [];
+      if (typeof target !== 'object' || target === null) return [];
+
+      const record = target as Record<string, unknown>;
+      const route = [record.route, record.path, record.value, record.pattern].find(
+        (value): value is string => typeof value === 'string' && value.trim().length > 0,
+      );
+      if (!route) return [];
+      if (record.kind === 'SUBTREE' && !route.endsWith('/**')) {
+        return [`${route.replace(/\/$/, '')}/**`];
+      }
+      return [route];
+    });
+    return routes.length > 0 ? routes.join(', ') : 'Selected pages unavailable';
   }
 </script>
 
@@ -58,7 +71,7 @@
       aria-hidden="true"
     ></span>
     <div class="min-w-0 flex-1">
-      <p class="overflow-hidden text-ellipsis whitespace-nowrap font-bold">{excerpt}</p>
+      <p class="overflow-hidden text-ellipsis whitespace-nowrap font-bold">{banner.excerpt}</p>
       <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-surface-600">
         <span class="rounded-full bg-surface-200 px-2 py-1 font-bold uppercase">
           {lifecycleLabels[banner.lifecycle]}

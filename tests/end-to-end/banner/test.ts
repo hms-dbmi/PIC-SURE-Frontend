@@ -88,6 +88,7 @@ test.describe('Site banner workflow 1', () => {
     });
 
     await page.goto('/admin/configuration');
+    await expect(page.getByTestId('configuration-hydrated')).toBeAttached();
     expect(managementLoads).toBe(0);
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await expect.poll(() => managementLoads).toBe(1);

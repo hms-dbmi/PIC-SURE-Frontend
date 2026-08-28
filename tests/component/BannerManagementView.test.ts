@@ -176,9 +176,17 @@ describe('BannerManagementView', () => {
     timeout.mockRestore();
   });
 
-  it('uses static tone classes and summarizes selected pages without raw targeting JSON', async () => {
+  it('uses static tone classes and names selected target routes without raw JSON', async () => {
     vi.mocked(getManagedBanners).mockResolvedValue([
-      { ...base, pageTargets: [{ kind: 'PATH', path: '/explorer' }] },
+      {
+        ...base,
+        pageTargets: [
+          { kind: 'EXACT', route: '/explorer' },
+          { kind: 'SUBTREE', route: '/help' },
+          { kind: 'PARAMETERIZED', route: '/datasets/[slug]' },
+          { kind: 'PATH', path: '/search' },
+        ],
+      },
     ]);
     const { container } = render(BannerManagementView);
 
@@ -187,8 +195,10 @@ describe('BannerManagementView', () => {
     expect(container.querySelector('[aria-label="Warning tone"]')).not.toBeInTheDocument();
     await fireEvent.click(details);
     expect(document.getElementById(`banner-${base.uuid}-details`)).toHaveTextContent(
-      'Pages: 1 selected page',
+      'Pages: /explorer, /help/**, /datasets/[slug], /search',
     );
-    expect(screen.queryByText(/PATH|explorer/)).not.toBeInTheDocument();
+    expect(document.getElementById(`banner-${base.uuid}-details`)).not.toHaveTextContent(
+      /"kind"|\{|\}/,
+    );
   });
 });

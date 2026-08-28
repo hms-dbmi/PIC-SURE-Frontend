@@ -123,6 +123,23 @@ describe('BannerEditor', () => {
     expect(oncancel).toHaveBeenCalledOnce();
   });
 
+  it('merges a dirty tab change into the open editor confirmation', async () => {
+    const ontabchangerequestresolve = vi.fn();
+    const view = render(BannerEditor, { props: { ontabchangerequestresolve } });
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Unsaved content</p>';
+    await fireEvent.input(editor);
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    await view.rerender({ tabchangerequest: 'Branding', ontabchangerequestresolve });
+
+    expect(screen.getAllByRole('heading', { name: 'Unsaved Changes' })).toHaveLength(1);
+    expect(screen.getByRole('dialog')).toHaveTextContent('Discard them to open Branding');
+    await fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
+    expect(ontabchangerequestresolve).toHaveBeenCalledOnce();
+    expect(ontabchangerequestresolve).toHaveBeenCalledWith(null);
+  });
+
   it('leaves external unloads to the native prompt without disabling later navigation guards', async () => {
     let guard: ((navigation: Record<string, unknown>) => void) | undefined;
     navigation.beforeNavigate.mockImplementation((callback) => {

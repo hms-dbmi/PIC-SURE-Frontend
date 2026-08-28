@@ -27,6 +27,8 @@
     onsuccess?: (banner: ManagedBanner) => void;
     oncancel?: () => void;
     ondirtychange?: (dirty: boolean) => void;
+    tabchangerequest?: string | null;
+    ontabchangerequestresolve?: (destination: string | null) => void;
   }
 
   let {
@@ -34,6 +36,8 @@
     onsuccess = () => {},
     oncancel = () => {},
     ondirtychange = () => {},
+    tabchangerequest = null,
+    ontabchangerequestresolve = () => {},
   }: Props = $props();
   const appearanceOptions = BANNER_APPEARANCES.map((value) => ({
     value,
@@ -57,6 +61,7 @@
   let showUnsavedModal = $state(false);
   let pendingUrl: URL | null = null;
   let pendingCancel = false;
+  let pendingTabChange: string | null = $state(null);
   let bypassGuard = false;
 
   const sanitizedLength = $derived(sanitizeBannerHTML(htmlContent).length);
@@ -91,6 +96,15 @@
     ondirtychange(dirty);
   });
 
+  $effect(() => {
+    if (tabchangerequest) {
+      pendingTabChange = tabchangerequest;
+      pendingCancel = false;
+      pendingUrl = null;
+      showUnsavedModal = true;
+    }
+  });
+
   onDestroy(() => ondirtychange(false));
 
   beforeNavigate(({ to, cancel, willUnload }) => {
@@ -98,6 +112,7 @@
       cancel();
       pendingUrl = to?.url ?? null;
       pendingCancel = false;
+      pendingTabChange = null;
       showUnsavedModal = true;
     }
   });
@@ -110,6 +125,7 @@
     if (dirty) {
       pendingCancel = true;
       pendingUrl = null;
+      pendingTabChange = null;
       showUnsavedModal = true;
       return;
     }
@@ -117,14 +133,21 @@
   }
 
   function keepEditing() {
+    const wasTabChange = pendingTabChange !== null || tabchangerequest !== null;
     showUnsavedModal = false;
     pendingCancel = false;
     pendingUrl = null;
+    pendingTabChange = null;
+    if (wasTabChange) ontabchangerequestresolve(null);
   }
 
   async function discardChanges() {
+    const tabDestination = pendingTabChange ?? tabchangerequest;
     showUnsavedModal = false;
-    if (pendingCancel) {
+    pendingTabChange = null;
+    if (tabDestination) {
+      ontabchangerequestresolve(tabDestination);
+    } else if (pendingCancel) {
       oncancel();
     } else if (pendingUrl) {
       bypassGuard = true;
@@ -180,7 +203,14 @@
 <svelte:window onbeforeunload={handleBeforeUnload} />
 
 <Modal bind:open={showUnsavedModal} title="Unsaved Changes" closeable onclose={keepEditing}>
-  <p class="mb-6">You have unsaved banner changes. Discard them or keep editing.</p>
+  <p class="mb-6">
+    {#if pendingTabChange ?? tabchangerequest}
+      You have unsaved banner changes. Discard them to open {pendingTabChange ?? tabchangerequest},
+      or keep editing.
+    {:else}
+      You have unsaved banner changes. Discard them or keep editing.
+    {/if}
+  </p>
   <footer class="flex justify-end gap-2">
     <button type="button" class="btn border preset-tonal-primary" onclick={keepEditing}>
       Keep editing

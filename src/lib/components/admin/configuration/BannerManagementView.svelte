@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from 'svelte';
+  import { elasticInOut } from 'svelte/easing';
+  import { scale } from 'svelte/transition';
   import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
   import BannerManagementRow from '$lib/components/admin/configuration/BannerManagementRow.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -13,9 +15,15 @@
 
   interface Props {
     ondirtychange?: (dirty: boolean) => void;
+    tabchangerequest?: string | null;
+    ontabchangerequestresolve?: (destination: string | null) => void;
   }
 
-  let { ondirtychange = () => {} }: Props = $props();
+  let {
+    ondirtychange = () => {},
+    tabchangerequest = null,
+    ontabchangerequestresolve = () => {},
+  }: Props = $props();
 
   let records: ManagementRecord[] = $state([]);
   let loading = $state(true);
@@ -106,6 +114,8 @@
   <BannerEditor
     banner={editingBanner}
     {ondirtychange}
+    {tabchangerequest}
+    {ontabchangerequestresolve}
     onsuccess={handleSuccess}
     oncancel={() => {
       mode = 'list';
@@ -174,10 +184,17 @@
           </p>
         {:else}
           {#each visibleRecords as banner (banner.uuid)}
-            <div data-banner-row={banner.uuid} class:banner-arrival={arrivalUuid === banner.uuid}>
+            <div
+              data-banner-row={banner.uuid}
+              class:banner-arrival={arrivalUuid === banner.uuid}
+              in:scale={{
+                start: 0.97,
+                duration: arrivalUuid === banner.uuid ? 450 : 0,
+                easing: elasticInOut,
+              }}
+            >
               <BannerManagementRow
                 {banner}
-                excerpt={banner.excerpt}
                 open={openUuid === banner.uuid}
                 ontoggle={() => (openUuid = openUuid === banner.uuid ? null : banner.uuid)}
                 onedit={() => editBanner(banner)}
@@ -197,23 +214,14 @@
 
   @keyframes banner-highlight {
     0% {
-      transform: scale(0.97);
       box-shadow: inset 0 0 0 3px var(--color-primary-500);
       background: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
     }
-    28% {
-      transform: scale(1.015);
-    }
-    48% {
-      transform: scale(0.995);
-    }
     65% {
-      transform: scale(1);
       box-shadow: inset 0 0 0 3px var(--color-primary-500);
       background: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
     }
     100% {
-      transform: scale(1);
       box-shadow: inset 0 0 0 transparent;
       background: transparent;
     }
