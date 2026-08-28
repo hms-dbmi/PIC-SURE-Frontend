@@ -706,6 +706,7 @@ describe('BannerManagementView', () => {
       disabledBy: null,
       restoredFromUuid: disabled.uuid,
     };
+    let resolveReorder!: (banners: ManagedBanner[]) => void;
     let resolveRefresh!: (banners: ManagedBanner[]) => void;
     vi.mocked(getManagedBanners)
       .mockResolvedValueOnce([base, scheduled, disabled])
@@ -714,16 +715,32 @@ describe('BannerManagementView', () => {
           resolveRefresh = resolve;
         }),
       );
-    vi.mocked(reorderBanners).mockResolvedValue([
-      { ...scheduled, priority: 1 },
-      { ...base, priority: 2 },
-    ]);
+    vi.mocked(reorderBanners).mockReturnValue(
+      new Promise((resolve) => {
+        resolveReorder = resolve;
+      }),
+    );
     vi.mocked(restoreBanner).mockResolvedValue(restored);
     render(BannerManagementView);
     await screen.findByText('System maintenance tonight');
 
     await drag(scheduled.uuid, base.uuid);
     await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
+    await waitFor(() => expect(reorderBanners).toHaveBeenCalledTimes(1));
+
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    expect(within(screen.getByRole('dialog')).getByText('Unsaved Changes')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /Active & scheduled/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.queryByRole('button', { name: 'Restore banner' })).not.toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Keep ordering' }));
+
+    resolveReorder([
+      { ...scheduled, priority: 1 },
+      { ...base, priority: 2 },
+    ]);
     await waitFor(() => expect(getManagedBanners).toHaveBeenCalledTimes(2));
 
     await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));

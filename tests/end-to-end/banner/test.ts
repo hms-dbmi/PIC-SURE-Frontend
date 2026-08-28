@@ -907,6 +907,7 @@ test.describe('Site banner workflow 2', () => {
     let scheduled: Record<string, unknown> | null = null;
     let restored: Record<string, unknown> | null = null;
     let sourceLookupRequests = 0;
+    let showFeedSynchronizationBanner = false;
     await page.clock.install({ time: new Date(serverNow) });
 
     const lifecycle = () => {
@@ -919,7 +920,22 @@ test.describe('Site banner workflow 2', () => {
     await page.route('**/picsure/operations/banners/active/v2', (route) => {
       if (restored) return route.fulfill({ json: [restored] });
       const banner = authoritative();
-      return route.fulfill({ json: banner && lifecycle() === 'ACTIVE' ? [banner] : [] });
+      const active = banner && lifecycle() === 'ACTIVE' ? [banner] : [];
+      const synchronizedFeedBanner = {
+        ...banner,
+        uuid: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+        htmlContent: '<p>Feed synchronization marker</p>',
+        title: 'Feed synchronization marker',
+        status: 'PUBLISHED',
+        lifecycle: 'ACTIVE',
+        priority: 99,
+        presentationHash: 'feed-synchronization-hash',
+        startAt: serverNow,
+        endAt: null,
+      };
+      return route.fulfill({
+        json: showFeedSynchronizationBanner ? [...active, synchronizedFeedBanner] : active,
+      });
     });
     await page.route('**/picsure/operations/banners**', async (route) => {
       const pathname = new URL(route.request().url()).pathname;
@@ -1054,12 +1070,23 @@ test.describe('Site banner workflow 2', () => {
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await page.getByRole('tab', { name: 'Expired' }).click();
     await expect(row).toContainText('Expired');
+    showFeedSynchronizationBanner = true;
     await page.goto('/help');
     // The root layout's hydration-time fetch of the current pathname redirects to '/' when it
     // is aborted (src/routes/+layout.ts). Waiting for the signed-in shell proves hydration
-    // finished, so the next page.goto cannot race that redirect - and it also makes the
-    // absent-banner assertion below meaningful rather than true before the app boots.
+    // finished before the internal navigation below can abort it. The visible feed marker then
+    // proves SiteBannerRegion consumed a response before the test asks it to consume an empty one.
     await userIsLoggedIn(page);
+    await expect(page.getByTestId('site-banner')).toContainText('Feed synchronization marker');
+    await expect(page.getByTestId('site-banner')).not.toContainText('Minute-boundary maintenance');
+
+    showFeedSynchronizationBanner = false;
+    const emptyFeed = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/picsure/operations/banners/active/v2') && response.ok(),
+    );
+    await page.locator('a[href="/"]').first().click();
+    await emptyFeed;
     await expect(page.getByTestId('site-banner')).toHaveCount(0);
 
     await page.goto('/admin/configuration');
