@@ -616,12 +616,15 @@ describe('BannerEditor', () => {
     });
     const schedule = screen.getByRole('button', { name: 'Schedule banner' });
     expect(schedule).toBeEnabled();
+    const staticHelp = screen.getByText('Resolved UTC: 2026-08-28 16:01 UTC');
+    expect(staticHelp.closest('#banner-start-help')).not.toHaveAttribute('aria-live');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 
     await vi.advanceTimersByTimeAsync(30_000);
 
-    expect(
-      screen.getByText('Start must be in the future. Leave Start blank to restore now.'),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Start must be in the future. Leave Start blank to restore now.',
+    );
     expect(schedule).toBeDisabled();
     await fireEvent.click(schedule);
     expect(restoreBanner).not.toHaveBeenCalled();
@@ -672,6 +675,45 @@ describe('BannerEditor', () => {
 
     unmount();
 
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('chunks a restore start beyond the browser maximum delay without invalidating early', async () => {
+    const maxBrowserTimeout = 2_147_483_647;
+    const remainingDelay = 98_916_353;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-28T16:00:00Z'));
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    render(BannerEditor, { props: { banner: disabled, mode: 'restore' } });
+    const setTimeoutSpy = vi.spyOn(window, 'setTimeout');
+
+    await fireEvent.input(screen.getByLabelText('Start'), {
+      target: { value: '2026-09-23T12:00' },
+    });
+
+    expect(setTimeoutSpy).toHaveBeenLastCalledWith(expect.any(Function), maxBrowserTimeout);
+    expect(screen.getByRole('button', { name: 'Schedule banner' })).toBeEnabled();
+    await vi.advanceTimersByTimeAsync(maxBrowserTimeout);
+
+    expect(setTimeoutSpy).toHaveBeenLastCalledWith(expect.any(Function), remainingDelay);
+    expect(screen.queryByText(/Start must be in the future/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Schedule banner' })).toBeEnabled();
+    expect(vi.getTimerCount()).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(remainingDelay - 1);
+    expect(screen.queryByText(/Start must be in the future/)).not.toBeInTheDocument();
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(
+      screen.getByText('Start must be in the future. Leave Start blank to restore now.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Schedule banner' })).toBeDisabled();
+    expect(setTimeoutSpy).toHaveBeenCalledTimes(2);
     expect(vi.getTimerCount()).toBe(0);
   });
 

@@ -585,7 +585,7 @@
               {:else if startResolution?.status === 'invalid'}
                 <span class="text-error-700">Enter a valid local date and time.</span>
               {:else if restoreStartNotFuture}
-                <span class="text-error-700">
+                <span class="text-error-700" role="alert">
                   Start must be in the future. Leave Start blank to restore now.
                 </span>
               {:else if resolvedStart}
