@@ -4,7 +4,7 @@
   import type { ActiveBanner, BannerAudience } from '$lib/models/Banner';
   import { BANNER_APPEARANCES, BANNER_AUDIENCES, BANNER_ICONS } from '$lib/models/Banner';
   import { Picsure } from '$lib/paths';
-  import { tokenStatus } from '$lib/stores/User';
+  import { hasValidToken } from '$lib/stores/User';
   import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
 
   const appearances = new Set<unknown>(BANNER_APPEARANCES);
@@ -15,12 +15,12 @@
 
   let banners: ActiveBanner[] = $state([]);
 
-  // Public routes do not hydrate the user store, so use token status for audience filtering.
+  // Public routes do not hydrate the user store, so use token validity for audience filtering.
   const visibleBanners = $derived(banners.filter((banner) => matches(banner.audience)));
 
   function matches(audience: BannerAudience): boolean {
-    if (audience === 'SIGNED_IN') return $tokenStatus;
-    if (audience === 'SIGNED_OUT') return !$tokenStatus;
+    if (audience === 'SIGNED_IN') return $hasValidToken;
+    if (audience === 'SIGNED_OUT') return !$hasValidToken;
     return true;
   }
 

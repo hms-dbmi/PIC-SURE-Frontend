@@ -58,6 +58,57 @@ test.describe('Site banner delivery', () => {
   });
 });
 
+test.describe('Site banner closed-login delivery', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'false' }] });
+  });
+
+  test('shows signed-out audiences after redirecting outside the normal shell', async ({
+    page,
+  }) => {
+    const signedIn = { ...banner, title: 'Signed-in notice', audience: 'SIGNED_IN' };
+    const signedOut = {
+      ...banner,
+      uuid: '22222222-2222-2222-2222-222222222222',
+      title: 'Signed-out notice',
+      audience: 'SIGNED_OUT',
+    };
+    await page.route('**/picsure/operations/banners/active', (route) =>
+      route.fulfill({ json: [banner, signedIn, signedOut] }),
+    );
+
+    await page.goto('/');
+
+    await expect(page).toHaveURL('/login');
+    await expect(page.getByRole('region', { name: 'Maintenance' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Signed-out notice' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
+    await expect(page.getByTestId('site-banner-region')).toHaveCount(1);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const bannerRegion = document.querySelector('[data-testid="site-banner-region"]');
+          const loginTitle = document.querySelector('[data-testid="login-title"]');
+          return Boolean(
+            bannerRegion &&
+            loginTitle &&
+            bannerRegion.compareDocumentPosition(loginTitle) & Node.DOCUMENT_POSITION_FOLLOWING,
+          );
+        }),
+      )
+      .toBe(true);
+
+    await page.goto('/login/error');
+
+    await expect(page.getByRole('region', { name: 'Maintenance' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Signed-out notice' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
+    await expect(page.getByTestId('site-banner-region')).toHaveCount(1);
+  });
+});
+
 // Workflow 3 of the five representative end-to-end workflows. Ticket 08 extends this same test with
 // page targeting rather than adding a sixth workflow.
 test.describe('Site banner workflow 3', () => {

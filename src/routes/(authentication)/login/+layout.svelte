@@ -9,6 +9,7 @@
 
   import Footer from '$lib/components/Footer.svelte';
   import Dots from '$lib/components/Dots.svelte';
+  import SiteBannerRegion from '$lib/components/banner/SiteBannerRegion.svelte';
 
   interface Props {
     children?: import('svelte').Snippet;
@@ -24,19 +25,19 @@
 </script>
 
 <Toaster {toaster} />
-<div class="w-full full-height">
-  <Dots class="top-dots" />
-  {@render children?.()}
-  <Dots class="bottom-dots" />
+<div class="h-full w-full flex flex-col">
+  <SiteBannerRegion />
+  <div class="min-h-0 flex-1 pb-14">
+    <Dots class="top-dots" />
+    {@render children?.()}
+    <Dots class="bottom-dots" />
+  </div>
   <div class="footer">
     <Footer showSitemap={false} />
   </div>
 </div>
 
 <style>
-  .full-height {
-    height: calc(100% - 56px);
-  }
   .footer {
     position: fixed;
     bottom: 0;

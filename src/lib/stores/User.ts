@@ -14,6 +14,8 @@ import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
 import { log, createLog } from '$lib/logger';
 import { isToastShowing, toaster } from '$lib/toaster';
 
+const tokenRevision = writable(0);
+
 // Create a store that syncs with localStorage
 function createLocalStorageStore(key: string, initialValue: boolean) {
   const store = writable(browser ? !!localStorage.getItem(key) : initialValue);
@@ -23,6 +25,7 @@ function createLocalStorageStore(key: string, initialValue: boolean) {
     window.addEventListener('storage', (event) => {
       if (event.key === key) {
         store.set(!!event.newValue);
+        tokenRevision.update((revision) => revision + 1);
       }
     });
   }
@@ -32,6 +35,26 @@ function createLocalStorageStore(key: string, initialValue: boolean) {
 
 // Initialize tokenStatus first, before any other operations
 export const tokenStatus: Writable<boolean> = createLocalStorageStore('token', false);
+export const hasValidToken: Readable<boolean> = derived(
+  [tokenStatus, tokenRevision],
+  ([$hasToken], set) => {
+    let expiryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    function updateValidity() {
+      const token = getToken();
+      const valid = $hasToken && !!token && !isTokenExpired(token);
+      set(valid);
+      if (!valid) return;
+
+      const remaining = getTokenExpiration(token) - Date.now() + 1;
+      expiryTimer = setTimeout(updateValidity, Math.min(Math.max(remaining, 1), 2_147_483_647));
+    }
+
+    updateValidity();
+    return () => clearTimeout(expiryTimer);
+  },
+  false,
+);
 export const user: Writable<User> = writable(restoreUser());
 export const isTopAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.SUPER);
@@ -77,6 +100,7 @@ user.subscribe(($user: User) => {
 export function setToken(token: string) {
   localStorage.setItem('token', token);
   tokenStatus.set(true);
+  tokenRevision.update((revision) => revision + 1);
 }
 
 export function getToken(): string {
@@ -86,6 +110,7 @@ export function getToken(): string {
 export function removeToken() {
   localStorage.removeItem('token');
   tokenStatus.set(false);
+  tokenRevision.update((revision) => revision + 1);
 }
 
 /**

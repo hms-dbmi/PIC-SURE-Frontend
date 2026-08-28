@@ -6,6 +6,10 @@ import { render, screen, waitFor } from '@testing-library/svelte';
 const navigation = vi.hoisted(() => ({
   callback: undefined as (() => Promise<void>) | undefined,
 }));
+const authentication = vi.hoisted(() => ({
+  setHasValidToken: undefined as unknown as (value: boolean) => void,
+  setTokenStatus: undefined as unknown as (value: boolean) => void,
+}));
 
 vi.mock('$app/navigation', () => ({
   afterNavigate: (callback: () => Promise<void>) => {
@@ -18,16 +22,19 @@ vi.mock('$lib/logger', () => ({
   createLog: vi.fn((...args: unknown[]) => args),
 }));
 
-// Mock only tokenStatus to prove public routes do not depend on hydrated user state.
+// Keep token presence separate from validity to cover expired sessions on public routes.
 vi.mock('$lib/stores/User', async () => {
   const { writable } = await import('svelte/store');
-  return { tokenStatus: writable(false) };
+  const hasValidToken = writable(false);
+  const tokenStatus = writable(false);
+  authentication.setHasValidToken = (value) => hasValidToken.set(value);
+  authentication.setTokenStatus = (value) => tokenStatus.set(value);
+  return { hasValidToken, tokenStatus };
 });
 
 import SiteBannerRegion from '$lib/components/banner/SiteBannerRegion.svelte';
 import { createLog, log } from '$lib/logger';
 import type { BannerAudience } from '$lib/models/Banner';
-import { tokenStatus } from '$lib/stores/User';
 
 const banner = {
   uuid: '11111111-1111-1111-1111-111111111111',
@@ -57,7 +64,8 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   vi.mocked(log).mockClear();
   vi.mocked(createLog).mockClear();
-  tokenStatus.set(false);
+  authentication.setHasValidToken(false);
+  authentication.setTokenStatus(false);
 });
 
 describe('SiteBannerRegion', () => {
@@ -277,7 +285,8 @@ describe('SiteBannerRegion audience targeting', () => {
   it.each(audienceCases)(
     'renders %s when signed in is %s: %s',
     async (audience, signedIn, rendered) => {
-      tokenStatus.set(signedIn);
+      authentication.setHasValidToken(signedIn);
+      authentication.setTokenStatus(signedIn);
       fetchMock.mockResolvedValue(
         new Response(JSON.stringify([{ ...banner, audience }]), { status: 200 }),
       );
@@ -326,7 +335,8 @@ describe('SiteBannerRegion audience targeting', () => {
   });
 
   it('keeps filtering the same records after a later navigation', async () => {
-    tokenStatus.set(true);
+    authentication.setHasValidToken(true);
+    authentication.setTokenStatus(true);
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify([{ ...banner, audience: 'SIGNED_OUT' }]), { status: 200 }),
     );
@@ -342,7 +352,8 @@ describe('SiteBannerRegion audience targeting', () => {
   });
 
   it('re-evaluates the rendered records when the session ends without refetching', async () => {
-    tokenStatus.set(true);
+    authentication.setHasValidToken(true);
+    authentication.setTokenStatus(true);
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify([
@@ -362,12 +373,38 @@ describe('SiteBannerRegion audience targeting', () => {
     await navigation.callback?.();
     expect(screen.getByRole('region', { name: 'For signed-in users' })).toBeInTheDocument();
 
-    tokenStatus.set(false);
+    authentication.setHasValidToken(false);
+    authentication.setTokenStatus(false);
 
     await waitFor(() =>
       expect(screen.getByRole('region', { name: 'For signed-out visitors' })).toBeInTheDocument(),
     );
     expect(screen.queryByRole('region', { name: 'For signed-in users' })).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('treats a present but expired token as signed out', async () => {
+    authentication.setTokenStatus(true);
+    authentication.setHasValidToken(false);
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          { ...banner, title: 'For signed-in users', audience: 'SIGNED_IN' },
+          {
+            ...banner,
+            uuid: '66666666-6666-6666-6666-666666666666',
+            title: 'For signed-out visitors',
+            audience: 'SIGNED_OUT',
+          },
+        ]),
+        { status: 200 },
+      ),
+    );
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+
+    expect(screen.getByRole('region', { name: 'For signed-out visitors' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'For signed-in users' })).not.toBeInTheDocument();
   });
 });
