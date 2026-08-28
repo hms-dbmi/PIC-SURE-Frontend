@@ -107,6 +107,35 @@ test.describe('Site banner closed-login delivery', () => {
     await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(1);
   });
+
+  test('keeps login controls reachable below multiple signed-out banners', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    const notices = Array.from({ length: 4 }, (_, index) => ({
+      ...banner,
+      uuid: `${index + 1}0000000-0000-0000-0000-000000000000`,
+      htmlContent: `<p>${'Read this important deployment notice before continuing. '.repeat(60)}</p>`,
+      title: `Signed-out notice ${index + 1}`,
+      dismissible: false,
+      audience: 'SIGNED_OUT',
+      priority: (index + 1) * 10,
+      presentationHash: `signed-out-${index + 1}`,
+    }));
+    await page.route('**/picsure/operations/banners/active', (route) =>
+      route.fulfill({ json: notices }),
+    );
+
+    await page.goto('/');
+
+    await expect(page).toHaveURL('/login');
+    await expect(page.getByTestId('site-banner')).toHaveCount(4);
+    const loginControl = page.getByRole('button', { name: 'Login with Auth0' });
+    await expect(loginControl).not.toBeInViewport();
+
+    await page.mouse.move(640, 360);
+    await page.mouse.wheel(0, 10_000);
+
+    await expect(loginControl).toBeInViewport({ ratio: 1 });
+  });
 });
 
 // Workflow 3 of the five representative end-to-end workflows. Ticket 08 extends this same test with

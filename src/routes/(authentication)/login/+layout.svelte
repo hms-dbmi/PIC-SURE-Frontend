@@ -25,7 +25,7 @@
 </script>
 
 <Toaster {toaster} />
-<div class="h-full w-full flex flex-col">
+<div class="h-full w-full overflow-y-auto flex flex-col">
   <SiteBannerRegion />
   <div class="min-h-0 flex-1 pb-14">
     <Dots class="top-dots" />
