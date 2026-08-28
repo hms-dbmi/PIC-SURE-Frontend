@@ -69,6 +69,14 @@ const saved = {
   publishedBy: null,
 };
 
+const disabled = {
+  ...published,
+  status: 'DISABLED' as const,
+  lifecycle: 'DISABLED' as const,
+  disabledAt: '2026-08-27T13:00:00Z',
+  disabledBy: 'admin-id',
+};
+
 beforeEach(() => {
   vi.mocked(publishBanner).mockReset();
   navigation.beforeNavigate.mockReset();
@@ -486,9 +494,9 @@ describe('BannerEditor', () => {
     expect(
       screen.queryByRole('button', { name: /save for later|save changes/i }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Bring back now' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeEnabled();
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Bring back now' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     await waitFor(() => expect(onsuccess).toHaveBeenCalledWith(restored));
     expect(restoreBanner).toHaveBeenCalledWith(
@@ -502,6 +510,94 @@ describe('BannerEditor', () => {
       }),
     );
     expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner restored' });
+  });
+
+  it('schedules a restored occurrence at a future minute and reports success', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-08-28T12:00:00Z').getTime());
+    const scheduled = {
+      ...disabled,
+      uuid: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      status: 'PUBLISHED' as const,
+      lifecycle: 'SCHEDULED' as const,
+      startAt: '2026-08-28T13:15:00Z',
+      disabledAt: null,
+      disabledBy: null,
+      restoredFromUuid: disabled.uuid,
+    };
+    vi.mocked(restoreBanner).mockResolvedValue(scheduled);
+    const onsuccess = vi.fn();
+    render(BannerEditor, { props: { banner: disabled, mode: 'restore', onsuccess } });
+
+    await fireEvent.input(screen.getByLabelText('Start'), {
+      target: { value: '2026-08-28T09:15' },
+    });
+
+    const schedule = screen.getByRole('button', { name: 'Schedule banner' });
+    expect(schedule).toBeEnabled();
+    await fireEvent.click(schedule);
+
+    await waitFor(() => expect(onsuccess).toHaveBeenCalledWith(scheduled));
+    expect(restoreBanner).toHaveBeenCalledWith(
+      disabled.uuid,
+      expect.objectContaining({ startAt: '2026-08-28T13:15:00.000Z' }),
+    );
+    expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner scheduled' });
+  });
+
+  it('keeps future restore changes in place and reports scheduling failure', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-08-28T12:00:00Z').getTime());
+    vi.mocked(restoreBanner).mockRejectedValue(new Error('offline'));
+    render(BannerEditor, { props: { banner: disabled, mode: 'restore' } });
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Title' }), {
+      target: { value: 'Scheduled copied changes' },
+    });
+    await fireEvent.input(screen.getByLabelText('Start'), {
+      target: { value: '2026-08-28T09:15' },
+    });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Schedule banner' }));
+
+    await waitFor(() =>
+      expect(toaster.error).toHaveBeenCalledWith({
+        title: 'Banner could not be scheduled',
+        description: 'The source banner is unchanged. Your copied changes are still here.',
+      }),
+    );
+    expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('Scheduled copied changes');
+    expect(screen.getByRole('button', { name: 'Schedule banner' })).toBeEnabled();
+  });
+
+  it('rejects an explicit nonfuture restore start before submission with a clear correction', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    vi.spyOn(Date, 'now').mockReturnValue(new Date('2026-08-28T12:00:00Z').getTime());
+    render(BannerEditor, { props: { banner: disabled, mode: 'restore' } });
+
+    await fireEvent.input(screen.getByLabelText('Start'), {
+      target: { value: '2026-08-28T08:00' },
+    });
+
+    expect(
+      screen.getByText('Start must be in the future. Leave Start blank to restore now.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Schedule banner' })).toBeDisabled();
+    expect(restoreBanner).not.toHaveBeenCalled();
   });
 
   it.each(audienceCases)('submits %s as %s', async (label, audience) => {

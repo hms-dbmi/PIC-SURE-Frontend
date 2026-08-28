@@ -1067,7 +1067,7 @@ test.describe('Site banner workflow 2', () => {
     await expect(restoreForm.getByLabel('End')).toHaveValue('');
     await expect(restoreForm.getByRole('button', { name: 'Save for later' })).toHaveCount(0);
     await restoreForm.locator('#banner-content-editor .ql-editor').fill('Restored maintenance');
-    await restoreForm.getByRole('button', { name: 'Bring back now' }).click();
+    await restoreForm.getByRole('button', { name: 'Restore' }).click();
 
     const restoredRow = page.locator('[data-banner-row="99999999-9999-9999-9999-999999999999"]');
     await expect(restoredRow).toContainText('Active');

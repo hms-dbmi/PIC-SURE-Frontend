@@ -724,7 +724,7 @@ describe('BannerManagementView', () => {
 
     expect(screen.getByRole('heading', { name: 'Restore banner' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    await fireEvent.click(screen.getByRole('button', { name: 'Bring back now' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     await waitFor(() =>
       expect(restoreBanner).toHaveBeenCalledWith(disabled.uuid, expect.any(Object)),
@@ -769,7 +769,7 @@ describe('BannerManagementView', () => {
       target: { value: 'Copied changes' },
     });
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Bring back now' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     await waitFor(() =>
       expect(toaster.error).toHaveBeenCalledWith({

@@ -148,10 +148,16 @@
       editorMode === 'restore' ? null : (banner?.endAt ?? null),
     ),
   );
+  const restoreStartNotFuture = $derived(
+    editorMode === 'restore' &&
+      resolvedStart !== null &&
+      new Date(resolvedStart).getTime() <= Date.now(),
+  );
   const scheduleInvalid = $derived(
     (editorMode === 'edit' && banner?.status === 'PUBLISHED' && resolvedStart === null) ||
       (startLocal !== '' && resolvedStart === null) ||
       (endLocal !== '' && resolvedEnd === null) ||
+      restoreStartNotFuture ||
       (resolvedStart !== null && resolvedEnd !== null && resolvedEnd <= resolvedStart),
   );
   const pageTargetErrors = $derived(pageTargets.map(validateBannerPageTarget));
@@ -334,7 +340,7 @@
               ? await publishSavedBanner(banner.uuid, draft())
               : await publishBanner(draft());
       adoptAuthoritativePageTargets(published);
-      initialSnapshot = snapshot();
+      if (editorMode !== 'restore') initialSnapshot = snapshot();
       toaster.success({
         title:
           editorMode === 'restore'
@@ -536,6 +542,10 @@
                 </span>
               {:else if startResolution?.status === 'invalid'}
                 <span class="text-error-700">Enter a valid local date and time.</span>
+              {:else if restoreStartNotFuture}
+                <span class="text-error-700">
+                  Start must be in the future. Leave Start blank to restore now.
+                </span>
               {:else if resolvedStart}
                 {utcText(resolvedStart)}
               {/if}
@@ -757,7 +767,7 @@
           : editorMode === 'restore'
             ? startLocal
               ? 'Schedule banner'
-              : 'Bring back now'
+              : 'Restore'
             : banner?.status === 'PUBLISHED'
               ? 'Save changes'
               : startLocal

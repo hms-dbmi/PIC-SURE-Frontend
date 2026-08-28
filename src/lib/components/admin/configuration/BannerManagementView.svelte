@@ -40,6 +40,7 @@
     { value: 'expired' as const, label: 'Expired' },
   ];
   const MAX_EXCERPT_LENGTH = 160;
+  const ARRIVAL_HIGHLIGHT_MS = 1_800;
   interface Props {
     ondirtychange?: (dirty: boolean) => void;
     tabchangerequest?: string | null;
@@ -322,67 +323,47 @@
     }
   }
 
-  async function handleSuccess(banner: ManagedBanner) {
-    records = [...records.filter((record) => record.uuid !== banner.uuid), present(banner)];
-    activeTab = tabFor(banner.lifecycle);
-    search = '';
-    openUuid = null;
-    mode = 'list';
-    editingBanner = null;
-    if (inTab(banner.lifecycle, 'orderable') && !orderUuids.includes(banner.uuid)) {
-      orderUuids = [...orderUuids, banner.uuid];
-      savedOrderUuids = [...savedOrderUuids, banner.uuid];
-    } else if (!inTab(banner.lifecycle, 'orderable')) {
-      orderUuids = orderUuids.filter((uuid) => uuid !== banner.uuid);
-      savedOrderUuids = savedOrderUuids.filter((uuid) => uuid !== banner.uuid);
-    }
-    arrivalUuid = banner.uuid;
+  async function showArrival(uuid: string) {
+    arrivalUuid = uuid;
     await tick();
-    document.querySelector(`[data-banner-row="${banner.uuid}"]`)?.scrollIntoView({
-      block: 'center',
-    });
+    document.querySelector(`[data-banner-row="${uuid}"]`)?.scrollIntoView({ block: 'center' });
     if (arrivalTimeout !== undefined) window.clearTimeout(arrivalTimeout);
     arrivalTimeout = window.setTimeout(() => {
-      if (arrivalUuid === banner.uuid) arrivalUuid = null;
-    }, 1_800);
+      if (arrivalUuid === uuid) arrivalUuid = null;
+    }, ARRIVAL_HIGHLIGHT_MS);
+  }
+
+  async function reconcileSuccess(
+    banner: ManagedBanner,
+    sourceUuid: string | null = null,
+    openDetails = false,
+  ) {
+    const retainsOccurrence = (uuid: string) => uuid !== sourceUuid && uuid !== banner.uuid;
+    records = [...records.filter((record) => retainsOccurrence(record.uuid)), present(banner)];
+    activeTab = tabFor(banner.lifecycle);
+    search = '';
+    openUuid = openDetails ? banner.uuid : null;
+    mode = 'list';
+    editingBanner = null;
+    if (
+      inTab(banner.lifecycle, 'orderable') &&
+      (sourceUuid !== null || !orderUuids.includes(banner.uuid))
+    ) {
+      orderUuids = [...orderUuids.filter(retainsOccurrence), banner.uuid];
+      savedOrderUuids = [...savedOrderUuids.filter(retainsOccurrence), banner.uuid];
+    } else if (!inTab(banner.lifecycle, 'orderable')) {
+      orderUuids = orderUuids.filter(retainsOccurrence);
+      savedOrderUuids = savedOrderUuids.filter(retainsOccurrence);
+    }
+    await showArrival(banner.uuid);
+  }
+
+  async function handleSuccess(banner: ManagedBanner) {
+    await reconcileSuccess(banner);
   }
 
   async function handleRestoreSuccess(banner: ManagedBanner) {
-    const sourceUuid = editingBanner?.uuid;
-    if (!sourceUuid) return;
-    records = [
-      ...records.filter((record) => record.uuid !== sourceUuid && record.uuid !== banner.uuid),
-      present(banner),
-    ];
-    activeTab = tabFor(banner.lifecycle);
-    search = '';
-    openUuid = banner.uuid;
-    mode = 'list';
-    editingBanner = null;
-    if (inTab(banner.lifecycle, 'orderable')) {
-      orderUuids = [
-        ...orderUuids.filter((uuid) => uuid !== sourceUuid && uuid !== banner.uuid),
-        banner.uuid,
-      ];
-      savedOrderUuids = [
-        ...savedOrderUuids.filter((uuid) => uuid !== sourceUuid && uuid !== banner.uuid),
-        banner.uuid,
-      ];
-    } else {
-      orderUuids = orderUuids.filter((uuid) => uuid !== sourceUuid && uuid !== banner.uuid);
-      savedOrderUuids = savedOrderUuids.filter(
-        (uuid) => uuid !== sourceUuid && uuid !== banner.uuid,
-      );
-    }
-    arrivalUuid = banner.uuid;
-    await tick();
-    document.querySelector(`[data-banner-row="${banner.uuid}"]`)?.scrollIntoView({
-      block: 'center',
-    });
-    if (arrivalTimeout !== undefined) window.clearTimeout(arrivalTimeout);
-    arrivalTimeout = window.setTimeout(() => {
-      if (arrivalUuid === banner.uuid) arrivalUuid = null;
-    }, 1_800);
+    await reconcileSuccess(banner, editingBanner?.uuid ?? null, true);
   }
 
   function handleDragStart(event: any) {
@@ -481,7 +462,10 @@
     }}
   />
 {:else}
-  <section aria-labelledby="site-banners-title">
+  <section
+    aria-labelledby="site-banners-title"
+    style:--banner-arrival-duration={`${ARRIVAL_HIGHLIGHT_MS}ms`}
+  >
     <header class="flex items-start justify-between gap-6">
       <div>
         <h2 id="site-banners-title">Site banners</h2>
@@ -644,7 +628,7 @@
 
 <style>
   .banner-arrival {
-    animation: banner-highlight 1.8s ease-out;
+    animation: banner-highlight var(--banner-arrival-duration) ease-out;
   }
 
   @keyframes banner-highlight {
