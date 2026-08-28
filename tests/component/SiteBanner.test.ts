@@ -76,6 +76,17 @@ describe('SiteBanner', () => {
     );
   });
 
+  it('preserves authored spaces in visitor banner content', () => {
+    const spacedBanner = {
+      ...banner,
+      htmlContent: '<p>  Leading and  consecutive spaces</p>',
+    };
+    const { container } = render(SiteBanner, { banner: spacedBanner });
+
+    const content = container.querySelector('.site-banner-content');
+    expect(content?.querySelector('p')?.textContent).toBe('  Leading and  consecutive spaces');
+  });
+
   it('routes cross-origin HTTPS through the warning and safe-open while relative and mailto retain normal behavior', async () => {
     render(ExternalLinkWarning);
     render(SiteBanner, { banner });

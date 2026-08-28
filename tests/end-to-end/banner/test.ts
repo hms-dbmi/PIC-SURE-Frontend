@@ -80,21 +80,23 @@ test.describe('Site banner workflow 1', () => {
     await editor.fill('First sentence with spaces');
     await editor.press('End');
     await editor.press('Enter');
-    await editor.type('Second  paragraph');
+    await editor.type('  Second  paragraph');
 
     await expect(editor.locator('p')).toHaveCount(2);
     expect((await editor.locator('p').nth(0).textContent())?.replaceAll('\u00a0', ' ')).toBe(
       'First sentence with spaces',
     );
     expect((await editor.locator('p').nth(1).textContent())?.replaceAll('\u00a0', ' ')).toBe(
-      'Second  paragraph',
+      '  Second  paragraph',
     );
     const previewContent = page
       .getByRole('region', { name: 'Site announcement' })
       .locator('.site-banner-content');
     await expect(previewContent.locator('p')).toHaveCount(2);
-    await expect(previewContent.locator('p').nth(0)).toHaveText('First sentence with spaces');
-    expect(await previewContent.locator('p').nth(1).textContent()).toBe('Second  paragraph');
+    expect(await previewContent.locator('p').nth(1).textContent()).toBe('  Second  paragraph');
+    expect(await previewContent.evaluate((element) => getComputedStyle(element).whiteSpace)).toBe(
+      'pre-wrap',
+    );
   });
 
   test('keeps a bullet list stable while adding items', async ({ page }) => {
@@ -107,10 +109,20 @@ test.describe('Site banner workflow 1', () => {
     await bannerForm.locator('button.ql-list[value="bullet"]').click();
     await editor.type('First item');
     await editor.press('Enter');
+    const firstItem = editor.locator('li').nth(0);
+    await firstItem.evaluate((element) => {
+      (element as HTMLElement & { reconciliationSentinel?: boolean }).reconciliationSentinel = true;
+    });
     await editor.type('Second item');
 
     await expect(editor.locator('li')).toHaveCount(2);
-    await expect(editor.locator('li').nth(0)).toHaveText('First item');
+    await expect(firstItem).toHaveText('First item');
+    expect(
+      await firstItem.evaluate(
+        (element) =>
+          (element as HTMLElement & { reconciliationSentinel?: boolean }).reconciliationSentinel,
+      ),
+    ).toBe(true);
     await expect(editor.locator('li').nth(1)).toHaveText('Second item');
     const previewList = page
       .getByRole('region', { name: 'Site announcement' })

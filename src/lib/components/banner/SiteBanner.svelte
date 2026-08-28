@@ -66,6 +66,10 @@
 </section>
 
 <style>
+  .site-banner-content {
+    white-space: pre-wrap;
+  }
+
   .site-banner-content :global(p:last-child) {
     margin-bottom: 0;
   }

@@ -116,6 +116,7 @@
             sanitizer={sanitizeBannerHTML}
             convertQuillClasses={false}
             reconcileSanitizedDocument
+            normalizeNonBreakingSpaces
             ariaLabel="Banner content"
             ariaDescribedBy="banner-content-help"
             bind:content={htmlContent}

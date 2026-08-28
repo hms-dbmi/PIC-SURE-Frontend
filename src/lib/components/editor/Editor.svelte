@@ -17,6 +17,7 @@
     sanitizer = sanitizeHTML,
     convertQuillClasses = true,
     reconcileSanitizedDocument = false,
+    normalizeNonBreakingSpaces = false,
     ariaLabel = 'Rich text editor',
     ariaDescribedBy,
     id = 'editor',
@@ -30,6 +31,7 @@
     sanitizer?: (dirty: string) => string;
     convertQuillClasses?: boolean;
     reconcileSanitizedDocument?: boolean;
+    normalizeNonBreakingSpaces?: boolean;
     ariaLabel?: string;
     ariaDescribedBy?: string;
     id?: string;
@@ -97,10 +99,6 @@
     return converted;
   }
 
-  function normalizeNonBreakingSpaces(content: string) {
-    return content.replaceAll('&nbsp;', ' ').replaceAll('\u00a0', ' ');
-  }
-
   function canonicalHTML(content: string) {
     const template = document.createElement('template');
     template.innerHTML = content;
@@ -156,7 +154,9 @@
             quill.setSelection(index, length, 'silent');
           }
         }
-        const nextContent = normalizeNonBreakingSpaces(sanitizedContent);
+        const nextContent = normalizeNonBreakingSpaces
+          ? sanitizedContent.replaceAll('\u00a0', ' ')
+          : sanitizedContent;
         editorContent = nextContent;
         content = nextContent;
       });
