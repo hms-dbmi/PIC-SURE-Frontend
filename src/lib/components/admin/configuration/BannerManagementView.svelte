@@ -61,7 +61,7 @@
   const sensors = [KeyboardSensor, PointerSensor];
   const orderDirty = $derived(orderUuids.join() !== savedOrderUuids.join());
   let disablingUuid: string | null = null;
-  let archivingUuid: string | null = null;
+  let archivingUuid: string | null = $state(null);
 
   const counts = $derived({
     orderable: records.filter((banner) => inTab(banner.lifecycle, 'orderable')).length,
@@ -189,6 +189,10 @@
       orderUuids = orderUuids.filter((orderUuid) => orderUuid !== archived.uuid);
       savedOrderUuids = savedOrderUuids.filter((orderUuid) => orderUuid !== archived.uuid);
       openUuid = null;
+      if (editingBanner?.uuid === archived.uuid) {
+        mode = 'list';
+        editingBanner = null;
+      }
       toaster.success({ title: 'Banner archived' });
     } catch {
       toaster.error({
@@ -398,6 +402,7 @@
                   position={activeTab === 'orderable' ? orderUuids.indexOf(banner.uuid) + 1 : null}
                   index={orderUuids.indexOf(banner.uuid)}
                   activeId={activeDragUuid}
+                  busy={archivingUuid === banner.uuid}
                 />
               </div>
             {/each}

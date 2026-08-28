@@ -615,6 +615,48 @@ describe('BannerManagementView', () => {
     expect(document.getElementById(`banner-${disabled.uuid}-details`)).not.toBeInTheDocument();
   });
 
+  it('blocks archived row actions while pending and preserves an unrelated editor', async () => {
+    const saved = records[1];
+    const archived = {
+      uuid: saved.uuid,
+      status: 'ARCHIVED' as const,
+      archivedAt: '2026-08-28T13:00:00Z',
+      archivedBy: 'admin-id',
+    };
+    let resolveArchive!: (result: typeof archived) => void;
+    vi.mocked(archiveBanner).mockReturnValue(
+      new Promise((resolve) => {
+        resolveArchive = resolve;
+      }),
+    );
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    const row = await openDetailsFor('Reusable enrollment notice');
+    const edit = within(row).getByRole('button', { name: 'Edit banner' });
+    const archive = within(row).getByRole('button', { name: 'Archive banner' });
+
+    await fireEvent.click(archive);
+    await fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
+    );
+
+    await waitFor(() => expect(archiveBanner).toHaveBeenCalledWith(saved.uuid));
+    expect(edit).toBeDisabled();
+    expect(archive).toBeDisabled();
+    await fireEvent.click(edit);
+    expect(screen.queryByRole('heading', { name: /Edit .* banner/ })).not.toBeInTheDocument();
+
+    await fireEvent.click(screen.getByRole('tab', { name: /Active & scheduled/ }));
+    const activeRow = await openDetailsFor('System maintenance tonight');
+    await fireEvent.click(within(activeRow).getByRole('button', { name: 'Edit banner' }));
+    expect(screen.getByRole('heading', { name: 'Edit published banner' })).toBeInTheDocument();
+
+    resolveArchive(archived);
+    await waitFor(() => expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner archived' }));
+    expect(screen.getByRole('heading', { name: 'Edit published banner' })).toBeInTheDocument();
+  });
+
   it('shows the empty state once the last banner in a tab is archived', async () => {
     vi.mocked(getManagedBanners).mockResolvedValue([records[2]]);
     vi.mocked(archiveBanner).mockResolvedValue({

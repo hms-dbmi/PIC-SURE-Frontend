@@ -20,6 +20,7 @@
     index?: number;
     activeId?: string | null;
     isOverlay?: boolean;
+    busy?: boolean;
   }
 
   let {
@@ -34,6 +35,7 @@
     index = 0,
     activeId = null,
     isOverlay = false,
+    busy = false,
   }: Props = $props();
 
   const { ref, handleRef } = useSortable({
@@ -195,7 +197,12 @@
         {#if editable || disableable || archiveable}
           <div class="flex flex-wrap gap-2 sm:col-span-2">
             {#if editable}
-              <button type="button" class="btn preset-tonal-primary" onclick={onedit}>
+              <button
+                type="button"
+                class="btn preset-tonal-primary"
+                disabled={busy}
+                onclick={onedit}
+              >
                 Edit banner
               </button>
             {/if}
@@ -207,6 +214,7 @@
                 cancelText="No"
                 onconfirm={ondisable}
                 triggerBase="btn preset-tonal-error"
+                disabled={busy}
                 withDefault
               >
                 {#snippet trigger()}
@@ -224,6 +232,7 @@
                 cancelText="No"
                 onconfirm={onarchive}
                 triggerBase="btn preset-tonal-error"
+                disabled={busy}
                 withDefault
               >
                 {#snippet trigger()}
