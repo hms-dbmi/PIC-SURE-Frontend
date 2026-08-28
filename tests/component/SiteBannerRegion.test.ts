@@ -321,6 +321,27 @@ describe('SiteBannerRegion', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('does not apply a dismissed source occurrence to a restored occurrence with the same hash', async () => {
+    const restored = {
+      ...banner,
+      uuid: '22222222-2222-2222-2222-222222222222',
+      title: 'Restored maintenance',
+    };
+    sessionStorage.setItem(
+      dismissalStorageKey,
+      JSON.stringify({ [banner.uuid]: banner.presentationHash }),
+    );
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([restored]), { status: 200 }));
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+
+    expect(screen.getByRole('region', { name: 'Restored maintenance' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Dismiss Restored maintenance' }),
+    ).toBeInTheDocument();
+  });
+
   it('dismisses only the selected occurrence and writes the complete versioned map', async () => {
     const second = {
       ...banner,

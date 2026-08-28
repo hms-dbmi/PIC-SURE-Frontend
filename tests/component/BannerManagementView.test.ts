@@ -685,7 +685,7 @@ describe('BannerManagementView', () => {
     expect(within(expiredRow).getByRole('button', { name: 'Edit banner' })).toBeInTheDocument();
   });
 
-  it('reconciles a restored occurrence at the bottom while preserving dirty and saved order snapshots', async () => {
+  it('guards a dirty reorder through Keep and Discard before restoring at the clean queue bottom', async () => {
     const disabled: ManagedBanner = {
       ...base,
       uuid: '44444444-4444-4444-4444-444444444444',
@@ -716,6 +716,19 @@ describe('BannerManagementView', () => {
     await drag(scheduled.uuid, base.uuid);
     expect(bannerRowOrder()).toEqual([scheduled.uuid, base.uuid]);
     await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    expect(screen.getByRole('tab', { name: /Active & scheduled/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await fireEvent.click(screen.getByRole('button', { name: 'Keep ordering' }));
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, base.uuid]);
+
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Discard order changes' }));
+    expect(screen.getByRole('tab', { name: /Saved & disabled/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
     await fireEvent.input(screen.getByRole('searchbox', { name: 'Search banner text' }), {
       target: { value: 'Previously' },
     });
@@ -732,7 +745,7 @@ describe('BannerManagementView', () => {
     expect(await screen.findByText('Authoritative restored notice')).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: 'Search banner text' })).toHaveValue('');
     expect(screen.queryByText('Previously disabled')).not.toBeInTheDocument();
-    expect(bannerRowOrder()).toEqual([scheduled.uuid, base.uuid, restored.uuid]);
+    expect(bannerRowOrder()).toEqual([base.uuid, scheduled.uuid, restored.uuid]);
     const restoredRow = document.querySelector<HTMLElement>(
       `[data-banner-row="${restored.uuid}"]`,
     )!;
@@ -742,10 +755,53 @@ describe('BannerManagementView', () => {
       'true',
     );
     expect(restoredRow).toHaveTextContent(`Restored from ${disabled.uuid}`);
-    expect(screen.getByRole('button', { name: 'Save order' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Save order' })).not.toBeInTheDocument();
+  });
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Cancel order changes' }));
-    expect(bannerRowOrder()).toEqual([base.uuid, scheduled.uuid, restored.uuid]);
+  it('shows the broad overlap warning when restore raises Everyone and All pages from three to four', async () => {
+    const third: ManagedBanner = {
+      ...base,
+      uuid: '33333333-3333-3333-3333-333333333333',
+      htmlContent: '<p>Third broad notice</p>',
+      priority: 3,
+    };
+    const source: ManagedBanner = {
+      ...base,
+      uuid: '44444444-4444-4444-4444-444444444444',
+      status: 'DISABLED',
+      lifecycle: 'DISABLED',
+      htmlContent: '<p>Disabled broad notice</p>',
+      priority: 4,
+      disabledAt: '2026-08-27T12:30:00Z',
+      disabledBy: 'admin-id',
+    };
+    const destination: ManagedBanner = {
+      ...source,
+      uuid: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      status: 'PUBLISHED',
+      lifecycle: 'ACTIVE',
+      htmlContent: '<p>Restored fourth broad notice</p>',
+      priority: 4,
+      disabledAt: null,
+      disabledBy: null,
+      restoredFromUuid: source.uuid,
+    };
+    vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, third, source]);
+    vi.mocked(restoreBanner).mockResolvedValue(destination);
+    render(BannerManagementView);
+    await screen.findByText('Third broad notice');
+    expect(screen.queryByTestId('banner-overlap-warning')).not.toBeInTheDocument();
+
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    const sourceRow = await openDetailsFor('Disabled broad notice');
+    await fireEvent.click(within(sourceRow).getByRole('button', { name: 'Restore banner' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+
+    const warning = await screen.findByTestId('banner-overlap-warning');
+    expect(warning).toHaveTextContent(
+      '4 published banners currently target Everyone and All pages',
+    );
+    expect(bannerRowOrder()).toEqual([base.uuid, scheduled.uuid, third.uuid, destination.uuid]);
   });
 
   it('keeps the copied restore editor and source unchanged when restore fails', async () => {
