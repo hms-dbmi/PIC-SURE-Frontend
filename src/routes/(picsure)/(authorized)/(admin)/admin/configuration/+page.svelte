@@ -17,7 +17,7 @@
   import Application from '$lib/components/admin/configuration/cell/Application.svelte';
   import RequiredFields from '$lib/components/admin/configuration/cell/RequiredFields.svelte';
   import ConfigKindTab from '$lib/components/admin/configuration/ConfigKindTab.svelte';
-  import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
+  import BannerManagementView from '$lib/components/admin/configuration/BannerManagementView.svelte';
 
   import { privileges, loadPrivileges } from '$lib/stores/Privileges';
   import { roles, loadRoles } from '$lib/stores/Roles';
@@ -212,7 +212,7 @@
         <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!$isTopAdmin} />
       </Tabs.Panel>
       <Tabs.Panel value="Site banners">
-        <BannerEditor />
+        <BannerManagementView />
       </Tabs.Panel>
       {#if config.features.termsOfService}
         <Tabs.Panel value="Terms of Service">

@@ -69,11 +69,16 @@ test.describe('Site banner workflow 1', () => {
     await page.route('**/picsure/operations/banners/active', (route) =>
       route.fulfill({ json: [] }),
     );
+    await page.route('**/picsure/operations/banners', (route) => {
+      if (route.request().method() === 'GET') return route.fulfill({ json: [] });
+      return route.fallback();
+    });
   });
 
   test('keeps sentence spaces, Enter, and a second paragraph while editing', async ({ page }) => {
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.getByRole('button', { name: '+ Create banner' }).click();
     const bannerForm = page.getByTestId('banner-editor-form');
     const editor = bannerForm.locator('#banner-content-editor .ql-editor');
 
@@ -102,6 +107,7 @@ test.describe('Site banner workflow 1', () => {
   test('keeps a bullet list stable while adding items', async ({ page }) => {
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.getByRole('button', { name: '+ Create banner' }).click();
     const bannerForm = page.getByTestId('banner-editor-form');
     const editor = bannerForm.locator('#banner-content-editor .ql-editor');
 
@@ -132,15 +138,37 @@ test.describe('Site banner workflow 1', () => {
     await expect(previewList.locator('li').nth(1)).toHaveText('Second item');
   });
 
-  test('creates, previews, publishes, and renders the authoritative banner above navigation', async ({
+  test('creates, saves, reopens, updates, and publishes the authoritative banner', async ({
     page,
   }) => {
     let published = false;
     let publicationRequests = 0;
     let submitted: Record<string, unknown> | undefined;
-    const authoritativeBanner = {
+    let managedRecords: Record<string, unknown>[] = [];
+    const savedBanner = {
       ...banner,
       uuid: '99999999-9999-9999-9999-999999999999',
+      htmlContent: '<p>Server-confirmed saved draft</p>',
+      title: 'Saved maintenance draft',
+      appearance: 'WARNING',
+      icon: 'WARNING',
+      dismissible: true,
+      priority: null,
+      presentationHash: 'server-saved-hash',
+      status: 'SAVED',
+      lifecycle: 'SAVED',
+      startAt: null,
+      endAt: null,
+      createdAt: '2026-08-27T11:00:00Z',
+      createdBy: 'admin-id',
+      updatedAt: '2026-08-27T11:00:00Z',
+      updatedBy: 'admin-id',
+      publishedAt: null,
+      publishedBy: null,
+    };
+    const authoritativeBanner = {
+      ...banner,
+      uuid: savedBanner.uuid,
       htmlContent:
         '<p><strong>Server-confirmed window</strong> <a href="https://example.org/status" rel="noopener noreferrer" target="_blank">View status</a></p>',
       title: 'Published maintenance notice',
@@ -150,6 +178,7 @@ test.describe('Site banner workflow 1', () => {
       priority: 42,
       presentationHash: 'server-computed-hash',
       status: 'PUBLISHED',
+      lifecycle: 'ACTIVE',
       startAt: '2026-08-27T12:00:00Z',
       endAt: null,
       createdAt: '2026-08-27T12:00:00Z',
@@ -162,16 +191,41 @@ test.describe('Site banner workflow 1', () => {
     await page.route('**/picsure/operations/banners/active', (route) =>
       route.fulfill({ json: published ? [authoritativeBanner] : [] }),
     );
-    await page.route('**/picsure/operations/banners', async (route) => {
-      if (route.request().method() !== 'POST') return route.fallback();
-      publicationRequests += 1;
-      submitted = route.request().postDataJSON();
-      published = true;
-      await route.fulfill({ status: 201, json: authoritativeBanner });
+    await page.route('**/picsure/operations/banners**', async (route) => {
+      const url = new URL(route.request().url());
+      const method = route.request().method();
+      if (method === 'GET' && url.pathname.endsWith('/banners')) {
+        return route.fulfill({ json: managedRecords });
+      }
+      if (method === 'POST' && url.pathname.endsWith('/banners/saved')) {
+        managedRecords = [savedBanner];
+        return route.fulfill({ status: 201, json: savedBanner });
+      }
+      if (method === 'PUT' && url.pathname.endsWith(`/banners/${savedBanner.uuid}`)) {
+        const update = route.request().postDataJSON();
+        const updatedBanner = {
+          ...savedBanner,
+          ...update,
+          updatedAt: '2026-08-27T11:30:00Z',
+          updatedBy: 'editor-id',
+          presentationHash: 'updated-saved-hash',
+        };
+        managedRecords = [updatedBanner];
+        return route.fulfill({ json: updatedBanner });
+      }
+      if (method === 'POST' && url.pathname.endsWith(`/banners/${savedBanner.uuid}/publish`)) {
+        publicationRequests += 1;
+        submitted = route.request().postDataJSON();
+        published = true;
+        managedRecords = [authoritativeBanner];
+        return route.fulfill({ json: authoritativeBanner });
+      }
+      return route.fallback();
     });
 
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.getByRole('button', { name: '+ Create banner' }).click();
     const bannerForm = page.getByTestId('banner-editor-form');
     const editor = bannerForm.locator('#banner-content-editor .ql-editor');
     await expect(editor).toHaveAttribute('aria-label', 'Banner content');
@@ -192,34 +246,50 @@ test.describe('Site banner workflow 1', () => {
     ).toBeVisible();
     await expect(preview.locator('img')).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'Publish now' }).click();
+    await page.getByRole('button', { name: 'Save for later' }).click();
 
     await expect(page).toHaveURL(/\/admin\/configuration$/);
     await expect(page.getByTestId('toast-root')).toHaveAttribute('data-type', 'success');
-    await expect(editor).toContainText('Server-confirmed window View status');
-    const reconciledPreview = page.getByRole('region', {
-      name: 'Published maintenance notice',
-    });
-    await expect(reconciledPreview).toHaveClass(/preset-tonal-error/);
-    await expect(reconciledPreview).toContainText('Server-confirmed window View status');
-    await expect(reconciledPreview.getByRole('button', { name: /Dismiss/ })).toHaveCount(0);
-    await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue(
-      'Published maintenance notice',
-    );
-    await expect(page.getByRole('combobox', { name: 'Icon' })).toHaveValue('ERROR');
-    await expect(page.getByRole('radio', { name: 'Permanent' })).toBeChecked();
-    await expect(bannerForm.getByRole('status')).toContainText('Published maintenance notice');
-    await expect(page.getByRole('button', { name: 'Published' })).toBeDisabled();
-    expect(publicationRequests).toBe(1);
+    const savedRow = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
+    await expect(savedRow).toContainText('Server-confirmed saved draft');
+    await expect(savedRow).toContainText('Saved');
+    await expect(savedRow).toHaveClass(/banner-arrival/);
+    const details = savedRow.getByRole('button', { name: 'Details' });
+    await expect(details).toHaveAttribute('aria-expanded', 'false');
+    await expect(details).toHaveAttribute('aria-controls', `banner-${savedBanner.uuid}-details`);
+    await details.click();
+    await expect(savedRow).toContainText('Audience: Everyone');
+    await expect(savedRow).toContainText('Last changed by admin-id');
+    await expect(savedRow.getByRole('region')).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'Create another banner' }).click();
-    await expect(bannerForm.getByRole('status')).toHaveCount(0);
-    await expect(editor).toHaveText('');
-    await expect(page.getByRole('radio', { name: 'Primary' })).toBeChecked();
-    await expect(page.getByRole('radio', { name: 'Dismissible' })).toBeChecked();
-    await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('');
-    await expect(page.getByRole('combobox', { name: 'Icon' })).toHaveValue('NONE');
-    await expect(page.getByRole('button', { name: 'Publish now' })).toBeDisabled();
+    await savedRow.getByRole('button', { name: 'Edit banner' }).click();
+    await expect(page.getByRole('heading', { name: 'Edit saved banner' })).toBeVisible();
+    const reopenedEditor = page.getByRole('textbox', { name: 'Banner content' });
+    await expect(reopenedEditor).toContainText('Server-confirmed saved draft');
+    await page.getByText('Advanced options').click();
+    await page.getByRole('textbox', { name: 'Title' }).fill('Updated reusable draft');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+
+    const updatedRow = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
+    await expect(updatedRow).toContainText('Server-confirmed saved draft');
+    await updatedRow.getByRole('button', { name: 'Details' }).click();
+    await expect(updatedRow).toContainText('Last changed by editor-id');
+    await updatedRow.getByRole('button', { name: 'Edit banner' }).click();
+    await page.getByText('Advanced options').click();
+    await page.getByRole('textbox', { name: 'Title' }).fill('Publish this draft');
+
+    await page.getByRole('link', { name: 'Help' }).click();
+    await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/configuration$/);
+    await page.getByRole('button', { name: 'Keep editing' }).click();
+    await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Publish this draft');
+
+    await page.getByRole('button', { name: 'Publish now' }).click();
+
+    const publishedRow = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
+    await expect(publishedRow).toContainText('Server-confirmed window View status');
+    await expect(publishedRow).toContainText('Active');
+    await expect(publishedRow).toHaveClass(/banner-arrival/);
     expect(publicationRequests).toBe(1);
 
     await page.goto('/');
@@ -227,9 +297,8 @@ test.describe('Site banner workflow 1', () => {
       'Server-confirmed window View status',
     );
     expect(submitted).toMatchObject({
-      htmlContent:
-        '<p><a href="https://example.org/status" rel="noopener noreferrer" target="_blank">System maintenance status page</a></p>',
-      title: 'Planned maintenance',
+      htmlContent: '<p>Server-confirmed saved draft</p>',
+      title: 'Publish this draft',
       appearance: 'WARNING',
       icon: 'WARNING',
       dismissible: true,
@@ -247,6 +316,7 @@ test.describe('Site banner workflow 1', () => {
 
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
+    await page.getByRole('button', { name: '+ Create banner' }).click();
     const bannerForm = page.getByTestId('banner-editor-form');
     const editor = bannerForm.locator('#banner-content-editor .ql-editor');
     await editor.fill('Preserve this announcement');

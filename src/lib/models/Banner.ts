@@ -42,14 +42,24 @@ export interface BannerDraft extends BannerPresentation {
   pageTargets: unknown[];
 }
 
-export interface PublishedBanner extends ActiveBanner {
-  status: 'PUBLISHED';
-  startAt: string;
+export type BannerStatus = 'SAVED' | 'PUBLISHED' | 'DISABLED' | 'ARCHIVED';
+export type BannerLifecycle = 'ACTIVE' | 'SCHEDULED' | 'SAVED' | 'DISABLED' | 'EXPIRED';
+
+export interface ManagedBanner extends BannerPresentation {
+  uuid: string;
+  status: BannerStatus;
+  lifecycle: BannerLifecycle;
+  audience: BannerAudience;
+  placement: BannerPlacement;
+  pageTargets: unknown[];
+  startAt: string | null;
   endAt: string | null;
+  priority: number | null;
+  presentationHash: string;
   createdAt: string;
   createdBy: string;
   updatedAt: string;
   updatedBy: string;
-  publishedAt: string;
-  publishedBy: string;
+  publishedAt: string | null;
+  publishedBy: string | null;
 }

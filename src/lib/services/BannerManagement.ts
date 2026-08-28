@@ -1,9 +1,31 @@
 import * as api from '$lib/api';
-import type { BannerDraft, PublishedBanner } from '$lib/models/Banner';
+import type { BannerDraft, ManagedBanner } from '$lib/models/Banner';
 import { Picsure } from '$lib/paths';
 import { hasBannerContent, sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
 
-export async function publishBanner(draft: BannerDraft): Promise<PublishedBanner> {
+export async function publishBanner(draft: BannerDraft): Promise<ManagedBanner> {
+  return api.post(Picsure.Banners.Manage, authorablePayload(draft));
+}
+
+export async function getManagedBanners(): Promise<ManagedBanner[]> {
+  return api.get(Picsure.Banners.Manage);
+}
+
+export async function saveBanner(draft: BannerDraft): Promise<ManagedBanner> {
+  return api.post(`${Picsure.Banners.Manage}/saved`, authorablePayload(draft));
+}
+
+export async function updateSavedBanner(uuid: string, draft: BannerDraft): Promise<ManagedBanner> {
+  return api.put(`${Picsure.Banners.Manage}/${uuid}`, authorablePayload(draft));
+}
+
+export async function publishSavedBanner(uuid: string, draft: BannerDraft): Promise<ManagedBanner> {
+  return api.post(`${Picsure.Banners.Manage}/${uuid}/publish`, authorablePayload(draft));
+}
+
+function authorablePayload(
+  draft: BannerDraft,
+): Omit<BannerDraft, 'title'> & { title: string | null } {
   const htmlContent = sanitizeBannerHTML(draft.htmlContent);
   if (!hasBannerContent(htmlContent)) {
     throw new Error('Banner content is required');
@@ -15,9 +37,9 @@ export async function publishBanner(draft: BannerDraft): Promise<PublishedBanner
     throw new Error('Banner title must be 120 characters or fewer');
   }
 
-  return api.post(Picsure.Banners.Manage, {
+  return {
     ...draft,
     htmlContent,
     title: draft.title.trim() || null,
-  });
+  };
 }

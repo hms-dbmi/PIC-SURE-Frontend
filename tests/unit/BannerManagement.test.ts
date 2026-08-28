@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/api', () => ({ post: vi.fn() }));
+vi.mock('$lib/api', () => ({ get: vi.fn(), post: vi.fn(), put: vi.fn() }));
 
 import * as api from '$lib/api';
-import { publishBanner } from '$lib/services/BannerManagement';
-import type { BannerDraft, PublishedBanner } from '$lib/models/Banner';
+import {
+  getManagedBanners,
+  publishBanner,
+  publishSavedBanner,
+  saveBanner,
+  updateSavedBanner,
+} from '$lib/services/BannerManagement';
+import type { BannerDraft, ManagedBanner } from '$lib/models/Banner';
 
 const draft: BannerDraft = {
   htmlContent:
@@ -19,12 +25,13 @@ const draft: BannerDraft = {
   pageTargets: [{ kind: 'ALL' }],
 };
 
-const published: PublishedBanner = {
+const published: ManagedBanner = {
   ...draft,
   htmlContent: '<p>Maintenance <a href="https://example.org">details</a></p>',
   title: null,
   uuid: '11111111-1111-1111-1111-111111111111',
   status: 'PUBLISHED',
+  lifecycle: 'ACTIVE',
   priority: 1,
   presentationHash: 'abc123',
   startAt: '2026-08-27T12:00:00Z',
@@ -38,7 +45,63 @@ const published: PublishedBanner = {
 };
 
 beforeEach(() => {
+  vi.mocked(api.get).mockReset();
   vi.mocked(api.post).mockReset();
+  vi.mocked(api.put).mockReset();
+});
+
+describe('draft banner management', () => {
+  it('loads non-archived records and uses dedicated save, update, and promotion endpoints', async () => {
+    const saved = {
+      ...published,
+      status: 'SAVED' as const,
+      lifecycle: 'SAVED' as const,
+      startAt: null,
+      priority: null,
+      publishedAt: null,
+      publishedBy: null,
+    };
+    vi.mocked(api.get).mockResolvedValue([saved]);
+    vi.mocked(api.post).mockResolvedValueOnce(saved).mockResolvedValueOnce(published);
+    vi.mocked(api.put).mockResolvedValue(saved);
+
+    await expect(getManagedBanners()).resolves.toEqual([saved]);
+    await expect(saveBanner(draft)).resolves.toBe(saved);
+    await expect(updateSavedBanner(saved.uuid, draft)).resolves.toBe(saved);
+    await expect(publishSavedBanner(saved.uuid, draft)).resolves.toBe(published);
+
+    expect(api.get).toHaveBeenCalledWith('picsure/operations/banners');
+    expect(api.post).toHaveBeenNthCalledWith(1, 'picsure/operations/banners/saved', {
+      ...draft,
+      htmlContent: published.htmlContent,
+      title: null,
+    });
+    expect(api.put).toHaveBeenCalledWith(`picsure/operations/banners/${saved.uuid}`, {
+      ...draft,
+      htmlContent: published.htmlContent,
+      title: null,
+    });
+    expect(api.post).toHaveBeenNthCalledWith(
+      2,
+      `picsure/operations/banners/${saved.uuid}/publish`,
+      {
+        ...draft,
+        htmlContent: published.htmlContent,
+        title: null,
+      },
+    );
+  });
+
+  it.each([saveBanner, updateSavedBanner.bind(null, 'saved-id')])(
+    'applies the authoring validation before draft mutation',
+    async (mutate) => {
+      await expect(mutate({ ...draft, htmlContent: '<p>&nbsp;</p>' })).rejects.toThrow(
+        'Banner content is required',
+      );
+      expect(api.post).not.toHaveBeenCalled();
+      expect(api.put).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe('publishBanner', () => {

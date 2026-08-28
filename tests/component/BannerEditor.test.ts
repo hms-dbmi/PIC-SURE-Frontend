@@ -4,7 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('$lib/services/BannerManagement', () => ({ publishBanner: vi.fn() }));
+vi.mock('$lib/services/BannerManagement', () => ({
+  publishBanner: vi.fn(),
+  publishSavedBanner: vi.fn(),
+  saveBanner: vi.fn(),
+  updateSavedBanner: vi.fn(),
+}));
 
 import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
 import { publishBanner } from '$lib/services/BannerManagement';
@@ -22,6 +27,7 @@ const published = {
   priority: 4,
   presentationHash: 'server-hash',
   status: 'PUBLISHED' as const,
+  lifecycle: 'ACTIVE' as const,
   startAt: '2026-08-27T12:00:00Z',
   endAt: null,
   createdAt: '2026-08-27T12:00:00Z',
@@ -69,6 +75,7 @@ describe('BannerEditor', () => {
       screen.queryByRole('button', { name: 'Dismiss site announcement' }),
     ).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Publish now' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save for later' })).toBeDisabled();
     expect(container.querySelector('#banner-content-editor')).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByRole('textbox', { name: 'Banner content' })).toHaveAttribute(
@@ -81,9 +88,10 @@ describe('BannerEditor', () => {
     expect(contentHelp).not.toHaveAttribute('aria-live');
   });
 
-  it('locks a published occurrence against duplicate submission and resets deliberately', async () => {
+  it('returns the authoritative published occurrence to the management view', async () => {
     vi.mocked(publishBanner).mockResolvedValue(published);
-    render(BannerEditor);
+    const onsuccess = vi.fn();
+    render(BannerEditor, { props: { onsuccess } });
     const editor = await screen.findByRole('textbox', { name: 'Banner content' });
     editor.innerHTML = '<p>Draft content</p>';
     await fireEvent.input(editor);
@@ -91,22 +99,23 @@ describe('BannerEditor', () => {
 
     await fireEvent.click(screen.getByRole('button', { name: 'Publish now' }));
 
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Published title'));
-    expect(screen.getByRole('heading', { name: 'Published title', level: 3 })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Published' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Create another banner' })).toBeEnabled();
-    await fireEvent.click(screen.getByRole('button', { name: 'Published' }));
+    await waitFor(() => expect(onsuccess).toHaveBeenCalledWith(published));
     expect(publishBanner).toHaveBeenCalledOnce();
+  });
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Create another banner' }));
+  it('asks before discarding a dirty editor through its cancel action', async () => {
+    const oncancel = vi.fn();
+    render(BannerEditor, { props: { oncancel } });
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Unsaved content</p>';
+    await fireEvent.input(editor);
 
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Primary' })).toBeChecked();
-    expect(screen.getByRole('radio', { name: 'Dismissible' })).toBeChecked();
-    expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('');
-    expect(screen.getByRole('combobox', { name: 'Icon' })).toHaveValue('NONE');
-    expect(screen.getByRole('button', { name: 'Publish now' })).toBeDisabled();
-    expect(publishBanner).toHaveBeenCalledOnce();
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByRole('heading', { name: 'Unsaved Changes' })).toBeInTheDocument();
+    expect(oncancel).not.toHaveBeenCalled();
+    await fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+    expect(oncancel).toHaveBeenCalledOnce();
   });
 
   it('keeps allowed whitespace and blank paragraphs without rebuilding the editor', async () => {

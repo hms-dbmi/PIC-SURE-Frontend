@@ -1,17 +1,34 @@
 <script lang="ts">
+  import { beforeNavigate, goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
+  import { untrack } from 'svelte';
   import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
   import Editor from '$lib/components/editor/Editor.svelte';
+  import Modal from '$lib/components/Modal.svelte';
   import type {
     BannerAppearance,
     BannerDraft,
     BannerIcon,
     BannerPresentation,
-    PublishedBanner,
+    ManagedBanner,
   } from '$lib/models/Banner';
   import { BANNER_APPEARANCES, BANNER_ICONS } from '$lib/models/Banner';
-  import { publishBanner } from '$lib/services/BannerManagement';
+  import {
+    publishBanner,
+    publishSavedBanner,
+    saveBanner,
+    updateSavedBanner,
+  } from '$lib/services/BannerManagement';
   import { toaster } from '$lib/toaster';
   import { hasBannerContent, sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
+
+  interface Props {
+    banner?: ManagedBanner | null;
+    onsuccess?: (banner: ManagedBanner) => void;
+    oncancel?: () => void;
+  }
+
+  let { banner = null, onsuccess = () => {}, oncancel = () => {} }: Props = $props();
 
   const appearanceDetails: Record<BannerAppearance, { label: string; swatchClass: string }> = {
     PRIMARY: { label: 'Primary', swatchClass: 'bg-primary-500' },
@@ -26,7 +43,6 @@
     value,
     ...appearanceDetails[value],
   }));
-
   const iconLabels: Record<BannerIcon, string> = {
     NONE: 'None',
     INFORMATION: 'Information',
@@ -36,13 +52,16 @@
   };
   const iconOptions = BANNER_ICONS.map((value) => ({ value, label: iconLabels[value] }));
 
-  let htmlContent = $state('');
-  let title = $state('');
-  let appearance: BannerAppearance = $state('PRIMARY');
-  let icon: BannerIcon = $state('NONE');
-  let dismissible = $state(true);
-  let publishing = $state(false);
-  let publishedBanner: PublishedBanner | null = $state(null);
+  let htmlContent = $state(untrack(() => banner?.htmlContent ?? ''));
+  let title = $state(untrack(() => banner?.title ?? ''));
+  let appearance: BannerAppearance = $state(untrack(() => banner?.appearance ?? 'PRIMARY'));
+  let icon: BannerIcon = $state(untrack(() => banner?.icon ?? 'NONE'));
+  let dismissible = $state(untrack(() => banner?.dismissible ?? true));
+  let working: 'save' | 'publish' | null = $state(null);
+  let showUnsavedModal = $state(false);
+  let pendingUrl: URL | null = null;
+  let pendingCancel = false;
+  let bypassGuard = false;
 
   const sanitizedLength = $derived(sanitizeBannerHTML(htmlContent).length);
   const hasContent = $derived(hasBannerContent(htmlContent));
@@ -54,48 +73,126 @@
     dismissible,
   });
 
-  async function publish() {
-    if (publishing || publishedBanner) return;
-    const draft: BannerDraft = {
+  function draft(): BannerDraft {
+    return {
       ...preview,
       title,
-      audience: 'EVERYONE',
-      placement: 'SITE_TOP',
-      pageTargets: [{ kind: 'ALL' }],
+      audience: banner?.audience ?? 'EVERYONE',
+      placement: banner?.placement ?? 'SITE_TOP',
+      pageTargets: banner?.pageTargets ?? [{ kind: 'ALL' }],
     };
-    publishing = true;
+  }
+
+  function snapshot() {
+    const value = draft();
+    return JSON.stringify({ ...value, htmlContent: sanitizeBannerHTML(value.htmlContent) });
+  }
+
+  let initialSnapshot = $state(snapshot());
+  const dirty = $derived(snapshot() !== initialSnapshot);
+
+  beforeNavigate(({ to, cancel }) => {
+    if (!bypassGuard && dirty) {
+      cancel();
+      pendingUrl = to?.url ?? null;
+      pendingCancel = false;
+      showUnsavedModal = true;
+    }
+  });
+
+  function handleBeforeUnload(event: BeforeUnloadEvent) {
+    if (dirty) event.preventDefault();
+  }
+
+  function requestCancel() {
+    if (dirty) {
+      pendingCancel = true;
+      pendingUrl = null;
+      showUnsavedModal = true;
+      return;
+    }
+    oncancel();
+  }
+
+  function keepEditing() {
+    showUnsavedModal = false;
+    pendingCancel = false;
+    pendingUrl = null;
+  }
+
+  async function discardChanges() {
+    showUnsavedModal = false;
+    bypassGuard = true;
+    if (pendingCancel) {
+      oncancel();
+    } else if (pendingUrl) {
+      await goto(resolve(`${pendingUrl.pathname}${pendingUrl.search}${pendingUrl.hash}` as '/'));
+    }
+  }
+
+  async function saveForLater() {
+    if (working) return;
+    working = 'save';
     try {
-      publishedBanner = await publishBanner(draft);
-      htmlContent = publishedBanner.htmlContent;
-      title = publishedBanner.title ?? '';
-      appearance = publishedBanner.appearance;
-      icon = publishedBanner.icon;
-      dismissible = publishedBanner.dismissible;
+      const saved = banner
+        ? await updateSavedBanner(banner.uuid, draft())
+        : await saveBanner(draft());
+      initialSnapshot = snapshot();
+      toaster.success({ title: banner ? 'Banner changes saved' : 'Banner saved for later' });
+      onsuccess(saved);
+    } catch {
+      toaster.error({
+        title: 'Banner could not be saved',
+        description: 'Your changes are still here. Check your connection and try again.',
+      });
+    } finally {
+      working = null;
+    }
+  }
+
+  async function publish() {
+    if (working) return;
+    working = 'publish';
+    try {
+      const published = banner
+        ? await publishSavedBanner(banner.uuid, draft())
+        : await publishBanner(draft());
+      initialSnapshot = snapshot();
       toaster.success({ title: 'Banner published' });
+      onsuccess(published);
     } catch {
       toaster.error({
         title: 'Banner could not be published',
         description: 'The banner was not published. Check your connection and try again.',
       });
     } finally {
-      publishing = false;
+      working = null;
     }
-  }
-
-  function startAnother() {
-    htmlContent = '';
-    title = '';
-    appearance = 'PRIMARY';
-    icon = 'NONE';
-    dismissible = true;
-    publishedBanner = null;
   }
 </script>
 
-<section class="mx-auto max-w-5xl" aria-labelledby="create-banner-title">
+<svelte:window onbeforeunload={handleBeforeUnload} />
+
+<Modal bind:open={showUnsavedModal} title="Unsaved Changes" closeable onclose={keepEditing}>
+  <p class="mb-6">You have unsaved banner changes. Discard them or keep editing.</p>
+  <footer class="flex justify-end gap-2">
+    <button type="button" class="btn border preset-tonal-primary" onclick={keepEditing}>
+      Keep editing
+    </button>
+    <button type="button" class="btn preset-filled-error-500" onclick={discardChanges}>
+      Discard changes
+    </button>
+  </footer>
+</Modal>
+
+<section class="mx-auto max-w-5xl" aria-labelledby="banner-editor-title">
   <header class="mb-6">
-    <h2 id="create-banner-title">Create banner</h2>
-    <p>Publish an announcement across PIC-SURE. Published banners cannot be edited yet.</p>
+    <h2 id="banner-editor-title">{banner ? 'Edit saved banner' : 'Create banner'}</h2>
+    <p>
+      {banner
+        ? 'Update this reusable draft or publish it across PIC-SURE.'
+        : 'Save this announcement for later or publish it across PIC-SURE.'}
+    </p>
   </header>
 
   <form
@@ -197,23 +294,24 @@
       </details>
     </div>
 
-    {#if publishedBanner}
-      <div class="mt-6 rounded border border-success-500 p-4" role="status">
-        <p class="font-bold">Published: {publishedBanner.title || 'Site announcement'}</p>
-        <p class="text-sm">Published at {publishedBanner.publishedAt}</p>
-        <button type="button" class="btn preset-tonal-primary mt-3" onclick={startAnother}>
-          Create another banner
-        </button>
-      </div>
-    {/if}
-
-    <div class="mt-6 flex justify-end">
+    <div class="mt-6 flex items-center justify-end gap-3">
+      <button type="button" class="btn preset-tonal-primary mr-auto" onclick={requestCancel}>
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="btn border preset-tonal-primary"
+        disabled={working !== null || !dirty || !hasContent || sanitizedLength > 5_000}
+        onclick={saveForLater}
+      >
+        {working === 'save' ? 'Saving...' : banner ? 'Save changes' : 'Save for later'}
+      </button>
       <button
         type="submit"
         class="btn preset-filled-primary-500"
-        disabled={publishing || publishedBanner !== null || !hasContent || sanitizedLength > 5_000}
+        disabled={working !== null || !hasContent || sanitizedLength > 5_000}
       >
-        {publishing ? 'Publishing...' : publishedBanner ? 'Published' : 'Publish now'}
+        {working === 'publish' ? 'Publishing...' : 'Publish now'}
       </button>
     </div>
   </form>
