@@ -82,15 +82,19 @@
     saved: records.filter((banner) => inTab(banner.lifecycle, 'saved')).length,
     expired: records.filter((banner) => inTab(banner.lifecycle, 'expired')).length,
   });
-  const orderedRecords = $derived(
-    orderUuids
+  const orderedRecords = $derived([
+    ...orderUuids
       .map((uuid) => records.find((banner) => banner.uuid === uuid))
       .filter((banner): banner is ManagementRecord => banner !== undefined),
-  );
+    ...records.filter(
+      (banner) => inTab(banner.lifecycle, 'orderable') && !orderUuids.includes(banner.uuid),
+    ),
+  ]);
   const broadOverlapCount = $derived(
     records.filter(
       (banner) =>
         banner.status === 'PUBLISHED' &&
+        orderUuids.includes(banner.uuid) &&
         inTab(banner.lifecycle, 'orderable') &&
         banner.audience === 'EVERYONE' &&
         isAllPagesBannerTarget(banner.pageTargets),
@@ -340,14 +344,14 @@
 
   function handleDragStart(event: any) {
     const source = event?.operation?.source;
-    if (!source || activeTab !== 'orderable' || search.trim()) return;
+    if (!source || savingOrder || activeTab !== 'orderable' || search.trim()) return;
     activeDragUuid = String(source.id);
     dragStartOrder = [...orderUuids];
     dragTargetUuid = activeDragUuid;
   }
 
   function handleDragOver(event: any) {
-    if (!activeDragUuid) return;
+    if (savingOrder || !activeDragUuid) return;
     const targetUuid = event?.operation?.target?.id;
     if (!targetUuid || targetUuid === activeDragUuid || targetUuid === dragTargetUuid) return;
     const sourceIndex = orderUuids.indexOf(activeDragUuid);
@@ -395,7 +399,8 @@
 
   function adoptCanonicalOrder(authoritative: ManagedBanner[]) {
     const presented = authoritative.map(present);
-    records = [...presented, ...records.filter((banner) => !inTab(banner.lifecycle, 'orderable'))];
+    const presentedUuids = new Set(presented.map((banner) => banner.uuid));
+    records = [...presented, ...records.filter((banner) => !presentedUuids.has(banner.uuid))];
     orderUuids = presented.map((banner) => banner.uuid);
     savedOrderUuids = [...orderUuids];
   }
@@ -469,9 +474,14 @@
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        {#if activeTab === 'orderable' && !search.trim() && orderDirty}
+        {#if activeTab === 'orderable' && !search.trim() && (orderDirty || savingOrder)}
           <div class="mt-5 flex justify-end gap-3">
-            <button type="button" class="btn preset-tonal-primary" onclick={cancelOrderChanges}>
+            <button
+              type="button"
+              class="btn preset-tonal-primary"
+              disabled={savingOrder}
+              onclick={cancelOrderChanges}
+            >
               Cancel order changes
             </button>
             <button
@@ -545,8 +555,13 @@
                   onedit={() => editBanner(banner)}
                   ondisable={() => disable(banner.uuid)}
                   onarchive={() => archive(banner.uuid)}
-                  orderable={activeTab === 'orderable' && !search.trim()}
-                  position={activeTab === 'orderable' ? orderUuids.indexOf(banner.uuid) + 1 : null}
+                  orderable={activeTab === 'orderable' &&
+                    !search.trim() &&
+                    !savingOrder &&
+                    orderUuids.includes(banner.uuid)}
+                  position={activeTab === 'orderable' && orderUuids.includes(banner.uuid)
+                    ? orderUuids.indexOf(banner.uuid) + 1
+                    : null}
                   index={orderUuids.indexOf(banner.uuid)}
                   activeId={activeDragUuid}
                   busy={archivingUuid === banner.uuid || disablingUuid === banner.uuid}

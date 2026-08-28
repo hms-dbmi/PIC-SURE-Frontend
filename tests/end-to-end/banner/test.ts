@@ -1061,6 +1061,7 @@ test.describe('Site banner workflow 5', () => {
     };
     let saved = [...managed];
     let reorderRequests = 0;
+    const reorderPayloads: string[][] = [];
 
     async function pointerReorder(sourceName: string, targetName: string) {
       const source = page.getByRole('button', { name: `Reorder banner: ${sourceName}` });
@@ -1113,7 +1114,7 @@ test.describe('Site banner workflow 5', () => {
       if (request.method() === 'PUT' && pathname.endsWith('/banners/order')) {
         reorderRequests += 1;
         const { bannerUuids } = request.postDataJSON() as { bannerUuids: string[] };
-        expect(bannerUuids).toHaveLength(4);
+        reorderPayloads.push(bannerUuids);
         const current = reorderRequests === 1 ? [...managed.slice(0, 3), arrival] : saved;
         const currentByUuid = new Map(current.map((record) => [record.uuid, record]));
         const canonicalUuids = [
@@ -1157,6 +1158,7 @@ test.describe('Site banner workflow 5', () => {
     await page.getByRole('button', { name: 'Save order' }).click();
     await expect(page.getByTestId('toast-root')).toContainText('Banner order saved');
     expect(reorderRequests).toBe(1);
+    expect(reorderPayloads[0]).toHaveLength(4);
     await expect(rows).toHaveCount(4);
     await expect(rows.filter({ hasText: 'Departing notice' })).toHaveCount(0);
     await expect(rows.filter({ hasText: 'Concurrent arrival' })).toHaveCount(1);
@@ -1175,6 +1177,7 @@ test.describe('Site banner workflow 5', () => {
 
     await page.getByRole('button', { name: 'Save order' }).click();
     await expect.poll(() => reorderRequests).toBe(2);
+    expect(reorderPayloads[1]).toHaveLength(4);
 
     await page.goto('/help');
     await expect(page.getByTestId('site-banner')).toHaveCount(4);

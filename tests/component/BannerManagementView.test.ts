@@ -213,10 +213,83 @@ describe('BannerManagementView', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
 
     await waitFor(() => expect(getManagedBanners).toHaveBeenCalledTimes(2));
-    expect(bannerRowOrder()).toEqual([scheduled.uuid, arrival.uuid]);
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, arrival.uuid, base.uuid]);
     expect(screen.queryByRole('button', { name: 'Save order' })).not.toBeInTheDocument();
     expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner order saved' });
     expect(toaster.error).not.toHaveBeenCalled();
+  });
+
+  it('retains a departed management record outside the canonical queue when refresh fails', async () => {
+    const departed = {
+      ...base,
+      uuid: '66666666-6666-6666-6666-666666666666',
+      htmlContent: '<p>Departed notice</p>',
+      title: 'Departed',
+      priority: 3,
+    };
+    vi.mocked(getManagedBanners)
+      .mockResolvedValueOnce([base, scheduled, departed])
+      .mockRejectedValueOnce(new Error('refresh unavailable'));
+    vi.mocked(reorderBanners).mockResolvedValue([
+      { ...scheduled, priority: 1 },
+      { ...base, priority: 2 },
+    ]);
+    render(BannerManagementView);
+    await screen.findByText('Departed notice');
+
+    await drag(base.uuid, scheduled.uuid);
+    await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
+
+    await waitFor(() => expect(toaster.success).toHaveBeenCalledOnce());
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, base.uuid, departed.uuid]);
+    const departedRow = screen.getByText('Departed notice').closest('article')!;
+    expect(
+      within(departedRow).queryByRole('button', { name: /Reorder banner/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('keeps saving visible and disables dragging through reorder and refresh', async () => {
+    let resolveReorder!: (records: ManagedBanner[]) => void;
+    let resolveRefresh!: (records: ManagedBanner[]) => void;
+    vi.mocked(getManagedBanners)
+      .mockResolvedValueOnce([base, scheduled])
+      .mockReturnValueOnce(new Promise((resolve) => (resolveRefresh = resolve)));
+    vi.mocked(reorderBanners).mockReturnValue(
+      new Promise((resolve) => {
+        resolveReorder = resolve;
+      }),
+    );
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+    await drag(base.uuid, scheduled.uuid);
+    const savedOrder = [scheduled.uuid, base.uuid];
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
+    await waitFor(() => expect(reorderBanners).toHaveBeenCalledWith(savedOrder));
+    expect(screen.getByRole('button', { name: 'Saving order...' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel order changes' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /Reorder banner/ })).not.toBeInTheDocument();
+    await drag(scheduled.uuid, base.uuid);
+    expect(bannerRowOrder()).toEqual(savedOrder);
+
+    resolveReorder([
+      { ...scheduled, priority: 1 },
+      { ...base, priority: 2 },
+    ]);
+    await waitFor(() => expect(getManagedBanners).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole('button', { name: 'Saving order...' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel order changes' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /Reorder banner/ })).not.toBeInTheDocument();
+    await drag(scheduled.uuid, base.uuid);
+    expect(bannerRowOrder()).toEqual(savedOrder);
+
+    resolveRefresh([
+      { ...scheduled, priority: 1 },
+      { ...base, priority: 2 },
+    ]);
+    await waitFor(() => expect(toaster.success).toHaveBeenCalledOnce());
+    expect(screen.queryByRole('button', { name: 'Saving order...' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Reorder banner/ })).toHaveLength(2);
   });
 
   it('keeps a failed order dirty and lets cancel restore the saved queue without another request', async () => {
@@ -358,12 +431,6 @@ describe('BannerManagementView', () => {
         ...base,
         uuid: 'a2222222-2222-2222-2222-222222222222',
         status: 'DISABLED' as const,
-        lifecycle: 'DISABLED' as const,
-      },
-      {
-        ...base,
-        uuid: 'a3333333-3333-3333-3333-333333333333',
-        status: 'ARCHIVED' as const,
         lifecycle: 'DISABLED' as const,
       },
     ];
