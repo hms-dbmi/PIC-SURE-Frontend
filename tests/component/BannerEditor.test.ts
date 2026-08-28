@@ -132,10 +132,14 @@ describe('BannerEditor', () => {
     editor.innerHTML = '<p>Corrected content</p>';
     expect(screen.queryByText(/version history/i)).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: /version|history|restore|revert/i }),
+      screen.queryByRole('button', {
+        name: /version|history|revisions?|restore|revert|rollback/i,
+      }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('link', { name: /version|history|restore|revert/i }),
+      screen.queryByRole('link', {
+        name: /version|history|revisions?|restore|revert|rollback/i,
+      }),
     ).not.toBeInTheDocument();
     await fireEvent.input(editor);
 
