@@ -167,6 +167,7 @@ describe('BannerEditor', () => {
     await fireEvent.input(screen.getByLabelText('End'), {
       target: { value: '2026-08-28T10:45' },
     });
+    await fireEvent.click(screen.getByRole('radio', { name: 'Signed-out visitors' }));
 
     expect(screen.getByText('Resolved UTC: 2026-08-28 13:15 UTC')).toBeInTheDocument();
     expect(screen.getByText('Resolved UTC: 2026-08-28 14:45 UTC')).toBeInTheDocument();
@@ -175,6 +176,7 @@ describe('BannerEditor', () => {
     await waitFor(() =>
       expect(publishBanner).toHaveBeenCalledWith(
         expect.objectContaining({
+          audience: 'SIGNED_OUT',
           startAt: '2026-08-28T13:15:00.000Z',
           endAt: '2026-08-28T14:45:00.000Z',
         }),
