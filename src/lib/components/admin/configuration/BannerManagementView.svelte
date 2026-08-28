@@ -403,6 +403,7 @@
                   index={orderUuids.indexOf(banner.uuid)}
                   activeId={activeDragUuid}
                   busy={archivingUuid === banner.uuid}
+                  archiveDisabled={archivingUuid !== null}
                 />
               </div>
             {/each}

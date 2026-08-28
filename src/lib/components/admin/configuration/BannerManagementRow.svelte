@@ -21,6 +21,7 @@
     activeId?: string | null;
     isOverlay?: boolean;
     busy?: boolean;
+    archiveDisabled?: boolean;
   }
 
   let {
@@ -36,6 +37,7 @@
     activeId = null,
     isOverlay = false,
     busy = false,
+    archiveDisabled = false,
   }: Props = $props();
 
   const { ref, handleRef } = useSortable({
@@ -232,7 +234,7 @@
                 cancelText="No"
                 onconfirm={onarchive}
                 triggerBase="btn preset-tonal-error"
-                disabled={busy}
+                disabled={busy || archiveDisabled}
                 withDefault
               >
                 {#snippet trigger()}

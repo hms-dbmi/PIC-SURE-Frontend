@@ -661,6 +661,32 @@ describe('BannerManagementView', () => {
     expect(document.getElementById(`banner-${base.uuid}-details`)).toBeInTheDocument();
   });
 
+  it('blocks a second archive while preserving unrelated row controls', async () => {
+    const firstSaved = records[1];
+    const secondSaved: ManagedBanner = {
+      ...firstSaved,
+      uuid: '66666666-6666-6666-6666-666666666666',
+      htmlContent: '<p>Second reusable notice</p>',
+    };
+    vi.mocked(getManagedBanners).mockResolvedValue([firstSaved, secondSaved]);
+    vi.mocked(archiveBanner).mockReturnValue(new Promise(() => {}));
+    render(BannerManagementView);
+
+    await fireEvent.click(await screen.findByRole('tab', { name: /Saved & disabled/ }));
+    const firstRow = await openDetailsFor('Reusable enrollment notice');
+    await fireEvent.click(within(firstRow).getByRole('button', { name: 'Archive banner' }));
+    await fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
+    );
+    await waitFor(() => expect(archiveBanner).toHaveBeenCalledWith(firstSaved.uuid));
+
+    const secondRow = await openDetailsFor('Second reusable notice');
+    expect(document.getElementById(`banner-${secondSaved.uuid}-details`)).toBeInTheDocument();
+    expect(within(secondRow).getByRole('button', { name: 'Edit banner' })).toBeEnabled();
+    expect(within(secondRow).getByRole('button', { name: 'Archive banner' })).toBeDisabled();
+    expect(archiveBanner).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the empty state once the last banner in a tab is archived', async () => {
     vi.mocked(getManagedBanners).mockResolvedValue([records[2]]);
     vi.mocked(archiveBanner).mockResolvedValue({
