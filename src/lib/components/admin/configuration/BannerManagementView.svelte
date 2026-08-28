@@ -1,17 +1,23 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte';
-  import { elasticInOut } from 'svelte/easing';
-  import { scale } from 'svelte/transition';
+  import { onDestroy, onMount, tick } from 'svelte';
   import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
   import BannerManagementRow from '$lib/components/admin/configuration/BannerManagementRow.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import type { BannerLifecycle, ManagedBanner } from '$lib/models/Banner';
   import { getManagedBanners } from '$lib/services/BannerManagement';
+  import { bannerPlainText } from '$lib/utilities/BannerHTML';
 
   type LifecycleTab = 'orderable' | 'saved' | 'expired';
+  type ManagementRecord = ManagedBanner & { excerpt: string };
 
-  let records: ManagedBanner[] = $state([]);
+  interface Props {
+    ondirtychange?: (dirty: boolean) => void;
+  }
+
+  let { ondirtychange = () => {} }: Props = $props();
+
+  let records: ManagementRecord[] = $state([]);
   let loading = $state(true);
   let failed = $state(false);
   let activeTab: LifecycleTab = $state('orderable');
@@ -20,6 +26,7 @@
   let mode: 'list' | 'create' | 'edit' = $state('list');
   let editingBanner: ManagedBanner | null = $state(null);
   let arrivalUuid: string | null = $state(null);
+  let arrivalTimeout: number | undefined;
 
   const counts = $derived({
     orderable: records.filter((banner) => inTab(banner.lifecycle, 'orderable')).length,
@@ -30,7 +37,7 @@
     records.filter(
       (banner) =>
         inTab(banner.lifecycle, activeTab) &&
-        `${banner.title ?? ''} ${plainText(banner.htmlContent)}`
+        `${banner.title ?? ''} ${banner.excerpt}`
           .toLocaleLowerCase()
           .includes(search.trim().toLocaleLowerCase()),
     ),
@@ -38,12 +45,16 @@
 
   onMount(async () => {
     try {
-      records = await getManagedBanners();
+      records = (await getManagedBanners()).map(present);
     } catch {
       failed = true;
     } finally {
       loading = false;
     }
+  });
+
+  onDestroy(() => {
+    if (arrivalTimeout !== undefined) window.clearTimeout(arrivalTimeout);
   });
 
   function inTab(lifecycle: BannerLifecycle, tab: LifecycleTab) {
@@ -52,9 +63,8 @@
     return lifecycle === 'EXPIRED';
   }
 
-  function plainText(html: string) {
-    const document = new DOMParser().parseFromString(html, 'text/html');
-    return (document.body.textContent ?? '').replace(/\s+/g, ' ').trim();
+  function present(banner: ManagedBanner): ManagementRecord {
+    return { ...banner, excerpt: bannerPlainText(banner.htmlContent) };
   }
 
   function tabFor(lifecycle: BannerLifecycle): LifecycleTab {
@@ -74,7 +84,7 @@
   }
 
   async function handleSuccess(banner: ManagedBanner) {
-    records = [...records.filter((record) => record.uuid !== banner.uuid), banner];
+    records = [...records.filter((record) => record.uuid !== banner.uuid), present(banner)];
     activeTab = tabFor(banner.lifecycle);
     search = '';
     openUuid = null;
@@ -85,7 +95,8 @@
     document.querySelector(`[data-banner-row="${banner.uuid}"]`)?.scrollIntoView({
       block: 'center',
     });
-    window.setTimeout(() => {
+    if (arrivalTimeout !== undefined) window.clearTimeout(arrivalTimeout);
+    arrivalTimeout = window.setTimeout(() => {
       if (arrivalUuid === banner.uuid) arrivalUuid = null;
     }, 1_800);
   }
@@ -94,6 +105,7 @@
 {#if mode !== 'list'}
   <BannerEditor
     banner={editingBanner}
+    {ondirtychange}
     onsuccess={handleSuccess}
     oncancel={() => {
       mode = 'list';
@@ -128,6 +140,7 @@
           <button
             type="button"
             role="tab"
+            id={`banner-management-tab-${tab.value}`}
             class="mr-6 border-b-3 px-1 py-3 font-bold {activeTab === tab.value
               ? 'border-primary-500 text-primary-700'
               : 'border-transparent text-surface-600'}"
@@ -146,45 +159,30 @@
 
       <label class="mt-5 block max-w-md">
         <span class="sr-only">Search banner text</span>
-        <input
-          type="search"
-          class="input"
-          placeholder="Search banner text"
-          aria-label="Search banner text"
-          bind:value={search}
-        />
+        <input type="search" class="input" placeholder="Search banner text" bind:value={search} />
       </label>
 
-      <div id="banner-management-panel" class="mt-5 grid gap-3" role="tabpanel">
+      <div
+        id="banner-management-panel"
+        class="mt-5 grid gap-3"
+        role="tabpanel"
+        aria-labelledby={`banner-management-tab-${activeTab}`}
+      >
         {#if visibleRecords.length === 0}
           <p class="rounded border border-surface-300 p-6 text-center text-surface-600">
             {search.trim() ? 'No banners match this search.' : 'No banners in this section.'}
           </p>
         {:else}
           {#each visibleRecords as banner (banner.uuid)}
-            {#if arrivalUuid === banner.uuid}
-              <div
-                data-banner-row={banner.uuid}
-                class="banner-arrival rounded-xl"
-                in:scale={{ easing: elasticInOut }}
-              >
-                <BannerManagementRow
-                  {banner}
-                  open={openUuid === banner.uuid}
-                  ontoggle={() => (openUuid = openUuid === banner.uuid ? null : banner.uuid)}
-                  onedit={() => editBanner(banner)}
-                />
-              </div>
-            {:else}
-              <div data-banner-row={banner.uuid}>
-                <BannerManagementRow
-                  {banner}
-                  open={openUuid === banner.uuid}
-                  ontoggle={() => (openUuid = openUuid === banner.uuid ? null : banner.uuid)}
-                  onedit={() => editBanner(banner)}
-                />
-              </div>
-            {/if}
+            <div data-banner-row={banner.uuid} class:banner-arrival={arrivalUuid === banner.uuid}>
+              <BannerManagementRow
+                {banner}
+                excerpt={banner.excerpt}
+                open={openUuid === banner.uuid}
+                ontoggle={() => (openUuid = openUuid === banner.uuid ? null : banner.uuid)}
+                onedit={() => editBanner(banner)}
+              />
+            </div>
           {/each}
         {/if}
       </div>
@@ -198,12 +196,24 @@
   }
 
   @keyframes banner-highlight {
-    0%,
-    35% {
+    0% {
+      transform: scale(0.97);
+      box-shadow: inset 0 0 0 3px var(--color-primary-500);
+      background: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
+    }
+    28% {
+      transform: scale(1.015);
+    }
+    48% {
+      transform: scale(0.995);
+    }
+    65% {
+      transform: scale(1);
       box-shadow: inset 0 0 0 3px var(--color-primary-500);
       background: color-mix(in srgb, var(--color-primary-500) 10%, transparent);
     }
     100% {
+      transform: scale(1);
       box-shadow: inset 0 0 0 transparent;
       background: transparent;
     }

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { beforeNavigate, goto } from '$app/navigation';
   import { resolve } from '$app/paths';
-  import { untrack } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
   import Editor from '$lib/components/editor/Editor.svelte';
   import Modal from '$lib/components/Modal.svelte';
@@ -12,7 +12,7 @@
     BannerPresentation,
     ManagedBanner,
   } from '$lib/models/Banner';
-  import { BANNER_APPEARANCES, BANNER_ICONS } from '$lib/models/Banner';
+  import { BANNER_APPEARANCES, BANNER_APPEARANCE_DETAILS, BANNER_ICONS } from '$lib/models/Banner';
   import {
     publishBanner,
     publishSavedBanner,
@@ -26,22 +26,18 @@
     banner?: ManagedBanner | null;
     onsuccess?: (banner: ManagedBanner) => void;
     oncancel?: () => void;
+    ondirtychange?: (dirty: boolean) => void;
   }
 
-  let { banner = null, onsuccess = () => {}, oncancel = () => {} }: Props = $props();
-
-  const appearanceDetails: Record<BannerAppearance, { label: string; swatchClass: string }> = {
-    PRIMARY: { label: 'Primary', swatchClass: 'bg-primary-500' },
-    SECONDARY: { label: 'Secondary', swatchClass: 'bg-secondary-500' },
-    TERTIARY: { label: 'Tertiary', swatchClass: 'bg-tertiary-500' },
-    SUCCESS: { label: 'Success', swatchClass: 'bg-success-500' },
-    WARNING: { label: 'Warning', swatchClass: 'bg-warning-500' },
-    ERROR: { label: 'Error', swatchClass: 'bg-error-500' },
-    SURFACE: { label: 'Surface', swatchClass: 'bg-surface-500' },
-  };
+  let {
+    banner = null,
+    onsuccess = () => {},
+    oncancel = () => {},
+    ondirtychange = () => {},
+  }: Props = $props();
   const appearanceOptions = BANNER_APPEARANCES.map((value) => ({
     value,
-    ...appearanceDetails[value],
+    ...BANNER_APPEARANCE_DETAILS[value],
   }));
   const iconLabels: Record<BannerIcon, string> = {
     NONE: 'None',
@@ -91,8 +87,14 @@
   let initialSnapshot = $state(snapshot());
   const dirty = $derived(snapshot() !== initialSnapshot);
 
-  beforeNavigate(({ to, cancel }) => {
-    if (!bypassGuard && dirty) {
+  $effect(() => {
+    ondirtychange(dirty);
+  });
+
+  onDestroy(() => ondirtychange(false));
+
+  beforeNavigate(({ to, cancel, willUnload }) => {
+    if (!bypassGuard && dirty && !willUnload) {
       cancel();
       pendingUrl = to?.url ?? null;
       pendingCancel = false;
@@ -122,11 +124,15 @@
 
   async function discardChanges() {
     showUnsavedModal = false;
-    bypassGuard = true;
     if (pendingCancel) {
       oncancel();
     } else if (pendingUrl) {
-      await goto(resolve(`${pendingUrl.pathname}${pendingUrl.search}${pendingUrl.hash}` as '/'));
+      bypassGuard = true;
+      try {
+        await goto(resolve(`${pendingUrl.pathname}${pendingUrl.search}${pendingUrl.hash}` as '/'));
+      } finally {
+        bypassGuard = false;
+      }
     }
   }
 

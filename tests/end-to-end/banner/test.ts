@@ -75,6 +75,39 @@ test.describe('Site banner workflow 1', () => {
     });
   });
 
+  test('loads management on tab selection and protects dirty configuration-tab changes', async ({
+    page,
+  }) => {
+    let managementLoads = 0;
+    await page.route('**/picsure/operations/banners', (route) => {
+      if (route.request().method() === 'GET') {
+        managementLoads += 1;
+        return route.fulfill({ json: [] });
+      }
+      return route.fallback();
+    });
+
+    await page.goto('/admin/configuration');
+    expect(managementLoads).toBe(0);
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await expect.poll(() => managementLoads).toBe(1);
+    await page.getByRole('button', { name: '+ Create banner' }).click();
+    await page
+      .getByTestId('banner-editor-form')
+      .locator('#banner-content-editor .ql-editor')
+      .fill('Unsaved configuration-tab content');
+
+    await page.getByRole('tab', { name: 'Branding' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toBeVisible();
+    await expect(page.getByTestId('banner-editor-form')).toBeVisible();
+    await page.getByRole('button', { name: 'Keep editing' }).click();
+    await expect(page.getByTestId('banner-editor-form')).toBeVisible();
+    await page.getByRole('tab', { name: 'Branding' }).click();
+    await page.getByRole('button', { name: 'Discard changes' }).click();
+    await expect(page.getByTestId('banner-editor-form')).not.toBeVisible();
+  });
+
   test('keeps sentence spaces, Enter, and a second paragraph while editing', async ({ page }) => {
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();

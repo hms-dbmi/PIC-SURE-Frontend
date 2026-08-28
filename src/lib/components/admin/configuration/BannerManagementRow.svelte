@@ -1,25 +1,16 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
-  import type { BannerAppearance, ManagedBanner } from '$lib/models/Banner';
+  import { BANNER_APPEARANCE_DETAILS, type ManagedBanner } from '$lib/models/Banner';
 
   interface Props {
     banner: ManagedBanner;
+    excerpt: string;
     open: boolean;
     ontoggle: () => void;
     onedit: () => void;
   }
 
-  let { banner, open, ontoggle, onedit }: Props = $props();
-
-  const appearanceLabels: Record<BannerAppearance, string> = {
-    PRIMARY: 'Primary',
-    SECONDARY: 'Secondary',
-    TERTIARY: 'Tertiary',
-    SUCCESS: 'Success',
-    WARNING: 'Warning',
-    ERROR: 'Error',
-    SURFACE: 'Surface',
-  };
+  let { banner, excerpt, open, ontoggle, onedit }: Props = $props();
   const audienceLabels = {
     EVERYONE: 'Everyone',
     SIGNED_IN: 'Signed-in users',
@@ -34,13 +25,6 @@
   } as const;
 
   const panelId = $derived(`banner-${banner.uuid}-details`);
-  const excerpt = $derived(plainText(banner.htmlContent));
-
-  function plainText(html: string) {
-    const document = new DOMParser().parseFromString(html, 'text/html');
-    return (document.body.textContent ?? '').replace(/\s+/g, ' ').trim();
-  }
-
   function scheduleSummary() {
     if (banner.lifecycle === 'SAVED') return 'Not published';
     const start = banner.startAt ? new Date(banner.startAt).toLocaleString() : 'No start date';
@@ -60,19 +44,18 @@
     ) {
       return 'All pages';
     }
-    return banner.pageTargets
-      .map((target) =>
-        typeof target === 'object' && target !== null ? JSON.stringify(target) : String(target),
-      )
-      .join(', ');
+    const count = banner.pageTargets.length;
+    if (count === 0) return 'No pages selected';
+    return `${count} selected ${count === 1 ? 'page' : 'pages'}`;
   }
 </script>
 
 <article class="overflow-hidden rounded-xl border border-surface-300 bg-surface-50">
   <div class="flex min-h-28 items-center gap-4 p-4">
     <span
-      class="h-14 w-2 shrink-0 rounded-full bg-{banner.appearance.toLowerCase()}-500"
-      aria-label="{appearanceLabels[banner.appearance]} tone"
+      class="h-14 w-2 shrink-0 rounded-full {BANNER_APPEARANCE_DETAILS[banner.appearance]
+        .swatchClass}"
+      aria-hidden="true"
     ></span>
     <div class="min-w-0 flex-1">
       <p class="overflow-hidden text-ellipsis whitespace-nowrap font-bold">{excerpt}</p>
@@ -81,7 +64,7 @@
           {lifecycleLabels[banner.lifecycle]}
         </span>
         <span
-          >{appearanceLabels[banner.appearance]} · {banner.dismissible
+          >{BANNER_APPEARANCE_DETAILS[banner.appearance].label} · {banner.dismissible
             ? 'Dismissible'
             : 'Permanent'}</span
         >

@@ -30,3 +30,8 @@ export function hasBannerContent(dirty: string): boolean {
   }).replace(/[\s\u200b]/gu, '');
   return visibleText.length > 0;
 }
+
+export function bannerPlainText(html: string): string {
+  const document = new DOMParser().parseFromString(html, 'text/html');
+  return (document.body.textContent ?? '').replace(/\s+/g, ' ').trim();
+}

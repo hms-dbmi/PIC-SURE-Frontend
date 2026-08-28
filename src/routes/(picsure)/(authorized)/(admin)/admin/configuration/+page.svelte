@@ -26,8 +26,41 @@
   import { isTopAdmin } from '$lib/stores/User';
 
   import Loading from '$lib/components/Loading.svelte';
+  import Modal from '$lib/components/Modal.svelte';
 
   let tabSet: string = $state('Access Control');
+  let requestedTab: string = $state('Access Control');
+  let bannerEditorDirty = $state(false);
+  let showBannerTabModal = $state(false);
+  let pendingTab: string | null = null;
+
+  $effect(() => {
+    if (requestedTab === tabSet) return;
+    if (tabSet === 'Site banners' && bannerEditorDirty) {
+      pendingTab = requestedTab;
+      requestedTab = tabSet;
+      showBannerTabModal = true;
+      return;
+    }
+    tabSet = requestedTab;
+  });
+
+  function keepEditingBanner() {
+    pendingTab = null;
+    requestedTab = tabSet;
+    showBannerTabModal = false;
+  }
+
+  function discardBannerAndChangeTab() {
+    const destination = pendingTab;
+    pendingTab = null;
+    bannerEditorDirty = false;
+    showBannerTabModal = false;
+    if (destination) {
+      tabSet = destination;
+      requestedTab = destination;
+    }
+  }
 
   const roleTable = {
     columns: [
@@ -83,6 +116,18 @@
   <title>{config.branding.applicationName} | Configuration</title>
 </svelte:head>
 
+<Modal bind:open={showBannerTabModal} title="Unsaved Changes" closeable onclose={keepEditingBanner}>
+  <p class="mb-6">You have unsaved banner changes. Discard them or keep editing.</p>
+  <footer class="flex justify-end gap-2">
+    <button type="button" class="btn border preset-tonal-primary" onclick={keepEditingBanner}>
+      Keep editing
+    </button>
+    <button type="button" class="btn preset-filled-error-500" onclick={discardBannerAndChangeTab}>
+      Discard changes
+    </button>
+  </footer>
+</Modal>
+
 <Content title="Configuration">
   {#if !$isTopAdmin && tabSet !== 'Site banners'}
     <ErrorAlert data-testid="top-admin-only-error" title="Top Administrator Only" color="warning">
@@ -92,14 +137,14 @@
       </p>
     </ErrorAlert>
   {/if}
-  <Tabs value={tabSet} onValueChange={(e: { value: string }) => (tabSet = e.value)}>
+  <Tabs value={tabSet} onValueChange={(e: { value: string }) => (requestedTab = e.value)}>
     {#snippet list()}
-      <TabItem bind:group={tabSet} value="Access Control">Access Control</TabItem>
-      <TabItem bind:group={tabSet} value="Settings & Features">Settings & Features</TabItem>
-      <TabItem bind:group={tabSet} value="Branding">Branding</TabItem>
-      <TabItem bind:group={tabSet} value="Site banners">Site banners</TabItem>
+      <TabItem bind:group={requestedTab} value="Access Control">Access Control</TabItem>
+      <TabItem bind:group={requestedTab} value="Settings & Features">Settings & Features</TabItem>
+      <TabItem bind:group={requestedTab} value="Branding">Branding</TabItem>
+      <TabItem bind:group={requestedTab} value="Site banners">Site banners</TabItem>
       {#if config.features.termsOfService}
-        <TabItem bind:group={tabSet} value="Terms of Service">Terms of Service</TabItem>
+        <TabItem bind:group={requestedTab} value="Terms of Service">Terms of Service</TabItem>
       {/if}
     {/snippet}
     {#snippet content()}
@@ -212,7 +257,9 @@
         <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!$isTopAdmin} />
       </Tabs.Panel>
       <Tabs.Panel value="Site banners">
-        <BannerManagementView />
+        {#if tabSet === 'Site banners'}
+          <BannerManagementView ondirtychange={(dirty) => (bannerEditorDirty = dirty)} />
+        {/if}
       </Tabs.Panel>
       {#if config.features.termsOfService}
         <Tabs.Panel value="Terms of Service">

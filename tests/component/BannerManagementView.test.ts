@@ -12,7 +12,7 @@ vi.mock('$lib/services/BannerManagement', () => ({
 }));
 
 import BannerManagementView from '$lib/components/admin/configuration/BannerManagementView.svelte';
-import { getManagedBanners } from '$lib/services/BannerManagement';
+import { getManagedBanners, saveBanner } from '$lib/services/BannerManagement';
 import type { ManagedBanner } from '$lib/models/Banner';
 
 const base: ManagedBanner = {
@@ -65,10 +65,12 @@ const records: ManagedBanner[] = [
 
 beforeEach(() => {
   vi.mocked(getManagedBanners).mockReset().mockResolvedValue(records);
+  vi.mocked(saveBanner).mockReset();
 });
 
 describe('BannerManagementView', () => {
   it('groups loaded rows under lifecycle tabs and filters plain text without pagination', async () => {
+    const parse = vi.spyOn(DOMParser.prototype, 'parseFromString');
     render(BannerManagementView);
 
     expect(await screen.findByText('System maintenance tonight')).toBeInTheDocument();
@@ -89,6 +91,15 @@ describe('BannerManagementView', () => {
     });
     expect(screen.getByText('No banners match this search.')).toBeInTheDocument();
     expect(screen.queryByText(/pagination/i)).not.toBeInTheDocument();
+    expect(parse).toHaveBeenCalledTimes(records.length);
+    const selectedTab = screen.getByRole('tab', { name: /Saved & disabled/ });
+    expect(selectedTab).toHaveAttribute('id', 'banner-management-tab-saved');
+    expect(selectedTab).toHaveAttribute('aria-controls', 'banner-management-panel');
+    expect(screen.getByRole('tabpanel')).toHaveAttribute(
+      'aria-labelledby',
+      'banner-management-tab-saved',
+    );
+    parse.mockRestore();
   });
 
   it('opens one stable, accessible inline disclosure at a time', async () => {
@@ -119,5 +130,65 @@ describe('BannerManagementView', () => {
     await fireEvent.click(details[1]);
     await waitFor(() => expect(details[0]).toHaveAttribute('aria-expanded', 'false'));
     expect(details[1]).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('shows the standard API error when the management list fails', async () => {
+    vi.mocked(getManagedBanners).mockRejectedValue(new Error('offline'));
+
+    render(BannerManagementView);
+
+    expect(await screen.findByText('Site banners could not be loaded.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'API Error' })).toBeInTheDocument();
+  });
+
+  it('keeps the authoritative arrival row mounted when its highlight ends', async () => {
+    const saved = { ...records[1], htmlContent: '<p>Authoritative saved content</p>' };
+    vi.mocked(saveBanner).mockResolvedValue(saved);
+    const nativeSetTimeout = window.setTimeout.bind(window);
+    let finishHighlight: (() => void) | undefined;
+    const timeout = vi.spyOn(window, 'setTimeout').mockImplementation((handler, delay, ...args) => {
+      if (delay === 1_800) {
+        finishHighlight = handler as () => void;
+        return 1 as unknown as ReturnType<typeof window.setTimeout>;
+      }
+      return nativeSetTimeout(handler, delay, ...args) as unknown as ReturnType<
+        typeof window.setTimeout
+      >;
+    });
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+    await fireEvent.click(screen.getByRole('button', { name: '+ Create banner' }));
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Draft</p>';
+    await fireEvent.input(editor);
+    await fireEvent.click(screen.getByRole('button', { name: 'Save for later' }));
+
+    expect(await screen.findByText('Authoritative saved content')).toBeInTheDocument();
+    const row = document.querySelector(`[data-banner-row="${saved.uuid}"]`);
+    const details = screen.getByRole('button', { name: 'Details' });
+    details.focus();
+
+    finishHighlight?.();
+    await waitFor(() => expect(row).not.toHaveClass('banner-arrival'));
+
+    expect(document.querySelector(`[data-banner-row="${saved.uuid}"]`)).toBe(row);
+    expect(document.activeElement).toBe(details);
+    timeout.mockRestore();
+  });
+
+  it('uses static tone classes and summarizes selected pages without raw targeting JSON', async () => {
+    vi.mocked(getManagedBanners).mockResolvedValue([
+      { ...base, pageTargets: [{ kind: 'PATH', path: '/explorer' }] },
+    ]);
+    const { container } = render(BannerManagementView);
+
+    const details = await screen.findByRole('button', { name: 'Details' });
+    expect(container.querySelector('.bg-warning-500')).toBeInTheDocument();
+    expect(container.querySelector('[aria-label="Warning tone"]')).not.toBeInTheDocument();
+    await fireEvent.click(details);
+    expect(document.getElementById(`banner-${base.uuid}-details`)).toHaveTextContent(
+      'Pages: 1 selected page',
+    );
+    expect(screen.queryByText(/PATH|explorer/)).not.toBeInTheDocument();
   });
 });

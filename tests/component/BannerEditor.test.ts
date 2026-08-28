@@ -3,6 +3,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
+const navigation = vi.hoisted(() => ({ beforeNavigate: vi.fn(), goto: vi.fn() }));
+
+vi.mock('$app/navigation', () => navigation);
 vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('$lib/services/BannerManagement', () => ({
   publishBanner: vi.fn(),
@@ -40,6 +43,8 @@ const published = {
 
 beforeEach(() => {
   vi.mocked(publishBanner).mockReset();
+  navigation.beforeNavigate.mockReset();
+  navigation.goto.mockReset();
 });
 
 describe('BannerEditor', () => {
@@ -116,6 +121,35 @@ describe('BannerEditor', () => {
     expect(oncancel).not.toHaveBeenCalled();
     await fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
     expect(oncancel).toHaveBeenCalledOnce();
+  });
+
+  it('leaves external unloads to the native prompt without disabling later navigation guards', async () => {
+    let guard: ((navigation: Record<string, unknown>) => void) | undefined;
+    navigation.beforeNavigate.mockImplementation((callback) => {
+      guard = callback;
+    });
+    render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Unsaved content</p>';
+    await fireEvent.input(editor);
+    const cancelExternal = vi.fn();
+
+    guard?.({ to: null, willUnload: true, cancel: cancelExternal });
+
+    expect(cancelExternal).not.toHaveBeenCalled();
+    expect(screen.queryByRole('heading', { name: 'Unsaved Changes' })).not.toBeInTheDocument();
+
+    const cancelInternal = vi.fn();
+    guard?.({
+      to: { url: new URL('http://localhost/help') },
+      willUnload: false,
+      cancel: cancelInternal,
+    });
+
+    expect(cancelInternal).toHaveBeenCalledOnce();
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Unsaved Changes' })).toBeInTheDocument(),
+    );
   });
 
   it('keeps allowed whitespace and blank paragraphs without rebuilding the editor', async () => {
