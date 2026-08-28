@@ -177,6 +177,29 @@ describe('BannerEditor', () => {
     );
   });
 
+  it('discards a pending navigation through the captured destination', async () => {
+    let guard: ((navigation: Record<string, unknown>) => void) | undefined;
+    navigation.beforeNavigate.mockImplementation((callback) => {
+      guard = callback;
+    });
+    render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Unsaved content</p>';
+    await fireEvent.input(editor);
+    const cancel = vi.fn();
+
+    guard?.({
+      to: { url: new URL('http://localhost/help?from=banner#guide') },
+      willUnload: false,
+      cancel,
+    });
+    await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument());
+    await fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
+
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(navigation.goto).toHaveBeenCalledWith('/help?from=banner#guide');
+  });
+
   it('keeps allowed whitespace and blank paragraphs without rebuilding the editor', async () => {
     render(BannerEditor);
     const editor = await screen.findByRole('textbox', { name: 'Banner content' });

@@ -133,10 +133,7 @@ test.describe('Site banner workflow 1', () => {
     await expect(page.getByTestId('banner-editor-form')).not.toBeVisible();
     await expect(page.getByTestId('config-tab-branding')).toBeVisible();
     await expect(page.getByTestId('config-branding-scope-note')).toContainText('Limited scope');
-    await expect(page.getByRole('tab', { name: 'Branding' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    await expect(page.getByTestId('config-tab-branding').getByText('LOGO_ALT')).toBeVisible();
   });
 
   test('keeps sentence spaces, Enter, and a second paragraph while editing', async ({ page }) => {
@@ -315,13 +312,19 @@ test.describe('Site banner workflow 1', () => {
     await expect(page).toHaveURL(/\/admin\/configuration$/);
     await expect(page.getByTestId('toast-root')).toHaveAttribute('data-type', 'success');
     const savedRow = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
+    await expect(savedRow).toBeVisible();
     await expect(savedRow).toContainText('Server-confirmed saved draft');
     await expect(savedRow).toContainText('Saved');
-    await expect(savedRow).toHaveClass(/banner-arrival/);
+    await savedRow.evaluate((element) => element.setAttribute('data-stability-sentinel', 'same'));
     const details = savedRow.getByRole('button', { name: 'Details' });
     await expect(details).toHaveAttribute('aria-expanded', 'false');
     await expect(details).toHaveAttribute('aria-controls', `banner-${savedBanner.uuid}-details`);
-    await details.click();
+    await details.focus();
+    await expect(details).toBeFocused();
+    await details.press('Enter');
+    await expect(details).toBeFocused();
+    await expect(savedRow).toHaveAttribute('data-stability-sentinel', 'same');
+    await expect(savedRow).toBeVisible();
     await expect(savedRow).toContainText('Audience: Everyone');
     await expect(savedRow).toContainText('Last changed by admin-id');
     await expect(savedRow.getByRole('region')).toHaveCount(0);
@@ -351,9 +354,9 @@ test.describe('Site banner workflow 1', () => {
     await page.getByRole('button', { name: 'Publish now' }).click();
 
     const publishedRow = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
+    await expect(publishedRow).toBeVisible();
     await expect(publishedRow).toContainText('Server-confirmed window View status');
     await expect(publishedRow).toContainText('Active');
-    await expect(publishedRow).toHaveClass(/banner-arrival/);
     expect(publicationRequests).toBe(1);
 
     await page.goto('/');

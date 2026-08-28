@@ -102,6 +102,33 @@ describe('BannerManagementView', () => {
     parse.mockRestore();
   });
 
+  it('moves focus and selection through lifecycle tabs from the keyboard', async () => {
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+    const active = screen.getByRole('tab', { name: /Active & scheduled/ });
+    const saved = screen.getByRole('tab', { name: /Saved & disabled/ });
+    const expired = screen.getByRole('tab', { name: /Expired/ });
+
+    active.focus();
+    expect(active).toHaveAttribute('tabindex', '0');
+    expect(saved).toHaveAttribute('tabindex', '-1');
+    await fireEvent.keyDown(active, { key: 'ArrowRight' });
+    expect(saved).toHaveFocus();
+    expect(saved).toHaveAttribute('aria-selected', 'true');
+    expect(saved).toHaveAttribute('tabindex', '0');
+    expect(await screen.findByText('Reusable enrollment notice')).toBeInTheDocument();
+
+    await fireEvent.keyDown(saved, { key: 'End' });
+    expect(expired).toHaveFocus();
+    expect(expired).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByText('Past outage')).toBeInTheDocument();
+
+    await fireEvent.keyDown(expired, { key: 'Home' });
+    expect(active).toHaveFocus();
+    await fireEvent.keyDown(active, { key: 'ArrowLeft' });
+    expect(expired).toHaveFocus();
+  });
+
   it('opens one stable, accessible inline disclosure at a time', async () => {
     vi.mocked(getManagedBanners).mockResolvedValue([
       base,
@@ -161,10 +188,14 @@ describe('BannerManagementView', () => {
     const editor = await screen.findByRole('textbox', { name: 'Banner content' });
     editor.innerHTML = '<p>Draft</p>';
     await fireEvent.input(editor);
-    await fireEvent.click(screen.getByRole('button', { name: 'Save for later' }));
+    const save = screen.getByRole('button', { name: 'Save for later' });
+    await waitFor(() => expect(save).toBeEnabled());
+    await fireEvent.click(save);
 
     expect(await screen.findByText('Authoritative saved content')).toBeInTheDocument();
     const row = document.querySelector(`[data-banner-row="${saved.uuid}"]`);
+    expect(row).toHaveClass('banner-arrival');
+    expect(timeout).toHaveBeenCalledWith(expect.any(Function), 1_800);
     const details = screen.getByRole('button', { name: 'Details' });
     details.focus();
 
@@ -174,6 +205,30 @@ describe('BannerManagementView', () => {
     expect(document.querySelector(`[data-banner-row="${saved.uuid}"]`)).toBe(row);
     expect(document.activeElement).toBe(details);
     timeout.mockRestore();
+  });
+
+  it('names the existing v1 all-pages target without exposing its object shape', async () => {
+    render(BannerManagementView);
+
+    const details = await screen.findByRole('button', { name: 'Details' });
+    await fireEvent.click(details);
+    const panel = document.getElementById(`banner-${base.uuid}-details`);
+    expect(panel).toHaveTextContent('Pages: All pages');
+    expect(panel).not.toHaveTextContent('kind');
+  });
+
+  it('bounds the collapsed excerpt in rendered and accessible text', async () => {
+    const longText = `${'A'.repeat(220)} never-render-this-tail`;
+    vi.mocked(getManagedBanners).mockResolvedValue([
+      { ...base, htmlContent: `<p>${longText}</p>` },
+    ]);
+    const { container } = render(BannerManagementView);
+
+    await screen.findByRole('button', { name: 'Details' });
+    const excerpt = container.querySelector('p.font-bold');
+    expect(excerpt?.textContent?.length).toBeLessThanOrEqual(160);
+    expect(excerpt).not.toHaveTextContent('never-render-this-tail');
+    expect(excerpt).toHaveTextContent(/…$/);
   });
 
   it('uses static tone classes and bounds generic target values without raw JSON', async () => {

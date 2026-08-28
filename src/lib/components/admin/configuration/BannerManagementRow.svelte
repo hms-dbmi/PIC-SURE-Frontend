@@ -33,6 +33,17 @@
 
   function pageTargetSummary() {
     if (banner.pageTargets.length === 0) return 'No pages selected';
+    if (
+      banner.pageTargets.some(
+        (target) =>
+          target !== null &&
+          typeof target === 'object' &&
+          'kind' in target &&
+          target.kind === 'ALL',
+      )
+    ) {
+      return 'All pages';
+    }
 
     const values: string[] = [];
     const visited: object[] = [];

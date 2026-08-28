@@ -11,6 +11,12 @@
   import { bannerPlainText } from '$lib/utilities/BannerHTML';
 
   type LifecycleTab = 'orderable' | 'saved' | 'expired';
+  const lifecycleTabs = [
+    { value: 'orderable' as const, label: 'Active & scheduled' },
+    { value: 'saved' as const, label: 'Saved & disabled' },
+    { value: 'expired' as const, label: 'Expired' },
+  ];
+  const MAX_EXCERPT_LENGTH = 160;
   interface Props {
     ondirtychange?: (dirty: boolean) => void;
     tabchangerequest?: string | null;
@@ -70,7 +76,12 @@
   }
 
   function present(banner: ManagedBanner): ManagementRecord {
-    return { ...banner, excerpt: bannerPlainText(banner.htmlContent) };
+    const plainText = bannerPlainText(banner.htmlContent);
+    const excerpt =
+      plainText.length > MAX_EXCERPT_LENGTH
+        ? `${plainText.slice(0, MAX_EXCERPT_LENGTH - 1).trimEnd()}…`
+        : plainText;
+    return { ...banner, excerpt };
   }
 
   function tabFor(lifecycle: BannerLifecycle): LifecycleTab {
@@ -87,6 +98,26 @@
   function editBanner(banner: ManagedBanner) {
     editingBanner = banner;
     mode = 'edit';
+  }
+
+  function selectLifecycleTab(tab: LifecycleTab) {
+    activeTab = tab;
+    openUuid = null;
+  }
+
+  function handleLifecycleTabKeydown(event: KeyboardEvent, index: number) {
+    let destination: number | undefined;
+    if (event.key === 'ArrowRight') destination = (index + 1) % lifecycleTabs.length;
+    if (event.key === 'ArrowLeft')
+      destination = (index - 1 + lifecycleTabs.length) % lifecycleTabs.length;
+    if (event.key === 'Home') destination = 0;
+    if (event.key === 'End') destination = lifecycleTabs.length - 1;
+    if (destination === undefined) return;
+
+    event.preventDefault();
+    const tab = lifecycleTabs[destination].value;
+    selectLifecycleTab(tab);
+    document.getElementById(`banner-management-tab-${tab}`)?.focus();
   }
 
   async function handleSuccess(banner: ManagedBanner) {
@@ -144,7 +175,7 @@
         role="tablist"
         aria-label="Banner lifecycle states"
       >
-        {#each [{ value: 'orderable' as const, label: 'Active & scheduled', count: counts.orderable }, { value: 'saved' as const, label: 'Saved & disabled', count: counts.saved }, { value: 'expired' as const, label: 'Expired', count: counts.expired }] as tab}
+        {#each lifecycleTabs as tab, index}
           <button
             type="button"
             role="tab"
@@ -154,13 +185,14 @@
               : 'border-transparent text-surface-600'}"
             aria-selected={activeTab === tab.value}
             aria-controls="banner-management-panel"
-            onclick={() => {
-              activeTab = tab.value;
-              openUuid = null;
-            }}
+            tabindex={activeTab === tab.value ? 0 : -1}
+            onclick={() => selectLifecycleTab(tab.value)}
+            onkeydown={(event) => handleLifecycleTabKeydown(event, index)}
           >
             {tab.label}
-            <span class="ml-1 rounded-full bg-surface-200 px-2 py-1 text-xs">{tab.count}</span>
+            <span class="ml-1 rounded-full bg-surface-200 px-2 py-1 text-xs"
+              >{counts[tab.value]}</span
+            >
           </button>
         {/each}
       </div>
