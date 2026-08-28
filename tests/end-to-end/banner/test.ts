@@ -391,6 +391,12 @@ test.describe('Site banner workflow 1', () => {
     const correctedRow = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
     await expect(correctedRow).toContainText('Corrected visitor notice');
     await expect(page.getByText(/version history/i)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /version|history|restore|revert/i })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole('link', { name: /version|history|restore|revert/i })).toHaveCount(
+      0,
+    );
     expect(updateRequests).toBe(1);
     expect(publicationRequests).toBe(1);
 

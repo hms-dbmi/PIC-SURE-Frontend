@@ -130,6 +130,13 @@ describe('BannerEditor', () => {
     ).toBeInTheDocument();
     const editor = await screen.findByRole('textbox', { name: 'Banner content' });
     editor.innerHTML = '<p>Corrected content</p>';
+    expect(screen.queryByText(/version history/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /version|history|restore|revert/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /version|history|restore|revert/i }),
+    ).not.toBeInTheDocument();
     await fireEvent.input(editor);
 
     expect(screen.queryByText(/version history/i)).not.toBeInTheDocument();
