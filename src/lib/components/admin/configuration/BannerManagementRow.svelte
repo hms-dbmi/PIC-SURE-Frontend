@@ -1,7 +1,11 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
   import Modal from '$lib/components/Modal.svelte';
-  import { BANNER_APPEARANCE_DETAILS, type ManagementRecord } from '$lib/models/Banner';
+  import {
+    BANNER_APPEARANCE_DETAILS,
+    BANNER_AUDIENCE_LABELS,
+    type ManagementRecord,
+  } from '$lib/models/Banner';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
 
   interface Props {
@@ -43,11 +47,6 @@
     },
   });
   const noopAttachment = () => {};
-  const audienceLabels = {
-    EVERYONE: 'Everyone',
-    SIGNED_IN: 'Signed-in users',
-    SIGNED_OUT: 'Signed-out visitors',
-  } as const;
   const lifecycleLabels = {
     ACTIVE: 'Active',
     SCHEDULED: 'Scheduled',
@@ -178,7 +177,7 @@
       >
         <div>
           <h3 class="text-sm font-bold uppercase tracking-wide">Visibility</h3>
-          <p><strong>Audience:</strong> {audienceLabels[banner.audience]}</p>
+          <p><strong>Audience:</strong> {BANNER_AUDIENCE_LABELS[banner.audience]}</p>
           <p><strong>Pages:</strong> {pageTargetSummary()}</p>
         </div>
         <div>

@@ -58,6 +58,129 @@ test.describe('Site banner delivery', () => {
   });
 });
 
+// Workflow 3 of the five representative end-to-end workflows. Ticket 08 extends this same test with
+// page targeting rather than adding a sixth workflow.
+test.describe('Site banner workflow 3', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
+
+  const everyone = {
+    ...banner,
+    uuid: '77777777-7777-7777-7777-777777777777',
+    htmlContent: '<p>Open to every visitor</p>',
+    title: 'For everyone',
+    audience: 'EVERYONE',
+    priority: 10,
+    presentationHash: 'server-everyone-hash',
+  };
+  const targeted = {
+    ...banner,
+    uuid: '88888888-8888-8888-8888-888888888888',
+    htmlContent: '<p>Saved query limits are changing</p>',
+    title: 'Release notice',
+    audience: 'EVERYONE',
+    priority: 20,
+    presentationHash: 'server-everyone-targeted-hash',
+  };
+  const managementFields = {
+    status: 'PUBLISHED',
+    lifecycle: 'ACTIVE',
+    startAt: '2026-08-27T12:00:00Z',
+    endAt: null,
+    createdAt: '2026-08-27T12:00:00Z',
+    createdBy: 'admin-id',
+    updatedAt: '2026-08-27T12:00:00Z',
+    updatedBy: 'admin-id',
+    publishedAt: '2026-08-27T12:00:00Z',
+    publishedBy: 'admin-id',
+  };
+  // The server recomputes the hash because audience is material: ticket 09 uses it to make a
+  // dismissed occurrence eligible to reappear.
+  const retargeted = {
+    ...targeted,
+    audience: 'SIGNED_IN',
+    presentationHash: 'server-signed-in-hash',
+  };
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+    for (const path of ['role', 'privilege', 'application', 'connection']) {
+      await page.route(`**/psama/${path}`, (route) => route.fulfill({ json: [] }));
+    }
+  });
+
+  test('retargets a published banner and filters the visitor feed by session', async ({ page }) => {
+    let feed = [everyone, targeted];
+    let managed = [
+      { ...everyone, ...managementFields },
+      { ...targeted, ...managementFields },
+    ];
+    let submitted: Record<string, unknown> | undefined;
+    let credentialedFeedRequests = 0;
+    const servedAudiences: string[][] = [];
+    await page.route('**/picsure/operations/banners/active', (route) => {
+      if (route.request().headers()['authorization']) credentialedFeedRequests += 1;
+      servedAudiences.push(feed.map((record) => record.audience));
+      return route.fulfill({ json: feed });
+    });
+    await page.route('**/picsure/operations/banners**', (route) => {
+      const url = new URL(route.request().url());
+      const method = route.request().method();
+      if (method === 'GET' && url.pathname.endsWith('/banners')) {
+        return route.fulfill({ json: managed });
+      }
+      if (method === 'PUT' && url.pathname.endsWith(`/banners/${targeted.uuid}`)) {
+        submitted = route.request().postDataJSON();
+        feed = [everyone, retargeted];
+        managed = [
+          { ...everyone, ...managementFields },
+          { ...retargeted, ...managementFields },
+        ];
+        return route.fulfill({ json: { ...retargeted, ...managementFields } });
+      }
+      return route.fallback();
+    });
+
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    const row = page.locator(`[data-banner-row="${targeted.uuid}"]`);
+    await row.getByRole('button', { name: 'Details' }).click();
+    await expect(row).toContainText('Audience: Everyone');
+
+    await row.getByRole('button', { name: 'Edit banner' }).click();
+    await expect(page.getByRole('radio', { name: 'Everyone' })).toBeChecked();
+    await page.getByRole('radio', { name: 'Signed-in users' }).check();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+
+    const retargetedRow = page.locator(`[data-banner-row="${targeted.uuid}"]`);
+    await retargetedRow.getByRole('button', { name: 'Details' }).click();
+    await expect(retargetedRow).toContainText('Audience: Signed-in users');
+    expect(submitted).toMatchObject({ audience: 'SIGNED_IN' });
+
+    await page.goto('/');
+    await expect(page.getByRole('region', { name: 'Release notice' })).toContainText(
+      'Saved query limits are changing',
+    );
+    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
+
+    // A signed-out visitor who never enters the authorized shell. The tab-scoped `user` blob
+    // deliberately stays behind: only the session token decides audience.
+    await page.evaluate(() => localStorage.removeItem('token'));
+    await page.goto('/');
+
+    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
+    // The signed-out browser was still served the signed-in record over an uncredentialed
+    // read: audience is presentation, not authorization.
+    expect(servedAudiences.at(-1)).toContain('SIGNED_IN');
+    expect(credentialedFeedRequests).toBe(0);
+
+    await page.locator('#nav-link-help').click();
+    await expect(page).toHaveURL('/help');
+    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
+  });
+});
+
 test.describe('Site banner workflow 1', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
 

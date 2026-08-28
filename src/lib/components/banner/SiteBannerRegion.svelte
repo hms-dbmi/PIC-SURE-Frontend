@@ -1,9 +1,10 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
   import { createLog, log } from '$lib/logger';
-  import type { ActiveBanner } from '$lib/models/Banner';
+  import type { ActiveBanner, BannerAudience } from '$lib/models/Banner';
   import { BANNER_APPEARANCES, BANNER_AUDIENCES, BANNER_ICONS } from '$lib/models/Banner';
   import { Picsure } from '$lib/paths';
+  import { tokenStatus } from '$lib/stores/User';
   import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
 
   const appearances = new Set<unknown>(BANNER_APPEARANCES);
@@ -13,6 +14,15 @@
   type BannerFeedRecord = Omit<ActiveBanner, 'placement'> & { placement: string };
 
   let banners: ActiveBanner[] = $state([]);
+
+  // Public routes do not hydrate the user store, so use token status for audience filtering.
+  const visibleBanners = $derived(banners.filter((banner) => matches(banner.audience)));
+
+  function matches(audience: BannerAudience): boolean {
+    if (audience === 'SIGNED_IN') return $tokenStatus;
+    if (audience === 'SIGNED_OUT') return !$tokenStatus;
+    return true;
+  }
 
   function isBannerFeedRecord(value: unknown): value is BannerFeedRecord {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -70,9 +80,9 @@
   afterNavigate(refreshBanners);
 </script>
 
-{#if banners.length > 0}
+{#if visibleBanners.length > 0}
   <div class="w-full flex-none" data-testid="site-banner-region">
-    {#each banners as banner (banner.uuid)}
+    {#each visibleBanners as banner (banner.uuid)}
       <SiteBanner {banner} />
     {/each}
   </div>

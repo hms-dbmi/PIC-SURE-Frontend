@@ -7,12 +7,19 @@
   import Modal from '$lib/components/Modal.svelte';
   import type {
     BannerAppearance,
+    BannerAudience,
     BannerDraft,
     BannerIcon,
     BannerPresentation,
     ManagedBanner,
   } from '$lib/models/Banner';
-  import { BANNER_APPEARANCES, BANNER_APPEARANCE_DETAILS, BANNER_ICONS } from '$lib/models/Banner';
+  import {
+    BANNER_APPEARANCES,
+    BANNER_APPEARANCE_DETAILS,
+    BANNER_AUDIENCES,
+    BANNER_AUDIENCE_LABELS,
+    BANNER_ICONS,
+  } from '$lib/models/Banner';
   import {
     publishBanner,
     publishSavedBanner,
@@ -57,6 +64,10 @@
     ERROR: 'Error',
   };
   const iconOptions = BANNER_ICONS.map((value) => ({ value, label: iconLabels[value] }));
+  const audienceOptions = BANNER_AUDIENCES.map((value) => ({
+    value,
+    label: BANNER_AUDIENCE_LABELS[value],
+  }));
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const initialStartLocal = untrack(() =>
     banner?.startAt ? formatInstantAsLocalMinute(banner.startAt, timeZone) : '',
@@ -76,6 +87,7 @@
   let appearance: BannerAppearance = $state(untrack(() => banner?.appearance ?? 'PRIMARY'));
   let icon: BannerIcon = $state(untrack(() => banner?.icon ?? 'NONE'));
   let dismissible = $state(untrack(() => banner?.dismissible ?? true));
+  let audience: BannerAudience = $state(untrack(() => banner?.audience ?? 'EVERYONE'));
   let startLocal = $state(untrack(() => initialStartLocal));
   let endLocal = $state(untrack(() => initialEndLocal));
   let startChoice = $state(untrack(() => initialStartChoice));
@@ -129,7 +141,7 @@
     return {
       ...preview,
       title,
-      audience: banner?.audience ?? 'EVERYONE',
+      audience,
       placement: banner?.placement ?? 'SITE_TOP',
       pageTargets: banner?.pageTargets ?? [{ kind: 'ALL' }],
       startAt: resolvedStart,
@@ -517,6 +529,18 @@
         {#if resolvedStart && resolvedEnd && resolvedEnd <= resolvedStart}
           <p class="mt-2 text-sm text-error-700">End must be after start.</p>
         {/if}
+      </fieldset>
+
+      <fieldset>
+        <legend class="font-bold">Audience</legend>
+        <div class="mt-2 flex flex-wrap gap-6">
+          {#each audienceOptions as option}
+            <label class="flex items-center gap-2">
+              <input type="radio" name="audience" value={option.value} bind:group={audience} />
+              {option.label}
+            </label>
+          {/each}
+        </div>
       </fieldset>
 
       <details class="rounded border border-surface-300 p-4">

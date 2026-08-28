@@ -18,8 +18,16 @@ vi.mock('$lib/logger', () => ({
   createLog: vi.fn((...args: unknown[]) => args),
 }));
 
+// Mock only tokenStatus to prove public routes do not depend on hydrated user state.
+vi.mock('$lib/stores/User', async () => {
+  const { writable } = await import('svelte/store');
+  return { tokenStatus: writable(false) };
+});
+
 import SiteBannerRegion from '$lib/components/banner/SiteBannerRegion.svelte';
 import { createLog, log } from '$lib/logger';
+import type { BannerAudience } from '$lib/models/Banner';
+import { tokenStatus } from '$lib/stores/User';
 
 const banner = {
   uuid: '11111111-1111-1111-1111-111111111111',
@@ -49,6 +57,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
   vi.mocked(log).mockClear();
   vi.mocked(createLog).mockClear();
+  tokenStatus.set(false);
 });
 
 describe('SiteBannerRegion', () => {
@@ -252,5 +261,113 @@ describe('SiteBannerRegion', () => {
     await navigation.callback?.();
 
     expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+  });
+});
+
+const audienceCases: [BannerAudience, boolean, boolean][] = [
+  ['EVERYONE', true, true],
+  ['EVERYONE', false, true],
+  ['SIGNED_IN', true, true],
+  ['SIGNED_IN', false, false],
+  ['SIGNED_OUT', true, false],
+  ['SIGNED_OUT', false, true],
+];
+
+describe('SiteBannerRegion audience targeting', () => {
+  it.each(audienceCases)(
+    'renders %s when signed in is %s: %s',
+    async (audience, signedIn, rendered) => {
+      tokenStatus.set(signedIn);
+      fetchMock.mockResolvedValue(
+        new Response(JSON.stringify([{ ...banner, audience }]), { status: 200 }),
+      );
+      render(SiteBannerRegion);
+
+      await navigation.callback?.();
+
+      if (rendered) {
+        expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+      } else {
+        expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+      }
+      expect(log).not.toHaveBeenCalled();
+    },
+  );
+
+  it('keeps the server order of the matching records and drops only the mismatches', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          { ...banner, uuid: '22222222-2222-2222-2222-222222222222', title: 'For everyone' },
+          {
+            ...banner,
+            uuid: '33333333-3333-3333-3333-333333333333',
+            title: 'For signed-in users',
+            audience: 'SIGNED_IN',
+          },
+          {
+            ...banner,
+            uuid: '44444444-4444-4444-4444-444444444444',
+            title: 'For signed-out visitors',
+            audience: 'SIGNED_OUT',
+          },
+        ]),
+        { status: 200 },
+      ),
+    );
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+
+    expect(
+      screen.getAllByTestId('site-banner').map((element) => element.getAttribute('aria-label')),
+    ).toEqual(['For everyone', 'For signed-out visitors']);
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it('keeps filtering the same records after a later navigation', async () => {
+    tokenStatus.set(true);
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify([{ ...banner, audience: 'SIGNED_OUT' }]), { status: 200 }),
+    );
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+
+    await navigation.callback?.();
+
+    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('re-evaluates the rendered records when the session ends without refetching', async () => {
+    tokenStatus.set(true);
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          { ...banner, title: 'For signed-in users', audience: 'SIGNED_IN' },
+          {
+            ...banner,
+            uuid: '55555555-5555-5555-5555-555555555555',
+            title: 'For signed-out visitors',
+            audience: 'SIGNED_OUT',
+          },
+        ]),
+        { status: 200 },
+      ),
+    );
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+    expect(screen.getByRole('region', { name: 'For signed-in users' })).toBeInTheDocument();
+
+    tokenStatus.set(false);
+
+    await waitFor(() =>
+      expect(screen.getByRole('region', { name: 'For signed-out visitors' })).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole('region', { name: 'For signed-in users' })).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledOnce();
   });
 });

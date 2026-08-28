@@ -16,8 +16,15 @@ vi.mock('$lib/services/BannerManagement', () => ({
 }));
 
 import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
+import type { BannerAudience } from '$lib/models/Banner';
 import { publishBanner, updatePublishedBanner } from '$lib/services/BannerManagement';
 import { toaster } from '$lib/toaster';
+
+const audienceCases: [string, BannerAudience][] = [
+  ['Everyone', 'EVERYONE'],
+  ['Signed-in users', 'SIGNED_IN'],
+  ['Signed-out visitors', 'SIGNED_OUT'],
+];
 
 const published = {
   uuid: '99999999-9999-9999-9999-999999999999',
@@ -96,6 +103,9 @@ describe('BannerEditor', () => {
     }
     expect(screen.getByRole('radio', { name: 'Dismissible' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Permanent' })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Everyone' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Signed-in users' })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Signed-out visitors' })).not.toBeChecked();
     expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('');
     expect(screen.getByRole('combobox', { name: 'Icon' })).toHaveValue('NONE');
     expect(screen.getByRole('region', { name: 'Site announcement' })).toHaveClass(
@@ -423,6 +433,50 @@ describe('BannerEditor', () => {
     expect(updatePublishedBanner).toHaveBeenCalledWith(
       expired.uuid,
       expect.objectContaining({ startAt: expired.startAt, endAt: expired.endAt }),
+    );
+  });
+
+  it.each(audienceCases)('submits %s as %s', async (label, audience) => {
+    vi.mocked(publishBanner).mockResolvedValue({ ...published, audience });
+    render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Draft content</p>';
+    await fireEvent.input(editor);
+    await fireEvent.click(screen.getByRole('radio', { name: label }));
+
+    expect(screen.getByRole('radio', { name: label })).toBeChecked();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Publish now' })).toBeEnabled());
+    await fireEvent.click(screen.getByRole('button', { name: 'Publish now' }));
+
+    await waitFor(() => expect(publishBanner).toHaveBeenCalledOnce());
+    expect(publishBanner).toHaveBeenCalledWith(expect.objectContaining({ audience }));
+  });
+
+  it.each(audienceCases)(
+    'reopens a saved %s banner on its stored audience',
+    async (label, audience) => {
+      render(BannerEditor, { props: { banner: { ...published, audience } } });
+
+      expect(screen.getByRole('radio', { name: label })).toBeChecked();
+    },
+  );
+
+  it('treats an audience change alone as a material edit of a published banner', async () => {
+    const retargeted = { ...published, audience: 'SIGNED_IN' as const };
+    vi.mocked(updatePublishedBanner).mockResolvedValue(retargeted);
+    const onsuccess = vi.fn();
+    render(BannerEditor, { props: { banner: published, onsuccess } });
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+
+    await fireEvent.click(screen.getByRole('radio', { name: 'Signed-in users' }));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled());
+    await fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(onsuccess).toHaveBeenCalledWith(retargeted));
+    expect(updatePublishedBanner).toHaveBeenCalledWith(
+      published.uuid,
+      expect.objectContaining({ audience: 'SIGNED_IN' }),
     );
   });
 

@@ -28,6 +28,12 @@ export type BannerIcon = (typeof BANNER_ICONS)[number];
 export const BANNER_AUDIENCES = ['EVERYONE', 'SIGNED_IN', 'SIGNED_OUT'] as const;
 export type BannerAudience = (typeof BANNER_AUDIENCES)[number];
 
+export const BANNER_AUDIENCE_LABELS: Record<BannerAudience, string> = {
+  EVERYONE: 'Everyone',
+  SIGNED_IN: 'Signed-in users',
+  SIGNED_OUT: 'Signed-out visitors',
+};
+
 export const BANNER_PLACEMENTS = ['SITE_TOP'] as const;
 export type BannerPlacement = (typeof BANNER_PLACEMENTS)[number];
 
