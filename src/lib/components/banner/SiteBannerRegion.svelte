@@ -6,6 +6,7 @@
   import { Picsure } from '$lib/paths';
   import { hasValidToken } from '$lib/stores/User';
   import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
+  import { isBannerPageTargets, matchesBannerPageTargets } from '$lib/utilities/BannerPageTargets';
 
   const appearances = new Set<unknown>(BANNER_APPEARANCES);
   const icons = new Set<unknown>(BANNER_ICONS);
@@ -14,11 +15,17 @@
   type BannerFeedRecord = Omit<ActiveBanner, 'placement'> & { placement: string };
 
   let banners: ActiveBanner[] = $state([]);
+  let pathname = $state('/');
 
   // Public routes do not hydrate the user store, so use token validity for audience filtering.
-  const visibleBanners = $derived(banners.filter((banner) => matches(banner.audience)));
+  const visibleBanners = $derived(
+    banners.filter(
+      (banner) =>
+        matchesAudience(banner.audience) && matchesBannerPageTargets(banner.pageTargets, pathname),
+    ),
+  );
 
-  function matches(audience: BannerAudience): boolean {
+  function matchesAudience(audience: BannerAudience): boolean {
     if (audience === 'SIGNED_IN') return $hasValidToken;
     if (audience === 'SIGNED_OUT') return !$hasValidToken;
     return true;
@@ -37,14 +44,15 @@
       typeof banner.dismissible === 'boolean' &&
       audiences.has(banner.audience) &&
       typeof banner.placement === 'string' &&
-      Array.isArray(banner.pageTargets) &&
+      isBannerPageTargets(banner.pageTargets) &&
       typeof banner.priority === 'number' &&
       Number.isFinite(banner.priority) &&
       typeof banner.presentationHash === 'string'
     );
   }
 
-  async function refreshBanners(): Promise<void> {
+  async function refreshBanners(currentPathname: string): Promise<void> {
+    pathname = currentPathname;
     try {
       const response = await fetch(`/${Picsure.Banners.Active}`, {
         cache: 'no-store',
@@ -77,7 +85,9 @@
     }
   }
 
-  afterNavigate(refreshBanners);
+  afterNavigate((navigation) =>
+    refreshBanners(navigation?.to?.url.pathname ?? window.location.pathname),
+  );
 </script>
 
 {#if visibleBanners.length > 0}

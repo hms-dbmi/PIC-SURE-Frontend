@@ -10,6 +10,7 @@
     BannerAudience,
     BannerDraft,
     BannerIcon,
+    BannerPageTarget,
     BannerPresentation,
     ManagedBanner,
   } from '$lib/models/Banner';
@@ -34,6 +35,9 @@
     resolveLocalMinute,
     type LocalMinuteResolution,
   } from '$lib/utilities/BannerSchedule';
+  import { validateBannerPageTarget } from '$lib/utilities/BannerPageTargets';
+
+  type TargetedPage = Exclude<BannerPageTarget, { kind: 'ALL' }>;
 
   interface Props {
     banner?: ManagedBanner | null;
@@ -81,6 +85,7 @@
   const initialEndChoice = untrack(() =>
     banner?.endAt ? new Date(banner.endAt).toISOString() : '',
   );
+  const initialPageTargets = untrack(() => banner?.pageTargets ?? [{ kind: 'ALL' as const }]);
 
   let htmlContent = $state(untrack(() => banner?.htmlContent ?? ''));
   let title = $state(untrack(() => banner?.title ?? ''));
@@ -88,6 +93,12 @@
   let icon: BannerIcon = $state(untrack(() => banner?.icon ?? 'NONE'));
   let dismissible = $state(untrack(() => banner?.dismissible ?? true));
   let audience: BannerAudience = $state(untrack(() => banner?.audience ?? 'EVERYONE'));
+  let allPages = $state(initialPageTargets.some((target) => target.kind === 'ALL'));
+  let pageTargets: TargetedPage[] = $state(
+    initialPageTargets
+      .filter((target): target is TargetedPage => target.kind !== 'ALL')
+      .map((target) => ({ ...target })),
+  );
   let startLocal = $state(untrack(() => initialStartLocal));
   let endLocal = $state(untrack(() => initialEndLocal));
   let startChoice = $state(untrack(() => initialStartChoice));
@@ -129,6 +140,10 @@
       (endLocal !== '' && resolvedEnd === null) ||
       (resolvedStart !== null && resolvedEnd !== null && resolvedEnd <= resolvedStart),
   );
+  const pageTargetErrors = $derived(pageTargets.map(validateBannerPageTarget));
+  const pageTargetsInvalid = $derived(
+    !allPages && (pageTargets.length === 0 || pageTargetErrors.some((error) => error !== null)),
+  );
   const preview: BannerPresentation = $derived({
     htmlContent,
     title: title.trim() || null,
@@ -143,7 +158,7 @@
       title,
       audience,
       placement: banner?.placement ?? 'SITE_TOP',
-      pageTargets: banner?.pageTargets ?? [{ kind: 'ALL' }],
+      pageTargets: allPages ? [{ kind: 'ALL' }] : pageTargets.map((target) => ({ ...target })),
       startAt: resolvedStart,
       endAt: resolvedEnd,
     };
@@ -169,6 +184,20 @@
 
   function utcText(instant: string) {
     return `Resolved UTC: ${instant.slice(0, 16).replace('T', ' ')} UTC`;
+  }
+
+  function addPageTarget() {
+    pageTargets = [...pageTargets, { kind: 'EXACT', path: '/' }];
+  }
+
+  function removePageTarget(index: number) {
+    pageTargets = pageTargets.filter((_, targetIndex) => targetIndex !== index);
+  }
+
+  function updatePageTarget(index: number, target: TargetedPage) {
+    pageTargets = pageTargets.map((current, targetIndex) =>
+      targetIndex === index ? target : current,
+    );
   }
 
   function snapshot() {
@@ -559,6 +588,89 @@
             </select>
           </label>
         </div>
+        <fieldset class="mt-5 border-t border-surface-300 pt-4">
+          <legend class="font-bold">Pages</legend>
+          <p class="mt-1 text-sm text-surface-600">
+            Match application pathnames. Query strings and fragments are ignored.
+          </p>
+          <div class="mt-3 flex flex-wrap gap-6">
+            <label class="flex items-center gap-2">
+              <input type="radio" name="page-target-mode" value={true} bind:group={allPages} />
+              All pages
+            </label>
+            <label class="flex items-center gap-2">
+              <input type="radio" name="page-target-mode" value={false} bind:group={allPages} />
+              Specific pages
+            </label>
+          </div>
+
+          {#if !allPages}
+            <div class="mt-4 grid gap-4">
+              {#each pageTargets as target, index}
+                <div
+                  class="grid gap-2 rounded border border-surface-300 p-3 sm:grid-cols-[12rem_1fr_auto]"
+                >
+                  <label class="grid content-start gap-1">
+                    <span class="font-bold">Target {index + 1} type</span>
+                    <select
+                      class="select"
+                      value={target.kind}
+                      onchange={(event) =>
+                        updatePageTarget(index, {
+                          kind: event.currentTarget.value as TargetedPage['kind'],
+                          path: target.path,
+                        })}
+                    >
+                      <option value="EXACT">Exact page</option>
+                      <option value="SUBTREE">Page and subtree</option>
+                      <option value="PARAMETERIZED">Parameterized route</option>
+                    </select>
+                  </label>
+                  <div class="grid content-start gap-1">
+                    <label class="font-bold" for={`banner-page-target-${index}-path`}>
+                      Target {index + 1} path
+                    </label>
+                    <input
+                      id={`banner-page-target-${index}-path`}
+                      class="input"
+                      type="text"
+                      placeholder="/help"
+                      value={target.path}
+                      aria-describedby={pageTargetErrors[index]
+                        ? `banner-page-target-${index}-error`
+                        : undefined}
+                      oninput={(event) =>
+                        updatePageTarget(index, { ...target, path: event.currentTarget.value })}
+                    />
+                    {#if pageTargetErrors[index]}
+                      <span id={`banner-page-target-${index}-error`} class="text-sm text-error-700"
+                        >{pageTargetErrors[index]}</span
+                      >
+                    {/if}
+                  </div>
+                  <button
+                    type="button"
+                    class="btn preset-tonal-error self-start sm:mt-7"
+                    aria-label={`Remove target ${index + 1}`}
+                    onclick={() => removePageTarget(index)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              {/each}
+              {#if pageTargets.length === 0}
+                <p class="text-sm text-error-700">Add at least one page target.</p>
+              {/if}
+              <button
+                type="button"
+                class="btn preset-tonal-primary justify-self-start"
+                onclick={addPageTarget}
+              >
+                Add page target
+              </button>
+            </div>
+          {/if}
+        </fieldset>
       </details>
     </div>
 
@@ -574,7 +686,8 @@
             !dirty ||
             !hasContent ||
             sanitizedLength > 5_000 ||
-            scheduleInvalid}
+            scheduleInvalid ||
+            pageTargetsInvalid}
           onclick={saveForLater}
         >
           {working === 'save' ? 'Saving...' : banner ? 'Save changes' : 'Save for later'}
@@ -587,7 +700,8 @@
           (banner?.status === 'PUBLISHED' && !dirty) ||
           !hasContent ||
           sanitizedLength > 5_000 ||
-          scheduleInvalid}
+          scheduleInvalid ||
+          pageTargetsInvalid}
       >
         {working === 'publish'
           ? banner?.status === 'PUBLISHED'

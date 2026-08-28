@@ -218,6 +218,39 @@ describe('publishBanner', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
+  it('normalizes page targets before calling the API', async () => {
+    vi.mocked(api.post).mockResolvedValue(published);
+
+    await publishBanner({
+      ...draft,
+      pageTargets: [
+        { kind: 'SUBTREE', path: '/admin/' },
+        { kind: 'EXACT', path: ' /help/ ' },
+        { kind: 'EXACT', path: '/help' },
+      ],
+    });
+
+    expect(api.post).toHaveBeenCalledWith(
+      'picsure/operations/banners',
+      expect.objectContaining({
+        pageTargets: [
+          { kind: 'EXACT', path: '/help' },
+          { kind: 'SUBTREE', path: '/admin' },
+        ],
+      }),
+    );
+  });
+
+  it('rejects unsupported page parameter syntax before calling the API', async () => {
+    await expect(
+      publishBanner({
+        ...draft,
+        pageTargets: [{ kind: 'PARAMETERIZED', path: '/studies/[study=uuid]' }],
+      }),
+    ).rejects.toThrow('Only plain [name] parameter segments are supported.');
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
   it.each(['<p></p>', '<p> \n</p>', '<p>&nbsp;</p>'])(
     'rejects semantically blank banner content before calling the API: %s',
     async (htmlContent) => {

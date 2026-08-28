@@ -37,6 +37,12 @@ export const BANNER_AUDIENCE_LABELS: Record<BannerAudience, string> = {
 export const BANNER_PLACEMENTS = ['SITE_TOP'] as const;
 export type BannerPlacement = (typeof BANNER_PLACEMENTS)[number];
 
+export const BANNER_PAGE_TARGET_KINDS = ['ALL', 'EXACT', 'PARAMETERIZED', 'SUBTREE'] as const;
+export type BannerPageTargetKind = (typeof BANNER_PAGE_TARGET_KINDS)[number];
+export type BannerPageTarget =
+  | { kind: 'ALL' }
+  | { kind: Exclude<BannerPageTargetKind, 'ALL'>; path: string };
+
 export interface BannerPresentation {
   htmlContent: string;
   title: string | null;
@@ -49,7 +55,7 @@ export interface ActiveBanner extends BannerPresentation {
   uuid: string;
   audience: BannerAudience;
   placement: BannerPlacement;
-  pageTargets: unknown[];
+  pageTargets: BannerPageTarget[];
   priority: number;
   presentationHash: string;
 }
@@ -58,7 +64,7 @@ export interface BannerDraft extends BannerPresentation {
   title: string;
   audience: BannerAudience;
   placement: BannerPlacement;
-  pageTargets: unknown[];
+  pageTargets: BannerPageTarget[];
   startAt: string | null;
   endAt: string | null;
 }
@@ -72,7 +78,7 @@ export interface ManagedBanner extends BannerPresentation {
   lifecycle: BannerLifecycle;
   audience: BannerAudience;
   placement: BannerPlacement;
-  pageTargets: unknown[];
+  pageTargets: BannerPageTarget[];
   startAt: string | null;
   endAt: string | null;
   priority: number | null;

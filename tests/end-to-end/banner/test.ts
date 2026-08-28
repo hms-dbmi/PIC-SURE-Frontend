@@ -178,6 +178,7 @@ test.describe('Site banner workflow 3', () => {
   const retargeted = {
     ...targeted,
     audience: 'SIGNED_IN',
+    pageTargets: [{ kind: 'EXACT', path: '/help' }],
     presentationHash: 'server-signed-in-hash',
   };
 
@@ -229,14 +230,26 @@ test.describe('Site banner workflow 3', () => {
     await row.getByRole('button', { name: 'Edit banner' }).click();
     await expect(page.getByRole('radio', { name: 'Everyone' })).toBeChecked();
     await page.getByRole('radio', { name: 'Signed-in users' }).check();
+    await page.getByText('Advanced options', { exact: true }).click();
+    await page.getByRole('radio', { name: 'Specific pages' }).check();
+    await page.getByRole('button', { name: 'Add page target' }).click();
+    await page.getByRole('textbox', { name: 'Target 1 path' }).fill('/help');
     await page.getByRole('button', { name: 'Save changes' }).click();
 
     const retargetedRow = page.locator(`[data-banner-row="${targeted.uuid}"]`);
     await retargetedRow.getByRole('button', { name: 'Details' }).click();
     await expect(retargetedRow).toContainText('Audience: Signed-in users');
-    expect(submitted).toMatchObject({ audience: 'SIGNED_IN' });
+    expect(submitted).toMatchObject({
+      audience: 'SIGNED_IN',
+      pageTargets: [{ kind: 'EXACT', path: '/help' }],
+    });
 
     await page.goto('/');
+    await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
+
+    await page.locator('#nav-link-help').click();
+    await expect(page).toHaveURL('/help');
     await expect(page.getByRole('region', { name: 'Release notice' })).toContainText(
       'Saved query limits are changing',
     );
@@ -245,7 +258,7 @@ test.describe('Site banner workflow 3', () => {
     // A signed-out visitor who never enters the authorized shell. The tab-scoped `user` blob
     // deliberately stays behind: only the session token decides audience.
     await page.evaluate(() => localStorage.removeItem('token'));
-    await page.goto('/');
+    await page.goto('/help');
 
     await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
@@ -254,8 +267,8 @@ test.describe('Site banner workflow 3', () => {
     expect(servedAudiences.at(-1)).toContain('SIGNED_IN');
     expect(credentialedFeedRequests).toBe(0);
 
-    await page.locator('#nav-link-help').click();
-    await expect(page).toHaveURL('/help');
+    await page.goto('/');
+    await expect(page).toHaveURL('/');
     await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
   });

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/svelte';
 
 const navigation = vi.hoisted(() => ({
-  callback: undefined as (() => Promise<void>) | undefined,
+  callback: undefined as ((navigation?: { to?: { url: URL } | null }) => Promise<void>) | undefined,
 }));
 const authentication = vi.hoisted(() => ({
   setHasValidToken: undefined as unknown as (value: boolean) => void,
@@ -12,7 +12,7 @@ const authentication = vi.hoisted(() => ({
 }));
 
 vi.mock('$app/navigation', () => ({
-  afterNavigate: (callback: () => Promise<void>) => {
+  afterNavigate: (callback: (navigation?: { to?: { url: URL } | null }) => Promise<void>) => {
     navigation.callback = callback;
   },
 }));
@@ -179,6 +179,7 @@ describe('SiteBannerRegion', () => {
     ['missing uuid', without('uuid')],
     ['missing html', without('htmlContent')],
     ['missing placement', without('placement')],
+    ['malformed page targets', { ...banner, pageTargets: [{ kind: 'EXACT' }] }],
     ['nonnumeric priority', { ...banner, priority: 'first' }],
   ])(
     'skips %s and clears the region when no valid record remains',
@@ -332,6 +333,67 @@ describe('SiteBannerRegion audience targeting', () => {
       screen.getAllByTestId('site-banner').map((element) => element.getAttribute('aria-label')),
     ).toEqual(['For everyone', 'For signed-out visitors']);
     expect(log).not.toHaveBeenCalled();
+  });
+
+  it('composes page and audience matching without changing server order', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          {
+            ...banner,
+            uuid: '22222222-2222-2222-2222-222222222222',
+            title: 'First matching page',
+            pageTargets: [{ kind: 'SUBTREE', path: '/admin' }],
+          },
+          {
+            ...banner,
+            uuid: '33333333-3333-3333-3333-333333333333',
+            title: 'Wrong audience',
+            audience: 'SIGNED_IN',
+            pageTargets: [{ kind: 'PARAMETERIZED', path: '/admin/[section]' }],
+          },
+          {
+            ...banner,
+            uuid: '44444444-4444-4444-4444-444444444444',
+            title: 'Wrong page',
+            audience: 'SIGNED_OUT',
+            pageTargets: [{ kind: 'EXACT', path: '/help' }],
+          },
+          {
+            ...banner,
+            uuid: '55555555-5555-5555-5555-555555555555',
+            title: 'Second matching page',
+            audience: 'SIGNED_OUT',
+            pageTargets: [{ kind: 'PARAMETERIZED', path: '/admin/[section]' }],
+          },
+        ]),
+        { status: 200 },
+      ),
+    );
+    render(SiteBannerRegion);
+
+    await navigation.callback?.({ to: { url: new URL('https://picsure.example/admin/users') } });
+
+    expect(
+      screen.getAllByTestId('site-banner').map((element) => element.getAttribute('aria-label')),
+    ).toEqual(['First matching page', 'Second matching page']);
+  });
+
+  it('uses the new pathname on each SvelteKit navigation', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify([{ ...banner, pageTargets: [{ kind: 'EXACT', path: '/help' }] }]),
+        { status: 200 },
+      ),
+    );
+    render(SiteBannerRegion);
+
+    await navigation.callback?.({ to: { url: new URL('https://picsure.example/help?topic=one') } });
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+
+    await navigation.callback?.({ to: { url: new URL('https://picsure.example/status#notice') } });
+    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('keeps filtering the same records after a later navigation', async () => {

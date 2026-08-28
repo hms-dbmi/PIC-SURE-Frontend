@@ -16,7 +16,7 @@ vi.mock('$lib/services/BannerManagement', () => ({
 }));
 
 import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
-import type { BannerAudience } from '$lib/models/Banner';
+import type { BannerAudience, ManagedBanner } from '$lib/models/Banner';
 import { publishBanner, updatePublishedBanner } from '$lib/services/BannerManagement';
 import { toaster } from '$lib/toaster';
 
@@ -26,7 +26,7 @@ const audienceCases: [string, BannerAudience][] = [
   ['Signed-out visitors', 'SIGNED_OUT'],
 ];
 
-const published = {
+const published: ManagedBanner = {
   uuid: '99999999-9999-9999-9999-999999999999',
   htmlContent: '<p>Published content</p>',
   title: 'Published title',
@@ -106,6 +106,8 @@ describe('BannerEditor', () => {
     expect(screen.getByRole('radio', { name: 'Everyone' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Signed-in users' })).not.toBeChecked();
     expect(screen.getByRole('radio', { name: 'Signed-out visitors' })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: 'All pages' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Specific pages' })).not.toBeChecked();
     expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('');
     expect(screen.getByRole('combobox', { name: 'Icon' })).toHaveValue('NONE');
     expect(screen.getByRole('region', { name: 'Site announcement' })).toHaveClass(
@@ -480,6 +482,92 @@ describe('BannerEditor', () => {
       published.uuid,
       expect.objectContaining({ audience: 'SIGNED_IN' }),
     );
+  });
+
+  it('submits multiple exact, subtree, and parameterized targets without a route allowlist', async () => {
+    const targeted = {
+      ...published,
+      pageTargets: [
+        { kind: 'EXACT' as const, path: '/removed-deployment-route' },
+        { kind: 'SUBTREE' as const, path: '/admin' },
+        { kind: 'PARAMETERIZED' as const, path: '/studies/[study]' },
+      ],
+    };
+    vi.mocked(publishBanner).mockResolvedValue(targeted);
+    render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Targeted content</p>';
+    await fireEvent.input(editor);
+    await fireEvent.click(screen.getByRole('radio', { name: 'Specific pages' }));
+
+    for (let index = 0; index < 3; index++) {
+      await fireEvent.click(screen.getByRole('button', { name: 'Add page target' }));
+    }
+    await fireEvent.change(screen.getByRole('combobox', { name: 'Target 1 type' }), {
+      target: { value: 'EXACT' },
+    });
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Target 1 path' }), {
+      target: { value: '/removed-deployment-route' },
+    });
+    await fireEvent.change(screen.getByRole('combobox', { name: 'Target 2 type' }), {
+      target: { value: 'SUBTREE' },
+    });
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Target 2 path' }), {
+      target: { value: '/admin' },
+    });
+    await fireEvent.change(screen.getByRole('combobox', { name: 'Target 3 type' }), {
+      target: { value: 'PARAMETERIZED' },
+    });
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Target 3 path' }), {
+      target: { value: '/studies/[study]' },
+    });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Publish now' }));
+
+    await waitFor(() => expect(publishBanner).toHaveBeenCalledOnce());
+    expect(publishBanner).toHaveBeenCalledWith(
+      expect.objectContaining({ pageTargets: targeted.pageTargets }),
+    );
+  });
+
+  it('validates unsupported parameter syntax and keeps the edit dirty', async () => {
+    const ondirtychange = vi.fn();
+    render(BannerEditor, { props: { banner: published, ondirtychange } });
+    await fireEvent.click(screen.getByRole('radio', { name: 'Specific pages' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Add page target' }));
+    await fireEvent.change(screen.getByRole('combobox', { name: 'Target 1 type' }), {
+      target: { value: 'PARAMETERIZED' },
+    });
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Target 1 path' }), {
+      target: { value: '/studies/[...rest]' },
+    });
+
+    expect(
+      screen.getByText('Only plain [name] parameter segments are supported.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+    await waitFor(() => expect(ondirtychange).toHaveBeenLastCalledWith(true));
+  });
+
+  it('reopens targeted pages and removes individual entries', async () => {
+    const targeted = {
+      ...published,
+      pageTargets: [
+        { kind: 'EXACT' as const, path: '/help' },
+        { kind: 'SUBTREE' as const, path: '/admin' },
+      ],
+    };
+    render(BannerEditor, { props: { banner: targeted } });
+
+    expect(screen.getByRole('radio', { name: 'Specific pages' })).toBeChecked();
+    expect(screen.getByRole('textbox', { name: 'Target 1 path' })).toHaveValue('/help');
+    expect(screen.getByRole('textbox', { name: 'Target 2 path' })).toHaveValue('/admin');
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Remove target 1' }));
+
+    expect(screen.getByRole('textbox', { name: 'Target 1 path' })).toHaveValue('/admin');
+    expect(screen.queryByRole('textbox', { name: 'Target 2 path' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled();
   });
 
   it('asks before discarding a dirty editor through its cancel action', async () => {

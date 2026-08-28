@@ -857,17 +857,14 @@ describe('BannerManagementView', () => {
     expect(Array.from(excerpt?.textContent ?? '')).toHaveLength(160);
   });
 
-  it('uses static tone classes and bounds generic target values without raw JSON', async () => {
+  it('uses static tone classes and summarizes typed page targets', async () => {
     vi.mocked(getManagedBanners).mockResolvedValue([
       {
         ...base,
         pageTargets: [
-          {
-            arbitrary: '/explorer',
-            nested: { enabled: true, priority: 2 },
-            another: '/help',
-            overflow: '/not-shown',
-          },
+          { kind: 'EXACT', path: '/explorer' },
+          { kind: 'SUBTREE', path: '/help' },
+          { kind: 'PARAMETERIZED', path: '/studies/[study]' },
         ],
       },
     ]);
@@ -878,10 +875,32 @@ describe('BannerManagementView', () => {
     expect(container.querySelector('[aria-label="Warning tone"]')).not.toBeInTheDocument();
     await fireEvent.click(details);
     expect(document.getElementById(`banner-${base.uuid}-details`)).toHaveTextContent(
-      'Pages: /explorer · true · 2 · /help · + more',
+      'Pages: Exact: /explorer · Subtree: /help · Parameterized: /studies/[study]',
     );
-    expect(document.getElementById(`banner-${base.uuid}-details`)).not.toHaveTextContent(
-      /arbitrary|nested|enabled|priority|another|overflow|"|\{|\}|not-shown/,
-    );
+  });
+
+  it('bounds the typed page-target summary without limiting stored targets', async () => {
+    const longPath = `/${'segment'.repeat(12)}-hidden-tail`;
+    vi.mocked(getManagedBanners).mockResolvedValue([
+      {
+        ...base,
+        pageTargets: [
+          { kind: 'EXACT', path: longPath },
+          { kind: 'EXACT', path: '/second' },
+          { kind: 'SUBTREE', path: '/third' },
+          { kind: 'PARAMETERIZED', path: '/fourth/[id]' },
+          { kind: 'EXACT', path: '/fifth-hidden' },
+        ],
+      },
+    ]);
+    render(BannerManagementView);
+
+    const details = await screen.findByRole('button', { name: 'Details' });
+    await fireEvent.click(details);
+    const panel = document.getElementById(`banner-${base.uuid}-details`);
+    expect(panel).toHaveTextContent('Pages: Exact: /segment');
+    expect(panel).toHaveTextContent('· + more');
+    expect(panel).not.toHaveTextContent('hidden-tail');
+    expect(panel).not.toHaveTextContent('/fifth-hidden');
   });
 });

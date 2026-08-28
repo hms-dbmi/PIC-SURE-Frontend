@@ -2,6 +2,7 @@ import * as api from '$lib/api';
 import type { ArchivedBanner, BannerDraft, ManagedBanner } from '$lib/models/Banner';
 import { Picsure } from '$lib/paths';
 import { hasBannerContent, sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
+import { normalizeBannerPageTargets } from '$lib/utilities/BannerPageTargets';
 
 export async function publishBanner(draft: BannerDraft): Promise<ManagedBanner> {
   return api.post(Picsure.Banners.Manage, authorablePayload(draft));
@@ -60,5 +61,6 @@ function authorablePayload(
     ...draft,
     htmlContent,
     title: draft.title.trim() || null,
+    pageTargets: normalizeBannerPageTargets(draft.pageTargets),
   };
 }

@@ -80,53 +80,22 @@
   }
 
   function pageTargetSummary() {
-    if (banner.pageTargets.length === 0) return 'No pages selected';
-    if (
-      banner.pageTargets.some(
-        (target) =>
-          target !== null &&
-          typeof target === 'object' &&
-          'kind' in target &&
-          target.kind === 'ALL',
-      )
-    ) {
-      return 'All pages';
-    }
-
-    const values: string[] = [];
-    const visited: object[] = [];
-    let inspectedNodes = 0;
-    let omitted = false;
-
-    function add(value: string) {
-      if (values.length === 4) {
-        omitted = true;
-        return;
-      }
-      const trimmed = value.trim();
-      if (!trimmed) return;
-      values.push(trimmed.length > 48 ? `${trimmed.slice(0, 47)}…` : trimmed);
-    }
-
-    function visit(value: unknown, depth: number) {
-      if (typeof value === 'string') return add(value);
-      if (typeof value === 'number' || typeof value === 'boolean') return add(String(value));
-      if (value === null || typeof value !== 'object') return;
-      if (depth === 4 || inspectedNodes === 24 || visited.includes(value)) {
-        omitted = true;
-        return;
-      }
-
-      inspectedNodes += 1;
-      visited.push(value);
-      for (const child of Array.isArray(value) ? value : Object.values(value)) {
-        visit(child, depth + 1);
-      }
-    }
-
-    visit(banner.pageTargets, 0);
-    if (values.length === 0) return 'Selected page values unavailable';
-    return `${values.join(' · ')}${omitted ? ' · + more' : ''}`;
+    if (banner.pageTargets[0]?.kind === 'ALL') return 'All pages';
+    const values = banner.pageTargets
+      .slice(0, 4)
+      .map((target) => {
+        if (target.kind === 'ALL') return 'All pages';
+        const label =
+          target.kind === 'EXACT'
+            ? 'Exact'
+            : target.kind === 'SUBTREE'
+              ? 'Subtree'
+              : 'Parameterized';
+        const path = target.path.length > 48 ? `${target.path.slice(0, 47)}…` : target.path;
+        return `${label}: ${path}`;
+      })
+      .join(' · ');
+    return `${values}${banner.pageTargets.length > 4 ? ' · + more' : ''}`;
   }
 </script>
 
