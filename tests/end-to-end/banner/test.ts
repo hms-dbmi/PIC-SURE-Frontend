@@ -476,15 +476,19 @@ test.describe('Site banner workflow 2', () => {
   test('moves a scheduled banner through Scheduled, Active, and Expired without waiting', async ({
     page,
   }) => {
-    const startAt = '2026-08-28T13:01:00.000Z';
-    const endAt = '2026-08-28T13:02:00.000Z';
+    const initialStartAt = '2026-08-28T13:01:00.000Z';
+    const initialEndAt = '2026-08-28T13:02:00.000Z';
+    const rescheduledStartAt = '2026-08-28T13:03:00.000Z';
+    const rescheduledEndAt = '2026-08-28T13:04:00.000Z';
+    let startAt = initialStartAt;
+    let endAt: string | null = initialEndAt;
     let serverNow = '2026-08-28T13:00:00.000Z';
     let scheduled: Record<string, unknown> | null = null;
     await page.clock.install({ time: new Date(serverNow) });
 
     const lifecycle = () => {
       if (serverNow < startAt) return 'SCHEDULED';
-      if (serverNow >= endAt) return 'EXPIRED';
+      if (endAt && serverNow >= endAt) return 'EXPIRED';
       return 'ACTIVE';
     };
     const authoritative = () => (scheduled ? { ...scheduled, lifecycle: lifecycle() } : null);
@@ -493,14 +497,15 @@ test.describe('Site banner workflow 2', () => {
       const banner = authoritative();
       return route.fulfill({ json: banner && lifecycle() === 'ACTIVE' ? [banner] : [] });
     });
-    await page.route('**/picsure/operations/banners', async (route) => {
-      if (route.request().method() === 'GET') {
+    await page.route('**/picsure/operations/banners**', async (route) => {
+      const pathname = new URL(route.request().url()).pathname;
+      if (route.request().method() === 'GET' && pathname.endsWith('/banners')) {
         const banner = authoritative();
         return route.fulfill({ json: banner ? [banner] : [] });
       }
-      if (route.request().method() === 'POST') {
+      if (route.request().method() === 'POST' && pathname.endsWith('/banners')) {
         const submitted = route.request().postDataJSON();
-        expect(submitted).toMatchObject({ startAt, endAt });
+        expect(submitted).toMatchObject({ startAt: initialStartAt, endAt: initialEndAt });
         scheduled = {
           ...banner,
           ...submitted,
@@ -519,6 +524,27 @@ test.describe('Site banner workflow 2', () => {
           publishedBy: 'admin-id',
         };
         return route.fulfill({ status: 201, json: scheduled });
+      }
+      if (
+        route.request().method() === 'PUT' &&
+        pathname.endsWith('/banners/88888888-8888-8888-8888-888888888888')
+      ) {
+        const submitted = route.request().postDataJSON();
+        expect(submitted).toMatchObject({
+          startAt: rescheduledStartAt,
+          endAt: rescheduledEndAt,
+        });
+        startAt = submitted.startAt;
+        endAt = submitted.endAt;
+        scheduled = {
+          ...scheduled,
+          ...submitted,
+          uuid: '88888888-8888-8888-8888-888888888888',
+          lifecycle: 'SCHEDULED',
+          updatedAt: serverNow,
+          updatedBy: 'admin-id',
+        };
+        return route.fulfill({ json: scheduled });
       }
       return route.fallback();
     });
@@ -545,7 +571,24 @@ test.describe('Site banner workflow 2', () => {
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await expect(row).toContainText('Active');
 
-    serverNow = endAt;
+    await row.getByRole('button', { name: /Details/ }).click();
+    await row.getByRole('button', { name: 'Edit banner' }).click();
+    const publishedForm = page.getByTestId('banner-editor-form');
+    await publishedForm.getByLabel('Start').fill('2026-08-28T09:03');
+    await publishedForm.getByLabel('End').fill('2026-08-28T09:04');
+    await expect(publishedForm.getByText('Resolved UTC: 2026-08-28 13:03 UTC')).toBeVisible();
+    await publishedForm.getByRole('button', { name: 'Save changes' }).click();
+    await expect(row).toContainText('Scheduled');
+    await expect(row).toHaveAttribute('data-banner-row', '88888888-8888-8888-8888-888888888888');
+
+    serverNow = rescheduledStartAt;
+    await page.clock.setFixedTime(new Date(serverNow));
+    await page.goto('/help');
+    await expect(page.getByTestId('site-banner')).toContainText('Minute-boundary maintenance');
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+
+    serverNow = rescheduledEndAt;
     await page.clock.setFixedTime(new Date(serverNow));
     await page.reload();
     await page.getByRole('tab', { name: 'Site banners' }).click();

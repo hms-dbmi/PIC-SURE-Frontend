@@ -249,7 +249,13 @@ describe('BannerEditor', () => {
     },
   );
 
-  it('updates a published row through the editor without exposing history controls', async () => {
+  it('updates a published row with its exact historical start without exposing history controls', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
     const corrected = {
       ...published,
       htmlContent: '<p>Corrected content</p>',
@@ -276,7 +282,8 @@ describe('BannerEditor', () => {
         name: /version|history|revisions?|restore|revert|rollback/i,
       }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Start')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Start')).toHaveValue('2026-08-27T08:00');
+    expect(screen.getByText('Resolved UTC: 2026-08-27 12:00 UTC')).toBeInTheDocument();
     await fireEvent.input(editor);
 
     expect(screen.queryByText(/version history/i)).not.toBeInTheDocument();
@@ -285,7 +292,101 @@ describe('BannerEditor', () => {
     await waitFor(() => expect(onsuccess).toHaveBeenCalledWith(corrected));
     expect(updatePublishedBanner).toHaveBeenCalledWith(
       published.uuid,
-      expect.objectContaining({ htmlContent: '<p>Corrected content</p>' }),
+      expect.objectContaining({
+        htmlContent: '<p>Corrected content</p>',
+        startAt: published.startAt,
+        endAt: null,
+      }),
+    );
+  });
+
+  it('reschedules a published occurrence and returns the authoritative derived state', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    const scheduled = {
+      ...published,
+      lifecycle: 'SCHEDULED' as const,
+      startAt: '2026-08-28T13:15:00Z',
+      updatedAt: '2026-08-27T13:00:00Z',
+    };
+    vi.mocked(updatePublishedBanner).mockResolvedValue(scheduled);
+    const onsuccess = vi.fn();
+    render(BannerEditor, { props: { banner: published, onsuccess } });
+
+    await fireEvent.input(screen.getByLabelText('Start'), {
+      target: { value: '2026-08-28T09:15' },
+    });
+
+    expect(screen.getByText('Resolved UTC: 2026-08-28 13:15 UTC')).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(onsuccess).toHaveBeenCalledWith(scheduled));
+    expect(updatePublishedBanner).toHaveBeenCalledWith(
+      published.uuid,
+      expect.objectContaining({ startAt: '2026-08-28T13:15:00.000Z', endAt: null }),
+    );
+  });
+
+  it('does not round an untouched server-now start when saving another published change', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    const exactPublished = { ...published, startAt: '2026-08-27T12:00:37.421Z' };
+    vi.mocked(updatePublishedBanner).mockResolvedValue({
+      ...exactPublished,
+      htmlContent: '<p>Corrected content</p>',
+    });
+    render(BannerEditor, { props: { banner: exactPublished } });
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Corrected content</p>';
+    await fireEvent.input(editor);
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(updatePublishedBanner).toHaveBeenCalledOnce());
+    expect(updatePublishedBanner).toHaveBeenCalledWith(
+      exactPublished.uuid,
+      expect.objectContaining({ startAt: exactPublished.startAt }),
+    );
+  });
+
+  it('clears a published end and treats a schedule-only edit as guarded dirty state', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    const ending = { ...published, endAt: '2026-08-27T14:00:00Z' };
+    const permanent = {
+      ...ending,
+      endAt: null,
+      updatedAt: '2026-08-27T13:00:00Z',
+    };
+    vi.mocked(updatePublishedBanner).mockResolvedValue(permanent);
+    const oncancel = vi.fn();
+    render(BannerEditor, { props: { banner: ending, oncancel } });
+
+    expect(screen.getByLabelText('End')).toHaveValue('2026-08-27T10:00');
+    await fireEvent.input(screen.getByLabelText('End'), { target: { value: '' } });
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByRole('heading', { name: 'Unsaved Changes' })).toBeInTheDocument();
+    expect(oncancel).not.toHaveBeenCalled();
+    await fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(updatePublishedBanner).toHaveBeenCalledOnce());
+    expect(updatePublishedBanner).toHaveBeenCalledWith(
+      ending.uuid,
+      expect.objectContaining({ startAt: ending.startAt, endAt: null }),
     );
   });
 
