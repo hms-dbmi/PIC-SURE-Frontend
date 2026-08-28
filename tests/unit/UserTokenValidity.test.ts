@@ -1,7 +1,13 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { hasValidToken, removeToken, setToken } from '$lib/stores/User';
+import {
+  getTokenExpiration,
+  hasValidToken,
+  isTokenExpired,
+  removeToken,
+  setToken,
+} from '$lib/stores/User';
 
 vi.mock('$lib/logger', () => ({
   createLog: vi.fn(),
@@ -26,6 +32,39 @@ const invalidExpirations = [
   ['positive overflow exp', '{"sub":"test","exp":1e309}'],
   ['negative overflow exp', '{"sub":"test","exp":-1e309}'],
 ] as const;
+
+describe('token expiration helpers', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('returns a finite future expiration in milliseconds and reports the token as current', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-28T12:00:00.000Z'));
+    const expirationSeconds = Math.floor(Date.now() / 1000) + 60;
+    const token = makeToken(expirationSeconds);
+
+    expect(getTokenExpiration(token)).toBe(expirationSeconds * 1000);
+    expect(isTokenExpired(token)).toBe(false);
+  });
+
+  it('reports a token with a finite past expiration as expired', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-28T12:00:00.000Z'));
+
+    expect(isTokenExpired(makeToken(Math.floor(Date.now() / 1000) - 1))).toBe(true);
+  });
+
+  it('fails closed for a malformed token', () => {
+    expect(() => getTokenExpiration('not-a-jwt')).toThrow('Error parsing token:');
+    expect(isTokenExpired('not-a-jwt')).toBe(true);
+  });
+
+  it.each(invalidExpirations)('fails closed for %s', (_description, payload) => {
+    const token = makeTokenWithPayload(payload);
+
+    expect(() => getTokenExpiration(token)).toThrow('Token expiration must be a finite number.');
+    expect(isTokenExpired(token)).toBe(true);
+  });
+});
 
 describe('hasValidToken', () => {
   afterEach(() => {
