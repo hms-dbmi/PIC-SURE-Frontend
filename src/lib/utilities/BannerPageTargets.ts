@@ -92,6 +92,10 @@ export function matchesBannerPageTargets(
   });
 }
 
+export function isAllPagesBannerTarget(targets: BannerPageTarget[]): boolean {
+  return targets.length === 1 && targets[0].kind === 'ALL';
+}
+
 export function parseBannerPageTargets(value: unknown): BannerPageTarget[] | null {
   if (!Array.isArray(value) || value.length === 0) return null;
   const targets: BannerPageTarget[] = [];

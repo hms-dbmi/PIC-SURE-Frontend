@@ -1,11 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isAllPagesBannerTarget,
   matchesBannerPageTargets,
   normalizeBannerPageTargets,
   parseBannerPageTargets,
   validateBannerPageTarget,
 } from '$lib/utilities/BannerPageTargets';
 import type { BannerPageTarget } from '$lib/models/Banner';
+
+describe('isAllPagesBannerTarget', () => {
+  it('accepts only the canonical singleton All-pages target', () => {
+    expect(isAllPagesBannerTarget([{ kind: 'ALL' }])).toBe(true);
+    expect(isAllPagesBannerTarget([])).toBe(false);
+    expect(isAllPagesBannerTarget([{ kind: 'ALL' }, { kind: 'EXACT', path: '/help' }])).toBe(false);
+  });
+});
 
 describe('normalizeBannerPageTargets', () => {
   it('normalizes, sorts, and removes duplicate targets', () => {

@@ -1034,25 +1034,58 @@ test.describe('Site banner workflow 5', () => {
   test('reorders with pointer and keyboard, saves, and renders visitors in saved order', async ({
     page,
   }) => {
-    const managed = ['First notice', 'Second notice', 'Third notice'].map((title, index) => ({
-      ...banner,
-      uuid: `${index + 1}1111111-1111-1111-1111-111111111111`,
-      htmlContent: `<p>${title}</p>`,
-      title,
-      status: 'PUBLISHED',
-      lifecycle: 'ACTIVE',
-      priority: (index + 1) * 10,
-      startAt: '2026-08-27T12:00:00Z',
-      endAt: null,
-      createdAt: '2026-08-27T11:00:00Z',
-      createdBy: 'admin-id',
-      updatedAt: '2026-08-27T12:00:00Z',
-      updatedBy: 'admin-id',
-      publishedAt: '2026-08-27T12:00:00Z',
-      publishedBy: 'admin-id',
-    }));
+    const managed = ['First notice', 'Second notice', 'Third notice', 'Departing notice'].map(
+      (title, index) => ({
+        ...banner,
+        uuid: `${index + 1}1111111-1111-1111-1111-111111111111`,
+        htmlContent: `<p>${title}</p>`,
+        title,
+        status: 'PUBLISHED',
+        lifecycle: 'ACTIVE',
+        priority: (index + 1) * 10,
+        startAt: '2026-08-27T12:00:00Z',
+        endAt: null,
+        createdAt: '2026-08-27T11:00:00Z',
+        createdBy: 'admin-id',
+        updatedAt: '2026-08-27T12:00:00Z',
+        updatedBy: 'admin-id',
+        publishedAt: '2026-08-27T12:00:00Z',
+        publishedBy: 'admin-id',
+      }),
+    );
+    const arrival = {
+      ...managed[3],
+      uuid: '51111111-1111-1111-1111-111111111111',
+      htmlContent: '<p>Concurrent arrival</p>',
+      title: 'Concurrent arrival',
+    };
     let saved = [...managed];
     let reorderRequests = 0;
+
+    async function pointerReorder(sourceName: string, targetName: string) {
+      const source = page.getByRole('button', { name: `Reorder banner: ${sourceName}` });
+      const target = page.getByRole('button', { name: `Reorder banner: ${targetName}` });
+      await source.scrollIntoViewIfNeeded();
+      const sourceBox = await source.boundingBox();
+      const targetBox = await target.boundingBox();
+      expect(sourceBox).not.toBeNull();
+      expect(targetBox).not.toBeNull();
+      await page.mouse.move(
+        sourceBox!.x + sourceBox!.width / 2,
+        sourceBox!.y + sourceBox!.height / 2,
+      );
+      await page.mouse.down();
+      await page.mouse.move(
+        targetBox!.x + targetBox!.width / 2,
+        targetBox!.y + targetBox!.height / 2,
+        {
+          steps: 10,
+        },
+      );
+      await expect(page.getByTestId('banner-drop-preview')).toBeVisible();
+      await expect(page.locator('[data-banner-row]').first()).not.toContainText(sourceName);
+      await page.mouse.up();
+    }
 
     await page.route('**/picsure/operations/banners**', async (route) => {
       const request = route.request();
@@ -1080,9 +1113,17 @@ test.describe('Site banner workflow 5', () => {
       if (request.method() === 'PUT' && pathname.endsWith('/banners/order')) {
         reorderRequests += 1;
         const { bannerUuids } = request.postDataJSON() as { bannerUuids: string[] };
-        expect(bannerUuids).toHaveLength(3);
-        saved = bannerUuids.map((uuid, index) => ({
-          ...managed.find((record) => record.uuid === uuid)!,
+        expect(bannerUuids).toHaveLength(4);
+        const current = reorderRequests === 1 ? [...managed.slice(0, 3), arrival] : saved;
+        const currentByUuid = new Map(current.map((record) => [record.uuid, record]));
+        const canonicalUuids = [
+          ...bannerUuids.filter((uuid) => currentByUuid.has(uuid)),
+          ...current
+            .filter((record) => !bannerUuids.includes(record.uuid))
+            .map((record) => record.uuid),
+        ];
+        saved = canonicalUuids.map((uuid, index) => ({
+          ...currentByUuid.get(uuid)!,
           priority: index + 1,
         }));
         return route.fulfill({ json: saved });
@@ -1090,26 +1131,41 @@ test.describe('Site banner workflow 5', () => {
       return route.fallback();
     });
 
+    await page.setViewportSize({ width: 1280, height: 2_000 });
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
     const rows = page.locator('[data-banner-row]');
-    await expect(rows).toHaveCount(3);
+    await expect(rows).toHaveCount(4);
+    await expect(page.getByTestId('banner-overlap-warning')).toContainText('4');
 
-    const firstGrip = page.getByRole('button', { name: /Reorder banner: First notice/ });
-    const secondGrip = page.getByRole('button', { name: /Reorder banner: Second notice/ });
-    await firstGrip.dragTo(secondGrip);
+    await pointerReorder('First notice', 'Third notice');
     await expect(rows.nth(0)).toContainText('Second notice');
     expect(reorderRequests).toBe(0);
+
+    await page.getByRole('tab', { name: 'Access Control' }).click();
+    await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toBeVisible();
+    await page.getByRole('button', { name: 'Keep ordering' }).click();
+    await expect(rows.nth(0)).toContainText('Second notice');
+    await page.getByRole('tab', { name: 'Access Control' }).click();
+    await page.getByRole('button', { name: 'Discard order changes' }).click();
+    await expect(page.getByRole('heading', { name: 'Roles Management' })).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await expect(rows.nth(0)).toContainText('First notice');
+    await pointerReorder('First notice', 'Third notice');
 
     await page.getByRole('button', { name: 'Save order' }).click();
     await expect(page.getByTestId('toast-root')).toContainText('Banner order saved');
     expect(reorderRequests).toBe(1);
+    await expect(rows).toHaveCount(4);
+    await expect(rows.filter({ hasText: 'Departing notice' })).toHaveCount(0);
+    await expect(rows.filter({ hasText: 'Concurrent arrival' })).toHaveCount(1);
+    await expect(page.getByTestId('banner-overlap-warning')).toContainText('4');
 
     await page.getByRole('tab', { name: 'Access Control' }).click();
     await page.getByRole('tab', { name: 'Site banners' }).click();
-    await expect(rows).toHaveCount(3);
-    const thirdGrip = page.getByRole('button', { name: /Reorder banner: Third notice/ });
-    await thirdGrip.focus();
+    await expect(rows).toHaveCount(4);
+    await page.getByRole('button', { name: /Reorder banner: Third notice/ }).focus();
     await page.keyboard.press('Enter');
     await expect(page.getByTestId('banner-drop-preview')).toBeVisible();
     for (let step = 0; step < 30; step += 1) await page.keyboard.press('ArrowUp');
@@ -1118,16 +1174,16 @@ test.describe('Site banner workflow 5', () => {
     expect(reorderRequests).toBe(1);
 
     await page.getByRole('button', { name: 'Save order' }).click();
-    expect(reorderRequests).toBe(2);
+    await expect.poll(() => reorderRequests).toBe(2);
 
     await page.goto('/help');
-    await expect(page.getByTestId('site-banner')).toHaveCount(3);
+    await expect(page.getByTestId('site-banner')).toHaveCount(4);
     await expect
       .poll(() =>
         page
           .getByTestId('site-banner')
           .evaluateAll((elements) => elements.map((element) => element.getAttribute('aria-label'))),
       )
-      .toEqual(['Third notice', 'Second notice', 'First notice']);
+      .toEqual(['Third notice', 'Second notice', 'First notice', 'Concurrent arrival']);
   });
 });

@@ -3,6 +3,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 
+const navigation = vi.hoisted(() => ({ beforeNavigate: vi.fn(), goto: vi.fn() }));
+vi.mock('$app/navigation', () => navigation);
+vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
+
 vi.mock('$lib/services/BannerManagement', () => ({
   archiveBanner: vi.fn(),
   disableBanner: vi.fn(),
@@ -100,6 +104,8 @@ const records: ManagedBanner[] = [
 ];
 
 beforeEach(() => {
+  navigation.beforeNavigate.mockReset();
+  navigation.goto.mockReset();
   vi.mocked(getManagedBanners).mockReset().mockResolvedValue(records);
   vi.mocked(saveBanner).mockReset();
   vi.mocked(reorderBanners).mockReset();
@@ -160,6 +166,59 @@ describe('BannerManagementView', () => {
     expect(screen.getByText('Position 1')).toBeInTheDocument();
   });
 
+  it('adopts the canonical reorder response and then replaces it with one authoritative refresh', async () => {
+    const arrival = {
+      ...base,
+      uuid: '66666666-6666-6666-6666-666666666666',
+      htmlContent: '<p>Concurrent arrival</p>',
+      title: 'Arrival',
+      priority: 2,
+    };
+    const refreshedSecond = { ...scheduled, htmlContent: '<p>Refreshed second notice</p>' };
+    vi.mocked(getManagedBanners)
+      .mockResolvedValueOnce([base, scheduled, records[1]])
+      .mockResolvedValueOnce([refreshedSecond, arrival, records[1]]);
+    vi.mocked(reorderBanners).mockResolvedValue([{ ...scheduled, priority: 1 }, arrival]);
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+
+    await drag(base.uuid, scheduled.uuid);
+    await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
+
+    await waitFor(() => expect(getManagedBanners).toHaveBeenCalledTimes(2));
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, arrival.uuid]);
+    expect(screen.getByText('Refreshed second notice')).toBeInTheDocument();
+    expect(screen.getByText('Concurrent arrival')).toBeInTheDocument();
+    expect(screen.queryByText('System maintenance tonight')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save order' })).not.toBeInTheDocument();
+    expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner order saved' });
+  });
+
+  it('keeps a successful canonical queue saved when the follow-up refresh fails', async () => {
+    const arrival = {
+      ...base,
+      uuid: '66666666-6666-6666-6666-666666666666',
+      htmlContent: '<p>Concurrent arrival</p>',
+      title: 'Arrival',
+      priority: 2,
+    };
+    vi.mocked(getManagedBanners)
+      .mockResolvedValueOnce([base, scheduled])
+      .mockRejectedValueOnce(new Error('refresh unavailable'));
+    vi.mocked(reorderBanners).mockResolvedValue([{ ...scheduled, priority: 1 }, arrival]);
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+
+    await drag(base.uuid, scheduled.uuid);
+    await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
+
+    await waitFor(() => expect(getManagedBanners).toHaveBeenCalledTimes(2));
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, arrival.uuid]);
+    expect(screen.queryByRole('button', { name: 'Save order' })).not.toBeInTheDocument();
+    expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner order saved' });
+    expect(toaster.error).not.toHaveBeenCalled();
+  });
+
   it('keeps a failed order dirty and lets cancel restore the saved queue without another request', async () => {
     vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, ...records.slice(1)]);
     vi.mocked(reorderBanners).mockRejectedValue(new Error('validation failed'));
@@ -175,6 +234,160 @@ describe('BannerManagementView', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Cancel order changes' }));
     expect(bannerRowOrder()).toEqual([base.uuid, scheduled.uuid]);
     expect(reorderBanners).toHaveBeenCalledTimes(1);
+  });
+
+  it('guards route and unload navigation, then restores order before continuing the exact route', async () => {
+    vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled]);
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+    await drag(base.uuid, scheduled.uuid);
+    const guard = navigation.beforeNavigate.mock.calls[0][0];
+    const cancel = vi.fn();
+    const destination = new URL('http://localhost/help?from=ordering#details');
+
+    guard({ to: { url: destination }, cancel, willUnload: false });
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(await screen.findByRole('heading', { name: 'Unsaved Changes' })).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Keep ordering' }));
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, base.uuid]);
+    expect(navigation.goto).not.toHaveBeenCalled();
+
+    const unload = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(unload);
+    expect(unload.defaultPrevented).toBe(true);
+
+    guard({ to: { url: destination }, cancel, willUnload: false });
+    await screen.findByRole('heading', { name: 'Unsaved Changes' });
+    await fireEvent.click(screen.getByRole('button', { name: 'Discard order changes' }));
+    expect(bannerRowOrder()).toEqual([base.uuid, scheduled.uuid]);
+    expect(navigation.goto).toHaveBeenCalledWith('/help?from=ordering#details');
+  });
+
+  it('guards lifecycle, create, edit, and Configuration tab transitions while order is dirty', async () => {
+    const resolveTab = vi.fn();
+    vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, records[1]]);
+    const view = render(BannerManagementView, {
+      props: { ontabchangerequestresolve: resolveTab },
+    });
+    await screen.findByText('System maintenance tonight');
+
+    await drag(base.uuid, scheduled.uuid);
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    expect(screen.getByRole('tab', { name: /Active & scheduled/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await fireEvent.click(screen.getByRole('button', { name: 'Keep ordering' }));
+
+    await fireEvent.click(screen.getByRole('button', { name: '+ Create banner' }));
+    expect(screen.queryByRole('heading', { name: 'Create banner' })).not.toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Keep ordering' }));
+
+    const row = document.querySelector<HTMLElement>(`[data-banner-row="${base.uuid}"]`)!;
+    await fireEvent.click(within(row).getByRole('button', { name: 'Details' }));
+    await fireEvent.click(within(row).getByRole('button', { name: 'Edit banner' }));
+    expect(
+      screen.queryByRole('heading', { name: 'Edit published banner' }),
+    ).not.toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Keep ordering' }));
+
+    await view.rerender({
+      ontabchangerequestresolve: resolveTab,
+      tabchangerequest: 'Branding',
+    });
+    expect(screen.getByRole('heading', { name: 'Unsaved Changes' })).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Discard order changes' }));
+    expect(resolveTab).toHaveBeenCalledWith('Branding');
+  });
+
+  it('continues the guarded lifecycle and editor transitions after discarding order changes', async () => {
+    vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, records[1]]);
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+
+    await drag(base.uuid, scheduled.uuid);
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Discard order changes' }));
+    expect(screen.getByRole('tab', { name: /Saved & disabled/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+
+    await fireEvent.click(screen.getByRole('tab', { name: /Active & scheduled/ }));
+    await drag(base.uuid, scheduled.uuid);
+    await fireEvent.click(screen.getByRole('button', { name: '+ Create banner' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Discard order changes' }));
+    expect(screen.getByRole('heading', { name: 'Create banner' })).toBeInTheDocument();
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await drag(base.uuid, scheduled.uuid);
+    const row = document.querySelector<HTMLElement>(`[data-banner-row="${base.uuid}"]`)!;
+    await fireEvent.click(within(row).getByRole('button', { name: 'Details' }));
+    await fireEvent.click(within(row).getByRole('button', { name: 'Edit banner' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Discard order changes' }));
+    expect(screen.getByRole('heading', { name: 'Edit published banner' })).toBeInTheDocument();
+  });
+
+  it('warns at four canonical Everyone and All-pages publications without blocking order save', async () => {
+    const qualifying = [base, scheduled, 2, 3].map((record, index) =>
+      typeof record === 'number'
+        ? {
+            ...base,
+            uuid: `${record}6666666-6666-6666-6666-666666666666`,
+            htmlContent: `<p>Qualifying ${record}</p>`,
+            priority: index + 1,
+          }
+        : { ...record, priority: index + 1 },
+    );
+    const excluded = [
+      { ...base, uuid: '71111111-1111-1111-1111-111111111111', audience: 'SIGNED_IN' as const },
+      { ...base, uuid: '72222222-2222-2222-2222-222222222222', audience: 'SIGNED_OUT' as const },
+      {
+        ...base,
+        uuid: '81111111-1111-1111-1111-111111111111',
+        pageTargets: [{ kind: 'EXACT' as const, path: '/help' }],
+      },
+      { ...base, uuid: '91111111-1111-1111-1111-111111111111', lifecycle: 'EXPIRED' as const },
+      {
+        ...base,
+        uuid: 'a1111111-1111-1111-1111-111111111111',
+        status: 'SAVED' as const,
+        lifecycle: 'SAVED' as const,
+      },
+      {
+        ...base,
+        uuid: 'a2222222-2222-2222-2222-222222222222',
+        status: 'DISABLED' as const,
+        lifecycle: 'DISABLED' as const,
+      },
+      {
+        ...base,
+        uuid: 'a3333333-3333-3333-3333-333333333333',
+        status: 'ARCHIVED' as const,
+        lifecycle: 'DISABLED' as const,
+      },
+    ];
+    vi.mocked(getManagedBanners).mockResolvedValue([...qualifying, ...excluded]);
+    vi.mocked(reorderBanners).mockResolvedValue(qualifying);
+    render(BannerManagementView);
+
+    const warning = await screen.findByTestId('banner-overlap-warning');
+    expect(warning).toHaveTextContent('4');
+    expect(warning).not.toHaveAttribute('aria-live');
+    await drag(qualifying[0].uuid, qualifying[1].uuid);
+    expect(screen.getByRole('button', { name: 'Save order' })).toBeEnabled();
+  });
+
+  it('does not warn below four broad published banners', async () => {
+    vi.mocked(getManagedBanners).mockResolvedValue(
+      [base, scheduled, { ...base, uuid: '26666666-6666-6666-6666-666666666666' }].map(
+        (record, index) => ({ ...record, priority: index + 1 }),
+      ),
+    );
+    render(BannerManagementView);
+
+    expect(await screen.findAllByRole('article')).toHaveLength(3);
+    expect(screen.queryByTestId('banner-overlap-warning')).not.toBeInTheDocument();
   });
 
   it('removes an authoritatively expired edit from both ordering queues before the next save', async () => {

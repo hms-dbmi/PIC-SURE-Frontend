@@ -1,5 +1,7 @@
 <script lang="ts">
   /* eslint-disable @typescript-eslint/no-explicit-any -- dnd-kit events lack exported types */
+  import { beforeNavigate, goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
   import { onDestroy, onMount, tick } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
   import { scale } from 'svelte/transition';
@@ -7,6 +9,7 @@
   import BannerManagementRow from '$lib/components/admin/configuration/BannerManagementRow.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
+  import Modal from '$lib/components/Modal.svelte';
   import type { BannerLifecycle, ManagedBanner, ManagementRecord } from '$lib/models/Banner';
   import {
     archiveBanner,
@@ -15,6 +18,7 @@
     reorderBanners,
   } from '$lib/services/BannerManagement';
   import { bannerPlainText } from '$lib/utilities/BannerHTML';
+  import { isAllPagesBannerTarget } from '$lib/utilities/BannerPageTargets';
   import { toaster } from '$lib/toaster';
   import {
     DragDropProvider,
@@ -24,6 +28,12 @@
   } from '@dnd-kit-svelte/svelte';
 
   type LifecycleTab = 'orderable' | 'saved' | 'expired';
+  type PendingOrderTransition =
+    | { kind: 'url'; url: URL }
+    | { kind: 'configuration-tab'; destination: string }
+    | { kind: 'lifecycle-tab'; tab: LifecycleTab; focus: boolean }
+    | { kind: 'create' }
+    | { kind: 'edit'; banner: ManagedBanner };
   const lifecycleTabs = [
     { value: 'orderable' as const, label: 'Active & scheduled' },
     { value: 'saved' as const, label: 'Saved & disabled' },
@@ -60,6 +70,10 @@
   let savingOrder = $state(false);
   const sensors = [KeyboardSensor, PointerSensor];
   const orderDirty = $derived(orderUuids.join() !== savedOrderUuids.join());
+  let editorDirty = $state(false);
+  let showOrderGuard = $state(false);
+  let pendingOrderTransition: PendingOrderTransition | null = null;
+  let bypassOrderGuard = false;
   let disablingUuid: string | null = $state(null);
   let archivingUuid: string | null = $state(null);
 
@@ -72,6 +86,15 @@
     orderUuids
       .map((uuid) => records.find((banner) => banner.uuid === uuid))
       .filter((banner): banner is ManagementRecord => banner !== undefined),
+  );
+  const broadOverlapCount = $derived(
+    records.filter(
+      (banner) =>
+        banner.status === 'PUBLISHED' &&
+        inTab(banner.lifecycle, 'orderable') &&
+        banner.audience === 'EVERYONE' &&
+        isAllPagesBannerTarget(banner.pageTargets),
+    ).length,
   );
   const visibleRecords = $derived(
     (activeTab === 'orderable' ? orderedRecords : records).filter(
@@ -99,7 +122,34 @@
 
   onDestroy(() => {
     if (arrivalTimeout !== undefined) window.clearTimeout(arrivalTimeout);
+    ondirtychange(false);
   });
+
+  $effect(() => {
+    ondirtychange(mode === 'list' ? orderDirty : editorDirty);
+  });
+
+  $effect(() => {
+    if (mode === 'list' && orderDirty && tabchangerequest) {
+      pendingOrderTransition = {
+        kind: 'configuration-tab',
+        destination: tabchangerequest,
+      };
+      showOrderGuard = true;
+    }
+  });
+
+  beforeNavigate(({ to, cancel, willUnload }) => {
+    if (mode === 'list' && orderDirty && !bypassOrderGuard && !willUnload && to?.url) {
+      cancel();
+      pendingOrderTransition = { kind: 'url', url: to.url };
+      showOrderGuard = true;
+    }
+  });
+
+  function handleBeforeUnload(event: BeforeUnloadEvent) {
+    if (mode === 'list' && orderDirty) event.preventDefault();
+  }
 
   function inTab(lifecycle: BannerLifecycle, tab: LifecycleTab) {
     if (tab === 'orderable') return lifecycle === 'ACTIVE' || lifecycle === 'SCHEDULED';
@@ -127,18 +177,35 @@
   }
 
   function createBanner() {
+    if (guardOrderTransition({ kind: 'create' })) return;
+    openCreateEditor();
+  }
+
+  function openCreateEditor() {
     editingBanner = null;
     mode = 'create';
   }
 
   function editBanner(banner: ManagedBanner) {
+    if (guardOrderTransition({ kind: 'edit', banner })) return;
+    openEditor(banner);
+  }
+
+  function openEditor(banner: ManagedBanner) {
     editingBanner = banner;
     mode = 'edit';
   }
 
-  function selectLifecycleTab(tab: LifecycleTab) {
+  function selectLifecycleTab(tab: LifecycleTab, focus = false) {
+    if (tab === activeTab) return;
+    if (guardOrderTransition({ kind: 'lifecycle-tab', tab, focus })) return;
+    applyLifecycleTab(tab, focus);
+  }
+
+  function applyLifecycleTab(tab: LifecycleTab, focus = false) {
     activeTab = tab;
     openUuid = null;
+    if (focus) document.getElementById(`banner-management-tab-${tab}`)?.focus();
   }
 
   function handleLifecycleTabKeydown(event: KeyboardEvent, index: number) {
@@ -152,8 +219,50 @@
 
     event.preventDefault();
     const tab = lifecycleTabs[destination].value;
-    selectLifecycleTab(tab);
-    document.getElementById(`banner-management-tab-${tab}`)?.focus();
+    selectLifecycleTab(tab, true);
+  }
+
+  function guardOrderTransition(transition: PendingOrderTransition): boolean {
+    if (!orderDirty || mode !== 'list') return false;
+    pendingOrderTransition = transition;
+    showOrderGuard = true;
+    return true;
+  }
+
+  function keepOrdering() {
+    const configurationTabPending = pendingOrderTransition?.kind === 'configuration-tab';
+    pendingOrderTransition = null;
+    showOrderGuard = false;
+    if (configurationTabPending) ontabchangerequestresolve(null);
+  }
+
+  async function discardOrderChanges() {
+    const transition = pendingOrderTransition;
+    orderUuids = [...savedOrderUuids];
+    pendingOrderTransition = null;
+    showOrderGuard = false;
+    if (!transition) return;
+
+    if (transition.kind === 'configuration-tab') {
+      ontabchangerequestresolve(transition.destination);
+    } else if (transition.kind === 'lifecycle-tab') {
+      applyLifecycleTab(transition.tab, transition.focus);
+    } else if (transition.kind === 'create') {
+      openCreateEditor();
+    } else if (transition.kind === 'edit') {
+      openEditor(transition.banner);
+    } else {
+      bypassOrderGuard = true;
+      try {
+        await goto(
+          resolve(
+            `${transition.url.pathname}${transition.url.search}${transition.url.hash}` as '/',
+          ),
+        );
+      } finally {
+        bypassOrderGuard = false;
+      }
+    }
   }
 
   async function disable(uuid: string) {
@@ -262,13 +371,17 @@
     savingOrder = true;
     try {
       const authoritative = await reorderBanners(orderUuids);
-      const presented = authoritative.map(present);
-      records = [
-        ...presented,
-        ...records.filter((banner) => !inTab(banner.lifecycle, 'orderable')),
-      ];
-      orderUuids = presented.map((banner) => banner.uuid);
-      savedOrderUuids = [...orderUuids];
+      adoptCanonicalOrder(authoritative);
+      try {
+        const refreshed = (await getManagedBanners()).map(present);
+        records = refreshed;
+        orderUuids = refreshed
+          .filter((banner) => inTab(banner.lifecycle, 'orderable'))
+          .map((banner) => banner.uuid);
+        savedOrderUuids = [...orderUuids];
+      } catch {
+        // The reorder already committed. Keep its canonical response instead of reporting a false mutation failure.
+      }
       toaster.success({ title: 'Banner order saved' });
     } catch {
       toaster.error({
@@ -280,15 +393,36 @@
     }
   }
 
+  function adoptCanonicalOrder(authoritative: ManagedBanner[]) {
+    const presented = authoritative.map(present);
+    records = [...presented, ...records.filter((banner) => !inTab(banner.lifecycle, 'orderable'))];
+    orderUuids = presented.map((banner) => banner.uuid);
+    savedOrderUuids = [...orderUuids];
+  }
+
   function cancelOrderChanges() {
     orderUuids = [...savedOrderUuids];
   }
 </script>
 
+<svelte:window onbeforeunload={handleBeforeUnload} />
+
+<Modal bind:open={showOrderGuard} title="Unsaved Changes" closeable={false}>
+  <p class="mb-6">You have unsaved banner ordering. Discard it or keep ordering.</p>
+  <footer class="flex justify-end gap-2">
+    <button type="button" class="btn border preset-tonal-primary" onclick={keepOrdering}>
+      Keep ordering
+    </button>
+    <button type="button" class="btn preset-filled-error-500" onclick={discardOrderChanges}>
+      Discard order changes
+    </button>
+  </footer>
+</Modal>
+
 {#if mode !== 'list'}
   <BannerEditor
     banner={editingBanner}
-    {ondirtychange}
+    ondirtychange={(dirty) => (editorDirty = dirty)}
     {tabchangerequest}
     {ontabchangerequestresolve}
     onsuccess={handleSuccess}
@@ -308,6 +442,19 @@
         + Create banner
       </button>
     </header>
+
+    {#if broadOverlapCount >= 4}
+      <div class="mt-5">
+        <ErrorAlert
+          data-testid="banner-overlap-warning"
+          title="Broad banner overlap"
+          color="warning"
+        >
+          {broadOverlapCount} published banners currently target Everyone and All pages. They may appear
+          together.
+        </ErrorAlert>
+      </div>
+    {/if}
 
     {#if loading}
       <Loading />
