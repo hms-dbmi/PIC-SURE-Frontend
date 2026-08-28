@@ -60,7 +60,7 @@
   let savingOrder = $state(false);
   const sensors = [KeyboardSensor, PointerSensor];
   const orderDirty = $derived(orderUuids.join() !== savedOrderUuids.join());
-  let disablingUuid: string | null = null;
+  let disablingUuid: string | null = $state(null);
   let archivingUuid: string | null = $state(null);
 
   const counts = $derived({
@@ -403,6 +403,7 @@
                   index={orderUuids.indexOf(banner.uuid)}
                   activeId={activeDragUuid}
                   busy={archivingUuid === banner.uuid}
+                  disableDisabled={disablingUuid !== null}
                   archiveDisabled={archivingUuid !== null}
                 />
               </div>

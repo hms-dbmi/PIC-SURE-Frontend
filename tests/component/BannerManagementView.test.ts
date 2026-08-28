@@ -524,6 +524,25 @@ describe('BannerManagementView', () => {
     expect(screen.getByText('System maintenance tonight')).toBeInTheDocument();
   });
 
+  it('blocks a second disable while preserving unrelated row controls', async () => {
+    vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled]);
+    vi.mocked(disableBanner).mockReturnValue(new Promise(() => {}));
+    render(BannerManagementView);
+
+    const firstRow = await openDetailsFor('System maintenance tonight');
+    await fireEvent.click(within(firstRow).getByRole('button', { name: 'Disable banner' }));
+    await fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
+    );
+    await waitFor(() => expect(disableBanner).toHaveBeenCalledWith(base.uuid));
+
+    const secondRow = await openDetailsFor('Scheduled enrollment notice');
+    expect(document.getElementById(`banner-${scheduled.uuid}-details`)).toBeInTheDocument();
+    expect(within(secondRow).getByRole('button', { name: 'Edit banner' })).toBeEnabled();
+    expect(within(secondRow).getByRole('button', { name: 'Disable banner' })).toBeDisabled();
+    expect(disableBanner).toHaveBeenCalledTimes(1);
+  });
+
   it('offers archive only for saved, disabled, and expired occurrences', async () => {
     vi.mocked(getManagedBanners).mockResolvedValue([
       ...records,

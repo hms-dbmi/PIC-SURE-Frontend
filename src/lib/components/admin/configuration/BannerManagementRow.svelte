@@ -21,6 +21,7 @@
     activeId?: string | null;
     isOverlay?: boolean;
     busy?: boolean;
+    disableDisabled?: boolean;
     archiveDisabled?: boolean;
   }
 
@@ -37,6 +38,7 @@
     activeId = null,
     isOverlay = false,
     busy = false,
+    disableDisabled = false,
     archiveDisabled = false,
   }: Props = $props();
 
@@ -216,7 +218,7 @@
                 cancelText="No"
                 onconfirm={ondisable}
                 triggerBase="btn preset-tonal-error"
-                disabled={busy}
+                disabled={busy || disableDisabled}
                 withDefault
               >
                 {#snippet trigger()}
