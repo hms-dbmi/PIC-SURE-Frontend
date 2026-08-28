@@ -4,6 +4,7 @@ vi.mock('$lib/api', () => ({ get: vi.fn(), post: vi.fn(), put: vi.fn() }));
 
 import * as api from '$lib/api';
 import {
+  disableBanner,
   getManagedBanners,
   publishBanner,
   publishSavedBanner,
@@ -46,6 +47,8 @@ const published: ManagedBanner = {
   updatedBy: 'admin-id',
   publishedAt: '2026-08-27T12:00:00Z',
   publishedBy: 'admin-id',
+  disabledAt: null,
+  disabledBy: null,
 };
 
 beforeEach(() => {
@@ -144,6 +147,28 @@ describe('reorderBanners', () => {
     expect(api.put).toHaveBeenCalledWith('picsure/operations/banners/order', {
       bannerUuids: [published.uuid],
     });
+  });
+});
+
+describe('disableBanner', () => {
+  it('posts to the dedicated disable route without a body and returns the authoritative record', async () => {
+    const disabled = {
+      ...published,
+      status: 'DISABLED' as const,
+      lifecycle: 'DISABLED' as const,
+      updatedAt: '2026-08-27T13:00:00Z',
+      updatedBy: 'super-id',
+      disabledAt: '2026-08-27T13:00:00Z',
+      disabledBy: 'super-id',
+    };
+    vi.mocked(api.post).mockResolvedValue(disabled);
+
+    await expect(disableBanner(published.uuid)).resolves.toBe(disabled);
+    expect(api.post).toHaveBeenCalledWith(
+      `picsure/operations/banners/${published.uuid}/disable`,
+      undefined,
+    );
+    expect(api.put).not.toHaveBeenCalled();
   });
 });
 

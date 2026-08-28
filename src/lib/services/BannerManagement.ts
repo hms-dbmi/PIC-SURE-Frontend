@@ -34,6 +34,10 @@ export async function publishSavedBanner(uuid: string, draft: BannerDraft): Prom
   return api.post(`${Picsure.Banners.Manage}/${uuid}/publish`, authorablePayload(draft));
 }
 
+export async function disableBanner(uuid: string): Promise<ManagedBanner> {
+  return api.post(`${Picsure.Banners.Manage}/${uuid}/disable`, undefined);
+}
+
 function authorablePayload(
   draft: BannerDraft,
 ): Omit<BannerDraft, 'title'> & { title: string | null } {

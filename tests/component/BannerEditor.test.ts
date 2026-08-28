@@ -41,6 +41,8 @@ const published = {
   updatedBy: 'admin-id',
   publishedAt: '2026-08-27T12:00:00Z',
   publishedBy: 'admin-id',
+  disabledAt: null,
+  disabledBy: null,
 };
 
 const saved = {

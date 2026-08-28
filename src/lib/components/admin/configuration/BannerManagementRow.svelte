@@ -1,5 +1,6 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
+  import Modal from '$lib/components/Modal.svelte';
   import { BANNER_APPEARANCE_DETAILS, type ManagementRecord } from '$lib/models/Banner';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
 
@@ -8,6 +9,7 @@
     open: boolean;
     ontoggle: () => void;
     onedit: () => void;
+    ondisable: () => void;
     orderable?: boolean;
     position?: number | null;
     index?: number;
@@ -20,6 +22,7 @@
     open,
     ontoggle,
     onedit,
+    ondisable,
     orderable = false,
     position = null,
     index = 0,
@@ -54,6 +57,11 @@
   } as const;
 
   const panelId = $derived(`banner-${banner.uuid}-details`);
+  const editable = $derived(banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED');
+  const disableable = $derived(banner.lifecycle === 'ACTIVE' || banner.lifecycle === 'SCHEDULED');
+  const editable = $derived(banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED');
+  const disableable = $derived(banner.lifecycle === 'ACTIVE' || banner.lifecycle === 'SCHEDULED');
+
   function scheduleSummary() {
     if (banner.lifecycle === 'SAVED') return 'Not published';
     const start = banner.startAt ? new Date(banner.startAt).toLocaleString() : 'No start date';
@@ -180,11 +188,30 @@
           <p>{new Date(banner.updatedAt).toLocaleString()}</p>
           <p>Last changed by {banner.updatedBy}</p>
         </div>
-        {#if banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED'}
-          <div class="sm:col-span-2">
-            <button type="button" class="btn preset-tonal-primary" onclick={onedit}>
-              Edit banner
-            </button>
+        {#if editable || disableable}
+          <div class="flex flex-wrap gap-2 sm:col-span-2">
+            {#if editable}
+              <button type="button" class="btn preset-tonal-primary" onclick={onedit}>
+                Edit banner
+              </button>
+            {/if}
+            {#if disableable}
+              <Modal
+                data-testid="banner-{banner.uuid}-disable"
+                title="Disable banner?"
+                confirmText="Yes"
+                cancelText="No"
+                onconfirm={ondisable}
+                triggerBase="btn preset-tonal-error"
+                withDefault
+              >
+                {#snippet trigger()}
+                  Disable banner
+                {/snippet}
+                Are you sure you want to disable this banner? It stops appearing to visitors immediately
+                and moves to Saved &amp; disabled. Its content and history are kept.
+              </Modal>
+            {/if}
           </div>
         {/if}
       </section>

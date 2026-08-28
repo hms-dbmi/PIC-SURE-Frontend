@@ -205,6 +205,7 @@ test.describe('Site banner workflow 1', () => {
     let published = false;
     let publicationRequests = 0;
     let updateRequests = 0;
+    let disableRequests = 0;
     let submitted: Record<string, unknown> | undefined;
     let managedRecords: Record<string, unknown>[] = [];
     let updateSubmitted: Record<string, unknown> | undefined;
@@ -228,6 +229,8 @@ test.describe('Site banner workflow 1', () => {
       updatedBy: 'admin-id',
       publishedAt: null,
       publishedBy: null,
+      disabledAt: null,
+      disabledBy: null,
     };
     const authoritativeBanner = {
       ...banner,
@@ -250,6 +253,8 @@ test.describe('Site banner workflow 1', () => {
       updatedBy: 'admin-id',
       publishedAt: '2026-08-27T12:00:00Z',
       publishedBy: 'admin-id',
+      disabledAt: null,
+      disabledBy: null,
     };
     const correctedBanner = {
       ...authoritativeBanner,
@@ -259,6 +264,15 @@ test.describe('Site banner workflow 1', () => {
       presentationHash: 'server-computed-corrected-hash',
       updatedAt: '2026-08-27T13:00:00Z',
       updatedBy: 'second-admin-id',
+    };
+    const disabledBanner = {
+      ...correctedBanner,
+      status: 'DISABLED',
+      lifecycle: 'DISABLED',
+      updatedAt: '2026-08-27T14:00:00Z',
+      updatedBy: 'super-id',
+      disabledAt: '2026-08-27T14:00:00Z',
+      disabledBy: 'super-id',
     };
     let activeBanner = authoritativeBanner;
     await page.route('**/picsure/operations/banners/active', (route) =>
@@ -292,6 +306,12 @@ test.describe('Site banner workflow 1', () => {
         };
         managedRecords = [updatedBanner];
         return route.fulfill({ json: updatedBanner });
+      }
+      if (method === 'POST' && url.pathname.endsWith(`/banners/${savedBanner.uuid}/disable`)) {
+        disableRequests += 1;
+        published = false;
+        managedRecords = [disabledBanner];
+        return route.fulfill({ json: disabledBanner });
       }
       if (method === 'POST' && url.pathname.endsWith(`/banners/${savedBanner.uuid}/publish`)) {
         publicationRequests += 1;
@@ -428,6 +448,27 @@ test.describe('Site banner workflow 1', () => {
       placement: 'SITE_TOP',
       pageTargets: [{ kind: 'ALL' }],
     });
+
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    const rowToDisable = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
+    await rowToDisable.getByRole('button', { name: 'Details' }).click();
+    await rowToDisable.getByRole('button', { name: 'Disable banner' }).click();
+
+    const confirmation = page.getByRole('dialog');
+    await expect(confirmation.getByRole('heading', { name: 'Disable banner?' })).toBeVisible();
+    await expect(confirmation.getByRole('textbox')).toHaveCount(0);
+    await confirmation.getByRole('button', { name: 'Yes' }).click();
+
+    await expect(page.getByTestId('toast-root')).toHaveAttribute('data-type', 'success');
+    await expect(page.getByRole('tab', { name: /Active & scheduled/ })).toContainText('0');
+    await page.getByRole('tab', { name: /Saved & disabled/ }).click();
+    await expect(page.locator(`[data-banner-row="${savedBanner.uuid}"]`)).toContainText('Disabled');
+    expect(disableRequests).toBe(1);
+
+    await page.goto('/');
+    await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
   });
 
   test('keeps editor state and shows a stable error when publication fails', async ({ page }) => {
@@ -522,6 +563,8 @@ test.describe('Site banner workflow 2', () => {
           updatedBy: 'admin-id',
           publishedAt: serverNow,
           publishedBy: 'admin-id',
+          disabledAt: null,
+          disabledBy: null,
         };
         return route.fulfill({ status: 201, json: scheduled });
       }

@@ -8,7 +8,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import type { BannerLifecycle, ManagedBanner, ManagementRecord } from '$lib/models/Banner';
-  import { getManagedBanners, reorderBanners } from '$lib/services/BannerManagement';
+  import { disableBanner, getManagedBanners, reorderBanners } from '$lib/services/BannerManagement';
   import { bannerPlainText } from '$lib/utilities/BannerHTML';
   import { toaster } from '$lib/toaster';
   import {
@@ -55,6 +55,7 @@
   let savingOrder = $state(false);
   const sensors = [KeyboardSensor, PointerSensor];
   const orderDirty = $derived(orderUuids.join() !== savedOrderUuids.join());
+  let disablingUuid: string | null = null;
 
   const counts = $derived({
     orderable: records.filter((banner) => inTab(banner.lifecycle, 'orderable')).length,
@@ -147,6 +148,26 @@
     const tab = lifecycleTabs[destination].value;
     selectLifecycleTab(tab);
     document.getElementById(`banner-management-tab-${tab}`)?.focus();
+  }
+
+  async function disable(uuid: string) {
+    if (disablingUuid) return;
+    disablingUuid = uuid;
+    try {
+      const disabled = await disableBanner(uuid);
+      records = records.map((record) =>
+        record.uuid === disabled.uuid ? present(disabled) : record,
+      );
+      openUuid = null;
+      toaster.success({ title: 'Banner disabled' });
+    } catch {
+      toaster.error({
+        title: 'Banner could not be disabled',
+        description: 'The banner is unchanged. Check your connection and try again.',
+      });
+    } finally {
+      disablingUuid = null;
+    }
   }
 
   async function handleSuccess(banner: ManagedBanner) {
@@ -341,6 +362,7 @@
                   open={openUuid === banner.uuid}
                   ontoggle={() => (openUuid = openUuid === banner.uuid ? null : banner.uuid)}
                   onedit={() => editBanner(banner)}
+                  ondisable={() => disable(banner.uuid)}
                   orderable={activeTab === 'orderable' && !search.trim()}
                   position={activeTab === 'orderable' ? orderUuids.indexOf(banner.uuid) + 1 : null}
                   index={orderUuids.indexOf(banner.uuid)}
@@ -359,6 +381,7 @@
                 open={false}
                 ontoggle={() => {}}
                 onedit={() => {}}
+                ondisable={() => {}}
                 orderable={true}
                 position={orderUuids.indexOf(activeBanner.uuid) + 1}
                 index={orderUuids.indexOf(activeBanner.uuid)}

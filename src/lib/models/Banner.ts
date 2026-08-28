@@ -77,6 +77,8 @@ export interface ManagedBanner extends BannerPresentation {
   updatedBy: string;
   publishedAt: string | null;
   publishedBy: string | null;
+  disabledAt: string | null;
+  disabledBy: string | null;
 }
 
 export type ManagementRecord = ManagedBanner & { excerpt: string };
