@@ -10,6 +10,11 @@
     matchesBannerPageTargets,
     parseBannerPageTargets,
   } from '$lib/utilities/BannerPageTargets';
+  import {
+    readBannerDismissals,
+    writeBannerDismissals,
+    type BannerDismissals,
+  } from '$lib/utilities/BannerDismissal';
 
   const appearances = new Set<unknown>(BANNER_APPEARANCES);
   const icons = new Set<unknown>(BANNER_ICONS);
@@ -19,12 +24,15 @@
 
   let banners: ActiveBanner[] = $state([]);
   let pathname = $state('/');
+  let dismissals: BannerDismissals = $state(readBannerDismissals());
 
   // Public routes do not hydrate the user store, so use token validity for audience filtering.
   const visibleBanners = $derived(
     banners.filter(
       (banner) =>
-        matchesAudience(banner.audience) && matchesBannerPageTargets(banner.pageTargets, pathname),
+        matchesAudience(banner.audience) &&
+        matchesBannerPageTargets(banner.pageTargets, pathname) &&
+        !isDismissed(banner),
     ),
   );
 
@@ -32,6 +40,15 @@
     if (audience === 'SIGNED_IN') return $hasValidToken;
     if (audience === 'SIGNED_OUT') return !$hasValidToken;
     return true;
+  }
+
+  function isDismissed(banner: ActiveBanner): boolean {
+    return banner.dismissible && dismissals[banner.uuid] === banner.presentationHash;
+  }
+
+  function dismissBanner(banner: ActiveBanner): void {
+    dismissals = { ...dismissals, [banner.uuid]: banner.presentationHash };
+    writeBannerDismissals(dismissals);
   }
 
   function normalizeBannerFeedRecord(value: unknown): BannerFeedRecord | null {
@@ -100,7 +117,7 @@
 {#if visibleBanners.length > 0}
   <div class="w-full flex-none" data-testid="site-banner-region">
     {#each visibleBanners as banner (banner.uuid)}
-      <SiteBanner {banner} />
+      <SiteBanner {banner} ondismiss={() => dismissBanner(banner)} />
     {/each}
   </div>
 {/if}

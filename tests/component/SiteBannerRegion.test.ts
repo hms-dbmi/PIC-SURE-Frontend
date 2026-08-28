@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 const navigation = vi.hoisted(() => ({
   callback: undefined as ((navigation?: { to?: { url: URL } | null }) => Promise<void>) | undefined,
@@ -51,6 +51,7 @@ const banner = {
 };
 
 const fetchMock = vi.fn();
+const dismissalStorageKey = 'site-banner-dismissals-v1';
 
 function without(field: string): Record<string, unknown> {
   const malformed: Record<string, unknown> = { ...banner };
@@ -66,6 +67,7 @@ beforeEach(() => {
   vi.mocked(createLog).mockClear();
   authentication.setHasValidToken(false);
   authentication.setTokenStatus(false);
+  sessionStorage.clear();
 });
 
 describe('SiteBannerRegion', () => {
@@ -286,6 +288,152 @@ describe('SiteBannerRegion', () => {
       expect.objectContaining({ error: { message: 'Banner feed returned HTTP 404' } }),
     );
     expect(log).toHaveBeenCalledOnce();
+  });
+
+  it('hides a matching dismissible occurrence while permanent banners ignore storage', async () => {
+    const permanent = {
+      ...banner,
+      uuid: '22222222-2222-2222-2222-222222222222',
+      title: 'Permanent notice',
+      dismissible: false,
+      presentationHash: 'permanent-hash',
+    };
+    sessionStorage.setItem(
+      dismissalStorageKey,
+      JSON.stringify({
+        [banner.uuid]: banner.presentationHash,
+        [permanent.uuid]: permanent.presentationHash,
+      }),
+    );
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner, permanent]), { status: 200 }));
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+
+    expect(screen.queryByRole('region', { name: 'Maintenance' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Permanent notice' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Dismiss Permanent notice/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('dismisses only the selected occurrence and writes the complete versioned map', async () => {
+    const second = {
+      ...banner,
+      uuid: '22222222-2222-2222-2222-222222222222',
+      title: 'Second notice',
+      presentationHash: 'second-hash',
+    };
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner, second]), { status: 200 }));
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' }));
+
+    expect(screen.queryByRole('region', { name: 'Maintenance' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Second notice' })).toBeInTheDocument();
+    expect(sessionStorage.getItem(dismissalStorageKey)).toBe(
+      JSON.stringify({ [banner.uuid]: banner.presentationHash }),
+    );
+  });
+
+  it('keeps the same hash dismissed across navigation and priority changes, then shows a new hash', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner]), { status: 200 }));
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify([{ ...banner, priority: 99 }]), { status: 200 }),
+    );
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([{ ...banner, priority: 99, presentationHash: 'changed-hash' }]),
+        { status: 200 },
+      ),
+    );
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' }));
+
+    await navigation.callback?.({ to: { url: new URL('https://picsure.example/help') } });
+    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+
+    await navigation.callback?.({ to: { url: new URL('https://picsure.example/status') } });
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+  });
+
+  it('restores dismissal from storage after the region remounts', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner]), { status: 200 }));
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' }));
+
+    cleanup();
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+  });
+
+  it('renders again when a new tab session has no dismissal map', async () => {
+    sessionStorage.setItem(
+      dismissalStorageKey,
+      JSON.stringify({ [banner.uuid]: banner.presentationHash }),
+    );
+    sessionStorage.clear();
+    expect(sessionStorage.getItem(dismissalStorageKey)).toBeNull();
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner]), { status: 200 }));
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+  });
+
+  it('fails open when stored dismissal data is malformed', async () => {
+    sessionStorage.setItem(dismissalStorageKey, '{not-json');
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner]), { status: 200 }));
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+  });
+
+  it('ignores non-string dismissal entries without discarding valid entries', async () => {
+    const second = {
+      ...banner,
+      uuid: '22222222-2222-2222-2222-222222222222',
+      title: 'Second notice',
+      presentationHash: 'second-hash',
+    };
+    sessionStorage.setItem(
+      dismissalStorageKey,
+      JSON.stringify({ [banner.uuid]: 123, [second.uuid]: second.presentationHash }),
+    );
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner, second]), { status: 200 }));
+    render(SiteBannerRegion);
+
+    await navigation.callback?.();
+
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Second notice' })).not.toBeInTheDocument();
+  });
+
+  it('fails open when storage cannot be read and keeps the clicked banner hidden when storage cannot be written', async () => {
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('storage unavailable');
+    });
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner]), { status: 200 }));
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+    getItem.mockRestore();
+
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('storage unavailable');
+    });
+    await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' }));
+
+    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    setItem.mockRestore();
   });
 });
 

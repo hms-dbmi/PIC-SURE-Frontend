@@ -29,6 +29,8 @@
     WARNING: 'fa-triangle-exclamation',
     ERROR: 'fa-circle-exclamation',
   };
+
+  const dismissLabel = $derived(`Dismiss ${banner.title || 'site announcement'}`);
 </script>
 
 <section
@@ -54,9 +56,9 @@
     {#if banner.dismissible && ondismiss}
       <button
         type="button"
-        class="btn-icon h-11 w-11 flex-none rounded-full border border-current"
-        aria-label="Dismiss {banner.title || 'site announcement'}"
-        title="Dismiss"
+        class="site-banner-dismiss btn-icon h-11 w-11 flex-none rounded-full border border-current focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-current"
+        aria-label={dismissLabel}
+        title={dismissLabel}
         onclick={ondismiss}
       >
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
@@ -66,6 +68,11 @@
 </section>
 
 <style>
+  .site-banner-dismiss {
+    box-sizing: border-box;
+    padding: 0;
+  }
+
   .site-banner-content {
     white-space: pre-wrap;
   }

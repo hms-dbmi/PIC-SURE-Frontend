@@ -274,6 +274,122 @@ test.describe('Site banner workflow 3', () => {
   });
 });
 
+// Workflow 4 of the five representative end-to-end workflows.
+test.describe('Site banner workflow 4', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
+
+  const dismissalBanner = {
+    ...banner,
+    uuid: '66666666-6666-6666-6666-666666666666',
+    htmlContent: '<p>Dismiss this maintenance notice</p>',
+    title: 'Dismissible maintenance',
+    presentationHash: 'dismissal-hash-v1',
+  };
+  const managementFields = {
+    status: 'PUBLISHED',
+    lifecycle: 'ACTIVE',
+    startAt: '2026-08-28T12:00:00Z',
+    endAt: null,
+    createdAt: '2026-08-28T12:00:00Z',
+    createdBy: 'admin-id',
+    updatedAt: '2026-08-28T12:00:00Z',
+    updatedBy: 'admin-id',
+    publishedAt: '2026-08-28T12:00:00Z',
+    publishedBy: 'admin-id',
+    disabledAt: null,
+    disabledBy: null,
+  };
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+    for (const path of ['role', 'privilege', 'application', 'connection']) {
+      await page.route(`**/psama/${path}`, (route) => route.fulfill({ json: [] }));
+    }
+  });
+
+  test('dismisses for the tab session and shows the occurrence after a material edit', async ({
+    page,
+  }) => {
+    let active = dismissalBanner;
+    let managed = { ...dismissalBanner, ...managementFields };
+    let submitted: Record<string, unknown> | undefined;
+    let feedRequests = 0;
+    await page.route('**/picsure/operations/banners/active/v2', (route) => {
+      feedRequests += 1;
+      return route.fulfill({ json: [active] });
+    });
+    await page.route('**/picsure/operations/banners**', (route) => {
+      const url = new URL(route.request().url());
+      const method = route.request().method();
+      if (method === 'GET' && url.pathname.endsWith('/banners')) {
+        return route.fulfill({ json: [managed] });
+      }
+      if (method === 'PUT' && url.pathname.endsWith(`/banners/${dismissalBanner.uuid}`)) {
+        submitted = route.request().postDataJSON();
+        active = {
+          ...dismissalBanner,
+          htmlContent: '<p>Updated maintenance notice</p>',
+          title: 'Updated dismissible maintenance',
+          presentationHash: 'dismissal-hash-v2',
+        };
+        managed = {
+          ...active,
+          ...managementFields,
+          updatedAt: '2026-08-28T13:00:00Z',
+          updatedBy: 'second-admin-id',
+        };
+        return route.fulfill({ json: managed });
+      }
+      return route.fallback();
+    });
+
+    await page.goto('/');
+    const notice = page.getByRole('region', { name: 'Dismissible maintenance' });
+    await expect(notice).toBeVisible();
+    const dismiss = notice.getByRole('button', { name: 'Dismiss Dismissible maintenance' });
+    await expect(dismiss).toHaveAttribute('title', 'Dismiss Dismissible maintenance');
+    expect(await dismiss.boundingBox()).toMatchObject({ width: 44, height: 44 });
+    await dismiss.focus();
+    await expect(dismiss).toBeFocused();
+    await dismiss.press('Enter');
+
+    await expect(notice).toHaveCount(0);
+    expect(await page.evaluate(() => sessionStorage.getItem('site-banner-dismissals-v1'))).toBe(
+      `{"${dismissalBanner.uuid}":"${dismissalBanner.presentationHash}"}`,
+    );
+
+    await page.locator('#nav-link-help').click();
+    await expect(page).toHaveURL('/help');
+    await expect.poll(() => feedRequests).toBeGreaterThanOrEqual(2);
+    await expect(page.getByRole('region', { name: 'Dismissible maintenance' })).toHaveCount(0);
+
+    const requestsBeforeReload = feedRequests;
+    await page.reload();
+    await expect.poll(() => feedRequests).toBeGreaterThan(requestsBeforeReload);
+    await expect(page.getByRole('region', { name: 'Dismissible maintenance' })).toHaveCount(0);
+
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    const row = page.locator(`[data-banner-row="${dismissalBanner.uuid}"]`);
+    await row.getByRole('button', { name: 'Details' }).click();
+    await row.getByRole('button', { name: 'Edit banner' }).click();
+    await page
+      .getByTestId('banner-editor-form')
+      .locator('#banner-content-editor .ql-editor')
+      .fill('Updated maintenance notice');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    expect(submitted).toMatchObject({ htmlContent: '<p>Updated maintenance notice</p>' });
+
+    await page.goto('/');
+    await expect(
+      page.getByRole('region', { name: 'Updated dismissible maintenance' }),
+    ).toContainText('Updated maintenance notice');
+    expect(await page.evaluate(() => sessionStorage.getItem('site-banner-dismissals-v1'))).toBe(
+      `{"${dismissalBanner.uuid}":"${dismissalBanner.presentationHash}"}`,
+    );
+  });
+});
+
 test.describe('Site banner workflow 1', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
 

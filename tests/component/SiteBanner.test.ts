@@ -110,4 +110,25 @@ describe('SiteBanner', () => {
       expect(screen.queryByTestId('external-link-warning')).not.toBeInTheDocument();
     }
   });
+
+  it('renders an accessible 44-pixel dismissal control with visible keyboard focus', async () => {
+    const ondismiss = vi.fn();
+    render(SiteBanner, { banner, ondismiss });
+
+    const dismiss = screen.getByRole('button', { name: 'Dismiss Maintenance' });
+    expect(dismiss).toHaveAttribute('title', 'Dismiss Maintenance');
+    expect(dismiss).toHaveClass('site-banner-dismiss', 'h-11', 'w-11', 'focus-visible:outline-3');
+    dismiss.focus();
+    expect(document.activeElement).toBe(dismiss);
+
+    await fireEvent.click(dismiss);
+
+    expect(ondismiss).toHaveBeenCalledOnce();
+  });
+
+  it('does not render a dismissal control for a permanent banner', () => {
+    render(SiteBanner, { banner: { ...banner, dismissible: false }, ondismiss: vi.fn() });
+
+    expect(screen.queryByRole('button', { name: /Dismiss/ })).not.toBeInTheDocument();
+  });
 });
