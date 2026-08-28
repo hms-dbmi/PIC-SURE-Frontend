@@ -57,7 +57,9 @@ describe('BannerEditor', () => {
     const { container } = render(BannerEditor);
 
     expect(screen.getByRole('heading', { name: 'Create banner' })).toBeInTheDocument();
-    expect(screen.getByText('Publish an announcement across PIC-SURE.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Save this announcement for later or publish it across PIC-SURE.'),
+    ).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Primary' })).toBeChecked();
     expect(screen.getAllByTestId('appearance-swatch')).toHaveLength(7);
     for (const appearance of [
