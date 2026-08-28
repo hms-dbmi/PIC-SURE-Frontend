@@ -417,10 +417,12 @@
         <SiteBanner banner={preview} titleLevel={3} />
       </section>
 
-      <fieldset>
+      <fieldset disabled={banner?.lifecycle === 'EXPIRED'}>
         <legend class="font-bold">Schedule</legend>
         <p class="mt-1 text-sm text-surface-600">
-          {#if banner?.status === 'PUBLISHED'}
+          {#if banner?.lifecycle === 'EXPIRED'}
+            Expired banner schedules cannot be changed.
+          {:else if banner?.status === 'PUBLISHED'}
             Times use your local timezone ({timeZone}) at minute precision. Change Start to move
             this occurrence; leave End blank to keep it active until it is disabled.
           {:else}

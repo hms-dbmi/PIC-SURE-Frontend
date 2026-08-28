@@ -390,6 +390,40 @@ describe('BannerEditor', () => {
     );
   });
 
+  it('keeps an expired occurrence schedule out of the editor while allowing content correction', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      locale: 'en-US',
+      calendar: 'gregory',
+      numberingSystem: 'latn',
+      timeZone: 'America/New_York',
+    });
+    const expired = {
+      ...published,
+      lifecycle: 'EXPIRED' as const,
+      startAt: '2026-08-27T12:00:00Z',
+      endAt: '2026-08-27T13:00:00Z',
+    };
+    vi.mocked(updatePublishedBanner).mockResolvedValue({
+      ...expired,
+      htmlContent: '<p>Corrected expired content</p>',
+    });
+    render(BannerEditor, { props: { banner: expired } });
+
+    expect(screen.getByText('Expired banner schedules cannot be changed.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Start')).toBeDisabled();
+    expect(screen.getByLabelText('End')).toBeDisabled();
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML = '<p>Corrected expired content</p>';
+    await fireEvent.input(editor);
+    await fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(updatePublishedBanner).toHaveBeenCalledOnce());
+    expect(updatePublishedBanner).toHaveBeenCalledWith(
+      expired.uuid,
+      expect.objectContaining({ startAt: expired.startAt, endAt: expired.endAt }),
+    );
+  });
+
   it('asks before discarding a dirty editor through its cancel action', async () => {
     const oncancel = vi.fn();
     render(BannerEditor, { props: { oncancel } });
