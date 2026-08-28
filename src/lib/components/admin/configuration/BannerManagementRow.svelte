@@ -1,15 +1,45 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
   import { BANNER_APPEARANCE_DETAILS, type ManagementRecord } from '$lib/models/Banner';
+  import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
 
   interface Props {
     banner: ManagementRecord;
     open: boolean;
     ontoggle: () => void;
     onedit: () => void;
+    orderable?: boolean;
+    position?: number | null;
+    index?: number;
+    activeId?: string | null;
+    isOverlay?: boolean;
   }
 
-  let { banner, open, ontoggle, onedit }: Props = $props();
+  let {
+    banner,
+    open,
+    ontoggle,
+    onedit,
+    orderable = false,
+    position = null,
+    index = 0,
+    activeId = null,
+    isOverlay = false,
+  }: Props = $props();
+
+  const { ref, handleRef } = useSortable({
+    get id() {
+      return banner.uuid;
+    },
+    index: () => index,
+    type: 'banner',
+    accept: 'banner',
+    group: 'banner-order',
+    get disabled() {
+      return !orderable || isOverlay;
+    },
+  });
+  const noopAttachment = () => {};
   const audienceLabels = {
     EVERYONE: 'Everyone',
     SIGNED_IN: 'Signed-in users',
@@ -82,60 +112,92 @@
   }
 </script>
 
-<article class="overflow-hidden rounded-xl border border-surface-300 bg-surface-50">
-  <div class="flex min-h-28 items-center gap-4 p-4">
-    <span
-      class="h-14 w-2 shrink-0 rounded-full {BANNER_APPEARANCE_DETAILS[banner.appearance]
-        .swatchClass}"
-      aria-hidden="true"
-    ></span>
-    <div class="min-w-0 flex-1">
-      <p class="overflow-hidden text-ellipsis whitespace-nowrap font-bold">{banner.excerpt}</p>
-      <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-surface-600">
-        <span class="rounded-full bg-surface-200 px-2 py-1 font-bold uppercase">
-          {lifecycleLabels[banner.lifecycle]}
-        </span>
-        <span
-          >{BANNER_APPEARANCE_DETAILS[banner.appearance].label} · {banner.dismissible
-            ? 'Dismissible'
-            : 'Permanent'}</span
-        >
-      </div>
-      <p class="mt-2 text-sm text-surface-600">{scheduleSummary()}</p>
-    </div>
-    <button
-      type="button"
-      class="btn preset-tonal-primary"
-      aria-expanded={open}
-      aria-controls={panelId}
-      onclick={ontoggle}
-    >
-      Details <span aria-hidden="true">{open ? '▴' : '▾'}</span>
-    </button>
-  </div>
-  {#if open}
-    <section
-      id={panelId}
-      class="grid gap-5 border-t border-primary-200 bg-primary-50 p-5 sm:grid-cols-2"
-      transition:slide={{ axis: 'y' }}
-    >
-      <div>
-        <h3 class="text-sm font-bold uppercase tracking-wide">Visibility</h3>
-        <p><strong>Audience:</strong> {audienceLabels[banner.audience]}</p>
-        <p><strong>Pages:</strong> {pageTargetSummary()}</p>
-      </div>
-      <div>
-        <h3 class="text-sm font-bold uppercase tracking-wide">Last change</h3>
-        <p>{new Date(banner.updatedAt).toLocaleString()}</p>
-        <p>Last changed by {banner.updatedBy}</p>
-      </div>
-      {#if banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED'}
-        <div class="sm:col-span-2">
-          <button type="button" class="btn preset-tonal-primary" onclick={onedit}>
-            Edit banner
+<div class="relative" {@attach orderable && !isOverlay ? ref : noopAttachment}>
+  <article
+    class="overflow-hidden rounded-xl border border-surface-300 bg-surface-50 {activeId ===
+      banner.uuid && !isOverlay
+      ? 'invisible'
+      : ''}"
+  >
+    <div class="flex min-h-28 items-center gap-4 p-4">
+      {#if orderable}
+        <div class="flex w-14 shrink-0 flex-col items-center gap-1">
+          <button
+            type="button"
+            class="cursor-grab rounded p-3 text-surface-600 active:cursor-grabbing focus-visible:ring-3 focus-visible:ring-primary-500 focus-visible:outline-none"
+            aria-label={`Reorder banner: ${banner.excerpt}`}
+            aria-roledescription="sortable"
+            title="Drag or use the keyboard to reorder"
+            {@attach handleRef}
+          >
+            <i class="fa-solid fa-grip-vertical text-xl" aria-hidden="true"></i>
           </button>
+          {#if position !== null}<span class="text-xs font-bold">Position {position}</span>{/if}
         </div>
       {/if}
-    </section>
+      <span
+        class="h-14 w-2 shrink-0 rounded-full {BANNER_APPEARANCE_DETAILS[banner.appearance]
+          .swatchClass}"
+        aria-hidden="true"
+      ></span>
+      <div class="min-w-0 flex-1">
+        <p class="overflow-hidden text-ellipsis whitespace-nowrap font-bold">{banner.excerpt}</p>
+        <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-surface-600">
+          <span class="rounded-full bg-surface-200 px-2 py-1 font-bold uppercase">
+            {lifecycleLabels[banner.lifecycle]}
+          </span>
+          <span
+            >{BANNER_APPEARANCE_DETAILS[banner.appearance].label} · {banner.dismissible
+              ? 'Dismissible'
+              : 'Permanent'}</span
+          >
+        </div>
+        <p class="mt-2 text-sm text-surface-600">{scheduleSummary()}</p>
+      </div>
+      <button
+        type="button"
+        class="btn preset-tonal-primary"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onclick={ontoggle}
+      >
+        Details <span aria-hidden="true">{open ? '▴' : '▾'}</span>
+      </button>
+    </div>
+    {#if open}
+      <section
+        id={panelId}
+        class="grid gap-5 border-t border-primary-200 bg-primary-50 p-5 sm:grid-cols-2"
+        transition:slide={{ axis: 'y' }}
+      >
+        <div>
+          <h3 class="text-sm font-bold uppercase tracking-wide">Visibility</h3>
+          <p><strong>Audience:</strong> {audienceLabels[banner.audience]}</p>
+          <p><strong>Pages:</strong> {pageTargetSummary()}</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold uppercase tracking-wide">Last change</h3>
+          <p>{new Date(banner.updatedAt).toLocaleString()}</p>
+          <p>Last changed by {banner.updatedBy}</p>
+        </div>
+        {#if banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED'}
+          <div class="sm:col-span-2">
+            <button type="button" class="btn preset-tonal-primary" onclick={onedit}>
+              Edit banner
+            </button>
+          </div>
+        {/if}
+      </section>
+    {/if}
+  </article>
+  {#if orderable && activeId === banner.uuid && !isOverlay}
+    <div
+      data-testid="banner-drop-preview"
+      class="absolute inset-0 flex items-center justify-center rounded-xl border border-dashed border-primary-500 bg-primary-500/10"
+    >
+      <span class="text-xs font-semibold uppercase tracking-wide text-primary-700">
+        Moving: {banner.excerpt}
+      </span>
+    </div>
   {/if}
-</article>
+</div>

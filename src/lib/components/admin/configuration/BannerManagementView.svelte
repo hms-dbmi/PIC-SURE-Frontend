@@ -1,4 +1,5 @@
 <script lang="ts">
+  /* eslint-disable @typescript-eslint/no-explicit-any -- dnd-kit events lack exported types */
   import { onDestroy, onMount, tick } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
   import { scale } from 'svelte/transition';
@@ -7,8 +8,15 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import type { BannerLifecycle, ManagedBanner, ManagementRecord } from '$lib/models/Banner';
-  import { getManagedBanners } from '$lib/services/BannerManagement';
+  import { getManagedBanners, reorderBanners } from '$lib/services/BannerManagement';
   import { bannerPlainText } from '$lib/utilities/BannerHTML';
+  import { toaster } from '$lib/toaster';
+  import {
+    DragDropProvider,
+    DragOverlay,
+    KeyboardSensor,
+    PointerSensor,
+  } from '@dnd-kit-svelte/svelte';
 
   type LifecycleTab = 'orderable' | 'saved' | 'expired';
   const lifecycleTabs = [
@@ -39,14 +47,27 @@
   let editingBanner: ManagedBanner | null = $state(null);
   let arrivalUuid: string | null = $state(null);
   let arrivalTimeout: number | undefined;
+  let orderUuids: string[] = $state([]);
+  let savedOrderUuids: string[] = $state([]);
+  let activeDragUuid: string | null = $state(null);
+  let dragStartOrder: string[] = [];
+  let dragTargetUuid: string | null = null;
+  let savingOrder = $state(false);
+  const sensors = [KeyboardSensor, PointerSensor];
+  const orderDirty = $derived(orderUuids.join() !== savedOrderUuids.join());
 
   const counts = $derived({
     orderable: records.filter((banner) => inTab(banner.lifecycle, 'orderable')).length,
     saved: records.filter((banner) => inTab(banner.lifecycle, 'saved')).length,
     expired: records.filter((banner) => inTab(banner.lifecycle, 'expired')).length,
   });
+  const orderedRecords = $derived(
+    orderUuids
+      .map((uuid) => records.find((banner) => banner.uuid === uuid))
+      .filter((banner): banner is ManagementRecord => banner !== undefined),
+  );
   const visibleRecords = $derived(
-    records.filter(
+    (activeTab === 'orderable' ? orderedRecords : records).filter(
       (banner) =>
         inTab(banner.lifecycle, activeTab) &&
         `${banner.title ?? ''} ${banner.excerpt}`
@@ -58,6 +79,10 @@
   onMount(async () => {
     try {
       records = (await getManagedBanners()).map(present);
+      orderUuids = records
+        .filter((banner) => inTab(banner.lifecycle, 'orderable'))
+        .map((banner) => banner.uuid);
+      savedOrderUuids = [...orderUuids];
     } catch {
       failed = true;
     } finally {
@@ -131,6 +156,10 @@
     openUuid = null;
     mode = 'list';
     editingBanner = null;
+    if (inTab(banner.lifecycle, 'orderable') && !orderUuids.includes(banner.uuid)) {
+      orderUuids = [...orderUuids, banner.uuid];
+      savedOrderUuids = [...savedOrderUuids, banner.uuid];
+    }
     arrivalUuid = banner.uuid;
     await tick();
     document.querySelector(`[data-banner-row="${banner.uuid}"]`)?.scrollIntoView({
@@ -140,6 +169,61 @@
     arrivalTimeout = window.setTimeout(() => {
       if (arrivalUuid === banner.uuid) arrivalUuid = null;
     }, 1_800);
+  }
+
+  function handleDragStart(event: any) {
+    const source = event?.operation?.source;
+    if (!source || activeTab !== 'orderable' || search.trim()) return;
+    activeDragUuid = String(source.id);
+    dragStartOrder = [...orderUuids];
+    dragTargetUuid = activeDragUuid;
+  }
+
+  function handleDragOver(event: any) {
+    if (!activeDragUuid) return;
+    const targetUuid = event?.operation?.target?.id;
+    if (!targetUuid || targetUuid === activeDragUuid || targetUuid === dragTargetUuid) return;
+    const sourceIndex = orderUuids.indexOf(activeDragUuid);
+    const targetIndex = orderUuids.indexOf(String(targetUuid));
+    if (sourceIndex < 0 || targetIndex < 0) return;
+    const next = [...orderUuids];
+    const [moved] = next.splice(sourceIndex, 1);
+    next.splice(targetIndex, 0, moved);
+    orderUuids = next;
+    dragTargetUuid = String(targetUuid);
+  }
+
+  function handleDragEnd(event: any) {
+    if (event?.canceled ?? event?.operation?.canceled) orderUuids = dragStartOrder;
+    activeDragUuid = null;
+    dragTargetUuid = null;
+    dragStartOrder = [];
+  }
+
+  async function saveOrder() {
+    savingOrder = true;
+    try {
+      const authoritative = await reorderBanners(orderUuids);
+      const presented = authoritative.map(present);
+      records = [
+        ...presented,
+        ...records.filter((banner) => !inTab(banner.lifecycle, 'orderable')),
+      ];
+      orderUuids = presented.map((banner) => banner.uuid);
+      savedOrderUuids = [...orderUuids];
+      toaster.success({ title: 'Banner order saved' });
+    } catch {
+      toaster.error({
+        title: 'Banner order could not be saved',
+        description: 'The order was not saved. Review the current queue and try again.',
+      });
+    } finally {
+      savingOrder = false;
+    }
+  }
+
+  function cancelOrderChanges() {
+    orderUuids = [...savedOrderUuids];
   }
 </script>
 
@@ -174,70 +258,113 @@
         <ErrorAlert title="API Error">Site banners could not be loaded.</ErrorAlert>
       </div>
     {:else}
-      <div
-        class="mt-6 border-b border-surface-300"
-        role="tablist"
-        aria-label="Banner lifecycle states"
+      <DragDropProvider
+        {sensors}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
       >
-        {#each lifecycleTabs as tab, index}
-          <button
-            type="button"
-            role="tab"
-            id={`banner-management-tab-${tab.value}`}
-            class="mr-6 border-b-3 px-1 py-3 font-bold {activeTab === tab.value
-              ? 'border-primary-500 text-primary-700'
-              : 'border-transparent text-surface-600'}"
-            aria-selected={activeTab === tab.value}
-            aria-controls="banner-management-panel"
-            tabindex={activeTab === tab.value ? 0 : -1}
-            onclick={() => selectLifecycleTab(tab.value)}
-            onkeydown={(event) => handleLifecycleTabKeydown(event, index)}
-          >
-            {tab.label}
-            <span class="ml-1 rounded-full bg-surface-200 px-2 py-1 text-xs"
-              >{counts[tab.value]}</span
+        {#if activeTab === 'orderable' && !search.trim() && orderDirty}
+          <div class="mt-5 flex justify-end gap-3">
+            <button type="button" class="btn preset-tonal-primary" onclick={cancelOrderChanges}>
+              Cancel order changes
+            </button>
+            <button
+              type="button"
+              class="btn preset-filled-primary-500"
+              disabled={savingOrder}
+              onclick={saveOrder}
             >
-          </button>
-        {/each}
-      </div>
-
-      <label class="mt-5 block max-w-md">
-        <span class="sr-only">Search banner text</span>
-        <input type="search" class="input" placeholder="Search banner text" bind:value={search} />
-      </label>
-
-      <div
-        id="banner-management-panel"
-        class="mt-5 grid gap-3"
-        role="tabpanel"
-        aria-labelledby={`banner-management-tab-${activeTab}`}
-      >
-        {#if visibleRecords.length === 0}
-          <p class="rounded border border-surface-300 p-6 text-center text-surface-600">
-            {search.trim() ? 'No banners match this search.' : 'No banners in this section.'}
-          </p>
-        {:else}
-          {#each visibleRecords as banner (banner.uuid)}
-            <div
-              data-banner-row={banner.uuid}
-              class:banner-arrival={arrivalUuid === banner.uuid}
-              in:scale={{
-                start: 0.97,
-                opacity: 1,
-                duration: arrivalUuid === banner.uuid ? 450 : 0,
-                easing: elasticInOut,
-              }}
-            >
-              <BannerManagementRow
-                {banner}
-                open={openUuid === banner.uuid}
-                ontoggle={() => (openUuid = openUuid === banner.uuid ? null : banner.uuid)}
-                onedit={() => editBanner(banner)}
-              />
-            </div>
-          {/each}
+              {savingOrder ? 'Saving order...' : 'Save order'}
+            </button>
+          </div>
         {/if}
-      </div>
+        <div
+          class="mt-6 border-b border-surface-300"
+          role="tablist"
+          aria-label="Banner lifecycle states"
+        >
+          {#each lifecycleTabs as tab, index}
+            <button
+              type="button"
+              role="tab"
+              id={`banner-management-tab-${tab.value}`}
+              class="mr-6 border-b-3 px-1 py-3 font-bold {activeTab === tab.value
+                ? 'border-primary-500 text-primary-700'
+                : 'border-transparent text-surface-600'}"
+              aria-selected={activeTab === tab.value}
+              aria-controls="banner-management-panel"
+              tabindex={activeTab === tab.value ? 0 : -1}
+              onclick={() => selectLifecycleTab(tab.value)}
+              onkeydown={(event) => handleLifecycleTabKeydown(event, index)}
+            >
+              {tab.label}
+              <span class="ml-1 rounded-full bg-surface-200 px-2 py-1 text-xs"
+                >{counts[tab.value]}</span
+              >
+            </button>
+          {/each}
+        </div>
+
+        <label class="mt-5 block max-w-md">
+          <span class="sr-only">Search banner text</span>
+          <input type="search" class="input" placeholder="Search banner text" bind:value={search} />
+        </label>
+
+        <div
+          id="banner-management-panel"
+          class="mt-5 grid gap-3"
+          role="tabpanel"
+          aria-labelledby={`banner-management-tab-${activeTab}`}
+        >
+          {#if visibleRecords.length === 0}
+            <p class="rounded border border-surface-300 p-6 text-center text-surface-600">
+              {search.trim() ? 'No banners match this search.' : 'No banners in this section.'}
+            </p>
+          {:else}
+            {#each visibleRecords as banner (banner.uuid)}
+              <div
+                data-banner-row={banner.uuid}
+                class:banner-arrival={arrivalUuid === banner.uuid}
+                in:scale={{
+                  start: 0.97,
+                  opacity: 1,
+                  duration: arrivalUuid === banner.uuid ? 450 : 0,
+                  easing: elasticInOut,
+                }}
+              >
+                <BannerManagementRow
+                  {banner}
+                  open={openUuid === banner.uuid}
+                  ontoggle={() => (openUuid = openUuid === banner.uuid ? null : banner.uuid)}
+                  onedit={() => editBanner(banner)}
+                  orderable={activeTab === 'orderable' && !search.trim()}
+                  position={activeTab === 'orderable' ? orderUuids.indexOf(banner.uuid) + 1 : null}
+                  index={orderUuids.indexOf(banner.uuid)}
+                  activeId={activeDragUuid}
+                />
+              </div>
+            {/each}
+          {/if}
+        </div>
+        <DragOverlay>
+          {#if activeDragUuid}
+            {@const activeBanner = records.find((banner) => banner.uuid === activeDragUuid)}
+            {#if activeBanner}
+              <BannerManagementRow
+                banner={activeBanner}
+                open={false}
+                ontoggle={() => {}}
+                onedit={() => {}}
+                orderable={true}
+                position={orderUuids.indexOf(activeBanner.uuid) + 1}
+                index={orderUuids.indexOf(activeBanner.uuid)}
+                isOverlay={true}
+              />
+            {/if}
+          {/if}
+        </DragOverlay>
+      </DragDropProvider>
     {/if}
   </section>
 {/if}

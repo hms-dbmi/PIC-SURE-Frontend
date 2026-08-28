@@ -7,13 +7,27 @@ vi.mock('$lib/services/BannerManagement', () => ({
   getManagedBanners: vi.fn(),
   publishBanner: vi.fn(),
   publishSavedBanner: vi.fn(),
+  reorderBanners: vi.fn(),
   saveBanner: vi.fn(),
   updatePublishedBanner: vi.fn(),
   updateSavedBanner: vi.fn(),
 }));
 
+const sensors = vi.hoisted(() => ({ keyboard: Symbol('keyboard'), pointer: Symbol('pointer') }));
+vi.mock('@dnd-kit-svelte/svelte', async () => ({
+  DragDropProvider: (await import('./fixtures/DragDropProviderMock.svelte')).default,
+  DragOverlay: (await import('./fixtures/DragOverlayMock.svelte')).default,
+  KeyboardSensor: sensors.keyboard,
+  PointerSensor: sensors.pointer,
+}));
+vi.mock('@dnd-kit-svelte/svelte/sortable', () => ({
+  useSortable: () => ({ ref: vi.fn(), handleRef: vi.fn() }),
+}));
+vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
+
 import BannerManagementView from '$lib/components/admin/configuration/BannerManagementView.svelte';
-import { getManagedBanners, saveBanner } from '$lib/services/BannerManagement';
+import { getManagedBanners, reorderBanners, saveBanner } from '$lib/services/BannerManagement';
+import { toaster } from '$lib/toaster';
 import type { ManagedBanner } from '$lib/models/Banner';
 
 const base: ManagedBanner = {
@@ -38,6 +52,16 @@ const base: ManagedBanner = {
   updatedBy: 'admin-id',
   publishedAt: '2026-08-27T12:00:00Z',
   publishedBy: 'admin-id',
+};
+
+const scheduled: ManagedBanner = {
+  ...base,
+  uuid: '55555555-5555-5555-5555-555555555555',
+  lifecycle: 'SCHEDULED',
+  htmlContent: '<p>Scheduled enrollment notice</p>',
+  title: 'Enrollment',
+  priority: 7,
+  startAt: '2026-08-28T12:00:00Z',
 };
 
 const records: ManagedBanner[] = [
@@ -67,9 +91,70 @@ const records: ManagedBanner[] = [
 beforeEach(() => {
   vi.mocked(getManagedBanners).mockReset().mockResolvedValue(records);
   vi.mocked(saveBanner).mockReset();
+  vi.mocked(reorderBanners).mockReset();
+  vi.mocked(toaster.error).mockReset();
 });
 
+function bannerRowOrder(): string[] {
+  return Array.from(document.querySelectorAll<HTMLElement>('[data-banner-row]')).map(
+    (row) => row.dataset.bannerRow ?? '',
+  );
+}
+
+async function drag(sourceId: string, targetId: string) {
+  const shared = globalThis as typeof globalThis & { __bannerDndEvent?: unknown };
+  shared.__bannerDndEvent = { operation: { source: { id: sourceId }, target: { id: sourceId } } };
+  await fireEvent.click(screen.getByTestId('dnd-start'));
+  shared.__bannerDndEvent = { operation: { source: { id: sourceId }, target: { id: targetId } } };
+  await fireEvent.click(screen.getByTestId('dnd-over'));
+  await fireEvent.click(screen.getByTestId('dnd-end'));
+}
+
 describe('BannerManagementView', () => {
+  it('moves locally through the provider seam and reconciles only on save', async () => {
+    vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, ...records.slice(1)]);
+    vi.mocked(reorderBanners).mockResolvedValue([
+      { ...base, priority: 1 },
+      { ...scheduled, priority: 2 },
+    ]);
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+
+    expect(
+      (globalThis as typeof globalThis & { __bannerDndSensors?: unknown[] }).__bannerDndSensors,
+    ).toEqual([sensors.keyboard, sensors.pointer]);
+    const grips = screen.getAllByRole('button', { name: /Reorder banner/ });
+    expect(grips).toHaveLength(2);
+    expect(grips[0]).toHaveClass('focus-visible:ring-3');
+    expect(screen.queryByRole('button', { name: /move with keyboard/i })).not.toBeInTheDocument();
+
+    await drag(base.uuid, scheduled.uuid);
+
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, base.uuid]);
+    expect(reorderBanners).not.toHaveBeenCalled();
+    await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
+    expect(reorderBanners).toHaveBeenCalledWith([scheduled.uuid, base.uuid]);
+    await waitFor(() => expect(bannerRowOrder()).toEqual([base.uuid, scheduled.uuid]));
+    expect(screen.getByText('Position 1')).toBeInTheDocument();
+  });
+
+  it('keeps a failed order dirty and lets cancel restore the saved queue without another request', async () => {
+    vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, ...records.slice(1)]);
+    vi.mocked(reorderBanners).mockRejectedValue(new Error('validation failed'));
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+
+    await drag(base.uuid, scheduled.uuid);
+    await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
+
+    await waitFor(() => expect(toaster.error).toHaveBeenCalledOnce());
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, base.uuid]);
+    expect(screen.getByRole('button', { name: 'Save order' })).toBeEnabled();
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel order changes' }));
+    expect(bannerRowOrder()).toEqual([base.uuid, scheduled.uuid]);
+    expect(reorderBanners).toHaveBeenCalledTimes(1);
+  });
+
   it('groups loaded rows under lifecycle tabs and filters plain text without pagination', async () => {
     const parse = vi.spyOn(DOMParser.prototype, 'parseFromString');
     render(BannerManagementView);
@@ -86,6 +171,7 @@ describe('BannerManagementView', () => {
     await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
     expect(await screen.findByText('Reusable enrollment notice')).toBeInTheDocument();
     expect(screen.queryByText('System maintenance tonight')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Reorder banner/ })).not.toBeInTheDocument();
 
     await fireEvent.input(screen.getByRole('searchbox', { name: 'Search banner text' }), {
       target: { value: 'missing' },

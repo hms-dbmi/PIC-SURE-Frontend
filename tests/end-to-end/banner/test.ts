@@ -598,3 +598,114 @@ test.describe('Site banner workflow 2', () => {
     await expect(page.getByTestId('site-banner')).toHaveCount(0);
   });
 });
+
+test.describe('Site banner workflow 5', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page);
+    for (const path of ['role', 'privilege', 'application', 'connection']) {
+      await page.route(`**/psama/${path}`, (route) => route.fulfill({ json: [] }));
+    }
+  });
+
+  test('reorders with pointer and keyboard, saves, and renders visitors in saved order', async ({
+    page,
+  }) => {
+    const managed = ['First notice', 'Second notice', 'Third notice'].map((title, index) => ({
+      ...banner,
+      uuid: `${index + 1}1111111-1111-1111-1111-111111111111`,
+      htmlContent: `<p>${title}</p>`,
+      title,
+      status: 'PUBLISHED',
+      lifecycle: 'ACTIVE',
+      priority: (index + 1) * 10,
+      startAt: '2026-08-27T12:00:00Z',
+      endAt: null,
+      createdAt: '2026-08-27T11:00:00Z',
+      createdBy: 'admin-id',
+      updatedAt: '2026-08-27T12:00:00Z',
+      updatedBy: 'admin-id',
+      publishedAt: '2026-08-27T12:00:00Z',
+      publishedBy: 'admin-id',
+    }));
+    let saved = [...managed];
+    let reorderRequests = 0;
+
+    await page.route('**/picsure/operations/banners**', async (route) => {
+      const request = route.request();
+      const pathname = new URL(request.url()).pathname;
+      if (request.method() === 'GET' && pathname.endsWith('/banners/active')) {
+        return route.fulfill({
+          json: saved.map((record) => ({
+            uuid: record.uuid,
+            htmlContent: record.htmlContent,
+            title: record.title,
+            appearance: record.appearance,
+            icon: record.icon,
+            dismissible: record.dismissible,
+            audience: record.audience,
+            placement: record.placement,
+            pageTargets: record.pageTargets,
+            priority: record.priority,
+            presentationHash: record.presentationHash,
+          })),
+        });
+      }
+      if (request.method() === 'GET' && pathname.endsWith('/banners')) {
+        return route.fulfill({ json: saved });
+      }
+      if (request.method() === 'PUT' && pathname.endsWith('/banners/order')) {
+        reorderRequests += 1;
+        const { bannerUuids } = request.postDataJSON() as { bannerUuids: string[] };
+        expect(bannerUuids).toHaveLength(3);
+        saved = bannerUuids.map((uuid, index) => ({
+          ...managed.find((record) => record.uuid === uuid)!,
+          priority: index + 1,
+        }));
+        return route.fulfill({ json: saved });
+      }
+      return route.fallback();
+    });
+
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    const rows = page.locator('[data-banner-row]');
+    await expect(rows).toHaveCount(3);
+
+    const firstGrip = page.getByRole('button', { name: /Reorder banner: First notice/ });
+    const secondGrip = page.getByRole('button', { name: /Reorder banner: Second notice/ });
+    await firstGrip.dragTo(secondGrip);
+    await expect(rows.nth(0)).toContainText('Second notice');
+    expect(reorderRequests).toBe(0);
+
+    await page.getByRole('button', { name: 'Save order' }).click();
+    await expect(page.getByTestId('toast-root')).toContainText('Banner order saved');
+    expect(reorderRequests).toBe(1);
+
+    await page.getByRole('tab', { name: 'Access Control' }).click();
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await expect(rows).toHaveCount(3);
+    const thirdGrip = page.getByRole('button', { name: /Reorder banner: Third notice/ });
+    await thirdGrip.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByTestId('banner-drop-preview')).toBeVisible();
+    for (let step = 0; step < 30; step += 1) await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('Enter');
+    await expect(rows.nth(0)).toContainText('Third notice');
+    expect(reorderRequests).toBe(1);
+
+    await page.getByRole('button', { name: 'Save order' }).click();
+    expect(reorderRequests).toBe(2);
+
+    await page.goto('/help');
+    await expect(page.getByTestId('site-banner')).toHaveCount(3);
+    await expect
+      .poll(() =>
+        page
+          .getByTestId('site-banner')
+          .evaluateAll((elements) => elements.map((element) => element.getAttribute('aria-label'))),
+      )
+      .toEqual(['Third notice', 'Second notice', 'First notice']);
+  });
+});

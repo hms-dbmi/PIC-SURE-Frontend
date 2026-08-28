@@ -7,6 +7,7 @@ import {
   getManagedBanners,
   publishBanner,
   publishSavedBanner,
+  reorderBanners,
   saveBanner,
   updatePublishedBanner,
   updateSavedBanner,
@@ -129,6 +130,19 @@ describe('updatePublishedBanner', () => {
       ...draft,
       htmlContent: '<p>Corrected content</p>',
       title: 'Corrected',
+    });
+  });
+});
+
+describe('reorderBanners', () => {
+  it('submits the complete queue to the atomic order endpoint and returns its authoritative order', async () => {
+    const authoritative = [{ ...published, priority: 1 }];
+    vi.mocked(api.put).mockResolvedValue(authoritative);
+
+    await expect(reorderBanners([published.uuid])).resolves.toBe(authoritative);
+
+    expect(api.put).toHaveBeenCalledWith('picsure/operations/banners/order', {
+      bannerUuids: [published.uuid],
     });
   });
 });

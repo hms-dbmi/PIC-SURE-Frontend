@@ -11,6 +11,10 @@ export async function getManagedBanners(): Promise<ManagedBanner[]> {
   return api.get(Picsure.Banners.Manage);
 }
 
+export async function reorderBanners(bannerUuids: string[]): Promise<ManagedBanner[]> {
+  return api.put(`${Picsure.Banners.Manage}/order`, { bannerUuids });
+}
+
 export async function saveBanner(draft: BannerDraft): Promise<ManagedBanner> {
   return api.post(`${Picsure.Banners.Manage}/saved`, authorablePayload(draft));
 }
