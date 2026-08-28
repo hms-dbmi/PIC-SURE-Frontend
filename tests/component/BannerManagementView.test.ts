@@ -685,6 +685,79 @@ describe('BannerManagementView', () => {
     expect(within(expiredRow).getByRole('button', { name: 'Edit banner' })).toBeInTheDocument();
   });
 
+  it('withholds restore until a pending order save and its refresh settle', async () => {
+    const disabled: ManagedBanner = {
+      ...base,
+      uuid: '44444444-4444-4444-4444-444444444444',
+      status: 'DISABLED',
+      lifecycle: 'DISABLED',
+      htmlContent: '<p>Previously disabled</p>',
+      disabledAt: '2026-08-27T12:30:00Z',
+      disabledBy: 'admin-id',
+    };
+    const restored: ManagedBanner = {
+      ...disabled,
+      uuid: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      status: 'PUBLISHED',
+      lifecycle: 'ACTIVE',
+      htmlContent: '<p>Authoritative restored notice</p>',
+      priority: 99,
+      disabledAt: null,
+      disabledBy: null,
+      restoredFromUuid: disabled.uuid,
+    };
+    let resolveRefresh!: (banners: ManagedBanner[]) => void;
+    vi.mocked(getManagedBanners)
+      .mockResolvedValueOnce([base, scheduled, disabled])
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveRefresh = resolve;
+        }),
+      );
+    vi.mocked(reorderBanners).mockResolvedValue([
+      { ...scheduled, priority: 1 },
+      { ...base, priority: 2 },
+    ]);
+    vi.mocked(restoreBanner).mockResolvedValue(restored);
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+
+    await drag(scheduled.uuid, base.uuid);
+    await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
+    await waitFor(() => expect(getManagedBanners).toHaveBeenCalledTimes(2));
+
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    const sourceRow = await openDetailsFor('Previously disabled');
+    expect(document.getElementById(`banner-${disabled.uuid}-details`)).toBeInTheDocument();
+    const restore = within(sourceRow).getByRole('button', { name: 'Restore banner' });
+    expect(restore).toBeDisabled();
+    await fireEvent.click(restore);
+    expect(screen.queryByRole('heading', { name: 'Restore banner' })).not.toBeInTheDocument();
+
+    // A click that reaches the handler anyway - a stale callback, or an event queued
+    // before the control re-rendered - must not open the restore editor either.
+    restore.removeAttribute('disabled');
+    await fireEvent.click(restore);
+    expect(screen.queryByRole('heading', { name: 'Restore banner' })).not.toBeInTheDocument();
+    expect(restoreBanner).not.toHaveBeenCalled();
+
+    resolveRefresh([{ ...scheduled, priority: 1 }, { ...base, priority: 2 }, disabled]);
+    await waitFor(() =>
+      expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner order saved' }),
+    );
+    await fireEvent.click(within(sourceRow).getByRole('button', { name: 'Restore banner' }));
+    expect(screen.getByRole('heading', { name: 'Restore banner' })).toBeInTheDocument();
+    await fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+
+    await waitFor(() =>
+      expect(restoreBanner).toHaveBeenCalledWith(disabled.uuid, expect.any(Object)),
+    );
+    expect(await screen.findByText('Authoritative restored notice')).toBeInTheDocument();
+    expect(screen.queryByText('Previously disabled')).not.toBeInTheDocument();
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, base.uuid, restored.uuid]);
+    expect(getManagedBanners).toHaveBeenCalledTimes(2);
+  });
+
   it('guards a dirty reorder through Keep and Discard before restoring at the clean queue bottom', async () => {
     const disabled: ManagedBanner = {
       ...base,

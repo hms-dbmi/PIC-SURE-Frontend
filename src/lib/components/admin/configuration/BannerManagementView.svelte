@@ -202,6 +202,10 @@
   }
 
   function restoreBanner(banner: ManagedBanner) {
+    // A pending order save still has a follow-up getManagedBanners() in flight. Letting a
+    // restore commit underneath it would let that older response replace the authoritative
+    // restore reconciliation with the archived source and drop the new occurrence.
+    if (savingOrder) return;
     editingBanner = banner;
     mode = 'restore';
   }
@@ -595,6 +599,7 @@
                   activeId={activeDragUuid}
                   busy={archivingUuid === banner.uuid || disablingUuid === banner.uuid}
                   disableDisabled={disablingUuid !== null}
+                  restoreDisabled={savingOrder}
                   archiveDisabled={archivingUuid !== null}
                 />
               </div>

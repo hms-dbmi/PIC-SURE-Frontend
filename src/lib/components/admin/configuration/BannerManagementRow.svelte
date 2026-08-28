@@ -23,6 +23,7 @@
     isOverlay?: boolean;
     busy?: boolean;
     disableDisabled?: boolean;
+    restoreDisabled?: boolean;
     archiveDisabled?: boolean;
   }
 
@@ -41,6 +42,7 @@
     isOverlay = false,
     busy = false,
     disableDisabled = false,
+    restoreDisabled = false,
     archiveDisabled = false,
   }: Props = $props();
 
@@ -207,7 +209,7 @@
               <button
                 type="button"
                 class="btn preset-tonal-primary"
-                disabled={busy}
+                disabled={busy || restoreDisabled}
                 onclick={onrestore}
               >
                 Restore banner

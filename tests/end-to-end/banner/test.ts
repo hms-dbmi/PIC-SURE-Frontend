@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { test, mockApiConfig } from '../custom-context';
+import { userIsLoggedIn } from '../utils';
 
 const banner = {
   uuid: '11111111-1111-1111-1111-111111111111',
@@ -1054,6 +1055,11 @@ test.describe('Site banner workflow 2', () => {
     await page.getByRole('tab', { name: 'Expired' }).click();
     await expect(row).toContainText('Expired');
     await page.goto('/help');
+    // The root layout's hydration-time fetch of the current pathname redirects to '/' when it
+    // is aborted (src/routes/+layout.ts). Waiting for the signed-in shell proves hydration
+    // finished, so the next page.goto cannot race that redirect - and it also makes the
+    // absent-banner assertion below meaningful rather than true before the app boots.
+    await userIsLoggedIn(page);
     await expect(page.getByTestId('site-banner')).toHaveCount(0);
 
     await page.goto('/admin/configuration');
