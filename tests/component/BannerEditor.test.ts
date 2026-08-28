@@ -57,6 +57,7 @@ describe('BannerEditor', () => {
     const { container } = render(BannerEditor);
 
     expect(screen.getByRole('heading', { name: 'Create banner' })).toBeInTheDocument();
+    expect(screen.getByText('Publish an announcement across PIC-SURE.')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Primary' })).toBeChecked();
     expect(screen.getAllByTestId('appearance-swatch')).toHaveLength(7);
     for (const appearance of [
@@ -122,6 +123,11 @@ describe('BannerEditor', () => {
     vi.mocked(updatePublishedBanner).mockResolvedValue(corrected);
     const onsuccess = vi.fn();
     render(BannerEditor, { props: { banner: published, onsuccess } });
+    expect(
+      screen.getByText(
+        'Correct the published announcement. Saved changes take effect immediately.',
+      ),
+    ).toBeInTheDocument();
     const editor = await screen.findByRole('textbox', { name: 'Banner content' });
     editor.innerHTML = '<p>Corrected content</p>';
     await fireEvent.input(editor);

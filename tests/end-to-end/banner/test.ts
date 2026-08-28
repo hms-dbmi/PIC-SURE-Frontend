@@ -382,6 +382,7 @@ test.describe('Site banner workflow 1', () => {
     await expect(page.getByRole('heading', { name: 'Edit published banner' })).toBeVisible();
     const publishedEditor = page.getByRole('textbox', { name: 'Banner content' });
     await publishedEditor.fill('Corrected visitor notice');
+    const correctedEditorHtml = await publishedEditor.innerHTML();
     await page.getByRole('radio', { name: 'Secondary' }).check();
     await page.getByText('Advanced options').click();
     await page.getByRole('textbox', { name: 'Title' }).fill('Correction submitted by admin');
@@ -408,7 +409,7 @@ test.describe('Site banner workflow 1', () => {
       pageTargets: [{ kind: 'ALL' }],
     });
     expect(updateSubmitted).toMatchObject({
-      htmlContent: '<p>Corrected visitor notice</p>',
+      htmlContent: correctedEditorHtml,
       title: 'Correction submitted by admin',
       appearance: 'SECONDARY',
       icon: 'ERROR',

@@ -245,7 +245,7 @@
     </h2>
     <p>
       {banner?.status === 'PUBLISHED'
-        ? 'Correct this published banner. Saving creates an immutable revision.'
+        ? 'Correct the published announcement. Saved changes take effect immediately.'
         : banner
           ? 'Update this reusable draft or publish it across PIC-SURE.'
           : 'Save this announcement for later or publish it across PIC-SURE.'}
