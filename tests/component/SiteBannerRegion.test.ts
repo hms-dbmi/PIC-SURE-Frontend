@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 const navigation = vi.hoisted(() => ({
@@ -68,6 +68,10 @@ beforeEach(() => {
   authentication.setHasValidToken(false);
   authentication.setTokenStatus(false);
   sessionStorage.clear();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe('SiteBannerRegion', () => {
@@ -359,6 +363,48 @@ describe('SiteBannerRegion', () => {
     expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
   });
 
+  it('shows a changed hash only when its signed-in audience and parameterized page also match', async () => {
+    authentication.setHasValidToken(true);
+    authentication.setTokenStatus(true);
+    const targeted = {
+      ...banner,
+      audience: 'SIGNED_IN',
+      pageTargets: [{ kind: 'PARAMETERIZED', path: '/admin/[section]' }],
+      presentationHash: 'targeted-hash-v1',
+    };
+    const changedHash = { ...targeted, presentationHash: 'targeted-hash-v2' };
+    sessionStorage.setItem(
+      dismissalStorageKey,
+      JSON.stringify({ [targeted.uuid]: targeted.presentationHash }),
+    );
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([targeted]), { status: 200 }));
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify([{ ...changedHash, audience: 'SIGNED_OUT' }]), { status: 200 }),
+    );
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([{ ...changedHash, pageTargets: [{ kind: 'EXACT', path: '/help' }] }]),
+        { status: 200 },
+      ),
+    );
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([changedHash]), { status: 200 }));
+    render(SiteBannerRegion);
+    const matchingPage = { to: { url: new URL('https://picsure.example/admin/users') } };
+
+    await navigation.callback?.(matchingPage);
+    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+
+    await navigation.callback?.(matchingPage);
+    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+
+    await navigation.callback?.(matchingPage);
+    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+
+    await navigation.callback?.(matchingPage);
+    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
   it('restores dismissal from storage after the region remounts', async () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify([banner]), { status: 200 }));
     render(SiteBannerRegion);
@@ -421,19 +467,24 @@ describe('SiteBannerRegion', () => {
     const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('storage unavailable');
     });
-    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner]), { status: 200 }));
-    render(SiteBannerRegion);
-    await navigation.callback?.();
-    expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
-    getItem.mockRestore();
+    try {
+      fetchMock.mockResolvedValue(new Response(JSON.stringify([banner]), { status: 200 }));
+      render(SiteBannerRegion);
+      await navigation.callback?.();
+      expect(screen.getByRole('region', { name: 'Maintenance' })).toBeInTheDocument();
+    } finally {
+      getItem.mockRestore();
+    }
 
     const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('storage unavailable');
     });
-    await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' }));
-
-    expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
-    setItem.mockRestore();
+    try {
+      await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' }));
+      expect(screen.queryByTestId('site-banner-region')).not.toBeInTheDocument();
+    } finally {
+      setItem.mockRestore();
+    }
   });
 });
 
