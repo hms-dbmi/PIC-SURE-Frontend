@@ -53,7 +53,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (csp) response.headers.set('content-security-policy', csp);
   const problem = findStyleNonceProblem(csp);
   if (problem) {
-    const message = `CSP cannot authorise the Plotly stylesheet seeded in app.html: ${problem}`;
+    const message = `CSP cannot authorise the inline <style> seeded in app.html: ${problem}`;
     if (import.meta.env.DEV) throw new Error(message);
     console.error(message);
   }
