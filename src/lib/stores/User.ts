@@ -352,11 +352,26 @@ export function getTokenExpiration(token: string) {
   if (!token) {
     throw new Error('No token provided.');
   }
+  let payload: unknown;
   try {
-    return JSON.parse(atob(token.split('.')[1])).exp * 1000;
+    payload = JSON.parse(atob(token.split('.')[1]));
   } catch (error) {
     throw new Error('Error parsing token: ' + error, { cause: error });
   }
+
+  const expirationSeconds =
+    payload && typeof payload === 'object' && 'exp' in payload
+      ? (payload as { exp: unknown }).exp
+      : undefined;
+  if (typeof expirationSeconds !== 'number' || !Number.isFinite(expirationSeconds)) {
+    throw new Error('Token expiration must be a finite number.');
+  }
+
+  const expirationMilliseconds = expirationSeconds * 1000;
+  if (!Number.isFinite(expirationMilliseconds)) {
+    throw new Error('Token expiration must be a finite number.');
+  }
+  return expirationMilliseconds;
 }
 
 export function getTokenExpirationAsDate(token: string) {

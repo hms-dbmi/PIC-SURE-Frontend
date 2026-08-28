@@ -1,11 +1,29 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { isTokenExpired, getTokenExpiration, getTokenExpirationAsDate } from './User';
+
+vi.mock('$lib/logger', () => ({
+  createLog: vi.fn(),
+  log: vi.fn(),
+}));
 
 function makeToken(exp: number): string {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const payload = btoa(JSON.stringify({ sub: 'test', exp }));
   return `${header}.${payload}.fake-signature`;
 }
+
+function makeTokenWithPayload(payload: string): string {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  return `${header}.${btoa(payload)}.fake-signature`;
+}
+
+const invalidExpirations = [
+  ['missing exp', '{"sub":"test"}'],
+  ['string exp', '{"sub":"test","exp":"tomorrow"}'],
+  ['null exp', '{"sub":"test","exp":null}'],
+  ['positive overflow exp', '{"sub":"test","exp":1e309}'],
+  ['negative overflow exp', '{"sub":"test","exp":-1e309}'],
+] as const;
 
 describe('isTokenExpired', () => {
   it('returns true for a token with a past expiration', () => {
@@ -21,6 +39,10 @@ describe('isTokenExpired', () => {
   it('returns true for a malformed token', () => {
     expect(isTokenExpired('not-a-jwt')).toBe(true);
   });
+
+  it.each(invalidExpirations)('returns true for %s', (_description, payload) => {
+    expect(isTokenExpired(makeTokenWithPayload(payload))).toBe(true);
+  });
 });
 
 describe('getTokenExpiration', () => {
@@ -35,6 +57,12 @@ describe('getTokenExpiration', () => {
 
   it('throws for a token with invalid base64 payload', () => {
     expect(() => getTokenExpiration('a.!!!.c')).toThrow();
+  });
+
+  it.each(invalidExpirations)('throws for %s', (_description, payload) => {
+    expect(() => getTokenExpiration(makeTokenWithPayload(payload))).toThrow(
+      'Token expiration must be a finite number.',
+    );
   });
 });
 
