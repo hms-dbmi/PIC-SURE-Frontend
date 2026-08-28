@@ -536,11 +536,51 @@ describe('BannerManagementView', () => {
     );
     await waitFor(() => expect(disableBanner).toHaveBeenCalledWith(base.uuid));
 
+    expect(within(firstRow).getByRole('button', { name: 'Edit banner' })).toBeDisabled();
+    expect(within(firstRow).getByRole('button', { name: 'Disable banner' })).toBeDisabled();
+    await fireEvent.click(within(firstRow).getByRole('button', { name: 'Edit banner' }));
+    expect(
+      screen.queryByRole('heading', { name: 'Edit published banner' }),
+    ).not.toBeInTheDocument();
+
     const secondRow = await openDetailsFor('Scheduled enrollment notice');
     expect(document.getElementById(`banner-${scheduled.uuid}-details`)).toBeInTheDocument();
     expect(within(secondRow).getByRole('button', { name: 'Edit banner' })).toBeEnabled();
     expect(within(secondRow).getByRole('button', { name: 'Disable banner' })).toBeDisabled();
     expect(disableBanner).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves unrelated details when a disable succeeds', async () => {
+    const disabled: ManagedBanner = {
+      ...base,
+      status: 'DISABLED',
+      lifecycle: 'DISABLED',
+      updatedAt: '2026-08-27T13:00:00Z',
+      updatedBy: 'super-id',
+      disabledAt: '2026-08-27T13:00:00Z',
+      disabledBy: 'super-id',
+    };
+    let resolveDisable!: (result: ManagedBanner) => void;
+    vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled]);
+    vi.mocked(disableBanner).mockReturnValue(
+      new Promise((resolve) => {
+        resolveDisable = resolve;
+      }),
+    );
+    render(BannerManagementView);
+
+    const firstRow = await openDetailsFor('System maintenance tonight');
+    await fireEvent.click(within(firstRow).getByRole('button', { name: 'Disable banner' }));
+    await fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
+    );
+    await waitFor(() => expect(disableBanner).toHaveBeenCalledWith(base.uuid));
+
+    await openDetailsFor('Scheduled enrollment notice');
+    resolveDisable(disabled);
+
+    await waitFor(() => expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner disabled' }));
+    expect(document.getElementById(`banner-${scheduled.uuid}-details`)).toBeInTheDocument();
   });
 
   it('offers archive only for saved, disabled, and expired occurrences', async () => {

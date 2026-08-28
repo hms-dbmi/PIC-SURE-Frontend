@@ -166,7 +166,7 @@
       );
       orderUuids = orderUuids.filter((orderUuid) => orderUuid !== disabled.uuid);
       savedOrderUuids = savedOrderUuids.filter((orderUuid) => orderUuid !== disabled.uuid);
-      openUuid = null;
+      if (openUuid === disabled.uuid) openUuid = null;
       toaster.success({ title: 'Banner disabled' });
     } catch {
       toaster.error({
@@ -402,7 +402,7 @@
                   position={activeTab === 'orderable' ? orderUuids.indexOf(banner.uuid) + 1 : null}
                   index={orderUuids.indexOf(banner.uuid)}
                   activeId={activeDragUuid}
-                  busy={archivingUuid === banner.uuid}
+                  busy={archivingUuid === banner.uuid || disablingUuid === banner.uuid}
                   disableDisabled={disablingUuid !== null}
                   archiveDisabled={archivingUuid !== null}
                 />
