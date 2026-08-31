@@ -66,9 +66,13 @@
     });
 
     const query = getQueryRequestV3();
+    const openAccess = isOpenAccess();
+    const distributionsPath = openAccess
+      ? Picsure.Visualization.DistributionsOpen
+      : Picsure.Visualization.Distributions;
 
     await api
-      .post(Picsure.Visualization.Distributions, { query: query.query }, undefined, !isOpenAccess())
+      .post(distributionsPath, { query: query.query }, undefined, !openAccess)
       .then((resp) => {
         const categoricalData = (resp?.categoricalData || []).filter((data: CategoricalPlotData) =>
           categoricalHasData(data, minimumCount),

@@ -25,9 +25,11 @@ vi.mock('$lib/logger', () => ({
 }));
 
 vi.mock('@sveltejs/kit', () => ({
-  error: (status: number, message: string) => {
-    throw new Error(`${status}: ${message}`);
+  error: (status: number, body: string | { message: string }) => {
+    throw new Error(`${status}: ${typeof body === 'string' ? body : body.message}`);
   },
+  // Unused here; consentError.test.ts covers the real HttpError shape.
+  isHttpError: () => false,
 }));
 
 let mockWafFlag = false;
@@ -331,6 +333,26 @@ describe('api', () => {
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('logout-reason');
       expect(sessionStorage.removeItem).toHaveBeenCalledWith('filters');
       expect(mockLogout).toHaveBeenCalledWith(undefined, false);
+    });
+
+    it('reports consent denial without logging out', async () => {
+      fetchMock.mockResolvedValue(
+        mockFetchResponse({
+          ok: false,
+          status: 403,
+          body: JSON.stringify({
+            errorType: 'consent_denied',
+            message: 'You no longer have consent for this saved result',
+          }),
+        }),
+      );
+
+      await expect(get('picsure/test')).rejects.toThrow(
+        '403: You no longer have consent for this saved result',
+      );
+
+      expect(mockLogout).not.toHaveBeenCalled();
+      expect(sessionStorage.removeItem).not.toHaveBeenCalled();
     });
 
     it('throws error with status for other error codes', async () => {
