@@ -41,6 +41,55 @@
 
   type TargetedPage = Exclude<BannerPageTarget, { kind: 'ALL' }>;
   type EditorTransition = { kind: 'cancel' } | { kind: 'tab'; destination: string };
+  type PublishIntent = 'restore' | 'schedule-restore' | 'update-published' | 'schedule' | 'publish';
+
+  interface PublishCopy {
+    submitLabel: string;
+    busyLabel: string;
+    successToast: string;
+    errorToast: string;
+    errorDescription: string;
+  }
+
+  const RESTORE_ERROR_DESCRIPTION =
+    'The source banner is unchanged. Your copied changes are still here.';
+  const PUBLISH_COPY: Record<PublishIntent, PublishCopy> = {
+    restore: {
+      submitLabel: 'Restore',
+      busyLabel: 'Restoring...',
+      successToast: 'Banner restored',
+      errorToast: 'Banner could not be restored',
+      errorDescription: RESTORE_ERROR_DESCRIPTION,
+    },
+    'schedule-restore': {
+      submitLabel: 'Schedule banner',
+      busyLabel: 'Scheduling...',
+      successToast: 'Banner scheduled',
+      errorToast: 'Banner could not be scheduled',
+      errorDescription: RESTORE_ERROR_DESCRIPTION,
+    },
+    'update-published': {
+      submitLabel: 'Save changes',
+      busyLabel: 'Saving...',
+      successToast: 'Banner updated',
+      errorToast: 'Banner could not be updated',
+      errorDescription: 'The changes were not saved. Check your connection and try again.',
+    },
+    schedule: {
+      submitLabel: 'Schedule banner',
+      busyLabel: 'Scheduling...',
+      successToast: 'Banner scheduled',
+      errorToast: 'Banner could not be scheduled',
+      errorDescription: 'The banner was not scheduled. Check your connection and try again.',
+    },
+    publish: {
+      submitLabel: 'Publish now',
+      busyLabel: 'Publishing...',
+      successToast: 'Banner published',
+      errorToast: 'Banner could not be published',
+      errorDescription: 'The banner was not published. Check your connection and try again.',
+    },
+  };
   const MAX_TIMEOUT_MS = 2_147_483_647;
 
   interface Props {
@@ -178,6 +227,41 @@
     icon,
     dismissible,
   });
+  const publishIntent: PublishIntent = $derived(
+    editorMode === 'restore'
+      ? startLocal
+        ? 'schedule-restore'
+        : 'restore'
+      : banner?.status === 'PUBLISHED'
+        ? 'update-published'
+        : startLocal
+          ? 'schedule'
+          : 'publish',
+  );
+  const publishCopy = $derived(PUBLISH_COPY[publishIntent]);
+  const editorCopy = untrack(() =>
+    editorMode === 'restore'
+      ? {
+          heading: 'Restore banner',
+          description:
+            'Review this copy and choose when it should return. Restoring creates a new occurrence and archives the source after success.',
+        }
+      : banner?.status === 'PUBLISHED'
+        ? {
+            heading: 'Edit published banner',
+            description:
+              'Correct the published announcement. Saved changes take effect immediately.',
+          }
+        : banner
+          ? {
+              heading: 'Edit saved banner',
+              description: 'Update this reusable draft or publish it across PIC-SURE.',
+            }
+          : {
+              heading: 'Create banner',
+              description: 'Save this announcement for later or publish it across PIC-SURE.',
+            },
+  );
 
   function draft(): BannerDraft {
     return {
@@ -348,38 +432,13 @@
               : await publishBanner(draft());
       adoptAuthoritativePageTargets(published);
       if (editorMode !== 'restore') initialSnapshot = snapshot();
-      toaster.success({
-        title:
-          editorMode === 'restore'
-            ? startLocal
-              ? 'Banner scheduled'
-              : 'Banner restored'
-            : banner?.status === 'PUBLISHED'
-              ? 'Banner updated'
-              : startLocal
-                ? 'Banner scheduled'
-                : 'Banner published',
-      });
+      toaster.success({ title: publishCopy.successToast });
       onsuccess(published);
     } catch {
-      if (editorMode === 'restore') {
-        toaster.error({
-          title: startLocal ? 'Banner could not be scheduled' : 'Banner could not be restored',
-          description: 'The source banner is unchanged. Your copied changes are still here.',
-        });
-      } else if (banner?.status === 'PUBLISHED') {
-        toaster.error({
-          title: 'Banner could not be updated',
-          description: 'The changes were not saved. Check your connection and try again.',
-        });
-      } else {
-        toaster.error({
-          title: startLocal ? 'Banner could not be scheduled' : 'Banner could not be published',
-          description: startLocal
-            ? 'The banner was not scheduled. Check your connection and try again.'
-            : 'The banner was not published. Check your connection and try again.',
-        });
-      }
+      toaster.error({
+        title: publishCopy.errorToast,
+        description: publishCopy.errorDescription,
+      });
     } finally {
       working = null;
     }
@@ -402,24 +461,8 @@
 
 <section class="mx-auto max-w-5xl" aria-labelledby="banner-editor-title">
   <header class="mb-6">
-    <h2 id="banner-editor-title">
-      {editorMode === 'restore'
-        ? 'Restore banner'
-        : banner?.status === 'PUBLISHED'
-          ? 'Edit published banner'
-          : banner
-            ? 'Edit saved banner'
-            : 'Create banner'}
-    </h2>
-    <p>
-      {editorMode === 'restore'
-        ? 'Review this copy and choose when it should return. Restoring creates a new occurrence and archives the source after success.'
-        : banner?.status === 'PUBLISHED'
-          ? 'Correct the published announcement. Saved changes take effect immediately.'
-          : banner
-            ? 'Update this reusable draft or publish it across PIC-SURE.'
-            : 'Save this announcement for later or publish it across PIC-SURE.'}
-    </p>
+    <h2 id="banner-editor-title">{editorCopy.heading}</h2>
+    <p>{editorCopy.description}</p>
   </header>
 
   <form
@@ -578,25 +621,7 @@
           scheduleInvalid ||
           pageTargetsInvalid}
       >
-        {working === 'publish'
-          ? editorMode === 'restore'
-            ? startLocal
-              ? 'Scheduling...'
-              : 'Restoring...'
-            : banner?.status === 'PUBLISHED'
-              ? 'Saving...'
-              : startLocal
-                ? 'Scheduling...'
-                : 'Publishing...'
-          : editorMode === 'restore'
-            ? startLocal
-              ? 'Schedule banner'
-              : 'Restore'
-            : banner?.status === 'PUBLISHED'
-              ? 'Save changes'
-              : startLocal
-                ? 'Schedule banner'
-                : 'Publish now'}
+        {working === 'publish' ? publishCopy.busyLabel : publishCopy.submitLabel}
       </button>
     </div>
   </form>
