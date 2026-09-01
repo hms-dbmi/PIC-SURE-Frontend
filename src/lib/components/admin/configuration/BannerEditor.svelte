@@ -90,8 +90,6 @@
       errorDescription: 'The banner was not published. Check your connection and try again.',
     },
   };
-  const MAX_TIMEOUT_MS = 2_147_483_647;
-
   interface Props {
     banner?: ManagedBanner | null;
     mode?: 'create' | 'edit' | 'restore';
@@ -170,8 +168,9 @@
   let startChoice = $state(untrack(() => initialStartChoice));
   let endChoice = $state(untrack(() => initialEndChoice));
   let working: 'save' | 'publish' | null = $state(null);
+  // Advanced when a submit is rejected; the pre-submit derived error only has to catch starts
+  // that were already in the past, and publish() re-validates against the wall clock.
   let restoreValidationNow = $state(Date.now());
-  let restoreStartTimeout: number | undefined;
 
   const sanitizedLength = $derived(sanitizeBannerHTML(htmlContent).length);
   const hasContent = $derived(hasBannerContent(htmlContent));
@@ -299,26 +298,6 @@
     );
   }
 
-  function clearRestoreStartTimeout() {
-    if (restoreStartTimeout === undefined) return;
-    window.clearTimeout(restoreStartTimeout);
-    restoreStartTimeout = undefined;
-  }
-
-  function scheduleRestoreStartCheck(startAt: number) {
-    const now = Date.now();
-    restoreValidationNow = now;
-    const delay = startAt - now;
-    if (delay <= 0) return;
-    restoreStartTimeout = window.setTimeout(
-      () => {
-        restoreStartTimeout = undefined;
-        scheduleRestoreStartCheck(startAt);
-      },
-      Math.min(delay, MAX_TIMEOUT_MS),
-    );
-  }
-
   function snapshot() {
     const value = draft();
     return JSON.stringify({
@@ -347,12 +326,9 @@
   });
 
   $effect(() => {
-    const startAt = resolvedStart;
-    clearRestoreStartTimeout();
+    if (editorMode !== 'restore') return;
+    void resolvedStart;
     restoreValidationNow = Date.now();
-    if (editorMode === 'restore' && startAt !== null) {
-      scheduleRestoreStartCheck(new Date(startAt).getTime());
-    }
   });
 
   $effect(() => {
@@ -366,7 +342,6 @@
   });
 
   onDestroy(() => {
-    clearRestoreStartTimeout();
     ondirtychange(false);
   });
 
