@@ -1,5 +1,7 @@
 <script lang="ts">
   import { onDestroy, untrack } from 'svelte';
+  import BannerPageTargetFields from '$lib/components/admin/configuration/BannerPageTargetFields.svelte';
+  import BannerScheduleFields from '$lib/components/admin/configuration/BannerScheduleFields.svelte';
   import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
   import Editor from '$lib/components/editor/Editor.svelte';
   import UnsavedChangesModal from '$lib/components/UnsavedChangesModal.svelte';
@@ -158,6 +160,17 @@
   const pageTargetsInvalid = $derived(
     !allPages && (pageTargets.length === 0 || pageTargetErrors.some((error) => error !== null)),
   );
+  const scheduleDisabled = $derived(editorMode !== 'restore' && banner?.lifecycle === 'EXPIRED');
+  const startMissingError = $derived(editorMode === 'edit' && banner?.status === 'PUBLISHED');
+  const scheduleDescription = $derived(
+    scheduleDisabled
+      ? 'Expired banner schedules cannot be changed.'
+      : editorMode === 'restore'
+        ? `Times use your local timezone (${timeZone}) at minute precision. Leave Start blank to bring the copied banner back immediately using the server's current UTC time.`
+        : banner?.status === 'PUBLISHED'
+          ? `Times use your local timezone (${timeZone}) at minute precision. Change Start to move this occurrence; leave End blank to keep it active until it is disabled.`
+          : `Times use your local timezone (${timeZone}) at minute precision. Leave Start blank to publish immediately using the server's current UTC time.`,
+  );
   const preview: BannerPresentation = $derived({
     htmlContent,
     title: title.trim() || null,
@@ -219,24 +232,6 @@
         scheduleRestoreStartCheck(startAt);
       },
       Math.min(delay, MAX_TIMEOUT_MS),
-    );
-  }
-
-  function utcText(instant: string) {
-    return `Resolved UTC: ${instant.slice(0, 16).replace('T', ' ')} UTC`;
-  }
-
-  function addPageTarget() {
-    pageTargets = [...pageTargets, { kind: 'EXACT', path: '' }];
-  }
-
-  function removePageTarget(index: number) {
-    pageTargets = pageTargets.filter((_, targetIndex) => targetIndex !== index);
-  }
-
-  function updatePageTarget(index: number, target: TargetedPage) {
-    pageTargets = pageTargets.map((current, targetIndex) =>
-      targetIndex === index ? target : current,
     );
   }
 
@@ -507,114 +502,20 @@
         <SiteBanner banner={preview} titleLevel={3} />
       </section>
 
-      <fieldset disabled={editorMode !== 'restore' && banner?.lifecycle === 'EXPIRED'}>
-        <legend class="font-bold">Schedule</legend>
-        <p class="mt-1 text-sm text-surface-600">
-          {#if editorMode !== 'restore' && banner?.lifecycle === 'EXPIRED'}
-            Expired banner schedules cannot be changed.
-          {:else if editorMode === 'restore'}
-            Times use your local timezone ({timeZone}) at minute precision. Leave Start blank to
-            bring the copied banner back immediately using the server's current UTC time.
-          {:else if banner?.status === 'PUBLISHED'}
-            Times use your local timezone ({timeZone}) at minute precision. Change Start to move
-            this occurrence; leave End blank to keep it active until it is disabled.
-          {:else}
-            Times use your local timezone ({timeZone}) at minute precision. Leave Start blank to
-            publish immediately using the server's current UTC time.
-          {/if}
-        </p>
-        <div class="mt-3 grid gap-4 sm:grid-cols-2">
-          <div class="grid content-start gap-1">
-            <label class="font-bold" for="banner-start">Start</label>
-            <input
-              id="banner-start"
-              class="input"
-              type="datetime-local"
-              step="60"
-              bind:value={startLocal}
-              aria-describedby="banner-start-help"
-            />
-            <div id="banner-start-help" class="text-sm text-surface-600">
-              {#if !startLocal}
-                {#if editorMode === 'edit' && banner?.status === 'PUBLISHED'}
-                  <span class="text-error-700">A published banner needs a start time.</span>
-                {:else}
-                  Server UTC when published.
-                {/if}
-              {:else if startResolution?.status === 'nonexistent'}
-                <span class="text-error-700">
-                  This local time does not exist because the clock moves forward.
-                </span>
-              {:else if startResolution?.status === 'invalid'}
-                <span class="text-error-700">Enter a valid local date and time.</span>
-              {:else if restoreStartNotFuture}
-                <span class="text-error-700" role="alert">
-                  Start must be in the future. Leave Start blank to restore now.
-                </span>
-              {:else if resolvedStart}
-                {utcText(resolvedStart)}
-              {/if}
-            </div>
-            {#if startResolution?.status === 'ambiguous'}
-              <label class="mt-1 grid gap-1">
-                <span class="font-bold">Start UTC offset</span>
-                <select
-                  class="select"
-                  value={startChoice}
-                  onchange={(event) => (startChoice = event.currentTarget.value)}
-                >
-                  <option value="">Choose an offset</option>
-                  {#each startResolution.options as option}
-                    <option value={option.instant}>UTC{option.offset}</option>
-                  {/each}
-                </select>
-              </label>
-            {/if}
-          </div>
-          <div class="grid content-start gap-1">
-            <label class="font-bold" for="banner-end">End</label>
-            <input
-              id="banner-end"
-              class="input"
-              type="datetime-local"
-              step="60"
-              bind:value={endLocal}
-              aria-describedby="banner-end-help"
-            />
-            <div id="banner-end-help" class="text-sm text-surface-600">
-              {#if !endLocal}
-                No end date.
-              {:else if endResolution?.status === 'nonexistent'}
-                <span class="text-error-700">
-                  This local time does not exist because the clock moves forward.
-                </span>
-              {:else if endResolution?.status === 'invalid'}
-                <span class="text-error-700">Enter a valid local date and time.</span>
-              {:else if resolvedEnd}
-                {utcText(resolvedEnd)}
-              {/if}
-            </div>
-            {#if endResolution?.status === 'ambiguous'}
-              <label class="mt-1 grid gap-1">
-                <span class="font-bold">End UTC offset</span>
-                <select
-                  class="select"
-                  value={endChoice}
-                  onchange={(event) => (endChoice = event.currentTarget.value)}
-                >
-                  <option value="">Choose an offset</option>
-                  {#each endResolution.options as option}
-                    <option value={option.instant}>UTC{option.offset}</option>
-                  {/each}
-                </select>
-              </label>
-            {/if}
-          </div>
-        </div>
-        {#if resolvedStart && resolvedEnd && resolvedEnd <= resolvedStart}
-          <p class="mt-2 text-sm text-error-700">End must be after start.</p>
-        {/if}
-      </fieldset>
+      <BannerScheduleFields
+        bind:startLocal
+        bind:endLocal
+        bind:startChoice
+        bind:endChoice
+        {startResolution}
+        {endResolution}
+        {resolvedStart}
+        {resolvedEnd}
+        disabled={scheduleDisabled}
+        description={scheduleDescription}
+        {startMissingError}
+        {restoreStartNotFuture}
+      />
 
       <fieldset>
         <legend class="font-bold">Audience</legend>
@@ -644,89 +545,7 @@
             </select>
           </label>
         </div>
-        <fieldset class="mt-5 border-t border-surface-300 pt-4">
-          <legend class="font-bold">Pages</legend>
-          <p class="mt-1 text-sm text-surface-600">
-            Match application pathnames. Query strings and fragments are ignored.
-          </p>
-          <div class="mt-3 flex flex-wrap gap-6">
-            <label class="flex items-center gap-2">
-              <input type="radio" name="page-target-mode" value={true} bind:group={allPages} />
-              All pages
-            </label>
-            <label class="flex items-center gap-2">
-              <input type="radio" name="page-target-mode" value={false} bind:group={allPages} />
-              Specific pages
-            </label>
-          </div>
-
-          {#if !allPages}
-            <div class="mt-4 grid gap-4">
-              {#each pageTargets as target, index}
-                <div
-                  class="grid gap-2 rounded border border-surface-300 p-3 sm:grid-cols-[12rem_1fr_auto]"
-                >
-                  <label class="grid content-start gap-1">
-                    <span class="font-bold">Target {index + 1} type</span>
-                    <select
-                      class="select"
-                      value={target.kind}
-                      onchange={(event) =>
-                        updatePageTarget(index, {
-                          kind: event.currentTarget.value as TargetedPage['kind'],
-                          path: target.path,
-                        })}
-                    >
-                      <option value="EXACT">Exact page</option>
-                      <option value="SUBTREE">Page and subtree</option>
-                      <option value="PARAMETERIZED">Parameterized route</option>
-                    </select>
-                  </label>
-                  <div class="grid content-start gap-1">
-                    <label class="font-bold" for={`banner-page-target-${index}-path`}>
-                      Target {index + 1} path
-                    </label>
-                    <input
-                      id={`banner-page-target-${index}-path`}
-                      class="input"
-                      type="text"
-                      placeholder="/help"
-                      value={target.path}
-                      aria-describedby={pageTargetErrors[index]
-                        ? `banner-page-target-${index}-error`
-                        : undefined}
-                      oninput={(event) =>
-                        updatePageTarget(index, { ...target, path: event.currentTarget.value })}
-                    />
-                    {#if pageTargetErrors[index]}
-                      <span id={`banner-page-target-${index}-error`} class="text-sm text-error-700"
-                        >{pageTargetErrors[index]}</span
-                      >
-                    {/if}
-                  </div>
-                  <button
-                    type="button"
-                    class="btn preset-tonal-error self-start sm:mt-7"
-                    aria-label={`Remove target ${index + 1}`}
-                    onclick={() => removePageTarget(index)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              {/each}
-              {#if pageTargets.length === 0}
-                <p class="text-sm text-error-700">Add at least one page target.</p>
-              {/if}
-              <button
-                type="button"
-                class="btn preset-tonal-primary justify-self-start"
-                onclick={addPageTarget}
-              >
-                Add page target
-              </button>
-            </div>
-          {/if}
-        </fieldset>
+        <BannerPageTargetFields bind:allPages bind:pageTargets errors={pageTargetErrors} />
       </details>
     </div>
 
