@@ -43,7 +43,7 @@
     "plotly.js-basic-dist-min": "^3.5.1",
     "quill": "^2.0.3",
     "sanitize-html": "^2.17.6",
-    "shiki": "^4.0.2",
+    "shiki": "^4.4.3",
     "uuid": "^14.0.0"
   },
   "devDependencies": {
