@@ -8,16 +8,28 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import UnsavedChangesModal from '$lib/components/UnsavedChangesModal.svelte';
-  import type { BannerLifecycle, ManagedBanner, ManagementRecord } from '$lib/models/Banner';
+  import type { ManagedBanner, ManagementRecord } from '$lib/models/Banner';
   import {
     archiveBanner,
     disableBanner,
     getManagedBanners,
     reorderBanners,
   } from '$lib/services/BannerManagement';
-  import { bannerPlainText } from '$lib/utilities/BannerHTML';
+  import {
+    adoptCanonicalBannerOrder,
+    broadBannerOverlapCount,
+    initialBannerListState,
+    inLifecycleTab,
+    lifecycleTabCounts,
+    lifecycleTabFor,
+    reconcileBannerArchived,
+    reconcileBannerDisabled,
+    reconcileBannerSuccess,
+    visibleBannerRecords,
+    type BannerListState,
+    type LifecycleTab,
+  } from '$lib/services/BannerManagementList';
   import FilterSearch from './FilterSearch.svelte';
-  import { isAllPagesBannerTarget } from '$lib/utilities/BannerPageTargets';
   import { createUnsavedGuard } from '$lib/utilities/UnsavedGuard.svelte';
   import { toaster } from '$lib/toaster';
   import {
@@ -27,7 +39,6 @@
     PointerSensor,
   } from '@dnd-kit-svelte/svelte';
 
-  type LifecycleTab = 'orderable' | 'saved' | 'expired';
   type OrderTransition =
     | { kind: 'configuration-tab'; destination: string }
     | { kind: 'lifecycle-tab'; tab: LifecycleTab; focus: boolean }
@@ -38,7 +49,6 @@
     { value: 'saved' as const, label: 'Saved & disabled' },
     { value: 'expired' as const, label: 'Expired' },
   ];
-  const MAX_EXCERPT_LENGTH = 160;
   const ARRIVAL_HIGHLIGHT_MS = 1_800;
   interface Props {
     ondirtychange?: (dirty: boolean) => void;
@@ -75,46 +85,23 @@
   let archivingUuid: string | null = $state(null);
   const orderGuard = createUnsavedGuard<OrderTransition>(() => mode === 'list' && orderDirty);
 
-  const counts = $derived({
-    orderable: records.filter((banner) => inTab(banner.lifecycle, 'orderable')).length,
-    saved: records.filter((banner) => inTab(banner.lifecycle, 'saved')).length,
-    expired: records.filter((banner) => inTab(banner.lifecycle, 'expired')).length,
-  });
-  const orderedRecords = $derived([
-    ...orderUuids
-      .map((uuid) => records.find((banner) => banner.uuid === uuid))
-      .filter((banner): banner is ManagementRecord => banner !== undefined),
-    ...records.filter(
-      (banner) => inTab(banner.lifecycle, 'orderable') && !orderUuids.includes(banner.uuid),
-    ),
-  ]);
-  const broadOverlapCount = $derived(
-    records.filter(
-      (banner) =>
-        banner.status === 'PUBLISHED' &&
-        orderUuids.includes(banner.uuid) &&
-        inTab(banner.lifecycle, 'orderable') &&
-        banner.audience === 'EVERYONE' &&
-        isAllPagesBannerTarget(banner.pageTargets),
-    ).length,
-  );
-  const visibleRecords = $derived(
-    (activeTab === 'orderable' ? orderedRecords : records).filter(
-      (banner) =>
-        inTab(banner.lifecycle, activeTab) &&
-        `${banner.title ?? ''} ${banner.excerpt}`
-          .toLocaleLowerCase()
-          .includes(search.trim().toLocaleLowerCase()),
-    ),
-  );
+  const counts = $derived(lifecycleTabCounts(records));
+  const broadOverlapCount = $derived(broadBannerOverlapCount({ records, orderUuids }));
+  const visibleRecords = $derived(visibleBannerRecords({ records, orderUuids }, activeTab, search));
+
+  function applyList(next: BannerListState) {
+    records = next.records;
+    orderUuids = next.orderUuids;
+    savedOrderUuids = next.savedOrderUuids;
+  }
+
+  function currentList(): BannerListState {
+    return { records, orderUuids, savedOrderUuids };
+  }
 
   onMount(async () => {
     try {
-      records = (await getManagedBanners()).map(present);
-      orderUuids = records
-        .filter((banner) => inTab(banner.lifecycle, 'orderable'))
-        .map((banner) => banner.uuid);
-      savedOrderUuids = [...orderUuids];
+      applyList(initialBannerListState(await getManagedBanners()));
     } catch {
       failed = true;
     } finally {
@@ -136,31 +123,6 @@
     if (!request || mode !== 'list') return;
     orderGuard.intercept({ kind: 'configuration-tab', destination: request });
   });
-
-  function inTab(lifecycle: BannerLifecycle, tab: LifecycleTab) {
-    if (tab === 'orderable') return lifecycle === 'ACTIVE' || lifecycle === 'SCHEDULED';
-    if (tab === 'saved') return lifecycle === 'SAVED' || lifecycle === 'DISABLED';
-    return lifecycle === 'EXPIRED';
-  }
-
-  function present(banner: ManagedBanner): ManagementRecord {
-    const plainText = bannerPlainText(banner.htmlContent);
-    const characters = Array.from(plainText);
-    const excerpt =
-      characters.length > MAX_EXCERPT_LENGTH
-        ? `${characters
-            .slice(0, MAX_EXCERPT_LENGTH - 1)
-            .join('')
-            .trimEnd()}…`
-        : plainText;
-    return { ...banner, excerpt };
-  }
-
-  function tabFor(lifecycle: BannerLifecycle): LifecycleTab {
-    if (lifecycle === 'ACTIVE' || lifecycle === 'SCHEDULED') return 'orderable';
-    if (lifecycle === 'EXPIRED') return 'expired';
-    return 'saved';
-  }
 
   function createBanner() {
     if (orderGuard.intercept({ kind: 'create' })) return;
@@ -245,11 +207,7 @@
     disablingUuid = uuid;
     try {
       const disabled = await disableBanner(uuid);
-      records = records.map((record) =>
-        record.uuid === disabled.uuid ? present(disabled) : record,
-      );
-      orderUuids = orderUuids.filter((orderUuid) => orderUuid !== disabled.uuid);
-      savedOrderUuids = savedOrderUuids.filter((orderUuid) => orderUuid !== disabled.uuid);
+      applyList(reconcileBannerDisabled(currentList(), disabled));
       if (openUuid === disabled.uuid) openUuid = null;
       toaster.success({ title: 'Banner disabled' });
     } catch {
@@ -267,11 +225,7 @@
     archivingUuid = uuid;
     try {
       const archived = await archiveBanner(uuid);
-      records = records.filter((record) => record.uuid !== archived.uuid);
-      // An archiveable occurrence is never in the orderable queue, so these stay no-ops that cannot
-      // introduce or discard unsaved order changes.
-      orderUuids = orderUuids.filter((orderUuid) => orderUuid !== archived.uuid);
-      savedOrderUuids = savedOrderUuids.filter((orderUuid) => orderUuid !== archived.uuid);
+      applyList(reconcileBannerArchived(currentList(), archived.uuid));
       if (openUuid === archived.uuid) openUuid = null;
       if (editingBanner?.uuid === archived.uuid) {
         mode = 'list';
@@ -303,23 +257,12 @@
     sourceUuid: string | null = null,
     openDetails = false,
   ) {
-    const retainsOccurrence = (uuid: string) => uuid !== sourceUuid && uuid !== banner.uuid;
-    records = [...records.filter((record) => retainsOccurrence(record.uuid)), present(banner)];
-    activeTab = tabFor(banner.lifecycle);
+    applyList(reconcileBannerSuccess(currentList(), banner, sourceUuid));
+    activeTab = lifecycleTabFor(banner.lifecycle);
     search = '';
     openUuid = openDetails ? banner.uuid : null;
     mode = 'list';
     editingBanner = null;
-    if (
-      inTab(banner.lifecycle, 'orderable') &&
-      (sourceUuid !== null || !orderUuids.includes(banner.uuid))
-    ) {
-      orderUuids = [...orderUuids.filter(retainsOccurrence), banner.uuid];
-      savedOrderUuids = [...savedOrderUuids.filter(retainsOccurrence), banner.uuid];
-    } else if (!inTab(banner.lifecycle, 'orderable')) {
-      orderUuids = orderUuids.filter(retainsOccurrence);
-      savedOrderUuids = savedOrderUuids.filter(retainsOccurrence);
-    }
     await showArrival(banner.uuid);
   }
 
@@ -364,14 +307,9 @@
     savingOrder = true;
     try {
       const authoritative = await reorderBanners(orderUuids);
-      adoptCanonicalOrder(authoritative);
+      applyList(adoptCanonicalBannerOrder(currentList(), authoritative));
       try {
-        const refreshed = (await getManagedBanners()).map(present);
-        records = refreshed;
-        orderUuids = refreshed
-          .filter((banner) => inTab(banner.lifecycle, 'orderable'))
-          .map((banner) => banner.uuid);
-        savedOrderUuids = [...orderUuids];
+        applyList(initialBannerListState(await getManagedBanners()));
       } catch {
         // The reorder already committed. Keep its canonical response instead of reporting a false mutation failure.
       }
@@ -384,14 +322,6 @@
     } finally {
       savingOrder = false;
     }
-  }
-
-  function adoptCanonicalOrder(authoritative: ManagedBanner[]) {
-    const presented = authoritative.map(present);
-    const presentedUuids = new Set(presented.map((banner) => banner.uuid));
-    records = [...presented, ...records.filter((banner) => !presentedUuids.has(banner.uuid))];
-    orderUuids = presented.map((banner) => banner.uuid);
-    savedOrderUuids = [...orderUuids];
   }
 
   function cancelOrderChanges() {
