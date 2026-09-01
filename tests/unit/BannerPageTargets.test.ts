@@ -101,12 +101,22 @@ describe('parseBannerPageTargets', () => {
   const malformedFeedValues: unknown[] = [
     [],
     [{ kind: 'EXACT' }],
-    [{ kind: 'EXACT', path: '/help', extra: true }],
+    [{ kind: 'EXACT', path: 42 }],
+    [{ kind: 'EVERYWHERE' }],
     [{ kind: 'ALL' }, { kind: 'EXACT', path: '/help' }],
   ];
 
   it.each(malformedFeedValues)('rejects malformed feed value %j', (value) => {
     expect(parseBannerPageTargets(value)).toBeNull();
+  });
+
+  it('tolerates unknown extra fields on otherwise valid targets', () => {
+    expect(
+      parseBannerPageTargets([{ kind: 'ALL', addedByNewerServer: true }, { kind: 'ALL' }]),
+    ).toEqual([{ kind: 'ALL' }]);
+    expect(parseBannerPageTargets([{ kind: 'EXACT', path: '/help', extra: true }])).toEqual([
+      { kind: 'EXACT', path: '/help' },
+    ]);
   });
 });
 

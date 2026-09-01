@@ -19,7 +19,6 @@
     adoptCanonicalBannerOrder,
     broadBannerOverlapCount,
     initialBannerListState,
-    inLifecycleTab,
     lifecycleTabCounts,
     lifecycleTabFor,
     reconcileBannerArchived,

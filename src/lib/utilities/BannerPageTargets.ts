@@ -101,17 +101,14 @@ export function parseBannerPageTargets(value: unknown): BannerPageTarget[] | nul
   const targets: BannerPageTarget[] = [];
   for (const candidate of value) {
     if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return null;
-    const fields = Object.keys(candidate);
+    // Unknown extra fields are tolerated so a server-side field addition cannot
+    // silently drop every targeted banner from the feed.
     const target = candidate as Record<string, unknown>;
     if (target.kind === 'ALL') {
-      if (fields.length !== 1) return null;
       targets.push({ kind: 'ALL' });
     } else if (
       (target.kind === 'EXACT' || target.kind === 'SUBTREE' || target.kind === 'PARAMETERIZED') &&
-      typeof target.path === 'string' &&
-      fields.length === 2 &&
-      fields.includes('kind') &&
-      fields.includes('path')
+      typeof target.path === 'string'
     ) {
       targets.push({ kind: target.kind, path: target.path });
     } else {
