@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { beforeNavigate, goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import { onDestroy, untrack } from 'svelte';
   import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
   import Editor from '$lib/components/editor/Editor.svelte';
-  import Modal from '$lib/components/Modal.svelte';
+  import UnsavedChangesModal from '$lib/components/UnsavedChangesModal.svelte';
   import type {
     BannerAppearance,
     BannerAudience,
@@ -37,8 +35,10 @@
     type LocalMinuteResolution,
   } from '$lib/utilities/BannerSchedule';
   import { validateBannerPageTarget } from '$lib/utilities/BannerPageTargets';
+  import { createUnsavedGuard } from '$lib/utilities/UnsavedGuard.svelte';
 
   type TargetedPage = Exclude<BannerPageTarget, { kind: 'ALL' }>;
+  type EditorTransition = { kind: 'cancel' } | { kind: 'tab'; destination: string };
   const MAX_TIMEOUT_MS = 2_147_483_647;
 
   interface Props {
@@ -119,11 +119,6 @@
   let startChoice = $state(untrack(() => initialStartChoice));
   let endChoice = $state(untrack(() => initialEndChoice));
   let working: 'save' | 'publish' | null = $state(null);
-  let showUnsavedModal = $state(false);
-  let pendingUrl: URL | null = null;
-  let pendingCancel = false;
-  let pendingTabChange: string | null = $state(null);
-  let bypassGuard = false;
   let restoreValidationNow = $state(Date.now());
   let restoreStartTimeout: number | undefined;
 
@@ -263,6 +258,10 @@
 
   let initialSnapshot = $state(snapshot());
   const dirty = $derived(editorMode === 'restore' || snapshot() !== initialSnapshot);
+  const guard = createUnsavedGuard<EditorTransition>(() => dirty);
+  const pendingTabDestination = $derived(
+    (guard.pending?.kind === 'tab' ? guard.pending.destination : null) ?? tabchangerequest,
+  );
 
   $effect(() => {
     ondirtychange(dirty);
@@ -278,12 +277,13 @@
   });
 
   $effect(() => {
-    if (tabchangerequest) {
-      pendingTabChange = tabchangerequest;
-      pendingCancel = false;
-      pendingUrl = null;
-      showUnsavedModal = true;
-    }
+    const request = tabchangerequest;
+    if (!request) return;
+    untrack(() => {
+      if (!guard.intercept({ kind: 'tab', destination: request })) {
+        ontabchangerequestresolve(request);
+      }
+    });
   });
 
   onDestroy(() => {
@@ -291,55 +291,25 @@
     ondirtychange(false);
   });
 
-  beforeNavigate(({ to, cancel, willUnload }) => {
-    if (!bypassGuard && dirty && !willUnload) {
-      cancel();
-      pendingUrl = to?.url ?? null;
-      pendingCancel = false;
-      pendingTabChange = null;
-      showUnsavedModal = true;
-    }
-  });
-
-  function handleBeforeUnload(event: BeforeUnloadEvent) {
-    if (dirty) event.preventDefault();
-  }
-
   function requestCancel() {
-    if (dirty) {
-      pendingCancel = true;
-      pendingUrl = null;
-      pendingTabChange = null;
-      showUnsavedModal = true;
-      return;
-    }
-    oncancel();
+    if (!guard.intercept({ kind: 'cancel' })) oncancel();
   }
 
   function keepEditing() {
-    const wasTabChange = pendingTabChange !== null || tabchangerequest !== null;
-    showUnsavedModal = false;
-    pendingCancel = false;
-    pendingUrl = null;
-    pendingTabChange = null;
+    const wasTabChange = pendingTabDestination !== null;
+    guard.take();
     if (wasTabChange) ontabchangerequestresolve(null);
   }
 
   async function discardChanges() {
-    const tabDestination = pendingTabChange ?? tabchangerequest;
-    showUnsavedModal = false;
-    pendingTabChange = null;
+    const tabDestination = pendingTabDestination;
+    const pending = guard.take();
     if (tabDestination) {
       ontabchangerequestresolve(tabDestination);
-    } else if (pendingCancel) {
+    } else if (pending?.kind === 'cancel') {
       oncancel();
-    } else if (pendingUrl) {
-      bypassGuard = true;
-      try {
-        await goto(resolve(`${pendingUrl.pathname}${pendingUrl.search}${pendingUrl.hash}` as '/'));
-      } finally {
-        bypassGuard = false;
-      }
+    } else if (pending?.kind === 'navigation' && pending.url) {
+      await guard.navigate(pending.url);
     }
   }
 
@@ -421,26 +391,19 @@
   }
 </script>
 
-<svelte:window onbeforeunload={handleBeforeUnload} />
-
-<Modal bind:open={showUnsavedModal} title="Unsaved Changes" closeable={false}>
-  <p class="mb-6">
-    {#if pendingTabChange ?? tabchangerequest}
-      You have unsaved banner changes. Discard them to open {pendingTabChange ?? tabchangerequest},
-      or keep editing.
-    {:else}
-      You have unsaved banner changes. Discard them or keep editing.
-    {/if}
-  </p>
-  <footer class="flex justify-end gap-2">
-    <button type="button" class="btn border preset-tonal-primary" onclick={keepEditing}>
-      Keep editing
-    </button>
-    <button type="button" class="btn preset-filled-error-500" onclick={discardChanges}>
-      Discard changes
-    </button>
-  </footer>
-</Modal>
+<UnsavedChangesModal
+  open={guard.open}
+  keepLabel="Keep editing"
+  discardLabel="Discard changes"
+  onkeep={keepEditing}
+  ondiscard={discardChanges}
+>
+  {#if pendingTabDestination}
+    You have unsaved banner changes. Discard them to open {pendingTabDestination}, or keep editing.
+  {:else}
+    You have unsaved banner changes. Discard them or keep editing.
+  {/if}
+</UnsavedChangesModal>
 
 <section class="mx-auto max-w-5xl" aria-labelledby="banner-editor-title">
   <header class="mb-6">

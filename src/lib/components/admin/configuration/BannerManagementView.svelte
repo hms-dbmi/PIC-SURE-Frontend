@@ -1,7 +1,5 @@
 <script lang="ts">
   /* eslint-disable @typescript-eslint/no-explicit-any -- dnd-kit events lack exported types */
-  import { beforeNavigate, goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
   import { onDestroy, onMount, tick } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
   import { scale } from 'svelte/transition';
@@ -9,7 +7,7 @@
   import BannerManagementRow from '$lib/components/admin/configuration/BannerManagementRow.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
-  import Modal from '$lib/components/Modal.svelte';
+  import UnsavedChangesModal from '$lib/components/UnsavedChangesModal.svelte';
   import type { BannerLifecycle, ManagedBanner, ManagementRecord } from '$lib/models/Banner';
   import {
     archiveBanner,
@@ -20,6 +18,7 @@
   import { bannerPlainText } from '$lib/utilities/BannerHTML';
   import FilterSearch from './FilterSearch.svelte';
   import { isAllPagesBannerTarget } from '$lib/utilities/BannerPageTargets';
+  import { createUnsavedGuard } from '$lib/utilities/UnsavedGuard.svelte';
   import { toaster } from '$lib/toaster';
   import {
     DragDropProvider,
@@ -29,8 +28,7 @@
   } from '@dnd-kit-svelte/svelte';
 
   type LifecycleTab = 'orderable' | 'saved' | 'expired';
-  type PendingOrderTransition =
-    | { kind: 'url'; url: URL }
+  type OrderTransition =
     | { kind: 'configuration-tab'; destination: string }
     | { kind: 'lifecycle-tab'; tab: LifecycleTab; focus: boolean }
     | { kind: 'create' }
@@ -73,11 +71,9 @@
   const sensors = [KeyboardSensor, PointerSensor];
   const orderDirty = $derived(orderUuids.join() !== savedOrderUuids.join());
   let editorDirty = $state(false);
-  let showOrderGuard = $state(false);
-  let pendingOrderTransition: PendingOrderTransition | null = null;
-  let bypassOrderGuard = false;
   let disablingUuid: string | null = $state(null);
   let archivingUuid: string | null = $state(null);
+  const orderGuard = createUnsavedGuard<OrderTransition>(() => mode === 'list' && orderDirty);
 
   const counts = $derived({
     orderable: records.filter((banner) => inTab(banner.lifecycle, 'orderable')).length,
@@ -136,26 +132,10 @@
   });
 
   $effect(() => {
-    if (mode === 'list' && orderDirty && tabchangerequest) {
-      pendingOrderTransition = {
-        kind: 'configuration-tab',
-        destination: tabchangerequest,
-      };
-      showOrderGuard = true;
-    }
+    const request = tabchangerequest;
+    if (!request || mode !== 'list') return;
+    orderGuard.intercept({ kind: 'configuration-tab', destination: request });
   });
-
-  beforeNavigate(({ to, cancel, willUnload }) => {
-    if (mode === 'list' && orderDirty && !bypassOrderGuard && !willUnload && to?.url) {
-      cancel();
-      pendingOrderTransition = { kind: 'url', url: to.url };
-      showOrderGuard = true;
-    }
-  });
-
-  function handleBeforeUnload(event: BeforeUnloadEvent) {
-    if (mode === 'list' && orderDirty) event.preventDefault();
-  }
 
   function inTab(lifecycle: BannerLifecycle, tab: LifecycleTab) {
     if (tab === 'orderable') return lifecycle === 'ACTIVE' || lifecycle === 'SCHEDULED';
@@ -183,7 +163,7 @@
   }
 
   function createBanner() {
-    if (guardOrderTransition({ kind: 'create' })) return;
+    if (orderGuard.intercept({ kind: 'create' })) return;
     openCreateEditor();
   }
 
@@ -193,7 +173,7 @@
   }
 
   function editBanner(banner: ManagedBanner) {
-    if (guardOrderTransition({ kind: 'edit', banner })) return;
+    if (orderGuard.intercept({ kind: 'edit', banner })) return;
     openEditor(banner);
   }
 
@@ -213,7 +193,7 @@
 
   function selectLifecycleTab(tab: LifecycleTab, focus = false) {
     if (tab === activeTab) return;
-    if (guardOrderTransition({ kind: 'lifecycle-tab', tab, focus })) return;
+    if (orderGuard.intercept({ kind: 'lifecycle-tab', tab, focus })) return;
     applyLifecycleTab(tab, focus);
   }
 
@@ -237,25 +217,14 @@
     selectLifecycleTab(tab, true);
   }
 
-  function guardOrderTransition(transition: PendingOrderTransition): boolean {
-    if (!orderDirty || mode !== 'list') return false;
-    pendingOrderTransition = transition;
-    showOrderGuard = true;
-    return true;
-  }
-
   function keepOrdering() {
-    const configurationTabPending = pendingOrderTransition?.kind === 'configuration-tab';
-    pendingOrderTransition = null;
-    showOrderGuard = false;
-    if (configurationTabPending) ontabchangerequestresolve(null);
+    const transition = orderGuard.take();
+    if (transition?.kind === 'configuration-tab') ontabchangerequestresolve(null);
   }
 
   async function discardOrderChanges() {
-    const transition = pendingOrderTransition;
+    const transition = orderGuard.take();
     orderUuids = [...savedOrderUuids];
-    pendingOrderTransition = null;
-    showOrderGuard = false;
     if (!transition) return;
 
     if (transition.kind === 'configuration-tab') {
@@ -266,17 +235,8 @@
       openCreateEditor();
     } else if (transition.kind === 'edit') {
       openEditor(transition.banner);
-    } else {
-      bypassOrderGuard = true;
-      try {
-        await goto(
-          resolve(
-            `${transition.url.pathname}${transition.url.search}${transition.url.hash}` as '/',
-          ),
-        );
-      } finally {
-        bypassOrderGuard = false;
-      }
+    } else if (transition.url) {
+      await orderGuard.navigate(transition.url);
     }
   }
 
@@ -439,19 +399,15 @@
   }
 </script>
 
-<svelte:window onbeforeunload={handleBeforeUnload} />
-
-<Modal bind:open={showOrderGuard} title="Unsaved Changes" closeable={false}>
-  <p class="mb-6">You have unsaved banner ordering. Discard it or keep ordering.</p>
-  <footer class="flex justify-end gap-2">
-    <button type="button" class="btn border preset-tonal-primary" onclick={keepOrdering}>
-      Keep ordering
-    </button>
-    <button type="button" class="btn preset-filled-error-500" onclick={discardOrderChanges}>
-      Discard order changes
-    </button>
-  </footer>
-</Modal>
+<UnsavedChangesModal
+  open={orderGuard.open}
+  keepLabel="Keep ordering"
+  discardLabel="Discard order changes"
+  onkeep={keepOrdering}
+  ondiscard={discardOrderChanges}
+>
+  You have unsaved banner ordering. Discard it or keep ordering.
+</UnsavedChangesModal>
 
 {#if mode !== 'list'}
   <BannerEditor
