@@ -1,6 +1,7 @@
 import type { BannerLifecycle, ManagedBanner, ManagementRecord } from '$lib/models/Banner';
 import { bannerPlainText } from '$lib/utilities/BannerHTML';
 import { isAllPagesBannerTarget } from '$lib/utilities/BannerPageTargets';
+import { truncate } from '$lib/utilities/Strings';
 
 export type LifecycleTab = 'orderable' | 'saved' | 'expired';
 
@@ -17,16 +18,7 @@ export interface BannerListState {
 const MAX_EXCERPT_LENGTH = 160;
 
 export function presentBanner(banner: ManagedBanner): ManagementRecord {
-  const plainText = bannerPlainText(banner.htmlContent);
-  const characters = Array.from(plainText);
-  const excerpt =
-    characters.length > MAX_EXCERPT_LENGTH
-      ? `${characters
-          .slice(0, MAX_EXCERPT_LENGTH - 1)
-          .join('')
-          .trimEnd()}…`
-      : plainText;
-  return { ...banner, excerpt };
+  return { ...banner, excerpt: truncate(bannerPlainText(banner.htmlContent), MAX_EXCERPT_LENGTH) };
 }
 
 export function inLifecycleTab(lifecycle: BannerLifecycle, tab: LifecycleTab): boolean {

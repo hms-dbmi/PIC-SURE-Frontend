@@ -6,6 +6,7 @@
     BANNER_AUDIENCE_LABELS,
     type ManagementRecord,
   } from '$lib/models/Banner';
+  import { truncate } from '$lib/utilities/Strings';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
 
   interface Props {
@@ -103,8 +104,7 @@
             : target.kind === 'SUBTREE'
               ? 'Subtree'
               : 'Parameterized';
-        const path = target.path.length > 48 ? `${target.path.slice(0, 47)}…` : target.path;
-        return `${label}: ${path}`;
+        return `${label}: ${truncate(target.path, 48)}`;
       })
       .join(' · ');
     return `${values}${banner.pageTargets.length > 4 ? ' · + more' : ''}`;

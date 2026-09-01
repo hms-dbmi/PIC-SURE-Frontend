@@ -1,5 +1,9 @@
 import sanitizeHtml, { type IOptions } from 'sanitize-html';
 
+// Deliberately independent of $lib/utilities/HTML.ts's sanitizeHTML: that helper
+// shallow-merges caller options over its permissive branding defaults, so routing
+// this profile through it would let future default additions silently widen the
+// banner allowlist. Banners render for signed-out visitors and must stay strict.
 const bannerOptions: IOptions = {
   allowedTags: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike', 'ol', 'ul', 'li', 'a'],
   allowedAttributes: {

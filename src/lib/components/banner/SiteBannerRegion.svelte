@@ -78,6 +78,9 @@
   async function refreshBanners(currentPathname: string): Promise<void> {
     pathname = currentPathname;
     try {
+      // Deliberately bypasses $lib/api: the feed renders on the public login layout, where
+      // api.ts would throw SvelteKit error() on a feed failure, log the visitor out on a
+      // 401/403, and cannot express cache: 'no-store'. Failures degrade to no banners below.
       const response = await fetch(`/${Picsure.Banners.Active}`, {
         cache: 'no-store',
         headers: { Accept: 'application/json' },

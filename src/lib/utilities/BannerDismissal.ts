@@ -1,9 +1,11 @@
+import { browser } from '$app/environment';
+
 export const BANNER_DISMISSALS_STORAGE_KEY = 'site-banner-dismissals-v1';
 
 export type BannerDismissals = Record<string, string>;
 
 export function readBannerDismissals(): BannerDismissals {
-  if (typeof window === 'undefined') return {};
+  if (!browser) return {};
 
   try {
     const stored = window.sessionStorage.getItem(BANNER_DISMISSALS_STORAGE_KEY);
@@ -23,7 +25,7 @@ export function readBannerDismissals(): BannerDismissals {
 }
 
 export function writeBannerDismissals(dismissals: BannerDismissals): void {
-  if (typeof window === 'undefined') return;
+  if (!browser) return;
 
   try {
     window.sessionStorage.setItem(BANNER_DISMISSALS_STORAGE_KEY, JSON.stringify(dismissals));
