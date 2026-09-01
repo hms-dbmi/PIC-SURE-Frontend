@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { css } from '$lib/utilities/style';
   import type { Snippet } from 'svelte';
   import {
     FloatingArrow,
@@ -127,7 +128,9 @@
     bind:this={floating.elements.floating}
     class="popover {size}"
     aria-label={title || 'Help popover'}
-    style="background-color: var(--color-{color}-100); opacity: 0.95;{floating.floatingStyles}"
+    {@attach css(
+      `background-color: var(--color-${color}-100); opacity: 0.95;${floating.floatingStyles}`,
+    )}
     {...interactions.getFloatingProps()}
     data-testid={testid}
     transition:fade={{ duration: 200 }}

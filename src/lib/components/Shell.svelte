@@ -18,7 +18,7 @@
 </script>
 
 {#if showShell}
-  <div style="display: contents">
+  <div class="contents">
     <main class="w-full h-full">
       <div
         id="appShell"
