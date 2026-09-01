@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
-import { test, mockApiConfig } from '../custom-context';
-import { userIsLoggedIn } from '../utils';
+import { test, mockApiConfig } from '../../custom-context';
+import { userIsLoggedIn } from '../../utils';
 
 const banner = {
   uuid: '11111111-1111-1111-1111-111111111111',
@@ -16,7 +16,7 @@ const banner = {
   presentationHash: 'abc123',
 };
 
-test.describe('Site banner delivery', () => {
+test.describe('Visitors receive banners across navigation', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
   test.beforeEach(async ({ page }) => {
@@ -37,6 +37,31 @@ test.describe('Site banner delivery', () => {
     await expect(page.getByRole('region', { name: 'Maintenance' })).toContainText(
       'Scheduled maintenance',
     );
+    const visitorBanner = page.getByRole('region', { name: 'Maintenance' });
+    const visitorLayout = visitorBanner.locator('.site-banner-layout');
+    const visitorTitle = visitorBanner.getByRole('heading', { name: 'Maintenance' });
+    const visitorMessage = visitorBanner.locator('.site-banner-content');
+    const dismissVisual = visitorBanner.locator('.site-banner-dismiss-visual');
+    await expect(visitorBanner).toHaveCSS('border-left-width', '0px');
+    await expect(visitorBanner).toHaveCSS('border-bottom-width', '4px');
+    await expect(dismissVisual).toHaveCSS('width', '32px');
+    await expect(dismissVisual).toHaveCSS('height', '32px');
+    const [bannerBox, layoutBox, titleBox, messageBox, dismissBox] = await Promise.all([
+      visitorBanner.boundingBox(),
+      visitorLayout.boundingBox(),
+      visitorTitle.boundingBox(),
+      visitorMessage.boundingBox(),
+      visitorBanner.getByRole('button', { name: 'Dismiss Maintenance' }).boundingBox(),
+    ]);
+    expect(bannerBox?.height).toBeLessThanOrEqual(72);
+    expect(titleBox?.x).toBe(messageBox?.x);
+    expect(
+      Math.abs(
+        (dismissBox?.y ?? 0) +
+          (dismissBox?.height ?? 0) / 2 -
+          ((layoutBox?.y ?? 0) + (layoutBox?.height ?? 0) / 2),
+      ),
+    ).toBeLessThanOrEqual(1);
     await expect
       .poll(() =>
         page.evaluate(() => {
@@ -59,7 +84,7 @@ test.describe('Site banner delivery', () => {
   });
 });
 
-test.describe('Site banner closed-login delivery', () => {
+test.describe('Signed-out visitors can read banners and reach login', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
   test.beforeEach(async ({ page }) => {
@@ -131,17 +156,20 @@ test.describe('Site banner closed-login delivery', () => {
     await expect(page.getByTestId('site-banner')).toHaveCount(4);
     const loginControl = page.getByRole('button', { name: 'Login with Auth0' });
     await expect(loginControl).not.toBeInViewport();
+    const [bannerRegionBox, loginTitleBox] = await Promise.all([
+      page.getByTestId('site-banner-region').boundingBox(),
+      page.getByTestId('login-title').boundingBox(),
+    ]);
+    expect(bannerRegionBox).not.toBeNull();
+    expect(loginTitleBox).not.toBeNull();
+    expect(loginTitleBox!.y).toBeGreaterThanOrEqual(bannerRegionBox!.y + bannerRegionBox!.height);
 
-    await page.mouse.move(640, 360);
-    await page.mouse.wheel(0, 10_000);
-
+    await loginControl.scrollIntoViewIfNeeded();
     await expect(loginControl).toBeInViewport({ ratio: 1 });
   });
 });
 
-// Workflow 3 of the five representative end-to-end workflows. Ticket 08 extends this same test with
-// page targeting rather than adding a sixth workflow.
-test.describe('Site banner workflow 3', () => {
+test.describe('Admins review and target published banners', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
 
   const everyone = {
@@ -223,6 +251,7 @@ test.describe('Site banner workflow 3', () => {
     });
 
     await page.goto('/admin/configuration');
+    await page.waitForLoadState('networkidle');
     await page.getByRole('tab', { name: 'Site banners' }).click();
     const row = page.locator(`[data-banner-row="${targeted.uuid}"]`);
     await row.getByRole('button', { name: 'Details' }).click();
@@ -273,10 +302,64 @@ test.describe('Site banner workflow 3', () => {
     await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
   });
+
+  test('keeps long management cards compact and inside the configuration page', async ({
+    page,
+  }) => {
+    const longManagedBanner = {
+      ...targeted,
+      ...managementFields,
+      htmlContent: `<p>${'Scheduled maintenance stays readable without widening the card. '.repeat(5)}</p>`,
+    };
+    await page.route('**/picsure/operations/banners**', (route) => {
+      const url = new URL(route.request().url());
+      if (route.request().method() === 'GET' && url.pathname.endsWith('/banners/active/v2')) {
+        return route.fulfill({ json: [targeted] });
+      }
+      if (route.request().method() === 'GET' && url.pathname.endsWith('/banners')) {
+        return route.fulfill({ json: [longManagedBanner] });
+      }
+      return route.fallback();
+    });
+
+    await page.goto('/admin/configuration');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('tab', { name: 'Site banners' }).click();
+    await expect(page.getByRole('heading', { name: 'Site banners' })).toBeVisible();
+    const panel = page.locator('#banner-management-panel');
+    const row = page.locator(`[data-banner-row="${targeted.uuid}"]`);
+    const article = row.locator('article');
+    await expect(row).toBeVisible();
+    await expect(article).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(row.getByText('Active')).toHaveClass(/preset-tonal-success/);
+    await expect(row.getByText('Position 1')).toHaveCSS('white-space', 'nowrap');
+    const [panelBox, rowBox, articleBox, barBox] = await Promise.all([
+      panel.boundingBox(),
+      row.boundingBox(),
+      article.boundingBox(),
+      row.locator('.banner-appearance-bar').boundingBox(),
+    ]);
+    expect(rowBox?.x).toBe(panelBox?.x);
+    expect((rowBox?.x ?? 0) + (rowBox?.width ?? 0)).toBeLessThanOrEqual(
+      (panelBox?.x ?? 0) + (panelBox?.width ?? 0) + 1,
+    );
+    expect(
+      Math.abs(
+        (barBox?.y ?? 0) +
+          (barBox?.height ?? 0) -
+          ((articleBox?.y ?? 0) + (articleBox?.height ?? 0)),
+      ),
+    ).toBeLessThanOrEqual(1);
+    const headingBox = await page.getByRole('heading', { name: 'Site banners' }).boundingBox();
+    const descriptionBox = await page
+      .getByText('Create and manage announcements across PIC-SURE.')
+      .boundingBox();
+    expect(headingBox?.x).toBe(descriptionBox?.x);
+    await expect(page.getByTestId('banner-search')).toBeVisible();
+  });
 });
 
-// Workflow 4 of the five representative end-to-end workflows.
-test.describe('Site banner workflow 4', () => {
+test.describe('Visitors dismiss a banner until its content changes', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
 
   const dismissalBanner = {
@@ -391,7 +474,7 @@ test.describe('Site banner workflow 4', () => {
   });
 });
 
-test.describe('Site banner workflow 1', () => {
+test.describe('Admins create, edit, and publish banners', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
 
   test.beforeEach(async ({ page }) => {
@@ -881,7 +964,7 @@ test.describe('Site banner workflow 1', () => {
   });
 });
 
-test.describe('Site banner workflow 2', () => {
+test.describe('Admins schedule banners through their lifecycle', () => {
   test.use({
     storageState: 'tests/end-to-end/.auth/adminUser.json',
     timezoneId: 'America/New_York',
@@ -1116,7 +1199,7 @@ test.describe('Site banner workflow 2', () => {
   });
 });
 
-test.describe('Site banner workflow 5', () => {
+test.describe('Admins reorder banners to control display priority', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
 
   test.beforeEach(async ({ page }) => {

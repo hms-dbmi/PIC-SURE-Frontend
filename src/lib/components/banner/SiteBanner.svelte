@@ -36,32 +36,42 @@
 <section
   aria-label={banner.title || 'Site announcement'}
   data-testid="site-banner"
-  class="w-full border-l-8 px-4 py-3 {toneClasses[banner.appearance]}"
+  class="w-full border-b-4 px-4 py-1.5 {toneClasses[banner.appearance]}"
 >
-  <div class="mx-auto flex w-full items-start gap-3">
+  <div class="site-banner-layout mx-auto flex w-full items-center gap-3">
     {#if iconClasses[banner.icon]}
-      <i class="fa-solid {iconClasses[banner.icon]} mt-1 flex-none text-xl" aria-hidden="true"></i>
+      <i
+        class="site-banner-icon fa-solid {iconClasses[banner.icon]} flex-none text-lg"
+        aria-hidden="true"
+      ></i>
     {/if}
     <div class="min-w-0 flex-1">
       {#if banner.title}
         {#if titleLevel === 3}
-          <h3 class="h4 mb-1">{banner.title}</h3>
+          <h3 class="site-banner-title">{banner.title}</h3>
         {:else}
-          <h2 class="h4 mb-1">{banner.title}</h2>
+          <h2 class="site-banner-title">{banner.title}</h2>
         {/if}
       {/if}
-      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      <div class="site-banner-content">{@html sanitizeBannerHTML(banner.htmlContent)}</div>
+      <div class="site-banner-content text-sm leading-5">
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+        {@html sanitizeBannerHTML(banner.htmlContent)}
+      </div>
     </div>
     {#if banner.dismissible && ondismiss}
       <button
         type="button"
-        class="site-banner-dismiss btn-icon h-11 w-11 flex-none rounded-full border border-current focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-current"
+        class="site-banner-dismiss flex h-11 w-11 flex-none items-center justify-center rounded-full focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-current"
         aria-label={dismissLabel}
         title={dismissLabel}
         onclick={ondismiss}
       >
-        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        <span
+          class="site-banner-dismiss-visual flex h-8 w-8 items-center justify-center rounded-full border border-current"
+          aria-hidden="true"
+        >
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </span>
       </button>
     {/if}
   </div>
@@ -77,8 +87,15 @@
     white-space: pre-wrap;
   }
 
-  .site-banner-content :global(p:last-child) {
-    margin-bottom: 0;
+  .site-banner-content :global(p) {
+    margin: 0;
+  }
+
+  .site-banner-title {
+    margin: 0 0 0.125rem;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.25rem;
   }
 
   .site-banner-content :global(ul) {

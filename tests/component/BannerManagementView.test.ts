@@ -1438,6 +1438,55 @@ describe('BannerManagementView', () => {
     );
   });
 
+  it('uses compact white cards with a successful active badge and bottom tone bar', async () => {
+    const { container } = render(BannerManagementView);
+
+    const details = await screen.findByRole('button', { name: 'Details' });
+    const article = details.closest('article');
+    expect(article).toHaveClass('min-w-0', 'bg-white');
+    expect(screen.getByText('Active')).toHaveClass('preset-tonal-success');
+    expect(screen.getByText('Position 1')).toHaveClass('whitespace-nowrap');
+    expect(screen.getByText('System maintenance tonight')).toHaveClass('m-0');
+    expect(container.querySelector('.banner-appearance-bar')).toHaveClass(
+      'h-1',
+      'w-full',
+      'bg-warning-500',
+    );
+    expect(container.querySelector('[data-banner-row]')).toHaveClass('min-w-0');
+    expect(screen.getByTestId('banner-search')).toHaveAttribute(
+      'placeholder',
+      'Search banner text',
+    );
+  });
+
+  it('distinguishes saved banners and uses outline management actions', async () => {
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+
+    const row = await openDetailsFor('Reusable enrollment notice');
+    expect(within(row).getByText('Saved')).toHaveClass('preset-tonal-primary');
+    expect(within(row).getByRole('button', { name: 'Details' })).toHaveClass(
+      'preset-tonal-primary',
+    );
+    expect(within(row).getByRole('button', { name: 'Edit banner' })).toHaveClass(
+      'preset-outlined-primary-500',
+    );
+    expect(within(row).getByRole('button', { name: 'Archive banner' })).toHaveClass(
+      'preset-outlined-error-500',
+    );
+  });
+
+  it('aligns the Site banners heading and description', async () => {
+    render(BannerManagementView);
+    await screen.findByRole('button', { name: 'Details' });
+
+    const title = screen.getByRole('heading', { name: 'Site banners' });
+    const description = screen.getByText('Create and manage announcements across PIC-SURE.');
+    expect(title.parentElement).toHaveClass('space-y-1');
+    expect(description).toHaveClass('m-0');
+  });
+
   it('bounds the typed page-target summary without limiting stored targets', async () => {
     const longPath = `/${'segment'.repeat(12)}-hidden-tail`;
     vi.mocked(getManagedBanners).mockResolvedValue([

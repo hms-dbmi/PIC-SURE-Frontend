@@ -66,6 +66,13 @@
     DISABLED: 'Disabled',
     EXPIRED: 'Expired',
   } as const;
+  const lifecycleBadgeClasses = {
+    ACTIVE: 'preset-tonal-success',
+    SCHEDULED: 'bg-surface-200',
+    SAVED: 'preset-tonal-primary',
+    DISABLED: 'bg-surface-200',
+    EXPIRED: 'bg-surface-200',
+  } as const;
 
   const panelId = $derived(`banner-${banner.uuid}-details`);
   const editable = $derived(banner.lifecycle === 'SAVED' || banner.status === 'PUBLISHED');
@@ -104,19 +111,19 @@
   }
 </script>
 
-<div class="relative" {@attach orderable && !isOverlay ? ref : noopAttachment}>
+<div class="relative min-w-0" {@attach orderable && !isOverlay ? ref : noopAttachment}>
   <article
-    class="overflow-hidden rounded-xl border border-surface-300 bg-surface-50 {activeId ===
+    class="min-w-0 overflow-hidden rounded-xl border border-surface-300 bg-white dark:bg-surface-950 {activeId ===
       banner.uuid && !isOverlay
       ? 'invisible'
       : ''}"
   >
-    <div class="flex min-h-28 items-center gap-4 p-4">
+    <div class="flex min-h-24 items-center gap-3 p-3">
       {#if orderable}
-        <div class="flex w-14 shrink-0 flex-col items-center gap-1">
+        <div class="flex w-20 shrink-0 flex-col items-center gap-1">
           <button
             type="button"
-            class="cursor-grab rounded p-3 text-surface-600 active:cursor-grabbing focus-visible:ring-3 focus-visible:ring-primary-500 focus-visible:outline-none"
+            class="cursor-grab rounded p-2 text-surface-600 active:cursor-grabbing focus-visible:ring-3 focus-visible:ring-primary-500 focus-visible:outline-none"
             aria-label={`Reorder banner: ${banner.excerpt}`}
             aria-roledescription="sortable"
             title="Drag or use the keyboard to reorder"
@@ -124,18 +131,21 @@
           >
             <i class="fa-solid fa-grip-vertical text-xl" aria-hidden="true"></i>
           </button>
-          {#if position !== null}<span class="text-xs font-bold">Position {position}</span>{/if}
+          {#if position !== null}
+            <span class="whitespace-nowrap text-xs font-bold">Position {position}</span>
+          {/if}
         </div>
       {/if}
-      <span
-        class="h-14 w-2 shrink-0 rounded-full {BANNER_APPEARANCE_DETAILS[banner.appearance]
-          .swatchClass}"
-        aria-hidden="true"
-      ></span>
       <div class="min-w-0 flex-1">
-        <p class="overflow-hidden text-ellipsis whitespace-nowrap font-bold">{banner.excerpt}</p>
+        <p class="m-0 overflow-hidden text-ellipsis whitespace-nowrap font-bold">
+          {banner.excerpt}
+        </p>
         <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-surface-600">
-          <span class="rounded-full bg-surface-200 px-2 py-1 font-bold uppercase">
+          <span
+            class="rounded-full px-2 py-1 font-bold uppercase {lifecycleBadgeClasses[
+              banner.lifecycle
+            ]}"
+          >
             {lifecycleLabels[banner.lifecycle]}
           </span>
           <span
@@ -144,7 +154,7 @@
               : 'Permanent'}</span
           >
         </div>
-        <p class="mt-2 text-sm text-surface-600">{scheduleSummary()}</p>
+        <p class="m-0 mt-2 text-sm text-surface-600">{scheduleSummary()}</p>
       </div>
       <button
         type="button"
@@ -180,7 +190,7 @@
             {#if editable}
               <button
                 type="button"
-                class="btn preset-tonal-primary"
+                class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
                 disabled={busy}
                 onclick={onedit}
               >
@@ -194,7 +204,7 @@
                 confirmText="Yes"
                 cancelText="No"
                 onconfirm={ondisable}
-                triggerBase="btn preset-tonal-error"
+                triggerBase="btn preset-outlined-error-500 text-error-700 hover:preset-filled-error-500 hover:text-white"
                 disabled={busy || disableDisabled}
                 withDefault
               >
@@ -208,7 +218,7 @@
             {#if restorable}
               <button
                 type="button"
-                class="btn preset-tonal-primary"
+                class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
                 disabled={busy || restoreDisabled}
                 onclick={onrestore}
               >
@@ -222,7 +232,7 @@
                 confirmText="Yes"
                 cancelText="No"
                 onconfirm={onarchive}
-                triggerBase="btn preset-tonal-error"
+                triggerBase="btn preset-outlined-error-500 text-error-700 hover:preset-filled-error-500 hover:text-white"
                 disabled={busy || archiveDisabled}
                 withDefault
               >
@@ -238,6 +248,11 @@
         {/if}
       </section>
     {/if}
+    <span
+      class="banner-appearance-bar block h-1 w-full {BANNER_APPEARANCE_DETAILS[banner.appearance]
+        .swatchClass}"
+      aria-hidden="true"
+    ></span>
   </article>
   {#if orderable && activeId === banner.uuid && !isOverlay}
     <div

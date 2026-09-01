@@ -18,6 +18,7 @@
     reorderBanners,
   } from '$lib/services/BannerManagement';
   import { bannerPlainText } from '$lib/utilities/BannerHTML';
+  import FilterSearch from './FilterSearch.svelte';
   import { isAllPagesBannerTarget } from '$lib/utilities/BannerPageTargets';
   import { toaster } from '$lib/toaster';
   import {
@@ -467,13 +468,14 @@
   />
 {:else}
   <section
+    class="min-w-0"
     aria-labelledby="site-banners-title"
     style:--banner-arrival-duration={`${ARRIVAL_HIGHLIGHT_MS}ms`}
   >
     <header class="flex items-start justify-between gap-6">
-      <div>
-        <h2 id="site-banners-title">Site banners</h2>
-        <p>Create and manage announcements across PIC-SURE.</p>
+      <div class="space-y-1">
+        <h2 id="site-banners-title" class="m-0">Site banners</h2>
+        <p class="m-0">Create and manage announcements across PIC-SURE.</p>
       </div>
       <button type="button" class="btn preset-filled-primary-500" onclick={createBanner}>
         + Create banner
@@ -553,14 +555,17 @@
           {/each}
         </div>
 
-        <label class="mt-5 block max-w-md">
-          <span class="sr-only">Search banner text</span>
-          <input type="search" class="input" placeholder="Search banner text" bind:value={search} />
-        </label>
+        <FilterSearch
+          class="mt-5 max-w-sm"
+          placeholder="Search banner text"
+          label="Search banner text"
+          testId="banner-search"
+          bind:value={search}
+        />
 
         <div
           id="banner-management-panel"
-          class="mt-5 grid gap-3"
+          class="mt-5 grid min-w-0 gap-3"
           role="tabpanel"
           aria-labelledby={`banner-management-tab-${activeTab}`}
         >
@@ -572,6 +577,7 @@
             {#each visibleRecords as banner (banner.uuid)}
               <div
                 data-banner-row={banner.uuid}
+                class="min-w-0"
                 class:banner-arrival={arrivalUuid === banner.uuid}
                 in:scale={{
                   start: 0.97,
