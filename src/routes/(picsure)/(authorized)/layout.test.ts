@@ -51,10 +51,6 @@ function mockUserModule(overrides: Record<string, unknown> = {}) {
 function mockOtherModules() {
   vi.doMock('$app/environment', () => ({ browser: true }));
   vi.doMock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
-  vi.doMock('$lib/models/Privilege', () => ({
-    PicsurePrivileges: { QUERY: 'PRIV_QUERY' },
-    BDCPrivileges: { AUTHORIZED_ACCESS: 'PRIV_AUTHORIZED_ACCESS' },
-  }));
 }
 
 describe('authorized layout load — check order', () => {
@@ -107,7 +103,7 @@ describe('authorized layout load — check order', () => {
     vi.mocked(localStorage.getItem).mockReturnValue(validToken);
     mockUserStoreValue = {};
     const hydrateSpy = vi.fn().mockImplementation(async () => {
-      mockUserStoreValue = { privileges: ['PRIV_QUERY'] };
+      mockUserStoreValue = { privileges: ['PIC_SURE_ANY_QUERY'] };
     });
     mockUserModule({
       isTokenExpired: () => false,
@@ -142,6 +138,51 @@ describe('authorized layout load — check order', () => {
     expect(result).not.toBeNull();
     expect(result!.location).toContain('/login');
     expect(clearSessionSpy).toHaveBeenCalled();
+  });
+
+  // Both arms of the privilege check, asserted separately. The suite used to reach this gate only
+  // through PIC_SURE_ANY_QUERY, with the negative case passing [] and so failing both arms at
+  // once, which left a wrong AUTHORIZED_ACCESS value undetectable.
+  it('admits a user holding only PIC_SURE_ANY_QUERY', async () => {
+    vi.mocked(localStorage.getItem).mockReturnValue(validToken);
+    mockUserStoreValue = { privileges: ['PIC_SURE_ANY_QUERY'] };
+    mockUserModule({ isTokenExpired: () => false });
+    const { load } = await import('./+layout.ts');
+
+    const result = await captureRedirect(() =>
+      load({ url: new URL('http://localhost/explorer') } as Parameters<typeof load>[0]),
+    );
+
+    expect(result).toBeNull();
+  });
+
+  it('admits a user holding only AUTHORIZED_ACCESS', async () => {
+    vi.mocked(localStorage.getItem).mockReturnValue(validToken);
+    mockUserStoreValue = { privileges: ['AUTHORIZED_ACCESS'] };
+    mockUserModule({ isTokenExpired: () => false });
+    const { load } = await import('./+layout.ts');
+
+    const result = await captureRedirect(() =>
+      load({ url: new URL('http://localhost/explorer') } as Parameters<typeof load>[0]),
+    );
+
+    expect(result).toBeNull();
+  });
+
+  // A privilege set that is non-empty but satisfies neither arm. The old [] case could not tell
+  // "both arms rejected it" apart from "the store was never populated".
+  it('redirects to / for a user whose privileges satisfy neither arm', async () => {
+    vi.mocked(localStorage.getItem).mockReturnValue(validToken);
+    mockUserStoreValue = { privileges: ['MANAGED_PRIV_OPEN_ACCESS', 'MANAGED_PRIV_DICTIONARY'] };
+    mockUserModule({ isTokenExpired: () => false });
+    const { load } = await import('./+layout.ts');
+
+    const result = await captureRedirect(() =>
+      load({ url: new URL('http://localhost/explorer') } as Parameters<typeof load>[0]),
+    );
+
+    expect(result).not.toBeNull();
+    expect(result!.location).toBe('/');
   });
 
   it('redirects to / when token is valid and hydrated user lacks privileges', async () => {

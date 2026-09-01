@@ -4,7 +4,7 @@ import { browser } from '$app/environment';
 import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
 import type { ConsentsMap, User } from '$lib/models/User';
-import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
+import { PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, config } from '$lib/configuration.svelte';
 import { Psama } from '$lib/paths';
 import { goto } from '$app/navigation';
@@ -177,14 +177,6 @@ export const userRoutes: Readable<Route[]> = derived([user], ([$user]) => {
 export async function getUser(force?: boolean, hasToken = false) {
   if (force || !get(user)?.privileges || !get(user)?.token) {
     const res: User = await api.get(`${Psama.User.Me}${hasToken ? '?hasToken' : ''}`);
-    if (res.privileges && res.token) {
-      for (const privilege of res.privileges) {
-        if (privilege.includes(BDCPrivileges.PRIV_MANAGED)) {
-          res.privileges.push(BDCPrivileges.AUTHORIZED_ACCESS);
-          break;
-        }
-      }
-    }
     user.set({ ...get(user), ...res });
   }
 }
