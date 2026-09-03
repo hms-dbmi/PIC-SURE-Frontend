@@ -2,7 +2,7 @@ import { get, derived, writable, type Readable, type Writable } from 'svelte/sto
 import { genericUUID, objectUUID } from '$lib/utilities/UUID';
 
 import { browser } from '$app/environment';
-import { user } from '$lib/stores/User';
+import { ensureConsentsLoaded, user } from '$lib/stores/User';
 import { getConceptDetails } from '$lib/stores/Dictionary';
 import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
 
@@ -45,23 +45,24 @@ export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => !filter.allowFiltering) : false,
 );
 
-export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$user, $filters]) => {
-  if ($filters.length === 0 || !$user?.queryScopes) return false;
+function hasConsentForFilter(filter: Filter, consents: string[]): boolean {
+  let filterDataset = filter.dataset || '';
+  if (genomicFilterTypes.includes(filter.filterType)) {
+    filterDataset = 'Gene_with_variant';
+  }
 
-  return $filters.some((filter) => {
-    let filterDataset = filter.dataset || '';
-    if (genomicFilterTypes.includes(filter.filterType)) {
-      filterDataset = 'Gene_with_variant';
-    }
+  return filterDataset.length > 0 && consents.some((consent) => consent.includes(filterDataset));
+}
 
-    const isValidFilter = $user?.queryScopes?.some((scope) => {
-      const isMatch = filterDataset.length > 0 && scope.includes(filterDataset);
-      return isMatch;
-    });
+export const hasInvalidFilter: Readable<boolean> = derived(
+  [user, allFilters],
+  ([$user, $allFilters]) => {
+    const consents = $user?.consents?.['\\_consents\\'];
+    if ($allFilters.length === 0 || !consents) return false;
 
-    return !isValidFilter;
-  });
-});
+    return $allFilters.some((filter) => !hasConsentForFilter(filter, consents));
+  },
+);
 
 export const hasOrGroup: Readable<boolean> = derived(filterTree, ($ft) => $ft.hasOr);
 
@@ -231,32 +232,21 @@ export function removeUnallowedFilters() {
   if (totalCount > 0) log(createLog('FILTER', 'filter.remove_unallowed', { count: totalCount }));
 }
 
-export function removeInvalidFilters(): void {
-  const currentUser = get(user);
+export async function removeInvalidFilters(): Promise<void> {
   const currentFilters = get(filters);
-
-  if (!currentUser || currentFilters.length === 0) return;
-
-  const match = (filter: Filter) => {
-    let filterDataset = filter.dataset || '';
-    if (genomicFilterTypes.includes(filter.filterType)) {
-      filterDataset = 'Gene_with_variant';
-    }
-
-    const isValidFilter = currentUser.queryScopes?.some((scope) => {
-      const isMatch = filterDataset.length > 0 && scope.includes(filterDataset);
-      return isMatch;
-    });
-
-    return isValidFilter;
-  };
-
   const geneFilters = get(genomicFilters);
-  const geneRemoveCount = geneFilters.filter((node) => !match(node)).length;
-  genomicFilters.set(geneFilters.filter((node) => match(node)));
+  if (currentFilters.length === 0 && geneFilters.length === 0) return;
+
+  const consentsMap = await ensureConsentsLoaded();
+  const consents = consentsMap?.['\\_consents\\'];
+
+  if (!consents) return;
+
+  const geneRemoveCount = geneFilters.filter((node) => !hasConsentForFilter(node, consents)).length;
+  genomicFilters.set(geneFilters.filter((node) => hasConsentForFilter(node, consents)));
 
   const tree = get(filterTree);
-  const remove = tree.leafNodes.filter((node) => !match(node as Filter));
+  const remove = tree.leafNodes.filter((node) => !hasConsentForFilter(node as Filter, consents));
   tree.remove(...remove);
   tree.root.uuid = genericUUID();
   filterTree.set(tree);

@@ -243,6 +243,15 @@ export function loadConsents(): Promise<void> {
   return request;
 }
 
+/** Waits for or starts the consent request when access has not been loaded yet. */
+export async function ensureConsentsLoaded(): Promise<ConsentsMap | undefined> {
+  if (get(user).consents !== undefined) return get(user).consents;
+
+  await consentsSettled();
+  if (get(user).consents === undefined) await loadConsents();
+  return get(user).consents;
+}
+
 /** Idempotent per visible toast, so repeated blocked requests do not stack up alerts. */
 export function showAccessUnavailable() {
   if (isToastShowing('access-unavailable')) return;
