@@ -622,8 +622,9 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
     LOGO_ALT: {
       group: 'Logo',
       type: 'string',
-      default: 'PIC-SURE',
-      description: 'Alt/title text for the site logo image shown in the header and login page.',
+      default: '',
+      description:
+        'Alt/title text for the site logo image shown in the header and login page. Defaults to the application name used in page titles.',
     },
     LOGO: {
       group: 'Logo',
@@ -871,7 +872,7 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
       },
       dotsColorsClass: [] as string[],
       logo: {
-        alt: 'PIC-SURE',
+        alt: '',
         src: '',
       },
       privacyPolicy: {
@@ -917,7 +918,7 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
   // ENV or API overrides
   const parser = parsersFor('branding', resolveConfigMap(apiBranding));
   branding.theme = parser.asString('THEME');
-  branding.logo.alt = parser.asString('LOGO_ALT');
+  branding.logo.alt = parser.asString('LOGO_ALT') || branding.logo.alt || branding.applicationName;
   branding.logo.src = parser.asString('LOGO');
   branding.dotsColorsClass = parser.asJson('DOTS_COLORS_CLASS') as string[];
 
