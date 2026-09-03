@@ -107,17 +107,11 @@
         </div>
       </section>
       <footer class="card-footer mt-2">
-        <span
-          role="button"
-          tabindex="-1"
-          onclick={() => log(createLog('ACTION', 'token.copy'))}
-          onkeydown={(e) => e.key === 'Enter' && log(createLog('ACTION', 'token.copy'))}
-        >
-          <CopyButton
-            itemToCopy={$user.token || ''}
-            class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          />
-        </span>
+        <CopyButton
+          itemToCopy={$user.token || ''}
+          logAction="token.copy"
+          class="preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+        />
         <Modal
           data-testid="refresh"
           title="Please Confirm"

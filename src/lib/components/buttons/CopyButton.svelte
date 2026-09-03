@@ -1,5 +1,6 @@
 <script lang="ts">
   import Popover from '$lib/components/Popover.svelte';
+  import { log, createLog } from '$lib/logger';
 
   interface Props {
     itemToCopy: string;
@@ -11,6 +12,9 @@
     'data-testid'?: string;
     class?: string;
     oncopy?: () => void;
+    logAction?: string;
+    logEventType?: string;
+    logMetadata?: Record<string, unknown>;
   }
 
   const {
@@ -23,6 +27,9 @@
     'data-testid': testid = '',
     class: className = '',
     oncopy = () => {},
+    logAction,
+    logEventType = 'ACTION',
+    logMetadata,
   }: Props = $props();
 
   let copied = $state(false);
@@ -40,6 +47,7 @@
     clearTimeout(resetTimer);
     resetTimer = setTimeout(() => (copied = false), 4500);
     copied = true;
+    if (logAction) log(createLog(logEventType, logAction, logMetadata));
     oncopy();
   }
 </script>
