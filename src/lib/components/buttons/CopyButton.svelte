@@ -11,7 +11,6 @@
     altIcon?: string;
     'data-testid'?: string;
     class?: string;
-    oncopy?: () => void;
     logAction?: string;
     logEventType?: string;
     logMetadata?: Record<string, unknown>;
@@ -26,7 +25,6 @@
     altIcon = 'fa-regular fa-square-check',
     'data-testid': testid = '',
     class: className = '',
-    oncopy = () => {},
     logAction,
     logEventType = 'ACTION',
     logMetadata,
@@ -48,7 +46,6 @@
     resetTimer = setTimeout(() => (copied = false), 4500);
     copied = true;
     if (logAction) log(createLog(logEventType, logAction, logMetadata));
-    oncopy();
   }
 </script>
 
