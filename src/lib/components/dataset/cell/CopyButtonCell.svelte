@@ -1,6 +1,5 @@
 <script lang="ts">
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
-  import { log, createLog } from '$lib/logger';
 
   let { data = { cell: '', row: {} } } = $props();
 </script>
@@ -11,6 +10,7 @@
     data-testid="{data.cell}-copy"
     useIcon
     itemToCopy={data.cell}
-    oncopy={() => log(createLog('ACTION', 'dataset.copy_id', { value: data.cell }))}
+    logAction="dataset.copy_id"
+    logMetadata={{ value: data.cell }}
   />
 </div>
