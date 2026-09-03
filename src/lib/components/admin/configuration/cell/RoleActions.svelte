@@ -40,17 +40,20 @@
   <button
     data-testid={`role-${data.cell}-edit-btn`}
     type="button"
-    title="Edit"
+    title="Edit (e)"
+    data-key="e"
     class="btn-icon-color"
     disabled={!$isTopAdmin}
     onclick={editRole}
   >
     <i class="fa-solid fa-pen-to-square fa-xl"></i>
-    <span class="sr-only">Edit</span>
+    <span class="sr-only">Edit (e)</span>
   </button>
   <Modal
     data-testid="role-{data.cell}-delete"
     title="Delete Role?"
+    triggerTitle="Delete (d)"
+    data-key="d"
     confirmText="Yes"
     cancelText="No"
     disabled={!$isTopAdmin}
@@ -60,7 +63,7 @@
   >
     {#snippet trigger()}
       <i class="fa-solid fa-trash fa-xl"></i>
-      <span class="sr-only">Delete</span>
+      <span class="sr-only">Delete (d)</span>
     {/snippet}
     Are you sure you want to delete role '{data.row.name}'?
   </Modal>

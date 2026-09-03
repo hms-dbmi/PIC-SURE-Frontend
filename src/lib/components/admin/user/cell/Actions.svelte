@@ -53,8 +53,9 @@
   <button
     data-testid="user-{data.cell}-edit-btn"
     type="button"
-    title="Edit"
-    aria-label="Edit"
+    title="Edit (e)"
+    aria-label="Edit (e)"
+    data-key="e"
     class="btn-icon-color"
     onclick={edit}
   >
@@ -62,22 +63,18 @@
   </button>
 {/if}
 <Modal
-  data-testid="user-{data.cell}-{active ? 'D' : 'R'}eactivate-btn"
+  data-testid="user-{data.cell}-{active ? 'D' : 'R'}eactivate"
   title="{active ? 'D' : 'R'}eactivate User?"
   confirmText="{active ? 'D' : 'R'}eactivate"
+  triggerTitle={active ? 'Deactivate user (d)' : 'Reactivate user (r)'}
+  data-key={active ? 'd' : 'r'}
+  triggerBase="btn-icon-color"
   onconfirm={() => toggleActivate(!active)}
   withDefault
 >
   {#snippet trigger()}
-    <button
-      data-testid="user-{active ? 'd' : 'r'}eactivate-btn-{data.cell}"
-      type="button"
-      title="{active ? 'D' : 'R'}eactivate user"
-      aria-label="{active ? 'D' : 'R'}eactivate user"
-      class="btn-icon-color"
-    >
-      <i class="fa-solid fa-trash{active ? '' : '-arrow-up'} fa-xl"></i>
-    </button>
+    <i class="fa-solid fa-trash{active ? '' : '-arrow-up'} fa-xl"></i>
+    <span class="sr-only">{active ? 'Deactivate user (d)' : 'Reactivate user (r)'}</span>
   {/snippet}
   Are you sure you want to {active ? 'd' : 'r'}eactiveate user '{data.row.email}'?
 </Modal>

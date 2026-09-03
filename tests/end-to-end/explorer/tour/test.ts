@@ -49,22 +49,19 @@ test('Tour Finishes', async ({ page }) => {
   }).toPass({ timeout: 15000 });
   await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
 
-  // When
-  const stepCount = await page
-    .locator('#driver-popover-content')
-    .locator('footer')
-    .locator('.driver-popover-progress-text')
-    .textContent();
-  if (!stepCount) {
-    throw new Error('Step count not found');
-  }
-  const stepCountInt = parseInt(stepCount.split(' ')[2]) || 0;
-  for (let i = 0; i < stepCountInt + 1; i++) {
-    // +1 to account for the Done button
+  await expect(
+    page
+      .locator('#driver-popover-content')
+      .locator('footer')
+      .locator('.driver-popover-progress-text'),
+  ).toBeVisible();
+
+  // When - driver.js ignores presses that land during its 200ms step animation, so
+  // advance by outcome rather than pressing a fixed number of times on a timer.
+  await expect(async () => {
     await page.keyboard.press('ArrowRight');
-    // fade-in and fade-out animations are 200ms, so we account for fade in, reposition, and out
-    await page.waitForTimeout(600);
-  }
+    await expect(page.locator('#driver-popover-content')).not.toBeVisible({ timeout: 500 });
+  }).toPass({ timeout: 30000 });
 
   // Then
   await expect(page.locator('#driver-popover-content')).not.toBeVisible();

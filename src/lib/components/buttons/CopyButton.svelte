@@ -9,6 +9,8 @@
     icon?: string;
     altIcon?: string;
     'data-testid'?: string;
+    'data-key'?: string;
+    triggerTitle?: string;
     class?: string;
     oncopy?: () => void;
   }
@@ -21,6 +23,8 @@
     icon = 'fa-regular fa-copy',
     altIcon = 'fa-regular fa-square-check',
     'data-testid': testid = '',
+    'data-key': dataKey,
+    triggerTitle,
     class: className = '',
     oncopy = () => {},
   }: Props = $props();
@@ -46,6 +50,8 @@
 
 <Popover
   data-testid={testid || 'copy'}
+  data-key={dataKey}
+  {triggerTitle}
   triggerStyle="ml-4 {useIcon ? 'text-black-600 hover:text-primary-600' : 'btn'} {className}"
   onengage={updateButton}
   onTriggerClick={(e) => e.stopPropagation()}

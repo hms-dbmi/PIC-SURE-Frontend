@@ -67,37 +67,48 @@
   let shouldDisableFilter = $derived(isOpenAccess() && !data.row.allowFiltering);
 </script>
 
-<button type="button" title="Information" class="btn-icon-color" onclick={insertInfoContent}>
+<button
+  type="button"
+  title="Information (i)"
+  data-key="i"
+  class="btn-icon-color"
+  onclick={insertInfoContent}
+>
   <i class="fa-solid fa-circle-info fa-xl"></i>
-  <span class="sr-only">View Information</span>
+  <span class="sr-only">View Information (i)</span>
 </button>
 <button
   type="button"
-  title={shouldDisableFilter ? 'Filtering is not available for this variable' : 'Filter'}
+  title={shouldDisableFilter ? 'Filtering is not available for this variable' : 'Filter (f)'}
+  data-key="f"
   class="btn-icon-color"
   disabled={shouldDisableFilter}
   onclick={insertFilterContent}
 >
   <i class="fa-solid fa-filter fa-xl"></i>
   <span class="sr-only"
-    >{shouldDisableFilter ? 'Filtering is not available for this variable' : 'View Filter'}</span
+    >{shouldDisableFilter
+      ? 'Filtering is not available for this variable'
+      : 'View Filter (f)'}</span
   >
 </button>
 {#if config.features.explorer.enableHierarchy}
   <button
     type="button"
-    title="Data Hierarchy"
+    title="Data Hierarchy (h)"
+    data-key="h"
     class="btn-icon-color"
     onclick={insertHierarchyContent}
   >
     <i class="fa-solid fa-sitemap fa-xl"></i>
-    <span class="sr-only">View Data Hierarchy</span>
+    <span class="sr-only">View Data Hierarchy (h)</span>
   </button>
 {/if}
 {#if config.features.explorer.exportsEnableExport && !isOpenAccess()}
   <button
     type="button"
-    title={isExported ? 'Remove from Analysis' : 'Add for Analysis'}
+    title={isExported ? 'Remove from Analysis (e)' : 'Add for Analysis (e)'}
+    data-key="e"
     class="btn-icon-color"
     onclick={insertExportContent}
   >
@@ -106,5 +117,6 @@
     {:else}
       <i class="fa-solid fa-right-from-bracket fa-xl"></i>
     {/if}
+    <span class="sr-only">{isExported ? 'Remove from Analysis (e)' : 'Add for Analysis (e)'}</span>
   </button>
 {/if}
