@@ -4,6 +4,7 @@ import { get } from 'svelte/store';
 vi.mock('$app/environment', () => ({ browser: false }));
 vi.mock('$lib/stores/User', () => ({
   user: { subscribe: vi.fn() },
+  tokenStatus: { subscribe: vi.fn() },
   isUserLoggedIn: vi.fn(() => false),
 }));
 vi.mock('$lib/stores/Dictionary', () => ({

@@ -715,9 +715,9 @@ test.describe('Any record of filter', () => {
     await expect(page.getByTestId('distributions-btn')).not.toBeVisible();
   });
 });
-test.describe('User with no query scopes can add filters without error', () => {
-  const outOfScopeStudy = 7;
-  test.use({ storageState: 'tests/end-to-end/.auth/noScopeUser.json' });
+test.describe('Adding a filter and moving on to the analysis tools', () => {
+  const consentedContinuousRow = 3;
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
   test('User can prepare data for analysis', async ({ page }) => {
     // Given
@@ -727,7 +727,7 @@ test.describe('User with no query scopes can add filters without error', () => {
     await userIsLoggedIn(page);
 
     // When
-    await clickNthFilterIcon(page, outOfScopeStudy);
+    await clickNthFilterIcon(page, consentedContinuousRow);
     await page.getByTestId('add-filter').click();
     await page.locator('#export-data-button').click();
 
@@ -742,7 +742,7 @@ test.describe('User with no query scopes can add filters without error', () => {
     await userIsLoggedIn(page);
 
     // When
-    await clickNthFilterIcon(page, outOfScopeStudy);
+    await clickNthFilterIcon(page, consentedContinuousRow);
     await page.getByTestId('add-filter').click();
     await page.getByTestId('distributions-btn').click();
 
@@ -751,7 +751,7 @@ test.describe('User with no query scopes can add filters without error', () => {
   });
 });
 test.describe('Query V3 OR features', () => {
-  test.use({ storageState: 'tests/end-to-end/.auth/noScopeUser.json' });
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   let querySyncRequest: string[] = [];
 
   test.beforeEach(({ page }) => {

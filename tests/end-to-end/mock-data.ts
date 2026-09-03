@@ -313,7 +313,6 @@ export const picsureUser: User = {
     BDCPrivileges.NAMED_DATASET,
     PicsurePrivileges.API_ACCESS,
   ],
-  queryScopes: ['Gene_with_variant', 'test_data_set', 'STUDY123', 'phs001', 'phs123'],
   // expired token
   token: mockToken,
   acceptedTOS: true,
@@ -327,14 +326,6 @@ export const userTypes = {
       PicsurePrivileges.NAMED_DATASET,
       PicsurePrivileges.API_ACCESS,
     ],
-  },
-  noScopeUser: {
-    privileges: [
-      PicsurePrivileges.QUERY,
-      PicsurePrivileges.NAMED_DATASET,
-      PicsurePrivileges.API_ACCESS,
-    ],
-    queryScopes: undefined,
   },
   adminUser: {
     privileges: [

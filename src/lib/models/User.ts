@@ -9,7 +9,6 @@ export interface User {
   email?: string;
   userId?: string;
   privileges?: string[];
-  queryScopes?: string[];
   token?: string;
   acceptedTOS?: boolean;
   readonly consents?: ConsentsMap;

@@ -2,7 +2,8 @@ import { get, derived, writable, type Readable, type Writable } from 'svelte/sto
 import { genericUUID, objectUUID } from '$lib/utilities/UUID';
 
 import { browser } from '$app/environment';
-import { user } from '$lib/stores/User';
+import { user, tokenStatus } from '$lib/stores/User';
+import type { ConsentsMap, User } from '$lib/models/User';
 import { getConceptDetails } from '$lib/stores/Dictionary';
 import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
 
@@ -45,23 +46,59 @@ export const hasUnallowedFilter: Readable<boolean> = derived(filters, ($f) =>
   $f && $f.length > 0 ? $f.some((filter) => !filter.allowFiltering) : false,
 );
 
-export const hasInvalidFilter: Readable<boolean> = derived([user, filters], ([$user, $filters]) => {
-  if ($filters.length === 0 || !$user?.queryScopes) return false;
+const CONSENTS_KEY = '\\_consents\\';
+const TOPMED_CONSENTS_KEY = '\\_topmed_consents\\';
 
-  return $filters.some((filter) => {
-    let filterDataset = filter.dataset || '';
-    if (genomicFilterTypes.includes(filter.filterType)) {
-      filterDataset = 'Gene_with_variant';
-    }
+/** A grant reads `phs999901.c1`, or the bare study ref when it carries no consent group. */
+const studyOf = (consent: string) => consent.split('.')[0];
 
-    const isValidFilter = $user?.queryScopes?.some((scope) => {
-      const isMatch = filterDataset.length > 0 && scope.includes(filterDataset);
-      return isMatch;
-    });
+/**
+ * Whether the user may filter on the study a filter came from, at the same granularity the
+ * dictionary applies server-side in `ConceptFilterQueryGenerator.CONSENT_QUERY`: holding any
+ * consent group within a study grants the study. Genomic filters span every genomic study, so
+ * they ride on holding any TOPMed consent.
+ *
+ * Harmonized datasets are the known gap. The dictionary resolves those through its
+ * `dataset_harmonization` table, which no endpoint exposes to the client, so a harmonized
+ * filter carried over from Discover reads as unconsented here.
+ *
+ * @param filter the filter to judge
+ * @param consents the user's loaded consents map, never an unknown one
+ * @returns true when the filter's study is granted
+ */
+function isConsentedFilter(filter: Filter, consents: ConsentsMap): boolean {
+  if (genomicFilterTypes.includes(filter.filterType)) {
+    return (consents[TOPMED_CONSENTS_KEY] ?? []).length > 0;
+  }
+  if (!filter.dataset) return false;
+  return (consents[CONSENTS_KEY] ?? []).some((consent) => studyOf(consent) === filter.dataset);
+}
 
-    return !isValidFilter;
-  });
-});
+/**
+ * The consents to judge filters against, or `undefined` when access is not known well enough to
+ * judge them at all. Token-gated for the same reason `consentedStudies` is: a logout in another
+ * tab must not leave a restored sessionStorage blob deciding what the user may query.
+ *
+ * An unknown map is not an empty one. Callers must read `undefined` as "do not warn, do not
+ * remove" - `{}` is a user with no access, `undefined` is an answer that never arrived.
+ *
+ * @param currentUser the user to read consents from
+ * @param hasToken whether a token is still present
+ * @returns the consents map, or undefined when access is unknown
+ */
+function consentsToJudgeBy(currentUser: User, hasToken: boolean): ConsentsMap | undefined {
+  return hasToken ? currentUser?.consents : undefined;
+}
+
+export const hasInvalidFilter: Readable<boolean> = derived(
+  [user, tokenStatus, filters],
+  ([$user, $hasToken, $filters]) => {
+    const consents = consentsToJudgeBy($user, $hasToken);
+    if ($filters.length === 0 || !consents) return false;
+
+    return $filters.some((filter) => !isConsentedFilter(filter, consents));
+  },
+);
 
 export const hasOrGroup: Readable<boolean> = derived(filterTree, ($ft) => $ft.hasOr);
 
@@ -232,24 +269,10 @@ export function removeUnallowedFilters() {
 }
 
 export function removeInvalidFilters(): void {
-  const currentUser = get(user);
-  const currentFilters = get(filters);
+  const consents = consentsToJudgeBy(get(user), get(tokenStatus));
+  if (!consents) return;
 
-  if (!currentUser || currentFilters.length === 0) return;
-
-  const match = (filter: Filter) => {
-    let filterDataset = filter.dataset || '';
-    if (genomicFilterTypes.includes(filter.filterType)) {
-      filterDataset = 'Gene_with_variant';
-    }
-
-    const isValidFilter = currentUser.queryScopes?.some((scope) => {
-      const isMatch = filterDataset.length > 0 && scope.includes(filterDataset);
-      return isMatch;
-    });
-
-    return isValidFilter;
-  };
+  const match = (filter: Filter) => isConsentedFilter(filter, consents);
 
   const geneFilters = get(genomicFilters);
   const geneRemoveCount = geneFilters.filter((node) => !match(node)).length;
