@@ -65,6 +65,10 @@
     goto(resolve(path as '/'));
   }
 
+  function scrollToSearchResults() {
+    document.getElementById(`${tableName}-table`)?.scrollIntoView({ block: 'start' });
+  }
+
   let releaseHandler: (() => void) | undefined;
 
   onMount(() => {
@@ -130,6 +134,7 @@
         isLoading={$isLoading}
         expandable
         rowClickLogAction="search_result.row_click"
+        onPageChange={scrollToSearchResults}
       />
     {/if}
     {#if config.features.explorer.enableTour && $tour}
