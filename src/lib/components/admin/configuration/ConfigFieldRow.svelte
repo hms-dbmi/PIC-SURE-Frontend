@@ -7,7 +7,7 @@
     deleteConfigRow,
     type AdminConfigKind,
   } from '$lib/stores/AdminConfiguration';
-  import { humanizeKey, truncate } from '$lib/utilities/Strings';
+  import { humanizeKey, truncate, visibleLength } from '$lib/utilities/Strings';
   import { toaster } from '$lib/toaster';
 
   interface Props {
@@ -115,7 +115,9 @@
 
   const DESCRIPTION_LIMIT = 150;
   let expanded = $state(false);
-  let descriptionTruncatable = $derived((schema.description?.length ?? 0) > DESCRIPTION_LIMIT);
+  let descriptionTruncatable = $derived(
+    visibleLength(schema.description ?? '') > DESCRIPTION_LIMIT,
+  );
   let displayDescription = $derived(
     descriptionTruncatable && !expanded
       ? truncate(schema.description, DESCRIPTION_LIMIT)
