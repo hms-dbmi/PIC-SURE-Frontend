@@ -4,19 +4,12 @@
   import Loading from './Loading.svelte';
   import { log, createLog, getPageContext } from '$lib/logger';
 
-  // Long enough to swallow a burst of typing, short enough to feel immediate. `onscroll`
-  // can be a network call, so an unthrottled `oninput` costs one request per keystroke.
   const SEARCH_DEBOUNCE_MS = 250;
 
   let searchInput: string = $state('');
   let searchTimeout: ReturnType<typeof setTimeout> | undefined;
 
   interface Props {
-    /**
-     * The options a user can pick from. The parent may derive this list from
-     * `selectedOptions`, so writes from here are advisory: treat them as a request that
-     * the parent is free to recompute away.
-     */
     unselectedOptions?: string[];
     selectedOptions?: string[];
     selectedOptionEndLocation?: number;
@@ -93,8 +86,7 @@
     return (event: Event) => {
       event.preventDefault();
       selectedOptions = selectedOptions.filter((o) => o !== option);
-      // When the parent derives `unselectedOptions` from `selectedOptions`, the line above
-      // has already put the option back in the options list; adding it again lists it twice.
+
       if (!unselectedOptions.includes(option)) {
         unselectedOptions = [option, ...unselectedOptions];
       }
