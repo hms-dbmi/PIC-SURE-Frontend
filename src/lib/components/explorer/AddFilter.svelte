@@ -137,9 +137,6 @@
         (option) => !selected.has(option) && (!needle || option.toLowerCase().includes(needle)),
       );
 
-      // Page by what is not on screen yet rather than by an index into `filteredOptions`:
-      // that list shifts every time an option is selected or unselected, so a saved index
-      // would skip options or hand back ones already listed.
       const displayed = new Set(unselectedOptions);
       const nextOptions = filteredOptions
         .filter((option) => !displayed.has(option))
