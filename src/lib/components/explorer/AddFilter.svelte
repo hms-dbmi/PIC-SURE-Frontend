@@ -32,7 +32,6 @@
   let pageSize = 20;
   let unselectedOptions: string[] = $state([]);
   let selectedOptions: string[] = $state([]);
-  let startLocation = pageSize;
   let lastSearchTerm = '';
   let loading = $state(false);
   let display: string = $state('');
@@ -126,24 +125,27 @@
     try {
       let allOptions = data?.values || [];
 
-      if (search !== lastSearchTerm || !lastSearchTerm.includes(search)) {
+      if (search !== lastSearchTerm) {
         // new search
-        startLocation = 0;
         unselectedOptions = [];
         lastSearchTerm = search;
       }
 
+      const selected = new Set(selectedOptions);
+      const needle = search.toLowerCase();
       let filteredOptions = allOptions.filter(
-        (option) =>
-          !selectedOptions.includes(option) &&
-          (!search || option.toLowerCase().includes(search.toLowerCase())),
+        (option) => !selected.has(option) && (!needle || option.toLowerCase().includes(needle)),
       );
 
-      const endLocation = Math.min(startLocation + pageSize, filteredOptions.length);
-      const nextOptions = filteredOptions.slice(startLocation, endLocation);
+      // Page by what is not on screen yet rather than by an index into `filteredOptions`:
+      // that list shifts every time an option is selected or unselected, so a saved index
+      // would skip options or hand back ones already listed.
+      const displayed = new Set(unselectedOptions);
+      const nextOptions = filteredOptions
+        .filter((option) => !displayed.has(option))
+        .slice(0, pageSize);
 
       unselectedOptions = [...unselectedOptions, ...nextOptions];
-      startLocation = endLocation;
     } catch (error) {
       console.error(error);
       toaster.error({

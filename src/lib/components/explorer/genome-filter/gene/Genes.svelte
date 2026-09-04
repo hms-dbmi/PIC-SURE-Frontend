@@ -9,10 +9,14 @@
   import { log, createLog } from '$lib/logger';
 
   let allGenes: string[] = $state([]);
+  // Genes restored from a saved filter are not guaranteed to be in any page of search
+  // results. Keeping them here means unchecking one returns it to the options list for
+  // good, instead of showing it until the next selection change recomputes the list.
+  let genesFromSavedFilter: string[] = $state([]);
   let unselectedGenes = $derived(
-    $selectedGenes.length === 0
-      ? allGenes
-      : allGenes.filter((gene) => !$selectedGenes.includes(gene)),
+    [...new Set([...genesFromSavedFilter, ...allGenes])].filter(
+      (gene) => !$selectedGenes.includes(gene),
+    ),
   );
 
   let lastFilter = '';
@@ -66,6 +70,7 @@
 
   onMount(async () => {
     previousGeneCount = $selectedGenes.length;
+    genesFromSavedFilter = [...$selectedGenes];
     await getGeneValues();
   });
 
