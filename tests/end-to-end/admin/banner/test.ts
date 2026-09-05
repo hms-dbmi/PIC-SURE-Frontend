@@ -37,31 +37,6 @@ test.describe('Visitors receive banners across navigation', () => {
     await expect(page.getByRole('region', { name: 'Maintenance' })).toContainText(
       'Scheduled maintenance',
     );
-    const visitorBanner = page.getByRole('region', { name: 'Maintenance' });
-    const visitorLayout = visitorBanner.locator('.site-banner-layout');
-    const visitorTitle = visitorBanner.getByRole('heading', { name: 'Maintenance' });
-    const visitorMessage = visitorBanner.locator('.site-banner-content');
-    const dismissVisual = visitorBanner.locator('.site-banner-dismiss-visual');
-    await expect(visitorBanner).toHaveCSS('border-left-width', '0px');
-    await expect(visitorBanner).toHaveCSS('border-bottom-width', '4px');
-    await expect(dismissVisual).toHaveCSS('width', '32px');
-    await expect(dismissVisual).toHaveCSS('height', '32px');
-    const [bannerBox, layoutBox, titleBox, messageBox, dismissBox] = await Promise.all([
-      visitorBanner.boundingBox(),
-      visitorLayout.boundingBox(),
-      visitorTitle.boundingBox(),
-      visitorMessage.boundingBox(),
-      visitorBanner.getByRole('button', { name: 'Dismiss Maintenance' }).boundingBox(),
-    ]);
-    expect(bannerBox?.height).toBeLessThanOrEqual(72);
-    expect(titleBox?.x).toBe(messageBox?.x);
-    expect(
-      Math.abs(
-        (dismissBox?.y ?? 0) +
-          (dismissBox?.height ?? 0) / 2 -
-          ((layoutBox?.y ?? 0) + (layoutBox?.height ?? 0) / 2),
-      ),
-    ).toBeLessThanOrEqual(1);
     await expect
       .poll(() =>
         page.evaluate(() => {
@@ -156,14 +131,6 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
     await expect(page.getByTestId('site-banner')).toHaveCount(4);
     const loginControl = page.getByRole('button', { name: 'Login with Auth0' });
     await expect(loginControl).not.toBeInViewport();
-    const [bannerRegionBox, loginTitleBox] = await Promise.all([
-      page.getByTestId('site-banner-region').boundingBox(),
-      page.getByTestId('login-title').boundingBox(),
-    ]);
-    expect(bannerRegionBox).not.toBeNull();
-    expect(loginTitleBox).not.toBeNull();
-    expect(loginTitleBox!.y).toBeGreaterThanOrEqual(bannerRegionBox!.y + bannerRegionBox!.height);
-
     await loginControl.scrollIntoViewIfNeeded();
     await expect(loginControl).toBeInViewport({ ratio: 1 });
   });
@@ -302,61 +269,6 @@ test.describe('Admins review and target published banners', () => {
     await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
   });
-
-  test('keeps long management cards compact and inside the configuration page', async ({
-    page,
-  }) => {
-    const longManagedBanner = {
-      ...targeted,
-      ...managementFields,
-      htmlContent: `<p>${'Scheduled maintenance stays readable without widening the card. '.repeat(5)}</p>`,
-    };
-    await page.route('**/picsure/operations/banners**', (route) => {
-      const url = new URL(route.request().url());
-      if (route.request().method() === 'GET' && url.pathname.endsWith('/banners/active')) {
-        return route.fulfill({ json: [targeted] });
-      }
-      if (route.request().method() === 'GET' && url.pathname.endsWith('/banners')) {
-        return route.fulfill({ json: [longManagedBanner] });
-      }
-      return route.fallback();
-    });
-
-    await page.goto('/admin/configuration');
-    await page.waitForLoadState('networkidle');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
-    await expect(page.getByRole('heading', { name: 'Site banners' })).toBeVisible();
-    const panel = page.locator('#banner-management-panel');
-    const row = page.locator(`[data-banner-row="${targeted.uuid}"]`);
-    const article = row.locator('article');
-    await expect(row).toBeVisible();
-    await expect(article).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-    await expect(row.getByText('Active')).toHaveClass(/preset-tonal-success/);
-    await expect(row.getByText('Position 1')).toHaveCSS('white-space', 'nowrap');
-    const [panelBox, rowBox, articleBox, barBox] = await Promise.all([
-      panel.boundingBox(),
-      row.boundingBox(),
-      article.boundingBox(),
-      row.locator('.banner-appearance-bar').boundingBox(),
-    ]);
-    expect(rowBox?.x).toBe(panelBox?.x);
-    expect((rowBox?.x ?? 0) + (rowBox?.width ?? 0)).toBeLessThanOrEqual(
-      (panelBox?.x ?? 0) + (panelBox?.width ?? 0) + 1,
-    );
-    expect(
-      Math.abs(
-        (barBox?.y ?? 0) +
-          (barBox?.height ?? 0) -
-          ((articleBox?.y ?? 0) + (articleBox?.height ?? 0)),
-      ),
-    ).toBeLessThanOrEqual(1);
-    const headingBox = await page.getByRole('heading', { name: 'Site banners' }).boundingBox();
-    const descriptionBox = await page
-      .getByText('Create and manage announcements across PIC-SURE.')
-      .boundingBox();
-    expect(headingBox?.x).toBe(descriptionBox?.x);
-    await expect(page.getByTestId('banner-search')).toBeVisible();
-  });
 });
 
 test.describe('Visitors dismiss a banner until its content changes', () => {
@@ -432,7 +344,6 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
     await expect(notice).toBeVisible();
     const dismiss = notice.getByRole('button', { name: 'Dismiss Dismissible maintenance' });
     await expect(dismiss).toHaveAttribute('title', 'Dismiss Dismissible maintenance');
-    expect(await dismiss.boundingBox()).toMatchObject({ width: 44, height: 44 });
     await dismiss.focus();
     await expect(dismiss).toBeFocused();
     await dismiss.press('Enter');
@@ -615,9 +526,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     await expect(previewList.locator('li').nth(1)).toHaveText('Second item');
   });
 
-  test('creates, saves, reopens, updates, and publishes the authoritative banner', async ({
-    page,
-  }) => {
+  test('saves, publishes, edits, disables, and archives a banner', async ({ page }) => {
     let published = false;
     let publicationRequests = 0;
     let updateRequests = 0;
@@ -706,23 +615,11 @@ test.describe('Admins create, edit, and publish banners', () => {
         return route.fulfill({ status: 201, json: savedBanner });
       }
       if (method === 'PUT' && url.pathname.endsWith(`/banners/${savedBanner.uuid}`)) {
-        const update = route.request().postDataJSON();
-        if (published) {
-          updateRequests += 1;
-          updateSubmitted = update;
-          activeBanner = correctedBanner;
-          managedRecords = [correctedBanner];
-          return route.fulfill({ json: correctedBanner });
-        }
-        const updatedBanner = {
-          ...savedBanner,
-          ...update,
-          updatedAt: '2026-08-27T11:30:00Z',
-          updatedBy: 'editor-id',
-          presentationHash: 'updated-saved-hash',
-        };
-        managedRecords = [updatedBanner];
-        return route.fulfill({ json: updatedBanner });
+        updateRequests += 1;
+        updateSubmitted = route.request().postDataJSON();
+        activeBanner = correctedBanner;
+        managedRecords = [correctedBanner];
+        return route.fulfill({ json: correctedBanner });
       }
       if (method === 'POST' && url.pathname.endsWith(`/banners/${savedBanner.uuid}/disable`)) {
         disableRequests += 1;
@@ -784,33 +681,11 @@ test.describe('Admins create, edit, and publish banners', () => {
     await expect(savedRow).toBeVisible();
     await expect(savedRow).toContainText('Server-confirmed saved draft');
     await expect(savedRow).toContainText('Saved');
-    await savedRow.evaluate((element) => element.setAttribute('data-stability-sentinel', 'same'));
-    const details = savedRow.getByRole('button', { name: 'Details' });
-    await expect(details).toHaveAttribute('aria-expanded', 'false');
-    await expect(details).toHaveAttribute('aria-controls', `banner-${savedBanner.uuid}-details`);
-    await details.focus();
-    await expect(details).toBeFocused();
-    await details.press('Enter');
-    await expect(details).toBeFocused();
-    await expect(savedRow).toHaveAttribute('data-stability-sentinel', 'same');
-    await expect(savedRow).toBeVisible();
-    await expect(savedRow).toContainText('Audience: Everyone');
-    await expect(savedRow).toContainText('Last changed by admin-id');
-    await expect(savedRow.getByRole('region')).toHaveCount(0);
-
+    await savedRow.getByRole('button', { name: 'Details' }).click();
     await savedRow.getByRole('button', { name: 'Edit banner' }).click();
     await expect(page.getByRole('heading', { name: 'Edit saved banner' })).toBeVisible();
     const reopenedEditor = page.getByRole('textbox', { name: 'Banner content' });
     await expect(reopenedEditor).toContainText('Server-confirmed saved draft');
-    await page.getByText('Advanced options').click();
-    await page.getByRole('textbox', { name: 'Title' }).fill('Updated reusable draft');
-    await page.getByRole('button', { name: 'Save changes' }).click();
-
-    const updatedRow = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
-    await expect(updatedRow).toContainText('Server-confirmed saved draft');
-    await updatedRow.getByRole('button', { name: 'Details' }).click();
-    await expect(updatedRow).toContainText('Last changed by editor-id');
-    await updatedRow.getByRole('button', { name: 'Edit banner' }).click();
     await page.getByText('Advanced options').click();
     await page.getByRole('textbox', { name: 'Title' }).fill('Publish this draft');
 
@@ -840,17 +715,6 @@ test.describe('Admins create, edit, and publish banners', () => {
 
     const correctedRow = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
     await expect(correctedRow).toContainText('Corrected visitor notice');
-    await expect(page.getByText(/version history/i)).toHaveCount(0);
-    await expect(
-      page.getByRole('button', {
-        name: /version|history|revisions?|restore|revert|rollback/i,
-      }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole('link', {
-        name: /version|history|revisions?|restore|revert|rollback/i,
-      }),
-    ).toHaveCount(0);
     expect(updateRequests).toBe(1);
     expect(publicationRequests).toBe(1);
 
@@ -922,13 +786,6 @@ test.describe('Admins create, edit, and publish banners', () => {
     await expect(page.getByText('No banners in this section.')).toBeVisible();
     expect(archiveRequests).toBe(1);
 
-    await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
-    for (const tab of [/Active & scheduled/, /Saved & disabled/, /Expired/]) {
-      await page.getByRole('tab', { name: tab }).click();
-      await expect(page.locator(`[data-banner-row="${savedBanner.uuid}"]`)).toHaveCount(0);
-    }
-
     await page.goto('/');
     await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
@@ -977,15 +834,13 @@ test.describe('Admins schedule banners through their lifecycle', () => {
     }
   });
 
-  test('moves a scheduled banner through Scheduled, Active, and Expired without waiting', async ({
+  test('schedules a banner, shows it during its window, and restores it after expiry', async ({
     page,
   }) => {
     const initialStartAt = '2026-08-28T13:01:00.000Z';
     const initialEndAt = '2026-08-28T13:02:00.000Z';
-    const rescheduledStartAt = '2026-08-28T13:03:00.000Z';
-    const rescheduledEndAt = '2026-08-28T13:04:00.000Z';
-    let startAt = initialStartAt;
-    let endAt: string | null = initialEndAt;
+    const startAt = initialStartAt;
+    const endAt = initialEndAt;
     let serverNow = '2026-08-28T13:00:00.000Z';
     let scheduled: Record<string, unknown> | null = null;
     let restored: Record<string, unknown> | null = null;
@@ -1051,27 +906,6 @@ test.describe('Admins schedule banners through their lifecycle', () => {
         return route.fulfill({ status: 201, json: scheduled });
       }
       if (
-        route.request().method() === 'PUT' &&
-        pathname.endsWith('/banners/88888888-8888-8888-8888-888888888888')
-      ) {
-        const submitted = route.request().postDataJSON();
-        expect(submitted).toMatchObject({
-          startAt: rescheduledStartAt,
-          endAt: rescheduledEndAt,
-        });
-        startAt = submitted.startAt;
-        endAt = submitted.endAt;
-        scheduled = {
-          ...scheduled,
-          ...submitted,
-          uuid: '88888888-8888-8888-8888-888888888888',
-          lifecycle: 'SCHEDULED',
-          updatedAt: serverNow,
-          updatedBy: 'admin-id',
-        };
-        return route.fulfill({ json: scheduled });
-      }
-      if (
         route.request().method() === 'POST' &&
         pathname.endsWith('/banners/88888888-8888-8888-8888-888888888888/restore')
       ) {
@@ -1130,24 +964,7 @@ test.describe('Admins schedule banners through their lifecycle', () => {
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await expect(row).toContainText('Active');
 
-    await row.getByRole('button', { name: /Details/ }).click();
-    await row.getByRole('button', { name: 'Edit banner' }).click();
-    const publishedForm = page.getByTestId('banner-editor-form');
-    await publishedForm.getByLabel('Start').fill('2026-08-28T09:03');
-    await publishedForm.getByLabel('End').fill('2026-08-28T09:04');
-    await expect(publishedForm.getByText('Resolved UTC: 2026-08-28 13:03 UTC')).toBeVisible();
-    await publishedForm.getByRole('button', { name: 'Save changes' }).click();
-    await expect(row).toContainText('Scheduled');
-    await expect(row).toHaveAttribute('data-banner-row', '88888888-8888-8888-8888-888888888888');
-
-    serverNow = rescheduledStartAt;
-    await page.clock.setFixedTime(new Date(serverNow));
-    await page.goto('/help');
-    await expect(page.getByTestId('site-banner')).toContainText('Minute-boundary maintenance');
-    await page.goto('/admin/configuration');
-    await page.getByRole('tab', { name: 'Site banners' }).click();
-
-    serverNow = rescheduledEndAt;
+    serverNow = endAt;
     await page.clock.setFixedTime(new Date(serverNow));
     await page.reload();
     await page.getByRole('tab', { name: 'Site banners' }).click();

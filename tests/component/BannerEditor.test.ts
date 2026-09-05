@@ -602,8 +602,8 @@ describe('BannerEditor', () => {
   });
 
   it('rechecks a future restore start against the wall clock at submit time', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-08-28T16:00:30Z'));
+    const now = vi.spyOn(Date, 'now');
+    now.mockReturnValue(new Date('2026-08-28T16:00:30Z').getTime());
     vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
       locale: 'en-US',
       calendar: 'gregory',
@@ -617,7 +617,7 @@ describe('BannerEditor', () => {
     const schedule = screen.getByRole('button', { name: 'Schedule banner' });
     expect(schedule).toBeEnabled();
 
-    vi.setSystemTime(new Date('2026-08-28T16:01:00Z'));
+    now.mockReturnValue(new Date('2026-08-28T16:01:00Z').getTime());
     await fireEvent.click(schedule);
 
     expect(restoreBanner).not.toHaveBeenCalled();

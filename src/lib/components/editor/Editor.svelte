@@ -17,7 +17,7 @@
     sanitizer = sanitizeHTML,
     convertQuillClasses = true,
     reconcileSanitizedDocument = false,
-    normalizeNonBreakingSpaces = false,
+    normalizeNonBreakingSpaces = true,
     ariaLabel = 'Rich text editor',
     ariaDescribedBy,
     id = 'editor',
