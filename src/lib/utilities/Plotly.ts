@@ -1,5 +1,6 @@
 import type { PlotlyHTMLElement, Root, Data, Config, Layout } from 'plotly.js-basic-dist-min';
 import { config } from '$lib/configuration.svelte';
+import { truncate } from '$lib/utilities/Strings';
 
 const MAX_TITLE_LENGTH = 60;
 
@@ -84,7 +85,7 @@ function getSubTitle(inData: CategoricalPlotData | ContinuousPlotData) {
 }
 
 function shortenTitle(title: string) {
-  return title.length > MAX_TITLE_LENGTH ? title.substring(0, MAX_TITLE_LENGTH - 3) + '...' : title;
+  return truncate(title, MAX_TITLE_LENGTH);
 }
 
 export function normalizeCount(value: CountValue): ObfuscatedCount {
