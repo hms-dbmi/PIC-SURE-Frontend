@@ -3,6 +3,7 @@ import { ExportType } from '../models/Variant';
 import type { Column } from '../components/datatable/types';
 import type { StatConfig, StatField } from '../models/Stat';
 import type { Indexable, Indexed } from '../types';
+import type { FormSchema } from '../utilities/Validation';
 import { deepMerge } from '../utilities/Objects';
 
 // Types
@@ -34,6 +35,7 @@ export type Features = Indexable & {
   login: {
     open: boolean;
   };
+  registerPage: boolean;
   manualRole: boolean;
   restoreV2queries: boolean;
   termsOfService: boolean;
@@ -147,6 +149,14 @@ export type Branding = Indexable & {
     openPicsureLinkText: string;
     contactLink: string;
     logoHeight: number;
+  };
+  register?: {
+    additionalFormValues: FormSchema;
+    intro: {
+      title: string;
+      description: string;
+    };
+    success: string;
   };
   help: {
     links: Array<{
@@ -353,6 +363,12 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       default: false,
       description:
         'Enables the Terms of Service feature: adds a footer link to view it, and an admin link to edit it.',
+    },
+    REGISTER_PAGE: {
+      group: 'Access & Login',
+      type: 'boolean',
+      default: false,
+      description: 'Eanbles in app registration flow.',
     },
     // --- Explorer & Search ---
     ALLOW_EXPORT: {
@@ -752,6 +768,7 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
     login: {
       open: parse('OPEN'),
     },
+    registerPage: parse('REGISTER_PAGE'),
     manualRole: parse('MANUAL_ROLE'),
     restoreV2queries: parse('RESTORE_V2_QUERY'),
     termsOfService: parse('ENABLE_TOS'),
@@ -799,7 +816,7 @@ export function mapSettings(apiSettings: ConfigObject[]): Settings {
 }
 
 export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []): Branding {
-  const branding = deepMerge(
+  const branding: Branding = deepMerge(
     {
       analysisPage: {
         api: {
@@ -869,6 +886,14 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
         openPicsureLinkText: '',
         contactLink: '',
         logoHeight: 7.5,
+      },
+      register: {
+        additionalFormValues: {},
+        intro: {
+          title: '',
+          description: '',
+        },
+        success: '',
       },
       dotsColorsClass: [] as string[],
       logo: {

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { page } from '$app/state';
   import { config } from '$lib/configuration.svelte';
   import { isUserLoggedIn } from '$lib/stores/User';
 
@@ -10,9 +11,10 @@
     children?: Snippet;
   }
 
-  let showShell = $derived(
-    config.features.login.open || (!config.features.login.open && isUserLoggedIn()),
+  let isOpenRegisterRoute = $derived(
+    config.features.registerPage && page.url.pathname.includes('/register'),
   );
+  let showShell = $derived(config.features.login.open || isUserLoggedIn() || isOpenRegisterRoute);
 
   const { header, sidebarRight, pageFooter, children }: Props = $props();
 </script>

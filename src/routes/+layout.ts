@@ -11,10 +11,12 @@ export const load: LayoutLoad = async ({ url, fetch, data }) => {
   applyConfig(data.configCache);
 
   if (!browser) return;
+  const isOpenRegisterRoute = config.features.registerPage && url.pathname.includes('/register');
   if (
     !config.features.login.open &&
     !localStorage.getItem('token') &&
-    !url.pathname.includes('/login')
+    !url.pathname.includes('/login') &&
+    !isOpenRegisterRoute
   ) {
     user && user.set({});
     redirect(302, '/login');

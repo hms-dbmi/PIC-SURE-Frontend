@@ -61,5 +61,6 @@ export const Psama = {
     Me: `${USER}/me`,
     Consents: `${USER}/me/consents`,
     Refresh: `${USER}/me/refresh_long_term_token`,
+    Register: `${USER}/register`,
   },
 };

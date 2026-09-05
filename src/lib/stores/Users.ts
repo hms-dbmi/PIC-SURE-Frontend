@@ -59,6 +59,10 @@ export async function updateUser(user: UserRequest) {
   users.set(store);
 }
 
+export function registerUser(user: UserRequest): unknown {
+  return api.post(Psama.User.Register, user, {}, false);
+}
+
 export default {
   subscribe: users.subscribe,
   users,
@@ -66,4 +70,5 @@ export default {
   getUser,
   addUser,
   updateUser,
+  registerUser,
 };
