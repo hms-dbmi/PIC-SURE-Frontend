@@ -3,26 +3,18 @@ const graphemeSegmenter =
     ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
     : undefined;
 
-/**
- * Split text into user-perceived characters (grapheme clusters) so flags, emoji
- * sequences and combining marks are never cut apart. Falls back to code points
- * where Intl.Segmenter is unavailable.
- */
+/** Split into grapheme clusters, or code points when Intl.Segmenter is unavailable. */
 export function graphemes(text: string): string[] {
   if (!graphemeSegmenter) return Array.from(text);
   return Array.from(graphemeSegmenter.segment(text), (segment) => segment.segment);
 }
 
-/** Number of user-perceived characters in `text`: the same unit `truncate` counts in. */
+/** Count text using the same units as truncate. */
 export function visibleLength(text: string): number {
   return graphemes(text).length;
 }
 
-/**
- * Cap text at `maxLength` visible characters, replacing the overflow with a single
- * ellipsis. Counts grapheme clusters so surrogate pairs, flags and combining marks
- * are never split.
- */
+/** Truncate by grapheme cluster, reserving one character for the ellipsis. Falls back to code points without Intl.Segmenter. */
 export function truncate(text: string, maxLength: number): string {
   const characters = graphemes(text);
   if (characters.length <= maxLength) return text;

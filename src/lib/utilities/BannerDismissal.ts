@@ -30,6 +30,6 @@ export function writeBannerDismissals(dismissals: BannerDismissals): void {
   try {
     window.sessionStorage.setItem(BANNER_DISMISSALS_STORAGE_KEY, JSON.stringify(dismissals));
   } catch {
-    // The in-memory dismissal still applies until this component is remounted.
+    return;
   }
 }

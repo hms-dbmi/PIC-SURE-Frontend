@@ -168,8 +168,6 @@
   let startChoice = $state(untrack(() => initialStartChoice));
   let endChoice = $state(untrack(() => initialEndChoice));
   let working: 'save' | 'publish' | null = $state(null);
-  // Advanced when a submit is rejected; the pre-submit derived error only has to catch starts
-  // that were already in the past, and publish() re-validates against the wall clock.
   let restoreValidationNow = $state(Date.now());
 
   const sanitizedLength = $derived(sanitizeBannerHTML(htmlContent).length);

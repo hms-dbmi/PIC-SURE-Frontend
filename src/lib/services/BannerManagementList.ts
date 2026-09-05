@@ -5,10 +5,6 @@ import { truncate } from '$lib/utilities/Strings';
 
 export type LifecycleTab = 'orderable' | 'saved' | 'expired';
 
-/**
- * The management list's reconciliation state: every non-archived record plus the
- * working and last-saved priority order of the orderable (active/scheduled) queue.
- */
 export interface BannerListState {
   records: ManagementRecord[];
   orderUuids: string[];
@@ -41,17 +37,12 @@ export function initialBannerListState(banners: ManagedBanner[]): BannerListStat
   return { records, orderUuids, savedOrderUuids: [...orderUuids] };
 }
 
-/**
- * Adopt an authoritative banner after an editor save/publish/restore. `sourceUuid` is the
- * occurrence a restore archived; both it and any stale copy of the banner leave the list,
- * and an occurrence that becomes orderable joins the end of both order queues.
- */
 export function reconcileBannerSuccess(
   state: BannerListState,
   banner: ManagedBanner,
-  sourceUuid: string | null = null,
+  archivedSourceUuid: string | null = null,
 ): BannerListState {
-  const retainsOccurrence = (uuid: string) => uuid !== sourceUuid && uuid !== banner.uuid;
+  const retainsOccurrence = (uuid: string) => uuid !== archivedSourceUuid && uuid !== banner.uuid;
   const records = [
     ...state.records.filter((record) => retainsOccurrence(record.uuid)),
     presentBanner(banner),
@@ -59,7 +50,7 @@ export function reconcileBannerSuccess(
   let { orderUuids, savedOrderUuids } = state;
   if (
     inLifecycleTab(banner.lifecycle, 'orderable') &&
-    (sourceUuid !== null || !orderUuids.includes(banner.uuid))
+    (archivedSourceUuid !== null || !orderUuids.includes(banner.uuid))
   ) {
     orderUuids = [...orderUuids.filter(retainsOccurrence), banner.uuid];
     savedOrderUuids = [...savedOrderUuids.filter(retainsOccurrence), banner.uuid];
@@ -84,8 +75,6 @@ export function reconcileBannerDisabled(
 }
 
 export function reconcileBannerArchived(state: BannerListState, uuid: string): BannerListState {
-  // An archiveable occurrence is never in the orderable queue, so these stay no-ops that cannot
-  // introduce or discard unsaved order changes.
   return {
     records: state.records.filter((record) => record.uuid !== uuid),
     orderUuids: state.orderUuids.filter((orderUuid) => orderUuid !== uuid),
@@ -148,7 +137,6 @@ export function lifecycleTabCounts(records: ManagementRecord[]): Record<Lifecycl
   };
 }
 
-/** Published banners in the working orderable queue that target Everyone on All pages. */
 export function broadBannerOverlapCount(
   state: Pick<BannerListState, 'records' | 'orderUuids'>,
 ): number {

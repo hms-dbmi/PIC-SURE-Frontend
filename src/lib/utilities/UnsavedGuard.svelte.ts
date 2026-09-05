@@ -26,13 +26,8 @@ export interface UnsavedGuard<T> {
 }
 
 /**
- * Confirmation guard for leaving a view with unsaved changes. Intercepts SvelteKit
- * navigations and full-page unloads while `isDirty()` is true, and lets callers
- * intercept their own transitions (tab changes, cancel buttons, ...) through the
- * same pending/confirm flow.
- *
- * Must be created during component initialisation: it registers `beforeNavigate`
- * and cleans up its `beforeunload` listener with `onDestroy`.
+ * Must be created during component initialisation: it registers beforeNavigate
+ * and cleans up its beforeunload listener with onDestroy.
  */
 export function createUnsavedGuard<T extends { kind: string } = never>(
   isDirty: () => boolean,
