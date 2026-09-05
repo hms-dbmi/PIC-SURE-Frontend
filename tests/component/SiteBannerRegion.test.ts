@@ -82,7 +82,7 @@ describe('SiteBannerRegion', () => {
 
     await navigation.callback?.();
 
-    expect(fetchMock).toHaveBeenCalledWith('/picsure/operations/banners/active/v2', {
+    expect(fetchMock).toHaveBeenCalledWith('/picsure/operations/banners/active', {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
     });

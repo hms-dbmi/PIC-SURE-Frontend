@@ -22,7 +22,7 @@ export const Picsure = {
     Admin: `${PREFIX}/operations/configuration/admin`,
   },
   Banners: {
-    Active: `${PREFIX}/operations/banners/active/v2`,
+    Active: `${PREFIX}/operations/banners/active`,
     Manage: `${PREFIX}/operations/banners`,
   },
   Dashboard: `${DICT}/dashboard`,
