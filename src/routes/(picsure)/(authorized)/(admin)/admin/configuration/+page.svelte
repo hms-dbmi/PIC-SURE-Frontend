@@ -17,6 +17,7 @@
   import Application from '$lib/components/admin/configuration/cell/Application.svelte';
   import RequiredFields from '$lib/components/admin/configuration/cell/RequiredFields.svelte';
   import ConfigKindTab from '$lib/components/admin/configuration/ConfigKindTab.svelte';
+  import BannerManagementView from '$lib/components/admin/configuration/BannerManagementView.svelte';
 
   import { privileges, loadPrivileges } from '$lib/stores/Privileges';
   import { roles, loadRoles } from '$lib/stores/Roles';
@@ -27,6 +28,30 @@
   import Loading from '$lib/components/Loading.svelte';
 
   let tabSet: string = $state('Access Control');
+  let requestedTab: string = $state('Access Control');
+  let bannerEditorDirty = $state(false);
+  let pendingTab: string | null = $state(null);
+
+  $effect(() => {
+    if (requestedTab !== tabSet) {
+      if (tabSet === 'Site banners' && bannerEditorDirty) {
+        pendingTab = requestedTab;
+        requestedTab = tabSet;
+      } else {
+        tabSet = requestedTab;
+      }
+    }
+  });
+
+  function resolveBannerTabChange(destination: string | null) {
+    pendingTab = null;
+    requestedTab = tabSet;
+    if (destination) {
+      bannerEditorDirty = false;
+      tabSet = destination;
+      requestedTab = destination;
+    }
+  }
 
   const roleTable = {
     columns: [
@@ -83,7 +108,7 @@
 </svelte:head>
 
 <Content title="Configuration">
-  {#if !$isTopAdmin}
+  {#if !$isTopAdmin && tabSet !== 'Site banners'}
     <ErrorAlert data-testid="top-admin-only-error" title="Top Administrator Only" color="warning">
       <p>
         Configurations are READ ONLY for admin users. Please contact your administrator to make
@@ -91,13 +116,14 @@
       </p>
     </ErrorAlert>
   {/if}
-  <Tabs value={tabSet} onValueChange={(e: { value: string }) => (tabSet = e.value)}>
+  <Tabs value={tabSet} onValueChange={(e: { value: string }) => (requestedTab = e.value)}>
     {#snippet list()}
-      <TabItem bind:group={tabSet} value="Access Control">Access Control</TabItem>
-      <TabItem bind:group={tabSet} value="Settings & Features">Settings & Features</TabItem>
-      <TabItem bind:group={tabSet} value="Branding">Branding</TabItem>
+      <TabItem bind:group={requestedTab} value="Access Control">Access Control</TabItem>
+      <TabItem bind:group={requestedTab} value="Settings & Features">Settings & Features</TabItem>
+      <TabItem bind:group={requestedTab} value="Branding">Branding</TabItem>
+      <TabItem bind:group={requestedTab} value="Site banners">Site banners</TabItem>
       {#if config.features.termsOfService}
-        <TabItem bind:group={tabSet} value="Terms of Service">Terms of Service</TabItem>
+        <TabItem bind:group={requestedTab} value="Terms of Service">Terms of Service</TabItem>
       {/if}
     {/snippet}
     {#snippet content()}
@@ -208,6 +234,15 @@
       </Tabs.Panel>
       <Tabs.Panel value="Branding">
         <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!$isTopAdmin} />
+      </Tabs.Panel>
+      <Tabs.Panel value="Site banners">
+        {#if tabSet === 'Site banners'}
+          <BannerManagementView
+            ondirtychange={(dirty) => (bannerEditorDirty = dirty)}
+            tabchangerequest={pendingTab}
+            ontabchangerequestresolve={resolveBannerTabChange}
+          />
+        {/if}
       </Tabs.Panel>
       {#if config.features.termsOfService}
         <Tabs.Panel value="Terms of Service">
