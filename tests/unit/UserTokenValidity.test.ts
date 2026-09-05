@@ -1,6 +1,10 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const environment = vi.hoisted(() => ({ browser: true }));
+vi.mock('$app/environment', () => environment);
+
 import {
   getTokenExpiration,
   hasValidToken,
@@ -68,8 +72,22 @@ describe('token expiration helpers', () => {
 
 describe('hasValidToken', () => {
   afterEach(() => {
+    environment.browser = true;
+    vi.restoreAllMocks();
     removeToken();
     vi.useRealTimers();
+  });
+
+  it('does not read browser storage during a server-side subscription', () => {
+    setToken(makeToken(Math.floor(Date.now() / 1000) + 60));
+    environment.browser = false;
+    const readStorage = vi.spyOn(localStorage, 'getItem');
+    let valid = true;
+    const unsubscribe = hasValidToken.subscribe((value) => (valid = value));
+
+    expect(valid).toBe(false);
+    expect(readStorage).not.toHaveBeenCalled();
+    unsubscribe();
   });
 
   it('is false when a stored token has expired', () => {

@@ -473,7 +473,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     await editor.fill('First sentence with spaces');
     await editor.press('End');
     await editor.press('Enter');
-    await editor.type('  Second  paragraph');
+    await editor.pressSequentially('  Second  paragraph');
 
     await expect(editor.locator('p')).toHaveCount(2);
     expect((await editor.locator('p').nth(0).textContent())?.replaceAll('\u00a0', ' ')).toBe(
@@ -501,13 +501,13 @@ test.describe('Admins create, edit, and publish banners', () => {
 
     await editor.click();
     await bannerForm.locator('button.ql-list[value="bullet"]').click();
-    await editor.type('First item');
+    await editor.pressSequentially('First item');
     await editor.press('Enter');
     const firstItem = editor.locator('li').nth(0);
     await firstItem.evaluate((element) => {
       (element as HTMLElement & { reconciliationSentinel?: boolean }).reconciliationSentinel = true;
     });
-    await editor.type('Second item');
+    await editor.pressSequentially('Second item');
 
     await expect(editor.locator('li')).toHaveCount(2);
     await expect(firstItem).toHaveText('First item');
@@ -761,6 +761,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     expect(disableRequests).toBe(1);
 
     await page.goto('/');
+    await userIsLoggedIn(page);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
 
@@ -787,6 +788,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     expect(archiveRequests).toBe(1);
 
     await page.goto('/');
+    await userIsLoggedIn(page);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
   });

@@ -57,14 +57,15 @@ function authorablePayload(
   if (htmlContent.length > 5_000) {
     throw new Error('Banner content must be 5,000 characters or fewer');
   }
-  if (draft.title.length > 120) {
+  const title = draft.title.trim();
+  if (title.length > 120) {
     throw new Error('Banner title must be 120 characters or fewer');
   }
 
   return {
     ...draft,
     htmlContent,
-    title: draft.title.trim() || null,
+    title: title || null,
     pageTargets: normalizeBannerPageTargets(draft.pageTargets),
   };
 }

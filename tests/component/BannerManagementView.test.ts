@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 
 const navigation = vi.hoisted(() => ({ beforeNavigate: vi.fn(), goto: vi.fn() }));
@@ -119,6 +119,8 @@ beforeEach(() => {
   vi.mocked(toaster.success).mockReset();
   vi.mocked(toaster.error).mockReset();
 });
+
+afterEach(() => vi.restoreAllMocks());
 
 function bannerRowOrder(): string[] {
   return Array.from(document.querySelectorAll<HTMLElement>('[data-banner-row]')).map(
@@ -586,7 +588,6 @@ describe('BannerManagementView', () => {
       'aria-labelledby',
       'banner-management-tab-saved',
     );
-    parse.mockRestore();
   });
 
   it('moves focus and selection through lifecycle tabs from the keyboard', async () => {
@@ -975,7 +976,6 @@ describe('BannerManagementView', () => {
 
     expect(document.querySelector(`[data-banner-row="${saved.uuid}"]`)).toBe(row);
     expect(document.activeElement).toBe(details);
-    timeout.mockRestore();
   });
 
   it('offers disable only for active and scheduled occurrences', async () => {

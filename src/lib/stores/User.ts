@@ -41,7 +41,7 @@ export const hasValidToken: Readable<boolean> = derived(
     let expiryTimer: ReturnType<typeof setTimeout> | undefined;
 
     function updateValidity() {
-      const token = getToken();
+      const token = browser && $hasToken ? getToken() : '';
       const valid = $hasToken && !!token && !isTokenExpired(token);
       set(valid);
       if (!valid) return;

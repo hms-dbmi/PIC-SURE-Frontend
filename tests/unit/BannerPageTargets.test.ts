@@ -106,9 +106,12 @@ describe('parseBannerPageTargets', () => {
     [{ kind: 'ALL' }, { kind: 'EXACT', path: '/help' }],
   ];
 
-  it.each(malformedFeedValues)('rejects malformed feed value %j', (value) => {
-    expect(parseBannerPageTargets(value)).toBeNull();
-  });
+  it.each(malformedFeedValues.map((value) => [value]))(
+    'rejects malformed feed value %j',
+    (value) => {
+      expect(parseBannerPageTargets(value)).toBeNull();
+    },
+  );
 
   it('tolerates unknown extra fields on otherwise valid targets', () => {
     expect(

@@ -247,6 +247,17 @@ describe('publishBanner', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
+  it('accepts a title within the limit after trimming whitespace', async () => {
+    vi.mocked(api.post).mockResolvedValue(published);
+
+    await publishBanner({ ...draft, title: ` ${'x'.repeat(120)} ` });
+
+    expect(api.post).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ title: 'x'.repeat(120) }),
+    );
+  });
+
   it('normalizes page targets before calling the API', async () => {
     vi.mocked(api.post).mockResolvedValue(published);
 
