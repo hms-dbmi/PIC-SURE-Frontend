@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
+import { flushSync } from 'svelte';
 
 vi.mock('$lib/configuration.svelte', () => ({
   config: {
@@ -42,6 +43,12 @@ function insertAnchor(attributes: Record<string, string>): HTMLAnchorElement {
   anchor.textContent = 'test link';
   document.body.appendChild(anchor);
   return anchor;
+}
+
+function actionsLogged(suffix: string) {
+  return vi
+    .mocked(log)
+    .mock.calls.filter(([event]) => (event as { action?: string }).action?.endsWith(suffix));
 }
 
 let openSpy: ReturnType<typeof vi.spyOn>;
@@ -170,15 +177,38 @@ describe('ExternalLinkWarning', () => {
 
     await fireEvent.click(anchor);
     await fireEvent.click(screen.getByRole('button', { name: 'OK' }));
-    expect(log).toHaveBeenCalledWith({
-      event_type: 'NAVIGATION',
-      action: 'external_link.confirmed',
-      metadata: { url: EXTERNAL_URL, newTab: true },
+    expect(log).toHaveBeenCalledWith(
+      {
+        event_type: 'NAVIGATION',
+        action: 'external_link.confirmed',
+        metadata: { url: EXTERNAL_URL, newTab: true },
+      },
+      { keepalive: true },
+    );
+    expect(actionsLogged('cancelled')).toHaveLength(1);
+  });
+
+  // Firefox's window.open() spins the event loop, so Svelte's pending effects flush
+  // part way through proceed() rather than after it returns. flushSync() inside the
+  // window.open mock reproduces that ordering: before the fix, confirming logged
+  // external_link.confirmed and then external_link.cancelled (ALS-12908).
+  it('does not log a cancel when navigation flushes pending effects mid-confirm', async () => {
+    openSpy.mockImplementation(() => {
+      flushSync();
+      return null;
     });
-    const cancelLogs = vi
-      .mocked(log)
-      .mock.calls.filter(([event]) => (event as { action?: string }).action?.endsWith('cancelled'));
-    expect(cancelLogs.length).toBe(1);
+    assignSpy.mockImplementation(() => flushSync());
+    render(ExternalLinkWarning);
+
+    for (const target of ['_blank', '_self']) {
+      const anchor = insertAnchor({ href: EXTERNAL_URL, target });
+      await fireEvent.click(anchor);
+      await fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+      anchor.remove();
+    }
+
+    expect(actionsLogged('confirmed')).toHaveLength(2);
+    expect(actionsLogged('cancelled')).toHaveLength(0);
   });
 
   it('uses configured strings when provided', async () => {
