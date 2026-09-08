@@ -309,6 +309,14 @@ ul.primary-list li::marker {
   background-color: var(--color-surface-300);
 }
 
+/* Rows in the keyboard-navigable grid are focused programmatically (roving
+   tabindex), which some browsers exclude from :focus-visible — use :focus. */
+.table.clickable tbody tr:not(.expandable-row):focus {
+  background-color: var(--color-surface-300);
+  outline: 2px solid var(--color-surface-500);
+  outline-offset: -2px;
+}
+
 .table.align-middle tbody td {
   vertical-align: middle;
 }
@@ -356,10 +364,6 @@ header .app-bar {
 }
 #main-footer ul li:last-child {
   border-right: none;
-}
-
-.key-focus {
-  border: 2px solid var(--color-surface-500) !important;
 }
 
 nav#page-navigation {

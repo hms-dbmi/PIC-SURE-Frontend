@@ -3,6 +3,7 @@
   import type { Column } from '$lib/components/datatable/types';
   import type { Indexable } from '$lib/types';
   import { activeTable, activeRow, activeComponent, setActiveRow } from '$lib/stores/ExpandableRow';
+  import { isFormField, tableIdPrefix } from '$lib/components/datatable/keyboard';
   import { log, createLog, getPageContext } from '$lib/logger';
 
   interface Props {
@@ -14,7 +15,9 @@
     isClickable?: boolean;
     expandable?: boolean;
     rowClickHandler?: (row: Indexable) => void;
+    rowClickKeys?: string[];
     rowClickLogAction?: string;
+    tabindex?: number;
   }
 
   let {
@@ -26,8 +29,15 @@
     isClickable = false,
     expandable = false,
     rowClickHandler = () => {},
+    rowClickKeys = [],
     rowClickLogAction,
+    tabindex = isClickable ? 0 : -1,
   }: Props = $props();
+
+  let rowElement: HTMLTableRowElement | undefined = $state();
+
+  // Element ids must be page-unique (multiple tables can render together).
+  const idPrefix = $derived(tableIdPrefix(tableName));
 
   function onClick(row: Indexable) {
     const willOpen = !(
@@ -46,6 +56,30 @@
     setActiveRow({ row: row.conceptPath || row.dataset_id, table: tableName });
     rowClickHandler(row);
   }
+
+  function onKeydown(event: KeyboardEvent) {
+    if (!isClickable || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+    // A held key must not rapid-fire activations (e.g. toggling export on/off).
+    if (event.repeat) return;
+    if ((event.key === 'Enter' || event.key === ' ') && event.target === rowElement) {
+      event.preventDefault();
+      onClick(row);
+      return;
+    }
+    const key = event.key.toLowerCase();
+    if (!/^[a-z]$/.test(key) || isFormField(event.target)) return;
+    if (rowClickKeys.includes(key)) {
+      event.preventDefault();
+      onClick(row);
+      return;
+    }
+    const shortcut = rowElement?.querySelector(`[data-key="${key}"]`)?.closest('button, a');
+    if (shortcut && !(shortcut instanceof HTMLButtonElement && shortcut.disabled)) {
+      event.preventDefault();
+      (shortcut as HTMLElement).click();
+    }
+  }
+
   let active = $derived(
     $activeTable === tableName &&
       ($activeRow === row?.conceptPath || $activeRow === row.dataset_id),
@@ -53,14 +87,17 @@
 </script>
 
 <tr
-  id="row-{index.toString()}"
+  bind:this={rowElement}
+  id="{idPrefix}-row-{index.toString()}"
   onclick={() => onClick(row)}
+  onkeydown={onKeydown}
   class={isClickable ? 'cursor-pointer' : ''}
-  tabindex={isClickable ? 0 : -1}
+  aria-expanded={expandable ? active : undefined}
+  {tabindex}
 >
   {#each columns as column, colIndex}
     <td
-      id="row-{index.toString()}-col-{colIndex.toString()}"
+      id="{idPrefix}-row-{index.toString()}-col-{colIndex.toString()}"
       class={column?.class?.includes('text-center') ? 'text-center' : ''}
     >
       {#if cellOverides[column.dataElement]}
@@ -74,7 +111,7 @@
 </tr>
 
 {#if expandable && active && !!$activeRow}
-  <tr id="active-row-{index.toString()}" class="expandable-row">
+  <tr id="{idPrefix}-active-row-{index.toString()}" class="expandable-row">
     <td colspan={columns.length}>
       <div transition:slide={{ axis: 'y' }}>
         {#if $activeComponent}
