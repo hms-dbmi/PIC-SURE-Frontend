@@ -47,6 +47,7 @@
     {:else if count > 0 && !!varData && varData.rows.length > 0}
       <Datatable
         tableName="variant-explorer"
+        ariaLabel="Variant data"
         data={varData.rows}
         columns={varData.columns}
         fullWidth

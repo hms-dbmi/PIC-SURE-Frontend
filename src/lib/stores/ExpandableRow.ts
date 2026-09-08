@@ -19,6 +19,11 @@ export const activeRow: Writable<string> = writable('');
 export const defaultComponent: Writable<ComponentObject | undefined> = writable(components.info());
 export const activeComponent: Writable<ComponentObject | undefined> = writable(components.info());
 
+export function closeActiveRow() {
+  activeRow.set('');
+  activeComponent.set(get(defaultComponent));
+}
+
 export function setActiveRow(options: { row: string; component?: string; table?: string }) {
   const { row, table, component: componentName } = options;
   const sameRow = get(activeRow) === row;
@@ -26,8 +31,7 @@ export function setActiveRow(options: { row: string; component?: string; table?:
   const sameTable = !table || get(activeTable) === table;
 
   if (sameRow && sameComponent && sameTable) {
-    activeRow.set('');
-    activeComponent.set(get(defaultComponent));
+    closeActiveRow();
   } else {
     activeRow.set(row);
     table && activeTable.set(table);
