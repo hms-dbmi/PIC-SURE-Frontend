@@ -19,10 +19,9 @@
 
 <th
   scope="col"
-  class="select-none align-bottom {className}"
+  class="select-none align-bottom p-0 {className}"
   class:active={sort.isActive}
   aria-sort={sort.isActive ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined}
-  style="padding: 0"
 >
   <button type="button" class="w-full p-4 cursor-pointer select-none" onclick={() => sort.set()}>
     {@render children?.()}

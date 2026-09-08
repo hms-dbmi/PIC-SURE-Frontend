@@ -34,7 +34,8 @@ test.describe('Branding overrides', () => {
     const logo = page.getByTestId('nav-logo');
     await expect(logo).toBeVisible();
     await expect(logo).not.toHaveAttribute('src');
-    await expect(logo.locator('title')).toHaveText('PIC-SURE');
+    // Falls back to applicationName, which uses a non-breaking hyphen (U+2011).
+    await expect(logo.locator('title')).toHaveText('PIC\u2011SURE');
   });
 });
 
