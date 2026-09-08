@@ -29,8 +29,12 @@
   let filterModal: boolean = $state(false);
   let anyRecordOfModal: boolean = $state(false);
 
-  function editFilter() {
+  function logEditClick() {
     log(createLog('ACTION', 'filter.edit_click', { variable: filter.variableName }));
+  }
+
+  function editFilter() {
+    logEditClick();
     if (filter.filterType === 'genomic') {
       populateFromGeneFilter(filter);
       goto(resolve(`/explorer/genome-filter?edit=${Option.Genomic}`));
@@ -110,6 +114,7 @@
           title="Edit Filter"
           triggerBase="bg-initial text-black-500 hover:text-primary-600"
           withDefault={false}
+          ontrigger={logEditClick}
         >
           {#snippet trigger()}
             <i class="fa-solid fa-pen-to-square"></i>

@@ -22,6 +22,7 @@
     'data-key'?: string;
     onclose?: () => void;
     onconfirm?: () => void;
+    ontrigger?: () => void;
     children: Snippet;
     trigger?: Snippet;
   }
@@ -46,6 +47,7 @@
     'data-key': dataKey,
     onclose = () => {},
     onconfirm,
+    ontrigger = () => {},
     children,
     trigger,
   }: Props = $props();
@@ -76,6 +78,7 @@
         e.stopPropagation();
         e.preventDefault();
         modalOpen = true;
+        ontrigger();
       }}
       {disabled}
       class={triggerBase}
