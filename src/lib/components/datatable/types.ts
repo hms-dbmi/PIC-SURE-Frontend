@@ -29,4 +29,5 @@ export interface TableProps {
   tableActions?: import('svelte').Snippet;
   searchLogAction?: string;
   rowClickLogAction?: string;
+  onPageChange?: () => void;
 }
