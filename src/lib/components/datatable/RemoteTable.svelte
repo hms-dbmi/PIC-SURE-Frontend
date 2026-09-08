@@ -70,7 +70,6 @@
     }, 30);
   }
   let pendingPageFocus: {
-    target: 'first' | 'last';
     page: number;
     rowsAtRequest: unknown;
   } | null = null;
@@ -115,8 +114,10 @@
     }
   });
 
-  // After a keyboard-initiated page change, focus the first/last row of the new
-  // page once it has rendered. The server handler updates currentPage
+  // After a keyboard-initiated page change, focus the first row of the new page
+  // once it has rendered - in both directions, so focus lands where callers
+  // scroll to (see onPageChange consumers) rather than fighting them for the
+  // viewport. The server handler updates currentPage
   // synchronously but replaces rows only after a debounced fetch (with a
   // loading placeholder in between), so the request stays pending until the
   // rows identity actually changes; a page mismatch at that point means the
@@ -126,7 +127,7 @@
     void handler.rows;
     void isLoading;
     if (!isClickable || !pendingPageFocus) return;
-    const { target, page, rowsAtRequest } = pendingPageFocus;
+    const { page, rowsAtRequest } = pendingPageFocus;
     if (handler.rows === rowsAtRequest) return;
     if (handler.currentPage !== page) {
       pendingPageFocus = null;
@@ -140,8 +141,7 @@
       return;
     }
     pendingPageFocus = null;
-    const index = target === 'first' ? 0 : rows.length - 1;
-    focusRow(rows[index], index);
+    focusRow(rows[0], 0);
     announce(`Page ${handler.currentPage} of ${handler.pages?.length ?? 1}`);
   });
 
@@ -151,7 +151,6 @@
     if (direction === 'next' && handler.currentPage >= lastPage) return;
     if (direction === 'previous' && handler.currentPage <= 1) return;
     pendingPageFocus = {
-      target: direction === 'next' ? 'first' : 'last',
       page: handler.currentPage + (direction === 'next' ? 1 : -1),
       rowsAtRequest: handler.rows,
     };
