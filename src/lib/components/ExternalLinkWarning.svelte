@@ -48,24 +48,24 @@
   }
 
   function proceed() {
-    if (!pendingUrl) return;
+    const url = pendingUrl;
+    if (!url) return;
+    // Firefox's window.open() spins the event loop, which flushes the cancellation.
+    pendingUrl = null;
     log(
       createLog('NAVIGATION', 'external_link.confirmed', {
-        url: pendingUrl,
+        url,
         newTab: openInNewTab,
       }),
+      { keepalive: true },
     );
     if (openInNewTab) {
-      window.open(pendingUrl, '_blank', 'noopener,noreferrer');
+      window.open(url, '_blank', 'noopener,noreferrer');
     } else {
-      window.location.assign(pendingUrl);
+      window.location.assign(url);
     }
-    pendingUrl = null;
   }
 
-  // Cancellation is detected from the open state rather than Modal's onclose:
-  // Escape and outside-click dismissals bypass onclose entirely. proceed() clears
-  // pendingUrl synchronously before effects flush, so confirms never log a cancel.
   $effect(() => {
     if (!open && pendingUrl) {
       log(createLog('NAVIGATION', 'external_link.cancelled', { url: pendingUrl }));
