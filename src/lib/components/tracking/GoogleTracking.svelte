@@ -146,15 +146,11 @@
       title="googleTagManger"
       height="0"
       width="0"
-      style="display:none;visibility:hidden"
+      class="hidden invisible"
     ></iframe>
   </noscript>
   <!-- End Google Tag Manager (noscript) -->
-  <div
-    data-testid="consentModal"
-    class="fixed"
-    style="left: 5%; bottom: 60px; z-index: 1000; width: 90%"
-  >
+  <div data-testid="consentModal" class="fixed left-[5%] bottom-[60px] z-[1000] w-[90%]">
     <div class="bg-surface-50-950 p-4 rounded-container shadow-2xl">
       <div class="flex flex-row justify-between items-center">
         <div class="flex items center">

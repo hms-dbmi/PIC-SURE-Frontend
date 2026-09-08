@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { css } from '$lib/utilities/style';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
   import {
     isFilterGroup,
@@ -123,7 +124,9 @@
       : activeId === id && !isOverlay
         ? 'invisible'
         : 'border'}"
-    style={id !== 'root' && !(activeId === id && !isOverlay) ? `${groupBg}; ${groupBorder}` : ''}
+    {@attach css(
+      id !== 'root' && !(activeId === id && !isOverlay) ? `${groupBg}; ${groupBorder}` : '',
+    )}
   >
     <div class="flex flex-row items-center gap-2 mb-1 w-full">
       <div
