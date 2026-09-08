@@ -106,6 +106,86 @@ test.describe('Explorer for authenticated users', () => {
     // Then
     await expect(page.locator('table')).toBeVisible();
   });
+  test('Scrolls to the top of the search results only when changing pages', async ({ page }) => {
+    const pageOneResults = {
+      ...mockData,
+      totalPages: 2,
+      totalElements: 200,
+      numberOfElements: 100,
+      number: 0,
+      first: true,
+      last: false,
+      size: 100,
+      pageable: {
+        ...mockData.pageable,
+        pageSize: 100,
+      },
+      content: Array.from({ length: 100 }, (_, index) => ({
+        ...mockData.content[index % mockData.content.length],
+        conceptPath: `\\test\\page-one-result-${index}\\`,
+        name: `page-one-result-${index}`,
+      })),
+    };
+    const pageTwoResults = {
+      ...pageOneResults,
+      number: 1,
+      first: false,
+      last: true,
+      pageable: {
+        ...pageOneResults.pageable,
+        pageNumber: 1,
+        offset: 100,
+      },
+      content: Array.from({ length: 100 }, (_, index) => ({
+        ...mockData.content[index % mockData.content.length],
+        conceptPath: `\\test\\page-two-result-${index}\\`,
+        name: `page-two-result-${index}`,
+      })),
+    };
+    await page.route(
+      searchResultPath.replace('page_size=10', 'page_size=100'),
+      async (route: Route) => route.fulfill({ json: pageOneResults }),
+    );
+    await page.route(
+      searchResultPath.replace('page_number=0&page_size=10', 'page_number=1&page_size=100'),
+      async (route: Route) => route.fulfill({ json: pageTwoResults }),
+    );
+    await page.goto('/explorer?search=sex');
+    await userIsLoggedIn(page);
+
+    await page.getByLabel('Rows per page').selectOption('100');
+    await expect(page.locator('#ExplorerTable-table tbody tr[id^="row-"]')).toHaveCount(100);
+    const scrollContainer = page.locator('#page');
+    await scrollContainer.evaluate((element) => element.scrollTo(0, element.scrollHeight));
+    expect(await scrollContainer.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
+    await page.getByLabel('Next', { exact: true }).click();
+    await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByText('page-two-result-0', { exact: true })).toBeVisible();
+    await expect
+      .poll(() =>
+        page.locator('#ExplorerTable-table').evaluate((table) => {
+          const container = document.querySelector('#page');
+          return Math.abs(
+            table.getBoundingClientRect().top - (container?.getBoundingClientRect().top ?? 0),
+          );
+        }),
+      )
+      .toBeLessThan(2);
+
+    const currentPageButton = page.getByLabel('Page 2');
+    await currentPageButton.scrollIntoViewIfNeeded();
+    const currentPageScroll = await currentPageButton.evaluate((button) => {
+      const container = document.querySelector('#page');
+      if (!container) throw new Error('Page scroll container not found');
+
+      const before = container.scrollTop;
+      (button as HTMLButtonElement).click();
+      return { before, after: container.scrollTop };
+    });
+    expect(currentPageScroll.before).toBeGreaterThan(0);
+    expect(currentPageScroll.after).toBe(currentPageScroll.before);
+  });
   test('Error message on api error', async ({ page }) => {
     // Given
     await mockApiFail(page, searchResultPath, 'accessdenied');

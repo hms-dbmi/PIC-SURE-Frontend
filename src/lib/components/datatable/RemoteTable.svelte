@@ -42,6 +42,7 @@
     tableActions,
     searchLogAction,
     rowClickLogAction,
+    onPageChange,
   }: Props = $props();
 
   $effect(() => {
@@ -370,7 +371,7 @@
       <RowCount {handler} />
       <div class="flex justify-end gap-4">
         <RowsPerPage {tableName} {handler} {options} />
-        <Pagination {handler} />
+        <Pagination {handler} {onPageChange} />
       </div>
     </footer>
   {/if}
