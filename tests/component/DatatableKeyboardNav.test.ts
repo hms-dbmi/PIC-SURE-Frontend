@@ -131,11 +131,32 @@ describe('Datatable keyboard navigation', () => {
     // Second page has rows 5 and 6 of the 7-row dataset.
     expect(document.activeElement?.textContent).toContain('Row 5');
 
-    // ArrowUp on the first row of page 2 returns to the last row of page 1.
+    // ArrowUp on the first row of page 2 returns to page 1, focusing its first row.
     await fireEvent.keyDown(document.activeElement!, { key: 'ArrowUp' });
     await waitFor(() => {
       expect(handler.currentPage).toBe(1);
-      expect(document.activeElement?.id).toBe('KbdTest-row-4');
+      expect(document.activeElement?.id).toBe('KbdTest-row-0');
+    });
+  });
+
+  it('focuses the first row when paging backwards, not the last', async () => {
+    // Both directions land on the first row so focus agrees with where callers
+    // scroll on a page change (Explorer scrolls the results back to the top via
+    // onPageChange); focusing the last row would scroll the viewport to the
+    // bottom of the table and undo it.
+    const { container, handler } = renderTable(7);
+    const pageRows = rows(container);
+    pageRows[4].focus();
+
+    await fireEvent.keyDown(pageRows[4], { key: 'ArrowDown' });
+    await waitFor(() => expect(handler.currentPage).toBe(2));
+
+    await fireEvent.keyDown(document.activeElement!, { key: 'ArrowUp' });
+
+    await waitFor(() => {
+      expect(handler.currentPage).toBe(1);
+      expect(document.activeElement?.id).toBe('KbdTest-row-0');
+      expect(document.activeElement?.textContent).toContain('Row 0');
     });
   });
 
