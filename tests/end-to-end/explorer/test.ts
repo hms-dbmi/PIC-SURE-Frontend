@@ -154,7 +154,9 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     await page.getByLabel('Rows per page').selectOption('100');
-    await expect(page.locator('#ExplorerTable-table tbody tr[id^="row-"]')).toHaveCount(100);
+    await expect(
+      page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]'),
+    ).toHaveCount(100);
     const scrollContainer = page.locator('#page');
     await scrollContainer.evaluate((element) => element.scrollTo(0, element.scrollHeight));
     expect(await scrollContainer.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
