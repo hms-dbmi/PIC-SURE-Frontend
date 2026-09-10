@@ -22,7 +22,7 @@
   import Loading from '$lib/components/Loading.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { Picsure } from '$lib/paths';
-  import { isOpenAccess } from '$lib/AccessState';
+  import { isOpenAccess, useOpenAccess } from '$lib/AccessState';
   import LogicTreeSummary from '$lib/components/explorer/advanced/LogicTreeSummary.svelte';
   import { filters, filterTree, genomicFilters } from '$lib/stores/Filter';
   import { type Filter, type FilterGroupInterface } from '$lib/models/Filter.svelte';
@@ -67,7 +67,7 @@
 
     const query = getQueryRequestV3();
     const openAccess = isOpenAccess();
-    const distributionsPath = openAccess
+    const distributionsPath = useOpenAccess(openAccess)
       ? Picsure.Visualization.DistributionsOpen
       : Picsure.Visualization.Distributions;
 
