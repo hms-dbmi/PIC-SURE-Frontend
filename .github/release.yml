@@ -7,9 +7,6 @@ changelog:
     - title: Breaking Changes
       labels:
         - breaking-change
-    - title: Features
-      labels:
-        - feature
     - title: Enhancements
       labels:
         - enhancement
