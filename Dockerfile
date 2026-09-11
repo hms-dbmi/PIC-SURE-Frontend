@@ -18,12 +18,18 @@ RUN pnpm build \
 # Step 2: Serve the app with httpd
 FROM httpd:2.4.68-alpine3.23@sha256:4a15e9c73f25334bc03cfb3c692c9adfc103bb46ca89cee1f0b9a5fcbc7b21f6
 
-# apk pins rot (Alpine keeps only the newest package per branch), so the base
-# image's own libs are refreshed via the weekly digest bumps instead. node is
-# copied from the digest-pinned builder so build and runtime cannot drift.
-RUN apk add --no-cache \
-  libstdc++ \
-  supervisor
+# Alpine keeps only the newest package per branch, so `apk add pkg=version`
+# breaks as soon as that branch moves. Digest bumps do not cover it either: the
+# upstream httpd image is rebuilt rarely and its libs drift months behind
+# Alpine's published fixes, so upgrade at build time. The httpd and node checks
+# below fail the build if an upgrade breaks something. libcurl cannot be dropped
+# here even though nothing calls curl: httpd's own mod_md links it, so apk holds
+# it for .httpd-so-deps. The upgrade above is what keeps it patched.
+# node is copied from the digest-pinned builder so build and runtime cannot drift.
+RUN apk upgrade --no-cache \
+  && apk add --no-cache \
+    libstdc++ \
+    supervisor
 COPY --from=builder /usr/local/bin/node /usr/local/bin/node
 
 COPY httpd-picsure.conf ${HTTPD_PREFIX}/conf/extra/httpd-picsure.conf
