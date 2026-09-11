@@ -742,6 +742,7 @@ describe('BannerEditor', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Add page target' }));
 
     expect(screen.getByRole('textbox', { name: 'Target 1 path' })).toHaveValue('');
+    expect(screen.getByRole('textbox', { name: 'Target 1 path' })).toHaveFocus();
     expect(screen.getByText('Enter an absolute path starting with /.')).toHaveAttribute(
       'aria-live',
       'polite',
@@ -750,6 +751,19 @@ describe('BannerEditor', () => {
       'aria-invalid',
       'true',
     );
+  });
+
+  it('focuses each newly added page target without changing existing paths', async () => {
+    render(BannerEditor);
+    await fireEvent.click(screen.getByRole('radio', { name: 'Specific pages' }));
+    await fireEvent.click(screen.getByRole('button', { name: 'Add page target' }));
+    await fireEvent.input(screen.getByRole('textbox', { name: 'Target 1 path' }), {
+      target: { value: '/help' },
+    });
+    await fireEvent.click(screen.getByRole('button', { name: 'Add page target' }));
+
+    expect(screen.getByRole('textbox', { name: 'Target 2 path' })).toHaveFocus();
+    expect(screen.getByRole('textbox', { name: 'Target 1 path' })).toHaveValue('/help');
   });
 
   it('adopts authoritative target normalization before marking a saved edit clean', async () => {
@@ -983,6 +997,67 @@ describe('BannerEditor', () => {
     expect(preview.querySelector('h1')).not.toBeInTheDocument();
     expect(preview.querySelector('img')).not.toBeInTheDocument();
   });
+
+  it.each(['http://example.org', '//example.org', 'javascript:alert(1)', 'data:text/html,test'])(
+    'announces removal of an unsupported %s link while preserving its text',
+    async (href) => {
+      const { container } = render(BannerEditor);
+      const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+      const feedback = container.querySelector('#banner-content-help [aria-atomic="true"]');
+      expect(feedback).toHaveTextContent(/^$/);
+      editor.innerHTML = `<p><a href="${href}">More information</a></p>`;
+      await fireEvent.input(editor);
+
+      await waitFor(() => {
+        expect(feedback).toHaveTextContent(
+          'An unsupported link was removed. Use a relative path, an HTTPS link, or an email link.',
+        );
+        expect(editor.querySelector('a[href]')).toBeNull();
+      });
+      expect(feedback).toHaveAttribute('aria-live', 'polite');
+      expect(editor).toHaveTextContent('More information');
+
+      editor.innerHTML = '<p><strong>Accepted edit</strong></p>';
+      await fireEvent.input(editor);
+      await waitFor(() => expect(feedback).toHaveTextContent(/^$/));
+    },
+  );
+
+  it('announces the number of removed links and keeps an accepted link', async () => {
+    const { container } = render(BannerEditor);
+    const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+    editor.innerHTML =
+      '<p><a href="http://example.org">First</a> and <a href="//example.org">Second</a> with <a href="/help">Help</a></p>';
+    await fireEvent.input(editor);
+
+    const feedback = container.querySelector('#banner-content-help [aria-atomic="true"]');
+    await waitFor(() => {
+      expect(feedback).toHaveTextContent(
+        '2 unsupported links were removed. Use a relative path, an HTTPS link, or an email link.',
+      );
+      expect(editor.querySelectorAll('a[href]')).toHaveLength(1);
+    });
+    expect(editor.querySelector('a[href]')).toHaveAttribute('href', '/help');
+    expect(editor).toHaveTextContent('First and Second with Help');
+  });
+
+  it.each(['/help', 'https://example.org', 'mailto:help@example.org'])(
+    'keeps supported %s links without a removal announcement',
+    async (href) => {
+      const { container } = render(BannerEditor);
+      const editor = await screen.findByRole('textbox', { name: 'Banner content' });
+      editor.innerHTML = `<p><a href="${href}" target="_blank">More information</a></p>`;
+      await fireEvent.input(editor);
+
+      await waitFor(() =>
+        expect(screen.getByRole('article').querySelector('a')).toHaveAttribute('href', href),
+      );
+      expect(editor.querySelector('a')).toHaveAttribute('href', href);
+      expect(
+        container.querySelector('#banner-content-help [aria-atomic="true"]'),
+      ).toHaveTextContent(/^$/);
+    },
+  );
 
   it('announces the over-limit explanation without announcing every character count', async () => {
     const { container } = render(BannerEditor);

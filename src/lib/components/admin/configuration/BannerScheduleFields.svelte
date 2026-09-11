@@ -90,6 +90,7 @@
             class="select"
             value={startChoice}
             aria-invalid={resolvedStart === null}
+            aria-describedby="banner-start-help"
             onchange={(event) => (startChoice = event.currentTarget.value)}
           >
             <option value="">Choose an offset</option>
@@ -138,6 +139,9 @@
             class="select"
             value={endChoice}
             aria-invalid={resolvedEnd === null}
+            aria-describedby={endBeforeStart
+              ? 'banner-end-help banner-schedule-order-error'
+              : 'banner-end-help'}
             onchange={(event) => (endChoice = event.currentTarget.value)}
           >
             <option value="">Choose an offset</option>

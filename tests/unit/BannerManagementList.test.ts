@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { ManagedBanner } from '$lib/models/Banner';
 import {
   adoptCanonicalBannerOrder,
+  bannerActionLabels,
   broadBannerOverlapCount,
   initialBannerListState,
   presentBanner,
@@ -201,5 +202,19 @@ describe('banner management list reconciliation', () => {
     expect(Array.from(long.excerpt)).toHaveLength(160);
     expect(long.excerpt.endsWith('…')).toBe(true);
     expect(long.excerpt.includes('�')).toBe(false);
+  });
+});
+
+describe('concise banner action labels', () => {
+  it('caps excerpts without splitting graphemes and distinguishes matching prefixes', () => {
+    const prefix = '👩🏽‍🔬'.repeat(60);
+    const records = initialBannerListState([
+      banner({ uuid: 'b', htmlContent: `<p>${prefix} second</p>` }),
+      banner({ uuid: 'a', htmlContent: `<p>${prefix} first</p>` }),
+    ]).records;
+    const labels = bannerActionLabels(records);
+    expect(labels.get('a')).toBe(`${'👩🏽‍🔬'.repeat(47)}… (1)`);
+    expect(labels.get('b')).toBe(`${'👩🏽‍🔬'.repeat(47)}… (2)`);
+    expect(bannerActionLabels([...records].reverse())).toEqual(labels);
   });
 });

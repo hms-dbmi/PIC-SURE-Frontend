@@ -1,3 +1,5 @@
+export const BANNER_LABEL_LENGTH = 48;
+
 export const BANNER_APPEARANCES = [
   'PRIMARY',
   'SECONDARY',
