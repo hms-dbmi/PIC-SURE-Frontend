@@ -31,6 +31,16 @@
     restoreStartNotFuture,
   }: Props = $props();
 
+  const startInvalid = $derived(
+    (!startLocal && startMissingError) ||
+      restoreStartNotFuture ||
+      (startLocal !== '' && resolvedStart === null),
+  );
+  const endBeforeStart = $derived(
+    !!resolvedStart && !!resolvedEnd && Date.parse(resolvedEnd) <= Date.parse(resolvedStart),
+  );
+  const endInvalid = $derived(endBeforeStart || (endLocal !== '' && resolvedEnd === null));
+
   function utcText(instant: string) {
     return `Resolved UTC: ${instant.slice(0, 16).replace('T', ' ')} UTC`;
   }
@@ -48,27 +58,29 @@
         type="datetime-local"
         step="60"
         bind:value={startLocal}
+        aria-invalid={startInvalid}
         aria-describedby="banner-start-help"
       />
       <div id="banner-start-help" class="text-sm text-surface-600">
-        {#if !startLocal}
-          {#if startMissingError}
-            <span class="text-error-700">A published banner needs a start time.</span>
-          {:else}
-            Server UTC when published.
-          {/if}
-        {:else if startResolution?.status === 'nonexistent'}
-          <span class="text-error-700">
+        <span class="text-error-700" aria-live="polite" aria-atomic="true">
+          {#if !startLocal && startMissingError}
+            A published banner needs a start time.
+          {:else if startResolution?.status === 'nonexistent'}
             This local time does not exist because the clock moves forward.
-          </span>
-        {:else if startResolution?.status === 'invalid'}
-          <span class="text-error-700">Enter a valid local date and time.</span>
-        {:else if restoreStartNotFuture}
-          <span class="text-error-700" role="alert">
+          {:else if startResolution?.status === 'invalid'}
+            Enter a valid local date and time.
+          {:else if startResolution?.status === 'ambiguous' && resolvedStart === null}
+            Choose a UTC offset for this start time.
+          {:else if restoreStartNotFuture}
             Start must be in the future. Leave Start blank to restore now.
-          </span>
-        {:else if resolvedStart}
-          {utcText(resolvedStart)}
+          {/if}
+        </span>
+        {#if !startInvalid}
+          {#if !startLocal}
+            Server UTC when published.
+          {:else if resolvedStart}
+            {utcText(resolvedStart)}
+          {/if}
         {/if}
       </div>
       {#if startResolution?.status === 'ambiguous'}
@@ -77,6 +89,7 @@
           <select
             class="select"
             value={startChoice}
+            aria-invalid={resolvedStart === null}
             onchange={(event) => (startChoice = event.currentTarget.value)}
           >
             <option value="">Choose an offset</option>
@@ -95,19 +108,27 @@
         type="datetime-local"
         step="60"
         bind:value={endLocal}
-        aria-describedby="banner-end-help"
+        aria-invalid={endInvalid}
+        aria-describedby={endBeforeStart
+          ? 'banner-end-help banner-schedule-order-error'
+          : 'banner-end-help'}
       />
       <div id="banner-end-help" class="text-sm text-surface-600">
-        {#if !endLocal}
-          No end date.
-        {:else if endResolution?.status === 'nonexistent'}
-          <span class="text-error-700">
+        <span class="text-error-700" aria-live="polite" aria-atomic="true">
+          {#if endResolution?.status === 'nonexistent'}
             This local time does not exist because the clock moves forward.
-          </span>
-        {:else if endResolution?.status === 'invalid'}
-          <span class="text-error-700">Enter a valid local date and time.</span>
-        {:else if resolvedEnd}
-          {utcText(resolvedEnd)}
+          {:else if endResolution?.status === 'invalid'}
+            Enter a valid local date and time.
+          {:else if endResolution?.status === 'ambiguous' && resolvedEnd === null}
+            Choose a UTC offset for this end time.
+          {/if}
+        </span>
+        {#if !endInvalid}
+          {#if !endLocal}
+            No end date.
+          {:else if resolvedEnd}
+            {utcText(resolvedEnd)}
+          {/if}
         {/if}
       </div>
       {#if endResolution?.status === 'ambiguous'}
@@ -116,6 +137,7 @@
           <select
             class="select"
             value={endChoice}
+            aria-invalid={resolvedEnd === null}
             onchange={(event) => (endChoice = event.currentTarget.value)}
           >
             <option value="">Choose an offset</option>
@@ -127,7 +149,11 @@
       {/if}
     </div>
   </div>
-  {#if resolvedStart && resolvedEnd && resolvedEnd <= resolvedStart}
-    <p class="mt-2 text-sm text-error-700">End must be after start.</p>
-  {/if}
+  <div aria-live="polite" aria-atomic="true">
+    {#if endBeforeStart}
+      <p id="banner-schedule-order-error" class="mt-2 text-sm text-error-700">
+        End must be after start.
+      </p>
+    {/if}
+  </div>
 </fieldset>

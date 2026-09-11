@@ -36,6 +36,10 @@ export function hasBannerContent(dirty: string): boolean {
 }
 
 export function bannerPlainText(html: string): string {
-  const document = new DOMParser().parseFromString(html, 'text/html');
+  const document = new DOMParser().parseFromString(sanitizeBannerHTML(html), 'text/html');
+  for (const block of document.body.querySelectorAll('p, ol, ul, li, br')) {
+    block.before(' ');
+    block.after(' ');
+  }
   return (document.body.textContent ?? '').replace(/\s+/g, ' ').trim();
 }

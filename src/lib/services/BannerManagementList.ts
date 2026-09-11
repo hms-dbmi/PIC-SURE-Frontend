@@ -14,7 +14,8 @@ export interface BannerListState {
 const MAX_EXCERPT_LENGTH = 160;
 
 export function presentBanner(banner: ManagedBanner): ManagementRecord {
-  return { ...banner, excerpt: truncate(bannerPlainText(banner.htmlContent), MAX_EXCERPT_LENGTH) };
+  const plainText = bannerPlainText(banner.htmlContent);
+  return { ...banner, plainText, excerpt: truncate(plainText, MAX_EXCERPT_LENGTH) };
 }
 
 export function inLifecycleTab(lifecycle: BannerLifecycle, tab: LifecycleTab): boolean {
@@ -90,7 +91,13 @@ export function adoptCanonicalBannerOrder(
   const presentedUuids = new Set(presented.map((banner) => banner.uuid));
   const orderUuids = presented.map((banner) => banner.uuid);
   return {
-    records: [...presented, ...state.records.filter((banner) => !presentedUuids.has(banner.uuid))],
+    records: [
+      ...presented,
+      ...state.records.filter(
+        (banner) =>
+          !inLifecycleTab(banner.lifecycle, 'orderable') && !presentedUuids.has(banner.uuid),
+      ),
+    ],
     orderUuids,
     savedOrderUuids: [...orderUuids],
   };
@@ -120,12 +127,11 @@ export function visibleBannerRecords(
     activeTab === 'orderable'
       ? orderedBannerRecords(state.records, state.orderUuids)
       : state.records;
+  const searchText = search.trim().toLocaleLowerCase();
   return candidates.filter(
     (banner) =>
       inLifecycleTab(banner.lifecycle, activeTab) &&
-      `${banner.title ?? ''} ${banner.excerpt}`
-        .toLocaleLowerCase()
-        .includes(search.trim().toLocaleLowerCase()),
+      `${banner.title ?? ''} ${banner.plainText}`.toLocaleLowerCase().includes(searchText),
   );
 }
 

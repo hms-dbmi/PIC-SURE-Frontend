@@ -34,7 +34,7 @@ test.describe('Visitors receive banners across navigation', () => {
 
     const bannerRegion = page.getByTestId('site-banner-region');
     await expect(bannerRegion).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Maintenance' })).toContainText(
+    await expect(page.getByRole('article', { name: 'Maintenance' })).toContainText(
       'Scheduled maintenance',
     );
     await expect
@@ -83,9 +83,9 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
     await page.goto('/');
 
     await expect(page).toHaveURL('/login');
-    await expect(page.getByRole('region', { name: 'Maintenance' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Signed-out notice' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
+    await expect(page.getByRole('article', { name: 'Maintenance' })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'Signed-out notice' })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'Signed-in notice' })).toHaveCount(0);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(1);
     await expect
       .poll(() =>
@@ -103,9 +103,9 @@ test.describe('Signed-out visitors can read banners and reach login', () => {
 
     await page.goto('/login/error');
 
-    await expect(page.getByRole('region', { name: 'Maintenance' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Signed-out notice' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Signed-in notice' })).toHaveCount(0);
+    await expect(page.getByRole('article', { name: 'Maintenance' })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'Signed-out notice' })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'Signed-in notice' })).toHaveCount(0);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(1);
   });
 
@@ -185,6 +185,34 @@ test.describe('Admins review and target published banners', () => {
     }
   });
 
+  test('finds full banner text and keeps keyboard focus after removing page targets', async ({
+    page,
+  }) => {
+    const longNotice = {
+      ...everyone,
+      ...managementFields,
+      htmlContent: `<p>${'Maintenance information. '.repeat(12)}Recovery instructions</p>`,
+    };
+    await page.route('**/picsure/operations/banners', (route) =>
+      route.fulfill({ json: [longNotice] }),
+    );
+    await page.goto('/admin/configuration');
+    await page.getByRole('tab', { name: 'Site banners', exact: true }).click();
+    await page.getByRole('searchbox', { name: 'Search banner text' }).fill('Recovery instructions');
+    const row = page.locator(`[data-banner-row="${longNotice.uuid}"]`);
+    await expect(row).toBeVisible();
+    await row.getByRole('button', { name: /^Details for / }).click();
+    await row.getByRole('button', { name: /^Edit banner for / }).click();
+    await page.getByText('Advanced options', { exact: true }).click();
+    await page.getByRole('radio', { name: 'Specific pages', exact: true }).check();
+    await page.getByRole('button', { name: 'Add page target' }).click();
+    await page.getByRole('textbox', { name: 'Target 1 path' }).fill('/help');
+    const remove = page.getByRole('button', { name: 'Remove target 1' });
+    await remove.focus();
+    await remove.press('Enter');
+    await expect(page.getByRole('button', { name: 'Add page target' })).toBeFocused();
+  });
+
   test('retargets a published banner and filters the visitor feed by session', async ({ page }) => {
     let feed = [everyone, targeted];
     let managed = [
@@ -221,10 +249,10 @@ test.describe('Admins review and target published banners', () => {
     await page.waitForLoadState('networkidle');
     await page.getByRole('tab', { name: 'Site banners' }).click();
     const row = page.locator(`[data-banner-row="${targeted.uuid}"]`);
-    await row.getByRole('button', { name: 'Details' }).click();
+    await row.getByRole('button', { name: /^Details for / }).click();
     await expect(row).toContainText('Audience: Everyone');
 
-    await row.getByRole('button', { name: 'Edit banner' }).click();
+    await row.getByRole('button', { name: /^Edit banner for / }).click();
     await expect(page.getByRole('radio', { name: 'Everyone' })).toBeChecked();
     await page.getByRole('radio', { name: 'Signed-in users' }).check();
     await page.getByText('Advanced options', { exact: true }).click();
@@ -234,7 +262,7 @@ test.describe('Admins review and target published banners', () => {
     await page.getByRole('button', { name: 'Save changes' }).click();
 
     const retargetedRow = page.locator(`[data-banner-row="${targeted.uuid}"]`);
-    await retargetedRow.getByRole('button', { name: 'Details' }).click();
+    await retargetedRow.getByRole('button', { name: /^Details for / }).click();
     await expect(retargetedRow).toContainText('Audience: Signed-in users');
     expect(submitted).toMatchObject({
       audience: 'SIGNED_IN',
@@ -242,23 +270,23 @@ test.describe('Admins review and target published banners', () => {
     });
 
     await page.goto('/');
-    await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
-    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'Release notice' })).toHaveCount(0);
+    await expect(page.getByRole('article', { name: 'For everyone' })).toBeVisible();
 
     await page.locator('#nav-link-help').click();
     await expect(page).toHaveURL('/help');
-    await expect(page.getByRole('region', { name: 'Release notice' })).toContainText(
+    await expect(page.getByRole('article', { name: 'Release notice' })).toContainText(
       'Saved query limits are changing',
     );
-    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'For everyone' })).toBeVisible();
 
     // A signed-out visitor who never enters the authorized shell. The tab-scoped `user` blob
     // deliberately stays behind: only the session token decides audience.
     await page.evaluate(() => localStorage.removeItem('token'));
     await page.goto('/help');
 
-    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
+    await expect(page.getByRole('article', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'Release notice' })).toHaveCount(0);
     // The signed-out browser was still served the signed-in record over an uncredentialed
     // read: audience is presentation, not authorization.
     expect(servedAudiences.at(-1)).toContain('SIGNED_IN');
@@ -266,8 +294,8 @@ test.describe('Admins review and target published banners', () => {
 
     await page.goto('/');
     await expect(page).toHaveURL('/');
-    await expect(page.getByRole('region', { name: 'For everyone' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Release notice' })).toHaveCount(0);
+    await expect(page.getByRole('article', { name: 'For everyone' })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'Release notice' })).toHaveCount(0);
   });
 });
 
@@ -340,7 +368,7 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
     });
 
     await page.goto('/');
-    const notice = page.getByRole('region', { name: 'Dismissible maintenance' });
+    const notice = page.getByRole('article', { name: 'Dismissible maintenance' });
     await expect(notice).toBeVisible();
     const dismiss = notice.getByRole('button', { name: 'Dismiss Dismissible maintenance' });
     await expect(dismiss).toHaveAttribute('title', 'Dismiss Dismissible maintenance');
@@ -356,18 +384,18 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
     await page.locator('#nav-link-help').click();
     await expect(page).toHaveURL('/help');
     await expect.poll(() => feedRequests).toBeGreaterThanOrEqual(2);
-    await expect(page.getByRole('region', { name: 'Dismissible maintenance' })).toHaveCount(0);
+    await expect(page.getByRole('article', { name: 'Dismissible maintenance' })).toHaveCount(0);
 
     const requestsBeforeReload = feedRequests;
     await page.reload();
     await expect.poll(() => feedRequests).toBeGreaterThan(requestsBeforeReload);
-    await expect(page.getByRole('region', { name: 'Dismissible maintenance' })).toHaveCount(0);
+    await expect(page.getByRole('article', { name: 'Dismissible maintenance' })).toHaveCount(0);
 
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
     const row = page.locator(`[data-banner-row="${dismissalBanner.uuid}"]`);
-    await row.getByRole('button', { name: 'Details' }).click();
-    await row.getByRole('button', { name: 'Edit banner' }).click();
+    await row.getByRole('button', { name: /^Details for / }).click();
+    await row.getByRole('button', { name: /^Edit banner for / }).click();
     await page
       .getByTestId('banner-editor-form')
       .locator('#banner-content-editor .ql-editor')
@@ -377,7 +405,7 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
 
     await page.goto('/');
     await expect(
-      page.getByRole('region', { name: 'Updated dismissible maintenance' }),
+      page.getByRole('article', { name: 'Updated dismissible maintenance' }),
     ).toContainText('Updated maintenance notice');
     expect(await page.evaluate(() => sessionStorage.getItem('site-banner-dismissals-v1'))).toBe(
       `{"${dismissalBanner.uuid}":"${dismissalBanner.presentationHash}"}`,
@@ -483,7 +511,7 @@ test.describe('Admins create, edit, and publish banners', () => {
       '  Second  paragraph',
     );
     const previewContent = page
-      .getByRole('region', { name: 'Site announcement' })
+      .getByRole('article', { name: 'Site announcement' })
       .locator('.site-banner-content');
     await expect(previewContent.locator('p')).toHaveCount(2);
     expect(await previewContent.locator('p').nth(1).textContent()).toBe('  Second  paragraph');
@@ -519,7 +547,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     ).toBe(true);
     await expect(editor.locator('li').nth(1)).toHaveText('Second item');
     const previewList = page
-      .getByRole('region', { name: 'Site announcement' })
+      .getByRole('article', { name: 'Site announcement' })
       .locator('.site-banner-content ul');
     await expect(previewList.locator('li')).toHaveCount(2);
     await expect(previewList.locator('li').nth(0)).toHaveText('First item');
@@ -666,7 +694,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.getByRole('textbox', { name: 'Title' }).fill('Planned maintenance');
     await page.getByRole('combobox', { name: 'Icon' }).selectOption('WARNING');
 
-    const preview = page.getByRole('region', { name: 'Planned maintenance' });
+    const preview = page.getByRole('article', { name: 'Planned maintenance' });
     await expect(preview).toHaveClass(/preset-tonal-warning/);
     await expect(
       preview.getByRole('link', { name: 'System maintenance status page' }),
@@ -681,8 +709,8 @@ test.describe('Admins create, edit, and publish banners', () => {
     await expect(savedRow).toBeVisible();
     await expect(savedRow).toContainText('Server-confirmed saved draft');
     await expect(savedRow).toContainText('Saved');
-    await savedRow.getByRole('button', { name: 'Details' }).click();
-    await savedRow.getByRole('button', { name: 'Edit banner' }).click();
+    await savedRow.getByRole('button', { name: /^Details for / }).click();
+    await savedRow.getByRole('button', { name: /^Edit banner for / }).click();
     await expect(page.getByRole('heading', { name: 'Edit saved banner' })).toBeVisible();
     const reopenedEditor = page.getByRole('textbox', { name: 'Banner content' });
     await expect(reopenedEditor).toContainText('Server-confirmed saved draft');
@@ -702,8 +730,8 @@ test.describe('Admins create, edit, and publish banners', () => {
     await expect(publishedRow).toContainText('Server-confirmed window View status');
     await expect(publishedRow).toContainText('Active');
 
-    await publishedRow.getByRole('button', { name: 'Details' }).click();
-    await publishedRow.getByRole('button', { name: 'Edit banner' }).click();
+    await publishedRow.getByRole('button', { name: /^Details for / }).click();
+    await publishedRow.getByRole('button', { name: /^Edit banner for / }).click();
     await expect(page.getByRole('heading', { name: 'Edit published banner' })).toBeVisible();
     const publishedEditor = page.getByRole('textbox', { name: 'Banner content' });
     await publishedEditor.fill('Corrected visitor notice');
@@ -719,7 +747,7 @@ test.describe('Admins create, edit, and publish banners', () => {
     expect(publicationRequests).toBe(1);
 
     await page.goto('/');
-    await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toContainText(
+    await expect(page.getByRole('article', { name: 'Corrected maintenance notice' })).toContainText(
       'Corrected visitor notice',
     );
     expect(submitted).toMatchObject({
@@ -746,8 +774,8 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
     const rowToDisable = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
-    await rowToDisable.getByRole('button', { name: 'Details' }).click();
-    await rowToDisable.getByRole('button', { name: 'Disable banner' }).click();
+    await rowToDisable.getByRole('button', { name: /^Details for / }).click();
+    await rowToDisable.getByRole('button', { name: /^Disable banner for / }).click();
 
     const confirmation = page.getByRole('dialog');
     await expect(confirmation.getByRole('heading', { name: 'Disable banner?' })).toBeVisible();
@@ -763,14 +791,16 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.goto('/');
     await userIsLoggedIn(page);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
-    await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
+    await expect(page.getByRole('article', { name: 'Corrected maintenance notice' })).toHaveCount(
+      0,
+    );
 
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await page.getByRole('tab', { name: /Saved & disabled/ }).click();
     const rowToArchive = page.locator(`[data-banner-row="${savedBanner.uuid}"]`);
-    await rowToArchive.getByRole('button', { name: 'Details' }).click();
-    await rowToArchive.getByRole('button', { name: 'Archive banner' }).click();
+    await rowToArchive.getByRole('button', { name: /^Details for / }).click();
+    await rowToArchive.getByRole('button', { name: /^Archive banner for / }).click();
 
     const archiveConfirmation = page.getByRole('dialog');
     await expect(
@@ -790,7 +820,9 @@ test.describe('Admins create, edit, and publish banners', () => {
     await page.goto('/');
     await userIsLoggedIn(page);
     await expect(page.getByTestId('site-banner-region')).toHaveCount(0);
-    await expect(page.getByRole('region', { name: 'Corrected maintenance notice' })).toHaveCount(0);
+    await expect(page.getByRole('article', { name: 'Corrected maintenance notice' })).toHaveCount(
+      0,
+    );
   });
 
   test('keeps editor state and shows a stable error when publication fails', async ({ page }) => {
@@ -993,10 +1025,10 @@ test.describe('Admins schedule banners through their lifecycle', () => {
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await page.getByRole('tab', { name: 'Expired' }).click();
-    await row.getByRole('button', { name: 'Details' }).click();
-    await row.getByRole('button', { name: 'Restore banner' }).click();
+    await row.getByRole('button', { name: /^Details for / }).click();
+    await row.getByRole('button', { name: /^Restore banner for / }).click();
     const restoreForm = page.getByTestId('banner-editor-form');
-    await expect(page.getByRole('heading', { name: 'Restore banner' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Restore banner', exact: true })).toBeVisible();
     await expect(restoreForm.getByLabel('Start')).toHaveValue('');
     await expect(restoreForm.getByLabel('End')).toHaveValue('');
     await expect(restoreForm.getByRole('button', { name: 'Save for later' })).toHaveCount(0);
@@ -1005,7 +1037,7 @@ test.describe('Admins schedule banners through their lifecycle', () => {
 
     const restoredRow = page.locator('[data-banner-row="99999999-9999-9999-9999-999999999999"]');
     await expect(restoredRow).toContainText('Active');
-    await expect(restoredRow.getByRole('button', { name: 'Details' })).toHaveAttribute(
+    await expect(restoredRow.getByRole('button', { name: /^Details for / })).toHaveAttribute(
       'aria-expanded',
       'true',
     );

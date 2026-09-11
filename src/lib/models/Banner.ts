@@ -101,4 +101,4 @@ export interface ArchivedBanner {
   archivedBy: string;
 }
 
-export type ManagementRecord = ManagedBanner & { excerpt: string };
+export type ManagementRecord = ManagedBanner & { excerpt: string; plainText: string };

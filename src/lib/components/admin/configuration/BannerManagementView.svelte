@@ -124,6 +124,7 @@
   });
 
   function createBanner() {
+    if (savingOrder) return;
     if (orderGuard.intercept({ kind: 'create' })) return;
     openCreateEditor();
   }
@@ -134,6 +135,7 @@
   }
 
   function editBanner(banner: ManagedBanner) {
+    if (savingOrder) return;
     if (orderGuard.intercept({ kind: 'edit', banner })) return;
     openEditor(banner);
   }
@@ -202,7 +204,7 @@
   }
 
   async function disable(uuid: string) {
-    if (disablingUuid) return;
+    if (savingOrder || disablingUuid) return;
     disablingUuid = uuid;
     try {
       const disabled = await disableBanner(uuid);
@@ -220,7 +222,7 @@
   }
 
   async function archive(uuid: string) {
-    if (archivingUuid) return;
+    if (savingOrder || archivingUuid) return;
     archivingUuid = uuid;
     try {
       const archived = await archiveBanner(uuid);
@@ -303,6 +305,7 @@
   }
 
   async function saveOrder() {
+    if (savingOrder || disablingUuid || archivingUuid) return;
     savingOrder = true;
     try {
       const authoritative = await reorderBanners(orderUuids);
@@ -362,7 +365,12 @@
         <h2 id="site-banners-title" class="m-0">Site banners</h2>
         <p class="m-0">Create and manage announcements across PIC-SURE.</p>
       </div>
-      <button type="button" class="btn preset-filled-primary-500" onclick={createBanner}>
+      <button
+        type="button"
+        class="btn preset-filled-primary-500"
+        disabled={savingOrder}
+        onclick={createBanner}
+      >
         + Create banner
       </button>
     </header>
@@ -406,7 +414,7 @@
             <button
               type="button"
               class="btn preset-filled-primary-500"
-              disabled={savingOrder}
+              disabled={savingOrder || disablingUuid !== null || archivingUuid !== null}
               onclick={saveOrder}
             >
               {savingOrder ? 'Saving order...' : 'Save order'}
@@ -488,7 +496,9 @@
                     : null}
                   index={orderUuids.indexOf(banner.uuid)}
                   activeId={activeDragUuid}
-                  busy={archivingUuid === banner.uuid || disablingUuid === banner.uuid}
+                  busy={savingOrder ||
+                    archivingUuid === banner.uuid ||
+                    disablingUuid === banner.uuid}
                   disableDisabled={disablingUuid !== null}
                   restoreDisabled={savingOrder}
                   archiveDisabled={archivingUuid !== null}

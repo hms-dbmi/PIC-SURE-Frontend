@@ -1,5 +1,6 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
+  import { onDestroy } from 'svelte';
   import { createLog, log } from '$lib/logger';
   import type { ActiveBanner, BannerAudience } from '$lib/models/Banner';
   import { BANNER_APPEARANCES, BANNER_AUDIENCES, BANNER_ICONS } from '$lib/models/Banner';
@@ -24,6 +25,8 @@
 
   let banners: ActiveBanner[] = $state([]);
   let pathname = $state('/');
+  let refreshRevision = 0;
+
   let dismissals: BannerDismissals = $state(readBannerDismissals());
 
   // Public routes do not hydrate the user store, so use token validity for audience filtering.
@@ -77,6 +80,7 @@
 
   async function refreshBanners(currentPathname: string): Promise<void> {
     pathname = currentPathname;
+    const revision = ++refreshRevision;
     try {
       // Deliberately bypasses $lib/api: the feed renders on the public login layout, where
       // api.ts would throw SvelteKit error() on a feed failure, log the visitor out on a
@@ -88,6 +92,7 @@
       if (!response.ok) throw new Error(`Banner feed returned HTTP ${response.status}`);
 
       const feed: unknown = await response.json();
+      if (revision !== refreshRevision) return;
       if (!Array.isArray(feed)) throw new Error('Banner feed returned an invalid response');
 
       const validRecords = feed.map(normalizeBannerFeedRecord).filter((record) => record !== null);
@@ -103,6 +108,7 @@
         );
       }
     } catch (error) {
+      if (revision !== refreshRevision) return;
       banners = [];
       log(
         createLog('ERROR', 'banner.feed_failed', undefined, {
@@ -112,15 +118,23 @@
     }
   }
 
+  onDestroy(() => {
+    refreshRevision += 1;
+  });
+
   afterNavigate((navigation) =>
     refreshBanners(navigation?.to?.url.pathname ?? window.location.pathname),
   );
 </script>
 
 {#if visibleBanners.length > 0}
-  <div class="w-full flex-none" data-testid="site-banner-region">
+  <section
+    class="w-full flex-none"
+    aria-label="Site announcements"
+    data-testid="site-banner-region"
+  >
     {#each visibleBanners as banner (banner.uuid)}
       <SiteBanner {banner} ondismiss={() => dismissBanner(banner)} />
     {/each}
-  </div>
+  </section>
 {/if}
