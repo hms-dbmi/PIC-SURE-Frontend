@@ -17,9 +17,12 @@
     disabled?: boolean;
     class?: string;
     triggerBase?: string;
+    triggerTitle?: string;
     'data-testid'?: string;
+    'data-key'?: string;
     onclose?: () => void;
     onconfirm?: () => void;
+    ontrigger?: () => void;
     children: Snippet;
     trigger?: Snippet;
   }
@@ -39,9 +42,12 @@
     disabled = false,
     class: className = '',
     triggerBase = '',
+    triggerTitle,
     'data-testid': testid = '',
+    'data-key': dataKey,
     onclose = () => {},
     onconfirm,
+    ontrigger = () => {},
     children,
     trigger,
   }: Props = $props();
@@ -66,10 +72,13 @@
     <button
       type="button"
       data-testid="{testid}-btn"
+      title={triggerTitle}
+      data-key={dataKey}
       onclick={(e) => {
         e.stopPropagation();
         e.preventDefault();
         modalOpen = true;
+        ontrigger();
       }}
       {disabled}
       class={triggerBase}

@@ -1,8 +1,13 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
+
   import Loading from './Loading.svelte';
   import { log, createLog, getPageContext } from '$lib/logger';
 
+  const SEARCH_DEBOUNCE_MS = 250;
+
   let searchInput: string = $state('');
+  let searchTimeout: ReturnType<typeof setTimeout> | undefined;
 
   interface Props {
     unselectedOptions?: string[];
@@ -60,9 +65,14 @@
   }
 
   function onSearch() {
-    onscroll(searchInput);
-    unselectedOptionsContainer.scrollTop = 0;
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      onscroll(searchInput);
+      unselectedOptionsContainer.scrollTop = 0;
+    }, SEARCH_DEBOUNCE_MS);
   }
+
+  onDestroy(() => clearTimeout(searchTimeout));
 
   function onSelect(option: string) {
     return (event: Event) => {
@@ -76,7 +86,10 @@
     return (event: Event) => {
       event.preventDefault();
       selectedOptions = selectedOptions.filter((o) => o !== option);
-      unselectedOptions = [option, ...unselectedOptions];
+
+      if (!unselectedOptions.includes(option)) {
+        unselectedOptions = [option, ...unselectedOptions];
+      }
     };
   }
 

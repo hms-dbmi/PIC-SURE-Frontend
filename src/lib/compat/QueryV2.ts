@@ -241,11 +241,10 @@ function anyRecordOfGroup(conceptPaths: string[]): PhenotypicClause | null {
   };
 }
 
-export function queryV2ToV3(query: QueryV2, excludedConceptPaths: string[] = []): QueryV3 {
+export function queryV2ToV3(query: QueryV2): QueryV3 {
   const clauses: PhenotypicClause[] = [];
 
   for (const [conceptPath, values] of Object.entries(query.categoryFilters)) {
-    if (excludedConceptPaths.includes(conceptPath)) continue;
     clauses.push({
       type: 'PhenotypicFilter',
       phenotypicFilterType: 'FILTER',
@@ -256,7 +255,6 @@ export function queryV2ToV3(query: QueryV2, excludedConceptPaths: string[] = [])
   }
 
   for (const [conceptPath, range] of Object.entries(query.numericFilters)) {
-    if (excludedConceptPaths.includes(conceptPath)) continue;
     clauses.push({
       type: 'PhenotypicFilter',
       phenotypicFilterType: 'FILTER',
@@ -268,7 +266,6 @@ export function queryV2ToV3(query: QueryV2, excludedConceptPaths: string[] = [])
   }
 
   for (const conceptPath of query.requiredFields) {
-    if (excludedConceptPaths.includes(conceptPath)) continue;
     clauses.push({
       type: 'PhenotypicFilter',
       phenotypicFilterType: 'REQUIRED',
@@ -279,9 +276,7 @@ export function queryV2ToV3(query: QueryV2, excludedConceptPaths: string[] = [])
 
   const legacyAnyRecordOfGroups = [query.anyRecordOf, ...query.anyRecordOfMulti];
   for (const group of legacyAnyRecordOfGroups) {
-    const convertedGroup = anyRecordOfGroup(
-      group.filter((conceptPath) => !excludedConceptPaths.includes(conceptPath)),
-    );
+    const convertedGroup = anyRecordOfGroup(group);
     if (convertedGroup) clauses.push(convertedGroup);
   }
 
@@ -315,9 +310,7 @@ export function queryV2ToV3(query: QueryV2, excludedConceptPaths: string[] = [])
     };
   }
 
-  const select = [...new Set([...query.fields, ...query.crossCountFields])].filter(
-    (conceptPath) => !excludedConceptPaths.includes(conceptPath),
-  );
+  const select = [...new Set([...query.fields, ...query.crossCountFields])];
 
   return new QueryV3({
     select,

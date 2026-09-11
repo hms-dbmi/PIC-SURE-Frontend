@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { css } from '$lib/utilities/style';
+
   let {
     className = '',
     numFacets = 3,
@@ -38,7 +40,7 @@
         <div
           data-testid="facet-placeholder-item-{i}"
           class="flex items-center space-x-3"
-          style="opacity: {opacity}"
+          {@attach css({ opacity })}
         >
           <div class="placeholder size-4 animate-pulse rounded-sm"></div>
           <div
@@ -54,7 +56,7 @@
       <div
         data-testid="facet-placeholder-show-more-button"
         class="flex justify-center mt-3"
-        style="opacity: {fadeEffect ? 0.1 : 1}"
+        {@attach css({ opacity: fadeEffect ? 0.1 : 1 })}
       >
         <div class="placeholder h-8 w-24 animate-pulse rounded-full"></div>
       </div>

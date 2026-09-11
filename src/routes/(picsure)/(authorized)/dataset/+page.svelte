@@ -52,6 +52,7 @@
       title="Active Datasets"
       data={$active}
       {rowClickHandler}
+      rowClickKeys={['v']}
       {columns}
       {cellOverides}
     />
@@ -63,6 +64,7 @@
         title="Deleted Datasets"
         data={$archived}
         {rowClickHandler}
+        rowClickKeys={['v']}
         {columns}
         {cellOverides}
       />

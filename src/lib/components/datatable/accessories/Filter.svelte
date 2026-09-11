@@ -25,7 +25,7 @@
   };
 </script>
 
-<th class={className}>
+<th scope="col" class={className}>
   <input
     type="text"
     class="input text-sm w-full"

@@ -83,6 +83,10 @@
       );
     } catch (error) {
       console.error('Error in onCompleteHandler', error);
+      const consentMessage = api.consentDeniedMessage(error);
+      if (consentMessage) {
+        toaster.error({ title: consentMessage, closable: true });
+      }
       log(
         createLog(
           'DOWNLOAD',

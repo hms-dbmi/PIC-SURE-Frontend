@@ -106,6 +106,88 @@ test.describe('Explorer for authenticated users', () => {
     // Then
     await expect(page.locator('table')).toBeVisible();
   });
+  test('Scrolls to the top of the search results only when changing pages', async ({ page }) => {
+    const pageOneResults = {
+      ...mockData,
+      totalPages: 2,
+      totalElements: 200,
+      numberOfElements: 100,
+      number: 0,
+      first: true,
+      last: false,
+      size: 100,
+      pageable: {
+        ...mockData.pageable,
+        pageSize: 100,
+      },
+      content: Array.from({ length: 100 }, (_, index) => ({
+        ...mockData.content[index % mockData.content.length],
+        conceptPath: `\\test\\page-one-result-${index}\\`,
+        name: `page-one-result-${index}`,
+      })),
+    };
+    const pageTwoResults = {
+      ...pageOneResults,
+      number: 1,
+      first: false,
+      last: true,
+      pageable: {
+        ...pageOneResults.pageable,
+        pageNumber: 1,
+        offset: 100,
+      },
+      content: Array.from({ length: 100 }, (_, index) => ({
+        ...mockData.content[index % mockData.content.length],
+        conceptPath: `\\test\\page-two-result-${index}\\`,
+        name: `page-two-result-${index}`,
+      })),
+    };
+    await page.route(
+      searchResultPath.replace('page_size=10', 'page_size=100'),
+      async (route: Route) => route.fulfill({ json: pageOneResults }),
+    );
+    await page.route(
+      searchResultPath.replace('page_number=0&page_size=10', 'page_number=1&page_size=100'),
+      async (route: Route) => route.fulfill({ json: pageTwoResults }),
+    );
+    await page.goto('/explorer?search=sex');
+    await userIsLoggedIn(page);
+
+    await page.getByLabel('Rows per page').selectOption('100');
+    await expect(
+      page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]'),
+    ).toHaveCount(100);
+    const scrollContainer = page.locator('#page');
+    await scrollContainer.evaluate((element) => element.scrollTo(0, element.scrollHeight));
+    expect(await scrollContainer.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
+    await page.getByLabel('Next', { exact: true }).click();
+    await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByText('page-two-result-0', { exact: true })).toBeVisible();
+    await expect
+      .poll(() =>
+        page.locator('#ExplorerTable-table').evaluate((table) => {
+          const container = document.querySelector('#page');
+          return Math.abs(
+            table.getBoundingClientRect().top - (container?.getBoundingClientRect().top ?? 0),
+          );
+        }),
+      )
+      .toBeLessThan(2);
+
+    const currentPageButton = page.getByLabel('Page 2');
+    await currentPageButton.scrollIntoViewIfNeeded();
+    const currentPageScroll = await currentPageButton.evaluate((button) => {
+      const container = document.querySelector('#page');
+      if (!container) throw new Error('Page scroll container not found');
+
+      const before = container.scrollTop;
+      (button as HTMLButtonElement).click();
+      return { before, after: container.scrollTop };
+    });
+    expect(currentPageScroll.before).toBeGreaterThan(0);
+    expect(currentPageScroll.after).toBe(currentPageScroll.before);
+  });
   test('Error message on api error', async ({ page }) => {
     // Given
     await mockApiFail(page, searchResultPath, 'accessdenied');
@@ -123,6 +205,64 @@ test.describe('Explorer for authenticated users', () => {
         async (route: Route) => route.fulfill({ json: detailResponseCat }),
       );
     });
+    test.describe('Keyboard navigation', () => {
+      test('Enter expands the info panel and Escape closes it', async ({ page }) => {
+        // Given
+        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
+
+        // When
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        await expect(firstRow).toBeVisible();
+        await firstRow.focus();
+        await page.keyboard.press('Enter');
+
+        // Then
+        const infoPanel = tableBody
+          .locator('tr.expandable-row')
+          .first()
+          .getByTestId('variable-info');
+        await expect(infoPanel).toBeVisible();
+
+        // When
+        await page.keyboard.press('Escape');
+
+        // Then
+        await expect(infoPanel).not.toBeVisible();
+        await expect(firstRow).toBeFocused();
+      });
+      test('Arrow keys move row focus and "f" opens the filter panel', async ({ page }) => {
+        // Given
+        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
+
+        // When
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        await expect(firstRow).toBeVisible();
+        await firstRow.focus();
+        await page.keyboard.press('ArrowDown');
+
+        // Then
+        await expect(tableBody.locator('#ExplorerTable-row-1')).toBeFocused();
+
+        // When
+        await page.keyboard.press('ArrowUp');
+        await expect(tableBody.locator('#ExplorerTable-row-0')).toBeFocused();
+        await page.keyboard.press('f');
+
+        // Then
+        await expect(tableBody.locator('tr.expandable-row').first()).toBeVisible();
+        await expect(page.getByTestId('categoical-filter')).toBeVisible();
+      });
+    });
     test.describe('Info Actions', () => {
       test('Clicking a row opens info panel', async ({ page }) => {
         // Given
@@ -135,7 +275,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         await expect(firstRow).toBeVisible();
         await firstRow.click();
 
@@ -157,7 +297,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         const tableBody = page.locator('tbody');
         await expect(tableBody).toBeVisible();
-        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         await expect(firstRow).toBeVisible();
         await firstRow.click();
 
@@ -183,7 +323,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         const infoIcon = firstRow.locator('td').last().locator('button').first();
         await expect(infoIcon).toBeVisible();
         await infoIcon.click();
@@ -212,7 +352,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         const infoIcon = firstRow.locator('td').last().locator('button').first();
         await expect(infoIcon).toBeVisible();
         await infoIcon.click();
@@ -261,7 +401,7 @@ test.describe('Explorer for authenticated users', () => {
         await expect(filterPanel).toBeVisible();
         // Filtered to data rows, so the open expansion row between them - and the
         // spinner row during loading - cannot shift the index.
-        const secondDataRow = tableBody.locator('tr[id^="row-"]').nth(1);
+        const secondDataRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
         await expect(secondDataRow).toBeVisible();
         await secondDataRow.click();
         await page.waitForTimeout(1000);
@@ -503,7 +643,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await expect(exportButton).toBeVisible();
         const iconExport = exportButton.locator('i');
@@ -526,7 +666,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await exportButton.click();
 
@@ -546,7 +686,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await exportButton.click();
 
@@ -568,7 +708,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await exportButton.click();
         const removeButton = page
@@ -592,9 +732,9 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
-        const firstRow2 = tableBody.locator('tr[id^="row-"]').nth(1);
+        const firstRow2 = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
         const exportButton2 = firstRow2.locator('td').last().locator('button').last();
         await exportButton.click();
         await exportButton2.click();
@@ -619,9 +759,9 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.locator('tbody')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
-        const firstRow2 = tableBody.locator('tr[id^="row-"]').nth(1);
+        const firstRow2 = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
         const exportButton2 = firstRow2.locator('td').last().locator('button').last();
         await exportButton.click();
         await exportButton2.click();
@@ -655,7 +795,7 @@ test.describe('Explorer for authenticated users', () => {
         await userIsLoggedIn(page);
         // When
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
         await hierarchyButton.click();
       });
@@ -671,7 +811,7 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await expect(page.getByTestId('hierarchy-component')).toBeVisible();
         const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="row-"]').first();
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
         await hierarchyButton.click();
         // Then

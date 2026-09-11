@@ -248,7 +248,7 @@ describe('CONFIG_FIELD_SCHEMA - derived from CONFIG_FIELDS', () => {
       default: 1000000,
     });
     expect(byName('branding', 'DOTS_COLORS_CLASS')).toMatchObject({ type: 'json' });
-    expect(byName('branding', 'LOGO_ALT')).toMatchObject({ type: 'string', default: 'PIC-SURE' });
+    expect(byName('branding', 'LOGO_ALT')).toMatchObject({ type: 'string', default: '' });
     expect(CONFIG_FIELD_SCHEMA.branding).toHaveLength(4);
   });
 
@@ -335,6 +335,10 @@ describe('mapBranding', () => {
     const branding = mapBranding('', []);
     expect(branding.explorePage.codeBlocks.PythonAPI).not.toContain('{{PICSURE_NETWORK_URL}}');
   });
+  it('falls back to the application name when no logo alt is configured', () => {
+    const branding = mapBranding('', []);
+    expect(branding.logo.alt).toBe(branding.applicationName);
+  });
   it('env overrides config json', () => {
     import.meta.env.VITE_LOGO_ALT = 'SOME ALT VALUE';
     const branding = mapBranding('', []);
@@ -393,5 +397,29 @@ describe('mapSettings - exportSystemFields', () => {
   it('handles a single field', () => {
     const settings = mapSettings([apiRow('EXPORT_SYSTEM_FIELDS', 'patient_id')]);
     expect(settings.exportSystemFields).toEqual(['\\patient_id\\']);
+  });
+});
+
+describe('mapSettings - dataset.bypassConceptLookup', () => {
+  it('parses comma-separated fields into concept paths with slash wrappers', () => {
+    const settings = mapSettings([apiRow('DATASET_BYPASS_CONCEPT_LOOKUP', '_consents,patient_id')]);
+    expect(settings.dataset.bypassConceptLookup).toEqual(['\\_consents\\', '\\patient_id\\']);
+  });
+
+  it('returns empty array when no API row or env var is set', () => {
+    expect(mapSettings([]).dataset.bypassConceptLookup).toEqual([]);
+  });
+
+  it('returns empty array for an explicit empty string', () => {
+    expect(
+      mapSettings([apiRow('DATASET_BYPASS_CONCEPT_LOOKUP', '')]).dataset.bypassConceptLookup,
+    ).toEqual([]);
+  });
+
+  it('trims whitespace from field names', () => {
+    const settings = mapSettings([
+      apiRow('DATASET_BYPASS_CONCEPT_LOOKUP', ' patient_id , _consents '),
+    ]);
+    expect(settings.dataset.bypassConceptLookup).toEqual(['\\patient_id\\', '\\_consents\\']);
   });
 });

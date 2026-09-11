@@ -19,6 +19,7 @@ import {
   ACCESS_UNAVAILABLE_MESSAGE,
   accessUnavailable,
   clearSession,
+  ensureConsentsLoaded,
   getConsents,
   loadConsents,
   user,
@@ -177,6 +178,23 @@ describe('loadConsents', () => {
 
     expect(get(user).consents).toBeUndefined();
     vi.unstubAllGlobals();
+  });
+});
+
+describe('ensureConsentsLoaded', () => {
+  it('returns stored consents without fetching them again', async () => {
+    user.set({ consents });
+
+    await expect(ensureConsentsLoaded()).resolves.toEqual(consents);
+    expect(mockApi.get).not.toHaveBeenCalled();
+  });
+
+  it('fetches consents when they are not set', async () => {
+    user.set({});
+    mockApi.get.mockResolvedValue({ consents });
+
+    await expect(ensureConsentsLoaded()).resolves.toEqual(consents);
+    expect(mockApi.get).toHaveBeenCalledWith(Psama.User.Consents);
   });
 });
 

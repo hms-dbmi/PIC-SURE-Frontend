@@ -177,7 +177,7 @@
         export. Please reduce the data selection or the number of selected participants.
       </ErrorAlert>
     {:else if !loadingSampleIds}
-      <Datatable tableName="ExportSummary" data={activeRows} {columns} />
+      <Datatable tableName="ExportSummary" ariaLabel="Export summary" data={activeRows} {columns} />
       {#if config.features.explorer.enableSampleIdCheckbox}
         <div>
           <label for="sample-ids-checkbox" class="flex items-center" data-testid="sample-ids-label">

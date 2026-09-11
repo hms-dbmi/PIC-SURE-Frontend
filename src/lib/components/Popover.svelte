@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { css } from '$lib/utilities/style';
   import type { Snippet } from 'svelte';
   import {
     FloatingArrow,
@@ -32,6 +33,8 @@
     color?: string;
     size?: string;
     'data-testid'?: string;
+    'data-key'?: string;
+    triggerTitle?: string;
     trigger?: Snippet;
     children?: Snippet;
     onengage?: () => void;
@@ -49,6 +52,8 @@
     color = 'surface',
     size = 'text-sm',
     'data-testid': testid = '',
+    'data-key': dataKey,
+    triggerTitle,
     trigger,
     children,
     onengage = () => {},
@@ -118,6 +123,9 @@
   {...testid ? { 'data-testid': `${testid}-btn` } : {}}
   class="cursor-pointer {triggerStyle}"
   {...interactions.getReferenceProps({ onclick: onTriggerClick })}
+  title={triggerTitle}
+  aria-label={triggerTitle}
+  data-key={dataKey}
   disabled={triggerDisabled}
 >
   {@render trigger?.()}
@@ -127,7 +135,9 @@
     bind:this={floating.elements.floating}
     class="popover {size}"
     aria-label={title || 'Help popover'}
-    style="background-color: var(--color-{color}-100); opacity: 0.95;{floating.floatingStyles}"
+    {@attach css(
+      `background-color: var(--color-${color}-100); opacity: 0.95;${floating.floatingStyles}`,
+    )}
     {...interactions.getFloatingProps()}
     data-testid={testid}
     transition:fade={{ duration: 200 }}

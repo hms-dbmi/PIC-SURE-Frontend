@@ -32,7 +32,8 @@ export const Picsure = {
   QueryV3: `${HPDS_AUTH}/v3/query`,
   QueryV3Sync: `${HPDS_AUTH}/v3/query/sync`,
   Visualization: {
-    Distributions: `${VIZ}/distributions`,
+    Distributions: `${VIZ}/auth/distributions`,
+    DistributionsOpen: `${VIZ}/open/distributions`,
   },
 };
 

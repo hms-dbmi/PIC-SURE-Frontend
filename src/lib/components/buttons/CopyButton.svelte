@@ -1,5 +1,6 @@
 <script lang="ts">
   import Popover from '$lib/components/Popover.svelte';
+  import { log, createLog } from '$lib/logger';
 
   interface Props {
     itemToCopy: string;
@@ -9,8 +10,12 @@
     icon?: string;
     altIcon?: string;
     'data-testid'?: string;
+    'data-key'?: string;
+    triggerTitle?: string;
     class?: string;
-    oncopy?: () => void;
+    logAction?: string;
+    logEventType?: string;
+    logMetadata?: Record<string, unknown>;
   }
 
   const {
@@ -21,8 +26,12 @@
     icon = 'fa-regular fa-copy',
     altIcon = 'fa-regular fa-square-check',
     'data-testid': testid = '',
+    'data-key': dataKey,
+    triggerTitle,
     class: className = '',
-    oncopy = () => {},
+    logAction,
+    logEventType = 'ACTION',
+    logMetadata,
   }: Props = $props();
 
   let copied = $state(false);
@@ -40,12 +49,14 @@
     clearTimeout(resetTimer);
     resetTimer = setTimeout(() => (copied = false), 4500);
     copied = true;
-    oncopy();
+    if (logAction) log(createLog(logEventType, logAction, logMetadata));
   }
 </script>
 
 <Popover
   data-testid={testid || 'copy'}
+  data-key={dataKey}
+  {triggerTitle}
   triggerStyle="ml-4 {useIcon ? 'text-black-600 hover:text-primary-600' : 'btn'} {className}"
   onengage={updateButton}
   onTriggerClick={(e) => e.stopPropagation()}

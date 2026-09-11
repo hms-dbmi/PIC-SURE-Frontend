@@ -8,7 +8,7 @@ import {
   crossCountSyncResponseInital,
 } from '../../mock-data';
 
-const distributionsPath = '*/**/picsure/visualization/distributions';
+const distributionsPath = '*/**/picsure/visualization/open/distributions';
 const openCountResultPath = '*/**/picsure/hpds/open/v3/query/sync';
 
 // Visualization resource response in the {count, display, variance} wire shape:
@@ -54,6 +54,49 @@ const distributionsResponse = {
 test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
 test.describe('Discover distributions', () => {
+  test('public access renders exact distributions without authentication', async ({ page }) => {
+    await mockApiConfig(page, {
+      features: [
+        { name: 'OPEN', value: 'true' },
+        { name: 'OPEN_EXPLORER', value: 'true' },
+        { name: 'DISCOVER', value: 'true' },
+      ],
+    });
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', '9999');
+    await mockApiSuccess(page, distributionsPath, distributionsResponse);
+    await mockApiSuccess(page, '*/**/picsure/visualization/auth/distributions', {
+      categoricalData: [
+        {
+          ...distributionsResponse.categoricalData[0],
+          categoricalMap: { Other: { count: 7, display: '7', variance: null } },
+          obfuscated: false,
+        },
+      ],
+      continuousData: [
+        {
+          ...distributionsResponse.continuousData[0],
+          continuousMap: { '18.0 - 24.0': { count: 6, display: '6', variance: null } },
+          obfuscated: false,
+        },
+      ],
+    });
+    const requestPromise = page.waitForRequest(
+      (request) => request.url().includes('/visualization/') && request.method() === 'POST',
+    );
+    await page.goto('/discover/distributions');
+    const request = await requestPromise;
+    expect(request.url()).toContain('/visualization/auth/distributions');
+    expect(request.headers()).not.toHaveProperty('authorization');
+    await expect(page.locator('#plot-0')).toBeVisible();
+    await expect(page.locator('#plot-1')).toBeVisible();
+    await expect(page.locator('#plot-0')).toContainText('7');
+    await expect(page.locator('#plot-1')).toContainText('6');
+    await expect(page.locator('#visualizations')).not.toContainText('±');
+    await expect(page.locator('#visualizations')).not.toContainText('< 10');
+  });
+
   test('renders charts with backend-provided count, display, and variance', async ({ page }) => {
     // Given: the visualization endpoint returns the new wire shape
     // OPEN is required for unauthenticated access; DISCOVER keeps /discover/*

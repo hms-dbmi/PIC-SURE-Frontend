@@ -31,8 +31,9 @@
     bind:this={toggleButton}
     data-testid={`dataset-action-restore-${data.cell}`}
     type="button"
-    title="Restore"
-    aria-label="Restore"
+    title="Restore (r)"
+    aria-label="Restore (r)"
+    data-key="r"
     class="btn-icon-color"
     onclick={toggleArchive}
   >
@@ -43,8 +44,9 @@
     bind:this={toggleButton}
     data-testid={`dataset-action-archive-${data.cell}`}
     type="button"
-    title="Delete"
-    aria-label="Delete"
+    title="Delete (d)"
+    aria-label="Delete (d)"
+    data-key="d"
     class="btn-icon-color"
     onclick={toggleArchive}
   >
