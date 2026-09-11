@@ -1633,3 +1633,35 @@ describe('banner mutations and order refreshes', () => {
     expect(screen.getByRole('button', { name: 'Save order' })).toBeEnabled();
   });
 });
+
+it('announces the filtered result count, including no matches', async () => {
+  render(BannerManagementView);
+  await screen.findByText('System maintenance tonight');
+  const status = screen.getByRole('status', { name: 'Banner search results' });
+  await waitFor(() => expect(status).toHaveTextContent('1 banner in this section.'));
+  const search = screen.getByRole('searchbox', { name: 'Search banner text' });
+  await fireEvent.input(search, { target: { value: 'missing notice' } });
+  await waitFor(() => expect(status).toHaveTextContent('0 banners match this search.'));
+  await fireEvent.input(search, { target: { value: 'maintenance' } });
+  await waitFor(() => expect(status).toHaveTextContent('1 banner matches this search.'));
+});
+
+it('waits for typing to settle before announcing search results', async () => {
+  render(BannerManagementView);
+  const status = await screen.findByRole('status', { name: 'Banner search results' });
+  await waitFor(() => expect(status).toHaveTextContent('1 banner in this section.'));
+  const search = screen.getByRole('searchbox', { name: 'Search banner text' });
+  vi.useFakeTimers();
+  try {
+    await fireEvent.input(search, { target: { value: 'missing' } });
+    await vi.advanceTimersByTimeAsync(150);
+    expect(status).toHaveTextContent('1 banner in this section.');
+    await fireEvent.input(search, { target: { value: 'maintenance' } });
+    await vi.advanceTimersByTimeAsync(150);
+    expect(status).toHaveTextContent('1 banner in this section.');
+    await vi.advanceTimersByTimeAsync(100);
+    expect(status).toHaveTextContent('1 banner matches this search.');
+  } finally {
+    vi.useRealTimers();
+  }
+});

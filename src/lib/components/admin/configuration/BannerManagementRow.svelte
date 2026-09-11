@@ -11,6 +11,7 @@
 
   interface Props {
     banner: ManagementRecord;
+    actionLabel: string;
     open: boolean;
     ontoggle: () => void;
     onedit: () => void;
@@ -30,6 +31,7 @@
 
   let {
     banner,
+    actionLabel,
     open,
     ontoggle,
     onedit,
@@ -112,7 +114,7 @@
 </script>
 
 {#snippet bannerContext()}
-  <span class="sr-only">for {banner.excerpt}</span>
+  <span class="sr-only">for {actionLabel}</span>
 {/snippet}
 
 <div class="relative min-w-0" {@attach orderable && !isOverlay ? ref : noopAttachment}>
@@ -128,7 +130,7 @@
           <button
             type="button"
             class="cursor-grab rounded p-2 text-surface-600 active:cursor-grabbing focus-visible:ring-3 focus-visible:ring-primary-500 focus-visible:outline-none"
-            aria-label={`Reorder banner: ${banner.excerpt}`}
+            aria-label={`Reorder banner: ${actionLabel}`}
             aria-roledescription="sortable"
             title="Drag or use the keyboard to reorder"
             {@attach handleRef}

@@ -201,11 +201,18 @@ test.describe('Admins review and target published banners', () => {
     await page.getByRole('searchbox', { name: 'Search banner text' }).fill('Recovery instructions');
     const row = page.locator(`[data-banner-row="${longNotice.uuid}"]`);
     await expect(row).toBeVisible();
+    await expect(
+      page.getByRole('status').filter({ hasText: '1 banner matches this search.' }),
+    ).toBeVisible();
+    await expect(row.getByRole('button', { name: /^Details for / })).toHaveAccessibleName(
+      /^Details for .{1,54}$/u,
+    );
     await row.getByRole('button', { name: /^Details for / }).click();
     await row.getByRole('button', { name: /^Edit banner for / }).click();
     await page.getByText('Advanced options', { exact: true }).click();
     await page.getByRole('radio', { name: 'Specific pages', exact: true }).check();
     await page.getByRole('button', { name: 'Add page target' }).click();
+    await expect(page.getByRole('textbox', { name: 'Target 1 path' })).toBeFocused();
     await page.getByRole('textbox', { name: 'Target 1 path' }).fill('/help');
     const remove = page.getByRole('button', { name: 'Remove target 1' });
     await remove.focus();
@@ -685,6 +692,14 @@ test.describe('Admins create, edit, and publish banners', () => {
     const editor = bannerForm.locator('#banner-content-editor .ql-editor');
     await expect(editor).toHaveAttribute('aria-label', 'Banner content');
     await editor.fill('System maintenance status page');
+    await editor.press('ControlOrMeta+a');
+    await page.getByRole('button', { name: 'link' }).click();
+    await page.locator('.ql-tooltip input[data-link]').fill('http://example.org/status');
+    await page.locator('.ql-tooltip input[data-link]').press('Enter');
+    await expect(
+      bannerForm.getByText('An unsupported link was removed.', { exact: false }),
+    ).toBeVisible();
+    await expect(editor.locator('a[href]')).toHaveCount(0);
     await editor.press('ControlOrMeta+a');
     await page.getByRole('button', { name: 'link' }).click();
     await page.locator('.ql-tooltip input[data-link]').fill('https://example.org/status');
@@ -1195,12 +1210,23 @@ test.describe('Admins reorder banners to control display priority', () => {
     await page.getByRole('tab', { name: 'Access Control' }).click();
     await page.getByRole('tab', { name: 'Site banners' }).click();
     await expect(rows).toHaveCount(4);
-    await page.getByRole('button', { name: /Reorder banner: Third notice/ }).focus();
+    const keyboardHandle = page.getByRole('button', { name: /Reorder banner: Third notice/ });
+    await expect(keyboardHandle).toHaveAttribute('aria-describedby', /^dnd-kit-description-/);
+    await keyboardHandle.focus();
     await page.keyboard.press('Enter');
     await expect(page.getByTestId('banner-drop-preview')).toBeVisible();
+    await expect(page.locator('[id^="dnd-kit-announcement"]')).toContainText(
+      'Picked up Third notice.',
+    );
     for (let step = 0; step < 30; step += 1) await page.keyboard.press('ArrowUp');
+    await expect(page.locator('[id^="dnd-kit-announcement"]')).toContainText(
+      'Moved Third notice. Position 1 of 4.',
+    );
     await page.keyboard.press('Enter');
     await expect(rows.nth(0)).toContainText('Third notice');
+    await expect(page.locator('[id^="dnd-kit-announcement"]')).toContainText(
+      'Dropped Third notice. Position 1 of 4.',
+    );
     expect(reorderRequests).toBe(1);
 
     await page.getByRole('button', { name: 'Save order' }).click();
@@ -1216,5 +1242,41 @@ test.describe('Admins reorder banners to control display priority', () => {
           .evaluateAll((elements) => elements.map((element) => element.getAttribute('aria-label'))),
       )
       .toEqual(['Third notice', 'Second notice', 'First notice', 'Concurrent arrival']);
+  });
+});
+
+test.describe('Visitors dismiss announcements with the keyboard', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+  test('announces new notices and retains focus after each dismissal', async ({ page }) => {
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+    await page.route('**/picsure/operations/banners/active', (route) =>
+      route.fulfill({
+        json: [
+          { ...banner, title: null, htmlContent: '<p>Maintenance tonight</p>' },
+          {
+            ...banner,
+            uuid: '22222222-2222-2222-2222-222222222222',
+            title: null,
+            htmlContent: '<p>Maintenance tonight</p>',
+          },
+        ],
+      }),
+    );
+    await page.goto('/help');
+    await expect(
+      page.getByRole('status').filter({ hasText: '2 new or updated site announcements.' }),
+    ).toBeAttached();
+    const first = page.getByRole('button', {
+      name: 'Dismiss Site announcement 1: Maintenance tonight',
+    });
+    await first.focus();
+    await first.press('Enter');
+    const remaining = page.getByRole('button', {
+      name: 'Dismiss Site announcement 2: Maintenance tonight',
+    });
+    await expect(remaining).toBeFocused();
+    await remaining.press('Enter');
+    await expect(page.getByText('End of site announcements.', { exact: true })).toBeFocused();
+    await expect(page.getByTestId('site-banner')).toHaveCount(0);
   });
 });

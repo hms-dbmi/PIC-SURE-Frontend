@@ -15,8 +15,11 @@
   let fields = $state<HTMLFieldSetElement>();
   let addButton = $state<HTMLButtonElement>();
 
-  function addPageTarget() {
+  async function addPageTarget() {
+    const index = pageTargets.length;
     pageTargets = [...pageTargets, { kind: 'EXACT', path: '' }];
+    await tick();
+    fields?.querySelector<HTMLInputElement>(`#banner-page-target-${index}-path`)?.focus();
   }
 
   async function removePageTarget(index: number) {

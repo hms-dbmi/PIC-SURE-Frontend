@@ -1,8 +1,5 @@
 <script lang="ts">
-  /* eslint-disable @typescript-eslint/no-explicit-any -- dnd-kit events lack exported types */
   import { onDestroy, onMount, tick } from 'svelte';
-  import { elasticInOut } from 'svelte/easing';
-  import { scale } from 'svelte/transition';
   import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
   import BannerManagementRow from '$lib/components/admin/configuration/BannerManagementRow.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -17,6 +14,7 @@
   } from '$lib/services/BannerManagement';
   import {
     adoptCanonicalBannerOrder,
+    bannerActionLabels,
     broadBannerOverlapCount,
     initialBannerListState,
     lifecycleTabCounts,
@@ -28,6 +26,13 @@
     type BannerListState,
     type LifecycleTab,
   } from '$lib/services/BannerManagementList';
+  import {
+    Accessibility,
+    defaultPreset,
+    type DragStartEvent,
+    type DragOverEvent,
+    type DragEndEvent,
+  } from '@dnd-kit/dom';
   import FilterSearch from './FilterSearch.svelte';
   import { createUnsavedGuard } from '$lib/utilities/UnsavedGuard.svelte';
   import { toaster } from '$lib/toaster';
@@ -84,9 +89,53 @@
   let archivingUuid: string | null = $state(null);
   const orderGuard = createUnsavedGuard<OrderTransition>(() => mode === 'list' && orderDirty);
 
+  const actionLabels = $derived(bannerActionLabels(records));
+  function reorderDescription(uuid: string, position = orderUuids.indexOf(uuid) + 1): string {
+    return `${actionLabels.get(uuid) ?? 'banner'}. Position ${position} of ${orderUuids.length}.`;
+  }
+
+  function announceMove({ operation: { source, target } }: Parameters<DragOverEvent>[0]) {
+    if (!source || !target || source.id === target.id || String(target.id) === dragTargetUuid)
+      return;
+    const destination = orderUuids.indexOf(String(target.id));
+    if (destination < 0) return;
+    // The plugin runs before handleDragOver applies the destination to the working order.
+    return `Moved ${reorderDescription(String(source.id), destination + 1)}`;
+  }
+
+  const plugins = defaultPreset.plugins.map((plugin) =>
+    plugin === Accessibility
+      ? Accessibility.configure({
+          announcements: {
+            dragstart: ({ operation: { source } }: Parameters<DragStartEvent>[0]) =>
+              source ? `Picked up ${reorderDescription(String(source.id))}` : undefined,
+            dragover: announceMove,
+            dragend: ({ operation: { source }, canceled }: Parameters<DragEndEvent>[0]) =>
+              source
+                ? canceled
+                  ? `Reordering ${actionLabels.get(String(source.id)) ?? 'banner'} canceled.`
+                  : `Dropped ${reorderDescription(String(source.id))}`
+                : undefined,
+          },
+        })
+      : plugin,
+  );
+
   const counts = $derived(lifecycleTabCounts(records));
   const broadOverlapCount = $derived(broadBannerOverlapCount({ records, orderUuids }));
   const visibleRecords = $derived(visibleBannerRecords({ records, orderUuids }, activeTab, search));
+
+  let searchAnnouncement = $state('');
+  $effect(() => {
+    const query = search.trim();
+    const count = visibleRecords.length;
+    const timer = setTimeout(() => {
+      searchAnnouncement = `${count} ${count === 1 ? 'banner' : 'banners'} ${
+        query ? (count === 1 ? 'matches this search.' : 'match this search.') : 'in this section.'
+      }`;
+    }, 250);
+    return () => clearTimeout(timer);
+  });
 
   function applyList(next: BannerListState) {
     records = next.records;
@@ -275,7 +324,7 @@
     await reconcileSuccess(banner, editingBanner?.uuid ?? null, true);
   }
 
-  function handleDragStart(event: any) {
+  function handleDragStart(event: Parameters<DragStartEvent>[0]) {
     const source = event?.operation?.source;
     if (!source || savingOrder || activeTab !== 'orderable' || search.trim()) return;
     activeDragUuid = String(source.id);
@@ -283,7 +332,7 @@
     dragTargetUuid = activeDragUuid;
   }
 
-  function handleDragOver(event: any) {
+  function handleDragOver(event: Parameters<DragOverEvent>[0]) {
     if (savingOrder || !activeDragUuid) return;
     const targetUuid = event?.operation?.target?.id;
     if (!targetUuid || targetUuid === activeDragUuid || targetUuid === dragTargetUuid) return;
@@ -297,8 +346,8 @@
     dragTargetUuid = String(targetUuid);
   }
 
-  function handleDragEnd(event: any) {
-    if (event?.canceled ?? event?.operation?.canceled) orderUuids = dragStartOrder;
+  function handleDragEnd(event: Parameters<DragEndEvent>[0]) {
+    if (event.canceled) orderUuids = dragStartOrder;
     activeDragUuid = null;
     dragTargetUuid = null;
     dragStartOrder = [];
@@ -397,6 +446,7 @@
     {:else}
       <DragDropProvider
         {sensors}
+        {plugins}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -456,6 +506,10 @@
           bind:value={search}
         />
 
+        <p class="sr-only" role="status" aria-label="Banner search results" aria-atomic="true">
+          {searchAnnouncement}
+        </p>
+
         <div
           id="banner-management-panel"
           class="mt-5 grid min-w-0 gap-3"
@@ -472,15 +526,10 @@
                 data-banner-row={banner.uuid}
                 class="min-w-0"
                 class:banner-arrival={arrivalUuid === banner.uuid}
-                in:scale={{
-                  start: 0.97,
-                  opacity: 1,
-                  duration: arrivalUuid === banner.uuid ? 450 : 0,
-                  easing: elasticInOut,
-                }}
               >
                 <BannerManagementRow
                   {banner}
+                  actionLabel={actionLabels.get(banner.uuid)!}
                   open={openUuid === banner.uuid}
                   ontoggle={() => (openUuid = openUuid === banner.uuid ? null : banner.uuid)}
                   onedit={() => editBanner(banner)}
@@ -513,6 +562,7 @@
             {#if activeBanner}
               <BannerManagementRow
                 banner={activeBanner}
+                actionLabel={actionLabels.get(activeBanner.uuid)!}
                 open={false}
                 ontoggle={() => {}}
                 onedit={() => {}}

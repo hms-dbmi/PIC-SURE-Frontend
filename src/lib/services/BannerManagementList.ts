@@ -1,4 +1,9 @@
-import type { BannerLifecycle, ManagedBanner, ManagementRecord } from '$lib/models/Banner';
+import {
+  BANNER_LABEL_LENGTH,
+  type BannerLifecycle,
+  type ManagedBanner,
+  type ManagementRecord,
+} from '$lib/models/Banner';
 import { bannerPlainText } from '$lib/utilities/BannerHTML';
 import { isAllPagesBannerTarget } from '$lib/utilities/BannerPageTargets';
 import { truncate } from '$lib/utilities/Strings';
@@ -16,6 +21,27 @@ const MAX_EXCERPT_LENGTH = 160;
 export function presentBanner(banner: ManagedBanner): ManagementRecord {
   const plainText = bannerPlainText(banner.htmlContent);
   return { ...banner, plainText, excerpt: truncate(plainText, MAX_EXCERPT_LENGTH) };
+}
+
+export function bannerActionLabels(records: ManagementRecord[]): Map<string, string> {
+  const groups = new Map<string, string[]>();
+  for (const banner of records) {
+    const label = truncate(
+      banner.plainText || banner.title || 'Untitled banner',
+      BANNER_LABEL_LENGTH,
+    );
+    const uuids = groups.get(label) ?? [];
+    uuids.push(banner.uuid);
+    groups.set(label, uuids);
+  }
+  const labels = new Map<string, string>();
+  for (const [label, uuids] of groups) {
+    uuids.sort();
+    uuids.forEach((uuid, index) =>
+      labels.set(uuid, uuids.length > 1 ? `${label} (${index + 1})` : label),
+    );
+  }
+  return labels;
 }
 
 export function inLifecycleTab(lifecycle: BannerLifecycle, tab: LifecycleTab): boolean {

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 import Editor from '$lib/components/editor/Editor.svelte';
@@ -61,4 +61,16 @@ describe('Editor', () => {
     expect(container.querySelector('#banner-content-editor .ql-editor')).toBeInTheDocument();
     expect(container.querySelector('#editor')).not.toBeInTheDocument();
   });
+});
+
+it('reports sanitization only when content is edited', async () => {
+  const onsanitize = vi.fn();
+  render(Editor, { content: '<p>Original</p>', onsanitize });
+  const editor = await screen.findByRole('textbox', { name: 'Rich text editor' });
+  expect(onsanitize).not.toHaveBeenCalled();
+  editor.innerHTML = '<p>Notice<a href="javascript:alert(1)">More</a></p>';
+  await fireEvent.input(editor);
+  await waitFor(() => expect(onsanitize).toHaveBeenCalledOnce());
+  expect(onsanitize.mock.calls[0][0]).toContain('javascript:');
+  expect(onsanitize.mock.calls[0][1]).not.toContain('javascript:');
 });

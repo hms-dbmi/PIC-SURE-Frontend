@@ -129,6 +129,9 @@ describe('BannerScheduleFields', () => {
       expect(field).toHaveAccessibleDescription(
         `Choose a UTC offset for this ${name.toLowerCase()} time.`,
       );
+      expect(
+        screen.getByRole('combobox', { name: `${name} UTC offset` }),
+      ).toHaveAccessibleDescription(`Choose a UTC offset for this ${name.toLowerCase()} time.`);
     }
 
     await view.rerender({
@@ -149,6 +152,30 @@ describe('BannerScheduleFields', () => {
         screen.queryByText(`Choose a UTC offset for this ${name.toLowerCase()} time.`),
       ).not.toBeInTheDocument();
     }
+  });
+
+  it('describes invalid ordering from the selected end offset', () => {
+    render(BannerScheduleFields, {
+      props: {
+        ...props,
+        startLocal: '2026-11-01T01:45',
+        endLocal: '2026-11-01T01:30',
+        resolvedStart: '2026-11-01T06:45:00Z',
+        endChoice: '2026-11-01T06:30:00Z',
+        resolvedEnd: '2026-11-01T06:30:00Z',
+        endResolution: {
+          status: 'ambiguous',
+          options: [
+            { instant: '2026-11-01T05:30:00Z', offset: '-04:00' },
+            { instant: '2026-11-01T06:30:00Z', offset: '-05:00' },
+          ],
+        },
+      },
+    });
+
+    expect(screen.getByRole('combobox', { name: 'End UTC offset' })).toHaveAccessibleDescription(
+      /End must be after start\./,
+    );
   });
 
   it('keeps changing valid UTC hints outside the live error spans', async () => {

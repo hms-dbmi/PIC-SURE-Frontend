@@ -169,6 +169,24 @@
   let endChoice = $state(untrack(() => initialEndChoice));
   let working: 'save' | 'publish' | null = $state(null);
   let restoreValidationNow = $state(Date.now());
+  let linkFeedback = $state('');
+
+  function reportSanitizedLinks(originalHTML: string, sanitizedHTML: string) {
+    const parser = new DOMParser();
+    const originalLinks = parser
+      .parseFromString(originalHTML, 'text/html')
+      .querySelectorAll('a[href]').length;
+    const sanitizedLinks = parser
+      .parseFromString(sanitizedHTML, 'text/html')
+      .querySelectorAll('a[href]').length;
+    const removedLinks = originalLinks - sanitizedLinks;
+    const removal =
+      removedLinks === 1
+        ? 'An unsupported link was removed.'
+        : `${removedLinks} unsupported links were removed.`;
+    linkFeedback =
+      removedLinks > 0 ? `${removal} Use a relative path, an HTTPS link, or an email link.` : '';
+  }
 
   const sanitizedLength = $derived(sanitizeBannerHTML(htmlContent).length);
   const hasContent = $derived(hasBannerContent(htmlContent));
@@ -456,6 +474,7 @@
             id="banner-content-editor"
             basicToolbar
             sanitizer={sanitizeBannerHTML}
+            onsanitize={reportSanitizedLinks}
             convertQuillClasses={false}
             reconcileSanitizedDocument
             normalizeNonBreakingSpaces
@@ -468,6 +487,7 @@
           <p class="mt-1">
             Basic formatting, lists, relative links, HTTPS links, and email links are supported.
           </p>
+          <p aria-live="polite" aria-atomic="true">{linkFeedback}</p>
           <p>
             {sanitizedLength}/5,000 sanitized HTML characters.
             <span class="text-error-700" aria-live="polite">

@@ -791,3 +791,241 @@ describe('banner feed navigation races', () => {
     expect(screen.getByRole('region', { name: 'Site announcements' })).toBeInTheDocument();
   });
 });
+
+describe('public banner accessibility', () => {
+  const secondBanner = { ...banner, uuid: 'second', title: 'Service update' };
+
+  it('moves keyboard dismissal focus to the next control, then a persistent fallback', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner, secondBanner])));
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+
+    const first = screen.getByRole('button', { name: 'Dismiss Maintenance' });
+    first.focus();
+    await fireEvent.click(first, { detail: 0 });
+    const second = screen.getByRole('button', { name: 'Dismiss Service update' });
+    expect(second).toHaveFocus();
+
+    await fireEvent.click(second, { detail: 0 });
+    await waitFor(() => expect(screen.getByText('End of site announcements.')).toHaveFocus());
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
+  it('moves focus to the previous control when dismissing the final banner in the list', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner, secondBanner])));
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    const second = screen.getByRole('button', { name: 'Dismiss Service update' });
+    second.focus();
+    await fireEvent.click(second, { detail: 0 });
+    expect(screen.getByRole('button', { name: 'Dismiss Maintenance' })).toHaveFocus();
+  });
+
+  it.each([0, 1])(
+    'does not move unrelated focus when dismissal has click detail %s',
+    async (detail) => {
+      fetchMock.mockResolvedValue(new Response(JSON.stringify([banner, secondBanner])));
+      render(SiteBannerRegion);
+      await navigation.callback?.();
+      const other = screen.getAllByRole('link', { name: 'details' })[0];
+      const second = screen.getByRole('button', { name: 'Dismiss Service update' });
+      other.focus();
+      await fireEvent.click(second, { detail });
+      expect(other).toHaveFocus();
+    },
+  );
+
+  it('does not transfer focus after a pointer dismissal', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner, secondBanner])));
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    const first = screen.getByRole('button', { name: 'Dismiss Maintenance' });
+    first.focus();
+    await fireEvent.click(first, { detail: 1 });
+    expect(screen.getByRole('button', { name: 'Dismiss Service update' })).not.toHaveFocus();
+  });
+
+  it('does not reclaim focus moved by another handler before dismissal finishes', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner, secondBanner])));
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    const first = screen.getByRole('button', { name: 'Dismiss Maintenance' });
+    const other = screen.getByRole('button', { name: 'Dismiss Service update' });
+    first.focus();
+    first.addEventListener('click', () => other.focus());
+    await fireEvent.click(first, { detail: 0 });
+    expect(other).toHaveFocus();
+  });
+
+  it('does not focus a removed fallback when the region unmounts during dismissal', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner])));
+    const { container, unmount } = render(SiteBannerRegion);
+    await navigation.callback?.();
+    const button = screen.getByRole('button', { name: 'Dismiss Maintenance' });
+    const fallback = container.querySelector<HTMLParagraphElement>('[tabindex="-1"]')!;
+    const focus = vi.spyOn(fallback, 'focus');
+    button.focus();
+    const dismissing = fireEvent.click(button, { detail: 0 });
+    unmount();
+    await dismissing;
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it('announces new and changed visible banners without repeating an unchanged navigation or dismissal', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner])));
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify([banner])));
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify([{ ...banner, presentationHash: 'changed' }, secondBanner])),
+    );
+    render(SiteBannerRegion);
+    const status = screen.getByRole('status');
+    expect(status.textContent).toBe('');
+    await navigation.callback?.();
+    await waitFor(() =>
+      expect(status).toHaveTextContent('1 new or updated site announcement. Maintenance'),
+    );
+    const changes = vi.fn();
+    const observer = new MutationObserver(changes);
+    observer.observe(status, { childList: true, characterData: true, subtree: true });
+
+    await navigation.callback?.();
+    expect(changes).not.toHaveBeenCalled();
+    await navigation.callback?.();
+    await waitFor(() =>
+      expect(status).toHaveTextContent(
+        '2 new or updated site announcements. Maintenance. Service update',
+      ),
+    );
+    changes.mockClear();
+    await fireEvent.click(screen.getByRole('button', { name: 'Dismiss Maintenance' }));
+    expect(changes).not.toHaveBeenCalled();
+    observer.disconnect();
+  });
+
+  it('remembers announcements across route hide and return, while announcing a changed version', async () => {
+    const targeted = { ...banner, pageTargets: [{ kind: 'EXACT', path: '/help' }] };
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify([targeted])));
+    render(SiteBannerRegion);
+    const navigate = (path: string) =>
+      navigation.callback?.({ to: { url: new URL(`https://example.org${path}`) } });
+    await navigate('/help');
+    const status = screen.getByRole('status');
+    await waitFor(() => expect(status).toHaveTextContent('Maintenance'));
+    const changes = vi.fn();
+    const observer = new MutationObserver(changes);
+    observer.observe(status, { childList: true, characterData: true, subtree: true });
+
+    await navigate('/elsewhere');
+    expect(screen.queryByRole('article')).not.toBeInTheDocument();
+    await navigate('/help');
+    expect(screen.getByRole('article', { name: 'Maintenance' })).toBeInTheDocument();
+    expect(changes).not.toHaveBeenCalled();
+
+    fetchMock.mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify([
+            { ...targeted, presentationHash: 'revised', title: 'Revised maintenance' },
+          ]),
+        ),
+    );
+    await navigate('/help');
+    await waitFor(() => expect(status).toHaveTextContent('Revised maintenance'));
+    expect(changes).toHaveBeenCalled();
+    observer.disconnect();
+  });
+
+  it('leaves the persistent fallback empty on pages without banners', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([])));
+    const { container } = render(SiteBannerRegion);
+    const fallback = container.querySelector('[tabindex="-1"]');
+    expect(fallback?.textContent).toBe('');
+    await navigation.callback?.();
+    expect(fallback?.textContent).toBe('');
+    expect(screen.queryByText('End of site announcements.')).not.toBeInTheDocument();
+  });
+
+  it('clears the dismissal fallback message when focus leaves it', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify([banner])));
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    const button = screen.getByRole('button', { name: 'Dismiss Maintenance' });
+    button.focus();
+    await fireEvent.click(button, { detail: 0 });
+    const fallback = screen.getByText('End of site announcements.');
+    await waitFor(() => expect(fallback).toHaveFocus());
+    fallback.blur();
+    await waitFor(() => expect(fallback.textContent).toBe(''));
+  });
+
+  it('clears the dismissal fallback message on subsequent navigation', async () => {
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify([banner])));
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    const button = screen.getByRole('button', { name: 'Dismiss Maintenance' });
+    button.focus();
+    await fireEvent.click(button, { detail: 0 });
+    await waitFor(() => expect(screen.getByText('End of site announcements.')).toHaveFocus());
+    await navigation.callback?.({ to: { url: new URL('https://example.org/elsewhere') } });
+    expect(screen.queryByText('End of site announcements.')).not.toBeInTheDocument();
+  });
+
+  it('announces only visible audience and page targets', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          banner,
+          { ...secondBanner, audience: 'SIGNED_IN' },
+          {
+            ...secondBanner,
+            uuid: 'another-page',
+            pageTargets: [{ kind: 'EXACT', path: '/elsewhere' }],
+          },
+        ]),
+      ),
+    );
+    render(SiteBannerRegion);
+    await navigation.callback?.({ to: { url: new URL('https://example.org/help') } });
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        '1 new or updated site announcement. Maintenance',
+      ),
+    );
+    expect(screen.getByRole('status')).not.toHaveTextContent('Service update');
+  });
+
+  it('uses distinct short text names for untitled banners without script content', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(
+        JSON.stringify([
+          {
+            ...banner,
+            title: null,
+            htmlContent: '<p>Maintenance <strong>details</strong></p><script>secret</script>',
+          },
+          { ...secondBanner, title: null, htmlContent: '<p>Maintenance details</p>' },
+        ]),
+      ),
+    );
+    render(SiteBannerRegion);
+    await navigation.callback?.();
+    expect(
+      screen.getByRole('article', { name: 'Site announcement 1: Maintenance details' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('article', { name: 'Site announcement 2: Maintenance details' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Dismiss Site announcement 2: Maintenance details' }),
+    ).toBeInTheDocument();
+    await fireEvent.click(
+      screen.getByRole('button', { name: 'Dismiss Site announcement 1: Maintenance details' }),
+    );
+    expect(
+      screen.getByRole('article', { name: 'Site announcement 2: Maintenance details' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Dismiss Site announcement 2: Maintenance details' }),
+    ).toBeInTheDocument();
+  });
+});

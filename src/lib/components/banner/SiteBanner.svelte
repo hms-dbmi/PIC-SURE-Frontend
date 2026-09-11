@@ -1,14 +1,18 @@
 <script lang="ts">
   import type { BannerAppearance, BannerIcon, BannerPresentation } from '$lib/models/Banner';
+  import { BANNER_LABEL_LENGTH } from '$lib/models/Banner';
   import { sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
+  import { truncate } from '$lib/utilities/Strings';
 
   let {
     banner,
     ondismiss,
+    accessibleName,
     titleLevel = 2,
   }: {
     banner: BannerPresentation;
-    ondismiss?: () => void;
+    ondismiss?: (event: MouseEvent) => void;
+    accessibleName?: string;
     titleLevel?: 2 | 3;
   } = $props();
 
@@ -30,11 +34,14 @@
     ERROR: 'fa-circle-exclamation',
   };
 
-  const dismissLabel = $derived(`Dismiss ${banner.title || 'site announcement'}`);
+  const label = $derived(
+    accessibleName || truncate(banner.title || 'Site announcement', BANNER_LABEL_LENGTH),
+  );
+  const dismissLabel = $derived(`Dismiss ${label}`);
 </script>
 
 <article
-  aria-label={banner.title || 'Site announcement'}
+  aria-label={label}
   data-testid="site-banner"
   class="w-full border-b-4 px-4 py-1.5 {toneClasses[banner.appearance]}"
 >
@@ -61,6 +68,7 @@
     {#if banner.dismissible && ondismiss}
       <button
         type="button"
+        data-banner-dismiss
         class="site-banner-dismiss flex h-11 w-11 flex-none items-center justify-center rounded-full focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-current"
         aria-label={dismissLabel}
         title={dismissLabel}

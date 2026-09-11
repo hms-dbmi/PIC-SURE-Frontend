@@ -144,3 +144,17 @@ describe('SiteBanner', () => {
     expect(screen.queryByRole('button', { name: /Dismiss/ })).not.toBeInTheDocument();
   });
 });
+
+it('keeps long titles visible while shortening repeated accessible names', () => {
+  const title = 'Maintenance notice for all research participants and collaborating institutions';
+  render(SiteBanner, { banner: { ...banner, title }, ondismiss: vi.fn() });
+  expect(screen.getByRole('heading', { name: title })).toBeInTheDocument();
+  expect(
+    screen.getByRole('article', { name: 'Maintenance notice for all research participant…' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', {
+      name: 'Dismiss Maintenance notice for all research participant…',
+    }),
+  ).toBeInTheDocument();
+});

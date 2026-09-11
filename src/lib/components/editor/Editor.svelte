@@ -20,6 +20,7 @@
     normalizeNonBreakingSpaces = true,
     ariaLabel = 'Rich text editor',
     ariaDescribedBy,
+    onsanitize,
     id = 'editor',
   }: {
     content: string;
@@ -34,6 +35,7 @@
     normalizeNonBreakingSpaces?: boolean;
     ariaLabel?: string;
     ariaDescribedBy?: string;
+    onsanitize?: (originalHTML: string, sanitizedHTML: string) => void;
     id?: string;
   } = $props();
 
@@ -140,6 +142,7 @@
         const semanticContent = quill.getSemanticHTML();
         const convertedContent = convertClasses(semanticContent);
         let sanitizedContent = sanitizer(convertedContent);
+        onsanitize?.(convertedContent, sanitizedContent);
         if (
           reconcileSanitizedDocument &&
           canonicalHTML(sanitizedContent) !== canonicalHTML(convertedContent)
