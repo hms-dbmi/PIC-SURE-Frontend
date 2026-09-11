@@ -126,7 +126,7 @@ describe('BannerEditor', () => {
     expect(screen.getByRole('radio', { name: 'Specific pages' })).not.toBeChecked();
     expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('');
     expect(screen.getByRole('combobox', { name: 'Icon' })).toHaveValue('NONE');
-    expect(screen.getByRole('region', { name: 'Site announcement' })).toHaveClass(
+    expect(screen.getByRole('article', { name: 'Site announcement' })).toHaveClass(
       'preset-tonal-primary',
     );
     expect(
@@ -742,7 +742,14 @@ describe('BannerEditor', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Add page target' }));
 
     expect(screen.getByRole('textbox', { name: 'Target 1 path' })).toHaveValue('');
-    expect(screen.getByText('Enter an absolute path starting with /.')).toBeInTheDocument();
+    expect(screen.getByText('Enter an absolute path starting with /.')).toHaveAttribute(
+      'aria-live',
+      'polite',
+    );
+    expect(screen.getByRole('textbox', { name: 'Target 1 path' })).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
   });
 
   it('adopts authoritative target normalization before marking a saved edit clean', async () => {
@@ -788,6 +795,49 @@ describe('BannerEditor', () => {
     expect(screen.getByRole('textbox', { name: 'Target 1 path' })).toHaveValue('/admin');
     expect(screen.queryByRole('textbox', { name: 'Target 2 path' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled();
+  });
+
+  it.each([
+    [1, '/second'],
+    [2, '/third'],
+    [3, '/second'],
+  ])('keeps focus on a remaining path after removing target %i', async (number, path) => {
+    render(BannerEditor, {
+      props: {
+        banner: {
+          ...published,
+          pageTargets: ['/first', '/second', '/third'].map((path) => ({
+            kind: 'EXACT' as const,
+            path,
+          })),
+        },
+      },
+    });
+    const remove = screen.getByRole('button', { name: `Remove target ${number}` });
+    remove.focus();
+    await fireEvent.click(remove);
+
+    await waitFor(() => {
+      expect(document.activeElement).toHaveValue(path);
+      expect(document.activeElement).toHaveAttribute('type', 'text');
+    });
+  });
+
+  it('focuses Add page target after removing the final target', async () => {
+    render(BannerEditor, {
+      props: { banner: { ...published, pageTargets: [{ kind: 'EXACT', path: '/help' }] } },
+    });
+    const remove = screen.getByRole('button', { name: 'Remove target 1' });
+    remove.focus();
+    await fireEvent.click(remove);
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Add page target' })).toHaveFocus(),
+    );
+    expect(screen.getByText('Add at least one page target.').parentElement).toHaveAttribute(
+      'aria-live',
+      'polite',
+    );
   });
 
   it('asks before discarding a dirty editor through its cancel action', async () => {
@@ -893,7 +943,7 @@ describe('BannerEditor', () => {
     expect(editor.querySelector('p')?.textContent?.replaceAll('\u00a0', ' ')).toBe(
       'First sentence with  two spaces',
     );
-    const preview = screen.getByRole('region', { name: 'Site announcement' });
+    const preview = screen.getByRole('article', { name: 'Site announcement' });
     expect(preview.querySelectorAll('p')).toHaveLength(2);
     expect(preview.querySelector('p')?.textContent).toBe('First sentence with  two spaces');
   });
@@ -927,14 +977,14 @@ describe('BannerEditor', () => {
       expect(editor.querySelector('img')).not.toBeInTheDocument();
       expect(editor).toHaveTextContent('Visible headingSafe ql-align-center');
     });
-    const preview = screen.getByRole('region', { name: 'Site announcement' });
+    const preview = screen.getByRole('article', { name: 'Site announcement' });
     expect(preview).toHaveTextContent('Visible headingSafe ql-align-center');
     expect(preview).not.toHaveTextContent('text-center');
     expect(preview.querySelector('h1')).not.toBeInTheDocument();
     expect(preview.querySelector('img')).not.toBeInTheDocument();
   });
 
-  it('associates a non-live over-limit explanation with the editor', async () => {
+  it('announces the over-limit explanation without announcing every character count', async () => {
     const { container } = render(BannerEditor);
     const editor = await screen.findByRole('textbox', { name: 'Banner content' });
 
@@ -952,7 +1002,22 @@ describe('BannerEditor', () => {
     );
     expect(editor).toHaveAttribute('aria-describedby', 'banner-content-help');
     expect(contentHelp).not.toHaveAttribute('aria-live');
-    expect(overLimitExplanation).not.toHaveAttribute('aria-live');
+    expect(overLimitExplanation).toHaveAttribute('aria-live', 'polite');
     expect(screen.getByRole('button', { name: 'Publish now' })).toBeDisabled();
   });
+});
+
+it('blocks equal schedule instants when editing changes the timestamp serialization', async () => {
+  render(BannerEditor, {
+    banner: {
+      ...published,
+      startAt: '2026-09-10T12:00:00Z',
+      endAt: '2026-09-10T13:00:00Z',
+    },
+  });
+  const end = screen.getByLabelText('End') as HTMLInputElement;
+  await fireEvent.input(screen.getByLabelText('Start'), { target: { value: end.value } });
+  expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+  expect(screen.getByText('End must be after start.')).toBeInTheDocument();
+  expect(updatePublishedBanner).not.toHaveBeenCalled();
 });

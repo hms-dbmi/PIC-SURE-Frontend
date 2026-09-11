@@ -139,12 +139,37 @@ async function drag(sourceId: string, targetId: string) {
 
 async function openDetailsFor(text: string) {
   const row = (await screen.findByText(text)).closest('article');
-  const details = within(row as HTMLElement).getByRole('button', { name: 'Details' });
+  const details = within(row as HTMLElement).getByRole('button', { name: /^Details for / });
   await fireEvent.click(details);
   return row as HTMLElement;
 }
 
 describe('BannerManagementView', () => {
+  it('identifies the banner in each row action accessible name', async () => {
+    render(BannerManagementView);
+    const row = await openDetailsFor('System maintenance tonight');
+
+    for (const action of ['Details', 'Edit banner', 'Disable banner']) {
+      expect(
+        within(row).getByRole('button', { name: `${action} for System maintenance tonight` }),
+      ).toBeInTheDocument();
+    }
+
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    const savedRow = await openDetailsFor('Reusable enrollment notice');
+    expect(
+      within(savedRow).getByRole('button', {
+        name: 'Archive banner for Reusable enrollment notice',
+      }),
+    ).toBeInTheDocument();
+
+    await fireEvent.click(screen.getByRole('tab', { name: /Expired/ }));
+    const expiredRow = await openDetailsFor('Past outage');
+    expect(
+      within(expiredRow).getByRole('button', { name: 'Restore banner for Past outage' }),
+    ).toBeInTheDocument();
+  });
+
   it('moves locally through the provider seam and reconciles only on save', async () => {
     vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, ...records.slice(1)]);
     vi.mocked(reorderBanners).mockResolvedValue([
@@ -219,13 +244,14 @@ describe('BannerManagementView', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
 
     await waitFor(() => expect(getManagedBanners).toHaveBeenCalledTimes(2));
-    expect(bannerRowOrder()).toEqual([scheduled.uuid, arrival.uuid, base.uuid]);
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, arrival.uuid]);
+    expect(screen.queryByText('System maintenance tonight')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save order' })).not.toBeInTheDocument();
     expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner order saved' });
     expect(toaster.error).not.toHaveBeenCalled();
   });
 
-  it('retains a departed management record outside the canonical queue when refresh fails', async () => {
+  it('removes a departed management record when the canonical queue refresh fails', async () => {
     const departed = {
       ...base,
       uuid: '66666666-6666-6666-6666-666666666666',
@@ -247,11 +273,8 @@ describe('BannerManagementView', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
 
     await waitFor(() => expect(toaster.success).toHaveBeenCalledOnce());
-    expect(bannerRowOrder()).toEqual([scheduled.uuid, base.uuid, departed.uuid]);
-    const departedRow = screen.getByText('Departed notice').closest('article')!;
-    expect(
-      within(departedRow).queryByRole('button', { name: /Reorder banner/ }),
-    ).not.toBeInTheDocument();
+    expect(bannerRowOrder()).toEqual([scheduled.uuid, base.uuid]);
+    expect(screen.queryByText('Departed notice')).not.toBeInTheDocument();
   });
 
   it('keeps saving visible and disables dragging through reorder and refresh', async () => {
@@ -363,8 +386,8 @@ describe('BannerManagementView', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Keep ordering' }));
 
     const row = document.querySelector<HTMLElement>(`[data-banner-row="${base.uuid}"]`)!;
-    await fireEvent.click(within(row).getByRole('button', { name: 'Details' }));
-    await fireEvent.click(within(row).getByRole('button', { name: 'Edit banner' }));
+    await fireEvent.click(within(row).getByRole('button', { name: /^Details for / }));
+    await fireEvent.click(within(row).getByRole('button', { name: /^Edit banner for / }));
     expect(
       screen.queryByRole('heading', { name: 'Edit published banner' }),
     ).not.toBeInTheDocument();
@@ -401,8 +424,8 @@ describe('BannerManagementView', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await drag(base.uuid, scheduled.uuid);
     const row = document.querySelector<HTMLElement>(`[data-banner-row="${base.uuid}"]`)!;
-    await fireEvent.click(within(row).getByRole('button', { name: 'Details' }));
-    await fireEvent.click(within(row).getByRole('button', { name: 'Edit banner' }));
+    await fireEvent.click(within(row).getByRole('button', { name: /^Details for / }));
+    await fireEvent.click(within(row).getByRole('button', { name: /^Edit banner for / }));
     await fireEvent.click(screen.getByRole('button', { name: 'Discard order changes' }));
     expect(screen.getByRole('heading', { name: 'Edit published banner' })).toBeInTheDocument();
   });
@@ -487,8 +510,8 @@ describe('BannerManagementView', () => {
     await screen.findByText('System maintenance tonight');
 
     const baseRow = document.querySelector<HTMLElement>(`[data-banner-row="${base.uuid}"]`)!;
-    await fireEvent.click(within(baseRow).getByRole('button', { name: 'Details' }));
-    await fireEvent.click(within(baseRow).getByRole('button', { name: 'Edit banner' }));
+    await fireEvent.click(within(baseRow).getByRole('button', { name: /^Details for / }));
+    await fireEvent.click(within(baseRow).getByRole('button', { name: /^Edit banner for / }));
     await fireEvent.input(screen.getByRole('textbox', { name: 'Title' }), {
       target: { value: 'Edited title' },
     });
@@ -540,8 +563,10 @@ describe('BannerManagementView', () => {
     const scheduledRow = document.querySelector<HTMLElement>(
       `[data-banner-row="${scheduled.uuid}"]`,
     )!;
-    await fireEvent.click(within(scheduledRow).getByRole('button', { name: 'Details' }));
-    await fireEvent.click(within(scheduledRow).getByRole('button', { name: 'Disable banner' }));
+    await fireEvent.click(within(scheduledRow).getByRole('button', { name: /^Details for / }));
+    await fireEvent.click(
+      within(scheduledRow).getByRole('button', { name: /^Disable banner for / }),
+    );
     await fireEvent.click(
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
     );
@@ -628,7 +653,7 @@ describe('BannerManagementView', () => {
     ]);
     render(BannerManagementView);
 
-    const details = await screen.findAllByRole('button', { name: 'Details' });
+    const details = await screen.findAllByRole('button', { name: /^Details for / });
     expect(details[0]).toHaveAttribute('aria-controls', `banner-${base.uuid}-details`);
     expect(details[0]).toHaveAttribute('aria-expanded', 'false');
 
@@ -648,8 +673,8 @@ describe('BannerManagementView', () => {
 
   it('keeps published editing reachable from the management list', async () => {
     render(BannerManagementView);
-    await fireEvent.click(await screen.findByRole('button', { name: 'Details' }));
-    await fireEvent.click(screen.getByRole('button', { name: 'Edit banner' }));
+    await fireEvent.click(await screen.findByRole('button', { name: /^Details for / }));
+    await fireEvent.click(screen.getByRole('button', { name: /^Edit banner for / }));
 
     expect(screen.getByRole('heading', { name: 'Edit published banner' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
@@ -671,19 +696,27 @@ describe('BannerManagementView', () => {
 
     for (const unavailable of ['System maintenance tonight', 'Scheduled enrollment notice']) {
       const row = await openDetailsFor(unavailable);
-      expect(within(row).queryByRole('button', { name: 'Restore banner' })).not.toBeInTheDocument();
+      expect(
+        within(row).queryByRole('button', { name: /^Restore banner for / }),
+      ).not.toBeInTheDocument();
     }
     await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
     const savedRow = await openDetailsFor('Reusable enrollment notice');
     expect(
-      within(savedRow).queryByRole('button', { name: 'Restore banner' }),
+      within(savedRow).queryByRole('button', { name: /^Restore banner for / }),
     ).not.toBeInTheDocument();
     const disabledRow = await openDetailsFor('Previously disabled');
-    expect(within(disabledRow).getByRole('button', { name: 'Restore banner' })).toBeInTheDocument();
+    expect(
+      within(disabledRow).getByRole('button', { name: /^Restore banner for / }),
+    ).toBeInTheDocument();
     await fireEvent.click(screen.getByRole('tab', { name: /Expired/ }));
     const expiredRow = await openDetailsFor('Past outage');
-    expect(within(expiredRow).getByRole('button', { name: 'Restore banner' })).toBeInTheDocument();
-    expect(within(expiredRow).getByRole('button', { name: 'Edit banner' })).toBeInTheDocument();
+    expect(
+      within(expiredRow).getByRole('button', { name: /^Restore banner for / }),
+    ).toBeInTheDocument();
+    expect(
+      within(expiredRow).getByRole('button', { name: /^Edit banner for / }),
+    ).toBeInTheDocument();
   });
 
   it('withholds restore until a pending order save and its refresh settle', async () => {
@@ -735,7 +768,7 @@ describe('BannerManagementView', () => {
       'aria-selected',
       'true',
     );
-    expect(screen.queryByRole('button', { name: 'Restore banner' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Restore banner for / })).not.toBeInTheDocument();
     await fireEvent.click(screen.getByRole('button', { name: 'Keep ordering' }));
 
     resolveReorder([
@@ -747,7 +780,7 @@ describe('BannerManagementView', () => {
     await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
     const sourceRow = await openDetailsFor('Previously disabled');
     expect(document.getElementById(`banner-${disabled.uuid}-details`)).toBeInTheDocument();
-    const restore = within(sourceRow).getByRole('button', { name: 'Restore banner' });
+    const restore = within(sourceRow).getByRole('button', { name: /^Restore banner for / });
     expect(restore).toBeDisabled();
     await fireEvent.click(restore);
     expect(screen.queryByRole('heading', { name: 'Restore banner' })).not.toBeInTheDocument();
@@ -763,7 +796,7 @@ describe('BannerManagementView', () => {
     await waitFor(() =>
       expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner order saved' }),
     );
-    await fireEvent.click(within(sourceRow).getByRole('button', { name: 'Restore banner' }));
+    await fireEvent.click(within(sourceRow).getByRole('button', { name: /^Restore banner for / }));
     expect(screen.getByRole('heading', { name: 'Restore banner' })).toBeInTheDocument();
     await fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
@@ -824,7 +857,7 @@ describe('BannerManagementView', () => {
       target: { value: 'Previously' },
     });
     const sourceRow = await openDetailsFor('Previously disabled');
-    await fireEvent.click(within(sourceRow).getByRole('button', { name: 'Restore banner' }));
+    await fireEvent.click(within(sourceRow).getByRole('button', { name: /^Restore banner for / }));
 
     expect(screen.getByRole('heading', { name: 'Restore banner' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -841,7 +874,7 @@ describe('BannerManagementView', () => {
       `[data-banner-row="${restored.uuid}"]`,
     )!;
     expect(restoredRow).toHaveClass('banner-arrival');
-    expect(within(restoredRow).getByRole('button', { name: 'Details' })).toHaveAttribute(
+    expect(within(restoredRow).getByRole('button', { name: /^Details for / })).toHaveAttribute(
       'aria-expanded',
       'true',
     );
@@ -885,7 +918,7 @@ describe('BannerManagementView', () => {
 
     await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
     const sourceRow = await openDetailsFor('Disabled broad notice');
-    await fireEvent.click(within(sourceRow).getByRole('button', { name: 'Restore banner' }));
+    await fireEvent.click(within(sourceRow).getByRole('button', { name: /^Restore banner for / }));
     await fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     const warning = await screen.findByTestId('banner-overlap-warning');
@@ -911,7 +944,7 @@ describe('BannerManagementView', () => {
     await screen.findByText('System maintenance tonight');
     await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
     const sourceRow = await openDetailsFor('Previously disabled');
-    await fireEvent.click(within(sourceRow).getByRole('button', { name: 'Restore banner' }));
+    await fireEvent.click(within(sourceRow).getByRole('button', { name: /^Restore banner for / }));
     await fireEvent.input(screen.getByRole('textbox', { name: 'Title' }), {
       target: { value: 'Copied changes' },
     });
@@ -968,7 +1001,7 @@ describe('BannerManagementView', () => {
     const row = document.querySelector(`[data-banner-row="${saved.uuid}"]`);
     expect(row).toHaveClass('banner-arrival');
     expect(timeout).toHaveBeenCalledWith(expect.any(Function), 1_800);
-    const details = screen.getByRole('button', { name: 'Details' });
+    const details = screen.getByRole('button', { name: /^Details for / });
     details.focus();
 
     finishHighlight?.();
@@ -1002,19 +1035,21 @@ describe('BannerManagementView', () => {
 
     for (const active of ['System maintenance tonight', 'Upcoming outage']) {
       const row = await openDetailsFor(active);
-      expect(within(row).getByRole('button', { name: 'Disable banner' })).toBeInTheDocument();
+      expect(within(row).getByRole('button', { name: /^Disable banner for / })).toBeInTheDocument();
     }
 
     await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
     for (const inactive of ['Reusable enrollment notice', 'Previously disabled']) {
       const row = await openDetailsFor(inactive);
-      expect(within(row).queryByRole('button', { name: 'Disable banner' })).not.toBeInTheDocument();
+      expect(
+        within(row).queryByRole('button', { name: /^Disable banner for / }),
+      ).not.toBeInTheDocument();
     }
 
     await fireEvent.click(screen.getByRole('tab', { name: /Expired/ }));
     const expired = await openDetailsFor('Past outage');
     expect(
-      within(expired).queryByRole('button', { name: 'Disable banner' }),
+      within(expired).queryByRole('button', { name: /^Disable banner for / }),
     ).not.toBeInTheDocument();
   });
 
@@ -1033,7 +1068,7 @@ describe('BannerManagementView', () => {
     render(BannerManagementView);
     await openDetailsFor('System maintenance tonight');
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Disable banner' }));
+    await fireEvent.click(screen.getByRole('button', { name: /^Disable banner for / }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByRole('heading', { name: 'Disable banner?' })).toBeInTheDocument();
     expect(within(dialog).queryByRole('textbox')).not.toBeInTheDocument();
@@ -1042,7 +1077,7 @@ describe('BannerManagementView', () => {
     expect(disableBanner).not.toHaveBeenCalled();
     expect(screen.getByText('System maintenance tonight')).toBeInTheDocument();
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Disable banner' }));
+    await fireEvent.click(screen.getByRole('button', { name: /^Disable banner for / }));
     await fireEvent.click(
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
     );
@@ -1066,7 +1101,7 @@ describe('BannerManagementView', () => {
     render(BannerManagementView);
     await openDetailsFor('System maintenance tonight');
 
-    await fireEvent.click(screen.getByRole('button', { name: 'Disable banner' }));
+    await fireEvent.click(screen.getByRole('button', { name: /^Disable banner for / }));
     await fireEvent.click(
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
     );
@@ -1089,23 +1124,23 @@ describe('BannerManagementView', () => {
     render(BannerManagementView);
 
     const firstRow = await openDetailsFor('System maintenance tonight');
-    await fireEvent.click(within(firstRow).getByRole('button', { name: 'Disable banner' }));
+    await fireEvent.click(within(firstRow).getByRole('button', { name: /^Disable banner for / }));
     await fireEvent.click(
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
     );
     await waitFor(() => expect(disableBanner).toHaveBeenCalledWith(base.uuid));
 
-    expect(within(firstRow).getByRole('button', { name: 'Edit banner' })).toBeDisabled();
-    expect(within(firstRow).getByRole('button', { name: 'Disable banner' })).toBeDisabled();
-    await fireEvent.click(within(firstRow).getByRole('button', { name: 'Edit banner' }));
+    expect(within(firstRow).getByRole('button', { name: /^Edit banner for / })).toBeDisabled();
+    expect(within(firstRow).getByRole('button', { name: /^Disable banner for / })).toBeDisabled();
+    await fireEvent.click(within(firstRow).getByRole('button', { name: /^Edit banner for / }));
     expect(
       screen.queryByRole('heading', { name: 'Edit published banner' }),
     ).not.toBeInTheDocument();
 
     const secondRow = await openDetailsFor('Scheduled enrollment notice');
     expect(document.getElementById(`banner-${scheduled.uuid}-details`)).toBeInTheDocument();
-    expect(within(secondRow).getByRole('button', { name: 'Edit banner' })).toBeEnabled();
-    expect(within(secondRow).getByRole('button', { name: 'Disable banner' })).toBeDisabled();
+    expect(within(secondRow).getByRole('button', { name: /^Edit banner for / })).toBeEnabled();
+    expect(within(secondRow).getByRole('button', { name: /^Disable banner for / })).toBeDisabled();
     expect(disableBanner).toHaveBeenCalledTimes(1);
   });
 
@@ -1129,7 +1164,7 @@ describe('BannerManagementView', () => {
     render(BannerManagementView);
 
     const firstRow = await openDetailsFor('System maintenance tonight');
-    await fireEvent.click(within(firstRow).getByRole('button', { name: 'Disable banner' }));
+    await fireEvent.click(within(firstRow).getByRole('button', { name: /^Disable banner for / }));
     await fireEvent.click(
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
     );
@@ -1166,19 +1201,23 @@ describe('BannerManagementView', () => {
 
     for (const displayed of ['System maintenance tonight', 'Upcoming outage']) {
       const row = await openDetailsFor(displayed);
-      expect(within(row).queryByRole('button', { name: 'Archive banner' })).not.toBeInTheDocument();
-      expect(within(row).getByRole('button', { name: 'Disable banner' })).toBeInTheDocument();
+      expect(
+        within(row).queryByRole('button', { name: /^Archive banner for / }),
+      ).not.toBeInTheDocument();
+      expect(within(row).getByRole('button', { name: /^Disable banner for / })).toBeInTheDocument();
     }
 
     await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
     for (const inactive of ['Reusable enrollment notice', 'Previously disabled']) {
       const row = await openDetailsFor(inactive);
-      expect(within(row).getByRole('button', { name: 'Archive banner' })).toBeInTheDocument();
+      expect(within(row).getByRole('button', { name: /^Archive banner for / })).toBeInTheDocument();
     }
 
     await fireEvent.click(screen.getByRole('tab', { name: /Expired/ }));
     const expired = await openDetailsFor('Past outage');
-    expect(within(expired).getByRole('button', { name: 'Archive banner' })).toBeInTheDocument();
+    expect(
+      within(expired).getByRole('button', { name: /^Archive banner for / }),
+    ).toBeInTheDocument();
     expect(
       within(expired).queryByRole('button', { name: /Reorder banner/ }),
     ).not.toBeInTheDocument();
@@ -1207,7 +1246,7 @@ describe('BannerManagementView', () => {
     const row = await openDetailsFor('Previously disabled');
     expect(row.closest('[data-banner-row]')).toBeInTheDocument();
 
-    await fireEvent.click(within(row).getByRole('button', { name: 'Archive banner' }));
+    await fireEvent.click(within(row).getByRole('button', { name: /^Archive banner for / }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByRole('heading', { name: 'Archive banner?' })).toBeInTheDocument();
     expect(within(dialog).queryByRole('textbox')).not.toBeInTheDocument();
@@ -1218,7 +1257,7 @@ describe('BannerManagementView', () => {
     expect(archiveBanner).not.toHaveBeenCalled();
     expect(screen.getByText('Previously disabled')).toBeInTheDocument();
 
-    await fireEvent.click(within(row).getByRole('button', { name: 'Archive banner' }));
+    await fireEvent.click(within(row).getByRole('button', { name: /^Archive banner for / }));
     await fireEvent.click(
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
     );
@@ -1251,8 +1290,8 @@ describe('BannerManagementView', () => {
     await screen.findByText('System maintenance tonight');
     await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
     const row = await openDetailsFor('Reusable enrollment notice');
-    const edit = within(row).getByRole('button', { name: 'Edit banner' });
-    const archive = within(row).getByRole('button', { name: 'Archive banner' });
+    const edit = within(row).getByRole('button', { name: /^Edit banner for / });
+    const archive = within(row).getByRole('button', { name: /^Archive banner for / });
 
     await fireEvent.click(archive);
     await fireEvent.click(
@@ -1268,7 +1307,7 @@ describe('BannerManagementView', () => {
     await fireEvent.click(screen.getByRole('tab', { name: /Active & scheduled/ }));
     const activeRow = await openDetailsFor('System maintenance tonight');
     expect(document.getElementById(`banner-${base.uuid}-details`)).toBeInTheDocument();
-    await fireEvent.click(within(activeRow).getByRole('button', { name: 'Edit banner' }));
+    await fireEvent.click(within(activeRow).getByRole('button', { name: /^Edit banner for / }));
     expect(screen.getByRole('heading', { name: 'Edit published banner' })).toBeInTheDocument();
 
     resolveArchive(archived);
@@ -1292,7 +1331,7 @@ describe('BannerManagementView', () => {
 
     await fireEvent.click(await screen.findByRole('tab', { name: /Saved & disabled/ }));
     const firstRow = await openDetailsFor('Reusable enrollment notice');
-    await fireEvent.click(within(firstRow).getByRole('button', { name: 'Archive banner' }));
+    await fireEvent.click(within(firstRow).getByRole('button', { name: /^Archive banner for / }));
     await fireEvent.click(
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
     );
@@ -1300,8 +1339,8 @@ describe('BannerManagementView', () => {
 
     const secondRow = await openDetailsFor('Second reusable notice');
     expect(document.getElementById(`banner-${secondSaved.uuid}-details`)).toBeInTheDocument();
-    expect(within(secondRow).getByRole('button', { name: 'Edit banner' })).toBeEnabled();
-    expect(within(secondRow).getByRole('button', { name: 'Archive banner' })).toBeDisabled();
+    expect(within(secondRow).getByRole('button', { name: /^Edit banner for / })).toBeEnabled();
+    expect(within(secondRow).getByRole('button', { name: /^Archive banner for / })).toBeDisabled();
     expect(archiveBanner).toHaveBeenCalledTimes(1);
   });
 
@@ -1317,7 +1356,7 @@ describe('BannerManagementView', () => {
     await fireEvent.click(await screen.findByRole('tab', { name: /Expired/ }));
     const row = await openDetailsFor('Past outage');
 
-    await fireEvent.click(within(row).getByRole('button', { name: 'Archive banner' }));
+    await fireEvent.click(within(row).getByRole('button', { name: /^Archive banner for / }));
     await fireEvent.click(
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
     );
@@ -1333,7 +1372,7 @@ describe('BannerManagementView', () => {
     await fireEvent.click(screen.getByRole('tab', { name: /Expired/ }));
     const row = await openDetailsFor('Past outage');
 
-    await fireEvent.click(within(row).getByRole('button', { name: 'Archive banner' }));
+    await fireEvent.click(within(row).getByRole('button', { name: /^Archive banner for / }));
     await fireEvent.click(
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
     );
@@ -1366,7 +1405,7 @@ describe('BannerManagementView', () => {
 
     await fireEvent.click(screen.getByRole('tab', { name: /Expired/ }));
     const row = await openDetailsFor('Past outage');
-    await fireEvent.click(within(row).getByRole('button', { name: 'Archive banner' }));
+    await fireEvent.click(within(row).getByRole('button', { name: /^Archive banner for / }));
     await fireEvent.click(
       within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
     );
@@ -1382,7 +1421,7 @@ describe('BannerManagementView', () => {
   it('names the existing v1 all-pages target without exposing its object shape', async () => {
     render(BannerManagementView);
 
-    const details = await screen.findByRole('button', { name: 'Details' });
+    const details = await screen.findByRole('button', { name: /^Details for / });
     await fireEvent.click(details);
     const panel = document.getElementById(`banner-${base.uuid}-details`);
     expect(panel).toHaveTextContent('Pages: All pages');
@@ -1396,7 +1435,7 @@ describe('BannerManagementView', () => {
     ]);
     const { container } = render(BannerManagementView);
 
-    await screen.findByRole('button', { name: 'Details' });
+    await screen.findByRole('button', { name: /^Details for / });
     const excerpt = container.querySelector('p.font-bold');
     expect(excerpt?.textContent?.length).toBeLessThanOrEqual(160);
     expect(excerpt).not.toHaveTextContent('never-render-this-tail');
@@ -1410,7 +1449,7 @@ describe('BannerManagementView', () => {
     ]);
     const { container } = render(BannerManagementView);
 
-    await screen.findByRole('button', { name: 'Details' });
+    await screen.findByRole('button', { name: /^Details for / });
     const excerpt = container.querySelector('p.font-bold');
     expect(excerpt).toHaveTextContent(`${prefix}😀…`);
     expect(Array.from(excerpt?.textContent ?? '')).toHaveLength(160);
@@ -1429,7 +1468,7 @@ describe('BannerManagementView', () => {
     ]);
     const { container } = render(BannerManagementView);
 
-    const details = await screen.findByRole('button', { name: 'Details' });
+    const details = await screen.findByRole('button', { name: /^Details for / });
     expect(container.querySelector('.bg-warning-500')).toBeInTheDocument();
     expect(container.querySelector('[aria-label="Warning tone"]')).not.toBeInTheDocument();
     await fireEvent.click(details);
@@ -1441,7 +1480,7 @@ describe('BannerManagementView', () => {
   it('uses compact white cards with a successful active badge and bottom tone bar', async () => {
     const { container } = render(BannerManagementView);
 
-    const details = await screen.findByRole('button', { name: 'Details' });
+    const details = await screen.findByRole('button', { name: /^Details for / });
     const article = details.closest('article');
     expect(article).toHaveClass('min-w-0', 'bg-white');
     expect(screen.getByText('Active')).toHaveClass('preset-tonal-success');
@@ -1466,20 +1505,20 @@ describe('BannerManagementView', () => {
 
     const row = await openDetailsFor('Reusable enrollment notice');
     expect(within(row).getByText('Saved')).toHaveClass('preset-tonal-primary');
-    expect(within(row).getByRole('button', { name: 'Details' })).toHaveClass(
+    expect(within(row).getByRole('button', { name: /^Details for / })).toHaveClass(
       'preset-tonal-primary',
     );
-    expect(within(row).getByRole('button', { name: 'Edit banner' })).toHaveClass(
+    expect(within(row).getByRole('button', { name: /^Edit banner for / })).toHaveClass(
       'preset-outlined-primary-500',
     );
-    expect(within(row).getByRole('button', { name: 'Archive banner' })).toHaveClass(
+    expect(within(row).getByRole('button', { name: /^Archive banner for / })).toHaveClass(
       'preset-outlined-error-500',
     );
   });
 
   it('aligns the Site banners heading and description', async () => {
     render(BannerManagementView);
-    await screen.findByRole('button', { name: 'Details' });
+    await screen.findByRole('button', { name: /^Details for / });
 
     const title = screen.getByRole('heading', { name: 'Site banners' });
     const description = screen.getByText('Create and manage announcements across PIC-SURE.');
@@ -1503,12 +1542,94 @@ describe('BannerManagementView', () => {
     ]);
     render(BannerManagementView);
 
-    const details = await screen.findByRole('button', { name: 'Details' });
+    const details = await screen.findByRole('button', { name: /^Details for / });
     await fireEvent.click(details);
     const panel = document.getElementById(`banner-${base.uuid}-details`);
     expect(panel).toHaveTextContent('Pages: Exact: /segment');
     expect(panel).toHaveTextContent('· + more');
     expect(panel).not.toHaveTextContent('hidden-tail');
     expect(panel).not.toHaveTextContent('/fifth-hidden');
+  });
+});
+
+describe('banner mutations and order refreshes', () => {
+  it('withholds mutations until the canonical order refresh completes', async () => {
+    const draft: ManagedBanner = {
+      ...base,
+      uuid: 'draft-uuid',
+      status: 'SAVED',
+      lifecycle: 'SAVED',
+      htmlContent: '<p>Saved notice</p>',
+    };
+    let resolveRefresh!: (banners: ManagedBanner[]) => void;
+    vi.mocked(getManagedBanners)
+      .mockResolvedValueOnce([base, scheduled, draft])
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveRefresh = resolve;
+        }),
+      );
+    vi.mocked(reorderBanners).mockResolvedValue([scheduled, base]);
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+    await drag(scheduled.uuid, base.uuid);
+    await fireEvent.click(screen.getByRole('button', { name: 'Save order' }));
+    await waitFor(() => expect(getManagedBanners).toHaveBeenCalledTimes(2));
+
+    const create = screen.getByRole('button', { name: /Create banner/ });
+    expect(create).toBeDisabled();
+    create.removeAttribute('disabled');
+    await fireEvent.click(create);
+    expect(screen.queryByRole('heading', { name: 'Create banner' })).not.toBeInTheDocument();
+    const row = await openDetailsFor('System maintenance tonight');
+    expect(within(row).getByRole('button', { name: /^Edit banner for / })).toBeDisabled();
+    const disable = within(row).getByRole('button', { name: /^Disable banner for / });
+    expect(disable).toBeDisabled();
+    disable.removeAttribute('disabled');
+    await fireEvent.click(disable);
+    await fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
+    );
+    expect(disableBanner).not.toHaveBeenCalled();
+
+    await fireEvent.click(screen.getByRole('tab', { name: /Saved & disabled/ }));
+    const savedRow = await openDetailsFor('Saved notice');
+    expect(within(savedRow).getByRole('button', { name: /^Archive banner for / })).toBeDisabled();
+    expect(within(savedRow).getByRole('button', { name: /^Edit banner for / })).toBeDisabled();
+    resolveRefresh([scheduled, base, draft]);
+    await waitFor(() =>
+      expect(within(savedRow).getByRole('button', { name: /^Archive banner for / })).toBeEnabled(),
+    );
+  });
+
+  it('waits for an in-flight disable before allowing an order save', async () => {
+    const third: ManagedBanner = {
+      ...base,
+      uuid: 'third-uuid',
+      htmlContent: '<p>Third notice</p>',
+    };
+    let resolveDisable!: (banner: ManagedBanner) => void;
+    vi.mocked(getManagedBanners).mockResolvedValue([base, scheduled, third]);
+    vi.mocked(disableBanner).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveDisable = resolve;
+      }),
+    );
+    render(BannerManagementView);
+    await screen.findByText('System maintenance tonight');
+    await drag(scheduled.uuid, base.uuid);
+    const row = await openDetailsFor('Third notice');
+    await fireEvent.click(within(row).getByRole('button', { name: /^Disable banner for / }));
+    await fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Yes' }),
+    );
+    const save = screen.getByRole('button', { name: 'Save order' });
+    expect(save).toBeDisabled();
+    save.removeAttribute('disabled');
+    await fireEvent.click(save);
+    expect(reorderBanners).not.toHaveBeenCalled();
+    resolveDisable({ ...third, status: 'DISABLED', lifecycle: 'DISABLED' });
+    await waitFor(() => expect(toaster.success).toHaveBeenCalledWith({ title: 'Banner disabled' }));
+    expect(screen.getByRole('button', { name: 'Save order' })).toBeEnabled();
   });
 });

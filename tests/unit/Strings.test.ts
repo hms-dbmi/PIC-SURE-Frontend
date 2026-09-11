@@ -3,6 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { truncate, visibleLength } from '$lib/utilities/Strings';
 
 describe('truncate', () => {
+  it.each([0, -1, -10])('returns empty text for a nonpositive limit of %s', (limit) => {
+    expect(truncate('hello', limit)).toBe('');
+    expect(truncate('', limit)).toBe('');
+  });
+
+  it('reserves the entire one-character limit for the ellipsis when text overflows', () => {
+    expect(truncate('hello', 1)).toBe('…');
+    expect(truncate('🎉', 1)).toBe('🎉');
+  });
+
   it('returns text at or under the limit unchanged', () => {
     expect(truncate('short', 5)).toBe('short');
   });

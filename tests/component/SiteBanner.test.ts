@@ -61,7 +61,7 @@ describe('SiteBanner', () => {
     (appearance, cssClass) => {
       render(SiteBanner, { banner: { ...banner, appearance } });
 
-      expect(screen.getByRole('region', { name: 'Maintenance' })).toHaveClass(cssClass);
+      expect(screen.getByRole('article', { name: 'Maintenance' })).toHaveClass(cssClass);
     },
   );
 
@@ -130,7 +130,7 @@ describe('SiteBanner', () => {
   it('uses a compact bottom tone bar and aligns the icon, title, and message', () => {
     const { container } = render(SiteBanner, { banner });
 
-    const region = screen.getByRole('region', { name: 'Maintenance' });
+    const region = screen.getByRole('article', { name: 'Maintenance' });
     expect(region).toHaveClass('border-b-4', 'py-1.5');
     expect(region).not.toHaveClass('border-l-8');
     expect(container.querySelector('.site-banner-layout')).toHaveClass('items-center');

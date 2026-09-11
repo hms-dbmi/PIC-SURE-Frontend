@@ -16,6 +16,7 @@ export function visibleLength(text: string): number {
 
 /** Truncate by grapheme cluster, reserving one character for the ellipsis. Falls back to code points without Intl.Segmenter. */
 export function truncate(text: string, maxLength: number): string {
+  if (maxLength <= 0) return '';
   const characters = graphemes(text);
   if (characters.length <= maxLength) return text;
   return `${characters

@@ -106,7 +106,38 @@ describe('banner management list reconciliation', () => {
     expect(next.records.map((record) => record.uuid)).toEqual(['uuid-2', 'uuid-1', 'uuid-3']);
   });
 
-  it('filters visible records by tab and case-insensitive search over title and excerpt', () => {
+  it('drops stale orderable records when the canonical response omits them', () => {
+    const disabled = banner({ uuid: 'disabled', lifecycle: 'DISABLED', status: 'DISABLED' });
+    const expired = banner({ uuid: 'expired', lifecycle: 'EXPIRED' });
+    const newActive = banner({ uuid: 'new-active' });
+    const state = initialBannerListState([active, scheduled, saved, disabled, expired]);
+
+    const next = adoptCanonicalBannerOrder(state, [newActive]);
+
+    expect(visibleBannerRecords(next, 'orderable', '').map((record) => record.uuid)).toEqual([
+      'new-active',
+    ]);
+    expect(next.savedOrderUuids).toEqual(['new-active']);
+    expect(visibleBannerRecords(next, 'saved', '').map((record) => record.uuid)).toEqual([
+      saved.uuid,
+      disabled.uuid,
+    ]);
+    expect(visibleBannerRecords(next, 'expired', '').map((record) => record.uuid)).toEqual([
+      expired.uuid,
+    ]);
+  });
+
+  it('clears the orderable tab when the canonical queue is empty', () => {
+    const state = initialBannerListState([active, scheduled, saved]);
+    const next = adoptCanonicalBannerOrder(state, []);
+
+    expect(visibleBannerRecords(next, 'orderable', '')).toEqual([]);
+    expect(next.orderUuids).toEqual([]);
+    expect(next.savedOrderUuids).toEqual([]);
+    expect(next.records.map((record) => record.uuid)).toEqual([saved.uuid]);
+  });
+
+  it('filters visible records by tab and case-insensitive search over title and content', () => {
     const titled = banner({ uuid: 'uuid-4', title: 'Downtime notice', lifecycle: 'SCHEDULED' });
     const state = initialBannerListState([active, titled, saved]);
     expect(
@@ -115,6 +146,33 @@ describe('banner management list reconciliation', () => {
     expect(visibleBannerRecords(state, 'saved', '').map((record) => record.uuid)).toEqual([
       'uuid-3',
     ]);
+  });
+
+  it('finds visible content beyond the excerpt without matching markup or script text', () => {
+    const long = banner({
+      htmlContent:
+        `<p>${'🎉'.repeat(170)} Planned <strong>downtime</strong> &amp; recovery</p>` +
+        '<script>hiddenScriptText</script><a href="/hidden-link">More</a>',
+    });
+    const state = initialBannerListState([long]);
+
+    expect(state.records[0].excerpt).not.toContain('downtime');
+    expect(visibleBannerRecords(state, 'orderable', ' DOWNTIME & RECOVERY ')).toHaveLength(1);
+    expect(visibleBannerRecords(state, 'orderable', 'hiddenScriptText')).toEqual([]);
+    expect(visibleBannerRecords(state, 'orderable', 'hidden-link')).toEqual([]);
+    expect(visibleBannerRecords(state, 'orderable', '<strong>')).toEqual([]);
+  });
+
+  it.each([
+    ['paragraphs', '<p>Scheduled</p><p>maintenance</p>'],
+    ['line breaks', '<p>Scheduled<br>maintenance</p>'],
+  ])('finds a phrase spanning %s beyond the excerpt', (_description, content) => {
+    const long = banner({ htmlContent: `<p>${'🎉'.repeat(170)}</p>${content}` });
+    const state = initialBannerListState([long]);
+
+    expect(state.records[0].excerpt).not.toContain('Scheduled');
+    expect(visibleBannerRecords(state, 'orderable', 'scheduled maintenance')).toHaveLength(1);
+    expect(visibleBannerRecords(state, 'orderable', 'scheduledmaintenance')).toEqual([]);
   });
 
   it('orders visible orderable records by the working queue', () => {

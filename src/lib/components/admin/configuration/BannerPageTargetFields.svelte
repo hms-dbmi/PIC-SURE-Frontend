@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import type { BannerPageTarget } from '$lib/models/Banner';
 
   type TargetedPage = Exclude<BannerPageTarget, { kind: 'ALL' }>;
@@ -11,12 +12,19 @@
 
   let { allPages = $bindable(), pageTargets = $bindable(), errors }: Props = $props();
 
+  let fields = $state<HTMLFieldSetElement>();
+  let addButton = $state<HTMLButtonElement>();
+
   function addPageTarget() {
     pageTargets = [...pageTargets, { kind: 'EXACT', path: '' }];
   }
 
-  function removePageTarget(index: number) {
+  async function removePageTarget(index: number) {
     pageTargets = pageTargets.filter((_, targetIndex) => targetIndex !== index);
+    await tick();
+    if (!fields) return;
+    const paths = fields.querySelectorAll<HTMLInputElement>('input[type="text"]');
+    (paths[Math.min(index, paths.length - 1)] ?? addButton)?.focus();
   }
 
   function updatePageTarget(index: number, target: TargetedPage) {
@@ -26,7 +34,7 @@
   }
 </script>
 
-<fieldset class="mt-5 border-t border-surface-300 pt-4">
+<fieldset bind:this={fields} class="mt-5 border-t border-surface-300 pt-4">
   <legend class="font-bold">Pages</legend>
   <p class="mt-1 text-sm text-surface-600">
     Match application pathnames. Query strings and fragments are ignored.
@@ -72,15 +80,17 @@
               type="text"
               placeholder="/help"
               value={target.path}
+              aria-invalid={!!errors[index]}
               aria-describedby={errors[index] ? `banner-page-target-${index}-error` : undefined}
               oninput={(event) =>
                 updatePageTarget(index, { ...target, path: event.currentTarget.value })}
             />
-            {#if errors[index]}
-              <span id={`banner-page-target-${index}-error`} class="text-sm text-error-700"
-                >{errors[index]}</span
-              >
-            {/if}
+            <span
+              id={`banner-page-target-${index}-error`}
+              class="text-sm text-error-700"
+              aria-live="polite"
+              aria-atomic="true">{errors[index] ?? ''}</span
+            >
           </div>
           <button
             type="button"
@@ -92,12 +102,15 @@
           </button>
         </div>
       {/each}
-      {#if pageTargets.length === 0}
-        <p class="text-sm text-error-700">Add at least one page target.</p>
-      {/if}
+      <div aria-live="polite" aria-atomic="true">
+        {#if pageTargets.length === 0}
+          <p class="text-sm text-error-700">Add at least one page target.</p>
+        {/if}
+      </div>
       <button
         type="button"
         class="btn preset-tonal-primary justify-self-start"
+        bind:this={addButton}
         onclick={addPageTarget}
       >
         Add page target

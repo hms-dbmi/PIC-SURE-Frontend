@@ -38,6 +38,19 @@ describe('normalizeBannerPageTargets', () => {
     ]);
   });
 
+  it.each(['/help', '', 42, false])('rejects an All-pages target with path %j', (path) => {
+    const target = { kind: 'ALL' as const, path };
+    expect(validateBannerPageTarget(target)).toBe('All pages cannot specify a path.');
+    expect(() => normalizeBannerPageTargets([{ kind: 'ALL' }, target])).toThrow(
+      'All pages cannot specify a path.',
+    );
+  });
+
+  it('accepts a null All-pages path and ignores harmless metadata', () => {
+    const target = { kind: 'ALL' as const, path: null, addedByNewerServer: true };
+    expect(normalizeBannerPageTargets([target])).toEqual([{ kind: 'ALL' }]);
+  });
+
   it('uses backend-compatible code-unit ordering instead of locale collation', () => {
     expect(
       normalizeBannerPageTargets([
@@ -103,6 +116,10 @@ describe('parseBannerPageTargets', () => {
     [{ kind: 'EXACT' }],
     [{ kind: 'EXACT', path: 42 }],
     [{ kind: 'EVERYWHERE' }],
+    [{ kind: 'ALL', path: '/help' }],
+    [{ kind: 'ALL', path: '' }],
+    [{ kind: 'ALL', path: 42 }],
+    [{ kind: 'ALL', path: false }],
     [{ kind: 'ALL' }, { kind: 'EXACT', path: '/help' }],
   ];
 
@@ -119,6 +136,9 @@ describe('parseBannerPageTargets', () => {
     ).toEqual([{ kind: 'ALL' }]);
     expect(parseBannerPageTargets([{ kind: 'EXACT', path: '/help', extra: true }])).toEqual([
       { kind: 'EXACT', path: '/help' },
+    ]);
+    expect(parseBannerPageTargets([{ kind: 'ALL', path: null, extra: true }])).toEqual([
+      { kind: 'ALL' },
     ]);
   });
 });

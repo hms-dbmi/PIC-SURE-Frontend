@@ -200,7 +200,9 @@
       (startLocal !== '' && resolvedStart === null) ||
       (endLocal !== '' && resolvedEnd === null) ||
       restoreStartNotFuture ||
-      (resolvedStart !== null && resolvedEnd !== null && resolvedEnd <= resolvedStart),
+      (resolvedStart !== null &&
+        resolvedEnd !== null &&
+        Date.parse(resolvedEnd) <= Date.parse(resolvedStart)),
   );
   const pageTargetErrors = $derived(pageTargets.map(validateBannerPageTarget));
   const pageTargetsInvalid = $derived(
@@ -468,11 +470,11 @@
           </p>
           <p>
             {sanitizedLength}/5,000 sanitized HTML characters.
-            {#if sanitizedLength > 5_000}
-              <span class="text-error-700">
+            <span class="text-error-700" aria-live="polite">
+              {#if sanitizedLength > 5_000}
                 Content exceeds the 5,000-character limit. Shorten it before publishing.
-              </span>
-            {/if}
+              {/if}
+            </span>
           </p>
         </div>
       </div>

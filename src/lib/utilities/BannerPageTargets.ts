@@ -4,7 +4,8 @@ const parameterSegment = /^\[[A-Za-z_][A-Za-z0-9_]*\]$/;
 const canonicalKindOrder = new Map(BANNER_PAGE_TARGET_KINDS.map((kind, index) => [kind, index]));
 
 export function validateBannerPageTarget(target: BannerPageTarget): string | null {
-  if (target.kind === 'ALL') return null;
+  if (target.kind === 'ALL')
+    return 'path' in target && target.path != null ? 'All pages cannot specify a path.' : null;
 
   const path = trimOuterSpaces(target.path);
   if (path.includes('\\') || [...path].some(isControlCharacter))
@@ -45,18 +46,19 @@ export function validateBannerPageTarget(target: BannerPageTarget): string | nul
 
 export function normalizeBannerPageTargets(targets: BannerPageTarget[]): BannerPageTarget[] {
   if (targets.length === 0) throw new Error('Add at least one page target.');
-  if (targets.some((target) => target.kind === 'ALL')) {
-    if (!targets.every((target) => target.kind === 'ALL'))
-      throw new Error('All pages cannot be combined with targeted pages.');
-    return [{ kind: 'ALL' }];
+  const hasAllPages = targets.some((target) => target.kind === 'ALL');
+  if (hasAllPages && !targets.every((target) => target.kind === 'ALL'))
+    throw new Error('All pages cannot be combined with targeted pages.');
+  for (const target of targets) {
+    const error = validateBannerPageTarget(target);
+    if (error) throw new Error(error);
   }
+  if (hasAllPages) return [{ kind: 'ALL' }];
 
   const targeted = targets.filter(
     (target): target is Exclude<BannerPageTarget, { kind: 'ALL' }> => target.kind !== 'ALL',
   );
   const normalized = targeted.map((target) => {
-    const error = validateBannerPageTarget(target);
-    if (error) throw new Error(error);
     return { ...target, path: normalizePathname(trimOuterSpaces(target.path)) };
   });
   const unique = new Map(normalized.map((target) => [`${target.kind}\0${target.path}`, target]));
@@ -105,7 +107,7 @@ export function parseBannerPageTargets(value: unknown): BannerPageTarget[] | nul
     // silently drop every targeted banner from the feed.
     const target = candidate as Record<string, unknown>;
     if (target.kind === 'ALL') {
-      targets.push({ kind: 'ALL' });
+      targets.push(target as BannerPageTarget);
     } else if (
       (target.kind === 'EXACT' || target.kind === 'SUBTREE' || target.kind === 'PARAMETERIZED') &&
       typeof target.path === 'string'

@@ -111,6 +111,10 @@
   }
 </script>
 
+{#snippet bannerContext()}
+  <span class="sr-only">for {banner.excerpt}</span>
+{/snippet}
+
 <div class="relative min-w-0" {@attach orderable && !isOverlay ? ref : noopAttachment}>
   <article
     class="min-w-0 overflow-hidden rounded-xl border border-surface-300 bg-white dark:bg-surface-950 {activeId ===
@@ -163,7 +167,7 @@
         aria-controls={panelId}
         onclick={ontoggle}
       >
-        Details <span aria-hidden="true">{open ? '▴' : '▾'}</span>
+        Details {@render bannerContext()}<span aria-hidden="true">{open ? '▴' : '▾'}</span>
       </button>
     </div>
     {#if open}
@@ -194,7 +198,7 @@
                 disabled={busy}
                 onclick={onedit}
               >
-                Edit banner
+                Edit banner {@render bannerContext()}
               </button>
             {/if}
             {#if disableable}
@@ -209,7 +213,7 @@
                 withDefault
               >
                 {#snippet trigger()}
-                  Disable banner
+                  Disable banner {@render bannerContext()}
                 {/snippet}
                 Are you sure you want to disable this banner? It stops appearing to visitors immediately
                 and moves to Saved &amp; disabled. Its content and history are kept.
@@ -222,7 +226,7 @@
                 disabled={busy || restoreDisabled}
                 onclick={onrestore}
               >
-                Restore banner
+                Restore banner {@render bannerContext()}
               </button>
             {/if}
             {#if archiveable}
@@ -237,7 +241,7 @@
                 withDefault
               >
                 {#snippet trigger()}
-                  Archive banner
+                  Archive banner {@render bannerContext()}
                 {/snippet}
                 Are you sure you want to archive this banner? It leaves normal management and can no longer
                 be edited, published, or reordered here. Its content and version history are retained
