@@ -27,9 +27,11 @@
     );
   }
 
-  function onClick() {
+  function onClick(event: MouseEvent) {
     if (facet?.children && facet?.children?.length > 0) {
       if (checkedState(facet.name) === 'indeterminate') {
+        // Clearing children leaves checked false, so cancel the browser's toggle to true.
+        event.preventDefault();
         updateFacets(getCurrentlySelectedChildren());
       } else {
         updateFacets(facet.children);
@@ -121,7 +123,7 @@
 </label>
 {#if open && facetsToDisplay !== undefined && facetsToDisplay?.length > 0}
   <div class="flex flex-col ml-8" data-testId={`facet-${facet.name}-children`}>
-    {#each facetsToDisplay as child}
+    {#each facetsToDisplay as child (child.name)}
       <FacetItem facet={child} {facetCategory} {textFilterValue} />
     {/each}
   </div>

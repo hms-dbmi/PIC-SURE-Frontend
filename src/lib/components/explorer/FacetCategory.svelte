@@ -169,7 +169,7 @@
           }}
         />
       {/if}
-      {#each facetsToDisplay as facet}
+      {#each facetsToDisplay as facet (facet.name)}
         <FacetItem {facet} {facetCategory} {textFilterValue} />
       {/each}
       {#if overShowLimit && !textFilterValue}
