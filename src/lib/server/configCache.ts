@@ -1,7 +1,7 @@
 import { error, type NumericRange } from '@sveltejs/kit';
 import type { ConfigObject, ConfigCache, ConfigKind } from '$lib/models/Configuration';
 import { CONFIG_API_KIND } from '$lib/models/Configuration';
-import { Picsure } from '$lib/paths';
+import { Picsure, joinUrl } from '$lib/paths';
 import { withBackoff } from '$lib/utilities/backoff';
 
 const ORIGIN = import.meta.env?.VITE_ORIGIN;
@@ -85,7 +85,7 @@ async function getConfigKind(kind: ConfigKind, force: boolean): Promise<void> {
   // in-flight fetch don't each re-log completion and re-run the cache write.
   if (fetchingKind[kind] === null) {
     console.log(`Attempting configuration cache hydration for ${kind}`);
-    const configUrl = `${ORIGIN}/${Picsure.Configuration.Get}`;
+    const configUrl = joinUrl(ORIGIN, Picsure.Configuration.Get);
     const errorMsg = `Configuration cache hydration failures: returned cached data for ${kind} might be defaults or outdated. Next request will retry.`;
     fetchingKind[kind] = (
       CONFIG_API_KIND[kind]
