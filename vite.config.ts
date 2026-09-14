@@ -24,16 +24,20 @@ export default defineConfig(async ({ mode }) => {
       setupFiles: ['./tests/component/setup.ts'],
     } satisfies ViteUserConfig['test'],
     server: {
-      // Unless noted, the options in this section are only applied to dev.
-      // See more details here: https://vite.dev/config/server-options#server-proxy
-      allowedHosts: ['.harvard.edu'],
-      // Enable proxy for local dev mock servers
-      // proxy: {
-      //   '/picsure': 'http://localhost:9000',
-      //   '//picsure': 'http://localhost:9000',
-      //   '/psama': 'http://localhost:9000',
-      //   '//psama': 'http://localhost:9000',
-      // },
+      // Forwards to `npm run mock-api` (tests/end-to-end/mock-server), which serves fixture
+      // data from tests/end-to-end/mock-data.ts so `npm run dev` has something to talk to.
+      // The double-slash variants cover VITE_ORIGIN values with a trailing slash (see
+      // configCache.ts, which builds `${ORIGIN}/${path}`). Dev-only: this never applies to
+      // Playwright's build+preview run (mode 'test'), which mocks routes per-test instead.
+      proxy:
+        mode === 'test'
+          ? undefined
+          : {
+              '/picsure': 'http://localhost:9000',
+              '//picsure': 'http://localhost:9000',
+              '/psama': 'http://localhost:9000',
+              '//psama': 'http://localhost:9000',
+            },
     },
     plugins,
     build: {
