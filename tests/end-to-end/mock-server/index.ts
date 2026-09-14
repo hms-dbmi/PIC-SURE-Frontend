@@ -33,10 +33,25 @@ import {
 } from '../mock-data';
 import { on, json, text, noContent, dispatch } from './router';
 import { state, nextId } from './state';
+import type { Indexable } from '../../../src/lib/types';
 
 const PORT = Number(process.env.MOCK_API_PORT ?? 9000);
 
 const path = (p: string) => `/${p}`;
+
+// Both Concept.Detail and Concept.Tree key their fixtures by concept path, but the
+// request body only sometimes carries one - fall back to matching on :dataset, then to
+// a fixed default, so every dataset renders something while browsing locally.
+function lookupConcept(
+  map: Indexable,
+  conceptPath: string | undefined,
+  dataset: string,
+  fallback: unknown,
+) {
+  const byPath = conceptPath ? map[conceptPath] : undefined;
+  const byDataset = Object.values(map).find((c) => (c as { dataset?: string }).dataset === dataset);
+  return byPath ?? byDataset ?? fallback;
+}
 
 /* ---------------------------------------------------------------------------------------
  * Dictionary / search / facets
@@ -54,11 +69,7 @@ on('POST', path(Picsure.Facets), ({ res }) => {
 
 on('POST', path(`${Picsure.Concept.Detail}/:dataset`), ({ params, body, res }) => {
   const conceptPath = typeof body === 'string' ? body : undefined;
-  const byPath = conceptPath ? datasetDetails.concepts[conceptPath] : undefined;
-  const byDataset = Object.values(datasetDetails.concepts).find(
-    (c) => (c as { dataset?: string }).dataset === params.dataset,
-  );
-  json(res, byPath ?? byDataset ?? detailResponseCat);
+  json(res, lookupConcept(datasetDetails.concepts, conceptPath, params.dataset, detailResponseCat));
 });
 
 on('POST', path(`${Picsure.Concept.Hierarchy}/:dataset`), ({ res }) => {
@@ -67,11 +78,8 @@ on('POST', path(`${Picsure.Concept.Hierarchy}/:dataset`), ({ res }) => {
 
 on('POST', path(`${Picsure.Concept.Tree}/:dataset`), ({ params, body, res }) => {
   const conceptPath = typeof body === 'string' ? body : undefined;
-  const byPath = conceptPath ? datasetDetails.tree[conceptPath] : undefined;
-  const byDataset = Object.values(datasetDetails.tree).find(
-    (c) => (c as { dataset?: string }).dataset === params.dataset,
-  );
-  json(res, byPath ?? byDataset ?? Object.values(datasetDetails.tree)[0]);
+  const fallback = Object.values(datasetDetails.tree)[0];
+  json(res, lookupConcept(datasetDetails.tree, conceptPath, params.dataset, fallback));
 });
 
 on('GET', path(Picsure.Concept.Tree), ({ res }) => {
@@ -361,7 +369,9 @@ on('POST', path(Psama.Priviege), ({ body, res }) => {
 on('PUT', path(Psama.Priviege), ({ body, res }) => {
   const [privilege] = body as { uuid: string }[];
   const index = state.privileges.findIndex((p) => p.uuid === privilege.uuid);
-  if (index > -1) state.privileges[index] = { ...state.privileges[index], ...privilege };
+  const updated = { ...(index > -1 ? state.privileges[index] : {}), ...privilege };
+  if (index > -1) state.privileges[index] = updated;
+  else state.privileges.push(updated);
   noContent(res);
 });
 on('DELETE', path(`${Psama.Priviege}/:uuid`), ({ params, res }) => {
@@ -409,6 +419,15 @@ on('PUT', path(Psama.Users), ({ body, res }) => {
 });
 
 on('GET', path(Psama.Application), ({ res }) => json(res, state.applications));
+
+/* ---------------------------------------------------------------------------------------
+ * Logging - src/routes/api/v1/log forwards here when LOGGING_TARGET points at this server
+ * (see .env.example); just swallow the event, nothing reads it back locally.
+ * ------------------------------------------------------------------------------------- */
+
+on('POST', path('picsure/logging/audit'), ({ res }) => {
+  noContent(res, 202);
+});
 
 const server = createServer((req, res) => {
   void dispatch(req, res);

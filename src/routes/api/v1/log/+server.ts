@@ -39,7 +39,10 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
   }
 
   try {
-    const target = 'http://localhost/picsure/logging/audit';
+    // Overridable for local dev, where nothing listens on localhost:80 - point this at
+    // the mock-api server (or a real backend) instead. Unset in deployed environments,
+    // where the gateway sidecar on localhost is always present.
+    const target = env.LOGGING_TARGET || 'http://localhost/picsure/logging/audit';
     const upstream = await fetch(target, {
       method: 'POST',
       headers,

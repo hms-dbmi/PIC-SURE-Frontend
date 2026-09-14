@@ -25,8 +25,13 @@ dev server, requests never reach the proxy (or the mock) at all, and you'll see
 
 Search, facets, dictionary concepts/tree/hierarchy, dashboard, saved datasets, query
 execution (cross counts, patient counts, variant export, dataframe export/status/signed-url),
-runtime + admin configuration, and the full PSAMA admin surface (roles, privileges,
-connections, users, applications, TOS). See `index.ts` for the full route table.
+runtime + admin configuration, audit logging, and the full PSAMA admin surface (roles,
+privileges, connections, users, applications, TOS). See `index.ts` for the full route table.
+
+Audit-log forwarding (`src/routes/api/v1/log`) targets a gateway sidecar at
+`http://localhost/picsure/logging/audit` by default, which nothing provides locally -
+set `LOGGING_TARGET=http://localhost:9000/picsure/logging/audit` in `.env` to send those
+events here instead of ECONNREFUSED-ing on every logged action.
 
 This favors "good enough to click through the app" over exactly replicating backend
 business logic - search relevance, filter math, and real query execution aren't reproduced.
