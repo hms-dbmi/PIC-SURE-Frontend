@@ -81,9 +81,7 @@ describe('FacetItem nested facet expansion', () => {
     expect(screen.getByTestId('facet-parent-facet-children')).toBeInTheDocument();
   });
 
-  it('ties expansion to the facet, not the component position in the list', async () => {
-    // Facet lists rerender unkeyed, so after a selection reorders them a component
-    // instance can receive a different facet. Expansion must follow the name.
+  it('updates expansion when the facet prop changes', async () => {
     const view = renderFacetItem('parent-facet');
     await fireEvent.click(screen.getByTestId('facet-parent-facet-arrow'));
     expect(screen.getByTestId('facet-parent-facet-children')).toBeInTheDocument();

@@ -14,6 +14,87 @@ const MAX_FACETS_TO_SHOW = 5;
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
+test.describe('Facet checkbox reordering', () => {
+  test.beforeEach(({ page }) => mockApiConfig(page));
+
+  for (const nested of [false, true]) {
+    test(`Only the selected ${nested ? 'nested child' : 'facet'} is checked before reload`, async ({
+      page,
+    }) => {
+      const clockStart = new Date();
+      await page.clock.install({ time: clockStart });
+      await mockApiSuccess(page, searchResultPath, searchResults);
+      await mockApiSuccess(page, facetResultPath, nestedFacetsResponse);
+      await page.goto('/explorer?search=age');
+      await userIsLoggedIn(page);
+
+      if (nested) await page.getByTestId('facet-nested_facet-arrow').click();
+      const list = nested
+        ? page.getByTestId('facet-nested_facet-children')
+        : page.getByTestId('accordion-item').first();
+      const selectedName = nested ? 'nested_facet_child_3' : 'phs000284';
+      const checkbox = list.locator(`input[id="${selectedName}"]`);
+      await expect(checkbox).toBeVisible();
+      await expect(list.locator('input[type="checkbox"]:checked')).toHaveCount(0);
+
+      // Hold the search debounce so a reload cannot hide a stale checkmark.
+      await page.clock.pauseAt(new Date(clockStart.getTime() + 60_000));
+      await checkbox.click();
+
+      await expect(list.locator('input[type="checkbox"]').first()).toHaveAttribute(
+        'id',
+        selectedName,
+      );
+      await expect(checkbox).toBeChecked();
+      await expect(list.locator('input[type="checkbox"]:checked')).toHaveCount(1);
+
+      const reloaded = page.waitForResponse(facetResultPath);
+      await page.clock.resume();
+      const response = await reloaded;
+      expect(
+        response
+          .request()
+          .postDataJSON()
+          .facets.map((facet: { name: string }) => facet.name),
+      ).toEqual([selectedName]);
+      await expect(checkbox).toBeChecked();
+      await expect(list.locator('input[type="checkbox"]:checked')).toHaveCount(1);
+    });
+  }
+
+  test('Clearing a partially selected parent leaves no checked boxes before reload', async ({
+    page,
+  }) => {
+    const clockStart = new Date();
+    await page.clock.install({ time: clockStart });
+    await mockApiSuccess(page, searchResultPath, searchResults);
+    await mockApiSuccess(page, facetResultPath, nestedFacetsResponse);
+    await page.goto('/explorer?search=age');
+    await userIsLoggedIn(page);
+    await page.getByTestId('facet-nested_facet-arrow').click();
+
+    const child = page.getByTestId('facet-nested_facet_child-label').locator('input');
+    const parent = page.getByTestId('facet-nested_facet-label').locator('input');
+    const childReloaded = page.waitForResponse(facetResultPath);
+    await child.click();
+    await childReloaded;
+    await expect(child).toBeChecked();
+    await expect(parent).toHaveClass(/indeterminate/);
+
+    await page.clock.pauseAt(new Date(clockStart.getTime() + 60_000));
+    await parent.click();
+
+    await expect(parent).not.toHaveClass(/indeterminate/);
+    await expect(parent).not.toBeChecked();
+    await expect(page.locator('#facet-side-bar input[type="checkbox"]:checked')).toHaveCount(0);
+
+    const reloaded = page.waitForResponse(facetResultPath);
+    await page.clock.resume();
+    expect((await reloaded).request().postDataJSON().facets).toEqual([]);
+    await expect(parent).not.toBeChecked();
+  });
+});
+
 test.describe('Facet Side Bar', () => {
   test.beforeEach(({ page }) => mockApiConfig(page));
   test('Facet Side Bar is shown after loading', async ({ page }) => {
