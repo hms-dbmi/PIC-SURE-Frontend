@@ -19,7 +19,9 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('Results Panel', () => {
   test.beforeEach(({ page }) => mockApiConfig(page));
-  test('Result panel bar and button shows', async ({ page }) => {
+  test('Collapsed strip shows the participant count and the empty filter message', async ({
+    page,
+  }) => {
     // Given
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
@@ -28,11 +30,37 @@ test.describe('Results Panel', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.locator('#side-panel-bar')).toBeVisible();
-    await expect(page.locator('#results-panel-toggle')).toBeVisible();
-    await page.locator('#results-panel-toggle').click();
+    const strip = page.getByTestId('results-summary-strip');
+    await expect(strip).toBeVisible();
+    await expect(strip).toHaveAttribute('aria-expanded', 'false');
+    await expect(strip).toHaveAttribute('aria-controls', 'results-panel-body');
+    await expect(page.getByTestId('results-panel-count')).toContainText('9,999');
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(
+      'No filters added, add below',
+    );
+    await expect(page.locator('#results-panel')).not.toBeVisible();
   });
-  test('Result toggle button opens and closes the results panel', async ({ page }) => {
+  test('Strip is not rendered on the export and distributions routes', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    await expect(page.getByTestId('results-summary-panel')).toBeVisible();
+
+    // Then
+    await page.goto('/explorer/distributions');
+    await expect(page.getByRole('heading', { name: 'Variable Distributions' })).toBeVisible();
+    await expect(page.getByTestId('results-summary-panel')).toHaveCount(0);
+
+    await page.goto('/explorer/export');
+    await expect(
+      page.getByRole('heading', { name: 'Export Data for Research Analysis' }),
+    ).toBeVisible();
+    await expect(page.getByTestId('results-summary-panel')).toHaveCount(0);
+  });
+  test('Strip pluralises the filter count', async ({ page }) => {
     // Given
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
@@ -40,17 +68,55 @@ test.describe('Results Panel', () => {
     await page.goto('/explorer?search=somedata');
     await userIsLoggedIn(page);
 
-    //When
-    await page.locator('#results-panel-toggle').click();
+    // When
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+    await page.locator('#options-container label:nth-child(1)').click();
+    await page.getByTestId('add-filter').click();
 
     // Then
-    await expect(page.locator('#results-panel')).toBeVisible();
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText('1 filter added');
+
+    // When
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat2.dataset}`,
+      detailResponseCat2,
+    );
+    await page.locator('#ExplorerTable-row-2 button[title^=Filter]').click();
+    await page.locator('#select-all').click();
+    await page.getByTestId('add-filter').click();
+
+    // Then
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText('2 filters added');
+  });
+  test('Clicking the strip opens and closes the results panel body', async ({ page }) => {
+    // Given
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    const strip = page.getByTestId('results-summary-strip');
 
     //When
-    await page.locator('#results-panel-toggle').click();
+    await strip.click();
+
+    // Then
+    await expect(page.getByTestId('results-panel-body')).toBeVisible();
+    await expect(page.locator('#results-panel')).toBeVisible();
+    await expect(strip).toHaveAttribute('aria-expanded', 'true');
+
+    //When
+    await strip.click();
 
     // Then
     await expect(page.locator('#results-panel')).not.toBeVisible();
+    await expect(strip).toHaveAttribute('aria-expanded', 'false');
   });
   test('Result panel shows N/A icon on add filter error with popup', async ({ page }) => {
     // Given
@@ -125,7 +191,9 @@ test.describe('Results Panel', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
 
     // Then
-    await expect(page.getByText('No filters added')).toBeVisible();
+    await expect(
+      page.getByTestId('results-panel-body').getByText('No filters added'),
+    ).toBeVisible();
   });
   test('Export button hidden when no filters or exports are added', async ({ page }) => {
     // Given
@@ -139,7 +207,9 @@ test.describe('Results Panel', () => {
     await page.locator('#results-panel-toggle').click();
 
     // Then
-    await expect(page.getByText('No filters added')).toBeVisible();
+    await expect(
+      page.getByTestId('results-panel-body').getByText('No filters added'),
+    ).toBeVisible();
     await expect(page.locator('#export-data-button')).not.toBeVisible();
   });
   test('Export button hidden when count is 0', async ({ page }) => {
@@ -289,7 +359,9 @@ test.describe('Results Panel', () => {
     await page.locator('#modal-component').getByRole('button', { name: 'Yes' }).click();
 
     // Then
-    await expect(page.getByText('No filters added')).toBeVisible();
+    await expect(
+      page.getByTestId('results-panel-body').getByText('No filters added'),
+    ).toBeVisible();
   });
 
   test.describe('Filter Tree Display', () => {
@@ -389,10 +461,12 @@ test.describe('Results Panel', () => {
       // Given
       await mockApiSuccess(page, facetResultPath, facetsResponse);
       await mockApiSuccess(page, searchResultPath, mockData);
+      // Call 1 is the panel's own no-filter count, which it now issues whether or not the
+      // body is expanded. Calls 2 and 3 are the two filters the test adds.
       let countCalls = 0;
       await page.route(countResultPath, async (route) => {
         countCalls += 1;
-        await route.fulfill({ json: countCalls >= 2 ? '0' : '9999' });
+        await route.fulfill({ json: countCalls >= 3 ? '0' : '9999' });
       });
 
       await page.goto('/explorer?search=somedata');
@@ -499,9 +573,10 @@ test.describe('Results Panel', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
 
-      // Then
-      expect(querySyncRequest.length).toBe(1);
-      expect(querySyncRequest[0]).toContain('phenotypicClauses');
+      // Then - the first request is the panel's no-filter count on load, the second carries
+      // the filter that was just added.
+      expect(querySyncRequest.length).toBe(2);
+      expect(querySyncRequest[1]).toContain('phenotypicClauses');
     });
     test('single filter shows no operator label', async ({ page }) => {
       // Given

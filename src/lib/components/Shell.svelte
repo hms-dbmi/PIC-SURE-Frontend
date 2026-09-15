@@ -5,7 +5,6 @@
 
   interface Props {
     header?: Snippet;
-    sidebarRight?: Snippet;
     pageFooter?: Snippet;
     children?: Snippet;
   }
@@ -14,7 +13,7 @@
     config.features.login.open || (!config.features.login.open && isUserLoggedIn()),
   );
 
-  const { header, sidebarRight, pageFooter, children }: Props = $props();
+  const { header, pageFooter, children }: Props = $props();
 </script>
 
 {#if showShell}
@@ -35,7 +34,6 @@
               {@render pageFooter?.()}
             </footer>
           </div>
-          {@render sidebarRight?.()}
         </div>
       </div>
     </main>

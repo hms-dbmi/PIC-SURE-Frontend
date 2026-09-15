@@ -53,7 +53,8 @@ test.describe('Advanced Query Builder - Core Features', () => {
     });
 
     await page.goto('/explorer?search=somedata');
-    await expect(page.locator('#results-panel')).toBeVisible();
+    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
     await afPage.openModal();
 
     const updatedFirstFilterCard = afPage.getFilterCard(afPage.filterNames[0]);
@@ -127,7 +128,8 @@ test.describe('Advanced Query Builder - Query Summary', () => {
     });
 
     await page.goto('/explorer?search=somedata');
-    await expect(page.locator('#results-panel')).toBeVisible();
+    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
     await afPage.openModal();
 
     // Equation should contain parentheses for the subquery
@@ -267,25 +269,16 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await expect(dragHandle).toBeVisible();
     await expect(firstCard).not.toHaveClass(/\binvisible\b/);
 
-    await dragHandle.scrollIntoViewIfNeeded();
-    await expect(dragHandle).toBeInViewport();
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.waitForTimeout(DND_QUICK_SETTLE_TIMEOUT);
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 100, { steps: 20 });
+    // startDrag centres the handle in the scroll container and clamps the travel, so the
+    // release lands inside the container however tall the chrome above the page is. Doing
+    // that by hand here put the pointer past the bottom of the viewport once the cohort
+    // summary panel was added, and the pointerup never reached dnd-kit.
+    const { startX, startY } = await afPage.startDrag(dragHandle, 'down', 100);
 
     const dragPlaceholder = page.getByTestId('drop-preview');
     await expect(dragPlaceholder).toBeVisible({ timeout: 5000 });
 
-    await page.mouse.up();
+    await afPage.endDrag(startX, startY);
     await expect(dragPlaceholder).toHaveCount(0, { timeout: 2000 });
   });
 
@@ -484,7 +477,8 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     });
 
     await page.goto('/explorer?search=somedata');
-    await expect(page.locator('#results-panel')).toBeVisible();
+    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
     await afPage.openModal();
 
     const dropPreview = page.getByTestId('drop-preview');
@@ -583,7 +577,8 @@ test.describe('Advanced Query Builder - Grouping', () => {
     });
 
     await page.goto('/explorer?search=somedata');
-    await expect(page.locator('#results-panel')).toBeVisible();
+    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
     await afPage.openModal();
 
     const lastFilter = afPage.filterNames[afPage.filterNames.length - 1];
@@ -632,7 +627,8 @@ test.describe('Advanced Query Builder - Grouping', () => {
     });
 
     await page.goto('/explorer?search=somedata');
-    await expect(page.locator('#results-panel')).toBeVisible();
+    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
     await afPage.openModal();
 
     const groupCards = modal.getByTestId('filter-group');
@@ -673,7 +669,8 @@ test.describe('Advanced Query Builder - Grouping', () => {
 
     // Navigate again to pick up the modified tree
     await page.goto('/explorer?search=somedata');
-    await expect(page.locator('#results-panel')).toBeVisible();
+    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
     await afPage.openModal();
 
     // Verify the subquery exists with "Between filters:" label
@@ -948,7 +945,8 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     await afPage.closeModal();
     await afPage.injectTwoGroups(page);
     await page.goto('/explorer?search=somedata');
-    await expect(page.locator('#results-panel')).toBeVisible();
+    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
     await afPage.openModal();
   }
 

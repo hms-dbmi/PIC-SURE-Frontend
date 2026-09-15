@@ -1,0 +1,100 @@
+<script module lang="ts">
+  // Explore and Discover render their own instance of this panel, from their own layout, so a
+  // navigation between the two has one instance mounting and another unmounting. Svelte does
+  // not promise an order for that, and `resultCountsState.stop()` cancels whatever load is in
+  // flight - so the teardown only fires for the instance that still owns the counts.
+  let countsOwner: object | null = null;
+</script>
+
+<script lang="ts">
+  import { onDestroy, onMount } from 'svelte';
+
+  import { page } from '$app/state';
+
+  import { config } from '$lib/configuration.svelte';
+  import { showsSearchChrome } from '$lib/explorer/searchChrome';
+  import { allFilters } from '$lib/stores/Filter';
+  import { panelOpen } from '$lib/stores/SidePanel';
+  import { resultCountsState } from '$lib/state/resultCounts.svelte';
+  import { sanitizeHTML } from '$lib/utilities/HTML';
+  import { log, createLog } from '$lib/logger';
+
+  import Counts from '$lib/components/explorer/results/Counts.svelte';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  // The body is deliberately one child: the chip redesign replaces this import and nothing else.
+  import ResultsPanel from '$lib/components/explorer/results/ResultsPanel.svelte';
+
+  const BODY_ID = 'results-panel-body';
+
+  let visible = $derived(showsSearchChrome(page.url.pathname));
+  let filterCount = $derived($allFilters.length);
+  let filterSummary = $derived(
+    filterCount === 0
+      ? 'No filters added, add below'
+      : `${filterCount} filter${filterCount === 1 ? '' : 's'} added`,
+  );
+  let hasCountError = $derived(
+    !resultCountsState.loading && resultCountsState.snapshot.summary.hasError,
+  );
+
+  const instance = {};
+  const getIsOpenAccess = () => page.url.pathname.includes('/discover');
+
+  onMount(() => {
+    countsOwner = instance;
+    resultCountsState.start(getIsOpenAccess);
+  });
+
+  onDestroy(() => {
+    if (countsOwner !== instance) return;
+    countsOwner = null;
+    resultCountsState.stop();
+  });
+
+  function toggle() {
+    panelOpen.update((open) => {
+      log(createLog('ACTION', 'results_panel.toggle', { open: !open }));
+      return !open;
+    });
+  }
+</script>
+
+{#if visible}
+  <section
+    id="results-summary-panel"
+    data-testid="results-summary-panel"
+    aria-label="Cohort summary"
+    class="card bg-surface-50-950 border border-surface-300-700 rounded-container mx-6 mt-8"
+  >
+    <button
+      type="button"
+      id="results-panel-toggle"
+      data-testid="results-summary-strip"
+      class="w-full flex items-center justify-between gap-4 px-6 py-3 text-left cursor-pointer rounded-container hover:bg-surface-100-900"
+      aria-expanded={$panelOpen}
+      aria-controls={BODY_ID}
+      onclick={toggle}
+    >
+      <Counts />
+      <span class="flex items-center gap-4">
+        <span data-testid="results-panel-filter-count">{filterSummary}</span>
+        <i class="fa-solid {$panelOpen ? 'fa-chevron-down' : 'fa-chevron-right'}" aria-hidden="true"
+        ></i>
+      </span>
+    </button>
+    {#if hasCountError}
+      <ErrorAlert color="warning" iconSize="2xl">
+        <p class="text-[0.6rem] !m-0">
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html sanitizeHTML(config.branding.explorePage.queryErrorText)}
+        </p>
+      </ErrorAlert>
+    {/if}
+    <!-- Rendered whether or not the panel is open so `aria-controls` always resolves. -->
+    <div id={BODY_ID} data-testid="results-panel-body">
+      {#if $panelOpen}
+        <ResultsPanel />
+      {/if}
+    </div>
+  </section>
+{/if}

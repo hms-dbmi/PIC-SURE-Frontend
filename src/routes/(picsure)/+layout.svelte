@@ -15,7 +15,6 @@
 
   import Shell from '$lib/components/Shell.svelte';
   import Navigation from '$lib/components/Navigation.svelte';
-  import SidePanel from '$lib/components/explorer/results/SidePanel.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import Drawer from '$lib/components/Drawer.svelte';
   import DashboardDrawer from '$lib/components/dashboard/DashboardDrawer.svelte';
@@ -27,12 +26,6 @@
   onMount(() => {
     document.body.classList.add('started');
   });
-
-  let showSidebar = $derived(
-    (page.url.pathname.includes('/explorer') || page.url.pathname.includes('/discover')) &&
-      !page.url.pathname.includes('/export') &&
-      !page.url.pathname.includes('/distributions'),
-  );
 
   beforeNavigate(({ to, cancel }) => {
     const notAuthorized =
@@ -60,13 +53,6 @@
 <Shell>
   {#snippet header()}
     <Navigation />
-  {/snippet}
-  {#snippet sidebarRight()}
-    {#if showSidebar}
-      <div id="sidebar-right" class="flex overflow-auto">
-        <SidePanel />
-      </div>
-    {/if}
   {/snippet}
   {@render children?.()}
   {#snippet pageFooter()}

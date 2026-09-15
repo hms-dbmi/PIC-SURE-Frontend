@@ -785,9 +785,10 @@ test.describe('Query V3 OR features', () => {
     const addFilterButton = page.getByTestId('add-filter');
     await addFilterButton.click();
 
-    // Then
-    expect(querySyncRequest.length).toBe(1);
-    expect(querySyncRequest[0]).toContain('phenotypicClauses');
+    // Then - the first request is the cohort summary panel's no-filter count on load, the
+    // second carries the filter that was just added.
+    expect(querySyncRequest.length).toBe(2);
+    expect(querySyncRequest[1]).toContain('phenotypicClauses');
   });
   test('shows AND label between filters on explorer', async ({ page }) => {
     // Given

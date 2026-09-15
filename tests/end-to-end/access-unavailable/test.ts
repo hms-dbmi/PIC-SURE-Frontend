@@ -30,6 +30,9 @@ test.describe('Access unavailable', () => {
     await mockApiSuccess(page, '*/**/picsure/dictionary/dashboard', mockDashboard);
     await mockApiSuccess(page, searchResultPath, searchResults);
     await mockApiSuccess(page, facetResultPath, []);
+    // The cohort summary panel loads a participant count on every /explorer visit; unmocked it
+    // fails and raises a second error toast alongside the one these tests assert on.
+    await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', '9999');
   });
 
   test('failing consents on login warns the user instead of failing silently', async ({ page }) => {

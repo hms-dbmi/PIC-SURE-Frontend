@@ -11,7 +11,7 @@ import {
   detailResponseCat2,
   detailResForAge,
 } from '../mock-data';
-import { clickNthFilterIcon, getOption, userIsLoggedIn } from '../utils';
+import { clickNthFilterIcon, expandResultsPanel, getOption, userIsLoggedIn } from '../utils';
 
 const SYNC_URL = '*/**/picsure/hpds/auth/v3/query/sync';
 
@@ -172,8 +172,8 @@ export class AdvancedFilteringPage {
       await addSteps[i]();
     }
 
-    // Wait for results panel to be visible
-    await expect(this.page.locator('#results-panel')).toBeVisible();
+    // Build Advanced Query lives in the cohort summary panel's body
+    await expandResultsPanel(this.page);
 
     // Click the Advanced Filtering button in the Tool Suite
     await expect(this.advancedFilteringBtn).toBeEnabled();
@@ -222,6 +222,7 @@ export class AdvancedFilteringPage {
   // ==================== Navigation ====================
 
   async openModal() {
+    await expandResultsPanel(this.page);
     await expect(this.advancedFilteringBtn).toBeEnabled();
     await this.advancedFilteringBtn.click();
     await expect(this.modal).toBeVisible();
@@ -388,8 +389,8 @@ export class AdvancedFilteringPage {
   async expectApplySucceeded() {
     // User should still be on the advanced-filtering page
     expect(this.page.url()).toContain('/advanced-filtering');
-    // The sidebar should have opened (panelOpen auto-opens on filter change)
-    await expect(this.page.locator('#side-panel')).toBeVisible();
+    // The cohort summary panel sits above the search and is always present
+    await expect(this.page.getByTestId('results-summary-panel')).toBeVisible();
   }
 
   async expectAddGroupButtonVisible() {
