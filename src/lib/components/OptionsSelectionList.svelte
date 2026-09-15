@@ -6,10 +6,15 @@
 
   const SEARCH_DEBOUNCE_MS = 250;
 
-  let searchInput: string = $state('');
   let searchTimeout: ReturnType<typeof setTimeout> | undefined;
 
   interface Props {
+    /**
+     * Bindable so a caller whose list outlives this component can restore what was typed
+     * alongside the options it answers to. Callers that do not bind get an empty box, which
+     * is what every one of them had before.
+     */
+    searchInput?: string;
     unselectedOptions?: string[];
     selectedOptions?: string[];
     selectedOptionEndLocation?: number;
@@ -22,6 +27,7 @@
   }
 
   let {
+    searchInput = $bindable(''),
     unselectedOptions = $bindable([]),
     selectedOptions = $bindable([]),
     selectedOptionEndLocation = $bindable(20),

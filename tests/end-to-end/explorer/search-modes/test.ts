@@ -42,6 +42,9 @@ test.describe('Explore search mode bar', () => {
     await mockApiConfig(page, genomicEnabled);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, searchResults);
+    // The specs here that reach the Genotypes tab mount the real gene panels, which load
+    // the gene list. Unmocked, that fails and puts a toast over the bar being asserted on.
+    await mockApiSuccess(page, '*/**/picsure/hpds/auth/search/values*', geneValues);
   });
 
   test('is a named navigation landmark listing Phenotypes and Genotypes', async ({ page }) => {
@@ -212,8 +215,8 @@ test.describe('Explore mode switching', () => {
 
   test.beforeEach(async ({ page }) => {
     await mockApiConfig(page, genomicEnabled);
-    // The Genotypes tab loads the gene list on mount; leave it unmocked and its failure
-    // toast lands over the assertions below.
+    // As above: the Genotypes tab loads the gene list, and an unmocked failure toasts over
+    // the assertions.
     await mockApiSuccess(page, '*/**/picsure/hpds/auth/search/values*', geneValues);
   });
 
@@ -255,6 +258,36 @@ test.describe('Explore mode switching', () => {
     await page.waitForTimeout(SETTLE_MS);
     expect(concepts.count).toBe(conceptsBefore);
     expect(facets.count).toBe(facetsBefore);
+  });
+
+  // The same invariant, for the one list the assertions above do not reach. The Genotypes
+  // tab's gene list is fetched a page at a time by infinite scroll, so reloading it on every
+  // return would also throw away however far the user had scrolled.
+  test('does not load the gene list again on returning to Genotypes', async ({ page }) => {
+    // Given the gene list loaded once
+    const genes = { count: 0 };
+    await page.route('*/**/picsure/hpds/auth/search/values*', async (route) => {
+      genes.count += 1;
+      await route.fulfill({ json: geneValues });
+    });
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, searchResults);
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+
+    await modeLink(page, 'genotypes').click();
+    await expect(page.getByLabel(geneValues.results[0])).toBeVisible({ timeout: 10000 });
+    expect(genes.count).toBe(1);
+
+    // When the user leaves and comes back
+    await modeLink(page, 'phenotypes').click();
+    await expect(page).toHaveURL(/\/explorer$/);
+    await modeLink(page, 'genotypes').click();
+
+    // Then the list is there without being asked for again
+    await expect(page.getByLabel(geneValues.results[0])).toBeVisible();
+    await page.waitForTimeout(SETTLE_MS);
+    expect(genes.count).toBe(1);
   });
 });
 
