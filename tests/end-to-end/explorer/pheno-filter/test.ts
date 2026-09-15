@@ -650,7 +650,9 @@ test.describe('Any record of filter', () => {
     await expect(page.getByTestId('hierarchy-component')).toBeVisible();
     const secondItem = page.getByTestId('radio:Disease (disease)');
     await secondItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
+    // The hierarchy's own add button. It used to share `add-filter` with the value list's,
+    // which made an unscoped locator ambiguous wherever both render.
+    const addFilterButton = page.getByTestId('add-hierarchy-filter');
     await addFilterButton.click();
     await expect(page.locator('#modal-component')).not.toBeVisible();
     await expect(page.getByTestId(/^any-record-of-filter-modal-.*-btn$/)).toBeVisible();
