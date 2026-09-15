@@ -455,6 +455,55 @@ describe('VariableDetail', () => {
       expect(get(filters)[0]).toMatchObject({ categoryValues: ['Yes', "Don't know"] });
     });
 
+    /*
+     * The same two views, for a related variable.
+     *
+     * A related variable's selection becomes its own filter on its own concept path, so it
+     * gets its own chip in the cohort panel and its own edit pencil - and goes stale here in
+     * exactly the same way the main variable's filter does. The key covers both.
+     */
+    it('re-reads a related variable’s filter edited from the cohort panel', async () => {
+      const child = {
+        ...categoricalDetail,
+        conceptPath: '\\this\\is\\a\\smoker\\status\\',
+        display: 'Infection status',
+        // Three, so that editing to two is still a restriction rather than "any value"
+        values: ['Infected', 'Non-infected', 'Unknown'],
+      } as SearchResult;
+      addFilter(createCategoricalFilter(child, ['Infected']));
+      vi.mocked(getConceptDetails).mockResolvedValue({
+        ...categoricalDetail,
+        children: [child],
+      } as SearchResult);
+
+      render(VariableDetail, { section: 'explorer', variableKey: categoricalKey });
+      await screen.findByTestId('variable-filter-panel-name');
+
+      // Its own ids repeat across the panel's lists, so this reads the section's own column
+      const relatedSelection = () =>
+        Array.from(
+          screen
+            .getByTestId('related-variable')
+            .querySelectorAll('#selected-options-container input[type="checkbox"]'),
+        ).map((input) => (input as HTMLInputElement).value);
+
+      // The section opens on what is applied, rather than collapsed over it
+      expect(relatedSelection()).toEqual(['Infected']);
+
+      // The edit the modal makes: the same filter, the same uuid, one more value
+      const { uuid } = get(filters)[0];
+      updateFilter(uuid, createCategoricalFilter(child, ['Infected', 'Non-infected']));
+      await waitFor(() => expect(relatedSelection()).toEqual(['Infected', 'Non-infected']));
+
+      // And filtering from this page carries that edit forward instead of reverting it
+      await fireEvent.click(addFilterButton());
+      expect(get(filters)).toHaveLength(1);
+      expect(get(filters)[0]).toMatchObject({
+        id: child.conceptPath,
+        categoryValues: ['Infected', 'Non-infected'],
+      });
+    });
+
     it('is offered in open access for a variable the dictionary allows', async () => {
       mockState.pathname = '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C';
       mockState.section = 'discover';

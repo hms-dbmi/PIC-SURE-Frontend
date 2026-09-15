@@ -7,6 +7,7 @@
     withSearchTerm,
     type SearchSection,
   } from '$lib/explorer/searchChrome';
+  import { relatedVariablesOf } from '$lib/explorer/variableFilter';
   import type { VariableKey } from '$lib/explorer/variableUrl';
   import { log, createLog, getPageContext } from '$lib/logger';
   import type { Filter, FilterType } from '$lib/models/Filter.svelte';
@@ -202,9 +203,27 @@
    *
    * The cost is that an edit elsewhere discards a selection in progress here. That is the
    * right way round: the alternative silently overwrites the newer of the two.
+   *
+   * It covers the panel's related variables as well as the main one. Each of those is its own
+   * filter on its own concept path, with its own chip and its own edit pencil, so each has
+   * exactly the same pair of views and the same way of going stale.
    */
+  function revisionOf(filter: Filter | undefined): string {
+    return filter ? `${filter.uuid}\u0000${filterContent(filter)}` : '';
+  }
+
+  const relatedFilters = $derived(
+    variable
+      ? relatedVariablesOf(variable).map((child) =>
+          $filters.find(
+            (filter) => filter.id === child.conceptPath && filter.filterType === 'Categorical',
+          ),
+        )
+      : [],
+  );
+
   const filterRevision = $derived(
-    existingFilter ? `${existingFilter.uuid}\u0000${filterContent(existingFilter)}` : '',
+    [existingFilter, ...relatedFilters].map(revisionOf).join('\u0001'),
   );
 
   // Add for Analysis has nowhere else to live once ticket 11 removes the per-row icons, so the
