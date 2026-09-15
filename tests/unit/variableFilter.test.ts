@@ -207,5 +207,11 @@ describe('relatedVariablesOf', () => {
         children: [child({ dataset: undefined as unknown as string })],
       } as SearchResult),
     ).toEqual([]);
+    // Whitespace too. `hasConsentForFilter` reads `' '` as unconsented exactly as it reads
+    // `''`, so a guard that admits it is a guard with a hole - worse than none, because it
+    // reads as handled.
+    expect(
+      relatedVariablesOf({ ...smoker, children: [child({ dataset: '   ' })] } as SearchResult),
+    ).toEqual([]);
   });
 });

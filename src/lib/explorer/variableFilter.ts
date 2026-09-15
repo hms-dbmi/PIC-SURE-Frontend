@@ -47,8 +47,11 @@ export function coversEveryValue(values: string[], selected: string[]): boolean 
 }
 
 /**
- * Whether this concept may not be filtered on: the rule the results row's filter icon uses,
- * in one place because three callers need it.
+ * Whether this concept may not be filtered on: the rule the results row's filter icon uses.
+ *
+ * Here because the page and the panel have to agree on it - the page applies it to the
+ * variable it is about, the panel to each related variable under it. `Actions.svelte` and
+ * `HierarchyComponent.svelte` still spell the same test out inline and could move to this.
  *
  * An open-access visitor may not filter on a variable the dictionary marks unfilterable. An
  * authenticated user may, which is why this is not `!allowFiltering` on its own.
@@ -116,6 +119,10 @@ export function appliedCategoricalFilter(
 export function relatedVariablesOf(concept: SearchResult): SearchResult[] {
   return (concept.children ?? []).filter(
     (child) =>
-      child.type === 'Categorical' && (child.values?.length ?? 0) > 0 && Boolean(child.dataset),
+      child.type === 'Categorical' &&
+      (child.values?.length ?? 0) > 0 &&
+      // Trimmed: `hasConsentForFilter` reads a dataset of spaces as unconsented exactly as it
+      // reads an empty one, so admitting whitespace would leave the hole this closes.
+      Boolean(child.dataset?.trim()),
   );
 }

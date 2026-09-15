@@ -205,6 +205,61 @@ test.describe('OptionalSelectionList', () => {
     await expect(optionContainer(page).getByRole('listitem')).toHaveCount(3);
   });
 
+  /*
+   * One reading of the search box.
+   *
+   * The term narrowing the column and the term Select All admits values by were two separate
+   * readings of the same input - one trimmed, one not - so a trailing space narrowed the
+   * column to nothing while Select All went on admitting values.
+   */
+  test('reads a term with a trailing space the same way everywhere', async ({ page }) => {
+    await openVariable(page, detailResponseCat);
+    const searchBox = list(page).locator('input[type="search"]');
+
+    await searchBox.fill('Yes ');
+
+    // The column narrows to the value the term names, rather than to nothing
+    await expect(optionContainer(page).getByRole('listitem')).toHaveCount(1);
+    await expect(optionContainer(page).locator('input[value="Yes"]')).toHaveCount(1);
+
+    // And Select All admits exactly that value
+    await list(page).locator('#select-all').click();
+    await expect(selectedContainer(page).getByRole('listitem')).toHaveCount(1);
+    await expect(selectedContainer(page).locator('input[value="Yes"]')).toHaveCount(1);
+  });
+
+  /*
+   * Where focus goes when the value has nowhere to go.
+   *
+   * Following a toggled value to its new column is the whole point of `focusMovedOption` -
+   * without it a keyboard user tabs in from the top of the page for every value. A value the
+   * search term excludes lands in neither column, so there is nothing to follow it to, and
+   * the checkbox that had focus has just been removed from the DOM. Focus goes to the search
+   * box: the control that decided the value would not reappear, and the one the user needs in
+   * order to change that.
+   */
+  test('moves focus to the search box when an unticked value has nowhere to go', async ({
+    page,
+  }) => {
+    // Given "No" picked and the column narrowed to a term it does not match
+    await openVariable(page, detailResponseCat);
+    const searchBox = list(page).locator('input[type="search"]');
+
+    await optionContainer(page).locator('input[value="No"]').click();
+    await searchBox.fill('Yes');
+    await expect(optionContainer(page).getByRole('listitem')).toHaveCount(1);
+
+    // When it is unticked from the keyboard, where it sits
+    const picked = selectedContainer(page).locator('input[value="No"]');
+    await picked.focus();
+    await expect(picked).toBeFocused();
+    await page.keyboard.press('Space');
+
+    // Then focus is on the search box, not on the document body
+    await expect(selectedContainer(page).getByRole('listitem')).toHaveCount(0);
+    await expect(searchBox).toBeFocused();
+  });
+
   test('Loads next values when scrolling', async ({ page }) => {
     // Given
     const manyOptions = {

@@ -75,6 +75,16 @@
   let currentlyLoadingSelected: boolean = $state(false);
   let unselectedOptionsContainer: HTMLElement = $state() as HTMLElement;
   let selectedOptionsContainer: HTMLElement = $state() as HTMLElement;
+  let searchBox: HTMLInputElement | undefined = $state();
+
+  /**
+   * The search term, as every reader of it sees it.
+   *
+   * Trimmed in one place. `matchesSearch` trimmed and the term handed to `onscroll` did not,
+   * so a term with a trailing space narrowed the column to nothing while Select All went on
+   * admitting values - two readings of one box.
+   */
+  const searchTerm = $derived(searchInput.trim());
 
   function shouldLoadMore(element: HTMLElement, allLoaded: boolean) {
     const scrollTop = element.scrollTop;
@@ -90,7 +100,7 @@
       !currentlyLoading &&
       shouldLoadMore(unselectedOptionsContainer, allUnselectedOptionsLoaded)
     ) {
-      onscroll(searchInput);
+      onscroll(searchTerm);
     }
   }
 
@@ -106,7 +116,7 @@
   function onSearch() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-      onscroll(searchInput);
+      onscroll(searchTerm);
       unselectedOptionsContainer.scrollTop = 0;
     }, SEARCH_DEBOUNCE_MS);
   }
@@ -130,16 +140,25 @@
    */
   async function focusMovedOption(container: HTMLElement | undefined, option: string) {
     await tick();
-    if (!container) return;
-    const boxes = Array.from(
-      container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'),
-    );
-    boxes.find((box) => box.value === option)?.focus();
+    const boxes = container
+      ? Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'))
+      : [];
+    const moved = boxes.find((box) => box.value === option);
+    if (moved) {
+      moved.focus();
+      return;
+    }
+    // Nowhere to follow it to: unticking a value the search term excludes takes it out of
+    // both columns, and the checkbox that had focus has just left the DOM. Focus goes to the
+    // box that decided the value would not come back, rather than to the document body -
+    // which is the same drop to the top of the page this function exists to prevent. Only
+    // reachable when there is a term, and a term means there is a box.
+    searchBox?.focus();
   }
 
   /** Whether the search box as it currently reads admits `option`. */
   function matchesSearch(option: string) {
-    const needle = searchInput.trim().toLowerCase();
+    const needle = searchTerm.toLowerCase();
     return !needle || option.toLowerCase().includes(needle);
   }
 
@@ -227,6 +246,7 @@
       <header class="flex pb-1">
         {#if showSearch}
           <input
+            bind:this={searchBox}
             class="input text-sm"
             type="search"
             name="search"

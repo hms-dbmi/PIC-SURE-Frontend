@@ -1219,6 +1219,41 @@ test.describe('the designed filter panel', () => {
   });
 
   /*
+   * The half of Select All that the three-value fixture cannot pin.
+   *
+   * With sixty values the column pages twenty at a time, and a term admitting thirty of them
+   * can only render twenty - so "the values the term admits" and "the values on screen" are
+   * different sets, which they never are for a variable with three values. An implementation
+   * that selected the rendered `unselectedOptions` would satisfy the case above unchanged.
+   */
+  test('selects every value the term admits, not only the ones paged onto the screen', async ({
+    page,
+  }) => {
+    const paged = {
+      ...variable,
+      values: [
+        ...Array.from({ length: 30 }, (_, index) => `Match ${index + 1}`),
+        ...Array.from({ length: 30 }, (_, index) => `Other ${index + 1}`),
+      ],
+    };
+    await open(page, paged);
+
+    // Twenty of sixty to start with, then twenty of the thirty the term admits
+    await expect(optionsColumn(page).getByRole('listitem')).toHaveCount(20);
+    await searchBox(page).fill('Match');
+    await expect(optionsColumn(page).getByRole('listitem')).toHaveCount(20);
+
+    await selectAll(page).click();
+    await filterParticipants(page).click();
+
+    // Thirty, not the twenty that were on screen - and none of the values the term excluded
+    const chip = page.getByTestId(`added-filter-${variable.conceptPath}`);
+    await chip.getByRole('button', { name: 'See details' }).click();
+    await expect(chip).toContainText('Restricting to 30 values.');
+    await expect(chip).not.toContainText('Other');
+  });
+
+  /*
    * The other half of "any value": reading it back.
    *
    * Select All writes a filter carrying *no* values, which is how the cohort records "filter
