@@ -26,15 +26,12 @@
   import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
   import { generateSNPFilter, selectedSNPs } from '$lib/stores/SNPFilter';
 
-  // The gene and variant working state above - selections, consequences, frequencies - is
-  // shared with /explorer/genome-filter, which is still reachable and which both clears it on
-  // its way out and overwrites it from the applied filter on its way in. So a detour through
-  // that page does change what this one is holding: it can empty the panels behind this tab's
-  // back, leaving `draftLoadedFrom` saying they hold the applied filter when they no longer
-  // do. `filterMethod` is the exception: that page keeps its own page-local method and never
-  // touches this store. None of it is isolated and none of it is meant to be - the two are the
-  // same feature behind two entry points for as long as both exist, and deleting the old one
-  // is what closes it.
+  // The gene and variant working state above - selections, consequences, frequencies - lives
+  // in module-level stores, so that switching search modes does not lose a draft in progress.
+  // This tab is now the only thing that loads or clears them wholesale, by way of
+  // `loadGenomicDrafts`; the retired genomic-filtering route used to do the same behind this
+  // tab's back, which is how a detour through it could leave `draftLoadedFrom` claiming the
+  // panels still held the applied filter when they had been emptied.
 
   /**
    * The method a deployment with a single query type leaves no choice about. BDC enables

@@ -73,6 +73,21 @@ test.describe('Explore search mode bar', () => {
     await expect(modeBar(page).locator('[aria-selected]')).toHaveCount(0);
   });
 
+  // The Genotypes mode is the only entry point to genomic filtering. The search bar used to
+  // carry a Genomic Filtering button beside Reset, leading to a second page over the same
+  // module-level draft stores, which it cleared on its way out and overwrote on its way in.
+  test('leaves the search bar with no second genomic entry point', async ({ page }) => {
+    // Given genomic search enabled, which is the condition the button used to render under
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+    await expect(modeLink(page, 'genotypes')).toBeVisible();
+
+    // Then the bar holds the search box and Reset, and no link at all
+    await expect(page.locator('#search-bar')).toBeVisible();
+    await expect(page.locator('#search-bar').getByRole('link')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Genomic Filtering' })).toHaveCount(0);
+  });
+
   test('marks exactly the current route with aria-current', async ({ page }) => {
     // Given
     await page.goto('/explorer');

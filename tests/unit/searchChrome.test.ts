@@ -63,7 +63,6 @@ describe('showsSearchChrome', () => {
     '/explorer/genotypes',
     '/explorer/advanced-filtering',
     '/explorer/variant',
-    '/explorer/genome-filter',
     '/discover',
     '/discover/advanced-filtering',
   ])('shows the chrome on %s', (pathname) => {

@@ -12,9 +12,9 @@ import type { Branding } from '$lib/models/Configuration';
 import brandingJson from '../../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
-// The gene-with-variant flow through the Genotypes tab, which is where genomic filtering
-// lives now. The route-based equivalents in gene-test.ts still cover /explorer/genome-filter
-// while it survives; that route goes away with ticket 08 and these become the only coverage.
+// The gene-with-variant flow through the Genotypes tab, which is the only way into genomic
+// filtering now. This is the whole of its coverage: the Genomic Filtering button and the route
+// it led to are gone, and the route-based specs that used to duplicate these went with them.
 
 const QUERY = '*/**/picsure/hpds/auth/v3/query/sync';
 

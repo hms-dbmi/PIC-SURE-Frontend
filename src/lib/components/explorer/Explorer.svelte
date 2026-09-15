@@ -18,7 +18,6 @@
   } from '$lib/stores/Search';
   import type { TourDataType } from '$lib/models/Tour';
   import { isDiscoverSection } from '$lib/explorer/searchChrome';
-  import { genotypesMode } from '$lib/explorer/searchModes';
 
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
   import SearchDatatable from '$lib/components/datatable/RemoteTable.svelte';
@@ -26,7 +25,6 @@
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
-  import { log, createLog } from '$lib/logger';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
@@ -53,9 +51,6 @@
   const cellOverides = { id: Actions };
   let isDiscoverPage = $derived(isDiscoverSection(page.url.pathname));
   let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
-  // Same gate as the Genotypes mode, from the one definition of it - this button and that
-  // link are two entry points to the same thing.
-  let allowGenomicFiltering = $derived(genotypesMode.enabled(isDiscoverPage));
 
   function update() {
     if ($error) error.set('');
@@ -102,15 +97,6 @@
         <Searchbox bind:searchTerm={searchInput} search={update} />
       </div>
       <div class="flex-none">
-        {#if allowGenomicFiltering}
-          <a
-            data-testid="genomic-filter-btn"
-            class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-            href={resolve('/explorer/genome-filter')}
-            onclick={() => log(createLog('NAVIGATION', 'explorer.genomic_filter_click'))}
-            >Genomic Filtering</a
-          >
-        {/if}
         <button
           type="button"
           class="btn preset-tonal-error border border-error-500 hover:preset-filled-error-500"

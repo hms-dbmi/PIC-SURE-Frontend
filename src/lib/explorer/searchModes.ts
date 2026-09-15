@@ -50,8 +50,9 @@ export const phenotypesMode: SearchMode = {
 };
 
 /**
- * Genomic filtering. `enabled` is the one definition of the rule, shared with the Genomic
- * Filtering button that is the other entry point to the same thing.
+ * Genomic filtering, and now the only way into it - the Genomic Filtering button that used to
+ * sit in the search bar, and the route behind it, are both gone. So `enabled` here is the one
+ * place that decides whether a deployment offers genomic filtering at all.
  */
 export const genotypesMode: SearchMode = {
   id: 'genotypes',

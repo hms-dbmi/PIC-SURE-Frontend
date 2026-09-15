@@ -9,9 +9,9 @@ import {
 } from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
 
-// The specific-variant flow through the Genotypes tab. The route-based equivalents in
-// snp-test.ts still cover /explorer/genome-filter while it survives; that route goes away
-// with ticket 08 and these become the only coverage.
+// The specific-variant flow through the Genotypes tab, which is the only way into genomic
+// filtering now. This is the whole of its coverage: the Genomic Filtering button and the route
+// it led to are gone, and the route-based specs that used to duplicate these went with them.
 
 const QUERY = '*/**/picsure/hpds/auth/v3/query/sync';
 
@@ -209,6 +209,24 @@ test.describe('Summary of Selected Filters', () => {
 
     // Then
     await expect(page.getByTestId('snp-constraint')).toHaveValue(validSnpConstraintValue);
+  });
+
+  // The other half of that: re-saving replaces the variant in the draft rather than adding a
+  // second copy of it, so the panel has to show the new constraint and not both.
+  test('re-saving an edited variant replaces its constraint', async ({ page }) => {
+    // Given
+    await page.getByTestId('snp-save-btn').click();
+    await expect(summaryPanel(page).getByText(validSnpConstraint)).toBeVisible();
+
+    // When
+    await page.getByTestId(`snp-edit-btn-${validSnp}`).click();
+    await page.getByTestId('snp-constraint').selectOption({ label: secondSnpConstraint });
+    await page.getByTestId('snp-save-btn').click();
+
+    // Then the one variant, on its new constraint
+    await expect(summaryPanel(page).getByText(validSnp)).toHaveCount(1);
+    await expect(summaryPanel(page).getByText(secondSnpConstraint)).toBeVisible();
+    await expect(summaryPanel(page).getByText(validSnpConstraint)).toHaveCount(0);
   });
 
   test('its delete icon removes the variant and disables Add Filter', async ({ page }) => {
