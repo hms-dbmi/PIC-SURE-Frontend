@@ -78,11 +78,7 @@ export function enabledSearchModes(pathname: string): SearchMode[] {
   return searchModes.filter((mode) => mode.enabled(isDiscover));
 }
 
-/**
- * The mode's href, carrying the search the user is looking at so that switching modes, Copy
- * Link and middle-click all keep it. The variable detail page's Back button and card links
- * are built the same way, from the one definition of it in `searchChrome`.
- */
+/** The mode's route, carrying the active search - see `withSearchTerm` for why. */
 export function searchModeHref(mode: SearchMode, searchTerm: string): string {
   return withSearchTerm(mode.route, searchTerm);
 }

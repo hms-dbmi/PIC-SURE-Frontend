@@ -11,6 +11,7 @@ import {
   searchResults,
 } from '../../mock-data';
 import {
+  cohortPanel,
   mockCountedSearch,
   searchCurrentPageButton as currentPageButton,
   searchFacetCheckbox as facetCheckbox,
@@ -37,10 +38,12 @@ const variable = detailResponseCat;
 const exploreUrl = detailUrl('explorer', variable.dataset, variable.conceptPath);
 const discoverUrl = detailUrl('discover', variable.dataset, variable.conceptPath);
 
+// A dataset that spells a route segment. Valid data, and the case that defeats substring
+// matching: `/discover/variable/explorer/...` used to read as being inside Explore already.
+const ROUTE_LIKE_DATASET = 'explorer';
+
 const mockConceptDetail = (page: Page, json: unknown = variable) =>
-  page.route(`${conceptsDetailPath}/${variable.dataset}`, (route: Route) =>
-    route.fulfill({ json }),
-  );
+  page.route(`${conceptsDetailPath}/*`, (route: Route) => route.fulfill({ json }));
 
 const mockHierarchy = (page: Page) =>
   mockApiSuccess(
@@ -127,8 +130,11 @@ test.describe('Explore variable detail page', () => {
     );
     await expect(page.getByTestId('search-mode-tab-genotypes')).not.toHaveAttribute('aria-current');
 
-    // And the cohort panel, which renders on every route the mode bar renders on
-    await expect(page.locator('#sidebar-right')).toBeVisible();
+    // And the cohort panel, which renders on every route the mode bar renders on. Located
+    // through the shared helper because ALS-12835 moves it from the right sidebar to a strip
+    // above the mode bar; this criterion has no other coverage, so it must follow the move
+    // rather than go red.
+    await expect(cohortPanel(page)).toBeVisible();
   });
 
   test('renders the data hierarchy where the deployment enables it', async ({ page }) => {
@@ -192,6 +198,123 @@ test.describe('Explore variable detail page', () => {
     );
     await expect(backButton(page)).toBeVisible();
   });
+
+  // A 200 is not proof of a concept, and rendering one of these gave an empty heading plus
+  // an information card that spun forever - the blank page the criterion forbids.
+  test('explains a 200 that is not a concept', async ({ page }) => {
+    // Given
+    await mockConceptDetail(page, {});
+
+    // When
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+
+    // Then
+    await expect(page.getByTestId('variable-detail-error')).toContainText(
+      'We could not find that variable',
+    );
+    await expect(identity(page)).toHaveCount(0);
+    await expect(page.getByTestId('variable-info')).toHaveCount(0);
+  });
+
+  // A dictionary outage must not tell every user their own link is stale, or they retry and
+  // give up instead of reporting a service problem.
+  test('tells a dictionary outage apart from a stale link', async ({ page }) => {
+    // Given
+    await page.route(`${conceptsDetailPath}/*`, (route: Route) =>
+      route.fulfill({ status: 500, body: 'boom' }),
+    );
+
+    // When
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+
+    // Then
+    const alert = page.getByTestId('variable-detail-error');
+    await expect(alert).toContainText('We could not load that variable');
+    await expect(alert).toContainText('contact an administrator');
+    await expect(alert).not.toContainText('since the link was made');
+  });
+});
+
+/**
+ * The dataset segment reaches a request path, so the route has to constrain it.
+ *
+ * SvelteKit decodes `%2F` and `%5C` only after matching routes, so `..%2F..%2F..` arrives as
+ * one `dataset` parameter reading `../../..`. Unconstrained, `getConceptDetails` interpolated
+ * that into `picsure/dictionary/concepts/detail/{dataset}`, and `api.send` resolves its path
+ * against `window.location.origin` - so `fetch` normalised the `..` away and aimed an
+ * authenticated, token-bearing POST, carrying a caller-supplied string body, at
+ * `/psama/studyAccess`: the URL, method and body shape of `addManualRole()`.
+ *
+ * Two independent checks close it - the route's parameter validation and
+ * `encodeURIComponent` in the dictionary client - so this asserts the outcome: a readable
+ * error, and no request leaving the dictionary namespace.
+ */
+test.describe('a traversal-shaped dataset', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+
+  test.beforeEach(({ page }) => mockApiConfig(page));
+
+  // RegExps, not globs, so there is no doubt these match - a counter that never fires would
+  // make the assertions below vacuous. The first test proves both of them do.
+  const conceptDetailUrl = /\/picsure\/dictionary\/concepts\/detail\//;
+  const privilegedUrl = /\/psama\/(studyAccess|role|privilege)/;
+
+  /** Counts what reaches the dictionary, and what reaches an endpoint that grants access. */
+  async function countRequests(page: Page) {
+    const dictionary = { count: 0 };
+    const privileged = { count: 0 };
+    await page.route(conceptDetailUrl, (route: Route) => {
+      dictionary.count += 1;
+      return route.fulfill({ json: variable });
+    });
+    await page.route(privilegedUrl, (route: Route) => {
+      privileged.count += 1;
+      return route.fulfill({ json: {} });
+    });
+    return { dictionary, privileged };
+  }
+
+  // The control. Without it the traversal cases below could pass on a counter that never
+  // matches anything.
+  test('the counters fire for an ordinary dataset', async ({ page }) => {
+    const { dictionary, privileged } = await countRequests(page);
+
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await expect(identity(page)).toBeVisible();
+
+    await page.waitForTimeout(SETTLE_MS);
+    expect(dictionary.count).toBeGreaterThan(0);
+    expect(privileged.count).toBe(0);
+  });
+
+  for (const dataset of [
+    '..%2F..%2F..%2F..%2Fpsama%2FstudyAccess',
+    '..%5C..%5C..%5C..%5Cpsama%5CstudyAccess',
+    '..%2F..%2F..%2F..%2Fpsama%2Frole',
+  ]) {
+    test(`is refused, and sends nothing, for ${dataset}`, async ({ page }) => {
+      // Given
+      const { dictionary, privileged } = await countRequests(page);
+
+      // When the crafted link is opened
+      await page.goto(`/explorer/variable/${dataset}/${encodeURIComponent(variable.conceptPath)}`);
+      await userIsLoggedIn(page);
+
+      // Then the page refuses the key, rather than looking anything up
+      await expect(page.getByTestId('variable-detail-error')).toContainText(
+        'We could not read that variable link',
+      );
+      await expect(identity(page)).toHaveCount(0);
+      await expect(backButton(page)).toBeVisible();
+
+      await page.waitForTimeout(SETTLE_MS);
+      expect(dictionary.count).toBe(0);
+      expect(privileged.count).toBe(0);
+    });
+  }
 });
 
 // The search session belongs to /explorer/+layout.svelte, not to the results page, so a round
@@ -364,14 +487,15 @@ test.describe('the stigmatising-filter guard from a detail page', () => {
         }),
       );
     });
-    await page.goto(discoverUrl);
+    // A dataset that spells `explorer`, so the guard cannot decide the section by substring
+    await page.goto(detailUrl('discover', ROUTE_LIKE_DATASET, variable.conceptPath));
     await expect(identity(page)).toBeVisible();
 
     // When
     await page.locator('#nav-link-explorer').click();
 
     // Then the navigation is cancelled on the detail page, exactly as it is on /discover
-    await expect(page).toHaveURL(new RegExp(`${discoverUrl.replace('?', '\\?')}$`));
+    await expect(page).toHaveURL(/\/discover\/variable\//);
     await expect(page.getByTestId('sendfilter-warning')).toContainText(
       'You are not authorized to access the data in Explore based on your selected filters.',
     );
@@ -397,7 +521,8 @@ test.describe('the stigmatising-filter guard from a detail page', () => {
         ]),
       );
     });
-    await page.goto(exploreUrl);
+    // A dataset that spells `discover`, so the guard cannot decide the target by substring
+    await page.goto(detailUrl('explorer', 'discover', variable.conceptPath));
     await userIsLoggedIn(page);
     await expect(identity(page)).toBeVisible();
 
@@ -408,5 +533,39 @@ test.describe('the stigmatising-filter guard from a detail page', () => {
     await expect(page.getByTestId('sendfilter-warning')).toContainText(
       'Your selected filters contain stigmatizing variables and/or genomic filters',
     );
+  });
+
+  // The mirror image: an Explore detail page whose dataset spells `discover` must not trip
+  // the guard on its own URL, or every variable in that dataset is unreachable.
+  test('does not fire on an Explore detail page whose dataset spells discover', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem(
+        'genomicFilters',
+        JSON.stringify([
+          {
+            uuid: 'standalone-genomic-filter',
+            id: 'genomic',
+            filterType: 'genomic',
+            displayType: 'any',
+            variableName: 'Genomic Filter',
+            description: 'Gene with variant: BRCA1',
+            allowFiltering: true,
+            dataset: '',
+            Gene_with_variant: ['BRCA1'],
+          },
+        ]),
+      );
+    });
+
+    // When navigating from the results page to a detail page in a dataset named `discover`
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+    await navigateInApp(page, detailUrl('explorer', 'discover', variable.conceptPath));
+
+    // Then the page loads and no warning appears
+    await expect(identity(page)).toBeVisible();
+    await expect(page.getByTestId('sendfilter-warning')).toHaveCount(0);
   });
 });

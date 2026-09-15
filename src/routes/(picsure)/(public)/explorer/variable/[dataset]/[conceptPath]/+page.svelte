@@ -1,17 +1,13 @@
 <script lang="ts">
-  import { config } from '$lib/configuration.svelte';
-
   import Content from '$lib/components/Content.svelte';
   import VariableDetail from '$lib/components/explorer/VariableDetail.svelte';
 
   import type { PageData } from './$types';
 
+  // A thin wrapper, the same shape as the two results pages around <Explorer>. The document
+  // title lives in VariableDetail, which is what knows the variable's name.
   let { data }: { data: PageData } = $props();
 </script>
-
-<svelte:head>
-  <title>{config.branding.applicationName} | Explorer</title>
-</svelte:head>
 
 <Content full>
   <VariableDetail variableKey={data.variableKey} />
