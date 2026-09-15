@@ -73,18 +73,15 @@ test.describe('Explore search mode bar', () => {
     await expect(modeBar(page).locator('[aria-selected]')).toHaveCount(0);
   });
 
-  // The Genotypes mode is the only entry point to genomic filtering. The search bar used to
-  // carry a Genomic Filtering button beside Reset, leading to a second page over the same
-  // module-level draft stores, which it cleared on its way out and overwrote on its way in.
-  test('leaves the search bar with no second genomic entry point', async ({ page }) => {
-    // Given genomic search enabled, which is the condition the button used to render under
+  // The Genotypes mode is the only entry point to genomic filtering, on the configuration
+  // that offers it - not one of two.
+  test('offers no genomic entry point outside the mode bar', async ({ page }) => {
+    // Given
     await page.goto('/explorer');
     await userIsLoggedIn(page);
     await expect(modeLink(page, 'genotypes')).toBeVisible();
 
-    // Then the bar holds the search box and Reset, and no link at all
-    await expect(page.locator('#search-bar')).toBeVisible();
-    await expect(page.locator('#search-bar').getByRole('link')).toHaveCount(0);
+    // Then
     await expect(page.getByRole('link', { name: 'Genomic Filtering' })).toHaveCount(0);
   });
 
@@ -204,6 +201,33 @@ test.describe('Explore search mode bar', () => {
     // Then
     await expect(page.getByTestId('search-box')).toBeVisible();
     await expect(modeBar(page)).toHaveCount(0);
+  });
+
+  // Genomic filtering's only address for the life of the feature, behind a prominent button,
+  // so bookmarks and history entries for it are real. Deleting the route outright left it
+  // returning a bare SvelteKit 404 with none of the app's chrome and no way back.
+  test('redirects the retired genomic-filtering URL to the Genotypes tab', async ({ page }) => {
+    // When
+    const response = await page.goto('/explorer/genome-filter');
+    await userIsLoggedIn(page);
+
+    // Then it is served, not 404'd, and lands on the tab that replaced it
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(/\/explorer\/genotypes$/);
+    await expect(page.getByTestId('genotypes-tab')).toBeVisible();
+    await expect(modeLink(page, 'genotypes')).toHaveAttribute('aria-current', 'page');
+  });
+
+  // The edit deep link the retired route took, which the filter chip used to produce.
+  test('redirects the retired edit deep link too, dropping its parameter', async ({ page }) => {
+    // When
+    const response = await page.goto('/explorer/genome-filter?edit=genomic');
+    await userIsLoggedIn(page);
+
+    // Then
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(/\/explorer\/genotypes$/);
+    await expect(page.getByTestId('genotypes-tab')).toBeVisible();
   });
 
   // The link is hidden when genomic search is off, but the URL is still reachable by hand,
