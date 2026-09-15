@@ -413,6 +413,124 @@ test.describe('Explorer for authenticated users', () => {
     });
   });
 
+  /*
+   * The table this replaced focused the first row of a new page after a keyboard page change.
+   * Cards are links, so they are tabbable without any help - but nothing moves focus when the
+   * page turns, and a keyboard user who pages is otherwise dropped back at the top of the
+   * document to tab down through the whole page again.
+   */
+  test.describe('Keyboard use of the card list', () => {
+    const PAGE_SIZE = 10;
+    /*
+     * Three, not two. Next disables itself on the last page, and a browser blurs a control it
+     * has just disabled - so a two-page fixture cannot tell "the mouse left focus alone" from
+     * "focus was taken away", and the mouse case below would be asserting the browser's
+     * behaviour rather than this component's.
+     */
+    const PAGE_COUNT = 3;
+    const PAGE_LABELS = ['page-one-result', 'page-two-result', 'page-three-result'];
+
+    /** Three pages of results, each card identifiable by the page it came from. */
+    const pagedResults = async (page: Page) => {
+      const makePage = (pageNumber: number) => ({
+        ...mockData,
+        totalPages: PAGE_COUNT,
+        totalElements: PAGE_SIZE * PAGE_COUNT,
+        numberOfElements: PAGE_SIZE,
+        number: pageNumber,
+        first: pageNumber === 0,
+        last: pageNumber === PAGE_COUNT - 1,
+        pageable: { ...mockData.pageable, pageNumber, offset: pageNumber * PAGE_SIZE },
+        content: Array.from({ length: PAGE_SIZE }, (_, index) => ({
+          ...mockData.content[index % mockData.content.length],
+          conceptPath: `\\test\\${PAGE_LABELS[pageNumber]}-${index}\\`,
+          name: `${PAGE_LABELS[pageNumber]}-${index}`,
+          // No description, so a card's name is the display name and nothing else.
+          display: `${PAGE_LABELS[pageNumber]}-${index}`,
+          description: null,
+          allowFiltering: true,
+        })),
+      });
+      for (let pageNumber = 0; pageNumber < PAGE_COUNT; pageNumber++) {
+        await page.route(
+          searchResultPath.replace('page_number=0', `page_number=${pageNumber}`),
+          async (route: Route) => route.fulfill({ json: makePage(pageNumber) }),
+        );
+      }
+    };
+
+    test.beforeEach(async ({ page }) => {
+      await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
+        route.fulfill({ body: '9999' }),
+      );
+      await mockConceptDetailFromRows(page);
+    });
+
+    test('Tab reaches each card once, in the order they were served', async ({ page }) => {
+      // Given
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page)).toHaveCount(mockData.content.length);
+
+      // When - starting on the first card, walk the list with Tab alone
+      await resultCards(page).first().focus();
+
+      // Then - one stop per card, in order, with nothing in between
+      for (let index = 1; index < mockData.content.length; index++) {
+        await page.keyboard.press('Tab');
+        await expect(resultCards(page).nth(index)).toBeFocused();
+      }
+    });
+
+    test('Paging from the keyboard lands focus on the first card of the new page', async ({
+      page,
+    }) => {
+      // Given
+      await pagedResults(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-one-result-0',
+      );
+
+      // When - Next reached and activated from the keyboard, as a keyboard user reaches it
+      const next = page.getByLabel('Next', { exact: true });
+      await next.focus();
+      await page.keyboard.press('Enter');
+
+      // Then - the new page is on screen, and focus is on the first card of it
+      await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-two-result-0',
+      );
+      await expect(resultCards(page).first()).toBeFocused();
+    });
+
+    test('Paging with the mouse does not take focus off what the user was on', async ({ page }) => {
+      // Given
+      await pagedResults(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-one-result-0',
+      );
+
+      // When - the same button, pressed rather than typed at
+      const next = page.getByLabel('Next', { exact: true });
+      await next.focus();
+      await next.click();
+
+      // Then - the page turned, and focus stayed where the user left it. Asserted after the
+      // new page is on screen: before it, this passes on a list that never paged.
+      await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-two-result-0',
+      );
+      await expect(next).toBeFocused();
+      await expect(resultCards(page).first()).not.toBeFocused();
+    });
+  });
+
   test.describe('Opening a search result', () => {
     test.beforeEach(async ({ page }) => {
       await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>

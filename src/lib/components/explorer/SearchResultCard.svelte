@@ -95,10 +95,15 @@
        route will not act on, so there is nothing to link to. Said on the card rather than
        left as a link that opens onto "We could not read that variable link": the result is
        real and worth showing, it just cannot be opened. -->
+  <!-- `tabindex="-1"`, so it is focusable without being a tab stop. There is nothing here to
+       activate, so it does not earn a place in the tab order - but a keyboard page change
+       puts focus on the first card of the new page, and if that card is this one, focus has
+       to be able to land somewhere rather than falling back to the top of the document. -->
   <div
     data-testid="search-result-card"
     data-unopenable="true"
-    class="card block border bg-white border-surface-200-800 rounded-xl px-5 py-4 shadow-sm"
+    tabindex="-1"
+    class="unopenable-card card block border bg-white border-surface-200-800 rounded-xl px-5 py-4 shadow-sm"
   >
     {@render content()}
     <span data-testid="search-result-card-unopenable" class="block mt-1 text-sm text-error-500">
@@ -127,6 +132,13 @@
 
   .result-card:focus-visible {
     background-color: var(--color-surface-200);
+    outline: 2px solid var(--color-surface-500);
+    outline-offset: -2px;
+  }
+
+  /* Not a tab stop, but a keyboard page change can land focus here, and focus that cannot be
+     seen is worse than none. No hover or pointer treatment: there is nothing to click. */
+  .unopenable-card:focus-visible {
     outline: 2px solid var(--color-surface-500);
     outline-offset: -2px;
   }

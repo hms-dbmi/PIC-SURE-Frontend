@@ -190,6 +190,27 @@ describe('the search result card', () => {
     });
   });
 
+  describe('as a place for focus to land', () => {
+    it('is one tab stop and no more: the whole card is the link', () => {
+      renderCard();
+
+      // No tabindex of its own - an anchor with an href is already in the tab order, and a
+      // tabindex here would be a second claim on it.
+      expect(card()).not.toHaveAttribute('tabindex');
+      expect(card().querySelectorAll('a, button, input, select, textarea')).toHaveLength(0);
+    });
+
+    it('lets focus land on an unopenable card without putting it in the tab order', () => {
+      // Nothing to activate, so it is not a tab stop - but a keyboard page change focuses the
+      // first card of the new page, and that card can be this one.
+      renderCard({ dataset: 'BioLINCC (phs004266)' });
+
+      expect(card()).toHaveAttribute('tabindex', '-1');
+      card().focus();
+      expect(document.activeElement).toBe(card());
+    });
+  });
+
   it('logs the click with the variable it opened', async () => {
     renderCard();
 
