@@ -18,10 +18,12 @@
   import { panelOpen } from '$lib/stores/SidePanel';
   import { clearSnpFilters, generateSNPFilter, selectedSNPs } from '$lib/stores/SNPFilter';
 
-  // Every store below is shared with /explorer/genome-filter, which is still reachable and
-  // which both clears these on its way out and overwrites them from the applied filter on
-  // its way in. So a detour through that page does change what this one is holding. That is
-  // not isolated and is not meant to be: the two are the same feature behind two entry
+  // The gene and variant working state above - selections, consequences, frequencies - is
+  // shared with /explorer/genome-filter, which is still reachable and which both clears it on
+  // its way out and overwrites it from the applied filter on its way in. So a detour through
+  // that page does change what this one is holding. `filterMethod` is the exception: that
+  // page keeps its own page-local method and never touches this store. None of it is
+  // isolated and none of it is meant to be - the two are the same feature behind two entry
   // points for as long as both exist, and deleting the old one is what closes it.
 
   /**

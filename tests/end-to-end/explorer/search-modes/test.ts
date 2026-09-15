@@ -264,7 +264,9 @@ test.describe('Explore mode switching', () => {
   // tab's gene list is fetched a page at a time by infinite scroll, so reloading it on every
   // return would also throw away however far the user had scrolled.
   test('does not load the gene list again on returning to Genotypes', async ({ page }) => {
-    // Given the gene list loaded once
+    // Given the gene list loaded once. This route is registered after the beforeEach's mock
+    // for the same URL and so takes precedence over it - verified by reverting the caching it
+    // guards, at which point the second visit is counted and this spec fails with 2.
     const genes = { count: 0 };
     await page.route('*/**/picsure/hpds/auth/search/values*', async (route) => {
       genes.count += 1;

@@ -443,12 +443,18 @@ test.describe('Adding the filter', () => {
     await expect(page.getByTestId('search-box')).toHaveValue('age');
   });
 
-  // No need to open the cohort panel by hand: adding the filter opens it. Deliberately so,
-  // since the panel is what the new filter has to show up in.
+  // Adding the filter opens the cohort panel, which is what starts the count - the panel is
+  // the only thing that asks for one, so nothing here has to open it by hand.
+  //
+  // The count answers from the query it is sent rather than from a flag flipped at some
+  // moment, so there is no ordering to get wrong: 1,320 is reachable only through a query
+  // that carries the genomic filter, and a query that lost it would show 9,999 and fail.
   test('updates the participant count', async ({ page }) => {
-    // Given a count that answers 9,999 for the cohort as it stands
-    let participants = '9999';
-    await page.route(QUERY, (route) => route.fulfill({ json: participants }));
+    // Given a cohort of 9,999 without the filter and 1,320 with it
+    await page.route(QUERY, async (route) => {
+      const genomicFilters = route.request().postDataJSON()?.query?.genomicFilters ?? [];
+      await route.fulfill({ json: genomicFilters.length > 0 ? '1320' : '9999' });
+    });
     await page.goto('/explorer');
     await userIsLoggedIn(page);
 
@@ -458,11 +464,10 @@ test.describe('Adding the filter', () => {
     });
     await optionsContainer(page).getByLabel(geneValues.results[0]).click();
 
-    // When the cohort the filter produces answers differently
-    participants = '1320';
+    // When
     await addFilterBtn(page).click();
 
-    // Then the panel shows the new count, not the one from before the filter
+    // Then
     await expect(page.getByTestId('added-filter-genomic')).toBeVisible();
     await expect(page.locator('#result-count-number')).toHaveText('1,320');
   });

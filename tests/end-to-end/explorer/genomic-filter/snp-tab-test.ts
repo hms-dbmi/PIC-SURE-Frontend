@@ -227,26 +227,26 @@ test.describe('Adding the filter', () => {
     await expect(addFilterBtn(page)).toBeDisabled();
   });
 
-  // No need to open the cohort panel by hand: adding the filter opens it.
+  // Adding the filter opens the cohort panel, which is what starts the count - the panel is
+  // the only thing that asks for one, so nothing here has to open it by hand.
+  //
+  // The variant search and the cohort count share an endpoint, so they are told apart by
+  // answering 12 to the search and 1,320 to whatever comes after it. Showing 1,320 therefore
+  // means the panel took the count made after the filter, not the search that preceded it.
   test('updates the participant count', async ({ page }) => {
-    // Given a count that answers 9,999 for the cohort as it stands
-    let participants = '9999';
-    await page.route(QUERY, (route) => route.fulfill({ json: participants }));
-    await page.goto('/explorer');
-    await userIsLoggedIn(page);
-
-    await modeLink(page, 'genotypes').click();
-    await page.getByTestId('snp-option').click();
+    // Given a variant the search finds
+    await mockApiSuccess(page, QUERY, 12);
+    await openSnpSearch(page);
     await page.getByTestId('snp-search-box').fill(validSnp);
     await page.getByTestId('snp-search-btn').click();
     await page.getByTestId('snp-constraint').selectOption({ label: validSnpConstraint });
     await page.getByTestId('snp-save-btn').click();
 
-    // When the cohort the filter produces answers differently
-    participants = '1320';
+    // When the cohort it produces is counted
+    await mockApiSuccess(page, QUERY, 1320);
     await addFilterBtn(page).click();
 
-    // Then the panel shows the new count, not the one from before the filter
+    // Then
     await expect(page.getByTestId('added-filter-snp-variant')).toBeVisible();
     await expect(page.locator('#result-count-number')).toHaveText('1,320');
   });
