@@ -9,7 +9,7 @@
   } from '$lib/explorer/searchChrome';
   import type { VariableKey } from '$lib/explorer/variableUrl';
   import { log, createLog, getPageContext } from '$lib/logger';
-  import type { FilterType } from '$lib/models/Filter.svelte';
+  import type { Filter, FilterType } from '$lib/models/Filter.svelte';
   import type { SearchResult } from '$lib/models/Search';
   import { getConceptDetails } from '$lib/stores/Dictionary';
   import { exports, addExport, removeExport, mapSearchResultAsExport } from '$lib/stores/Export';
@@ -102,8 +102,7 @@
     };
   });
 
-  // The loaded concept, or `undefined` for every other outcome. Named once so the actions
-  // below read from the same value the template renders.
+  // Named so the actions below and the template read one value, not two.
   const variable = $derived(outcome?.kind === 'variable' ? outcome.variable : undefined);
 
   // The variable's own name, so a shared link, a browser tab and a bookmark all say which
@@ -127,13 +126,31 @@
   );
 
   /**
+   * Whether the filter interface can express this concept at all.
+   *
+   * `AddFilter` renders an options list for `Categorical` and min/max inputs for
+   * `Continuous`, and nothing for anything else - but its add button is unconditional, and
+   * `addNewFilter` falls through to `createNumericFilter(data, undefined, undefined)` for
+   * every type it has no inputs for. So an `AnyRecordOf` concept, or one the dictionary
+   * returned with no type at all, would render a bare `+` under the heading with nothing to
+   * fill in, and one click would put a filter restricting nothing into the user's cohort -
+   * moving the participant count and the query sent on export.
+   *
+   * Reachable here in a way it is not from a results row: this page is addressed by URL, so
+   * a shared or hand-edited link can name a non-leaf concept path, and `isConcept` admits a
+   * concept on `conceptPath` and `dataset` alone.
+   */
+  const filterInterfaceFits = $derived(
+    variable?.type === 'Categorical' || variable?.type === 'Continuous',
+  );
+
+  /**
    * The filter already applied to this variable, if there is one.
    *
-   * The chip in the cohort panel and this page's filter interface are two views of one filter,
-   * so opening a variable that already has one has to edit it rather than add a second:
-   * `addFilter` appends to the tree without checking, so a second add would leave two filters
-   * on the same variable and no way to tell them apart. A filter's `id` is its concept path
-   * (see `createCategoricalFilter`), which is what identifies the variable.
+   * The chip in the cohort panel and this page's filter interface are two views of one
+   * filter, so opening a variable that already has one has to edit that filter rather than
+   * add a second. A filter's `id` is its concept path (see `createCategoricalFilter`), which
+   * is what identifies the variable.
    *
    * Only the two types this interface can express. An `AnyRecordOf` filter carries a category
    * node's concept path, and handing one to `AddFilter` would silently rewrite it as a
@@ -162,6 +179,30 @@
     variable ? $exports.find((item) => item.conceptPath === variable.conceptPath) : undefined,
   );
 
+  /** The part of a filter that the interface puts on screen. */
+  function filterContent(filter: Filter): string {
+    if (filter.filterType === 'Categorical') return filter.categoryValues.join('\u0000');
+    if (filter.filterType === 'numeric') return `${filter.min ?? ''}\u0000${filter.max ?? ''}`;
+    return '';
+  }
+
+  /**
+   * What the filter interface was opened on: the filter's identity *and* the content it
+   * shows, so that the `{#key}` below re-reads a filter edited out from under it.
+   *
+   * Identity alone is not enough, because this page renders two views of the same filter: the
+   * cohort panel's edit pencil opens `AddFilter` in a modal over it, and `updateFilter`
+   * preserves the uuid. Keyed on the uuid, an edit made in that modal would leave this
+   * interface holding the selection it read at mount, and the next add here would write that
+   * stale selection back over the user's edit.
+   *
+   * The cost is that an edit elsewhere discards a selection in progress here. That is the
+   * right way round: the alternative silently overwrites the newer of the two.
+   */
+  const filterRevision = $derived(
+    existingFilter ? `${existingFilter.uuid}\u0000${filterContent(existingFilter)}` : '',
+  );
+
   // Add for Analysis has nowhere else to live once ticket 11 removes the per-row icons, so the
   // gate has to be the same one those icons used: exports switched on, and not open access.
   const showExportToggle = $derived(config.features.explorer.exportsEnableExport && !openAccess);
@@ -177,8 +218,6 @@
       }),
     );
     if (exported) {
-      // By concept path - `removeExports` filters on it - so this removes whatever the store
-      // is actually holding rather than the object this page happens to have built.
       removeExport(exported);
     } else {
       addExport(mapSearchResultAsExport(variable));
@@ -235,12 +274,11 @@
           data-testid="variable-detail-export-toggle"
           onclick={toggleExport}
         >
-          <i
-            class="fa-{exportedVariable
-              ? 'regular fa-square-check'
-              : 'solid fa-right-from-bracket'}"
-            aria-hidden="true"
-          ></i>
+          {#if exportedVariable}
+            <i class="fa-regular fa-square-check" aria-hidden="true"></i>
+          {:else}
+            <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+          {/if}
           {exportedVariable ? 'Remove from Analysis' : 'Add for Analysis'}
         </button>
       {/if}
@@ -251,19 +289,23 @@
     </section>
 
     <!-- Ticket 13 replaces this interface with the designed layout; this ticket is the
-         wiring, so AddFilter goes in as-is. -->
+         wiring, so AddFilter goes in as-is. h3 for the same reason the hierarchy below is
+         one: it sits level with ResultInfoComponent's own section headings, and the jump
+         from h1 to h3 is that component's to close in ticket 14. -->
     <section data-testid="variable-detail-filter" class="flex flex-col gap-2">
       <h3 class="h5 text-primary-500 m-0">Add Filter</h3>
       {#if filteringDisabled}
         <ErrorAlert color="warning" data-testid="variable-detail-filter-disabled">
           <p class="m-0">Filtering is not available for this variable</p>
         </ErrorAlert>
+      {:else if !filterInterfaceFits}
+        <!-- A separate reason from the one above, and separately identified: this concept is
+             not something to select values from, rather than one the user may not filter. -->
+        <ErrorAlert color="warning" data-testid="variable-detail-filter-unavailable">
+          <p class="m-0">This concept has no values to filter on</p>
+        </ErrorAlert>
       {:else}
-        <!-- Keyed on the filter being edited, because AddFilter reads `existingFilter` in
-             `onMount` and never again. Without the key, adding a filter here would leave the
-             interface still believing there is none, and pressing add a second time would
-             append a duplicate filter on the same variable instead of updating the first. -->
-        {#key existingFilter?.uuid}
+        {#key filterRevision}
           <AddFilter data={variable} {existingFilter} />
         {/key}
       {/if}

@@ -14,6 +14,7 @@ import {
   cohortPanel,
   getOption,
   mockCountedSearch,
+  navigateInApp,
   searchCurrentPageButton as currentPageButton,
   searchFacetCheckbox as facetCheckbox,
   searchFor,
@@ -52,22 +53,6 @@ const mockHierarchy = (page: Page) =>
     `*/**/picsure/dictionary/concepts/hierarchy/${variable.dataset}`,
     hierarchyResponse,
   );
-
-// Only client-side navigation keeps the /explorer layout - and so the search session - alive,
-// and page.goto() would not. Nothing links to the detail page until ticket 11, so a synthetic
-// in-app anchor stands in for the card link without tying these specs to markup that does not
-// exist yet.
-async function navigateInApp(page: Page, href: string) {
-  await page.evaluate((target) => {
-    document.getElementById('e2e-nav-link')?.remove();
-    const link = document.createElement('a');
-    link.id = 'e2e-nav-link';
-    link.href = target;
-    link.textContent = 'e2e navigate';
-    document.body.appendChild(link);
-  }, href);
-  await page.locator('#e2e-nav-link').click();
-}
 
 const identity = (page: Page) => page.getByTestId('variable-identity');
 const backButton = (page: Page) => page.getByTestId('variable-detail-back');
@@ -727,6 +712,65 @@ test.describe('acting on the variable from its own page', () => {
 
     await expect(page.getByTestId(`added-export-${variable.conceptPath}`)).toHaveCount(0);
     await expect(exportToggle(page)).toHaveText(/Add for Analysis/);
+  });
+
+  /*
+   * Why the gate is here and not left to ticket 13: this page is addressed by URL, so a
+   * shared or hand-edited link can name a concept the value interface cannot express.
+   * AddFilter's add button is unconditional, and `addNewFilter` falls through to
+   * `createNumericFilter(data, undefined, undefined)` for a type it has no inputs for - so
+   * ungated, this rendered a bare `+` under the heading that added a filter restricting
+   * nothing to the user's cohort.
+   */
+  test('offers nothing to fill in for a concept with no values', async ({ page }) => {
+    // Given a link naming a category rather than a leaf variable
+    await mockConceptDetail(page, { ...variable, type: 'AnyRecordOf' });
+
+    // When
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await expect(identity(page)).toBeVisible();
+
+    // Then the page says why, and there is no button to press
+    await expect(page.getByTestId('variable-detail-filter-unavailable')).toContainText(
+      'This concept has no values to filter on',
+    );
+    await expect(page.getByTestId('filter-component')).toHaveCount(0);
+    await expect(addFilterButton(page)).toHaveCount(0);
+    await expect(filterCount(page)).toHaveText(/^No filters added/);
+  });
+
+  /*
+   * Two views of one filter, both on this page: the cohort panel's edit pencil opens its own
+   * AddFilter in a modal over it, and `updateFilter` preserves the uuid. Keyed on identity
+   * alone, this page's interface would still hold the selection it read at mount, and the
+   * next add here would write that stale selection back over the edit made in the modal.
+   */
+  test('does not undo an edit made from the cohort panel', async ({ page }) => {
+    // Given a filter on this variable, restricted to its first value
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await addFilterFromPage(page);
+    const chip = page.getByTestId(`added-filter-${variable.conceptPath}`);
+    await expect(chip).toBeVisible();
+
+    // When it is edited from the panel to a second value
+    await chip.getByRole('button', { name: 'Edit Filter' }).click();
+    const modal = page.getByRole('dialog');
+    const modalOption = await getOption(modal);
+    await modalOption.click();
+    await modal.getByTestId('add-filter').click();
+    await expect(modal).toHaveCount(0);
+
+    // Then this page's interface shows both values, not the one it read at mount
+    const selected = filterSection(page).locator('#selected-options-container');
+    await expect(selected.locator('input[type="checkbox"]')).toHaveCount(2);
+
+    // And adding from this page carries that edit forward rather than reverting it
+    await addFilterButton(page).click();
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+    await chip.getByRole('button', { name: 'See details' }).click();
+    await expect(chip).toContainText('Restricting to 2 values');
   });
 
   test('offers no Add for Analysis where the deployment disables exports', async ({ page }) => {

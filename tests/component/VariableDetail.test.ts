@@ -39,9 +39,10 @@ vi.mock('$lib/configuration.svelte', () => ({
 }));
 
 import VariableDetail from '$lib/components/explorer/VariableDetail.svelte';
+import { log } from '$lib/logger';
 import { getConceptDetails, getHierarchyConcepts } from '$lib/stores/Dictionary';
 import { exports, clearExports } from '$lib/stores/Export';
-import { addFilter, clearFilters, filters } from '$lib/stores/Filter';
+import { addFilter, clearFilters, filters, updateFilter } from '$lib/stores/Filter';
 import { createCategoricalFilter, createNumericFilter } from '$lib/models/Filter.svelte';
 import { searchTerm } from '$lib/stores/Search';
 import type { SearchResult } from '$lib/models/Search';
@@ -146,6 +147,7 @@ describe('VariableDetail', () => {
     cleanup();
     vi.mocked(getConceptDetails).mockReset();
     vi.mocked(getHierarchyConcepts).mockReset();
+    vi.mocked(log).mockClear();
     mockState.pathname = '/explorer/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C';
     mockState.section = 'explorer';
     mockState.enableHierarchy = false;
@@ -276,12 +278,14 @@ describe('VariableDetail', () => {
       expect(filter.id).toBe('\\this\\is\\a\\age\\');
       expect(filter.filterType).toBe('numeric');
       expect(filter).toMatchObject({ min: '21' });
-      // Still the detail page: nothing unmounted it and nothing navigated.
+      // Nothing here can navigate, so this is a smoke check rather than the control for
+      // staying on the page - the e2e spec asserts the URL for that.
       expect(screen.getByTestId('variable-identity')).toBeInTheDocument();
     });
 
-    // `addFilter` appends to the tree without checking, and `AddFilter` reads
-    // `existingFilter` once in `onMount` - so an unkeyed interface would go on adding.
+    // `AddFilter` reads `existingFilter` from the prop at click time, so this holds with or
+    // without the `{#key}` below - it pins the outcome, not the mechanism. The key earns its
+    // place in the modal-edit test further down, which does fail without it.
     it('updates the filter it already added rather than adding a second', async () => {
       await renderDetail();
 
@@ -328,6 +332,7 @@ describe('VariableDetail', () => {
     // Matching Actions.svelte: the rule is open access *and* the dictionary refusing, not
     // either alone.
     it('is refused, with an explanation, for an unfilterable variable in open access', async () => {
+      mockState.pathname = '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C';
       mockState.section = 'discover';
       await renderDetail({ allowFiltering: false });
 
@@ -344,7 +349,76 @@ describe('VariableDetail', () => {
       expect(screen.getByTestId('filter-component')).toBeInTheDocument();
     });
 
+    /*
+     * AddFilter renders an options list for Categorical and min/max inputs for Continuous,
+     * and nothing at all for any other type - but its add button is unconditional, and
+     * `addNewFilter` falls through to `createNumericFilter(data, undefined, undefined)` for
+     * a type it has no inputs for. Ungated, the user got a bare `+` under the heading and one
+     * click put a filter restricting nothing into their cohort.
+     *
+     * This page is addressed by URL, so a shared or hand-edited link can name a non-leaf
+     * concept, and `isConcept` admits one on conceptPath and dataset alone.
+     */
+    it.each([
+      { case: 'a category rather than a leaf variable', type: 'AnyRecordOf' },
+      { case: 'a concept the dictionary gave no type', type: undefined },
+    ])('offers nothing to fill in, and no add button, for $case', async ({ type }) => {
+      await renderDetail({ type } as Partial<SearchResult>);
+
+      expect(screen.getByTestId('variable-detail-filter-unavailable')).toHaveTextContent(
+        'This concept has no values to filter on',
+      );
+      expect(screen.queryByTestId('filter-component')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('add-filter')).not.toBeInTheDocument();
+    });
+
+    // The other side of that gate, so closing it altogether is not a way to pass the tests
+    // above.
+    it.each([
+      { type: 'Continuous' as const, key: variableKey, detail },
+      { type: 'Categorical' as const, key: categoricalKey, detail: categoricalDetail },
+    ])('is offered for a $type variable', async ({ key, detail: concept }) => {
+      vi.mocked(getConceptDetails).mockResolvedValue(concept);
+      render(VariableDetail, { section: 'explorer', variableKey: key });
+      await screen.findByTestId('variable-identity');
+
+      expect(await screen.findByTestId('filter-component')).toBeInTheDocument();
+      expect(screen.getByTestId('add-filter')).toBeInTheDocument();
+      expect(screen.queryByTestId('variable-detail-filter-unavailable')).not.toBeInTheDocument();
+    });
+
+    /*
+     * Two views of one filter render on this page: the cohort panel's edit pencil opens its
+     * own AddFilter in a modal over it, and `updateFilter` preserves the uuid. An interface
+     * keyed on identity alone would still hold the selection it read at mount, so the next
+     * add here would write that stale selection back over the user's edit.
+     */
+    it('re-reads a filter edited from the cohort panel, and does not undo the edit', async () => {
+      addFilter(createCategoricalFilter(categoricalDetail, ['Yes']));
+      vi.mocked(getConceptDetails).mockResolvedValue(categoricalDetail);
+      render(VariableDetail, { section: 'explorer', variableKey: categoricalKey });
+      await screen.findByTestId('optional-selection-list');
+      expect(optionsIn('selected-options-container')).toEqual(['Yes']);
+
+      // The edit the modal makes: the same filter, the same uuid, one more value.
+      const { uuid } = get(filters)[0];
+      updateFilter(uuid, createCategoricalFilter(categoricalDetail, ['Yes', "Don't know"]));
+
+      await waitFor(() =>
+        expect(optionsIn('selected-options-container')).toEqual(['Yes', "Don't know"]),
+      );
+      // Still one filter, still the same one - this is an edit, not a replacement.
+      expect(get(filters)).toHaveLength(1);
+      expect(get(filters)[0].uuid).toBe(uuid);
+
+      // And adding from this page carries the edit forward instead of reverting it.
+      await fireEvent.click(addFilterButton());
+      expect(get(filters)).toHaveLength(1);
+      expect(get(filters)[0]).toMatchObject({ categoryValues: ['Yes', "Don't know"] });
+    });
+
     it('is offered in open access for a variable the dictionary allows', async () => {
+      mockState.pathname = '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C';
       mockState.section = 'discover';
       await renderDetail();
 
@@ -419,6 +493,37 @@ describe('VariableDetail', () => {
       expect(toggle()).toHaveTextContent('Add for Analysis');
     });
 
+    // These two event names are the only record of an add or a remove once ticket 11 deletes
+    // the row icons that emitted `search_result.export_add` / `_remove`, and nothing else in
+    // the repo names them.
+    it('logs the add and the remove, naming the variable each happened to', async () => {
+      await renderDetail();
+
+      await fireEvent.click(toggle());
+      expect(log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event_type: 'ACTION',
+          action: 'variable_detail.export_add',
+          metadata: expect.objectContaining({
+            variable: 'Age at exam',
+            conceptPath: '\\this\\is\\a\\age\\',
+          }),
+        }),
+      );
+
+      await fireEvent.click(toggle());
+      expect(log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event_type: 'ACTION',
+          action: 'variable_detail.export_remove',
+          metadata: expect.objectContaining({
+            variable: 'Age at exam',
+            conceptPath: '\\this\\is\\a\\age\\',
+          }),
+        }),
+      );
+    });
+
     it('is absent where the deployment has exports turned off', async () => {
       mockState.exportsEnableExport = false;
       await renderDetail();
@@ -441,12 +546,23 @@ describe('VariableDetail', () => {
     // `isOpenAccess()` would answer yes here, because it tests
     // `pathname.includes('/discover')` and the dataset segment is dictionary data. This page
     // is told its section instead, so a dataset that spells a route name changes nothing.
-    it('survives a dataset named after the other section', async () => {
+    // Two harms, two tests: asserted together, whichever failed first would hide the other,
+    // and the filter one is the half that needs `allowFiltering: false` to discriminate at all.
+    it('keeps the toggle for a dataset named after the other section', async () => {
       mockState.pathname = '/explorer/variable/discover/%5Cthis%5Cis%5Ca%5Cage%5C';
       await renderDetail({ dataset: 'discover' });
 
       expect(toggle()).toBeInTheDocument();
+    });
+
+    it('keeps filtering for a dataset named after the other section', async () => {
+      mockState.pathname = '/explorer/variable/discover/%5Cthis%5Cis%5Ca%5Cage%5C';
+      // Unfilterable, so this is the case the substring rule would refuse. Left filterable,
+      // the filter is offered under either rule and the test proves nothing.
+      await renderDetail({ dataset: 'discover', allowFiltering: false });
+
       expect(screen.queryByTestId('variable-detail-filter-disabled')).not.toBeInTheDocument();
+      expect(screen.getByTestId('filter-component')).toBeInTheDocument();
     });
   });
 
