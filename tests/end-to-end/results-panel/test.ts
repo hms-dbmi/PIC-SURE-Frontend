@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { test, mockApiFail, mockApiSuccess, mockApiConfig } from '../custom-context';
 import {
   conceptsDetailPath,
@@ -10,7 +10,7 @@ import {
   facetsResponse,
   crossCountSyncResponseInital,
 } from '../mock-data';
-import { getOption, userIsLoggedIn } from '../utils';
+import { getOption, navigateInApp, userIsLoggedIn } from '../utils';
 
 const countResultPath = '*/**/picsure/hpds/auth/v3/query/sync';
 const openCountResultPath = '*/**/picsure/hpds/open/v3/query/sync';
@@ -714,5 +714,221 @@ test.describe('Results Panel', () => {
       await expect(page.getByTestId('operator-label')).toHaveCount(1);
       await expect(page.getByTestId('operator-label').first()).toHaveText('AND');
     });
+  });
+});
+
+// The panel opens itself when the cohort gains something. Every test here would still pass
+// with a permanently-open panel, so each one first pins the collapsed starting state - and
+// none of them assert "filters exist" with an unanchored /filters? added/, which the
+// zero-filter string "No filters added, add below" also matches.
+test.describe('Results panel auto-expand', () => {
+  const strip = (page: Page) => page.getByTestId('results-summary-strip');
+  const body = (page: Page) => page.locator('#results-panel');
+  const filterCount = (page: Page) => page.getByTestId('results-panel-filter-count');
+  const firstConceptPath = mockData.content[0].conceptPath;
+
+  async function mockExplorer(page: Page, features: { name: string; value: string }[] = []) {
+    await mockApiConfig(page, features.length > 0 ? { features } : undefined);
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    await mockApiSuccess(page, countResultPath, '9999');
+  }
+
+  async function addCategoricalFilter(
+    page: Page,
+    rowIndex: number,
+    detail: Record<string, unknown>,
+  ) {
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${(detail as { dataset: string }).dataset}`,
+      detail,
+    );
+    await page.locator(`#ExplorerTable-row-${rowIndex} button[title^=Filter]`).click();
+    const option = await getOption(page);
+    await option.click();
+    await page.getByTestId('add-filter').click();
+  }
+
+  test('expands when the first filter is added', async ({ page }) => {
+    // Given
+    await mockExplorer(page);
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+    await expect(body(page)).not.toBeVisible();
+
+    // When
+    await addCategoricalFilter(page, 0, detailResponseCat);
+
+    // Then
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
+    await expect(body(page)).toBeVisible();
+    await expect(page.getByTestId(`added-filter-${firstConceptPath}`)).toBeVisible();
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+  });
+
+  test('leaves an already-expanded panel alone when a second filter is added', async ({ page }) => {
+    // Given
+    await mockExplorer(page);
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    await addCategoricalFilter(page, 0, detailResponseCat);
+    await expect(body(page)).toBeVisible();
+    const openBody = await body(page).elementHandle();
+
+    // When
+    await addCategoricalFilter(page, 2, detailResponseCat2);
+
+    // Then
+    await expect(filterCount(page)).toHaveText(/^2 filters added$/);
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
+    // The same DOM node throughout: a collapse and re-expand would have replaced it, which
+    // is what "no re-animation" means here.
+    expect(await openBody!.evaluate((element) => element.isConnected)).toBe(true);
+  });
+
+  test('expands when a variable is added for analysis', async ({ page }) => {
+    // Given
+    await mockExplorer(page, [{ name: 'ALLOW_EXPORT_ENABLED', value: 'true' }]);
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+
+    // When
+    const firstRow = page.locator('tbody').locator('tr[id^="ExplorerTable-row-"]').first();
+    await firstRow.locator('td').last().locator('button').last().click();
+
+    // Then
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByTestId(`added-export-${firstConceptPath}`)).toBeVisible();
+  });
+
+  test('expands on load for a filter tree restored from sessionStorage', async ({ page }) => {
+    // Given a collapsed panel with a filter in it
+    await mockExplorer(page);
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    await addCategoricalFilter(page, 0, detailResponseCat);
+    await strip(page).click();
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+
+    // When - a reload reads the tree back out of sessionStorage with no UI interaction, and
+    // resets panelOpen to its collapsed default
+    await page.reload();
+    await userIsLoggedIn(page);
+
+    // Then
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByTestId(`added-filter-${firstConceptPath}`)).toBeVisible();
+  });
+
+  test('expands on load for a genomic filter restored from sessionStorage', async ({ page }) => {
+    // Given
+    await mockExplorer(page);
+    await page.addInitScript(() => {
+      sessionStorage.setItem(
+        'genomicFilters',
+        JSON.stringify([
+          {
+            id: 'genomic-test-filter',
+            uuid: 'genomic-test-uuid',
+            filterType: 'genomic',
+            variableName: 'Genomic Filter',
+            description: 'Test genomic filter',
+            searchResult: null,
+            isHarmonized: false,
+            categoryValues: [],
+          },
+        ]),
+      );
+    });
+
+    // When
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+
+    // Then - genomic filters are a store of their own, so this only passes if the panel
+    // watches that one as well as the filter tree
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  test('keeps a manual collapse across a child route of the Explore layout', async ({ page }) => {
+    // Given
+    await mockExplorer(page);
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    await addCategoricalFilter(page, 0, detailResponseCat);
+    await strip(page).click();
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+
+    // When - a route the layout spans, so the panel is never destroyed
+    await navigateInApp(page, '/explorer/distributions');
+    await expect(page.getByRole('heading', { name: 'Variable Distributions' })).toBeVisible();
+    await page.getByRole('button', { name: 'Back to Explore' }).click();
+
+    // Then
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+    await expect(body(page)).not.toBeVisible();
+  });
+
+  test('keeps a manual collapse across leaving Explore and coming back', async ({ page }) => {
+    // Given
+    await mockExplorer(page);
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    await addCategoricalFilter(page, 0, detailResponseCat);
+    await strip(page).click();
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+
+    // When - leaving the section destroys the panel, so coming back builds a new one. The
+    // cohort it finds is the one the user already collapsed over, not news.
+    await navigateInApp(page, '/help');
+    await expect(page).toHaveURL(/\/help$/);
+    await navigateInApp(page, '/explorer?search=somedata');
+
+    // Then
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+    await expect(body(page)).not.toBeVisible();
+  });
+
+  test('keeps a manual expansion across leaving Explore and coming back', async ({ page }) => {
+    // Given an empty cohort, so nothing could re-open the panel on the user's behalf
+    await mockExplorer(page);
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    await strip(page).click();
+    await expect(body(page)).toBeVisible();
+
+    // When
+    await navigateInApp(page, '/help');
+    await expect(page).toHaveURL(/\/help$/);
+    await navigateInApp(page, '/explorer?search=somedata');
+
+    // Then
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
+    await expect(body(page)).toBeVisible();
+  });
+
+  test('stays open when the last filter is removed', async ({ page }) => {
+    // Given
+    await mockExplorer(page);
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    await addCategoricalFilter(page, 0, detailResponseCat);
+    const chip = page.getByTestId(`added-filter-${firstConceptPath}`);
+    await expect(chip).toBeVisible();
+
+    // When
+    await chip.getByTitle('Remove Filter').click();
+
+    // Then
+    await expect(filterCount(page)).toHaveText('No filters added, add below');
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
+    await expect(body(page)).toBeVisible();
   });
 });
