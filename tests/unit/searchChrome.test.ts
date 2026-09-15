@@ -1,41 +1,44 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
+
 import { showsSearchChrome } from '$lib/explorer/searchChrome';
 
 describe('showsSearchChrome', () => {
-  it('shows the chrome on the Explore and Discover results pages', () => {
-    expect(showsSearchChrome('/explorer')).toBe(true);
-    expect(showsSearchChrome('/discover')).toBe(true);
+  it.each([
+    '/explorer',
+    '/explorer/',
+    '/explorer/genotypes',
+    '/explorer/advanced-filtering',
+    '/explorer/variant',
+    '/explorer/genome-filter',
+    '/discover',
+    '/discover/advanced-filtering',
+  ])('shows the chrome on %s', (pathname) => {
+    expect(showsSearchChrome(pathname)).toBe(true);
   });
 
-  it('shows the chrome on the child routes that keep the search above them', () => {
-    expect(showsSearchChrome('/explorer/advanced-filtering')).toBe(true);
-    expect(showsSearchChrome('/explorer/genome-filter')).toBe(true);
-    expect(showsSearchChrome('/explorer/variant')).toBe(true);
-    expect(showsSearchChrome('/discover/advanced-filtering')).toBe(true);
+  // Export and Distributions keep their own full-page presentation, exactly as the
+  // showSidebar rule in (picsure)/+layout.svelte has it today.
+  it.each([
+    '/explorer/export',
+    '/explorer/distributions',
+    '/discover/distributions',
+    '/explorer/export/anything',
+  ])('hides the chrome on %s', (pathname) => {
+    expect(showsSearchChrome(pathname)).toBe(false);
   });
 
-  it('hides the chrome on the full-page export and distributions routes', () => {
-    expect(showsSearchChrome('/explorer/export')).toBe(false);
-    expect(showsSearchChrome('/explorer/distributions')).toBe(false);
-    expect(showsSearchChrome('/discover/distributions')).toBe(false);
-  });
+  it.each(['/', '', '/dashboard', '/dataset', '/analyze/api', '/login', '/admin/configuration'])(
+    'hides the chrome outside the search section, on %s',
+    (pathname) => {
+      expect(showsSearchChrome(pathname)).toBe(false);
+    },
+  );
 
-  it('hides the chrome outside Explore and Discover', () => {
-    expect(showsSearchChrome('/')).toBe(false);
-    expect(showsSearchChrome('/dashboard')).toBe(false);
-    expect(showsSearchChrome('/dataset')).toBe(false);
-    expect(showsSearchChrome('/analyze')).toBe(false);
-  });
-
-  it('ignores a trailing slash and a base path', () => {
-    expect(showsSearchChrome('/explorer/')).toBe(true);
+  // Substring matching, inherited deliberately from showSidebar: a base path or a nested
+  // segment still counts as the search section.
+  it('matches on substring, so a base path or a nested segment still counts', () => {
     expect(showsSearchChrome('/picsure/explorer')).toBe(true);
-    expect(showsSearchChrome('/picsure/explorer/export')).toBe(false);
-  });
-
-  it('is total for the degenerate pathnames a caller can hand it', () => {
-    expect(showsSearchChrome('')).toBe(false);
-    expect(showsSearchChrome(undefined as unknown as string)).toBe(false);
-    expect(showsSearchChrome(null as unknown as string)).toBe(false);
+    expect(showsSearchChrome('/explorer/variable/asthma')).toBe(true);
+    expect(showsSearchChrome('/picsure/discover/distributions')).toBe(false);
   });
 });

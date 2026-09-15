@@ -1,19 +1,15 @@
 /**
- * The search chrome is everything Explore and Discover wrap their search in: the cohort
- * summary panel, and the search-mode tab bar that follows it. Both need the same rule, so it
- * lives here rather than in either component.
+ * Whether a route shows the search chrome - the cohort summary panel (ALS-12835) and the
+ * search-mode tab bar (ALS-12836). Both render from the /explorer and /discover layouts, so
+ * the rule lives here instead of being spelled out in each of them.
  *
- * `/explorer/export` and `/explorer/distributions` - and the Discover equivalents - present
- * full page and opt out. This is the rule the removed `showSidebar` in `(picsure)/+layout.svelte`
- * applied to the right-hand side panel.
+ * This is the rule `showSidebar` applies in `(picsure)/+layout.svelte` today, substring
+ * matching and all: Export and Distributions keep their own full-page presentation.
+ *
+ * Total for any string, including '' and paths outside the search section - the layouts are
+ * not the only caller, and a pathname that belongs to neither section is simply not chrome.
  */
-const SEARCH_ROOTS = ['/explorer', '/discover'];
-const FULL_PAGE_SEGMENTS = ['/export', '/distributions'];
-
 export function showsSearchChrome(pathname: string): boolean {
-  if (!pathname) return false;
-  return (
-    SEARCH_ROOTS.some((root) => pathname.includes(root)) &&
-    !FULL_PAGE_SEGMENTS.some((segment) => pathname.includes(segment))
-  );
+  const inSearchSection = pathname.includes('/explorer') || pathname.includes('/discover');
+  return inSearchSection && !pathname.includes('/export') && !pathname.includes('/distributions');
 }
