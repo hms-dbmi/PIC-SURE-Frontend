@@ -8,6 +8,17 @@ const severityKeys = variantData.map((sev) => sev.key);
 export const selectedGenes: Writable<string[]> = writable([]);
 export const selectedFrequency: Writable<string[]> = writable([]);
 export const selectedConsequence: Writable<string[]> = writable([]);
+
+/**
+ * Bumped whenever something outside the consequence panel replaces the whole consequence
+ * selection - loading an applied filter into it, or clearing it.
+ *
+ * The panel builds its tree of checkboxes from the selection once and owns that state
+ * afterwards, so it has to be told when the store is rewritten from elsewhere. It cannot
+ * simply follow every change instead: rebuilding the tree on each click would throw away
+ * which severity groups the user had open.
+ */
+export const consequenceRevision: Writable<number> = writable(0);
 export const consequences: Readable<string[]> = derived(selectedConsequence, ($c) =>
   $c.filter((cons) => !severityKeys.includes(cons)),
 );
@@ -62,12 +73,14 @@ export function populateFromGeneFilter(filter: GenomicFilterInterface) {
   selectedGenes.set(filter?.Gene_with_variant || []);
   selectedConsequence.set(filter?.Variant_consequence_calculated || []);
   selectedFrequency.set(filter?.Variant_frequency_as_text || []);
+  consequenceRevision.update((revision) => revision + 1);
 }
 
 export function clearGeneFilters() {
   selectedGenes.set([]);
   selectedFrequency.set([]);
   selectedConsequence.set([]);
+  consequenceRevision.update((revision) => revision + 1);
 }
 
 export function addConsquence(consequence: string) {
