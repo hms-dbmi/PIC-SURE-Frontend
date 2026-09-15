@@ -1147,6 +1147,37 @@ test.describe('the designed filter panel', () => {
     await expect(chip).not.toContainText("Values: Yes, No, Don't know");
   });
 
+  /*
+   * The other half of "any value": reading it back.
+   *
+   * Select All writes a filter carrying *no* values, which is how the cohort records "filter
+   * to any value". Re-opening the page therefore has to read an empty value list as every
+   * value ticked rather than as none - and if it did not, the next press of the action would
+   * turn the user's unconstrained filter into a filter on nothing.
+   */
+  test('re-opens a Select All filter with every value ticked', async ({ page }) => {
+    await open(page);
+    await selectAll(page).click();
+    await filterParticipants(page).click();
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+
+    // The filter tree comes back out of sessionStorage, and the concept is fetched fresh
+    await page.reload();
+    await userIsLoggedIn(page);
+    await expect(panel(page)).toBeVisible();
+
+    expect(await values(selectedColumn(page))).toEqual(['Yes', 'No', "Don't know"]);
+    await expect(optionsColumn(page).getByRole('listitem')).toHaveCount(0);
+
+    // And pressing the action again edits that filter rather than adding a second, still
+    // unconstrained
+    await filterParticipants(page).click();
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+    const chip = page.getByTestId(`added-filter-${variable.conceptPath}`);
+    await chip.getByRole('button', { name: 'See details' }).click();
+    await expect(chip).toContainText('Restricting to any value.');
+  });
+
   // p1-10: a continuous variable gets Min and Max, with the variable's own bounds as the
   // placeholders, and no value list at all.
   test('offers min and max, not a value list, for a continuous variable', async ({ page }) => {
@@ -1174,7 +1205,14 @@ test.describe('the designed filter panel', () => {
    * trail pins the order too: search, Select All, the values, then the action - the reading
    * order of the mockup.
    */
-  test('is operable from the keyboard end to end', async ({ page }) => {
+  test('is operable from the keyboard end to end', async ({ page, browserName }) => {
+    // Not WebKit. Safari leaves buttons and checkboxes out of the tab order unless the user
+    // turns on "Press Tab to highlight each item on a webpage", and Playwright's WebKit
+    // inherits that: the trail there runs from the search box straight past every control in
+    // this panel. That is a browser preference, not something this page can be built to
+    // satisfy, and asserting around it would leave the test passing on markup no keyboard
+    // user could operate anywhere else.
+    test.skip(browserName === 'webkit', 'WebKit omits buttons and checkboxes from tab order');
     await open(page);
 
     /** What Tab lands on, named by whatever identifies it. */
