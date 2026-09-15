@@ -8,10 +8,11 @@
     type SearchSection,
   } from '$lib/explorer/searchChrome';
   import {
-    appliedCategoricalFilter,
-    filteringRefused,
-    relatedVariablesOf,
-  } from '$lib/explorer/variableFilter';
+    FILTERING_UNAVAILABLE,
+    isFilteringBlocked,
+    isOpenAccessSection,
+  } from '$lib/explorer/sectionAccess';
+  import { appliedCategoricalFilter, relatedVariablesOf } from '$lib/explorer/variableFilter';
   import type { VariableKey } from '$lib/explorer/variableUrl';
   import { log, createLog, getPageContext } from '$lib/logger';
   import type { Filter, FilterType } from '$lib/models/Filter.svelte';
@@ -20,7 +21,6 @@
   import { exports, addExport, removeExport, mapSearchResultAsExport } from '$lib/stores/Export';
   import { filters } from '$lib/stores/Filter';
   import { searchTerm } from '$lib/stores/Search';
-  import { isUserLoggedIn } from '$lib/stores/User';
 
   import AngleButton from '$lib/components/buttons/AngleButton.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -118,19 +118,17 @@
     return `${config.branding.applicationName} | ${name}`;
   });
 
-  // `isOpenAccess()` decides this by `page.url.pathname.includes('/discover')`. On this page
-  // that substring is dictionary data: `/explorer/variable/discover/...` is a legitimate URL
-  // for a dataset named `discover`, and it would read as Discover - hiding Add for Analysis
-  // from a logged-in Explore user and disabling their filter. The section is passed in, so
-  // ask that. The other half of the rule, an anonymous visitor, is unchanged.
-  const openAccess = $derived(section === 'discover' || !isUserLoggedIn());
+  // Both from `sectionAccess`, which is where this rule lives now: the result card has to
+  // reach the same verdict from the same inputs, because it says on the card what this page
+  // then enforces. See that module for why the section is asked rather than the pathname.
+  const openAccess = $derived(isOpenAccessSection(section));
 
   // The same rule as the results row's filter icon: an open-access visitor may not filter on a
-  // variable the dictionary marks unfilterable. Shared with the panel, which applies it to
-  // each related variable - those are a second way into the cohort and were not held to it.
-  const filteringDisabled = $derived(
-    variable !== undefined && filteringRefused(variable, openAccess),
-  );
+  // variable the dictionary marks unfilterable. Three places apply it now - the result card
+  // before the click, this page after it, and the panel to each related variable below, those
+  // being a second way into the cohort - so it has one definition, in `sectionAccess`, which
+  // `filteringRefused` is the variable-and-access half of.
+  const filteringDisabled = $derived(isFilteringBlocked(section, variable));
 
   /**
    * Whether the filter interface can express this concept at all.
@@ -329,7 +327,7 @@
     >
       {#if filteringDisabled}
         <ErrorAlert color="warning" data-testid="variable-detail-filter-disabled">
-          <p class="m-0">Filtering is not available for this variable</p>
+          <p class="m-0">{FILTERING_UNAVAILABLE}</p>
         </ErrorAlert>
       {:else if !filterInterfaceFits}
         <!-- A separate reason from the one above, and separately identified: this concept is

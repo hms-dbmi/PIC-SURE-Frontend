@@ -394,6 +394,21 @@ test.describe('Explorer for authenticated users', () => {
       await expect(page.getByTestId('variable-detail')).toHaveCount(0);
     });
 
+    test('Says nothing about filtering: Explore is not open access', async ({ page }) => {
+      // Given a fixture that does hold an unfilterable variable, so this is the section
+      // deciding and not the data - row 6 is the one Discover marks.
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page)).toHaveCount(mockData.content.length);
+      expect(mockData.content.some((row) => row.allowFiltering === false)).toBe(true);
+
+      // Then - no card claims the state, in either direction
+      await expect(page.locator('[data-testid="search-result-card"][data-filterable]')).toHaveCount(
+        0,
+      );
+      await expect(page.getByTestId('search-result-card-filtering-unavailable')).toHaveCount(0);
+    });
+
     test('Carries none of the row actions the detail page took over', async ({ page }) => {
       // Given
       await page.goto('/explorer?search=somedata');

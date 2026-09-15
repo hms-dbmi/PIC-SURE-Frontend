@@ -56,7 +56,10 @@ export function coversEveryValue(values: string[], selected: string[]): boolean 
  * An open-access visitor may not filter on a variable the dictionary marks unfilterable. An
  * authenticated user may, which is why this is not `!allowFiltering` on its own.
  */
-export function filteringRefused(concept: SearchResult, openAccess: boolean): boolean {
+export function filteringRefused(
+  concept: Pick<SearchResult, 'allowFiltering'>,
+  openAccess: boolean,
+): boolean {
   return openAccess && !concept.allowFiltering;
 }
 

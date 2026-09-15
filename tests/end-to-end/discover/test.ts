@@ -18,6 +18,7 @@ import {
   mockConceptDetailFromRows,
   openNthResult,
   openNthResultFilter,
+  searchResultCards as resultCards,
 } from '../utils';
 
 // The row indices the allowFiltering specs below depend on, checked rather than trusted: the
@@ -130,6 +131,71 @@ test.describe('Discover for unauthenticated users', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
     await expect(page.locator('#result-count')).toHaveText('< 10');
   });
+  /*
+   * The filter affordance moved to the variable's own page, so without something on the card
+   * a user only learns which Discover results they may filter by opening each one. One
+   * assertion per case: bundled with the enabled card's, the disabled card's marking hides
+   * behind whichever expectation runs first.
+   */
+  test("A card for an unfilterable variable says so, in the detail page's words", async ({
+    page,
+  }) => {
+    // Given
+    expect(mockData.content[UNFILTERABLE_ROW].allowFiltering).toBe(false);
+    await page.goto('/discover?search=somedata');
+
+    // Then
+    await expect(
+      resultCards(page)
+        .nth(UNFILTERABLE_ROW)
+        .getByTestId('search-result-card-filtering-unavailable'),
+    ).toContainText('Filtering is not available for this variable');
+  });
+
+  test('That card carries a marker the tour and this suite can target', async ({ page }) => {
+    // Given
+    await page.goto('/discover?search=somedata');
+
+    // Then
+    await expect(resultCards(page).nth(UNFILTERABLE_ROW)).toHaveAttribute(
+      'data-filterable',
+      'false',
+    );
+  });
+
+  test('A filterable card carries the other value, so the two are told apart', async ({ page }) => {
+    // Given
+    expect(mockData.content[FILTERABLE_ROW].allowFiltering).toBe(true);
+    await page.goto('/discover?search=somedata');
+
+    // Then - separately from the message, which is what the disabled card is checked on
+    await expect(resultCards(page).nth(FILTERABLE_ROW)).toHaveAttribute('data-filterable', 'true');
+  });
+
+  test('A filterable card offers no such explanation', async ({ page }) => {
+    // Given
+    await page.goto('/discover?search=somedata');
+
+    // Then
+    await expect(
+      resultCards(page).nth(FILTERABLE_ROW).getByTestId('search-result-card-filtering-unavailable'),
+    ).toHaveCount(0);
+  });
+
+  test('Only the variables the dictionary refuses are marked', async ({ page }) => {
+    // Given
+    const refused = mockData.content.filter((row) => row.allowFiltering === false).length;
+    expect(refused).toBe(1);
+    await page.goto('/discover?search=somedata');
+    await expect(resultCards(page)).toHaveCount(mockData.content.length);
+
+    // Then - marked on the one row, not on every row of an open-access section
+    await expect(
+      page.locator('[data-testid="search-result-card"][data-filterable="false"]'),
+    ).toHaveCount(refused);
+    await expect(page.getByTestId('search-result-card-filtering-unavailable')).toHaveCount(refused);
+  });
+
   test('Search results with allowFiltering false are not filterable', async ({ page }) => {
     // Given
     expect(mockData.content[UNFILTERABLE_ROW].allowFiltering).toBe(false);

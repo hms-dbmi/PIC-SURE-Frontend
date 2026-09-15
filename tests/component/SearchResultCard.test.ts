@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 // The card's only job beyond the field mapping is to produce the detail-page href, so `resolve`
@@ -11,6 +11,15 @@ vi.mock('$lib/logger', () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createLog: vi.fn((...args: any[]) => args),
   getPageContext: vi.fn(() => 'test-context'),
+}));
+
+// Signed in by default, so an `explorer` card is the ordinary authenticated case. The other
+// half of the open-access rule is `!isUserLoggedIn()`, which reads localStorage - left real,
+// every Explore card here would be an open-access one and the section would prove nothing.
+const mockState = vi.hoisted(() => ({ loggedIn: true }));
+vi.mock('$lib/stores/User', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('$lib/stores/User')>()),
+  isUserLoggedIn: () => mockState.loggedIn,
 }));
 
 import SearchResultCard from '$lib/components/explorer/SearchResultCard.svelte';
@@ -37,6 +46,10 @@ function renderCard(overrides: Partial<SearchResult> = {}, props: Record<string,
 }
 
 const card = () => screen.getByTestId('search-result-card');
+
+beforeEach(() => {
+  mockState.loggedIn = true;
+});
 
 describe('the search result card', () => {
   it('leads with the description in bold and puts the variable name in parentheses', () => {
@@ -187,6 +200,93 @@ describe('the search result card', () => {
 
       expect(screen.queryByTestId('search-result-card-unopenable')).toBeNull();
       expect(card()).toHaveAttribute('href');
+    });
+  });
+
+  /**
+   * Open access bars filtering on some variables, and the filter itself now lives a
+   * navigation away - so a card that says nothing about it teaches the user which results are
+   * worth opening only by making them open each one.
+   *
+   * One assertion per case, because they discriminate on different things: the marker the tour
+   * and the e2e suite target, the words the user reads, and the section the rule applies in.
+   * Bundled, whichever failed first would hide the rest - and the enabled/disabled pair is
+   * exactly where that hides a card that is not marked at all.
+   */
+  describe('a variable open access will not let the user filter', () => {
+    const unfilterable = { allowFiltering: false };
+    const discover = { section: 'discover' };
+
+    it('marks the card, so the state is addressable without reading the text', () => {
+      renderCard(unfilterable, discover);
+
+      expect(card()).toHaveAttribute('data-filterable', 'false');
+    });
+
+    it('explains it on the card, in the words the detail page will repeat', () => {
+      renderCard(unfilterable, discover);
+
+      expect(screen.getByTestId('search-result-card-filtering-unavailable')).toHaveTextContent(
+        'Filtering is not available for this variable',
+      );
+    });
+
+    it('says it in text, not colour alone, and inside the link so it is part of its name', () => {
+      renderCard(unfilterable, discover);
+
+      // The badge sits inside the anchor, so a screen reader announcing the link announces
+      // this with it. An icon rides along for sighted users and is hidden from the reader so
+      // it is not announced twice.
+      const badge = screen.getByTestId('search-result-card-filtering-unavailable');
+      expect(card().contains(badge)).toBe(true);
+      expect(badge.querySelector('i')).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('marks a filterable card too, so the two are told apart rather than one being blank', () => {
+      renderCard({ allowFiltering: true }, discover);
+
+      expect(card()).toHaveAttribute('data-filterable', 'true');
+    });
+
+    it('leaves a filterable card unexplained: there is nothing to explain', () => {
+      renderCard({ allowFiltering: true }, discover);
+
+      expect(screen.queryByTestId('search-result-card-filtering-unavailable')).toBeNull();
+    });
+
+    it('marks an unopenable card as well - the two states are independent', () => {
+      // The unopenable branch renders its own element, so it needs its own case: a variable
+      // can be both unlinkable and unfilterable, and the card the user sees is the div.
+      renderCard({ ...unfilterable, dataset: 'BioLINCC (phs004266)' }, discover);
+
+      expect(card()).toHaveAttribute('data-filterable', 'false');
+      expect(screen.getByTestId('search-result-card-filtering-unavailable')).toBeInTheDocument();
+    });
+
+    it('says nothing of the kind on Explore, which is not open access', () => {
+      // Unfilterable on purpose: a filterable variable would carry no state under either
+      // rule, and the test would pass without the section mattering at all.
+      renderCard(unfilterable, { section: 'explorer' });
+
+      expect(screen.queryByTestId('search-result-card-filtering-unavailable')).toBeNull();
+    });
+
+    it('carries no filterable marking at all on Explore, not even a positive one', () => {
+      renderCard(unfilterable, { section: 'explorer' });
+
+      // Absent rather than `"true"`: an attribute asserting a variable is filterable is itself
+      // a claim about open access, which Explore makes no claim about.
+      expect(card()).not.toHaveAttribute('data-filterable');
+    });
+
+    it('applies to an anonymous visitor on Explore, as the row filter icon did', () => {
+      // `isOpenAccess()` was `pathname.includes('/discover') || !isUserLoggedIn()`, and the
+      // detail page keeps the second half. The card has to agree with the page it opens, so
+      // it keeps it too.
+      mockState.loggedIn = false;
+      renderCard(unfilterable, { section: 'explorer' });
+
+      expect(card()).toHaveAttribute('data-filterable', 'false');
     });
   });
 

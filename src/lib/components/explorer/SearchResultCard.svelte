@@ -2,6 +2,11 @@
   import { resolve } from '$app/paths';
 
   import type { SearchSection } from '$lib/explorer/searchChrome';
+  import {
+    FILTERING_UNAVAILABLE,
+    isFilteringBlocked,
+    isOpenAccessSection,
+  } from '$lib/explorer/sectionAccess';
   import { variableDetailHref } from '$lib/explorer/variableUrl';
   import { log, createLog, getPageContext } from '$lib/logger';
   import type { SearchResult } from '$lib/models/Search';
@@ -48,6 +53,23 @@
   // dataset - see the unopenable branch below.
   const detailPath = $derived(variableDetailHref(section, result, searchTerm));
 
+  /**
+   * Whether this card's variable may be filtered, said on the card rather than discovered on
+   * the detail page.
+   *
+   * Under open access the dictionary bars filtering on some variables, and the only affordance
+   * for it now lives a navigation away - so without this the user learns which results are
+   * worth opening by opening them. `data-filterable` carries the answer rather than the
+   * refusal, so the positive case is addressable too: the BDC-Open tour's step wants the first
+   * result it *can* filter, which it used to find by scanning rows for an enabled button.
+   *
+   * Absent, not `"true"`, where the rule does not apply. Explore for a signed-in user has no
+   * such state to show, and an attribute asserting it is filterable would read as one.
+   */
+  const openAccess = $derived(isOpenAccessSection(section));
+  const filteringBlocked = $derived(isFilteringBlocked(section, result));
+  const filterable = $derived(openAccess ? (filteringBlocked ? 'false' : 'true') : undefined);
+
   function onclick() {
     log(
       createLog('ACTION', 'search_result.card_click', {
@@ -78,6 +100,20 @@
         {result.type}
       </span>
     {/if}
+    {#if filteringBlocked}
+      <!-- An icon and words, not a colour: the state has to survive a monochrome display and
+           a colour-blind reader, and the text is also what carries it to a screen reader -
+           it sits inside the anchor, so it is part of the link's accessible name. The
+           wording is `FILTERING_UNAVAILABLE`, the same sentence the detail page gives when
+           the user opens this card. -->
+      <span
+        data-testid="search-result-card-filtering-unavailable"
+        class="badge preset-tonal-warning border border-warning-500 font-normal"
+      >
+        <i class="fa-solid fa-filter-circle-xmark" aria-hidden="true"></i>
+        {FILTERING_UNAVAILABLE}
+      </span>
+    {/if}
   </span>
 {/snippet}
 
@@ -86,6 +122,7 @@
     href={resolve(detailPath as '/')}
     {onclick}
     data-testid="search-result-card"
+    data-filterable={filterable}
     class="result-card card block border bg-white border-surface-200-800 rounded-xl px-5 py-4 shadow-sm"
   >
     {@render content()}
@@ -102,6 +139,7 @@
   <div
     data-testid="search-result-card"
     data-unopenable="true"
+    data-filterable={filterable}
     tabindex="-1"
     class="unopenable-card card block border bg-white border-surface-200-800 rounded-xl px-5 py-4 shadow-sm"
   >
