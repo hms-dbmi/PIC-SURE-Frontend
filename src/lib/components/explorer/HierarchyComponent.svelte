@@ -2,7 +2,6 @@
   import type { SearchResult } from '$lib/models/Search';
   import type { NodeInterface } from '$lib/components/tree/types';
   import { type Filter, createAnyRecordOfFilter } from '$lib/models/Filter.svelte';
-  import { activeRow } from '$lib/stores/ExpandableRow';
   import { addFilter } from '$lib/stores/Filter';
   import RadioTree from '$lib/components/tree/RadioTree.svelte';
   import { getConceptTree, getHierarchyConcepts, ENSURE_MAX_DEPTH } from '$lib/stores/Dictionary';
@@ -120,7 +119,6 @@
   }
 
   function finish() {
-    $activeRow = '';
     onclose();
   }
 </script>

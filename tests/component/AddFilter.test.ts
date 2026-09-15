@@ -25,11 +25,6 @@ vi.mock('$lib/toaster', () => ({
   toaster: { error: vi.fn() },
 }));
 
-vi.mock('$lib/stores/ExpandableRow', async () => {
-  const { writable } = await import('svelte/store');
-  return { activeRow: writable('') };
-});
-
 const mockGetConceptDetails = vi.mocked(getConceptDetails);
 const mockAddFilter = vi.mocked(addFilter);
 const mockEnrichFilterDetails = vi.mocked(enrichFilterDetails);

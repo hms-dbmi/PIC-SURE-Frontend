@@ -10,33 +10,6 @@ vi.mock('$lib/logger', () => ({
   getPageContext: vi.fn(() => 'test-context'),
 }));
 
-// The real ExpandableRow store eagerly imports explorer components that touch
-// localStorage at module load, which isn't available in this environment. We
-// only need the store contract Row.svelte consumes, so provide a minimal stub.
-vi.mock('$lib/stores/ExpandableRow', () => {
-  const make = (value: unknown) => {
-    let current = value;
-    const subscribers = new Set<(v: unknown) => void>();
-    return {
-      subscribe(fn: (v: unknown) => void) {
-        fn(current);
-        subscribers.add(fn);
-        return () => subscribers.delete(fn);
-      },
-      set(next: unknown) {
-        current = next;
-        subscribers.forEach((fn) => fn(current));
-      },
-    };
-  };
-  return {
-    activeTable: make(''),
-    activeRow: make(''),
-    activeComponent: make(undefined),
-    setActiveRow: vi.fn(),
-  };
-});
-
 import Row from '$lib/components/datatable/Row.svelte';
 import { createLog } from '$lib/logger';
 
@@ -44,6 +17,11 @@ const mockedCreateLog = vi.mocked(createLog);
 
 const columns = [{ dataElement: 'name', label: 'Name' }];
 const row = { name: 'Row A', dataset_id: 'ds-1' };
+
+// A stand-in for whatever a consumer opts in with. No table opts in today - Explore's
+// results are cards, which log their own click - so naming a real action here would assert
+// against nothing in the app.
+const OPT_IN_ACTION = 'test_table.row_click';
 
 function rowClickActions(): string[] {
   return mockedCreateLog.mock.calls
@@ -56,7 +34,7 @@ afterEach(() => {
 });
 
 describe('Datatable Row', () => {
-  it('does not emit search_result.row_click when a consumer provides its own click handler (e.g. dashboard)', async () => {
+  it('emits no ACTION log for a consumer that provides a click handler but no log action (e.g. dashboard)', async () => {
     const rowClickHandler = vi.fn();
 
     const { container } = render(Row, {
@@ -72,37 +50,36 @@ describe('Datatable Row', () => {
 
     // The consumer's handler runs (the dashboard logs dashboard.row_click itself).
     expect(rowClickHandler).toHaveBeenCalledTimes(1);
-    // The generic row must NOT also emit the search-result action.
-    expect(rowClickActions()).not.toContain('search_result.row_click');
+    // The generic row must NOT log on its own behalf.
+    expect(rowClickActions()).toEqual([]);
   });
 
-  it('emits search_result.row_click for the search-results table that opts in via rowClickLogAction', async () => {
+  it('emits the action a consumer opts in to via rowClickLogAction', async () => {
     const { container } = render(Row, {
-      tableName: 'ExplorerTable',
+      tableName: 'SomeTable',
       columns,
       index: 0,
       row,
       isClickable: true,
-      expandable: true,
-      rowClickLogAction: 'search_result.row_click',
+      rowClickLogAction: OPT_IN_ACTION,
     });
 
     await fireEvent.click(container.querySelector('tr[id$="-row-0"]')!);
 
-    expect(rowClickActions()).toContain('search_result.row_click');
+    expect(rowClickActions()).toEqual([OPT_IN_ACTION]);
   });
 
   it('activates the row on Enter and Space through the same click path (logging included)', async () => {
     const rowClickHandler = vi.fn();
 
     const { container } = render(Row, {
-      tableName: 'ExplorerTable',
+      tableName: 'SomeTable',
       columns,
       index: 0,
       row,
       isClickable: true,
       rowClickHandler,
-      rowClickLogAction: 'search_result.row_click',
+      rowClickLogAction: OPT_IN_ACTION,
     });
 
     const tr = container.querySelector('tr[id$="-row-0"]')!;
@@ -110,7 +87,7 @@ describe('Datatable Row', () => {
     await fireEvent.keyDown(tr, { key: ' ' });
 
     expect(rowClickHandler).toHaveBeenCalledTimes(2);
-    expect(rowClickActions().filter((a) => a === 'search_result.row_click')).toHaveLength(2);
+    expect(rowClickActions().filter((a) => a === OPT_IN_ACTION)).toHaveLength(2);
   });
 
   it('treats configured rowClickKeys as row activation shortcuts', async () => {
