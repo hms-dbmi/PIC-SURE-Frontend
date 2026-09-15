@@ -9,9 +9,8 @@ import {
 } from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
 
-// The specific-variant flow through the Genotypes tab, which is the only way into genomic
-// filtering now. This is the whole of its coverage: the Genomic Filtering button and the route
-// it led to are gone, and the route-based specs that used to duplicate these went with them.
+// The specific-variant flow through the Genotypes tab, the only entry point to genomic
+// filtering, and the whole of this flow's coverage.
 
 const QUERY = '*/**/picsure/hpds/auth/v3/query/sync';
 
@@ -116,6 +115,49 @@ test('opens straight onto the variant interface when SNP is the only method', as
   await expect(page.getByTestId('gene-variant-option')).toHaveCount(0);
   await expect(page.getByTestId('snp-option')).toHaveCount(0);
   await expect(page.locator('#snp-search')).toBeVisible();
+});
+
+// Add, update and remove on the SNP-only configuration, where the method is forced rather
+// than chosen. The specs above and below run on the both-enabled configuration, so without
+// this the forced-method path only ever reaches the panels and never applies a filter.
+test('adds, updates and removes the filter when SNP is the only method', async ({ page }) => {
+  // Given the tab on SNP alone, with a variant saved into the panel
+  await mockApiConfig(page, snpOnly);
+  await openGenotypesTab(page);
+  await expect(page.locator('#snp-search')).toBeVisible();
+  await saveVariant(page, validSnp, validSnpConstraint);
+
+  // When applied
+  await mockApiSuccess(page, QUERY, 200);
+  await addFilterBtn(page).click();
+
+  // Then it lands in the cohort panel, and the tab offers to update it rather than add again
+  await expect(page).toHaveURL(/\/explorer$/);
+  await expect(snpChip(page)).toBeVisible();
+  await modeLink(page, 'genotypes').click();
+  await expect(page.locator('#snp-search')).toBeVisible();
+  await expect(addFilterBtn(page)).toHaveText(/Update Filter/);
+
+  // When a second variant is added to the applied filter
+  await saveVariant(page, secondSnp, secondSnpConstraint);
+  await addFilterBtn(page).click();
+
+  // Then there is still one filter, holding both
+  await expect(snpChip(page)).toHaveCount(1);
+  await snpChip(page).getByRole('button', { name: 'See details' }).click();
+  await expect(snpChip(page)).toContainText(validSnp);
+  await expect(snpChip(page)).toContainText(secondSnp);
+
+  // When removed from its chip
+  await modeLink(page, 'genotypes').click();
+  await snpChip(page).getByRole('button', { name: 'Remove Filter' }).click();
+
+  // Then the panel empties and the button goes back to Add Filter, still on SNP
+  await expect(snpChip(page)).toHaveCount(0);
+  await expect(page.locator('#snp-search')).toBeVisible();
+  await expect(summaryPanel(page).getByText(validSnp)).not.toBeVisible();
+  await expect(addFilterBtn(page)).toHaveText(/Add Filter/);
+  await expect(addFilterBtn(page)).toBeDisabled();
 });
 
 test('the search box enforces the variant format', async ({ page }) => {
