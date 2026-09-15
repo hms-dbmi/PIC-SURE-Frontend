@@ -1436,6 +1436,17 @@ test.describe('the designed filter panel', () => {
     await expect(related.first().getByTestId('selected-empty')).toHaveText(
       'All included by default',
     );
+
+    // The chevron sits at the right edge of the row, level with the section's name and over
+    // the Selected values column - which is where `p2-10` draws it collapsed and `p2-11`
+    // draws it expanded. Measured rather than argued, because the two mockups can be read as
+    // putting it in two different places.
+    const chevron = await box(toggle.locator('i'));
+    const title = await box(toggle.locator('span'));
+    const selectedColumnLeft = (await box(related.first().locator('#selected-options-container')))
+      .x;
+    expect(chevron.x).toBeGreaterThan(selectedColumnLeft);
+    expect(Math.abs(chevron.y - title.y)).toBeLessThan(title.height);
   });
 
   test('adds a filter for a related variable only once it is given values', async ({ page }) => {
