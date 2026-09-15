@@ -443,14 +443,14 @@ test.describe('Adding the filter', () => {
     await expect(page.getByTestId('search-box')).toHaveValue('age');
   });
 
+  // No need to open the cohort panel by hand: adding the filter opens it. Deliberately so,
+  // since the panel is what the new filter has to show up in.
   test('updates the participant count', async ({ page }) => {
-    // Given a count that changes once the filter is in the query
+    // Given a count that answers 9,999 for the cohort as it stands
     let participants = '9999';
     await page.route(QUERY, (route) => route.fulfill({ json: participants }));
     await page.goto('/explorer');
     await userIsLoggedIn(page);
-    await page.locator('#results-panel-toggle').click();
-    await expect(page.locator('#result-count-number')).toHaveText('9,999');
 
     await modeLink(page, 'genotypes').click();
     await expect(optionsContainer(page).getByLabel(geneValues.results[0])).toBeVisible({
@@ -458,11 +458,11 @@ test.describe('Adding the filter', () => {
     });
     await optionsContainer(page).getByLabel(geneValues.results[0]).click();
 
-    // When
+    // When the cohort the filter produces answers differently
     participants = '1320';
     await addFilterBtn(page).click();
 
-    // Then
+    // Then the panel shows the new count, not the one from before the filter
     await expect(page.getByTestId('added-filter-genomic')).toBeVisible();
     await expect(page.locator('#result-count-number')).toHaveText('1,320');
   });

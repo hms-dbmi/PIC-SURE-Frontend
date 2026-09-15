@@ -18,11 +18,19 @@
   import { panelOpen } from '$lib/stores/SidePanel';
   import { clearSnpFilters, generateSNPFilter, selectedSNPs } from '$lib/stores/SNPFilter';
 
+  // Every store below is shared with /explorer/genome-filter, which is still reachable and
+  // which both clears these on its way out and overwrites them from the applied filter on
+  // its way in. So a detour through that page does change what this one is holding. That is
+  // not isolated and is not meant to be: the two are the same feature behind two entry
+  // points for as long as both exist, and deleting the old one is what closes it.
+
   /**
    * The method a deployment with a single query type leaves no choice about. BDC enables
    * GENE alone, so the tab opens straight onto the gene-variant panels and never shows the
-   * chooser. `undefined` means both are on - the route's load redirects when neither is, so
-   * there is no third case to answer for.
+   * chooser. `undefined` covers both of the cases where this cannot decide: both types
+   * enabled, where the user picks; and neither, where there is nothing to pick and the mode
+   * is not offered at all - `+page.ts` redirects that case away before this renders, and the
+   * chooser `undefined` yields would say so anyway.
    */
   const forcedMethod = $derived.by(() => {
     const { enableGENEQuery, enableSNPQuery } = config.features;
@@ -31,9 +39,9 @@
     return undefined;
   });
 
-  // Configuration wins outright where it decides, so the remembered method is read only in
-  // the case it can be set in. That also means the panels are on screen in the first render
-  // on BDC rather than after an effect has run.
+  // Configuration wins outright where it decides, so the remembered method is only read in
+  // the case it can be set in - a method carried over from elsewhere cannot strand a
+  // deployment on an interface it has not enabled.
   const method = $derived(forcedMethod ?? $filterMethod);
   const showsMethodChooser = $derived(forcedMethod === undefined);
 
@@ -46,6 +54,11 @@
   );
 
   function onComplete() {
+    // There is nothing to build without a method. The button only renders behind one, but
+    // that is an invariant of the template below, and on its own it would make `None` mean
+    // SNP here.
+    if (method === Option.None) return;
+
     addFilter(method === Option.Genomic ? generateGenomicFilter() : generateSNPFilter());
     // The working state has become the filter, so the tab starts over: empty panels, and the
     // chooser again where there is one.
@@ -63,8 +76,8 @@
   <title>{config.branding.applicationName} | Genotypes</title>
 </svelte:head>
 
-<!-- No title and no back button, unlike the /explorer/genome-filter page this replaces: the
-     mode bar the layout renders above it is the navigation now. -->
+<!-- No title of its own and no back button: the search-mode bar the layout renders above this
+     is the page's navigation, and a second one would only compete with it. -->
 <Content full>
   <div data-testid="genotypes-tab">
     {#if showsMethodChooser}
@@ -76,7 +89,7 @@
       <SnpSearch class="mt-6" />
     {/if}
     {#if method !== Option.None}
-      <div class="flex justify-center my-4" data-testid="genotypes-filter-actions">
+      <div class="flex justify-center my-4">
         <button
           data-testid="add-filter-btn"
           type="button"
