@@ -66,7 +66,9 @@
   // A fixed 25vh reserves scroll space a four-value variable does not need, which the
   // designed panel does not have room for; the card layout keeps the height it had.
   const listClass = $derived(
-    flat ? 'overflow-y-auto scrollbar-color max-h-25vh' : 'overflow-scroll scrollbar-color h-25vh',
+    flat
+      ? 'overflow-y-auto scrollbar-color max-h-[25vh]'
+      : 'overflow-scroll scrollbar-color h-[25vh]',
   );
   const labelFor = (column: string) => (groupLabel ? `${column} for ${groupLabel}` : column);
 
@@ -175,16 +177,26 @@
     selectedOptionEndLocation = 20;
   }
 
+  /**
+   * Selects every value the search box admits, keeping whatever was already selected.
+   *
+   * The term is not optional here. Assigning `allOptions` outright ignored it, so narrowing
+   * the column to two values and pressing Select All selected all fifty - and on the variable
+   * detail page, where every value selected is written as "filter to any value", that turned
+   * a deliberate narrowing into an unconstrained filter. It selects values the term admits
+   * rather than the values on screen, which is what pages a long list in.
+   */
   function selectAllOptions() {
-    if (allOptions && allOptions?.length !== 0) {
-      selectedOptions = allOptions;
-      unselectedOptions = [];
-      selectedOptionEndLocation = 20;
-    } else {
-      selectedOptions = [...selectedOptions, ...unselectedOptions];
-      unselectedOptions = [];
-      selectedOptionEndLocation = 20;
-    }
+    const pool =
+      allOptions && allOptions.length !== 0
+        ? allOptions
+        : [...selectedOptions, ...unselectedOptions];
+    const admitted = new Set(pool.filter((option) => matchesSearch(option)));
+    const chosen = new Set(selectedOptions);
+    // Filtered from the pool rather than concatenated, so the declared order survives.
+    selectedOptions = pool.filter((option) => admitted.has(option) || chosen.has(option));
+    unselectedOptions = [];
+    selectedOptionEndLocation = 20;
     log(
       createLog('ACTION', 'filter.select_all', {
         count: selectedOptions.length,
@@ -319,13 +331,5 @@
 <style>
   .scrollbar-color {
     scrollbar-color: var(--color-surface-300) var(--color-surface-100);
-  }
-  .h-25vh {
-    height: 25vh;
-  }
-  /* Not a Tailwind utility, and not an arbitrary value it would accept - so it has to be
-     spelled out here, or the list has no height to scroll within and never pages in. */
-  .max-h-25vh {
-    max-height: 25vh;
   }
 </style>

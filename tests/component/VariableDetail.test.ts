@@ -265,9 +265,12 @@ describe('VariableDetail', () => {
   });
 
   // Ticket 11 removes the per-row Info / Filter / Hierarchy / Add-for-Analysis icons, so this
-  // page has to be somewhere the user can act from. These cases are about the page's wiring of
-  // the panel - the gate, the existing filter, the key; VariableFilterPanel.test.ts covers the
-  // panel's own behaviour.
+  // page has to be somewhere the user can act from.
+  //
+  // The panel renders inside this page and is covered through it. Its decisions are unit
+  // tested where they are made, in `tests/unit/variableFilter.test.ts`, and its layout and
+  // keyboard behaviour in `tests/end-to-end/explorer/variable-detail/test.ts` - there is no
+  // separate component test file for it.
   describe('the filter interface', () => {
     const filterSection = () => screen.getByTestId('variable-detail-filter');
     const addFilterButton = () =>
@@ -502,6 +505,9 @@ describe('VariableDetail', () => {
         id: child.conceptPath,
         categoryValues: ['Infected', 'Non-infected'],
       });
+      // Edited in place, not removed and added again: the uuid is what keeps a filter's
+      // position in the logic tree, so re-adding one would drop any OR group it sat in.
+      expect(get(filters)[0].uuid).toBe(uuid);
     });
 
     /*

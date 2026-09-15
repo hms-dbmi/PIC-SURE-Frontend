@@ -1185,6 +1185,40 @@ test.describe('the designed filter panel', () => {
   });
 
   /*
+   * Select All means every value the search box admits, not every value there is.
+   *
+   * With `allOptions` supplied - which this panel does - it assigned that whole list and
+   * ignored the term. So narrowing the column and pressing Select All selected the values the
+   * term had excluded too, and because a selection covering every value is written as "filter
+   * to any value", a deliberate narrowing came out as an unconstrained filter. It sits
+   * directly beside the search box in `p1-04`.
+   */
+  test('selects only the values the search box admits', async ({ page }) => {
+    await open(page);
+
+    // A term that admits two of the three values
+    await searchBox(page).fill('o');
+    await expect(optionsColumn(page).getByRole('listitem')).toHaveCount(2);
+
+    await selectAll(page).click();
+    expect(await values(selectedColumn(page))).toEqual(['No', "Don't know"]);
+    await expect(optionsColumn(page).getByRole('listitem')).toHaveCount(0);
+
+    // The value the term excluded was not selected, and is still there to pick. `values()`
+    // reads a snapshot, so the count is waited on first - the search box debounces.
+    await searchBox(page).fill('');
+    await expect(optionsColumn(page).getByRole('listitem')).toHaveCount(1);
+    expect(await values(optionsColumn(page))).toEqual(['Yes']);
+
+    // And the filter is a restriction, not the unconstrained one every value would give
+    await filterParticipants(page).click();
+    const chip = page.getByTestId(`added-filter-${variable.conceptPath}`);
+    await chip.getByRole('button', { name: 'See details' }).click();
+    await expect(chip).toContainText('Restricting to 2 values.');
+    await expect(chip).not.toContainText('Restricting to any value.');
+  });
+
+  /*
    * The other half of "any value": reading it back.
    *
    * Select All writes a filter carrying *no* values, which is how the cohort records "filter

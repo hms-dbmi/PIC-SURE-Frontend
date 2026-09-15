@@ -189,4 +189,23 @@ describe('relatedVariablesOf', () => {
 
     expect(related.map((concept) => concept.display)).toEqual(['Infection status']);
   });
+
+  /*
+   * A filter is keyed on a dataset as well as a concept path. `createCategoricalFilter`
+   * copies the concept's dataset verbatim and `hasConsentForFilter` reads an empty one as
+   * unconsented, which sets `hasInvalidFilter` - and that drives the navigation guard for the
+   * whole cohort, not just for this filter. A child we cannot mint a usable filter from is
+   * not offered at all.
+   */
+  it('is not a related variable without a dataset to filter on', () => {
+    expect(
+      relatedVariablesOf({ ...smoker, children: [child({ dataset: '' })] } as SearchResult),
+    ).toEqual([]);
+    expect(
+      relatedVariablesOf({
+        ...smoker,
+        children: [child({ dataset: undefined as unknown as string })],
+      } as SearchResult),
+    ).toEqual([]);
+  });
 });

@@ -1,5 +1,6 @@
 <script lang="ts">
   import {
+    appliedCategoricalFilter,
     filterForRange,
     filterForSelection,
     filteringRefused,
@@ -67,7 +68,6 @@
     unselected: string[];
     lastSearch: string;
     open: boolean;
-    loading: boolean;
   };
 
   function draftFor(concept: SearchResult, applied?: Filter): Draft {
@@ -82,7 +82,6 @@
       // A related variable that already constrains the cohort opens, so its selection is not
       // hidden behind a collapsed row.
       open: selected.length > 0,
-      loading: false,
     };
   }
 
@@ -95,9 +94,7 @@
    * when any of these filters changes, so the two readings never disagree.
    */
   function appliedFilterFor(concept: SearchResult): Filter | undefined {
-    return $filters.find(
-      (filter) => filter.id === concept.conceptPath && filter.filterType === 'Categorical',
-    );
+    return appliedCategoricalFilter(concept.conceptPath, $filters);
   }
 
   /**
@@ -132,7 +129,9 @@
     existingFilter?.filterType === 'numeric' ? (existingFilter.max ?? '') : '',
   );
 
-  const bound = (value: number | undefined) =>
+  // `null` as well as `undefined`: `min` and `max` are typed as optional numbers, but they
+  // come out of a JSON response and the dictionary does send nulls.
+  const bound = (value: number | null | undefined) =>
     value !== undefined && value !== null ? value.toString() : '';
 
   /**
@@ -140,13 +139,15 @@
    *
    * Called by the list on scroll and after the search box settles. A changed term starts the
    * column over, so that narrowing does not leave the previous term's values on screen.
+   *
+   * Synchronous, because the values are already in hand - so this does not drive the list's
+   * loading spinner, which exists for the genomic filter's list and pages from the API.
    */
   function loadMore(draft: Draft) {
     return (search: string = '') => {
       const values = draft.concept.values ?? [];
       if (values.length === 0) return;
 
-      draft.loading = true;
       if (search !== draft.lastSearch) {
         draft.unselected = [];
         draft.lastSearch = search;
@@ -162,7 +163,6 @@
         ...draft.unselected,
         ...matching.filter((value) => !shown.has(value)).slice(0, PAGE_SIZE),
       ];
-      draft.loading = false;
     };
   }
 
@@ -307,7 +307,7 @@
       {/if}
     </div>
   {:else}
-    <div data-testid="categoical-filter">
+    <div>
       <OptionsSelectionList
         flat
         groupLabel={variableName}
@@ -317,7 +317,6 @@
         allOptions={variable.values}
         bind:unselectedOptions={main.unselected}
         bind:selectedOptions={main.selected}
-        bind:currentlyLoading={main.loading}
         onscroll={loadMore(main)}
       />
     </div>
@@ -353,7 +352,6 @@
           allOptions={draft.concept.values}
           bind:unselectedOptions={related[index].unselected}
           bind:selectedOptions={related[index].selected}
-          bind:currentlyLoading={related[index].loading}
           onscroll={loadMore(related[index])}
         />
       {/if}

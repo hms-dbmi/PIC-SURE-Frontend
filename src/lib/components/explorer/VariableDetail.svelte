@@ -7,7 +7,11 @@
     withSearchTerm,
     type SearchSection,
   } from '$lib/explorer/searchChrome';
-  import { filteringRefused, relatedVariablesOf } from '$lib/explorer/variableFilter';
+  import {
+    appliedCategoricalFilter,
+    filteringRefused,
+    relatedVariablesOf,
+  } from '$lib/explorer/variableFilter';
   import type { VariableKey } from '$lib/explorer/variableUrl';
   import { log, createLog, getPageContext } from '$lib/logger';
   import type { Filter, FilterType } from '$lib/models/Filter.svelte';
@@ -216,9 +220,7 @@
   const relatedFilters = $derived(
     variable
       ? relatedVariablesOf(variable).map((child) =>
-          $filters.find(
-            (filter) => filter.id === child.conceptPath && filter.filterType === 'Categorical',
-          ),
+          appliedCategoricalFilter(child.conceptPath, $filters),
         )
       : [],
   );

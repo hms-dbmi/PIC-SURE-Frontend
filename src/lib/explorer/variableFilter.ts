@@ -85,15 +85,37 @@ export function filterForRange(concept: SearchResult, min: string, max: string):
 }
 
 /**
+ * The `Categorical` filter applied to one concept path, if there is one.
+ *
+ * One function because two callers need the same answer and the `{#key}` on the panel is only
+ * correct while they agree: the page keys the panel on the content of these filters, and the
+ * panel seeds a draft from them and edits them. Spelled out twice, a change to one predicate
+ * would leave the panel holding a selection the key no longer watches.
+ */
+export function appliedCategoricalFilter(
+  conceptPath: string,
+  applied: Filter[],
+): Filter | undefined {
+  return applied.find((filter) => filter.id === conceptPath && filter.filterType === 'Categorical');
+}
+
+/**
  * The related variables the panel stacks under the main value list.
  *
  * The dictionary has no field for these: `children` on a concept detail response is the only
  * thing that names concepts belonging to this one, so a categorical child carrying values is
  * read as a related variable. A leaf variable has none and the panel renders the simple
  * two-column layout.
+ *
+ * A dataset is required as well as values. `createCategoricalFilter` copies the concept's
+ * dataset verbatim, and `hasConsentForFilter` reads an empty one as unconsented - which sets
+ * `hasInvalidFilter` and trips the navigation guard for the *whole* cohort. A child we cannot
+ * mint a usable filter from is not a related variable we can offer; better that than a value
+ * list whose only effect is to invalidate the user's cohort later.
  */
 export function relatedVariablesOf(concept: SearchResult): SearchResult[] {
   return (concept.children ?? []).filter(
-    (child) => child.type === 'Categorical' && (child.values?.length ?? 0) > 0,
+    (child) =>
+      child.type === 'Categorical' && (child.values?.length ?? 0) > 0 && Boolean(child.dataset),
   );
 }
