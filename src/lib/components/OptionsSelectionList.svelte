@@ -299,4 +299,9 @@
   .h-25vh {
     height: 25vh;
   }
+  /* Not a Tailwind utility, and not an arbitrary value it would accept - so it has to be
+     spelled out here, or the list has no height to scroll within and never pages in. */
+  .max-h-25vh {
+    max-height: 25vh;
+  }
 </style>
