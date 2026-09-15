@@ -1,6 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 import { test, mockApiConfig, mockApiSuccess } from '../../custom-context';
-import { facetResultPath, facetsResponse, searchResultPath, searchResults } from '../../mock-data';
+import {
+  facetResultPath,
+  facetsResponse,
+  geneValues,
+  searchResultPath,
+  searchResults,
+} from '../../mock-data';
 import {
   mockCountedSearch,
   searchCurrentPageButton as currentPageButton,
@@ -126,7 +132,7 @@ test.describe('Explore search mode bar', () => {
     await newTab.close();
   });
 
-  test('reaches the Genotypes placeholder and moves aria-current to it', async ({ page }) => {
+  test('reaches the Genotypes tab and moves aria-current to it', async ({ page }) => {
     // Given
     await page.goto('/explorer');
     await userIsLoggedIn(page);
@@ -136,7 +142,7 @@ test.describe('Explore search mode bar', () => {
 
     // Then
     await expect(page).toHaveURL(/\/explorer\/genotypes$/);
-    await expect(page.getByTestId('genotypes-placeholder')).toBeVisible();
+    await expect(page.getByTestId('genotypes-tab')).toBeVisible();
     await expect(activeLinks(page)).toHaveCount(1);
     await expect(modeLink(page, 'genotypes')).toHaveAttribute('aria-current', 'page');
     await expect(modeLink(page, 'phenotypes')).not.toHaveAttribute('aria-current');
@@ -196,7 +202,7 @@ test.describe('Explore search mode bar', () => {
 
     // Then
     await expect(page).toHaveURL(/\/explorer$/);
-    await expect(page.getByTestId('genotypes-placeholder')).toHaveCount(0);
+    await expect(page.getByTestId('genotypes-tab')).toHaveCount(0);
     await expect(page.getByTestId('search-box')).toBeVisible();
   });
 });
@@ -204,7 +210,12 @@ test.describe('Explore search mode bar', () => {
 test.describe('Explore mode switching', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
-  test.beforeEach(({ page }) => mockApiConfig(page, genomicEnabled));
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, genomicEnabled);
+    // The Genotypes tab loads the gene list on mount; leave it unmocked and its failure
+    // toast lands over the assertions below.
+    await mockApiSuccess(page, '*/**/picsure/hpds/auth/search/values*', geneValues);
+  });
 
   test('preserves the search term, facets, page and results with no refetch', async ({ page }) => {
     // Given a search, a selected facet and a non-default page
@@ -228,7 +239,7 @@ test.describe('Explore mode switching', () => {
     // When the user switches to Genotypes and back
     await modeLink(page, 'genotypes').click();
     await expect(page).toHaveURL(/\/explorer\/genotypes\?search=age$/);
-    await expect(page.getByTestId('genotypes-placeholder')).toBeVisible();
+    await expect(page.getByTestId('genotypes-tab')).toBeVisible();
     await modeLink(page, 'phenotypes').click();
 
     // Then the search is still in the URL, not only in the store, so a refresh or a copied
