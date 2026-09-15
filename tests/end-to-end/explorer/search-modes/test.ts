@@ -6,7 +6,7 @@ import {
   searchCurrentPageButton as currentPageButton,
   searchFacetCheckbox as facetCheckbox,
   searchFor,
-  searchResultRows as resultRows,
+  searchResultCards as resultCards,
   SEARCH_SETTLE_MS as SETTLE_MS,
   userIsLoggedIn,
 } from '../../utils';
@@ -212,7 +212,7 @@ test.describe('Explore mode switching', () => {
     await page.goto('/explorer');
     await userIsLoggedIn(page);
     await searchFor(page, 'age');
-    await expect(resultRows(page)).toHaveCount(3);
+    await expect(resultCards(page)).toHaveCount(3);
 
     await expect(facetCheckbox(page)).toBeVisible();
     await facetCheckbox(page).click();
@@ -237,7 +237,7 @@ test.describe('Explore mode switching', () => {
 
     // And everything is as they left it, with nothing fetched again
     await expect(page.getByTestId('search-box')).toHaveValue('age');
-    await expect(resultRows(page)).toHaveCount(3);
+    await expect(resultCards(page)).toHaveCount(3);
     await expect(currentPageButton(page)).toHaveText('2');
     await expect(facetCheckbox(page)).toBeChecked();
 

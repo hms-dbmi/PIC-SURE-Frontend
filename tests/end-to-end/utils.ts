@@ -1,6 +1,14 @@
 import { expect, type Page, type Locator, type Route } from '@playwright/test';
 
-import { facetResultPath, facetsResponse, genomicFilter, searchResults } from './mock-data';
+import type { SearchResult } from '../../src/lib/models/Search';
+
+import {
+  conceptsDetailPath,
+  facetResultPath,
+  facetsResponse,
+  genomicFilter,
+  searchResults,
+} from './mock-data';
 
 // This method is used to ensure that the user state is fully loaded before proceeding.
 // Sometimes, the tests are flaky because there is a race condition in the tests that
@@ -19,7 +27,11 @@ export const optionsHaveLoaded = async (page: Page | Locator, container = 'optio
     .first()
     .locator(`#${container} label`)
     .first()
-    .waitFor({ state: 'visible', timeout: 5000 });
+    // 15s, matching the rest of getOption. The option list arrives from the filter
+    // interface's own concept fetch, and that interface is now a page navigation away rather
+    // than a panel opening in place - 5s went flaky under four parallel workers. A timeout,
+    // not an assertion: what the specs check about the options is unchanged.
+    .waitFor({ state: 'visible', timeout: 15000 });
 };
 
 export const getOption = async (page: Page | Locator, optionIndex = 0) => {
@@ -34,18 +46,95 @@ export const getOption = async (page: Page | Locator, optionIndex = 0) => {
   return options[optionIndex];
 };
 
-export const nthFilterIcon = async (page: Page, rowIndex = 0) => {
-  await expect(page.locator('tbody')).toBeVisible();
-  const tableBody = page.locator('tbody');
-  const firstRow = tableBody.locator('tr').nth(rowIndex);
-  return firstRow.locator('td').last().locator('button').nth(1);
+/* --- Opening a search result ---------------------------------------------------------------
+ *
+ * A result is a card whose whole body is a link to the variable's detail page, and the four
+ * actions that used to sit on the row - Info, Filter, Hierarchy, Add for Analysis - live on
+ * that page now. So a spec that wants any of them opens the result first. These helpers are
+ * the one place that knows how, since every spec below used to reach for a row icon.
+ */
+
+/** The result cards, in the order the server served them. */
+export const searchResultCards = (page: Page) => page.getByTestId('search-result-card');
+
+/** The variable detail page, whichever section it is in. */
+export const variableDetail = (page: Page) => page.getByTestId('variable-detail');
+
+/** Back to the results the detail page was opened from. */
+export const backToResults = async (page: Page) => {
+  await page.getByTestId('variable-detail-back').click();
+  await expect(page.getByTestId('search-results')).toBeVisible();
 };
 
-export const clickNthFilterIcon = async (page: Page, rowIndex = 0) => {
-  const filterIcon = await nthFilterIcon(page, rowIndex);
-  await expect(filterIcon).toBeVisible();
-  await filterIcon.click();
+/** Opens the nth result's detail page by clicking its card. */
+export const openNthResult = async (page: Page, index = 0) => {
+  // Returning first, so a spec can work through several results in a row the way it used to
+  // with the row icons. A detail page is only ever reached from the list here.
+  if (await variableDetail(page).isVisible()) await backToResults(page);
+  const card = searchResultCards(page).nth(index);
+  await expect(card).toBeVisible();
+  await card.click();
+  await expect(variableDetail(page)).toBeVisible();
 };
+
+/**
+ * Opens the nth result's filter interface, which is on the variable's detail page.
+ *
+ * Waits for the panel rather than the section around it: `variable-detail-filter` also
+ * renders for a variable that may not be filtered - carrying an explanation instead of an
+ * interface - so waiting on the section alone would let a spec go on to assert nothing.
+ *
+ * The panel is `variable-filter-panel`, not `AddFilter`'s `filter-component`: ticket 14
+ * replaced the filter this page was given in ticket 10 with the designed one, and
+ * `filter-component` now appears nowhere on this page. Waiting on it would have waited out
+ * the timeout, and asserting its absence would have passed for any UI at all.
+ */
+export const openNthResultFilter = async (page: Page, index = 0) => {
+  await openNthResult(page, index);
+  await expect(page.getByTestId('variable-filter-panel')).toBeVisible();
+};
+
+/**
+ * The action of the detail page's filter interface - Filter Participants, in the design.
+ *
+ * The two add buttons this page used to carry both read `add-filter`, so the locator had to
+ * be scoped to tell the filter interface's from the data hierarchy's. They no longer share a
+ * test id: ticket 13 named the hierarchy's `add-hierarchy-filter`, and ticket 14's panel
+ * carries `filter-participants`. One element each, which `variable-detail` pins.
+ */
+export const addFilterButton = (page: Page) => page.getByTestId('filter-participants');
+
+/** The add button of the detail page's data hierarchy, for anyRecordOf selections. */
+export const addHierarchyFilterButton = (page: Page) => page.getByTestId('add-hierarchy-filter');
+
+/**
+ * Serves concept detail for any concept in `searchResults`, out of the row itself.
+ *
+ * The detail page loads the concept before it renders anything, so every spec that opens a
+ * result needs detail for it - where a row's filter icon only fetched it for a Categorical
+ * variable's value list. A search row is a subset of a detail response, which is all a spec
+ * needs to get the interface on screen. Specs that assert on detail fields register their own
+ * route after this one and win.
+ */
+/**
+ * The rows as this module was loaded with them.
+ *
+ * Snapshotted rather than read live. Several specs mutate these fixtures in place -
+ * `values.shift()` in optional-selection-list drains the array it walks - and a worker keeps
+ * one copy of the module across every file it runs. Reading the live object opened a later
+ * spec's filter interface with no options to select, once in a few runs, depending on which
+ * file the worker had picked up first.
+ */
+const SEARCH_ROWS: SearchResult[] = structuredClone(searchResults.content) as SearchResult[];
+
+export const mockConceptDetailFromRows = (page: Page) =>
+  page.route(`${conceptsDetailPath}/*`, async (route: Route) => {
+    const conceptPath = route.request().postData() ?? '';
+    const row = SEARCH_ROWS.find((result) => result.conceptPath === conceptPath);
+    // An empty object is the dictionary saying it holds nothing for this key, which the page
+    // renders as "we could not find that variable" - a visible failure, not a silent pass.
+    await route.fulfill({ json: row ?? {} });
+  });
 
 // Only client-side navigation keeps a layout - and so the cohort summary panel it renders -
 // alive, and page.goto() would not. The in-app links to Explore's child routes mostly live in
@@ -95,9 +184,6 @@ export const SEARCH_FACET_ID = 'phs000284';
 // A RegExp, not mock-data's searchResultPath, because that one pins page_number=0 and these
 // specs paginate. Matching on the query string keeps /concepts/detail out of the count.
 const conceptSearchUrl = /\/picsure\/dictionary\/concepts\?/;
-
-export const searchResultRows = (page: Page) =>
-  page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]');
 
 export const searchCurrentPageButton = (page: Page) =>
   page.locator('.pagination button[aria-current="page"]');

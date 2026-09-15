@@ -10,8 +10,20 @@ import {
   crossCountSyncResponseInital,
   crossCountSyncResponsePlus3,
   crossCountSyncResponseLessThan10,
+  hierarchyResponse,
 } from '../mock-data';
-import { getOption, nthFilterIcon, clickNthFilterIcon } from '../utils';
+import {
+  addFilterButton,
+  getOption,
+  mockConceptDetailFromRows,
+  openNthResult,
+  openNthResultFilter,
+} from '../utils';
+
+// The row indices the allowFiltering specs below depend on, checked rather than trusted: the
+// specs mean nothing if the fixture changes under them.
+const FILTERABLE_ROW = 5;
+const UNFILTERABLE_ROW = 6;
 
 test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
@@ -31,6 +43,8 @@ test.describe('Discover for unauthenticated users', () => {
     });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
+    // Opening a result loads its concept, which every spec below does.
+    await mockConceptDetailFromRows(page);
   });
 
   test('Has filters, and searchbar', async ({ page }) => {
@@ -53,11 +67,10 @@ test.describe('Discover for unauthenticated users', () => {
     await page.goto('/discover?search=somedata');
 
     // When
-    await clickNthFilterIcon(page);
+    await openNthResultFilter(page);
     const firstItem = await getOption(page);
     await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
-    await addFilterButton.click();
+    await addFilterButton(page).click();
     const raw = crossCountSyncResponsePlus3['\\_studies_consents\\'];
     const match = raw.match(/^(\d[\d,]*)\s*±(\d+)$/);
     const numeric = parseInt((match?.[1] || '0').replace(/,/g, '')) || 0;
@@ -81,11 +94,10 @@ test.describe('Discover for unauthenticated users', () => {
     await page.goto('/discover?search=somedata');
 
     // When
-    await clickNthFilterIcon(page);
+    await openNthResultFilter(page);
     const firstItem = await getOption(page);
     await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
-    await addFilterButton.click();
+    await addFilterButton(page).click();
 
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
@@ -109,11 +121,10 @@ test.describe('Discover for unauthenticated users', () => {
     await page.goto('/discover?search=somedata');
 
     // When
-    await clickNthFilterIcon(page);
+    await openNthResultFilter(page);
     const firstItem = await getOption(page);
     await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
-    await addFilterButton.click();
+    await addFilterButton(page).click();
 
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
@@ -121,43 +132,57 @@ test.describe('Discover for unauthenticated users', () => {
   });
   test('Search results with allowFiltering false are not filterable', async ({ page }) => {
     // Given
+    expect(mockData.content[UNFILTERABLE_ROW].allowFiltering).toBe(false);
     await mockApiSuccess(page, '*/**/picsure/hpds/open/v3/query/sync', '9999');
     await page.goto('/discover?search=somedata');
 
-    // When
-    const filterIcon = await nthFilterIcon(page, 6);
+    // When - the filter lives on the variable's own page now, so that is where the refusal is
+    await openNthResult(page, UNFILTERABLE_ROW);
 
     // Then
-    await expect(filterIcon).toBeVisible();
-    await expect(filterIcon).toBeDisabled();
+    await expect(page.getByTestId('variable-detail-filter-disabled')).toContainText(
+      'Filtering is not available for this variable',
+    );
+    // The panel ticket 14 put on this page. `filter-component` is `AddFilter`'s, which this
+    // page stopped rendering, so that absence held whether or not the refusal worked.
+    await expect(page.getByTestId('variable-filter-panel')).toHaveCount(0);
   });
   test('Search results with allowFiltering true are filterable', async ({ page }) => {
     // Given
+    expect(mockData.content[FILTERABLE_ROW].allowFiltering).toBe(true);
     await mockApiSuccess(page, '*/**/picsure/hpds/open/v3/query/sync', '9999');
     await page.goto('/discover?search=somedata');
 
     // When
-    const filterIcon = await nthFilterIcon(page, 5);
+    await openNthResult(page, FILTERABLE_ROW);
 
     // Then
-    await expect(filterIcon).toBeVisible();
-    await expect(filterIcon).not.toBeDisabled();
+    await expect(page.getByTestId('variable-filter-panel')).toBeVisible();
+    await expect(page.getByTestId('variable-detail-filter-disabled')).toHaveCount(0);
   });
   test("Hierarchy component's radio buttons are not selectable when disableAddFilter is true", async ({
     page,
   }) => {
     // Given
+    await mockApiSuccess(
+      page,
+      `*/**/picsure/dictionary/concepts/hierarchy/${mockData.content[UNFILTERABLE_ROW].dataset}`,
+      hierarchyResponse,
+    );
     await page.goto('/discover?search=somedata');
-    const tableBody = page.locator('tbody');
-    const firstRow = tableBody.locator('tr').nth(6);
-    const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
-    await hierarchyButton.click();
+
     // When
-    await expect(page.getByTestId('hierarchy-component')).toBeVisible();
+    await openNthResult(page, UNFILTERABLE_ROW);
+
+    // Then
     const hierarchyComponent = page.getByTestId('hierarchy-component');
-    const radioButtons = await hierarchyComponent.locator('input').all();
-    for (let i = 0; i < radioButtons.length; i++) {
-      await expect(radioButtons[i]).toBeDisabled();
+    await expect(hierarchyComponent).toBeVisible();
+    const radioButtons = hierarchyComponent.locator('input');
+    // Pinned first: with no tree loaded the loop below has nothing to check and would pass
+    // for the wrong reason, which is how the row-action version of this spec used to pass.
+    await expect(radioButtons).toHaveCount(hierarchyResponse.length);
+    for (const radio of await radioButtons.all()) {
+      await expect(radio).toBeDisabled();
     }
   });
   test('Cohort details button and variant explorer button are not visible', async ({ page }) => {
@@ -173,11 +198,10 @@ test.describe('Discover for unauthenticated users', () => {
     await page.goto('/discover?search=somedata');
 
     // When
-    await clickNthFilterIcon(page);
+    await openNthResultFilter(page);
     const firstItem = await getOption(page);
     await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
-    await addFilterButton.click();
+    await addFilterButton(page).click();
     const cohortDetailsButton = page.getByTestId('cohort-details-btn');
 
     // Then

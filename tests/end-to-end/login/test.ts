@@ -10,6 +10,7 @@ import {
   facetResultPath,
   facetsResponse,
 } from '../mock-data';
+import { searchResultCards } from '../utils';
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 const PROVIDER_PREFIX = 'VITE_AUTH_PROVIDER_MODULE_';
 
@@ -218,6 +219,9 @@ test.describe('Login redirect preserves search state', () => {
     await mockApiSuccess(page, '*/**/psama/authentication/auth0', picsureUser);
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
     await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
+    // Without this, the consents fetch 404s and the app refuses to search at all - "searching
+    // the data dictionary is unavailable" - so the spec below could never have seen results.
+    await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: picsureUser.consents });
     await page.route(searchResultPath, async (route: Route) =>
       route.fulfill({ json: searchResults }),
     );
@@ -262,6 +266,7 @@ test.describe('Login redirect preserves search state', () => {
     // Then: the user lands back on the same search, and it re-runs automatically
     await page.waitForURL('/explorer?search=somedata');
     await expect(page.getByTestId('search-box')).toHaveValue('somedata');
-    await expect(page.locator('table')).toBeVisible();
+    // Results on screen, not just the term in the box: that is what "it re-runs" means.
+    await expect(searchResultCards(page).first()).toBeVisible();
   });
 });

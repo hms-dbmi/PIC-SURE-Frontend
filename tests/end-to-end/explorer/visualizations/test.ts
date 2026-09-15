@@ -9,16 +9,16 @@ import {
   searchResults as mockData,
   searchResultPath,
 } from '../../mock-data';
-import { getOption, userIsLoggedIn } from '../../utils';
+import { addFilterButton, getOption, openNthResultFilter, userIsLoggedIn } from '../../utils';
 
 const countResultPath = '*/**/picsure/hpds/auth/v3/query/sync';
 const distributionsPath = '*/**/picsure/visualization/auth/distributions';
 
-async function addFilterFromRow(page: import('@playwright/test').Page, rowIndex: number) {
-  await page.locator(`#ExplorerTable-row-${rowIndex} button[title^=Filter]`).click();
+async function addFilterFromResult(page: import('@playwright/test').Page, rowIndex: number) {
+  await openNthResultFilter(page, rowIndex);
   const firstItem = await getOption(page);
   await firstItem.click();
-  await page.getByTestId('add-filter').click();
+  await addFilterButton(page).click();
 }
 
 test.describe('Variable Distributions visualizations', () => {
@@ -68,8 +68,8 @@ test.describe('Variable Distributions visualizations', () => {
 
     await page.goto('/explorer?search=somedata');
     await userIsLoggedIn(page);
-    await addFilterFromRow(page, 0);
-    await addFilterFromRow(page, 2);
+    await addFilterFromResult(page, 0);
+    await addFilterFromResult(page, 2);
     await page.getByTestId('distributions-btn').click();
 
     const warning = page.getByTestId('excluded-visualizations-warning');
@@ -107,7 +107,7 @@ test.describe('Variable Distributions visualizations', () => {
 
     await page.goto('/explorer?search=somedata');
     await userIsLoggedIn(page);
-    await addFilterFromRow(page, 0);
+    await addFilterFromResult(page, 0);
     await page.getByTestId('distributions-btn').click();
 
     await expect(page.getByTestId('excluded-visualizations-warning')).not.toBeVisible();

@@ -6,7 +6,7 @@ import {
   searchCurrentPageButton as currentPageButton,
   searchFacetCheckbox as facetCheckbox,
   searchFor,
-  searchResultRows as resultRows,
+  searchResultCards as resultCards,
   SEARCH_SETTLE_MS as SETTLE_MS,
   userIsLoggedIn,
 } from '../../utils';
@@ -41,7 +41,7 @@ test.describe('Explore search state survives leaving the results page', () => {
       await page.goto('/explorer');
       await userIsLoggedIn(page);
       await searchFor(page, 'age');
-      await expect(resultRows(page)).toHaveCount(3);
+      await expect(resultCards(page)).toHaveCount(3);
 
       await expect(facetCheckbox(page)).toBeVisible();
       await facetCheckbox(page).click();
@@ -64,7 +64,7 @@ test.describe('Explore search state survives leaving the results page', () => {
 
       // Then everything is as they left it, and nothing was fetched again
       await expect(page.getByTestId('search-box')).toHaveValue('age');
-      await expect(resultRows(page)).toHaveCount(3);
+      await expect(resultCards(page)).toHaveCount(3);
       await expect(currentPageButton(page)).toHaveText('2');
       await expect(facetCheckbox(page)).toBeChecked();
 
@@ -82,9 +82,9 @@ test.describe('Explore search state survives leaving the results page', () => {
     await page.goto('/explorer');
     await userIsLoggedIn(page);
     await searchFor(page, 'age');
-    await expect(resultRows(page)).toHaveCount(3);
+    await expect(resultCards(page)).toHaveCount(3);
     await page.getByRole('button', { name: 'You are on the reset button' }).click();
-    await expect(resultRows(page)).toHaveCount(0);
+    await expect(resultCards(page)).toHaveCount(0);
     await page.waitForTimeout(SETTLE_MS);
 
     // When a ?search= navigation originates inside the layout - browser history, or the
@@ -94,7 +94,7 @@ test.describe('Explore search state survives leaving the results page', () => {
 
     // Then the store moved too, so the box and the rows below it agree
     await expect(page.getByTestId('search-box')).toHaveValue('asthma');
-    await expect(resultRows(page)).toHaveCount(3);
+    await expect(resultCards(page)).toHaveCount(3);
     expect(concepts.terms.at(-1)).toBe('asthma');
   });
 
@@ -104,7 +104,7 @@ test.describe('Explore search state survives leaving the results page', () => {
     await page.goto('/explorer');
     await userIsLoggedIn(page);
     await searchFor(page, 'age');
-    await expect(resultRows(page)).toHaveCount(3);
+    await expect(resultCards(page)).toHaveCount(3);
     await page.waitForTimeout(SETTLE_MS);
     const conceptsBefore = concepts.count;
 
@@ -116,7 +116,7 @@ test.describe('Explore search state survives leaving the results page', () => {
 
     // Then the param matches the store and nothing re-searches
     await expect(page.getByTestId('search-box')).toHaveValue('age');
-    await expect(resultRows(page)).toHaveCount(3);
+    await expect(resultCards(page)).toHaveCount(3);
     await page.waitForTimeout(SETTLE_MS);
     expect(concepts.count).toBe(conceptsBefore);
   });
@@ -144,7 +144,7 @@ test.describe('Discover search state survives leaving the results page', () => {
       const { concepts, facets } = await mockCountedSearch(page);
       await page.goto('/discover');
       await searchFor(page, 'age');
-      await expect(resultRows(page)).toHaveCount(3);
+      await expect(resultCards(page)).toHaveCount(3);
       await page.waitForTimeout(SETTLE_MS);
 
       const conceptsBefore = concepts.count;
@@ -158,7 +158,7 @@ test.describe('Discover search state survives leaving the results page', () => {
 
       // Then the search is still there, unfetched
       await expect(page.getByTestId('search-box')).toHaveValue('age');
-      await expect(resultRows(page)).toHaveCount(3);
+      await expect(resultCards(page)).toHaveCount(3);
 
       await page.waitForTimeout(SETTLE_MS);
       expect(concepts.count).toBe(conceptsBefore);

@@ -2,7 +2,6 @@ import { expect, type Route, type Page } from '@playwright/test';
 import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import {
   conceptTreePath,
-  conceptsDetailPath,
   detailResponseCat,
   detailResponseCatSameDataset,
   searchResults as mockData,
@@ -16,7 +15,15 @@ import {
   picsureUser,
   mockDataWithChildren,
 } from '../../mock-data';
-import { getOption, userIsLoggedIn } from '../../utils';
+import {
+  addFilterButton,
+  backToResults,
+  getOption,
+  mockConceptDetailFromRows,
+  openNthResult,
+  openNthResultFilter,
+  userIsLoggedIn,
+} from '../../utils';
 
 const queryPathV3 = '*/**/picsure/hpds/auth/v3/query';
 const countResultPath = `${queryPathV3}/sync`;
@@ -51,11 +58,10 @@ async function setupExportPageAndAddFilterAndExport(
   includeGenomicFilter: boolean = false,
 ) {
   await mockApiSuccess(page, `${conceptTreePath}?depth=4`, mockDataWithChildren);
-  await mockApiSuccess(
-    page,
-    `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-    detailResponseCat,
-  );
+  // Per row, not one fixed response for the dataset: this setup opens two different results,
+  // and a dataset-wide mock would hand the second one the first one's concept - so the export
+  // it added would carry the wrong concept path.
+  await mockConceptDetailFromRows(page);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, searchResultPath, mockData);
   await mockApiSuccess(page, countResultPath, 9999);
@@ -64,22 +70,20 @@ async function setupExportPageAndAddFilterAndExport(
   await userIsLoggedIn(page);
 
   const expectedRowIds = mockData.content.map((row) => row.conceptPath);
-  const tableBody = page.locator('tbody');
-  await expect(tableBody).toBeVisible();
 
-  const firstRow = tableBody.locator('tr').nth(0);
-  const filterIcon = firstRow.locator('td').last().locator('button').nth(1);
-  await filterIcon.click();
+  // Filtering and Add for Analysis are both on the variable's own page now.
+  await openNthResultFilter(page, 0);
   const firstFilter = await getOption(page);
   await firstFilter.click();
-  const addFilterButton = page.getByTestId('add-filter');
-  await addFilterButton.click();
+  await addFilterButton(page).click();
   await expect(page.getByTestId(`added-filter-${expectedRowIds[0]}`)).toBeVisible();
 
-  const secondRow = tableBody.locator('tr').nth(1);
-  const exportButton = secondRow.locator('td').last().locator('button').last();
-  await exportButton.click();
+  await openNthResult(page, 1);
+  await page.getByTestId('variable-detail-export-toggle').click();
   await expect(page.getByTestId(`added-export-${expectedRowIds[1]}`)).toBeVisible();
+  // Back to the results, where the rest of this setup expects to be: the genomic filter
+  // button belongs to the search bar, which the detail page does not render.
+  await backToResults(page);
 
   if (includeGenomicFilter) {
     await page.getByTestId('genomic-filter-btn').click();
