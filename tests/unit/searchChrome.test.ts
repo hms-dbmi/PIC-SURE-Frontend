@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import {
   isDiscoverSection,
+  isExploreSection,
   searchRoute,
   searchSectionRoot,
   showsSearchChrome,
@@ -59,6 +60,32 @@ describe('isDiscoverSection', () => {
   it('is false when a deeper segment merely spells discover', () => {
     expect(isDiscoverSection('/explorer/variable/discover')).toBe(false);
     expect(isDiscoverSection('/explorer/variable/rediscovery')).toBe(false);
+  });
+});
+
+// The stigmatising-filter guard in (picsure)/+layout.svelte asks these two which section a
+// path belongs to. It used substring matching, which a variable detail URL defeats: the
+// dataset rides in the pathname, so `/discover/variable/explorer/...` read as being inside
+// Explore already and the notAuthorized arm never fired.
+describe('isExploreSection', () => {
+  it.each(['/explorer', '/explorer/', '/explorer/genotypes', '/picsure/explorer'])(
+    'is true for %s',
+    (pathname) => expect(isExploreSection(pathname)).toBe(true),
+  );
+
+  it.each(['/discover', '/discover/advanced-filtering', '/dashboard', ''])(
+    'is false for %s',
+    (pathname) => expect(isExploreSection(pathname)).toBe(false),
+  );
+
+  it('is false when only a deeper segment spells explorer', () => {
+    expect(isExploreSection('/discover/variable/explorer/%5Cx%5C')).toBe(false);
+    expect(isDiscoverSection('/discover/variable/explorer/%5Cx%5C')).toBe(true);
+  });
+
+  it('is true when only a deeper segment spells discover', () => {
+    expect(isExploreSection('/explorer/variable/discover/%5Cx%5C')).toBe(true);
+    expect(isDiscoverSection('/explorer/variable/discover/%5Cx%5C')).toBe(false);
   });
 });
 

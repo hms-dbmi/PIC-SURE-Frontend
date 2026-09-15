@@ -26,6 +26,10 @@ export function isDiscoverSection(pathname: string): boolean {
   return searchRoute(pathname).section === 'discover';
 }
 
+export function isExploreSection(pathname: string): boolean {
+  return searchRoute(pathname).section === 'explorer';
+}
+
 /**
  * Whether a route shows the search chrome - the cohort summary panel and the search-mode tab
  * bar. Both render from the /explorer and /discover layouts, so the rule lives here instead
