@@ -7,6 +7,7 @@
   import { goto } from '$app/navigation';
 
   import { config } from '$lib/configuration.svelte';
+  import { isDiscoverSection } from '$lib/explorer/searchChrome';
 
   import { allFilters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
@@ -19,7 +20,7 @@
   import Modal from '$lib/components/Modal.svelte';
   import { log, createLog } from '$lib/logger';
 
-  let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
+  let isDiscoverPage = $derived(isDiscoverSection(page.url.pathname));
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(

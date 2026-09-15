@@ -4,21 +4,33 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, cleanup } from '@testing-library/svelte';
 import { get, type Writable } from 'svelte/store';
 
+// Mutable so a spec can mount the panel on a deeper Explore route, which is where the
+// open-access decision has been got wrong before.
+const route = vi.hoisted(() => ({ pathname: '/explorer' }));
+
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/environment', () => ({ browser: true }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
+vi.mock('$app/state', () => ({
+  page: {
+    get url() {
+      return new URL(`http://localhost${route.pathname}`);
+    },
+  },
+}));
 
 vi.mock('$lib/configuration.svelte', () => ({
   config: { branding: { explorePage: { queryErrorText: '' } }, features: {} },
 }));
+const counts = vi.hoisted(() => ({ start: vi.fn(), stop: vi.fn() }));
+
 vi.mock('$lib/state/resultCounts.svelte', () => ({
   resultCountsState: {
     loading: false,
     total: 0,
     hasNonZero: true,
     snapshot: { descriptorKey: 'k', count: 0, summary: { total: 0, hasError: false } },
-    start: vi.fn(),
-    stop: vi.fn(),
+    start: counts.start,
+    stop: counts.stop,
   },
 }));
 vi.mock('$lib/stores/Filter', async () => {
@@ -64,6 +76,12 @@ import { panelOpen, resetPanel } from '$lib/stores/ResultsSummaryPanel';
 const EMPTY_COHORT: Cohort = { items: [], structure: 'empty' };
 const setCohort = (cohort: Cohort) => feed.cohort.set(cohort);
 
+/** Whether the mounted panel asked the counts to load against the open-access endpoint. */
+function startedAsOpenAccess(): boolean {
+  const getIsOpenAccess = counts.start.mock.calls[0]?.[0] as () => boolean;
+  return getIsOpenAccess();
+}
+
 describe('ResultsSummaryPanel auto-expand', () => {
   beforeEach(() => {
     cleanup();
@@ -73,6 +91,9 @@ describe('ResultsSummaryPanel auto-expand', () => {
     setCohort(EMPTY_COHORT);
     feed.subscribes = 0;
     feed.unsubscribes = 0;
+    route.pathname = '/explorer';
+    counts.start.mockClear();
+    counts.stop.mockClear();
   });
 
   it('opens when the cohort gains something', () => {
@@ -139,4 +160,41 @@ describe('ResultsSummaryPanel auto-expand', () => {
     expect(feed.subscribes).toBe(2);
     expect(get(panelOpen)).toBe(false);
   });
+});
+
+// Which endpoint the counts come from is decided by the pathname, and a substring test for
+// "/discover" says yes to an Explore variable whose slug merely starts with those letters -
+// which would send an authenticated user's cohort count to the open-access endpoint and show
+// them an obfuscated number. searchChrome.ts matches by segment for exactly this reason.
+describe('ResultsSummaryPanel open-access decision', () => {
+  beforeEach(() => {
+    cleanup();
+    route.pathname = '/explorer';
+    counts.start.mockClear();
+    counts.stop.mockClear();
+    resetPanel();
+    setCohort(EMPTY_COHORT);
+  });
+
+  it.each([
+    '/explorer',
+    '/explorer/variable/discoverable-trait',
+    '/explorer/variable/discover',
+    '/explorer/discover',
+  ])('loads authenticated counts on %s', (pathname) => {
+    route.pathname = pathname;
+    render(ResultsSummaryPanel);
+    expect(counts.start).toHaveBeenCalledTimes(1);
+    expect(startedAsOpenAccess()).toBe(false);
+  });
+
+  it.each(['/discover', '/discover/advanced-filtering', '/discover/variable/explorer-trait'])(
+    'loads open-access counts on %s',
+    (pathname) => {
+      route.pathname = pathname;
+      render(ResultsSummaryPanel);
+      expect(counts.start).toHaveBeenCalledTimes(1);
+      expect(startedAsOpenAccess()).toBe(true);
+    },
+  );
 });
