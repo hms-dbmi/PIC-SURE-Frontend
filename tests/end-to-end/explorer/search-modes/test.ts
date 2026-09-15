@@ -151,9 +151,15 @@ test.describe('Explore search mode bar', () => {
     await expect(modeBar(page)).toBeVisible();
     await expect(activeLinks(page)).toHaveCount(0);
 
-    // And the two full-page routes drop it
+    // And the two full-page routes drop it. Each goto waits for the previous page to finish
+    // loading first: without that, firefox aborts the pending navigation with
+    // NS_BINDING_ABORTED when the app starts one of its own concurrently, which is a flake in
+    // the spec rather than anything about the bar.
+    await page.waitForLoadState();
     await page.goto('/explorer/distributions');
     await expect(modeBar(page)).toHaveCount(0);
+
+    await page.waitForLoadState();
     await page.goto('/explorer/export');
     await expect(modeBar(page)).toHaveCount(0);
   });
