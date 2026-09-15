@@ -10,5 +10,5 @@
 </script>
 
 <Content full>
-  <VariableDetail variableKey={data.variableKey} />
+  <VariableDetail section="explorer" variableKey={data.variableKey} />
 </Content>

@@ -294,6 +294,30 @@ describe('dataset path parameters are escaped', () => {
     expect(resolved(requestedPath())).toContain('/picsure/dictionary/concepts/tree/');
   });
 
+  /**
+   * Escaping alone cannot fix `.` or `..`: the URL parser reads `%2E` as `.`, so an encoded
+   * dot segment still normalises away and walks the request up a level. This boundary has to
+   * refuse them, or it would be leaning on the detail route's own validation for one input
+   * class - and the point of having two checks is that either one holds alone.
+   */
+  it.each(['.', '..'])('refuses to build a path from the relative dataset %s', async (dataset) => {
+    await expect(getConceptDetails('\\a\\', dataset)).rejects.toThrow(/relative dataset/);
+    expect(mockState.postSpy).not.toHaveBeenCalled();
+  });
+
+  it.each(['...', '%2e', 'a..b', 'test_data_set.v1.p1'])(
+    'still allows the dataset %s, which is not a dot segment',
+    async (dataset) => {
+      mockState.postSpy.mockResolvedValueOnce({ conceptPath: '\\a\\', dataset });
+
+      await getConceptDetails('\\a\\', dataset);
+
+      expect(resolved(requestedPath())).toBe(
+        `/picsure/dictionary/concepts/detail/${encodeURIComponent(dataset)}`,
+      );
+    },
+  );
+
   it('leaves an ordinary dataset name untouched', async () => {
     mockState.postSpy.mockResolvedValueOnce({ conceptPath: '\\a\\', dataset: 'phs000284' });
 

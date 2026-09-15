@@ -1,11 +1,8 @@
 <script lang="ts">
   import { isHttpError } from '@sveltejs/kit';
 
-  import { page } from '$app/state';
-
   import { config } from '$lib/configuration.svelte';
   import {
-    searchRoute,
     searchSectionRoot,
     withSearchTerm,
     type SearchSection,
@@ -23,17 +20,17 @@
 
   // One variable's page, shared by the Explore and Discover routes so the page exists once
   // rather than twice.
-  let { variableKey }: { variableKey?: VariableKey } = $props();
+  //
+  // `section` is passed in rather than read off the pathname. Each route knows which section
+  // it is, so the invariant is enforced by the type instead of by a cast or a fallback -
+  // either of which would have turned a wrong section into a `/undefined` Back link or a
+  // Discover user quietly sent to Explore.
+  let { section, variableKey }: { section: SearchSection; variableKey?: VariableKey } = $props();
 
   const SECTION_LABEL: Record<SearchSection, string> = {
     explorer: 'Explorer',
     discover: 'Discover',
   };
-
-  // The routes live under /explorer and /discover, so the section is one of the two. Read
-  // rather than defaulted: a default would silently send a Discover user back to Explore if
-  // this ever rendered somewhere unexpected.
-  const section = $derived(searchRoute(page.url.pathname).section as SearchSection);
 
   // Back returns to the section the user searched in, carrying the term so the address bar
   // agrees with the results it lands on. Nothing refetches: the search session belongs to the

@@ -2,8 +2,10 @@ import { variableKeyFromParams } from '$lib/explorer/variableUrl';
 
 import type { PageLoad } from './$types';
 
-// The page is nothing but dictionary data, and the dictionary client builds its request URL
-// from `window.location.origin` (`$lib/api.ts`), so none of it can run on the server.
+// The page is nothing but dictionary data, and the dictionary client cannot run on a server:
+// `api.send` builds its request URL from `window.location.origin` and reads the bearer token
+// from `localStorage`, neither of which exists there. Server-rendering this route could
+// therefore only ever emit the loading state, so it does not render on the server at all.
 export const ssr = false;
 
 /**

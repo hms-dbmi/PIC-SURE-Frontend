@@ -5,7 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/svelte';
 
 const mockState = vi.hoisted(() => ({
+  // HierarchyComponent reads the pathname to decide whether filtering is allowed; the page
+  // itself is told its section rather than inferring one.
   pathname: '/explorer/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C',
+  section: 'explorer' as 'explorer' | 'discover',
   enableHierarchy: false,
 }));
 
@@ -57,14 +60,14 @@ const detail = {
 
 async function renderDetail(overrides: Partial<SearchResult> = {}) {
   vi.mocked(getConceptDetails).mockResolvedValue({ ...detail, ...overrides });
-  render(VariableDetail, { variableKey });
+  render(VariableDetail, { section: mockState.section, variableKey });
   await screen.findByTestId('variable-identity');
 }
 
 /** Renders with a dictionary that answers `response`, however unlike a concept it is. */
 async function renderResponse(response: unknown) {
   vi.mocked(getConceptDetails).mockResolvedValue(response as SearchResult);
-  render(VariableDetail, { variableKey });
+  render(VariableDetail, { section: mockState.section, variableKey });
   return screen.findByTestId('variable-detail-error');
 }
 
@@ -84,7 +87,7 @@ function httpError(status: number, message: string): unknown {
 
 async function renderRejection(reason: unknown) {
   vi.mocked(getConceptDetails).mockRejectedValue(reason);
-  render(VariableDetail, { variableKey });
+  render(VariableDetail, { section: mockState.section, variableKey });
   return screen.findByTestId('variable-detail-error');
 }
 
@@ -94,6 +97,7 @@ describe('VariableDetail', () => {
     vi.mocked(getConceptDetails).mockReset();
     vi.mocked(getHierarchyConcepts).mockReset();
     mockState.pathname = '/explorer/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C';
+    mockState.section = 'explorer';
     mockState.enableHierarchy = false;
     searchTerm.set('');
   });
@@ -141,6 +145,7 @@ describe('VariableDetail', () => {
 
     it('names Discover on a Discover detail page', async () => {
       mockState.pathname = '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C';
+      mockState.section = 'discover';
       await renderRejection(httpError(404, 'not found'));
       expect(document.title).toBe('PIC-SURE | Discover');
     });
@@ -163,6 +168,7 @@ describe('VariableDetail', () => {
 
     it('returns to Discover from a Discover detail page', async () => {
       mockState.pathname = '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C';
+      mockState.section = 'discover';
       searchTerm.set('age');
       await renderDetail();
       expect(screen.getByTestId('variable-detail-back')).toHaveAttribute(
@@ -201,7 +207,7 @@ describe('VariableDetail', () => {
   // an outage reads to every user as their own link being stale.
   describe('errors', () => {
     it('explains a key that addresses nothing, and still offers a way back', async () => {
-      render(VariableDetail, {});
+      render(VariableDetail, { section: 'explorer' });
 
       expect(await screen.findByTestId('variable-detail-error')).toHaveTextContent(
         'We could not read that variable link',

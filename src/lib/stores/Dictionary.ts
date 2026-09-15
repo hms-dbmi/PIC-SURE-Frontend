@@ -173,8 +173,19 @@ function processFacetResults(response: DictionaryFacetResult[]) {
  * constrain it as well (`$lib/explorer/variableUrl`); the two checks fail independently and
  * this is the one that covers every caller.
  */
+const DOT_SEGMENT_PROBE = 'http://probe.invalid/a/b/';
+
 function datasetSegment(dataset: string): string {
-  return encodeURIComponent(dataset);
+  const segment = encodeURIComponent(dataset);
+  // Escaping is not enough on its own for `.` and `..`: the URL parser reads `%2E` as `.`,
+  // so an encoded dot segment still normalises away and walks the request up a level. No
+  // encoding fixes that, so refuse to build the path at all. Without this the check above
+  // would be leaning on the variable detail route's own validation to cover one input class,
+  // and the point of this boundary is that it holds when the other one is not there.
+  if (new URL(segment, DOT_SEGMENT_PROBE).pathname !== `/a/b/${segment}`) {
+    throw new Error('Refusing to build a dictionary request path from a relative dataset');
+  }
+  return segment;
 }
 
 export async function getConceptDetails(
