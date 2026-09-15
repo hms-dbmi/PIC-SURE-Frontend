@@ -12,10 +12,10 @@ import {
   emptyCohortTextAt,
   enabledSearchModes,
   genotypesMode,
+  inlineModeLabel,
   phenotypesMode,
   searchModeHref,
   searchModes,
-  type SearchMode,
 } from '$lib/explorer/searchModes';
 
 function idsFor(pathname: string): string[] {
@@ -142,39 +142,53 @@ describe('the search mode registry', () => {
     });
   });
 
+  // An acronym mode is the case the default gets wrong, and SPEC 4.3 names FHIR as one of the
+  // modes to come - so the mode owns the word, not the sentence.
+  describe('inlineModeLabel', () => {
+    it('lowercases an ordinary label, which is what the two current modes need', () => {
+      expect(inlineModeLabel(phenotypesMode)).toBe('phenotypes');
+      expect(inlineModeLabel(genotypesMode)).toBe('genotypes');
+    });
+
+    it('leaves an acronym mode the casing it declares', () => {
+      expect(inlineModeLabel({ ...phenotypesMode, label: 'FHIR', inlineLabel: 'FHIR' })).toBe(
+        'FHIR',
+      );
+      expect(inlineModeLabel({ ...phenotypesMode, label: 'dbGaP', inlineLabel: 'dbGaP' })).toBe(
+        'dbGaP',
+      );
+    });
+  });
+
   // The empty state has to grow on its own when Studies and FHIR land, so the list-building
   // is tested at mode counts the registry does not have yet - not only at the two real ones,
   // which a hardcoded pair of strings would also satisfy.
   describe('emptyCohortText', () => {
     it('names a single mode with no dangling "or" and no trailing comma', () => {
-      const text = emptyCohortText(['Phenotypes']);
+      const text = emptyCohortText(['phenotypes']);
       expect(text).toBe('No filters yet - add one from the phenotypes page below');
       expect(text).not.toContain(' or ');
       expect(text).not.toContain(',');
     });
 
     it('joins two modes with "or"', () => {
-      expect(emptyCohortText(['Phenotypes', 'Genotypes'])).toBe(
+      expect(emptyCohortText(['phenotypes', 'genotypes'])).toBe(
         'No filters yet - add one from the phenotypes or genotypes page below',
       );
     });
 
     it('joins three modes as "a, b or c"', () => {
-      expect(emptyCohortText(['Phenotypes', 'Genotypes', 'Studies'])).toBe(
+      expect(emptyCohortText(['phenotypes', 'genotypes', 'studies'])).toBe(
         'No filters yet - add one from the phenotypes, genotypes or studies page below',
       );
     });
 
+    // The last entry is an acronym on purpose: the sentence must not touch the casing it is
+    // handed, or the first person to add FHIR ships "fhir" to users.
     it('joins four modes with a comma between every pair but the last', () => {
-      expect(emptyCohortText(['Phenotypes', 'Genotypes', 'Studies', 'FHIR'])).toBe(
-        'No filters yet - add one from the phenotypes, genotypes, studies or fhir page below',
+      expect(emptyCohortText(['phenotypes', 'genotypes', 'studies', 'FHIR'])).toBe(
+        'No filters yet - add one from the phenotypes, genotypes, studies or FHIR page below',
       );
-    });
-
-    // Unreachable from the panel, which only renders inside the search section where
-    // phenotypes is always enabled - but the sentence should not read "from the  page below".
-    it('drops the list entirely when there are no modes', () => {
-      expect(emptyCohortText([])).toBe('No filters yet - add one below');
     });
   });
 
@@ -205,23 +219,24 @@ describe('the search mode registry', () => {
     });
 
     // The acceptance criterion, exercised end to end through the registry: a third entry and
-    // nothing else changes the sentence the panel renders.
+    // nothing else changes the sentence the panel renders. FHIR is the entry SPEC 4.3 names
+    // next, and the one whose casing a lowercasing sentence would break.
     it('grows by itself when a third mode joins the registry', () => {
       mockFeatures.enableGENEQuery = true;
-      const studiesMode: SearchMode = {
-        id: 'studies',
-        label: 'Studies',
-        route: '/explorer/studies',
+      searchModes.push({
+        id: 'fhir',
+        label: 'FHIR',
+        inlineLabel: 'FHIR',
+        route: '/explorer/fhir',
         enabled: () => true,
         isActive: () => false,
-      };
-      searchModes.push(studiesMode);
+      });
       try {
         expect(emptyCohortTextAt('/explorer')).toBe(
-          'No filters yet - add one from the phenotypes, genotypes or studies page below',
+          'No filters yet - add one from the phenotypes, genotypes or FHIR page below',
         );
       } finally {
-        searchModes.splice(searchModes.indexOf(studiesMode), 1);
+        searchModes.pop();
       }
       expect(searchModes.map((mode) => mode.id)).toEqual(['phenotypes', 'genotypes']);
     });

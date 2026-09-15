@@ -14,6 +14,12 @@ import { isDiscoverSection, searchRoute } from '$lib/explorer/searchChrome';
 export type SearchMode = {
   id: string;
   label: string;
+  /**
+   * The label as it appears inside a sentence, for the empty-state text. Defaults to `label`
+   * lowercased, which is what ordinary words want and what acronyms must not have: a FHIR
+   * mode sets `'FHIR'` here rather than reading "fhir" to the user.
+   */
+  inlineLabel?: string;
   route: string;
   enabled: (isDiscover: boolean) => boolean;
   /** True on the mode's own route and on its detail pages. */
@@ -83,8 +89,13 @@ export function searchModeHref(mode: SearchMode, searchTerm: string): string {
 
 /** "a", "a or b", "a, b or c" - no serial comma, no dangling "or" on a single item. */
 function joinWithOr(items: string[]): string {
-  if (items.length < 2) return items.join('');
+  if (items.length < 2) return items[0] ?? '';
   return `${items.slice(0, -1).join(', ')} or ${items[items.length - 1]}`;
+}
+
+/** How the mode reads inside a sentence, which for an acronym is not its label lowercased. */
+export function inlineModeLabel(mode: SearchMode): string {
+  return mode.inlineLabel ?? mode.label.toLowerCase();
 }
 
 /**
@@ -93,12 +104,14 @@ function joinWithOr(items: string[]): string {
  * here. Exported separately from `emptyCohortTextAt` so the list-building can be tested at
  * mode counts the registry does not have yet.
  *
+ * Takes the labels already in their inline form: casing belongs to the mode that owns the
+ * word, not to the sentence. At least one is expected, which the registry guarantees - the
+ * phenotypes mode is enabled unconditionally.
+ *
  * "page" stays singular: the reader is going to one page, whichever they pick.
  */
-export function emptyCohortText(modeLabels: string[]): string {
-  if (modeLabels.length === 0) return 'No filters yet - add one below';
-  const labels = modeLabels.map((label) => label.toLowerCase());
-  return `No filters yet - add one from the ${joinWithOr(labels)} page below`;
+export function emptyCohortText(inlineLabels: string[]): string {
+  return `No filters yet - add one from the ${joinWithOr(inlineLabels)} page below`;
 }
 
 /**
@@ -106,5 +119,5 @@ export function emptyCohortText(modeLabels: string[]): string {
  * so Discover, which has no Genotypes tab, does not send the reader to one.
  */
 export function emptyCohortTextAt(pathname: string): string {
-  return emptyCohortText(enabledSearchModes(pathname).map((mode) => mode.label));
+  return emptyCohortText(enabledSearchModes(pathname).map(inlineModeLabel));
 }

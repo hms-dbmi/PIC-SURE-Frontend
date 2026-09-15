@@ -998,10 +998,13 @@ test.describe('Results panel empty state', () => {
     { name: 'ENABLE_SNP_QUERY', value: 'false' },
   ];
 
-  async function mockSearch(page: Page, countPath: string) {
+  // The count fixture differs by section, not by convenience: Discover asks the open-access
+  // endpoint for a CROSS_COUNT and gets the per-consent map back, which is what providers.ts
+  // parses. Explore's authenticated COUNT is the bare scalar.
+  async function mockSearch(page: Page, countPath: string, count: unknown) {
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
-    await mockApiSuccess(page, countPath, '9999');
+    await mockApiSuccess(page, countPath, count);
   }
 
   test.describe('on Explore', () => {
@@ -1010,7 +1013,7 @@ test.describe('Results panel empty state', () => {
     test('names both pages when genomic search gives Explore a Genotypes tab', async ({ page }) => {
       // Given
       await mockApiConfig(page, { features: [{ name: 'ENABLE_GENE_QUERY', value: 'true' }] });
-      await mockSearch(page, countResultPath);
+      await mockSearch(page, countResultPath, '9999');
       await page.goto('/explorer?search=somedata');
       await userIsLoggedIn(page);
 
@@ -1026,7 +1029,7 @@ test.describe('Results panel empty state', () => {
     test('names the phenotypes page alone when genomic search is off', async ({ page }) => {
       // Given
       await mockApiConfig(page, { features: genomicOff });
-      await mockSearch(page, countResultPath);
+      await mockSearch(page, countResultPath, '9999');
       await page.goto('/explorer?search=somedata');
       await userIsLoggedIn(page);
 
@@ -1042,7 +1045,7 @@ test.describe('Results panel empty state', () => {
     test('moves the pointer from the strip into the body on expanding', async ({ page }) => {
       // Given
       await mockApiConfig(page, { features: genomicOff });
-      await mockSearch(page, countResultPath);
+      await mockSearch(page, countResultPath, '9999');
       await page.goto('/explorer?search=somedata');
       await userIsLoggedIn(page);
       const strip = page.getByTestId('results-summary-strip');
@@ -1063,7 +1066,7 @@ test.describe('Results panel empty state', () => {
     test('drops the text as soon as the first filter is added', async ({ page }) => {
       // Given an open, empty panel
       await mockApiConfig(page, { features: [{ name: 'ENABLE_GENE_QUERY', value: 'true' }] });
-      await mockSearch(page, countResultPath);
+      await mockSearch(page, countResultPath, '9999');
       await page.goto('/explorer?search=somedata');
       await userIsLoggedIn(page);
       await page.getByTestId('results-summary-strip').click();
@@ -1104,15 +1107,18 @@ test.describe('Results panel empty state', () => {
           { name: 'ENABLE_SNP_QUERY', value: 'true' },
         ],
       });
-      await mockSearch(page, openCountResultPath);
+      await mockSearch(page, openCountResultPath, { '\\_studies_consents\\': 9999 });
       await page.goto('/discover?search=somedata');
+      // The strip is server-rendered for an unauthenticated visitor, so wait for the
+      // client-side count before clicking it: a click that lands before hydration is
+      // swallowed and the panel never opens. The Explore cases get this from userIsLoggedIn.
+      await expect(page.getByTestId('results-panel-count')).toContainText('9,999');
 
       // When
       await page.getByTestId('results-summary-strip').click();
 
       // Then
       await expect(emptyState(page)).toHaveText(PHENOTYPES_ONLY);
-      await expect(emptyState(page)).not.toContainText('genotypes');
     });
   });
 });
