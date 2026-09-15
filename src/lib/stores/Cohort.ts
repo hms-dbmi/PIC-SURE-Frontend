@@ -6,9 +6,10 @@ import { filterTree, genomicFilters } from '$lib/stores/Filter';
 export interface CohortContents {
   /**
    * One identity per filter, genomic filter and added variable: a canonical snapshot of that
-   * item as the panel's body would show it. Two items with the same identity would render
-   * identically, so an identity the cohort holds more of than it did is something it gained -
-   * which is the question the panel needs answered, and one a total cannot answer.
+   * item. Two items with the same identity hold the same content - where they sit relative to
+   * each other is `structure`, not part of an identity - so an identity the cohort holds more
+   * of than it did is something it gained, which is the question the panel needs answered and
+   * one a total cannot answer.
    *
    * Duplicates are kept. Nothing dedupes phenotypic filters, so two of them can hold the
    * same content and therefore the same identity, and the consumer counts rather than

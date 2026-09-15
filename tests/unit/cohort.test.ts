@@ -61,8 +61,21 @@ function addCategoricalFilter(conceptPath: string) {
 
 const items = () => get(cohortContents).items;
 const structure = () => get(cohortContents).structure;
-/** The identities present now that were not present in `before`. */
-const gainedSince = (before: string[]) => items().filter((item) => !before.includes(item));
+/**
+ * The identities the cohort now holds beyond what `before` held, counting duplicates the way
+ * the consumer does. A set difference would be wrong here for the same reason it was wrong in
+ * `autoOpenForCohort`: gaining a second copy of an identity already present is a gain.
+ */
+const gainedSince = (before: string[]) => {
+  const unclaimed = new Map<string, number>();
+  for (const item of before) unclaimed.set(item, (unclaimed.get(item) ?? 0) + 1);
+  return items().filter((item) => {
+    const left = unclaimed.get(item) ?? 0;
+    if (left === 0) return true;
+    unclaimed.set(item, left - 1);
+    return false;
+  });
+};
 
 describe('cohortContents', () => {
   beforeEach(() => {
@@ -173,10 +186,14 @@ describe('cohortContents', () => {
     // not addFilter, not LogicTree.add, not queryToFilterTree, which maps a saved query's
     // clauses straight across - so a restored dataset can legitimately hold two of these.
     addCategoricalFilter('\\test\\one\\');
+    const afterFirst = items();
     addCategoricalFilter('\\test\\one\\');
 
     expect(items()).toHaveLength(2);
     expect(items()[0]).toBe(items()[1]);
+    // And the second copy reads as a gain, which is what the consumer counts on - and what
+    // `gainedSince` would miss if it compared as a set.
+    expect(gainedSince(afterFirst)).toHaveLength(1);
   });
 
   it('gives the same identities after a sessionStorage round trip', () => {
