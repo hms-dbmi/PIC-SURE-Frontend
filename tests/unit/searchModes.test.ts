@@ -10,8 +10,8 @@ vi.mock('$lib/configuration.svelte', () => ({ config: { features: mockFeatures }
 import {
   enabledSearchModes,
   genotypesMode,
-  isDiscoverPath,
   phenotypesMode,
+  searchModeHref,
   searchModes,
 } from '$lib/explorer/searchModes';
 
@@ -25,7 +25,7 @@ describe('the search mode registry', () => {
     mockFeatures.enableSNPQuery = false;
   });
 
-  it('is phenotypes then genotypes, in tab order', () => {
+  it('is phenotypes then genotypes, in display order', () => {
     expect(searchModes.map((mode) => mode.id)).toEqual(['phenotypes', 'genotypes']);
     expect(searchModes.map((mode) => mode.label)).toEqual(['Phenotypes', 'Genotypes']);
   });
@@ -65,23 +65,30 @@ describe('the search mode registry', () => {
   });
 
   describe('enabledSearchModes', () => {
-    it('yields both modes on Explore when genomic search is on, so the tab bar renders', () => {
+    it('yields both modes on Explore when genomic search is on, so the bar renders', () => {
       mockFeatures.enableGENEQuery = true;
       expect(idsFor('/explorer')).toEqual(['phenotypes', 'genotypes']);
       expect(idsFor('/explorer/genotypes')).toEqual(['phenotypes', 'genotypes']);
     });
 
-    it('yields one mode on Explore when genomic search is off, so no tab bar renders', () => {
+    it('yields one mode on Explore when genomic search is off, so no bar renders', () => {
       expect(idsFor('/explorer')).toEqual(['phenotypes']);
     });
 
     // Discover has a single mode by configuration, not by luck - which is also what makes
-    // the Explore-only route on the phenotypes entry safe: no Discover tab bar ever renders.
+    // the Explore-only route on the phenotypes entry safe: no Discover bar ever renders.
     it('yields one mode on Discover whatever the genomic flags say', () => {
       mockFeatures.enableGENEQuery = true;
       mockFeatures.enableSNPQuery = true;
       expect(idsFor('/discover')).toEqual(['phenotypes']);
       expect(idsFor('/discover/advanced-filtering')).toEqual(['phenotypes']);
+    });
+
+    // A variable slug spelling `discover` must not flip the section and drop the Genotypes
+    // mode from a detail page under /explorer.
+    it('stays on Explore when a deeper segment merely spells discover', () => {
+      mockFeatures.enableGENEQuery = true;
+      expect(idsFor('/explorer/variable/discover')).toEqual(['phenotypes', 'genotypes']);
     });
   });
 
@@ -94,7 +101,9 @@ describe('the search mode registry', () => {
       },
     );
 
-    it.each(['/explorer/genotypes', '/explorer/genotypes/'])(
+    // Each mode matches its own route and anything beneath it, so a detail page keeps its
+    // parent mode selected.
+    it.each(['/explorer/genotypes', '/explorer/genotypes/', '/explorer/genotypes/BRCA1'])(
       'marks genotypes active on %s',
       (pathname) => {
         expect(genotypesMode.isActive(pathname)).toBe(true);
@@ -102,32 +111,51 @@ describe('the search mode registry', () => {
       },
     );
 
-    // The variable detail page keeps the tab bar with its parent mode selected.
-    it.each(['/explorer/variable/asthma', '/discover/variable/asthma'])(
-      'marks phenotypes active on its detail page %s',
-      (pathname) => {
-        expect(phenotypesMode.isActive(pathname)).toBe(true);
-      },
-    );
+    it.each([
+      '/explorer/variable/asthma',
+      '/discover/variable/asthma',
+      '/explorer/variable/age-at-export',
+    ])('marks phenotypes active on its detail page %s', (pathname) => {
+      expect(phenotypesMode.isActive(pathname)).toBe(true);
+      expect(genotypesMode.isActive(pathname)).toBe(false);
+    });
 
-    // Sibling routes under the layout belong to no mode, and a tab bar with nothing
-    // selected is the honest rendering of that.
+    // Sibling routes under the layout belong to no mode, and a bar with nothing marked is
+    // the honest rendering of that.
     it.each(['/explorer/advanced-filtering', '/explorer/variant', '/explorer/genome-filter'])(
       'marks no mode active on %s',
       (pathname) => {
         expect(searchModes.some((mode) => mode.isActive(pathname))).toBe(false);
       },
     );
+
+    it.each(['', '/', '/dashboard'])(
+      'marks no mode active outside the section, on %s',
+      (pathname) => expect(searchModes.some((mode) => mode.isActive(pathname))).toBe(false),
+    );
+
+    it('never marks genotypes active on Discover, which cannot reach the route', () => {
+      expect(genotypesMode.isActive('/discover/genotypes')).toBe(false);
+    });
   });
 
-  describe('isDiscoverPath', () => {
-    it.each(['/discover', '/discover/distributions', '/picsure/discover'])(
-      'is true for %s',
-      (pathname) => expect(isDiscoverPath(pathname)).toBe(true),
-    );
+  // Without this, Copy Link on Phenotypes yields a link that discards the user's search and
+  // the address bar stops agreeing with the results on screen.
+  describe('searchModeHref', () => {
+    it('carries the active search term', () => {
+      expect(searchModeHref(phenotypesMode, 'age')).toBe('/explorer?search=age');
+      expect(searchModeHref(genotypesMode, 'age')).toBe('/explorer/genotypes?search=age');
+    });
 
-    it.each(['/explorer', '/explorer/genotypes', '/dashboard', ''])('is false for %s', (pathname) =>
-      expect(isDiscoverPath(pathname)).toBe(false),
-    );
+    it('encodes terms that are not URL-safe', () => {
+      expect(searchModeHref(phenotypesMode, 'age at exam & more')).toBe(
+        '/explorer?search=age%20at%20exam%20%26%20more',
+      );
+    });
+
+    it('is the bare route when there is no search', () => {
+      expect(searchModeHref(phenotypesMode, '')).toBe('/explorer');
+      expect(searchModeHref(genotypesMode, '')).toBe('/explorer/genotypes');
+    });
   });
 });

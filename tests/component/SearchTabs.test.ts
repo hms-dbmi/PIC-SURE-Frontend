@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, render, screen } from '@testing-library/svelte';
 
 const mockState = vi.hoisted(() => ({
   pathname: '/explorer',
   features: { enableGENEQuery: false, enableSNPQuery: false },
+  logSpy: vi.fn(),
 }));
 
 vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
@@ -24,31 +25,44 @@ vi.mock('$lib/configuration.svelte', () => ({
   },
   resetConfig: () => {},
 }));
+vi.mock('$lib/logger', () => ({
+  log: mockState.logSpy,
+  createLog: vi.fn((eventType: string, action: string, metadata?: unknown) => ({
+    eventType,
+    action,
+    metadata,
+  })),
+  getPageContext: () => 'explorer',
+}));
 
 import SearchTabs from '$lib/components/explorer/SearchTabs.svelte';
+import { searchTerm } from '$lib/stores/Search';
 
 /** Renders the bar at `pathname`, with genomic search on unless told otherwise. */
-function renderAt(pathname: string, { genomic = true } = {}) {
+function renderAt(pathname: string, { genomic = true, term = '' } = {}) {
   cleanup();
   mockState.pathname = pathname;
   mockState.features = { enableGENEQuery: genomic, enableSNPQuery: false };
+  searchTerm.set(term);
   return render(SearchTabs);
 }
 
-const tabBar = () => screen.queryByTestId('search-mode-tabs');
-const tab = (id: string) => screen.getByTestId(`search-mode-tab-${id}`);
+const modeBar = () => screen.queryByTestId('search-mode-tabs');
+const modeLink = (id: string) => screen.getByTestId(`search-mode-tab-${id}`);
 
 describe('SearchTabs', () => {
   beforeEach(() => {
     mockState.pathname = '/explorer';
     mockState.features = { enableGENEQuery: false, enableSNPQuery: false };
+    mockState.logSpy.mockClear();
+    searchTerm.set('');
   });
 
   describe('visibility', () => {
     it('renders on Explore when genomic search gives it a second mode', () => {
       renderAt('/explorer');
-      expect(tabBar()).toBeInTheDocument();
-      expect(screen.getAllByRole('tab').map((el) => el.textContent?.trim())).toEqual([
+      expect(modeBar()).toBeInTheDocument();
+      expect(screen.getAllByRole('link').map((el) => el.textContent?.trim())).toEqual([
         'Phenotypes',
         'Genotypes',
       ]);
@@ -56,30 +70,32 @@ describe('SearchTabs', () => {
 
     it('renders nothing on Discover, which has a single mode', () => {
       renderAt('/discover');
-      expect(tabBar()).not.toBeInTheDocument();
+      expect(modeBar()).not.toBeInTheDocument();
     });
 
     it('renders nothing on Explore when genomic search is off', () => {
       renderAt('/explorer', { genomic: false });
-      expect(tabBar()).not.toBeInTheDocument();
+      expect(modeBar()).not.toBeInTheDocument();
     });
 
-    // The tab bar and ALS-12835's cohort panel share one route rule, showsSearchChrome.
+    // The bar and the cohort panel share one route rule, showsSearchChrome.
     it.each(['/explorer/export', '/explorer/distributions'])(
       'renders nothing on %s, which keeps its own full-page presentation',
       (pathname) => {
         renderAt(pathname);
-        expect(tabBar()).not.toBeInTheDocument();
+        expect(modeBar()).not.toBeInTheDocument();
       },
     );
 
-    it.each(['/explorer/genotypes', '/explorer/advanced-filtering', '/explorer/variant'])(
-      'renders on %s, the same routes the cohort panel renders on',
-      (pathname) => {
-        renderAt(pathname);
-        expect(tabBar()).toBeInTheDocument();
-      },
-    );
+    it.each([
+      '/explorer/genotypes',
+      '/explorer/advanced-filtering',
+      '/explorer/variant',
+      '/explorer/variable/age-at-export',
+    ])('renders on %s, the same routes the cohort panel renders on', (pathname) => {
+      renderAt(pathname);
+      expect(modeBar()).toBeInTheDocument();
+    });
   });
 
   describe('links', () => {
@@ -87,90 +103,69 @@ describe('SearchTabs', () => {
     // Copy Link, and the back button works.
     it('are anchors carrying each mode route', () => {
       renderAt('/explorer');
-      expect(tab('phenotypes').tagName).toBe('A');
-      expect(tab('genotypes').tagName).toBe('A');
-      expect(tab('phenotypes')).toHaveAttribute('href', '/explorer');
-      expect(tab('genotypes')).toHaveAttribute('href', '/explorer/genotypes');
+      expect(modeLink('phenotypes').tagName).toBe('A');
+      expect(modeLink('genotypes').tagName).toBe('A');
+      expect(modeLink('phenotypes')).toHaveAttribute('href', '/explorer');
+      expect(modeLink('genotypes')).toHaveAttribute('href', '/explorer/genotypes');
+    });
+
+    // Otherwise switching modes, or copying the link, silently drops the search.
+    it('carry the active search term', () => {
+      renderAt('/explorer', { term: 'age' });
+      expect(modeLink('phenotypes')).toHaveAttribute('href', '/explorer?search=age');
+      expect(modeLink('genotypes')).toHaveAttribute('href', '/explorer/genotypes?search=age');
+    });
+
+    it('log a navigation event naming the mode', async () => {
+      renderAt('/explorer');
+      modeLink('genotypes').click();
+      expect(mockState.logSpy).toHaveBeenCalledWith({
+        eventType: 'NAVIGATION',
+        action: 'explorer.search_mode_click',
+        metadata: { mode: 'genotypes' },
+      });
     });
   });
 
   describe('accessibility', () => {
-    it('is a tablist of tabs', () => {
+    // A navigation landmark, not a tab widget: the modes are routes and there is no
+    // tabpanel for role="tab" to control. The name is required because the main navigation
+    // is another nav landmark on the same page.
+    it('is a navigation landmark with an accessible name', () => {
       renderAt('/explorer');
-      expect(tabBar()).toHaveAttribute('role', 'tablist');
-      expect(screen.getAllByRole('tab')).toHaveLength(2);
+      expect(modeBar()?.tagName).toBe('NAV');
+      expect(modeBar()).toHaveAttribute('aria-label', 'Search modes');
+      expect(screen.getByRole('navigation', { name: 'Search modes' })).toBeInTheDocument();
     });
 
-    it('selects the tab matching the route, and only that one', () => {
+    it('carries no tab-widget semantics', () => {
       renderAt('/explorer');
-      expect(tab('phenotypes')).toHaveAttribute('aria-selected', 'true');
-      expect(tab('phenotypes')).toHaveAttribute('aria-current', 'page');
-      expect(tab('genotypes')).toHaveAttribute('aria-selected', 'false');
-      expect(tab('genotypes')).not.toHaveAttribute('aria-current');
+      expect(document.querySelector('[role="tablist"]')).toBeNull();
+      expect(document.querySelector('[role="tab"]')).toBeNull();
+      expect(document.querySelector('[aria-selected]')).toBeNull();
+      // Links are natively tabbable; a roving tabindex belongs to widgets, not navigation.
+      expect(modeLink('phenotypes')).not.toHaveAttribute('tabindex');
+    });
+
+    it('marks the current route, and only that one', () => {
+      renderAt('/explorer');
+      expect(modeLink('phenotypes')).toHaveAttribute('aria-current', 'page');
+      expect(modeLink('genotypes')).not.toHaveAttribute('aria-current');
 
       renderAt('/explorer/genotypes');
-      expect(tab('genotypes')).toHaveAttribute('aria-selected', 'true');
-      expect(tab('genotypes')).toHaveAttribute('aria-current', 'page');
-      expect(tab('phenotypes')).toHaveAttribute('aria-selected', 'false');
-      expect(tab('phenotypes')).not.toHaveAttribute('aria-current');
+      expect(modeLink('genotypes')).toHaveAttribute('aria-current', 'page');
+      expect(modeLink('phenotypes')).not.toHaveAttribute('aria-current');
     });
 
-    it('selects Phenotypes on the variable detail page', () => {
+    it('marks Phenotypes on the variable detail page', () => {
       renderAt('/explorer/variable/asthma');
-      expect(tab('phenotypes')).toHaveAttribute('aria-selected', 'true');
+      expect(modeLink('phenotypes')).toHaveAttribute('aria-current', 'page');
+      expect(modeLink('genotypes')).not.toHaveAttribute('aria-current');
     });
 
-    it('selects nothing on a sibling route that is not a search mode', () => {
+    it('marks nothing on a sibling route that is not a search mode', () => {
       renderAt('/explorer/advanced-filtering');
-      expect(tab('phenotypes')).toHaveAttribute('aria-selected', 'false');
-      expect(tab('genotypes')).toHaveAttribute('aria-selected', 'false');
-    });
-
-    it('gives the tab stop to the selected tab', () => {
-      renderAt('/explorer/genotypes');
-      expect(tab('phenotypes')).toHaveAttribute('tabindex', '-1');
-      expect(tab('genotypes')).toHaveAttribute('tabindex', '0');
-    });
-
-    // Otherwise the whole bar would fall out of the keyboard order on routes where no tab
-    // is selected.
-    it('gives the tab stop to the first tab when nothing is selected', () => {
-      renderAt('/explorer/advanced-filtering');
-      expect(tab('phenotypes')).toHaveAttribute('tabindex', '0');
-      expect(tab('genotypes')).toHaveAttribute('tabindex', '-1');
-    });
-  });
-
-  describe('arrow keys', () => {
-    it('move focus right and left', async () => {
-      renderAt('/explorer');
-      tab('phenotypes').focus();
-
-      await fireEvent.keyDown(tab('phenotypes'), { key: 'ArrowRight' });
-      expect(document.activeElement).toBe(tab('genotypes'));
-
-      await fireEvent.keyDown(tab('genotypes'), { key: 'ArrowLeft' });
-      expect(document.activeElement).toBe(tab('phenotypes'));
-    });
-
-    it('wrap around at both ends', async () => {
-      renderAt('/explorer');
-      tab('phenotypes').focus();
-
-      await fireEvent.keyDown(tab('phenotypes'), { key: 'ArrowLeft' });
-      expect(document.activeElement).toBe(tab('genotypes'));
-
-      await fireEvent.keyDown(tab('genotypes'), { key: 'ArrowRight' });
-      expect(document.activeElement).toBe(tab('phenotypes'));
-    });
-
-    // Manual activation: arrowing must not navigate, or every keypress would be a page load.
-    it('leave other keys alone', async () => {
-      renderAt('/explorer');
-      tab('phenotypes').focus();
-
-      await fireEvent.keyDown(tab('phenotypes'), { key: 'ArrowDown' });
-      expect(document.activeElement).toBe(tab('phenotypes'));
+      expect(modeBar()?.querySelectorAll('[aria-current]')).toHaveLength(0);
     });
   });
 });

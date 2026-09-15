@@ -17,6 +17,7 @@
     loading as isLoading,
   } from '$lib/stores/Search';
   import type { TourDataType } from '$lib/models/Tour';
+  import { isDiscoverSection } from '$lib/explorer/searchChrome';
   import { genotypesMode } from '$lib/explorer/searchModes';
 
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
@@ -50,10 +51,10 @@
     { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
   ]);
   const cellOverides = { id: Actions };
-  let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
+  let isDiscoverPage = $derived(isDiscoverSection(page.url.pathname));
   let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
-  // Same gate as the Genotypes tab, from the one definition of it - this button and that tab
-  // are two entry points to the same thing until ALS-12880 retires the button.
+  // Same gate as the Genotypes mode, from the one definition of it - this button and that
+  // link are two entry points to the same thing.
   let allowGenomicFiltering = $derived(genotypesMode.enabled(isDiscoverPage));
 
   function update() {

@@ -1,69 +1,35 @@
-import { expect, type Page, type Route } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { test, mockApiConfig, mockApiSuccess } from '../../custom-context';
 import { facetResultPath, facetsResponse, searchResultPath, searchResults } from '../../mock-data';
-import { userIsLoggedIn } from '../../utils';
+import {
+  mockCountedSearch,
+  searchCurrentPageButton as currentPageButton,
+  searchFacetCheckbox as facetCheckbox,
+  searchFor,
+  searchResultRows as resultRows,
+  SEARCH_SETTLE_MS as SETTLE_MS,
+  userIsLoggedIn,
+} from '../../utils';
 
-// The search-mode tab bar (ALS-12836). Switching tabs must preserve the search, which only
-// works because the session belongs to /explorer/+layout.svelte rather than to the results
-// page - so the preservation spec asserts by request count, the way search-state/test.ts
-// does. State assertions alone still pass if something silently refetches it all back.
-
-const conceptSearchUrl = /\/picsure\/dictionary\/concepts\?/;
-
-// Past the TableHandler's 250ms debounce, with room for a request to land after it.
-const SETTLE_MS = 1000;
-
-const FACET_ID = 'phs000284';
+// The search-mode bar. It is a navigation landmark of links, not a tab widget: the modes are
+// routes, and there is no tabpanel for role="tab" to control. Switching modes must preserve
+// the search, which only works because the session belongs to /explorer/+layout.svelte rather
+// than to the results page - so that spec asserts by request count, using the harness in
+// utils.ts that explorer/search-state shares.
 
 const genomicEnabled = { features: [{ name: 'ENABLE_GENE_QUERY', value: 'true' }] };
+const genomicDisabled = {
+  features: [
+    { name: 'ENABLE_GENE_QUERY', value: 'false' },
+    { name: 'ENABLE_SNP_QUERY', value: 'false' },
+  ],
+};
 
-function resultRows(page: Page) {
-  return page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]');
-}
+const modeBar = (page: Page) => page.getByTestId('search-mode-tabs');
+const modeLink = (page: Page, id: string) => page.getByTestId(`search-mode-tab-${id}`);
+const activeLinks = (page: Page) => modeBar(page).locator('[aria-current="page"]');
 
-function currentPageButton(page: Page) {
-  return page.locator('.pagination button[aria-current="page"]');
-}
-
-function facetCheckbox(page: Page) {
-  return page.getByTestId('accordion-item').first().locator(`input[id="${FACET_ID}"]`);
-}
-
-const tabBar = (page: Page) => page.getByTestId('search-mode-tabs');
-const tab = (page: Page, id: string) => page.getByTestId(`search-mode-tab-${id}`);
-
-async function mockCountedSearch(page: Page) {
-  const concepts = { count: 0 };
-  const facets = { count: 0 };
-
-  await page.route(conceptSearchUrl, async (route: Route) => {
-    concepts.count += 1;
-    const pageNumber = Number(new URL(route.request().url()).searchParams.get('page_number') ?? 0);
-    await route.fulfill({
-      json: {
-        ...searchResults,
-        totalElements: 25,
-        totalPages: 3,
-        numberOfElements: 3,
-        pageable: { ...searchResults.pageable, pageNumber },
-        content: searchResults.content.slice(0, 3),
-      },
-    });
-  });
-  await page.route(facetResultPath, async (route: Route) => {
-    facets.count += 1;
-    await route.fulfill({ json: facetsResponse });
-  });
-
-  return { concepts, facets };
-}
-
-async function searchFor(page: Page, term: string) {
-  await page.getByTestId('search-box').fill(term);
-  await page.locator('#search-button').click();
-}
-
-test.describe('Explore tab bar', () => {
+test.describe('Explore search mode bar', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
   test.beforeEach(async ({ page }) => {
@@ -72,42 +38,82 @@ test.describe('Explore tab bar', () => {
     await mockApiSuccess(page, searchResultPath, searchResults);
   });
 
-  test('shows Phenotypes and Genotypes, with Phenotypes on /explorer', async ({ page }) => {
+  test('is a named navigation landmark listing Phenotypes and Genotypes', async ({ page }) => {
+    // Given
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+
+    // Then it is a nav with an accessible name, which it needs because the main navigation
+    // is another nav landmark on the same page
+    await expect(modeBar(page)).toHaveRole('navigation');
+    await expect(modeBar(page)).toHaveAttribute('aria-label', 'Search modes');
+    await expect(page.getByRole('navigation', { name: 'Search modes' })).toBeVisible();
+    await expect(modeBar(page).getByRole('link')).toHaveText(['Phenotypes', 'Genotypes']);
+  });
+
+  // Dropped with the tabs pattern: without a tabpanel these announced a widget the DOM did
+  // not honour, and role="tab" hid the links' own role so AT could not predict a page change.
+  test('carries no tab-widget semantics', async ({ page }) => {
     // Given
     await page.goto('/explorer');
     await userIsLoggedIn(page);
 
     // Then
-    await expect(tabBar(page)).toHaveAttribute('role', 'tablist');
-    await expect(page.getByRole('tab')).toHaveText(['Phenotypes', 'Genotypes']);
-    await expect(tab(page, 'phenotypes')).toHaveAttribute('aria-selected', 'true');
-    await expect(tab(page, 'phenotypes')).toHaveAttribute('aria-current', 'page');
-    await expect(tab(page, 'genotypes')).toHaveAttribute('aria-selected', 'false');
-    await expect(tab(page, 'genotypes')).not.toHaveAttribute('aria-current');
+    await expect(page.locator('[role="tablist"]')).toHaveCount(0);
+    await expect(page.locator('[role="tab"]')).toHaveCount(0);
+    await expect(modeBar(page).locator('[aria-selected]')).toHaveCount(0);
   });
 
-  // Anchors, not buttons, because the tabs are routes: this is what makes middle-click open
+  test('marks exactly the current route with aria-current', async ({ page }) => {
+    // Given
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+
+    // Then
+    await expect(activeLinks(page)).toHaveCount(1);
+    await expect(modeLink(page, 'phenotypes')).toHaveAttribute('aria-current', 'page');
+    await expect(modeLink(page, 'genotypes')).not.toHaveAttribute('aria-current');
+  });
+
+  // Anchors, not buttons, because the modes are routes: this is what makes middle-click open
   // a new browser tab and right-click offer Copy Link, both of which are browser-native
   // given a real href that nothing calls preventDefault on.
-  test('renders the tabs as links to their routes', async ({ page }) => {
+  test('renders the modes as links to their routes', async ({ page }) => {
     // Given
     await page.goto('/explorer');
     await userIsLoggedIn(page);
 
     // Then
-    await expect(tab(page, 'phenotypes')).toHaveAttribute('href', '/explorer');
-    await expect(tab(page, 'genotypes')).toHaveAttribute('href', '/explorer/genotypes');
-    expect(await tab(page, 'genotypes').evaluate((element) => element.tagName)).toBe('A');
+    await expect(modeLink(page, 'phenotypes')).toHaveAttribute('href', '/explorer');
+    await expect(modeLink(page, 'genotypes')).toHaveAttribute('href', '/explorer/genotypes');
+    expect(await modeLink(page, 'genotypes').evaluate((element) => element.tagName)).toBe('A');
   });
 
-  test('middle-clicking a tab opens it in a new browser tab', async ({ page, context }) => {
+  // Otherwise Copy Link on Phenotypes yields a link that discards the user's search, and the
+  // address bar stops agreeing with the results on screen.
+  test('carries the active search in both hrefs', async ({ page }) => {
+    // Given a search
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+    await searchFor(page, 'age');
+    await expect(page).toHaveURL(/\?search=age$/);
+
+    // Then
+    await expect(modeLink(page, 'phenotypes')).toHaveAttribute('href', '/explorer?search=age');
+    await expect(modeLink(page, 'genotypes')).toHaveAttribute(
+      'href',
+      '/explorer/genotypes?search=age',
+    );
+  });
+
+  test('middle-clicking a mode opens it in a new browser tab', async ({ page, context }) => {
     // Given
     await page.goto('/explorer');
     await userIsLoggedIn(page);
 
     // When
     const opened = context.waitForEvent('page');
-    await tab(page, 'genotypes').click({ button: 'middle' });
+    await modeLink(page, 'genotypes').click({ button: 'middle' });
 
     // Then
     const newTab = await opened;
@@ -116,61 +122,41 @@ test.describe('Explore tab bar', () => {
     await newTab.close();
   });
 
-  test('reaches the Genotypes placeholder and marks it selected', async ({ page }) => {
+  test('reaches the Genotypes placeholder and moves aria-current to it', async ({ page }) => {
     // Given
     await page.goto('/explorer');
     await userIsLoggedIn(page);
 
     // When
-    await tab(page, 'genotypes').click();
+    await modeLink(page, 'genotypes').click();
 
     // Then
     await expect(page).toHaveURL(/\/explorer\/genotypes$/);
     await expect(page.getByTestId('genotypes-placeholder')).toBeVisible();
-    await expect(tab(page, 'genotypes')).toHaveAttribute('aria-selected', 'true');
-    await expect(tab(page, 'genotypes')).toHaveAttribute('aria-current', 'page');
-    await expect(tab(page, 'phenotypes')).toHaveAttribute('aria-selected', 'false');
+    await expect(activeLinks(page)).toHaveCount(1);
+    await expect(modeLink(page, 'genotypes')).toHaveAttribute('aria-current', 'page');
+    await expect(modeLink(page, 'phenotypes')).not.toHaveAttribute('aria-current');
   });
 
-  test('moves focus between tabs with the arrow keys', async ({ page }) => {
-    // Given
-    await page.goto('/explorer');
-    await userIsLoggedIn(page);
-    await tab(page, 'phenotypes').focus();
-
-    // When / Then
-    await page.keyboard.press('ArrowRight');
-    await expect(tab(page, 'genotypes')).toBeFocused();
-    await page.keyboard.press('ArrowLeft');
-    await expect(tab(page, 'phenotypes')).toBeFocused();
-
-    // Arrow keys move focus only - activating on arrow would navigate on every keypress.
-    await expect(page).toHaveURL(/\/explorer$/);
-  });
-
-  test('keeps the tab bar on the routes the cohort panel renders on', async ({ page }) => {
+  test('keeps the bar on the routes the cohort panel renders on', async ({ page }) => {
     // Given
     await page.goto('/explorer/advanced-filtering');
     await userIsLoggedIn(page);
 
-    // Then a sibling route keeps the bar, with no tab selected
-    await expect(tabBar(page)).toBeVisible();
-    await expect(tab(page, 'phenotypes')).toHaveAttribute('aria-selected', 'false');
-    await expect(tab(page, 'genotypes')).toHaveAttribute('aria-selected', 'false');
+    // Then a sibling route keeps the bar, belonging to no mode
+    await expect(modeBar(page)).toBeVisible();
+    await expect(activeLinks(page)).toHaveCount(0);
 
-    // And the two full-page routes drop it, as showSidebar does today
+    // And the two full-page routes drop it
     await page.goto('/explorer/distributions');
-    await expect(tabBar(page)).toHaveCount(0);
+    await expect(modeBar(page)).toHaveCount(0);
+    await page.goto('/explorer/export');
+    await expect(modeBar(page)).toHaveCount(0);
   });
 
-  test('hides the tab bar when genomic search is off, leaving one mode', async ({ page }) => {
+  test('hides the bar when genomic search is off, leaving one mode', async ({ page }) => {
     // Given
-    await mockApiConfig(page, {
-      features: [
-        { name: 'ENABLE_GENE_QUERY', value: 'false' },
-        { name: 'ENABLE_SNP_QUERY', value: 'false' },
-      ],
-    });
+    await mockApiConfig(page, genomicDisabled);
 
     // When
     await page.goto('/explorer');
@@ -178,11 +164,29 @@ test.describe('Explore tab bar', () => {
 
     // Then
     await expect(page.getByTestId('search-box')).toBeVisible();
-    await expect(tabBar(page)).toHaveCount(0);
+    await expect(modeBar(page)).toHaveCount(0);
+  });
+
+  // The link is hidden when genomic search is off, but the URL is still reachable by hand,
+  // by bookmark and by browser history.
+  test('redirects /explorer/genotypes to /explorer when genomic search is off', async ({
+    page,
+  }) => {
+    // Given
+    await mockApiConfig(page, genomicDisabled);
+
+    // When
+    await page.goto('/explorer/genotypes');
+    await userIsLoggedIn(page);
+
+    // Then
+    await expect(page).toHaveURL(/\/explorer$/);
+    await expect(page.getByTestId('genotypes-placeholder')).toHaveCount(0);
+    await expect(page.getByTestId('search-box')).toBeVisible();
   });
 });
 
-test.describe('Explore tab switching', () => {
+test.describe('Explore mode switching', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
   test.beforeEach(({ page }) => mockApiConfig(page, genomicEnabled));
@@ -207,13 +211,16 @@ test.describe('Explore tab switching', () => {
     const facetsBefore = facets.count;
 
     // When the user switches to Genotypes and back
-    await tab(page, 'genotypes').click();
-    await expect(page).toHaveURL(/\/explorer\/genotypes$/);
+    await modeLink(page, 'genotypes').click();
+    await expect(page).toHaveURL(/\/explorer\/genotypes\?search=age$/);
     await expect(page.getByTestId('genotypes-placeholder')).toBeVisible();
-    await tab(page, 'phenotypes').click();
-    await expect(page).toHaveURL(/\/explorer$/);
+    await modeLink(page, 'phenotypes').click();
 
-    // Then everything is as they left it, and nothing was fetched again
+    // Then the search is still in the URL, not only in the store, so a refresh or a copied
+    // link reproduces what is on screen
+    await expect(page).toHaveURL(/\/explorer\?search=age$/);
+
+    // And everything is as they left it, with nothing fetched again
     await expect(page.getByTestId('search-box')).toHaveValue('age');
     await expect(resultRows(page)).toHaveCount(3);
     await expect(currentPageButton(page)).toHaveText('2');
@@ -242,7 +249,7 @@ test.describe('Discover', () => {
     }),
   );
 
-  test('shows no tab bar, having a single search mode', async ({ page }) => {
+  test('shows no mode bar, having a single search mode', async ({ page }) => {
     // Given
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, searchResults);
@@ -252,6 +259,6 @@ test.describe('Discover', () => {
 
     // Then
     await expect(page.getByTestId('search-box')).toBeVisible();
-    await expect(tabBar(page)).toHaveCount(0);
+    await expect(modeBar(page)).toHaveCount(0);
   });
 });

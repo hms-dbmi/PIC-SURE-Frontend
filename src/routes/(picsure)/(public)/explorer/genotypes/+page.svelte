@@ -7,8 +7,8 @@
   <title>{config.branding.applicationName} | Genotypes</title>
 </svelte:head>
 
-<!-- Placeholder. ALS-12880 moves the genomic filtering UI here and retires
-     /explorer/genome-filter; until then that route is still the working one. -->
+<!-- Placeholder body. The genomic filtering UI still lives on /explorer/genome-filter, reached
+     from the Genomic Filtering button, and moves here in a later change. -->
 <Content full>
   <p data-testid="genotypes-placeholder" class="my-8 text-center">
     Genomic filtering is moving to this tab.
