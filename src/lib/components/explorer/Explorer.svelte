@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -11,7 +11,6 @@
     searchTerm,
     selectedFacets,
     tableHandler as handler,
-    initHandler,
     error,
     tour,
     resetSearch,
@@ -69,16 +68,10 @@
     document.getElementById(`${tableName}-table`)?.scrollIntoView({ block: 'start' });
   }
 
-  let releaseHandler: (() => void) | undefined;
-
+  // The search handler's lifecycle belongs to the /explorer and /discover layouts, which
+  // outlive this component. Only the tour button, which this component renders, is handled
+  // here.
   onMount(() => {
-    releaseHandler = initHandler();
-    if (searchInput && searchInput !== $searchTerm) {
-      searchTerm.set(searchInput);
-    } else {
-      // reload table and facets
-      handler.invalidate();
-    }
     if (page.url.searchParams.get('startTour') === 'true') {
       const tourBtn = document.querySelector('#explorer-tour-btn');
       if (tourBtn) {
@@ -86,8 +79,6 @@
       }
     }
   });
-
-  onDestroy(() => releaseHandler?.());
 </script>
 
 <section id="search-container" class="flex gap-9">
