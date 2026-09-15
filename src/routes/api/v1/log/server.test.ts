@@ -158,4 +158,45 @@ describe('+server POST /api/log', () => {
     const headers = fetchSpy.mock.calls[0][1]?.headers as Record<string, string>;
     expect(headers['Authorization']).toBeUndefined();
   });
+
+  it('forwards over plain HTTP to a loopback LOGGING_TARGET', async () => {
+    mockEnv.LOGGING_TARGET = 'http://127.0.0.1:9000/picsure/logging/audit';
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('', { status: 202 }));
+
+    const response = await POST(makeEvent(makeRequest({ event_type: 'QUERY' })));
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ result: 'accepted' });
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    expect(fetchSpy.mock.calls[0][0]).toBe('http://127.0.0.1:9000/picsure/logging/audit');
+  });
+
+  it('refuses to forward over plain HTTP to a non-loopback LOGGING_TARGET', async () => {
+    mockEnv.LOGGING_TARGET = 'http://logging.example.com/audit';
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const response = await POST(makeEvent(makeRequest({ event_type: 'QUERY' })));
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ result: 'accepted' });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Refusing to forward'));
+  });
+
+  it('forwards over HTTPS to a non-loopback LOGGING_TARGET', async () => {
+    mockEnv.LOGGING_TARGET = 'https://logging.example.com/audit';
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('', { status: 202 }));
+
+    const response = await POST(makeEvent(makeRequest({ event_type: 'QUERY' })));
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ result: 'accepted' });
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    expect(fetchSpy.mock.calls[0][0]).toBe('https://logging.example.com/audit');
+  });
 });

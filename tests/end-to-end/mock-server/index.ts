@@ -159,16 +159,35 @@ on('POST', path(Picsure.Visualization.Distributions), ({ res }) => {
     categoricalData: [
       {
         conceptPath: datasetDetails.paths.GENDER,
-        counts: { Male: 120, Female: 130, Undisclosed: 5 },
+        title: 'STUDY123: GENDER',
+        continuous: false,
+        categoricalMap: {
+          Male: { count: 120, display: '120', variance: null },
+          Female: { count: 130, display: '130', variance: null },
+          Undisclosed: { count: 5, display: '5', variance: null },
+        },
+        obfuscated: false,
+        xaxisName: 'GENDER',
+        yaxisName: 'Number of Participants',
+        chartWidth: 500,
+        chartHeight: 600,
       },
     ],
     continuousData: [
       {
         conceptPath: datasetDetails.paths.HEIGHT,
-        min: 0,
-        max: 300,
-        mean: 165,
-        stdDev: 12,
+        title: 'STUDY123: HEIGHT',
+        continuous: true,
+        continuousMap: {
+          '0.0 - 100.0': { count: 40, display: '40', variance: null },
+          '100.0 - 200.0': { count: 90, display: '90', variance: null },
+          '200.0 - 300.0': { count: 35, display: '35', variance: null },
+        },
+        obfuscated: false,
+        xaxisName: 'HEIGHT',
+        yaxisName: 'Number of Participants',
+        chartWidth: 500,
+        chartHeight: 600,
       },
     ],
   });
@@ -287,7 +306,8 @@ const personas: Record<string, unknown> = {
 };
 
 function userForPersona(persona: string | undefined | null): unknown {
-  return (persona && personas[persona]) || picsureUser;
+  const user = (persona && personas[persona]) || picsureUser;
+  return state.acceptedTOS ? { ...(user as object), acceptedTOS: true } : user;
 }
 
 on('GET', path(Psama.User.Me), ({ query, res }) => {
@@ -308,7 +328,10 @@ on('GET', path(Psama.User.Logout), ({ res }) => {
 
 on('POST', path(`${Psama.Auth}/:provider`), ({ body, res }) => {
   const persona = (body as { persona?: string } | undefined)?.persona;
-  if (persona) state.persona = persona;
+  if (persona) {
+    state.persona = persona;
+    state.acceptedTOS = false;
+  }
   res.setHeader('Authorization', `Bearer ${mockToken}`);
   json(res, userForPersona(persona ?? state.persona));
 });
@@ -318,6 +341,7 @@ on('GET', path(`${Psama.TOS}/latest`), ({ res }) => {
 });
 
 on('POST', path(`${Psama.TOS}/accept`), ({ res }) => {
+  state.acceptedTOS = true;
   noContent(res);
 });
 

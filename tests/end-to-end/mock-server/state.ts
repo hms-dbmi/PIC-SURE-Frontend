@@ -40,6 +40,11 @@ export const state = {
   // persona) just logged in. Falls back to MOCK_USER_PERSONA for the "skip the login UI,
   // seed a token by hand" path, where authenticate() never runs at all.
   persona: process.env.MOCK_USER_PERSONA as string | undefined,
+  // Set by the psama/terms/accept handler and read back by psama/user/me, so accepting
+  // terms as the noTOS persona sticks for the rest of the session instead of reverting to
+  // acceptedTOS: false on the next fetch (Terms.svelte reloads the user right after accept).
+  // Reset whenever a persona logs in fresh, so the noTOS flow can be exercised again.
+  acceptedTOS: false,
 };
 
 export function nextId(): string {

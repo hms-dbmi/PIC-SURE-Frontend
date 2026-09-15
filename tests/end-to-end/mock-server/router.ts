@@ -84,30 +84,35 @@ function parseBody(raw: string): unknown {
 }
 
 export async function dispatch(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  const url = new URL(req.url ?? '/', 'http://mock-server.local');
-  const pathname = decodeURIComponent(url.pathname);
-  const method = (req.method ?? 'GET').toUpperCase();
-
-  const route = routes.find((r) => r.method === method && r.pattern.test(pathname));
-  if (!route) {
-    console.warn(`[mock-api] 404 ${method} ${pathname} (not mocked)`);
-    json(res, { error: `No mock route for ${method} ${pathname}` }, 404);
-    return;
-  }
-
-  const match = route.pattern.exec(pathname);
-  const params = Object.fromEntries(
-    route.keys.map((key, i) => [key, decodeURIComponent(match?.[i + 1] ?? '')]),
-  );
-
-  const raw = await readRawBody(req);
-  const body = parseBody(raw);
-
   try {
-    console.log(`[mock-api] ${method} ${pathname}`);
-    await route.handler({ req, res, params, query: url.searchParams, body });
+    const url = new URL(req.url ?? '/', 'http://mock-server.local');
+    const pathname = decodeURIComponent(url.pathname);
+    const method = (req.method ?? 'GET').toUpperCase();
+
+    const route = routes.find((r) => r.method === method && r.pattern.test(pathname));
+    if (!route) {
+      console.warn(`[mock-api] 404 ${method} ${pathname} (not mocked)`);
+      json(res, { error: `No mock route for ${method} ${pathname}` }, 404);
+      return;
+    }
+
+    const match = route.pattern.exec(pathname);
+    const params = Object.fromEntries(
+      route.keys.map((key, i) => [key, decodeURIComponent(match?.[i + 1] ?? '')]),
+    );
+
+    const raw = await readRawBody(req);
+    const body = parseBody(raw);
+
+    try {
+      console.log(`[mock-api] ${method} ${pathname}`);
+      await route.handler({ req, res, params, query: url.searchParams, body });
+    } catch (e) {
+      console.error(`[mock-api] handler error for ${method} ${pathname}:`, e);
+      if (!res.headersSent) json(res, { error: String(e) }, 500);
+    }
   } catch (e) {
-    console.error(`[mock-api] handler error for ${method} ${pathname}:`, e);
-    if (!res.headersSent) json(res, { error: String(e) }, 500);
+    console.error('[mock-api] failed to process request:', e);
+    if (!res.headersSent) json(res, { error: String(e) }, 400);
   }
 }
