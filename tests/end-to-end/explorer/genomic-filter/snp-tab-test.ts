@@ -18,6 +18,8 @@ const QUERY = '*/**/picsure/hpds/auth/v3/query/sync';
 const validSnp = 'chr17,35269878,GT,A';
 const validSnpConstraint = 'Heterozygous';
 const validSnpConstraintValue = '0/1';
+const secondSnp = 'chr1,1234567,A,G';
+const secondSnpConstraint = 'Homozygous';
 const invalidSnp = 'chr17, 35269878,,A';
 const snpError =
   'Please check that value matches: chromosome (chr#), position, reference allele, variant allele.';
@@ -40,6 +42,7 @@ const snpOnly = {
 const modeLink = (page: Page, id: string) => page.getByTestId(`search-mode-tab-${id}`);
 const addFilterBtn = (page: Page) => page.getByTestId('add-filter-btn');
 const summaryPanel = (page: Page) => page.getByTestId('summary-of-selected-filters');
+const snpChip = (page: Page) => page.getByTestId('added-filter-snp-variant');
 
 async function openGenotypesTab(page: Page) {
   await page.goto('/explorer');
@@ -55,6 +58,24 @@ async function openSnpSearch(page: Page) {
   await expect(page.getByTestId('snp-option')).toBeVisible();
   await page.getByTestId('snp-option').click();
   await expect(page.locator('#snp-search')).toBeVisible();
+}
+
+/** Searches for a variant, constrains it and saves it into the panel. */
+async function saveVariant(page: Page, search: string, constraint: string) {
+  await mockApiSuccess(page, QUERY, 12);
+  await page.getByTestId('snp-search-box').fill(search);
+  await page.getByTestId('snp-search-btn').click();
+  await page.getByTestId('snp-constraint').selectOption({ label: constraint });
+  await page.getByTestId('snp-save-btn').click();
+}
+
+/** Applies a variant filter through the tab, leaving the browser back on Phenotypes. */
+async function applySnpFilter(page: Page) {
+  await openSnpSearch(page);
+  await saveVariant(page, validSnp, validSnpConstraint);
+  await mockApiSuccess(page, QUERY, 200);
+  await addFilterBtn(page).click();
+  await expect(snpChip(page)).toBeVisible();
 }
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -200,7 +221,7 @@ test.describe('Summary of Selected Filters', () => {
 });
 
 test.describe('Adding the filter', () => {
-  test('creates it, clears the panels and returns to the Phenotypes tab', async ({ page }) => {
+  test('creates it, returns to the Phenotypes tab, and goes on showing it', async ({ page }) => {
     // Given
     await openSnpSearch(page);
     await mockApiSuccess(page, QUERY, 12);
@@ -216,15 +237,14 @@ test.describe('Adding the filter', () => {
     // Then
     await expect(page).toHaveURL(/\/explorer$/);
     await expect(modeLink(page, 'phenotypes')).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByTestId('added-filter-snp-variant')).toBeVisible();
+    await expect(snpChip(page)).toBeVisible();
 
-    // And the working state is gone: both methods are enabled, so the tab is back at the
-    // chooser with nothing saved behind it
+    // And the tab goes on showing the filter the cohort now holds - the variant interface
+    // rather than the chooser, because only one of the two methods has anything to show
     await modeLink(page, 'genotypes').click();
-    await expect(page.getByTestId('snp-option')).toBeVisible();
-    await page.getByTestId('snp-option').click();
-    await expect(summaryPanel(page).getByText(validSnp)).not.toBeVisible();
-    await expect(addFilterBtn(page)).toBeDisabled();
+    await expect(page.locator('#snp-search')).toBeVisible();
+    await expect(summaryPanel(page).getByText(validSnp)).toBeVisible();
+    await expect(addFilterBtn(page)).toHaveText(/Update Filter/);
   });
 
   // Adding the filter opens the cohort panel, which is what starts the count - the panel is
@@ -272,4 +292,94 @@ test('leaving the tab mid-edit keeps the saved variants and the chosen method', 
   await expect(page.locator('#snp-search')).toBeVisible();
   await expect(summaryPanel(page).getByText(validSnp)).toBeVisible();
   await expect(addFilterBtn(page)).toBeEnabled();
+});
+
+// The same requirement as for the gene filter, on the deployment that offers both methods:
+// there is only ever one variant filter, so the tab shows the one the cohort holds.
+test.describe('The applied filter', () => {
+  test('is loaded into the variant panel on a fresh visit', async ({ page }) => {
+    // Given a filter applied and then a page load, which leaves nothing in memory: the panel
+    // can only be showing what the cohort holds
+    await applySnpFilter(page);
+    await page.goto('/explorer/genotypes');
+    await userIsLoggedIn(page);
+
+    // Then the variant interface, not the chooser, because only one method has anything to show
+    await expect(page.locator('#snp-search')).toBeVisible();
+    await expect(summaryPanel(page).getByText(validSnp)).toBeVisible();
+    await expect(summaryPanel(page).getByText(validSnpConstraint)).toBeVisible();
+    await expect(addFilterBtn(page)).toHaveText(/Update Filter/);
+  });
+
+  test('is replaced in place by Update Filter, keeping the variants already in it', async ({
+    page,
+  }) => {
+    // Given
+    await applySnpFilter(page);
+    await modeLink(page, 'genotypes').click();
+    await expect(summaryPanel(page).getByText(validSnp)).toBeVisible();
+
+    // When a second variant is added to it
+    await saveVariant(page, secondSnp, secondSnpConstraint);
+    await mockApiSuccess(page, QUERY, 1320);
+    await addFilterBtn(page).click();
+
+    // Then the cohort still has one variant filter, holding both variants
+    await expect(snpChip(page)).toHaveCount(1);
+    await snpChip(page).getByRole('button', { name: 'See details' }).click();
+    await expect(snpChip(page)).toContainText(validSnp);
+    await expect(snpChip(page)).toContainText(secondSnp);
+    await expect(page.locator('#result-count-number')).toHaveText('1,320');
+  });
+
+  test('empties the panel and offers Add Filter again once it is removed', async ({ page }) => {
+    // Given
+    await applySnpFilter(page);
+    await modeLink(page, 'genotypes').click();
+    await expect(addFilterBtn(page)).toHaveText(/Update Filter/);
+
+    // When removed from its chip, in the cohort panel above the tab
+    await snpChip(page).getByRole('button', { name: 'Remove Filter' }).click();
+
+    // Then
+    await expect(snpChip(page)).toHaveCount(0);
+    await expect(summaryPanel(page).getByText(validSnp)).not.toBeVisible();
+    await expect(addFilterBtn(page)).toHaveText(/Add Filter/);
+    await expect(addFilterBtn(page)).toBeDisabled();
+  });
+
+  test('is opened for editing by its chip, with no edit parameter in the URL', async ({ page }) => {
+    // Given
+    await applySnpFilter(page);
+
+    // When
+    await snpChip(page).getByRole('button', { name: 'Edit Filter' }).click();
+
+    // Then the tab, on the method the filter belongs to
+    await expect(page).toHaveURL(/\/explorer\/genotypes$/);
+    await expect(page.locator('#snp-search')).toBeVisible();
+    await expect(summaryPanel(page).getByText(validSnp)).toBeVisible();
+    await expect(addFilterBtn(page)).toHaveText(/Update Filter/);
+  });
+
+  // The other half of the requirement: arriving loads the applied filter, but coming back
+  // mid-edit must not - including when what the user did was empty the panel.
+  test('is left out of a draft in progress, across a trip to Phenotypes', async ({ page }) => {
+    // Given the applied filter loaded into the panel
+    await applySnpFilter(page);
+    await modeLink(page, 'genotypes').click();
+    await expect(summaryPanel(page).getByText(validSnp)).toBeVisible();
+
+    // When the user takes the variant out without applying that
+    await page.getByTestId(`snp-delete-btn-${validSnp}`).click();
+    await expect(summaryPanel(page).getByText(validSnp)).not.toBeVisible();
+    await modeLink(page, 'phenotypes').click();
+    await expect(page).toHaveURL(/\/explorer$/);
+    await modeLink(page, 'genotypes').click();
+
+    // Then the panel is still as they left it, and the applied filter still applies
+    await expect(summaryPanel(page).getByText(validSnp)).not.toBeVisible();
+    await expect(addFilterBtn(page)).toBeDisabled();
+    await expect(snpChip(page)).toHaveCount(1);
+  });
 });

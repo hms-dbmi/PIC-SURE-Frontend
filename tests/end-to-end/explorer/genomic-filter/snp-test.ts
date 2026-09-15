@@ -229,12 +229,12 @@ test('Clicking edit filter button in results panel returns to snp filter with co
   await mockApiSuccess(page, queryResultPathV3, 200);
   await page.getByTestId('add-filter-btn').click();
 
-  // When
+  // When the edit view is opened by URL. The filter chip's edit control no longer links here -
+  // it goes to the Genotypes tab, which shows the applied filter itself - so this page's
+  // `?edit=` mode is reachable by address bar and history only, until ticket 08 deletes the
+  // route and takes it along.
   await page.waitForURL('**/explorer');
-  await page
-    .getByTestId('added-filter-snp-variant')
-    .getByRole('button', { name: 'Edit Filter' })
-    .click();
+  await page.goto('/explorer/genome-filter?edit=snp');
 
   // Then
   await expect(page.getByTestId('summary-of-selected-filters').getByText(validSnp)).toBeVisible();
@@ -259,12 +259,9 @@ test('Editing filter from results panel updates results panel on save', async ({
   await mockApiSuccess(page, queryResultPathV3, 200);
   await page.getByTestId('add-filter-btn').click();
 
-  // When
+  // When, by URL for the same reason as the test above
   await page.waitForURL('**/explorer');
-  await page
-    .getByTestId('added-filter-snp-variant')
-    .getByRole('button', { name: 'Edit Filter' })
-    .click();
+  await page.goto('/explorer/genome-filter?edit=snp');
   await page.getByTestId(`snp-edit-btn-${validSnp}`).click();
   await page.getByTestId('snp-constraint').selectOption({ label: secondConstraint });
   await page.getByTestId('snp-save-btn').click();

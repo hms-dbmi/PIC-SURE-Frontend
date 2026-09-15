@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { get } from 'svelte/store';
+
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
 
@@ -10,21 +12,29 @@
   import SnpSearch from '$lib/components/explorer/genome-filter/SNPSearch.svelte';
 
   import { phenotypesMode, searchModeHref } from '$lib/explorer/searchModes';
+  import type {
+    Filter,
+    GenomicFilterInterface,
+    SnpFilterInterface,
+  } from '$lib/models/Filter.svelte';
   import { Option } from '$lib/models/GenomeFilter';
-  import { addFilter } from '$lib/stores/Filter';
-  import { clearGeneFilters, generateGenomicFilter, selectedGenes } from '$lib/stores/GeneFilter';
+  import { addFilter, genomicFilters } from '$lib/stores/Filter';
+  import { generateGenomicFilter, selectedGenes } from '$lib/stores/GeneFilter';
+  import { loadGenomicDrafts, type AppliedGenomicFilters } from '$lib/stores/GenomicDraft';
   import { filterMethod } from '$lib/stores/GenomicFilterMethod';
   import { searchTerm } from '$lib/stores/Search';
   import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
-  import { clearSnpFilters, generateSNPFilter, selectedSNPs } from '$lib/stores/SNPFilter';
+  import { generateSNPFilter, selectedSNPs } from '$lib/stores/SNPFilter';
 
   // The gene and variant working state above - selections, consequences, frequencies - is
   // shared with /explorer/genome-filter, which is still reachable and which both clears it on
   // its way out and overwrites it from the applied filter on its way in. So a detour through
-  // that page does change what this one is holding. `filterMethod` is the exception: that
-  // page keeps its own page-local method and never touches this store. None of it is
-  // isolated and none of it is meant to be - the two are the same feature behind two entry
-  // points for as long as both exist, and deleting the old one is what closes it.
+  // that page does change what this one is holding: it can empty the panels behind this tab's
+  // back, leaving `draftLoadedFrom` saying they hold the applied filter when they no longer
+  // do. `filterMethod` is the exception: that page keeps its own page-local method and never
+  // touches this store. None of it is isolated and none of it is meant to be - the two are the
+  // same feature behind two entry points for as long as both exist, and deleting the old one
+  // is what closes it.
 
   /**
    * The method a deployment with a single query type leaves no choice about. BDC enables
@@ -34,12 +44,13 @@
    * is not offered at all - `+page.ts` redirects that case away before this renders, and the
    * chooser `undefined` yields would say so anyway.
    */
-  const forcedMethod = $derived.by(() => {
-    const { enableGENEQuery, enableSNPQuery } = config.features;
+  function methodForcedBy({ enableGENEQuery, enableSNPQuery }: typeof config.features) {
     if (enableGENEQuery && !enableSNPQuery) return Option.Genomic;
     if (!enableGENEQuery && enableSNPQuery) return Option.SNP;
     return undefined;
-  });
+  }
+
+  const forcedMethod = $derived(methodForcedBy(config.features));
 
   // Configuration wins outright where it decides, so the remembered method is only read in
   // the case it can be set in - a method carried over from elsewhere cannot strand a
@@ -47,12 +58,40 @@
   const method = $derived(forcedMethod ?? $filterMethod);
   const showsMethodChooser = $derived(forcedMethod === undefined);
 
+  // There is only ever one filter of each genomic method, so the tab has no separate edit
+  // mode: whatever the cohort holds is what the panels show, and the action button replaces it.
+  function appliedIn(filters: Filter[]): AppliedGenomicFilters {
+    return {
+      gene: filters.find((f): f is GenomicFilterInterface => f.filterType === 'genomic'),
+      snp: filters.find((f): f is SnpFilterInterface => f.filterType === 'snp'),
+    };
+  }
+
+  const applied = $derived(appliedIn($genomicFilters));
+  const updates = $derived(
+    method === Option.SNP ? applied.snp !== undefined : applied.gene !== undefined,
+  );
+
+  // Loaded here rather than only in the effect below, so that the panels are built from the
+  // drafts instead of catching up to them: the gene panel reads the selection as it mounts, to
+  // keep a gene the filter names among its options whether or not the values endpoint's first
+  // page has it, and an effect runs after that. Read plainly rather than through the derived
+  // values above, which at this point hold nothing but their initial value anyway.
+  loadGenomicDrafts(appliedIn(get(genomicFilters)), methodForcedBy(config.features) === undefined);
+
+  // And again whenever the cohort's genomic filters change under an open tab, which is how
+  // removing the filter from its chip empties the panels it was loaded into.
+  $effect(() => {
+    loadGenomicDrafts(applied, showsMethodChooser);
+  });
+
   const canComplete = $derived(
     (method === Option.Genomic && $selectedGenes.length > 0) ||
       (method === Option.SNP && $selectedSNPs.length > 0),
   );
+  const actionLabel = $derived(updates ? 'Update Filter' : 'Add Filter');
   const actionTitle = $derived(
-    canComplete ? 'Add Filter' : method === Option.SNP ? 'A SNP is required' : 'A gene is required',
+    canComplete ? actionLabel : method === Option.SNP ? 'A SNP is required' : 'A gene is required',
   );
 
   function onComplete() {
@@ -61,12 +100,11 @@
     // SNP here.
     if (method === Option.None) return;
 
+    // `addFilter` replaces by id, and both genomic ids are fixed, so this updates the applied
+    // filter rather than adding a second one.
     addFilter(method === Option.Genomic ? generateGenomicFilter() : generateSNPFilter());
-    // The working state has become the filter, so the tab starts over: empty panels, and the
-    // chooser again where there is one.
-    clearGeneFilters();
-    clearSnpFilters();
-    filterMethod.set(Option.None);
+    // The draft is not cleared: it has become the filter, and the tab shows the applied filter
+    // now, so coming back to it has to find the panels holding what the cohort holds.
     $panelOpen = true;
     // Back to Phenotypes, from the registry rather than a literal, carrying the search so the
     // address bar still agrees with the results the user returns to.
@@ -100,7 +138,8 @@
           onclick={onComplete}
           disabled={!canComplete}
         >
-          Add Filter <i class="fa-solid fa-plus ml-3"></i>
+          {actionLabel}
+          <i class="fa-solid {updates ? 'fa-check' : 'fa-plus'} ml-3"></i>
         </button>
       </div>
     {/if}
