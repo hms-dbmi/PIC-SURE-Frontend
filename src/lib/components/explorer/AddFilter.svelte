@@ -12,7 +12,6 @@
     createRequiredFilter,
   } from '$lib/models/Filter.svelte';
   import { getConceptDetails } from '$lib/stores/Dictionary';
-  import { panelOpen } from '$lib/stores/SidePanel';
 
   import Loading from '$lib/components/Loading.svelte';
   import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
@@ -113,7 +112,6 @@
 
   function finish() {
     $activeRow = '';
-    $panelOpen = true;
     onclose();
   }
 

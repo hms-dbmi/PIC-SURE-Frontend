@@ -35,11 +35,6 @@ vi.mock('$lib/stores/ExpandableRow', async () => {
   return { activeRow: writable('') };
 });
 
-vi.mock('$lib/stores/SidePanel', async () => {
-  const { writable } = await import('svelte/store');
-  return { panelOpen: writable(true) };
-});
-
 import AddedFilter from '$lib/components/explorer/results/AddedFilter.svelte';
 import { log } from '$lib/logger';
 import type { Filter } from '$lib/models/Filter.svelte';
