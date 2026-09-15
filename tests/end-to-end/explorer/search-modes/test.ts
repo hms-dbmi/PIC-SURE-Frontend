@@ -117,6 +117,10 @@ test.describe('Explore search mode bar', () => {
 
     // Then
     const newTab = await opened;
+    // A freshly opened tab resolves from waitForEvent before it has committed a navigation, so
+    // its URL can still be '' when toHaveURL starts its window. Under load that outlasted the
+    // 5s assertion and then hit the test timeout - a flake in the assertion, not the feature.
+    await newTab.waitForLoadState();
     await expect(newTab).toHaveURL(/\/explorer\/genotypes$/);
     await expect(page).toHaveURL(/\/explorer$/);
     await newTab.close();
