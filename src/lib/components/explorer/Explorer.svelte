@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -29,6 +29,19 @@
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
   let searchInput = $state(page.url.searchParams.get('search') || $searchTerm || '');
+
+  // The box holds typing the user has not submitted, so it cannot be derived from the store -
+  // but it has to follow the store whenever something else moves it, or the box and the rows
+  // below it end up showing different searches. The layout applies ?search= on navigations
+  // this component does not remount for, which is when that happens.
+  let boxTerm = $state($searchTerm);
+  $effect(() => {
+    const term = $searchTerm;
+    if (untrack(() => boxTerm) === term) return;
+    boxTerm = term;
+    searchInput = term;
+  });
+
   const tableName = 'ExplorerTable';
   const tableColumns = $derived(config.branding.explorePage.columns || []);
   const columns: Column[] = $derived([
@@ -68,9 +81,6 @@
     document.getElementById(`${tableName}-table`)?.scrollIntoView({ block: 'start' });
   }
 
-  // The search handler's lifecycle belongs to the /explorer and /discover layouts, which
-  // outlive this component. Only the tour button, which this component renders, is handled
-  // here.
   onMount(() => {
     if (page.url.searchParams.get('startTour') === 'true') {
       const tourBtn = document.querySelector('#explorer-tour-btn');
