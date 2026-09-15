@@ -10,7 +10,7 @@ import {
   facetsResponse,
   crossCountSyncResponseInital,
 } from '../mock-data';
-import { getOption, navigateInApp, userIsLoggedIn } from '../utils';
+import { getOption, navigateInApp, seedGenomicFilter, userIsLoggedIn } from '../utils';
 
 const countResultPath = '*/**/picsure/hpds/auth/v3/query/sync';
 const openCountResultPath = '*/**/picsure/hpds/open/v3/query/sync';
@@ -726,9 +726,11 @@ test.describe('Results panel auto-expand', () => {
   const body = (page: Page) => page.locator('#results-panel');
   const filterCount = (page: Page) => page.getByTestId('results-panel-filter-count');
   const firstConceptPath = mockData.content[0].conceptPath;
+  const exportRow = (page: Page, rowIndex: number) =>
+    page.locator('tbody').locator('tr[id^="ExplorerTable-row-"]').nth(rowIndex);
 
   async function mockExplorer(page: Page, features: { name: string; value: string }[] = []) {
-    await mockApiConfig(page, features.length > 0 ? { features } : undefined);
+    await mockApiConfig(page, { features });
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countResultPath, '9999');
@@ -783,8 +785,9 @@ test.describe('Results panel auto-expand', () => {
     // Then
     await expect(filterCount(page)).toHaveText(/^2 filters added$/);
     await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
-    // The same DOM node throughout: a collapse and re-expand would have replaced it, which
-    // is what "no re-animation" means here.
+    // The body element was never replaced, so nothing collapsed and re-rendered on the way.
+    // That the store is not even notified a second time is asserted where it is decided, in
+    // tests/unit/resultsSummaryPanel.test.ts.
     expect(await openBody!.evaluate((element) => element.isConnected)).toBe(true);
   });
 
@@ -796,8 +799,7 @@ test.describe('Results panel auto-expand', () => {
     await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
 
     // When
-    const firstRow = page.locator('tbody').locator('tr[id^="ExplorerTable-row-"]').first();
-    await firstRow.locator('td').last().locator('button').last().click();
+    await exportRow(page, 0).getByTitle('Add for Analysis (e)').click();
 
     // Then
     await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
@@ -827,23 +829,7 @@ test.describe('Results panel auto-expand', () => {
   test('expands on load for a genomic filter restored from sessionStorage', async ({ page }) => {
     // Given
     await mockExplorer(page);
-    await page.addInitScript(() => {
-      sessionStorage.setItem(
-        'genomicFilters',
-        JSON.stringify([
-          {
-            id: 'genomic-test-filter',
-            uuid: 'genomic-test-uuid',
-            filterType: 'genomic',
-            variableName: 'Genomic Filter',
-            description: 'Test genomic filter',
-            searchResult: null,
-            isHarmonized: false,
-            categoryValues: [],
-          },
-        ]),
-      );
-    });
+    await seedGenomicFilter(page);
 
     // When
     await page.goto('/explorer?search=somedata');
@@ -912,6 +898,67 @@ test.describe('Results panel auto-expand', () => {
     // Then
     await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
     await expect(body(page)).toBeVisible();
+  });
+
+  test('keeps a manual collapse after a filter is enriched in place', async ({ page }) => {
+    // Given a Continuous filter, which is the only kind whose searchResult arrives without a
+    // `table`: AddFilter re-fetches concept details for Categorical only, so the enrich guard
+    // in enrichFilterDetails passes and it patches `table` and `study` onto a filter that is
+    // already in the tree - in place, with no write to filterTree for the panel to see.
+    await mockExplorer(page);
+    await mockApiSuccess(
+      page,
+      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+      detailResponseCat,
+    );
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    const continuousRow = mockData.content[3];
+    await page.locator('#ExplorerTable-row-3 button[title^=Filter]').click();
+    await page.getByTestId('add-filter').click();
+    await expect(page.getByTestId(`added-filter-${continuousRow.conceptPath}`)).toBeVisible();
+
+    // The enrichment is fire-and-forget, so wait for the evidence it landed: its only other
+    // effect is writing the patched tree straight to sessionStorage.
+    await page.waitForFunction(() =>
+      (sessionStorage.getItem('filterTree') ?? '').includes('"table":{'),
+    );
+
+    // When
+    await strip(page).click();
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+    await navigateInApp(page, '/help');
+    await expect(page).toHaveURL(/\/help$/);
+    await navigateInApp(page, '/explorer?search=somedata');
+
+    // Then - the enriched bytes are not the query, so the new panel must read this as the
+    // same cohort the user collapsed over
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+    await expect(body(page)).not.toBeVisible();
+  });
+
+  test('keeps a manual collapse when a variable is removed', async ({ page }) => {
+    // Given a collapsed panel holding a filter and an added variable
+    await mockExplorer(page, [{ name: 'ALLOW_EXPORT_ENABLED', value: 'true' }]);
+    await page.goto('/explorer?search=somedata');
+    await userIsLoggedIn(page);
+    await addCategoricalFilter(page, 0, detailResponseCat);
+    await exportRow(page, 1).getByTitle('Add for Analysis (e)').click();
+    const secondConceptPath = mockData.content[1].conceptPath;
+    await expect(page.getByTestId(`added-export-${secondConceptPath}`)).toBeVisible();
+    await strip(page).click();
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+
+    // When - the one removal reachable without opening the body first
+    await exportRow(page, 1).getByTitle('Remove from Analysis (e)').click();
+
+    // Then - the cohort still holds the filter, so it is not empty, but it shrank, and taking
+    // something away is not a reason to overrule a collapse
+    await expect(exportRow(page, 1).getByTitle('Add for Analysis (e)')).toBeVisible();
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+    await expect(body(page)).not.toBeVisible();
   });
 
   test('stays open when the last filter is removed', async ({ page }) => {

@@ -11,7 +11,7 @@ import {
   detailResponseCat2,
   detailResForAge,
 } from '../mock-data';
-import { clickNthFilterIcon, getOption, userIsLoggedIn } from '../utils';
+import { clickNthFilterIcon, getOption, seedGenomicFilter, userIsLoggedIn } from '../utils';
 
 const SYNC_URL = '*/**/picsure/hpds/auth/v3/query/sync';
 
@@ -194,22 +194,7 @@ export class AdvancedFilteringPage {
    * Must be called before navigating to the explorer page.
    */
   async injectGenomicFilter() {
-    const genomicFilter = {
-      id: 'genomic-test-filter',
-      uuid: 'genomic-test-uuid',
-      filterType: 'genomic',
-      variableName: 'Genomic Filter',
-      description: 'Test genomic filter',
-      searchResult: null,
-      isHarmonized: false,
-      categoryValues: [],
-    };
-    await this.page.addInitScript(
-      (filterJson: string) => {
-        sessionStorage.setItem('genomicFilters', filterJson);
-      },
-      JSON.stringify([genomicFilter]),
-    );
+    await seedGenomicFilter(this.page);
   }
 
   /**
@@ -222,7 +207,18 @@ export class AdvancedFilteringPage {
 
   // ==================== Navigation ====================
 
+  /**
+   * Opens the builder from the panel's body, expanding the panel first if it is not already
+   * open. `setupAndOpenModal` asserts the expansion instead of ensuring it, because there the
+   * panel having opened itself is the thing under test; here it is only a precondition, and a
+   * spec that legitimately collapsed the panel first should not fail inside the page object.
+   */
   async openModal() {
+    const strip = this.page.getByTestId('results-summary-strip');
+    await expect(strip).toBeVisible();
+    if ((await strip.getAttribute('aria-expanded')) !== 'true') {
+      await strip.click();
+    }
     await expect(this.page.locator('#results-panel')).toBeVisible();
     await expect(this.advancedFilteringBtn).toBeEnabled();
     await this.advancedFilteringBtn.click();

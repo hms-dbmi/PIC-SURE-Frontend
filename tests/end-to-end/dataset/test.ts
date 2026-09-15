@@ -8,7 +8,7 @@ import {
   conceptTreePath,
   conceptsDetailPath,
 } from '../mock-data';
-import { userIsLoggedIn } from '../utils';
+import { navigateInApp, userIsLoggedIn } from '../utils';
 
 const datasetPath = '*/**/picsure/operations/dataset/named';
 
@@ -475,6 +475,41 @@ test.describe('dataset/[uuid]', () => {
     await expect(page.getByTestId(`added-export-${datasetDetails.paths.HEIGHT}`)).toBeVisible();
     await expect(page.getByTestId(`added-export-${datasetDetails.paths.WEIGHT}`)).toBeVisible();
   });
+  test('Restore Filters expands the panel on returning to an Explore already visited', async ({
+    page,
+  }) => {
+    // Given - Explore visited first, so the panel mounts, records an empty cohort and is then
+    // destroyed on the way to the dataset. Every other restore spec arrives at /dataset by a
+    // fresh document load, where the panel has never recorded anything and a "first mount
+    // only" rule would pass just as well. This is the flow that can tell the two apart, and
+    // it is the ordinary one: Explore, saved datasets, restore, back.
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+
+    // When - all client-side from here, so it is one page load throughout
+    await navigateInApp(page, `/dataset/${mockData[0].uuid}`);
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
+    await page.getByTestId('restore-filters-btn').click();
+    await page
+      .getByTestId('restore-filters')
+      .getByRole('button', { name: 'Restore Filters' })
+      .click();
+    await page.waitForURL('**/explorer');
+
+    // Then - the second panel of this page load compares against the cohort the first one
+    // last saw, which is the empty one from before the restore
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
+  });
+
   test('Restore Filters modal shows warning when existing filters are present', async ({
     page,
   }) => {

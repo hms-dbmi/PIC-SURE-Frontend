@@ -398,6 +398,23 @@ export const configurationPath = '*/**/picsure/operations/configuration';
 
 export const searchRequest = { facets: [], search: 'age' };
 
+/**
+ * A gene-with-variant filter in the shape `createGenomicFilter` produces, for seeding
+ * `sessionStorage.genomicFilters` before a page load. `restoreGenomicFilters` recomputes the
+ * uuid from the contents, so the one here is only a placeholder.
+ */
+export const genomicFilter = {
+  uuid: '',
+  id: 'genomic',
+  filterType: 'genomic',
+  displayType: 'any',
+  variableName: 'Genomic Filter',
+  description: 'Gene with variant: CHD8',
+  Gene_with_variant: ['CHD8'],
+  allowFiltering: true,
+  dataset: '',
+};
+
 export const searchResults = {
   totalPages: 1,
   totalElements: 7,

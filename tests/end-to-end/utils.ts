@@ -1,4 +1,5 @@
 import { expect, type Page, type Locator } from '@playwright/test';
+import { genomicFilter } from './mock-data';
 
 // This method is used to ensure that the user state is fully loaded before proceeding.
 // Sometimes, the tests are flaky because there is a race condition in the tests that
@@ -59,4 +60,15 @@ export const navigateInApp = async (page: Page, href: string) => {
     document.body.appendChild(link);
   }, href);
   await page.locator('#e2e-nav-link').click();
+};
+
+// Puts a genomic filter in sessionStorage for the next page load to restore, the way a user
+// who built one on an earlier visit would have left it. Must be called before navigating.
+export const seedGenomicFilter = async (page: Page) => {
+  await page.addInitScript(
+    (json: string) => {
+      sessionStorage.setItem('genomicFilters', json);
+    },
+    JSON.stringify([genomicFilter]),
+  );
 };

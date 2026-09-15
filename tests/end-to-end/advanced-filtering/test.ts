@@ -764,6 +764,9 @@ test.describe('Advanced Query Builder - Apply', () => {
 
   test('AF-APPLY-003: Clicking Apply to Query applies changes and stays on page', async () => {
     await afPage.expectModalVisible();
+    // An actual edit, as the name says: applying a query identical to the one already in the
+    // store changes nothing, and the panel does not expand for a query that did not change.
+    await afPage.selectRootOperator('OR');
     await afPage.clickApplyChanges();
     await afPage.expectApplySucceeded();
   });
