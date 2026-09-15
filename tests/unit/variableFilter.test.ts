@@ -4,6 +4,7 @@ import {
   coversEveryValue,
   filterForRange,
   filterForSelection,
+  filteringRefused,
   relatedVariablesOf,
   selectionFromFilter,
 } from '$lib/explorer/variableFilter';
@@ -86,6 +87,31 @@ describe('coversEveryValue', () => {
   it('is false for a variable with no values at all', () => {
     expect(coversEveryValue([], [])).toBe(false);
   });
+
+  /*
+   * The two have to match as sets, not merely cover.
+   *
+   * A selection carries the filter's own values, including ones the dictionary has stopped
+   * offering - `selectionFromFilter` keeps those on purpose. Asking only whether every
+   * current value is selected read a stored restriction of [Yes, No], against a dictionary
+   * now offering only [Yes], as covering everything, and Filter Participants rewrote it as an
+   * any-value filter that admitted the value the user had excluded.
+   */
+  it('is false when the selection names a value the dictionary no longer offers', () => {
+    expect(coversEveryValue(['Yes'], ['Yes', 'No'])).toBe(false);
+  });
+});
+
+describe('filteringRefused', () => {
+  // The results row's rule, in one place: open access *and* the dictionary refusing, not
+  // either on its own.
+  it('refuses an unfilterable variable only in open access', () => {
+    const unfilterable = { ...smoker, allowFiltering: false };
+    expect(filteringRefused(unfilterable, true)).toBe(true);
+    expect(filteringRefused(unfilterable, false)).toBe(false);
+    expect(filteringRefused(smoker, true)).toBe(false);
+    expect(filteringRefused(smoker, false)).toBe(false);
+  });
 });
 
 describe('filterForSelection', () => {
@@ -105,6 +131,15 @@ describe('filterForSelection', () => {
   it('is any value when the selection covers every value', () => {
     const filter = filterForSelection(smoker, ['Yes', 'No', "Don't know"]) as Filter;
     expect(filter).toMatchObject({ displayType: 'any', categoryValues: [] });
+  });
+
+  // A stored filter reopened against a shorter value list still restricts to what it named.
+  it('keeps restricting when the selection outruns the dictionary', () => {
+    const narrowed = { ...smoker, values: ['Yes'] } as SearchResult;
+    expect(filterForSelection(narrowed, ['Yes', 'No'])).toMatchObject({
+      displayType: 'restrict',
+      categoryValues: ['Yes', 'No'],
+    });
   });
 });
 

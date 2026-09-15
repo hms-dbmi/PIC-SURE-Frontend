@@ -122,7 +122,7 @@ test.describe('Add Filters', () => {
     await expect(filterParticipants(page)).toBeEnabled();
   });
 
-  test('Clicking the add butoon options the results panel', async ({ page }) => {
+  test('Clicking the add button opens the results panel', async ({ page }) => {
     // Given
     await openVariable(page, detailResponseCat);
 

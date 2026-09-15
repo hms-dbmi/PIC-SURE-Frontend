@@ -29,11 +29,32 @@ export function selectionFromFilter(values: string[], filter?: Filter): string[]
   return [...filter.categoryValues];
 }
 
-/** Whether a selection covers every value the variable has, and so constrains nothing. */
+/**
+ * Whether a selection is exactly the variable's values, and so constrains nothing.
+ *
+ * The two have to match as sets, not merely cover: a selection may carry values the
+ * dictionary has since stopped offering, because `selectionFromFilter` keeps them rather than
+ * loosening the user's filter behind their back. Asking only whether every *current* value is
+ * selected read a stored restriction of `[A, B]`, against a dictionary now offering only
+ * `[A]`, as covering everything - and the next press of Filter Participants rewrote it as an
+ * any-value filter, admitting the values it had excluded. A re-index is all that takes.
+ */
 export function coversEveryValue(values: string[], selected: string[]): boolean {
   if (values.length === 0) return false;
+  const offered = new Set(values);
   const chosen = new Set(selected);
-  return values.every((value) => chosen.has(value));
+  return chosen.size === offered.size && values.every((value) => chosen.has(value));
+}
+
+/**
+ * Whether this concept may not be filtered on: the rule the results row's filter icon uses,
+ * in one place because three callers need it.
+ *
+ * An open-access visitor may not filter on a variable the dictionary marks unfilterable. An
+ * authenticated user may, which is why this is not `!allowFiltering` on its own.
+ */
+export function filteringRefused(concept: SearchResult, openAccess: boolean): boolean {
+  return openAccess && !concept.allowFiltering;
 }
 
 /**

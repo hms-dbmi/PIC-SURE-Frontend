@@ -504,6 +504,194 @@ describe('VariableDetail', () => {
       });
     });
 
+    /*
+     * A value with an apostrophe in it, which `detailResponseCat` has had all along.
+     *
+     * Focus followed a moved value by building `#option-<id> input` out of the value's own
+     * text, and an apostrophe is not a legal identifier character - so `querySelector` threw a
+     * DOMException inside an un-awaited, uncaught async call. The value still moved, but focus
+     * fell to the document body: precisely the thing the keyboard criterion is about, for
+     * three of this fixture's values and for anything containing `/`, `#`, `.`, `:` or
+     * brackets.
+     */
+    it('follows a moved value whose text is not a legal selector', async () => {
+      vi.mocked(getConceptDetails).mockResolvedValue(categoricalDetail);
+      render(VariableDetail, { section: 'explorer', variableKey: categoricalKey });
+      await screen.findByTestId('optional-selection-list');
+
+      await fireEvent.click(screen.getByRole('checkbox', { name: "Don't know" }));
+
+      expect(optionsIn('selected-options-container')).toEqual(["Don't know"]);
+      const focused = document.activeElement as HTMLInputElement | null;
+      expect(focused?.tagName).toBe('INPUT');
+      expect(focused?.value).toBe("Don't know");
+      // And in the column it moved to, not the one it came from
+      expect(document.getElementById('selected-options-container')?.contains(focused)).toBe(true);
+    });
+
+    /*
+     * A stored restriction, reopened after the dictionary dropped one of its values.
+     *
+     * `coversEveryValue` asked only whether every value the dictionary offers now is
+     * selected, so a filter on [Yes, No] seen against a dictionary offering only [Yes] read
+     * as covering everything - and Filter Participants rewrote it as an any-value filter,
+     * admitting the values the user had excluded. Needs nothing but a re-index to happen.
+     */
+    it('does not broaden a stored filter when the dictionary drops a value', async () => {
+      addFilter(createCategoricalFilter(categoricalDetail, ['Yes', 'No']));
+      vi.mocked(getConceptDetails).mockResolvedValue({
+        ...categoricalDetail,
+        values: ['Yes'],
+      } as SearchResult);
+
+      render(VariableDetail, { section: 'explorer', variableKey: categoricalKey });
+      await screen.findByTestId('optional-selection-list');
+
+      // Both of the filter's values are still shown as selected
+      expect(optionsIn('selected-options-container')).toEqual(['Yes', 'No']);
+
+      await fireEvent.click(addFilterButton());
+
+      expect(get(filters)).toHaveLength(1);
+      expect(get(filters)[0]).toMatchObject({
+        displayType: 'restrict',
+        categoryValues: ['Yes', 'No'],
+      });
+    });
+
+    /*
+     * The panel's related variables, which are a second way into the cohort and were not
+     * held to the same rules as the main one.
+     *
+     * None of this is reachable from a deployment today: the dictionary has no field for
+     * related variables and the panel reads them off `children`, which concept detail sends
+     * as `null` for every leaf. The code ships either way, so it is held to the same rules
+     * as the variable above it.
+     */
+    describe('related variables', () => {
+      const relatedChild = (overrides: Partial<SearchResult> = {}) =>
+        ({
+          ...categoricalDetail,
+          conceptPath: '\\this\\is\\a\\smoker\\status\\',
+          display: 'Infection status',
+          name: 'infection_status',
+          // Three, so picking two is still a restriction rather than "any value"
+          values: ['Infected', 'Non-infected', 'Unknown'],
+          ...overrides,
+        }) as SearchResult;
+
+      /** Renders `parent` with `children`, and waits for the complex panel. */
+      async function renderWith(parent: SearchResult, children: SearchResult[]) {
+        vi.mocked(getConceptDetails).mockResolvedValue({ ...parent, children } as SearchResult);
+        render(VariableDetail, {
+          section: mockState.section,
+          variableKey: { dataset: parent.dataset, conceptPath: parent.conceptPath },
+        });
+        await screen.findByTestId('variable-filter-panel-name');
+      }
+
+      const relatedRow = () => screen.getByTestId('related-variable');
+      const filterIds = () => get(filters).map((filter) => filter.id);
+
+      /*
+       * The page refuses filtering on an unfilterable variable in open access, and refuses it
+       * when that variable is the one the page is about. Reached as a related variable it was
+       * not refused at all: ticking a value built its filter and put it in the open-access
+       * cohort query, routing around a restriction the application makes everywhere else.
+       */
+      it('refuses an unfilterable related variable in open access', async () => {
+        mockState.pathname = '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Csmoker%5C';
+        mockState.section = 'discover';
+        await renderWith(categoricalDetail, [relatedChild({ allowFiltering: false })]);
+
+        await fireEvent.click(screen.getByTestId('related-variable-toggle'));
+
+        // It says why, rather than offering values that cannot be filtered on
+        expect(relatedRow()).toHaveTextContent('Filtering is not available for this variable');
+        expect(relatedRow().querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
+
+        // And filtering the main variable puts nothing of the child's in the cohort
+        await fireEvent.click(screen.getByRole('checkbox', { name: 'Yes' }));
+        await fireEvent.click(addFilterButton());
+        expect(filterIds()).toEqual([categoricalDetail.conceptPath]);
+      });
+
+      // The other side of that gate, so closing it altogether is not a way to pass the above.
+      it('offers a filterable related variable in open access', async () => {
+        mockState.pathname = '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Csmoker%5C';
+        mockState.section = 'discover';
+        const child = relatedChild();
+        await renderWith(categoricalDetail, [child]);
+
+        await fireEvent.click(screen.getByTestId('related-variable-toggle'));
+        expect(relatedRow()).not.toHaveTextContent('Filtering is not available');
+
+        await fireEvent.click(screen.getByRole('checkbox', { name: 'Infected' }));
+        await fireEvent.click(addFilterButton());
+        expect(filterIds()).toEqual([child.conceptPath]);
+      });
+
+      /*
+       * Emptying a related selection reads as "All included by default" on screen. Skipped
+       * rather than removed, the filter it used to have stayed in the cohort - the panel
+       * saying unconstrained while the query said otherwise.
+       */
+      it('removes a related variable’s filter when its last value is unticked', async () => {
+        const child = relatedChild();
+        addFilter(createCategoricalFilter(child, ['Infected']));
+        await renderWith(categoricalDetail, [child]);
+
+        // The section opens on its applied value; untick it where it sits
+        const applied = relatedRow().querySelector(
+          '#selected-options-container input[type="checkbox"]',
+        ) as HTMLInputElement;
+        expect(applied.value).toBe('Infected');
+        await fireEvent.click(applied);
+        expect(relatedRow()).toHaveTextContent('All included by default');
+
+        // A main selection, so the action is live for a reason other than this one
+        await fireEvent.click(screen.getByRole('checkbox', { name: 'Yes' }));
+        await fireEvent.click(addFilterButton());
+
+        expect(filterIds()).toEqual([categoricalDetail.conceptPath]);
+      });
+
+      /*
+       * A continuous main variable with related variables.
+       *
+       * Blank bounds are a deliberate filter for a variable on its own - everyone with a
+       * measurement - and `filterForRange` always returns one, so the main filter was written
+       * unconditionally. With related variables below it, touching only one of those still put
+       * an any-value numeric filter on the main path: one click, two chips, one restriction
+       * the user never picked. A categorical main variable was already exempt.
+       */
+      it('leaves a continuous main variable alone when only a related one is touched', async () => {
+        const child = relatedChild({ conceptPath: '\\this\\is\\a\\age\\band\\' });
+        await renderWith(detail, [child]);
+
+        // Nothing typed and nothing ticked is not a filter here, unlike a variable on its own
+        expect(addFilterButton()).toBeDisabled();
+
+        await fireEvent.click(screen.getByTestId('related-variable-toggle'));
+        await fireEvent.click(screen.getByRole('checkbox', { name: 'Infected' }));
+        await fireEvent.click(addFilterButton());
+
+        expect(filterIds()).toEqual([child.conceptPath]);
+      });
+
+      // And a continuous variable on its own keeps blank bounds as a filter, which is what
+      // `explorer/pheno-filter` requires of it.
+      it('keeps blank bounds as a filter for a continuous variable on its own', async () => {
+        await renderDetail();
+
+        expect(addFilterButton()).not.toBeDisabled();
+        await fireEvent.click(addFilterButton());
+
+        expect(get(filters)).toHaveLength(1);
+        expect(get(filters)[0]).toMatchObject({ filterType: 'numeric', displayType: 'any' });
+      });
+    });
+
     it('is offered in open access for a variable the dictionary allows', async () => {
       mockState.pathname = '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C';
       mockState.section = 'discover';

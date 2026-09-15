@@ -173,6 +173,38 @@ test.describe('OptionalSelectionList', () => {
     await expect(optionContainer(page)).toBeEmpty();
   });
 
+  /*
+   * A value put back has to respect the search box.
+   *
+   * `onUnselect` and `clearSelectedOptions` prepended straight into the left-hand column
+   * without consulting the term, so unticking a value the term excludes put it back into a
+   * column that was supposed to be narrowed - under a search box still reading the term.
+   * Pre-existing; visible on the detail page, where this list is now the whole interface.
+   */
+  test('does not put a value back into a column the search has narrowed', async ({ page }) => {
+    // Given "No" picked, and the left-hand column narrowed to a term it does not match
+    await openVariable(page, detailResponseCat);
+    const searchBox = list(page).locator('input[type="search"]');
+
+    await optionContainer(page).locator('input[value="No"]').click();
+    await expect(selectedContainer(page).locator('input[value="No"]')).toHaveCount(1);
+    await searchBox.fill('Yes');
+    await expect(optionContainer(page).getByRole('listitem')).toHaveCount(1);
+
+    // When it is unticked where it sits
+    await selectedContainer(page).locator('input[value="No"]').click();
+
+    // Then it is gone from both columns, rather than shown under a term that excludes it
+    await expect(selectedContainer(page).getByRole('listitem')).toHaveCount(0);
+    await expect(optionContainer(page).locator('input[value="No"]')).toHaveCount(0);
+    await expect(optionContainer(page).getByRole('listitem')).toHaveCount(1);
+
+    // And clearing the term brings it back, so nothing was lost
+    await searchBox.fill('');
+    await expect(optionContainer(page).locator('input[value="No"]')).toHaveCount(1);
+    await expect(optionContainer(page).getByRole('listitem')).toHaveCount(3);
+  });
+
   test('Loads next values when scrolling', async ({ page }) => {
     // Given
     const manyOptions = {

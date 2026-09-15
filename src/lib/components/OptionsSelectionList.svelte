@@ -116,12 +116,29 @@
    *
    * Toggling a value removes its checkbox from the DOM, which drops focus to the document
    * body - so a keyboard user has to tab in from the top of the page again for every value
-   * they pick. The ids are not unique across the two containers, so this queries inside the
-   * one it means.
+   * they pick.
+   *
+   * The checkbox is found by reading the values off the column's own checkboxes, not by
+   * building a selector out of one. A value is dictionary data: `#option-don't-know input` is
+   * not a valid selector, because a bare apostrophe is not a legal identifier character, and
+   * `querySelector` throws a DOMException on it - inside an async call that nothing awaits.
+   * `/`, `#`, `.`, `:` and brackets fail the same way, and "Don't know" is in the fixtures.
+   * The ids are not unique across the two containers either, so this looks inside the one it
+   * means.
    */
   async function focusMovedOption(container: HTMLElement | undefined, option: string) {
     await tick();
-    container?.querySelector<HTMLInputElement>(`#option-${getID(option)} input`)?.focus();
+    if (!container) return;
+    const boxes = Array.from(
+      container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'),
+    );
+    boxes.find((box) => box.value === option)?.focus();
+  }
+
+  /** Whether the search box as it currently reads admits `option`. */
+  function matchesSearch(option: string) {
+    const needle = searchInput.trim().toLowerCase();
+    return !needle || option.toLowerCase().includes(needle);
   }
 
   function onSelect(option: string) {
@@ -138,7 +155,11 @@
       event.preventDefault();
       selectedOptions = selectedOptions.filter((o) => o !== option);
 
-      if (!unselectedOptions.includes(option)) {
+      // Back to the left-hand column only if the search box admits it. Unconditionally, a
+      // value the term excludes reappears in a column the term is supposed to be narrowing,
+      // under a search box still reading that term. Clearing the box brings it back, because
+      // a changed term refills the column from the whole list.
+      if (matchesSearch(option) && !unselectedOptions.includes(option)) {
         unselectedOptions = [option, ...unselectedOptions];
       }
       focusMovedOption(unselectedOptionsContainer, option);
@@ -146,7 +167,10 @@
   }
 
   function clearSelectedOptions() {
-    unselectedOptions = [...unselectedOptions, ...selectedOptions].sort();
+    unselectedOptions = [
+      ...unselectedOptions,
+      ...selectedOptions.filter((option) => matchesSearch(option)),
+    ].sort();
     selectedOptions = [];
     selectedOptionEndLocation = 20;
   }

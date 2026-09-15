@@ -1,16 +1,22 @@
 <script lang="ts">
-  import { get } from 'svelte/store';
-
   import {
     filterForRange,
     filterForSelection,
+    filteringRefused,
     relatedVariablesOf,
     selectionFromFilter,
   } from '$lib/explorer/variableFilter';
   import type { Filter } from '$lib/models/Filter.svelte';
   import type { SearchResult } from '$lib/models/Search';
-  import { addFilter, enrichFilterDetails, filters, updateFilter } from '$lib/stores/Filter';
+  import {
+    addFilter,
+    enrichFilterDetails,
+    filters,
+    removeFilter,
+    updateFilter,
+  } from '$lib/stores/Filter';
 
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
 
   /**
@@ -32,9 +38,16 @@
   interface Props {
     variable: SearchResult;
     existingFilter?: Filter;
+    /**
+     * Whether this is an open-access view, which decides whether a variable the dictionary
+     * marks unfilterable may be filtered on. The caller applies it to the main variable
+     * before rendering this at all; the related variables below are a second way into the
+     * cohort and are held to it here.
+     */
+    openAccess?: boolean;
   }
 
-  let { variable, existingFilter }: Props = $props();
+  let { variable, existingFilter, openAccess = false }: Props = $props();
 
   const PAGE_SIZE = 20;
   /** Past this many values the list pages in on scroll rather than rendering in full. */
@@ -74,17 +87,28 @@
   }
 
   /**
-   * The Categorical filter already applied to a related variable.
+   * The Categorical filter already applied to a related variable - the counterpart of the
+   * `existingFilter` prop, for a concept the caller does not name.
    *
-   * Read once, not derived: this seeds a draft, and re-reading it on every store change would
-   * throw away a selection in progress. The main variable's filter arrives as a prop for the
-   * same reason.
+   * It seeds that variable's draft once, at creation; read live everywhere else, because the
+   * action has to know what it is editing or removing. The caller remounts this component
+   * when any of these filters changes, so the two readings never disagree.
    */
   function appliedFilterFor(concept: SearchResult): Filter | undefined {
-    return get(filters).find(
+    return $filters.find(
       (filter) => filter.id === concept.conceptPath && filter.filterType === 'Categorical',
     );
   }
+
+  /**
+   * Whether a related variable may be filtered on at all.
+   *
+   * The same rule the caller applies to the main variable. Without it, a related variable the
+   * dictionary marks unfilterable could be ticked on an open-access page and its filter would
+   * go into the cohort query - routing around a restriction the application makes both on the
+   * results row and on that variable's own detail page.
+   */
+  const refused = (concept: SearchResult) => filteringRefused(concept, openAccess);
 
   // Seeded from the props once, which is the point: this is a draft the user edits, and a
   // derived one would discard a half-finished selection on every unrelated store change. The
@@ -142,34 +166,70 @@
     };
   }
 
-  /** Whether anything has been picked - on the main variable or on a related one. */
-  const hasSelection = $derived(
-    main.selected.length > 0 || related.some((draft) => draft.selected.length > 0),
+  /**
+   * Whether the main interface has been filled in.
+   *
+   * Both bounds left blank is a deliberate filter for a continuous variable - everyone with a
+   * measurement, which is what the cohort chip reads back - but only where the main variable
+   * is the only thing this panel can write. With related variables under it, `filterForRange`
+   * always returning a filter meant that touching one of those also put an any-value numeric
+   * filter on the main path: one press, two chips, one restriction the user never picked. A
+   * categorical main variable was already exempt, because an empty selection is not a filter.
+   */
+  const mainEngaged = $derived(
+    variable.type === 'Continuous'
+      ? minInput !== '' || maxInput !== '' || !isComplex
+      : main.selected.length > 0,
   );
 
-  // A range with both bounds blank is a filter: everyone with a measurement. A value list
-  // with nothing ticked is not, so the button waits for a tick.
-  const canFilter = $derived(variable.type === 'Continuous' || hasSelection);
+  /** Related variables the action would write a filter for, or take one away from. */
+  const relatedWrites = $derived(
+    related.filter((draft) => !refused(draft.concept) && draft.selected.length > 0),
+  );
+  const relatedClears = $derived(
+    related.filter(
+      (draft) =>
+        !refused(draft.concept) &&
+        draft.selected.length === 0 &&
+        appliedFilterFor(draft.concept) !== undefined,
+    ),
+  );
+
+  const canFilter = $derived(mainEngaged || relatedWrites.length > 0 || relatedClears.length > 0);
 
   /**
    * Writes the draft to the cohort.
    *
-   * A related variable with a selection becomes its own filter on its own concept path,
-   * because that is what a filter is keyed on; one left alone adds nothing, which is what
-   * "All included by default" says on screen.
+   * A variable with a selection becomes its own filter on its own concept path, because that
+   * is what a filter is keyed on. One with none has no filter - and if it had one before,
+   * that filter goes: skipped instead, the panel read "All included by default" while the
+   * query it describes was still constrained.
+   *
+   * A continuous main variable is the exception in the other direction. Blank bounds are
+   * indistinguishable from an applied any-value filter seeded back into the same inputs, so
+   * there is nothing here to tell "left alone" from "cleared" - it is written when filled in
+   * and otherwise left exactly as it was.
    */
   function apply() {
     if (!canFilter) return;
 
-    const primary =
-      variable.type === 'Continuous'
-        ? filterForRange(variable, minInput, maxInput)
-        : filterForSelection(variable, main.selected);
-    if (primary) applyOne(primary, variable, existingFilter);
+    if (mainEngaged) {
+      const primary =
+        variable.type === 'Continuous'
+          ? filterForRange(variable, minInput, maxInput)
+          : filterForSelection(variable, main.selected);
+      if (primary) applyOne(primary, variable, existingFilter);
+    } else if (variable.type !== 'Continuous' && existingFilter) {
+      removeFilter(existingFilter.uuid);
+    }
 
-    for (const draft of related) {
+    for (const draft of relatedWrites) {
       const filter = filterForSelection(draft.concept, draft.selected);
       if (filter) applyOne(filter, draft.concept, appliedFilterFor(draft.concept));
+    }
+    for (const draft of relatedClears) {
+      const applied = appliedFilterFor(draft.concept);
+      if (applied) removeFilter(applied.uuid);
     }
   }
 
@@ -275,7 +335,13 @@
         <span class="italic">{draft.concept.display || draft.concept.name}</span>
         <i class="fas {draft.open ? 'fa-chevron-down' : 'fa-chevron-right'}" aria-hidden="true"></i>
       </button>
-      {#if draft.open}
+      {#if draft.open && refused(draft.concept)}
+        <!-- The same reason the page gives for the main variable, said where the user is
+             being refused rather than by leaving the values off with no explanation. -->
+        <ErrorAlert color="warning" data-testid="related-variable-disabled">
+          <p class="m-0">Filtering is not available for this variable</p>
+        </ErrorAlert>
+      {:else if draft.open}
         <OptionsSelectionList
           flat
           showSearch={false}

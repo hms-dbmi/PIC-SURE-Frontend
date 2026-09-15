@@ -7,7 +7,7 @@
     withSearchTerm,
     type SearchSection,
   } from '$lib/explorer/searchChrome';
-  import { relatedVariablesOf } from '$lib/explorer/variableFilter';
+  import { filteringRefused, relatedVariablesOf } from '$lib/explorer/variableFilter';
   import type { VariableKey } from '$lib/explorer/variableUrl';
   import { log, createLog, getPageContext } from '$lib/logger';
   import type { Filter, FilterType } from '$lib/models/Filter.svelte';
@@ -122,9 +122,10 @@
   const openAccess = $derived(section === 'discover' || !isUserLoggedIn());
 
   // The same rule as the results row's filter icon: an open-access visitor may not filter on a
-  // variable the dictionary marks unfilterable.
+  // variable the dictionary marks unfilterable. Shared with the panel, which applies it to
+  // each related variable - those are a second way into the cohort and were not held to it.
   const filteringDisabled = $derived(
-    openAccess && variable !== undefined && !variable.allowFiltering,
+    variable !== undefined && filteringRefused(variable, openAccess),
   );
 
   /**
@@ -336,7 +337,7 @@
         </ErrorAlert>
       {:else}
         {#key filterRevision}
-          <VariableFilterPanel {variable} {existingFilter} />
+          <VariableFilterPanel {variable} {existingFilter} {openAccess} />
         {/key}
       {/if}
     </section>

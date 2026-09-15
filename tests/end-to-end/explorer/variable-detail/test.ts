@@ -953,6 +953,43 @@ test.describe('acting on the variable in open access', () => {
     await expect(page.getByTestId('variable-detail-filter-disabled')).toHaveCount(0);
   });
 
+  /*
+   * A related variable is a second way into the cohort, and the page's own gate looks only at
+   * the variable it is about. Ungated, ticking a value on an unfilterable related variable
+   * built its filter and put it in the open-access query - around a restriction the
+   * application makes on the results row and on that variable's own detail page.
+   *
+   * Nothing reaches this from a deployment today: the dictionary has no field for related
+   * variables, so the panel reads them off `children`, which concept detail sends as `null`.
+   */
+  test('refuses filtering on an unfilterable related variable', async ({ page }) => {
+    // Given a filterable variable with an unfilterable related one
+    const child = {
+      ...variable,
+      conceptPath: '\\SOMEDATA\\questionnaire\\disease\\infection status\\',
+      display: 'Infection status',
+      values: ['Infected', 'Non-infected'],
+      allowFiltering: false,
+    };
+    await mockConceptDetail(page, { ...variable, children: [child] });
+
+    // When
+    await page.goto(discoverUrl);
+    await expect(page.getByTestId('variable-filter-panel')).toBeVisible();
+    await page.getByTestId('related-variable-toggle').click();
+
+    // Then it says why, rather than offering values that cannot be filtered on
+    await expect(page.getByTestId('related-variable-disabled')).toContainText(
+      'Filtering is not available for this variable',
+    );
+    const related = page.getByTestId('related-variable');
+    await expect(related.locator('input[type="checkbox"]')).toHaveCount(0);
+
+    // And the main variable is still filterable, so this is the child's own rule
+    await expect(page.getByTestId('variable-detail-filter-disabled')).toHaveCount(0);
+    await expect(page.getByTestId('optional-selection-list').first()).toBeVisible();
+  });
+
   // The same rule as the results row's filter icon: open access *and* the dictionary
   // refusing, not either on its own.
   test('refuses filtering, with an explanation, for an unfilterable variable', async ({ page }) => {
@@ -1262,6 +1299,16 @@ test.describe('the designed filter panel', () => {
     await page.keyboard.press('Shift+Tab');
     await page.keyboard.press('Enter');
     await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+
+    // And a value whose text is not a legal CSS selector, which is how the moved checkbox
+    // used to be found: `#option-don't-know input` throws a DOMException, so the value moved
+    // but focus fell to the document body - the one thing this case is about. Three of this
+    // fixture's values contain an apostrophe or a space.
+    await backButton(page).focus();
+    await trail(4);
+    await page.keyboard.press('Space');
+    expect(await values(selectedColumn(page))).toEqual(["Don't know", 'Yes']);
+    await expect(selectedColumn(page).locator(`input[value="Don't know"]`)).toBeFocused();
   });
 
   test('names both value columns for a screen reader', async ({ page }) => {
