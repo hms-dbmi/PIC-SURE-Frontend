@@ -82,8 +82,6 @@ async function setupExportPageAndAddFilterAndExport(
   await expect(page.getByTestId(`added-export-${expectedRowIds[1]}`)).toBeVisible();
 
   if (includeGenomicFilter) {
-    // Through the Genotypes search mode: the search bar's Genomic Filtering button and the
-    // route behind it are gone.
     await page.getByTestId('search-mode-tab-genotypes').click();
     await page.getByTestId('gene-variant-option').click();
     await expect(page.getByTestId('add-filter-btn')).not.toBeEnabled();

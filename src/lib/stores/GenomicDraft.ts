@@ -34,10 +34,6 @@ export type AppliedGenomicFilters = {
  * a view of the cohort, which is on screen above them the whole time, and the filter's own
  * edit control loads it back whenever it is asked.
  *
- * Nothing else can empty the panels now. The retired genomic-filtering route reached the same
- * state for a quite different reason - a navigation emptying panels nobody asked to empty,
- * which this could not tell apart from a deliberate Clear - and it went away with the route.
- *
  * Exported for tests, which need a tab that has never been opened.
  */
 export const draftLoadedFrom: Writable<{ gene: string | null; snp: string | null }> = writable({

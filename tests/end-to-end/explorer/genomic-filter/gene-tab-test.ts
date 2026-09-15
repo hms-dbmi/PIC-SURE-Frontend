@@ -12,9 +12,8 @@ import type { Branding } from '$lib/models/Configuration';
 import brandingJson from '../../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
-// The gene-with-variant flow through the Genotypes tab, which is the only way into genomic
-// filtering now. This is the whole of its coverage: the Genomic Filtering button and the route
-// it led to are gone, and the route-based specs that used to duplicate these went with them.
+// The gene-with-variant flow through the Genotypes tab, the only entry point to genomic
+// filtering, and the whole of this flow's coverage.
 
 const QUERY = '*/**/picsure/hpds/auth/v3/query/sync';
 

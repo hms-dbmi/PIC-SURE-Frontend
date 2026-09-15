@@ -111,8 +111,8 @@ describe('the Genotypes tab', () => {
     vi.mocked(addFilter).mockImplementation(applyFilter);
   });
 
-  // The tab bar is the navigation now, so the page-level title and back button that
-  // /explorer/genome-filter carried would be a second, redundant one.
+  // The mode bar above this is the page's navigation, so a page-level title and back button
+  // would be a second, redundant one.
   it('has no page title and no back button', () => {
     render(GenotypesTab);
     expect(screen.queryByRole('heading', { name: 'Genomic Filtering' })).not.toBeInTheDocument();

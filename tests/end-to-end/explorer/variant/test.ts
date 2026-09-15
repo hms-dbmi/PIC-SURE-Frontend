@@ -41,10 +41,7 @@ function mockSyncAPI(context: BrowserContext | Page, resultMap: Results) {
   });
 }
 
-/**
- * Genomic filtering is reached through the Genotypes search mode. The search bar's Genomic
- * Filtering button and the route behind it are gone, so this is the only way in.
- */
+/** Genomic filtering is reached through the Genotypes search mode. */
 function openGenotypesTab(page: Page) {
   return page.getByTestId('search-mode-tab-genotypes').click();
 }

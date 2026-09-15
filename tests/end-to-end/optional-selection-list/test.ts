@@ -290,7 +290,7 @@ test.describe('OptionalSelectionList', () => {
     await page.goto('/explorer');
     await userIsLoggedIn(page);
 
-    // When - through the Genotypes search mode, the only way into genomic filtering now
+    // When
     await page.getByTestId('search-mode-tab-genotypes').click();
     await expect(page.getByTestId('gene-variant-option')).toBeVisible({ timeout: 10000 });
     await page.getByTestId('gene-variant-option').click();

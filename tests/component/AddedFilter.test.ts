@@ -128,7 +128,7 @@ describe('AddedFilter', () => {
   });
 
   // The Genotypes tab shows the filter's own state, so editing one is a navigation to that
-  // tab and nothing else: the `?edit=` deep link into /explorer/genome-filter is gone.
+  // tab and nothing else - no edit mode to deep link into.
   it.each([
     { label: 'a genomic', filter: genomicFilter },
     { label: 'an SNP', filter: snpFilter },

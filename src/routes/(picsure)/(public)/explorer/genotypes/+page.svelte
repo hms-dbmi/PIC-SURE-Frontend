@@ -28,10 +28,8 @@
 
   // The gene and variant working state above - selections, consequences, frequencies - lives
   // in module-level stores, so that switching search modes does not lose a draft in progress.
-  // This tab is now the only thing that loads or clears them wholesale, by way of
-  // `loadGenomicDrafts`; the retired genomic-filtering route used to do the same behind this
-  // tab's back, which is how a detour through it could leave `draftLoadedFrom` claiming the
-  // panels still held the applied filter when they had been emptied.
+  // This tab is the only thing that loads or clears them wholesale, by way of
+  // `loadGenomicDrafts`, which is what lets `draftLoadedFrom` be trusted.
 
   /**
    * The method a deployment with a single query type leaves no choice about. BDC enables
