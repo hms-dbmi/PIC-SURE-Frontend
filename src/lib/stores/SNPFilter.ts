@@ -16,7 +16,7 @@ export const selectedSNPs: Writable<SNP[]> = writable([]);
  *
  * The panel keeps the variant being constrained in component-local state, which nothing
  * outside it can see, so it has to be told when the selection behind it is replaced. This is
- * the same arrangement as `consequenceRevision`, for the same reason: state that is read once
+ * the same arrangement as `geneDraftRevision`, for the same reason: state that is read once
  * and then owned locally cannot notice being overtaken.
  */
 export const snpDraftRevision: Writable<number> = writable(0);

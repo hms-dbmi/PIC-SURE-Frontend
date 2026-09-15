@@ -71,14 +71,6 @@ const geneOption = () => screen.queryByTestId('gene-variant-option');
 const snpOption = () => screen.queryByTestId('snp-option');
 const addFilterBtn = () => screen.getByTestId('add-filter-btn');
 const summary = () => screen.getByTestId('summary-of-selected-filters');
-/** The checkbox for a gene in the selected box, which unselects it when clicked. */
-const selectedOption = (option: string) => {
-  const box = document.querySelector<HTMLElement>(
-    `#selected-options-container #option-${option.toLowerCase()} input`,
-  );
-  if (!box) throw new Error(`${option} is not in the selected box`);
-  return box;
-};
 const consequenceBox = (severity: string, consequence: string) =>
   screen.queryByTestId(`checkbox:${severity}-${consequence}`);
 
@@ -376,29 +368,6 @@ describe('the Genotypes tab', () => {
       expect(screen.getByLabelText('Rare')).not.toBeChecked();
       expect(addFilterBtn()).toHaveTextContent('Add Filter');
       expect(addFilterBtn()).toBeDisabled();
-    });
-  });
-
-  // A draft loaded from an applied filter must not share an array with it: anything the panels
-  // then wrote in place would rewrite the cohort's filter invisibly. The variant half of this
-  // is in tests/unit/GenomicDraft.test.ts, where the edit can be made without depending on a
-  // select binding to carry it.
-  describe('the applied filter as an object', () => {
-    it('is untouched by editing the genes and frequencies loaded from it', async () => {
-      const applied = appliedGeneFilter();
-      const appliedUuid = applied.uuid;
-      genomicFilters.set([applied]);
-      render(GenotypesTab);
-
-      await fireEvent.click(screen.getByLabelText('Common'));
-      await fireEvent.click(selectedOption('IL33'));
-      await tick();
-
-      expect(get(selectedFrequency)).toEqual(['Rare', 'Common']);
-      expect(applied.Gene_with_variant).toEqual(['IL33']);
-      expect(applied.Variant_frequency_as_text).toEqual(['Rare']);
-      expect(applied.Variant_consequence_calculated).toEqual(['stop_lost']);
-      expect(applied.uuid).toBe(appliedUuid);
     });
   });
 

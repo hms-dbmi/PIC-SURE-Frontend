@@ -63,10 +63,12 @@ export const geneOptions: Writable<GeneOptions> = writable(emptyGeneOptions());
 
 export function generateGenomicFilter() {
   // Copied on the way out, so the filter this becomes owns its values and the panels cannot
-  // reach into it afterwards. `consequences` is derived and so is a copy already.
+  // reach into it afterwards. All three, including the derived one: a derived caches, so two
+  // filters generated with no selection change between them would otherwise be handed the
+  // same array.
   const genes = [...get(selectedGenes)];
   const freq = [...get(selectedFrequency)];
-  const cons = get(consequences);
+  const cons = [...get(consequences)];
   return createGenomicFilter({
     Gene_with_variant: genes.length > 0 ? genes : undefined,
     Variant_consequence_calculated: cons.length > 0 ? cons : undefined,
