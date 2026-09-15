@@ -34,16 +34,16 @@ vi.mock('$lib/components/explorer/results/ResultsPanel.svelte', () => ({ default
 // A cohort feed this spec drives directly, wrapped so subscribe/unsubscribe can be counted.
 // `stores/ResultsSummaryPanel` is deliberately NOT mocked: it is a leaf, so the real
 // auto-open policy runs here and this spec covers the wiring end to end.
-type Cohort = { size: number; signature: string };
+type Cohort = { items: string[]; structure: string };
 const feed = vi.hoisted(() => ({
-  cohort: undefined as unknown as Writable<{ size: number; signature: string }>,
+  cohort: undefined as unknown as Writable<Cohort>,
   subscribes: 0,
   unsubscribes: 0,
 }));
 
 vi.mock('$lib/stores/Cohort', async () => {
   const { writable: w } = await import('svelte/store');
-  feed.cohort = w({ size: 0, signature: 'empty' });
+  feed.cohort = w({ items: [], structure: 'empty' });
   return {
     cohortContents: {
       subscribe: (run: (value: Cohort) => void) => {
@@ -61,7 +61,7 @@ vi.mock('$lib/stores/Cohort', async () => {
 import ResultsSummaryPanel from '$lib/components/explorer/results/ResultsSummaryPanel.svelte';
 import { panelOpen, resetPanel } from '$lib/stores/ResultsSummaryPanel';
 
-const EMPTY_COHORT: Cohort = { size: 0, signature: 'empty' };
+const EMPTY_COHORT: Cohort = { items: [], structure: 'empty' };
 const setCohort = (cohort: Cohort) => feed.cohort.set(cohort);
 
 describe('ResultsSummaryPanel auto-expand', () => {
@@ -79,42 +79,47 @@ describe('ResultsSummaryPanel auto-expand', () => {
     render(ResultsSummaryPanel);
     expect(get(panelOpen)).toBe(false);
 
-    setCohort({ size: 1, signature: 'a-filter' });
+    setCohort({ items: ['filter:a'], structure: 'a' });
 
     expect(get(panelOpen)).toBe(true);
   });
 
-  it('does not open when the cohort shrinks', () => {
-    setCohort({ size: 2, signature: 'two-filters' });
+  it('does not open when an item is removed', () => {
+    setCohort({ items: ['filter:a', 'filter:b'], structure: 'a-AND-b' });
     render(ResultsSummaryPanel);
     expect(get(panelOpen)).toBe(true);
     panelOpen.set(false);
 
-    setCohort({ size: 1, signature: 'one-filter' });
+    setCohort({ items: ['filter:a'], structure: 'a' });
 
     expect(get(panelOpen)).toBe(false);
   });
 
   it('stops listening when it unmounts', () => {
     render(ResultsSummaryPanel);
-    setCohort({ size: 1, signature: 'a-filter' });
+    setCohort({ items: ['filter:a'], structure: 'a' });
     expect(feed.subscribes).toBe(1);
 
     cleanup();
     panelOpen.set(false);
-    setCohort({ size: 2, signature: 'another-filter' });
+    setCohort({ items: ['filter:a', 'filter:b'], structure: 'a-AND-b' });
 
     expect(feed.unsubscribes).toBe(1);
     expect(get(panelOpen)).toBe(false);
   });
 
   it('opens on a second mount for a cohort that changed while nothing was mounted', () => {
-    // The dataset restore, in miniature: a panel exists, is destroyed, the stores are filled
-    // while nothing is watching, and a new panel mounts. Only a mounted panel records what it
-    // saw, so the new one compares against the cohort from before the restore.
+    // The dataset restore, in miniature, and in the shape that actually catches things: a
+    // panel exists over three filters, the user collapses it, it is destroyed, a one-filter
+    // dataset replaces the cohort while nothing is watching, and a new panel mounts. Fewer
+    // items than before, all of them new. Only a mounted panel records what it saw, so the
+    // new one compares against the cohort from before the restore.
+    setCohort({ items: ['filter:a', 'filter:b', 'filter:c'], structure: 'a-AND-b-AND-c' });
     render(ResultsSummaryPanel);
+    panelOpen.set(false);
+
     cleanup();
-    setCohort({ size: 3, signature: 'restored-from-a-dataset' });
+    setCohort({ items: ['filter:restored'], structure: 'restored' });
     expect(get(panelOpen)).toBe(false);
 
     render(ResultsSummaryPanel);
@@ -124,7 +129,7 @@ describe('ResultsSummaryPanel auto-expand', () => {
   });
 
   it('does not open on a second mount for a cohort nothing has changed', () => {
-    setCohort({ size: 2, signature: 'two-filters' });
+    setCohort({ items: ['filter:a', 'filter:b'], structure: 'a-AND-b' });
     render(ResultsSummaryPanel);
     panelOpen.set(false);
 

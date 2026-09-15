@@ -199,6 +199,10 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     const orRadio = page.getByRole('radio', { name: 'OR' }).first();
     await expect(orRadio).toBeVisible();
     await orRadio.locator('..').click();
+    // Wait for the edit to land before applying it. Applying a query identical to the stored
+    // one changes nothing, and the panel does not expand for a query that did not change -
+    // so without this the assertion below races the click, which is how it flaked on webkit.
+    await expect(page.locator('.badge').filter({ hasText: /^OR$/i }).first()).toBeVisible();
 
     // Click Apply Changes (stays on page, sidebar updates)
     const applyBtn = page.getByRole('button', { name: 'Apply Changes' });

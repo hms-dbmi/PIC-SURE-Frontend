@@ -70,7 +70,7 @@
   //
   // `autoOpenForCohort` decides; see it for what does and does not count.
   onMount(() =>
-    cohortContents.subscribe(({ size, signature }) => autoOpenForCohort(size, signature)),
+    cohortContents.subscribe(({ items, structure }) => autoOpenForCohort(items, structure)),
   );
 
   function toggle() {

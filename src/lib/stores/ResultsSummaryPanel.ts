@@ -6,10 +6,14 @@ import { writable } from 'svelte/store';
  * route under the Explore and Discover layouts and across the two of them.
  *
  * Keep this module a leaf - `svelte/store` and nothing else. Most of what imports it wants
- * only the boolean, and one of those is `/login/loading`: `stores/Filter` JSON.parses
- * sessionStorage at module init with no error handling, so pulling that in here would let a
- * malformed `filterTree` blob - which nothing clears on logout - throw on the one route a
- * user could log in from to clear it.
+ * only the boolean, and one of those is `/login/loading`.
+ *
+ * That matters because `stores/Filter` JSON.parses sessionStorage at module init with no
+ * error handling, so a malformed `filterTree` or `genomicFilters` value throws before
+ * anything renders. That hazard is still there and is tracked separately - nothing here
+ * fixes it. What keeping this module a leaf does is keep `/login/loading` out of its blast
+ * radius, so the one route a user could log in from to clear the bad value does not go down
+ * with Explore and Discover.
  */
 export const panelOpen = writable(false);
 
@@ -22,36 +26,53 @@ export const panelOpen = writable(false);
  * Only a mounted panel writes it, which is what makes "changed while nothing was watching"
  * detectable at all.
  */
-const NO_COHORT = { size: 0, signature: '' };
-let lastSeen = NO_COHORT;
+interface SeenCohort {
+  items: Set<string>;
+  structure: string;
+}
+
+const noCohort = (): SeenCohort => ({ items: new Set(), structure: '' });
+let lastSeen = noCohort();
 
 /**
- * Expands the panel if `size` and `signature` describe a cohort that grew, or that was
- * rewritten without shrinking, since the panel last looked. Records them either way.
+ * Expands the panel if `items` and `structure` describe a cohort the user has something new
+ * to see in, compared with the last one a panel looked at. Records them either way.
  *
- * The three things this deliberately does not open for:
+ * The question is membership, not how many: did the cohort gain anything it did not hold
+ * before? A count cannot answer that, because one transaction can add and remove at once -
+ * a dataset restored over an existing cohort routinely lands smaller while carrying entirely
+ * new filters, and that is a restore the user asked for and must see.
  *
- * - **An empty cohort.** There would be nothing to show.
- * - **A removal.** Auto-expand exists so an addition is not hidden; taking something away is
- *   not a reason to overrule a collapse the user chose. A shrinking cohort is the signal,
- *   because a removal is the only way to shrink one.
- * - **An unchanged query.** This covers both a second panel instance reading a cohort that is
- *   already accounted for, and the several mutators in `stores/Filter.ts` that write the
- *   store having changed nothing - `removeUnallowedFilters` with nothing unallowed, say.
+ * So, in order:
  *
- * Everything else opens it: a filter, a genomic filter or an added variable appearing, and a
- * query rewritten in place by the Advanced Query Builder's Apply, which changes operators and
- * grouping while the size stays put.
+ * - **Nothing to show.** No filters, no genomic filters, no added variables: never open.
+ * - **Something gained.** Any identity that was not there before, whatever else went away in
+ *   the same breath. This is an addition, a restore, and a replacement.
+ * - **Only losses.** Nothing gained and something gone: a removal, which is not a reason to
+ *   overrule a collapse the user chose. An Advanced Query Builder Apply that only deletes
+ *   filters lands here too, deliberately.
+ * - **The same items, combined differently.** The Advanced Query Builder's Apply rewriting
+ *   operators or grouping, which changes no membership at all.
+ * - **Nothing changed.** A second panel instance reading a cohort already accounted for, or
+ *   one of the mutators in `stores/Filter.ts` that writes the store having changed nothing.
  */
-export function autoOpenForCohort(size: number, signature: string): void {
+export function autoOpenForCohort(items: readonly string[], structure: string): void {
   const previous = lastSeen;
-  lastSeen = { size, signature };
+  const current = new Set(items);
+  lastSeen = { items: current, structure };
 
-  if (size === 0) return;
-  if (size < previous.size) return;
-  if (signature === previous.signature) return;
+  if (current.size === 0) return;
 
-  panelOpen.set(true);
+  if (items.some((item) => !previous.items.has(item))) {
+    panelOpen.set(true);
+    return;
+  }
+
+  for (const item of previous.items) {
+    if (!current.has(item)) return;
+  }
+
+  if (structure !== previous.structure) panelOpen.set(true);
 }
 
 /**
@@ -61,5 +82,5 @@ export function autoOpenForCohort(size: number, signature: string): void {
  */
 export function resetPanel(): void {
   panelOpen.set(false);
-  lastSeen = NO_COHORT;
+  lastSeen = noCohort();
 }

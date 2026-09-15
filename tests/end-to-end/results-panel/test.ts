@@ -777,18 +777,19 @@ test.describe('Results panel auto-expand', () => {
     await userIsLoggedIn(page);
     await addCategoricalFilter(page, 0, detailResponseCat);
     await expect(body(page)).toBeVisible();
-    const openBody = await body(page).elementHandle();
 
     // When
     await addCategoricalFilter(page, 2, detailResponseCat2);
 
-    // Then
+    // Then - the panel did not collapse, and both filters are in it
     await expect(filterCount(page)).toHaveText(/^2 filters added$/);
     await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
-    // The body element was never replaced, so nothing collapsed and re-rendered on the way.
-    // That the store is not even notified a second time is asserted where it is decided, in
-    // tests/unit/resultsSummaryPanel.test.ts.
-    expect(await openBody!.evaluate((element) => element.isConnected)).toBe(true);
+    await expect(body(page)).toBeVisible();
+    // The rest of "nothing jarring" - that `panelOpen` is not notified a second time, so no
+    // consumer of it re-runs and the body is never torn down - is asserted in
+    // tests/unit/resultsSummaryPanel.test.ts. It cannot be asserted from here: a DOM check
+    // for the body surviving passes even when auto-open collapses before it opens, because
+    // Svelte flushes the two writes together and the node never leaves the document.
   });
 
   test('expands when a variable is added for analysis', async ({ page }) => {

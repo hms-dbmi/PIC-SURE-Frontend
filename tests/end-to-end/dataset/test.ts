@@ -510,6 +510,85 @@ test.describe('dataset/[uuid]', () => {
     await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
   });
 
+  test('Restore Filters expands the panel when the restored cohort is smaller', async ({
+    page,
+  }) => {
+    // Given - a cohort of four items (one filter, three variables) restored and then
+    // collapsed by hand. This is the case a count cannot see: the dataset restored next holds
+    // one filter and no variables, so the cohort ends up smaller while everything in it is
+    // new. It is also the ordinary flow behind the "you already have active filters" warning.
+    const smallerDataset = {
+      ...mockData[0],
+      uuid: '33333333-3333-3333-3333-333333333333',
+      name: 'one-filter-dataset',
+      query: {
+        ...mockData[0].query,
+        query: JSON.stringify({
+          resourceCredentials: { BEARER_TOKEN: null },
+          query: {
+            select: [],
+            authorizationFilters: [],
+            phenotypicClause: {
+              operator: 'AND',
+              phenotypicClauses: [
+                {
+                  phenotypicFilterType: 'FILTER',
+                  conceptPath: datasetDetails.paths.SEX,
+                  not: false,
+                  values: ['Male'],
+                },
+              ],
+              not: false,
+            },
+            genomicFilters: [],
+            expectedResultType: 'DATAFRAME',
+            picsureId: null,
+            id: null,
+          },
+          resourceUUID: mockData[0].query.resource.uuid,
+        }),
+      },
+    };
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${smallerDataset.uuid}`, smallerDataset);
+
+    await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
+    await page.getByTestId('restore-filters-btn').click();
+    await page
+      .getByTestId('restore-filters')
+      .getByRole('button', { name: 'Restore Filters' })
+      .click();
+    await page.waitForURL('**/explorer');
+    await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
+    await page.getByTestId('results-summary-strip').click();
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+
+    // When - restore the smaller dataset over it, confirming past the existing-filters warning
+    await navigateInApp(page, `/dataset/${smallerDataset.uuid}`);
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
+    await page.getByTestId('restore-filters-btn').click();
+    await expect(page.getByTestId('error-alert')).toContainText('You already have active filters.');
+    await page
+      .getByTestId('restore-filters')
+      .getByRole('button', { name: 'Restore Filters' })
+      .click();
+    await page.waitForURL('**/explorer');
+
+    // Then - fewer items than the user collapsed over, but the one that arrived is new, and it
+    // is the thing they asked to see
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    await expect(page.getByTestId(`added-filter-${datasetDetails.paths.SEX}`)).toBeVisible();
+    await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toHaveCount(0);
+  });
+
   test('Restore Filters modal shows warning when existing filters are present', async ({
     page,
   }) => {

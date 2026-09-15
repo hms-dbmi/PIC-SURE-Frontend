@@ -28,7 +28,7 @@ import {
   createGenomicFilter,
   createNumericFilter,
 } from '$lib/models/Filter.svelte';
-import type { Filter } from '$lib/models/Filter.svelte';
+import type { Filter, FilterInterface } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
 import { LogicTree } from '$lib/models/LogicTree.svelte';
 
@@ -59,8 +59,10 @@ function addCategoricalFilter(conceptPath: string) {
   addFilter(createCategoricalFilter(mockSearchResult(conceptPath), ['a']));
 }
 
-const size = () => get(cohortContents).size;
-const signature = () => get(cohortContents).signature;
+const items = () => get(cohortContents).items;
+const structure = () => get(cohortContents).structure;
+/** The identities present now that were not present in `before`. */
+const gainedSince = (before: string[]) => items().filter((item) => !before.includes(item));
 
 describe('cohortContents', () => {
   beforeEach(() => {
@@ -72,29 +74,48 @@ describe('cohortContents', () => {
     vi.mocked(getConceptDetails).mockReset();
   });
 
-  it('counts filters, genomic filters and added variables together', () => {
-    expect(size()).toBe(0);
+  it('gives one identity to each filter, genomic filter and added variable', () => {
+    expect(items()).toEqual([]);
 
     addCategoricalFilter('\\test\\one\\');
     addFilter(createGenomicFilter({ Gene_with_variant: ['CHD8'] }));
     addExport(mockExport('\\test\\height\\'));
 
-    expect(size()).toBe(3);
+    expect(items()).toHaveLength(3);
     expect(get(genomicFilters)).toHaveLength(1);
+    // Tagged by which store they came from, so the three can never collide with each other.
+    expect(items().map((item) => item.split(':')[0])).toEqual(['filter', 'genomic', 'variable']);
   });
 
-  it('gives a different signature to a different query', () => {
-    const empty = signature();
+  it('gains an identity when a filter is added', () => {
+    const before = items();
 
     addCategoricalFilter('\\test\\one\\');
 
-    expect(signature()).not.toBe(empty);
+    expect(gainedSince(before)).toHaveLength(1);
   });
 
-  it('gives a different signature to a regrouped query of the same filters', () => {
+  it('gains an identity when a smaller set of different filters replaces a larger one', () => {
+    // A dataset restore over filters the user already had. The cohort ends up smaller, so a
+    // count would read it as a removal, but every filter in it is new.
     addCategoricalFilter('\\test\\one\\');
     addCategoricalFilter('\\test\\two\\');
-    const before = signature();
+    addCategoricalFilter('\\test\\three\\');
+    const before = items();
+
+    const replacement = new LogicTree<FilterInterface>(createGroup);
+    replacement.add(createCategoricalFilter(mockSearchResult('\\test\\four\\'), ['a']));
+    setFilterTree(replacement);
+
+    expect(items()).toHaveLength(1);
+    expect(gainedSince(before)).toHaveLength(1);
+  });
+
+  it('keeps the same identities but a new structure for a regrouped query', () => {
+    addCategoricalFilter('\\test\\one\\');
+    addCategoricalFilter('\\test\\two\\');
+    const before = items();
+    const beforeStructure = structure();
 
     // What the Advanced Query Builder's Apply does: set a clone of the edited tree. The clone
     // round-trips the root uuid, so only the operator distinguishes it.
@@ -102,25 +123,26 @@ describe('cohortContents', () => {
     edited.root.operator = Operator.OR;
     filterTree.set(edited);
 
-    expect(size()).toBe(2);
-    expect(signature()).not.toBe(before);
+    expect(items()).toEqual(before);
+    expect(structure()).not.toBe(beforeStructure);
   });
 
-  it('gives the same signature to a mutator that changed nothing', () => {
+  it('changes nothing for a mutator that changed nothing', () => {
     // removeUnallowedFilters regenerates the root uuid and writes the store whether or not it
     // removed anything, and every filter here is allowed. Nothing changed, so the panel must
     // not be able to tell that anything happened.
     addCategoricalFilter('\\test\\one\\');
     addCategoricalFilter('\\test\\two\\');
-    const before = signature();
+    const before = items();
+    const beforeStructure = structure();
 
     removeUnallowedFilters();
 
-    expect(size()).toBe(2);
-    expect(signature()).toBe(before);
+    expect(items()).toEqual(before);
+    expect(structure()).toBe(beforeStructure);
   });
 
-  it('gives the same signature after a filter is enriched in place', async () => {
+  it('changes nothing after a filter is enriched in place', async () => {
     // enrichFilterDetails patches searchResult.table and searchResult.study onto a filter
     // already in the tree, in place, and never calls filterTree.set - so a mounted panel
     // never sees it and the next read of the store would otherwise disagree with the last.
@@ -129,7 +151,8 @@ describe('cohortContents', () => {
     const searchResult = mockSearchResult('\\test\\age\\', 'Continuous');
     const filter = createNumericFilter(searchResult, '1', '99') as Filter;
     addFilter(filter);
-    const before = signature();
+    const before = items();
+    const beforeStructure = structure();
 
     vi.mocked(getConceptDetails).mockResolvedValue({
       ...searchResult,
@@ -141,45 +164,48 @@ describe('cohortContents', () => {
     await Promise.resolve();
 
     expect(filter.searchResult?.table).toBeDefined();
-    expect(signature()).toBe(before);
+    expect(items()).toEqual(before);
+    expect(structure()).toBe(beforeStructure);
   });
 
-  it('gives the same signature to the same export read twice', () => {
+  it('gives an item the same identity each time it is read', () => {
     addExport(mockExport('\\test\\height\\'));
 
-    expect(signature()).toBe(signature());
+    expect(items()).toEqual(items());
   });
 
   it('distinguishes added variables that share a concept path', () => {
     // A dataset restore sets `exports` wholesale and can supply metadata the search page
-    // never would, so the signature cannot be the concept paths alone.
+    // never would, so an identity cannot be the concept path alone.
     addExport(mockExport('\\test\\height\\'));
-    const before = signature();
+    const before = items();
 
     clearExports();
     addExport({ ...mockExport('\\test\\height\\'), display: 'Height (cm)' });
 
-    expect(signature()).not.toBe(before);
+    expect(gainedSince(before)).toHaveLength(1);
   });
 
-  it('shrinks back to nothing when the cohort is emptied', () => {
+  it('holds no identities once the cohort is emptied', () => {
     addCategoricalFilter('\\test\\one\\');
     addExport(mockExport('\\test\\height\\'));
-    expect(size()).toBe(2);
+    expect(items()).toHaveLength(2);
 
     setFilterTree(new LogicTree(createGroup));
     clearExports();
 
-    expect(size()).toBe(0);
+    expect(items()).toEqual([]);
   });
 
-  it('shrinks when a filter is removed', () => {
+  it('gains nothing when a filter is removed', () => {
     addCategoricalFilter('\\test\\one\\');
     addCategoricalFilter('\\test\\two\\');
+    const before = items();
     const removed = get(filterTree).leafNodes[0] as Filter;
 
     removeFilter(removed.uuid);
 
-    expect(size()).toBe(1);
+    expect(items()).toHaveLength(1);
+    expect(gainedSince(before)).toEqual([]);
   });
 });

@@ -60,6 +60,10 @@ export const navigateInApp = async (page: Page, href: string) => {
     document.body.appendChild(link);
   }, href);
   await page.locator('#e2e-nav-link').click();
+  // The click starts a client-side navigation that discards this anchor with the rest of the
+  // old page, but a same-route navigation keeps the body - so remove it rather than leave a
+  // stray visible link behind for the next assertion to trip over.
+  await page.evaluate(() => document.getElementById('e2e-nav-link')?.remove());
 };
 
 // Puts a genomic filter in sessionStorage for the next page load to restore, the way a user
