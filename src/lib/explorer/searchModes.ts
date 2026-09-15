@@ -80,3 +80,31 @@ export function enabledSearchModes(pathname: string): SearchMode[] {
 export function searchModeHref(mode: SearchMode, searchTerm: string): string {
   return searchTerm ? `${mode.route}?search=${encodeURIComponent(searchTerm)}` : mode.route;
 }
+
+/** "a", "a or b", "a, b or c" - no serial comma, no dangling "or" on a single item. */
+function joinWithOr(items: string[]): string {
+  if (items.length < 2) return items.join('');
+  return `${items.slice(0, -1).join(', ')} or ${items[items.length - 1]}`;
+}
+
+/**
+ * The cohort panel's empty-state text, built from the mode labels rather than written out, so
+ * that Studies and FHIR each grow the sentence by one entry in the registry above and no edit
+ * here. Exported separately from `emptyCohortTextAt` so the list-building can be tested at
+ * mode counts the registry does not have yet.
+ *
+ * "page" stays singular: the reader is going to one page, whichever they pick.
+ */
+export function emptyCohortText(modeLabels: string[]): string {
+  if (modeLabels.length === 0) return 'No filters yet - add one below';
+  const labels = modeLabels.map((label) => label.toLowerCase());
+  return `No filters yet - add one from the ${joinWithOr(labels)} page below`;
+}
+
+/**
+ * The empty-state text for the page at `pathname`, naming only the modes that page offers -
+ * so Discover, which has no Genotypes tab, does not send the reader to one.
+ */
+export function emptyCohortTextAt(pathname: string): string {
+  return emptyCohortText(enabledSearchModes(pathname).map((mode) => mode.label));
+}

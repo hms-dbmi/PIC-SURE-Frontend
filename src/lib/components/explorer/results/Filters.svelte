@@ -2,6 +2,7 @@
   import { resolve } from '$app/paths';
   import type { FilterGroupInterface } from '$lib/models/Filter.svelte';
   import { page } from '$app/state';
+  import { emptyCohortTextAt } from '$lib/explorer/searchModes';
   import { filterTree, filters, genomicFilters } from '$lib/stores/Filter';
   import { exports } from '$lib/stores/Export';
 
@@ -15,6 +16,10 @@
 
   let { isDiscoverPage = false }: Props = $props();
 
+  // Names the search modes this page actually offers, so Discover does not point at a
+  // Genotypes tab it does not have.
+  let emptyCohortText = $derived(emptyCohortTextAt(page.url.pathname));
+
   let isAdvancedFilteringPage = $derived(page.url.pathname.includes('/advanced-filtering'));
   let advancedFilteringDisabled = $derived($filters.length <= 1);
 
@@ -22,7 +27,7 @@
 </script>
 
 {#if $filters.length + $genomicFilters.length + $exports.length === 0}
-  <p class="text-center">No filters added</p>
+  <p class="text-center" data-testid="no-filters-message">{emptyCohortText}</p>
 {:else}
   <div class="px-4 mb-1 w-80">
     {#if $filters.length + $genomicFilters.length > 0}

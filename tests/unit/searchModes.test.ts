@@ -8,11 +8,14 @@ const mockFeatures = vi.hoisted(() => ({
 vi.mock('$lib/configuration.svelte', () => ({ config: { features: mockFeatures } }));
 
 import {
+  emptyCohortText,
+  emptyCohortTextAt,
   enabledSearchModes,
   genotypesMode,
   phenotypesMode,
   searchModeHref,
   searchModes,
+  type SearchMode,
 } from '$lib/explorer/searchModes';
 
 function idsFor(pathname: string): string[] {
@@ -136,6 +139,91 @@ describe('the search mode registry', () => {
 
     it('never marks genotypes active on Discover, which cannot reach the route', () => {
       expect(genotypesMode.isActive('/discover/genotypes')).toBe(false);
+    });
+  });
+
+  // The empty state has to grow on its own when Studies and FHIR land, so the list-building
+  // is tested at mode counts the registry does not have yet - not only at the two real ones,
+  // which a hardcoded pair of strings would also satisfy.
+  describe('emptyCohortText', () => {
+    it('names a single mode with no dangling "or" and no trailing comma', () => {
+      const text = emptyCohortText(['Phenotypes']);
+      expect(text).toBe('No filters yet - add one from the phenotypes page below');
+      expect(text).not.toContain(' or ');
+      expect(text).not.toContain(',');
+    });
+
+    it('joins two modes with "or"', () => {
+      expect(emptyCohortText(['Phenotypes', 'Genotypes'])).toBe(
+        'No filters yet - add one from the phenotypes or genotypes page below',
+      );
+    });
+
+    it('joins three modes as "a, b or c"', () => {
+      expect(emptyCohortText(['Phenotypes', 'Genotypes', 'Studies'])).toBe(
+        'No filters yet - add one from the phenotypes, genotypes or studies page below',
+      );
+    });
+
+    it('joins four modes with a comma between every pair but the last', () => {
+      expect(emptyCohortText(['Phenotypes', 'Genotypes', 'Studies', 'FHIR'])).toBe(
+        'No filters yet - add one from the phenotypes, genotypes, studies or fhir page below',
+      );
+    });
+
+    // Unreachable from the panel, which only renders inside the search section where
+    // phenotypes is always enabled - but the sentence should not read "from the  page below".
+    it('drops the list entirely when there are no modes', () => {
+      expect(emptyCohortText([])).toBe('No filters yet - add one below');
+    });
+  });
+
+  describe('emptyCohortTextAt', () => {
+    it('names both modes on Explore when genomic search is on', () => {
+      mockFeatures.enableGENEQuery = true;
+      expect(emptyCohortTextAt('/explorer')).toBe(
+        'No filters yet - add one from the phenotypes or genotypes page below',
+      );
+    });
+
+    // Both genomic flags off is a real deployment, and it gets Discover's sentence on Explore.
+    it('names phenotypes alone on Explore when neither genomic query is enabled', () => {
+      expect(emptyCohortTextAt('/explorer')).toBe(
+        'No filters yet - add one from the phenotypes page below',
+      );
+    });
+
+    it('names phenotypes alone on Discover even with both genomic queries enabled', () => {
+      mockFeatures.enableGENEQuery = true;
+      mockFeatures.enableSNPQuery = true;
+      expect(emptyCohortTextAt('/discover')).toBe(
+        'No filters yet - add one from the phenotypes page below',
+      );
+      expect(emptyCohortTextAt('/discover/advanced-filtering')).toBe(
+        'No filters yet - add one from the phenotypes page below',
+      );
+    });
+
+    // The acceptance criterion, exercised end to end through the registry: a third entry and
+    // nothing else changes the sentence the panel renders.
+    it('grows by itself when a third mode joins the registry', () => {
+      mockFeatures.enableGENEQuery = true;
+      const studiesMode: SearchMode = {
+        id: 'studies',
+        label: 'Studies',
+        route: '/explorer/studies',
+        enabled: () => true,
+        isActive: () => false,
+      };
+      searchModes.push(studiesMode);
+      try {
+        expect(emptyCohortTextAt('/explorer')).toBe(
+          'No filters yet - add one from the phenotypes, genotypes or studies page below',
+        );
+      } finally {
+        searchModes.splice(searchModes.indexOf(studiesMode), 1);
+      }
+      expect(searchModes.map((mode) => mode.id)).toEqual(['phenotypes', 'genotypes']);
     });
   });
 

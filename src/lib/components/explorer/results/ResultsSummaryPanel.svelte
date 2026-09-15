@@ -29,9 +29,15 @@
 
   let visible = $derived(showsSearchChrome(page.url.pathname));
   let filterCount = $derived($allFilters.length);
+  // "add below" is the collapsed strip's only affordance - it points at a body the reader
+  // cannot see. Once the panel is open the body says the same thing and says it better, naming
+  // the page's actual search modes, so the strip drops back to the bare count rather than
+  // stating it twice in two different wordings.
   let filterSummary = $derived(
     filterCount === 0
-      ? 'No filters added, add below'
+      ? $panelOpen
+        ? 'No filters added'
+        : 'No filters added, add below'
       : `${filterCount} filter${filterCount === 1 ? '' : 's'} added`,
   );
   let hasCountError = $derived(
