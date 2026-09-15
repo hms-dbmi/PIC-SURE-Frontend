@@ -4,12 +4,6 @@
   // not promise an order for that, and `resultCountsState.stop()` cancels whatever load is in
   // flight - so the teardown only fires for the instance that still owns the counts.
   let countsOwner: object | null = null;
-
-  // Module-level for the same reason: the cohort a panel last saw is not a per-instance fact.
-  // Subscribing replays the cohort's current state, and that replay is only news when the
-  // cohort changed while no panel was mounted - otherwise crossing between Explore and
-  // Discover, or leaving the section and coming back, would re-open a deliberate collapse.
-  let lastCohortRevision: string | null = null;
 </script>
 
 <script lang="ts">
@@ -20,7 +14,8 @@
   import { config } from '$lib/configuration.svelte';
   import { showsSearchChrome } from '$lib/explorer/searchChrome';
   import { allFilters } from '$lib/stores/Filter';
-  import { cohortContents, panelOpen } from '$lib/stores/ResultsSummaryPanel';
+  import { cohortContents } from '$lib/stores/Cohort';
+  import { autoOpenForCohort, panelOpen } from '$lib/stores/ResultsSummaryPanel';
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import { sanitizeHTML } from '$lib/utilities/HTML';
   import { log, createLog } from '$lib/logger';
@@ -68,24 +63,15 @@
 
   // The panel expands itself when the cohort gains something, so that the chip, the added
   // variable or the rebuilt query is visible where it landed instead of behind a click. It
-  // does this by watching the stores rather than by having each caller remember: adding a
-  // filter has a dozen entry points, and two of the paths have no UI on this page at all -
-  // a sessionStorage tree restored by a page load, and a dataset restore that fills the
-  // stores before navigating here.
+  // watches the stores rather than relying on each caller to remember, because adding to the
+  // cohort has many entry points and two of them have no UI on this page at all: a
+  // sessionStorage tree restored by a page load, and a dataset restore that fills the stores
+  // before navigating here.
   //
-  // It only ever opens. Emptying the cohort leaves the panel however the user left it.
-  onMount(() => {
-    let replaying = true;
-    return cohortContents.subscribe(({ isEmpty, revision }) => {
-      const wasReplay = replaying;
-      replaying = false;
-      const cohortChanged = revision !== lastCohortRevision;
-      lastCohortRevision = revision;
-      if (isEmpty) return;
-      if (wasReplay && !cohortChanged) return;
-      panelOpen.set(true);
-    });
-  });
+  // `autoOpenForCohort` decides; see it for what does and does not count.
+  onMount(() =>
+    cohortContents.subscribe(({ size, signature }) => autoOpenForCohort(size, signature)),
+  );
 
   function toggle() {
     panelOpen.update((open) => {

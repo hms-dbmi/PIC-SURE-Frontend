@@ -1,115 +1,113 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { get } from 'svelte/store';
 
-vi.mock('$app/environment', () => ({ browser: false }));
-vi.mock('$lib/stores/User', () => ({
-  user: { subscribe: (run: (user: object) => void) => (run({}), () => {}) },
-  ensureConsentsLoaded: vi.fn(),
-  isUserLoggedIn: vi.fn(() => false),
-}));
-vi.mock('$lib/stores/Dictionary', () => ({ getConceptDetails: vi.fn() }));
+// No mocks: the module under test is a leaf, and keeping it one is the point of the split.
+import { autoOpenForCohort, panelOpen, resetPanel } from '$lib/stores/ResultsSummaryPanel';
 
-import { addFilter, clearFilters, filterTree, genomicFilters } from '$lib/stores/Filter';
-import { addExport, clearExports } from '$lib/stores/Export';
-import { cohortContents } from '$lib/stores/ResultsSummaryPanel';
-import { Operator } from '$lib/models/query/Query';
-import { createCategoricalFilter, createGenomicFilter } from '$lib/models/Filter.svelte';
-import type { SearchResult } from '$lib/models/Search';
+/** A cohort of `size`, whose query reads as `signature`. */
+const cohort = (size: number, signature: string) => autoOpenForCohort(size, signature);
 
-function mockSearchResult(conceptPath: string): SearchResult {
-  return {
-    conceptPath,
-    name: conceptPath,
-    display: conceptPath,
-    type: 'Categorical',
-    description: '',
-    dataset: 'test-dataset',
-    allowFiltering: true,
-    values: ['a', 'b'],
-  } as unknown as SearchResult;
-}
+// The module remembers the last cohort across tests on purpose, so every test starts clean.
+beforeEach(() => resetPanel());
 
-function addCategoricalFilter(conceptPath: string) {
-  addFilter(createCategoricalFilter(mockSearchResult(conceptPath), ['a']));
-}
+describe('autoOpenForCohort', () => {
+  it('opens for the first cohort it sees', () => {
+    cohort(1, 'one-filter');
 
-const revision = () => get(cohortContents).revision;
-
-function mockExport(conceptPath: string) {
-  return {
-    id: conceptPath,
-    display: conceptPath,
-    conceptPath,
-    searchResult: mockSearchResult(conceptPath),
-  };
-}
-
-describe('cohortContents', () => {
-  beforeEach(() => {
-    clearFilters();
-    clearExports();
+    expect(get(panelOpen)).toBe(true);
   });
 
-  it('is empty when nothing is filtered and nothing is added for analysis', () => {
-    expect(get(cohortContents).isEmpty).toBe(true);
+  it('does not open for an empty cohort', () => {
+    cohort(0, 'nothing');
+
+    expect(get(panelOpen)).toBe(false);
   });
 
-  it('reports a filter, and a new revision for it', () => {
-    const before = revision();
+  it('opens when the cohort grows', () => {
+    cohort(1, 'one-filter');
+    panelOpen.set(false);
 
-    addCategoricalFilter('\\test\\one\\');
+    cohort(2, 'two-filters');
 
-    expect(get(cohortContents).isEmpty).toBe(false);
-    expect(revision()).not.toBe(before);
+    expect(get(panelOpen)).toBe(true);
   });
 
-  it('reports a genomic filter, which lives in its own store', () => {
-    const before = revision();
+  it('opens when the query is rewritten at the same size', () => {
+    // What the Advanced Query Builder's Apply looks like: same filters, different operators.
+    cohort(2, 'a-AND-b');
+    panelOpen.set(false);
 
-    addFilter(createGenomicFilter({ Gene_with_variant: ['CHD8'] }));
+    cohort(2, 'a-OR-b');
 
-    expect(get(cohortContents).isEmpty).toBe(false);
-    expect(revision()).not.toBe(before);
-    expect(get(genomicFilters)).toHaveLength(1);
+    expect(get(panelOpen)).toBe(true);
   });
 
-  it('reports an export', () => {
-    const before = revision();
+  it('does not open when the cohort shrinks', () => {
+    cohort(2, 'a-AND-b');
+    panelOpen.set(false);
 
-    addExport(mockExport('\\test\\height\\'));
+    cohort(1, 'just-a');
 
-    expect(get(cohortContents).isEmpty).toBe(false);
-    expect(revision()).not.toBe(before);
+    expect(get(panelOpen)).toBe(false);
   });
 
-  it('changes revision for a regrouped query that keeps the same filters', () => {
-    addCategoricalFilter('\\test\\one\\');
-    addCategoricalFilter('\\test\\two\\');
-    const before = revision();
+  it('does not open when the cohort empties', () => {
+    cohort(1, 'one-filter');
+    panelOpen.set(false);
 
-    // What the Advanced Query Builder's Apply does: set a clone of the edited tree. The clone
-    // carries the original root uuid, so only the operator distinguishes it.
-    const edited = get(filterTree).clone();
-    edited.root.operator = Operator.OR;
-    filterTree.set(edited);
+    cohort(0, 'nothing');
 
-    expect(get(filterTree).leafNodes).toHaveLength(2);
-    expect(revision()).not.toBe(before);
+    expect(get(panelOpen)).toBe(false);
   });
 
-  it('does not change revision when re-read without a change', () => {
-    addCategoricalFilter('\\test\\one\\');
+  it('does not open when the query has not changed', () => {
+    // Both a second panel instance reading a cohort already accounted for, and a mutator in
+    // stores/Filter.ts that wrote the store having changed nothing.
+    cohort(2, 'a-AND-b');
+    panelOpen.set(false);
 
-    expect(revision()).toBe(revision());
+    cohort(2, 'a-AND-b');
+
+    expect(get(panelOpen)).toBe(false);
   });
 
-  it('is empty again once the cohort is cleared', () => {
-    addCategoricalFilter('\\test\\one\\');
-    addExport(mockExport('\\test\\height\\'));
+  it('does not re-notify an already-open panel', () => {
+    // The "nothing jarring on the second filter" criterion, at its source: a subscriber that
+    // fired again would re-run every consumer of $panelOpen, re-creating the body.
+    cohort(1, 'one-filter');
+    const seen: boolean[] = [];
+    const unsubscribe = panelOpen.subscribe((open) => seen.push(open));
 
-    clearFilters();
-    clearExports();
+    cohort(2, 'two-filters');
+    cohort(3, 'three-filters');
+    unsubscribe();
 
-    expect(get(cohortContents).isEmpty).toBe(true);
+    expect(seen).toEqual([true]);
+  });
+
+  it('opens again for a cohort that grew since the last one it saw', () => {
+    // A dataset restore: the panel is destroyed, the stores are filled, a new panel mounts.
+    // Only a mounted panel records, so the new one compares against the pre-restore cohort.
+    cohort(0, 'nothing');
+    panelOpen.set(false);
+
+    cohort(3, 'restored');
+
+    expect(get(panelOpen)).toBe(true);
+  });
+});
+
+describe('resetPanel', () => {
+  it('collapses the panel and forgets the cohort behind it', () => {
+    cohort(2, 'previous-session');
+    expect(get(panelOpen)).toBe(true);
+
+    resetPanel();
+
+    expect(get(panelOpen)).toBe(false);
+    // Forgetting matters: the same cohort must now read as new, or a panel mounted after a
+    // fresh login would compare against the session that just ended.
+    cohort(2, 'previous-session');
+    expect(get(panelOpen)).toBe(true);
   });
 });

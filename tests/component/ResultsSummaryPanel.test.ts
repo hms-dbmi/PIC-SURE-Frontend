@@ -32,26 +32,25 @@ vi.mock('$lib/components/explorer/results/Counts.svelte', () => ({ default: () =
 vi.mock('$lib/components/explorer/results/ResultsPanel.svelte', () => ({ default: () => {} }));
 
 // A cohort feed this spec drives directly, wrapped so subscribe/unsubscribe can be counted.
-type Cohort = { isEmpty: boolean; revision: string };
-const panelStore = vi.hoisted(() => ({
-  panelOpen: undefined as unknown as Writable<boolean>,
-  cohort: undefined as unknown as Writable<Cohort>,
+// `stores/ResultsSummaryPanel` is deliberately NOT mocked: it is a leaf, so the real
+// auto-open policy runs here and this spec covers the wiring end to end.
+type Cohort = { size: number; signature: string };
+const feed = vi.hoisted(() => ({
+  cohort: undefined as unknown as Writable<{ size: number; signature: string }>,
   subscribes: 0,
   unsubscribes: 0,
 }));
 
-vi.mock('$lib/stores/ResultsSummaryPanel', async () => {
+vi.mock('$lib/stores/Cohort', async () => {
   const { writable: w } = await import('svelte/store');
-  panelStore.panelOpen = w(false);
-  panelStore.cohort = w({ isEmpty: true, revision: 'empty' });
+  feed.cohort = w({ size: 0, signature: 'empty' });
   return {
-    panelOpen: panelStore.panelOpen,
     cohortContents: {
       subscribe: (run: (value: Cohort) => void) => {
-        panelStore.subscribes += 1;
-        const unsubscribe = panelStore.cohort.subscribe(run);
+        feed.subscribes += 1;
+        const unsubscribe = feed.cohort.subscribe(run);
         return () => {
-          panelStore.unsubscribes += 1;
+          feed.unsubscribes += 1;
           unsubscribe();
         };
       },
@@ -60,37 +59,79 @@ vi.mock('$lib/stores/ResultsSummaryPanel', async () => {
 });
 
 import ResultsSummaryPanel from '$lib/components/explorer/results/ResultsSummaryPanel.svelte';
+import { panelOpen, resetPanel } from '$lib/stores/ResultsSummaryPanel';
 
-const setCohort = (revision: string, isEmpty = false) =>
-  panelStore.cohort.set({ isEmpty, revision });
+const EMPTY_COHORT: Cohort = { size: 0, signature: 'empty' };
+const setCohort = (cohort: Cohort) => feed.cohort.set(cohort);
 
 describe('ResultsSummaryPanel auto-expand', () => {
   beforeEach(() => {
     cleanup();
-    panelStore.panelOpen.set(false);
-    panelStore.subscribes = 0;
-    panelStore.unsubscribes = 0;
+    // Both the panel's open state and the cohort it last saw live at module scope, so a test
+    // that did not reset them would depend on which tests ran before it.
+    resetPanel();
+    setCohort(EMPTY_COHORT);
+    feed.subscribes = 0;
+    feed.unsubscribes = 0;
   });
 
-  it('opens when the cohort gains something', async () => {
+  it('opens when the cohort gains something', () => {
     render(ResultsSummaryPanel);
-    expect(get(panelStore.panelOpen)).toBe(false);
+    expect(get(panelOpen)).toBe(false);
 
-    setCohort('one-filter');
+    setCohort({ size: 1, signature: 'a-filter' });
 
-    expect(get(panelStore.panelOpen)).toBe(true);
+    expect(get(panelOpen)).toBe(true);
   });
 
-  it('stops listening when it unmounts', async () => {
+  it('does not open when the cohort shrinks', () => {
+    setCohort({ size: 2, signature: 'two-filters' });
     render(ResultsSummaryPanel);
-    setCohort('a-filter');
-    expect(panelStore.subscribes).toBe(1);
+    expect(get(panelOpen)).toBe(true);
+    panelOpen.set(false);
+
+    setCohort({ size: 1, signature: 'one-filter' });
+
+    expect(get(panelOpen)).toBe(false);
+  });
+
+  it('stops listening when it unmounts', () => {
+    render(ResultsSummaryPanel);
+    setCohort({ size: 1, signature: 'a-filter' });
+    expect(feed.subscribes).toBe(1);
 
     cleanup();
-    panelStore.panelOpen.set(false);
-    setCohort('another-filter');
+    panelOpen.set(false);
+    setCohort({ size: 2, signature: 'another-filter' });
 
-    expect(panelStore.unsubscribes).toBe(1);
-    expect(get(panelStore.panelOpen)).toBe(false);
+    expect(feed.unsubscribes).toBe(1);
+    expect(get(panelOpen)).toBe(false);
+  });
+
+  it('opens on a second mount for a cohort that changed while nothing was mounted', () => {
+    // The dataset restore, in miniature: a panel exists, is destroyed, the stores are filled
+    // while nothing is watching, and a new panel mounts. Only a mounted panel records what it
+    // saw, so the new one compares against the cohort from before the restore.
+    render(ResultsSummaryPanel);
+    cleanup();
+    setCohort({ size: 3, signature: 'restored-from-a-dataset' });
+    expect(get(panelOpen)).toBe(false);
+
+    render(ResultsSummaryPanel);
+
+    expect(feed.subscribes).toBe(2);
+    expect(get(panelOpen)).toBe(true);
+  });
+
+  it('does not open on a second mount for a cohort nothing has changed', () => {
+    setCohort({ size: 2, signature: 'two-filters' });
+    render(ResultsSummaryPanel);
+    panelOpen.set(false);
+
+    cleanup();
+    render(ResultsSummaryPanel);
+
+    expect(feed.subscribes).toBe(2);
+    expect(get(panelOpen)).toBe(false);
   });
 });
