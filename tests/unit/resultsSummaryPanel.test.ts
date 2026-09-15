@@ -72,6 +72,31 @@ describe('autoOpenForCohort', () => {
     expect(get(panelOpen)).toBe(false);
   });
 
+  it('opens when a filter is replaced by a second copy of one already there', () => {
+    // Nothing dedupes phenotypic filters, so a cohort can hold two with the same content and
+    // therefore the same identity. Counting identities into a set loses that: the arriving
+    // copy of `a` looks like no gain because `a` is already there, the departing `b` looks
+    // like a loss, and the panel stays collapsed over a filter that just arrived - which is
+    // the failure this whole mechanism exists to prevent.
+    cohort(['filter:a', 'filter:b'], 'a-AND-b');
+    panelOpen.set(false);
+
+    cohort(['filter:a', 'filter:a'], 'a-AND-a');
+
+    expect(get(panelOpen)).toBe(true);
+  });
+
+  it('does not open when one of two identical filters is removed', () => {
+    // The same blind spot from the other side: as sets these are both {a}, so nothing reads
+    // as gained or lost, and the differing structure would open the panel on a removal.
+    cohort(['filter:a', 'filter:a'], 'a-AND-a');
+    panelOpen.set(false);
+
+    cohort(['filter:a'], 'a');
+
+    expect(get(panelOpen)).toBe(false);
+  });
+
   it('does not open when the cohort empties', () => {
     cohort(['filter:a']);
     panelOpen.set(false);

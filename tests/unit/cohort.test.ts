@@ -168,10 +168,50 @@ describe('cohortContents', () => {
     expect(structure()).toBe(beforeStructure);
   });
 
-  it('gives an item the same identity each time it is read', () => {
-    addExport(mockExport('\\test\\height\\'));
+  it('gives two filters holding the same content the same identity, twice over', () => {
+    // The premise the consumer's counting rests on. Nothing dedupes phenotypic filters -
+    // not addFilter, not LogicTree.add, not queryToFilterTree, which maps a saved query's
+    // clauses straight across - so a restored dataset can legitimately hold two of these.
+    addCategoricalFilter('\\test\\one\\');
+    addCategoricalFilter('\\test\\one\\');
 
-    expect(items()).toEqual(items());
+    expect(items()).toHaveLength(2);
+    expect(items()[0]).toBe(items()[1]);
+  });
+
+  it('gives the same identities after a sessionStorage round trip', () => {
+    // What a page load does to a cohort: the tree goes out to sessionStorage as a string and
+    // comes back through LogicTree.deserialize, which rebuilds each leaf from the JSON rather
+    // than from the factory that made it.
+    addCategoricalFilter('\\test\\one\\');
+    addCategoricalFilter('\\test\\two\\');
+    const before = items();
+    const beforeStructure = structure();
+
+    setFilterTree(LogicTree.deserialize<FilterInterface>(get(filterTree).serialized, createGroup));
+
+    expect(items()).toEqual(before);
+    expect(structure()).toBe(beforeStructure);
+  });
+
+  it('gives the same identity to an item whose fields were assigned in another order', () => {
+    // The property the key sorting exists for, under actual stress: a restore rebuilds an
+    // added variable from a saved query rather than from a search row, so the same variable
+    // can arrive with its properties in a different order. The round trip above cannot show
+    // this, because it reproduces the order it serialized.
+    const variable = mockExport('\\test\\height\\');
+    addExport(variable);
+    const before = items();
+
+    clearExports();
+    addExport({
+      searchResult: variable.searchResult,
+      conceptPath: variable.conceptPath,
+      display: variable.display,
+      id: variable.id,
+    });
+
+    expect(items()).toEqual(before);
   });
 
   it('distinguishes added variables that share a concept path', () => {
