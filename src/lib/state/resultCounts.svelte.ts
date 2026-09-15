@@ -122,7 +122,7 @@ export class ResultCounts {
    * this path fires on every Explore and Discover visit and again on every filter change, and
    * the toaster's top placement is a fixed, full-width, pointer-capturing band above the
    * navigation header for as long as a toast is up. A count that fails must not take the nav
-   * bar with it. One-shot callers that have nowhere to show an error still toast.
+   * bar with it. `ensureLoaded`, which has nowhere to show an error, still toasts.
    */
   start(getIsOpenAccess: () => boolean): void {
     this.stop();

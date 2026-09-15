@@ -46,7 +46,7 @@
   // Tied to `visible`, not to mount: the layout keeps this component alive across every child
   // route, so gating only the markup would leave the count subscription reloading on
   // /explorer/export and /explorer/distributions - where the strip must not render at all, and
-  // where ExportStepper's own ensureLoaded() would race a load we had already started.
+  // where Summary.svelte's ensureLoaded() would race a load we had already started.
   $effect(() => {
     if (!visible) return;
     countsOwner = instance;
