@@ -81,6 +81,13 @@ async function getConfigKind(kind: ConfigKind, force: boolean): Promise<void> {
     return Promise.resolve();
   }
 
+  if (!ORIGIN) {
+    console.error(
+      `Configuration cache hydration skipped for ${kind}: VITE_ORIGIN is not configured.`,
+    );
+    return;
+  }
+
   // Chained once here, not per caller, so concurrent callers awaiting the same
   // in-flight fetch don't each re-log completion and re-run the cache write.
   if (fetchingKind[kind] === null) {

@@ -1,10 +1,5 @@
-// Joins an origin and a path with exactly one slash, regardless of how many
-// slashes either side already has. Never parses `path` as a scheme-relative
-// or absolute URL, so it can't resolve off-origin no matter what it contains.
-// origin may be unset (e.g. VITE_ORIGIN in tests/local dev) - treated as empty
-// rather than throwing, matching how the old `${origin}/${path}` template coped.
-export function joinUrl(origin: string | undefined, path: string): string {
-  return `${(origin ?? '').replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+export function joinUrl(origin: string, path: string): string {
+  return `${origin.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
 }
 
 const PREFIX = 'picsure';

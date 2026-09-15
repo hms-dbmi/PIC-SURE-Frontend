@@ -13,6 +13,11 @@ export const GET: RequestHandler = async ({ request }) => {
     return json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!ORIGIN) {
+    console.error('Config refresh failed: VITE_ORIGIN is not configured.');
+    return json({ error: 'Server misconfigured' }, { status: 500 });
+  }
+
   let user: User;
   try {
     const target = joinUrl(ORIGIN, Psama.User.Me);
