@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 
-import { isDiscoverSection, searchRoute, showsSearchChrome } from '$lib/explorer/searchChrome';
+import {
+  isDiscoverSection,
+  searchRoute,
+  searchSectionRoot,
+  showsSearchChrome,
+  withSearchTerm,
+} from '$lib/explorer/searchChrome';
 
 describe('searchRoute', () => {
   it('reads the section and the segment beneath it', () => {
@@ -95,6 +101,10 @@ describe('showsSearchChrome', () => {
     '/explorer/variable/export',
     '/explorer/variable/distributions',
     '/explorer/variable/discover',
+    // The live shape of the detail URL: dataset then percent-encoded concept path.
+    '/explorer/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C',
+    '/explorer/variable/export/%5Cexport%5Cdistributions%5C',
+    '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C',
   ])('keeps the chrome on the variable detail page %s', (pathname) => {
     expect(showsSearchChrome(pathname)).toBe(true);
   });
@@ -102,5 +112,27 @@ describe('showsSearchChrome', () => {
   it('resolves under a base path', () => {
     expect(showsSearchChrome('/picsure/explorer')).toBe(true);
     expect(showsSearchChrome('/picsure/discover/distributions')).toBe(false);
+  });
+});
+
+describe('searchSectionRoot', () => {
+  it('is the section root, which is where Back to Search Results goes', () => {
+    expect(searchSectionRoot('explorer')).toBe('/explorer');
+    expect(searchSectionRoot('discover')).toBe('/discover');
+  });
+});
+
+// One definition of "carry the search in the href", shared by the mode bar's links, the
+// result cards and the detail page's Back button.
+describe('withSearchTerm', () => {
+  it('appends the term, encoded', () => {
+    expect(withSearchTerm('/explorer', 'age')).toBe('/explorer?search=age');
+    expect(withSearchTerm('/discover', 'age at exam & more')).toBe(
+      '/discover?search=age%20at%20exam%20%26%20more',
+    );
+  });
+
+  it('is the bare route when there is no search', () => {
+    expect(withSearchTerm('/explorer', '')).toBe('/explorer');
   });
 });

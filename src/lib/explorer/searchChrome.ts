@@ -37,3 +37,20 @@ export function showsSearchChrome(pathname: string): boolean {
   const { section, child } = searchRoute(pathname);
   return section !== undefined && !FULL_PAGE_ROUTES.includes(child ?? '');
 }
+
+/**
+ * The section's root route: the Phenotypes results page, and where the variable detail page's
+ * Back to Search Results returns to.
+ */
+export function searchSectionRoot(section: SearchSection): string {
+  return `/${section}`;
+}
+
+/**
+ * A search-section href carrying the term the user is looking at, so switching routes, Copy
+ * Link and middle-click all keep it. `?search=` is authoritative on every navigation, so the
+ * term has to travel in the URL or the address bar stops agreeing with the results on screen.
+ */
+export function withSearchTerm(route: string, searchTerm: string): string {
+  return searchTerm ? `${route}?search=${encodeURIComponent(searchTerm)}` : route;
+}

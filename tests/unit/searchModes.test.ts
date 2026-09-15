@@ -118,6 +118,12 @@ describe('the search mode registry', () => {
       '/explorer/variable/asthma',
       '/discover/variable/asthma',
       '/explorer/variable/age-at-export',
+      // The live shape of the detail URL: dataset then percent-encoded concept path. Only
+      // the segment directly under the section root selects a mode, so neither half of the
+      // key can move the highlight.
+      '/explorer/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C',
+      '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C',
+      '/explorer/variable/genotypes/%5Cgenotypes%5C',
     ])('marks phenotypes active on its detail page %s', (pathname) => {
       expect(phenotypesMode.isActive(pathname)).toBe(true);
       expect(genotypesMode.isActive(pathname)).toBe(false);

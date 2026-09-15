@@ -1,6 +1,6 @@
 import { config } from '$lib/configuration.svelte';
 
-import { isDiscoverSection, searchRoute } from '$lib/explorer/searchChrome';
+import { isDiscoverSection, searchRoute, withSearchTerm } from '$lib/explorer/searchChrome';
 
 /**
  * One search mode, which is one link in the Explore mode bar and one route under the
@@ -80,11 +80,11 @@ export function enabledSearchModes(pathname: string): SearchMode[] {
 
 /**
  * The mode's href, carrying the search the user is looking at so that switching modes, Copy
- * Link and middle-click all keep it. `?search=` is authoritative on every navigation, so the
- * term has to travel in the URL or the address bar drops what the results still show.
+ * Link and middle-click all keep it. The variable detail page's Back button and card links
+ * are built the same way, from the one definition of it in `searchChrome`.
  */
 export function searchModeHref(mode: SearchMode, searchTerm: string): string {
-  return searchTerm ? `${mode.route}?search=${encodeURIComponent(searchTerm)}` : mode.route;
+  return withSearchTerm(mode.route, searchTerm);
 }
 
 /** "a", "a or b", "a, b or c" - no serial comma, no dangling "or" on a single item. */
