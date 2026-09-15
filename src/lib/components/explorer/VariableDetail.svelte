@@ -20,9 +20,9 @@
   import AngleButton from '$lib/components/buttons/AngleButton.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
-  import AddFilter from '$lib/components/explorer/AddFilter.svelte';
   import HierarchyComponent from '$lib/components/explorer/HierarchyComponent.svelte';
   import ResultInfoComponent from '$lib/components/explorer/ResultInfoComponent.svelte';
+  import VariableFilterPanel from '$lib/components/explorer/VariableFilterPanel.svelte';
 
   // One variable's page, shared by the Explore and Discover routes so the page exists once
   // rather than twice.
@@ -129,13 +129,11 @@
   /**
    * Whether the filter interface can express this concept at all.
    *
-   * `AddFilter` renders an options list for `Categorical` and min/max inputs for
-   * `Continuous`, and nothing for anything else - but its add button is unconditional, and
-   * `addNewFilter` falls through to `createNumericFilter(data, undefined, undefined)` for
-   * every type it has no inputs for. So an `AnyRecordOf` concept, or one the dictionary
-   * returned with no type at all, would render a bare `+` under the heading with nothing to
-   * fill in, and one click would put a filter restricting nothing into the user's cohort -
-   * moving the participant count and the query sent on export.
+   * The panel has a value list for `Categorical` and min/max inputs for `Continuous`, and
+   * nothing for anything else. Ungated, an `AnyRecordOf` concept - or one the dictionary
+   * returned with no type at all - would render an empty panel whose one enabled control put
+   * a filter restricting nothing into the user's cohort, moving the participant count and
+   * the query sent on export.
    *
    * Reachable here in a way it is not from a results row: this page is addressed by URL, so
    * a shared or hand-edited link can name a non-leaf concept path, and `isConcept` admits a
@@ -154,8 +152,11 @@
    * is what identifies the variable.
    *
    * Only the two types this interface can express. An `AnyRecordOf` filter carries a category
-   * node's concept path, and handing one to `AddFilter` would silently rewrite it as a
-   * categorical filter the next time the user pressed add.
+   * node's concept path, so it would match here on `id` alone - and handing one to the panel
+   * would silently rewrite it as a categorical filter the next time the user pressed the
+   * button, dropping every concept it covered. Excluded rather than matched, which leaves
+   * Filter Participants adding a filter of its own beside it: two filters that say different
+   * things, rather than one that says something the user never asked for.
    */
   const EDITABLE_FILTER_TYPES: FilterType[] = ['Categorical', 'numeric'];
   const existingFilter = $derived(
@@ -180,7 +181,7 @@
     variable ? $exports.find((item) => item.conceptPath === variable.conceptPath) : undefined,
   );
 
-  /** The part of a filter that the interface puts on screen. */
+  /** The part of a filter that the panel puts on screen. */
   function filterContent(filter: Filter): string {
     if (filter.filterType === 'Categorical') return filter.categoryValues.join('\u0000');
     if (filter.filterType === 'numeric') return `${filter.min ?? ''}\u0000${filter.max ?? ''}`;
@@ -193,9 +194,11 @@
    *
    * Identity alone is not enough, because this page renders two views of the same filter: the
    * cohort panel's edit pencil opens `AddFilter` in a modal over it, and `updateFilter`
-   * preserves the uuid. Keyed on the uuid, an edit made in that modal would leave this
-   * interface holding the selection it read at mount, and the next add here would write that
-   * stale selection back over the user's edit.
+   * preserves the uuid. The panel seeds its draft selection once, deliberately, so that a
+   * selection in progress is not overwritten by every store change - so keyed on the uuid, an
+   * edit made in that modal would leave this interface holding the selection it seeded with,
+   * and the next press of Filter Participants would write that stale selection back over the
+   * user's edit.
    *
    * The cost is that an edit elsewhere discards a selection in progress here. That is the
    * right way round: the alternative silently overwrites the newer of the two.
@@ -285,16 +288,23 @@
       {/if}
     </header>
 
-    <section data-testid="variable-detail-information">
-      <ResultInfoComponent data={variable} />
-    </section>
+    <!--
+      The filter interface sits directly under the identity and above Variable Information,
+      which is where all four detail mockups put it (`p1-04`, `p1-05`, `p1-10`, `p2-10`) and
+      what SPEC.md:411-415 lists. Ticket 10 left it below Variable Information and deferred
+      the ordering here. The mockups are the design of record, so this follows them: the
+      action on the variable comes before the reference material about it.
 
-    <!-- Ticket 13 replaces this interface with the designed layout; this ticket is the
-         wiring, so AddFilter goes in as-is. h2 for the same reason the hierarchy below is
-         one: it sits level with ResultInfoComponent's own section headings, which ticket 14
-         made h2 so the page runs h1 to h2 with nothing skipped. -->
-    <section data-testid="variable-detail-filter" class="flex flex-col gap-2">
-      <h2 class="h5 text-primary-500 m-0">Add Filter</h2>
+      No visible heading, for the same reason - the mockups have the panel carry the variable
+      name (complex case) or nothing at all (simple case), and a heading here would be a
+      second name for a panel that sits immediately below the h1 it belongs to. The section
+      is labelled for a screen reader instead, so it is still announced as its own region.
+    -->
+    <section
+      data-testid="variable-detail-filter"
+      aria-label="Filter on this variable"
+      class="flex flex-col gap-2"
+    >
       {#if filteringDisabled}
         <ErrorAlert color="warning" data-testid="variable-detail-filter-disabled">
           <p class="m-0">Filtering is not available for this variable</p>
@@ -307,9 +317,13 @@
         </ErrorAlert>
       {:else}
         {#key filterRevision}
-          <AddFilter data={variable} {existingFilter} />
+          <VariableFilterPanel {variable} {existingFilter} />
         {/key}
       {/if}
+    </section>
+
+    <section data-testid="variable-detail-information">
+      <ResultInfoComponent data={variable} />
     </section>
 
     {#if config.features.explorer.enableHierarchy}

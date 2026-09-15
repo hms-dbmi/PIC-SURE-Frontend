@@ -261,11 +261,13 @@ describe('VariableDetail', () => {
   });
 
   // Ticket 11 removes the per-row Info / Filter / Hierarchy / Add-for-Analysis icons, so this
-  // page has to be somewhere the user can act from. The filter interface is AddFilter dropped
-  // in as-is; ticket 13 replaces its layout.
+  // page has to be somewhere the user can act from. These cases are about the page's wiring of
+  // the panel - the gate, the existing filter, the key; VariableFilterPanel.test.ts covers the
+  // panel's own behaviour.
   describe('the filter interface', () => {
     const filterSection = () => screen.getByTestId('variable-detail-filter');
-    const addFilterButton = () => filterSection().querySelector('[data-testid="add-filter"]')!;
+    const addFilterButton = () =>
+      filterSection().querySelector('[data-testid="filter-participants"]')!;
 
     it('adds a filter for this variable without leaving the page', async () => {
       await renderDetail();
@@ -283,7 +285,7 @@ describe('VariableDetail', () => {
       expect(screen.getByTestId('variable-identity')).toBeInTheDocument();
     });
 
-    // `AddFilter` reads `existingFilter` from the prop at click time, so this holds with or
+    // The panel reads `existingFilter` from the prop at click time, so this holds with or
     // without the `{#key}` below - it pins the outcome, not the mechanism. The key earns its
     // place in the modal-edit test further down, which does fail without it.
     it('updates the filter it already added rather than adding a second', async () => {
@@ -320,7 +322,7 @@ describe('VariableDetail', () => {
     });
 
     // A numeric filter round-trips through its own inputs rather than the selection list, so
-    // it needs its own case - the two branches of AddFilter's onMount are independent.
+    // it needs its own case - the two are seeded independently.
     it('opens with the bounds of a numeric filter this variable already has', async () => {
       addFilter(createNumericFilter(detail, '18', '65'));
       await renderDetail();
@@ -339,22 +341,20 @@ describe('VariableDetail', () => {
       expect(screen.getByTestId('variable-detail-filter-disabled')).toHaveTextContent(
         'Filtering is not available for this variable',
       );
-      expect(screen.queryByTestId('filter-component')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('variable-filter-panel')).not.toBeInTheDocument();
     });
 
     it('is offered to an authenticated user even where the dictionary refuses it', async () => {
       await renderDetail({ allowFiltering: false });
 
       expect(screen.queryByTestId('variable-detail-filter-disabled')).not.toBeInTheDocument();
-      expect(screen.getByTestId('filter-component')).toBeInTheDocument();
+      expect(screen.getByTestId('variable-filter-panel')).toBeInTheDocument();
     });
 
     /*
-     * AddFilter renders an options list for Categorical and min/max inputs for Continuous,
-     * and nothing at all for any other type - but its add button is unconditional, and
-     * `addNewFilter` falls through to `createNumericFilter(data, undefined, undefined)` for
-     * a type it has no inputs for. Ungated, the user got a bare `+` under the heading and one
-     * click put a filter restricting nothing into their cohort.
+     * The panel has a value list for Categorical and min/max inputs for Continuous, and
+     * nothing at all for any other type. Ungated, the user got an empty panel whose one
+     * enabled control put a filter restricting nothing into their cohort.
      *
      * This page is addressed by URL, so a shared or hand-edited link can name a non-leaf
      * concept, and `isConcept` admits one on conceptPath and dataset alone.
@@ -368,8 +368,8 @@ describe('VariableDetail', () => {
       expect(screen.getByTestId('variable-detail-filter-unavailable')).toHaveTextContent(
         'This concept has no values to filter on',
       );
-      expect(screen.queryByTestId('filter-component')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('add-filter')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('variable-filter-panel')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('filter-participants')).not.toBeInTheDocument();
     });
 
     // The other side of that gate, so closing it altogether is not a way to pass the tests
@@ -382,16 +382,16 @@ describe('VariableDetail', () => {
       render(VariableDetail, { section: 'explorer', variableKey: key });
       await screen.findByTestId('variable-identity');
 
-      expect(await screen.findByTestId('filter-component')).toBeInTheDocument();
-      expect(screen.getByTestId('add-filter')).toBeInTheDocument();
+      expect(await screen.findByTestId('variable-filter-panel')).toBeInTheDocument();
+      expect(screen.getByTestId('filter-participants')).toBeInTheDocument();
       expect(screen.queryByTestId('variable-detail-filter-unavailable')).not.toBeInTheDocument();
     });
 
     /*
      * Two views of one filter render on this page: the cohort panel's edit pencil opens its
      * own AddFilter in a modal over it, and `updateFilter` preserves the uuid. An interface
-     * keyed on identity alone would still hold the selection it read at mount, so the next
-     * add here would write that stale selection back over the user's edit.
+     * keyed on identity alone would still hold the selection it seeded with, so the next press
+     * of Filter Participants would write that stale selection back over the user's edit.
      */
     it('re-reads a filter edited from the cohort panel, and does not undo the edit', async () => {
       addFilter(createCategoricalFilter(categoricalDetail, ['Yes']));
@@ -423,7 +423,7 @@ describe('VariableDetail', () => {
       await renderDetail();
 
       expect(screen.queryByTestId('variable-detail-filter-disabled')).not.toBeInTheDocument();
-      expect(screen.getByTestId('filter-component')).toBeInTheDocument();
+      expect(screen.getByTestId('variable-filter-panel')).toBeInTheDocument();
     });
   });
 
@@ -562,7 +562,7 @@ describe('VariableDetail', () => {
       await renderDetail({ dataset: 'discover', allowFiltering: false });
 
       expect(screen.queryByTestId('variable-detail-filter-disabled')).not.toBeInTheDocument();
-      expect(screen.getByTestId('filter-component')).toBeInTheDocument();
+      expect(screen.getByTestId('variable-filter-panel')).toBeInTheDocument();
     });
   });
 
