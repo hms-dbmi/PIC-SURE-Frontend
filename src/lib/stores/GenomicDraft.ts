@@ -27,6 +27,15 @@ export type AppliedGenomicFilters = {
  * module-level precisely so that switching search modes does not lose them, and a draft that
  * happens to be empty reads exactly like no draft at all.
  *
+ * The panels' own Clear buttons empty a draft without touching this, which is deliberate: a
+ * user who cleared the panels meant to, and a trip to Phenotypes and back must not hand them
+ * the applied filter again. It leaves empty panels under a disabled Update Filter while the
+ * filter is still applied, and that is the honest reading of it - the panels are a draft, not
+ * a view of the cohort, which is on screen above them the whole time, and the filter's own
+ * edit control loads it back whenever it is asked. (The old `/explorer/genome-filter` route's
+ * Back button reaches the same state for a different reason: a navigation emptying panels
+ * nobody asked to empty. That one is a defect, and it goes with the route.)
+ *
  * Exported for tests, which need a tab that has never been opened.
  */
 export const draftLoadedFrom: Writable<{ gene: string | null; snp: string | null }> = writable({

@@ -141,8 +141,10 @@ test('a search returning no participants reports the variant was not found', asy
   await page.getByTestId('snp-search-box').fill(validSnp);
   await page.getByTestId('snp-search-btn').click();
 
-  // Then
-  await expect(page.locator('.alert-message')).toBeVisible();
+  // Then, from the variant panel itself: `.alert-message` on its own also matches the cohort
+  // panel's count error, which the unmocked count in these specs raises often enough to have
+  // made this assertion ambiguous.
+  await expect(page.locator('#snp-search .alert-message')).toBeVisible();
 });
 
 test('a search returning participants offers the genotype constraint', async ({ page }) => {
