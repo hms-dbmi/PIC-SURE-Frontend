@@ -600,8 +600,9 @@ describe('VariableDetail', () => {
     });
 
     // A 200 is not proof of a concept. Rendering one of these gave an empty heading and
-    // handed ResultInfoComponent a result with no concept path, whose own {#await} has no
-    // catch - a card that spins forever.
+    // handed ResultInfoComponent a result with no concept path, which that card now reports
+    // as its own error - so the page would say it loaded while the card inside it said it
+    // had not.
     it('reads an empty object as the dictionary holding nothing for the key', async () => {
       expect(await renderResponse({})).toHaveTextContent('We could not find that variable');
       expect(screen.queryByTestId('variable-identity')).not.toBeInTheDocument();

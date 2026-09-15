@@ -49,9 +49,10 @@
    * A 200 is not proof of a concept: `handleResponse` returns body text when the body will
    * not parse as JSON, so a proxy or WAF interstitial resolves successfully, and so does
    * `{}`. Rendering either gives an empty heading and hands `ResultInfoComponent` a result
-   * with no concept path, whose own `{#await}` has no catch - a card that spins forever.
-   * Mapping every outcome to one of these means the template has a branch per outcome and no
-   * way to fall through to a blank page.
+   * with no concept path, which is an error in that card rather than on this page - so the
+   * page would report success while part of it reported failure. Mapping every outcome to one
+   * of these means the template has a branch per outcome and no way to fall through to a
+   * blank page.
    */
   type Outcome =
     | { kind: 'variable'; variable: SearchResult }
@@ -289,11 +290,11 @@
     </section>
 
     <!-- Ticket 13 replaces this interface with the designed layout; this ticket is the
-         wiring, so AddFilter goes in as-is. h3 for the same reason the hierarchy below is
-         one: it sits level with ResultInfoComponent's own section headings, and the jump
-         from h1 to h3 is that component's to close in ticket 14. -->
+         wiring, so AddFilter goes in as-is. h2 for the same reason the hierarchy below is
+         one: it sits level with ResultInfoComponent's own section headings, which ticket 14
+         made h2 so the page runs h1 to h2 with nothing skipped. -->
     <section data-testid="variable-detail-filter" class="flex flex-col gap-2">
-      <h3 class="h5 text-primary-500 m-0">Add Filter</h3>
+      <h2 class="h5 text-primary-500 m-0">Add Filter</h2>
       {#if filteringDisabled}
         <ErrorAlert color="warning" data-testid="variable-detail-filter-disabled">
           <p class="m-0">Filtering is not available for this variable</p>
@@ -312,10 +313,9 @@
     </section>
 
     {#if config.features.explorer.enableHierarchy}
-      <!-- h3 to sit level with ResultInfoComponent's own section headings. The jump from h1
-           to h3 is that component's, and ticket 14 reshapes it. -->
+      <!-- h2 to sit level with ResultInfoComponent's own section headings. -->
       <section data-testid="variable-detail-hierarchy" class="flex flex-col gap-2">
-        <h3 class="h5 text-primary-500 m-0">Data Hierarchy</h3>
+        <h2 class="h5 text-primary-500 m-0">Data Hierarchy</h2>
         <HierarchyComponent data={variable} />
       </section>
     {/if}

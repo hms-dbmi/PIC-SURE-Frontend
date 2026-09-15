@@ -362,12 +362,20 @@ test.describe('Explorer for authenticated users', () => {
         await expect(infoPanel).toBeVisible();
         const variableInfo = infoPanel.getByTestId('variable-info');
         await expect(variableInfo).toBeVisible();
-        // Check Variable Information
+        // Check Variable Information: the fixed list the mockups show, in their order.
+        // `detailResponseCat`'s meta bag carries none of the keys Accession, Subject Type,
+        // Vocabulary and Harmonization method(s) come from, so those rows are absent rather
+        // than empty - and `name` is no longer shown as an Accession, the dictionary defining
+        // it as the last segment of the concept path rather than an identifier.
         await expect(variableInfo.getByText('Variable Information')).toBeVisible();
-        await expect(variableInfo).toContainText('Name: ' + detailResponseCat.display);
-        await expect(variableInfo).toContainText('Accession: ' + detailResponseCat.name);
-        await expect(variableInfo).toContainText('Type: ' + detailResponseCat.type);
-        await expect(variableInfo).toContainText('Description: ' + detailResponseCat.description);
+        await expect(variableInfo.locator('[data-testid^="variable-info-"]')).toHaveText([
+          'Name: ' + detailResponseCat.display,
+          'Description: ' + detailResponseCat.description,
+          'Type: ' + detailResponseCat.type,
+        ]);
+        await expect(variableInfo).not.toContainText('Accession:');
+        await expect(variableInfo).not.toContainText(detailResponseCat.name);
+        await expect(variableInfo).not.toContainText('values:');
 
         // Check Dataset Information
         const datasetInfo = infoPanel.getByTestId('dataset-info');
@@ -384,6 +392,37 @@ test.describe('Explorer for authenticated users', () => {
         await expect(studyInfo).toContainText('Study Name: ' + detailResponseCat.study.fullName);
         await expect(studyInfo).toContainText('Study Accession: ' + detailResponseCat.study.ref);
       });
+      // An information panel whose lookup fails used to spin for good - the rejection went
+      // into an `{#await}` with no `{:catch}`, which reads as a slow network, so users wait
+      // instead of retrying. This row is one of the callers that reaches the component with
+      // a concept the dictionary may not answer for.
+      test('Says so when the information lookup fails, rather than spinning', async ({ page }) => {
+        // Given
+        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
+          route.fulfill({ body: '9999' }),
+        );
+        await page.route(
+          '*/**/picsure/dictionary/concepts/detail/' + mockData.content[0].dataset,
+          async (route: Route) => route.fulfill({ status: 500, body: 'boom' }),
+        );
+        await page.goto('/explorer?search=somedata');
+        await userIsLoggedIn(page);
+
+        // When
+        const tableBody = page.locator('tbody');
+        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
+        await expect(firstRow).toBeVisible();
+        await firstRow.click();
+
+        // Then
+        const expansion = tableBody.locator('tr.expandable-row').first();
+        await expect(expansion.getByTestId('variable-info-error')).toContainText(
+          "We could not load this variable's information",
+        );
+        await expect(expansion.getByTestId('variable-info')).toHaveCount(0);
+        await expect(expansion.getByTestId('progress-ring')).toHaveCount(0);
+      });
+
       test('Clicking a filter button opens the filter panel & then clicking another row opens the info panel', async ({
         page,
       }) => {
