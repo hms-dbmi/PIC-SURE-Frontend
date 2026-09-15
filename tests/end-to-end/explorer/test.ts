@@ -359,6 +359,41 @@ test.describe('Explorer for authenticated users', () => {
       );
     });
 
+    test('Says so, rather than linking, when the detail route will not accept the dataset', async ({
+      page,
+    }) => {
+      // Given a dataset outside the detail route's allow-list. That list is a security
+      // control - an unvalidated dataset once let a crafted link redirect an authenticated
+      // POST - and the dataset is dictionary text, derived from a concept path's first
+      // segment, so a study named like this is not hypothetical.
+      await page.route(searchResultPath, async (route: Route) =>
+        route.fulfill({
+          json: {
+            ...mockData,
+            content: [{ ...mockData.content[0], dataset: 'BioLINCC (phs004266)' }],
+          },
+        }),
+      );
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+
+      // Then the result is still shown, but there is no link to follow
+      const card = resultCards(page).first();
+      await expect(card).toBeVisible();
+      await expect(card.getByTestId('search-result-card-description')).toHaveText(
+        mockData.content[0].description,
+      );
+      await expect(card).not.toHaveAttribute('href');
+      await expect(card.getByTestId('search-result-card-unopenable')).toContainText(
+        'This variable cannot be opened',
+      );
+
+      // And clicking it goes nowhere, rather than onto "We could not read that variable link"
+      await card.click();
+      await expect(page).toHaveURL(/\/explorer\?search=somedata$/);
+      await expect(page.getByTestId('variable-detail')).toHaveCount(0);
+    });
+
     test('Carries none of the row actions the detail page took over', async ({ page }) => {
       // Given
       await page.goto('/explorer?search=somedata');

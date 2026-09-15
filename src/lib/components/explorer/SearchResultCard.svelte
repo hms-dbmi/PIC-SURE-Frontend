@@ -43,8 +43,9 @@
   const study = $derived(result.studyAcronym || result.dataset);
 
   // The URL shape belongs to variableUrl.ts, which is the single seam a later ticket swaps
-  // for dictionary slugs, and whose `dataset` half a route loader validates on arrival. Not
-  // assembled here.
+  // for dictionary slugs, and which applies the same rule the route loader applies on
+  // arrival. Not assembled here, and `undefined` when that rule refuses this variable's
+  // dataset - see the unopenable branch below.
   const detailPath = $derived(variableDetailHref(section, result, searchTerm));
 
   function onclick() {
@@ -58,12 +59,7 @@
   }
 </script>
 
-<a
-  href={resolve(detailPath as '/')}
-  {onclick}
-  data-testid="search-result-card"
-  class="result-card card block border bg-white border-surface-200-800 rounded-xl px-5 py-4 shadow-sm"
->
+{#snippet content()}
   <span class="block">
     {#if description}
       <strong data-testid="search-result-card-description">{description}</strong>
@@ -83,12 +79,42 @@
       </span>
     {/if}
   </span>
-</a>
+{/snippet}
+
+{#if detailPath}
+  <a
+    href={resolve(detailPath as '/')}
+    {onclick}
+    data-testid="search-result-card"
+    class="result-card card block border bg-white border-surface-200-800 rounded-xl px-5 py-4 shadow-sm"
+  >
+    {@render content()}
+  </a>
+{:else}
+  <!-- The detail page is the only way into a variable now, and this one has a dataset the
+       route will not act on, so there is nothing to link to. Said on the card rather than
+       left as a link that opens onto "We could not read that variable link": the result is
+       real and worth showing, it just cannot be opened. -->
+  <div
+    data-testid="search-result-card"
+    data-unopenable="true"
+    class="card block border bg-white border-surface-200-800 rounded-xl px-5 py-4 shadow-sm"
+  >
+    {@render content()}
+    <span data-testid="search-result-card-unopenable" class="block mt-1 text-sm text-error-500">
+      This variable cannot be opened.
+    </span>
+  </div>
+{/if}
 
 <style>
-  /* The whole card is the link, so it must not read as body text. The hover and focus
-     treatment is the one the clickable table rows used (app.css, .table.clickable), so a
-     result still highlights the same way it did as a row. */
+  /* The whole card is the link, so it must not read as body text.
+
+     Same shape as the clickable table rows this replaced (app.css, .table.clickable: a
+     background change on hover, and an outline on focus because the rows were focused
+     programmatically). Deliberately not the same value: the rows used --color-surface-300,
+     these use --color-surface-200, which holds 6.2:1 against body text where the rows held
+     4.5:1. Do not "restore" it to match the table. */
   .result-card {
     cursor: pointer;
     color: inherit;

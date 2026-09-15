@@ -19,8 +19,10 @@
    * the row rendering moved.
    */
   interface Props {
-    /** `stores/Search`'s handler. Named for the preference key `getDefaultRows` reads. */
-    tableName: string;
+    /** Owned by the caller, which is also what scrolls the list into view on a page change. */
+    id: string;
+    /** What `getDefaultRows`/`setDefaultRows` key the user's rows-per-page choice on. */
+    rowsPreferenceKey: string;
     handler: TableHandler<SearchResult>;
     isLoading?: boolean;
     section: SearchSection;
@@ -30,7 +32,8 @@
   }
 
   let {
-    tableName,
+    id,
+    rowsPreferenceKey,
     handler,
     isLoading = false,
     section,
@@ -40,13 +43,21 @@
   }: Props = $props();
 </script>
 
-<div id="search-results" data-testid="search-results" class="space-y-1">
+<div {id} data-testid="search-results" class="space-y-1">
   {#if isLoading}
     <div class="flex justify-center items-center py-8">
       <Loading ring size="small" color="primary" />
     </div>
   {:else if handler.rows.length > 0}
-    <ul data-testid="search-result-list" aria-label="Search results" class="list-none space-y-3">
+    <!-- `role="list"` alongside `list-none`: `list-style: none` takes the list semantics away
+         in Safari and VoiceOver, and the aria-label goes with them. The table this replaced
+         gave the same group a <caption>. -->
+    <ul
+      role="list"
+      data-testid="search-result-list"
+      aria-label="Search results"
+      class="list-none space-y-3"
+    >
       <!-- Unkeyed: the cards hold no state worth preserving across a page change, and a
            concept path is not guaranteed unique across datasets - a keyed block would throw
            on a duplicate rather than render it. -->
@@ -62,7 +73,7 @@
   <footer class="flex justify-between mt-3">
     <RowCount {handler} />
     <div class="flex justify-end gap-4">
-      <RowsPerPage {tableName} {handler} {options} />
+      <RowsPerPage tableName={rowsPreferenceKey} {handler} {options} />
       <Pagination {handler} {onPageChange} />
     </div>
   </footer>

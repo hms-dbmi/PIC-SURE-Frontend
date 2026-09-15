@@ -59,6 +59,37 @@ const SAFE_DATASET = /^[A-Za-z0-9 ._-]+$/;
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/;
 
 /**
+ * Whether this app will act on these two halves - the one definition, used by both ends of
+ * the URL.
+ *
+ * The builder and the route validator used to apply this rule separately and agree only by
+ * convention. That cost nothing while the only way to reach the detail route was to type a
+ * URL, because the sole input was something a person had written. The result cards made it
+ * the gate on every search result, where the input is dictionary text: the dataset is derived
+ * from a concept path's first segment (see `SAFE_DATASET` below), so whether a link works is
+ * decided by how a study was named. Two copies of the rule there means a card that renders
+ * correctly and opens onto "We could not read that variable link", for every variable in that
+ * dataset, with nothing on the card to say so.
+ *
+ * So `variableDetailHref` refuses to build what this rejects, and the card renders itself
+ * unopenable rather than carrying a dead link. Widening the rule is a separate decision -
+ * this is a security control, not a tidiness one, and the note on `SAFE_DATASET` says what it
+ * is holding back.
+ */
+export function isLinkableVariableKey(key: { dataset?: string; conceptPath?: string }): boolean {
+  const { dataset = '', conceptPath = '' } = key;
+  if (!SAFE_DATASET.test(dataset)) return false;
+  // `..` passes the charset on its own, and is the whole traversal token.
+  if (dataset.includes('..')) return false;
+  // Spaces and dots alone address no dataset.
+  if (!/[A-Za-z0-9]/.test(dataset)) return false;
+  // The concept path is trimmed only to judge presence: whitespace inside one is meaningful,
+  // and a key that came back trimmed would no longer address the concept it was built from.
+  if (!conceptPath.trim() || CONTROL_CHARACTERS.test(conceptPath)) return false;
+  return true;
+}
+
+/**
  * The key a route's params carry, or `undefined` when they carry nothing this page may act
  * on - which the page renders as a readable error rather than passing to the dictionary.
  *
@@ -71,19 +102,16 @@ export function variableKeyFromParams(params: {
   conceptPath?: string;
 }): VariableKey | undefined {
   const { dataset = '', conceptPath = '' } = params;
-  if (!SAFE_DATASET.test(dataset)) return undefined;
-  // `..` passes the charset on its own, and is the whole traversal token.
-  if (dataset.includes('..')) return undefined;
-  // Spaces and dots alone address no dataset.
-  if (!/[A-Za-z0-9]/.test(dataset)) return undefined;
-  // The concept path is trimmed only to judge presence: whitespace inside one is meaningful,
-  // and a key that came back trimmed would no longer address the concept it was built from.
-  if (!conceptPath.trim() || CONTROL_CHARACTERS.test(conceptPath)) return undefined;
-  return { dataset, conceptPath };
+  return isLinkableVariableKey({ dataset, conceptPath }) ? { dataset, conceptPath } : undefined;
 }
 
 /**
- * The detail-page href for a search result, in the section the user is searching in.
+ * The detail-page href for a search result, in the section the user is searching in, or
+ * `undefined` when the route would refuse the key it is made of.
+ *
+ * `undefined` rather than a link the detail page turns into an error: a card is the only way
+ * into that page now, so a link this module knows is dead is worse than no link at all. The
+ * caller decides how to show it, but it cannot accidentally ship one.
  *
  * `searchTerm` travels in the URL for the same reason the mode bar's links carry it:
  * `?search=` is authoritative on every navigation, so a copied or bookmarked detail link has
@@ -93,7 +121,8 @@ export function variableDetailHref(
   section: SearchSection,
   result: Pick<SearchResult, 'dataset' | 'conceptPath'>,
   searchTerm = '',
-): string {
+): string | undefined {
+  if (!isLinkableVariableKey(result)) return undefined;
   const key = encodeVariableKey({ dataset: result.dataset, conceptPath: result.conceptPath });
   return withSearchTerm(`${searchSectionRoot(section)}/${VARIABLE_SEGMENT}/${key}`, searchTerm);
 }

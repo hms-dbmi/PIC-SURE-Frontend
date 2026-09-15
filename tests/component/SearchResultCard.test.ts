@@ -146,6 +146,50 @@ describe('the search result card', () => {
     expect(card().tagName).toBe('A');
   });
 
+  /**
+   * The dataset is dictionary text - `pathToSearchResult` derives it from a concept path's
+   * first segment - and the detail route refuses anything outside its allow-list, which is a
+   * security control. So the card has to agree with the route rather than hand the user a
+   * link that opens onto "We could not read that variable link".
+   */
+  describe('a variable the detail route will not accept', () => {
+    // A study named the way the mockups name them, not an attack.
+    const unlinkable = { dataset: 'BioLINCC (phs004266)' };
+
+    it('renders no link at all', () => {
+      renderCard(unlinkable);
+
+      expect(card().tagName).not.toBe('A');
+      expect(card()).not.toHaveAttribute('href');
+    });
+
+    it('says on the card that it cannot be opened', () => {
+      renderCard(unlinkable);
+
+      expect(screen.getByTestId('search-result-card-unopenable')).toHaveTextContent(
+        'This variable cannot be opened',
+      );
+    });
+
+    it('still shows the result, which is real even though it cannot be opened', () => {
+      renderCard(unlinkable);
+
+      expect(screen.getByTestId('search-result-card-description')).toHaveTextContent(
+        'Age of the participant at the exam',
+      );
+      // Still the acronym: only the link is withheld, nothing about how the card reads.
+      expect(screen.getByTestId('search-result-card-study')).toHaveTextContent('TDS');
+      expect(screen.getByTestId('search-result-card-type')).toHaveTextContent('Continuous');
+    });
+
+    it('does not offer that message on a variable that opens fine', () => {
+      renderCard();
+
+      expect(screen.queryByTestId('search-result-card-unopenable')).toBeNull();
+      expect(card()).toHaveAttribute('href');
+    });
+  });
+
   it('logs the click with the variable it opened', async () => {
     renderCard();
 

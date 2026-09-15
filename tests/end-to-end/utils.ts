@@ -108,15 +108,6 @@ export const addFilterButton = (page: Page) => page.getByTestId('filter-particip
 export const addHierarchyFilterButton = (page: Page) => page.getByTestId('add-hierarchy-filter');
 
 /**
- * Serves concept detail for any concept in `searchResults`, out of the row itself.
- *
- * The detail page loads the concept before it renders anything, so every spec that opens a
- * result needs detail for it - where a row's filter icon only fetched it for a Categorical
- * variable's value list. A search row is a subset of a detail response, which is all a spec
- * needs to get the interface on screen. Specs that assert on detail fields register their own
- * route after this one and win.
- */
-/**
  * The rows as this module was loaded with them.
  *
  * Snapshotted rather than read live. Several specs mutate these fixtures in place -
@@ -127,6 +118,15 @@ export const addHierarchyFilterButton = (page: Page) => page.getByTestId('add-hi
  */
 const SEARCH_ROWS: SearchResult[] = structuredClone(searchResults.content) as SearchResult[];
 
+/**
+ * Serves concept detail for any concept in `searchResults`, out of the row itself.
+ *
+ * The detail page loads the concept before it renders anything, so every spec that opens a
+ * result needs detail for it - where a row's filter icon only fetched it for a Categorical
+ * variable's value list. A search row is a subset of a detail response, which is all a spec
+ * needs to get the interface on screen. Specs that assert on detail fields register their own
+ * route after this one and win.
+ */
 export const mockConceptDetailFromRows = (page: Page) =>
   page.route(`${conceptsDetailPath}/*`, async (route: Route) => {
     const conceptPath = route.request().postData() ?? '';

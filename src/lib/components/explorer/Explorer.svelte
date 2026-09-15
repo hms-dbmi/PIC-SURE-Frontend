@@ -45,7 +45,10 @@
   // Still 'ExplorerTable': it is the key `getDefaultRows`/`setDefaultRows` store the user's
   // rows-per-page choice under, and `stores/Search` reads that same key when it builds the
   // handler. Renaming it here would silently drop everyone's saved page size.
-  const tableName = 'ExplorerTable';
+  const rowsPreferenceKey = 'ExplorerTable';
+  // Declared once, by the component that scrolls it: the list takes the id it is given, so a
+  // second list on a page cannot end up sharing this one.
+  const resultsId = 'search-results';
   // By segment, never by substring: below the section root the path carries dictionary data,
   // so a dataset named `discover` must not read as the Discover section.
   let isDiscoverPage = $derived(isDiscoverSection(page.url.pathname));
@@ -77,7 +80,7 @@
   }
 
   function scrollToSearchResults() {
-    document.getElementById('search-results')?.scrollIntoView({ block: 'start' });
+    document.getElementById(resultsId)?.scrollIntoView({ block: 'start' });
   }
 
   onMount(() => {
@@ -126,7 +129,8 @@
       </ErrorAlert>
     {:else if $searchTerm || $selectedFacets.length > 0}
       <SearchResultList
-        {tableName}
+        id={resultsId}
+        {rowsPreferenceKey}
         {handler}
         {section}
         isLoading={$isLoading}

@@ -11,11 +11,19 @@ import { searchRoute, showsSearchChrome } from '$lib/explorer/searchChrome';
 import { genotypesMode, phenotypesMode } from '$lib/explorer/searchModes';
 import {
   encodeVariableKey,
+  isLinkableVariableKey,
   VARIABLE_SEGMENT,
   variableDetailHref,
   variableKeyFromParams,
   type VariableKey,
 } from '$lib/explorer/variableUrl';
+
+/** The href for a key this module is expected to accept. Fails loudly if it refused. */
+function href(section: 'explorer' | 'discover', key: VariableKey, searchTerm = ''): string {
+  const built = variableDetailHref(section, key, searchTerm);
+  expect(built).toBeDefined();
+  return built as string;
+}
 
 // The detail page has no slug to key on yet, so its URL carries the dataset and the concept
 // path - the two things `getConceptDetails` needs. These tests pin the round trip through
@@ -52,6 +60,32 @@ const keys: Record<string, VariableKey> = {
 };
 
 /**
+ * Datasets that could leave their path segment, and the re-encoded and scheme-shaped variants
+ * that go with them. Shared by the rejection block and by the builder/route agreement block
+ * below, so the two cannot drift apart into testing different sets.
+ */
+const TRAVERSAL_DATASETS = [
+  '../../../../psama/studyAccess',
+  '..\\..\\..\\..\\psama\\studyAccess',
+  '..',
+  '../psama',
+  'a/b',
+  'a\\b',
+  'phs123/../../psama/studyAccess',
+  // Re-encoded, in case something downstream decodes a second time.
+  '%2F..%2Fpsama',
+  'phs123%2E%2E',
+  'phs123?x=1',
+  'phs123#x',
+  'phs123:8080',
+  'a..b',
+  '.',
+  '...',
+  'http://evil.example/x',
+  '//evil.example/x',
+];
+
+/**
  * How SvelteKit hands a URL's segments to a load: it decodes the pathname and then each param
  * (`decode_pathname` then `decode_params`, `@sveltejs/kit/src/utils/url.js`) before the
  * loader runs, which is why `variableKeyFromParams` only has to judge what arrives. Mirrored
@@ -71,9 +105,7 @@ describe('the variable URL key', () => {
     it.each(Object.entries(keys))(
       'survives a real URL and SvelteKit param decoding with %s',
       (_name, key) => {
-        expect(variableKeyFromParams(paramsFromHref(variableDetailHref('explorer', key)))).toEqual(
-          key,
-        );
+        expect(variableKeyFromParams(paramsFromHref(href('explorer', key)))).toEqual(key);
       },
     );
 
@@ -100,26 +132,7 @@ describe('the variable URL key', () => {
    * `$lib/stores/Dictionary` escapes the dataset at the request boundary as well.
    */
   describe('rejects a dataset that could leave its path segment', () => {
-    it.each([
-      '../../../../psama/studyAccess',
-      '..\\..\\..\\..\\psama\\studyAccess',
-      '..',
-      '../psama',
-      'a/b',
-      'a\\b',
-      'phs123/../../psama/studyAccess',
-      // Re-encoded, in case something downstream decodes a second time.
-      '%2F..%2Fpsama',
-      'phs123%2E%2E',
-      'phs123?x=1',
-      'phs123#x',
-      'phs123:8080',
-      'a..b',
-      '.',
-      '...',
-      'http://evil.example/x',
-      '//evil.example/x',
-    ])('rejects %s', (dataset) => {
+    it.each(TRAVERSAL_DATASETS)('rejects %s', (dataset) => {
       expect(variableKeyFromParams({ dataset, conceptPath: '\\a\\b\\' })).toBeUndefined();
     });
 
@@ -127,6 +140,69 @@ describe('the variable URL key', () => {
       expect(
         variableKeyFromParams({ dataset: '../../psama/studyAccess', conceptPath: 'ATTACKER' }),
       ).toBeUndefined();
+    });
+  });
+
+  /**
+   * One definition, used by both ends of the URL.
+   *
+   * These two ends were written for different threat models and used to agree only by
+   * convention. That cost nothing while the only way to reach the route was to type a URL;
+   * once the result cards link here it is the gate on every search result, and the input is
+   * dictionary text rather than something a person typed. A dataset the builder was happy
+   * with but the route refuses is a card that renders correctly and opens onto an error page,
+   * for every variable in that dataset, with nothing on the card to say so.
+   */
+  describe('the builder and the route agree', () => {
+    const REFUSED_BY_THE_ROUTE = [
+      ...TRAVERSAL_DATASETS,
+      // Not attacks - shapes a dictionary could plausibly emit, all outside SAFE_DATASET.
+      'BioLINCC (phs004266)',
+      'phs000179:v1.p2',
+      'a+b',
+      'a&b',
+      'a,b',
+      "Age a l'examen",
+      'Âge',
+      '',
+      '   ',
+    ];
+
+    it.each(REFUSED_BY_THE_ROUTE)('builds no link for %s, which the route refuses', (dataset) => {
+      const key = { dataset, conceptPath: '\\a\\b\\' };
+      // The premise: this is a key the route will not act on.
+      expect(variableKeyFromParams(key)).toBeUndefined();
+      // So there is no link to give a card. Anything else is a dead link with no signal.
+      expect(variableDetailHref('explorer', key)).toBeUndefined();
+      expect(variableDetailHref('discover', key)).toBeUndefined();
+    });
+
+    it.each([
+      { case: 'a blank concept path', conceptPath: '   ' },
+      { case: 'a missing concept path', conceptPath: '' },
+      {
+        case: 'a concept path with a control character',
+        conceptPath: `\\a\\b\\${String.fromCharCode(0)}`,
+      },
+    ])('builds no link when the concept path is refused: $case', ({ conceptPath }) => {
+      const key = { dataset: 'phs123', conceptPath };
+      expect(variableKeyFromParams(key)).toBeUndefined();
+      expect(variableDetailHref('explorer', key)).toBeUndefined();
+    });
+
+    // The other direction: whatever it does build has to survive the round trip into a key
+    // the route acts on. `keys` is the table of everything this module claims to support.
+    it.each(Object.entries(keys))('builds a link the route accepts for %s', (_name, key) => {
+      expect(isLinkableVariableKey(key)).toBe(true);
+      expect(variableKeyFromParams(paramsFromHref(href('explorer', key)))).toEqual(key);
+    });
+
+    it('answers the same question for both ends', () => {
+      for (const dataset of [...REFUSED_BY_THE_ROUTE, 'phs123', 'test_data_set.v1.p1']) {
+        const key = { dataset, conceptPath: '\\a\\b\\' };
+        expect(isLinkableVariableKey(key)).toBe(variableKeyFromParams(key) !== undefined);
+        expect(isLinkableVariableKey(key)).toBe(variableDetailHref('explorer', key) !== undefined);
+      }
     });
   });
 
@@ -158,10 +234,10 @@ describe('the variable URL key', () => {
     };
 
     it('points at the section the user is searching in', () => {
-      expect(variableDetailHref('explorer', result)).toBe(
+      expect(href('explorer', result)).toBe(
         '/explorer/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C',
       );
-      expect(variableDetailHref('discover', result)).toBe(
+      expect(href('discover', result)).toBe(
         '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C',
       );
     });
@@ -169,13 +245,13 @@ describe('the variable URL key', () => {
     // Otherwise a copied detail link drops the search, and Back to Search Results lands on
     // an empty results page.
     it('carries the active search term, encoded', () => {
-      expect(variableDetailHref('explorer', result, 'heart attack & more')).toBe(
+      expect(href('explorer', result, 'heart attack & more')).toBe(
         '/explorer/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C?search=heart%20attack%20%26%20more',
       );
     });
 
     it('omits the query string when there is no search', () => {
-      expect(variableDetailHref('explorer', result, '')).not.toContain('?');
+      expect(href('explorer', result, '')).not.toContain('?');
     });
   });
 
@@ -201,7 +277,7 @@ describe('the variable URL key', () => {
   // this module builds, rather than against hand-written pathnames.
   describe('the URLs it builds keep the search chrome', () => {
     it.each(Object.entries(keys))('on Explore with %s', (_name, key) => {
-      const { pathname } = new URL(variableDetailHref('explorer', key), 'http://localhost');
+      const { pathname } = new URL(href('explorer', key), 'http://localhost');
       expect(searchRoute(pathname)).toEqual({ section: 'explorer', child: 'variable' });
       expect(showsSearchChrome(pathname)).toBe(true);
       expect(phenotypesMode.isActive(pathname)).toBe(true);
@@ -209,7 +285,7 @@ describe('the variable URL key', () => {
     });
 
     it.each(Object.entries(keys))('on Discover with %s', (_name, key) => {
-      const { pathname } = new URL(variableDetailHref('discover', key), 'http://localhost');
+      const { pathname } = new URL(href('discover', key), 'http://localhost');
       expect(searchRoute(pathname)).toEqual({ section: 'discover', child: 'variable' });
       expect(showsSearchChrome(pathname)).toBe(true);
       expect(phenotypesMode.isActive(pathname)).toBe(true);
