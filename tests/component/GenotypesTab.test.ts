@@ -56,7 +56,7 @@ import { createGenomicFilter, createSnpsFilter, type Filter } from '$lib/models/
 import { Option } from '$lib/models/GenomeFilter';
 import { addFilter, genomicFilters } from '$lib/stores/Filter';
 import { clearGeneFilters, selectedFrequency, selectedGenes } from '$lib/stores/GeneFilter';
-import { draftLoadedFrom } from '$lib/stores/GenomicDraft';
+import { draftLoadedFrom, loadDraftForEditing } from '$lib/stores/GenomicDraft';
 import { filterMethod } from '$lib/stores/GenomicFilterMethod';
 import { searchTerm } from '$lib/stores/Search';
 import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
@@ -71,6 +71,14 @@ const geneOption = () => screen.queryByTestId('gene-variant-option');
 const snpOption = () => screen.queryByTestId('snp-option');
 const addFilterBtn = () => screen.getByTestId('add-filter-btn');
 const summary = () => screen.getByTestId('summary-of-selected-filters');
+/** The checkbox for a gene in the selected box, which unselects it when clicked. */
+const selectedOption = (option: string) => {
+  const box = document.querySelector<HTMLElement>(
+    `#selected-options-container #option-${option.toLowerCase()} input`,
+  );
+  if (!box) throw new Error(`${option} is not in the selected box`);
+  return box;
+};
 const consequenceBox = (severity: string, consequence: string) =>
   screen.queryByTestId(`checkbox:${severity}-${consequence}`);
 
@@ -291,6 +299,27 @@ describe('the Genotypes tab', () => {
       expect(document.getElementById('options-container')).toHaveTextContent('IL33');
     });
 
+    // The same mount-time snapshot problem as the variant editor, in the gene panel: it takes
+    // the genes it will offer back from the draft as it mounts. Loading a filter into a tab
+    // already on screen - which is what the chip's edit control does - happens after that.
+    it('offers a gene loaded by the chip edit control back once unselected', async () => {
+      const applied = appliedGeneFilter();
+      genomicFilters.set([applied]);
+      // Already loaded once and taken elsewhere, so mounting loads nothing
+      draftLoadedFrom.set({ gene: applied.uuid, snp: null });
+      selectedGenes.set(['CHD8']);
+      render(GenotypesTab);
+      await tick();
+
+      loadDraftForEditing(applied);
+      await tick();
+      // The user unselects the gene it just loaded
+      selectedGenes.set([]);
+      await tick();
+
+      expect(document.getElementById('options-container')).toHaveTextContent('IL33');
+    });
+
     it('loads the variant panel from an applied SNP filter, and picks that method', () => {
       enable(true, true);
       genomicFilters.set([createSnpsFilter([snp])]);
@@ -347,6 +376,120 @@ describe('the Genotypes tab', () => {
       expect(screen.getByLabelText('Rare')).not.toBeChecked();
       expect(addFilterBtn()).toHaveTextContent('Add Filter');
       expect(addFilterBtn()).toBeDisabled();
+    });
+  });
+
+  // A draft loaded from an applied filter must not share an array with it: anything the panels
+  // then wrote in place would rewrite the cohort's filter invisibly. The variant half of this
+  // is in tests/unit/GenomicDraft.test.ts, where the edit can be made without depending on a
+  // select binding to carry it.
+  describe('the applied filter as an object', () => {
+    it('is untouched by editing the genes and frequencies loaded from it', async () => {
+      const applied = appliedGeneFilter();
+      const appliedUuid = applied.uuid;
+      genomicFilters.set([applied]);
+      render(GenotypesTab);
+
+      await fireEvent.click(screen.getByLabelText('Common'));
+      await fireEvent.click(selectedOption('IL33'));
+      await tick();
+
+      expect(get(selectedFrequency)).toEqual(['Rare', 'Common']);
+      expect(applied.Gene_with_variant).toEqual(['IL33']);
+      expect(applied.Variant_frequency_as_text).toEqual(['Rare']);
+      expect(applied.Variant_consequence_calculated).toEqual(['stop_lost']);
+      expect(applied.uuid).toBe(appliedUuid);
+    });
+  });
+
+  // The editor holds the variant being constrained in component-local state, where nothing
+  // outside it can see or reset it - the same shape of problem as the consequence tree, and
+  // it needs the same answer. The chip's edit control is the case that finds it: its target
+  // is the route the user is already on, so nothing remounts.
+  describe('the variant editor', () => {
+    it('drops an unsaved variant when the chip reloads the filter', async () => {
+      enable(false, true);
+      const applied = createSnpsFilter([snp]);
+      genomicFilters.set([applied]);
+      render(GenotypesTab);
+
+      // The applied variant put back in the editor, not saved: the search box is taken over
+      // by it, and the genotype select and Save SNP are the editor itself
+      await fireEvent.click(screen.getByTestId(`snp-edit-btn-${snp.search}`));
+      expect(screen.getByTestId('snp-search-box')).toBeDisabled();
+      expect(screen.getByTestId('snp-constraint')).toBeInTheDocument();
+
+      // When the chip's edit control asks for this filter, from the tab it already leads to
+      loadDraftForEditing(applied);
+      await tick();
+
+      // Then there is nothing left to save the unsaved variant into the draft with
+      expect(screen.queryByTestId('snp-constraint')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('snp-save-btn')).not.toBeInTheDocument();
+      expect(screen.getByTestId('snp-search-box')).toHaveValue('');
+      expect(get(selectedSNPs)).toEqual([snp]);
+    });
+  });
+
+  // Where both methods have a filter, the tab has two filters and one interface to show them
+  // in, so it picks neither: any choice would be arbitrary. Both drafts still load, so
+  // whichever the user picks opens onto its own filter.
+  describe('with a filter applied to both methods', () => {
+    beforeEach(() => enable(true, true));
+
+    it('leaves the method to the user, and loads both drafts', () => {
+      genomicFilters.set([appliedGeneFilter(), createSnpsFilter([snp])]);
+
+      render(GenotypesTab);
+
+      expect(geneOption()).toBeInTheDocument();
+      expect(snpOption()).toBeInTheDocument();
+      expect(get(filterMethod)).toBe(Option.None);
+      expect(get(selectedGenes)).toEqual(['IL33']);
+      expect(get(selectedSNPs)).toEqual([snp]);
+    });
+
+    // Removing one of the two must not move the user off the interface they are on: they are
+    // owed the sight of the panels emptying and the button going back to Add Filter, not a
+    // different method's filter appearing in front of them.
+    it('leaves the user on the interface a removed filter has emptied', async () => {
+      genomicFilters.set([appliedGeneFilter(), createSnpsFilter([snp])]);
+      render(GenotypesTab);
+      await fireEvent.click(geneOption()!);
+      expect(document.getElementById('gene-search')).toBeInTheDocument();
+
+      // What the remove control on the gene filter's chip does, from the panel above
+      genomicFilters.set([createSnpsFilter([snp])]);
+      await tick();
+
+      expect(get(filterMethod)).toBe(Option.Genomic);
+      expect(document.getElementById('gene-search')).toBeInTheDocument();
+      expect(document.getElementById('snp-search')).not.toBeInTheDocument();
+      expect(summary()).not.toHaveTextContent('IL33');
+      expect(addFilterBtn()).toHaveTextContent('Add Filter');
+      expect(addFilterBtn()).toBeDisabled();
+      // And the variant draft it was not asked about is still there
+      expect(get(selectedSNPs)).toEqual([snp]);
+    });
+
+    // The edit control names one filter, so it replaces one draft. The other method's draft
+    // is a separate interface the user has not asked about.
+    it('keeps the other draft when one filter is opened from its chip', async () => {
+      const appliedGene = appliedGeneFilter();
+      genomicFilters.set([appliedGene, createSnpsFilter([snp])]);
+      render(GenotypesTab);
+
+      // Both drafts taken somewhere else
+      const draftSnp = { search: 'chr1,1234567,A,G', constraint: '1/1' };
+      selectedGenes.set(['CHD8']);
+      selectedSNPs.set([draftSnp]);
+      await tick();
+
+      loadDraftForEditing(appliedGene);
+
+      expect(get(filterMethod)).toBe(Option.Genomic);
+      expect(get(selectedGenes)).toEqual(['IL33']);
+      expect(get(selectedSNPs)).toEqual([draftSnp]);
     });
   });
 

@@ -4,12 +4,27 @@
   import * as api from '$lib/api';
   import { toaster } from '$lib/toaster';
   import { Picsure } from '$lib/paths';
-  import { geneOptions, selectedGenes } from '$lib/stores/GeneFilter';
+  import { geneDraftRevision, geneOptions, selectedGenes } from '$lib/stores/GeneFilter';
 
   import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
   import { log, createLog } from '$lib/logger';
 
+  /**
+   * The genes the draft held when it was last replaced from outside these panels, kept so that
+   * unselecting one puts it back in the options list: the page of the values endpoint this
+   * loaded need not contain a gene that came from the applied filter, and a gene that is in
+   * neither list has vanished.
+   *
+   * Re-read on every such replacement rather than at mount alone, because the filter can be
+   * loaded into a tab that is already on screen - which is what the edit control on a filter's
+   * chip does, the Genotypes tab being the route it leads to. Untracked, so ordinary selecting
+   * and unselecting leaves it alone; the options list maintains itself for those.
+   */
   let genesFromSavedFilter: string[] = $state([]);
+  $effect.pre(() => {
+    void $geneDraftRevision;
+    genesFromSavedFilter = [...get(selectedGenes)];
+  });
   let unselectedGenes = $derived(
     [...new Set([...genesFromSavedFilter, ...$geneOptions.options])].filter(
       (gene) => !$selectedGenes.includes(gene),
@@ -70,7 +85,6 @@
 
   onMount(async () => {
     previousGeneCount = $selectedGenes.length;
-    genesFromSavedFilter = [...$selectedGenes];
     // Only a first mount loads. A remount - which every search-mode switch causes - already
     // has the options and the scroll position it left behind.
     if (!get(geneOptions).loaded) await getGeneValues();

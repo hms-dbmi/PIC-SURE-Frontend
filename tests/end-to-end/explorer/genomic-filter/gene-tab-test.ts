@@ -639,6 +639,7 @@ test.describe('The applied filter', () => {
     await expect(selectedContainer(page).getByLabel(geneValues.results[0])).toHaveCount(0);
     await expect(frequencyBox(page, 'Rare')).not.toBeChecked();
     await expect(consequenceBox(page, 'stop_lost')).toHaveCount(0);
+    await expect(severityBox(page, 'High Severity')).not.toBeChecked();
     await expect(severityBox(page, 'High Severity')).toHaveJSProperty('indeterminate', false);
     await expect(addFilterBtn(page)).toHaveText(/Add Filter/);
     await expect(addFilterBtn(page)).toBeDisabled();

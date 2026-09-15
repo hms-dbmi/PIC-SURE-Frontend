@@ -10,15 +10,18 @@ export const selectedFrequency: Writable<string[]> = writable([]);
 export const selectedConsequence: Writable<string[]> = writable([]);
 
 /**
- * Bumped whenever something outside the consequence panel replaces the whole consequence
- * selection - loading an applied filter into it, or clearing it.
+ * Bumped whenever something outside the gene panels replaces the whole selection above -
+ * loading an applied filter into it, or clearing it.
  *
- * The panel builds its tree of checkboxes from the selection once and owns that state
- * afterwards, so it has to be told when the store is rewritten from elsewhere. It cannot
- * simply follow every change instead: rebuilding the tree on each click would throw away
- * which severity groups the user had open.
+ * Two of those panels read the selection once, as they are built, and own what they made of
+ * it afterwards: the consequence tree's checkboxes, and the list of genes the gene panel will
+ * offer back if the user unselects one. Neither can notice being overtaken, and neither can
+ * simply follow every change instead - rebuilding the tree on each click would throw away
+ * which severity groups the user had open. So the two functions that do replace the selection
+ * wholesale say so, and those panels rebuild on that alone.
  */
-export const consequenceRevision: Writable<number> = writable(0);
+export const geneDraftRevision: Writable<number> = writable(0);
+
 export const consequences: Readable<string[]> = derived(selectedConsequence, ($c) =>
   $c.filter((cons) => !severityKeys.includes(cons)),
 );
@@ -59,8 +62,10 @@ export const emptyGeneOptions = (): GeneOptions => ({
 export const geneOptions: Writable<GeneOptions> = writable(emptyGeneOptions());
 
 export function generateGenomicFilter() {
-  const genes = get(selectedGenes);
-  const freq = get(selectedFrequency);
+  // Copied on the way out, so the filter this becomes owns its values and the panels cannot
+  // reach into it afterwards. `consequences` is derived and so is a copy already.
+  const genes = [...get(selectedGenes)];
+  const freq = [...get(selectedFrequency)];
   const cons = get(consequences);
   return createGenomicFilter({
     Gene_with_variant: genes.length > 0 ? genes : undefined,
@@ -70,17 +75,21 @@ export function generateGenomicFilter() {
 }
 
 export function populateFromGeneFilter(filter: GenomicFilterInterface) {
-  selectedGenes.set(filter?.Gene_with_variant || []);
-  selectedConsequence.set(filter?.Variant_consequence_calculated || []);
-  selectedFrequency.set(filter?.Variant_frequency_as_text || []);
-  consequenceRevision.update((revision) => revision + 1);
+  // Copied, not assigned: these arrays belong to the applied filter, and a draft that shares
+  // them would edit the cohort's filter in place - no store write, no new uuid, and no way for
+  // anything holding the filter to notice. Nothing in these panels writes into an array today,
+  // but it is the sharing that would make such a write invisible, so it stops here.
+  selectedGenes.set([...(filter?.Gene_with_variant || [])]);
+  selectedConsequence.set([...(filter?.Variant_consequence_calculated || [])]);
+  selectedFrequency.set([...(filter?.Variant_frequency_as_text || [])]);
+  geneDraftRevision.update((revision) => revision + 1);
 }
 
 export function clearGeneFilters() {
   selectedGenes.set([]);
   selectedFrequency.set([]);
   selectedConsequence.set([]);
-  consequenceRevision.update((revision) => revision + 1);
+  geneDraftRevision.update((revision) => revision + 1);
 }
 
 export function addConsquence(consequence: string) {

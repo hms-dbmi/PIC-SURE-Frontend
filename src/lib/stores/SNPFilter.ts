@@ -10,17 +10,39 @@ import { getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
 
 export const selectedSNPs: Writable<SNP[]> = writable([]);
 
+/**
+ * Bumped whenever something outside the variant panel replaces the whole variant selection -
+ * loading an applied filter into it, or clearing it.
+ *
+ * The panel keeps the variant being constrained in component-local state, which nothing
+ * outside it can see, so it has to be told when the selection behind it is replaced. This is
+ * the same arrangement as `consequenceRevision`, for the same reason: state that is read once
+ * and then owned locally cannot notice being overtaken.
+ */
+export const snpDraftRevision: Writable<number> = writable(0);
+
+/** A copy of the variants, owing nothing to whoever held them. See `populateFromSNPFilter`. */
+const copyOf = (snps: SNP[]) => snps.map((snp) => ({ ...snp }));
+
 export function generateSNPFilter() {
-  const snps = get(selectedSNPs);
-  return createSnpsFilter(snps);
+  // Copied on the way out as well as on the way in, so the filter this becomes owns its
+  // variants and the panels cannot reach into it afterwards.
+  return createSnpsFilter(copyOf(get(selectedSNPs)));
 }
 
 export function populateFromSNPFilter(filter: SnpFilterInterface) {
-  selectedSNPs.set(filter.snpValues);
+  // Copied, not assigned. The array this arrives in belongs to the applied filter, and a
+  // draft holding that same array edits the cohort's filter in place: without a store write,
+  // without recomputing the uuid that its description and the Genotypes tab's "already loaded
+  // from" marker both key on, and whether or not the user ever pressed Update Filter. The
+  // query would then use the edit while every copy of the filter still described the original.
+  selectedSNPs.set(copyOf(filter.snpValues || []));
+  snpDraftRevision.update((revision) => revision + 1);
 }
 
 export function clearSnpFilters() {
   selectedSNPs.set([]);
+  snpDraftRevision.update((revision) => revision + 1);
 }
 
 function snpRequest(snp: SNP): Promise<number> {
@@ -41,10 +63,11 @@ export async function getSNPCounts(check: SNP): Promise<{ count: number; errors:
 
 export function saveSNP(newSNP: SNP) {
   const snps = get(selectedSNPs);
-  const index = snps.findIndex((snp) => snp.search === newSNP.search);
-  if (index >= 0) {
-    snps[index] = newSNP;
-    selectedSNPs.set(snps);
+  // Replaced into a new array rather than written into the existing one. An in-place write is
+  // invisible to everything that holds the array - which has included the applied filter -
+  // and a store whose subscribers cannot see a change may as well not have changed.
+  if (snps.some((snp) => snp.search === newSNP.search)) {
+    selectedSNPs.set(snps.map((snp) => (snp.search === newSNP.search ? newSNP : snp)));
   } else {
     selectedSNPs.set([...snps, newSNP]);
   }

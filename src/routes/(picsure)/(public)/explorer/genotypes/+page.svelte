@@ -50,13 +50,15 @@
     return undefined;
   }
 
+  const choosesMethod = () => methodForcedBy(config.features) === undefined;
+
   const forcedMethod = $derived(methodForcedBy(config.features));
 
   // Configuration wins outright where it decides, so the remembered method is only read in
   // the case it can be set in - a method carried over from elsewhere cannot strand a
   // deployment on an interface it has not enabled.
   const method = $derived(forcedMethod ?? $filterMethod);
-  const showsMethodChooser = $derived(forcedMethod === undefined);
+  const showsMethodChooser = $derived(choosesMethod());
 
   // There is only ever one filter of each genomic method, so the tab has no separate edit
   // mode: whatever the cohort holds is what the panels show, and the action button replaces it.
@@ -77,7 +79,7 @@
   // keep a gene the filter names among its options whether or not the values endpoint's first
   // page has it, and an effect runs after that. Read plainly rather than through the derived
   // values above, which at this point hold nothing but their initial value anyway.
-  loadGenomicDrafts(appliedIn(get(genomicFilters)), methodForcedBy(config.features) === undefined);
+  loadGenomicDrafts(appliedIn(get(genomicFilters)), choosesMethod());
 
   // And again whenever the cohort's genomic filters change under an open tab, which is how
   // removing the filter from its chip empties the panels it was loaded into.

@@ -43,10 +43,14 @@ export const draftLoadedFrom: Writable<{ gene: string | null; snp: string | null
  * filter from its chip while the tab is open empties the panels it was loaded into.
  *
  * `chooseMethod` is for deployments offering both query types. There the method is the user's
- * to pick, except that a single applied filter picks it for them - it is the only one of the
- * two interfaces with anything to show. Two applied filters make any choice arbitrary, so the
- * chooser stays; and a filter being removed never sends the user back to the chooser, since
- * they are looking at the interface it leaves empty.
+ * to pick, except that a single applied filter picks it for them on arrival - it is the only
+ * one of the two interfaces with anything to show. Two applied filters make any choice
+ * arbitrary, so the chooser stays.
+ *
+ * Only on arrival, though, which is why this looks at whether a method has been picked at all.
+ * Nothing that happens while the tab is open may move the user to another interface: removing
+ * one of two applied filters has to leave them watching the panels it emptied and the button
+ * going back to Add Filter, not hand them the other method's filter instead.
  */
 export function loadGenomicDrafts(applied: AppliedGenomicFilters, chooseMethod = false) {
   const loadedFrom = get(draftLoadedFrom);
@@ -64,7 +68,7 @@ export function loadGenomicDrafts(applied: AppliedGenomicFilters, chooseMethod =
   }
   draftLoadedFrom.set({ gene, snp });
 
-  if (!chooseMethod) return;
+  if (!chooseMethod || get(filterMethod) !== Option.None) return;
   if (applied.gene && !applied.snp) filterMethod.set(Option.Genomic);
   else if (applied.snp && !applied.gene) filterMethod.set(Option.SNP);
 }

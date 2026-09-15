@@ -43,6 +43,8 @@ const modeLink = (page: Page, id: string) => page.getByTestId(`search-mode-tab-$
 const addFilterBtn = (page: Page) => page.getByTestId('add-filter-btn');
 const summaryPanel = (page: Page) => page.getByTestId('summary-of-selected-filters');
 const snpChip = (page: Page) => page.getByTestId('added-filter-snp-variant');
+const geneChip = (page: Page) => page.getByTestId('added-filter-genomic');
+const optionsContainer = (page: Page) => page.locator('#options-container');
 
 async function openGenotypesTab(page: Page) {
   await page.goto('/explorer');
@@ -382,4 +384,38 @@ test.describe('The applied filter', () => {
     await expect(addFilterBtn(page)).toBeDisabled();
     await expect(snpChip(page)).toHaveCount(1);
   });
+});
+
+// This deployment can hold both genomic filters at once, which leaves the tab with two filters
+// and one interface to show them in. Removing either must not move the user to the other: the
+// panels emptying and the button going back to Add Filter is what they are owed, and they
+// cannot see it happen on an interface they have been taken off.
+test('removing one of two applied filters leaves the user on the one it emptied', async ({
+  page,
+}) => {
+  // Given a variant filter, and then a gene filter alongside it
+  await applySnpFilter(page);
+  await modeLink(page, 'genotypes').click();
+  await page.getByTestId('gene-variant-option').click();
+  await expect(optionsContainer(page).getByLabel(geneValues.results[0])).toBeVisible({
+    timeout: 10000,
+  });
+  await optionsContainer(page).getByLabel(geneValues.results[0]).click();
+  await addFilterBtn(page).click();
+  await expect(geneChip(page)).toBeVisible();
+  await expect(snpChip(page)).toBeVisible();
+
+  // When the user is in the gene interface and takes the gene filter out from its chip
+  await modeLink(page, 'genotypes').click();
+  await expect(page.locator('#gene-search')).toBeVisible();
+  await expect(addFilterBtn(page)).toHaveText(/Update Filter/);
+  await geneChip(page).getByRole('button', { name: 'Remove Filter' }).click();
+
+  // Then they are still there, watching it empty
+  await expect(page.locator('#gene-search')).toBeVisible();
+  await expect(page.locator('#snp-search')).toHaveCount(0);
+  await expect(addFilterBtn(page)).toHaveText(/Add Filter/);
+  await expect(addFilterBtn(page)).toBeDisabled();
+  // And the variant filter, which they were not editing, is untouched
+  await expect(snpChip(page)).toHaveCount(1);
 });
