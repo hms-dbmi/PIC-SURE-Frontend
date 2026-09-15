@@ -183,6 +183,35 @@ export function initHandler(): () => void {
   };
 }
 
+/**
+ * Applies the term `?search=` is asking for. `?search=` is authoritative on every navigation,
+ * not only when a session starts, because the layout that owns the session outlives the
+ * results page and nothing else re-reads the param. Returns whether the store moved, which is
+ * how a starting session tells "the URL already agrees" from "the URL just changed it".
+ */
+export function applySearchParam(url: URL): boolean {
+  const term = url.searchParams.get('search');
+  if (!term || term === get(searchTerm)) return false;
+  searchTerm.set(term);
+  return true;
+}
+
+/**
+ * Starts a search session and returns the call that releases it. Owned by the /explorer and
+ * /discover layouts so the session outlives the results page: term, facets, current page and
+ * rows survive a trip to a child route and back.
+ */
+export function startSearchSession(url: URL): () => void {
+  const release = initHandler();
+  // initHandler() drops whatever the previous session loaded, so the new one needs one load to
+  // start it off - either the term the URL is seeding, or an explicit invalidate. That is also
+  // the session's only facet-load attempt: returning from a child route no longer remounts
+  // anything that would retry, so a failed load leaves FacetSideBar's error - which tells the
+  // user to refresh - in place for the rest of the session.
+  if (!applySearchParam(url)) tableHandler.invalidate();
+  return release;
+}
+
 async function search(
   state: State,
   generation: number,
