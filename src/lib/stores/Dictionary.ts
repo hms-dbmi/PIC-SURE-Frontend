@@ -158,15 +158,38 @@ function processFacetResults(response: DictionaryFacetResult[]) {
   });
 }
 
+/**
+ * Escapes a dataset for the request path it is about to be interpolated into.
+ *
+ * Load-bearing, not tidiness. `api.send` resolves its path against
+ * `window.location.origin`, so `fetch` normalises the result: `..` segments in a dataset walk
+ * out of the dictionary namespace and aim an authenticated, token-bearing POST - carrying a
+ * caller-supplied string body - at whatever same-origin endpoint the path lands on.
+ * `picsure/dictionary/concepts/detail/../../../../psama/studyAccess` resolves to
+ * `/psama/studyAccess`, which is exactly the URL, method and body shape of
+ * `addManualRole()`. `\` is a path separator to the URL parser too, so it is not only `/`.
+ *
+ * Escaping an ordinary dataset name is a no-op. Routes that take a dataset from the URL
+ * constrain it as well (`$lib/explorer/variableUrl`); the two checks fail independently and
+ * this is the one that covers every caller.
+ */
+function datasetSegment(dataset: string): string {
+  return encodeURIComponent(dataset);
+}
+
 export async function getConceptDetails(
   conceptPath: string,
   dataset: string,
 ): Promise<SearchResult> {
-  const url = `${Picsure.Concept.Detail}/${dataset}`;
+  const url = `${Picsure.Concept.Detail}/${datasetSegment(dataset)}`;
   const rawConceptPath = String.raw`${conceptPath.replace(/\\\\/g, '\\')}`;
+  // Keyed on both halves. The same concept path exists under more than one dataset, and a
+  // path-only key answers a request for one dataset's concept with another's - so a URL
+  // naming dataset B would render dataset A's variable, hierarchy and filters.
+  const cacheKey = JSON.stringify([dataset, rawConceptPath]);
 
-  if (dictonaryCacheMap.has(rawConceptPath)) {
-    return dictonaryCacheMap.get(rawConceptPath) as SearchResult;
+  if (dictonaryCacheMap.has(cacheKey)) {
+    return dictonaryCacheMap.get(cacheKey) as SearchResult;
   }
 
   const response: SearchResult = await api.post(url, rawConceptPath);
@@ -175,7 +198,7 @@ export async function getConceptDetails(
     throw new Error('No response');
   }
 
-  cacheResult(rawConceptPath, response);
+  cacheResult(cacheKey, response);
   return response;
 }
 
@@ -184,7 +207,7 @@ export async function getHierarchyConcepts(
   conceptPath: string,
 ): Promise<SearchResult[]> {
   const response: SearchResult[] = await api.post(
-    `${Picsure.Concept.Hierarchy}/${dataset}`,
+    `${Picsure.Concept.Hierarchy}/${datasetSegment(dataset)}`,
     conceptPath,
   );
 
@@ -244,7 +267,7 @@ export async function getFacetCategoryCount(isOpenAccess = false, category: stri
 }
 
 export async function getDatasetDetails(datasetId: string) {
-  return api.get(`${Picsure.DashboardDrawer}/${datasetId}`);
+  return api.get(`${Picsure.DashboardDrawer}/${datasetSegment(datasetId)}`);
 }
 
 export async function getConceptTree(
@@ -252,7 +275,7 @@ export async function getConceptTree(
   depth: number,
   conceptPath: string,
 ): Promise<SearchResult> {
-  const url = `${Picsure.Concept.Tree}/${dataset}?depth=${depth}`;
+  const url = `${Picsure.Concept.Tree}/${datasetSegment(dataset)}?depth=${depth}`;
   return api.post(url, conceptPath);
 }
 

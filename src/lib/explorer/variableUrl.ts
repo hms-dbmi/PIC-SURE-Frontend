@@ -20,19 +20,12 @@ export type VariableKey = {
   conceptPath: string;
 };
 
-/** The route segment beneath the section root that owns variable detail pages. */
-export const VARIABLE_SEGMENT = 'variable';
-
-/** What a search result needs to carry for its detail page to be addressable. */
-export type VariableKeySource = Pick<SearchResult, 'dataset' | 'conceptPath'>;
-
 /**
- * The key that addresses a search result's detail page. Ticket 15 makes this read the
- * dictionary's slug instead.
+ * The route segment beneath the section root that owns variable detail pages. It has to agree
+ * with the `variable/` route directory under both sections, which `tests/unit/variableUrl`
+ * asserts, since nothing in the type system connects a string to a directory name.
  */
-export function variableKeyOf(result: VariableKeySource): VariableKey {
-  return { dataset: result.dataset, conceptPath: result.conceptPath };
-}
+export const VARIABLE_SEGMENT = 'variable';
 
 /** The two path segments that identify a variable, percent-encoded for a URL. */
 export function encodeVariableKey({ dataset, conceptPath }: VariableKey): string {
@@ -40,40 +33,53 @@ export function encodeVariableKey({ dataset, conceptPath }: VariableKey): string
 }
 
 /**
- * The key a route's params carry, or `undefined` when they carry nothing usable - so callers
- * render an error instead of asking the dictionary about an empty concept path.
+ * What a dataset name may contain.
  *
- * SvelteKit percent-decodes route params before a load sees them, so this only has to judge
- * what arrived. `decodeVariableKey` is the half that does the decoding.
+ * An allow-list, and a security control rather than a tidiness one. The dataset is
+ * interpolated into a request path by `$lib/stores/Dictionary`, and SvelteKit decodes `%2F`
+ * and `%5C` only *after* matching routes - so `..%2F..%2F..%2Fpsama%2FstudyAccess` arrives
+ * here as one parameter reading `../../../psama/studyAccess`. Left alone, that walks the
+ * authenticated, token-bearing POST out of the dictionary namespace and onto another
+ * same-origin endpoint. Nothing outside this set can leave its path segment.
+ *
+ * The space is here because real dataset names have them: `pathToSearchResult` derives the
+ * dataset from a concept path's first segment, and those look like
+ * `_Topmed Study Accession with Subject ID`.
+ */
+const SAFE_DATASET = /^[A-Za-z0-9 ._-]+$/;
+
+/**
+ * A concept path is dictionary data - backslash-delimited, with spaces, punctuation and
+ * non-ASCII text all legitimate - so it gets a shape check rather than a charset one. It
+ * only ever travels in a request body (`POST /dict/concepts/detail/{dataset}` carries it),
+ * never in a path, so it is not a traversal vector. Control characters are the only thing
+ * that cannot be part of a real concept path.
+ */
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/;
+
+/**
+ * The key a route's params carry, or `undefined` when they carry nothing this page may act
+ * on - which the page renders as a readable error rather than passing to the dictionary.
+ *
+ * This is the decode half of the URL key: SvelteKit percent-decodes route params before a
+ * load sees them, so what is left is to judge what arrived. Both route loaders go through
+ * here, so the path these values take in production is the path the tests exercise.
  */
 export function variableKeyFromParams(params: {
   dataset?: string;
   conceptPath?: string;
 }): VariableKey | undefined {
   const { dataset = '', conceptPath = '' } = params;
-  // Trimmed only to judge presence: whitespace inside a concept path is meaningful, and a
-  // key that came back trimmed would no longer address the concept it was built from.
-  if (!dataset.trim() || !conceptPath.trim()) return undefined;
+  if (!SAFE_DATASET.test(dataset)) return undefined;
+  // `..` passes the charset on its own, and is the whole traversal token.
+  if (dataset.includes('..')) return undefined;
+  // Spaces and dots alone address no dataset.
+  if (!/[A-Za-z0-9]/.test(dataset)) return undefined;
+  // The concept path is trimmed only to judge presence: whitespace inside one is meaningful,
+  // and a key that came back trimmed would no longer address the concept it was built from.
+  if (!conceptPath.trim() || CONTROL_CHARACTERS.test(conceptPath)) return undefined;
   return { dataset, conceptPath };
-}
-
-/**
- * The inverse of `encodeVariableKey`, over the still-encoded segments as they appear in the
- * URL. Used by the round-trip test, and by ticket 15's redirect from this URL shape to the
- * slug one.
- */
-export function decodeVariableKey(segments: string): VariableKey | undefined {
-  const separator = segments.indexOf('/');
-  if (separator < 1) return undefined;
-  try {
-    return variableKeyFromParams({
-      dataset: decodeURIComponent(segments.slice(0, separator)),
-      conceptPath: decodeURIComponent(segments.slice(separator + 1)),
-    });
-  } catch {
-    // decodeURIComponent throws URIError on a malformed escape, e.g. a hand-edited `%zz`.
-    return undefined;
-  }
 }
 
 /**
@@ -85,9 +91,9 @@ export function decodeVariableKey(segments: string): VariableKey | undefined {
  */
 export function variableDetailHref(
   section: SearchSection,
-  result: VariableKeySource,
+  result: Pick<SearchResult, 'dataset' | 'conceptPath'>,
   searchTerm = '',
 ): string {
-  const key = encodeVariableKey(variableKeyOf(result));
+  const key = encodeVariableKey({ dataset: result.dataset, conceptPath: result.conceptPath });
   return withSearchTerm(`${searchSectionRoot(section)}/${VARIABLE_SEGMENT}/${key}`, searchTerm);
 }

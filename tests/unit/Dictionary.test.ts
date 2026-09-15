@@ -52,6 +52,9 @@ import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
 import {
   updateFacetsFromSearch,
   searchDictionary,
+  getConceptDetails,
+  getHierarchyConcepts,
+  getConceptTree,
   hiddenFacets,
   openFacets,
   resetFacetState,
@@ -234,5 +237,99 @@ describe('searchDictionary', () => {
       undefined,
       undefined,
     );
+  });
+});
+
+/**
+ * The dataset goes into the request path, and `api.send` resolves that path against
+ * `window.location.origin` - so `fetch` normalises `..` segments and the request lands
+ * wherever the path ends up. `picsure/dictionary/concepts/detail/../../../../psama/studyAccess`
+ * resolves to `/psama/studyAccess`, which is the URL, method and string-body shape of
+ * `addManualRole()`, carrying whatever the caller passed as a body - and `api.send` attaches
+ * the user's bearer token. `\` is a path separator to the URL parser too.
+ *
+ * Only the variable detail route takes a dataset from the URL, and it validates one as well,
+ * but the unencoded concatenation was the shared root cause across every caller.
+ */
+describe('dataset path parameters are escaped', () => {
+  const traversal = '../../../../psama/studyAccess';
+
+  beforeEach(() => mockState.postSpy.mockReset());
+
+  function requestedPath(): string {
+    return mockState.postSpy.mock.calls.at(-1)?.[0] as string;
+  }
+
+  /** What `fetch` would resolve the requested path to, the way `api.send` builds it. */
+  function resolved(path: string): string {
+    return new URL(path, 'http://localhost/').pathname;
+  }
+
+  it('keeps getConceptDetails inside the dictionary namespace', async () => {
+    mockState.postSpy.mockResolvedValueOnce({ conceptPath: '\\a\\', dataset: traversal });
+
+    await getConceptDetails('\\a\\', traversal);
+
+    expect(requestedPath()).toBe(
+      'picsure/dictionary/concepts/detail/..%2F..%2F..%2F..%2Fpsama%2FstudyAccess',
+    );
+    expect(resolved(requestedPath())).toBe(
+      '/picsure/dictionary/concepts/detail/' + encodeURIComponent(traversal),
+    );
+  });
+
+  it('keeps getHierarchyConcepts inside the dictionary namespace', async () => {
+    mockState.postSpy.mockResolvedValueOnce([]);
+
+    await getHierarchyConcepts(traversal, '\\a\\');
+
+    expect(resolved(requestedPath())).toContain('/picsure/dictionary/concepts/hierarchy/');
+  });
+
+  it('keeps getConceptTree inside the dictionary namespace', async () => {
+    mockState.postSpy.mockResolvedValueOnce({});
+
+    await getConceptTree(traversal, 1, '\\a\\');
+
+    expect(resolved(requestedPath())).toContain('/picsure/dictionary/concepts/tree/');
+  });
+
+  it('leaves an ordinary dataset name untouched', async () => {
+    mockState.postSpy.mockResolvedValueOnce({ conceptPath: '\\a\\', dataset: 'phs000284' });
+
+    await getConceptDetails('\\unescaped\\', 'phs000284');
+
+    expect(requestedPath()).toBe('picsure/dictionary/concepts/detail/phs000284');
+  });
+});
+
+// Keyed on the concept path alone, the cache answered a request for one dataset's concept
+// with another dataset's - so a detail URL naming dataset B rendered dataset A's variable,
+// its information and its hierarchy, with no request to reveal the mistake.
+describe('getConceptDetails caching', () => {
+  const conceptPath = '\\SHARED\\age\\';
+
+  beforeEach(() => mockState.postSpy.mockReset());
+
+  it("does not serve one dataset's concept under another dataset", async () => {
+    mockState.postSpy.mockResolvedValueOnce({ conceptPath, dataset: 'phs111', display: 'A' });
+    mockState.postSpy.mockResolvedValueOnce({ conceptPath, dataset: 'phs222', display: 'B' });
+
+    const first = await getConceptDetails(conceptPath, 'phs111');
+    const second = await getConceptDetails(conceptPath, 'phs222');
+
+    expect(first.display).toBe('A');
+    expect(second.display).toBe('B');
+    expect(mockState.postSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('still serves a repeat of the same dataset and path from the cache', async () => {
+    mockState.postSpy.mockResolvedValueOnce({ conceptPath, dataset: 'phs333', display: 'C' });
+
+    await getConceptDetails(conceptPath, 'phs333');
+    const again = await getConceptDetails(conceptPath, 'phs333');
+
+    expect(again.display).toBe('C');
+    expect(mockState.postSpy).toHaveBeenCalledTimes(1);
   });
 });
