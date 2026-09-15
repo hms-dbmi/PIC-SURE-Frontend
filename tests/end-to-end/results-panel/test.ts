@@ -60,6 +60,35 @@ test.describe('Results Panel', () => {
     ).toBeVisible();
     await expect(page.getByTestId('results-summary-panel')).toHaveCount(0);
   });
+  test('Counts do not load where the strip does not render, and resume when it returns', async ({
+    page,
+  }) => {
+    // Given - the /explorer layout spans this route, so the panel component is alive on it.
+    // The count subscription has to follow the strip being shown, not the layout mounting.
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    let countRequests = 0;
+    await page.route(countResultPath, async (route) => {
+      countRequests += 1;
+      await route.fulfill({ json: '9999' });
+    });
+
+    // When
+    await page.goto('/explorer/distributions');
+    await userIsLoggedIn(page);
+    await expect(page.getByRole('heading', { name: 'Variable Distributions' })).toBeVisible();
+
+    // Then
+    await expect(page.getByTestId('results-summary-panel')).toHaveCount(0);
+    expect(countRequests).toBe(0);
+
+    // When - back to Explore without a reload, so the component is the same instance
+    await page.getByRole('button', { name: 'Back to Explore' }).click();
+
+    // Then
+    await expect(page.getByTestId('results-panel-count')).toContainText('9,999');
+    expect(countRequests).toBe(1);
+  });
   test('Strip pluralises the filter count', async ({ page }) => {
     // Given
     await mockApiSuccess(page, facetResultPath, facetsResponse);
@@ -141,7 +170,7 @@ test.describe('Results Panel', () => {
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
     await expect(page.locator('#result-count')).toHaveText('N/A');
-    const errorAlert = page.getByTestId('error-alert');
+    const errorAlert = page.getByTestId('count-error-alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText(
       'There was an error with your query. If this persists, please contact your PIC-SURE admin.',
@@ -160,7 +189,7 @@ test.describe('Results Panel', () => {
 
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
-    const errorAlert = page.getByTestId('error-alert');
+    const errorAlert = page.getByTestId('count-error-alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText(
       'There was an error with your query. If this persists, please contact your PIC-SURE admin.',
@@ -362,6 +391,34 @@ test.describe('Results Panel', () => {
     await expect(
       page.getByTestId('results-panel-body').getByText('No filters added'),
     ).toBeVisible();
+  });
+
+  test.describe('Server render', () => {
+    // No JS, so this is the first paint before hydration. OPEN + OPEN_EXPLORER is what makes
+    // the shell render server-side for an unauthenticated visitor.
+    test.use({ javaScriptEnabled: false });
+
+    test('shows a pending count, not the error value', async ({ page }) => {
+      // Given
+      await mockApiConfig(page, {
+        features: [
+          { name: 'OPEN', value: 'true' },
+          { name: 'OPEN_EXPLORER', value: 'true' },
+          { name: 'DISCOVER', value: 'true' },
+        ],
+      });
+
+      // When
+      await page.goto('/discover');
+
+      // Then - nothing has been asked for yet, which is not the same as having failed
+      const strip = page.getByTestId('results-summary-panel');
+      await expect(strip).toHaveCount(1);
+      await expect(strip.locator('#result-count')).not.toHaveText('N/A');
+      await expect(page.getByTestId('results-panel-count')).toContainText(
+        'Loading participant count',
+      );
+    });
   });
 
   test.describe('Filter Tree Display', () => {
@@ -573,10 +630,9 @@ test.describe('Results Panel', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
 
-      // Then - the first request is the panel's no-filter count on load, the second carries
-      // the filter that was just added.
-      expect(querySyncRequest.length).toBe(2);
-      expect(querySyncRequest[1]).toContain('phenotypicClauses');
+      // Then - the panel's no-filter count on page load comes first, so assert on the most
+      // recent request rather than pinning a total that counts it.
+      expect(querySyncRequest.at(-1)).toContain('phenotypicClauses');
     });
     test('single filter shows no operator label', async ({ page }) => {
       // Given

@@ -401,7 +401,7 @@ describe('ResultCounts', () => {
       expect(mockState.toasterErrorSpy).not.toHaveBeenCalled();
     });
 
-    it('on load error fires a toast once; does not refire while a toast is showing', async () => {
+    it('reports load errors through the snapshot and never toasts', async () => {
       mockService.getCount
         .mockResolvedValueOnce(snapshot(0, true))
         .mockResolvedValueOnce(snapshot(0, true));
@@ -409,14 +409,18 @@ describe('ResultCounts', () => {
       await flushMicrotasks();
       await flushMicrotasks();
       await flushMicrotasks();
-      expect(mockState.toasterErrorSpy).toHaveBeenCalledTimes(1);
+      // The component that calls start() is showing the count, so it renders the failure
+      // itself. A toast here would put a fixed, full-width, pointer-capturing band over the
+      // navigation header on every failed count - and this path runs on every Explore and
+      // Discover visit and again on every filter change.
+      expect(state.snapshot.summary.hasError).toBe(true);
+      expect(mockState.toasterErrorSpy).not.toHaveBeenCalled();
 
-      mockState.isToastShowingSpy.mockReturnValue(true);
       mockState.allFiltersStore.set([{} as unknown]);
       await flushMicrotasks();
       await flushMicrotasks();
       await flushMicrotasks();
-      expect(mockState.toasterErrorSpy).toHaveBeenCalledTimes(1);
+      expect(mockState.toasterErrorSpy).not.toHaveBeenCalled();
     });
 
     it('stop() mid-flight resets status to "idle" so spinners do not get stuck', async () => {
@@ -453,6 +457,19 @@ describe('ResultCounts', () => {
         expect.objectContaining({ isOpenAccess: true }),
       );
     });
+
+    it('toasts on error, unlike start(): a one-shot caller has nowhere to render it', async () => {
+      mockService.getCount.mockResolvedValue(snapshot(0, true));
+      await state.triggerLoad(() => true);
+      expect(mockState.toasterErrorSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not refire the toast while one is already showing', async () => {
+      mockService.getCount.mockResolvedValue(snapshot(0, true));
+      mockState.isToastShowingSpy.mockReturnValue(true);
+      await state.triggerLoad(() => true);
+      expect(mockState.toasterErrorSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('ensureLoaded', () => {
@@ -475,6 +492,12 @@ describe('ResultCounts', () => {
 
       await state.ensureLoaded(() => true);
       expect(mockService.getCount).toHaveBeenCalledTimes(1);
+    });
+
+    it('toasts on error, unlike start()', async () => {
+      mockService.getCount.mockResolvedValue(snapshot(0, true));
+      await state.ensureLoaded(() => true);
+      expect(mockState.toasterErrorSpy).toHaveBeenCalledTimes(1);
     });
 
     it('retries the load when the matching snapshot recorded an error', async () => {

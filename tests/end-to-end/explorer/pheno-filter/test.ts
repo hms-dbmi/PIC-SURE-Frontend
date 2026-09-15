@@ -785,10 +785,9 @@ test.describe('Query V3 OR features', () => {
     const addFilterButton = page.getByTestId('add-filter');
     await addFilterButton.click();
 
-    // Then - the first request is the cohort summary panel's no-filter count on load, the
-    // second carries the filter that was just added.
-    expect(querySyncRequest.length).toBe(2);
-    expect(querySyncRequest[1]).toContain('phenotypicClauses');
+    // Then - the summary panel's no-filter count on page load comes first, so assert on the
+    // most recent request rather than pinning a total that counts it.
+    expect(querySyncRequest.at(-1)).toContain('phenotypicClauses');
   });
   test('shows AND label between filters on explorer', async ({ page }) => {
     // Given

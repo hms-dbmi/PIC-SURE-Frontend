@@ -19,6 +19,13 @@ import type { ResultCountSnapshot } from '$lib/services/counts/snapshot';
 
 export type ResultCountsStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
+type RunLoadOptions = {
+  /** Skips rebuilding a descriptor the caller has already built. */
+  descriptor?: QueryDescriptor;
+  /** False when the caller renders the failure itself. See `start()`. */
+  toastOnError?: boolean;
+};
+
 /**
  * `load()` returns the per-call outcome so a caller can use ITS snapshot,
  * not the shared `#snapshot` (which a parallel call may have overwritten).
@@ -109,15 +116,23 @@ export class ResultCounts {
     this.#service.clear();
   }
 
+  /**
+   * Drives the count for a component that is showing it. Failures on this path are reported
+   * inline by that component - `snapshot.summary.hasError` - and deliberately do NOT toast:
+   * this path fires on every Explore and Discover visit and again on every filter change, and
+   * the toaster's top placement is a fixed, full-width, pointer-capturing band above the
+   * navigation header for as long as a toast is up. A count that fails must not take the nav
+   * bar with it. One-shot callers that have nowhere to show an error still toast.
+   */
   start(getIsOpenAccess: () => boolean): void {
     this.stop();
     // Order matters: fire the initial #runLoad BEFORE installing the subscription.
     // subscribeOnChange skips its initial synchronous fire, so the explicit
     // #runLoad here is what triggers the first load. Swapping the order would
     // race the subscription's first invocation against the initial load.
-    void this.#runLoad(getIsOpenAccess);
+    void this.#runLoad(getIsOpenAccess, { toastOnError: false });
     this.#unsubFilters = subscribeOnChange(allFilters, () => {
-      void this.#runLoad(getIsOpenAccess);
+      void this.#runLoad(getIsOpenAccess, { toastOnError: false });
     });
   }
 
@@ -146,7 +161,7 @@ export class ResultCounts {
     ) {
       return;
     }
-    await this.#runLoad(getIsOpenAccess, descriptor);
+    await this.#runLoad(getIsOpenAccess, { descriptor });
   }
 
   #buildCurrentDescriptor(isOpenAccess: boolean): QueryDescriptor {
@@ -159,16 +174,16 @@ export class ResultCounts {
 
   async #runLoad(
     getIsOpenAccess: () => boolean,
-    prebuiltDescriptor?: QueryDescriptor,
+    { descriptor: prebuiltDescriptor, toastOnError = true }: RunLoadOptions = {},
   ): Promise<void> {
     const isOpenAccess = getIsOpenAccess();
     try {
       const descriptor = prebuiltDescriptor ?? this.#buildCurrentDescriptor(isOpenAccess);
       const result = await this.load(descriptor, isOpenAccess);
-      if (result.kind === 'error') this.#showErrorToast();
+      if (result.kind === 'error' && toastOnError) this.#showErrorToast();
     } catch (error) {
       console.error(error);
-      this.#showErrorToast();
+      if (toastOnError) this.#showErrorToast();
     }
   }
 

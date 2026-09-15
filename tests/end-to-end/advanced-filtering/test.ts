@@ -53,8 +53,10 @@ test.describe('Advanced Query Builder - Core Features', () => {
     });
 
     await page.goto('/explorer?search=somedata');
-    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
-    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
+    // Anchored on purpose: toHaveText's regex form is unanchored, and the zero-filter string
+    // is "No filters added, add below" - so an unanchored /filters? added/ would pass before
+    // the injected sessionStorage tree had restored anything.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/^\d+ filters? added$/);
     await afPage.openModal();
 
     const updatedFirstFilterCard = afPage.getFilterCard(afPage.filterNames[0]);
@@ -128,8 +130,10 @@ test.describe('Advanced Query Builder - Query Summary', () => {
     });
 
     await page.goto('/explorer?search=somedata');
-    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
-    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
+    // Anchored on purpose: toHaveText's regex form is unanchored, and the zero-filter string
+    // is "No filters added, add below" - so an unanchored /filters? added/ would pass before
+    // the injected sessionStorage tree had restored anything.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/^\d+ filters? added$/);
     await afPage.openModal();
 
     // Equation should contain parentheses for the subquery
@@ -477,8 +481,10 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     });
 
     await page.goto('/explorer?search=somedata');
-    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
-    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
+    // Anchored on purpose: toHaveText's regex form is unanchored, and the zero-filter string
+    // is "No filters added, add below" - so an unanchored /filters? added/ would pass before
+    // the injected sessionStorage tree had restored anything.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/^\d+ filters? added$/);
     await afPage.openModal();
 
     const dropPreview = page.getByTestId('drop-preview');
@@ -577,8 +583,10 @@ test.describe('Advanced Query Builder - Grouping', () => {
     });
 
     await page.goto('/explorer?search=somedata');
-    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
-    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
+    // Anchored on purpose: toHaveText's regex form is unanchored, and the zero-filter string
+    // is "No filters added, add below" - so an unanchored /filters? added/ would pass before
+    // the injected sessionStorage tree had restored anything.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/^\d+ filters? added$/);
     await afPage.openModal();
 
     const lastFilter = afPage.filterNames[afPage.filterNames.length - 1];
@@ -627,8 +635,10 @@ test.describe('Advanced Query Builder - Grouping', () => {
     });
 
     await page.goto('/explorer?search=somedata');
-    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
-    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
+    // Anchored on purpose: toHaveText's regex form is unanchored, and the zero-filter string
+    // is "No filters added, add below" - so an unanchored /filters? added/ would pass before
+    // the injected sessionStorage tree had restored anything.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/^\d+ filters? added$/);
     await afPage.openModal();
 
     const groupCards = modal.getByTestId('filter-group');
@@ -669,8 +679,10 @@ test.describe('Advanced Query Builder - Grouping', () => {
 
     // Navigate again to pick up the modified tree
     await page.goto('/explorer?search=somedata');
-    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
-    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
+    // Anchored on purpose: toHaveText's regex form is unanchored, and the zero-filter string
+    // is "No filters added, add below" - so an unanchored /filters? added/ would pass before
+    // the injected sessionStorage tree had restored anything.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/^\d+ filters? added$/);
     await afPage.openModal();
 
     // Verify the subquery exists with "Between filters:" label
@@ -945,8 +957,10 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     await afPage.closeModal();
     await afPage.injectTwoGroups(page);
     await page.goto('/explorer?search=somedata');
-    // The filter tree injected into sessionStorage has landed once the summary strip counts it.
-    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/filters? added/);
+    // Anchored on purpose: toHaveText's regex form is unanchored, and the zero-filter string
+    // is "No filters added, add below" - so an unanchored /filters? added/ would pass before
+    // the injected sessionStorage tree had restored anything.
+    await expect(page.getByTestId('results-panel-filter-count')).toHaveText(/^\d+ filters? added$/);
     await afPage.openModal();
   }
 

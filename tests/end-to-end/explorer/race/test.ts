@@ -1,5 +1,5 @@
 import { expect, type Page, type Route } from '@playwright/test';
-import { test, mockApiConfig, mockApiSuccess } from '../../custom-context';
+import { test, mockApiConfig } from '../../custom-context';
 import { searchResults, facetsResponse, searchResultPath, facetResultPath } from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
 
@@ -79,13 +79,6 @@ async function searchFor(page: Page, term: string) {
 }
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
-
-// The cohort summary panel loads a participant count on every /explorer and /discover visit.
-// Unmocked it fails, and the error toast it raises covers the navigation bar for four seconds.
-test.beforeEach(async ({ page }) => {
-  await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', '9999');
-  await mockApiSuccess(page, '*/**/picsure/hpds/open/v3/query/sync', '9999');
-});
 
 test.describe('Out-of-order search responses', () => {
   test.beforeEach(({ page }) => mockApiConfig(page));

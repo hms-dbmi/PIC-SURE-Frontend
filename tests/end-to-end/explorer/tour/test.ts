@@ -1,4 +1,4 @@
-import { expect, type Route } from '@playwright/test';
+import { expect, type Page, type Route } from '@playwright/test';
 import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
 import {
   facetResultPath,
@@ -11,6 +11,24 @@ import {
 import { userIsLoggedIn } from '../../utils';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+
+/**
+ * driver.js calls the hooks in its config from its own listeners and bare - `onDestroyed &&
+ * onDestroyed(...)`, no try/catch - so anything a hook throws surfaces only as an uncaught
+ * page error, which nothing here would otherwise fail on.
+ *
+ * Read what this does and does not cover before relying on it. It does not currently reach
+ * the onDestroyed hook at all: on this branch neither ending the tour nor dismissing it with
+ * Escape gets as far as driver's destroy(), so the tour's own cleanup - resetSearch(), the
+ * search-box reset, driver's focus restore - never runs either. That is tracked with the tour
+ * re-anchoring work. This guard is here so that when the tours are re-anchored and those
+ * paths run again, a throw inside one of them fails a test instead of passing silently.
+ */
+function trackPageErrors(page: Page): string[] {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  return errors;
+}
 
 test.beforeEach(async ({ page }) => {
   await mockApiConfig(page);
@@ -34,6 +52,7 @@ test('Explorer tour button opens instruction modal', async ({ page }) => {
 });
 test('Tour Finishes', async ({ page }) => {
   // Given
+  const pageErrors = trackPageErrors(page);
   await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
   await page.route(facetResultPath, async (route: Route) =>
     route.fulfill({ json: facetsResponse }),
@@ -65,6 +84,7 @@ test('Tour Finishes', async ({ page }) => {
 
   // Then
   await expect(page.locator('#driver-popover-content')).not.toBeVisible();
+  expect(pageErrors).toEqual([]);
 });
 test('Explorer tour starts from modal', async ({ page }) => {
   // Given
@@ -84,6 +104,7 @@ test('Explorer tour starts from modal', async ({ page }) => {
 });
 test('Escape key closes tour', async ({ page }) => {
   // Given
+  const pageErrors = trackPageErrors(page);
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await expect(page.getByTestId('explorer-tour-btn')).toBeVisible();
@@ -100,6 +121,7 @@ test('Escape key closes tour', async ({ page }) => {
 
   // Then
   await expect(page.locator('#driver-popover-content')).not.toBeVisible();
+  expect(pageErrors).toEqual([]);
 });
 test('EXPLORE_TOUR=false hides the tour button entirely', async ({ page }) => {
   // Given

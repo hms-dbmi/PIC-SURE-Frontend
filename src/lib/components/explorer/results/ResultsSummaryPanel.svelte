@@ -7,8 +7,6 @@
 </script>
 
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
-
   import { page } from '$app/state';
 
   import { config } from '$lib/configuration.svelte';
@@ -38,17 +36,26 @@
   );
 
   const instance = {};
-  const getIsOpenAccess = () => page.url.pathname.includes('/discover');
+  // Read once, not derived: this instance belongs to whichever of the two layouts created it
+  // and never crosses to the other, so the section cannot change under it - and a reactive
+  // read here would land inside the $effect below, restarting the counts on every navigation
+  // within the layout.
+  const isOpenAccess = page.url.pathname.includes('/discover');
+  const getIsOpenAccess = () => isOpenAccess;
 
-  onMount(() => {
+  // Tied to `visible`, not to mount: the layout keeps this component alive across every child
+  // route, so gating only the markup would leave the count subscription reloading on
+  // /explorer/export and /explorer/distributions - where the strip must not render at all, and
+  // where ExportStepper's own ensureLoaded() would race a load we had already started.
+  $effect(() => {
+    if (!visible) return;
     countsOwner = instance;
     resultCountsState.start(getIsOpenAccess);
-  });
-
-  onDestroy(() => {
-    if (countsOwner !== instance) return;
-    countsOwner = null;
-    resultCountsState.stop();
+    return () => {
+      if (countsOwner !== instance) return;
+      countsOwner = null;
+      resultCountsState.stop();
+    };
   });
 
   function toggle() {
@@ -64,7 +71,7 @@
     id="results-summary-panel"
     data-testid="results-summary-panel"
     aria-label="Cohort summary"
-    class="card bg-surface-50-950 border border-surface-300-700 rounded-container mx-6 mt-8"
+    class="card bg-surface-50-950 border border-surface-300-700 rounded-container"
   >
     <button
       type="button"
@@ -82,9 +89,10 @@
         ></i>
       </span>
     </button>
+    <!-- The count's only error report: start() does not toast, so this has to be here. -->
     {#if hasCountError}
-      <ErrorAlert color="warning" iconSize="2xl">
-        <p class="text-[0.6rem] !m-0">
+      <ErrorAlert color="warning" iconSize="2xl" data-testid="count-error-alert">
+        <p class="text-sm !m-0">
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html sanitizeHTML(config.branding.explorePage.queryErrorText)}
         </p>

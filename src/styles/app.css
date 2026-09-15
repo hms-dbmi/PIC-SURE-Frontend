@@ -63,12 +63,21 @@ body {
   font-family: monospace;
 }
 
-.main-content {
+/*
+ * Content owns the page width, and the cohort summary panel renders above it as a sibling -
+ * so the panel has to track whichever width Content chose rather than hardcode one of them.
+ * /explorer and /discover pass `full`; the advanced-filtering routes, which the panel also
+ * renders on, do not. Sharing the selectors keeps one set of values for both, so a future
+ * child route that does or does not pass `full` gets the right one for free.
+ */
+.main-content,
+#page-content:has(> .main-content:not(.w-full)) > #results-summary-panel {
   width: 70%;
   margin: 2rem auto 0;
 }
 
-.main-content.w-full {
+.main-content.w-full,
+#page-content:not(:has(> .main-content:not(.w-full))) > #results-summary-panel {
   width: calc(100% - 4rem);
   margin: 2rem 1.5rem;
 }
@@ -159,6 +168,7 @@ hr {
   }
 
   .main-content,
+  #results-summary-panel,
   div:has(.main-content) {
     width: 100%;
     max-width: 100%;
@@ -198,10 +208,6 @@ hr {
   }
 }
 
-#sidebar-right {
-  height: 100%;
-  border-left: 2px solid var(--color-surface-500);
-}
 #appShell > header {
   border-bottom: 2px solid var(--color-surface-500);
 }
