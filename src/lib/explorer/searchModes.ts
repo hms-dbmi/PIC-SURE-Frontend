@@ -105,12 +105,17 @@ export function inlineModeLabel(mode: SearchMode): string {
  * mode counts the registry does not have yet.
  *
  * Takes the labels already in their inline form: casing belongs to the mode that owns the
- * word, not to the sentence. At least one is expected, which the registry guarantees - the
- * phenotypes mode is enabled unconditionally.
+ * word, not to the sentence.
+ *
+ * The registry makes an empty list unreachable today - the phenotypes mode is enabled
+ * unconditionally - but this is user-facing copy, so the empty case is guarded rather than
+ * left to that precondition holding as modes are added. Without the guard it reads
+ * "from the  page below".
  *
  * "page" stays singular: the reader is going to one page, whichever they pick.
  */
 export function emptyCohortText(inlineLabels: string[]): string {
+  if (inlineLabels.length === 0) return 'No filters yet - add one below';
   return `No filters yet - add one from the ${joinWithOr(inlineLabels)} page below`;
 }
 

@@ -1001,7 +1001,7 @@ test.describe('Results panel empty state', () => {
   // The count fixture differs by section, not by convenience: Discover asks the open-access
   // endpoint for a CROSS_COUNT and gets the per-consent map back, which is what providers.ts
   // parses. Explore's authenticated COUNT is the bare scalar.
-  async function mockSearch(page: Page, countPath: string, count: unknown) {
+  async function mockSearch(page: Page, countPath: string, count: string | Record<string, number>) {
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countPath, count);

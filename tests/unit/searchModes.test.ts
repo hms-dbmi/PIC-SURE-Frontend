@@ -190,6 +190,15 @@ describe('the search mode registry', () => {
         'No filters yet - add one from the phenotypes, genotypes, studies or FHIR page below',
       );
     });
+
+    // Not a reachable state - phenotypes is enabled unconditionally - but the guard against
+    // it is the point: the sentence degrades to one that still reads instead of "from the
+    // page below" with a hole in it.
+    it('drops the list rather than leaving a gap when there are no modes', () => {
+      const text = emptyCohortText([]);
+      expect(text).toBe('No filters yet - add one below');
+      expect(text).not.toContain('  ');
+    });
   });
 
   describe('emptyCohortTextAt', () => {
