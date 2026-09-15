@@ -445,8 +445,13 @@ test.describe('Explorer for authenticated users', () => {
     const PAGE_COUNT = 3;
     const PAGE_LABELS = ['page-one-result', 'page-two-result', 'page-three-result'];
 
-    /** Three pages of results, each card identifiable by the page it came from. */
-    const pagedResults = async (page: Page) => {
+    /**
+     * Three pages of results, each card identifiable by the page it came from.
+     *
+     * `pageTwoFirstRow` overrides the first result of page two, which is how a spec puts a
+     * card that cannot be opened where the page change is about to put focus.
+     */
+    const pagedResults = async (page: Page, pageTwoFirstRow: Partial<SearchResult> = {}) => {
       const makePage = (pageNumber: number) => ({
         ...mockData,
         totalPages: PAGE_COUNT,
@@ -464,6 +469,7 @@ test.describe('Explorer for authenticated users', () => {
           display: `${PAGE_LABELS[pageNumber]}-${index}`,
           description: null,
           allowFiltering: true,
+          ...(pageNumber === 1 && index === 0 ? pageTwoFirstRow : {}),
         })),
       });
       for (let pageNumber = 0; pageNumber < PAGE_COUNT; pageNumber++) {
@@ -519,6 +525,28 @@ test.describe('Explorer for authenticated users', () => {
         'page-two-result-0',
       );
       await expect(resultCards(page).first()).toBeFocused();
+    });
+
+    test('Lands on a first card that cannot be opened, rather than nowhere', async ({ page }) => {
+      // Given page two whose first result has a dataset the detail route refuses. That card
+      // renders unlinked, so it is not natively focusable - and a real browser will not focus
+      // an element that has not been made focusable, where happy-dom obliges either way.
+      await pagedResults(page, { dataset: 'BioLINCC (phs004266)' });
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-one-result-0',
+      );
+
+      // When
+      await page.getByLabel('Next', { exact: true }).focus();
+      await page.keyboard.press('Enter');
+
+      // Then - the card focus landed on is the unopenable one, not the next link past it
+      await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+      const first = resultCards(page).first();
+      await expect(first).toHaveAttribute('data-unopenable', 'true');
+      await expect(first).toBeFocused();
     });
 
     test('Paging with the mouse does not take focus off what the user was on', async ({ page }) => {
