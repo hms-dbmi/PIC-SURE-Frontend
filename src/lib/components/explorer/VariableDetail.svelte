@@ -8,13 +8,19 @@
     type SearchSection,
   } from '$lib/explorer/searchChrome';
   import type { VariableKey } from '$lib/explorer/variableUrl';
+  import { log, createLog, getPageContext } from '$lib/logger';
+  import type { FilterType } from '$lib/models/Filter.svelte';
   import type { SearchResult } from '$lib/models/Search';
   import { getConceptDetails } from '$lib/stores/Dictionary';
+  import { exports, addExport, removeExport, mapSearchResultAsExport } from '$lib/stores/Export';
+  import { filters } from '$lib/stores/Filter';
   import { searchTerm } from '$lib/stores/Search';
+  import { isUserLoggedIn } from '$lib/stores/User';
 
   import AngleButton from '$lib/components/buttons/AngleButton.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
+  import AddFilter from '$lib/components/explorer/AddFilter.svelte';
   import HierarchyComponent from '$lib/components/explorer/HierarchyComponent.svelte';
   import ResultInfoComponent from '$lib/components/explorer/ResultInfoComponent.svelte';
 
@@ -96,15 +102,88 @@
     };
   });
 
+  // The loaded concept, or `undefined` for every other outcome. Named once so the actions
+  // below read from the same value the template renders.
+  const variable = $derived(outcome?.kind === 'variable' ? outcome.variable : undefined);
+
   // The variable's own name, so a shared link, a browser tab and a bookmark all say which
   // variable rather than only which section.
   const documentTitle = $derived.by(() => {
-    const name =
-      outcome?.kind === 'variable'
-        ? outcome.variable.display || outcome.variable.name
-        : SECTION_LABEL[section];
+    const name = variable ? variable.display || variable.name : SECTION_LABEL[section];
     return `${config.branding.applicationName} | ${name}`;
   });
+
+  // `isOpenAccess()` decides this by `page.url.pathname.includes('/discover')`. On this page
+  // that substring is dictionary data: `/explorer/variable/discover/...` is a legitimate URL
+  // for a dataset named `discover`, and it would read as Discover - hiding Add for Analysis
+  // from a logged-in Explore user and disabling their filter. The section is passed in, so
+  // ask that. The other half of the rule, an anonymous visitor, is unchanged.
+  const openAccess = $derived(section === 'discover' || !isUserLoggedIn());
+
+  // The same rule as the results row's filter icon: an open-access visitor may not filter on a
+  // variable the dictionary marks unfilterable.
+  const filteringDisabled = $derived(
+    openAccess && variable !== undefined && !variable.allowFiltering,
+  );
+
+  /**
+   * The filter already applied to this variable, if there is one.
+   *
+   * The chip in the cohort panel and this page's filter interface are two views of one filter,
+   * so opening a variable that already has one has to edit it rather than add a second:
+   * `addFilter` appends to the tree without checking, so a second add would leave two filters
+   * on the same variable and no way to tell them apart. A filter's `id` is its concept path
+   * (see `createCategoricalFilter`), which is what identifies the variable.
+   *
+   * Only the two types this interface can express. An `AnyRecordOf` filter carries a category
+   * node's concept path, and handing one to `AddFilter` would silently rewrite it as a
+   * categorical filter the next time the user pressed add.
+   */
+  const EDITABLE_FILTER_TYPES: FilterType[] = ['Categorical', 'numeric'];
+  const existingFilter = $derived(
+    variable
+      ? $filters.find(
+          (filter) =>
+            filter.id === variable.conceptPath && EDITABLE_FILTER_TYPES.includes(filter.filterType),
+        )
+      : undefined,
+  );
+
+  /**
+   * The entry in Added Variables for this variable, found by concept path.
+   *
+   * Not by object identity. `mapSearchResultAsExport` mints a fresh object per call, and
+   * `addExport` already keys on concept path, so a reference test disagrees with the store the
+   * moment the concept is fetched again - which is the live defect in `Actions.svelte`, where
+   * `$exports.includes($derived object)` leaves the button reading "Remove from Analysis"
+   * while doing nothing. One key, used by both the state and the action.
+   */
+  const exportedVariable = $derived(
+    variable ? $exports.find((item) => item.conceptPath === variable.conceptPath) : undefined,
+  );
+
+  // Add for Analysis has nowhere else to live once ticket 11 removes the per-row icons, so the
+  // gate has to be the same one those icons used: exports switched on, and not open access.
+  const showExportToggle = $derived(config.features.explorer.exportsEnableExport && !openAccess);
+
+  function toggleExport() {
+    if (!variable) return;
+    const exported = exportedVariable;
+    log(
+      createLog('ACTION', `variable_detail.${exported ? 'export_remove' : 'export_add'}`, {
+        variable: variable.display || variable.name,
+        conceptPath: variable.conceptPath,
+        pageContext: getPageContext(),
+      }),
+    );
+    if (exported) {
+      // By concept path - `removeExports` filters on it - so this removes whatever the store
+      // is actually holding rather than the object this page happens to have built.
+      removeExport(exported);
+    } else {
+      addExport(mapSearchResultAsExport(variable));
+    }
+  }
 </script>
 
 {#snippet errorAlert(heading: string, body: string)}
@@ -126,29 +205,68 @@
 
   {#if !outcome}
     <Loading ring size="medium" label="Loading variable" />
-  {:else if outcome.kind === 'variable'}
-    {@const variable = outcome.variable}
-    <header data-testid="variable-identity" class="flex flex-col gap-1">
-      <h1 data-testid="variable-detail-name" class="h4 font-bold m-0">
-        {variable.display || variable.name}
-      </h1>
-      <div class="flex flex-wrap items-center gap-3">
-        <span data-testid="variable-detail-study">
-          {variable.studyAcronym || variable.dataset}
-        </span>
-        {#if variable.type}
-          <span
-            data-testid="variable-detail-type"
-            class="badge preset-tonal-surface border border-surface-500 font-normal"
-          >
-            {variable.type}
+  {:else if variable}
+    <header
+      data-testid="variable-identity"
+      class="flex flex-wrap items-start justify-between gap-3"
+    >
+      <div class="flex flex-col gap-1">
+        <h1 data-testid="variable-detail-name" class="h4 font-bold m-0">
+          {variable.display || variable.name}
+        </h1>
+        <div class="flex flex-wrap items-center gap-3">
+          <span data-testid="variable-detail-study">
+            {variable.studyAcronym || variable.dataset}
           </span>
-        {/if}
+          {#if variable.type}
+            <span
+              data-testid="variable-detail-type"
+              class="badge preset-tonal-surface border border-surface-500 font-normal"
+            >
+              {variable.type}
+            </span>
+          {/if}
+        </div>
       </div>
+      {#if showExportToggle}
+        <button
+          type="button"
+          class="btn preset-filled-primary-500 flex-none"
+          data-testid="variable-detail-export-toggle"
+          onclick={toggleExport}
+        >
+          <i
+            class="fa-{exportedVariable
+              ? 'regular fa-square-check'
+              : 'solid fa-right-from-bracket'}"
+            aria-hidden="true"
+          ></i>
+          {exportedVariable ? 'Remove from Analysis' : 'Add for Analysis'}
+        </button>
+      {/if}
     </header>
 
     <section data-testid="variable-detail-information">
       <ResultInfoComponent data={variable} />
+    </section>
+
+    <!-- Ticket 13 replaces this interface with the designed layout; this ticket is the
+         wiring, so AddFilter goes in as-is. -->
+    <section data-testid="variable-detail-filter" class="flex flex-col gap-2">
+      <h3 class="h5 text-primary-500 m-0">Add Filter</h3>
+      {#if filteringDisabled}
+        <ErrorAlert color="warning" data-testid="variable-detail-filter-disabled">
+          <p class="m-0">Filtering is not available for this variable</p>
+        </ErrorAlert>
+      {:else}
+        <!-- Keyed on the filter being edited, because AddFilter reads `existingFilter` in
+             `onMount` and never again. Without the key, adding a filter here would leave the
+             interface still believing there is none, and pressing add a second time would
+             append a duplicate filter on the same variable instead of updating the first. -->
+        {#key existingFilter?.uuid}
+          <AddFilter data={variable} {existingFilter} />
+        {/key}
+      {/if}
     </section>
 
     {#if config.features.explorer.enableHierarchy}
