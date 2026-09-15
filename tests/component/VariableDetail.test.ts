@@ -43,7 +43,11 @@ import { log } from '$lib/logger';
 import { getConceptDetails, getHierarchyConcepts } from '$lib/stores/Dictionary';
 import { exports, clearExports } from '$lib/stores/Export';
 import { addFilter, clearFilters, filters, updateFilter } from '$lib/stores/Filter';
-import { createCategoricalFilter, createNumericFilter } from '$lib/models/Filter.svelte';
+import {
+  createAnyRecordOfFilter,
+  createCategoricalFilter,
+  createNumericFilter,
+} from '$lib/models/Filter.svelte';
 import { searchTerm } from '$lib/stores/Search';
 import type { SearchResult } from '$lib/models/Search';
 import type { VariableKey } from '$lib/explorer/variableUrl';
@@ -329,6 +333,40 @@ describe('VariableDetail', () => {
 
       expect(screen.getByTestId('min-input')).toHaveValue('18');
       expect(screen.getByTestId('max-input')).toHaveValue('65');
+    });
+
+    /*
+     * An `AnyRecordOf` filter carries the concept path of the category node it was made from,
+     * so it matches this variable on `id` alone - which is why `existingFilter` excludes it by
+     * type. Handed to the panel it would be rewritten as a categorical filter the next time
+     * the user pressed Filter Participants, dropping every concept it covered.
+     *
+     * Reachable from this page: the hierarchy that adds one renders on it.
+     */
+    it('leaves an any-record-of filter on the same concept path alone', async () => {
+      const anyRecordOf = createAnyRecordOfFilter(categoricalDetail, {
+        ...categoricalDetail,
+        children: [{ ...categoricalDetail, conceptPath: '\\this\\is\\a\\smoker\\child\\' }],
+      });
+      addFilter(anyRecordOf);
+      vi.mocked(getConceptDetails).mockResolvedValue(categoricalDetail);
+
+      render(VariableDetail, { section: 'explorer', variableKey: categoricalKey });
+      await screen.findByTestId('optional-selection-list');
+
+      // The panel opens blank, on no selection it could not have read from that filter
+      expect(optionsIn('selected-options-container')).toEqual([]);
+      expect(optionsIn('options-container')).toEqual(['Yes', 'No', "Don't know"]);
+
+      await fireEvent.click(screen.getByRole('checkbox', { name: 'Yes' }));
+      await fireEvent.click(addFilterButton());
+
+      // Two filters, and the any-record-of one is the one it was
+      expect(get(filters)).toHaveLength(2);
+      expect(get(filters).find((filter) => filter.uuid === anyRecordOf.uuid)).toMatchObject({
+        filterType: 'AnyRecordOf',
+        concepts: anyRecordOf.concepts,
+      });
     });
 
     // Matching Actions.svelte: the rule is open access *and* the dictionary refusing, not
