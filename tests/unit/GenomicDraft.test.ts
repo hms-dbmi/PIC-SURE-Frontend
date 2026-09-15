@@ -110,6 +110,19 @@ describe('the genomic drafts', () => {
       expect(variants.snpValues[0]).not.toBe(get(selectedSNPs)[0]);
     });
 
+    // Copying at the boundaries is what keeps the filters safe from the panels; not writing
+    // into an array at all is what keeps anything else safe, including whatever holds one
+    // next. A store whose subscribers cannot tell that it changed may as well not have.
+    it('is not what a variant edit writes into, because nothing writes into an array', () => {
+      selectedSNPs.set([{ ...variant }]);
+      const before = get(selectedSNPs);
+
+      saveSNP({ search: variant.search, constraint: '1/1' });
+
+      expect(get(selectedSNPs)).not.toBe(before);
+      expect(before).toEqual([variant]);
+    });
+
     // The whole point of the marker: it is the filter's uuid, so it can only be trusted while
     // the filter's contents and its uuid agree.
     it('is not altered by the draft that generated it being edited afterwards', () => {
