@@ -15,7 +15,7 @@
   import { clearGeneFilters, generateGenomicFilter, selectedGenes } from '$lib/stores/GeneFilter';
   import { filterMethod } from '$lib/stores/GenomicFilterMethod';
   import { searchTerm } from '$lib/stores/Search';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
   import { clearSnpFilters, generateSNPFilter, selectedSNPs } from '$lib/stores/SNPFilter';
 
   // The gene and variant working state above - selections, consequences, frequencies - is

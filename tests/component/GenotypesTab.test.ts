@@ -41,7 +41,7 @@ vi.mock('$lib/stores/Search', async () => {
   return { searchTerm: writable('') };
 });
 
-vi.mock('$lib/stores/SidePanel', async () => {
+vi.mock('$lib/stores/ResultsSummaryPanel', async () => {
   const { writable } = await import('svelte/store');
   return { panelOpen: writable(false) };
 });
@@ -53,7 +53,7 @@ import { addFilter } from '$lib/stores/Filter';
 import { clearGeneFilters, selectedFrequency, selectedGenes } from '$lib/stores/GeneFilter';
 import { filterMethod } from '$lib/stores/GenomicFilterMethod';
 import { searchTerm } from '$lib/stores/Search';
-import { panelOpen } from '$lib/stores/SidePanel';
+import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
 import { clearSnpFilters, selectedSNPs } from '$lib/stores/SNPFilter';
 
 /** Both flags on is NHANES; GENE alone is BDC. Neither is unreachable - the load redirects. */
