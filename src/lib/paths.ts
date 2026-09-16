@@ -1,3 +1,7 @@
+export function joinUrl(origin: string, path: string): string {
+  return `${origin.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
+}
+
 const PREFIX = 'picsure';
 const DICT = `${PREFIX}/dictionary`;
 const VIZ = `${PREFIX}/visualization`;

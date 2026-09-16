@@ -4,6 +4,7 @@ import { browser } from '$app/environment';
 import { log, createLog, getSessionId } from '$lib/logger';
 import { config } from '$lib/configuration.svelte';
 import { isWafCaptchaResponse, handleWafCaptcha } from '$lib/wafCaptcha';
+import { joinUrl } from '$lib/paths';
 
 const BEARER = 'Bearer ';
 const CONSENT_DENIED = 'consent_denied';
@@ -71,7 +72,7 @@ async function send({
     opts.signal = options.signal;
   }
 
-  const res = await fetch(`${window.location.origin}/${path}`, opts);
+  const res = await fetch(joinUrl(window.location.origin, path), opts);
 
   return await handleResponse(res);
 }

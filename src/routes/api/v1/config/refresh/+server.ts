@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { getConfig } from '$lib/server/configCache';
-import { Psama } from '$lib/paths';
+import { Psama, joinUrl } from '$lib/paths';
 import { PicsurePrivileges } from '$lib/models/Privilege';
 import type { User } from '$lib/models/User';
 import type { RequestHandler } from './$types';
@@ -13,9 +13,14 @@ export const GET: RequestHandler = async ({ request }) => {
     return json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!ORIGIN) {
+    console.error('Config refresh failed: VITE_ORIGIN is not configured.');
+    return json({ error: 'Server misconfigured' }, { status: 500 });
+  }
+
   let user: User;
   try {
-    const target = `${ORIGIN}/${Psama.User.Me}`;
+    const target = joinUrl(ORIGIN, Psama.User.Me);
     const res = await fetch(target, {
       method: 'GET',
       headers: { Authorization: authorization },
