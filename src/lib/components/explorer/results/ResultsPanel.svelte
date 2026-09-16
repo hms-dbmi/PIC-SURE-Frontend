@@ -7,6 +7,7 @@
   import { goto } from '$app/navigation';
 
   import { config } from '$lib/configuration.svelte';
+  import { isDiscoverSection, searchRoute } from '$lib/explorer/searchChrome';
 
   import { allFilters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
@@ -19,7 +20,15 @@
   import Modal from '$lib/components/Modal.svelte';
   import { log, createLog } from '$lib/logger';
 
-  let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
+  let isDiscoverPage = $derived(isDiscoverSection(page.url.pathname));
+  // Segment-matched like the section above, though the exposure is narrower: dictionary data
+  // cannot reach this one, because a variable's detail route interposes `/variable/` and so
+  // never spells `explorer/variant`. What it guards is a future sibling route whose name
+  // merely starts with the word - `/explorer/variants` would have lit the card up.
+  let isVariantPage = $derived.by(() => {
+    const { section, child } = searchRoute(page.url.pathname);
+    return section === 'explorer' && child === 'variant';
+  });
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
@@ -167,7 +176,7 @@
             title="Variant Explorer"
             icon="fa-solid fa-dna"
             size="md"
-            active={page.url.pathname.includes('explorer/variant')}
+            active={isVariantPage}
           />
         {/if}
       </div>

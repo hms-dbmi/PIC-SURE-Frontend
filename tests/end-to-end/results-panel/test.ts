@@ -209,7 +209,7 @@ test.describe('Results Panel', () => {
     await expect(page.locator('#result-count')).toBeVisible();
     await expect(page.locator('#result-count')).not.toHaveText('0');
   });
-  test('Result panel shows no filters added when there are no filters', async ({ page }) => {
+  test('Result panel names the page to add a filter from when there are none', async ({ page }) => {
     // Given
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
@@ -220,9 +220,10 @@ test.describe('Results Panel', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
 
     // Then
-    await expect(
-      page.getByTestId('results-panel-body').getByText('No filters added'),
-    ).toBeVisible();
+    await expect(page.getByTestId('no-filters-message')).toHaveText(
+      // Genomic search is off in this describe's config, so Explore has one search mode.
+      'No filters yet - add one from the phenotypes page below',
+    );
   });
   test('Export button hidden when no filters or exports are added', async ({ page }) => {
     // Given
@@ -236,9 +237,10 @@ test.describe('Results Panel', () => {
     await page.locator('#results-panel-toggle').click();
 
     // Then
-    await expect(
-      page.getByTestId('results-panel-body').getByText('No filters added'),
-    ).toBeVisible();
+    await expect(page.getByTestId('no-filters-message')).toHaveText(
+      // Genomic search is off in this describe's config, so Explore has one search mode.
+      'No filters yet - add one from the phenotypes page below',
+    );
     await expect(page.locator('#export-data-button')).not.toBeVisible();
   });
   test('Export button hidden when count is 0', async ({ page }) => {
@@ -388,9 +390,10 @@ test.describe('Results Panel', () => {
     await page.locator('#modal-component').getByRole('button', { name: 'Yes' }).click();
 
     // Then
-    await expect(
-      page.getByTestId('results-panel-body').getByText('No filters added'),
-    ).toBeVisible();
+    await expect(page.getByTestId('no-filters-message')).toHaveText(
+      // Genomic search is off in this describe's config, so Explore has one search mode.
+      'No filters yet - add one from the phenotypes page below',
+    );
   });
 
   test.describe('Server render', () => {
@@ -720,7 +723,7 @@ test.describe('Results Panel', () => {
 // The panel opens itself when the cohort gains something. Every test here would still pass
 // with a permanently-open panel, so each one first pins the collapsed starting state - and
 // none of them assert "filters exist" with an unanchored /filters? added/, which the
-// zero-filter string "No filters added, add below" also matches.
+// zero-filter strings "No filters added, add below" and "No filters added" also match.
 test.describe('Results panel auto-expand', () => {
   const strip = (page: Page) => page.getByTestId('results-summary-strip');
   const body = (page: Page) => page.locator('#results-panel');
@@ -974,9 +977,162 @@ test.describe('Results panel auto-expand', () => {
     // When
     await chip.getByTitle('Remove Filter').click();
 
-    // Then
-    await expect(filterCount(page)).toHaveText('No filters added, add below');
+    // Then the strip is back to zero, without the "add below" pointer it only carries while
+    // the body is hidden
+    await expect(filterCount(page)).toHaveText('No filters added');
     await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
     await expect(body(page)).toBeVisible();
+  });
+});
+
+// The empty state is built from the search-mode registry, so it names only the modes the page
+// in front of the user actually has. Asserted with toHaveText, which is exact: an unanchored
+// match on "phenotypes" would pass for every one of these cases.
+test.describe('Results panel empty state', () => {
+  const EXPLORE_BOTH_MODES = 'No filters yet - add one from the phenotypes or genotypes page below';
+  const PHENOTYPES_ONLY = 'No filters yet - add one from the phenotypes page below';
+
+  const emptyState = (page: Page) => page.getByTestId('no-filters-message');
+  const genomicOff = [
+    { name: 'ENABLE_GENE_QUERY', value: 'false' },
+    { name: 'ENABLE_SNP_QUERY', value: 'false' },
+  ];
+
+  async function mockResults(page: Page) {
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+  }
+
+  // The count endpoint and the shape it answers with are one decision, not two: Discover asks
+  // the open-access endpoint for a CROSS_COUNT and gets the per-consent map back, which is
+  // what providers.ts parses, while Explore's authenticated COUNT is the bare scalar. One
+  // helper taking the path and the fixture as separate arguments let a call site hand either
+  // endpoint either shape, and the parser is lenient enough - map gets `_studies_consents_`
+  // pulled out of it, anything else comes back raw - that a swapped pair leaves the suite
+  // green on the wrong data. So the pairing lives here, once per section, and a call site has
+  // no pair left to get wrong.
+  async function mockExploreSearch(page: Page) {
+    await mockResults(page);
+    await mockApiSuccess(page, countResultPath, '9999');
+  }
+
+  async function mockDiscoverSearch(page: Page) {
+    await mockResults(page);
+    await mockApiSuccess(page, openCountResultPath, { '\\_studies_consents\\': 9999 });
+  }
+
+  test.describe('on Explore', () => {
+    test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+
+    test('names both pages when genomic search gives Explore a Genotypes tab', async ({ page }) => {
+      // Given
+      await mockApiConfig(page, { features: [{ name: 'ENABLE_GENE_QUERY', value: 'true' }] });
+      await mockExploreSearch(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+
+      // When
+      await page.getByTestId('results-summary-strip').click();
+
+      // Then
+      await expect(emptyState(page)).toHaveText(EXPLORE_BOTH_MODES);
+    });
+
+    // A real deployment shape: both genomic flags off leaves Explore with a single mode and
+    // no Genotypes tab to send anyone to.
+    test('names the phenotypes page alone when genomic search is off', async ({ page }) => {
+      // Given
+      await mockApiConfig(page, { features: genomicOff });
+      await mockExploreSearch(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+
+      // When
+      await page.getByTestId('results-summary-strip').click();
+
+      // Then
+      await expect(emptyState(page)).toHaveText(PHENOTYPES_ONLY);
+    });
+
+    // The strip's "add below" points at a body the reader cannot see. Once the body is open it
+    // says the same thing and names the pages, so the empty state reads once, not twice.
+    test('moves the pointer from the strip into the body on expanding', async ({ page }) => {
+      // Given
+      await mockApiConfig(page, { features: genomicOff });
+      await mockExploreSearch(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      const strip = page.getByTestId('results-summary-strip');
+      const summary = page.getByTestId('results-panel-filter-count');
+
+      // Then collapsed, the strip is the only thing pointing anywhere
+      await expect(strip).toHaveAttribute('aria-expanded', 'false');
+      await expect(summary).toHaveText('No filters added, add below');
+      await expect(emptyState(page)).toHaveCount(0);
+
+      // And expanded, the strip is the bare count and the body carries the pointer
+      await strip.click();
+      await expect(strip).toHaveAttribute('aria-expanded', 'true');
+      await expect(summary).toHaveText('No filters added');
+      await expect(emptyState(page)).toHaveText(PHENOTYPES_ONLY);
+    });
+
+    test('drops the text as soon as the first filter is added', async ({ page }) => {
+      // Given an open, empty panel
+      await mockApiConfig(page, { features: [{ name: 'ENABLE_GENE_QUERY', value: 'true' }] });
+      await mockExploreSearch(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await page.getByTestId('results-summary-strip').click();
+      await expect(emptyState(page)).toHaveText(EXPLORE_BOTH_MODES);
+
+      // When a filter is added
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+      const option = await getOption(page);
+      await option.click();
+      await page.getByTestId('add-filter').click();
+
+      // Then
+      await expect(
+        page.getByTestId(`added-filter-${mockData.content[0].conceptPath}`),
+      ).toBeVisible();
+      await expect(emptyState(page)).toHaveCount(0);
+    });
+  });
+
+  // Genomic search on, to prove Discover's single mode is the isDiscover half of the rule and
+  // not just an unset flag.
+  test.describe('on Discover', () => {
+    test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+    test('names the phenotypes page alone, having no Genotypes tab', async ({ page }) => {
+      // Given
+      await mockApiConfig(page, {
+        features: [
+          { name: 'OPEN', value: 'true' },
+          { name: 'DISCOVER', value: 'true' },
+          { name: 'OPEN_EXPLORER', value: 'false' },
+          { name: 'ENABLE_GENE_QUERY', value: 'true' },
+          { name: 'ENABLE_SNP_QUERY', value: 'true' },
+        ],
+      });
+      await mockDiscoverSearch(page);
+      await page.goto('/discover?search=somedata');
+      // The strip is server-rendered for an unauthenticated visitor, so wait for the
+      // client-side count before clicking it: a click that lands before hydration is
+      // swallowed and the panel never opens. The Explore cases get this from userIsLoggedIn.
+      await expect(page.getByTestId('results-panel-count')).toContainText('9,999');
+
+      // When
+      await page.getByTestId('results-summary-strip').click();
+
+      // Then
+      await expect(emptyState(page)).toHaveText(PHENOTYPES_ONLY);
+    });
   });
 });

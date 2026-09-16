@@ -1,22 +1,22 @@
-import { expect, type Page, type Route } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { test, mockApiConfig } from '../../custom-context';
-import { facetResultPath, facetsResponse, searchResults } from '../../mock-data';
-import { navigateInApp, userIsLoggedIn } from '../../utils';
+import {
+  mockCountedSearch,
+  navigateInApp,
+  searchCurrentPageButton as currentPageButton,
+  searchFacetCheckbox as facetCheckbox,
+  searchFor,
+  searchResultRows as resultRows,
+  SEARCH_SETTLE_MS as SETTLE_MS,
+  userIsLoggedIn,
+} from '../../utils';
 
 // The search session belongs to /explorer/+layout.svelte and /discover/+layout.svelte, not to
 // Explorer.svelte, so it outlives the results page. These specs guard that by counting
 // requests: a round trip through a child route must not re-issue the concept or facet search.
 // The count assertion is the point - the state assertions alone still pass if something
-// silently refetches it all back.
-
-// A RegExp, not mock-data's searchResultPath, because that one pins page_number=0 and these
-// specs paginate. Matching on the query string keeps /concepts/detail out of the count.
-const conceptSearchUrl = /\/picsure\/dictionary\/concepts\?/;
-
-// Past the TableHandler's 250ms debounce, with room for a request to land after it.
-const SETTLE_MS = 1000;
-
-const FACET_ID = 'phs000284';
+// silently refetches it all back. The harness itself lives in utils.ts, shared with
+// explorer/search-modes.
 
 const childRoutes = [
   { path: '/explorer/distributions', settles: true },
@@ -26,50 +26,6 @@ const childRoutes = [
   // of and back into the results page, which is what is being guarded here.
   { path: '/explorer/variant', settles: false },
 ];
-
-function resultRows(page: Page) {
-  return page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]');
-}
-
-function currentPageButton(page: Page) {
-  return page.locator('.pagination button[aria-current="page"]');
-}
-
-function facetCheckbox(page: Page) {
-  return page.getByTestId('accordion-item').first().locator(`input[id="${FACET_ID}"]`);
-}
-
-async function mockCountedSearch(page: Page) {
-  const concepts = { count: 0, terms: [] as string[] };
-  const facets = { count: 0 };
-
-  await page.route(conceptSearchUrl, async (route: Route) => {
-    concepts.count += 1;
-    concepts.terms.push(route.request().postDataJSON()?.search ?? '');
-    const pageNumber = Number(new URL(route.request().url()).searchParams.get('page_number') ?? 0);
-    await route.fulfill({
-      json: {
-        ...searchResults,
-        totalElements: 25,
-        totalPages: 3,
-        numberOfElements: 3,
-        pageable: { ...searchResults.pageable, pageNumber },
-        content: searchResults.content.slice(0, 3),
-      },
-    });
-  });
-  await page.route(facetResultPath, async (route: Route) => {
-    facets.count += 1;
-    await route.fulfill({ json: facetsResponse });
-  });
-
-  return { concepts, facets };
-}
-
-async function searchFor(page: Page, term: string) {
-  await page.getByTestId('search-box').fill(term);
-  await page.locator('#search-button').click();
-}
 
 test.describe('Explore search state survives leaving the results page', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });

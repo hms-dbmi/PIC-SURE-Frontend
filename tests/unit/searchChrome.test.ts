@@ -1,41 +1,106 @@
-import { describe, expect, it } from 'vitest';
-import { showsSearchChrome } from '$lib/explorer/searchChrome';
+import { describe, it, expect } from 'vitest';
+
+import { isDiscoverSection, searchRoute, showsSearchChrome } from '$lib/explorer/searchChrome';
+
+describe('searchRoute', () => {
+  it('reads the section and the segment beneath it', () => {
+    expect(searchRoute('/explorer')).toEqual({ section: 'explorer', child: undefined });
+    expect(searchRoute('/explorer/genotypes')).toEqual({
+      section: 'explorer',
+      child: 'genotypes',
+    });
+    expect(searchRoute('/discover/advanced-filtering')).toEqual({
+      section: 'discover',
+      child: 'advanced-filtering',
+    });
+  });
+
+  it('tolerates trailing slashes and doubled separators', () => {
+    expect(searchRoute('/explorer/')).toEqual({ section: 'explorer', child: undefined });
+    expect(searchRoute('//explorer//genotypes/')).toEqual({
+      section: 'explorer',
+      child: 'genotypes',
+    });
+  });
+
+  it('resolves under a base path', () => {
+    expect(searchRoute('/picsure/explorer/genotypes')).toEqual({
+      section: 'explorer',
+      child: 'genotypes',
+    });
+  });
+
+  it.each(['', '/', '/dashboard', '/dataset/exploreration'])(
+    'finds no section in %s',
+    (pathname) => {
+      expect(searchRoute(pathname)).toEqual({});
+    },
+  );
+});
+
+describe('isDiscoverSection', () => {
+  it.each(['/discover', '/discover/', '/discover/distributions', '/picsure/discover'])(
+    'is true for %s',
+    (pathname) => expect(isDiscoverSection(pathname)).toBe(true),
+  );
+
+  it.each(['/explorer', '/explorer/genotypes', '/dashboard', ''])('is false for %s', (pathname) =>
+    expect(isDiscoverSection(pathname)).toBe(false),
+  );
+
+  // Segment matching, not substring: variable detail slugs come from dictionary data, so a
+  // variable named `discover` must not move the page into the Discover section.
+  it('is false when a deeper segment merely spells discover', () => {
+    expect(isDiscoverSection('/explorer/variable/discover')).toBe(false);
+    expect(isDiscoverSection('/explorer/variable/rediscovery')).toBe(false);
+  });
+});
 
 describe('showsSearchChrome', () => {
-  it('shows the chrome on the Explore and Discover results pages', () => {
-    expect(showsSearchChrome('/explorer')).toBe(true);
-    expect(showsSearchChrome('/discover')).toBe(true);
+  it.each([
+    '/explorer',
+    '/explorer/',
+    '/explorer/genotypes',
+    '/explorer/advanced-filtering',
+    '/explorer/variant',
+    '/explorer/genome-filter',
+    '/discover',
+    '/discover/advanced-filtering',
+  ])('shows the chrome on %s', (pathname) => {
+    expect(showsSearchChrome(pathname)).toBe(true);
   });
 
-  it('shows the chrome on the child routes that keep the search above them', () => {
-    expect(showsSearchChrome('/explorer/advanced-filtering')).toBe(true);
-    expect(showsSearchChrome('/explorer/genome-filter')).toBe(true);
-    expect(showsSearchChrome('/explorer/variant')).toBe(true);
-    expect(showsSearchChrome('/discover/advanced-filtering')).toBe(true);
+  // Export and Distributions keep their own full-page presentation.
+  it.each([
+    '/explorer/export',
+    '/explorer/export/anything',
+    '/explorer/distributions',
+    '/discover/distributions',
+  ])('hides the chrome on %s', (pathname) => {
+    expect(showsSearchChrome(pathname)).toBe(false);
   });
 
-  it('hides the chrome on the full-page export and distributions routes', () => {
-    expect(showsSearchChrome('/explorer/export')).toBe(false);
-    expect(showsSearchChrome('/explorer/distributions')).toBe(false);
-    expect(showsSearchChrome('/discover/distributions')).toBe(false);
+  it.each(['/', '', '/dashboard', '/dataset', '/analyze/api', '/login', '/admin/configuration'])(
+    'hides the chrome outside the search section, on %s',
+    (pathname) => {
+      expect(showsSearchChrome(pathname)).toBe(false);
+    },
+  );
+
+  // Only the segment directly under the section root selects a route. Anything deeper is
+  // dictionary-supplied and must not be read as one, or a variable page would silently lose
+  // its tab bar and cohort panel.
+  it.each([
+    '/explorer/variable/age-at-export',
+    '/explorer/variable/export',
+    '/explorer/variable/distributions',
+    '/explorer/variable/discover',
+  ])('keeps the chrome on the variable detail page %s', (pathname) => {
+    expect(showsSearchChrome(pathname)).toBe(true);
   });
 
-  it('hides the chrome outside Explore and Discover', () => {
-    expect(showsSearchChrome('/')).toBe(false);
-    expect(showsSearchChrome('/dashboard')).toBe(false);
-    expect(showsSearchChrome('/dataset')).toBe(false);
-    expect(showsSearchChrome('/analyze')).toBe(false);
-  });
-
-  it('ignores a trailing slash and a base path', () => {
-    expect(showsSearchChrome('/explorer/')).toBe(true);
+  it('resolves under a base path', () => {
     expect(showsSearchChrome('/picsure/explorer')).toBe(true);
-    expect(showsSearchChrome('/picsure/explorer/export')).toBe(false);
-  });
-
-  it('is total for the degenerate pathnames a caller can hand it', () => {
-    expect(showsSearchChrome('')).toBe(false);
-    expect(showsSearchChrome(undefined as unknown as string)).toBe(false);
-    expect(showsSearchChrome(null as unknown as string)).toBe(false);
+    expect(showsSearchChrome('/picsure/discover/distributions')).toBe(false);
   });
 });

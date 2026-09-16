@@ -1,5 +1,6 @@
-import { expect, type Page, type Locator } from '@playwright/test';
-import { genomicFilter } from './mock-data';
+import { expect, type Page, type Locator, type Route } from '@playwright/test';
+
+import { facetResultPath, facetsResponse, genomicFilter, searchResults } from './mock-data';
 
 // This method is used to ensure that the user state is fully loaded before proceeding.
 // Sometimes, the tests are flaky because there is a race condition in the tests that
@@ -75,4 +76,67 @@ export const seedGenomicFilter = async (page: Page) => {
     },
     JSON.stringify([genomicFilter]),
   );
+};
+
+/* --- Explore search-state harness ---------------------------------------------------------
+ *
+ * The search session belongs to the /explorer and /discover layouts, not to the results
+ * page, so it outlives navigation within the section. The specs that guard that assert by
+ * request count: the state assertions alone still pass if something silently refetches it
+ * all back. Shared by explorer/search-state and explorer/search-modes.
+ */
+
+/** Past the TableHandler's 250ms debounce, with room for a request to land after it. */
+export const SEARCH_SETTLE_MS = 1000;
+
+/** The first facet in facetsResponse, used to select one and check it survived. */
+export const SEARCH_FACET_ID = 'phs000284';
+
+// A RegExp, not mock-data's searchResultPath, because that one pins page_number=0 and these
+// specs paginate. Matching on the query string keeps /concepts/detail out of the count.
+const conceptSearchUrl = /\/picsure\/dictionary\/concepts\?/;
+
+export const searchResultRows = (page: Page) =>
+  page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]');
+
+export const searchCurrentPageButton = (page: Page) =>
+  page.locator('.pagination button[aria-current="page"]');
+
+export const searchFacetCheckbox = (page: Page) =>
+  page.getByTestId('accordion-item').first().locator(`input[id="${SEARCH_FACET_ID}"]`);
+
+export const searchFor = async (page: Page, term: string) => {
+  await page.getByTestId('search-box').fill(term);
+  await page.locator('#search-button').click();
+};
+
+/**
+ * Serves a three-row, three-page search and counts the concept and facet requests behind it.
+ * `concepts.terms` records what each concept request asked for.
+ */
+export const mockCountedSearch = async (page: Page) => {
+  const concepts = { count: 0, terms: [] as string[] };
+  const facets = { count: 0 };
+
+  await page.route(conceptSearchUrl, async (route: Route) => {
+    concepts.count += 1;
+    concepts.terms.push(route.request().postDataJSON()?.search ?? '');
+    const pageNumber = Number(new URL(route.request().url()).searchParams.get('page_number') ?? 0);
+    await route.fulfill({
+      json: {
+        ...searchResults,
+        totalElements: 25,
+        totalPages: 3,
+        numberOfElements: 3,
+        pageable: { ...searchResults.pageable, pageNumber },
+        content: searchResults.content.slice(0, 3),
+      },
+    });
+  });
+  await page.route(facetResultPath, async (route: Route) => {
+    facets.count += 1;
+    await route.fulfill({ json: facetsResponse });
+  });
+
+  return { concepts, facets };
 };

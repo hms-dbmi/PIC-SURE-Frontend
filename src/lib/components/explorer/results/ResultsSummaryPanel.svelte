@@ -12,7 +12,7 @@
   import { page } from '$app/state';
 
   import { config } from '$lib/configuration.svelte';
-  import { showsSearchChrome } from '$lib/explorer/searchChrome';
+  import { isDiscoverSection, showsSearchChrome } from '$lib/explorer/searchChrome';
   import { allFilters } from '$lib/stores/Filter';
   import { cohortContents } from '$lib/stores/Cohort';
   import { autoOpenForCohort, panelOpen } from '$lib/stores/ResultsSummaryPanel';
@@ -29,9 +29,12 @@
 
   let visible = $derived(showsSearchChrome(page.url.pathname));
   let filterCount = $derived($allFilters.length);
+  // "add below" points at a body the reader cannot see, so it goes once the body is open.
   let filterSummary = $derived(
     filterCount === 0
-      ? 'No filters added, add below'
+      ? $panelOpen
+        ? 'No filters added'
+        : 'No filters added, add below'
       : `${filterCount} filter${filterCount === 1 ? '' : 's'} added`,
   );
   let hasCountError = $derived(
@@ -43,7 +46,7 @@
   // and never crosses to the other, so the section cannot change under it - and a reactive
   // read here would land inside the $effect below, restarting the counts on every navigation
   // within the layout.
-  const isOpenAccess = page.url.pathname.includes('/discover');
+  const isOpenAccess = isDiscoverSection(page.url.pathname);
   const getIsOpenAccess = () => isOpenAccess;
 
   // Tied to `visible`, not to mount: the layout keeps this component alive across every child

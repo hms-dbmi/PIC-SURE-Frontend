@@ -5,6 +5,7 @@
 
   import { applySearchParam, startSearchSession } from '$lib/stores/Search';
   import ResultsSummaryPanel from '$lib/components/explorer/results/ResultsSummaryPanel.svelte';
+  import SearchTabs from '$lib/components/explorer/SearchTabs.svelte';
 
   let { children }: { children?: Snippet } = $props();
 
@@ -24,4 +25,5 @@
 </script>
 
 <ResultsSummaryPanel />
+<SearchTabs />
 {@render children?.()}

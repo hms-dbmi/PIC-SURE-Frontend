@@ -17,6 +17,8 @@
     loading as isLoading,
   } from '$lib/stores/Search';
   import type { TourDataType } from '$lib/models/Tour';
+  import { isDiscoverSection } from '$lib/explorer/searchChrome';
+  import { genotypesMode } from '$lib/explorer/searchModes';
 
   import Actions from '$lib/components/explorer/cell/Actions.svelte';
   import SearchDatatable from '$lib/components/datatable/RemoteTable.svelte';
@@ -49,12 +51,11 @@
     { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
   ]);
   const cellOverides = { id: Actions };
-  const genomicFeaturesEnabled = $derived(
-    config.features.enableGENEQuery || config.features.enableSNPQuery,
-  );
-  let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
+  let isDiscoverPage = $derived(isDiscoverSection(page.url.pathname));
   let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
-  let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
+  // Same gate as the Genotypes mode, from the one definition of it - this button and that
+  // link are two entry points to the same thing.
+  let allowGenomicFiltering = $derived(genotypesMode.enabled(isDiscoverPage));
 
   function update() {
     if ($error) error.set('');
