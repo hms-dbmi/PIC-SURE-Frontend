@@ -8,6 +8,16 @@ export interface Column {
   filter?: boolean;
 }
 
+/**
+ * How a page change was asked for.
+ *
+ * A consumer that moves focus onto the new page needs to know: a keyboard user has just
+ * activated Next and has nothing under a cursor to go back to, so leaving focus behind drops
+ * them at the top of the document; a mouse user still has their pointer where they left it and
+ * must not have focus taken from them.
+ */
+export type PageChangeSource = 'mouse' | 'keyboard';
+
 export interface TableProps {
   tableName: string;
   isLoading?: boolean;
@@ -23,11 +33,10 @@ export interface TableProps {
   showPagination?: boolean;
   class?: string;
   isClickable?: boolean;
-  expandable?: boolean;
   rowClickHandler?: (row: Indexable) => void;
   rowClickKeys?: string[];
   tableActions?: import('svelte').Snippet;
   searchLogAction?: string;
   rowClickLogAction?: string;
-  onPageChange?: () => void;
+  onPageChange?: (source: PageChangeSource) => void;
 }

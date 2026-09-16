@@ -29,8 +29,8 @@ function resultsWith(rowCount: number, totalElements: number) {
 const supersededResults = () => resultsWith(SUPERSEDED_ROWS, SUPERSEDED_TOTAL);
 const currentResults = () => resultsWith(CURRENT_ROWS, CURRENT_TOTAL);
 
-function resultRows(page: Page) {
-  return page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]');
+function resultCards(page: Page) {
+  return page.getByTestId('search-result-card');
 }
 
 // Cancellation surfaces only as a requestfailed event. Assert the count, not the
@@ -98,10 +98,10 @@ test.describe('Out-of-order search responses', () => {
     await searchFor(page, 'bmi');
 
     // Then
-    await expect(resultRows(page)).toHaveCount(CURRENT_ROWS);
+    await expect(resultCards(page)).toHaveCount(CURRENT_ROWS);
 
     await page.waitForTimeout(SETTLE_MS);
-    await expect(resultRows(page)).toHaveCount(CURRENT_ROWS);
+    await expect(resultCards(page)).toHaveCount(CURRENT_ROWS);
     expect(abortedSearches.length).toBeGreaterThan(0);
   });
 
@@ -118,7 +118,7 @@ test.describe('Out-of-order search responses', () => {
     await page.waitForTimeout(SETTLE_MS);
 
     // Then - the superseded totalElements would add phantom pages to the pager
-    await expect(resultRows(page)).toHaveCount(CURRENT_ROWS);
+    await expect(resultCards(page)).toHaveCount(CURRENT_ROWS);
     await expect(page.locator('#search-results-col')).toContainText(`/ ${CURRENT_TOTAL}`);
     await expect(page.locator('#search-results-col')).not.toContainText(`${SUPERSEDED_TOTAL}`);
   });
@@ -140,9 +140,9 @@ test.describe('Out-of-order search responses', () => {
     await facetCheckbox.click();
 
     // Then
-    await expect(resultRows(page)).toHaveCount(CURRENT_ROWS);
+    await expect(resultCards(page)).toHaveCount(CURRENT_ROWS);
     await page.waitForTimeout(SETTLE_MS);
-    await expect(resultRows(page)).toHaveCount(CURRENT_ROWS);
+    await expect(resultCards(page)).toHaveCount(CURRENT_ROWS);
     expect(abortedSearches.length).toBeGreaterThan(0);
   });
 
@@ -170,9 +170,9 @@ test.describe('Out-of-order search responses', () => {
     const spinner = page.locator('#search-results-col').getByRole('progressbar');
     await page.waitForTimeout(1500);
     await expect(spinner).toBeVisible();
-    await expect(resultRows(page)).toHaveCount(0);
+    await expect(resultCards(page)).toHaveCount(0);
 
-    await expect(resultRows(page)).toHaveCount(CURRENT_ROWS, { timeout: SETTLE_MS });
+    await expect(resultCards(page)).toHaveCount(CURRENT_ROWS, { timeout: SETTLE_MS });
     await expect(spinner).toHaveCount(0);
   });
 });
@@ -252,8 +252,8 @@ test.describe('Leaving the page cancels in-flight searches', () => {
     // the check is that the superseded payload never renders.
     await page.waitForTimeout(SETTLE_MS);
     expect(abortedSearches.length).toBeGreaterThan(0);
-    await expect(resultRows(page)).toHaveCount(CURRENT_ROWS);
-    await expect(resultRows(page)).not.toHaveCount(SUPERSEDED_ROWS);
+    await expect(resultCards(page)).toHaveCount(CURRENT_ROWS);
+    await expect(resultCards(page)).not.toHaveCount(SUPERSEDED_ROWS);
   });
 
   test('the incoming page still searches after the outgoing one is destroyed', async ({ page }) => {
@@ -266,7 +266,7 @@ test.describe('Leaving the page cancels in-flight searches', () => {
     await page.goto('/explorer');
     await userIsLoggedIn(page);
     await searchFor(page, 'age');
-    await expect(resultRows(page)).toHaveCount(CURRENT_ROWS);
+    await expect(resultCards(page)).toHaveCount(CURRENT_ROWS);
 
     // When
     await page.locator('#nav-link-discover').click();
@@ -274,6 +274,6 @@ test.describe('Leaving the page cancels in-flight searches', () => {
     await searchFor(page, 'bmi');
 
     // Then
-    await expect(resultRows(page)).toHaveCount(CURRENT_ROWS);
+    await expect(resultCards(page)).toHaveCount(CURRENT_ROWS);
   });
 });

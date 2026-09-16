@@ -4,7 +4,6 @@
   import { toaster } from '$lib/toaster';
   import type { SearchResult } from '$lib/models/Search';
   import { addFilter, updateFilter, enrichFilterDetails } from '$lib/stores/Filter';
-  import { activeRow } from '$lib/stores/ExpandableRow';
   import {
     type Filter,
     createCategoricalFilter,
@@ -111,7 +110,6 @@
   }
 
   function finish() {
-    $activeRow = '';
     onclose();
   }
 

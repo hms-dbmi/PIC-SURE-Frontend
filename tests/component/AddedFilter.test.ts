@@ -30,11 +30,6 @@ vi.mock('$lib/stores/Filter', async () => {
 
 vi.mock('$lib/stores/Dictionary', () => ({ getConceptDetails: vi.fn() }));
 
-vi.mock('$lib/stores/ExpandableRow', async () => {
-  const { writable } = await import('svelte/store');
-  return { activeRow: writable('') };
-});
-
 import AddedFilter from '$lib/components/explorer/results/AddedFilter.svelte';
 import { log } from '$lib/logger';
 import type { Filter } from '$lib/models/Filter.svelte';

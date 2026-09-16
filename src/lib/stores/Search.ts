@@ -22,6 +22,24 @@ export const tableHandler: TableHandler = new TableHandler([] as SearchResult[],
 export const tour: Writable<boolean> = writable(true);
 export const error: Writable<string> = writable('');
 
+/**
+ * Bumped every time the search criteria move, and every time a session is torn down.
+ *
+ * Not a page counter and not a load counter: it names the *question* the rows on screen are
+ * answering. A consumer that asked for something and is waiting for it - the results list,
+ * which holds a focus request across a page change - compares this to tell the response it
+ * asked for from one a facet click or a new search produced in the meantime. Both changes
+ * route through `setPage(1)` below, so the page number alone cannot tell them apart.
+ *
+ * Incremented rather than set from a key, because two clicks that leave the criteria where
+ * they started are still two loads, and the second one's rows are not the first one's.
+ */
+export const criteriaGeneration: Writable<number> = writable(0);
+
+function supersedeCriteria() {
+  criteriaGeneration.update((generation) => generation + 1);
+}
+
 const emptyFn = () => {};
 const unsubscribers: { [key: string]: Unsubscriber } = {
   searchTerm: emptyFn,
@@ -106,6 +124,7 @@ function teardown() {
   facetsPromise.set(Promise.resolve([]));
   error.set('');
   loading.set(false);
+  supersedeCriteria();
   settleSearch('cancelled');
 }
 
@@ -118,6 +137,7 @@ export function initHandler(): () => void {
 
   const onCriteriaChange = () => {
     supersedeConcepts();
+    supersedeCriteria();
     loading.set(true);
     if (!isResetting) tableHandler.setPage(1);
   };

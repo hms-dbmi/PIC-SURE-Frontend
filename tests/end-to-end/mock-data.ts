@@ -1,4 +1,5 @@
 import type { ConsentsMap, User } from '../../src/lib/models/User';
+import type { SearchResult } from '../../src/lib/models/Search';
 import { PicsurePrivileges, BDCPrivileges } from '../../src/lib/models/Privilege';
 import type { DashboardResp } from '$lib/stores/Dashboard';
 import type { Indexable } from '$lib/types';
@@ -716,6 +717,101 @@ export const detailResponseCat = {
       data_type: 'P',
       study_focus: 'Study Focus',
       version: 'v1',
+    },
+  },
+};
+
+/**
+ * The related variable the filter panel stacks under search row 4's main interface.
+ *
+ * `relatedVariablesOf` admits a `Categorical` child that carries values and a non-blank
+ * dataset, so those three fields are load-bearing. So is one that is **absent**: there is no
+ * `table` here. A child arrives inside its parent's `children` without one, and
+ * `enrichFilterDetails` returns early on a `searchResult` that already has a `table` - so a
+ * child carrying one would make the enrichment a no-op.
+ *
+ * `STUDY123`, because it is one of the datasets `mockConsents` grants. A filter on an
+ * unconsented dataset sets `hasInvalidFilter`, and the navigation guard then answers any
+ * attempt to leave Explore with the "not authorized ... remove the invalid filters" dialog
+ * instead of navigating - which a spec that leaves and comes back cannot get past.
+ */
+const relatedVariableChild: SearchResult = {
+  type: 'Categorical',
+  conceptPath: '\\Study123\\AGE\\category\\',
+  name: 'AGE_BRACKET',
+  display: 'Age bracket',
+  dataset: 'STUDY123',
+  studyAcronym: 'S1',
+  allowFiltering: true,
+  description: 'Which bracket the recorded age falls in',
+  values: ['Under 18', '18 to 64', '65 and over'],
+  children: null,
+  meta: null,
+};
+
+/**
+ * A `concepts/detail` response for search row 4, `\Study123\AGE\`, with a related variable
+ * under it.
+ *
+ * Row 4 is `Continuous`, so the panel's main interface is a min/max pair rather than a value
+ * list. Left blank with a related variable present, `mainEngaged` is false and the main
+ * variable writes no filter at all - so a spec can put exactly one filter in the cohort, know
+ * it is the child's, and have the only value list on screen be the one it came from.
+ *
+ * Spread from the row so the detail page and the results list cannot drift: the row is what
+ * the card was rendered from, and `children` is the one field a detail response adds.
+ */
+export const detailResponseRelatedParent = {
+  ...(searchResults.content[4] as SearchResult),
+  children: [relatedVariableChild],
+};
+
+/**
+ * What the related variable's **own** `concepts/detail` call answers - the other half of the
+ * pair above, and the reason `enrichFilterDetails` has anything to write.
+ *
+ * `table` and `study` are the two fields the enrichment copies onto a filter that is already
+ * in the tree, in place, with no write to `filterTree`. If this response lacked them the
+ * enrichment would fetch, find nothing to copy, and leave the filter exactly as it was -
+ * which a spec asserting that the panel did not move would pass for the wrong reason.
+ * `table.display` is deliberately a string no other fixture uses, so a spec can assert that
+ * *this* table landed on *that* filter rather than merely that some table did.
+ *
+ * Note that the two halves share a dataset, as a parent and its child do. Concept detail is
+ * fetched as `POST concepts/detail/{dataset}` with the concept path in the body, so a route
+ * keyed on the URL would answer both requests with whichever of these was registered. Serve
+ * them with `mockConceptDetailByPath`.
+ *
+ * No main variable can exercise this path. `VariableDetail` hands the panel the object
+ * `getConceptDetails` returned; the filter constructors store that same object as the
+ * filter's `searchResult`; and the enrichment re-requests the same concept path and dataset,
+ * which `getConceptDetails` answers out of its own cache with the identical object - so the
+ * patch assigns each field to itself. A related variable is read off `children` and has a
+ * cache key of its own, which is what makes its fetch real.
+ */
+export const detailResponseRelatedChild = {
+  ...relatedVariableChild,
+  table: {
+    type: 'Categorical',
+    conceptPath: '\\Study123\\AGE\\',
+    name: 'study123_age_table',
+    display: 'Study123 age measurements table',
+    dataset: 'STUDY123',
+    description: 'The table the Study123 age variables sit in',
+    values: [],
+    allowFiltering: true,
+    studyAcronym: 'S1',
+    children: null,
+    table: null,
+    study: null,
+    meta: null,
+  },
+  study: {
+    ref: 'STUDY123',
+    fullName: 'Study 123 Full Name',
+    abbreviation: 'S1',
+    meta: {
+      study_accession: 'STUDY123.v1.p1',
     },
   },
 };

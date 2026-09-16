@@ -6,22 +6,21 @@
   import { goto } from '$app/navigation';
 
   import { config } from '$lib/configuration.svelte';
-  import type { Column } from '$lib/components/datatable/types';
   import {
     searchTerm,
     selectedFacets,
     tableHandler as handler,
+    criteriaGeneration,
     error,
     tour,
     resetSearch,
     loading as isLoading,
   } from '$lib/stores/Search';
   import type { TourDataType } from '$lib/models/Tour';
-  import { isDiscoverSection } from '$lib/explorer/searchChrome';
+  import { isDiscoverSection, type SearchSection } from '$lib/explorer/searchChrome';
   import { genotypesMode } from '$lib/explorer/searchModes';
 
-  import Actions from '$lib/components/explorer/cell/Actions.svelte';
-  import SearchDatatable from '$lib/components/datatable/RemoteTable.svelte';
+  import SearchResultList from '$lib/components/explorer/SearchResultList.svelte';
   import Searchbox from '$lib/components/Searchbox.svelte';
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
@@ -44,14 +43,17 @@
     searchInput = term;
   });
 
-  const tableName = 'ExplorerTable';
-  const tableColumns = $derived(config.branding.explorePage.columns || []);
-  const columns: Column[] = $derived([
-    ...tableColumns,
-    { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
-  ]);
-  const cellOverides = { id: Actions };
+  // Still 'ExplorerTable': it is the key `getDefaultRows`/`setDefaultRows` store the user's
+  // rows-per-page choice under, and `stores/Search` reads that same key when it builds the
+  // handler. Renaming it here would silently drop everyone's saved page size.
+  const rowsPreferenceKey = 'ExplorerTable';
+  // Declared once, by the component that scrolls it: the list takes the id it is given, so a
+  // second list on a page cannot end up sharing this one.
+  const resultsId = 'search-results';
+  // By segment, never by substring: below the section root the path carries dictionary data,
+  // so a dataset named `discover` must not read as the Discover section.
   let isDiscoverPage = $derived(isDiscoverSection(page.url.pathname));
+  let section: SearchSection = $derived(isDiscoverPage ? 'discover' : 'explorer');
   let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
   // Same gate as the Genotypes mode, from the one definition of it - this button and that
   // link are two entry points to the same thing.
@@ -79,7 +81,7 @@
   }
 
   function scrollToSearchResults() {
-    document.getElementById(`${tableName}-table`)?.scrollIntoView({ block: 'start' });
+    document.getElementById(resultsId)?.scrollIntoView({ block: 'start' });
   }
 
   onMount(() => {
@@ -127,16 +129,14 @@
         {$error}
       </ErrorAlert>
     {:else if $searchTerm || $selectedFacets.length > 0}
-      <SearchDatatable
-        isClickable
-        ariaLabel="Search results"
-        {tableName}
+      <SearchResultList
+        id={resultsId}
+        {rowsPreferenceKey}
         {handler}
-        {columns}
-        {cellOverides}
+        {section}
         isLoading={$isLoading}
-        expandable
-        rowClickLogAction="search_result.row_click"
+        searchTerm={$searchTerm}
+        criteriaGeneration={$criteriaGeneration}
         onPageChange={scrollToSearchResults}
       />
     {/if}
