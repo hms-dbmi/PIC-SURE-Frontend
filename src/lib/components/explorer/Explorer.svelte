@@ -10,6 +10,7 @@
     searchTerm,
     selectedFacets,
     tableHandler as handler,
+    criteriaGeneration,
     error,
     tour,
     resetSearch,
@@ -135,6 +136,7 @@
         {section}
         isLoading={$isLoading}
         searchTerm={$searchTerm}
+        criteriaGeneration={$criteriaGeneration}
         onPageChange={scrollToSearchResults}
       />
     {/if}
