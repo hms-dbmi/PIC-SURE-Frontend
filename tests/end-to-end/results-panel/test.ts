@@ -919,8 +919,12 @@ test.describe('Results panel auto-expand', () => {
     );
     await page.goto('/explorer?search=somedata');
     await userIsLoggedIn(page);
-    const continuousRow = mockData.content[3];
-    await openNthResultFilter(page, 3);
+    // Row 4, not row 3: concept detail is keyed on the dataset, and the override registered
+    // just above answers for every concept in test_data_set - which rows 0-3 all share - so
+    // opening row 3 serves a Categorical detail and loses the Continuous premise. Row 4 is
+    // Continuous in a dataset of its own.
+    const continuousRow = mockData.content[4];
+    await openNthResultFilter(page, 4);
     await addFilterButton(page).click();
     await expect(page.getByTestId(`added-filter-${continuousRow.conceptPath}`)).toBeVisible();
 
@@ -950,10 +954,13 @@ test.describe('Results panel auto-expand', () => {
     await page.goto('/explorer?search=somedata');
     await userIsLoggedIn(page);
     await addCategoricalFilter(page, 0, detailResponseCat);
-    await openNthResult(page, 1);
+    // Row 5, not row 1: addCategoricalFilter's detail override is keyed on test_data_set,
+    // which rows 0-3 share, so opening row 1 would serve row 0's detail and export the
+    // variable that is already filtered - leaving nothing for the removal to shrink.
+    await openNthResult(page, 5);
     const exportToggle = page.getByTestId('variable-detail-export-toggle');
     await exportToggle.click();
-    const secondConceptPath = mockData.content[1].conceptPath;
+    const secondConceptPath = mockData.content[5].conceptPath;
     await expect(page.getByTestId(`added-export-${secondConceptPath}`)).toBeVisible();
     await strip(page).click();
     await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
