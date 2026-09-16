@@ -136,6 +136,32 @@ export const mockConceptDetailFromRows = (page: Page) =>
     await route.fulfill({ json: row ?? {} });
   });
 
+/**
+ * Serves concept detail for the concept paths named, keyed on the **request body**, and
+ * defers anything else to the route registered before it.
+ *
+ * The usual override - `mockApiSuccess(page, `${conceptsDetailPath}/${dataset}`, detail)` -
+ * is keyed on the URL, and the URL carries only the dataset: `concepts/detail/{dataset}`,
+ * with the concept path in the body. So one of those answers for *every* concept in that
+ * dataset, which has twice been diagnosed as something else on this branch - a spec opened
+ * one row and was served a different row's detail. Use this instead wherever two concepts in
+ * the same dataset have to give different answers, such as a parent and the related variable
+ * under it.
+ *
+ * Unlisted paths fall through rather than 404, so `mockConceptDetailFromRows` still covers
+ * every other concept the page asks for.
+ */
+export const mockConceptDetailByPath = (page: Page, byConceptPath: Record<string, unknown>) =>
+  page.route(`${conceptsDetailPath}/*`, async (route: Route) => {
+    const conceptPath = route.request().postData() ?? '';
+    const detail = byConceptPath[conceptPath];
+    if (detail === undefined) {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({ json: detail });
+  });
+
 // Only client-side navigation keeps a layout - and so the cohort summary panel it renders -
 // alive, and page.goto() would not. The in-app links to Explore's child routes mostly live in
 // that panel's body, which is the state under test in several specs, so a synthetic anchor

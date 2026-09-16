@@ -4,6 +4,8 @@ import {
   conceptsDetailPath,
   detailResponseCat,
   detailResponseCat2,
+  detailResponseRelatedChild,
+  detailResponseRelatedParent,
   searchResults as mockData,
   searchResultPath,
   facetResultPath,
@@ -13,6 +15,7 @@ import {
 import {
   addFilterButton,
   getOption,
+  mockConceptDetailByPath,
   mockConceptDetailFromRows,
   navigateInApp,
   openNthResult,
@@ -732,6 +735,45 @@ test.describe('Results panel auto-expand', () => {
   const filterCount = (page: Page) => page.getByTestId('results-panel-filter-count');
   const firstConceptPath = mockData.content[0].conceptPath;
 
+  /* --- The related-variable filter, for the in-place enrichment ---------------------------
+   *
+   * Search row 4 is the parent. `detailResponseRelatedParent` is row 4 plus a `children`
+   * entry, so the row the card was rendered from and the detail the page loads agree on
+   * everything else.
+   */
+  const relatedParentPath = mockData.content[4].conceptPath;
+  const relatedChildPath = detailResponseRelatedChild.conceptPath;
+  const relatedChildInParent = detailResponseRelatedParent.children[0];
+  const relatedTableDisplay = detailResponseRelatedChild.table.display;
+
+  /**
+   * The `table.display` the stored cohort tree carries on one filter, or `undefined`.
+   *
+   * sessionStorage rather than the page, because that is the only place `enrichFilterDetails`
+   * is observable from this section: it patches `searchResult.table` and `searchResult.study`
+   * and re-serialises the tree, while the cohort panel's chip renders `studyAcronym` and
+   * `dataset`, neither of which the patch touches. `AdvancedItem` and the distributions page
+   * do read `table.display`, but both are somewhere else.
+   */
+  function tableDisplayOf(page: Page, filterId: string) {
+    return page.evaluate((id) => {
+      type Node = {
+        id?: string;
+        children?: Node[];
+        searchResult?: { table?: { display?: string } | null } | null;
+      };
+      const find = (node: Node): Node | undefined =>
+        Array.isArray(node.children)
+          ? node.children.map(find).find(Boolean)
+          : node.id === id
+            ? node
+            : undefined;
+      const raw = sessionStorage.getItem('filterTree');
+      if (!raw) return undefined;
+      return find(JSON.parse(raw) as Node)?.searchResult?.table?.display;
+    }, filterId);
+  }
+
   async function mockExplorer(page: Page, features: { name: string; value: string }[] = []) {
     await mockApiConfig(page, features.length > 0 ? { features } : undefined);
     await mockConceptDetailFromRows(page);
@@ -907,32 +949,65 @@ test.describe('Results panel auto-expand', () => {
   });
 
   test('keeps a manual collapse after a filter is enriched in place', async ({ page }) => {
-    // Given a Continuous filter, which is the only kind whose searchResult arrives without a
-    // `table`: AddFilter re-fetches concept details for Categorical only, so the enrich guard
-    // in enrichFilterDetails passes and it patches `table` and `study` onto a filter that is
-    // already in the tree - in place, with no write to filterTree for the panel to see.
+    // Given a filter on a *related* variable, which is the one path where
+    // `enrichFilterDetails` still mutates anything.
+    //
+    // A main variable cannot exercise it. `VariableDetail` hands the panel the object
+    // `getConceptDetails` returned, the filter constructors store that same object as the
+    // filter's `searchResult`, and the enrichment re-requests the same concept path and
+    // dataset - so either the response already carried a `table` and the guard returns early,
+    // or it did not and `getConceptDetails` answers out of its own cache with the identical
+    // object, making the patch a self-assignment. Neither issues a second request.
+    //
+    // A related variable is read off the parent's `children`, arrives without a `table`, and
+    // has a dictionary cache key of its own. So the fetch is real and the two fields land on
+    // a filter that is *already in the tree*, in place, with no write to `filterTree` for the
+    // panel to see.
     await mockExplorer(page);
-    await mockApiSuccess(
-      page,
-      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-      detailResponseCat,
-    );
+    // Per body, not per dataset. `mockApiSuccess` on `concepts/detail/{dataset}` matches on
+    // the URL, and the parent and the child share dataset `STUDY123` - so a dataset-keyed
+    // override would answer the parent's request with the child's detail, the panel would
+    // find no `children`, and there would be no related variable left to filter on.
+    await mockConceptDetailByPath(page, {
+      [relatedParentPath]: detailResponseRelatedParent,
+      [relatedChildPath]: detailResponseRelatedChild,
+    });
+    // The premise, asserted rather than assumed, because it can rot in two directions and
+    // both of them leave this test passing with nothing exercised: a child that arrives
+    // carrying a `table` short-circuits the enrichment, and a child detail response without
+    // one gives it nothing to copy.
+    expect(relatedChildInParent.table).toBeUndefined();
+    expect(detailResponseRelatedChild.table.display).toBe(relatedTableDisplay);
+
     await page.goto('/explorer?search=somedata');
     await userIsLoggedIn(page);
-    // Row 4, not row 3: concept detail is keyed on the dataset, and the override registered
-    // just above answers for every concept in test_data_set - which rows 0-3 all share - so
-    // opening row 3 serves a Categorical detail and loses the Continuous premise. Row 4 is
-    // Continuous in a dataset of its own.
-    const continuousRow = mockData.content[4];
     await openNthResultFilter(page, 4);
+    // Row 4 is Continuous, so its own interface is a min/max pair. Both bounds left blank
+    // with a related variable present writes no filter for it, which is what leaves exactly
+    // one filter in the cohort and makes it the child's. Asserting the pair is on screen also
+    // pins that the *parent's* detail is what arrived: served the child's, this page would
+    // render a value list and no related row at all.
+    await expect(page.getByTestId('numerical-filter')).toBeVisible();
+    const relatedRow = page.getByTestId('related-variable');
+    await expect(relatedRow).toHaveCount(1);
+    await relatedRow.getByTestId('related-variable-toggle').click();
+    const value = await getOption(relatedRow);
+    await value.click();
     await addFilterButton(page).click();
-    await expect(page.getByTestId(`added-filter-${continuousRow.conceptPath}`)).toBeVisible();
 
-    // The enrichment is fire-and-forget, so wait for the evidence it landed: its only other
-    // effect is writing the patched tree straight to sessionStorage.
-    await page.waitForFunction(() =>
-      (sessionStorage.getItem('filterTree') ?? '').includes('"table":{'),
-    );
+    // The cohort gained the child's filter, so the panel opens itself - the half of the
+    // invariant this test is the counterpart of, and the starting state the collapse below
+    // has to be a deliberate act against.
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+    await expect(page.getByTestId(`added-filter-${relatedChildPath}`)).toBeVisible();
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
+
+    // The enrichment is fire-and-forget, so wait for the evidence that it landed. Identity,
+    // not presence: `"table":{` appears in the tree for any filter whose detail response
+    // happened to carry one, which is most of them - so this asks whether *that* table is on
+    // *that* filter. Without it a run where nothing was enriched would go on to assert that a
+    // collapsed panel stayed collapsed and pass having exercised nothing.
+    await expect.poll(() => tableDisplayOf(page, relatedChildPath)).toBe(relatedTableDisplay);
 
     // When
     await strip(page).click();
@@ -941,11 +1016,14 @@ test.describe('Results panel auto-expand', () => {
     await expect(page).toHaveURL(/\/help$/);
     await navigateInApp(page, '/explorer?search=somedata');
 
-    // Then - the enriched bytes are not the query, so the new panel must read this as the
-    // same cohort the user collapsed over
+    // Then - the patched bytes are not part of what identifies a filter, so the new panel
+    // must read this as the same cohort the user collapsed over rather than as a gain
     await expect(filterCount(page)).toHaveText(/^1 filter added$/);
     await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
     await expect(body(page)).not.toBeVisible();
+    // And the enrichment survived the round trip, so "did not move" is still being said about
+    // a cohort that holds an enriched filter.
+    expect(await tableDisplayOf(page, relatedChildPath)).toBe(relatedTableDisplay);
   });
 
   test('keeps a manual collapse when a variable is removed', async ({ page }) => {
