@@ -13,7 +13,26 @@
 
   type PageTarget = 'previous' | 'next' | 'last' | number;
 
-  const setPage = (value: PageTarget, source: PageChangeSource = 'mouse') => {
+  /**
+   * What kind of activation produced this click.
+   *
+   * `MouseEvent.detail` is the click count: `1` for a real pointer press, and `0` for every
+   * activation that was not a pointer - Enter, Space, and the synthesised clicks assistive
+   * technology dispatches (VoiceOver AXPress, browse-mode Enter, switch control, voice
+   * control). Measured identical in chromium, firefox and webkit.
+   *
+   * Read off the click rather than intercepted at `keydown`, which is what lets assistive
+   * technology through. An AXPress arrives as a click with no key event before it, so a
+   * keydown handler never sees it, and the user with the most need for focus to follow the
+   * page is the one who would not get it. Reading the click also leaves the browser's own
+   * activation timing alone - Space still fires on release, where claiming the keydown moved
+   * it earlier and took away the "move focus away to cancel" escape.
+   */
+  function sourceOf(event: MouseEvent): PageChangeSource {
+    return event.detail === 0 ? 'keyboard' : 'mouse';
+  }
+
+  const setPage = (value: PageTarget, source: PageChangeSource) => {
     const previousPage = handler.currentPage;
     handler.setPage(value);
     if (handler.currentPage !== previousPage) onPageChange(source);
@@ -23,29 +42,6 @@
       }),
     );
   };
-
-  /**
-   * Keyboard activation, taken here rather than left to the click the browser synthesises
-   * from it.
-   *
-   * A button's Enter and Space both arrive at `onclick` looking exactly like a pointer press,
-   * so a consumer downstream has no way to tell a keyboard user paging from a mouse user
-   * paging - and the two want opposite things from focus. Claiming the keydown gives the two
-   * their own entry points, which is the same split `RemoteTable` drew between its arrow-key
-   * paging and this component's buttons.
-   *
-   * `preventDefault` is what makes the split hold: without it the browser fires its own click
-   * afterwards and the page changes twice, the second time reported as a mouse press. It also
-   * stops Space scrolling the document.
-   */
-  function onPageKeydown(event: KeyboardEvent, value: PageTarget) {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
-    event.preventDefault();
-    // A held key must not rapid-fire page changes past where the user can follow.
-    if (event.repeat) return;
-    setPage(value, 'keyboard');
-  }
 </script>
 
 <section class="pagination flex gap-0" aria-label="pagination">
@@ -55,8 +51,7 @@
       aria-label="Previous"
       title="Previous"
       disabled={handler.currentPage === 1}
-      onclick={() => setPage('previous')}
-      onkeydown={(event) => onPageKeydown(event, 'previous')}
+      onclick={(event) => setPage('previous', sourceOf(event))}
     >
       <i class="fa-solid fa-arrow-left"></i>
     </button>
@@ -68,8 +63,7 @@
         disabled={page === null}
         aria-current={handler.currentPage === page ? 'page' : false}
         class:active={handler.currentPage === page}
-        onclick={page ? () => setPage(page) : () => {}}
-        onkeydown={page ? (event) => onPageKeydown(event, page) : () => {}}
+        onclick={page ? (event) => setPage(page, sourceOf(event)) : () => {}}
       >
         {page ?? '...'}
       </button>
@@ -79,8 +73,7 @@
       aria-label="Next"
       title="Next"
       disabled={handler.currentPage === handler.pages.length}
-      onclick={() => setPage('next')}
-      onkeydown={(event) => onPageKeydown(event, 'next')}
+      onclick={(event) => setPage('next', sourceOf(event))}
     >
       <i class="fa-solid fa-arrow-right"></i>
     </button>

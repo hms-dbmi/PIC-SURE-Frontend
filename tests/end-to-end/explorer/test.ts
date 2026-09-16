@@ -487,7 +487,21 @@ test.describe('Explorer for authenticated users', () => {
       await mockConceptDetailFromRows(page);
     });
 
-    test('Tab reaches each card once, in the order they were served', async ({ page }) => {
+    /*
+     * WebKit does not put links in the tab order at all: measured directly against a bare
+     * document, Tab from one anchor jumps straight past the following anchors to the first
+     * <input>. That is Safari's "press Tab to highlight each item" preference, which is off by
+     * default on macOS and which Playwright does not set - a platform convention about links,
+     * not something this list decides. The two specs below are about Tab itself, so on WebKit
+     * there is nothing left of them to assert.
+     */
+    const TAB_SKIPS_LINKS = 'WebKit does not tab to links (Safari full-keyboard-access is off)';
+
+    test('Tab reaches each card once, in the order they were served', async ({
+      page,
+      browserName,
+    }) => {
+      test.skip(browserName === 'webkit', TAB_SKIPS_LINKS);
       // Given
       await page.goto('/explorer?search=somedata');
       await userIsLoggedIn(page);
@@ -503,7 +517,8 @@ test.describe('Explorer for authenticated users', () => {
       }
     });
 
-    test('Does not make a card that cannot be opened a tab stop', async ({ page }) => {
+    test('Does not make a card that cannot be opened a tab stop', async ({ page, browserName }) => {
+      test.skip(browserName === 'webkit', TAB_SKIPS_LINKS);
       // Given a list whose second result has a dataset the detail route refuses
       await page.route(searchResultPath, async (route: Route) =>
         route.fulfill({
@@ -578,7 +593,73 @@ test.describe('Explorer for authenticated users', () => {
       await expect(first).toBeFocused();
     });
 
-    test('Paging with the mouse does not take focus off what the user was on', async ({ page }) => {
+    test('Paging by assistive technology moves focus, as the keyboard does', async ({ page }) => {
+      // VoiceOver's AXPress, switch control and voice control dispatch a click with no key
+      // event before it. They present as `MouseEvent.detail === 0`, like the keyboard, and
+      // want the same thing - so this is the case a keydown-based split would have missed,
+      // handing the mouse's behaviour to the users the feature is most for.
+      await pagedResults(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-one-result-0',
+      );
+
+      // When - no key event, only the synthesised activation
+      const next = page.getByLabel('Next', { exact: true });
+      await next.focus();
+      await next.evaluate((button) => (button as HTMLButtonElement).click());
+
+      // Then
+      await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-two-result-0',
+      );
+      await expect(resultCards(page).first()).toBeFocused();
+    });
+
+    test('A page change answered with nothing keeps focus on the page', async ({ page }) => {
+      // The zero-*total* case, which is not the same as an empty page: the pagination is
+      // gated on the handler having pages at all, so this response unrenders the very button
+      // the activation came from. Focus has nowhere to stay and would fall to the body.
+      await pagedResults(page);
+      await page.route(
+        searchResultPath.replace('page_number=0', 'page_number=1'),
+        async (route: Route) =>
+          route.fulfill({
+            json: {
+              ...mockData,
+              totalPages: 0,
+              totalElements: 0,
+              numberOfElements: 0,
+              number: 1,
+              first: false,
+              last: true,
+              content: [],
+            },
+          }),
+      );
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-one-result-0',
+      );
+
+      // When
+      await page.getByLabel('Next', { exact: true }).focus();
+      await page.keyboard.press('Enter');
+
+      // Then - the button the user activated from is gone, and focus is on the message that
+      // replaced the results rather than on the document body
+      await expect(page.getByTestId('search-results-empty')).toBeVisible();
+      await expect(page.getByLabel('Next', { exact: true })).toHaveCount(0);
+      await expect(page.getByTestId('search-results-empty')).toBeFocused();
+    });
+
+    test('Paging with the mouse does not take focus off what the user was on', async ({
+      page,
+      browserName,
+    }) => {
       // Given
       await pagedResults(page);
       await page.goto('/explorer?search=somedata');
@@ -598,8 +679,13 @@ test.describe('Explorer for authenticated users', () => {
       await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
         'page-two-result-0',
       );
-      await expect(next).toBeFocused();
+      // The portable half, and the one this ticket is about: the list did not pull focus into
+      // itself. True on every engine.
       await expect(resultCards(page).first()).not.toBeFocused();
+      // Where the platform keeps focus on a clicked button, it is still there. WebKit blurs it
+      // to the body instead - measured against a bare document, so it is macOS convention
+      // rather than anything this list did, and there is no button left to be focused.
+      if (browserName !== 'webkit') await expect(next).toBeFocused();
     });
   });
 
