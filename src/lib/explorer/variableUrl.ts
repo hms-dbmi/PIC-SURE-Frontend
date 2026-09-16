@@ -38,10 +38,12 @@ export function encodeVariableKey({ dataset, conceptPath }: VariableKey): string
  * `SAFE_DATASET` is built from this string, so the set has exactly one definition, and it is
  * exported so `tests/unit/variableUrl` can drive its builder/route agreement cases from the
  * set itself. A hand-written table of datasets that ought to work is a second implementation
- * of this set, and it can omit a member: the one here did. The table exercised every
- * character this permits except `-`, so diverging the route validator on `-` alone - one end
- * accepting what the other refuses, on an allow-listed character, which is the entire bug
- * class this module exists to prevent - left the whole suite green.
+ * of this set, and it can omit a member. The one here omitted 36 of these 66 characters: 35
+ * letters and digits, plus `-`, which was the only one of the four non-alphanumerics it left
+ * out. Diverging the route validator on any of the 36 would have gone unnoticed, and when a
+ * reviewer tried it on `-` - one end accepting what the other refuses, on an allow-listed
+ * character, which is the entire bug class this module exists to prevent - the whole suite
+ * stayed green.
  */
 export const SAFE_DATASET_CHARACTERS =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ._-';

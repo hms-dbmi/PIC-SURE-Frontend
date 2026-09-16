@@ -71,9 +71,10 @@ const keys: Record<string, VariableKey> = {
     conceptPath: '\\_Topmed Study Accession with Subject ID\\',
   },
   'trailing whitespace inside the path': { dataset: 'phs123', conceptPath: '\\phs123\\age \\' },
-  // `-` was the one character `SAFE_DATASET` permits that this table omitted, which is how a
-  // divergence on it went unnoticed. The per-character block below is what stops an omission
-  // recurring; this entry also puts a hyphen through the round-trip and search-chrome blocks.
+  // `-` is the only non-alphanumeric character `SAFE_DATASET` permits that this table left
+  // out, which is how a divergence on it went unnoticed. The per-character block below is
+  // what stops an omission recurring; this entry also puts a hyphen through the round-trip
+  // and search-chrome blocks, which are keyed on this table rather than on the allow-list.
   'a hyphenated dataset': { dataset: 'phs000007-c1', conceptPath: '\\a\\b\\' },
   // Text outside the BMP is a surrogate *pair*, and encodes to `%F0%90%80%80` perfectly well.
   'text outside the BMP': { dataset: 'phs123', conceptPath: `\\phs123\\${SURROGATE_PAIR}\\` },
@@ -269,10 +270,12 @@ describe('the variable URL key', () => {
      *
      * `keys` above is a hand-written list of datasets that ought to work, which makes it a
      * second implementation of `SAFE_DATASET_CHARACTERS` - and a second implementation can
-     * omit a member. It did: it exercised every character the allow-list permits except `-`.
-     * Adding `if (dataset.includes('-')) return undefined;` to `variableKeyFromParams` - one
-     * end accepting what the other refuses, on an allow-listed character, which is the entire
-     * bug class this module exists to prevent - left all 971 tests green.
+     * omit a member. It omitted 36 of the 66: as it stood, its ten datasets between them
+     * exercised 30 characters, leaving out 35 letters and digits plus `-`. A divergence on
+     * any of those 36 was invisible. The one a reviewer tried,
+     * `if (dataset.includes('-')) return undefined;` in `variableKeyFromParams` - one end
+     * accepting what the other refuses, on an allow-listed character, which is the entire bug
+     * class this module exists to prevent - left all 971 tests green.
      *
      * So these cases come from the set itself. A character added to or taken out of the
      * allow-list changes what runs here with nobody having to remember a table.
