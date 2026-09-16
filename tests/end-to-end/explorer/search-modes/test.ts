@@ -151,16 +151,21 @@ test.describe('Explore search mode bar', () => {
     await expect(modeBar(page)).toBeVisible();
     await expect(activeLinks(page)).toHaveCount(0);
 
-    // And the two full-page routes drop it. Each goto waits for the previous page to finish
-    // loading first: without that, firefox aborts the pending navigation with
-    // NS_BINDING_ABORTED when the app starts one of its own concurrently, which is a flake in
-    // the spec rather than anything about the bar.
-    await page.waitForLoadState();
+    // And the two full-page routes drop it, asserted only once each route has actually
+    // rendered. toHaveCount(0) is satisfied by its first poll, so against a page still
+    // navigating it passes whatever the bar would have gone on to do - and returning that
+    // early is itself what aborts the in-flight navigation, which the root layout's load
+    // turns into a redirect to '/' and playwright reports as an interrupted goto.
     await page.goto('/explorer/distributions');
+    await expect(page).toHaveURL(/\/explorer\/distributions$/);
+    await expect(page.getByRole('heading', { name: 'Variable Distributions' })).toBeVisible();
     await expect(modeBar(page)).toHaveCount(0);
 
-    await page.waitForLoadState();
     await page.goto('/explorer/export');
+    await expect(page).toHaveURL(/\/explorer\/export$/);
+    await expect(
+      page.getByRole('heading', { name: 'Export Data for Research Analysis' }),
+    ).toBeVisible();
     await expect(modeBar(page)).toHaveCount(0);
   });
 
