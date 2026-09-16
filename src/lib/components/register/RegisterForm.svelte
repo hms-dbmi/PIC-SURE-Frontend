@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { SvelteMap } from 'svelte/reactivity';
   import { type UserRequest, defaultRegisterFormFields } from '$lib/models/User';
   import { registerUser } from '$lib/stores/Users';
 
@@ -7,9 +8,8 @@
   import { sanitizeHTML } from '$lib/utilities/HTML';
 
   import FormField from '$lib/components/FormField.svelte';
-  import Alert from '$lib/components/ErrorAlert.svelte';
+  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { config } from '$lib/configuration.svelte';
-  import { SvelteMap } from 'svelte/reactivity';
 
   const intro = config.branding.register?.intro;
   const successMsg = config.branding.register?.success || '';
@@ -28,7 +28,7 @@
     ),
   );
   let errors = $state<Record<string, string>>({});
-  let submitError = $state('');
+  let submitError = $state(false);
   let submitSuccess = $state(false);
 
   // Buckets fields by their optional `section`, in the order each section first
@@ -38,9 +38,13 @@
     schema: FormSchema,
   ): Array<{ section?: string; fields: Array<[string, FieldSchema]> }> {
     const groups: Array<{ section?: string; fields: Array<[string, FieldSchema]> }> = [];
-    const bySection = new SvelteMap<string | undefined, Array<[string, FieldSchema]>>();
+    const bySection = new SvelteMap<string, Array<[string, FieldSchema]>>();
     for (const entry of Object.entries(schema)) {
       const section = entry[1].section;
+      if (!section) {
+        groups.push({ section: undefined, fields: [entry] });
+        continue;
+      }
       let fields = bySection.get(section);
       if (!fields) {
         fields = [];
@@ -75,11 +79,12 @@
       active: false,
     };
 
+    submitError = false;
     try {
       await registerUser(request);
       submitSuccess = true;
     } catch (e) {
-      submitError = 'An error occured during submission';
+      submitError = true;
       console.error(e);
     }
   }
@@ -94,11 +99,16 @@
   </header>
 {/if}
 
-{#if !submitSuccess && !submitError}
-  <form onsubmit={handleSubmit} novalidate>
+{#if !submitSuccess}
+  {#if submitError}
+    <ErrorAlert data-testid="register-form-error">
+      {config.branding.register?.error || 'An error occured during submission'}
+    </ErrorAlert>
+  {/if}
+  <form class="w-1/2" onsubmit={handleSubmit} novalidate>
     <div data-testid="register-form" class="flex flex-col gap-5 my-3">
       {#each sections as { section, fields } (section ?? fields[0]?.[0])}
-        <fieldset class="card flex flex-col gap-5 p-6">
+        <fieldset class="card bg-surface-50-950 flex flex-col gap-5 p-6">
           {#if section}
             <legend class="-ml-1 px-1 text-xs font-bold tracking-wide text-primary-500 uppercase">
               {section}
@@ -135,14 +145,8 @@
   </form>
 {/if}
 
-{#if submitError}
-  <Alert data-testid="register-form-error">
-    {submitError}
-  </Alert>
-{/if}
-
 {#if submitSuccess}
-  <div class="p-2 left card bg-surface-50-950">
+  <div class="text-left p-2 left card bg-surface-50-950">
     {#if config.branding.register?.success}
       <!-- eslint-disable-next-line svelte/no-at-html-tags -->
       {@html sanitizeHTML(successMsg)}

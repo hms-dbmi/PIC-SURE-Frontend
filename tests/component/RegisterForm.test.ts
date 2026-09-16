@@ -5,10 +5,6 @@ import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import type { FormSchema, FieldSchema } from '$lib/utilities/Validation';
 
-// Fields invented purely for this test, decoupled from configuration.json's
-// register.additionalFormValues (which is a per-deployment branding fixture, not a
-// stable contract) - one field per path FormField/Validation support: select,
-// multiselect (array), text+between, text+regex.
 const dummyAdditionalFields: FormSchema = vi.hoisted(() => ({
   favoriteColor: {
     label: 'Favorite Color',

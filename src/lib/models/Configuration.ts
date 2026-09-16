@@ -157,6 +157,7 @@ export type Branding = Indexable & {
       description: string;
     };
     success: string;
+    error: string;
   };
   help: {
     links: Array<{
@@ -894,6 +895,7 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
           description: '',
         },
         success: '',
+        error: '',
       },
       dotsColorsClass: [] as string[],
       logo: {

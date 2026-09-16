@@ -2,6 +2,7 @@
   import type { FieldSchema } from '$lib/utilities/Validation';
   import { isRequired } from '$lib/utilities/Validation';
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
+  import FieldError from '$lib/components/FieldError.svelte';
 
   interface Props {
     name: string;
@@ -81,5 +82,5 @@
 {/if}
 
 {#if error}
-  <p class="text-xs text-error-500 mt-1.5" data-testid={`${testid}-error`}>{error}</p>
+  <FieldError testid={`${testid}-error`} message={error} />
 {/if}

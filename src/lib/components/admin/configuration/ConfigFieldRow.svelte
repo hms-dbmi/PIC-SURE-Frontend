@@ -9,6 +9,7 @@
   } from '$lib/stores/AdminConfiguration';
   import { humanizeKey } from '$lib/utilities/Strings';
   import { toaster } from '$lib/toaster';
+  import FieldError from '$lib/components/FieldError.svelte';
 
   interface Props {
     schema: ConfigFieldSchema;
@@ -230,12 +231,7 @@
           </div>
         </div>
         {#if jsonError}
-          <p
-            class="text-xs text-error-500 mt-1.5"
-            data-testid={`config-field-error-${schema.name}`}
-          >
-            {jsonError}
-          </p>
+          <FieldError testid={`config-field-error-${schema.name}`} message={jsonError} />
         {/if}
       {:else if schema.type === 'int'}
         <input
@@ -247,12 +243,7 @@
           bind:value
         />
         {#if !intValid}
-          <p
-            class="text-xs text-error-500 mt-1.5"
-            data-testid={`config-field-error-${schema.name}`}
-          >
-            Must be an integer.
-          </p>
+          <FieldError testid={`config-field-error-${schema.name}`} message="Must be an integer." />
         {/if}
       {:else}
         <input

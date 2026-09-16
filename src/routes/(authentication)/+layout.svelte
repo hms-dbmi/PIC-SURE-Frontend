@@ -36,6 +36,8 @@
 <style>
   .full-height {
     height: calc(100% - 56px);
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   .footer {
     position: fixed;

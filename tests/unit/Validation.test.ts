@@ -89,12 +89,8 @@ describe('Validation utilities', () => {
       });
       it('validates numeric value within range', () => {
         expect(validateField(5, 'between:1,10', 'Count')).toBeNull();
-        expect(validateField(15, 'between:1,10', 'Count')).toBe(
-          'Count must be between 1 and 10 characters.',
-        );
-        expect(validateField(0, 'between:1,10', 'Count')).toBe(
-          'Count must be between 1 and 10 characters.',
-        );
+        expect(validateField(15, 'between:1,10', 'Count')).toBe('Count must be between 1 and 10.');
+        expect(validateField(0, 'between:1,10', 'Count')).toBe('Count must be between 1 and 10.');
       });
       it('treats boundary values as valid (inclusive)', () => {
         expect(validateField('ab', 'between:2,4', 'Name')).toBeNull();
