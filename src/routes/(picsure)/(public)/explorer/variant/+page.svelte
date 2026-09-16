@@ -7,7 +7,7 @@
   import { isToastShowing, toaster } from '$lib/toaster';
 
   import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
 
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';

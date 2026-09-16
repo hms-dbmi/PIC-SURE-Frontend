@@ -30,11 +30,6 @@ vi.mock('$lib/stores/ExpandableRow', async () => {
   return { activeRow: writable('') };
 });
 
-vi.mock('$lib/stores/SidePanel', async () => {
-  const { writable } = await import('svelte/store');
-  return { panelOpen: writable(true) };
-});
-
 const mockGetConceptDetails = vi.mocked(getConceptDetails);
 const mockAddFilter = vi.mocked(addFilter);
 const mockEnrichFilterDetails = vi.mocked(enrichFilterDetails);

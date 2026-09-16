@@ -6,7 +6,7 @@
   import Content from '$lib/components/Content.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
 
   interface Props {
     backUrl: string;

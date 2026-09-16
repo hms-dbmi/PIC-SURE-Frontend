@@ -1,7 +1,7 @@
 import { expect, type Page, type Route } from '@playwright/test';
 import { test, mockApiConfig } from '../../custom-context';
 import { facetResultPath, facetsResponse, searchResults } from '../../mock-data';
-import { userIsLoggedIn } from '../../utils';
+import { navigateInApp, userIsLoggedIn } from '../../utils';
 
 // The search session belongs to /explorer/+layout.svelte and /discover/+layout.svelte, not to
 // Explorer.svelte, so it outlives the results page. These specs guard that by counting
@@ -64,22 +64,6 @@ async function mockCountedSearch(page: Page) {
   });
 
   return { concepts, facets };
-}
-
-// Only client-side navigation keeps the layout alive, and page.goto() would not. The in-app
-// links to these child routes all live in the results panel and need filter state built first
-// - state ALS-12835 is about to rewrite - so a synthetic in-app anchor exercises the same
-// SvelteKit navigation without tying this spec to that markup.
-async function navigateInApp(page: Page, href: string) {
-  await page.evaluate((target) => {
-    document.getElementById('e2e-nav-link')?.remove();
-    const link = document.createElement('a');
-    link.id = 'e2e-nav-link';
-    link.href = target;
-    link.textContent = 'e2e navigate';
-    document.body.appendChild(link);
-  }, href);
-  await page.locator('#e2e-nav-link').click();
 }
 
 async function searchFor(page: Page, term: string) {

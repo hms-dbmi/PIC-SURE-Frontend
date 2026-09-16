@@ -1,8 +1,7 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { onDestroy, onMount } from 'svelte';
   import { elasticInOut } from 'svelte/easing';
-  import { slide, scale } from 'svelte/transition';
+  import { scale } from 'svelte/transition';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
@@ -18,11 +17,9 @@
   import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
   import CardButton from '$lib/components/buttons/CardButton.svelte';
   import Modal from '$lib/components/Modal.svelte';
-  import Counts from '$lib/components/explorer/results/Counts.svelte';
   import { log, createLog } from '$lib/logger';
 
-  let currentPage: string = $state(page.url.pathname);
-  let isDiscoverPage = $derived(currentPage.includes('/discover'));
+  let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
   let modalOpen: boolean = $state(false);
 
   let hasFilterOrExport = $derived(
@@ -68,27 +65,6 @@
         ? isObfuscatedBelowThreshold(resultCountsState.total)
         : resultCountsState.total === 0),
   );
-
-  const getIsOpenAccess = () => isDiscoverPage;
-
-  // The destroy/mount method is not called on page navigation if the page we're navigating to
-  // has this same component. This can cause requests that may be pending on one page
-  // to load on the next page. Example discover results displaying on explorer page.
-  // To fix this, we restart on page navigation with the correct isOpenAccess flag,
-  // dropping the previous results and sending a new request.
-  $effect(() => {
-    if (!page.url.pathname.startsWith(currentPage)) {
-      currentPage = page.url.pathname;
-      resultCountsState.start(getIsOpenAccess);
-    }
-  });
-
-  onMount(() => {
-    resultCountsState.start(getIsOpenAccess);
-  });
-  onDestroy(() => {
-    resultCountsState.stop();
-  });
 </script>
 
 <Modal
@@ -104,12 +80,7 @@
 >
   Are you sure you want to clear all filters?
 </Modal>
-<section
-  id="results-panel"
-  class="flex flex-col items-center pt-8 pr-10 w-64"
-  transition:slide={{ axis: 'x' }}
->
-  <Counts />
+<section id="results-panel" class="flex flex-col items-center px-6 pt-2 pb-6">
   {#if showExportButton}
     <div class="h-11 mt-4">
       <button

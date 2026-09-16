@@ -1,4 +1,5 @@
 import { expect, type Page, type Locator } from '@playwright/test';
+import { genomicFilter } from './mock-data';
 
 // This method is used to ensure that the user state is fully loaded before proceeding.
 // Sometimes, the tests are flaky because there is a race condition in the tests that
@@ -43,4 +44,35 @@ export const clickNthFilterIcon = async (page: Page, rowIndex = 0) => {
   const filterIcon = await nthFilterIcon(page, rowIndex);
   await expect(filterIcon).toBeVisible();
   await filterIcon.click();
+};
+
+// Only client-side navigation keeps a layout - and so the cohort summary panel it renders -
+// alive, and page.goto() would not. The in-app links to Explore's child routes mostly live in
+// that panel's body, which is the state under test in several specs, so a synthetic anchor
+// exercises the same SvelteKit navigation without depending on the panel's own markup.
+export const navigateInApp = async (page: Page, href: string) => {
+  await page.evaluate((target) => {
+    document.getElementById('e2e-nav-link')?.remove();
+    const link = document.createElement('a');
+    link.id = 'e2e-nav-link';
+    link.href = target;
+    link.textContent = 'e2e navigate';
+    document.body.appendChild(link);
+  }, href);
+  await page.locator('#e2e-nav-link').click();
+  // The click starts a client-side navigation that discards this anchor with the rest of the
+  // old page, but a same-route navigation keeps the body - so remove it rather than leave a
+  // stray visible link behind for the next assertion to trip over.
+  await page.evaluate(() => document.getElementById('e2e-nav-link')?.remove());
+};
+
+// Puts a genomic filter in sessionStorage for the next page load to restore, the way a user
+// who built one on an earlier visit would have left it. Must be called before navigating.
+export const seedGenomicFilter = async (page: Page) => {
+  await page.addInitScript(
+    (json: string) => {
+      sessionStorage.setItem('genomicFilters', json);
+    },
+    JSON.stringify([genomicFilter]),
+  );
 };

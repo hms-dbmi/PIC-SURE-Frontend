@@ -7,7 +7,7 @@
   import type AuthProvider from '$lib/models/AuthProvider';
   import { createInstance } from '$lib/AuthProviderRegistry';
   import { browser } from '$app/environment';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import { resetPanel } from '$lib/stores/ResultsSummaryPanel';
   import Loading from '$lib/components/Loading.svelte';
   import type { User } from '$lib/models/User';
   import { login, setToken } from '$lib/stores/User';
@@ -82,7 +82,7 @@
   }
 
   onMount(async () => {
-    panelOpen.set(false);
+    resetPanel();
     attemptUserLogin().catch((error) => {
       log(createLog('LOGIN', 'login.failure', { error: String(error) }, { status: 401 }));
       console.error('Login Error: ', error);

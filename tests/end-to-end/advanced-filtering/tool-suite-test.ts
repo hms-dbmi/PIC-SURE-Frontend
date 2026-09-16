@@ -199,6 +199,10 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     const orRadio = page.getByRole('radio', { name: 'OR' }).first();
     await expect(orRadio).toBeVisible();
     await orRadio.locator('..').click();
+    // Wait for the edit to land before applying it. Applying a query identical to the stored
+    // one changes nothing, and the panel does not expand for a query that did not change -
+    // so without this the assertion below races the click, which is how it flaked on webkit.
+    await expect(page.locator('.badge').filter({ hasText: /^OR$/i }).first()).toBeVisible();
 
     // Click Apply Changes (stays on page, sidebar updates)
     const applyBtn = page.getByRole('button', { name: 'Apply Changes' });
@@ -207,7 +211,12 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     // Verify still on advanced-filtering page
     expect(page.url()).toContain('/advanced-filtering');
 
-    // Verify the sidebar opened and shows the OR operator
-    await expect(page.locator('#side-panel')).toBeVisible();
+    // Verify the panel - collapsed by this page on arrival - expanded itself to show the
+    // reapplied query. The body is the assertion; the strip is there either way.
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    await expect(page.locator('#results-panel')).toBeVisible();
   });
 });

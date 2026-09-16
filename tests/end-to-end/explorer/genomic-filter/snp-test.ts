@@ -75,8 +75,8 @@ test('Search request returns 0, indicating no SNP was found', async ({ page }) =
   await page.getByTestId('snp-search-box').fill(validSnp);
   await page.getByTestId('snp-search-btn').click();
 
-  // Then
-  await expect(page.locator('.alert-message')).toBeVisible();
+  // Then - scoped: the cohort summary panel renders its own alert when the count query fails.
+  await expect(page.locator('.main-content .alert-message')).toBeVisible();
 });
 test('Search returns > 0, indicating SNP was found', async ({ page }) => {
   // Given

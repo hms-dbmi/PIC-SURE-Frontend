@@ -7,7 +7,6 @@
     removeExportByUuid,
     mapSearchResultAsExport,
   } from '$lib/stores/Export';
-  import { panelOpen } from '$lib/stores/SidePanel';
   import { config } from '$lib/configuration.svelte';
   import { isOpenAccess } from '$lib/AccessState';
   import { log, createLog, getPageContext } from '$lib/logger';
@@ -57,7 +56,6 @@
         }),
       );
       addExport(exportItem);
-      $panelOpen = true;
     }
   }
 

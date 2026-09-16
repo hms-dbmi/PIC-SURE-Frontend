@@ -11,7 +11,7 @@ import {
   detailResponseCat2,
   detailResForAge,
 } from '../mock-data';
-import { clickNthFilterIcon, getOption, userIsLoggedIn } from '../utils';
+import { clickNthFilterIcon, getOption, seedGenomicFilter, userIsLoggedIn } from '../utils';
 
 const SYNC_URL = '*/**/picsure/hpds/auth/v3/query/sync';
 
@@ -172,7 +172,8 @@ export class AdvancedFilteringPage {
       await addSteps[i]();
     }
 
-    // Wait for results panel to be visible
+    // Build Advanced Query lives in the cohort summary panel's body, which the panel
+    // expands itself once there is a filter in it - no click needed to get at the button.
     await expect(this.page.locator('#results-panel')).toBeVisible();
 
     // Click the Advanced Filtering button in the Tool Suite
@@ -193,22 +194,7 @@ export class AdvancedFilteringPage {
    * Must be called before navigating to the explorer page.
    */
   async injectGenomicFilter() {
-    const genomicFilter = {
-      id: 'genomic-test-filter',
-      uuid: 'genomic-test-uuid',
-      filterType: 'genomic',
-      variableName: 'Genomic Filter',
-      description: 'Test genomic filter',
-      searchResult: null,
-      isHarmonized: false,
-      categoryValues: [],
-    };
-    await this.page.addInitScript(
-      (filterJson: string) => {
-        sessionStorage.setItem('genomicFilters', filterJson);
-      },
-      JSON.stringify([genomicFilter]),
-    );
+    await seedGenomicFilter(this.page);
   }
 
   /**
@@ -221,7 +207,19 @@ export class AdvancedFilteringPage {
 
   // ==================== Navigation ====================
 
+  /**
+   * Opens the builder from the panel's body, expanding the panel first if it is not already
+   * open. `setupAndOpenModal` asserts the expansion instead of ensuring it, because there the
+   * panel having opened itself is the thing under test; here it is only a precondition, and a
+   * spec that legitimately collapsed the panel first should not fail inside the page object.
+   */
   async openModal() {
+    const strip = this.page.getByTestId('results-summary-strip');
+    await expect(strip).toBeVisible();
+    if ((await strip.getAttribute('aria-expanded')) !== 'true') {
+      await strip.click();
+    }
+    await expect(this.page.locator('#results-panel')).toBeVisible();
     await expect(this.advancedFilteringBtn).toBeEnabled();
     await this.advancedFilteringBtn.click();
     await expect(this.modal).toBeVisible();
@@ -388,8 +386,14 @@ export class AdvancedFilteringPage {
   async expectApplySucceeded() {
     // User should still be on the advanced-filtering page
     expect(this.page.url()).toContain('/advanced-filtering');
-    // The sidebar should have opened (panelOpen auto-opens on filter change)
-    await expect(this.page.locator('#side-panel')).toBeVisible();
+    // Applying rewrites the query, so the panel - which this page collapsed on arrival -
+    // expands itself to show the result. The body is the assertion: the strip around it is
+    // rendered whether the panel is open or shut.
+    await expect(this.page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    await expect(this.page.locator('#results-panel')).toBeVisible();
   }
 
   async expectAddGroupButtonVisible() {

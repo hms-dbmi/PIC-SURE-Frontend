@@ -8,7 +8,7 @@ import {
   conceptTreePath,
   conceptsDetailPath,
 } from '../mock-data';
-import { userIsLoggedIn } from '../utils';
+import { navigateInApp, userIsLoggedIn } from '../utils';
 
 const datasetPath = '*/**/picsure/operations/dataset/named';
 
@@ -420,7 +420,12 @@ test.describe('dataset/[uuid]', () => {
       .click();
     await page.waitForURL('**/explorer');
 
-    // Then
+    // Then - the restore filled the stores before this page existed, so the panel has to
+    // expand itself on arrival. No click.
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
     await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
     await expect(page.getByTestId(`added-export-${datasetDetails.paths.HEIGHT}`)).toBeVisible();
   });
@@ -459,14 +464,131 @@ test.describe('dataset/[uuid]', () => {
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await page.waitForURL('**/explorer');
-    await expect(page.locator('#results-panel')).toBeVisible();
 
-    // Then
+    // Then - no click: the panel expands itself for a cohort that arrived with the navigation
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
     await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
     await expect(page.getByTestId(`added-export-${datasetDetails.paths.GENDER}`)).toBeVisible();
     await expect(page.getByTestId(`added-export-${datasetDetails.paths.HEIGHT}`)).toBeVisible();
     await expect(page.getByTestId(`added-export-${datasetDetails.paths.WEIGHT}`)).toBeVisible();
   });
+  test('Restore Filters expands the panel on returning to an Explore already visited', async ({
+    page,
+  }) => {
+    // Given - Explore visited first, so the panel mounts, records an empty cohort and is then
+    // destroyed on the way to the dataset. Every other restore spec arrives at /dataset by a
+    // fresh document load, where the panel has never recorded anything and a "first mount
+    // only" rule would pass just as well. This is the flow that can tell the two apart, and
+    // it is the ordinary one: Explore, saved datasets, restore, back.
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+
+    // When - all client-side from here, so it is one page load throughout
+    await navigateInApp(page, `/dataset/${mockData[0].uuid}`);
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
+    await page.getByTestId('restore-filters-btn').click();
+    await page
+      .getByTestId('restore-filters')
+      .getByRole('button', { name: 'Restore Filters' })
+      .click();
+    await page.waitForURL('**/explorer');
+
+    // Then - the second panel of this page load compares against the cohort the first one
+    // last saw, which is the empty one from before the restore
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
+  });
+
+  test('Restore Filters expands the panel when the restored cohort is smaller', async ({
+    page,
+  }) => {
+    // Given - a cohort of four items (one filter, three variables) restored and then
+    // collapsed by hand. This is the case a count cannot see: the dataset restored next holds
+    // one filter and no variables, so the cohort ends up smaller while everything in it is
+    // new. It is also the ordinary flow behind the "you already have active filters" warning.
+    const smallerDataset = {
+      ...mockData[0],
+      uuid: '33333333-3333-3333-3333-333333333333',
+      name: 'one-filter-dataset',
+      query: {
+        ...mockData[0].query,
+        query: JSON.stringify({
+          resourceCredentials: { BEARER_TOKEN: null },
+          query: {
+            select: [],
+            authorizationFilters: [],
+            phenotypicClause: {
+              operator: 'AND',
+              phenotypicClauses: [
+                {
+                  phenotypicFilterType: 'FILTER',
+                  conceptPath: datasetDetails.paths.SEX,
+                  not: false,
+                  values: ['Male'],
+                },
+              ],
+              not: false,
+            },
+            genomicFilters: [],
+            expectedResultType: 'DATAFRAME',
+            picsureId: null,
+            id: null,
+          },
+          resourceUUID: mockData[0].query.resource.uuid,
+        }),
+      },
+    };
+    await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, `${datasetPath}/${smallerDataset.uuid}`, smallerDataset);
+
+    await page.goto(`/dataset/${mockData[0].uuid}`);
+    await userIsLoggedIn(page);
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
+    await page.getByTestId('restore-filters-btn').click();
+    await page
+      .getByTestId('restore-filters')
+      .getByRole('button', { name: 'Restore Filters' })
+      .click();
+    await page.waitForURL('**/explorer');
+    await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
+    await page.getByTestId('results-summary-strip').click();
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+
+    // When - restore the smaller dataset over it, confirming past the existing-filters warning
+    await navigateInApp(page, `/dataset/${smallerDataset.uuid}`);
+    await page.waitForSelector('[data-testid="dataset-summary-container"]');
+    await page.getByTestId('restore-filters-btn').click();
+    await expect(page.getByTestId('error-alert')).toContainText('You already have active filters.');
+    await page
+      .getByTestId('restore-filters')
+      .getByRole('button', { name: 'Restore Filters' })
+      .click();
+    await page.waitForURL('**/explorer');
+
+    // Then - fewer items than the user collapsed over, but the one that arrived is new, and it
+    // is the thing they asked to see
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    await expect(page.getByTestId(`added-filter-${datasetDetails.paths.SEX}`)).toBeVisible();
+    await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toHaveCount(0);
+  });
+
   test('Restore Filters modal shows warning when existing filters are present', async ({
     page,
   }) => {
@@ -569,9 +691,12 @@ test.describe('dataset/[uuid]', () => {
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await page.waitForURL('**/explorer');
-    await expect(page.locator('#results-panel')).toBeVisible();
 
-    // Then — the AnyRecordOf filter appears in the result panel
+    // Then — the panel expanded itself and the AnyRecordOf filter appears in its body
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
     await expect(page.getByTestId(`added-filter-${anyRecordOfConceptPath}`)).toBeVisible();
   });
 

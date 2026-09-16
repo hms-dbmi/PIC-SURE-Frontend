@@ -223,8 +223,12 @@
       );
       resetSearch();
       selectedFacets.set([]);
-      const sidePanel = document.querySelector('#side-panel') as HTMLElement;
-      if (sidePanel.classList.contains('open-panel')) {
+      // #side-panel went with the side panel in ALS-12835 and this whole branch needs
+      // rewriting for the summary strip, which the tour re-anchoring ticket owns. Until then
+      // the guard is what keeps a null here from throwing inside driver.js's own click and
+      // keyup listeners, where nothing catches it and the search-box reset below never runs.
+      const sidePanel = document.querySelector('#side-panel') as HTMLElement | null;
+      if (sidePanel?.classList.contains('open-panel')) {
         (document.querySelector('#results-panel-toggle') as HTMLElement)?.click();
       }
       const searchBox = document.querySelector('#explorer-search-box') as HTMLInputElement;

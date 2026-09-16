@@ -4,6 +4,7 @@
   import { page } from '$app/state';
 
   import { applySearchParam, startSearchSession } from '$lib/stores/Search';
+  import ResultsSummaryPanel from '$lib/components/explorer/results/ResultsSummaryPanel.svelte';
 
   let { children }: { children?: Snippet } = $props();
 
@@ -22,4 +23,5 @@
   onDestroy(() => releaseSession?.());
 </script>
 
+<ResultsSummaryPanel />
 {@render children?.()}

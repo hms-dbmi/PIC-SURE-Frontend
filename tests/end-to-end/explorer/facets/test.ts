@@ -121,7 +121,8 @@ test.describe('Facet Side Bar', () => {
     await page.goto('/explorer?search=age');
     await userIsLoggedIn(page);
     const facetSideBar = page.locator('#facet-side-bar');
-    const errorAlert = page.getByTestId('error-alert');
+    // Scoped: the cohort summary panel renders its own alert when the count query fails.
+    const errorAlert = facetSideBar.getByTestId('error-alert');
     //When
 
     await expect(facetSideBar).toBeVisible();
