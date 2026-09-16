@@ -271,9 +271,11 @@ test.describe('Explore variable detail page', () => {
     const sibling = await measure(
       page.getByTestId('variable-detail-hierarchy').getByRole('heading'),
     );
+    // By role, not by `h2`: located as `h2` a level regression is a locator that never
+    // resolves, so it fails as a 30s timeout and `level` below can never fail on its own.
     const sections = ['variable-info', 'dataset-info', 'study-info'];
     const headings = await Promise.all(
-      sections.map((testid) => measure(page.getByTestId(testid).locator('h2'))),
+      sections.map((testid) => measure(page.getByTestId(testid).getByRole('heading'))),
     );
 
     // Then
