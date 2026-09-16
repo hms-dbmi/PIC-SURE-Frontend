@@ -101,26 +101,33 @@ describe('cohortContents', () => {
   });
 
   it('gains an identity when a filter is added', () => {
+    // From a filter the user already had, so the gain is smaller than the cohort. Out of an
+    // empty cohort this assertion reads the same whether `before` is compared against or
+    // ignored, which is no assertion about a difference at all.
+    addCategoricalFilter('\\test\\one\\');
     const before = items();
 
-    addCategoricalFilter('\\test\\one\\');
+    addCategoricalFilter('\\test\\two\\');
 
     expect(gainedSince(before)).toHaveLength(1);
   });
 
   it('gains an identity when a smaller set of different filters replaces a larger one', () => {
     // A dataset restore over filters the user already had. The cohort ends up smaller, so a
-    // count would read it as a removal, but every filter in it is new.
+    // count would read it as a removal, but every filter in it is new. The added variable is
+    // outside the tree the restore replaces, so it survives - which keeps the gain smaller
+    // than the cohort and stops the assertion passing on the cohort's own size.
     addCategoricalFilter('\\test\\one\\');
     addCategoricalFilter('\\test\\two\\');
     addCategoricalFilter('\\test\\three\\');
+    addExport(mockExport('\\test\\height\\'));
     const before = items();
 
     const replacement = new LogicTree<FilterInterface>(createGroup);
     replacement.add(createCategoricalFilter(mockSearchResult('\\test\\four\\'), ['a']));
     setFilterTree(replacement);
 
-    expect(items()).toHaveLength(1);
+    expect(items()).toHaveLength(2);
     expect(gainedSince(before)).toHaveLength(1);
   });
 
@@ -233,13 +240,17 @@ describe('cohortContents', () => {
 
   it('distinguishes added variables that share a concept path', () => {
     // A dataset restore sets `exports` wholesale and can supply metadata the search page
-    // never would, so an identity cannot be the concept path alone.
+    // never would, so an identity cannot be the concept path alone. The filter holds the
+    // cohort's size steady across the swap: with the variable on its own, one gain and a
+    // one-item cohort are the same number and the assertion cannot tell them apart.
+    addCategoricalFilter('\\test\\one\\');
     addExport(mockExport('\\test\\height\\'));
     const before = items();
 
     clearExports();
     addExport({ ...mockExport('\\test\\height\\'), display: 'Height (cm)' });
 
+    expect(items()).toHaveLength(2);
     expect(gainedSince(before)).toHaveLength(1);
   });
 
