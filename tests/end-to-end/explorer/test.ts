@@ -19,6 +19,7 @@ import {
   openNthResult,
   openNthResultFilter,
   optionsHaveLoaded,
+  searchFacetCheckbox,
   searchResultCards as resultCards,
   userIsLoggedIn,
   userIsLoggedOut,
@@ -616,6 +617,61 @@ test.describe('Explorer for authenticated users', () => {
         'page-two-result-0',
       );
       await expect(resultCards(page).first()).toBeFocused();
+    });
+
+    test('A facet chosen mid-page-change does not pull focus into the results', async ({
+      page,
+    }) => {
+      // The race the pending request has to survive. From page two, paging back asks for page
+      // one; a facet change asks for page one too (`onCriteriaChange` calls `setPage(1)`), so
+      // its rows arrive on exactly the page the focus request was waiting for. Spending the
+      // request on them takes focus off the checkbox the user is in the middle of using.
+      //
+      // Made deterministic by holding the response rather than by timing: the route does not
+      // answer until both have been asked for.
+      await pagedResults(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await page.getByLabel('Next', { exact: true }).focus();
+      await page.keyboard.press('Enter');
+      await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+
+      let release: () => void = () => {};
+      const held = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await page.route(searchResultPath, async (route: Route) => {
+        await held;
+        await route.fulfill({
+          json: {
+            ...mockData,
+            totalPages: 1,
+            totalElements: 1,
+            numberOfElements: 1,
+            number: 0,
+            first: true,
+            last: true,
+            content: [{ ...mockData.content[0], display: 'faceted-result-0', description: null }],
+          },
+        });
+      });
+
+      // When - page back, then pick a facet before the page has been answered
+      await page.getByLabel('Previous', { exact: true }).focus();
+      await page.keyboard.press('Enter');
+      await searchFacetCheckbox(page).click();
+      release();
+
+      // Then - the facet's results are on screen, and focus never entered the list
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'faceted-result-0',
+      );
+      await expect(resultCards(page).first()).not.toBeFocused();
+      expect(
+        await page.evaluate(() =>
+          Boolean(document.querySelector('#search-results')?.contains(document.activeElement)),
+        ),
+      ).toBe(false);
     });
 
     test('A page change answered with nothing keeps focus on the page', async ({ page }) => {
