@@ -41,6 +41,11 @@ function mockSyncAPI(context: BrowserContext | Page, resultMap: Results) {
   });
 }
 
+/** Genomic filtering is reached through the Genotypes search mode. */
+function openGenotypesTab(page: Page) {
+  return page.getByTestId('search-mode-tab-genotypes').click();
+}
+
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('variant explorer', () => {
@@ -62,7 +67,7 @@ test.describe('variant explorer', () => {
       await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, geneValues);
       // open the sidebar to reduce locator time on result panel items during testing
       await page.locator('#results-panel-toggle').click();
-      await page.getByTestId('genomic-filter-btn').click();
+      await openGenotypesTab(page);
       await expect(page.getByTestId('gene-variant-option')).toBeVisible();
       await page.getByTestId('gene-variant-option').click();
       await page.locator('#options-container').getByLabel(geneValues.results[0]).click();
@@ -167,7 +172,7 @@ test.describe('variant explorer', () => {
       await mockSyncAPI(page, successResults);
       await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, geneValues);
       await page.locator('#results-panel-toggle').click();
-      await page.getByTestId('genomic-filter-btn').click();
+      await openGenotypesTab(page);
       await expect(page.getByTestId('gene-variant-option')).toBeVisible();
       await page.getByTestId('gene-variant-option').click();
       await page.locator('#options-container').getByLabel(geneValues.results[0]).click();

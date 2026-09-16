@@ -291,7 +291,7 @@ test.describe('OptionalSelectionList', () => {
     await userIsLoggedIn(page);
 
     // When
-    await page.getByTestId('genomic-filter-btn').click();
+    await page.getByTestId('search-mode-tab-genotypes').click();
     await expect(page.getByTestId('gene-variant-option')).toBeVisible({ timeout: 10000 });
     await page.getByTestId('gene-variant-option').click();
     const component = page.getByTestId('optional-selection-list');

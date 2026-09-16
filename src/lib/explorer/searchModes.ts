@@ -50,8 +50,12 @@ export const phenotypesMode: SearchMode = {
 };
 
 /**
- * Genomic filtering. `enabled` is the one definition of the rule, shared with the Genomic
- * Filtering button that is the other entry point to the same thing.
+ * Genomic filtering, and the only way into it. `enabled` is the one gate on availability;
+ * which of the two methods a deployment offers is decided separately, by the tab itself.
+ *
+ * `route` is a redirect target as well as a link: `/explorer/genome-filter`, this feature's
+ * only address before the redesign, still 302s here for the sake of bookmarks and history, so
+ * moving this route means moving that redirect with it.
  */
 export const genotypesMode: SearchMode = {
   id: 'genotypes',

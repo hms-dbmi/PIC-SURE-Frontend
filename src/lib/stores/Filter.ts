@@ -269,15 +269,3 @@ export function setFilterTree(tree: LogicTree<FilterInterface>) {
   tree.root.uuid = genericUUID();
   filterTree.set(tree);
 }
-
-export function getFilter(uuid: string) {
-  return [...get(filters), ...get(genomicFilters)].find((f) => f.uuid === uuid);
-}
-
-export function getFilterById(id: string) {
-  return [...get(filters), ...get(genomicFilters)].find((f) => f.id === id);
-}
-
-export function getFiltersByType(type: string) {
-  return [...get(filters), ...get(genomicFilters)].filter((f) => f.filterType === type);
-}

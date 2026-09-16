@@ -1,6 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 import { test, mockApiConfig, mockApiSuccess } from '../../custom-context';
-import { facetResultPath, facetsResponse, searchResultPath, searchResults } from '../../mock-data';
+import {
+  facetResultPath,
+  facetsResponse,
+  geneValues,
+  searchResultPath,
+  searchResults,
+} from '../../mock-data';
 import {
   mockCountedSearch,
   searchCurrentPageButton as currentPageButton,
@@ -36,6 +42,9 @@ test.describe('Explore search mode bar', () => {
     await mockApiConfig(page, genomicEnabled);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, searchResults);
+    // The specs here that reach the Genotypes tab mount the real gene panels, which load
+    // the gene list. Unmocked, that fails and puts a toast over the bar being asserted on.
+    await mockApiSuccess(page, '*/**/picsure/hpds/auth/search/values*', geneValues);
   });
 
   test('is a named navigation landmark listing Phenotypes and Genotypes', async ({ page }) => {
@@ -62,6 +71,18 @@ test.describe('Explore search mode bar', () => {
     await expect(page.locator('[role="tablist"]')).toHaveCount(0);
     await expect(page.locator('[role="tab"]')).toHaveCount(0);
     await expect(modeBar(page).locator('[aria-selected]')).toHaveCount(0);
+  });
+
+  // The Genotypes mode is the only entry point to genomic filtering, on the configuration
+  // that offers it - not one of two.
+  test('offers no genomic entry point outside the mode bar', async ({ page }) => {
+    // Given
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+    await expect(modeLink(page, 'genotypes')).toBeVisible();
+
+    // Then
+    await expect(page.getByRole('link', { name: 'Genomic Filtering' })).toHaveCount(0);
   });
 
   test('marks exactly the current route with aria-current', async ({ page }) => {
@@ -126,7 +147,7 @@ test.describe('Explore search mode bar', () => {
     await newTab.close();
   });
 
-  test('reaches the Genotypes placeholder and moves aria-current to it', async ({ page }) => {
+  test('reaches the Genotypes tab and moves aria-current to it', async ({ page }) => {
     // Given
     await page.goto('/explorer');
     await userIsLoggedIn(page);
@@ -136,7 +157,7 @@ test.describe('Explore search mode bar', () => {
 
     // Then
     await expect(page).toHaveURL(/\/explorer\/genotypes$/);
-    await expect(page.getByTestId('genotypes-placeholder')).toBeVisible();
+    await expect(page.getByTestId('genotypes-tab')).toBeVisible();
     await expect(activeLinks(page)).toHaveCount(1);
     await expect(modeLink(page, 'genotypes')).toHaveAttribute('aria-current', 'page');
     await expect(modeLink(page, 'phenotypes')).not.toHaveAttribute('aria-current');
@@ -182,6 +203,33 @@ test.describe('Explore search mode bar', () => {
     await expect(modeBar(page)).toHaveCount(0);
   });
 
+  // Genomic filtering's only address for the life of the feature, behind a prominent button,
+  // so bookmarks and history entries for it are real. Deleting the route outright left it
+  // returning a bare SvelteKit 404 with none of the app's chrome and no way back.
+  test('redirects the retired genomic-filtering URL to the Genotypes tab', async ({ page }) => {
+    // When
+    const response = await page.goto('/explorer/genome-filter');
+    await userIsLoggedIn(page);
+
+    // Then it is served, not 404'd, and lands on the tab that replaced it
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(/\/explorer\/genotypes$/);
+    await expect(page.getByTestId('genotypes-tab')).toBeVisible();
+    await expect(modeLink(page, 'genotypes')).toHaveAttribute('aria-current', 'page');
+  });
+
+  // The edit deep link the retired route took, which the filter chip used to produce.
+  test('redirects the retired edit deep link too, dropping its parameter', async ({ page }) => {
+    // When
+    const response = await page.goto('/explorer/genome-filter?edit=genomic');
+    await userIsLoggedIn(page);
+
+    // Then
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(/\/explorer\/genotypes$/);
+    await expect(page.getByTestId('genotypes-tab')).toBeVisible();
+  });
+
   // The link is hidden when genomic search is off, but the URL is still reachable by hand,
   // by bookmark and by browser history.
   test('redirects /explorer/genotypes to /explorer when genomic search is off', async ({
@@ -196,7 +244,7 @@ test.describe('Explore search mode bar', () => {
 
     // Then
     await expect(page).toHaveURL(/\/explorer$/);
-    await expect(page.getByTestId('genotypes-placeholder')).toHaveCount(0);
+    await expect(page.getByTestId('genotypes-tab')).toHaveCount(0);
     await expect(page.getByTestId('search-box')).toBeVisible();
   });
 });
@@ -204,7 +252,12 @@ test.describe('Explore search mode bar', () => {
 test.describe('Explore mode switching', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
-  test.beforeEach(({ page }) => mockApiConfig(page, genomicEnabled));
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, genomicEnabled);
+    // As above: the Genotypes tab loads the gene list, and an unmocked failure toasts over
+    // the assertions.
+    await mockApiSuccess(page, '*/**/picsure/hpds/auth/search/values*', geneValues);
+  });
 
   test('preserves the search term, facets, page and results with no refetch', async ({ page }) => {
     // Given a search, a selected facet and a non-default page
@@ -228,7 +281,7 @@ test.describe('Explore mode switching', () => {
     // When the user switches to Genotypes and back
     await modeLink(page, 'genotypes').click();
     await expect(page).toHaveURL(/\/explorer\/genotypes\?search=age$/);
-    await expect(page.getByTestId('genotypes-placeholder')).toBeVisible();
+    await expect(page.getByTestId('genotypes-tab')).toBeVisible();
     await modeLink(page, 'phenotypes').click();
 
     // Then the search is still in the URL, not only in the store, so a refresh or a copied
@@ -244,6 +297,38 @@ test.describe('Explore mode switching', () => {
     await page.waitForTimeout(SETTLE_MS);
     expect(concepts.count).toBe(conceptsBefore);
     expect(facets.count).toBe(facetsBefore);
+  });
+
+  // The same invariant, for the one list the assertions above do not reach. The Genotypes
+  // tab's gene list is fetched a page at a time by infinite scroll, so reloading it on every
+  // return would also throw away however far the user had scrolled.
+  test('does not load the gene list again on returning to Genotypes', async ({ page }) => {
+    // Given the gene list loaded once. This route is registered after the beforeEach's mock
+    // for the same URL and so takes precedence over it - verified by reverting the caching it
+    // guards, at which point the second visit is counted and this spec fails with 2.
+    const genes = { count: 0 };
+    await page.route('*/**/picsure/hpds/auth/search/values*', async (route) => {
+      genes.count += 1;
+      await route.fulfill({ json: geneValues });
+    });
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, searchResults);
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+
+    await modeLink(page, 'genotypes').click();
+    await expect(page.getByLabel(geneValues.results[0])).toBeVisible({ timeout: 10000 });
+    expect(genes.count).toBe(1);
+
+    // When the user leaves and comes back
+    await modeLink(page, 'phenotypes').click();
+    await expect(page).toHaveURL(/\/explorer$/);
+    await modeLink(page, 'genotypes').click();
+
+    // Then the list is there without being asked for again
+    await expect(page.getByLabel(geneValues.results[0])).toBeVisible();
+    await page.waitForTimeout(SETTLE_MS);
+    expect(genes.count).toBe(1);
   });
 });
 

@@ -5,7 +5,7 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
 
-  import { Option } from '$lib/models/GenomeFilter';
+  import { genotypesMode, searchModeHref } from '$lib/explorer/searchModes';
   import {
     type Filter,
     type AnyRecordOfFilterInterface,
@@ -13,8 +13,8 @@
     derivedStudyDescription,
   } from '$lib/models/Filter.svelte';
   import { removeFilter, activeFilter, activeSearch } from '$lib/stores/Filter';
-  import { populateFromGeneFilter } from '$lib/stores/GeneFilter';
-  import { populateFromSNPFilter } from '$lib/stores/SNPFilter';
+  import { loadDraftForEditing } from '$lib/stores/GenomicDraft';
+  import { searchTerm } from '$lib/stores/Search';
   import { log, createLog } from '$lib/logger';
 
   import Modal from '$lib/components/Modal.svelte';
@@ -35,12 +35,13 @@
 
   function editFilter() {
     logEditClick();
-    if (filter.filterType === 'genomic') {
-      populateFromGeneFilter(filter);
-      goto(resolve(`/explorer/genome-filter?edit=${Option.Genomic}`));
-    } else if (filter.filterType === 'snp') {
-      populateFromSNPFilter(filter);
-      goto(resolve(`/explorer/genome-filter?edit=${Option.SNP}`));
+    // A genomic filter is edited on the Genotypes tab, which shows the filter's own state:
+    // there is no separate edit mode and no `?edit=` parameter to carry. The search travels
+    // with it for the same reason the mode bar's own links carry it - `?search=` is what the
+    // address bar and the results agree on.
+    if (filter.filterType === 'genomic' || filter.filterType === 'snp') {
+      loadDraftForEditing(filter);
+      goto(resolve(searchModeHref(genotypesMode, $searchTerm) as '/'));
     } else {
       $activeFilter = filter;
       $activeSearch = filter.searchResult;

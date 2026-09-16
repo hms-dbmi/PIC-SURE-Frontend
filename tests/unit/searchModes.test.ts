@@ -125,7 +125,7 @@ describe('the search mode registry', () => {
 
     // Sibling routes under the layout belong to no mode, and a bar with nothing marked is
     // the honest rendering of that.
-    it.each(['/explorer/advanced-filtering', '/explorer/variant', '/explorer/genome-filter'])(
+    it.each(['/explorer/advanced-filtering', '/explorer/variant'])(
       'marks no mode active on %s',
       (pathname) => {
         expect(searchModes.some((mode) => mode.isActive(pathname))).toBe(false);

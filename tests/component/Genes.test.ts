@@ -6,7 +6,7 @@ import { get } from 'svelte/store';
 
 import Genes from '$lib/components/explorer/genome-filter/gene/Genes.svelte';
 import * as api from '$lib/api';
-import { selectedGenes } from '$lib/stores/GeneFilter';
+import { emptyGeneOptions, geneOptions, selectedGenes } from '$lib/stores/GeneFilter';
 import { optionsIn } from './helpers';
 
 vi.mock('$app/environment', () => ({ browser: false }));
@@ -46,6 +46,9 @@ describe('Genes', () => {
   beforeEach(() => {
     mockGet.mockReset();
     selectedGenes.set([]);
+    // The loaded options outlive the component on purpose - see the store - so each test
+    // has to start from an empty list or it inherits the last one's.
+    geneOptions.set(emptyGeneOptions());
     mockGet.mockResolvedValue({ results: GENES, total: GENES.length, page: 1 });
   });
 
@@ -107,5 +110,60 @@ describe('Genes', () => {
 
     await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(2), { timeout: 2000 });
     expect(mockGet.mock.calls[1][0]).toContain('query=BRC');
+  });
+
+  // The gene panel is on a route: every search-mode switch unmounts and remounts it. Loading
+  // again would refetch page one, discard however far the user had scrolled, and - against an
+  // unhealthy values endpoint - raise another failure toast every time.
+  describe('across a remount, as a search-mode switch causes', () => {
+    it('does not load the list again', async () => {
+      const first = render(Genes);
+      await genesHaveLoaded();
+      expect(mockGet).toHaveBeenCalledTimes(1);
+
+      first.unmount();
+      render(Genes);
+
+      expect(optionsIn('options-container')).toEqual(GENES);
+      expect(mockGet).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the scroll position, so the next page continues from it', async () => {
+      // A full page back means there is more to scroll for; the cursor has to survive with
+      // the options, or the next scroll asks for page 2 again.
+      const pageOne = Array.from({ length: 20 }, (_, index) => `GENE${index}`);
+      mockGet.mockResolvedValue({ results: pageOne, total: 40, page: 1 });
+      const first = render(Genes);
+      await screen.findByRole('checkbox', { name: 'GENE0' });
+
+      first.unmount();
+      mockGet.mockResolvedValue({ results: ['GENE20'], total: 40, page: 2 });
+      render(Genes);
+
+      const container = document.getElementById('options-container') as HTMLElement;
+      await fireEvent.scroll(container);
+
+      await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(2));
+      expect(mockGet.mock.calls[1][0]).toContain('page=2');
+    });
+
+    it('restores the search box alongside the options it answers to', async () => {
+      const searched = render(Genes);
+      await genesHaveLoaded();
+
+      const search = document.querySelector('input[type="search"]') as HTMLInputElement;
+      mockGet.mockResolvedValue({ results: ['BRCA1'], total: 1, page: 1 });
+      await fireEvent.input(search, { target: { value: 'BRC' } });
+      await waitFor(() => expect(mockGet).toHaveBeenCalledTimes(2), { timeout: 2000 });
+
+      searched.unmount();
+      render(Genes);
+
+      // A searched list under an empty box would claim to be the whole list
+      const restored = document.querySelector('input[type="search"]') as HTMLInputElement;
+      expect(restored.value).toBe('BRC');
+      expect(optionsIn('options-container')).toEqual(['BRCA1']);
+      expect(mockGet).toHaveBeenCalledTimes(2);
+    });
   });
 });
