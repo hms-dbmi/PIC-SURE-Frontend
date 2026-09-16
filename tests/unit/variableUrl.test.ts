@@ -12,6 +12,7 @@ import { genotypesMode, phenotypesMode } from '$lib/explorer/searchModes';
 import {
   encodeVariableKey,
   isLinkableVariableKey,
+  SAFE_DATASET_CHARACTERS,
   VARIABLE_SEGMENT,
   variableDetailHref,
   variableKeyFromParams,
@@ -32,6 +33,19 @@ function href(section: 'explorer' | 'discover', key: VariableKey, searchTerm = '
 //
 // They also pin the dataset's charset, which is a security control: the dataset is
 // interpolated into a request path, and SvelteKit decodes `%2F` only after matching routes.
+
+/**
+ * A lone UTF-16 surrogate, and the paired form.
+ *
+ * `JSON.parse` yields a lone one from a `\ud800` escape, so malformed dictionary text reaches
+ * a card as an ordinary string, and `encodeURIComponent` raises `URIError` rather than
+ * encoding it. The pair is ordinary text outside the BMP and has to keep working: it is the
+ * fixture that tells a fix which rejects *unpaired* surrogates apart from one that rejects
+ * every surrogate, and the second would drop emoji and historic scripts out of the dictionary.
+ */
+const LONE_HIGH_SURROGATE = '\uD800';
+const LONE_LOW_SURROGATE = '\uDC00';
+const SURROGATE_PAIR = '\uD800\uDC00';
 
 const keys: Record<string, VariableKey> = {
   'backslashes and spaces': {
@@ -57,6 +71,12 @@ const keys: Record<string, VariableKey> = {
     conceptPath: '\\_Topmed Study Accession with Subject ID\\',
   },
   'trailing whitespace inside the path': { dataset: 'phs123', conceptPath: '\\phs123\\age \\' },
+  // `-` was the one character `SAFE_DATASET` permits that this table omitted, which is how a
+  // divergence on it went unnoticed. The per-character block below is what stops an omission
+  // recurring; this entry also puts a hyphen through the round-trip and search-chrome blocks.
+  'a hyphenated dataset': { dataset: 'phs000007-c1', conceptPath: '\\a\\b\\' },
+  // Text outside the BMP is a surrogate *pair*, and encodes to `%F0%90%80%80` perfectly well.
+  'text outside the BMP': { dataset: 'phs123', conceptPath: `\\phs123\\${SURROGATE_PAIR}\\` },
 };
 
 /**
@@ -99,6 +119,17 @@ function paramsFromHref(href: string): { dataset: string; conceptPath: string } 
     .map(decodeURIComponent);
   return { dataset, conceptPath };
 }
+
+/**
+ * A dataset whose only varying part is the character under test, with alphanumerics either
+ * side so that nothing else in the rule - the `..` token, the "must contain an alphanumeric"
+ * check - is what decides the case.
+ */
+const datasetContaining = (character: string) => `phs123${character}x`;
+
+/** Each character of a set, as an `it.each` row whose name survives being a space. */
+const characterRows = (characters: Iterable<string>) =>
+  [...characters].map((character) => ({ character, name: JSON.stringify(character) }));
 
 describe('the variable URL key', () => {
   describe('round trips', () => {
@@ -184,10 +215,31 @@ describe('the variable URL key', () => {
         case: 'a concept path with a control character',
         conceptPath: `\\a\\b\\${String.fromCharCode(0)}`,
       },
+      // These two classes are not a disagreement about what is allowed - both ends said yes.
+      // The builder then threw, or built an href that goes somewhere else. Accept-then-throw
+      // is the disagreement the "one definition" claim did not cover.
+      {
+        case: 'a lone high surrogate in the concept path',
+        conceptPath: `\\a\\${LONE_HIGH_SURROGATE}\\`,
+      },
+      {
+        case: 'a lone low surrogate in the concept path',
+        conceptPath: `\\a\\${LONE_LOW_SURROGATE}\\`,
+      },
+      // Dot segments, which the URL parser removes. Encoding does not help: it reads `%2E%2E`
+      // back as `..`, so the href would resolve above the route it was built for. The dataset
+      // half was guarded against this by hand and the concept-path half was not.
+      { case: 'a concept path that is a dot segment', conceptPath: '..' },
+      { case: 'a concept path that is a bare dot', conceptPath: '.' },
     ])('builds no link when the concept path is refused: $case', ({ conceptPath }) => {
       const key = { dataset: 'phs123', conceptPath };
       expect(variableKeyFromParams(key)).toBeUndefined();
+      // Named before the value is read, because the two failures are different findings: a
+      // `URIError` out of `variableDetailHref` reads as a broken test rather than as a card
+      // that took the result list down with it.
+      expect(() => variableDetailHref('explorer', key)).not.toThrow();
       expect(variableDetailHref('explorer', key)).toBeUndefined();
+      expect(variableDetailHref('discover', key)).toBeUndefined();
     });
 
     // The other direction: whatever it does build has to survive the round trip into a key
@@ -198,11 +250,171 @@ describe('the variable URL key', () => {
     });
 
     it('answers the same question for both ends', () => {
-      for (const dataset of [...REFUSED_BY_THE_ROUTE, 'phs123', 'test_data_set.v1.p1']) {
+      for (const dataset of [
+        ...REFUSED_BY_THE_ROUTE,
+        'phs123',
+        'test_data_set.v1.p1',
+        // From the allow-list rather than by hand, so the sameness claim covers every
+        // character the set permits and cannot quietly omit one.
+        ...[...SAFE_DATASET_CHARACTERS].map(datasetContaining),
+      ]) {
         const key = { dataset, conceptPath: '\\a\\b\\' };
         expect(isLinkableVariableKey(key)).toBe(variableKeyFromParams(key) !== undefined);
         expect(isLinkableVariableKey(key)).toBe(variableDetailHref('explorer', key) !== undefined);
       }
+    });
+
+    /**
+     * Derived from the allow-list, not from a table.
+     *
+     * `keys` above is a hand-written list of datasets that ought to work, which makes it a
+     * second implementation of `SAFE_DATASET_CHARACTERS` - and a second implementation can
+     * omit a member. It did: it exercised every character the allow-list permits except `-`.
+     * Adding `if (dataset.includes('-')) return undefined;` to `variableKeyFromParams` - one
+     * end accepting what the other refuses, on an allow-listed character, which is the entire
+     * bug class this module exists to prevent - left all 971 tests green.
+     *
+     * So these cases come from the set itself. A character added to or taken out of the
+     * allow-list changes what runs here with nobody having to remember a table.
+     */
+    describe('over every character the allow-list permits', () => {
+      /**
+       * That the exported set is the whole set, so deriving cases from it is not itself a
+       * second implementation of `SAFE_DATASET`.
+       *
+       * Every code point rather than a sample, because the claim is that nothing outside this
+       * string is accepted and a sample cannot make that claim. It costs about 40ms: the
+       * predicate tests the charset first, so only the 66 members reach the URL probe.
+       */
+      it('is the complete set of characters a dataset may contain', () => {
+        const accepted: string[] = [];
+        for (let codePoint = 0; codePoint <= 0x10ffff; codePoint += 1) {
+          const character = String.fromCodePoint(codePoint);
+          if (isLinkableVariableKey({ dataset: `a${character}`, conceptPath: '\\a\\b\\' })) {
+            accepted.push(character);
+          }
+        }
+        expect(accepted.sort().join('')).toBe([...SAFE_DATASET_CHARACTERS].sort().join(''));
+      });
+
+      it.each(characterRows(SAFE_DATASET_CHARACTERS))(
+        'builds a link the route reads the same key back out of, for $name',
+        ({ character }) => {
+          const key = { dataset: datasetContaining(character), conceptPath: '\\a\\b\\' };
+          expect(isLinkableVariableKey(key)).toBe(true);
+          // Both ends, and the trip between them: the route accepts the key as it stands, and
+          // it also accepts what comes back out of a real URL built from it.
+          expect(variableKeyFromParams(key)).toEqual(key);
+          expect(variableKeyFromParams(paramsFromHref(href('explorer', key)))).toEqual(key);
+        },
+      );
+
+      /*
+       * The other side of the set. Printable ASCII is where a plausible dataset name lives,
+       * and the filter is the allow-list itself rather than a second hand-written list of
+       * what is meant to be outside it.
+       */
+      it.each(
+        characterRows(
+          Array.from({ length: 0x7f - 0x20 }, (_, offset) =>
+            String.fromCharCode(0x20 + offset),
+          ).filter((character) => !SAFE_DATASET_CHARACTERS.includes(character)),
+        ),
+      )('refuses at both ends a dataset containing $name', ({ character }) => {
+        const key = { dataset: datasetContaining(character), conceptPath: '\\a\\b\\' };
+        expect(isLinkableVariableKey(key)).toBe(false);
+        expect(variableKeyFromParams(key)).toBeUndefined();
+        expect(variableDetailHref('explorer', key)).toBeUndefined();
+      });
+    });
+  });
+
+  /**
+   * The promise the predicate makes, as a property rather than as a list of inputs: anything
+   * it accepts, the builder can build and the route can read back. Both round-2 findings
+   * against it were inputs nobody had thought to put in a table - a lone surrogate and a dot
+   * segment - so what is asserted here is "no input behaves otherwise", over a corpus that
+   * includes the awkward ones.
+   */
+  describe('accepts nothing the builder cannot put in a URL', () => {
+    const CONCEPT_PATHS = [
+      ...Object.values(keys).map((key) => key.conceptPath),
+      '',
+      '   ',
+      '.',
+      '..',
+      '...',
+      'a..b',
+      './a',
+      '../..',
+      // Already-encoded text, in case something downstream decodes twice.
+      '%2E%2E',
+      '%2F',
+      LONE_HIGH_SURROGATE,
+      LONE_LOW_SURROGATE,
+      SURROGATE_PAIR,
+      `\\a\\${LONE_HIGH_SURROGATE}\\`,
+      `\\a\\${SURROGATE_PAIR}\\`,
+      `\\a\\${String.fromCharCode(0)}`,
+      '\\a\\\nb\\',
+      '?',
+      '#',
+      '&x=1',
+      '//evil.example/x',
+      'http://evil.example/x',
+    ];
+
+    it('holds for every concept path, and refuses by returning rather than throwing', () => {
+      let accepted = 0;
+      for (const conceptPath of CONCEPT_PATHS) {
+        const key = { dataset: 'phs123', conceptPath };
+        if (!isLinkableVariableKey(key)) {
+          // A refusal has to be a value: the card reads it in a `$derived`, where a throw
+          // escapes the `{#each}` and takes every other result with it.
+          expect(() => variableDetailHref('explorer', key)).not.toThrow();
+          expect(variableDetailHref('explorer', key)).toBeUndefined();
+          continue;
+        }
+        accepted += 1;
+        expect(() => encodeVariableKey(key)).not.toThrow();
+        expect(variableKeyFromParams(paramsFromHref(href('explorer', key)))).toEqual(key);
+      }
+      // Otherwise a predicate that refused everything would satisfy the loop above. Tied to
+      // `keys`, which is the set this module declares it supports, so the floor rises with it
+      // rather than being a number to remember.
+      expect(accepted).toBeGreaterThanOrEqual(Object.keys(keys).length);
+    });
+  });
+
+  /**
+   * A row where the dictionary left one half null, which `SearchResult` says cannot happen.
+   *
+   * The cast is the finding. `models/Search.ts` types `dataset` and `conceptPath` as `string`,
+   * but that is a claim about untrusted wire data rather than a runtime guarantee: the same
+   * type marks `description`, `meta`, `table`, `study` and `children` as `| null`, and the
+   * dictionary is a Java service, where Jackson serialises an absent field as `null` by
+   * default. So the codebase already expects nulls from this endpoint; these two fields are
+   * simply typed as though it does not.
+   *
+   * A destructuring default applies to `undefined` only, so `= ''` let a `null` through to
+   * throw `TypeError` on `.includes` or `.trim()`. It threw inside the card's `$derived`, and
+   * there is no `<svelte:boundary>` in `src/`, so it escaped the whole `{#each}`: in the built
+   * app, zero cards and "No entries found." above a count still reading "1 - 7 / 7". One bad
+   * row destroyed six good ones and misreported why.
+   */
+  describe('a row with a null half', () => {
+    it.each([
+      { case: 'a null concept path', dataset: 'phs123', conceptPath: null },
+      { case: 'a null dataset', dataset: null, conceptPath: '\\a\\b\\' },
+      { case: 'both halves null', dataset: null, conceptPath: null },
+    ])('is refused, by returning rather than by throwing: $case', ({ dataset, conceptPath }) => {
+      // No cast needed here: the predicate's parameter type now says what it accepts.
+      expect(isLinkableVariableKey({ dataset, conceptPath })).toBe(false);
+
+      const result = { dataset, conceptPath } as unknown as VariableKey;
+      expect(() => variableDetailHref('explorer', result)).not.toThrow();
+      expect(variableDetailHref('explorer', result)).toBeUndefined();
+      expect(variableDetailHref('discover', result)).toBeUndefined();
     });
   });
 

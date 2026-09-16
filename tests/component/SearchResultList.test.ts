@@ -415,6 +415,67 @@ describe('the search result list', () => {
     });
   });
 
+  /**
+   * One row the dictionary left incomplete, among rows that are fine.
+   *
+   * `SearchResult` types `dataset` and `conceptPath` as `string`, but that is a claim about
+   * untrusted wire data rather than a runtime guarantee - the same type marks `description`,
+   * `meta`, `table`, `study` and `children` as `| null`, and the dictionary is a Java service,
+   * where Jackson serialises an absent field as `null` by default. Hence the casts.
+   *
+   * This is the layer the damage was visible at. `variableDetailHref` is read in the card's
+   * `$derived`, a destructuring default does not apply to `null`, and the resulting
+   * `TypeError` escaped the `{#each}` because there is no `<svelte:boundary>` in `src/`: in
+   * the built app, zero cards and "No entries found." above a count that still read
+   * "1 - 7 / 7". The unit suite pins that the predicate is total; what these pin is the
+   * consequence that made it a P2 - that one bad row costs one card and not the list.
+   *
+   * The page change is only how a row with an override gets in: the first load is fixed.
+   */
+  describe('a row the dictionary left incomplete', () => {
+    it.each([
+      { case: 'a null dataset', override: { dataset: null as unknown as string } },
+      { case: 'a null concept path', override: { conceptPath: null as unknown as string } },
+    ])('costs that one card and not the whole list: $case', async ({ override }) => {
+      const { settle } = renderList();
+      await onPageOne();
+
+      await clickByKeyboard(nextButton());
+      await settle(makeRows(5, 5, [override]));
+
+      // Every row still rendered. Before the predicate was made total over `null` this was
+      // zero, and the assertions below could not distinguish "the bad row is unopenable" from
+      // "nothing rendered at all".
+      await waitFor(() => expect(cards()).toHaveLength(5));
+      expect(cards().map((card) => card.textContent?.trim().startsWith('Row'))).toEqual([
+        true,
+        true,
+        true,
+        true,
+        true,
+      ]);
+
+      // The bad row degrades to the unopenable card, which is the designed behaviour for a
+      // key the detail route would refuse - not a link, and it says so.
+      expect(cards()[0]).toHaveAttribute('data-unopenable', 'true');
+      expect(cards()[0]).not.toHaveAttribute('href');
+      expect(screen.getByTestId('search-result-card-unopenable')).toBeInTheDocument();
+
+      // And the four good rows are still ordinary links, so the fix is not "unopenable
+      // everything".
+      expect(
+        cards()
+          .slice(1)
+          .map((card) => card.getAttribute('href')),
+      ).toEqual([
+        '/explorer/variable/test_data_set/%5Ctest%5Crow-6%5C',
+        '/explorer/variable/test_data_set/%5Ctest%5Crow-7%5C',
+        '/explorer/variable/test_data_set/%5Ctest%5Crow-8%5C',
+        '/explorer/variable/test_data_set/%5Ctest%5Crow-9%5C',
+      ]);
+    });
+  });
+
   /*
    * A page change answered with nothing at all. The pagination is gated on the handler having
    * pages, so a zero-total response unrenders the very button the user activated - focus would
