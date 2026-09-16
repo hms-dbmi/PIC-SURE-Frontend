@@ -3,11 +3,12 @@
 import { error } from '@sveltejs/kit';
 import { get } from 'svelte/store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 
 const mockState = vi.hoisted(() => ({
-  // HierarchyComponent reads the pathname to decide whether filtering is allowed; the page
-  // itself is told its section rather than inferring one.
+  // Nothing under test reads the pathname to decide access any more - the page and the
+  // hierarchy below it are both told their section. Kept because `$app/state` is mocked from
+  // it and a URL still has to exist.
   pathname: '/explorer/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C',
   section: 'explorer' as 'explorer' | 'discover',
   enableHierarchy: false,
@@ -261,6 +262,70 @@ describe('VariableDetail', () => {
       expect(screen.getByTestId('variable-detail-hierarchy')).toBeInTheDocument();
       expect(await screen.findByTestId('hierarchy-component')).toBeInTheDocument();
       expect(getHierarchyConcepts).toHaveBeenCalledWith('test_data_set', '\\this\\is\\a\\age\\');
+    });
+
+    /*
+     * The hierarchy renders directly beneath the filter section, so the two are in view of
+     * each other and have to reach the same verdict. It used to decide for itself with
+     * `pathname.includes('/discover')`, which disagreed with the section above it in both
+     * directions - and the disagreement is a working Add Filter four lines under a notice
+     * saying filtering is unavailable.
+     *
+     * A case per direction, and per affordance: the notice, the tree and the add button are
+     * three separate reads of `disableAddFilter`, and asserting them together lets the first
+     * one to fail hide the rest.
+     */
+    describe('agreeing with the filter section above it', () => {
+      async function renderHierarchy(overrides: Partial<SearchResult> = {}) {
+        mockState.enableHierarchy = true;
+        vi.mocked(getHierarchyConcepts).mockResolvedValue([{ ...detail, ...overrides }]);
+        await renderDetail(overrides);
+        return screen.findByTestId('hierarchy-component');
+      }
+
+      it('refuses an anonymous Explore visitor the hierarchy filter, as the section does', async () => {
+        // The contradiction this closes: open access here is `!isUserLoggedIn()`, and the
+        // pathname carries no `/discover`, so the old rule left this enabled while the filter
+        // section above it refused.
+        mockState.loggedIn = false;
+        const hierarchy = await renderHierarchy({ allowFiltering: false });
+
+        expect(screen.getByTestId('variable-detail-filter-disabled')).toBeInTheDocument();
+        expect(within(hierarchy).getByTestId('add-hierarchy-filter')).toBeDisabled();
+      });
+
+      it('gives that visitor the same explanation the filter section gives', async () => {
+        mockState.loggedIn = false;
+        const hierarchy = await renderHierarchy({ allowFiltering: false });
+
+        expect(hierarchy).toHaveTextContent('Filtering is not available for this variable');
+      });
+
+      it('refuses a dataset named after the other section nothing, as the section does', async () => {
+        // The mirror image: `pathname.includes('/discover')` read a *dataset* called
+        // `discover` as the Discover section and refused a filter the page above allowed.
+        mockState.pathname = '/explorer/variable/discover/%5Cthis%5Cis%5Ca%5Cage%5C';
+        const hierarchy = await renderHierarchy({ dataset: 'discover', allowFiltering: false });
+
+        expect(screen.queryByTestId('variable-detail-filter-disabled')).not.toBeInTheDocument();
+        expect(within(hierarchy).getByTestId('add-hierarchy-filter')).toBeEnabled();
+      });
+
+      it('still refuses it on Discover, which is what the rule is for', async () => {
+        // The other side of the gate, so agreeing by never refusing is not a way to pass.
+        mockState.section = 'discover';
+        const hierarchy = await renderHierarchy({ allowFiltering: false });
+
+        expect(within(hierarchy).getByTestId('add-hierarchy-filter')).toBeDisabled();
+      });
+
+      it('leaves it alone for a variable the dictionary allows', async () => {
+        mockState.section = 'discover';
+        const hierarchy = await renderHierarchy({ allowFiltering: true });
+
+        expect(within(hierarchy).getByTestId('add-hierarchy-filter')).toBeEnabled();
+        expect(hierarchy).not.toHaveTextContent('Filtering is not available');
+      });
     });
   });
 

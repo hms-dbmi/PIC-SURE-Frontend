@@ -47,11 +47,16 @@ export function coversEveryValue(values: string[], selected: string[]): boolean 
 }
 
 /**
- * Whether this concept may not be filtered on: the rule the results row's filter icon uses.
+ * Whether this concept may not be filtered on: the rule the results row's filter icon used.
  *
- * Here because the page and the panel have to agree on it - the page applies it to the
- * variable it is about, the panel to each related variable under it. `Actions.svelte` and
- * `HierarchyComponent.svelte` still spell the same test out inline and could move to this.
+ * The variable-and-access half of the one rule. `sectionAccess.isFilteringBlocked` wraps it
+ * for the callers that hold a section rather than an `openAccess` boolean - the result card
+ * before the click, the detail page after it, and the data hierarchy below that. The panel
+ * calls this directly, holding one `openAccess` for itself and applying the rule to each
+ * related variable under the main one.
+ *
+ * Nothing spells the test out inline any more: ticket 11 removed `Actions.svelte` with the
+ * row actions, and ticket 12 moved `HierarchyComponent.svelte` onto the shared rule.
  *
  * An open-access visitor may not filter on a variable the dictionary marks unfilterable. An
  * authenticated user may, which is why this is not `!allowFiltering` on its own.

@@ -350,7 +350,7 @@
       <!-- h2 to sit level with ResultInfoComponent's own section headings. -->
       <section data-testid="variable-detail-hierarchy" class="flex flex-col gap-2">
         <h2 class="h5 text-primary-500 m-0">Data Hierarchy</h2>
-        <HierarchyComponent data={variable} />
+        <HierarchyComponent data={variable} {section} />
       </section>
     {/if}
   {:else if outcome.kind === 'unreadable'}

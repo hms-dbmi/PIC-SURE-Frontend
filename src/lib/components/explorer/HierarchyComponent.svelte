@@ -1,4 +1,6 @@
 <script lang="ts">
+  import type { SearchSection } from '$lib/explorer/searchChrome';
+  import { FILTERING_UNAVAILABLE, isFilteringBlocked } from '$lib/explorer/sectionAccess';
   import type { SearchResult } from '$lib/models/Search';
   import type { NodeInterface } from '$lib/components/tree/types';
   import { type Filter, createAnyRecordOfFilter } from '$lib/models/Filter.svelte';
@@ -9,22 +11,31 @@
   import { toaster } from '$lib/toaster';
   import { AnyRecordOfFilterError } from '$lib/types';
   import Modal from '$lib/components/Modal.svelte';
-  import { page } from '$app/state';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { sortHierarchyDeepestFirst } from '$lib/utilities/Hierarchy';
   import { log, createLog, getPageContext } from '$lib/logger';
   interface Props {
     data?: SearchResult;
+    /**
+     * Which search section this is rendered in, passed in rather than read off the pathname.
+     *
+     * This component renders directly beneath the detail page's filter section, so the two
+     * decide the same thing in view of each other. It used to decide it itself, with
+     * `pathname.includes('/discover')` - which disagreed with the filter above it twice over:
+     * an anonymous visitor on Explore was refused a filter and offered a working hierarchy one
+     * four lines down, and a dataset named `discover` was refused a hierarchy filter the page
+     * above it allowed.
+     */
+    section: SearchSection;
     onclose?: () => void;
   }
-  let { data = {} as SearchResult, onclose = () => {} }: Props = $props();
+  let { data = {} as SearchResult, section, onclose = () => {} }: Props = $props();
 
   let modalOpen: boolean = $state(false);
   let selectedNode: string | undefined = $state(undefined);
   let isLoading = $state(false);
-  let disableAddFilter: boolean = $derived(
-    !data?.allowFiltering && page.url.pathname.includes('/discover'),
-  );
+  // The one definition, shared with the result card and the filter section above.
+  let disableAddFilter: boolean = $derived(isFilteringBlocked(section, data));
 
   async function getHierarchy(): Promise<NodeInterface[]> {
     if (!data?.dataset || !data?.conceptPath) {
@@ -148,7 +159,7 @@
   <div class="flex flex-col gap-2">
     {#if disableAddFilter}
       <ErrorAlert color="warning">
-        <p class="m-0">Filtering is not available for this variable</p>
+        <p class="m-0">{FILTERING_UNAVAILABLE}</p>
       </ErrorAlert>
     {/if}
     {#await getHierarchy()}
@@ -188,7 +199,7 @@
       <Loading size="micro" color="white" />
     {:else if disableAddFilter}
       <i class="fas fa-warning"></i>
-      <span class="sr-only">Filtering is not available for this variable</span>
+      <span class="sr-only">{FILTERING_UNAVAILABLE}</span>
     {:else}
       <i class="fas fa-plus"></i>
     {/if}
