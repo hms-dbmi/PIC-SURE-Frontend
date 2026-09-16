@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { onDestroy, tick, type Snippet } from 'svelte';
 
   import Loading from './Loading.svelte';
   import { log, createLog, getPageContext } from '$lib/logger';
@@ -16,9 +16,24 @@
     currentlyLoading?: boolean;
     showClearAll?: boolean;
     showSelectAll?: boolean;
+    showSearch?: boolean;
     allOptionsLoaded?: boolean;
     allOptions?: string[] | undefined;
     onscroll?: (search: string) => void;
+    /** Heading over the right-hand column. */
+    selectedLabel?: string;
+    /** Shown in place of an empty right-hand column, for a list that is optional to fill in. */
+    emptySelectedText?: string;
+    /** Replaces Clear in the right-hand column's header. */
+    selectedAction?: Snippet;
+    /**
+     * Names the two columns for a screen reader, which otherwise announces a run of
+     * checkboxes with no indication of which variable they belong to or which column they are
+     * in. Both lists are groups either way; this adds the variable's name to their labels.
+     */
+    groupLabel?: string;
+    /** Drops the per-column card, for a caller that draws the surrounding panel itself. */
+    flat?: boolean;
   }
 
   let {
@@ -28,14 +43,48 @@
     currentlyLoading = $bindable(false),
     showClearAll = true,
     showSelectAll = true,
+    showSearch = true,
     allOptionsLoaded = false,
     allOptions = undefined,
     onscroll = () => {},
+    selectedLabel = 'Selected:',
+    emptySelectedText = '',
+    selectedAction = undefined,
+    groupLabel = '',
+    flat = false,
   }: Props = $props();
+
+  // No `h-full` on the flat column: `height: 100%` is a specified cross size, which turns
+  // `align-self: stretch` off, and the two columns then take their own content heights - so
+  // the right-hand column collapses to its header while nothing is selected, taking the
+  // divider between the columns with it. The card layout keeps the height it had.
+  const columnClass = $derived(
+    flat
+      ? 'flex flex-1 flex-col min-w-0'
+      : 'flex flex-1 flex-col h-full p-3 m-1 card bg-surface-100 rounded-xl',
+  );
+  // A fixed 25vh reserves scroll space a four-value variable does not need, which the
+  // designed panel does not have room for; the card layout keeps the height it had.
+  const listClass = $derived(
+    flat
+      ? 'overflow-y-auto scrollbar-color max-h-[25vh]'
+      : 'overflow-scroll scrollbar-color h-[25vh]',
+  );
+  const labelFor = (column: string) => (groupLabel ? `${column} for ${groupLabel}` : column);
 
   let currentlyLoadingSelected: boolean = $state(false);
   let unselectedOptionsContainer: HTMLElement = $state() as HTMLElement;
   let selectedOptionsContainer: HTMLElement = $state() as HTMLElement;
+  let searchBox: HTMLInputElement | undefined = $state();
+
+  /**
+   * The search term, as every reader of it sees it.
+   *
+   * Trimmed in one place. `matchesSearch` trimmed and the term handed to `onscroll` did not,
+   * so a term with a trailing space narrowed the column to nothing while Select All went on
+   * admitting values - two readings of one box.
+   */
+  const searchTerm = $derived(searchInput.trim());
 
   function shouldLoadMore(element: HTMLElement, allLoaded: boolean) {
     const scrollTop = element.scrollTop;
@@ -51,7 +100,7 @@
       !currentlyLoading &&
       shouldLoadMore(unselectedOptionsContainer, allUnselectedOptionsLoaded)
     ) {
-      onscroll(searchInput);
+      onscroll(searchTerm);
     }
   }
 
@@ -67,18 +116,58 @@
   function onSearch() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
-      onscroll(searchInput);
+      onscroll(searchTerm);
       unselectedOptionsContainer.scrollTop = 0;
     }, SEARCH_DEBOUNCE_MS);
   }
 
   onDestroy(() => clearTimeout(searchTimeout));
 
+  /**
+   * Follows a value to the column it just moved to.
+   *
+   * Toggling a value removes its checkbox from the DOM, which drops focus to the document
+   * body - so a keyboard user has to tab in from the top of the page again for every value
+   * they pick.
+   *
+   * The checkbox is found by reading the values off the column's own checkboxes, not by
+   * building a selector out of one. A value is dictionary data: `#option-don't-know input` is
+   * not a valid selector, because a bare apostrophe is not a legal identifier character, and
+   * `querySelector` throws a DOMException on it - inside an async call that nothing awaits.
+   * `/`, `#`, `.`, `:` and brackets fail the same way, and "Don't know" is in the fixtures.
+   * The ids are not unique across the two containers either, so this looks inside the one it
+   * means.
+   */
+  async function focusMovedOption(container: HTMLElement | undefined, option: string) {
+    await tick();
+    const boxes = container
+      ? Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'))
+      : [];
+    const moved = boxes.find((box) => box.value === option);
+    if (moved) {
+      moved.focus();
+      return;
+    }
+    // Nowhere to follow it to: unticking a value the search term excludes takes it out of
+    // both columns, and the checkbox that had focus has just left the DOM. Focus goes to the
+    // box that decided the value would not come back, rather than to the document body -
+    // which is the same drop to the top of the page this function exists to prevent. Only
+    // reachable when there is a term, and a term means there is a box.
+    searchBox?.focus();
+  }
+
+  /** Whether the search box as it currently reads admits `option`. */
+  function matchesSearch(option: string) {
+    const needle = searchTerm.toLowerCase();
+    return !needle || option.toLowerCase().includes(needle);
+  }
+
   function onSelect(option: string) {
     return (event: Event) => {
       event.preventDefault();
       unselectedOptions = unselectedOptions.filter((o) => o !== option);
       selectedOptions = [...selectedOptions, option].sort();
+      focusMovedOption(selectedOptionsContainer, option);
     };
   }
 
@@ -87,28 +176,46 @@
       event.preventDefault();
       selectedOptions = selectedOptions.filter((o) => o !== option);
 
-      if (!unselectedOptions.includes(option)) {
+      // Back to the left-hand column only if the search box admits it. Unconditionally, a
+      // value the term excludes reappears in a column the term is supposed to be narrowing,
+      // under a search box still reading that term. Clearing the box brings it back, because
+      // a changed term refills the column from the whole list.
+      if (matchesSearch(option) && !unselectedOptions.includes(option)) {
         unselectedOptions = [option, ...unselectedOptions];
       }
+      focusMovedOption(unselectedOptionsContainer, option);
     };
   }
 
   function clearSelectedOptions() {
-    unselectedOptions = [...unselectedOptions, ...selectedOptions].sort();
+    unselectedOptions = [
+      ...unselectedOptions,
+      ...selectedOptions.filter((option) => matchesSearch(option)),
+    ].sort();
     selectedOptions = [];
     selectedOptionEndLocation = 20;
   }
 
+  /**
+   * Selects every value the search box admits, keeping whatever was already selected.
+   *
+   * The term is not optional here. Assigning `allOptions` outright ignored it, so narrowing
+   * the column to two values and pressing Select All selected all fifty - and on the variable
+   * detail page, where every value selected is written as "filter to any value", that turned
+   * a deliberate narrowing into an unconstrained filter. It selects values the term admits
+   * rather than the values on screen, which is what pages a long list in.
+   */
   function selectAllOptions() {
-    if (allOptions && allOptions?.length !== 0) {
-      selectedOptions = allOptions;
-      unselectedOptions = [];
-      selectedOptionEndLocation = 20;
-    } else {
-      selectedOptions = [...selectedOptions, ...unselectedOptions];
-      unselectedOptions = [];
-      selectedOptionEndLocation = 20;
-    }
+    const pool =
+      allOptions && allOptions.length !== 0
+        ? allOptions
+        : [...selectedOptions, ...unselectedOptions];
+    const admitted = new Set(pool.filter((option) => matchesSearch(option)));
+    const chosen = new Set(selectedOptions);
+    // Filtered from the pool rather than concatenated, so the declared order survives.
+    selectedOptions = pool.filter((option) => admitted.has(option) || chosen.has(option));
+    unselectedOptions = [];
+    selectedOptionEndLocation = 20;
     log(
       createLog('ACTION', 'filter.select_all', {
         count: selectedOptions.length,
@@ -134,30 +241,37 @@
 </script>
 
 <div data-testid="optional-selection-list" class="flex w-full">
-  <div class="flex flex-1 flex-col h-full p-3 m-1 card bg-surface-100 rounded-xl">
-    <header class="flex pb-1">
-      <input
-        class="input text-sm"
-        type="search"
-        name="search"
-        bind:value={searchInput}
-        oninput={onSearch}
-        placeholder="Search..."
-      />
-      {#if showSelectAll}
-        <button
-          id="select-all"
-          class="btn preset-outlined-surface-500 hover:preset-filled-primary-500 ml-2 text-sm"
-          disabled={unselectedOptions.length === 0}
-          onclick={selectAllOptions}>Select All</button
-        >
-      {/if}
-    </header>
-    <section class="card-body">
+  <div class={columnClass}>
+    {#if showSearch || showSelectAll}
+      <header class="flex pb-1">
+        {#if showSearch}
+          <input
+            bind:this={searchBox}
+            class="input text-sm"
+            type="search"
+            name="search"
+            aria-label={labelFor('Search values')}
+            bind:value={searchInput}
+            oninput={onSearch}
+            placeholder="Search..."
+          />
+        {/if}
+        {#if showSelectAll}
+          <button
+            id="select-all"
+            class="btn preset-outlined-surface-500 hover:preset-filled-primary-500 ml-2 text-sm"
+            disabled={unselectedOptions.length === 0}
+            onclick={selectAllOptions}>Select All</button
+          >
+        {/if}
+      </header>
+    {/if}
+    <section class="card-body grow" role="group" aria-label={labelFor('Values')}>
       <div
         id="options-container"
+        role="list"
         bind:this={unselectedOptionsContainer}
-        class="overflow-scroll scrollbar-color h-25vh"
+        class={listClass}
         onscroll={handleScroll}
       >
         {#each unselectedOptions as option}
@@ -181,10 +295,12 @@
       </div>
     </section>
   </div>
-  <div class="flex flex-1 flex-col h-full p-3 m-1 card bg-surface-100 rounded-xl">
+  <div class={flat ? `${columnClass} border-l border-surface-400-600 pl-4` : columnClass}>
     <header class="flex justify-between pb-1">
-      <div class="py-2">Selected:</div>
-      {#if showClearAll}
+      <div class="py-2">{selectedLabel}</div>
+      {#if selectedAction}
+        {@render selectedAction()}
+      {:else if showClearAll}
         <button
           id="clear"
           class="btn preset-outlined-surface-500 hover:preset-filled-primary-500 ml-2 text-sm"
@@ -193,11 +309,19 @@
         >
       {/if}
     </header>
-    <section class="card-body">
+    <section
+      class="card-body grow"
+      role="group"
+      aria-label={labelFor(selectedLabel.replace(/:$/, ''))}
+    >
+      {#if emptySelectedText && selectedOptions.length === 0}
+        <div class="italic opacity-70 p-1" data-testid="selected-empty">{emptySelectedText}</div>
+      {/if}
       <div
         id="selected-options-container"
+        role="list"
         bind:this={selectedOptionsContainer}
-        class="overflow-scroll scrollbar-color h-25vh"
+        class={listClass}
         onscroll={loadMoreSelectedOptions}
       >
         {#each displayedSelectedOptions as option (option)}
@@ -227,8 +351,5 @@
 <style>
   .scrollbar-color {
     scrollbar-color: var(--color-surface-300) var(--color-surface-100);
-  }
-  .h-25vh {
-    height: 25vh;
   }
 </style>

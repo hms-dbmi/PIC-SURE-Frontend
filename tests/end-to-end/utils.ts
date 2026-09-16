@@ -105,6 +105,17 @@ export const searchCurrentPageButton = (page: Page) =>
 export const searchFacetCheckbox = (page: Page) =>
   page.getByTestId('accordion-item').first().locator(`input[id="${SEARCH_FACET_ID}"]`);
 
+/**
+ * The cohort panel, wherever it currently lives.
+ *
+ * Today it is the collapsed strip in the right sidebar (`results/SidePanel.svelte`).
+ * ALS-12835 moves it above the search-mode bar and deletes that component, so the selector
+ * changes - which is why it is here rather than spelled out in each spec. **Update this one
+ * locator when the panel moves** and every spec that asserts the panel renders follows;
+ * `explorer/variable-detail` depends on it for an acceptance criterion.
+ */
+export const cohortPanel = (page: Page) => page.locator('#results-panel-toggle');
+
 export const searchFor = async (page: Page, term: string) => {
   await page.getByTestId('search-box').fill(term);
   await page.locator('#search-button').click();

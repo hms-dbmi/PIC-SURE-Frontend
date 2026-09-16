@@ -12,6 +12,7 @@
     hasUnallowedFilter,
     filterWarning,
   } from '$lib/stores/Filter.ts';
+  import { isDiscoverSection, isExploreSection } from '$lib/explorer/searchChrome';
 
   import Shell from '$lib/components/Shell.svelte';
   import Navigation from '$lib/components/Navigation.svelte';
@@ -27,13 +28,15 @@
     document.body.classList.add('started');
   });
 
+  // Which section a path belongs to is decided by segment, not substring. Below the section
+  // root the segments are dictionary data - a variable detail URL carries its dataset - so
+  // `/discover/variable/explorer/...` would otherwise read as being inside Explore already and
+  // let an unauthorised filter through the notAuthorized arm without a warning.
   beforeNavigate(({ to, cancel }) => {
-    const notAuthorized =
-      !page.url.pathname.includes('/explorer') &&
-      to?.url.pathname.includes('/explorer') &&
-      $hasInvalidFilter;
-    const stigmatizing =
-      to?.url.pathname.includes('/discover') && ($hasGenomicFilter || $hasUnallowedFilter);
+    const from = page.url.pathname;
+    const target = to?.url.pathname ?? '';
+    const notAuthorized = !isExploreSection(from) && isExploreSection(target) && $hasInvalidFilter;
+    const stigmatizing = isDiscoverSection(target) && ($hasGenomicFilter || $hasUnallowedFilter);
 
     if (stigmatizing || notAuthorized) {
       if (stigmatizing) $filterWarning = 'stigmatizing';

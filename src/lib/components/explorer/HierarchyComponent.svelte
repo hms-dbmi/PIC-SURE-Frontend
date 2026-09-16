@@ -181,7 +181,7 @@
   </div>
   <button
     class="btn btn-icon preset-filled-primary-500 m-1"
-    data-testid="add-filter"
+    data-testid="add-hierarchy-filter"
     aria-label={isLoading ? 'Adding Filter...' : 'Add Filter'}
     onclick={addSelection}
     disabled={isLoading || disableAddFilter}
