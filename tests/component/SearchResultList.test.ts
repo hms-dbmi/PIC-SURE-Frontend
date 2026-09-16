@@ -56,7 +56,12 @@ function makeRows(start: number, count: number, overrides: Partial<SearchResult>
  * - which is the only way to interleave anything (a facet change, more paging) with a request
  * that is still in flight.
  */
-function renderList({ debounce = 0, totalRows = TOTAL_ROWS } = {}) {
+function renderList({
+  debounce = 0,
+  totalRows = TOTAL_ROWS,
+  /** Overrides for the first page, for a row that has to be there before anything is clicked. */
+  firstPageOverrides = [] as Partial<SearchResult>[],
+} = {}) {
   const handler = new TableHandler<SearchResult>([], { rowsPerPage: ROWS_PER_PAGE, debounce });
   let loads = 0;
   let answer: ((rows: SearchResult[]) => void) | undefined;
@@ -64,7 +69,7 @@ function renderList({ debounce = 0, totalRows = TOTAL_ROWS } = {}) {
     loads += 1;
     if (loads === 1) {
       handler.totalRows = totalRows;
-      return Promise.resolve(makeRows(0, ROWS_PER_PAGE));
+      return Promise.resolve(makeRows(0, ROWS_PER_PAGE, firstPageOverrides));
     }
     return new Promise<SearchResult[]>((resolve) => {
       answer = resolve;
@@ -107,6 +112,14 @@ function renderList({ debounce = 0, totalRows = TOTAL_ROWS } = {}) {
 }
 
 const cards = () => screen.queryAllByTestId('search-result-card');
+/**
+ * The variable name on each card, in order.
+ *
+ * Which rows are on screen, rather than how many: a card count cannot tell a list that
+ * re-rendered apart from one that threw mid-update and kept the previous page's DOM.
+ */
+const cardNames = () =>
+  cards().map((card) => card.querySelector('[data-testid="search-result-card-name"]')?.textContent);
 const nextButton = () => screen.getByLabelText('Next');
 const previousButton = () => screen.getByLabelText('Previous');
 const announcer = () => screen.getByTestId('search-results-announcer');
@@ -425,44 +438,80 @@ describe('the search result list', () => {
    *
    * This is the layer the damage was visible at. `variableDetailHref` is read in the card's
    * `$derived`, a destructuring default does not apply to `null`, and the resulting
-   * `TypeError` escaped the `{#each}` because there is no `<svelte:boundary>` in `src/`: in
-   * the built app, zero cards and "No entries found." above a count that still read
-   * "1 - 7 / 7". The unit suite pins that the predicate is total; what these pin is the
-   * consequence that made it a P2 - that one bad row costs one card and not the list.
+   * `TypeError` escapes the `{#each}` because there is no `<svelte:boundary>` in `src/`. The
+   * unit suite pins that the predicate is total over `null`; these pin the consequence that
+   * made it a P2 - one bad row costs one card, not the list.
    *
-   * The page change is only how a row with an override gets in: the first load is fixed.
+   * It costs the list two different ways depending on when the row arrives, which is why
+   * there are two cases here rather than one. Measured against the reverted fix:
+   *
+   * - In the first render, the throw leaves nothing behind: **zero cards**, and the list falls
+   *   through to "No entries found." while the count beneath reports the rows it does not
+   *   show. That is what was observed in the built app, reading "1 - 7 / 7" over an empty list.
+   * - On a page change, the throw interrupts the update and the **previous page's cards stay
+   *   on screen** - five cards, all fine-looking, all the wrong rows, under a count that has
+   *   moved on to "6 - 10 / 10".
+   *
+   * The second is why these assert *which* rows are on screen. A card count cannot tell the
+   * stale case from the fixed one: both show five cards whose text starts with "Row".
    */
   describe('a row the dictionary left incomplete', () => {
+    const nullDataset = { dataset: null as unknown as string };
+    const nullConceptPath = { conceptPath: null as unknown as string };
+
     it.each([
-      { case: 'a null dataset', override: { dataset: null as unknown as string } },
-      { case: 'a null concept path', override: { conceptPath: null as unknown as string } },
-    ])('costs that one card and not the whole list: $case', async ({ override }) => {
+      { case: 'a null dataset', override: nullDataset },
+      { case: 'a null concept path', override: nullConceptPath },
+    ])('costs that one card and not the first render: $case', async ({ override }) => {
+      renderList({ firstPageOverrides: [override] });
+
+      // Zero here, before the fix, and `toHaveLength` is the assertion that says so.
+      await waitFor(() => expect(cards()).toHaveLength(5));
+      expect(cardNames()).toEqual(['Row 0', 'Row 1', 'Row 2', 'Row 3', 'Row 4']);
+
+      // The bad row degrades to the unopenable card, which is the designed behaviour for a
+      // key the detail route would refuse: not a link, and it says so on the card.
+      expect(cards()[0]).toHaveAttribute('data-unopenable', 'true');
+      expect(cards()[0]).not.toHaveAttribute('href');
+      expect(screen.getByTestId('search-result-card-unopenable')).toBeInTheDocument();
+
+      // And the four good rows are still ordinary links, so the fix is not "unopenable
+      // everything" - which is the mutation that refuses every key and would otherwise
+      // satisfy every assertion above.
+      expect(
+        cards()
+          .slice(1)
+          .map((card) => card.getAttribute('href')),
+      ).toEqual([
+        '/explorer/variable/test_data_set/%5Ctest%5Crow-1%5C',
+        '/explorer/variable/test_data_set/%5Ctest%5Crow-2%5C',
+        '/explorer/variable/test_data_set/%5Ctest%5Crow-3%5C',
+        '/explorer/variable/test_data_set/%5Ctest%5Crow-4%5C',
+      ]);
+    });
+
+    it.each([
+      { case: 'a null dataset', override: nullDataset },
+      { case: 'a null concept path', override: nullConceptPath },
+    ])('costs that one card and not the page change: $case', async ({ override }) => {
       const { settle } = renderList();
       await onPageOne();
 
       await clickByKeyboard(nextButton());
       await settle(makeRows(5, 5, [override]));
 
-      // Every row still rendered. Before the predicate was made total over `null` this was
-      // zero, and the assertions below could not distinguish "the bad row is unopenable" from
-      // "nothing rendered at all".
-      await waitFor(() => expect(cards()).toHaveLength(5));
-      expect(cards().map((card) => card.textContent?.trim().startsWith('Row'))).toEqual([
-        true,
-        true,
-        true,
-        true,
-        true,
-      ]);
+      // Page two's rows, by name. Before the fix these were still Row 0 to Row 4: the update
+      // threw partway and left page one on screen, which a count of five cannot detect.
+      await waitFor(() =>
+        expect(cardNames()).toEqual(['Row 5', 'Row 6', 'Row 7', 'Row 8', 'Row 9']),
+      );
+      // And the count agrees with the rows, which is the half of the symptom a row check
+      // alone would miss: before the fix the count moved to page two while the list did not,
+      // so the page reported rows it was not showing.
+      expect(screen.getByTestId('search-results')).toHaveTextContent('6 - 10 / 10');
 
-      // The bad row degrades to the unopenable card, which is the designed behaviour for a
-      // key the detail route would refuse - not a link, and it says so.
       expect(cards()[0]).toHaveAttribute('data-unopenable', 'true');
       expect(cards()[0]).not.toHaveAttribute('href');
-      expect(screen.getByTestId('search-result-card-unopenable')).toBeInTheDocument();
-
-      // And the four good rows are still ordinary links, so the fix is not "unopenable
-      // everything".
       expect(
         cards()
           .slice(1)
