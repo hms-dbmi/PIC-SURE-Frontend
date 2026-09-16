@@ -326,6 +326,21 @@ on('GET', path(Psama.User.Logout), ({ res }) => {
   noContent(res);
 });
 
+on('POST', path(Psama.User.Register), ({ body, res }) => {
+  const user = body as { email: string; generalMetadata?: string };
+  const metadata = user.generalMetadata ? JSON.parse(user.generalMetadata) : {};
+  const values = [user.email, metadata.firstName, metadata.lastName];
+  // Lets local dev trigger the failure path on demand - use any value containing
+  // "error" (e.g. firstName: "Error") to exercise the register form's error alert.
+  if (values.some((v) => typeof v === 'string' && v.toLowerCase().includes('error'))) {
+    json(res, { error: 'Mock-triggered registration failure' }, 500);
+    return;
+  }
+  const created = { ...user, uuid: nextId() };
+  state.users.push(created);
+  json(res, created);
+});
+
 on('POST', path(`${Psama.Auth}/:provider`), ({ body, res }) => {
   const persona = (body as { persona?: string } | undefined)?.persona;
   if (persona) {

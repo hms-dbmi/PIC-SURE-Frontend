@@ -70,7 +70,7 @@ test.describe('Not logged in', () => {
     // Then
     await expect(page.locator('#terms-of-service')).not.toBeVisible();
   });
-  test('Terms link displays close button', async ({ page }) => {
+  test('Terms link displays close button', { tag: '@flaky' }, async ({ page }) => {
     // Given
     await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
     await page.goto('/');
