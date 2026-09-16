@@ -362,20 +362,23 @@ test.describe('Explorer for authenticated users', () => {
         await expect(infoPanel).toBeVisible();
         const variableInfo = infoPanel.getByTestId('variable-info');
         await expect(variableInfo).toBeVisible();
-        // Check Variable Information: the fixed list the mockups show, in their order.
-        // `detailResponseCat`'s meta bag carries none of the keys Accession, Subject Type,
-        // Vocabulary and Harmonization method(s) come from, so those rows are absent rather
-        // than empty - and `name` is no longer shown as an Accession, the dictionary defining
-        // it as the last segment of the concept path rather than an identifier.
+        // Check Variable Information: the designed rows the mockups show, in their order,
+        // then the concept's own meta bag. `detailResponseCat`'s bag carries none of the keys
+        // Subject Type, Vocabulary and Harmonization method(s) come from, so those rows are
+        // absent rather than empty; Accession falls back to `name`, which is a column of its
+        // own and is the dbGaP variable accession on the dictionary's own dbGaP rows.
         await expect(variableInfo.getByText('Variable Information')).toBeVisible();
         await expect(variableInfo.locator('[data-testid^="variable-info-"]')).toHaveText([
           'Name: ' + detailResponseCat.display,
           'Description: ' + detailResponseCat.description,
+          'Accession: ' + detailResponseCat.name,
           'Type: ' + detailResponseCat.type,
         ]);
-        await expect(variableInfo).not.toContainText('Accession:');
-        await expect(variableInfo).not.toContainText(detailResponseCat.name);
-        await expect(variableInfo).not.toContainText('values:');
+        await expect(variableInfo).toContainText(
+          'values: ' + detailResponseCat.meta.values.join(', '),
+        );
+        await expect(variableInfo).not.toContainText('Subject Type:');
+        await expect(variableInfo).not.toContainText('Vocabulary:');
 
         // Check Dataset Information
         const datasetInfo = infoPanel.getByTestId('dataset-info');

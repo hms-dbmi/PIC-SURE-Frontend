@@ -21,6 +21,7 @@
 
   let { data = {} as SearchResult }: { data?: SearchResult } = $props();
 
+  let showAllVariableInfo = $state(false);
   let showAllDatasetInfo = $state(false);
   let showAllStudyInfo = $state(false);
 
@@ -50,27 +51,42 @@
    *
    * Keys are compared with case and punctuation removed rather than literally.
    * `concept_node_meta.key` is a `varchar(256)` filled per deployment by whatever loaded the
-   * dictionary, and the keys in the dictionary's own seed data are a mix of `snake_case`,
-   * `space separated` and mixed case - `Question` and `question` are *both* whitelisted in its
-   * `rebuild_searchable_fields.sql`. One normalising rule covers that; a literal comparison
-   * would need a per-deployment list.
+   * dictionary, its own seed data mixes `snake_case`, `space separated` and mixed case, and
+   * `ConceptMetaExtractor` then title-cases each `_`-delimited word before we see it - so
+   * `subject_type` arrives as "Subject Type" and `subjectType` as "SubjectType". One
+   * normalising rule covers that; a literal comparison would need a per-deployment list.
    *
    * The aliases below are only the spellings the design itself uses (`prototype/js/data.js`:
    * `Accession`, `Subject Type`, `Vocabulary`, `Unit`, `harmonizationLink`, and the label
    * "Harmonization method(s)", which could be a singular or plural key). Nothing wider is
-   * guessed at, because none of these keys exist in any fixture, in `mock-data.ts`, or in the
-   * dictionary's seed data: until the dictionary makes them first-class fields (SPEC section 8,
-   * item 6) these rows are simply absent, which is what the omit-empty rule is for.
+   * guessed at, because until the dictionary makes them first-class fields (SPEC section 8,
+   * item 6) any deployment that has them has them under a key it chose itself.
    */
   function metaKey(key: string): string {
     return key.replace(/[^a-z0-9]/gi, '').toLowerCase();
   }
 
-  function metaValue(meta: Record<string, unknown> | null | undefined, aliases: string[]): unknown {
+  /**
+   * The `[key, value]` the row should use, or `undefined` if the bag has nothing for it.
+   *
+   * Normalising is lossy, so two distinct raw keys can land on one alias. `concept_node_meta`
+   * is unique on `(key, concept_node_id)`, but only on the *raw* key, and the keys are then
+   * title-cased on the way out by `ConceptMetaExtractor` - a deployment holding both
+   * `subject_type` and `subjectType` sends us "Subject Type" and "SubjectType", which
+   * normalise onto the same `subjecttype`. Taking the first *match* let an empty spelling
+   * hide a populated one and rendered the row blank. Precedence is therefore: alias order
+   * first, then the first **populated** key among the raw keys that normalise onto it, in the
+   * order the dictionary serialised the bag. Returning the key, not just the value, is what
+   * lets the caller keep that entry from being listed a second time below.
+   */
+  function metaEntry(
+    meta: Record<string, unknown> | null | undefined,
+    aliases: string[],
+  ): [string, unknown] | undefined {
     const entries = Object.entries(meta ?? {});
     for (const alias of aliases) {
-      const found = entries.find(([key]) => metaKey(key) === alias);
-      if (found && isPresent(found[1])) return found[1];
+      const found = entries.find(([key, value]) => metaKey(key) === alias && isPresent(value));
+      if (found) return found;
     }
     return undefined;
   }
@@ -99,9 +115,17 @@
     }
   }
 
-  function getMetaRows(meta: Record<string, unknown> | null | undefined): InfoRow[] {
+  /**
+   * Every populated key in a `meta` bag as its own row, minus the keys a labelled row above
+   * already rendered - a value the design gives a label to should not also appear under its
+   * raw dictionary key.
+   */
+  function getMetaRows(
+    meta: Record<string, unknown> | null | undefined,
+    shown: readonly string[] = [],
+  ): InfoRow[] {
     return Object.entries(meta ?? {}).reduce((rows, [label, value]) => {
-      addRow(rows, label, value, { isMeta: true });
+      if (!shown.includes(label)) addRow(rows, label, value, { isMeta: true });
       return rows;
     }, [] as InfoRow[]);
   }
@@ -111,51 +135,78 @@
   }
 
   /**
-   * Variable Information, in the mockups' order with the mockups' labels
-   * (`p1-04-asthma-detail.png`, `p1-10-eosinophil-detail.png`, `p2-04-moderate-detail.png`).
+   * Variable Information: the mockups' rows first, in the mockups' order with the mockups'
+   * labels (`p1-04-asthma-detail.png`, `p1-10-eosinophil-detail.png`,
+   * `p2-04-moderate-detail.png`), then whatever else the concept's `meta` bag holds, behind
+   * the same Show More the Dataset and Study sections use.
    *
-   * A fixed list, not the typed fields plus everything in `meta`: the mockups show these rows
-   * and no others, and the bag they used to be appended from carries `values`, `stigmatized`,
-   * `unique_identifier` and `free_text` on real data.
+   * The designed rows do not replace the bag, for two reasons.
    *
-   * Accession is read from `meta`, and is *not* the old `name` row relabelled. The dictionary
-   * defines `name` as "the right most concept in the concept path"
-   * (`Concept.java`) - a path segment - while the design's accessions are ontology
-   * identifiers from three different namespaces (`MONDO:004979`, `OBA:VT0002602`,
-   * `rc-ra1:cc_asthma_fu|inf|v33`). Labelling a path segment "Accession" said something
-   * untrue about the data, so it is gone rather than carried over.
+   * The keys deployments populate are wider than these eight. The dictionary indexes
+   * `description`, `derived_values`, `variable_type`, `comment`, `domain`,
+   * `Question`/`question`, `unit` and `values` for search
+   * (`WeightUpdateCreator`/`rebuild_searchable_fields.sql`) - `comment` and `Question` are
+   * free text a curator wrote, and a fixed eight-row list renders them nowhere, because this
+   * component is the only place in the application a concept's bag is rendered at all.
+   *
+   * And deciding what to hide is not ours to make. The dictionary filters the bag itself,
+   * server side and per deployment, with the `metadata.no_show_list` denylist that
+   * `ConceptRepository` applies as `key NOT IN (:noShowList)` - `values` on every profile,
+   * plus `stigmatized`, `derived_values`, `drs_uri`, `logical_min`, `logical_max` and
+   * `description` on BDC. What reaches us is what that deployment wants shown, so dropping
+   * any of it here overrides a decision already taken upstream.
+   *
+   * Accession prefers a `meta` accession and otherwise falls back to `name`, which is the row
+   * this page showed before the redesign. `name` is *not* a path segment, despite
+   * `Concept.java` documenting it as "the right most concept in the concept path": `name` and
+   * `concept_path` are independent columns and `ConceptResultSetUtil` maps `name` verbatim. On
+   * the dictionary's own canonical dbGaP row (`seed.sql`, concept_node 232) `name` is
+   * `phv00004260`, `display` is `FM219` and the path ends `\phv00004260\FM219\` - so `name`
+   * is the dbGaP variable accession and `display` is the last segment. The JavaDoc holds only
+   * for ACT/ICD-10 rows, where `name`, `display` and the last segment coincide.
    */
   function variableInfoRows(searchResultDetail: SearchResult): InfoRow[] {
     const rows: InfoRow[] = [];
     const meta = searchResultDetail.meta;
-    const harmonization = metaValue(meta, HARMONIZATION_KEYS);
+    // Raw keys a labelled row below takes its value from, so the bag does not repeat them.
+    // An array rather than a `Set` because this is a plain local accumulator, and a `Set`
+    // here trips `svelte/prefer-svelte-reactivity`, which wants a reactive collection.
+    const shownMetaKeys: string[] = [];
+
+    function fromMeta(aliases: string[]): unknown {
+      const entry = metaEntry(meta, aliases);
+      if (!entry) return undefined;
+      shownMetaKeys.push(entry[0]);
+      return entry[1];
+    }
+
+    const accession = fromMeta(ACCESSION_KEYS) ?? searchResultDetail.name;
+    const unit = fromMeta(UNIT_KEYS);
+    const subjectType = fromMeta(SUBJECT_TYPE_KEYS);
+    const vocabulary = fromMeta(VOCABULARY_KEYS);
+    const harmonization = fromMeta(HARMONIZATION_KEYS);
 
     addRow(rows, 'Name', searchResultDetail.display, { testid: 'variable-info-name' });
     addRow(rows, 'Description', searchResultDetail.description, {
       testid: 'variable-info-description',
     });
-    addRow(rows, 'Accession', metaValue(meta, ACCESSION_KEYS), {
-      testid: 'variable-info-accession',
-    });
+    addRow(rows, 'Accession', accession, { testid: 'variable-info-accession' });
     addRow(rows, 'Type', searchResultDetail.type, { testid: 'variable-info-type' });
-    addRow(rows, 'Unit', metaValue(meta, UNIT_KEYS), { testid: 'variable-info-unit' });
-    addRow(rows, 'Subject Type', metaValue(meta, SUBJECT_TYPE_KEYS), {
-      testid: 'variable-info-subject-type',
-    });
-    addRow(rows, 'Vocabulary', metaValue(meta, VOCABULARY_KEYS), {
-      testid: 'variable-info-vocabulary',
-    });
+    addRow(rows, 'Unit', unit, { testid: 'variable-info-unit' });
+    addRow(rows, 'Subject Type', subjectType, { testid: 'variable-info-subject-type' });
+    addRow(rows, 'Vocabulary', vocabulary, { testid: 'variable-info-vocabulary' });
     addRow(rows, 'Harmonization method(s)', harmonization, {
       testid: 'variable-info-harmonization-methods',
       href: isPresent(harmonization) ? safeLink(formatValue(harmonization)) : undefined,
     });
 
-    return rows;
+    return [...rows, ...getMetaRows(meta, shownMetaKeys)];
   }
 
   // Dataset and Study keep the fields and the `meta` bag they have today, in the single-column
   // treatment the variable list now uses. The mockups only redesign Variable Information, and
   // these two sections are the only place a study's link, phase and accession are on screen.
+  // `table.name` under "Accession" is the same field, read the same way, as the variable row.
   function datasetInfoRows(table: SearchResult): InfoRow[] {
     const rows: InfoRow[] = [];
     addRow(rows, 'Name', table.display);
@@ -202,16 +253,28 @@
     {#await detailPromise}
       <Loading ring size="medium" />
     {:then searchResultDetail}
+      {@const variableRows = variableInfoRows(searchResultDetail)}
       <section data-testid="variable-info" class="flex flex-col w-full p-4">
-        <h2 class="text-primary-500">
+        <!-- `h2` for the document outline - the page's own heading is an `h1` and there is
+             nothing between them - and `h5` for the size, which is the one the page's other
+             section headings use. Without a size class an `h2` renders at 1.75rem, half again
+             the size of the `h1.h4` above it. -->
+        <h2 class="h5 text-primary-500">
           {config.branding.explorePage.resultInfo.variableHeader || 'Variable Information'}
         </h2>
-        {@render infoRows(variableInfoRows(searchResultDetail))}
+        {@render infoRows(getVisibleRows(variableRows, showAllVariableInfo))}
+        {#if variableRows.length > MAX_INFO_ROWS}
+          <ShowMoreButton
+            data-testid="show-more-variable-info"
+            expanded={showAllVariableInfo}
+            onclick={() => (showAllVariableInfo = !showAllVariableInfo)}
+          />
+        {/if}
       </section>
       {#if searchResultDetail.table}
         {@const datasetRows = datasetInfoRows(searchResultDetail.table)}
         <section data-testid="dataset-info" class="flex flex-col w-full p-4">
-          <h2 class="text-primary-500">
+          <h2 class="h5 text-primary-500">
             {config.branding.explorePage.resultInfo.datasetHeader || 'Dataset Information'}
           </h2>
           {@render infoRows(getVisibleRows(datasetRows, showAllDatasetInfo))}
@@ -227,7 +290,7 @@
       {#if searchResultDetail.study}
         {@const studyRows = studyInfoRows(searchResultDetail)}
         <section data-testid="study-info" class="flex flex-col w-full p-4">
-          <h2 class="text-primary-500">
+          <h2 class="h5 text-primary-500">
             {config.branding.explorePage.resultInfo.studyHeader || 'Study Information'}
           </h2>
           {@render infoRows(getVisibleRows(studyRows, showAllStudyInfo))}

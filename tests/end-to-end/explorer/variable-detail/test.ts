@@ -207,25 +207,86 @@ test.describe('Explore variable detail page', () => {
     await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
-  // What every deployment we can see actually sends: `detailResponseCat`'s bag holds `values`
-  // and `description` and none of the design's keys. Those rows are omitted rather than
-  // rendered empty, and `name` is not shown as an Accession - the dictionary defines it as
-  // the last segment of the concept path, not as an identifier in any namespace.
-  test('omits the rows a variable has no values for', async ({ page }) => {
-    // Given the fixture concept, whose meta carries none of the four keys
+  /**
+   * What every deployment we can see actually sends: `detailResponseCat`'s bag holds `values`
+   * and `description` and none of the design's keys, so Unit, Subject Type, Vocabulary and
+   * Harmonization method(s) are omitted rather than rendered empty.
+   *
+   * Accession is *not* omitted. It falls back to `name`, which is the row this page showed
+   * before the redesign - `name` is a column of its own, mapped verbatim by
+   * `ConceptResultSetUtil`, and on the dictionary's own dbGaP rows it is the variable
+   * accession (`phv00004260`) while the last path segment is the `display` (`FM219`).
+   * `Concept.java` documenting it as "the right most concept in the concept path" holds only
+   * for ACT/ICD-10 rows, where `name`, `display` and the last segment coincide.
+   */
+  test('omits the rows a variable has no values for, and keeps Accession and the bag', async ({
+    page,
+  }) => {
+    // Given the fixture concept, whose meta carries none of the design's keys
     await page.goto(exploreUrl);
     await userIsLoggedIn(page);
 
-    // Then
+    // Then the designed rows it does have values for, and no empty ones
     await expect(infoRows(page)).toHaveText([
       `Name: ${variable.display}`,
       `Description: ${variable.description}`,
+      `Accession: ${variable.name}`,
       `Type: ${variable.type}`,
     ]);
+
+    // And its own meta bag below them, which this component is the only renderer of
     const variableInfo = page.getByTestId('variable-info');
-    await expect(variableInfo).not.toContainText('Accession:');
-    await expect(variableInfo).not.toContainText(variable.name);
-    await expect(variableInfo).not.toContainText('values:');
+    await expect(variableInfo).toContainText(`values: ${variable.meta.values.join(', ')}`);
+    await expect(variableInfo).not.toContainText('Unit:');
+    await expect(variableInfo).not.toContainText('Subject Type:');
+    await expect(variableInfo).not.toContainText('Vocabulary:');
+    await expect(variableInfo).not.toContainText('Harmonization method(s):');
+  });
+
+  /**
+   * The three section headings are `h2` for the outline - the page's own heading is an `h1`
+   * and nothing sits between them - and must not render larger than it. An `h2` with no size
+   * class is 1.75rem against this page's `h1.h4` at 1.25rem, so the level change needs the
+   * `h5` the page's other section headings already use.
+   *
+   * Read from computed style rather than from class names, so it holds whatever the classes
+   * say, and anchored on a visible heading first: a font size read off a page that has not
+   * rendered is not a measurement.
+   */
+  test('renders the section headings at the size of the page, not larger than its h1', async ({
+    page,
+  }) => {
+    // Given
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await expect(page.getByTestId('variable-info')).toBeVisible();
+
+    // When
+    const measure = (locator: Locator) =>
+      locator.evaluate((element) => ({
+        level: element.tagName,
+        fontSize: parseFloat(getComputedStyle(element).fontSize),
+      }));
+    const pageHeading = await measure(page.getByTestId('variable-detail-name'));
+    const sibling = await measure(
+      page.getByTestId('variable-detail-hierarchy').getByRole('heading'),
+    );
+    const sections = ['variable-info', 'dataset-info', 'study-info'];
+    const headings = await Promise.all(
+      sections.map((testid) => measure(page.getByTestId(testid).locator('h2'))),
+    );
+
+    // Then
+    expect(pageHeading.level).toBe('H1');
+    expect(sibling.level).toBe('H2');
+    expect(headings).toHaveLength(3);
+    headings.forEach((heading) => {
+      // The level, which is what makes the outline h1 -> h2 with nothing skipped.
+      expect(heading.level).toBe('H2');
+      // And the size, which the level does not carry.
+      expect(heading.fontSize).toBeLessThanOrEqual(pageHeading.fontSize);
+      expect(heading.fontSize).toBeCloseTo(sibling.fontSize, 1);
+    });
   });
 
   // The branded headings (`explorePage.resultInfo.*`) are not reachable from here: they come

@@ -32,6 +32,53 @@ const ASTHMA_META = {
   'Harmonization method(s)': HARMONIZATION_URL,
 };
 
+/**
+ * The dictionary's own canonical dbGaP variable, `seed.sql` concept_node 232, verbatim.
+ *
+ * It is the fixture that can tell `name`, `display` and the last segment of the concept path
+ * apart: `name` is `phv00004260` - the dbGaP variable accession - while `display` *and* the
+ * last path segment are both `FM219`. Every other fixture here has `name === display`, so
+ * none of them can distinguish which field an Accession row was read from.
+ */
+const DBGAP_VARIABLE = {
+  conceptPath: '\\phs000007\\pht000022\\phv00004260\\FM219\\',
+  name: 'phv00004260',
+  display: 'FM219',
+};
+
+/**
+ * The meta keys the dictionary indexes for search, as it spells them -
+ * `WeightUpdateCreator`, mirrored into `db/dml/rebuild_searchable_fields.sql`. It is the best
+ * available statement of which keys deployments actually populate, so the coverage below is
+ * generated from it rather than from a list written out here a second time.
+ *
+ * `ConceptMetaExtractor` title-cases each `_`-delimited word on the way out, so a deployment's
+ * `derived_values` reaches this component as `Derived Values`; the raw spellings are used here
+ * because the component must not depend on which of the two it gets.
+ */
+const INDEXED_META_KEYS = [
+  'description',
+  'derived_values',
+  'variable_type',
+  'comment',
+  'domain',
+  'Question',
+  'question',
+  'unit',
+  'values',
+];
+
+/** The only indexed key one of the designed rows reads, so the only one the bag must not repeat. */
+const INDEXED_KEYS_A_DESIGNED_ROW_READS = ['unit'];
+
+function occurrences(haystack: string, needle: string): number {
+  return haystack.split(needle).length - 1;
+}
+
+function sectionText(testid: string): string {
+  return screen.getByTestId(testid).textContent ?? '';
+}
+
 // The rows p1-04 shows, top to bottom. p1-10 adds Unit between Type and Subject Type.
 const MOCKUP_ROW_ORDER = [
   'variable-info-name',
@@ -125,6 +172,8 @@ describe('ResultInfoComponent', () => {
       expect(screen.getByTestId('variable-info-harmonization-methods')).toHaveTextContent(
         `Harmonization method(s): ${HARMONIZATION_URL}`,
       );
+      // Seven rows fit, so there is nothing to reveal.
+      expect(screen.queryByTestId('show-more-variable-info')).not.toBeInTheDocument();
     });
 
     // p1-10-eosinophil-detail.png, the continuous variable. `unit` is a real dictionary meta
@@ -158,19 +207,55 @@ describe('ResultInfoComponent', () => {
       expect(link).toHaveAttribute('rel', 'noopener noreferrer');
     });
 
-    // `meta` is dictionary data, and this row's value becomes an href. A `javascript:` value
-    // would otherwise be one click from running in the user's session.
+    /**
+     * `meta` is dictionary data, and this row's value becomes an `href`. A `javascript:` value
+     * would otherwise be one click from running in the user's session.
+     *
+     * `safeLink` parses with `new URL` and allows only `http:`/`https:`, which handles all of
+     * these - the parser lowercases the scheme, strips ASCII whitespace including embedded
+     * tabs and newlines, trims C0 and space, and throws on a protocol-relative URL with no
+     * base. The table is wide because the boundary is a security one: a refactor to something
+     * like `value.startsWith('http')` still passes a three-row table covering only lowercase
+     * `javascript:`, `data:` and plain text, while regressing every other row here.
+     */
     it.each([
       { case: 'a javascript: url', value: 'javascript:alert(document.cookie)' },
+      { case: 'JavaScript: in mixed case', value: 'JavaScript:alert(document.cookie)' },
+      { case: 'JAVASCRIPT: in upper case', value: 'JAVASCRIPT:alert(document.cookie)' },
+      { case: 'a javascript: url padded with whitespace', value: '  javascript:alert(1)\n' },
+      { case: 'a tab smuggled into the scheme', value: 'java\tscript:alert(1)' },
+      { case: 'a newline smuggled into the scheme', value: 'java\nscript:alert(1)' },
+      { case: 'a carriage return smuggled into the scheme', value: 'java\rscript:alert(1)' },
       { case: 'a data: url', value: 'data:text/html,<script>alert(1)</script>' },
+      { case: 'a vbscript: url', value: 'vbscript:msgbox(1)' },
+      { case: 'a file: url', value: 'file:///etc/passwd' },
+      { case: 'a protocol-relative url', value: '//evil.com/harmonization' },
       { case: 'text that is not a url at all', value: 'see the harmonization repository' },
+      { case: 'a bare hostname with no scheme', value: 'evil.com/harmonization' },
     ])('renders $case as text rather than a link', async ({ value }) => {
       await renderResultInfo(makeDetail({ meta: { 'Harmonization method(s)': value } }));
 
       const row = screen.getByTestId('variable-info-harmonization-methods');
-      expect(row).toHaveTextContent(`Harmonization method(s): ${value}`);
+      // `textContent` rather than `toHaveTextContent`, which collapses the whitespace that
+      // several of these values are entirely about.
+      expect(row).toHaveTextContent('Harmonization method(s):');
+      expect(row.textContent).toContain(value);
       expect(row.querySelector('a')).toBeNull();
       expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    });
+
+    // The other direction: the two schemes that must survive, so the rule above cannot be
+    // satisfied by rejecting everything.
+    it.each([
+      { case: 'https', value: 'https://example.org/harmonization' },
+      { case: 'http', value: 'http://example.org/harmonization' },
+      { case: 'https in mixed case, which the parser normalises', value: 'HtTpS://example.org/h' },
+    ])('renders an $case url as a link', async ({ value }) => {
+      await renderResultInfo(makeDetail({ meta: { 'Harmonization method(s)': value } }));
+
+      const link = screen.getByTestId('variable-info-harmonization-methods').querySelector('a');
+      expect(link).not.toBeNull();
+      expect(link).toHaveAttribute('href', value);
     });
 
     /**
@@ -234,12 +319,14 @@ describe('ResultInfoComponent', () => {
 
     /**
      * What every deployment we can see actually sends. None of the fixtures, none of
-     * `mock-data.ts` and none of the dictionary's seed data carries Accession, Subject Type,
-     * Vocabulary or Harmonization method(s); the keys they do carry are these.
+     * `mock-data.ts` and none of the dictionary's seed data carries Subject Type, Vocabulary
+     * or Harmonization method(s); the keys they do carry are these. Accession still renders,
+     * from `name`.
      */
-    it('renders Name, Description and Type for a variable carrying none of those keys', async () => {
+    it('renders the designed rows a variable has values for, and keeps the rest of its bag', async () => {
       await renderResultInfo(
         makeDetail({
+          ...DBGAP_VARIABLE,
           meta: {
             values: ['Yes', 'No'],
             description: 'A second copy of the description',
@@ -253,26 +340,33 @@ describe('ResultInfoComponent', () => {
       expect(variableRowIds()).toEqual([
         'variable-info-name',
         'variable-info-description',
+        'variable-info-accession',
         'variable-info-type',
       ]);
-      // The bag is no longer appended to the list: these were rows of their own before.
-      expect(screen.getByTestId('variable-info')).not.toHaveTextContent('values:');
-      expect(screen.getByTestId('variable-info')).not.toHaveTextContent('stigmatized:');
-      expect(screen.getByTestId('variable-info')).not.toHaveTextContent('unique_identifier:');
+      // And the bag below them, which this component is the only renderer of.
+      const variableInfo = screen.getByTestId('variable-info');
+      expect(variableInfo).toHaveTextContent('values: Yes, No');
+      expect(variableInfo).toHaveTextContent('stigmatized: false');
+      expect(variableInfo).toHaveTextContent('unique_identifier: false');
+      expect(variableInfo).toHaveTextContent('free_text: false');
     });
 
     it.each([
       { case: 'no meta at all', meta: undefined },
       { case: 'a null meta bag', meta: null },
       { case: 'an empty meta bag', meta: {} },
-    ])('renders Name, Description and Type with $case', async ({ meta }) => {
-      await renderResultInfo(makeDetail({ meta }));
+    ])('renders Name, Description, Accession and Type with $case', async ({ meta }) => {
+      await renderResultInfo(makeDetail({ ...DBGAP_VARIABLE, meta }));
 
       expect(variableRowIds()).toEqual([
         'variable-info-name',
         'variable-info-description',
+        'variable-info-accession',
         'variable-info-type',
       ]);
+      expect(screen.getByTestId('variable-info-accession')).toHaveTextContent(
+        'Accession: phv00004260',
+      );
     });
 
     // A label with nothing after it reads as missing data rather than as an absent field.
@@ -280,6 +374,7 @@ describe('ResultInfoComponent', () => {
       await renderResultInfo(
         makeDetail({
           display: '',
+          name: '',
           description: null,
           type: undefined,
           meta: {
@@ -298,17 +393,191 @@ describe('ResultInfoComponent', () => {
       expect(screen.getByTestId('variable-info')).not.toHaveTextContent(':');
     });
 
-    // The old list's Accession row was `name`, which the dictionary documents as "the right
-    // most concept in the concept path" - a path segment, not an accession. The design's
-    // accessions are ontology identifiers (MONDO:, OBA:), so the two are not the same field
-    // and the path segment is not shown under that label.
-    it('does not label the concept path segment as an Accession', async () => {
+    /**
+     * Accession falls back to `name`, which is the row this page showed before the redesign.
+     *
+     * `Concept.java` documents `name` as "the right most concept in the concept path", and
+     * that JavaDoc is wrong about the data: `name` and `concept_path` are independent columns,
+     * `ConceptResultSetUtil` maps `name` verbatim, and of the dictionary's own 92 seed
+     * concept nodes only 28 have `name` equal to the last path segment. On concept_node 232 -
+     * the fixture below - `name` is the dbGaP variable accession `phv00004260` while the last
+     * segment is `FM219`, so dropping this row hid the identifier users cite and showed
+     * nothing in its place, `meta.Accession` existing in no deployment, fixture or seed row.
+     */
+    it('falls back to name for the Accession, which is the dbGaP variable accession', async () => {
+      await renderResultInfo(makeDetail({ ...DBGAP_VARIABLE, meta: {}, table: null, study: null }));
+
+      // `phv00004260`, not `FM219` - which is both `display` and the last path segment.
+      expect(screen.getByTestId('variable-info-accession')).toHaveTextContent(
+        'Accession: phv00004260',
+      );
+      expect(screen.getByTestId('variable-info-name')).toHaveTextContent('Name: FM219');
+    });
+
+    it('prefers a meta accession over name when the bag carries one', async () => {
       await renderResultInfo(
-        makeDetail({ name: 'heart_test', meta: {}, table: null, study: null }),
+        makeDetail({
+          ...DBGAP_VARIABLE,
+          meta: { Accession: 'MONDO:004979' },
+          table: null,
+          study: null,
+        }),
       );
 
-      expect(screen.queryByTestId('variable-info-accession')).not.toBeInTheDocument();
-      expect(screen.getByTestId('variable-info')).not.toHaveTextContent('heart_test');
+      expect(screen.getByTestId('variable-info-accession')).toHaveTextContent(
+        'Accession: MONDO:004979',
+      );
+      expect(sectionText('variable-info')).not.toContain('phv00004260');
+    });
+
+    // An empty key is not an accession. Reading the bag first must not mean reading `''` and
+    // rendering the row blank, which is how the row reads as missing data.
+    it('falls back to name when the meta accession is present but empty', async () => {
+      await renderResultInfo(
+        makeDetail({ ...DBGAP_VARIABLE, meta: { Accession: '' }, table: null, study: null }),
+      );
+
+      expect(screen.getByTestId('variable-info-accession')).toHaveTextContent(
+        'Accession: phv00004260',
+      );
+    });
+  });
+
+  /**
+   * The concept's own `meta` bag, which the designed rows sit above rather than replace.
+   *
+   * The dictionary already decides what to hide, server side and per deployment, with the
+   * `metadata.no_show_list` denylist `ConceptRepository` applies as `key NOT IN (:noShowList)`.
+   * What arrives here is what that deployment wants shown, and this component is the only
+   * renderer of a concept's bag in the application, so a key omitted here renders nowhere.
+   */
+  describe("the variable's meta bag", () => {
+    it('renders every key the dictionary indexes that no designed row already shows', async () => {
+      const meta = Object.fromEntries(INDEXED_META_KEYS.map((key) => [key, `value of ${key}`]));
+      await renderResultInfo(makeDetail({ ...DBGAP_VARIABLE, meta, table: null, study: null }));
+
+      // Nine bag keys behind four designed rows overruns the ten-row window, so reveal the
+      // tail before asserting on it.
+      await fireEvent.click(screen.getByTestId('show-more-variable-info'));
+
+      const variableInfo = screen.getByTestId('variable-info');
+      INDEXED_META_KEYS.filter((key) => !INDEXED_KEYS_A_DESIGNED_ROW_READS.includes(key)).forEach(
+        (key) => {
+          expect(variableInfo).toHaveTextContent(`${key}: value of ${key}`);
+        },
+      );
+
+      // `unit` is the one the design labels itself, so it appears once, under that label.
+      expect(screen.getByTestId('variable-info-unit')).toHaveTextContent('Unit: value of unit');
+      expect(occurrences(sectionText('variable-info'), 'value of unit')).toBe(1);
+    });
+
+    // Suppression is keyed on the raw key the row read, not on the design's label, so a
+    // deployment spelling it `harmonizationLink` gets the same single row.
+    it('does not list a designed row a second time under its raw key', async () => {
+      const meta = {
+        accession: 'MONDO:004979',
+        subjectType: 'Human',
+        vocabulary: 'Mondo Disease Ontology',
+        harmonizationLink: HARMONIZATION_URL,
+        comment: 'A curator wrote this by hand',
+      };
+      await renderResultInfo(makeDetail({ ...DBGAP_VARIABLE, meta, table: null, study: null }));
+
+      const text = sectionText('variable-info');
+      ['MONDO:004979', 'Human', 'Mondo Disease Ontology', HARMONIZATION_URL].forEach((value) => {
+        expect(occurrences(text, value)).toBe(1);
+      });
+      ['accession:', 'subjectType:', 'vocabulary:', 'harmonizationLink:'].forEach((rawLabel) => {
+        expect(text).not.toContain(rawLabel);
+      });
+      // The key no designed row reads is still there.
+      expect(text).toContain('comment: A curator wrote this by hand');
+    });
+
+    it('shows the first 10 rows and toggles the rest with show more', async () => {
+      await renderResultInfo(
+        makeDetail({
+          ...DBGAP_VARIABLE,
+          meta: Object.fromEntries(
+            Array.from({ length: 8 }, (_, index) => [`meta ${index + 1}`, `value ${index + 1}`]),
+          ),
+          table: null,
+          study: null,
+        }),
+      );
+
+      // Name, Description, Accession and Type, then six of the eight bag rows.
+      const variableInfo = screen.getByTestId('variable-info');
+      expect(variableInfo).toHaveTextContent('meta 6: value 6');
+      expect(variableInfo).not.toHaveTextContent('meta 7: value 7');
+
+      const showMoreButton = screen.getByTestId('show-more-variable-info');
+      expect(showMoreButton).toHaveTextContent('Show More');
+
+      await fireEvent.click(showMoreButton);
+
+      expect(variableInfo).toHaveTextContent('meta 7: value 7');
+      expect(variableInfo).toHaveTextContent('meta 8: value 8');
+      expect(showMoreButton).toHaveTextContent('Show Less');
+    });
+  });
+
+  /**
+   * Normalising a key to compare it is lossy, so two raw keys can land on one alias.
+   * `concept_node_meta` is unique on the raw `(key, concept_node_id)` only, and
+   * `ConceptMetaExtractor` title-cases each `_`-delimited word, so a deployment holding both
+   * `subject_type` and `subjectType` sends "Subject Type" and "SubjectType" in one bag.
+   * Exercising each spelling on its own, as the table above does, cannot see a collision.
+   */
+  describe('colliding meta keys', () => {
+    it.each([
+      { case: 'the empty one first', meta: { 'Subject Type': '', SubjectType: 'Human' } },
+      { case: 'the populated one first', meta: { SubjectType: 'Human', 'Subject Type': '' } },
+    ])('reads the populated spelling with $case', async ({ meta }) => {
+      await renderResultInfo(makeDetail({ ...DBGAP_VARIABLE, meta, table: null, study: null }));
+
+      expect(screen.getByTestId('variable-info-subject-type')).toHaveTextContent(
+        'Subject Type: Human',
+      );
+      expect(occurrences(sectionText('variable-info'), 'Human')).toBe(1);
+    });
+
+    // Two populated spellings: the first in the bag wins, and the loser is still listed under
+    // its own key rather than disappearing.
+    it('takes the first populated spelling, and keeps the other in the bag', async () => {
+      await renderResultInfo(
+        makeDetail({
+          ...DBGAP_VARIABLE,
+          meta: { 'Subject Type': 'Human', SubjectType: 'Mouse' },
+          table: null,
+          study: null,
+        }),
+      );
+
+      expect(screen.getByTestId('variable-info-subject-type')).toHaveTextContent(
+        'Subject Type: Human',
+      );
+      expect(screen.getByTestId('variable-info')).toHaveTextContent('SubjectType: Mouse');
+    });
+
+    // Alias order beats bag order: the plural spelling is the design's own label.
+    it('prefers the earlier alias over the earlier key in the bag', async () => {
+      await renderResultInfo(
+        makeDetail({
+          ...DBGAP_VARIABLE,
+          meta: {
+            harmonizationLink: 'https://example.org/link',
+            harmonization_methods: 'https://example.org/methods',
+          },
+          table: null,
+          study: null,
+        }),
+      );
+
+      expect(
+        screen.getByTestId('variable-info-harmonization-methods').querySelector('a'),
+      ).toHaveAttribute('href', 'https://example.org/methods');
     });
   });
 
