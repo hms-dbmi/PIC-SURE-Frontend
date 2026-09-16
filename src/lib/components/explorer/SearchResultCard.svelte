@@ -175,8 +175,12 @@
   }
 
   /* Not a tab stop, but a keyboard page change can land focus here, and focus that cannot be
-     seen is worse than none. No hover or pointer treatment: there is nothing to click. */
-  .unopenable-card:focus-visible {
+     seen is worse than none. No hover or pointer treatment: there is nothing to click.
+
+     `:focus`, not `:focus-visible`: this card is only ever focused by script, and whether a
+     browser calls script focus "visible" is a heuristic about the last input modality. The one
+     way focus arrives here is a page change the user asked for, so the ring is always wanted. */
+  .unopenable-card:focus {
     outline: 2px solid var(--color-surface-500);
     outline-offset: -2px;
   }

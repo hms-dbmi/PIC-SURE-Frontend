@@ -303,11 +303,13 @@ describe('the search result card', () => {
     it('lets focus land on an unopenable card without putting it in the tab order', () => {
       // Nothing to activate, so it is not a tab stop - but a keyboard page change focuses the
       // first card of the new page, and that card can be this one.
+      //
+      // The attribute is all this layer can say. happy-dom focuses a div with no tabindex just
+      // as readily, so `focus()` here would pass with the attribute removed; that the browser
+      // will not is pinned by `Lands on a first card that cannot be opened` in the e2e suite.
       renderCard({ dataset: 'BioLINCC (phs004266)' });
 
       expect(card()).toHaveAttribute('tabindex', '-1');
-      card().focus();
-      expect(document.activeElement).toBe(card());
     });
   });
 
