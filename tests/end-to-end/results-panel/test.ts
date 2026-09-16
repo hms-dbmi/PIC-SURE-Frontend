@@ -998,13 +998,27 @@ test.describe('Results panel empty state', () => {
     { name: 'ENABLE_SNP_QUERY', value: 'false' },
   ];
 
-  // The count fixture differs by section, not by convenience: Discover asks the open-access
-  // endpoint for a CROSS_COUNT and gets the per-consent map back, which is what providers.ts
-  // parses. Explore's authenticated COUNT is the bare scalar.
-  async function mockSearch(page: Page, countPath: string, count: string | Record<string, number>) {
+  async function mockResults(page: Page) {
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
-    await mockApiSuccess(page, countPath, count);
+  }
+
+  // The count endpoint and the shape it answers with are one decision, not two: Discover asks
+  // the open-access endpoint for a CROSS_COUNT and gets the per-consent map back, which is
+  // what providers.ts parses, while Explore's authenticated COUNT is the bare scalar. One
+  // helper taking the path and the fixture as separate arguments let a call site hand either
+  // endpoint either shape, and the parser is lenient enough - map gets `_studies_consents_`
+  // pulled out of it, anything else comes back raw - that a swapped pair leaves the suite
+  // green on the wrong data. So the pairing lives here, once per section, and a call site has
+  // no pair left to get wrong.
+  async function mockExploreSearch(page: Page) {
+    await mockResults(page);
+    await mockApiSuccess(page, countResultPath, '9999');
+  }
+
+  async function mockDiscoverSearch(page: Page) {
+    await mockResults(page);
+    await mockApiSuccess(page, openCountResultPath, { '\\_studies_consents\\': 9999 });
   }
 
   test.describe('on Explore', () => {
@@ -1013,7 +1027,7 @@ test.describe('Results panel empty state', () => {
     test('names both pages when genomic search gives Explore a Genotypes tab', async ({ page }) => {
       // Given
       await mockApiConfig(page, { features: [{ name: 'ENABLE_GENE_QUERY', value: 'true' }] });
-      await mockSearch(page, countResultPath, '9999');
+      await mockExploreSearch(page);
       await page.goto('/explorer?search=somedata');
       await userIsLoggedIn(page);
 
@@ -1029,7 +1043,7 @@ test.describe('Results panel empty state', () => {
     test('names the phenotypes page alone when genomic search is off', async ({ page }) => {
       // Given
       await mockApiConfig(page, { features: genomicOff });
-      await mockSearch(page, countResultPath, '9999');
+      await mockExploreSearch(page);
       await page.goto('/explorer?search=somedata');
       await userIsLoggedIn(page);
 
@@ -1045,7 +1059,7 @@ test.describe('Results panel empty state', () => {
     test('moves the pointer from the strip into the body on expanding', async ({ page }) => {
       // Given
       await mockApiConfig(page, { features: genomicOff });
-      await mockSearch(page, countResultPath, '9999');
+      await mockExploreSearch(page);
       await page.goto('/explorer?search=somedata');
       await userIsLoggedIn(page);
       const strip = page.getByTestId('results-summary-strip');
@@ -1066,7 +1080,7 @@ test.describe('Results panel empty state', () => {
     test('drops the text as soon as the first filter is added', async ({ page }) => {
       // Given an open, empty panel
       await mockApiConfig(page, { features: [{ name: 'ENABLE_GENE_QUERY', value: 'true' }] });
-      await mockSearch(page, countResultPath, '9999');
+      await mockExploreSearch(page);
       await page.goto('/explorer?search=somedata');
       await userIsLoggedIn(page);
       await page.getByTestId('results-summary-strip').click();
@@ -1107,7 +1121,7 @@ test.describe('Results panel empty state', () => {
           { name: 'ENABLE_SNP_QUERY', value: 'true' },
         ],
       });
-      await mockSearch(page, openCountResultPath, { '\\_studies_consents\\': 9999 });
+      await mockDiscoverSearch(page);
       await page.goto('/discover?search=somedata');
       // The strip is server-rendered for an unauthenticated visitor, so wait for the
       // client-side count before clicking it: a click that lands before hydration is
