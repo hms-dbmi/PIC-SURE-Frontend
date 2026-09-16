@@ -503,6 +503,35 @@ test.describe('Explorer for authenticated users', () => {
       }
     });
 
+    test('Does not make a card that cannot be opened a tab stop', async ({ page }) => {
+      // Given a list whose second result has a dataset the detail route refuses
+      await page.route(searchResultPath, async (route: Route) =>
+        route.fulfill({
+          json: {
+            ...mockData,
+            content: [
+              mockData.content[0],
+              { ...mockData.content[1], dataset: 'BioLINCC (phs004266)' },
+              mockData.content[2],
+            ],
+          },
+        }),
+      );
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page)).toHaveCount(3);
+      await expect(resultCards(page).nth(1)).toHaveAttribute('data-unopenable', 'true');
+
+      // When - tabbing on from the first card
+      await resultCards(page).first().focus();
+      await page.keyboard.press('Tab');
+
+      // Then - it is passed over: there is nothing on it to activate, and it only takes focus
+      // when a page change puts it there
+      await expect(resultCards(page).nth(2)).toBeFocused();
+      await expect(resultCards(page).nth(1)).not.toBeFocused();
+    });
+
     test('Paging from the keyboard lands focus on the first card of the new page', async ({
       page,
     }) => {
