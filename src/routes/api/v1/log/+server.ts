@@ -5,6 +5,21 @@ import type { LogEvent } from '$lib/models/Log';
 
 const ACCEPTED = 202;
 
+const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1']);
+
+// LOGGING_TARGET carries the client's bearer token and X-API-Key, so only loopback
+// destinations (the local mock-api or a same-host gateway) may use plaintext HTTP -
+// anything else must be HTTPS or an attacker on the network path can read both.
+function isSecureLoggingTarget(target: string): boolean {
+  let url: URL;
+  try {
+    url = new URL(target);
+  } catch {
+    return false;
+  }
+  return url.protocol === 'https:' || LOOPBACK_HOSTNAMES.has(url.hostname);
+}
+
 export const POST: RequestHandler = async ({ request, getClientAddress }) => {
   if (!env.LOGGING_API_KEY) {
     console.error('[log] Logging API Key not set!');
@@ -39,7 +54,17 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
   }
 
   try {
-    const target = 'http://localhost/picsure/logging/audit';
+    // Overridable for local dev, where nothing listens on localhost:80 - point this at
+    // the mock-api server (or a real backend) instead. Unset in deployed environments,
+    // where the gateway sidecar on localhost is always present.
+    const target = env.LOGGING_TARGET || 'http://localhost/picsure/logging/audit';
+    if (!isSecureLoggingTarget(target)) {
+      console.error(
+        `[log] Refusing to forward to insecure LOGGING_TARGET (plaintext HTTP to a non-loopback host): ${target}`,
+      );
+      return json({ result: 'accepted' }, { status: ACCEPTED });
+    }
+
     const upstream = await fetch(target, {
       method: 'POST',
       headers,

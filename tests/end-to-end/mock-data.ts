@@ -135,7 +135,11 @@ const conceptTree: Indexable = {
     conceptPath: conceptDetailPaths.PHS001,
     name: 'phs001',
     dataset: 'phs001',
-    children: [conceptDetails.SEX, conceptDetails.SAMPLE_NAME, conceptDetails.SAMPLE_ID],
+    children: [
+      conceptDetails[conceptDetailPaths.SEX],
+      conceptDetails[conceptDetailPaths.SAMPLE_NAME],
+      conceptDetails[conceptDetailPaths.SAMPLE_ID],
+    ],
   },
   [conceptDetailPaths.STUDY123]: {
     ...defaultConceptDetail,
@@ -143,7 +147,11 @@ const conceptTree: Indexable = {
     conceptPath: conceptDetailPaths.STUDY123,
     name: 'STUDY123',
     dataset: 'STUDY123',
-    children: [conceptDetails.GENDER, conceptDetails.HEIGHT, conceptDetails.WEIGHT],
+    children: [
+      conceptDetails[conceptDetailPaths.GENDER],
+      conceptDetails[conceptDetailPaths.HEIGHT],
+      conceptDetails[conceptDetailPaths.WEIGHT],
+    ],
   },
 };
 
