@@ -1473,6 +1473,7 @@ packages:
 
   crypto-js@4.2.0:
     resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
+    deprecated: Active development of CryptoJS has been discontinued. This library is no longer maintained.
 
   css.escape@1.5.1:
     resolution: {integrity: sha512-YUifsXXuknHlUsmlgyY0PKzgPOr7/FjCePfHNt0jxm83wHZi44VDMQ7/fGNkjY3/jV1MC+1CmZbaHzugyeRtpg==}
@@ -1635,7 +1636,7 @@ packages:
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.1 || ^9.0.0 || ^10.0.0
-      svelte: '>=5.51.5'
+      svelte: '>=5.53.5'
     peerDependenciesMeta:
       svelte:
         optional: true
@@ -2280,8 +2281,8 @@ packages:
     peerDependencies:
       postcss: '>=8.5.23'
 
-  postcss-selector-parser@7.1.1:
-    resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
+  postcss-selector-parser@7.1.6:
+    resolution: {integrity: sha512-7qASPzhKF2l2KLboRZux8CCTRMdGiV08vWmyKzPz22qZ7ZjQBOeY7rNzNoCLSUiftJ7HUq0GERHmxw/t0dCdMw==}
     engines: {node: '>=4'}
 
   postcss@8.5.26:
@@ -4709,7 +4710,7 @@ snapshots:
     dependencies:
       postcss: 8.5.26
 
-  postcss-selector-parser@7.1.1:
+  postcss-selector-parser@7.1.6:
     dependencies:
       cssesc: 3.0.0
       util-deprecate: 1.0.2
@@ -4968,7 +4969,7 @@ snapshots:
       espree: 10.4.0
       postcss: 8.5.26
       postcss-scss: 4.0.9(postcss@8.5.26)
-      postcss-selector-parser: 7.1.1
+      postcss-selector-parser: 7.1.6
       semver: 7.8.0
     optionalDependencies:
       svelte: 5.56.4(@typescript-eslint/types@8.59.3)
