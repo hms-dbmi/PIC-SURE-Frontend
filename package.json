@@ -42,7 +42,7 @@
     "gtagjs": "^0.0.10",
     "plotly.js-basic-dist-min": "^3.5.1",
     "quill": "^2.0.3",
-    "sanitize-html": "^2.17.6",
+    "sanitize-html": "^2.17.7",
     "shiki": "^4.0.2",
     "uuid": "^14.0.0"
   },
