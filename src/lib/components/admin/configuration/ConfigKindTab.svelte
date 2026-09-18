@@ -23,6 +23,7 @@
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import Modal from '$lib/components/Modal.svelte';
+  import FilterSearch from './FilterSearch.svelte';
   import { toaster } from '$lib/toaster';
   import { humanizeKey } from '$lib/utilities/Strings';
 
@@ -183,19 +184,13 @@
   {/if}
   <div class="flex items-center gap-3 my-3">
     {#if kindedSchema.length > SEARCH_BOX_MIN_LENGTH}
-      <div class="relative flex-1 max-w-sm">
-        <i
-          class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-50"
-        ></i>
-        <input
-          type="text"
-          class="input pl-8 w-full"
-          placeholder="Search fields…"
-          aria-label="Search fields"
-          data-testid={`config-search-${testIdBase}`}
-          bind:value={query}
-        />
-      </div>
+      <FilterSearch
+        class="max-w-sm flex-1"
+        placeholder="Search fields…"
+        label="Search fields"
+        testId={`config-search-${testIdBase}`}
+        bind:value={query}
+      />
       <span class="text-xs opacity-60 whitespace-nowrap">
         {visibleCount} of {kindedSchema.length} fields
       </span>
