@@ -35,6 +35,7 @@ export type Features = Indexable & {
     open: boolean;
   };
   manualRole: boolean;
+  registerPage: boolean;
   restoreV2queries: boolean;
   termsOfService: boolean;
   wafCaptchaRecovery: boolean;
@@ -142,11 +143,18 @@ export type Branding = Indexable & {
   };
   login: {
     description: string;
+    intro: string;
     showSiteName: boolean;
     openPicsureLink: string;
     openPicsureLinkText: string;
     contactLink: string;
     logoHeight: number;
+    // Shown instead of the provider login list when features.registerPage is
+    // enabled - see REGISTER_PAGE's description in CONFIG_FIELDS above.
+    register: {
+      buttons: Array<Link>;
+      links: Array<Link>;
+    };
   };
   help: {
     links: Array<{
@@ -353,6 +361,13 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       default: false,
       description:
         'Enables the Terms of Service feature: adds a footer link to view it, and an admin link to edit it.',
+    },
+    REGISTER_PAGE: {
+      group: 'Access & Login',
+      type: 'boolean',
+      default: false,
+      description:
+        "Replaces the login page's provider login list with the static Login/Register buttons and Reset Password/FAQ links configured under branding.login.register, pointing users at an external identity provider (e.g. the AIM-AHEAD SWB landing page).",
     },
     // --- Explorer & Search ---
     ALLOW_EXPORT: {
@@ -753,6 +768,7 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
       open: parse('OPEN'),
     },
     manualRole: parse('MANUAL_ROLE'),
+    registerPage: parse('REGISTER_PAGE'),
     restoreV2queries: parse('RESTORE_V2_QUERY'),
     termsOfService: parse('ENABLE_TOS'),
     useQueryTemplate: parse('USE_QUERY_TEMPLATE'),
@@ -864,11 +880,16 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
       },
       login: {
         description: '',
+        intro: '',
         showSiteName: false,
         openPicsureLink: '',
         openPicsureLinkText: '',
         contactLink: '',
         logoHeight: 7.5,
+        register: {
+          buttons: [],
+          links: [],
+        },
       },
       dotsColorsClass: [] as string[],
       logo: {

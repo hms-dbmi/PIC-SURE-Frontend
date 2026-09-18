@@ -18,6 +18,7 @@
 
   const redirectTo = page.url.searchParams.get('redirectTo') || '/';
   const siteName = $derived(config.branding.applicationName);
+  const intro = $derived(config.branding.login.intro);
   const description = $derived(config.branding.login.description);
   const openPicsureLinkText = $derived(config.branding.login.openPicsureLinkText);
   let logoutReason: string | null;
@@ -50,90 +51,126 @@
     <h1 data-testid="login-title" class="mb-6 w-full flex gap-2 items-center justify-center">
       <Logo class="flex-none" height={config.branding.login.logoHeight || 7.5} />
     </h1>
-    <p data-testid="login-description" class="text-2xl">{description}</p>
+    {#if intro}<p class="font-bold text-2xl">{intro}</p>{/if}
+    <p data-testid="login-description" class="text-xl w-1/2">{description}</p>
   </div>
-  {#await loading}
-    <Loading ring size="medium" />
-  {:then providers}
-    <div id="login-box" class="w-max mt-2">
-      <header class="flex flex-col items-center">
-        {#if config.branding.login.showSiteName}
-          <div>{siteName}</div>
-        {/if}
-      </header>
+  {#if config.features.registerPage}
+    <div id="register-page-box" class="w-max mt-2">
       <div class="flex flex-col items-center justify-center">
-        <div id="main-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
-          {#if providers?.length === 0}
-            <ErrorAlert>
-              No main authentication providers are registered. Please add them to your
-              configuration. Click <a
-                class="anchor"
-                href="https://pic-sure.gitbook.io/pic-sure-developer-guide/configuring-pic-sure"
-                target="_blank">Here</a
-              >
-              to learn how.
-            </ErrorAlert>
-          {/if}
-          {#if providers.length > 3}
-            <select id="login-select" bind:value={selected} required>
-              <!-- This is a workaround to make the placeholder show when the select is bound to an empty string -->
-              <option value="" disabled selected>Select a provider</option>
-              {#each providers as provider}
-                <option class="capitalize" value={provider.name}
-                  >{provider.description || provider.name}</option
-                >
-              {/each}
-            </select>
-            <LoginButton
-              buttonText="Log In"
-              provider={selectedProvider}
-              {redirectTo}
-              helpText={selectedProvider?.helptext}
-              class="btn preset-filled-primary-500 w-full"
-            />
-          {:else}
-            {#each providers as provider}
-              <LoginButton
-                buttonText={provider.description || provider.name}
-                {provider}
-                {redirectTo}
-                helpText={provider.helptext}
-                class="btn preset-filled-primary-500 w-full"
-              />
-            {/each}
-          {/if}
+        <div id="register-page-buttons" class="grid grid-cols-1 gap-4 mb-4 w-full">
+          {#each config.branding.login.register.buttons as { title, url, newTab }}
+            <a
+              data-testid="register-page-btn-{title}"
+              href={url}
+              rel="external"
+              target={newTab ? '_blank' : '_self'}
+              class="btn preset-filled-primary-500 w-full min-w-48"
+              onclick={() =>
+                log(createLog('NAVIGATION', 'login.register_page_click', { title, url }))}
+              >{title}</a
+            >
+          {/each}
         </div>
-        {#if config.features.login.open}
-          <a
-            href={config.branding.login.openPicsureLink || '/'}
-            rel="external"
-            class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white mb-4 w-full"
-            onclick={() =>
-              log(
-                createLog('NAVIGATION', 'login.explore_open', {
-                  url: config.branding.login.openPicsureLink || '/',
-                }),
-              )}>{openPicsureLinkText}</a
-          >
-        {/if}
-        {#await page.data?.altProviders}
-          <Loading ring />
-        {:then altProviders}
-          <div id="alt-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
-            {#each altProviders as provider}
-              <LoginButton
-                buttonText={provider.description || provider.name}
-                {provider}
-                {redirectTo}
-                helpText={provider.helptext}
-                class="btn-sm preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
-              />
-            {/each}
-          </div>
-        {/await}
+        <div id="register-page-links" class="flex flex-col items-center gap-2">
+          {#each config.branding.login.register.links as { title, url, newTab }}
+            <a
+              data-testid="register-page-link-{title}"
+              href={url}
+              rel="external"
+              target={newTab ? '_blank' : '_self'}
+              class="text-sm hover:underline"
+              onclick={() =>
+                log(createLog('NAVIGATION', 'login.register_page_click', { title, url }))}
+              >{title}</a
+            >
+          {/each}
+        </div>
       </div>
     </div>
-  {/await}
+  {:else}
+    {#await loading}
+      <Loading ring size="medium" />
+    {:then providers}
+      <div id="login-box" class="w-max mt-2">
+        <header class="flex flex-col items-center">
+          {#if config.branding.login.showSiteName}
+            <div>{siteName}</div>
+          {/if}
+        </header>
+        <div class="flex flex-col items-center justify-center">
+          <div id="main-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
+            {#if providers?.length === 0}
+              <ErrorAlert>
+                No main authentication providers are registered. Please add them to your
+                configuration. Click <a
+                  class="anchor"
+                  href="https://pic-sure.gitbook.io/pic-sure-developer-guide/configuring-pic-sure"
+                  target="_blank">Here</a
+                >
+                to learn how.
+              </ErrorAlert>
+            {/if}
+            {#if providers.length > 3}
+              <select id="login-select" bind:value={selected} required>
+                <!-- This is a workaround to make the placeholder show when the select is bound to an empty string -->
+                <option value="" disabled selected>Select a provider</option>
+                {#each providers as provider}
+                  <option class="capitalize" value={provider.name}
+                    >{provider.description || provider.name}</option
+                  >
+                {/each}
+              </select>
+              <LoginButton
+                buttonText="Log In"
+                provider={selectedProvider}
+                {redirectTo}
+                helpText={selectedProvider?.helptext}
+                class="btn preset-filled-primary-500 w-full"
+              />
+            {:else}
+              {#each providers as provider}
+                <LoginButton
+                  buttonText={provider.description || provider.name}
+                  {provider}
+                  {redirectTo}
+                  helpText={provider.helptext}
+                  class="btn preset-filled-primary-500 w-full"
+                />
+              {/each}
+            {/if}
+          </div>
+          {#if config.features.login.open}
+            <a
+              href={config.branding.login.openPicsureLink || '/'}
+              rel="external"
+              class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white mb-4 w-full"
+              onclick={() =>
+                log(
+                  createLog('NAVIGATION', 'login.explore_open', {
+                    url: config.branding.login.openPicsureLink || '/',
+                  }),
+                )}>{openPicsureLinkText}</a
+            >
+          {/if}
+          {#await page.data?.altProviders}
+            <Loading ring />
+          {:then altProviders}
+            <div id="alt-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
+              {#each altProviders as provider}
+                <LoginButton
+                  buttonText={provider.description || provider.name}
+                  {provider}
+                  {redirectTo}
+                  helpText={provider.helptext}
+                  class="btn-sm preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
+                />
+              {/each}
+            </div>
+          {/await}
+        </div>
+      </div>
+    {/await}
+  {/if}
 </section>
 
 <style>

@@ -165,12 +165,30 @@
     }
   },
   "login": {
-    "description": "Where searching for, filtering on, and analyzing data is made simple.",
+    "description": "The AIM-AHEAD Secure Data Repository & Cloud Compute (SDRCC) gives you access to the following tools that enable researchers to search and analyze data.",
+    "intro": "Welcome to the AIM-AHEAD Data Repository!",
     "showSiteName": false,
     "openPicsureLink": "/",
     "openPicsureLinkText": "Explore without Login",
     "contactLink": "https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5",
-    "logoHeight": 7.5
+    "logoHeight": 18,
+    "register": {
+      "buttons": [
+        { "title": "Login", "url": "https://login.srce.hms.harvard.edu/" },
+        { "title": "Register", "url": "https://aim-ahead.host/register" }
+      ],
+      "links": [
+        {
+          "title": "Reset Password",
+          "url": "https://login.srce.hms.harvard.edu/signin/forgot-password"
+        },
+        {
+          "title": "FAQ",
+          "url": "https://hms-srce-okta-faq.s3.amazonaws.com/OktaFaq/AWSSWBFAQ.html",
+          "newTab": true
+        }
+      ]
+    }
   },
   "help": {
     "links": [
