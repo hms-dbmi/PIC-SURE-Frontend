@@ -96,9 +96,6 @@ importers:
       auth0-js:
         specifier: ^10.2.0
         version: 10.2.0
-      dompurify:
-        specifier: ^3.4.13
-        version: 3.4.13
       driver.js:
         specifier: ^1.4.0
         version: 1.4.0
@@ -1556,9 +1553,6 @@ packages:
     resolution: {integrity: sha512-gYzvtM72ZtxQO0T048kd6HWSbbGCNOUwcnfQ01cqIJ4X2IYKFFHZ5mKvrQETcFXxsRObZulDaKmy//R7TPtsBg==}
     engines: {node: '>=20.19.0'}
 
-  dompurify@3.4.13:
-    resolution: {integrity: sha512-2vmYIoqjze2d+kakP8S/nS5shfsl587kzwEjcGlTdiksUVgFHnFCsLYDVj/JNqJVOQZGSYBTmuycv0PodwmnMQ==}
-
   domutils@3.2.2:
     resolution: {integrity: sha512-6kZKyUajlDuqlHKVX1w7gyslj9MPIXzIFiz/rGu35uC1wMi+kMhQwGhl4lt9unC9Vb9INnY9Z3/ZA3+FhASLaw==}
 
@@ -1635,7 +1629,7 @@ packages:
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.1 || ^9.0.0 || ^10.0.0
-      svelte: '>=5.51.5'
+      svelte: '>=5.53.5'
     peerDependenciesMeta:
       svelte:
         optional: true
@@ -4022,10 +4016,6 @@ snapshots:
   domhandler@6.0.1:
     dependencies:
       domelementtype: 3.0.0
-
-  dompurify@3.4.13:
-    optionalDependencies:
-      '@types/trusted-types': 2.0.7
 
   domutils@3.2.2:
     dependencies:
