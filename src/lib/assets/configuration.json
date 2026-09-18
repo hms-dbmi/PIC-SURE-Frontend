@@ -172,11 +172,9 @@
     "openPicsureLinkText": "Explore without Login",
     "contactLink": "https://hms-dbmi.atlassian.net/servicedesk/customer/portal/5",
     "logoHeight": 18,
-    "register": {
-      "buttons": [
-        { "title": "Login", "url": "https://login.srce.hms.harvard.edu/" },
-        { "title": "Register", "url": "https://aim-ahead.host/register" }
-      ],
+    "registerButton": {
+      "text": "Register",
+      "url": "https://aim-ahead.host/register",
       "links": [
         {
           "title": "Reset Password",

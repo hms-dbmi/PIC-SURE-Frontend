@@ -54,123 +54,118 @@
     {#if intro}<p class="font-bold text-2xl">{intro}</p>{/if}
     <p data-testid="login-description" class="text-xl w-1/2">{description}</p>
   </div>
-  {#if config.features.registerPage}
-    <div id="register-page-box" class="w-max mt-2">
+  {#await loading}
+    <Loading ring size="medium" />
+  {:then providers}
+    <div id="login-box" class="w-max mt-2">
+      <header class="flex flex-col items-center">
+        {#if config.branding.login.showSiteName}
+          <div>{siteName}</div>
+        {/if}
+      </header>
       <div class="flex flex-col items-center justify-center">
-        <div id="register-page-buttons" class="grid grid-cols-1 gap-4 mb-4 w-full">
-          {#each config.branding.login.register.buttons as { title, url, newTab }}
-            <a
-              data-testid="register-page-btn-{title}"
-              href={url}
-              rel="external"
-              target={newTab ? '_blank' : '_self'}
-              class="btn preset-filled-primary-500 w-full min-w-48"
-              onclick={() =>
-                log(createLog('NAVIGATION', 'login.register_page_click', { title, url }))}
-              >{title}</a
-            >
-          {/each}
-        </div>
-        <div id="register-page-links" class="flex flex-col items-center gap-2">
-          {#each config.branding.login.register.links as { title, url, newTab }}
-            <a
-              data-testid="register-page-link-{title}"
-              href={url}
-              rel="external"
-              target={newTab ? '_blank' : '_self'}
-              class="text-sm hover:underline"
-              onclick={() =>
-                log(createLog('NAVIGATION', 'login.register_page_click', { title, url }))}
-              >{title}</a
-            >
-          {/each}
-        </div>
-      </div>
-    </div>
-  {:else}
-    {#await loading}
-      <Loading ring size="medium" />
-    {:then providers}
-      <div id="login-box" class="w-max mt-2">
-        <header class="flex flex-col items-center">
-          {#if config.branding.login.showSiteName}
-            <div>{siteName}</div>
+        <div id="main-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
+          {#if providers?.length === 0}
+            <ErrorAlert>
+              No main authentication providers are registered. Please add them to your
+              configuration. Click <a
+                class="anchor"
+                href="https://pic-sure.gitbook.io/pic-sure-developer-guide/configuring-pic-sure"
+                target="_blank">Here</a
+              >
+              to learn how.
+            </ErrorAlert>
           {/if}
-        </header>
-        <div class="flex flex-col items-center justify-center">
-          <div id="main-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
-            {#if providers?.length === 0}
-              <ErrorAlert>
-                No main authentication providers are registered. Please add them to your
-                configuration. Click <a
-                  class="anchor"
-                  href="https://pic-sure.gitbook.io/pic-sure-developer-guide/configuring-pic-sure"
-                  target="_blank">Here</a
+          {#if providers.length > 3}
+            <select id="login-select" bind:value={selected} required>
+              <!-- This is a workaround to make the placeholder show when the select is bound to an empty string -->
+              <option value="" disabled selected>Select a provider</option>
+              {#each providers as provider}
+                <option class="capitalize" value={provider.name}
+                  >{provider.description || provider.name}</option
                 >
-                to learn how.
-              </ErrorAlert>
-            {/if}
-            {#if providers.length > 3}
-              <select id="login-select" bind:value={selected} required>
-                <!-- This is a workaround to make the placeholder show when the select is bound to an empty string -->
-                <option value="" disabled selected>Select a provider</option>
-                {#each providers as provider}
-                  <option class="capitalize" value={provider.name}
-                    >{provider.description || provider.name}</option
-                  >
-                {/each}
-              </select>
+              {/each}
+            </select>
+            <LoginButton
+              buttonText="Log In"
+              provider={selectedProvider}
+              {redirectTo}
+              helpText={selectedProvider?.helptext}
+              class="btn preset-filled-primary-500 w-full"
+            />
+          {:else}
+            {#each providers as provider}
               <LoginButton
-                buttonText="Log In"
-                provider={selectedProvider}
+                buttonText={provider.description || provider.name}
+                {provider}
                 {redirectTo}
-                helpText={selectedProvider?.helptext}
+                helpText={provider.helptext}
                 class="btn preset-filled-primary-500 w-full"
               />
-            {:else}
-              {#each providers as provider}
-                <LoginButton
-                  buttonText={provider.description || provider.name}
-                  {provider}
-                  {redirectTo}
-                  helpText={provider.helptext}
-                  class="btn preset-filled-primary-500 w-full"
-                />
-              {/each}
-            {/if}
-          </div>
-          {#if config.features.login.open}
+            {/each}
+          {/if}
+          {#if config.features.registerButton}
             <a
-              href={config.branding.login.openPicsureLink || '/'}
+              data-testid="register-button"
+              href={config.branding.login.registerButton.url}
               rel="external"
-              class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white mb-4 w-full"
+              class="btn preset-filled-primary-500 w-full"
               onclick={() =>
                 log(
-                  createLog('NAVIGATION', 'login.explore_open', {
-                    url: config.branding.login.openPicsureLink || '/',
+                  createLog('NAVIGATION', 'login.register_click', {
+                    url: config.branding.login.registerButton.url,
                   }),
-                )}>{openPicsureLinkText}</a
+                )}>{config.branding.login.registerButton.text}</a
             >
           {/if}
-          {#await page.data?.altProviders}
-            <Loading ring />
-          {:then altProviders}
-            <div id="alt-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
-              {#each altProviders as provider}
-                <LoginButton
-                  buttonText={provider.description || provider.name}
-                  {provider}
-                  {redirectTo}
-                  helpText={provider.helptext}
-                  class="btn-sm preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
-                />
-              {/each}
-            </div>
-          {/await}
         </div>
+        {#if config.features.login.open}
+          <a
+            href={config.branding.login.openPicsureLink || '/'}
+            rel="external"
+            class="btn preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white mb-4 w-full"
+            onclick={() =>
+              log(
+                createLog('NAVIGATION', 'login.explore_open', {
+                  url: config.branding.login.openPicsureLink || '/',
+                }),
+              )}>{openPicsureLinkText}</a
+          >
+        {/if}
+        {#await page.data?.altProviders}
+          <Loading ring />
+        {:then altProviders}
+          <div id="alt-logins" class="grid grid-cols-1 gap-4 mb-4 w-full">
+            {#each altProviders as provider}
+              <LoginButton
+                buttonText={provider.description || provider.name}
+                {provider}
+                {redirectTo}
+                helpText={provider.helptext}
+                class="btn-sm preset-outlined-primary-500 text-primary-500 hover:preset-filled-primary-500 hover:text-white"
+              />
+            {/each}
+          </div>
+        {/await}
+        {#if config.features.registerButton}
+          <div id="register-button-links" class="flex flex-col items-center gap-2 mt-2">
+            {#each config.branding.login.registerButton.links as { title, url, newTab }}
+              <a
+                data-testid="register-button-link-{title}"
+                href={url}
+                rel="external"
+                target={newTab ? '_blank' : '_self'}
+                class="text-sm hover:underline"
+                onclick={() =>
+                  log(createLog('NAVIGATION', 'login.register_link_click', { title, url }))}
+                >{title}</a
+              >
+            {/each}
+          </div>
+        {/if}
       </div>
-    {/await}
-  {/if}
+    </div>
+  {/await}
 </section>
 
 <style>

@@ -35,7 +35,7 @@ export type Features = Indexable & {
     open: boolean;
   };
   manualRole: boolean;
-  registerPage: boolean;
+  registerButton: boolean;
   restoreV2queries: boolean;
   termsOfService: boolean;
   wafCaptchaRecovery: boolean;
@@ -149,10 +149,11 @@ export type Branding = Indexable & {
     openPicsureLinkText: string;
     contactLink: string;
     logoHeight: number;
-    // Shown instead of the provider login list when features.registerPage is
-    // enabled - see REGISTER_PAGE's description in CONFIG_FIELDS above.
-    register: {
-      buttons: Array<Link>;
+    // Shown alongside the provider login list when features.registerButton is
+    // enabled - see REGISTER_BUTTON's description in CONFIG_FIELDS above.
+    registerButton: {
+      text: string;
+      url: string;
       links: Array<Link>;
     };
   };
@@ -362,12 +363,12 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       description:
         'Enables the Terms of Service feature: adds a footer link to view it, and an admin link to edit it.',
     },
-    REGISTER_PAGE: {
+    REGISTER_BUTTON: {
       group: 'Access & Login',
       type: 'boolean',
       default: false,
       description:
-        "Replaces the login page's provider login list with the static Login/Register buttons and Reset Password/FAQ links configured under branding.login.register, pointing users at an external identity provider (e.g. the AIM-AHEAD SWB landing page).",
+        'Adds a Register button (and Reset Password/FAQ links) to the login page, configured under branding.login.registerButton, alongside the existing provider login list (e.g. for the AIM-AHEAD SWB landing page).',
     },
     // --- Explorer & Search ---
     ALLOW_EXPORT: {
@@ -768,7 +769,7 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
       open: parse('OPEN'),
     },
     manualRole: parse('MANUAL_ROLE'),
-    registerPage: parse('REGISTER_PAGE'),
+    registerButton: parse('REGISTER_BUTTON'),
     restoreV2queries: parse('RESTORE_V2_QUERY'),
     termsOfService: parse('ENABLE_TOS'),
     useQueryTemplate: parse('USE_QUERY_TEMPLATE'),
@@ -886,8 +887,9 @@ export function mapBranding(hostname: string, apiBranding: ConfigObject[] = []):
         openPicsureLinkText: '',
         contactLink: '',
         logoHeight: 7.5,
-        register: {
-          buttons: [],
+        registerButton?: {
+          text: '',
+          url: '',
           links: [],
         },
       },
