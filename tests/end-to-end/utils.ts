@@ -45,13 +45,22 @@ export const clickNthFilterIcon = async (page: Page, rowIndex = 0) => {
   await filterIcon.click();
 };
 
-// The cohort summary panel keeps its body - filter chips, Added Variables, Tool Suite -
-// collapsed until the strip above the search bar is clicked. Idempotent.
-export const expandResultsPanel = async (page: Page) => {
-  const strip = page.getByTestId('results-summary-strip');
-  await expect(strip).toBeVisible();
-  if ((await strip.getAttribute('aria-expanded')) !== 'true') {
-    await strip.click();
-  }
-  await expect(page.locator('#results-panel')).toBeVisible();
+// Only client-side navigation keeps a layout - and so the cohort summary panel it renders -
+// alive, and page.goto() would not. The in-app links to Explore's child routes mostly live in
+// that panel's body, which is the state under test in several specs, so a synthetic anchor
+// exercises the same SvelteKit navigation without depending on the panel's own markup.
+export const navigateInApp = async (page: Page, href: string) => {
+  await page.evaluate((target) => {
+    document.getElementById('e2e-nav-link')?.remove();
+    const link = document.createElement('a');
+    link.id = 'e2e-nav-link';
+    link.href = target;
+    link.textContent = 'e2e navigate';
+    document.body.appendChild(link);
+  }, href);
+  await page.locator('#e2e-nav-link').click();
+  // The click starts a client-side navigation that discards this anchor with the rest of the
+  // old page, but a same-route navigation keeps the body - so remove it rather than leave a
+  // stray visible link behind for the next assertion to trip over.
+  await page.evaluate(() => document.getElementById('e2e-nav-link')?.remove());
 };
