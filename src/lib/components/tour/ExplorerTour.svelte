@@ -223,10 +223,6 @@
       );
       resetSearch();
       selectedFacets.set([]);
-      const sidePanel = document.querySelector('#side-panel') as HTMLElement;
-      if (sidePanel.classList.contains('open-panel')) {
-        (document.querySelector('#results-panel-toggle') as HTMLElement)?.click();
-      }
       const searchBox = document.querySelector('#explorer-search-box') as HTMLInputElement;
       searchBox.value = '';
       searchBox.focus();

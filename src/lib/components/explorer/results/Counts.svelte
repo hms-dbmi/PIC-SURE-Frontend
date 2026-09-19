@@ -1,7 +1,6 @@
 <script lang="ts">
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import { countResult } from '$lib/services/counts/countFormat';
-  import Loading from '$lib/components/Loading.svelte';
 
   const ERROR_VALUE = 'N/A';
   const LABEL = 'participants';
@@ -14,19 +13,31 @@
   // suffix that the backend returns on the open-access cross-count path.
   let count = $derived(countResult([snapshot.count]));
   let hasCount = $derived(snapshot.descriptorKey !== '' && !hasError);
+  // descriptorKey stays empty until a load commits, so "not loaded yet" and "load failed" are
+  // distinct states; collapsing the first into ERROR_VALUE shows N/A on every server render.
+  let isPending = $derived(isLoading || (!hasCount && !hasError));
+
+  // The strip is a button named by its text. The spinner has none, so the count reaches
+  // assistive technology through this span and the visual side is hidden from the tree.
+  let accessibleCount = $derived(
+    isPending
+      ? 'Loading participant count'
+      : hasError
+        ? 'Participant count unavailable'
+        : `${count} ${LABEL}`,
+  );
 </script>
 
 <span class="flex items-baseline gap-2" data-testid="results-panel-count">
-  {#if isLoading}
-    <Loading ring size="mini" />
-  {:else}
-    <span id="result-count">
-      {#if !hasCount}
-        <span class="text-3xl font-bold">{ERROR_VALUE}</span>
-      {:else}
-        <span id="result-count-number" class="text-3xl font-bold">{count}</span>
-      {/if}
-    </span>
-  {/if}
-  <span class="text-lg">{LABEL}</span>
+  <span class="sr-only">{accessibleCount}</span>
+  <span id="result-count" class="text-3xl font-bold" aria-hidden="true">
+    {#if isPending}
+      <i class="fa-solid fa-spinner fa-spin text-xl align-middle"></i>
+    {:else if hasError}
+      {ERROR_VALUE}
+    {:else}
+      <span id="result-count-number">{count}</span>
+    {/if}
+  </span>
+  <span class="text-lg" aria-hidden="true">{LABEL}</span>
 </span>

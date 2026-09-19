@@ -63,12 +63,20 @@ body {
   font-family: monospace;
 }
 
-.main-content {
+/*
+ * The panel is a sibling of .main-content, not a child, so it has to mirror whichever width
+ * Content chose. /explorer and /discover pass `full`; the advanced-filtering routes, which
+ * the panel also renders on, do not. `:where()` keeps the `:has()` argument out of the
+ * specificity so the print rules below can still override these.
+ */
+.main-content,
+#page-content:where(:has(> .main-content:not(.w-full))) > #results-summary-panel {
   width: 70%;
   margin: 2rem auto 0;
 }
 
-.main-content.w-full {
+.main-content.w-full,
+#page-content:where(:not(:has(> .main-content:not(.w-full)))) > #results-summary-panel {
   width: calc(100% - 4rem);
   margin: 2rem 1.5rem;
 }
@@ -159,6 +167,7 @@ hr {
   }
 
   .main-content,
+  #page-content > #results-summary-panel,
   div:has(.main-content) {
     width: 100%;
     max-width: 100%;
@@ -198,10 +207,6 @@ hr {
   }
 }
 
-#sidebar-right {
-  height: 100%;
-  border-left: 2px solid var(--color-surface-500);
-}
 #appShell > header {
   border-bottom: 2px solid var(--color-surface-500);
 }

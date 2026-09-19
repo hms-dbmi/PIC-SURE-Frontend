@@ -53,7 +53,7 @@
     id="results-summary-panel"
     data-testid="results-summary-panel"
     aria-label="Cohort summary"
-    class="card bg-surface-50-950 border border-surface-300-700 rounded-container mx-6 mt-8"
+    class="card bg-surface-50-950 border border-surface-300-700 rounded-container"
   >
     <button
       type="button"
@@ -71,9 +71,10 @@
         ></i>
       </span>
     </button>
+    <!-- The count's only error report: start() does not toast, so this has to be here. -->
     {#if hasCountError}
-      <ErrorAlert color="warning" iconSize="2xl">
-        <p class="text-[0.6rem] !m-0">
+      <ErrorAlert color="warning" iconSize="2xl" data-testid="count-error-alert">
+        <p class="text-sm !m-0">
           <!-- eslint-disable-next-line svelte/no-at-html-tags -->
           {@html sanitizeHTML(config.branding.explorePage.queryErrorText)}
         </p>

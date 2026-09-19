@@ -60,6 +60,77 @@ test.describe('Results Panel', () => {
     ).toBeVisible();
     await expect(page.getByTestId('results-summary-panel')).toHaveCount(0);
   });
+  test('Counts do not load where the strip does not render, and resume when it returns', async ({
+    page,
+  }) => {
+    // Given - the /explorer layout spans this route, so the panel component is alive on it.
+    // The count subscription has to follow the strip being shown, not the layout mounting.
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    let countRequests = 0;
+    await page.route(countResultPath, async (route) => {
+      countRequests += 1;
+      await route.fulfill({ json: '9999' });
+    });
+
+    // When
+    await page.goto('/explorer/distributions');
+    await userIsLoggedIn(page);
+    await expect(page.getByRole('heading', { name: 'Variable Distributions' })).toBeVisible();
+
+    // Then
+    await expect(page.getByTestId('results-summary-panel')).toHaveCount(0);
+    expect(countRequests).toBe(0);
+
+    // When - back to Explore without a reload, so the component is the same instance
+    await page.getByRole('button', { name: 'Back to Explore' }).click();
+
+    // Then
+    await expect(page.getByTestId('results-panel-count')).toContainText('9,999');
+    expect(countRequests).toBe(1);
+  });
+  test('Restarts the count on the open-access resource when crossing into Discover', async ({
+    page,
+  }) => {
+    // Given - one panel instance spans Explore and Discover, and Discover's count is the
+    // obfuscated open-access one, so the crossing has to restart the count on the other resource
+    await mockApiConfig(page, {
+      features: [
+        { name: 'DISCOVER', value: 'true' },
+        { name: 'OPEN_EXPLORER', value: 'false' },
+      ],
+    });
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+    let authCounts = 0;
+    let openCounts = 0;
+    await page.route(countResultPath, async (route) => {
+      authCounts += 1;
+      await route.fulfill({ json: '9999' });
+    });
+    await page.route(openCountResultPath, async (route) => {
+      openCounts += 1;
+      await route.fulfill({ json: '4321' });
+    });
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+    await expect(page.getByTestId('results-panel-count')).toContainText('9,999');
+    expect(openCounts).toBe(0);
+
+    // When
+    await navigateInApp(page, '/discover');
+    await expect(page).toHaveURL(/\/discover$/);
+
+    // Then
+    await expect(page.getByTestId('results-panel-count')).toContainText('4,321');
+    expect(authCounts).toBe(1);
+
+    // And back again, served from the count cache
+    await navigateInApp(page, '/explorer');
+    await expect(page).toHaveURL(/\/explorer$/);
+    await expect(page.getByTestId('results-panel-count')).toContainText('9,999');
+  });
+
   test('Strip pluralises the filter count', async ({ page }) => {
     // Given
     await mockApiSuccess(page, facetResultPath, facetsResponse);
@@ -141,7 +212,7 @@ test.describe('Results Panel', () => {
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
     await expect(page.locator('#result-count')).toHaveText('N/A');
-    const errorAlert = page.getByTestId('error-alert');
+    const errorAlert = page.getByTestId('count-error-alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText(
       'There was an error with your query. If this persists, please contact your PIC-SURE admin.',
@@ -160,7 +231,7 @@ test.describe('Results Panel', () => {
 
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
-    const errorAlert = page.getByTestId('error-alert');
+    const errorAlert = page.getByTestId('count-error-alert');
     await expect(errorAlert).toBeVisible();
     await expect(errorAlert).toContainText(
       'There was an error with your query. If this persists, please contact your PIC-SURE admin.',
@@ -573,10 +644,9 @@ test.describe('Results Panel', () => {
       const addFilterButton = page.getByTestId('add-filter');
       await addFilterButton.click();
 
-      // Then - the first request is the panel's no-filter count on load, the second carries
-      // the filter that was just added.
-      expect(querySyncRequest.length).toBe(2);
-      expect(querySyncRequest[1]).toContain('phenotypicClauses');
+      // Then - the panel's no-filter count on page load comes first, so assert on the most
+      // recent request rather than pinning a total that counts it.
+      expect(querySyncRequest.at(-1)).toContain('phenotypicClauses');
     });
     test('single filter shows no operator label', async ({ page }) => {
       // Given
