@@ -4,7 +4,7 @@
 
   import { goto } from '$app/navigation';
 
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
   import {
     removeGenomicFilters,
     removeUnallowedFilters,

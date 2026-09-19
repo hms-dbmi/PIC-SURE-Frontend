@@ -27,7 +27,7 @@
     populateFromSNPFilter,
   } from '$lib/stores/SNPFilter';
   import { addFilter, getFiltersByType } from '$lib/stores/Filter';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
 
   let edit = page.url.searchParams.get('edit') || '';
   let selectedOption: Option = $state(

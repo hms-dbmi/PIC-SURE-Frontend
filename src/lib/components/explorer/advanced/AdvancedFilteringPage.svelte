@@ -6,7 +6,7 @@
   import Content from '$lib/components/Content.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import AdvancedFiltering from '$lib/components/explorer/advanced/AdvancedFiltering.svelte';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
 
   interface Props {
     backUrl: string;
@@ -19,12 +19,16 @@
   let showUnsavedModal = $state(false);
   let bypassGuard = false;
 
+  let panelWasOpen = false;
+
   onMount(() => {
+    panelWasOpen = $panelOpen;
     $panelOpen = false;
   });
 
+  // Put the panel back the way it was on arrival, unless the cohort opened it meanwhile.
   onDestroy(() => {
-    $panelOpen = true;
+    if (!$panelOpen) $panelOpen = panelWasOpen;
   });
 
   beforeNavigate(({ cancel }) => {

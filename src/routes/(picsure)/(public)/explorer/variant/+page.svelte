@@ -7,12 +7,14 @@
   import { isToastShowing, toaster } from '$lib/toaster';
 
   import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
 
   import Content from '$lib/components/Content.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import VariantExplorer from '$lib/components/explorer/variant/VariantExplorer.svelte';
   import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
+
+  let panelWasOpen = false;
 
   onMount(() => {
     const request: QueryRequestInterfaceV3 = getQueryRequestV3();
@@ -26,10 +28,14 @@
       }
       goto(resolve('/explorer'));
     } else {
+      panelWasOpen = $panelOpen;
       $panelOpen = false;
     }
   });
-  onDestroy(() => ($panelOpen = true));
+  // Put the panel back the way it was on arrival, unless the cohort opened it meanwhile.
+  onDestroy(() => {
+    if (!$panelOpen) $panelOpen = panelWasOpen;
+  });
 </script>
 
 <svelte:head>

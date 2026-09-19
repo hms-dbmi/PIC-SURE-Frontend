@@ -1,17 +1,19 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
   import { page } from '$app/state';
 
   import { config } from '$lib/configuration.svelte';
   import { showsSearchChrome } from '$lib/explorer/searchChrome';
+  import { exports } from '$lib/stores/Export';
   import { allFilters } from '$lib/stores/Filter';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import { sanitizeHTML } from '$lib/utilities/HTML';
   import { log, createLog } from '$lib/logger';
 
   import Counts from '$lib/components/explorer/results/Counts.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  // The body is deliberately one child: the chip redesign replaces this import and nothing else.
   import ResultsPanel from '$lib/components/explorer/results/ResultsPanel.svelte';
 
   const BODY_ID = 'results-panel-body';
@@ -27,17 +29,30 @@
     !resultCountsState.loading && resultCountsState.snapshot.summary.hasError,
   );
 
-  // One instance, rendered from the (picsure) layout, so it never remounts while the user moves
-  // between Explore and Discover. The count still has to restart on that crossing - Discover
-  // counts are the obfuscated open-access ones - and has to stop on the full-page routes where
-  // the strip does not render, so the lifecycle follows those two facts rather than mount.
   let isOpenAccess = $derived(page.url.pathname.includes('/discover'));
 
+  // The layout renders one instance that never unmounts, so the count restart has to key off
+  // the route - Discover counts are the open-access ones - not off mount.
   $effect(() => {
     if (!visible) return;
     const openAccess = isOpenAccess;
     resultCountsState.start(() => openAccess);
     return () => resultCountsState.stop();
+  });
+
+  // Subscribed rather than opened at the add sites: a sessionStorage restore on load and a
+  // dataset restore before navigation both fill these stores with no interaction on this page.
+  onMount(() => {
+    const unsubFilters = allFilters.subscribe((filterList) => {
+      if (filterList?.length !== 0) panelOpen.set(true);
+    });
+    const unsubExports = exports.subscribe((exportList) => {
+      if (exportList?.length !== 0) panelOpen.set(true);
+    });
+    return () => {
+      unsubFilters();
+      unsubExports();
+    };
   });
 
   function toggle() {
