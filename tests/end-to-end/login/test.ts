@@ -218,6 +218,7 @@ test.describe('Login redirect preserves search state', () => {
     await mockApiSuccess(page, '*/**/psama/authentication/auth0', picsureUser);
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
     await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
+    await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', 99);
     await page.route(searchResultPath, async (route: Route) =>
       route.fulfill({ json: searchResults }),
     );

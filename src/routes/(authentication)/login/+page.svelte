@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { resolve } from '$app/paths';
   import { fly } from 'svelte/transition';
 
   import { page } from '$app/state';
@@ -43,7 +44,7 @@
 
 <section
   id="logins"
-  class="flex flex-col items-center h-screen w-full text-center place-content-center text-lg"
+  class="flex flex-col items-center h-full w-full text-center place-content-center text-lg"
   in:fly={{ duration: 600, x: '100%' }}
 >
   <div id="title-box" class="flex flex-col items-center text-center mb-8 max-w-3/4">
@@ -101,6 +102,9 @@
                 class="btn preset-filled-primary-500 w-full"
               />
             {/each}
+          {/if}
+          {#if config.features.registerPage}
+            <a href={resolve('/register')} class="btn preset-filled-primary-500 w-full">Register</a>
           {/if}
         </div>
         {#if config.features.login.open}

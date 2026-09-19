@@ -25,7 +25,7 @@
 </script>
 
 {#if text || children}
-  <div data-testid={id}>
+  <div data-testid={id} class="contents">
     <Popover data-testid="{id}-content" triggerTypes={['click', 'hover']} size={popoverSize}>
       {#snippet trigger()}
         <i class="fa-solid fa-circle-{type} text-{color}-950-50 hover:text-{color}-300-700 {size}"
