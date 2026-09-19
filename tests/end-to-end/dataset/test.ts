@@ -8,7 +8,7 @@ import {
   conceptTreePath,
   conceptsDetailPath,
 } from '../mock-data';
-import { userIsLoggedIn } from '../utils';
+import { expandResultsPanel, userIsLoggedIn } from '../utils';
 
 const datasetPath = '*/**/picsure/operations/dataset/named';
 
@@ -419,6 +419,7 @@ test.describe('dataset/[uuid]', () => {
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await page.waitForURL('**/explorer');
+    await expandResultsPanel(page);
 
     // Then
     await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
@@ -459,7 +460,7 @@ test.describe('dataset/[uuid]', () => {
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await page.waitForURL('**/explorer');
-    await expect(page.locator('#results-panel')).toBeVisible();
+    await expandResultsPanel(page);
 
     // Then
     await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
@@ -569,7 +570,7 @@ test.describe('dataset/[uuid]', () => {
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await page.waitForURL('**/explorer');
-    await expect(page.locator('#results-panel')).toBeVisible();
+    await expandResultsPanel(page);
 
     // Then — the AnyRecordOf filter appears in the result panel
     await expect(page.getByTestId(`added-filter-${anyRecordOfConceptPath}`)).toBeVisible();

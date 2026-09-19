@@ -44,3 +44,14 @@ export const clickNthFilterIcon = async (page: Page, rowIndex = 0) => {
   await expect(filterIcon).toBeVisible();
   await filterIcon.click();
 };
+
+// The cohort summary panel keeps its body - filter chips, Added Variables, Tool Suite -
+// collapsed until the strip above the search bar is clicked. Idempotent.
+export const expandResultsPanel = async (page: Page) => {
+  const strip = page.getByTestId('results-summary-strip');
+  await expect(strip).toBeVisible();
+  if ((await strip.getAttribute('aria-expanded')) !== 'true') {
+    await strip.click();
+  }
+  await expect(page.locator('#results-panel')).toBeVisible();
+};
