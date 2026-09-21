@@ -4,6 +4,7 @@
   import { page } from '$app/state';
 
   import { applySearchParam, startSearchSession } from '$lib/stores/Search';
+  import SearchTabs from '$lib/components/explorer/SearchTabs.svelte';
 
   let { children }: { children?: Snippet } = $props();
 
@@ -22,4 +23,5 @@
   onDestroy(() => releaseSession?.());
 </script>
 
+<SearchTabs />
 {@render children?.()}
