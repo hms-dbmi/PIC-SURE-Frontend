@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 
+import { get } from 'svelte/store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
 const mockState = vi.hoisted(() => ({
   // HierarchyComponent reads the pathname to decide whether filtering is allowed; the page
@@ -39,11 +40,13 @@ vi.mock('$lib/configuration.svelte', () => ({
 import VariableDetail from '$lib/components/explorer/VariableDetail.svelte';
 import { log } from '$lib/logger';
 import { getConceptDetails, getHierarchyConcepts } from '$lib/stores/Dictionary';
-import { clearExports } from '$lib/stores/Export';
-import { clearFilters } from '$lib/stores/Filter';
+import { exports, clearExports } from '$lib/stores/Export';
+import { addFilter, clearFilters, filters } from '$lib/stores/Filter';
+import { createCategoricalFilter, createNumericFilter } from '$lib/models/Filter.svelte';
 import { searchTerm } from '$lib/stores/Search';
 import type { SearchResult } from '$lib/models/Search';
 import type { VariableKey } from '$lib/explorer/variableUrl';
+import { optionsIn } from './helpers';
 
 vi.mock('$lib/stores/Dictionary', async (importOriginal) => ({
   ...(await importOriginal<typeof import('$lib/stores/Dictionary')>()),
@@ -81,6 +84,20 @@ const detail = {
   allowFiltering: true,
 } as SearchResult;
 
+const categoricalDetail = {
+  ...detail,
+  conceptPath: '\\this\\is\\a\\smoker\\',
+  name: 'smoker1',
+  display: 'Ever smoked',
+  type: 'Categorical',
+  values: ['Yes', 'No', "Don't know"],
+} as SearchResult;
+
+const categoricalKey: VariableKey = {
+  dataset: categoricalDetail.dataset,
+  conceptPath: categoricalDetail.conceptPath,
+};
+
 async function renderDetail(overrides: Partial<SearchResult> = {}) {
   vi.mocked(getConceptDetails).mockResolvedValue({ ...detail, ...overrides });
   render(VariableDetail, { section: mockState.section, variableKey });
@@ -92,6 +109,16 @@ async function renderResponse(response: unknown) {
   vi.mocked(getConceptDetails).mockResolvedValue(response as SearchResult);
   render(VariableDetail, { section: mockState.section, variableKey });
   return screen.findByTestId('variable-detail-error');
+}
+
+/**
+ * Waits for the page's own heading to read `name`.
+ *
+ * By test id, not by text: `ResultInfoComponent` renders the display name as its Name row
+ * too, so `findByText` would match two elements and throw.
+ */
+function showsName(name: string) {
+  return waitFor(() => expect(screen.getByTestId('variable-detail-name')).toHaveTextContent(name));
 }
 
 async function renderRejection(reason: unknown) {
@@ -188,6 +215,190 @@ describe('VariableDetail', () => {
       expect(getHierarchyConcepts).toHaveBeenCalledWith('test_data_set', '\\this\\is\\a\\age\\');
     });
   });
+
+  // Ticket 11 removes the per-row Info / Filter / Hierarchy / Add-for-Analysis icons, so this
+  // page has to be somewhere the user can act from. The filter interface is AddFilter dropped
+  // in as-is; ticket 13 replaces its layout.
+  describe('the filter interface', () => {
+    const filterSection = () => screen.getByTestId('variable-detail-filter');
+    const addFilterButton = () => filterSection().querySelector('[data-testid="add-filter"]')!;
+
+    it('adds a filter for this variable without leaving the page', async () => {
+      await renderDetail();
+
+      await fireEvent.input(screen.getByTestId('min-input'), { target: { value: '21' } });
+      await fireEvent.click(addFilterButton());
+
+      expect(get(filters)).toHaveLength(1);
+      const [filter] = get(filters);
+      expect(filter.id).toBe('\\this\\is\\a\\age\\');
+      expect(filter.filterType).toBe('numeric');
+      expect(filter).toMatchObject({ min: '21' });
+      // Still the detail page: nothing unmounted it and nothing navigated.
+      expect(screen.getByTestId('variable-identity')).toBeInTheDocument();
+    });
+
+    // `addFilter` appends to the tree without checking, and `AddFilter` reads
+    // `existingFilter` once in `onMount` - so an unkeyed interface would go on adding.
+    it('updates the filter it already added rather than adding a second', async () => {
+      await renderDetail();
+
+      await fireEvent.input(screen.getByTestId('min-input'), { target: { value: '21' } });
+      await fireEvent.click(addFilterButton());
+      expect(get(filters)).toHaveLength(1);
+
+      await fireEvent.input(await screen.findByTestId('min-input'), { target: { value: '30' } });
+      await fireEvent.click(addFilterButton());
+
+      expect(get(filters)).toHaveLength(1);
+      expect(get(filters)[0]).toMatchObject({ min: '30' });
+    });
+
+    it('opens with the selection of a filter this variable already has', async () => {
+      addFilter(createCategoricalFilter(categoricalDetail, ['Yes']));
+      vi.mocked(getConceptDetails).mockResolvedValue(categoricalDetail);
+
+      render(VariableDetail, { section: 'explorer', variableKey: categoricalKey });
+      await screen.findByTestId('variable-identity');
+      await screen.findByTestId('optional-selection-list');
+
+      expect(optionsIn('selected-options-container')).toEqual(['Yes']);
+      expect(optionsIn('options-container')).toEqual(['No', "Don't know"]);
+      // Editing, not adding: the second value joins the filter that is already there.
+      await fireEvent.click(screen.getByRole('checkbox', { name: 'No' }));
+      await fireEvent.click(addFilterButton());
+
+      expect(get(filters)).toHaveLength(1);
+      // Sorted: OptionsSelectionList sorts on every selection.
+      expect(get(filters)[0]).toMatchObject({ categoryValues: ['No', 'Yes'] });
+    });
+
+    // A numeric filter round-trips through its own inputs rather than the selection list, so
+    // it needs its own case - the two branches of AddFilter's onMount are independent.
+    it('opens with the bounds of a numeric filter this variable already has', async () => {
+      addFilter(createNumericFilter(detail, '18', '65'));
+      await renderDetail();
+
+      expect(screen.getByTestId('min-input')).toHaveValue('18');
+      expect(screen.getByTestId('max-input')).toHaveValue('65');
+    });
+
+    // Matching Actions.svelte: the rule is open access *and* the dictionary refusing, not
+    // either alone.
+    it('is refused, with an explanation, for an unfilterable variable in open access', async () => {
+      mockState.pathname = '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C';
+      mockState.section = 'discover';
+      await renderDetail({ allowFiltering: false });
+
+      expect(screen.getByTestId('variable-detail-filter-disabled')).toHaveTextContent(
+        'Filtering is not available for this variable',
+      );
+      expect(screen.queryByTestId('filter-component')).not.toBeInTheDocument();
+    });
+
+    it('is offered to an authenticated user even where the dictionary refuses it', async () => {
+      await renderDetail({ allowFiltering: false });
+
+      expect(screen.queryByTestId('variable-detail-filter-disabled')).not.toBeInTheDocument();
+      expect(screen.getByTestId('filter-component')).toBeInTheDocument();
+    });
+
+    it('is offered in open access for a variable the dictionary allows', async () => {
+      mockState.pathname = '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C';
+      mockState.section = 'discover';
+      await renderDetail();
+
+      expect(screen.queryByTestId('variable-detail-filter-disabled')).not.toBeInTheDocument();
+      expect(screen.getByTestId('filter-component')).toBeInTheDocument();
+    });
+  });
+
+  // Add for Analysis is the one of the four row actions with nowhere else to go, so it is the
+  // one that must not be dropped when ticket 11 removes the icons.
+  describe('Add for Analysis', () => {
+    const toggle = () => screen.getByTestId('variable-detail-export-toggle');
+    const exportedPaths = () => get(exports).map((item) => item.conceptPath);
+
+    it('adds and removes the variable from Added Variables', async () => {
+      await renderDetail();
+      expect(toggle()).toHaveTextContent('Add for Analysis');
+
+      await fireEvent.click(toggle());
+      expect(exportedPaths()).toEqual(['\\this\\is\\a\\age\\']);
+      expect(toggle()).toHaveTextContent('Remove from Analysis');
+
+      await fireEvent.click(toggle());
+      expect(exportedPaths()).toEqual([]);
+      expect(toggle()).toHaveTextContent('Add for Analysis');
+    });
+
+    it('opens already added when the variable is in Added Variables', async () => {
+      await renderDetail();
+      await fireEvent.click(toggle());
+      cleanup();
+
+      await renderDetail();
+      expect(toggle()).toHaveTextContent('Remove from Analysis');
+    });
+
+    /**
+     * EXISTING-ISSUES item 18, which this page must not inherit.
+     *
+     * `Actions.svelte` tests membership with `$exports.includes(exportItem)` where
+     * `exportItem` is `$derived(mapSearchResultAsExport(data.row))` - a fresh object literal
+     * on every derivation. Anything that refetches the concept (a new search term, a facet
+     * selection, a trip through Discover) replaces the object, `includes` goes false, the
+     * click takes the add branch, and `addExport` early-returns because the concept path is
+     * already there: the button reads "Remove from Analysis" and does nothing.
+     *
+     * The refetch here is the real one - a fresh key re-runs the load - and the dictionary
+     * answers with a different object. The heading is rendered straight off that object, so a
+     * heading reading v2 is proof the page is no longer holding the object it held when the
+     * user clicked: nothing mutates a loaded concept in place.
+     */
+    it('still removes the variable after the concept has been fetched again', async () => {
+      let generation = 1;
+      // A fresh object per call, which is what a fetch gives.
+      vi.mocked(getConceptDetails).mockImplementation(() =>
+        Promise.resolve({ ...detail, display: `Age at exam v${generation}` }),
+      );
+
+      const { rerender } = render(VariableDetail, { section: 'explorer', variableKey });
+      await showsName('Age at exam v1');
+      await fireEvent.click(toggle());
+      expect(exportedPaths()).toEqual(['\\this\\is\\a\\age\\']);
+
+      generation = 2;
+      await rerender({ section: 'explorer', variableKey: { ...variableKey } });
+      await showsName('Age at exam v2');
+
+      expect(toggle()).toHaveTextContent('Remove from Analysis');
+      await fireEvent.click(toggle());
+
+      expect(exportedPaths()).toEqual([]);
+      expect(toggle()).toHaveTextContent('Add for Analysis');
+    });
+
+    it('is absent where the deployment has exports turned off', async () => {
+      mockState.exportsEnableExport = false;
+      await renderDetail();
+      expect(screen.queryByTestId('variable-detail-export-toggle')).not.toBeInTheDocument();
+    });
+
+    it('is absent on Discover', async () => {
+      mockState.pathname = '/discover/variable/test_data_set/%5Cthis%5Cis%5Ca%5Cage%5C';
+      mockState.section = 'discover';
+      await renderDetail();
+      expect(screen.queryByTestId('variable-detail-export-toggle')).not.toBeInTheDocument();
+    });
+
+    it('is absent for a visitor who is not logged in', async () => {
+      mockState.loggedIn = false;
+      await renderDetail();
+      expect(screen.queryByTestId('variable-detail-export-toggle')).not.toBeInTheDocument();
+    });
+  });
+
   // Blank, not crashing, is the failure mode to avoid: the user has no way to tell a broken
   // link from a broken app, and no way back either.
   describe('errors', () => {
@@ -227,6 +438,7 @@ describe('VariableDetail', () => {
 
       expect(screen.queryByTestId('variable-identity')).not.toBeInTheDocument();
       expect(screen.queryByTestId('variable-detail-information')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('variable-detail-filter')).not.toBeInTheDocument();
       expect(screen.queryByTestId('variable-detail-hierarchy')).not.toBeInTheDocument();
       expect(getHierarchyConcepts).not.toHaveBeenCalled();
     });

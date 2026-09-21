@@ -12,6 +12,7 @@ import {
 } from '../../mock-data';
 import {
   cohortPanel,
+  getOption,
   mockCountedSearch,
   navigateInApp,
   searchCurrentPageButton as currentPageButton,
@@ -399,4 +400,230 @@ test.describe('the stigmatising-filter guard from a detail page', () => {
 
   // The mirror image: an Explore detail page whose dataset spells `discover` must not trip
   // the guard on its own URL, or every variable in that dataset is unreachable.
+});
+
+/*
+ * Acting on the variable from its own page.
+ *
+ * Ticket 11 strips the per-row Info / Filter / Hierarchy / Add-for-Analysis icons off the
+ * search results, so all four actions have to exist here before the icons go. Add for
+ * Analysis is the only one not duplicated anywhere else in the UI.
+ */
+test.describe('acting on the variable from its own page', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+
+  const strip = (page: Page) => page.getByTestId('results-summary-strip');
+  const panelBody = (page: Page) => page.locator('#results-panel');
+  const filterCount = (page: Page) => page.getByTestId('results-panel-filter-count');
+  const participants = (page: Page) => page.locator('#result-count-number');
+  const exportToggle = (page: Page) => page.getByTestId('variable-detail-export-toggle');
+  const filterSection = (page: Page) => page.getByTestId('variable-detail-filter');
+  // Scoped: `data-testid="add-filter"` is AddFilter's button *and* HierarchyComponent's, and
+  // both render on this page, so an unscoped locator resolves to two elements.
+  const addFilterButton = (page: Page) => filterSection(page).getByTestId('add-filter');
+
+  const COUNT_PATH = '*/**/picsure/hpds/auth/v3/query/sync';
+  const EXPORT_FEATURES = [
+    { name: 'ENABLE_HIERARCHY', value: 'true' },
+    { name: 'ALLOW_EXPORT_ENABLED', value: 'true' },
+  ];
+
+  /**
+   * Answers the count query with a different number once this variable is part of it, so
+   * "the participant count updates" is an observable change rather than the same figure
+   * re-rendered. `detailResponseCat`'s concept path is the only thing in the query body that
+   * could carry this phrase.
+   */
+  const mockCounts = (page: Page) =>
+    page.route(COUNT_PATH, (route: Route) => {
+      const filtered = (route.request().postData() ?? '').includes('heart attack');
+      return route.fulfill({ json: filtered ? '4242' : '9999' });
+    });
+
+  /** Selects the first value and adds the filter. */
+  async function addFilterFromPage(page: Page) {
+    const option = await getOption(filterSection(page));
+    await option.click();
+    await addFilterButton(page).click();
+  }
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, { features: EXPORT_FEATURES });
+    await mockConceptDetail(page);
+    await mockHierarchy(page);
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, searchResults);
+    await mockCounts(page);
+  });
+
+  test('adds a filter, updating the cohort, and stays on the page', async ({ page }) => {
+    // Given a cold load with a collapsed panel and an unfiltered count
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+    await expect(participants(page)).toHaveText('9,999');
+    await expect(filterCount(page)).toHaveText(/^No filters added/);
+
+    // When
+    await addFilterFromPage(page);
+
+    // Then the chip is in the cohort panel, which opened itself to show it
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
+    await expect(panelBody(page)).toBeVisible();
+    await expect(page.getByTestId(`added-filter-${variable.conceptPath}`)).toBeVisible();
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+
+    // And the participant count is the filtered one
+    await expect(participants(page)).toHaveText('4,242');
+
+    // And the user is still on the detail page, not back on the results list
+    await expect(page).toHaveURL(new RegExp(`/explorer/variable/${variable.dataset}/`));
+    await expect(identity(page)).toBeVisible();
+    await expect(page.getByTestId('search-box')).toHaveCount(0);
+  });
+
+  test('opens with the selection of a filter the variable already has', async ({ page }) => {
+    // Given a filter added from this page
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await addFilterFromPage(page);
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+
+    // When the page is loaded again - the filter tree comes back out of sessionStorage, and
+    // the concept is fetched fresh
+    await page.reload();
+    await userIsLoggedIn(page);
+    await expect(identity(page)).toBeVisible();
+
+    // Then the interface opens on what is already selected, not on a blank filter
+    const selected = filterSection(page).locator('#selected-options-container');
+    await expect(selected.locator('input[type="checkbox"]')).toHaveCount(1);
+    await expect(selected).toContainText('Yes');
+    await expect(filterSection(page).locator('#options-container')).toContainText('No');
+
+    // And adding again edits that filter rather than leaving two on one variable
+    await addFilterFromPage(page);
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+    await expect(page.locator('[data-testid^="added-filter-"]')).toHaveCount(1);
+  });
+
+  test('adds the variable for analysis, and removes it again', async ({ page }) => {
+    // Given
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await expect(exportToggle(page)).toHaveText(/Add for Analysis/);
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
+
+    // When
+    await exportToggle(page).click();
+
+    // Then it is in Added Variables, and the panel opened itself to show it
+    await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.getByTestId(`added-export-${variable.conceptPath}`)).toBeVisible();
+    await expect(exportToggle(page)).toHaveText(/Remove from Analysis/);
+
+    // And it comes back off again
+    await exportToggle(page).click();
+    await expect(page.getByTestId(`added-export-${variable.conceptPath}`)).toHaveCount(0);
+    await expect(exportToggle(page)).toHaveText(/Add for Analysis/);
+  });
+
+  /*
+   * EXISTING-ISSUES item 18, from the outside.
+   *
+   * `Actions.svelte` decides whether a variable is already added with
+   * `$exports.includes(exportItem)` - reference equality against a fresh object literal - so
+   * once anything refetches the concept the button reads "Remove from Analysis" and does
+   * nothing. `exports` is module state and survives navigation, so a round trip through the
+   * results page and back is all it takes.
+   */
+  test('removes the variable after leaving the page and coming back', async ({ page }) => {
+    // Given a variable added for analysis
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await exportToggle(page).click();
+    await expect(page.getByTestId(`added-export-${variable.conceptPath}`)).toBeVisible();
+
+    // When the user leaves and returns, so the concept is fetched again. Client-side, so the
+    // export outlives the trip.
+    await navigateInApp(page, '/explorer');
+    await expect(page.getByTestId('search-box')).toBeVisible();
+    await navigateInApp(page, exploreUrl);
+    await expect(identity(page)).toBeVisible();
+    await expect(page.getByTestId(`added-export-${variable.conceptPath}`)).toBeVisible();
+
+    // Then the toggle still knows it is added, and still takes it off
+    await expect(exportToggle(page)).toHaveText(/Remove from Analysis/);
+    await exportToggle(page).click();
+
+    await expect(page.getByTestId(`added-export-${variable.conceptPath}`)).toHaveCount(0);
+    await expect(exportToggle(page)).toHaveText(/Add for Analysis/);
+  });
+
+  test('offers no Add for Analysis where the deployment disables exports', async ({ page }) => {
+    // Given
+    await mockApiConfig(page, {
+      features: [{ name: 'ENABLE_HIERARCHY', value: 'true' }],
+    });
+
+    // When
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await expect(identity(page)).toBeVisible();
+
+    // Then the toggle is absent, and the rest of the page is not
+    await expect(exportToggle(page)).toHaveCount(0);
+    await expect(filterSection(page)).toBeVisible();
+  });
+});
+
+// Discover runs the same component behind its own layout, and open access is where the two
+// rules below differ from Explore: no Add for Analysis at all, and no filtering on a variable
+// the dictionary marks unfilterable.
+test.describe('acting on the variable in open access', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, {
+      features: [
+        { name: 'OPEN', value: 'true' },
+        { name: 'DISCOVER', value: 'true' },
+        { name: 'OPEN_EXPLORER', value: 'false' },
+        { name: 'ENABLE_HIERARCHY', value: 'true' },
+        // On, so the toggle's absence is the open-access rule rather than an unset flag.
+        { name: 'ALLOW_EXPORT_ENABLED', value: 'true' },
+      ],
+    });
+    await mockHierarchy(page);
+  });
+
+  test('offers the filter interface but no Add for Analysis', async ({ page }) => {
+    // Given
+    await mockConceptDetail(page);
+
+    // When
+    await page.goto(discoverUrl);
+
+    // Then
+    await expect(page.getByTestId('variable-detail-filter')).toBeVisible();
+    await expect(page.getByTestId('filter-component')).toBeVisible();
+    await expect(page.getByTestId('variable-detail-export-toggle')).toHaveCount(0);
+    await expect(page.getByTestId('variable-detail-filter-disabled')).toHaveCount(0);
+  });
+
+  // The same rule as the results row's filter icon: open access *and* the dictionary
+  // refusing, not either on its own.
+  test('refuses filtering, with an explanation, for an unfilterable variable', async ({ page }) => {
+    // Given
+    await mockConceptDetail(page, { ...variable, allowFiltering: false });
+
+    // When
+    await page.goto(discoverUrl);
+
+    // Then
+    await expect(page.getByTestId('variable-detail-filter-disabled')).toContainText(
+      'Filtering is not available for this variable',
+    );
+    await expect(page.getByTestId('filter-component')).toHaveCount(0);
+  });
 });
