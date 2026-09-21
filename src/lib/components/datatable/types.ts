@@ -8,6 +8,8 @@ export interface Column {
   filter?: boolean;
 }
 
+export type PageChangeSource = 'mouse' | 'keyboard';
+
 export interface TableProps {
   tableName: string;
   isLoading?: boolean;
@@ -28,5 +30,5 @@ export interface TableProps {
   tableActions?: import('svelte').Snippet;
   searchLogAction?: string;
   rowClickLogAction?: string;
-  onPageChange?: () => void;
+  onPageChange?: (source: PageChangeSource) => void;
 }

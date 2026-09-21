@@ -1,4 +1,8 @@
 <script lang="ts">
+  import {
+    pendingPageFocusStatus,
+    type PendingPageFocus,
+  } from '$lib/components/datatable/pageFocus';
   import { TableHandler } from '@vincjo/datatables';
   import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
 
@@ -68,10 +72,8 @@
       announceTimer = setTimeout(() => (announcement = ''), 5000);
     }, 30);
   }
-  let pendingPageFocus: {
-    page: number;
-    rowsAtRequest: unknown;
-  } | null = null;
+  // Not `$state`: see `pendingPageFocusStatus`.
+  let pendingPageFocus: PendingPageFocus | null = null;
   const idPrefix = $derived(tableIdPrefix(tableName));
   const helpId = $derived(`${idPrefix}-kbd-help`);
 
@@ -113,33 +115,18 @@
     }
   });
 
-  // After a keyboard-initiated page change, focus the first row of the new page
-  // once it has rendered - in both directions, so focus lands where callers
-  // scroll to (see onPageChange consumers) rather than fighting them for the
-  // viewport. The server handler updates currentPage
-  // synchronously but replaces rows only after a debounced fetch (with a
-  // loading placeholder in between), so the request stays pending until the
-  // rows identity actually changes; a page mismatch at that point means the
-  // data changed for another reason (e.g. a new search) and the focus request
-  // is stale.
+  // After a keyboard page change, focus the first row of the new page once it has rendered -
+  // in both directions, so focus lands where callers scroll to rather than fighting them for
+  // the viewport.
   $effect(() => {
     void handler.rows;
     void isLoading;
     if (!isClickable || !pendingPageFocus) return;
-    const { page, rowsAtRequest } = pendingPageFocus;
-    if (handler.rows === rowsAtRequest) return;
-    if (handler.currentPage !== page) {
-      pendingPageFocus = null;
-      return;
-    }
     const rows = dataRows();
-    if (!rows.length) {
-      // The loading placeholder is still rendered; retry when it clears.
-      if (isLoading) return;
-      pendingPageFocus = null;
-      return;
-    }
+    const status = pendingPageFocusStatus(pendingPageFocus, handler, isLoading, rows.length);
+    if (status === 'waiting') return;
     pendingPageFocus = null;
+    if (status === 'stale') return;
     focusRow(rows[0], 0);
     announce(`Page ${handler.currentPage} of ${handler.pages?.length ?? 1}`);
   });

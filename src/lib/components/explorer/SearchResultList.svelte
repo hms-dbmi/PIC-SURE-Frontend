@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { TableHandler } from '@vincjo/datatables/server';
 
+  import {
+    pendingPageFocusStatus,
+    type PendingPageFocus,
+  } from '$lib/components/datatable/pageFocus';
+  import type { PageChangeSource } from '$lib/components/datatable/types';
   import type { SearchSection } from '$lib/explorer/variableUrl';
   import type { SearchResult } from '$lib/models/Search';
 
@@ -10,16 +15,8 @@
   import Loading from '$lib/components/Loading.svelte';
   import SearchResultCard from '$lib/components/explorer/SearchResultCard.svelte';
 
-  /**
-   * The search results, as a list of cards.
-   *
-   * The paging is unchanged: this renders the same server-side `TableHandler` the results
-   * table did, and keeps the same three accessories below the list, so the abort and
-   * generation logic in `stores/Search` and the facet-refetch coupling are untouched. Only
-   * the row rendering moved.
-   */
   interface Props {
-    /** `stores/Search`'s handler. Named for the preference key `getDefaultRows` reads. */
+    /** The key `getDefaultRows`/`setDefaultRows` store the user's rows-per-page choice under. */
     tableName: string;
     handler: TableHandler<SearchResult>;
     isLoading?: boolean;
@@ -36,6 +33,45 @@
     options = [5, 10, 20, 50, 100],
     onPageChange,
   }: Props = $props();
+
+  let listElement: HTMLUListElement | undefined = $state();
+
+  // Not `$state`: see `pendingPageFocusStatus`.
+  let pendingPageFocus: PendingPageFocus | null = null;
+
+  function resultCards(): HTMLElement[] {
+    return Array.from(listElement?.querySelectorAll<HTMLElement>(':scope > li > a') ?? []);
+  }
+
+  /**
+   * `handler.rows` here is the outgoing page: this runs from `Pagination`, synchronously after
+   * `setPage`, and the server handler `stores/Search` builds replaces rows only when its fetch
+   * resolves.
+   *
+   * Only the keyboard registers a focus request - a mouse user's pointer is still where they
+   * left it.
+   */
+  function onPaged(source: PageChangeSource) {
+    if (source === 'keyboard') {
+      pendingPageFocus = { page: handler.currentPage, rowsAtRequest: handler.rows };
+    }
+    onPageChange?.();
+  }
+
+  $effect(() => {
+    void handler.rows;
+    void isLoading;
+    if (!pendingPageFocus) return;
+    const cards = resultCards();
+    const status = pendingPageFocusStatus(pendingPageFocus, handler, isLoading, cards.length);
+    if (status === 'waiting') return;
+    pendingPageFocus = null;
+    if (status === 'stale') return;
+    cards[0].focus();
+    // `nearest`, so this agrees with the caller's own scroll on a page change rather than
+    // fighting it for the viewport.
+    cards[0].scrollIntoView?.({ block: 'nearest' });
+  });
 </script>
 
 <div id="search-results" data-testid="search-results" class="space-y-1">
@@ -47,6 +83,7 @@
     <!-- role="list" spelled out: `list-none` removes the bullets, and with them Safari and
          VoiceOver drop the list semantics, so the group would no longer be announced as one. -->
     <ul
+      bind:this={listElement}
       role="list"
       data-testid="search-result-list"
       aria-label="Search results"
@@ -68,7 +105,7 @@
     <RowCount {handler} />
     <div class="flex justify-end gap-4">
       <RowsPerPage {tableName} {handler} {options} />
-      <Pagination {handler} {onPageChange} />
+      <Pagination {handler} onPageChange={onPaged} />
     </div>
   </footer>
 </div>
