@@ -251,7 +251,7 @@ test.describe('Results Panel', () => {
     await expect(page.locator('#result-count')).toBeVisible();
     await expect(page.locator('#result-count')).not.toHaveText('0');
   });
-  test('Result panel shows no filters added when there are no filters', async ({ page }) => {
+  test('Result panel names the page to add a filter from when there are none', async ({ page }) => {
     // Given
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
@@ -262,9 +262,10 @@ test.describe('Results Panel', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
 
     // Then
-    await expect(
-      page.getByTestId('results-panel-body').getByText('No filters added'),
-    ).toBeVisible();
+    await expect(page.getByTestId('no-filters-message')).toHaveText(
+      // Genomic search is off in this describe's config, so Explore has one search mode.
+      'No filters yet - add one from the phenotypes page below',
+    );
   });
   test('Export button hidden when no filters or exports are added', async ({ page }) => {
     // Given
@@ -278,9 +279,10 @@ test.describe('Results Panel', () => {
     await page.locator('#results-panel-toggle').click();
 
     // Then
-    await expect(
-      page.getByTestId('results-panel-body').getByText('No filters added'),
-    ).toBeVisible();
+    await expect(page.getByTestId('no-filters-message')).toHaveText(
+      // Genomic search is off in this describe's config, so Explore has one search mode.
+      'No filters yet - add one from the phenotypes page below',
+    );
     await expect(page.locator('#export-data-button')).not.toBeVisible();
   });
   test('Export button hidden when count is 0', async ({ page }) => {
@@ -430,9 +432,10 @@ test.describe('Results Panel', () => {
     await page.locator('#modal-component').getByRole('button', { name: 'Yes' }).click();
 
     // Then
-    await expect(
-      page.getByTestId('results-panel-body').getByText('No filters added'),
-    ).toBeVisible();
+    await expect(page.getByTestId('no-filters-message')).toHaveText(
+      // Genomic search is off in this describe's config, so Explore has one search mode.
+      'No filters yet - add one from the phenotypes page below',
+    );
   });
 
   test.describe('Filter Tree Display', () => {
@@ -986,5 +989,130 @@ test.describe('Results panel auto-expand', () => {
     await expect(filterCount(page)).toHaveText('No filters added, add below');
     await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
     await expect(body(page)).toBeVisible();
+  });
+});
+
+// The empty state is built from the search-mode registry, so it names only the modes the page
+// in front of the user actually has. Asserted with toHaveText, which is exact: an unanchored
+// match on "phenotypes" would pass for every one of these cases.
+test.describe('Results panel empty state', () => {
+  const EXPLORE_BOTH_MODES = 'No filters yet - add one from the phenotypes or genotypes page below';
+  const PHENOTYPES_ONLY = 'No filters yet - add one from the phenotypes page below';
+
+  const emptyState = (page: Page) => page.getByTestId('no-filters-message');
+  const genomicOff = [
+    { name: 'ENABLE_GENE_QUERY', value: 'false' },
+    { name: 'ENABLE_SNP_QUERY', value: 'false' },
+  ];
+
+  async function mockResults(page: Page) {
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, mockData);
+  }
+
+  // The count endpoint and the shape it answers with are one decision, not two: Discover asks
+  // the open-access endpoint for a CROSS_COUNT and gets the per-consent map back, which is
+  // what providers.ts parses, while Explore's authenticated COUNT is the bare scalar. So the
+  // pairing lives here, once per section, and a call site has no pair to get wrong.
+  async function mockExploreSearch(page: Page) {
+    await mockResults(page);
+    await mockApiSuccess(page, countResultPath, '9999');
+  }
+
+  async function mockDiscoverSearch(page: Page) {
+    await mockResults(page);
+    await mockApiSuccess(page, openCountResultPath, { '\\_studies_consents\\': 9999 });
+  }
+
+  test.describe('on Explore', () => {
+    test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+
+    test('names both pages when genomic search gives Explore a Genotypes tab', async ({ page }) => {
+      // Given
+      await mockApiConfig(page, { features: [{ name: 'ENABLE_GENE_QUERY', value: 'true' }] });
+      await mockExploreSearch(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+
+      // When
+      await page.getByTestId('results-summary-strip').click();
+
+      // Then
+      await expect(emptyState(page)).toHaveText(EXPLORE_BOTH_MODES);
+    });
+
+    // A real deployment shape: both genomic flags off leaves Explore with a single mode and
+    // no Genotypes tab to send anyone to.
+    test('names the phenotypes page alone when genomic search is off', async ({ page }) => {
+      // Given
+      await mockApiConfig(page, { features: genomicOff });
+      await mockExploreSearch(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+
+      // When
+      await page.getByTestId('results-summary-strip').click();
+
+      // Then
+      await expect(emptyState(page)).toHaveText(PHENOTYPES_ONLY);
+    });
+
+    test('drops the text as soon as the first filter is added', async ({ page }) => {
+      // Given an open, empty panel
+      await mockApiConfig(page, { features: [{ name: 'ENABLE_GENE_QUERY', value: 'true' }] });
+      await mockExploreSearch(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await page.getByTestId('results-summary-strip').click();
+      await expect(emptyState(page)).toHaveText(EXPLORE_BOTH_MODES);
+
+      // When a filter is added
+      await mockApiSuccess(
+        page,
+        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+        detailResponseCat,
+      );
+      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+      const option = await getOption(page);
+      await option.click();
+      await page.getByTestId('add-filter').click();
+
+      // Then
+      await expect(
+        page.getByTestId(`added-filter-${mockData.content[0].conceptPath}`),
+      ).toBeVisible();
+      await expect(emptyState(page)).toHaveCount(0);
+    });
+  });
+
+  // Genomic search on, to prove Discover's single mode is the isDiscover half of the rule and
+  // not just an unset flag.
+  test.describe('on Discover', () => {
+    test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+    test('names the phenotypes page alone, having no Genotypes tab', async ({ page }) => {
+      // Given
+      await mockApiConfig(page, {
+        features: [
+          { name: 'OPEN', value: 'true' },
+          { name: 'DISCOVER', value: 'true' },
+          { name: 'OPEN_EXPLORER', value: 'false' },
+          { name: 'ENABLE_GENE_QUERY', value: 'true' },
+          { name: 'ENABLE_SNP_QUERY', value: 'true' },
+        ],
+      });
+      await mockDiscoverSearch(page);
+      await page.goto('/discover?search=somedata');
+      // The strip is server-rendered for an unauthenticated visitor, so wait for the
+      // client-side count before clicking it: a click that lands before hydration is
+      // swallowed and the panel never opens. The Explore cases get this from userIsLoggedIn.
+      await expect(page.getByTestId('results-panel-count')).toContainText('9,999');
+
+      // When
+      await page.getByTestId('results-summary-strip').click();
+
+      // Then
+      await expect(emptyState(page)).toHaveText(PHENOTYPES_ONLY);
+    });
   });
 });

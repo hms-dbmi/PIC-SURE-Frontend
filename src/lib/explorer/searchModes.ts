@@ -47,3 +47,18 @@ export function enabledSearchModes(pathname: string): SearchMode[] {
   const isDiscover = isDiscoverPath(pathname);
   return searchModes.filter((mode) => mode.enabled(isDiscover));
 }
+
+function joinWithOr(items: string[]): string {
+  if (items.length < 2) return items.join('');
+  return `${items.slice(0, -1).join(', ')} or ${items[items.length - 1]}`;
+}
+
+export function emptyCohortText(modeLabels: string[]): string {
+  if (modeLabels.length === 0) return 'No filters yet - add one below';
+  const labels = modeLabels.map((label) => label.toLowerCase());
+  return `No filters yet - add one from the ${joinWithOr(labels)} page below`;
+}
+
+export function emptyCohortTextAt(pathname: string): string {
+  return emptyCohortText(enabledSearchModes(pathname).map((mode) => mode.label));
+}
