@@ -1,6 +1,12 @@
 import { expect, type Page, type Route } from '@playwright/test';
 import { test, mockApiConfig, mockApiSuccess } from '../../custom-context';
-import { facetResultPath, facetsResponse, searchResultPath, searchResults } from '../../mock-data';
+import {
+  facetResultPath,
+  facetsResponse,
+  geneValues,
+  searchResultPath,
+  searchResults,
+} from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
 
 // The search-mode bar. Switching modes must preserve the search, which only works because the
@@ -138,7 +144,7 @@ test.describe('Explore tab bar', () => {
 
     // Then
     await expect(page).toHaveURL(/\/explorer\/genotypes$/);
-    await expect(page.getByTestId('genotypes-placeholder')).toBeVisible();
+    await expect(page.getByTestId('genotypes-tab')).toBeVisible();
     await expect(tab(page, 'genotypes')).toHaveAttribute('aria-current', 'page');
     await expect(tab(page, 'phenotypes')).not.toHaveAttribute('aria-current');
   });
@@ -191,7 +197,12 @@ test.describe('Explore tab bar', () => {
 test.describe('Explore tab switching', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
-  test.beforeEach(({ page }) => mockApiConfig(page, genomicEnabled));
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, genomicEnabled);
+    // The Genotypes tab loads the gene list on mount; leave it unmocked and its failure
+    // toast lands over the assertions below.
+    await mockApiSuccess(page, '*/**/picsure/hpds/auth/search/values*', geneValues);
+  });
 
   test('preserves the search term, facets, page and results with no refetch', async ({ page }) => {
     // Given a search, a selected facet and a non-default page
@@ -215,7 +226,7 @@ test.describe('Explore tab switching', () => {
     // When the user switches to Genotypes and back
     await tab(page, 'genotypes').click();
     await expect(page).toHaveURL(/\/explorer\/genotypes$/);
-    await expect(page.getByTestId('genotypes-placeholder')).toBeVisible();
+    await expect(page.getByTestId('genotypes-tab')).toBeVisible();
     await tab(page, 'phenotypes').click();
     await expect(page).toHaveURL(/\/explorer$/);
 
