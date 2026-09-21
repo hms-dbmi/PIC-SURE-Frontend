@@ -1,11 +1,26 @@
 // @vitest-environment happy-dom
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 // The card's only job beyond the field mapping is to produce the detail-page href, so `resolve`
 // is the identity here and the assertions below are on the URL the builder made.
 vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
+
+// Open access is `isOpenAccess()`: the pathname says Discover, or nobody is signed in. Signed
+// in on Explore by default, so an `explorer` card is the ordinary authenticated case.
+const mockState = vi.hoisted(() => ({ pathname: '/explorer', loggedIn: true }));
+vi.mock('$app/state', () => ({
+  page: {
+    get url() {
+      return new URL(`http://localhost${mockState.pathname}`);
+    },
+  },
+}));
+vi.mock('$lib/stores/User', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('$lib/stores/User')>()),
+  isUserLoggedIn: () => mockState.loggedIn,
+}));
 vi.mock('$lib/logger', () => ({
   log: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,6 +52,17 @@ function renderCard(overrides: Partial<SearchResult> = {}, props: Record<string,
 }
 
 const card = () => screen.getByTestId('search-result-card');
+
+beforeEach(() => {
+  mockState.pathname = '/explorer';
+  mockState.loggedIn = true;
+});
+
+/** A Discover card: the section is decided from the pathname, as the results row decided it. */
+function renderDiscoverCard(overrides: Partial<SearchResult> = {}) {
+  mockState.pathname = '/discover';
+  return renderCard(overrides, { section: 'discover' });
+}
 
 describe('the search result card', () => {
   it('leads with the description in bold and puts the variable name in parentheses', () => {
@@ -138,5 +164,63 @@ describe('the search result card', () => {
       'search_result.row_click',
       expect.objectContaining({ variable: '\\this\\is\\a\\age\\' }),
     );
+  });
+
+  /**
+   * Open access bars filtering on some variables, and the filter itself now lives a
+   * navigation away - so a card that says nothing about it teaches the user which results are
+   * worth opening only by making them open each one. One assertion per case, because they
+   * discriminate on different things: the marker the tour and the e2e suite target, the words
+   * the user reads, and the section the rule applies in.
+   */
+  describe('a variable open access will not let the user filter', () => {
+    const unfilterable = { allowFiltering: false };
+
+    it('marks the card, so the state is addressable without reading the text', () => {
+      renderDiscoverCard(unfilterable);
+
+      expect(card()).toHaveAttribute('data-filterable', 'false');
+    });
+
+    it('explains it on the card, in the words the detail page will repeat', () => {
+      renderDiscoverCard(unfilterable);
+
+      expect(screen.getByTestId('search-result-card-filtering-unavailable')).toHaveTextContent(
+        'Filtering is not available for this variable',
+      );
+    });
+
+    it('says it in text, not colour alone, and inside the link so it is part of its name', () => {
+      renderDiscoverCard(unfilterable);
+
+      const badge = screen.getByTestId('search-result-card-filtering-unavailable');
+      expect(card().contains(badge)).toBe(true);
+      expect(badge.querySelector('i')).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('marks a filterable card too, so the two are told apart rather than one being blank', () => {
+      renderDiscoverCard({ allowFiltering: true });
+
+      expect(card()).toHaveAttribute('data-filterable', 'true');
+      expect(screen.queryByTestId('search-result-card-filtering-unavailable')).toBeNull();
+    });
+
+    it('says nothing of the kind on Explore, which is not open access', () => {
+      // Unfilterable on purpose: with a filterable variable the badge is absent in either
+      // section, so the badge assertion alone would not depend on the section.
+      renderCard(unfilterable, { section: 'explorer' });
+
+      expect(screen.queryByTestId('search-result-card-filtering-unavailable')).toBeNull();
+      // Absent rather than `"true"`: an attribute asserting a variable is filterable is itself
+      // a claim about open access, which Explore makes no claim about.
+      expect(card()).not.toHaveAttribute('data-filterable');
+    });
+
+    it('applies to an anonymous visitor on Explore, as the row filter icon did', () => {
+      mockState.loggedIn = false;
+      renderCard(unfilterable, { section: 'explorer' });
+
+      expect(card()).toHaveAttribute('data-filterable', 'false');
+    });
   });
 });

@@ -10,7 +10,7 @@
   import { toaster } from '$lib/toaster';
   import { AnyRecordOfFilterError } from '$lib/types';
   import Modal from '$lib/components/Modal.svelte';
-  import { page } from '$app/state';
+  import { filteringBlocked } from '$lib/AccessState';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import { sortHierarchyDeepestFirst } from '$lib/utilities/Hierarchy';
   import { log, createLog, getPageContext } from '$lib/logger';
@@ -23,9 +23,7 @@
   let modalOpen: boolean = $state(false);
   let selectedNode: string | undefined = $state(undefined);
   let isLoading = $state(false);
-  let disableAddFilter: boolean = $derived(
-    !data?.allowFiltering && page.url.pathname.includes('/discover'),
-  );
+  let disableAddFilter: boolean = $derived(filteringBlocked(data));
 
   async function getHierarchy(): Promise<NodeInterface[]> {
     if (!data?.dataset || !data?.conceptPath) {

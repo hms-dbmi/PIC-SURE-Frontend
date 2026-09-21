@@ -18,6 +18,7 @@ import {
   mockConceptDetailFromRows,
   openNthResult,
   openNthResultFilter,
+  searchResultCards as resultCards,
 } from '../utils';
 
 // The row indices the allowFiltering specs below depend on, checked rather than trusted: the
@@ -43,7 +44,6 @@ test.describe('Discover for unauthenticated users', () => {
     });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
-    // Opening a result loads its concept, which every spec below does.
     await mockConceptDetailFromRows(page);
   });
 
@@ -130,6 +130,71 @@ test.describe('Discover for unauthenticated users', () => {
     await expect(page.locator('#results-panel')).toBeVisible();
     await expect(page.locator('#result-count')).toHaveText('< 10');
   });
+  /*
+   * The filter affordance moved to the variable's own page, so without something on the card
+   * a user only learns which Discover results they may filter by opening each one. One
+   * assertion per case: bundled with the enabled card's, the disabled card's marking hides
+   * behind whichever expectation runs first.
+   */
+  test("A card for an unfilterable variable says so, in the detail page's words", async ({
+    page,
+  }) => {
+    // Given
+    expect(mockData.content[UNFILTERABLE_ROW].allowFiltering).toBe(false);
+    await page.goto('/discover?search=somedata');
+
+    // Then
+    await expect(
+      resultCards(page)
+        .nth(UNFILTERABLE_ROW)
+        .getByTestId('search-result-card-filtering-unavailable'),
+    ).toContainText('Filtering is not available for this variable');
+  });
+
+  test('That card carries a marker the tour and this suite can target', async ({ page }) => {
+    // Given
+    await page.goto('/discover?search=somedata');
+
+    // Then
+    await expect(resultCards(page).nth(UNFILTERABLE_ROW)).toHaveAttribute(
+      'data-filterable',
+      'false',
+    );
+  });
+
+  test('A filterable card carries the other value, so the two are told apart', async ({ page }) => {
+    // Given
+    expect(mockData.content[FILTERABLE_ROW].allowFiltering).toBe(true);
+    await page.goto('/discover?search=somedata');
+
+    // Then - separately from the message, which is what the disabled card is checked on
+    await expect(resultCards(page).nth(FILTERABLE_ROW)).toHaveAttribute('data-filterable', 'true');
+  });
+
+  test('A filterable card offers no such explanation', async ({ page }) => {
+    // Given
+    await page.goto('/discover?search=somedata');
+
+    // Then
+    await expect(
+      resultCards(page).nth(FILTERABLE_ROW).getByTestId('search-result-card-filtering-unavailable'),
+    ).toHaveCount(0);
+  });
+
+  test('Only the variables the dictionary refuses are marked', async ({ page }) => {
+    // Given
+    const refused = mockData.content.filter((row) => row.allowFiltering === false).length;
+    expect(refused).toBe(1);
+    await page.goto('/discover?search=somedata');
+    await expect(resultCards(page)).toHaveCount(mockData.content.length);
+
+    // Then - marked on the one row, not on every row of an open-access section
+    await expect(
+      page.locator('[data-testid="search-result-card"][data-filterable="false"]'),
+    ).toHaveCount(refused);
+    await expect(page.getByTestId('search-result-card-filtering-unavailable')).toHaveCount(refused);
+  });
+
   test('Search results with allowFiltering false are not filterable', async ({ page }) => {
     // Given
     expect(mockData.content[UNFILTERABLE_ROW].allowFiltering).toBe(false);
@@ -143,8 +208,6 @@ test.describe('Discover for unauthenticated users', () => {
     await expect(page.getByTestId('variable-detail-filter-disabled')).toContainText(
       'Filtering is not available for this variable',
     );
-    // The panel ticket 14 put on this page. `filter-component` is `AddFilter`'s, which this
-    // page stopped rendering, so that absence held whether or not the refusal worked.
     await expect(page.getByTestId('variable-filter-panel')).toHaveCount(0);
   });
   test('Search results with allowFiltering true are filterable', async ({ page }) => {
@@ -179,7 +242,7 @@ test.describe('Discover for unauthenticated users', () => {
     await expect(hierarchyComponent).toBeVisible();
     const radioButtons = hierarchyComponent.locator('input');
     // Pinned first: with no tree loaded the loop below has nothing to check and would pass
-    // for the wrong reason, which is how the row-action version of this spec used to pass.
+    // for the wrong reason.
     await expect(radioButtons).toHaveCount(hierarchyResponse.length);
     for (const radio of await radioButtons.all()) {
       await expect(radio).toBeDisabled();

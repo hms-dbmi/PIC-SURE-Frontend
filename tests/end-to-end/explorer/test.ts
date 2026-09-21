@@ -24,15 +24,15 @@ import {
   userIsLoggedOut,
 } from '../utils';
 
+/** The detail page's filter panel - where a result's filter interface lives once opened. */
+const filterPanel = (page: Page) => page.getByTestId('variable-filter-panel');
+
 /**
  * Categorical details whose first option identifies which response served them.
  *
  * Every stock detail response begins "Yes", so the cache specs below - which tell one
  * response from another by the first option alone - could not fail against them.
  */
-/** The detail page's filter panel - where a result's filter interface lives once opened. */
-const filterPanel = (page: Page) => page.getByTestId('variable-filter-panel');
-
 const heartAttackDetail = { ...detailResponseCat, values: ['heart-attack-first', 'No'] };
 const diedDetail = { ...detailResponseCatSameDataset, values: ['died-first', 'No'] };
 const uncachedDetail = { ...detailResponseCat2, values: ['should-not-be-fetched', 'No'] };
@@ -357,6 +357,21 @@ test.describe('Explorer for authenticated users', () => {
       );
     });
 
+    test('Says nothing about filtering: Explore is not open access', async ({ page }) => {
+      // Given a fixture that does hold an unfilterable variable, so this is the section
+      // deciding and not the data - row 6 is the one Discover marks.
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page)).toHaveCount(mockData.content.length);
+      expect(mockData.content.some((row) => row.allowFiltering === false)).toBe(true);
+
+      // Then - no card claims the state, in either direction
+      await expect(page.locator('[data-testid="search-result-card"][data-filterable]')).toHaveCount(
+        0,
+      );
+      await expect(page.getByTestId('search-result-card-filtering-unavailable')).toHaveCount(0);
+    });
+
     test('Carries none of the row actions the detail page took over', async ({ page }) => {
       // Given
       await page.goto('/explorer?search=somedata');
@@ -429,16 +444,9 @@ test.describe('Explorer for authenticated users', () => {
       await mockConceptDetailFromRows(page);
     });
 
-    /*
-     * WebKit does not put links in the tab order at all: that is Safari's "press Tab to
-     * highlight each item" preference, off by default on macOS and not set by Playwright - a
-     * platform convention about links, not something this list decides.
-     */
-    test('Tab reaches each card once, in the order they were served', async ({
-      page,
-      browserName,
-    }) => {
-      test.skip(browserName === 'webkit', 'WebKit does not tab to links');
+    // Holds on WebKit only because the card carries an explicit tabindex: Safari does not
+    // Tab to bare links by default.
+    test('Tab reaches each card once, in the order they were served', async ({ page }) => {
       // Given
       await page.goto('/explorer?search=somedata');
       await userIsLoggedIn(page);
@@ -662,16 +670,13 @@ test.describe('Explorer for authenticated users', () => {
         // When
         await openNthResultFilter(page, 0);
 
-        // Then - the value list, which is what ticket 14's panel renders for a Categorical
-        // variable. Not `categoical-filter`: that belongs to `AddFilter`, which this page no
-        // longer uses, so asserting its absence would have held for any panel at all.
+        // Then - the value list, for a Categorical variable
         await expect(filterPanel(page).getByTestId('optional-selection-list')).toHaveCount(1);
         await expect(filterPanel(page).getByTestId('optional-selection-list')).toBeVisible();
         await expect(filterPanel(page).getByTestId('numerical-filter')).toHaveCount(0);
       });
       test('Opens the numerical filter interface for a continuous variable', async ({ page }) => {
-        // Given - row 3 is Continuous. The old spec opened row 2, which is Categorical, so its
-        // "(numerical)" branch never ran.
+        // Given - row 3 is Continuous
         expect(mockData.content[3].type).toBe('Continuous');
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
@@ -795,8 +800,7 @@ test.describe('Explorer for authenticated users', () => {
         expect((await secondItem.textContent())?.trim()).toBe(diedDetail.values[0]);
 
         // Then Given - this must not be hit, so serve something whose first option differs
-        // from the cached one. The stock responses all begin "Yes", which is why the old
-        // version of this assertion could not fail.
+        // from the cached one.
         await page.route(
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
           async (route: Route) => route.fulfill({ json: uncachedDetail }),
