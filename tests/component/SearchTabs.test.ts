@@ -113,6 +113,12 @@ describe('SearchTabs', () => {
       expect(tab('phenotypes')).not.toHaveAttribute('aria-current');
     });
 
+    it('marks Phenotypes current on the variable detail page', () => {
+      renderAt('/explorer/variable/ds/path');
+      expect(tab('phenotypes')).toHaveAttribute('aria-current', 'page');
+      expect(tab('genotypes')).not.toHaveAttribute('aria-current');
+    });
+
     it('marks nothing current on a sibling route that is not a search mode', () => {
       renderAt('/explorer/advanced-filtering');
       expect(tab('phenotypes')).not.toHaveAttribute('aria-current');

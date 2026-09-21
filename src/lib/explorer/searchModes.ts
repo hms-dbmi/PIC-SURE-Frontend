@@ -27,7 +27,11 @@ export const phenotypesMode: SearchMode = {
   label: 'Phenotypes',
   route: '/explorer',
   enabled: () => true,
-  isActive: (pathname) => pathname === '/explorer' || pathname === '/discover',
+  isActive: (pathname) =>
+    pathname === '/explorer' ||
+    pathname === '/discover' ||
+    pathname.startsWith('/explorer/variable/') ||
+    pathname.startsWith('/discover/variable/'),
 };
 
 /** Genomic filtering. `enabled` gates the mode's link; the route itself is not guarded. */

@@ -97,6 +97,14 @@ describe('the search mode registry', () => {
       },
     );
 
+    it.each(['/explorer/variable/ds/path', '/discover/variable/ds/path'])(
+      'marks phenotypes active on the variable detail page %s',
+      (pathname) => {
+        expect(phenotypesMode.isActive(pathname)).toBe(true);
+        expect(genotypesMode.isActive(pathname)).toBe(false);
+      },
+    );
+
     it('marks genotypes active on /explorer/genotypes', () => {
       expect(genotypesMode.isActive('/explorer/genotypes')).toBe(true);
       expect(phenotypesMode.isActive('/explorer/genotypes')).toBe(false);
