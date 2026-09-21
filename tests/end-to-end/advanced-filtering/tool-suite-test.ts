@@ -9,7 +9,7 @@ import {
   detailResponseCat,
   detailResponseCatSameDataset,
 } from '../mock-data';
-import { clickNthFilterIcon, getOption, userIsLoggedIn } from '../utils';
+import { addFilterButton, getOption, openNthResultFilter, userIsLoggedIn } from '../utils';
 
 const SYNC_URL = '*/**/picsure/hpds/open/v3/query/sync';
 
@@ -35,10 +35,10 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await userIsLoggedIn(page);
 
     // Add first filter
-    await clickNthFilterIcon(page, 0);
+    await openNthResultFilter(page, 0);
     const firstItem = await getOption(page);
     await firstItem.click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     // Add second filter
     await mockApiSuccess(
@@ -46,10 +46,10 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
       `${conceptsDetailPath}/${detailResponseCatSameDataset.dataset}`,
       detailResponseCatSameDataset,
     );
-    await clickNthFilterIcon(page, 1);
+    await openNthResultFilter(page, 1);
     const secondItem = await getOption(page);
     await secondItem.click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     await expect(page.locator('#results-panel')).toBeVisible();
 
@@ -71,10 +71,10 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await userIsLoggedIn(page);
 
     // Add one filter
-    await clickNthFilterIcon(page, 0);
+    await openNthResultFilter(page, 0);
     const firstItem = await getOption(page);
     await firstItem.click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     await expect(page.locator('#results-panel')).toBeVisible();
 
@@ -96,10 +96,10 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await userIsLoggedIn(page);
 
     // Add first filter — button should be disabled (needs > 1)
-    await clickNthFilterIcon(page, 0);
+    await openNthResultFilter(page, 0);
     const firstItem = await getOption(page);
     await firstItem.click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     const advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
     await expect(advancedFilteringBtn).toBeDisabled();
@@ -110,10 +110,10 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
       `${conceptsDetailPath}/${detailResponseCatSameDataset.dataset}`,
       detailResponseCatSameDataset,
     );
-    await clickNthFilterIcon(page, 1);
+    await openNthResultFilter(page, 1);
     const secondItem = await getOption(page);
     await secondItem.click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     // Verify the button is now enabled
     await expect(advancedFilteringBtn).toBeEnabled();
@@ -131,20 +131,20 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await userIsLoggedIn(page);
 
     // Add two filters to enable the button
-    await clickNthFilterIcon(page, 0);
+    await openNthResultFilter(page, 0);
     const firstItem = await getOption(page);
     await firstItem.click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     await mockApiSuccess(
       page,
       `${conceptsDetailPath}/${detailResponseCatSameDataset.dataset}`,
       detailResponseCatSameDataset,
     );
-    await clickNthFilterIcon(page, 1);
+    await openNthResultFilter(page, 1);
     const secondItem = await getOption(page);
     await secondItem.click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     // Click the Build Advanced Query button
     const advancedFilteringBtn = page.getByTestId('advanced-filtering-btn');
@@ -168,10 +168,10 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
     await userIsLoggedIn(page);
 
     // Add first filter
-    await clickNthFilterIcon(page, 0);
+    await openNthResultFilter(page, 0);
     const firstItem = await getOption(page);
     await firstItem.click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     // Add second filter (need 2 for AND/OR controls to appear)
     await mockApiSuccess(
@@ -179,10 +179,10 @@ test.describe('Advanced Query Builder - Build Advanced Query Button', () => {
       `${conceptsDetailPath}/${detailResponseCatSameDataset.dataset}`,
       detailResponseCatSameDataset,
     );
-    await clickNthFilterIcon(page, 1);
+    await openNthResultFilter(page, 1);
     const secondItem = await getOption(page);
     await secondItem.click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     // Wait for results panel to appear
     await expect(page.locator('#results-panel')).toBeVisible();

@@ -10,7 +10,15 @@ import {
   facetsResponse,
   crossCountSyncResponseInital,
 } from '../mock-data';
-import { getOption, navigateInApp, userIsLoggedIn } from '../utils';
+import {
+  addFilterButton,
+  getOption,
+  mockConceptDetailFromRows,
+  navigateInApp,
+  openNthResult,
+  openNthResultFilter,
+  userIsLoggedIn,
+} from '../utils';
 
 const countResultPath = '*/**/picsure/hpds/auth/v3/query/sync';
 const openCountResultPath = '*/**/picsure/hpds/open/v3/query/sync';
@@ -18,7 +26,13 @@ const openCountResultPath = '*/**/picsure/hpds/open/v3/query/sync';
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('Results Panel', () => {
-  test.beforeEach(({ page }) => mockApiConfig(page));
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page);
+    // Filtering and Add for Analysis are on a result's own page, which loads the concept
+    // before it renders. Specs that assert on particular detail fields register their own
+    // route later and win.
+    await mockConceptDetailFromRows(page);
+  });
   test('Collapsed strip shows the participant count and the empty filter message', async ({
     page,
   }) => {
@@ -145,9 +159,9 @@ test.describe('Results Panel', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+    await openNthResultFilter(page, 0);
     await page.locator('#options-container label:nth-child(1)').click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     // Then
     await expect(page.getByTestId('results-panel-filter-count')).toHaveText('1 filter added');
@@ -158,9 +172,9 @@ test.describe('Results Panel', () => {
       `${conceptsDetailPath}/${detailResponseCat2.dataset}`,
       detailResponseCat2,
     );
-    await page.locator('#ExplorerTable-row-2 button[title^=Filter]').click();
+    await openNthResultFilter(page, 2);
     await page.locator('#select-all').click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     // Then
     await expect(page.getByTestId('results-panel-filter-count')).toHaveText('2 filters added');
@@ -205,9 +219,9 @@ test.describe('Results Panel', () => {
       detailResponseCat,
     );
     await mockApiFail(page, countResultPath, 'failed');
-    await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+    await openNthResultFilter(page, 0);
     await page.locator('#options-container label:nth-child(1)').click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     // Then
     await expect(page.locator('#result-count')).toBeVisible();
@@ -316,9 +330,9 @@ test.describe('Results Panel', () => {
       detailResponseCat,
     );
     await mockApiFail(page, countResultPath, 'failed');
-    await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+    await openNthResultFilter(page, 0);
     await page.locator('#options-container label:nth-child(1)').click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     // Then
     await expect(page.locator('#results-panel')).toBeVisible();
@@ -369,9 +383,9 @@ test.describe('Results Panel', () => {
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,
       detailResponseCat,
     );
-    await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+    await openNthResultFilter(page, 0);
     await page.locator('#options-container label:nth-child(1)').click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
     const exportButton = page.locator('#export-data-button');
     await expect(exportButton).toBeVisible();
     await expect(exportButton).toBeEnabled();
@@ -382,9 +396,9 @@ test.describe('Results Panel', () => {
       `${conceptsDetailPath}/${detailResponseCat2.dataset}`,
       detailResponseCat2,
     );
-    await page.locator('#ExplorerTable-row-2 button[title^=Filter]').click();
+    await openNthResultFilter(page, 2);
     await page.locator('#select-all').click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
 
     await expect(exportButton).toBeVisible();
     await expect(exportButton).toBeDisabled();
@@ -398,11 +412,6 @@ test.describe('Results Panel', () => {
     await mockApiConfig(page, {
       features: [{ name: 'ALLOW_EXPORT_ENABLED', value: 'true' }],
     });
-    await mockApiSuccess(
-      page,
-      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-      detailResponseCat,
-    );
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countResultPath, '9999');
@@ -410,21 +419,15 @@ test.describe('Results Panel', () => {
     await userIsLoggedIn(page);
 
     const expectedRowIds = mockData.content.map((row) => row.conceptPath);
-    const tableBody = page.locator('tbody');
-    await expect(tableBody).toBeVisible();
 
-    const firstRow = tableBody.locator('tr').nth(0);
-    const filterIcon = firstRow.locator('td').last().locator('button').nth(1);
-    await filterIcon.click();
+    await openNthResultFilter(page, 0);
     const firstFilter = await getOption(page);
     await firstFilter.click();
-    const addFilterButton = page.getByTestId('add-filter');
-    await addFilterButton.click();
+    await addFilterButton(page).click();
     await expect(page.getByTestId(`added-filter-${expectedRowIds[0]}`)).toBeVisible();
 
-    const secondRow = tableBody.locator('tr').nth(1);
-    const exportButton = secondRow.locator('td').last().locator('button').last();
-    await exportButton.click();
+    await openNthResult(page, 1);
+    await page.getByTestId('variable-detail-export-toggle').click();
     await expect(page.getByTestId(`added-export-${expectedRowIds[1]}`)).toBeVisible();
 
     // When
@@ -482,23 +485,21 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat,
       );
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+      await openNthResultFilter(page, 0);
       await page.locator('#options-container label:nth-child(1)').click();
       const firstItem = await getOption(page);
       await firstItem.click();
-      const addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
+      await addFilterButton(page).click();
       await mockApiSuccess(
         page,
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat2,
       );
-      await page.locator('#ExplorerTable-row-2 button[title^=Filter]').click();
+      await openNthResultFilter(page, 2);
       await page.locator('#options-container label:nth-child(1)').click();
       const secondItem = await getOption(page);
       await secondItem.click();
-      const addFilterButton2 = page.getByTestId('add-filter');
-      await addFilterButton2.click();
+      await addFilterButton(page).click();
 
       // Then
       await expect(page.getByTestId('distributions-btn')).not.toBeDisabled();
@@ -520,10 +521,10 @@ test.describe('Results Panel', () => {
       await userIsLoggedIn(page);
 
       // When
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+      await openNthResultFilter(page, 0);
       const firstItem = await getOption(page);
       await firstItem.click();
-      await page.getByTestId('add-filter').click();
+      await addFilterButton(page).click();
 
       // Then
       await expect(page.getByTestId('distributions-btn')).toBeDisabled();
@@ -551,10 +552,10 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat,
       );
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+      await openNthResultFilter(page, 0);
       const firstItem = await getOption(page);
       await firstItem.click();
-      await page.getByTestId('add-filter').click();
+      await addFilterButton(page).click();
       await expect(page.locator('#result-count-number')).toHaveText('9,999');
       await expect(page.getByTestId('distributions-btn')).toBeEnabled();
 
@@ -563,10 +564,10 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat2.dataset}`,
         detailResponseCat2,
       );
-      await page.locator('#ExplorerTable-row-2 button[title^=Filter]').click();
+      await openNthResultFilter(page, 2);
       const secondItem = await getOption(page);
       await secondItem.click();
-      await page.getByTestId('add-filter').click();
+      await addFilterButton(page).click();
       await expect(page.locator('#result-count-number')).toHaveText('0');
       await expect(page.getByTestId('distributions-btn')).toBeDisabled();
 
@@ -607,11 +608,11 @@ test.describe('Results Panel', () => {
       await userIsLoggedIn(page);
 
       // When
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+      await openNthResultFilter(page, 0);
       await page.locator('#options-container label:nth-child(1)').click();
       const firstItem = await getOption(page);
       await firstItem.click();
-      await page.getByTestId('add-filter').click();
+      await addFilterButton(page).click();
 
       // Then
       await expect(page.getByTestId('distributions-btn')).toBeDisabled();
@@ -640,12 +641,11 @@ test.describe('Results Panel', () => {
       await page.goto('/discover?search=somedata');
 
       // When
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+      await openNthResultFilter(page, 0);
       await page.locator('#options-container label:nth-child(1)').click();
       const firstItem = await getOption(page);
       await firstItem.click();
-      const addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
+      await addFilterButton(page).click();
 
       // Then - the panel's no-filter count on page load comes first, so assert on the most
       // recent request rather than pinning a total that counts it.
@@ -674,12 +674,11 @@ test.describe('Results Panel', () => {
       await page.goto('/discover?search=somedata');
 
       // When
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+      await openNthResultFilter(page, 0);
       await page.locator('#options-container label:nth-child(1)').click();
       const firstItem = await getOption(page);
       await firstItem.click();
-      const addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
+      await addFilterButton(page).click();
 
       // Then
       await expect(page.getByTestId('operator-label')).toHaveCount(0);
@@ -707,24 +706,22 @@ test.describe('Results Panel', () => {
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat,
       );
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+      await openNthResultFilter(page, 0);
       await page.locator('#options-container label:nth-child(1)').click();
       const firstItem = await getOption(page);
       await firstItem.click();
-      let addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
+      await addFilterButton(page).click();
 
       await mockApiSuccess(
         page,
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat2,
       );
-      await page.locator('#ExplorerTable-row-2 button[title^=Filter]').click();
+      await openNthResultFilter(page, 2);
       await page.locator('#options-container label:nth-child(1)').click();
       const secondItem = await getOption(page);
       await secondItem.click();
-      addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
+      await addFilterButton(page).click();
 
       // Then
       await expect(page.locator('#results-panel')).toBeVisible();
@@ -747,6 +744,7 @@ test.describe('Results panel auto-expand', () => {
 
   async function mockExplorer(page: Page, features: { name: string; value: string }[] = []) {
     await mockApiConfig(page, features.length > 0 ? { features } : undefined);
+    await mockConceptDetailFromRows(page);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, countResultPath, '9999');
@@ -762,10 +760,10 @@ test.describe('Results panel auto-expand', () => {
       `${conceptsDetailPath}/${(detail as { dataset: string }).dataset}`,
       detail,
     );
-    await page.locator(`#ExplorerTable-row-${rowIndex} button[title^=Filter]`).click();
+    await openNthResultFilter(page, rowIndex);
     const option = await getOption(page);
     await option.click();
-    await page.getByTestId('add-filter').click();
+    await addFilterButton(page).click();
   }
 
   test('expands when the first filter is added', async ({ page }) => {
@@ -813,9 +811,9 @@ test.describe('Results panel auto-expand', () => {
     await userIsLoggedIn(page);
     await expect(strip(page)).toHaveAttribute('aria-expanded', 'false');
 
-    // When
-    const firstRow = page.locator('tbody').locator('tr[id^="ExplorerTable-row-"]').first();
-    await firstRow.locator('td').last().locator('button').last().click();
+    // When - Add for Analysis lives on the variable's own page now
+    await openNthResult(page, 0);
+    await page.getByTestId('variable-detail-export-toggle').click();
 
     // Then
     await expect(strip(page)).toHaveAttribute('aria-expanded', 'true');
@@ -1006,6 +1004,7 @@ test.describe('Results panel empty state', () => {
   ];
 
   async function mockResults(page: Page) {
+    await mockConceptDetailFromRows(page);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
   }
@@ -1072,10 +1071,10 @@ test.describe('Results panel empty state', () => {
         `${conceptsDetailPath}/${detailResponseCat.dataset}`,
         detailResponseCat,
       );
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
+      await openNthResultFilter(page, 0);
       const option = await getOption(page);
       await option.click();
-      await page.getByTestId('add-filter').click();
+      await addFilterButton(page).click();
 
       // Then
       await expect(

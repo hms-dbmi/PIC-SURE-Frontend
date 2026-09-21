@@ -23,7 +23,6 @@ export interface TableProps {
   showPagination?: boolean;
   class?: string;
   isClickable?: boolean;
-  expandable?: boolean;
   rowClickHandler?: (row: Indexable) => void;
   rowClickKeys?: string[];
   tableActions?: import('svelte').Snippet;

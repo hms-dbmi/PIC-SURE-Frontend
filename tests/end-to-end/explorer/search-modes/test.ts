@@ -23,8 +23,8 @@ const FACET_ID = 'phs000284';
 
 const genomicEnabled = { features: [{ name: 'ENABLE_GENE_QUERY', value: 'true' }] };
 
-function resultRows(page: Page) {
-  return page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]');
+function resultCards(page: Page) {
+  return page.getByTestId('search-result-card');
 }
 
 function currentPageButton(page: Page) {
@@ -249,7 +249,7 @@ test.describe('Explore tab switching', () => {
     await page.goto('/explorer');
     await userIsLoggedIn(page);
     await searchFor(page, 'age');
-    await expect(resultRows(page)).toHaveCount(3);
+    await expect(resultCards(page)).toHaveCount(3);
 
     await expect(facetCheckbox(page)).toBeVisible();
     await facetCheckbox(page).click();
@@ -271,7 +271,7 @@ test.describe('Explore tab switching', () => {
 
     // Then everything is as they left it, and nothing was fetched again
     await expect(page.getByTestId('search-box')).toHaveValue('age');
-    await expect(resultRows(page)).toHaveCount(3);
+    await expect(resultCards(page)).toHaveCount(3);
     await expect(currentPageButton(page)).toHaveText('2');
     await expect(facetCheckbox(page)).toBeChecked();
 

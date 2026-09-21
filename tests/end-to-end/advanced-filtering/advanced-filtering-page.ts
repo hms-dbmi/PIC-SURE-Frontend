@@ -11,7 +11,13 @@ import {
   detailResponseCat2,
   detailResForAge,
 } from '../mock-data';
-import { clickNthFilterIcon, getOption, userIsLoggedIn } from '../utils';
+import {
+  addFilterButton,
+  getOption,
+  mockConceptDetailFromRows,
+  openNthResultFilter,
+  userIsLoggedIn,
+} from '../utils';
 
 const SYNC_URL = '*/**/picsure/hpds/auth/v3/query/sync';
 
@@ -82,11 +88,13 @@ export class AdvancedFilteringPage {
     await mockApiSuccess(this.page, searchResultPath, mockData);
     await mockApiSuccess(this.page, facetResultPath, facetsResponse);
     await mockApiSuccess(this.page, SYNC_URL, '9999');
+    // A result's filter interface is on its detail page, which loads the concept first.
+    await mockConceptDetailFromRows(this.page);
   }
 
   /**
-   * Add a categorical filter by clicking the filter icon on a search result row,
-   * selecting the first option, and clicking "Add Filter".
+   * Add a categorical filter by opening the nth search result, selecting the first option in
+   * its filter interface, and clicking "Add Filter".
    */
   async addCategoricalFilter(
     rowIndex: number,
@@ -98,7 +106,7 @@ export class AdvancedFilteringPage {
       `${conceptsDetailPath}/${(detailResponse as { dataset: string }).dataset}`,
       detailResponse,
     );
-    await clickNthFilterIcon(this.page, rowIndex);
+    await openNthResultFilter(this.page, rowIndex);
     if (selectAll) {
       const selectAllButton = this.page.locator('#select-all');
       await selectAllButton.click();
@@ -106,16 +114,22 @@ export class AdvancedFilteringPage {
       const firstItem = await getOption(this.page);
       await firstItem.click();
     }
-    await this.page.getByTestId('add-filter').click();
+    await addFilterButton(this.page).click();
   }
 
   /**
-   * Add a numeric filter by clicking the filter icon on a search result row
-   * and clicking "Add Filter" (any value).
+   * Add a numeric filter by opening the nth search result and clicking "Add Filter" (any
+   * value).
    */
   async addNumericFilter(rowIndex: number) {
-    await clickNthFilterIcon(this.page, rowIndex);
-    await this.page.getByTestId('add-filter').click();
+    // The row's own concept: the categorical steps above register dataset-wide detail routes,
+    // and the last one registered would otherwise answer here too - handing a Continuous
+    // variable a Categorical interface with nothing selected, and an add button that is
+    // disabled.
+    const row = mockData.content[rowIndex];
+    await mockApiSuccess(this.page, `${conceptsDetailPath}/${row.dataset}`, row);
+    await openNthResultFilter(this.page, rowIndex);
+    await addFilterButton(this.page).click();
   }
 
   /**

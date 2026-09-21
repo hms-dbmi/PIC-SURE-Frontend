@@ -19,14 +19,15 @@ import {
   searchCurrentPageButton as currentPageButton,
   searchFacetCheckbox as facetCheckbox,
   searchFor,
-  searchResultRows as resultRows,
+  searchResultCards as resultCards,
   SEARCH_SETTLE_MS as SETTLE_MS,
   userIsLoggedIn,
 } from '../../utils';
 
-// The variable detail page. These specs reach it by URL, which is also the thing that has to
-// keep working: the page has to load from cold, with no search in the session to inherit a
-// variable from.
+// The variable detail page. The result cards link here, but these specs reach it by URL,
+// which is the thing that has to keep working on its own: the page has to load from cold,
+// with no search in the session to inherit a variable from. Opening one from a card is
+// covered by the round trip at the end of "Back to Search Results", and by explorer/test.
 //
 // The URL carries the dataset and the concept path because the dictionary has no slug field
 // yet and concept detail needs both. That shape is spelled out here rather than imported from
@@ -394,7 +395,7 @@ test.describe('Back to Search Results', () => {
     await page.goto('/explorer');
     await userIsLoggedIn(page);
     await searchFor(page, 'age');
-    await expect(resultRows(page)).toHaveCount(3);
+    await expect(resultCards(page)).toHaveCount(3);
 
     await expect(facetCheckbox(page)).toBeVisible();
     await facetCheckbox(page).click();
@@ -418,13 +419,40 @@ test.describe('Back to Search Results', () => {
 
     // And everything is as they left it, with nothing fetched again
     await expect(page.getByTestId('search-box')).toHaveValue('age');
-    await expect(resultRows(page)).toHaveCount(3);
+    await expect(resultCards(page)).toHaveCount(3);
     await expect(currentPageButton(page)).toHaveText('2');
     await expect(facetCheckbox(page)).toBeChecked();
 
     await page.waitForTimeout(SETTLE_MS);
     expect(concepts.count).toBe(conceptsBefore);
     expect(facets.count).toBe(facetsBefore);
+  });
+
+  test('a card opened from the results comes back to them, populated', async ({ page }) => {
+    // Given a search on a non-default page, so a silent refetch would show as page 1
+    const { concepts } = await mockCountedSearch(page);
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+    await searchFor(page, 'age');
+    await expect(resultCards(page)).toHaveCount(3);
+    await page.locator('.pagination button[aria-label="Page 2"]').click();
+    await expect(currentPageButton(page)).toHaveText('2');
+    await page.waitForTimeout(SETTLE_MS);
+    const conceptsBefore = concepts.count;
+
+    // When the user clicks a card rather than typing the URL
+    await resultCards(page).first().click();
+    await expect(identity(page)).toBeVisible();
+    await expect(backButton(page)).toHaveAttribute('href', '/explorer');
+
+    // Then Back lands on populated results, on the page they were left on
+    await backButton(page).click();
+    await expect(page).toHaveURL(/\/explorer$/);
+    await expect(page.getByTestId('search-box')).toHaveValue('age');
+    await expect(resultCards(page)).toHaveCount(3);
+    await expect(currentPageButton(page)).toHaveText('2');
+    await page.waitForTimeout(SETTLE_MS);
+    expect(concepts.count).toBe(conceptsBefore);
   });
 });
 
@@ -473,7 +501,7 @@ test.describe('Discover variable detail page', () => {
     const { concepts, facets } = await mockCountedSearch(page);
     await page.goto('/discover');
     await searchFor(page, 'age');
-    await expect(resultRows(page)).toHaveCount(3);
+    await expect(resultCards(page)).toHaveCount(3);
     await page.waitForTimeout(SETTLE_MS);
 
     const conceptsBefore = concepts.count;
@@ -487,7 +515,7 @@ test.describe('Discover variable detail page', () => {
 
     // Then
     await expect(page.getByTestId('search-box')).toHaveValue('age');
-    await expect(resultRows(page)).toHaveCount(3);
+    await expect(resultCards(page)).toHaveCount(3);
 
     await page.waitForTimeout(SETTLE_MS);
     expect(concepts.count).toBe(conceptsBefore);

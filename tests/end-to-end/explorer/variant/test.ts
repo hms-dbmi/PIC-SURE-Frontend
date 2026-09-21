@@ -11,7 +11,7 @@ import {
   searchResults as mockData,
   searchResultPath,
 } from '../../mock-data';
-import { getOption, clickNthFilterIcon, userIsLoggedIn } from '../../utils';
+import { addFilterButton, getOption, openNthResultFilter, userIsLoggedIn } from '../../utils';
 
 const SyncQueryV3 = '*/**/picsure/hpds/auth/v3/query/sync';
 
@@ -253,11 +253,10 @@ test.describe('variant explorer', () => {
     await userIsLoggedIn(page);
 
     // has one pheno filter
-    await clickNthFilterIcon(page);
+    await openNthResultFilter(page);
     const firstItem = await getOption(page);
     await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
-    await addFilterButton.click();
+    await addFilterButton(page).click();
     await expect(page.locator('#results-panel')).toBeVisible();
 
     // When
