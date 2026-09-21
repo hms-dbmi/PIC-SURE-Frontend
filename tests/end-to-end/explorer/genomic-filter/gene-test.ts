@@ -439,12 +439,12 @@ test('Clicking edit filter button in results panel returns to genomic filter wit
   await mockApiSuccess(page, QUERY, 200);
   await page.getByTestId('add-filter-btn').click();
 
-  // When
+  // When the edit view is opened by URL. The filter chip's edit control no longer links here -
+  // it goes to the Genotypes tab, which shows the applied filter itself - so this page's
+  // `?edit=` mode is reachable by address bar and history only, until ticket 08 deletes the
+  // route and takes it along.
   await page.waitForURL('**/explorer');
-  await page
-    .getByTestId('added-filter-genomic')
-    .getByRole('button', { name: 'Edit Filter' })
-    .click();
+  await page.goto('/explorer/genome-filter?edit=genomic');
 
   // Then
   await expect(selectedContainer.getByLabel(geneValues.results[0])).toBeChecked();
@@ -461,12 +461,9 @@ test('Editing filter from results panel updates results panel on save', async ({
   await mockApiSuccess(page, QUERY, 200);
   await page.getByTestId('add-filter-btn').click();
 
-  // When
+  // When, by URL for the same reason as the test above
   await page.waitForURL('**/explorer');
-  await page
-    .getByTestId('added-filter-genomic')
-    .getByRole('button', { name: 'Edit Filter' })
-    .click();
+  await page.goto('/explorer/genome-filter?edit=genomic');
   await page.getByTestId('select-variant-frequency').getByLabel('Novel').click();
   await page.getByTestId('save-filter-btn').click();
   await page

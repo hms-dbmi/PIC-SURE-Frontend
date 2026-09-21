@@ -15,9 +15,7 @@ vi.mock('$lib/logger', () => ({
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
-vi.mock('$lib/stores/GeneFilter', () => ({ populateFromGeneFilter: vi.fn() }));
-
-vi.mock('$lib/stores/SNPFilter', () => ({ populateFromSNPFilter: vi.fn() }));
+vi.mock('$lib/stores/GenomicDraft', () => ({ loadDraftForEditing: vi.fn() }));
 
 vi.mock('$lib/stores/Filter', async () => {
   const { writable } = await import('svelte/store');
@@ -35,15 +33,12 @@ vi.mock('$lib/stores/ExpandableRow', async () => {
   return { activeRow: writable('') };
 });
 
-vi.mock('$lib/stores/ResultsSummaryPanel', async () => {
-  const { writable } = await import('svelte/store');
-  return { panelOpen: writable(true) };
-});
-
 import AddedFilter from '$lib/components/explorer/results/AddedFilter.svelte';
+import { goto } from '$app/navigation';
 import { log } from '$lib/logger';
 import type { Filter } from '$lib/models/Filter.svelte';
 import type { SearchResult } from '$lib/models/Search';
+import { loadDraftForEditing } from '$lib/stores/GenomicDraft';
 
 const searchResult = {
   conceptPath: '\\test\\concept\\',
@@ -78,8 +73,21 @@ const genomicFilter = {
   categoryValues: [],
 } as unknown as Filter;
 
+const snpFilter = {
+  parent: undefined,
+  uuid: 'snp-uuid',
+  id: 'snp-variant',
+  filterType: 'snp',
+  variableName: 'Variant Filter',
+  snpValues: [{ search: 'chr17,35269878,GT,A', constraint: '0/1' }],
+} as unknown as Filter;
+
 describe('AddedFilter', () => {
-  beforeEach(() => vi.mocked(log).mockClear());
+  beforeEach(() => {
+    vi.mocked(log).mockClear();
+    vi.mocked(goto).mockClear();
+    vi.mocked(loadDraftForEditing).mockClear();
+  });
 
   // Regression guard for ALS-12904: the edit control for phenotypic filters is
   // Modal's trigger button, which is a different code path from the genomic
@@ -110,5 +118,19 @@ describe('AddedFilter', () => {
         metadata: { variable: 'Gene With Variant' },
       }),
     );
+  });
+
+  // The Genotypes tab shows the filter's own state, so editing one is a navigation to that
+  // tab and nothing else - no edit mode to deep link into.
+  it.each([
+    { label: 'a genomic', filter: genomicFilter },
+    { label: 'an SNP', filter: snpFilter },
+  ])('sends $label filter to the Genotypes tab with the filter loaded', async ({ filter }) => {
+    render(AddedFilter, { filter });
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Edit Filter' }));
+
+    expect(loadDraftForEditing).toHaveBeenCalledWith(filter);
+    expect(goto).toHaveBeenCalledWith('/explorer/genotypes');
   });
 });

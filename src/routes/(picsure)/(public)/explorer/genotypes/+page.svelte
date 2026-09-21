@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { get } from 'svelte/store';
+
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
 
@@ -9,18 +11,19 @@
   import GeneSearch from '$lib/components/explorer/genome-filter/GeneSearch.svelte';
   import SnpSearch from '$lib/components/explorer/genome-filter/SNPSearch.svelte';
 
+  import type {
+    Filter,
+    GenomicFilterInterface,
+    SnpFilterInterface,
+  } from '$lib/models/Filter.svelte';
   import { Option } from '$lib/models/GenomeFilter';
   import { genomicFilterMethod } from '$lib/state/genomicFilterMethod.svelte';
-  import { addFilter } from '$lib/stores/Filter';
-  import { clearGeneFilters, generateGenomicFilter, selectedGenes } from '$lib/stores/GeneFilter';
+  import { addFilter, genomicFilters } from '$lib/stores/Filter';
+  import { generateGenomicFilter, selectedGenes } from '$lib/stores/GeneFilter';
+  import { loadGenomicDrafts, type AppliedGenomicFilters } from '$lib/stores/GenomicDraft';
   import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
-  import { clearSnpFilters, generateSNPFilter, selectedSNPs } from '$lib/stores/SNPFilter';
+  import { generateSNPFilter, selectedSNPs } from '$lib/stores/SNPFilter';
 
-  /**
-   * The method a deployment with a single query type leaves no choice about. BDC enables
-   * GENE alone, so the tab opens straight onto the gene-variant panels and never shows the
-   * chooser. `undefined` means the user picks.
-   */
   const forcedMethod = $derived.by(() => {
     const { enableGENEQuery, enableSNPQuery } = config.features;
     if (enableGENEQuery && !enableSNPQuery) return Option.Genomic;
@@ -28,26 +31,43 @@
     return undefined;
   });
 
-  // Configuration wins outright where it decides, so the remembered method is read only in
-  // the case it can be set in.
   const method = $derived(forcedMethod ?? genomicFilterMethod.current);
   const showsMethodChooser = $derived(forcedMethod === undefined);
+
+  function appliedIn(filters: Filter[]): AppliedGenomicFilters {
+    return {
+      gene: filters.find((f): f is GenomicFilterInterface => f.filterType === 'genomic'),
+      snp: filters.find((f): f is SnpFilterInterface => f.filterType === 'snp'),
+    };
+  }
+
+  const applied = $derived(appliedIn($genomicFilters));
+  const updates = $derived(
+    method === Option.SNP ? applied.snp !== undefined : applied.gene !== undefined,
+  );
+
+  // Loaded here rather than only in the effect below, so that the panels are built from the
+  // drafts instead of catching up to them: the gene panel reads the selection as it mounts,
+  // and an effect runs after that.
+  loadGenomicDrafts(appliedIn(get(genomicFilters)));
+
+  $effect(() => {
+    loadGenomicDrafts(applied);
+  });
 
   const canComplete = $derived(
     (method === Option.Genomic && $selectedGenes.length > 0) ||
       (method === Option.SNP && $selectedSNPs.length > 0),
   );
+  const actionLabel = $derived(updates ? 'Update Filter' : 'Add Filter');
   const actionTitle = $derived(
-    canComplete ? 'Add Filter' : method === Option.SNP ? 'A SNP is required' : 'A gene is required',
+    canComplete ? actionLabel : method === Option.SNP ? 'A SNP is required' : 'A gene is required',
   );
 
   function onComplete() {
+    // `addFilter` replaces by id, and both genomic ids are fixed, so this updates the applied
+    // filter rather than adding a second one.
     addFilter(method === Option.Genomic ? generateGenomicFilter() : generateSNPFilter());
-    // The working state has become the filter, so the tab starts over: empty panels, and the
-    // chooser again where there is one. Same as the page this replaces.
-    clearGeneFilters();
-    clearSnpFilters();
-    genomicFilterMethod.current = Option.None;
     $panelOpen = true;
     goto(resolve('/explorer'));
   }
@@ -81,7 +101,7 @@
           onclick={onComplete}
           disabled={!canComplete}
         >
-          Add Filter <i class="fa-solid fa-plus ml-3"></i>
+          {actionLabel} <i class="fa-solid fa-plus ml-3"></i>
         </button>
       </div>
     {/if}
