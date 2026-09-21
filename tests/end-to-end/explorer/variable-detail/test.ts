@@ -1,4 +1,4 @@
-import { expect, type Page, type Route } from '@playwright/test';
+import { expect, type Locator, type Page, type Route } from '@playwright/test';
 
 import { test, mockApiConfig, mockApiSuccess } from '../../custom-context';
 import {
@@ -39,6 +39,10 @@ const detailUrl = (section: 'explorer' | 'discover', dataset: string, conceptPat
 const variable = detailResponseCat;
 const exploreUrl = detailUrl('explorer', variable.dataset, variable.conceptPath);
 const discoverUrl = detailUrl('discover', variable.dataset, variable.conceptPath);
+
+// The transform the mockups link Harmonization method(s) to.
+const HARMONIZATION_URL =
+  'https://github.com/RTIInternational/NHLBI-BDC-DMC-HV/tree/main/priority_variables_transform';
 
 const mockConceptDetail = (page: Page, json: unknown = variable) =>
   page.route(`${conceptsDetailPath}/*`, (route: Route) => route.fulfill({ json }));
@@ -117,6 +121,192 @@ test.describe('Explore variable detail page', () => {
     // above the mode bar; this criterion has no other coverage, so it must follow the move
     // rather than go red.
     await expect(cohortPanel(page)).toBeVisible();
+  });
+
+  /**
+   * Variable Information against the mockup it was drawn from, `p1-04-asthma-detail.png`.
+   *
+   * The concept is spelled out here rather than taken from `mock-data.ts` because no fixture
+   * carries the four `meta` keys the design's rows come from - Accession, Subject Type,
+   * Vocabulary and Harmonization method(s) are not in any fixture, in `mock-data.ts`, or in
+   * the dictionary's own seed data. These values are the mockup's own.
+   */
+  const asthma = {
+    ...variable,
+    display: 'asthma',
+    description: 'A bronchial disease characterized by chronic inflammation of the airways.',
+    type: 'Categorical',
+    table: null,
+    study: null,
+    meta: {
+      Accession: 'MONDO:004979',
+      'Subject Type': 'Human',
+      Vocabulary: 'Mondo Disease Ontology',
+      'Harmonization method(s)': HARMONIZATION_URL,
+    },
+  };
+
+  const infoRows = (page: Page) =>
+    page.getByTestId('variable-info').locator('[data-testid^="variable-info-"]');
+
+  test("renders Variable Information in the mockup's order, one field per line", async ({
+    page,
+  }) => {
+    // Given
+    await mockConceptDetail(page, asthma);
+
+    // When
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+
+    // Then the mockup's rows, with its labels, in its order - toHaveText on a list asserts
+    // the count and the order, not just that each is somewhere on the page.
+    await expect(infoRows(page)).toHaveText([
+      'Name: asthma',
+      `Description: ${asthma.description}`,
+      'Accession: MONDO:004979',
+      'Type: Categorical',
+      'Subject Type: Human',
+      'Vocabulary: Mondo Disease Ontology',
+      `Harmonization method(s): ${HARMONIZATION_URL}`,
+    ]);
+
+    // And one column: every row starts at the same left edge and sits below the one before,
+    // which the old one-to-three-column grid did not do. Read from layout rather than from
+    // class names, so it holds whatever the classes say.
+    const geometry = await infoRows(page).evaluateAll((rows) =>
+      rows.map((row) => {
+        const { left, top, bottom } = row.getBoundingClientRect();
+        return { left, top, bottom };
+      }),
+    );
+    expect(geometry.length).toBe(7);
+    geometry.forEach((row, index) => {
+      expect(row.left).toBeCloseTo(geometry[0].left, 0);
+      if (index > 0) expect(row.top).toBeGreaterThanOrEqual(geometry[index - 1].bottom - 1);
+    });
+  });
+
+  test('renders Harmonization method(s) as a link to the transform', async ({ page }) => {
+    // Given
+    await mockConceptDetail(page, asthma);
+
+    // When
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+
+    // Then
+    const link = page.getByTestId('variable-info-harmonization-methods').getByRole('link');
+    await expect(link).toHaveAttribute('href', HARMONIZATION_URL);
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  /**
+   * What every deployment we can see actually sends: `detailResponseCat`'s bag holds `values`
+   * and `description` and none of the design's keys, so Unit, Subject Type, Vocabulary and
+   * Harmonization method(s) are omitted rather than rendered empty.
+   *
+   * Accession is *not* omitted. It falls back to `name`, which is the row this page showed
+   * before the redesign - `name` is a column of its own, mapped verbatim by
+   * `ConceptResultSetUtil`, and on the dictionary's own dbGaP rows it is the variable
+   * accession (`phv00004260`) while the last path segment is the `display` (`FM219`).
+   * `Concept.java` documenting it as "the right most concept in the concept path" holds only
+   * for ACT/ICD-10 rows, where `name`, `display` and the last segment coincide.
+   */
+  test('omits the rows a variable has no values for, and keeps Accession and the bag', async ({
+    page,
+  }) => {
+    // Given the fixture concept, whose meta carries none of the design's keys
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+
+    // Then the designed rows it does have values for, and no empty ones
+    await expect(infoRows(page)).toHaveText([
+      `Name: ${variable.display}`,
+      `Description: ${variable.description}`,
+      `Accession: ${variable.name}`,
+      `Type: ${variable.type}`,
+    ]);
+
+    // And its own meta bag below them, which this component is the only renderer of
+    const variableInfo = page.getByTestId('variable-info');
+    await expect(variableInfo).toContainText(`values: ${variable.meta.values.join(', ')}`);
+    await expect(variableInfo).not.toContainText('Unit:');
+    await expect(variableInfo).not.toContainText('Subject Type:');
+    await expect(variableInfo).not.toContainText('Vocabulary:');
+    await expect(variableInfo).not.toContainText('Harmonization method(s):');
+  });
+
+  /**
+   * The three section headings are `h2` for the outline - the page's own heading is an `h1`
+   * and nothing sits between them - and must not render larger than it. An `h2` with no size
+   * class is 1.75rem against this page's `h1.h4` at 1.25rem, so the level change needs the
+   * `h5` the page's other section headings already use.
+   *
+   * Read from computed style rather than from class names, so it holds whatever the classes
+   * say, and anchored on a visible heading first: a font size read off a page that has not
+   * rendered is not a measurement.
+   */
+  test('renders the section headings at the size of the page, not larger than its h1', async ({
+    page,
+  }) => {
+    // Given
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await expect(page.getByTestId('variable-info')).toBeVisible();
+
+    // When
+    const measure = (locator: Locator) =>
+      locator.evaluate((element) => ({
+        level: element.tagName,
+        fontSize: parseFloat(getComputedStyle(element).fontSize),
+      }));
+    const pageHeading = await measure(page.getByTestId('variable-detail-name'));
+    const sibling = await measure(
+      page.getByTestId('variable-detail-hierarchy').getByRole('heading'),
+    );
+    // By role, not by `h2`: located as `h2` a level regression is a locator that never
+    // resolves, so it fails as a 30s timeout and `level` below can never fail on its own.
+    const sections = ['variable-info', 'dataset-info', 'study-info'];
+    const headings = await Promise.all(
+      sections.map((testid) => measure(page.getByTestId(testid).getByRole('heading'))),
+    );
+
+    // Then
+    expect(pageHeading.level).toBe('H1');
+    expect(sibling.level).toBe('H2');
+    expect(headings).toHaveLength(3);
+    headings.forEach((heading) => {
+      // The level, which is what makes the outline h1 -> h2 with nothing skipped.
+      expect(heading.level).toBe('H2');
+      // And the size, which the level does not carry.
+      expect(heading.fontSize).toBeLessThanOrEqual(pageHeading.fontSize);
+      expect(heading.fontSize).toBeCloseTo(sibling.fontSize, 1);
+    });
+  });
+
+  // The branded headings (`explorePage.resultInfo.*`) are not reachable from here: they come
+  // from the deployment's `configuration.json`, not from an API branding row, so
+  // `mockApiConfig` cannot set them and an e2e assertion on them would pass whatever the
+  // component did with the config. `tests/component/ResultInfoComponent.test.ts` covers them
+  // at the layer they are observable.
+
+  // Dataset and Study survive the rewrite: a study's link, phase and accession are on screen
+  // nowhere else in the application.
+  test('keeps Dataset and Study Information below the variable', async ({ page }) => {
+    // Given
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+
+    // Then
+    await expect(page.getByTestId('dataset-info')).toContainText(`Name: ${variable.table.display}`);
+    await expect(page.getByTestId('study-info')).toContainText(
+      `Study Name: ${variable.study.fullName}`,
+    );
+    await expect(page.getByTestId('study-info')).toContainText(
+      `study_link: ${variable.study.meta.study_link}`,
+    );
   });
 
   test('renders the data hierarchy where the deployment enables it', async ({ page }) => {
