@@ -78,6 +78,45 @@ test.describe('Explore tab bar', () => {
     await mockApiSuccess(page, searchResultPath, searchResults);
   });
 
+  // The Genotypes tab is the only entry point to genomic filtering, on the configuration
+  // that offers it - not one of two.
+  test('offers no genomic entry point outside the tab bar', async ({ page }) => {
+    // Given
+    await page.goto('/explorer');
+    await userIsLoggedIn(page);
+    await expect(tab(page, 'genotypes')).toBeVisible();
+
+    // Then
+    await expect(page.getByRole('link', { name: 'Genomic Filtering' })).toHaveCount(0);
+  });
+
+  // Genomic filtering's only address for the life of the feature, behind a prominent button,
+  // so bookmarks and history entries for it are real. Deleting the route outright would leave
+  // it returning a bare SvelteKit 404 with none of the app's chrome and no way back.
+  test('redirects the retired genomic-filtering URL to the Genotypes tab', async ({ page }) => {
+    // When
+    const response = await page.goto('/explorer/genome-filter');
+    await userIsLoggedIn(page);
+
+    // Then it is served, not 404'd, and lands on the tab that replaced it
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(/\/explorer\/genotypes$/);
+    await expect(page.getByTestId('genotypes-tab')).toBeVisible();
+    await expect(tab(page, 'genotypes')).toHaveAttribute('aria-current', 'page');
+  });
+
+  // The edit deep link the retired route took, which the filter chip used to produce.
+  test('redirects the retired edit deep link too, dropping its parameter', async ({ page }) => {
+    // When
+    const response = await page.goto('/explorer/genome-filter?edit=genomic');
+    await userIsLoggedIn(page);
+
+    // Then
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(/\/explorer\/genotypes$/);
+    await expect(page.getByTestId('genotypes-tab')).toBeVisible();
+  });
+
   test('shows Phenotypes and Genotypes, with Phenotypes on /explorer', async ({ page }) => {
     // Given
     await page.goto('/explorer');

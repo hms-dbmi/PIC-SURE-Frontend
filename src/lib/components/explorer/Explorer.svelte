@@ -24,7 +24,6 @@
   import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
-  import { log, createLog } from '$lib/logger';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
@@ -49,12 +48,8 @@
     { dataElement: 'id', label: 'Actions', class: 'w-36 text-center' },
   ]);
   const cellOverides = { id: Actions };
-  const genomicFeaturesEnabled = $derived(
-    config.features.enableGENEQuery || config.features.enableSNPQuery,
-  );
   let isDiscoverPage = $derived(page.url.pathname.includes('/discover'));
   let path = $derived(isDiscoverPage ? '/discover' : '/explorer');
-  let allowGenomicFiltering = $derived(genomicFeaturesEnabled && !isDiscoverPage);
 
   function update() {
     if ($error) error.set('');
@@ -101,15 +96,6 @@
         <Searchbox bind:searchTerm={searchInput} search={update} />
       </div>
       <div class="flex-none">
-        {#if allowGenomicFiltering}
-          <a
-            data-testid="genomic-filter-btn"
-            class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-            href={resolve('/explorer/genome-filter')}
-            onclick={() => log(createLog('NAVIGATION', 'explorer.genomic_filter_click'))}
-            >Genomic Filtering</a
-          >
-        {/if}
         <button
           type="button"
           class="btn preset-tonal-error border border-error-500 hover:preset-filled-error-500"
