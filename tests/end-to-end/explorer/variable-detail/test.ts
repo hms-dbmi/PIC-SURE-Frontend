@@ -4,6 +4,7 @@ import { test, mockApiConfig, mockApiSuccess } from '../../custom-context';
 import {
   conceptsDetailPath,
   detailResponseCat,
+  detailResponseNum,
   facetResultPath,
   facetsResponse,
   hierarchyResponse,
@@ -23,9 +24,9 @@ import {
   userIsLoggedIn,
 } from '../../utils';
 
-// The variable detail page. Nothing links to it yet - ticket 11 points the result cards here -
-// so these specs reach it by URL, which is also the thing that has to keep working: the page
-// has to load from cold, with no search in the session to inherit a variable from.
+// The variable detail page. These specs reach it by URL, which is also the thing that has to
+// keep working: the page has to load from cold, with no search in the session to inherit a
+// variable from.
 //
 // The URL carries the dataset and the concept path because the dictionary has no slug field
 // yet and concept detail needs both. That shape is spelled out here rather than imported from
@@ -116,15 +117,12 @@ test.describe('Explore variable detail page', () => {
     );
     await expect(page.getByTestId('search-mode-tab-genotypes')).not.toHaveAttribute('aria-current');
 
-    // And the cohort panel, which renders on every route the mode bar renders on. Located
-    // through the shared helper because ALS-12835 moves it from the right sidebar to a strip
-    // above the mode bar; this criterion has no other coverage, so it must follow the move
-    // rather than go red.
+    // And the cohort panel, which renders on every route the mode bar renders on
     await expect(cohortPanel(page)).toBeVisible();
   });
 
   /**
-   * Variable Information against the mockup it was drawn from, `p1-04-asthma-detail.png`.
+   * Variable Information against the design it was drawn from.
    *
    * The concept is spelled out here rather than taken from `mock-data.ts` because no fixture
    * carries the four `meta` keys the design's rows come from - Accession, Subject Type,
@@ -595,9 +593,8 @@ test.describe('the stigmatising-filter guard from a detail page', () => {
 /*
  * Acting on the variable from its own page.
  *
- * Ticket 11 strips the per-row Info / Filter / Hierarchy / Add-for-Analysis icons off the
- * search results, so all four actions have to exist here before the icons go. Add for
- * Analysis is the only one not duplicated anywhere else in the UI.
+ * All four row actions exist here. Add for Analysis is the only one not duplicated anywhere
+ * else in the UI.
  */
 test.describe('acting on the variable from its own page', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -608,9 +605,10 @@ test.describe('acting on the variable from its own page', () => {
   const participants = (page: Page) => page.locator('#result-count-number');
   const exportToggle = (page: Page) => page.getByTestId('variable-detail-export-toggle');
   const filterSection = (page: Page) => page.getByTestId('variable-detail-filter');
-  // Scoped: `data-testid="add-filter"` is AddFilter's button *and* HierarchyComponent's, and
-  // both render on this page, so an unscoped locator resolves to two elements.
-  const addFilterButton = (page: Page) => filterSection(page).getByTestId('add-filter');
+  // Unscoped on purpose. `add-filter` was AddFilter's button *and* HierarchyComponent's, and
+  // both rendered on this page, so any unscoped locator for it was a strict-mode violation;
+  // the two ids are now distinct and the filter action has this page's own name.
+  const addFilterButton = (page: Page) => page.getByTestId('filter-participants');
 
   const COUNT_PATH = '*/**/picsure/hpds/auth/v3/query/sync';
   const EXPORT_FEATURES = [
@@ -719,7 +717,7 @@ test.describe('acting on the variable from its own page', () => {
   });
 
   /*
-   * EXISTING-ISSUES item 18, from the outside.
+   * The `Actions.svelte` identity trap, from the outside.
    *
    * `Actions.svelte` decides whether a variable is already added with
    * `$exports.includes(exportItem)` - reference equality against a fresh object literal - so
@@ -748,6 +746,39 @@ test.describe('acting on the variable from its own page', () => {
 
     await expect(page.getByTestId(`added-export-${variable.conceptPath}`)).toHaveCount(0);
     await expect(exportToggle(page)).toHaveText(/Add for Analysis/);
+  });
+
+  /*
+   * Two views of one filter, both on this page: the cohort panel's edit pencil opens its own
+   * AddFilter in a modal over it, and `updateFilter` preserves the uuid. Keyed on identity
+   * alone, this page's interface would still hold the selection it read at mount, and the
+   * next add here would write that stale selection back over the edit made in the modal.
+   */
+  test('does not undo an edit made from the cohort panel', async ({ page }) => {
+    // Given a filter on this variable, restricted to its first value
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await addFilterFromPage(page);
+    const chip = page.getByTestId(`added-filter-${variable.conceptPath}`);
+    await expect(chip).toBeVisible();
+
+    // When it is edited from the panel to a second value
+    await chip.getByRole('button', { name: 'Edit Filter' }).click();
+    const modal = page.getByRole('dialog');
+    const modalOption = await getOption(modal);
+    await modalOption.click();
+    await modal.getByTestId('add-filter').click();
+    await expect(modal).toHaveCount(0);
+
+    // Then this page's interface shows both values, not the one it read at mount
+    const selected = filterSection(page).locator('#selected-options-container');
+    await expect(selected.locator('input[type="checkbox"]')).toHaveCount(2);
+
+    // And adding from this page carries that edit forward rather than reverting it
+    await addFilterButton(page).click();
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+    await chip.getByRole('button', { name: 'See details' }).click();
+    await expect(chip).toContainText('Restricting to 2 values');
   });
 
   test('offers no Add for Analysis where the deployment disables exports', async ({ page }) => {
@@ -796,7 +827,7 @@ test.describe('acting on the variable in open access', () => {
 
     // Then
     await expect(page.getByTestId('variable-detail-filter')).toBeVisible();
-    await expect(page.getByTestId('filter-component')).toBeVisible();
+    await expect(page.getByTestId('variable-filter-panel')).toBeVisible();
     await expect(page.getByTestId('variable-detail-export-toggle')).toHaveCount(0);
     await expect(page.getByTestId('variable-detail-filter-disabled')).toHaveCount(0);
   });
@@ -814,6 +845,319 @@ test.describe('acting on the variable in open access', () => {
     await expect(page.getByTestId('variable-detail-filter-disabled')).toContainText(
       'Filtering is not available for this variable',
     );
-    await expect(page.getByTestId('filter-component')).toHaveCount(0);
+    await expect(page.getByTestId('variable-filter-panel')).toHaveCount(0);
+  });
+});
+
+/*
+ * The designed filter panel: a value list for a categorical variable, min and max for a
+ * continuous one.
+ */
+test.describe('the designed filter panel', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
+
+  const panel = (page: Page) => page.getByTestId('variable-filter-panel');
+  const searchBox = (page: Page) => panel(page).locator('input[type="search"]');
+  const selectAll = (page: Page) => panel(page).locator('#select-all');
+  const filterParticipants = (page: Page) => page.getByTestId('filter-participants');
+  const optionsColumn = (page: Page) => panel(page).locator('#options-container').first();
+  const selectedColumn = (page: Page) => panel(page).locator('#selected-options-container').first();
+  const filterCount = (page: Page) => page.getByTestId('results-panel-filter-count');
+
+  const values = async (locator: Locator) =>
+    (await locator.getByRole('listitem').allInnerTexts()).map((text) => text.trim());
+
+  const box = async (locator: Locator) => {
+    const rect = await locator.boundingBox();
+    if (!rect) throw new Error('element has no box');
+    return rect;
+  };
+
+  /** A continuous variable, so the min/max interface has bounds to render. */
+  const continuous = { ...detailResponseNum, allowFiltering: true };
+
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page, { features: [{ name: 'ENABLE_HIERARCHY', value: 'true' }] });
+    await mockConceptDetail(page);
+    await mockHierarchy(page);
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+    await mockApiSuccess(page, searchResultPath, searchResults);
+    await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', '9999');
+  });
+
+  /** Opens this page's URL on `concept`, whatever concept the URL happens to name. */
+  async function open(page: Page, concept: unknown = variable) {
+    await mockConceptDetail(page, concept);
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await expect(panel(page)).toBeVisible();
+  }
+
+  // Search and Select All above the value checkboxes on the left; Selected values and Filter
+  // Participants on the right. Read from layout, not from class names, so it holds whatever
+  // the classes say.
+  test('puts search and Select All over the values, and the action over Selected values', async ({
+    page,
+  }) => {
+    await open(page);
+
+    const search = await box(searchBox(page));
+    const all = await box(selectAll(page));
+    const firstValue = await box(optionsColumn(page).getByRole('listitem').first());
+    const action = await box(filterParticipants(page));
+    const selectedHeading = await box(panel(page).getByText('Selected values:'));
+
+    // Select All beside the search box, both of them above the values
+    expect(all.x).toBeGreaterThan(search.x + search.width - 1);
+    expect(firstValue.y).toBeGreaterThanOrEqual(search.y + search.height - 1);
+    expect(firstValue.y).toBeGreaterThanOrEqual(all.y + all.height - 1);
+
+    // The right-hand column is to the right of the values, with the action in its top corner
+    expect(selectedHeading.x).toBeGreaterThan(firstValue.x + firstValue.width - 1);
+    expect(action.x).toBeGreaterThan(selectedHeading.x);
+    expect(action.y).toBeLessThan(firstValue.y);
+  });
+
+  // The design puts the filter interface between the variable's identity and Variable
+  // Information.
+  test('sits under the variable identity and above Variable Information', async ({ page }) => {
+    await open(page);
+    await expect(page.getByTestId('variable-detail-hierarchy')).toBeVisible();
+
+    const tops = await Promise.all(
+      [
+        'variable-identity',
+        'variable-detail-filter',
+        'variable-detail-information',
+        'variable-detail-hierarchy',
+      ].map(async (id) => (await box(page.getByTestId(id))).y),
+    );
+
+    expect(tops).toEqual([...tops].sort((a, b) => a - b));
+    expect(new Set(tops).size).toBe(tops.length);
+  });
+
+  test('narrows the value list as the user types', async ({ page }) => {
+    await open(page);
+    expect(await values(optionsColumn(page))).toEqual(['Yes', 'No', "Don't know"]);
+
+    await searchBox(page).fill('kno');
+    await expect(optionsColumn(page).getByRole('listitem')).toHaveCount(1);
+    expect(await values(optionsColumn(page))).toEqual(["Don't know"]);
+
+    // And widens again, so what narrowed the list is the term and not a one-way filter
+    await searchBox(page).fill('');
+    await expect(optionsColumn(page).getByRole('listitem')).toHaveCount(3);
+  });
+
+  test('moves a ticked value into Selected values, and an unticked one back', async ({ page }) => {
+    await open(page);
+
+    await optionsColumn(page).getByRole('listitem').first().click();
+    expect(await values(selectedColumn(page))).toEqual(['Yes']);
+    await expect(selectedColumn(page).locator('input[type="checkbox"]')).toBeChecked();
+    expect(await values(optionsColumn(page))).toEqual(['No', "Don't know"]);
+
+    // Unticking it in the right-hand column sends it back to the left
+    await selectedColumn(page).getByRole('listitem').first().click();
+    await expect(selectedColumn(page).getByRole('listitem')).toHaveCount(0);
+    expect(await values(optionsColumn(page))).toContain('Yes');
+    await expect(optionsColumn(page).locator('#option-yes input')).not.toBeChecked();
+  });
+
+  test('waits for a value before it will filter', async ({ page }) => {
+    await open(page);
+    await expect(filterParticipants(page)).toBeDisabled();
+
+    await optionsColumn(page).getByRole('listitem').first().click();
+    await expect(filterParticipants(page)).toBeEnabled();
+
+    // And back again: a panel the user emptied cannot add a filter that restricts nothing
+    await selectedColumn(page).getByRole('listitem').first().click();
+    await expect(filterParticipants(page)).toBeDisabled();
+  });
+
+  // Select All means "filter to any value" - selecting everything constrains nothing - so the
+  // chip has to say that rather than list every value the variable has.
+  test('reads Select All back as any value, not as a list of every value', async ({ page }) => {
+    await open(page);
+
+    await selectAll(page).click();
+    expect(await values(selectedColumn(page))).toEqual(['Yes', 'No', "Don't know"]);
+    await expect(optionsColumn(page).getByRole('listitem')).toHaveCount(0);
+
+    await filterParticipants(page).click();
+    const chip = page.getByTestId(`added-filter-${variable.conceptPath}`);
+    await expect(chip).toBeVisible();
+    await chip.getByRole('button', { name: 'See details' }).click();
+
+    await expect(chip).toContainText('Restricting to any value.');
+    await expect(chip).not.toContainText("Values: Yes, No, Don't know");
+  });
+
+  /*
+   * The other half of "any value": reading it back.
+   *
+   * Select All writes a filter carrying *no* values, which is how the cohort records "filter
+   * to any value". Re-opening the page therefore has to read an empty value list as every
+   * value ticked rather than as none - and if it did not, the next press of the action would
+   * turn the user's unconstrained filter into a filter on nothing.
+   */
+  test('re-opens a Select All filter with every value ticked', async ({ page }) => {
+    await open(page);
+    await selectAll(page).click();
+    await filterParticipants(page).click();
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+
+    // The filter tree comes back out of sessionStorage, and the concept is fetched fresh
+    await page.reload();
+    await userIsLoggedIn(page);
+    await expect(panel(page)).toBeVisible();
+
+    expect(await values(selectedColumn(page))).toEqual(['Yes', 'No', "Don't know"]);
+    await expect(optionsColumn(page).getByRole('listitem')).toHaveCount(0);
+
+    // And pressing the action again edits that filter rather than adding a second, still
+    // unconstrained
+    await filterParticipants(page).click();
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+    const chip = page.getByTestId(`added-filter-${variable.conceptPath}`);
+    await chip.getByRole('button', { name: 'See details' }).click();
+    await expect(chip).toContainText('Restricting to any value.');
+  });
+
+  // A continuous variable gets Min and Max, with the variable's own bounds as the
+  // placeholders, and no value list at all.
+  test('offers min and max, not a value list, for a continuous variable', async ({ page }) => {
+    await open(page, continuous);
+
+    await expect(page.getByTestId('min-input')).toHaveAttribute('placeholder', '0');
+    await expect(page.getByTestId('max-input')).toHaveAttribute('placeholder', '99');
+    await expect(panel(page).getByTestId('optional-selection-list')).toHaveCount(0);
+    await expect(selectAll(page)).toHaveCount(0);
+
+    // Both bounds blank is a filter - everyone with a measurement - so the action is offered
+    await expect(filterParticipants(page)).toBeEnabled();
+    await page.getByTestId('min-input').fill('21');
+    await filterParticipants(page).click();
+
+    const chip = page.getByTestId(`added-filter-${continuous.conceptPath}`);
+    await chip.getByRole('button', { name: 'See details' }).click();
+    await expect(chip).toContainText('Restricting to greater than 21.');
+  });
+
+  /*
+   * Keyboard operability, driven with keys.
+   *
+   * Every control in the panel has to be reachable by Tab and workable by Space or Enter. The
+   * trail pins the order too: search, Select All, the values, then the action - the reading
+   * order of the mockup.
+   */
+  test('is operable from the keyboard end to end', async ({ page, browserName }) => {
+    // Not WebKit. Safari leaves buttons and checkboxes out of the tab order unless the user
+    // turns on "Press Tab to highlight each item on a webpage", and Playwright's WebKit
+    // inherits that: the trail there runs from the search box straight past every control in
+    // this panel. That is a browser preference, not something this page can be built to
+    // satisfy, and asserting around it would leave the test passing on markup no keyboard
+    // user could operate anywhere else.
+    test.skip(browserName === 'webkit', 'WebKit omits buttons and checkboxes from tab order');
+    await open(page);
+
+    /** What Tab lands on, named by whatever identifies it. */
+    const trail = async (steps: number) => {
+      const seen: string[] = [];
+      for (let step = 0; step < steps; step += 1) {
+        await page.keyboard.press('Tab');
+        seen.push(
+          await page.evaluate(() => {
+            const element = document.activeElement as HTMLElement | null;
+            if (!element) return 'none';
+            return (
+              element.getAttribute('data-testid') ||
+              element.id ||
+              (element as HTMLInputElement).value ||
+              element.tagName
+            );
+          }),
+        );
+      }
+      return seen;
+    };
+
+    // Space works the checkbox the keyboard is on
+    await backButton(page).focus();
+    await trail(3);
+    await page.keyboard.press('Space');
+    expect(await values(selectedColumn(page))).toEqual(['Yes']);
+
+    // With a value picked the action is live - it is disabled before that, and a disabled
+    // button is deliberately not a tab stop. The search box has no id and an empty value, so
+    // Tab reports it by its element name.
+    await backButton(page).focus();
+    const reached = await trail(6);
+    expect(reached).toEqual([
+      'INPUT',
+      'select-all',
+      'No',
+      "Don't know",
+      'filter-participants',
+      'Yes',
+    ]);
+
+    // Enter works the action, from the tab stop before the value already picked
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Enter');
+    await expect(filterCount(page)).toHaveText(/^1 filter added$/);
+  });
+
+  test('names both value columns for a screen reader', async ({ page }) => {
+    await open(page);
+
+    const valueGroup = page.getByRole('group', {
+      name: `Values for ${variable.display}`,
+      exact: true,
+    });
+    await expect(valueGroup).toBeVisible();
+    await expect(valueGroup.getByRole('listitem')).toHaveCount(3);
+    await expect(
+      page.getByRole('group', {
+        name: `Selected values for ${variable.display}`,
+        exact: true,
+      }),
+    ).toBeVisible();
+  });
+
+  /*
+   * The concept is handed to the panel, not fetched by it.
+   *
+   * The interface this replaced called `getConceptDetails` again in `onMount` for a
+   * categorical variable with no filter, though the page had already loaded the same concept
+   * including its values - one redundant POST per page view.
+   */
+  test('asks the dictionary for the concept once', async ({ page }) => {
+    const detail = { count: 0 };
+    await page.route(/\/picsure\/dictionary\/concepts\/detail\//, (route: Route) => {
+      detail.count += 1;
+      return route.fulfill({ json: variable });
+    });
+
+    await page.goto(exploreUrl);
+    await userIsLoggedIn(page);
+    await expect(panel(page)).toBeVisible();
+    await expect(optionsColumn(page).getByRole('listitem')).toHaveCount(3);
+
+    await page.waitForTimeout(SETTLE_MS);
+    expect(detail.count).toBe(1);
+  });
+
+  // The hierarchy's add button and the value list's used to share one test id, which made any
+  // unscoped locator for it ambiguous on this page.
+  test('leaves one element per test id on the page', async ({ page }) => {
+    await open(page);
+    await expect(page.getByTestId('variable-detail-hierarchy')).toBeVisible();
+
+    await expect(filterParticipants(page)).toHaveCount(1);
+    await expect(page.getByTestId('add-hierarchy-filter')).toHaveCount(1);
+    await expect(page.getByTestId('add-filter')).toHaveCount(0);
   });
 });

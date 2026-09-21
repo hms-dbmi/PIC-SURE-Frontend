@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { onDestroy, type Snippet } from 'svelte';
 
   import Loading from './Loading.svelte';
   import { log, createLog, getPageContext } from '$lib/logger';
@@ -19,6 +19,13 @@
     allOptionsLoaded?: boolean;
     allOptions?: string[] | undefined;
     onscroll?: (search: string) => void;
+    selectedLabel?: string;
+    /** Replaces Clear in the right-hand column's header. */
+    selectedAction?: Snippet;
+    /** Names both columns for a screen reader, which otherwise announces an unattributed run of checkboxes. */
+    groupLabel?: string;
+    /** Drops the per-column card, for a caller that draws the surrounding panel itself. */
+    flat?: boolean;
   }
 
   let {
@@ -31,7 +38,27 @@
     allOptionsLoaded = false,
     allOptions = undefined,
     onscroll = () => {},
+    selectedLabel = 'Selected:',
+    selectedAction = undefined,
+    groupLabel = '',
+    flat = false,
   }: Props = $props();
+
+  // No `h-full` on the flat column: `height: 100%` is a specified cross size, which turns
+  // `align-self: stretch` off, and the two columns then take their own content heights - so
+  // the right-hand column collapses to its header while nothing is selected, taking the
+  // divider between the columns with it. The card layout keeps the height it had.
+  const columnClass = $derived(
+    flat
+      ? 'flex flex-1 flex-col min-w-0'
+      : 'flex flex-1 flex-col h-full p-3 m-1 card bg-surface-100 rounded-xl',
+  );
+  const listClass = $derived(
+    flat
+      ? 'overflow-y-auto scrollbar-color max-h-[25vh]'
+      : 'overflow-scroll scrollbar-color h-25vh',
+  );
+  const labelFor = (column: string) => (groupLabel ? `${column} for ${groupLabel}` : column);
 
   let currentlyLoadingSelected: boolean = $state(false);
   let unselectedOptionsContainer: HTMLElement = $state() as HTMLElement;
@@ -134,12 +161,13 @@
 </script>
 
 <div data-testid="optional-selection-list" class="flex w-full">
-  <div class="flex flex-1 flex-col h-full p-3 m-1 card bg-surface-100 rounded-xl">
+  <div class={columnClass}>
     <header class="flex pb-1">
       <input
         class="input text-sm"
         type="search"
         name="search"
+        aria-label={labelFor('Search values')}
         bind:value={searchInput}
         oninput={onSearch}
         placeholder="Search..."
@@ -153,11 +181,12 @@
         >
       {/if}
     </header>
-    <section class="card-body">
+    <section class="card-body grow" role="group" aria-label={labelFor('Values')}>
       <div
         id="options-container"
+        role="list"
         bind:this={unselectedOptionsContainer}
-        class="overflow-scroll scrollbar-color h-25vh"
+        class={listClass}
         onscroll={handleScroll}
       >
         {#each unselectedOptions as option}
@@ -181,10 +210,12 @@
       </div>
     </section>
   </div>
-  <div class="flex flex-1 flex-col h-full p-3 m-1 card bg-surface-100 rounded-xl">
+  <div class={flat ? `${columnClass} border-l border-surface-400-600 pl-4` : columnClass}>
     <header class="flex justify-between pb-1">
-      <div class="py-2">Selected:</div>
-      {#if showClearAll}
+      <div class="py-2">{selectedLabel}</div>
+      {#if selectedAction}
+        {@render selectedAction()}
+      {:else if showClearAll}
         <button
           id="clear"
           class="btn preset-outlined-surface-500 hover:preset-filled-primary-500 ml-2 text-sm"
@@ -193,11 +224,16 @@
         >
       {/if}
     </header>
-    <section class="card-body">
+    <section
+      class="card-body grow"
+      role="group"
+      aria-label={labelFor(selectedLabel.replace(/:$/, ''))}
+    >
       <div
         id="selected-options-container"
+        role="list"
         bind:this={selectedOptionsContainer}
-        class="overflow-scroll scrollbar-color h-25vh"
+        class={listClass}
         onscroll={loadMoreSelectedOptions}
       >
         {#each displayedSelectedOptions as option (option)}

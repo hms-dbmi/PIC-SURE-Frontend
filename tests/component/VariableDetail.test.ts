@@ -41,8 +41,12 @@ import VariableDetail from '$lib/components/explorer/VariableDetail.svelte';
 import { log } from '$lib/logger';
 import { getConceptDetails, getHierarchyConcepts } from '$lib/stores/Dictionary';
 import { exports, clearExports } from '$lib/stores/Export';
-import { addFilter, clearFilters, filters } from '$lib/stores/Filter';
-import { createCategoricalFilter, createNumericFilter } from '$lib/models/Filter.svelte';
+import { addFilter, clearFilters, filters, updateFilter } from '$lib/stores/Filter';
+import {
+  createAnyRecordOfFilter,
+  createCategoricalFilter,
+  createNumericFilter,
+} from '$lib/models/Filter.svelte';
 import { searchTerm } from '$lib/stores/Search';
 import type { SearchResult } from '$lib/models/Search';
 import type { VariableKey } from '$lib/explorer/variableUrl';
@@ -216,12 +220,14 @@ describe('VariableDetail', () => {
     });
   });
 
-  // Ticket 11 removes the per-row Info / Filter / Hierarchy / Add-for-Analysis icons, so this
-  // page has to be somewhere the user can act from. The filter interface is AddFilter dropped
-  // in as-is; ticket 13 replaces its layout.
+  // The panel renders inside this page and is covered through it. Its decisions are unit
+  // tested where they are made, in `tests/unit/variableFilter.test.ts`, and its layout and
+  // keyboard behaviour in `tests/end-to-end/explorer/variable-detail/test.ts` - there is no
+  // separate component test file for it.
   describe('the filter interface', () => {
     const filterSection = () => screen.getByTestId('variable-detail-filter');
-    const addFilterButton = () => filterSection().querySelector('[data-testid="add-filter"]')!;
+    const addFilterButton = () =>
+      filterSection().querySelector('[data-testid="filter-participants"]')!;
 
     it('adds a filter for this variable without leaving the page', async () => {
       await renderDetail();
@@ -234,12 +240,14 @@ describe('VariableDetail', () => {
       expect(filter.id).toBe('\\this\\is\\a\\age\\');
       expect(filter.filterType).toBe('numeric');
       expect(filter).toMatchObject({ min: '21' });
-      // Still the detail page: nothing unmounted it and nothing navigated.
+      // Nothing here can navigate, so this is a smoke check rather than the control for
+      // staying on the page - the e2e spec asserts the URL for that.
       expect(screen.getByTestId('variable-identity')).toBeInTheDocument();
     });
 
-    // `addFilter` appends to the tree without checking, and `AddFilter` reads
-    // `existingFilter` once in `onMount` - so an unkeyed interface would go on adding.
+    // The panel reads `existingFilter` from the prop at click time, so this holds with or
+    // without the `{#key}` below - it pins the outcome, not the mechanism. The key earns its
+    // place in the modal-edit test further down, which does fail without it.
     it('updates the filter it already added rather than adding a second', async () => {
       await renderDetail();
 
@@ -274,13 +282,47 @@ describe('VariableDetail', () => {
     });
 
     // A numeric filter round-trips through its own inputs rather than the selection list, so
-    // it needs its own case - the two branches of AddFilter's onMount are independent.
+    // it needs its own case - the two are seeded independently.
     it('opens with the bounds of a numeric filter this variable already has', async () => {
       addFilter(createNumericFilter(detail, '18', '65'));
       await renderDetail();
 
       expect(screen.getByTestId('min-input')).toHaveValue('18');
       expect(screen.getByTestId('max-input')).toHaveValue('65');
+    });
+
+    /*
+     * An `AnyRecordOf` filter carries the concept path of the category node it was made from,
+     * so it matches this variable on `id` alone - which is why `existingFilter` excludes it by
+     * type. Handed to the panel it would be rewritten as a categorical filter the next time
+     * the user pressed Filter Participants, dropping every concept it covered.
+     *
+     * Reachable from this page: the hierarchy that adds one renders on it.
+     */
+    it('leaves an any-record-of filter on the same concept path alone', async () => {
+      const anyRecordOf = createAnyRecordOfFilter(categoricalDetail, {
+        ...categoricalDetail,
+        children: [{ ...categoricalDetail, conceptPath: '\\this\\is\\a\\smoker\\child\\' }],
+      });
+      addFilter(anyRecordOf);
+      vi.mocked(getConceptDetails).mockResolvedValue(categoricalDetail);
+
+      render(VariableDetail, { section: 'explorer', variableKey: categoricalKey });
+      await screen.findByTestId('optional-selection-list');
+
+      // The panel opens blank: the any-record-of filter is not read into it.
+      expect(optionsIn('selected-options-container')).toEqual([]);
+      expect(optionsIn('options-container')).toEqual(['Yes', 'No', "Don't know"]);
+
+      await fireEvent.click(screen.getByRole('checkbox', { name: 'Yes' }));
+      await fireEvent.click(addFilterButton());
+
+      // Two filters, and the any-record-of one is the one it was
+      expect(get(filters)).toHaveLength(2);
+      expect(get(filters).find((filter) => filter.uuid === anyRecordOf.uuid)).toMatchObject({
+        filterType: 'AnyRecordOf',
+        concepts: anyRecordOf.concepts,
+      });
     });
 
     // Matching Actions.svelte: the rule is open access *and* the dictionary refusing, not
@@ -293,14 +335,74 @@ describe('VariableDetail', () => {
       expect(screen.getByTestId('variable-detail-filter-disabled')).toHaveTextContent(
         'Filtering is not available for this variable',
       );
-      expect(screen.queryByTestId('filter-component')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('variable-filter-panel')).not.toBeInTheDocument();
     });
 
     it('is offered to an authenticated user even where the dictionary refuses it', async () => {
       await renderDetail({ allowFiltering: false });
 
       expect(screen.queryByTestId('variable-detail-filter-disabled')).not.toBeInTheDocument();
-      expect(screen.getByTestId('filter-component')).toBeInTheDocument();
+      expect(screen.getByTestId('variable-filter-panel')).toBeInTheDocument();
+    });
+
+    /*
+     * Two views of one filter render on this page: the cohort panel's edit pencil opens its
+     * own AddFilter in a modal over it, and `updateFilter` preserves the uuid. An interface
+     * keyed on identity alone would still hold the selection it seeded with, so the next press
+     * of Filter Participants would write that stale selection back over the user's edit.
+     */
+    it('re-reads a filter edited from the cohort panel, and does not undo the edit', async () => {
+      addFilter(createCategoricalFilter(categoricalDetail, ['Yes']));
+      vi.mocked(getConceptDetails).mockResolvedValue(categoricalDetail);
+      render(VariableDetail, { section: 'explorer', variableKey: categoricalKey });
+      await screen.findByTestId('optional-selection-list');
+      expect(optionsIn('selected-options-container')).toEqual(['Yes']);
+
+      // The edit the modal makes: the same filter, the same uuid, one more value.
+      const { uuid } = get(filters)[0];
+      updateFilter(uuid, createCategoricalFilter(categoricalDetail, ['Yes', "Don't know"]));
+
+      await waitFor(() =>
+        expect(optionsIn('selected-options-container')).toEqual(['Yes', "Don't know"]),
+      );
+      // Still one filter, still the same one - this is an edit, not a replacement.
+      expect(get(filters)).toHaveLength(1);
+      expect(get(filters)[0].uuid).toBe(uuid);
+
+      // And adding from this page carries the edit forward instead of reverting it.
+      await fireEvent.click(addFilterButton());
+      expect(get(filters)).toHaveLength(1);
+      expect(get(filters)[0]).toMatchObject({ categoryValues: ['Yes', "Don't know"] });
+    });
+
+    /*
+     * A stored restriction, reopened after the dictionary dropped one of its values.
+     *
+     * `selectionIsEveryValue` asked only whether every value the dictionary offers now is
+     * selected, so a filter on [Yes, No] seen against a dictionary offering only [Yes] read
+     * as covering everything - and Filter Participants rewrote it as an any-value filter,
+     * admitting the values the user had excluded. Needs nothing but a re-index to happen.
+     */
+    it('does not broaden a stored filter when the dictionary drops a value', async () => {
+      addFilter(createCategoricalFilter(categoricalDetail, ['Yes', 'No']));
+      vi.mocked(getConceptDetails).mockResolvedValue({
+        ...categoricalDetail,
+        values: ['Yes'],
+      } as SearchResult);
+
+      render(VariableDetail, { section: 'explorer', variableKey: categoricalKey });
+      await screen.findByTestId('optional-selection-list');
+
+      // Both of the filter's values are still shown as selected
+      expect(optionsIn('selected-options-container')).toEqual(['Yes', 'No']);
+
+      await fireEvent.click(addFilterButton());
+
+      expect(get(filters)).toHaveLength(1);
+      expect(get(filters)[0]).toMatchObject({
+        displayType: 'restrict',
+        categoryValues: ['Yes', 'No'],
+      });
     });
 
     it('is offered in open access for a variable the dictionary allows', async () => {
@@ -309,12 +411,11 @@ describe('VariableDetail', () => {
       await renderDetail();
 
       expect(screen.queryByTestId('variable-detail-filter-disabled')).not.toBeInTheDocument();
-      expect(screen.getByTestId('filter-component')).toBeInTheDocument();
+      expect(screen.getByTestId('variable-filter-panel')).toBeInTheDocument();
     });
   });
 
-  // Add for Analysis is the one of the four row actions with nowhere else to go, so it is the
-  // one that must not be dropped when ticket 11 removes the icons.
+  // Add for Analysis is the one row action with nowhere else to go.
   describe('Add for Analysis', () => {
     const toggle = () => screen.getByTestId('variable-detail-export-toggle');
     const exportedPaths = () => get(exports).map((item) => item.conceptPath);
@@ -342,7 +443,7 @@ describe('VariableDetail', () => {
     });
 
     /**
-     * EXISTING-ISSUES item 18, which this page must not inherit.
+     * The `Actions.svelte` identity trap, which this page must not inherit.
      *
      * `Actions.svelte` tests membership with `$exports.includes(exportItem)` where
      * `exportItem` is `$derived(mapSearchResultAsExport(data.row))` - a fresh object literal

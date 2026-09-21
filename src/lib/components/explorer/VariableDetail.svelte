@@ -3,7 +3,7 @@
   import { config } from '$lib/configuration.svelte';
   import type { SearchSection, VariableKey } from '$lib/explorer/variableUrl';
   import { log, createLog, getPageContext } from '$lib/logger';
-  import type { FilterType } from '$lib/models/Filter.svelte';
+  import type { Filter, FilterType } from '$lib/models/Filter.svelte';
   import type { SearchResult } from '$lib/models/Search';
   import { getConceptDetails } from '$lib/stores/Dictionary';
   import { exports, addExport, removeExport, mapSearchResultAsExport } from '$lib/stores/Export';
@@ -12,19 +12,14 @@
   import AngleButton from '$lib/components/buttons/AngleButton.svelte';
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
-  import AddFilter from '$lib/components/explorer/AddFilter.svelte';
   import HierarchyComponent from '$lib/components/explorer/HierarchyComponent.svelte';
   import ResultInfoComponent from '$lib/components/explorer/ResultInfoComponent.svelte';
+  import VariableFilterPanel from '$lib/components/explorer/VariableFilterPanel.svelte';
 
-  // One variable's page, shared by the Explore and Discover routes so both are thin wrappers
-  // - which is what keeps the stigmatising-filter `beforeNavigate` guard in
-  // `(picsure)/+layout.svelte` matching on pathname as it does for every other route. Each
-  // route knows which section it is, so it says so rather than the page reading it back off
-  // the pathname.
+  // Both detail routes must stay under /explorer and /discover: the stigmatising-filter
+  // guard in `(picsure)/+layout.svelte` matches on pathname.
   let { section, variableKey }: { section: SearchSection; variableKey?: VariableKey } = $props();
 
-  // Back returns to the section the user searched in. Nothing refetches: the search session
-  // belongs to the /explorer and /discover layouts, which this page renders inside of.
   const backHref = $derived(`/${section}`);
 
   // A 200 is not proof of a concept: `handleResponse` returns body text when the body will
@@ -35,8 +30,6 @@
     return Boolean(concept?.conceptPath && concept?.dataset);
   }
 
-  // `undefined` while loading. Held here rather than in an `{#await}` so the rest of the page
-  // can derive from the loaded concept.
   let variable: SearchResult | undefined = $state();
   let failed = $state(false);
 
@@ -63,49 +56,46 @@
     };
   });
 
-  // The same rule as the results row's filter icon: an open-access visitor may not filter on a
-  // variable the dictionary marks unfilterable.
   const filteringDisabled = $derived(
     isOpenAccess() && variable !== undefined && !variable.allowFiltering,
   );
 
-  /**
-   * The filter already applied to this variable, if there is one.
-   *
-   * The chip in the cohort panel and this page's filter interface are two views of one filter,
-   * so opening a variable that already has one has to edit it rather than add a second:
-   * `addFilter` appends to the tree without checking, so a second add would leave two filters
-   * on the same variable and no way to tell them apart. A filter's `id` is its concept path
-   * (see `createCategoricalFilter`), which is what identifies the variable.
-   *
-   * Only the two types this interface can express. An `AnyRecordOf` filter carries a category
-   * node's concept path, and handing one to `AddFilter` would silently rewrite it as a
-   * categorical filter the next time the user pressed add.
-   */
+  // Only the two types this panel can express. An `AnyRecordOf` filter carries a category
+  // node's concept path, so it matches on `id` alone - handing one to the panel would
+  // rewrite it as a categorical filter, dropping every concept it covered.
   const EDITABLE_FILTER_TYPES: FilterType[] = ['Categorical', 'numeric'];
   const existingFilter = $derived.by(() => {
     const conceptPath = variable?.conceptPath;
+    const dataset = variable?.dataset;
     if (!conceptPath) return undefined;
     return $filters.find(
-      (filter) => filter.id === conceptPath && EDITABLE_FILTER_TYPES.includes(filter.filterType),
+      (filter) =>
+        filter.id === conceptPath &&
+        filter.dataset === dataset &&
+        EDITABLE_FILTER_TYPES.includes(filter.filterType),
     );
   });
 
-  /**
-   * The entry in Added Variables for this variable, found by concept path.
-   *
-   * Not by object identity: `mapSearchResultAsExport` mints a fresh object per call, and
-   * `addExport` already keys on concept path, so a reference test would disagree with the
-   * store the moment the concept is fetched again. One key, used by both the state and the
-   * action.
-   */
   const exportedVariable = $derived.by(() => {
     const conceptPath = variable?.conceptPath;
     return conceptPath ? $exports.find((item) => item.conceptPath === conceptPath) : undefined;
   });
 
-  // Add for Analysis has nowhere else to live once the per-row icons go, so the gate is the
-  // same one those icons use: exports switched on, and not open access.
+  function filterContentKey(filter: Filter): string {
+    if (filter.filterType === 'Categorical') return filter.categoryValues.join('\u0000');
+    if (filter.filterType === 'numeric') return `${filter.min ?? ''}\u0000${filter.max ?? ''}`;
+    return '';
+  }
+
+  /**
+   * Keyed on the filter's content, not its uuid: `updateFilter` preserves the uuid, so a
+   * uuid-keyed panel would keep the selection it seeded with and write it back over an
+   * edit made in the cohort panel's modal.
+   */
+  const filterRevision = $derived(
+    existingFilter ? `${existingFilter.uuid}\u0000${filterContentKey(existingFilter)}` : '',
+  );
+
   const showExportToggle = $derived(
     config.features.explorer.exportsEnableExport && !isOpenAccess(),
   );
@@ -143,8 +133,6 @@
       </p>
     </ErrorAlert>
   {:else if failed}
-    <!-- A key that decoded cleanly but that the dictionary does not know: a variable that
-         has been re-indexed away, a hand-edited URL, or the dictionary being down. -->
     <ErrorAlert data-testid="variable-detail-error" title="We could not find that variable">
       <p class="m-0">
         Nothing in the data dictionary matches this address. It may have changed since the link was
@@ -193,27 +181,24 @@
       {/if}
     </header>
 
-    <section data-testid="variable-detail-information">
-      <ResultInfoComponent data={variable} />
-    </section>
-
-    <!-- The designed layout replaces this interface in a later change; this is the wiring, so
-         AddFilter goes in as-is. -->
-    <section data-testid="variable-detail-filter" class="flex flex-col gap-2">
-      <h2 class="h5 text-primary-500 m-0">Add Filter</h2>
+    <section
+      data-testid="variable-detail-filter"
+      aria-label="Filter on this variable"
+      class="flex flex-col gap-2"
+    >
       {#if filteringDisabled}
         <ErrorAlert color="warning" data-testid="variable-detail-filter-disabled">
           <p class="m-0">Filtering is not available for this variable</p>
         </ErrorAlert>
       {:else}
-        <!-- Keyed on the filter being edited, because AddFilter reads `existingFilter` in
-             `onMount` and never again. Without the key, adding a filter here would leave the
-             interface still believing there is none, and pressing add a second time would
-             append a duplicate filter on the same variable instead of updating the first. -->
-        {#key existingFilter?.uuid}
-          <AddFilter data={variable} {existingFilter} />
+        {#key filterRevision}
+          <VariableFilterPanel {variable} {existingFilter} />
         {/key}
       {/if}
+    </section>
+
+    <section data-testid="variable-detail-information">
+      <ResultInfoComponent data={variable} />
     </section>
 
     {#if config.features.explorer.enableHierarchy}
