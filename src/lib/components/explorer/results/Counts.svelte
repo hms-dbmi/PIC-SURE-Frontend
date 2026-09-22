@@ -1,13 +1,9 @@
 <script lang="ts">
   import { resultCountsState } from '$lib/state/resultCounts.svelte';
   import { countResult } from '$lib/services/counts/countFormat';
-  import Loading from '$lib/components/Loading.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import { config } from '$lib/configuration.svelte';
-  import { sanitizeHTML } from '$lib/utilities/HTML';
 
   const ERROR_VALUE = 'N/A';
-  const LABEL = 'Participants';
+  const LABEL = 'participants';
 
   let isLoading = $derived(resultCountsState.loading);
   let snapshot = $derived(resultCountsState.snapshot);
@@ -17,30 +13,31 @@
   // suffix that the backend returns on the open-access cross-count path.
   let count = $derived(countResult([snapshot.count]));
   let hasCount = $derived(snapshot.descriptorKey !== '' && !hasError);
+  // descriptorKey stays empty until a load commits, so "not loaded yet" and "load failed" are
+  // distinct states; collapsing the first into ERROR_VALUE shows N/A on every server render.
+  let isPending = $derived(isLoading || (!hasCount && !hasError));
+
+  // The strip is a button named by its text. The spinner has none, so the count reaches
+  // assistive technology through this span and the visual side is hidden from the tree.
+  let accessibleCount = $derived(
+    isPending
+      ? 'Loading participant count'
+      : hasError
+        ? 'Participant count unavailable'
+        : `${count} ${LABEL}`,
+  );
 </script>
 
-<div class="flex flex-col items-center mt-2">
-  {#if isLoading}
-    <Loading ring size="mini" />
-  {:else}
-    <div id="result-count">
-      {#if !hasCount}
-        <span class="text-4xl font-bold">{ERROR_VALUE}</span>
-      {:else}
-        <div class="flex flex-row h-full">
-          <span id="result-count-number" class="text-4xl">{count}</span>
-        </div>
-      {/if}
-    </div>
-  {/if}
-  <h4 class="text-center">{LABEL}</h4>
-</div>
-
-{#if hasError && !isLoading}
-  <ErrorAlert color="warning" iconSize="2xl">
-    <p class="text-[0.6rem] !m-0">
-      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-      {@html sanitizeHTML(config.branding.explorePage.queryErrorText)}
-    </p>
-  </ErrorAlert>
-{/if}
+<span class="flex items-baseline gap-2" data-testid="results-panel-count">
+  <span class="sr-only">{accessibleCount}</span>
+  <span id="result-count" class="text-3xl font-bold" aria-hidden="true">
+    {#if isPending}
+      <i class="fa-solid fa-spinner fa-spin text-xl align-middle"></i>
+    {:else if hasError}
+      {ERROR_VALUE}
+    {:else}
+      <span id="result-count-number">{count}</span>
+    {/if}
+  </span>
+  <span class="text-lg" aria-hidden="true">{LABEL}</span>
+</span>

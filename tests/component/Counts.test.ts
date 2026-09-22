@@ -77,6 +77,33 @@ describe('Counts.svelte rendering', () => {
     expect(node).toBeInTheDocument();
   });
 
+  it('renders a pending state, not the error value, before any load has committed', async () => {
+    // What every server render looks like, and the window before the first client load
+    // resolves: the singleton is idle, its snapshot empty, and nothing has failed. The panel
+    // server-renders now that it no longer sits behind a closed-by-default side panel, so
+    // treating this as the error case flashed "N/A participants" on first paint.
+    mockState.current = {
+      loading: false,
+      total: 0,
+      hasNonZero: false,
+      snapshot: {
+        descriptorKey: '',
+        count: 0,
+        summary: { total: 0, hasNonZero: false, hasError: false },
+      },
+    };
+    render(Counts);
+    expect(screen.queryByText('N/A')).not.toBeInTheDocument();
+    // The strip is a button, so the count only reaches assistive technology as text.
+    expect(await screen.findByText('Loading participant count')).toBeInTheDocument();
+  });
+
+  it('names the count for assistive technology, which cannot see inside the button', async () => {
+    setSnapshot(1234, 1234);
+    render(Counts);
+    expect(await screen.findByText('1,234 participants')).toBeInTheDocument();
+  });
+
   it('renders N/A on error (single-cell load failure matches the OLD all-cells-failed branch)', async () => {
     setSnapshot(0, 0, true);
     render(Counts);

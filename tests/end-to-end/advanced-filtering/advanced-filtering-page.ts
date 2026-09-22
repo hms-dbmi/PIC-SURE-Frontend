@@ -172,7 +172,8 @@ export class AdvancedFilteringPage {
       await addSteps[i]();
     }
 
-    // Wait for results panel to be visible
+    // Build Advanced Query lives in the cohort summary panel's body, which the panel
+    // expands itself once there is a filter in it - no click needed to get at the button.
     await expect(this.page.locator('#results-panel')).toBeVisible();
 
     // Click the Advanced Filtering button in the Tool Suite
@@ -222,6 +223,7 @@ export class AdvancedFilteringPage {
   // ==================== Navigation ====================
 
   async openModal() {
+    await expect(this.page.locator('#results-panel')).toBeVisible();
     await expect(this.advancedFilteringBtn).toBeEnabled();
     await this.advancedFilteringBtn.click();
     await expect(this.modal).toBeVisible();
@@ -388,8 +390,14 @@ export class AdvancedFilteringPage {
   async expectApplySucceeded() {
     // User should still be on the advanced-filtering page
     expect(this.page.url()).toContain('/advanced-filtering');
-    // The sidebar should have opened (panelOpen auto-opens on filter change)
-    await expect(this.page.locator('#side-panel')).toBeVisible();
+    // Applying rewrites the query, so the panel - which this page collapsed on arrival -
+    // expands itself to show the result. The body is the assertion: the strip around it is
+    // rendered whether the panel is open or shut.
+    await expect(this.page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    await expect(this.page.locator('#results-panel')).toBeVisible();
   }
 
   async expectAddGroupButtonVisible() {

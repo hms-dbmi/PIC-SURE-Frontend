@@ -6,7 +6,7 @@
   import { addFilter } from '$lib/stores/Filter';
   import RadioTree from '$lib/components/tree/RadioTree.svelte';
   import { getConceptTree, getHierarchyConcepts, ENSURE_MAX_DEPTH } from '$lib/stores/Dictionary';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import { panelOpen } from '$lib/stores/ResultsSummaryPanel';
   import Loading from '$lib/components/Loading.svelte';
   import { toaster } from '$lib/toaster';
   import { AnyRecordOfFilterError } from '$lib/types';

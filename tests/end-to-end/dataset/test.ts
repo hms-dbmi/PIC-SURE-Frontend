@@ -420,7 +420,12 @@ test.describe('dataset/[uuid]', () => {
       .click();
     await page.waitForURL('**/explorer');
 
-    // Then
+    // Then - the restore filled the stores before this page existed, so the panel has to
+    // expand itself on arrival. No click.
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
     await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
     await expect(page.getByTestId(`added-export-${datasetDetails.paths.HEIGHT}`)).toBeVisible();
   });
@@ -459,9 +464,12 @@ test.describe('dataset/[uuid]', () => {
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await page.waitForURL('**/explorer');
-    await expect(page.locator('#results-panel')).toBeVisible();
 
-    // Then
+    // Then - no click: the panel expands itself for a cohort that arrived with the navigation
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
     await expect(page.getByTestId(`added-filter-${datasetDetails.paths.GENDER}`)).toBeVisible();
     await expect(page.getByTestId(`added-export-${datasetDetails.paths.GENDER}`)).toBeVisible();
     await expect(page.getByTestId(`added-export-${datasetDetails.paths.HEIGHT}`)).toBeVisible();
@@ -569,9 +577,12 @@ test.describe('dataset/[uuid]', () => {
       .getByRole('button', { name: 'Restore Filters' })
       .click();
     await page.waitForURL('**/explorer');
-    await expect(page.locator('#results-panel')).toBeVisible();
 
-    // Then — the AnyRecordOf filter appears in the result panel
+    // Then — the panel expanded itself and the AnyRecordOf filter appears in its body
+    await expect(page.getByTestId('results-summary-strip')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
     await expect(page.getByTestId(`added-filter-${anyRecordOfConceptPath}`)).toBeVisible();
   });
 
