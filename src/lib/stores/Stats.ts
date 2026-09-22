@@ -3,6 +3,7 @@ import { derived, writable, type Readable, type Writable } from 'svelte/store';
 import { isToastShowing, toaster } from '$lib/toaster';
 import { config } from '$lib/configuration.svelte';
 import { getValidStatList, populateStatRequests, StatPromise } from '$lib/utilities/StatBuilder';
+import { ensureConsentsLoaded, isUserLoggedIn } from '$lib/stores/User';
 
 import type { StatResult } from '$lib/models/Stat';
 
@@ -31,6 +32,10 @@ export async function loadLandingStats() {
 
     loaded.set(false);
     hasError.set(false);
+    // A fresh tab retains the token but needs consents before the parallel dictionary requests.
+    if (isUserLoggedIn()) {
+      await ensureConsentsLoaded();
+    }
     const stats: StatResult[] = populateStatRequests(validStats);
     statData.set(stats);
     Promise.allSettled(stats.flatMap(StatPromise.list).map(({ promise }) => promise)).then(
