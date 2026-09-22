@@ -32,7 +32,7 @@ export async function loadLandingStats() {
 
     loaded.set(false);
     hasError.set(false);
-    // A fresh tab retains the token but needs consents before the parallel dictionary requests.
+    
     if (isUserLoggedIn()) {
       const consents = await ensureConsentsLoaded();
       if (consents === undefined) {
