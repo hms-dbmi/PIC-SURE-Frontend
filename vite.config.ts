@@ -41,7 +41,7 @@ export default defineConfig(async ({ mode }) => {
     },
     plugins,
     build: {
-      sourcemap: false,
+      sourcemap: true,
     },
   };
 });
