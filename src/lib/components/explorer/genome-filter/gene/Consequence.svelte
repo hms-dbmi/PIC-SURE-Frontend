@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { get } from 'svelte/store';
+
   import type { NodeInterface } from '$lib/components/tree/types';
-  import { selectedConsequence } from '$lib/stores/GeneFilter';
+  import { consequenceRevision, selectedConsequence } from '$lib/stores/GeneFilter';
   import { addConsquence, removeConsequence } from '$lib/stores/GeneFilter';
   import variantData from '$lib/components/explorer/genome-filter/variant-data.json';
   import Tree from '$lib/components/tree/Tree.svelte';
@@ -16,8 +18,12 @@
     removeConsequence(value);
   }
 
-  let nodes: NodeInterface[] = $state(
-    variantData.map(({ key, children }) => ({
+  // Read untracked: the tree owns its checkboxes once built, and rebuilds only when the
+  // selection is replaced from outside - see `consequenceRevision`.
+  let nodes: NodeInterface[] = $derived.by(() => {
+    void $consequenceRevision;
+    const selected = get(selectedConsequence);
+    return variantData.map(({ key, children }) => ({
       name: 'severity',
       value: key,
       children: children.map((child) => ({
@@ -25,12 +31,12 @@
         value: child,
         children: [],
         open: false,
-        selected: $selectedConsequence.includes(child),
+        selected: selected.includes(child),
       })),
       open: false,
       selected: false,
-    })),
-  );
+    }));
+  });
 </script>
 
 <Tree {nodes} onselect={loggedAddConsequence} onunselect={loggedRemoveConsequence} />

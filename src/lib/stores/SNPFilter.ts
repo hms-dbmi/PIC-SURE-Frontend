@@ -10,13 +10,23 @@ import { getBlankQueryRequestV3 } from '$lib/utilities/QueryBuilder';
 
 export const selectedSNPs: Writable<SNP[]> = writable([]);
 
+const blankSNP = (): SNP => ({ search: '', constraint: '' });
+
+// The variant found by the search box and not yet saved. Held here rather than in
+// SNPSearch.svelte so a trip to Phenotypes and back does not lose it.
+export const pendingSNP: Writable<SNP> = writable(blankSNP());
+
+const copyOf = (snps: SNP[]) => snps.map((snp) => ({ ...snp }));
+
 export function generateSNPFilter() {
-  const snps = get(selectedSNPs);
-  return createSnpsFilter(snps);
+  return createSnpsFilter(copyOf(get(selectedSNPs)));
 }
 
 export function populateFromSNPFilter(filter: SnpFilterInterface) {
-  selectedSNPs.set(filter.snpValues);
+  // Copy, do not alias: the applied filter's uuid is a hash of its contents, so a shared
+  // array lets a draft edit the cohort's filter without recomputing its identity.
+  selectedSNPs.set(copyOf(filter.snpValues || []));
+  pendingSNP.set(blankSNP());
 }
 
 export function clearSnpFilters() {
@@ -41,10 +51,8 @@ export async function getSNPCounts(check: SNP): Promise<{ count: number; errors:
 
 export function saveSNP(newSNP: SNP) {
   const snps = get(selectedSNPs);
-  const index = snps.findIndex((snp) => snp.search === newSNP.search);
-  if (index >= 0) {
-    snps[index] = newSNP;
-    selectedSNPs.set(snps);
+  if (snps.some((snp) => snp.search === newSNP.search)) {
+    selectedSNPs.set(snps.map((snp) => (snp.search === newSNP.search ? newSNP : snp)));
   } else {
     selectedSNPs.set([...snps, newSNP]);
   }

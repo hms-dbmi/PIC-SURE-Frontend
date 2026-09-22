@@ -277,7 +277,3 @@ export function getFilter(uuid: string) {
 export function getFilterById(id: string) {
   return [...get(filters), ...get(genomicFilters)].find((f) => f.id === id);
 }
-
-export function getFiltersByType(type: string) {
-  return [...get(filters), ...get(genomicFilters)].filter((f) => f.filterType === type);
-}
