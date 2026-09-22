@@ -158,15 +158,26 @@ function processFacetResults(response: DictionaryFacetResult[]) {
   });
 }
 
+/**
+ * A security control, not tidiness. `api.send` resolves its path against
+ * `window.location.origin`, so `fetch` normalises `..` and `\` segments out of the
+ * dictionary namespace and re-aims an authenticated, token-bearing POST at another
+ * same-origin endpoint.
+ */
+function datasetSegment(dataset: string): string {
+  return encodeURIComponent(dataset);
+}
+
 export async function getConceptDetails(
   conceptPath: string,
   dataset: string,
 ): Promise<SearchResult> {
-  const url = `${Picsure.Concept.Detail}/${dataset}`;
+  const url = `${Picsure.Concept.Detail}/${datasetSegment(dataset)}`;
   const rawConceptPath = String.raw`${conceptPath.replace(/\\\\/g, '\\')}`;
+  const cacheKey = JSON.stringify([dataset, rawConceptPath]);
 
-  if (dictonaryCacheMap.has(rawConceptPath)) {
-    return dictonaryCacheMap.get(rawConceptPath) as SearchResult;
+  if (dictonaryCacheMap.has(cacheKey)) {
+    return dictonaryCacheMap.get(cacheKey) as SearchResult;
   }
 
   const response: SearchResult = await api.post(url, rawConceptPath);
@@ -175,7 +186,7 @@ export async function getConceptDetails(
     throw new Error('No response');
   }
 
-  cacheResult(rawConceptPath, response);
+  cacheResult(cacheKey, response);
   return response;
 }
 
@@ -184,7 +195,7 @@ export async function getHierarchyConcepts(
   conceptPath: string,
 ): Promise<SearchResult[]> {
   const response: SearchResult[] = await api.post(
-    `${Picsure.Concept.Hierarchy}/${dataset}`,
+    `${Picsure.Concept.Hierarchy}/${datasetSegment(dataset)}`,
     conceptPath,
   );
 
@@ -244,7 +255,7 @@ export async function getFacetCategoryCount(isOpenAccess = false, category: stri
 }
 
 export async function getDatasetDetails(datasetId: string) {
-  return api.get(`${Picsure.DashboardDrawer}/${datasetId}`);
+  return api.get(`${Picsure.DashboardDrawer}/${datasetSegment(datasetId)}`);
 }
 
 export async function getConceptTree(
@@ -252,7 +263,7 @@ export async function getConceptTree(
   depth: number,
   conceptPath: string,
 ): Promise<SearchResult> {
-  const url = `${Picsure.Concept.Tree}/${dataset}?depth=${depth}`;
+  const url = `${Picsure.Concept.Tree}/${datasetSegment(dataset)}?depth=${depth}`;
   return api.post(url, conceptPath);
 }
 

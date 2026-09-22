@@ -82,7 +82,9 @@ async function setupExportPageAndAddFilterAndExport(
   await expect(page.getByTestId(`added-export-${expectedRowIds[1]}`)).toBeVisible();
 
   if (includeGenomicFilter) {
-    await page.getByTestId('genomic-filter-btn').click();
+    // Through the Genotypes search mode: the search bar's Genomic Filtering button and the
+    // route behind it are gone.
+    await page.getByTestId('search-mode-tab-genotypes').click();
     await page.getByTestId('gene-variant-option').click();
     await expect(page.getByTestId('add-filter-btn')).not.toBeEnabled();
     const optionsContainer = page.locator('#options-container');
@@ -240,7 +242,7 @@ test.describe('Export Page', () => {
       features: [
         ...exportFeatures,
         { name: 'DISCOVER', value: 'true' },
-        // Required for the Genomic Filtering entry point to render at all.
+        // Required for the Genotypes search mode, the genomic entry point, to exist at all.
         { name: 'ENABLE_GENE_QUERY', value: 'true' },
         { name: 'ENABLE_SNP_QUERY', value: 'true' },
       ],

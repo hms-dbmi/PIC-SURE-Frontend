@@ -97,6 +97,14 @@ describe('the search mode registry', () => {
       },
     );
 
+    it.each(['/explorer/variable/ds/path', '/discover/variable/ds/path'])(
+      'marks phenotypes active on the variable detail page %s',
+      (pathname) => {
+        expect(phenotypesMode.isActive(pathname)).toBe(true);
+        expect(genotypesMode.isActive(pathname)).toBe(false);
+      },
+    );
+
     it('marks genotypes active on /explorer/genotypes', () => {
       expect(genotypesMode.isActive('/explorer/genotypes')).toBe(true);
       expect(phenotypesMode.isActive('/explorer/genotypes')).toBe(false);
@@ -104,7 +112,7 @@ describe('the search mode registry', () => {
 
     // Sibling routes under the layout belong to no mode, and a mode bar with nothing
     // current is the honest rendering of that.
-    it.each(['/explorer/advanced-filtering', '/explorer/variant', '/explorer/genome-filter'])(
+    it.each(['/explorer/advanced-filtering', '/explorer/variant'])(
       'marks no mode active on %s',
       (pathname) => {
         expect(searchModes.some((mode) => mode.isActive(pathname))).toBe(false);

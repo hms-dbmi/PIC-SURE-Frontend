@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { selectedSNPs, clearSnpFilters, saveSNP, deleteSNP } from '$lib/stores/SNPFilter';
+  import {
+    selectedSNPs,
+    pendingSNP,
+    clearSnpFilters,
+    saveSNP,
+    deleteSNP,
+  } from '$lib/stores/SNPFilter';
   import type { SNP } from '$lib/models/GenomeFilter';
 
   import Panel from '$lib/components/explorer/Panel.svelte';
@@ -9,20 +15,17 @@
 
   let { class: className = '' }: { class: string } = $props();
 
-  const defaultSnp: SNP = { search: '', constraint: '' };
-  let snp: SNP = $state(defaultSnp);
-
   function onvalid(snpItem: SNP) {
-    snp = snpItem;
+    $pendingSNP = snpItem;
   }
 
   function onsave(snpItem: SNP) {
     saveSNP(snpItem);
-    snp = defaultSnp;
+    $pendingSNP = { search: '', constraint: '' };
   }
 
   function onedit(snpItem: SNP) {
-    snp = snpItem;
+    $pendingSNP = snpItem;
   }
 
   function ondelete(snpItem: SNP) {
@@ -32,11 +35,11 @@
 
 <div id="snp-search" class="grid grid-cols-1 gap-3 {className || ''}">
   <Panel title="Search for Genomic Variants">
-    <Search disabled={!!snp.search} search={snp.search} {onvalid} />
-    {#if snp.search}
+    <Search disabled={!!$pendingSNP.search} search={$pendingSNP.search} {onvalid} />
+    {#if $pendingSNP.search}
       <hr />
       <div class="flex gap-2 items-center justify-center my-8">
-        <Edit {snp} {onsave} />
+        <Edit snp={$pendingSNP} {onsave} />
       </div>
     {/if}
   </Panel>
