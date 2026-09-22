@@ -104,7 +104,9 @@ for (const { label, consents } of [
   });
 }
 
-test('blocks authenticated dictionary stats when consent loading fails', async ({ browser }) => {
+test('blocks stats on consent failure and retries when returning to the landing page', async ({
+  browser,
+}) => {
   const context = await browser.newContext({ baseURL: 'http://localhost:4173' });
   try {
     await mockSession(context);
@@ -114,9 +116,12 @@ test('blocks authenticated dictionary stats when consent loading fails', async (
     await original.close();
     const requests = trackDictionaryRequests(context);
     let consentRequests = 0;
+    let fail = true;
     await context.route('**/psama/user/me/consents', (route) => {
       consentRequests++;
-      return route.fulfill({ status: 500, body: 'Unavailable' });
+      return fail
+        ? route.fulfill({ status: 500, body: 'Unavailable' })
+        : route.fulfill({ json: { consents: mockConsents } });
     });
 
     await fresh.goto('/');
@@ -135,6 +140,16 @@ test('blocks authenticated dictionary stats when consent loading fails', async (
     expect(requests.auth).toEqual([]);
     expect(requests.open).toEqual([[], []]);
     expect(await fresh.evaluate(() => localStorage.getItem('token'))).toBe(mockToken);
+
+    fail = false;
+    await fresh.getByTestId('toast-root').getByRole('button').click();
+    await fresh.locator('#nav-link-help').click();
+    await expect(fresh).toHaveURL('http://localhost:4173/help');
+    await fresh.getByTestId('logo-home-link').click();
+    await expect(fresh).toHaveURL('http://localhost:4173/');
+    await expectAuthStats(fresh);
+    expect(consentRequests).toBe(4);
+    expect(requests.auth).toEqual([mockConsents['\\_consents\\'], mockConsents['\\_consents\\']]);
   } finally {
     await context.close();
   }
