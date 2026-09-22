@@ -25,11 +25,6 @@ vi.mock('$lib/toaster', () => ({
   toaster: { error: vi.fn() },
 }));
 
-vi.mock('$lib/stores/ExpandableRow', async () => {
-  const { writable } = await import('svelte/store');
-  return { activeRow: writable('') };
-});
-
 vi.mock('$lib/stores/ResultsSummaryPanel', async () => {
   const { writable } = await import('svelte/store');
   return { panelOpen: writable(true) };

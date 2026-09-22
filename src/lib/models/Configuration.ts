@@ -367,7 +367,7 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       type: 'boolean',
       default: false,
       description:
-        'Shows a per-row action on search results to add that variable to the export, and contributes to the export button/badge visibility.',
+        "Shows Add for Analysis on a variable's page, and contributes to the export button/badge visibility.",
     },
     DIST_EXPLORER: {
       group: 'Explorer & Search',

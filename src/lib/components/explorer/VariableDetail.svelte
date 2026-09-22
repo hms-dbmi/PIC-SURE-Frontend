@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { isOpenAccess } from '$lib/AccessState';
+  import { filteringBlocked, isOpenAccess } from '$lib/AccessState';
   import { config } from '$lib/configuration.svelte';
   import type { SearchSection, VariableKey } from '$lib/explorer/variableUrl';
   import { log, createLog, getPageContext } from '$lib/logger';
@@ -56,9 +56,7 @@
     };
   });
 
-  const filteringDisabled = $derived(
-    isOpenAccess() && variable !== undefined && !variable.allowFiltering,
-  );
+  const filteringDisabled = $derived(variable !== undefined && filteringBlocked(variable));
 
   // Only the two types this panel can express. An `AnyRecordOf` filter carries a category
   // node's concept path, so it matches on `id` alone - handing one to the panel would

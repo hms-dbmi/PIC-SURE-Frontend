@@ -1,13 +1,16 @@
 <script lang="ts">
+  import {
+    pendingPageFocusStatus,
+    type PendingPageFocus,
+  } from '$lib/components/datatable/pageFocus';
   import { TableHandler } from '@vincjo/datatables';
   import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
 
   import type { TableProps } from './types';
 
-  import { activeTable, activeRow, closeActiveRow } from '$lib/stores/ExpandableRow';
-  import { isFormField, isTextEntryField, tableIdPrefix } from '$lib/components/datatable/keyboard';
+  import { isFormField, tableIdPrefix } from '$lib/components/datatable/keyboard';
   import { log, createLog } from '$lib/logger';
-  import ExpandableRow from '$lib/components/datatable/Row.svelte';
+  import Row from '$lib/components/datatable/Row.svelte';
   import ThFilter from '$lib/components/datatable/accessories/Filter.svelte';
   import ThSort from '$lib/components/datatable/accessories/Sort.svelte';
   import RowsPerPage from '$lib/components/datatable/accessories/Rows.svelte';
@@ -36,7 +39,6 @@
     showPagination = true,
     class: className = '',
     isClickable = false,
-    expandable = false,
     rowClickHandler = () => {},
     rowClickKeys = [],
     tableActions,
@@ -70,10 +72,8 @@
       announceTimer = setTimeout(() => (announcement = ''), 5000);
     }, 30);
   }
-  let pendingPageFocus: {
-    page: number;
-    rowsAtRequest: unknown;
-  } | null = null;
+  // Not `$state`: see `pendingPageFocusStatus`.
+  let pendingPageFocus: PendingPageFocus | null = null;
   const idPrefix = $derived(tableIdPrefix(tableName));
   const helpId = $derived(`${idPrefix}-kbd-help`);
 
@@ -115,33 +115,18 @@
     }
   });
 
-  // After a keyboard-initiated page change, focus the first row of the new page
-  // once it has rendered - in both directions, so focus lands where callers
-  // scroll to (see onPageChange consumers) rather than fighting them for the
-  // viewport. The server handler updates currentPage
-  // synchronously but replaces rows only after a debounced fetch (with a
-  // loading placeholder in between), so the request stays pending until the
-  // rows identity actually changes; a page mismatch at that point means the
-  // data changed for another reason (e.g. a new search) and the focus request
-  // is stale.
+  // After a keyboard page change, focus the first row of the new page once it has rendered -
+  // in both directions, so focus lands where callers scroll to rather than fighting them for
+  // the viewport.
   $effect(() => {
     void handler.rows;
     void isLoading;
     if (!isClickable || !pendingPageFocus) return;
-    const { page, rowsAtRequest } = pendingPageFocus;
-    if (handler.rows === rowsAtRequest) return;
-    if (handler.currentPage !== page) {
-      pendingPageFocus = null;
-      return;
-    }
     const rows = dataRows();
-    if (!rows.length) {
-      // The loading placeholder is still rendered; retry when it clears.
-      if (isLoading) return;
-      pendingPageFocus = null;
-      return;
-    }
+    const status = pendingPageFocusStatus(pendingPageFocus, handler, isLoading, rows.length);
+    if (status === 'waiting') return;
     pendingPageFocus = null;
+    if (status === 'stale') return;
     focusRow(rows[0], 0);
     announce(`Page ${handler.currentPage} of ${handler.pages?.length ?? 1}`);
   });
@@ -163,22 +148,6 @@
     return Array.from(
       rowElement.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea'),
     ).filter((element) => !('disabled' in element && (element as HTMLButtonElement).disabled));
-  }
-
-  function closeExpandedRow() {
-    if (!expandable || $activeTable !== tableName || !$activeRow) return;
-    const owner = tbodyElement?.querySelector('tr.expandable-row')
-      ?.previousElementSibling as HTMLElement | null;
-    // Only pull focus back to the opener row when focus was on it or inside the
-    // closing panel; if the user has arrowed to another row, leave them there.
-    const current = document.activeElement;
-    const currentRow = current instanceof HTMLElement ? current.closest('tr') : null;
-    const onAnotherRow =
-      currentRow instanceof HTMLTableRowElement &&
-      currentRow !== owner &&
-      dataRows().includes(currentRow);
-    closeActiveRow();
-    if (!onAnotherRow) owner?.focus();
   }
 
   function onTbodyFocusin(event: FocusEvent) {
@@ -206,28 +175,8 @@
   function onTbodyKeydown(event: KeyboardEvent) {
     if (!isClickable || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
     const target = event.target as HTMLElement;
-    if (event.key === 'Escape') {
-      // An inner widget (e.g. a combobox closing its dropdown) already used
-      // this press.
-      if (event.defaultPrevented) return;
-      if (isTextEntryField(target)) {
-        // Per the APG grid pattern, the first Escape steps out of the field
-        // back to the row; a second Escape then closes the panel.
-        const fieldRow = target.closest('tr');
-        const rowElement = fieldRow?.classList.contains('expandable-row')
-          ? (fieldRow.previousElementSibling as HTMLElement | null)
-          : fieldRow;
-        if (rowElement) {
-          event.preventDefault();
-          rowElement.focus();
-        }
-        return;
-      }
-      closeExpandedRow();
-      return;
-    }
     const rowElement = target.closest('tr');
-    if (!rowElement || rowElement.classList.contains('expandable-row') || isFormField(target)) {
+    if (!rowElement || isFormField(target)) {
       return;
     }
     const rows = dataRows();
@@ -299,9 +248,8 @@
     <p id={helpId} class="sr-only">
       Use the up and down arrow keys to move between rows, Home and End to jump to the first or last
       row, and the right and left arrow keys to reach a row's action buttons. Press Enter or Space
-      to open a row. On paginated tables the down arrow continues onto the next page. Press Escape
-      to close an expanded row; from a text field, the first Escape returns focus to the row.
-      Additional single-key shortcuts are listed in each action button's label.
+      to open a row. On paginated tables the down arrow continues onto the next page. Additional
+      single-key shortcuts are listed in each action button's label.
     </p>
     <div class="sr-only" aria-live="polite">{announcement}</div>
   {/if}
@@ -347,7 +295,7 @@
         </tr>
       {:else if handler.rows.length > 0}
         {#each handler.rows as row, i}
-          <ExpandableRow
+          <Row
             {tableName}
             {cellOverides}
             {columns}
@@ -357,7 +305,6 @@
             {rowClickKeys}
             {rowClickLogAction}
             {isClickable}
-            {expandable}
             tabindex={isClickable ? (i === activeRowIndex ? 0 : -1) : -1}
           />
         {/each}

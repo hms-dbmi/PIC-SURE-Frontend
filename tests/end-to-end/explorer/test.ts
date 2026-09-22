@@ -1,4 +1,4 @@
-import { expect, type Route } from '@playwright/test';
+import { expect, type Page, type Route } from '@playwright/test';
 import { test, mockApiFail, mockApiConfig } from '../custom-context';
 import {
   conceptsDetailPath,
@@ -15,11 +15,27 @@ import {
 import { type SearchResult } from '../../../src/lib/models/Search';
 import {
   getOption,
-  clickNthFilterIcon,
+  mockConceptDetailFromRows,
+  openNthResult,
+  openNthResultFilter,
   optionsHaveLoaded,
+  searchResultCards as resultCards,
   userIsLoggedIn,
   userIsLoggedOut,
 } from '../utils';
+
+/** The detail page's filter panel - where a result's filter interface lives once opened. */
+const filterPanel = (page: Page) => page.getByTestId('variable-filter-panel');
+
+/**
+ * Categorical details whose first option identifies which response served them.
+ *
+ * Every stock detail response begins "Yes", so the cache specs below - which tell one
+ * response from another by the first option alone - could not fail against them.
+ */
+const heartAttackDetail = { ...detailResponseCat, values: ['heart-attack-first', 'No'] };
+const diedDetail = { ...detailResponseCatSameDataset, values: ['died-first', 'No'] };
+const uncachedDetail = { ...detailResponseCat2, values: ['should-not-be-fetched', 'No'] };
 
 test.describe('Explorer for authenticated users', () => {
   test.beforeEach(async ({ page }) => {
@@ -91,7 +107,7 @@ test.describe('Explorer for authenticated users', () => {
     await expect(page.locator('#search-bar')).toBeVisible();
     await expect(page.locator('#search-button')).not.toBeDisabled();
   });
-  test('Has search result table when search is executed', async ({ page }) => {
+  test('Has search result cards when search is executed', async ({ page }) => {
     // Given
     await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
       route.fulfill({ body: '9999' }),
@@ -104,7 +120,7 @@ test.describe('Explorer for authenticated users', () => {
     await page.locator('#search-button').click();
 
     // Then
-    await expect(page.locator('table')).toBeVisible();
+    await expect(resultCards(page).first()).toBeVisible();
   });
   test('Scrolls to the top of the search results only when changing pages', async ({ page }) => {
     const pageOneResults = {
@@ -124,6 +140,10 @@ test.describe('Explorer for authenticated users', () => {
         ...mockData.content[index % mockData.content.length],
         conceptPath: `\\test\\page-one-result-${index}\\`,
         name: `page-one-result-${index}`,
+        // A card shows the display name, not the accession, and shows it unparenthesised
+        // when there is no description - which is what makes the page identifiable below.
+        display: `page-one-result-${index}`,
+        description: null,
       })),
     };
     const pageTwoResults = {
@@ -140,6 +160,8 @@ test.describe('Explorer for authenticated users', () => {
         ...mockData.content[index % mockData.content.length],
         conceptPath: `\\test\\page-two-result-${index}\\`,
         name: `page-two-result-${index}`,
+        display: `page-two-result-${index}`,
+        description: null,
       })),
     };
     await page.route(
@@ -154,22 +176,22 @@ test.describe('Explorer for authenticated users', () => {
     await userIsLoggedIn(page);
 
     await page.getByLabel('Rows per page').selectOption('100');
-    await expect(
-      page.locator('#ExplorerTable-table tbody tr[id^="ExplorerTable-row-"]'),
-    ).toHaveCount(100);
+    await expect(resultCards(page)).toHaveCount(100);
     const scrollContainer = page.locator('#page');
     await scrollContainer.evaluate((element) => element.scrollTo(0, element.scrollHeight));
     expect(await scrollContainer.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
 
     await page.getByLabel('Next', { exact: true }).click();
     await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByText('page-two-result-0', { exact: true })).toBeVisible();
+    await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+      'page-two-result-0',
+    );
     await expect
       .poll(() =>
-        page.locator('#ExplorerTable-table').evaluate((table) => {
+        page.locator('#search-results').evaluate((list) => {
           const container = document.querySelector('#page');
           return Math.abs(
-            table.getBoundingClientRect().top - (container?.getBoundingClientRect().top ?? 0),
+            list.getBoundingClientRect().top - (container?.getBoundingClientRect().top ?? 0),
           );
         }),
       )
@@ -197,170 +219,409 @@ test.describe('Explorer for authenticated users', () => {
     // Then
     await expect(page.getByTestId('error-alert')).toBeVisible();
   });
-  test.describe('Search row actions', () => {
-    // TODO: Some feartures will be hidden in the future. Cannot use nth.
+  test.describe('Search result cards', () => {
     test.beforeEach(async ({ page }) => {
-      await page.route(
-        '*/**/picsure/dictionary/concepts/detail/' + mockData.content[0].dataset,
-        async (route: Route) => route.fulfill({ json: detailResponseCat }),
+      await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
+        route.fulfill({ body: '9999' }),
       );
     });
-    test.describe('Keyboard navigation', () => {
-      test('Enter expands the info panel and Escape closes it', async ({ page }) => {
-        // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
-        await page.goto('/explorer?search=somedata');
-        await userIsLoggedIn(page);
 
-        // When
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        await expect(firstRow).toBeVisible();
-        await firstRow.focus();
-        await page.keyboard.press('Enter');
+    test('Renders one card per result, and no table', async ({ page }) => {
+      // Given
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
 
-        // Then
-        const infoPanel = tableBody
-          .locator('tr.expandable-row')
-          .first()
-          .getByTestId('variable-info');
-        await expect(infoPanel).toBeVisible();
-
-        // When
-        await page.keyboard.press('Escape');
-
-        // Then
-        await expect(infoPanel).not.toBeVisible();
-        await expect(firstRow).toBeFocused();
-      });
-      test('Arrow keys move row focus and "f" opens the filter panel', async ({ page }) => {
-        // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
-        await page.goto('/explorer?search=somedata');
-        await userIsLoggedIn(page);
-
-        // When
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        await expect(firstRow).toBeVisible();
-        await firstRow.focus();
-        await page.keyboard.press('ArrowDown');
-
-        // Then
-        await expect(tableBody.locator('#ExplorerTable-row-1')).toBeFocused();
-
-        // When
-        await page.keyboard.press('ArrowUp');
-        await expect(tableBody.locator('#ExplorerTable-row-0')).toBeFocused();
-        await page.keyboard.press('f');
-
-        // Then
-        await expect(tableBody.locator('tr.expandable-row').first()).toBeVisible();
-        await expect(page.getByTestId('categoical-filter')).toBeVisible();
-      });
+      // Then
+      await expect(resultCards(page)).toHaveCount(mockData.content.length);
+      await expect(page.locator('table')).toHaveCount(0);
+      await expect(page.locator('#ExplorerTable-table')).toHaveCount(0);
     });
-    test.describe('Info Actions', () => {
-      test('Clicking a row opens info panel', async ({ page }) => {
-        // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
-        await page.goto('/explorer?search=somedata');
-        await userIsLoggedIn(page);
 
-        // When
-        await expect(page.locator('tbody')).toBeVisible();
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        await expect(firstRow).toBeVisible();
-        await firstRow.click();
+    test('Leads with the description in bold and puts the variable name in parentheses', async ({
+      page,
+    }) => {
+      // Given
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
 
-        // Then
-        const infoPanel = tableBody
-          .locator('tr.expandable-row')
-          .first()
-          .getByTestId('variable-info');
-        await expect(infoPanel).toBeVisible();
+      // Then
+      const card = resultCards(page).first();
+      const description = card.getByTestId('search-result-card-description');
+      await expect(description).toHaveText(mockData.content[0].description);
+      // The emphasis is the point of the rule: the description carries it, the name does not.
+      expect(await description.evaluate((element) => element.tagName)).toBe('STRONG');
+      const name = card.getByTestId('search-result-card-name');
+      await expect(name).toHaveText(`(${mockData.content[0].display})`);
+      expect(await name.evaluate((element) => element.tagName)).not.toBe('STRONG');
+    });
+
+    test('Shows the bold name alone, with no parentheses, for a variable with no description', async ({
+      page,
+    }) => {
+      // Given - no stock row is missing a description, so serve one that is
+      await page.route(searchResultPath, async (route: Route) =>
+        route.fulfill({
+          json: {
+            ...mockData,
+            content: [{ ...mockData.content[0], description: null }],
+          },
+        }),
+      );
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+
+      // Then
+      const card = resultCards(page).first();
+      await expect(card.getByTestId('search-result-card-description')).toHaveCount(0);
+      const name = card.getByTestId('search-result-card-name');
+      await expect(name).toHaveText(mockData.content[0].display);
+      expect(await name.evaluate((element) => element.tagName)).toBe('STRONG');
+      expect(await card.textContent()).not.toContain('(');
+    });
+
+    test('Shows the study acronym, falling back to the dataset when there is none', async ({
+      page,
+    }) => {
+      // Given - row 0 has an acronym, the routed row below has none
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+
+      // Then
+      await expect(resultCards(page).first().getByTestId('search-result-card-study')).toHaveText(
+        mockData.content[0].studyAcronym,
+      );
+
+      // When
+      await page.route(searchResultPath, async (route: Route) =>
+        route.fulfill({
+          json: { ...mockData, content: [{ ...mockData.content[0], studyAcronym: '' }] },
+        }),
+      );
+      await page.reload();
+      await userIsLoggedIn(page);
+
+      // Then
+      await expect(resultCards(page).first().getByTestId('search-result-card-study')).toHaveText(
+        mockData.content[0].dataset,
+      );
+    });
+
+    test('Badges the variable type, once', async ({ page }) => {
+      // Given
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+
+      // Then - one badge per card, and it reads the dictionary's type
+      for (const [index, row] of mockData.content.entries()) {
+        const badges = resultCards(page).nth(index).getByTestId('search-result-card-type');
+        // The mockups show a "Harmonized Variable" badge beside the type; no dictionary field
+        // backs it, so there is exactly one badge until one does.
+        await expect(badges).toHaveCount(1);
+        await expect(badges).toHaveText(row.type);
+      }
+    });
+
+    test('Highlights on hover and shows a pointer cursor', async ({ page }) => {
+      // Given
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      const card = resultCards(page).first();
+      await expect(card).toBeVisible();
+
+      // Then
+      expect(await card.evaluate((element) => getComputedStyle(element).cursor)).toBe('pointer');
+      const resting = await card.evaluate((element) => getComputedStyle(element).backgroundColor);
+
+      // When
+      await card.hover();
+
+      // Then
+      await expect
+        .poll(() => card.evaluate((element) => getComputedStyle(element).backgroundColor))
+        .not.toBe(resting);
+    });
+
+    test('Is a link the browser can follow on its own', async ({ page }) => {
+      // Given
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+
+      // Then - the encoded shape is asserted from the outside, so a change to the URL builder
+      // that breaks a copied or bookmarked link fails here
+      const row = mockData.content[0];
+      await expect(resultCards(page).first()).toHaveAttribute(
+        'href',
+        `/explorer/variable/${encodeURIComponent(row.dataset)}/${encodeURIComponent(
+          row.conceptPath,
+        )}`,
+      );
+    });
+
+    test('Says nothing about filtering: Explore is not open access', async ({ page }) => {
+      // Given a fixture that does hold an unfilterable variable, so this is the section
+      // deciding and not the data - row 6 is the one Discover marks.
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page)).toHaveCount(mockData.content.length);
+      expect(mockData.content.some((row) => row.allowFiltering === false)).toBe(true);
+
+      // Then - no card claims the state, in either direction
+      await expect(page.locator('[data-testid="search-result-card"][data-filterable]')).toHaveCount(
+        0,
+      );
+      await expect(page.getByTestId('search-result-card-filtering-unavailable')).toHaveCount(0);
+    });
+
+    test('Carries none of the row actions the detail page took over', async ({ page }) => {
+      // Given
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page).first()).toBeVisible();
+
+      // Then - the card is a single click target; nothing inside it competes for the click
+      await expect(resultCards(page).first().locator('button')).toHaveCount(0);
+      for (const title of [
+        'Information (i)',
+        'Filter (f)',
+        'Data Hierarchy (h)',
+        'Add for Analysis (e)',
+      ]) {
+        await expect(page.getByTitle(title)).toHaveCount(0);
+      }
+    });
+  });
+
+  /*
+   * The table this replaced focused the first row of a new page after a keyboard page change.
+   * Cards are links, so they are tabbable without any help - but nothing moves focus when the
+   * page turns, and a keyboard user who pages is otherwise dropped back at the top of the
+   * document to tab down through the whole page again.
+   */
+  test.describe('Keyboard use of the card list', () => {
+    const PAGE_SIZE = 10;
+    /*
+     * Three, not two. Next disables itself on the last page, and a browser blurs a control it
+     * has just disabled - so a two-page fixture cannot tell "the mouse left focus alone" from
+     * "focus was taken away", and the mouse case below would be asserting the browser's
+     * behaviour rather than this component's.
+     */
+    const PAGE_COUNT = 3;
+    const PAGE_LABELS = ['page-one-result', 'page-two-result', 'page-three-result'];
+
+    /** Three pages of results, each card identifiable by the page it came from. */
+    const pagedResults = async (page: Page) => {
+      const makePage = (pageNumber: number) => ({
+        ...mockData,
+        totalPages: PAGE_COUNT,
+        totalElements: PAGE_SIZE * PAGE_COUNT,
+        numberOfElements: PAGE_SIZE,
+        number: pageNumber,
+        first: pageNumber === 0,
+        last: pageNumber === PAGE_COUNT - 1,
+        pageable: { ...mockData.pageable, pageNumber, offset: pageNumber * PAGE_SIZE },
+        content: Array.from({ length: PAGE_SIZE }, (_, index) => ({
+          ...mockData.content[index % mockData.content.length],
+          conceptPath: `\\test\\${PAGE_LABELS[pageNumber]}-${index}\\`,
+          name: `${PAGE_LABELS[pageNumber]}-${index}`,
+          // No description, so a card's name is the display name and nothing else.
+          display: `${PAGE_LABELS[pageNumber]}-${index}`,
+          description: null,
+          allowFiltering: true,
+        })),
       });
-      test('Clicking the row again closes the info panel', async ({ page }) => {
+      for (let pageNumber = 0; pageNumber < PAGE_COUNT; pageNumber++) {
+        await page.route(
+          searchResultPath.replace('page_number=0', `page_number=${pageNumber}`),
+          async (route: Route) => route.fulfill({ json: makePage(pageNumber) }),
+        );
+      }
+    };
+
+    test.beforeEach(async ({ page }) => {
+      await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
+        route.fulfill({ body: '9999' }),
+      );
+      await mockConceptDetailFromRows(page);
+    });
+
+    // Holds on WebKit only because the card carries an explicit tabindex: Safari does not
+    // Tab to bare links by default.
+    test('Tab reaches each card once, in the order they were served', async ({ page }) => {
+      // Given
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page)).toHaveCount(mockData.content.length);
+
+      // When - starting on the first card, walk the list with Tab alone
+      await resultCards(page).first().focus();
+
+      // Then - one stop per card, in order, with nothing in between
+      for (let index = 1; index < mockData.content.length; index++) {
+        await page.keyboard.press('Tab');
+        await expect(resultCards(page).nth(index)).toBeFocused();
+      }
+    });
+
+    test('Paging from the keyboard lands focus on the first card of the new page', async ({
+      page,
+    }) => {
+      // Given
+      await pagedResults(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-one-result-0',
+      );
+
+      // When - Next reached and activated from the keyboard, as a keyboard user reaches it
+      const next = page.getByLabel('Next', { exact: true });
+      await next.focus();
+      await page.keyboard.press('Enter');
+
+      // Then - the new page is on screen, and focus is on the first card of it
+      await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-two-result-0',
+      );
+      await expect(resultCards(page).first()).toBeFocused();
+    });
+
+    test('Paging by assistive technology moves focus, as the keyboard does', async ({ page }) => {
+      // VoiceOver's AXPress, switch control and voice control dispatch a click with no key
+      // event before it. They present as `MouseEvent.detail === 0`, like the keyboard, and
+      // want the same thing.
+      await pagedResults(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-one-result-0',
+      );
+
+      // When - no key event, only the synthesised activation
+      const next = page.getByLabel('Next', { exact: true });
+      await next.focus();
+      await next.evaluate((button) => (button as HTMLButtonElement).click());
+
+      // Then
+      await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-two-result-0',
+      );
+      await expect(resultCards(page).first()).toBeFocused();
+    });
+
+    test('Paging with the mouse does not take focus off what the user was on', async ({
+      page,
+      browserName,
+    }) => {
+      // Given
+      await pagedResults(page);
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-one-result-0',
+      );
+
+      // When - the same button, pressed rather than typed at
+      const next = page.getByLabel('Next', { exact: true });
+      await next.focus();
+      await next.click();
+
+      // Then - the page turned, and focus stayed where the user left it. Asserted after the
+      // new page is on screen: before it, this passes on a list that never paged.
+      await expect(page.getByLabel('Page 2')).toHaveAttribute('aria-current', 'page');
+      await expect(resultCards(page).first().getByTestId('search-result-card-name')).toHaveText(
+        'page-two-result-0',
+      );
+      // The portable half, and the one this ticket is about: the list did not pull focus into
+      // itself. Where the platform keeps focus on a clicked button, it is still there; WebKit
+      // blurs it to the body instead, which is macOS convention rather than anything this
+      // list did.
+      await expect(resultCards(page).first()).not.toBeFocused();
+      if (browserName !== 'webkit') await expect(next).toBeFocused();
+    });
+  });
+
+  test.describe('Opening a search result', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
+        route.fulfill({ body: '9999' }),
+      );
+      // A card's detail page loads the concept before it renders anything, so detail has to
+      // be available for whichever row a spec opens - not only the ones it asserts values on.
+      await mockConceptDetailFromRows(page);
+    });
+
+    test('Clicking a card opens that variable detail page', async ({ page }) => {
+      // Given
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+
+      // When
+      await openNthResult(page, 0);
+
+      // Then
+      await expect(page).toHaveURL(
+        `/explorer/variable/${encodeURIComponent(
+          mockData.content[0].dataset,
+        )}/${encodeURIComponent(mockData.content[0].conceptPath)}`,
+      );
+      await expect(page.getByTestId('variable-detail-name')).toHaveText(
+        mockData.content[0].display,
+      );
+    });
+
+    test('Opening a later card opens that variable, not the first', async ({ page }) => {
+      // Given - index 0 would pass for any wiring at all, so open one that is not the default
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      const row = mockData.content[4];
+
+      // When
+      await openNthResult(page, 4);
+
+      // Then
+      await expect(page.getByTestId('variable-detail-name')).toHaveText(row.display);
+      await expect(page.getByTestId('variable-detail-study')).toHaveText(row.studyAcronym);
+      await expect(page).toHaveURL(
+        `/explorer/variable/${encodeURIComponent(row.dataset)}/${encodeURIComponent(
+          row.conceptPath,
+        )}`,
+      );
+    });
+
+    test('Opens the focused card with Enter', async ({ page }) => {
+      // Given
+      await page.goto('/explorer?search=somedata');
+      await userIsLoggedIn(page);
+      const card = resultCards(page).nth(1);
+      await expect(card).toBeVisible();
+
+      // When
+      await card.focus();
+      await page.keyboard.press('Enter');
+
+      // Then
+      await expect(page.getByTestId('variable-detail-name')).toHaveText(
+        mockData.content[1].display,
+      );
+    });
+
+    test.describe('Variable information', () => {
+      test('The information panel shows the opened variable', async ({ page }) => {
         // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
+        await page.route(
+          `${conceptsDetailPath}/${detailResponseCat.dataset}`,
+          async (route: Route) => route.fulfill({ json: detailResponseCat }),
         );
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
 
         // When
-        const tableBody = page.locator('tbody');
-        await expect(tableBody).toBeVisible();
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        await expect(firstRow).toBeVisible();
-        await firstRow.click();
+        await openNthResult(page, 0);
 
         // Then
-        const infoPanel = tableBody
-          .locator('tr.expandable-row')
-          .first()
-          .getByTestId('variable-info');
-        await expect(infoPanel).toBeVisible();
-
-        // Then
-        await firstRow.click();
-        await expect(infoPanel).not.toBeVisible();
-      });
-      test('Clicking the info icon opens and then closes the info panel', async ({ page }) => {
-        // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
-        await page.goto('/explorer?search=somedata');
-        await userIsLoggedIn(page);
-
-        // When
-        await expect(page.locator('tbody')).toBeVisible();
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        const infoIcon = firstRow.locator('td').last().locator('button').first();
-        await expect(infoIcon).toBeVisible();
-        await infoIcon.click();
-
-        // Then
-        const infoPanel = tableBody
-          .locator('tr.expandable-row')
-          .first()
-          .getByTestId('variable-info');
-        await expect(infoPanel).toBeVisible();
-
-        // Then
-        await infoIcon.click();
-        await expect(infoPanel).not.toBeVisible();
-      });
-      test('Clicking the info icon opens the info panel with the correct information', async ({
-        page,
-      }) => {
-        // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
-        await page.goto('/explorer?search=somedata');
-        await userIsLoggedIn(page);
-
-        // When
-        await expect(page.locator('tbody')).toBeVisible();
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        const infoIcon = firstRow.locator('td').last().locator('button').first();
-        await expect(infoIcon).toBeVisible();
-        await infoIcon.click();
-
-        // Then
-        const infoPanel = tableBody.locator('tr.expandable-row').first();
-        await expect(infoPanel).toBeVisible();
-        const variableInfo = infoPanel.getByTestId('variable-info');
+        const variableInfo = page.getByTestId('variable-info');
         await expect(variableInfo).toBeVisible();
         // Check Variable Information: the designed rows the mockups show, in their order,
         // then the concept's own meta bag. `detailResponseCat`'s bag carries none of the keys
@@ -381,7 +642,7 @@ test.describe('Explorer for authenticated users', () => {
         await expect(variableInfo).not.toContainText('Vocabulary:');
 
         // Check Dataset Information
-        const datasetInfo = infoPanel.getByTestId('dataset-info');
+        const datasetInfo = page.getByTestId('dataset-info');
         await expect(datasetInfo.getByText('Dataset Information')).toBeVisible();
         await expect(datasetInfo).toContainText('Name: ' + detailResponseCat.table.display);
         await expect(datasetInfo).toContainText('Accession: ' + detailResponseCat.table.name);
@@ -390,150 +651,55 @@ test.describe('Explorer for authenticated users', () => {
         );
 
         // Check Study Information
-        const studyInfo = infoPanel.getByTestId('study-info');
+        const studyInfo = page.getByTestId('study-info');
         await expect(studyInfo.getByText('Study Information')).toBeVisible();
         await expect(studyInfo).toContainText('Study Name: ' + detailResponseCat.study.fullName);
         await expect(studyInfo).toContainText('Study Accession: ' + detailResponseCat.study.ref);
       });
-      test('Says so when the information lookup fails, rather than spinning', async ({ page }) => {
-        // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
-        await page.route(
-          '*/**/picsure/dictionary/concepts/detail/' + mockData.content[0].dataset,
-          async (route: Route) => route.fulfill({ status: 500, body: 'boom' }),
-        );
-        await page.goto('/explorer?search=somedata');
-        await userIsLoggedIn(page);
-
-        // When
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        await expect(firstRow).toBeVisible();
-        await firstRow.click();
-
-        // Then
-        const expansion = tableBody.locator('tr.expandable-row').first();
-        await expect(expansion.getByTestId('variable-info-error')).toContainText(
-          "We could not load this variable's information",
-        );
-        await expect(expansion.getByTestId('variable-info')).toHaveCount(0);
-        await expect(expansion.getByTestId('progress-ring')).toHaveCount(0);
-      });
-
-      test('Clicking a filter button opens the filter panel & then clicking another row opens the info panel', async ({
-        page,
-      }) => {
-        // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
-        await page.goto('/explorer?search=somedata');
-        await userIsLoggedIn(page);
-
-        // When
-        const tableBody = page.locator('tbody');
-        await clickNthFilterIcon(page);
-        const filterPanel = tableBody.getByTestId('filter-component');
-        await expect(filterPanel).toBeVisible();
-        // Filtered to data rows, so the open expansion row between them - and the
-        // spinner row during loading - cannot shift the index.
-        const secondDataRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
-        await expect(secondDataRow).toBeVisible();
-        await secondDataRow.click();
-        await page.waitForTimeout(1000);
-
-        // Then
-        const infoPanel = tableBody.locator('tr.expandable-row').getByTestId('variable-info');
-        await expect(infoPanel).toBeVisible();
-        await expect(filterPanel).not.toBeVisible();
-      });
     });
+
     test.describe('Filter Actions', () => {
-      test('Clicking the filter button opens and then closes the filter panel', async ({
+      test('Opens the categorical filter interface for a categorical variable', async ({
         page,
       }) => {
-        // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
+        // Given - row 0 is Categorical
+        expect(mockData.content[0].type).toBe('Categorical');
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
 
         // When
-        await clickNthFilterIcon(page);
+        await openNthResultFilter(page, 0);
 
-        // Then
-        const tableBody = page.locator('tbody');
-        const panel = tableBody.locator('tr.expandable-row').first();
-        await expect(panel).toBeVisible();
-
-        // Then
-        await clickNthFilterIcon(page);
-        await expect(panel).not.toBeVisible();
+        // Then - the value list, for a Categorical variable
+        await expect(filterPanel(page).getByTestId('optional-selection-list')).toHaveCount(1);
+        await expect(filterPanel(page).getByTestId('optional-selection-list')).toBeVisible();
+        await expect(filterPanel(page).getByTestId('numerical-filter')).toHaveCount(0);
       });
-      test('Clicking the filter button opens the correct filter panel', async ({ page }) => {
-        // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
+      test('Opens the numerical filter interface for a continuous variable', async ({ page }) => {
+        // Given - row 3 is Continuous
+        expect(mockData.content[3].type).toBe('Continuous');
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
 
         // When
-        await clickNthFilterIcon(page);
-        const mockdataType = mockData.content[0].type;
+        await openNthResultFilter(page, 3);
 
         // Then
-        const tableBody = page.locator('tbody');
-        const panel = tableBody.locator('tr.expandable-row').first();
-        await expect(panel).toBeVisible();
-        if (mockdataType === 'Categorical') {
-          await expect(page.getByTestId('categoical-filter')).toBeVisible();
-        } else {
-          await expect(page.getByTestId('numerical-filter')).toBeVisible();
-        }
-      });
-      test('Clicking the filter button opens the correct filter panel (numerical)', async ({
-        page,
-      }) => {
-        // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
-        await page.goto('/explorer?search=somedata');
-        await userIsLoggedIn(page);
-
-        // When
-        await clickNthFilterIcon(page, 2);
-        const mockdataType = mockData.content[2].type;
-
-        // Then
-        const tableBody = page.locator('tbody');
-        const panel = tableBody.locator('tr.expandable-row').first();
-        await expect(panel).toBeVisible();
-        if (mockdataType === 'Categorical') {
-          await expect(page.getByTestId('categoical-filter')).toBeVisible();
-        } else {
-          await expect(page.getByTestId('numerical-filter')).toBeVisible();
-        }
+        await expect(filterPanel(page).getByTestId('numerical-filter')).toBeVisible();
+        await expect(filterPanel(page).getByTestId('optional-selection-list')).toHaveCount(0);
       });
       test('Searching in filter shows only searched options', async ({ page }) => {
         // Given
         const row = mockData.content[0] as SearchResult;
         const searchValue = 'No';
 
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
         await page.route(
           '*/**/picsure/dictionary/concepts/detail/' + row.dataset,
           async (route: Route) => route.fulfill({ body: JSON.stringify(row) }),
         );
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
-        await clickNthFilterIcon(page, 0);
+        await openNthResultFilter(page, 0);
         await optionsHaveLoaded(page);
 
         // When
@@ -561,16 +727,13 @@ test.describe('Explorer for authenticated users', () => {
         // Given
         const row = mockData.content[0] as SearchResult;
 
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
         await page.route(
           '*/**/picsure/dictionary/concepts/detail/' + row.dataset,
           async (route: Route) => route.fulfill({ body: JSON.stringify(row) }),
         );
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
-        await clickNthFilterIcon(page, 0);
+        await openNthResultFilter(page, 0);
 
         // When
         const searchBtn = page.locator('#select-all');
@@ -584,198 +747,136 @@ test.describe('Explorer for authenticated users', () => {
         // Given
         await page.route(
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-          async (route: Route) => route.fulfill({ json: detailResponseCat }),
-        );
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
+          async (route: Route) => route.fulfill({ json: heartAttackDetail }),
         );
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
 
         // When
-        await clickNthFilterIcon(page);
+        await openNthResultFilter(page, 0);
         const firstItem = await getOption(page);
 
         // Then
-        const firstItemText: string | null = await firstItem.textContent();
-        expect(firstItemText?.trim()).toBe(detailResponseCat.values[0]);
-        // Close the filter panel
-        await clickNthFilterIcon(page);
+        expect((await firstItem.textContent())?.trim()).toBe(heartAttackDetail.values[0]);
 
-        // Then Given
+        // Then Given - a different concept under the same dataset gets its own answer
         await page.route(
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-          async (route: Route) => route.fulfill({ json: detailResponseCatSameDataset }),
+          async (route: Route) => route.fulfill({ json: diedDetail }),
         );
         // When
-        await clickNthFilterIcon(page, 1);
+        await openNthResultFilter(page, 1);
 
         const secondItem = await getOption(page);
         // Then
-        const secondItemText: string | null = await secondItem.textContent();
-        expect(secondItemText?.trim()).toBe(detailResponseCatSameDataset.values[0]);
+        expect((await secondItem.textContent())?.trim()).toBe(diedDetail.values[0]);
       });
       test('The dictionary details are cached', async ({ page }) => {
         // Given
         await page.route(
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-          async (route: Route) => route.fulfill({ json: detailResponseCat }),
-        );
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
+          async (route: Route) => route.fulfill({ json: heartAttackDetail }),
         );
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
 
         // When
-        await clickNthFilterIcon(page);
-        let firstItem = await getOption(page);
+        await openNthResultFilter(page, 0);
+        const firstItem = await getOption(page);
 
         // Then
-        const firstItemText: string | null = await firstItem.textContent();
-        expect(firstItemText?.trim()).toBe(detailResponseCat.values[0]);
-        // Close the filter panel and wait for it to fully disappear
-        await clickNthFilterIcon(page);
-        await expect(page.getByTestId('optional-selection-list')).toHaveCount(0);
+        expect((await firstItem.textContent())?.trim()).toBe(heartAttackDetail.values[0]);
 
         // Then Given
         await page.route(
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-          async (route: Route) => route.fulfill({ json: detailResponseCatSameDataset }),
+          async (route: Route) => route.fulfill({ json: diedDetail }),
         );
         // When
-        await clickNthFilterIcon(page, 1);
+        await openNthResultFilter(page, 1);
 
         const secondItem = await getOption(page);
         // Then
-        const secondItemText: string | null = await secondItem.textContent();
-        expect(secondItemText?.trim()).toBe(detailResponseCatSameDataset.values[0]);
+        expect((await secondItem.textContent())?.trim()).toBe(diedDetail.values[0]);
 
-        // Then Given
-        // This should not be hit so I am putting detailResponseCat2 which is wrong
-        await clickNthFilterIcon(page, 1);
-        await expect(page.getByTestId('optional-selection-list')).toHaveCount(0);
+        // Then Given - this must not be hit, so serve something whose first option differs
+        // from the cached one.
         await page.route(
           `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-          async (route: Route) => route.fulfill({ json: detailResponseCat2 }),
+          async (route: Route) => route.fulfill({ json: uncachedDetail }),
         );
 
         // When
-        await clickNthFilterIcon(page, 0);
-        firstItem = await getOption(page);
+        await openNthResultFilter(page, 0);
+        const sameItem = await getOption(page);
         // Then
-        const sameString: string | null = await firstItem.textContent();
-        expect(sameString?.trim()).toBe(detailResponseCat.values[0]);
-        expect(sameString?.trim()).toBe(firstItemText?.trim());
+        expect((await sameItem.textContent())?.trim()).toBe(heartAttackDetail.values[0]);
+        expect((await sameItem.textContent())?.trim()).not.toBe(uncachedDetail.values[0]);
       });
     });
     test.describe('Export Actions', () => {
-      test('Clicking the export button flips the icon', async ({ page }) => {
+      const exportToggle = (page: Page) => page.getByTestId('variable-detail-export-toggle');
+
+      test('Add for Analysis flips the icon on the detail page', async ({ page }) => {
         // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
+        await openNthResult(page, 0);
 
         // When
-        await expect(page.locator('tbody')).toBeVisible();
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        const exportButton = firstRow.locator('td').last().locator('button').last();
-        await expect(exportButton).toBeVisible();
-        const iconExport = exportButton.locator('i');
-        await expect(iconExport).toHaveClass(/fa-right-from-bracket/);
+        const icon = exportToggle(page).locator('i');
+        await expect(icon).toHaveClass(/fa-right-from-bracket/);
 
         // Then
-        await exportButton.click();
-        await expect(iconExport).toHaveClass(/fa-square-check/);
-        await exportButton.click();
-        await expect(iconExport).toHaveClass(/fa-right-from-bracket/);
+        await exportToggle(page).click();
+        await expect(icon).toHaveClass(/fa-square-check/);
+        await exportToggle(page).click();
+        await expect(icon).toHaveClass(/fa-right-from-bracket/);
       });
-      test('Clicking the export button opens result panel', async ({ page }) => {
-        // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
-        await page.goto('/explorer?search=somedata');
-        await userIsLoggedIn(page);
-
-        // When
-        await expect(page.locator('tbody')).toBeVisible();
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        const exportButton = firstRow.locator('td').last().locator('button').last();
-        await exportButton.click();
-
-        // Then
-        await expect(page.locator('#results-panel')).toBeVisible();
-      });
-      test('Clicking the export button opens result panel and the variable show in the list', async ({
+      test('Adding for analysis opens the result panel with the variable in it', async ({
         page,
       }) => {
         // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
+        await openNthResult(page, 0);
 
         // When
-        await expect(page.locator('tbody')).toBeVisible();
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        const exportButton = firstRow.locator('td').last().locator('button').last();
-        await exportButton.click();
+        await exportToggle(page).click();
 
         // Then
+        await expect(page.locator('#results-panel')).toBeVisible();
         await expect(page.getByTestId('export-header')).toBeVisible();
         await expect(
           page.getByTestId(`added-export-${mockData.content[0].conceptPath}`),
         ).toBeVisible();
       });
       test('Clicking an export remove button removes the export', async ({ page }) => {
-        //todo check remove button class
         // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
+        await openNthResult(page, 0);
+        await exportToggle(page).click();
+        const added = page.getByTestId(`added-export-${mockData.content[0].conceptPath}`);
+        await expect(added).toBeVisible();
 
         // When
-        await expect(page.locator('tbody')).toBeVisible();
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        const exportButton = firstRow.locator('td').last().locator('button').last();
-        await exportButton.click();
-        const removeButton = page
-          .getByTestId(`added-export-${mockData.content[0].conceptPath}`)
-          .locator('button');
-        removeButton.click();
+        await added.locator('button').click();
+
         // Then
         await expect(page.getByTestId('export-header')).not.toBeVisible();
-        await expect(
-          page.getByTestId(`added-export-${mockData.content[0].display}`),
-        ).not.toBeVisible();
+        await expect(added).toHaveCount(0);
       });
-      test('Clicking a second export adds a second export', async ({ page }) => {
+      test('Adding a second variable adds a second export', async ({ page }) => {
         // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
 
         // When
-        await expect(page.locator('tbody')).toBeVisible();
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        const exportButton = firstRow.locator('td').last().locator('button').last();
-        const firstRow2 = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
-        const exportButton2 = firstRow2.locator('td').last().locator('button').last();
-        await exportButton.click();
-        await exportButton2.click();
+        await openNthResult(page, 0);
+        await exportToggle(page).click();
+        await openNthResult(page, 1);
+        await exportToggle(page).click();
 
         // Then
         await expect(page.getByTestId('export-header')).toBeVisible();
@@ -786,23 +887,16 @@ test.describe('Explorer for authenticated users', () => {
           page.getByTestId(`added-export-${mockData.content[1].conceptPath}`),
         ).toBeVisible();
       });
-      test('Exports remmain after closing and opening the results panel', async ({ page }) => {
+      test('Exports remain after closing and opening the results panel', async ({ page }) => {
         // Given
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
+        await openNthResult(page, 0);
+        await exportToggle(page).click();
+        await openNthResult(page, 1);
+        await exportToggle(page).click();
 
         // When
-        await expect(page.locator('tbody')).toBeVisible();
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        const exportButton = firstRow.locator('td').last().locator('button').last();
-        const firstRow2 = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
-        const exportButton2 = firstRow2.locator('td').last().locator('button').last();
-        await exportButton.click();
-        await exportButton2.click();
         await page.locator('#results-panel-toggle').click();
 
         // Then
@@ -822,38 +916,19 @@ test.describe('Explorer for authenticated users', () => {
     });
     test.describe('Hierarchy Actions', () => {
       test.beforeEach(async ({ page }) => {
-        await page.route('*/**/picsure/hpds/auth/v3/query/sync', async (route: Route) =>
-          route.fulfill({ body: '9999' }),
-        );
         await page.route(
           '*/**/picsure/dictionary/concepts/hierarchy/test_data_set',
           async (route: Route) => route.fulfill({ json: hierarchyResponse }),
         );
         await page.goto('/explorer?search=somedata');
         await userIsLoggedIn(page);
-        // When
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
-        await hierarchyButton.click();
+        // The hierarchy is a section of the variable's own page now, not a row action.
+        await openNthResult(page, 0);
+        await expect(page.getByTestId('variable-detail-hierarchy')).toBeVisible();
       });
-      test('Hierarchy component shows when action button clicked', async ({ page }) => {
-        // When
-        await expect(page.locator('tbody')).toBeVisible();
+      test('Hierarchy component shows on the variable page', async ({ page }) => {
         // Then
         await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-      });
-      test('Hierarchy component is not visible when action button is clicked again', async ({
-        page,
-      }) => {
-        // When
-        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-        const tableBody = page.locator('tbody');
-        const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
-        const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
-        await hierarchyButton.click();
-        // Then
-        await expect(page.getByTestId('hierarchy-component')).not.toBeVisible();
       });
       test('Hierarchy component data is expected', async ({ page }) => {
         // Then

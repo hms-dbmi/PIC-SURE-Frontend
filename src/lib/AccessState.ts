@@ -7,6 +7,11 @@ export function isOpenAccess(): boolean {
   return (browser && page.url.pathname.includes('/discover')) || !isUserLoggedIn();
 }
 
+/** Open access bars filtering on the variables the dictionary marks unfilterable. */
+export function filteringBlocked(variable: { allowFiltering?: boolean }): boolean {
+  return isOpenAccess() && !variable.allowFiltering;
+}
+
 export function useOpenAccess(isOpen?: boolean) {
   let openAccess = isOpen;
   if (typeof openAccess === 'undefined') {
