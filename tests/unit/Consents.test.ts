@@ -1,266 +1,319 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
 
-const mockApi = vi.hoisted(() => ({ get: vi.fn() }));
-const mockToaster = vi.hoisted(() => ({ error: vi.fn() }));
-
-vi.mock('$app/environment', () => ({ browser: false }));
-vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
+const mockApi = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), isAbortError: () => false }));
+vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
-vi.mock('$lib/configuration.svelte', () => ({
-  config: { features: { explorer: { open: false }, login: { open: false } } },
-  routes: [],
-}));
 vi.mock('$lib/api', () => mockApi);
-vi.mock('$lib/toaster', () => ({ toaster: mockToaster, isToastShowing: () => false }));
+vi.mock('$lib/logger', () => ({
+  log: vi.fn(),
+  createLog: vi.fn(),
+  registerAssociatedStudies: vi.fn(),
+}));
+vi.mock('$lib/stores/Search', () => ({ searchTerm: {}, selectedFacets: {} }));
+vi.mock('$lib/utilities/QueryBuilder', () => ({
+  getQueryRequestV3: vi.fn(),
+  getBlankQueryRequestV3: vi.fn(),
+}));
 
 import {
-  ACCESS_UNAVAILABLE_MESSAGE,
-  accessUnavailable,
-  clearSession,
-  ensureConsentsLoaded,
-  getConsents,
-  loadConsents,
-  user,
-  tokenStatus,
-} from '$lib/stores/User';
+  access,
+  ensureAccess,
+  AccessUnavailableError,
+  SessionChangedError,
+} from '$lib/state/access.svelte';
+import { session, setToken, removeToken, getToken, renewToken } from '$lib/state/session.svelte';
+import { user, hydrateUserFromToken, clearSession } from '$lib/stores/User';
 import { addConsents } from '$lib/stores/Dictionary';
+import { landingStats, loadLandingStats, retryLandingStats } from '$lib/state/landingStats.svelte';
+import { config } from '$lib/configuration.svelte';
 import { Psama } from '$lib/paths';
 
-const consents = {
-  '\\_consents\\': ['phs001', 'phs002'],
-  '\\_harmonized_consent\\': ['phs001'],
-};
-
-const blankRequest = () => ({ facets: [], search: '', consents: [] });
-
-const runOutRetries = () => vi.advanceTimersByTimeAsync(5_000);
+const consents = { '\\_consents\\': ['phs001', 'phs002'] };
+const blankRequest = () => ({ facets: [], search: '' });
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}
 
 beforeEach(() => {
-  mockApi.get.mockReset();
-  mockToaster.error.mockReset();
-  vi.spyOn(console, 'error').mockImplementation(() => {});
-  tokenStatus.set(true);
-  user.set({ consents: {} });
+  removeToken();
+  setToken('session-a');
+  mockApi.get.mockReset().mockResolvedValue({ consents });
+  mockApi.post
+    .mockReset()
+    .mockImplementation(async (path: string) =>
+      path.includes('concepts')
+        ? { totalElements: 23 }
+        : [{ name: 'dataset_id', facets: [{ count: 23 }] }],
+    );
+  config.features.login.open = true;
+  config.branding.landing.stats = [
+    { key: 'dict:concepts', label: 'Variables' },
+    { key: 'dict:facets:dataset_id', label: 'Data sources' },
+  ];
+});
+afterEach(() => {
+  vi.useRealTimers();
 });
 
-describe('getConsents', () => {
-  it('unwraps the consents map from the UserConsents entity', async () => {
-    mockApi.get.mockResolvedValue({ uuid: 'abc', userId: '1234', consents });
-
-    await expect(getConsents()).resolves.toEqual(consents);
-    expect(mockApi.get).toHaveBeenCalledWith(Psama.User.Consents);
+describe('access lifecycle', () => {
+  it('loads once for concurrent consumers in a fresh tab', async () => {
+    const response = deferred<{ consents: typeof consents }>();
+    mockApi.get.mockReturnValue(response.promise);
+    expect(access.state.status).toBe('idle');
+    const first = ensureAccess();
+    const second = ensureAccess();
+    expect(first).toBe(second);
+    expect(access.state.status).toBe('loading');
+    await Promise.resolve();
+    expect(mockApi.get).toHaveBeenCalledOnce();
+    response.resolve({ consents });
+    await expect(first).resolves.toEqual(consents);
+    expect(access.state.status).toBe('ready');
+    await ensureAccess();
+    expect(mockApi.get).toHaveBeenCalledOnce();
+    expect(get(user).consents).toBeUndefined();
   });
 
-  it('returns an empty map when the response has no consents key', async () => {
-    mockApi.get.mockResolvedValue({ uuid: 'abc', userId: '1234' });
-
-    await expect(getConsents()).resolves.toEqual({});
+  it('permits a successful empty consent map', async () => {
+    mockApi.get.mockResolvedValue({ consents: {} });
+    await expect(addConsents(blankRequest())).resolves.toHaveProperty('consents', []);
+    expect(access.state.status).toBe('ready');
   });
 
-  describe('retries', () => {
-    beforeEach(() => vi.useFakeTimers());
-    afterEach(() => vi.useRealTimers());
-
-    it('retries immediately, without waiting, on the first failure', async () => {
-      mockApi.get
-        .mockRejectedValueOnce(new Error('500'))
-        .mockResolvedValueOnce({ uuid: 'abc', consents });
-
-      // No timer advance: the second attempt must not be behind a delay.
-      await expect(getConsents()).resolves.toEqual(consents);
-      expect(mockApi.get).toHaveBeenCalledTimes(2);
-    });
-
-    it('backs off before the third attempt', async () => {
-      mockApi.get
-        .mockRejectedValueOnce(new Error('500'))
-        .mockRejectedValueOnce(new Error('500'))
-        .mockResolvedValueOnce({ uuid: 'abc', consents });
-
-      const pending = getConsents();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(mockApi.get).toHaveBeenCalledTimes(2);
-
-      await runOutRetries();
-      await expect(pending).resolves.toEqual(consents);
-      expect(mockApi.get).toHaveBeenCalledTimes(3);
-    });
-
-    it('rejects after three attempts so callers can distinguish failure from no access', async () => {
-      mockApi.get.mockRejectedValue(new Error('500'));
-
-      const pending = getConsents();
-      const assertion = expect(pending).rejects.toThrow('500');
-      await runOutRetries();
-
-      await assertion;
-      expect(mockApi.get).toHaveBeenCalledTimes(3);
-    });
-  });
-});
-
-describe('loadConsents', () => {
-  it('stores the consents and leaves access available', async () => {
-    user.set({});
-    mockApi.get.mockResolvedValue({ consents });
-
-    await loadConsents();
-
-    expect(get(user).consents).toEqual(consents);
-    expect(get(accessUnavailable)).toBe(false);
-    expect(mockToaster.error).not.toHaveBeenCalled();
+  it('does not fetch consents for a public session', async () => {
+    removeToken();
+    await expect(addConsents(blankRequest())).resolves.toHaveProperty('consents', []);
+    expect(mockApi.get).not.toHaveBeenCalled();
+    expect(access.state.status).toBe('idle');
   });
 
-  it('leaves consents undefined and toasts once the attempts are exhausted', async () => {
+  it('retries once immediately, then waits before the final attempt', async () => {
+    vi.useFakeTimers();
+    mockApi.get
+      .mockRejectedValueOnce(new Error('500'))
+      .mockRejectedValueOnce(new Error('500'))
+      .mockResolvedValue({ consents });
+    const request = ensureAccess();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(mockApi.get).toHaveBeenCalledTimes(2);
+    expect(access.state.status).toBe('loading');
+    await vi.advanceTimersByTimeAsync(3_000);
+    await expect(request).resolves.toEqual(consents);
+    expect(mockApi.get).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps failure distinct from empty access and shares an explicit retry', async () => {
     vi.useFakeTimers();
     mockApi.get.mockRejectedValue(new Error('500'));
-
-    const pending = loadConsents();
-    await runOutRetries();
-    await pending;
-    vi.useRealTimers();
-
-    expect(get(user).consents).toBeUndefined();
-    expect(get(accessUnavailable)).toBe(true);
-    expect(mockToaster.error).toHaveBeenCalledWith(
-      expect.objectContaining({ title: ACCESS_UNAVAILABLE_MESSAGE }),
-    );
-  });
-
-  it('ignores a superseded response that resolves after a later request settled', async () => {
-    let resolveStale!: (value: unknown) => void;
-    mockApi.get
-      .mockImplementationOnce(() => new Promise((resolve) => (resolveStale = resolve)))
-      .mockResolvedValueOnce({ consents });
-
-    const stale = loadConsents();
-    const fresh = loadConsents();
-    await fresh;
-
-    resolveStale({ consents: { '\\_consents\\': ['prior-user-study'] } });
-    await stale;
-
-    expect(get(user).consents).toEqual(consents);
-  });
-
-  it('does not toast when a superseded request exhausts its retries', async () => {
-    vi.useFakeTimers();
-    mockApi.get
-      .mockRejectedValueOnce(new Error('500'))
-      .mockRejectedValueOnce(new Error('500'))
-      .mockResolvedValueOnce({ consents })
-      .mockRejectedValueOnce(new Error('500'));
-
-    const stale = loadConsents();
-    // Flush the two immediate attempts so the stale request is parked in its back-off.
-    await vi.advanceTimersByTimeAsync(0);
-    const fresh = loadConsents();
-    await fresh;
-    await runOutRetries();
-    await stale;
-    vi.useRealTimers();
-
-    expect(get(user).consents).toEqual(consents);
-    expect(mockToaster.error).not.toHaveBeenCalled();
-  });
-
-  it('drops an in-flight response when the session is cleared', async () => {
-    vi.stubGlobal('sessionStorage', { removeItem: vi.fn() });
-    let resolveStale!: (value: unknown) => void;
-    mockApi.get.mockImplementationOnce(() => new Promise((resolve) => (resolveStale = resolve)));
-
-    const stale = loadConsents();
-    clearSession();
-    resolveStale({ consents });
-    await stale;
-
-    expect(get(user).consents).toBeUndefined();
-    vi.unstubAllGlobals();
-  });
-});
-
-describe('ensureConsentsLoaded', () => {
-  it('returns stored consents without fetching them again', async () => {
-    user.set({ consents });
-
-    await expect(ensureConsentsLoaded()).resolves.toEqual(consents);
-    expect(mockApi.get).not.toHaveBeenCalled();
-  });
-
-  it('fetches consents when they are not set', async () => {
-    user.set({});
+    const failure = expect(ensureAccess()).rejects.toBeInstanceOf(AccessUnavailableError);
+    await vi.runAllTimersAsync();
+    await failure;
+    expect(access.state.status).toBe('error');
+    await expect(ensureAccess()).rejects.toBeInstanceOf(AccessUnavailableError);
+    expect(mockApi.get).toHaveBeenCalledTimes(3);
     mockApi.get.mockResolvedValue({ consents });
-
-    await expect(ensureConsentsLoaded()).resolves.toEqual(consents);
-    expect(mockApi.get).toHaveBeenCalledWith(Psama.User.Consents);
-  });
-});
-
-describe('accessUnavailable', () => {
-  it('distinguishes "loaded, no access" from "could not determine access"', () => {
-    user.set({ consents: {} });
-    expect(get(accessUnavailable)).toBe(false);
-
-    user.set({ consents: undefined });
-    expect(get(accessUnavailable)).toBe(true);
+    const retry = ensureAccess({ retry: true });
+    expect(ensureAccess({ retry: true })).toBe(retry);
+    await retry;
+    expect(access.state.status).toBe('ready');
+    expect(mockApi.get).toHaveBeenCalledTimes(4);
   });
 
-  it('is false when logged out, where access is simply not applicable', () => {
-    user.set({ consents: undefined });
-    tokenStatus.set(false);
+  it.each([undefined, {}, { consents: [] }, { consents: { study: 'invalid' } }])(
+    'rejects malformed response %j',
+    async (response) => {
+      vi.useFakeTimers();
+      mockApi.get.mockResolvedValue(response);
+      const failure = expect(addConsents(blankRequest())).rejects.toBeInstanceOf(
+        AccessUnavailableError,
+      );
+      await vi.runAllTimersAsync();
+      await failure;
+      expect(access.consents).toBeUndefined();
+    },
+  );
 
-    expect(get(accessUnavailable)).toBe(false);
+  it('discards a response from a previous session without disturbing the new request', async () => {
+    const stale = deferred<{ consents: typeof consents }>();
+    mockApi.get.mockReturnValueOnce(stale.promise);
+    const oldRequest = ensureAccess();
+    const rejected = expect(oldRequest).rejects.toBeInstanceOf(SessionChangedError);
+    await Promise.resolve();
+    setToken('session-b');
+    const current = ensureAccess();
+    await current;
+    stale.resolve({ consents: { '\\_consents\\': ['old-study'] } });
+    await rejected;
+    expect(access.consents).toEqual(consents);
   });
 
-  it('survives the sessionStorage round trip a page reload performs', () => {
-    const restored = JSON.parse(JSON.stringify({ privileges: ['QUERY'], consents: undefined }));
-
-    user.set(restored);
-
-    expect('consents' in restored).toBe(false);
-    expect(get(accessUnavailable)).toBe(true);
-  });
-});
-
-describe('addConsents', () => {
-  it('populates the request from the user store', async () => {
-    user.set({ consents });
-
-    await expect(addConsents(blankRequest())).resolves.toEqual({
-      facets: [],
-      search: '',
-      consents: ['phs001', 'phs002'],
-    });
+  it('stops retries after logout during the backoff', async () => {
+    vi.useFakeTimers();
+    mockApi.get.mockRejectedValue(new Error('500'));
+    const rejected = expect(ensureAccess()).rejects.toBeInstanceOf(SessionChangedError);
+    await vi.advanceTimersByTimeAsync(0);
+    clearSession();
+    await vi.runAllTimersAsync();
+    await rejected;
+    expect(mockApi.get).toHaveBeenCalledTimes(2);
+    expect(access.state.status).toBe('idle');
   });
 
-  it('sends an empty list when the user genuinely has no access', async () => {
-    user.set({ consents: {} });
-
-    await expect(addConsents(blankRequest())).resolves.toHaveProperty('consents', []);
+  it('clears access and profile on logout in another tab', async () => {
+    await ensureAccess();
+    user.set({ privileges: ['ADMIN'] });
+    localStorage.removeItem('token');
+    window.dispatchEvent(new StorageEvent('storage', { key: 'token', newValue: null }));
+    expect(access.state.status).toBe('idle');
+    expect(get(user)).toEqual({});
+    expect(session.authenticated).toBe(false);
   });
 
-  it('sends an empty list when the token is gone but the user blob lingers', async () => {
-    user.set({ consents });
-    tokenStatus.set(false);
-
-    await expect(addConsents(blankRequest())).resolves.toHaveProperty('consents', []);
+  it('renews tokens without restarting access, and ignores a late old-session renewal', async () => {
+    await ensureAccess();
+    const revision = session.revision;
+    renewToken('renewed-a', 'session-a');
+    expect(session.revision).toBe(revision);
+    expect(getToken()).toBe('renewed-a');
+    expect(access.state.status).toBe('ready');
+    setToken('session-b');
+    renewToken('late-a', 'renewed-a');
+    expect(getToken()).toBe('session-b');
+    expect(access.state.status).toBe('idle');
   });
 
-  it('throws and toasts rather than sending an empty list when access is unknown', async () => {
-    user.set({ consents: undefined });
-
-    await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
-    expect(mockToaster.error).toHaveBeenCalledWith(
-      expect.objectContaining({ title: ACCESS_UNAVAILABLE_MESSAGE }),
+  it('does not let a failed profile request clear a replacement session', async () => {
+    let rejectOld!: (error: Error) => void;
+    mockApi.get.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectOld = reject;
+        }),
     );
+    const old = hydrateUserFromToken();
+    setToken('session-b');
+    mockApi.get.mockImplementation(async (path: string) =>
+      path === Psama.User.Me
+        ? { privileges: ['QUERY'], email: 'current@example.test' }
+        : { consents },
+    );
+    await hydrateUserFromToken();
+    rejectOld(new Error('old session failed'));
+    await old;
+    expect(getToken()).toBe('session-b');
+    expect(get(user).email).toBe('current@example.test');
+    expect(access.state.status).toBe('ready');
   });
 
-  it('stays closed after a reload, where no fetch is in flight to wait on', async () => {
-    // Reload keeps privileges, so the layout skips re-hydrating and nothing is in flight.
-    user.set(JSON.parse(JSON.stringify({ privileges: ['QUERY'], consents: undefined })));
+  it('rejects dictionary construction if the session changes while reading cached access', async () => {
+    await ensureAccess();
+    const request = addConsents(blankRequest());
+    removeToken();
+    await expect(request).rejects.toBeInstanceOf(SessionChangedError);
+  });
 
-    await expect(addConsents(blankRequest())).rejects.toThrow(ACCESS_UNAVAILABLE_MESSAGE);
+  it('hydrates profile and access once for concurrent session restoration', async () => {
+    mockApi.get.mockImplementation(async (path: string) =>
+      path === Psama.User.Me
+        ? { privileges: ['QUERY'], consents: { '\\_consents\\': ['stale'] } }
+        : { consents },
+    );
+    await Promise.all([hydrateUserFromToken(), hydrateUserFromToken()]);
+    expect(mockApi.get).toHaveBeenCalledTimes(2);
+    expect(get(user).privileges).toEqual(['QUERY']);
+    expect(get(user).consents).toBeUndefined();
+    expect(JSON.parse(sessionStorage.getItem('user')!).consents).toBeUndefined();
+    expect(access.consents).toEqual(consents);
+  });
+});
+
+describe('landing stats with real dictionary requests', () => {
+  it('loads authenticated and public stats in a fresh tab using one consent request', async () => {
+    await loadLandingStats();
+    expect(mockApi.get).toHaveBeenCalledOnce();
+    expect(mockApi.post).toHaveBeenCalledTimes(4);
+    expect(landingStats.hasError).toBe(false);
+    expect(landingStats.authStats).toHaveLength(2);
+    const authRequests = mockApi.post.mock.calls.filter((call) => call[3] === true);
+    expect(authRequests.map((call) => call[1].consents)).toEqual([
+      consents['\\_consents\\'],
+      consents['\\_consents\\'],
+    ]);
+  });
+
+  it('recovers failed statistics after retrying access', async () => {
+    vi.useFakeTimers();
+    mockApi.get.mockRejectedValue(new Error('500'));
+    const initial = loadLandingStats();
+    await vi.runAllTimersAsync();
+    await initial;
+    expect(landingStats.hasError).toBe(true);
+    expect(mockApi.post.mock.calls.every((call) => call[3] === false)).toBe(true);
+    mockApi.get.mockResolvedValue({ consents });
+    await retryLandingStats();
+    expect(landingStats.hasError).toBe(false);
+    expect(landingStats.loaded).toBe(true);
+    expect(mockApi.post.mock.calls.filter((call) => call[3] === true)).toHaveLength(2);
+  });
+
+  it('retries a failed stats endpoint without refetching successful access', async () => {
+    mockApi.post.mockRejectedValueOnce(new Error('500'));
+    await loadLandingStats();
+    expect(landingStats.hasError).toBe(true);
+    await loadLandingStats();
+    expect(landingStats.hasError).toBe(false);
+    expect(mockApi.get).toHaveBeenCalledOnce();
+  });
+
+  it('does not commit old stats after the session changes', async () => {
+    const oldResponses = deferred<void>();
+    const newResponses = deferred<void>();
+    const response = (path: string) =>
+      path.includes('concepts')
+        ? { totalElements: 23 }
+        : [{ name: 'dataset_id', facets: [{ count: 23 }] }];
+    await ensureAccess();
+    mockApi.post.mockImplementation(async (path: string) => {
+      await oldResponses.promise;
+      return response(path);
+    });
+    const old = loadLandingStats();
+    await vi.waitFor(() => expect(mockApi.post).toHaveBeenCalledTimes(4));
+    removeToken();
+    mockApi.post.mockImplementation(async (path: string) => {
+      await newResponses.promise;
+      return response(path);
+    });
+    const current = loadLandingStats();
+    await vi.waitFor(() => expect(mockApi.post).toHaveBeenCalledTimes(6));
+    oldResponses.resolve();
+    await old;
+    expect(landingStats.loaded).toBe(false);
+    expect(landingStats.authStats).toEqual([]);
+    newResponses.resolve();
+    await current;
+    expect(landingStats.loaded).toBe(true);
+    expect(landingStats.hasError).toBe(false);
+  });
+
+  it('shares pending stats, caches success, and invalidates on session replacement', async () => {
+    const first = loadLandingStats();
+    expect(loadLandingStats()).toBe(first);
+    await first;
+    await loadLandingStats();
+    expect(mockApi.post).toHaveBeenCalledTimes(4);
+    setToken('session-b');
+    expect(landingStats.authStats).toEqual([]);
+    await loadLandingStats();
+    expect(mockApi.get).toHaveBeenCalledTimes(2);
+    expect(mockApi.post).toHaveBeenCalledTimes(8);
   });
 });

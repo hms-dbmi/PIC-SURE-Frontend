@@ -2,16 +2,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
 
 const mockUser = vi.hoisted(() => {
-  let value = {};
-  const subscribers = new Set<(user: object) => void>();
+  let value: { consents?: Record<string, string[]> } = {};
+  const subscribers = new Set<(user: typeof value) => void>();
 
   return {
-    subscribe(run: (user: object) => void) {
+    subscribe(run: (user: typeof value) => void) {
       subscribers.add(run);
       run(value);
       return () => subscribers.delete(run);
     },
-    set(user: object) {
+    set(user: typeof value) {
       value = user;
       subscribers.forEach((run) => run(value));
     },
@@ -20,10 +20,14 @@ const mockUser = vi.hoisted(() => {
 const mockEnsureConsentsLoaded = vi.hoisted(() => vi.fn());
 
 vi.mock('$app/environment', () => ({ browser: false }));
-vi.mock('$lib/stores/User', () => ({
-  user: mockUser,
-  ensureConsentsLoaded: mockEnsureConsentsLoaded,
-  isUserLoggedIn: vi.fn(() => false),
+vi.mock('$lib/stores/User', () => ({ isUserLoggedIn: vi.fn(() => false) }));
+vi.mock('$lib/state/access.svelte', () => ({
+  access: {
+    get consents() {
+      return get(mockUser).consents;
+    },
+  },
+  ensureAccess: mockEnsureConsentsLoaded,
 }));
 vi.mock('$lib/stores/Dictionary', () => ({
   getConceptDetails: vi.fn(),

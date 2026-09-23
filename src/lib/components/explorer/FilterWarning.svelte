@@ -2,6 +2,7 @@
   import { resolve } from '$app/paths';
   import { Modal } from '@skeletonlabs/skeleton-svelte';
 
+  import { AccessUnavailableError, SessionChangedError } from '$lib/state/access.svelte';
   import { goto } from '$app/navigation';
 
   import { panelOpen } from '$lib/stores/SidePanel';
@@ -64,7 +65,12 @@
 
   async function reset() {
     const path = warning.path;
-    await warning.resetQuery();
+    try {
+      await warning.resetQuery();
+    } catch (error) {
+      if (error instanceof AccessUnavailableError || error instanceof SessionChangedError) return;
+      throw error;
+    }
     panelOpen.set(false);
     filterWarning.set(undefined);
     open = false;

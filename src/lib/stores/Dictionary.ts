@@ -12,13 +12,8 @@ import type {
   DictionarySearchRequest,
 } from '$lib/models/api/Dictionary';
 import type { Pageable } from '$lib/models/api/Pageable';
-import {
-  ACCESS_UNAVAILABLE_MESSAGE,
-  accessUnavailable,
-  consentedStudies,
-  consentsSettled,
-  showAccessUnavailable,
-} from '$lib/stores/User';
+import { ensureAccess, SessionChangedError } from '$lib/state/access.svelte';
+import { session } from '$lib/state/session.svelte';
 import { searchTerm, selectedFacets } from '$lib/stores/Search';
 import { log, createLog } from '$lib/logger';
 
@@ -195,23 +190,11 @@ export async function getHierarchyConcepts(
   return response;
 }
 
-/**
- * Waits for access rather than sending an empty list before it lands - the dictionary reads an
- * empty list as no filter and answers with every concept. Throws for the same reason when
- * access is unknown. An empty list once access HAS loaded is deliberate and must stay
- * permitted: it means the deployment has no consent model. BdcConsentsBuilder throws rather
- * than emitting an empty `\_consents\`, so a consent-based deployment cannot reach here empty.
- */
 export async function addConsents(request: DictionarySearchRequest) {
-  await consentsSettled();
-  if (get(accessUnavailable)) {
-    // Raised here because Search.ts swallows this error in one path and replaces it with its
-    // own generic text in the other, and a reload has no login-time toast to fall back on.
-    showAccessUnavailable();
-    throw new Error(ACCESS_UNAVAILABLE_MESSAGE);
-  }
-  request.consents = get(consentedStudies);
-  return request;
+  const version = session.revision;
+  const consents = await ensureAccess();
+  if (session.revision !== version) throw new SessionChangedError();
+  return { ...request, consents: consents['\\_consents\\'] ?? [] };
 }
 
 export async function getConceptCount(isOpenAccess = false) {

@@ -27,7 +27,7 @@ vi.mock('$lib/configuration.svelte', async () => {
   };
 });
 
-import { getUser, user, userRoutes } from '$lib/stores/User';
+import { getUser, user, userRoutes, setToken } from '$lib/stores/User';
 
 // What the three baseline roles carry in the BDC auth schema, plus AUTHORIZED_ACCESS on
 // MANUAL_ROLE_AUTH_ACCESS. Every authenticated BDC user holds exactly this.
@@ -47,7 +47,7 @@ const navPaths = () => get(userRoutes).map((r) => r.path);
 
 beforeEach(() => {
   mockApi.get.mockReset();
-  localStorage.setItem('token', 'fake-token');
+  setToken('fake-token');
   user.set({});
 });
 

@@ -1,10 +1,12 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, untrack } from 'svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
+  import { session } from '$lib/state/session.svelte';
+  import { access } from '$lib/state/access.svelte';
   import { config } from '$lib/configuration.svelte';
   import type { Column } from '$lib/components/datatable/types';
   import {
@@ -69,16 +71,21 @@
     document.getElementById(`${tableName}-table`)?.scrollIntoView({ block: 'start' });
   }
 
-  let releaseHandler: (() => void) | undefined;
+  $effect(() => {
+    void session.revision;
+    void access.revision;
+    return untrack(() => {
+      const releaseHandler = initHandler();
+      if (searchInput && searchInput !== $searchTerm) {
+        searchTerm.set(searchInput);
+      } else {
+        handler.invalidate();
+      }
+      return releaseHandler;
+    });
+  });
 
   onMount(() => {
-    releaseHandler = initHandler();
-    if (searchInput && searchInput !== $searchTerm) {
-      searchTerm.set(searchInput);
-    } else {
-      // reload table and facets
-      handler.invalidate();
-    }
     if (page.url.searchParams.get('startTour') === 'true') {
       const tourBtn = document.querySelector('#explorer-tour-btn');
       if (tourBtn) {
@@ -86,8 +93,6 @@
       }
     }
   });
-
-  onDestroy(() => releaseHandler?.());
 </script>
 
 <section id="search-container" class="flex gap-9">

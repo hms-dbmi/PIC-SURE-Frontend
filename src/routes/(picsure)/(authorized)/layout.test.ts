@@ -37,7 +37,6 @@ function mockUserModule(overrides: Record<string, unknown> = {}) {
       }
     },
     clearSession: vi.fn(),
-    hydrateUserFromToken: vi.fn().mockResolvedValue(undefined),
     user: {
       subscribe: (fn: (v: unknown) => void) => {
         fn(mockUserStoreValue);
@@ -72,7 +71,9 @@ describe('authorized layout load — check order', () => {
     const { load } = await import('./+layout.ts');
 
     const result = await captureRedirect(() =>
-      load({ url: new URL('http://localhost/explorer') } as Parameters<typeof load>[0]),
+      load({ url: new URL('http://localhost/explorer'), parent: async () => ({}) } as Parameters<
+        typeof load
+      >[0]),
     );
 
     expect(result).not.toBeNull();
@@ -88,7 +89,9 @@ describe('authorized layout load — check order', () => {
     const { load } = await import('./+layout.ts');
 
     const result = await captureRedirect(() =>
-      load({ url: new URL('http://localhost/explorer') } as Parameters<typeof load>[0]),
+      load({ url: new URL('http://localhost/explorer'), parent: async () => ({}) } as Parameters<
+        typeof load
+      >[0]),
     );
 
     expect(result).not.toBeNull();
@@ -99,45 +102,22 @@ describe('authorized layout load — check order', () => {
     expect(clearSessionSpy).toHaveBeenCalled();
   });
 
-  it('hydrates the user from PSAMA when token is valid but user store is empty', async () => {
+  it('waits for shared session restoration before checking privileges', async () => {
     vi.mocked(localStorage.getItem).mockReturnValue(validToken);
-    mockUserStoreValue = {};
-    const hydrateSpy = vi.fn().mockImplementation(async () => {
+    mockUserModule({ isTokenExpired: () => false });
+    const { load } = await import('./+layout.ts');
+    const parent = vi.fn(async () => {
       mockUserStoreValue = { privileges: ['PIC_SURE_ANY_QUERY'] };
+      return {};
     });
-    mockUserModule({
-      isTokenExpired: () => false,
-      hydrateUserFromToken: hydrateSpy,
-    });
-    const { load } = await import('./+layout.ts');
-
     const result = await captureRedirect(() =>
-      load({ url: new URL('http://localhost/explorer') } as Parameters<typeof load>[0]),
+      load({
+        url: new URL('http://localhost/explorer'),
+        parent,
+      } as unknown as Parameters<typeof load>[0]),
     );
-
-    expect(hydrateSpy).toHaveBeenCalled();
-    // User was hydrated with QUERY privilege, so no redirect should fire.
+    expect(parent).toHaveBeenCalledOnce();
     expect(result).toBeNull();
-  });
-
-  it('redirects to /login and clears session when hydration fails', async () => {
-    vi.mocked(localStorage.getItem).mockReturnValue(validToken);
-    mockUserStoreValue = {};
-    const clearSessionSpy = vi.fn();
-    mockUserModule({
-      isTokenExpired: () => false,
-      hydrateUserFromToken: vi.fn().mockRejectedValue(new Error('network')),
-      clearSession: clearSessionSpy,
-    });
-    const { load } = await import('./+layout.ts');
-
-    const result = await captureRedirect(() =>
-      load({ url: new URL('http://localhost/explorer') } as Parameters<typeof load>[0]),
-    );
-
-    expect(result).not.toBeNull();
-    expect(result!.location).toContain('/login');
-    expect(clearSessionSpy).toHaveBeenCalled();
   });
 
   // Both arms of the privilege check, asserted separately. The suite used to reach this gate only
@@ -150,7 +130,9 @@ describe('authorized layout load — check order', () => {
     const { load } = await import('./+layout.ts');
 
     const result = await captureRedirect(() =>
-      load({ url: new URL('http://localhost/explorer') } as Parameters<typeof load>[0]),
+      load({ url: new URL('http://localhost/explorer'), parent: async () => ({}) } as Parameters<
+        typeof load
+      >[0]),
     );
 
     expect(result).toBeNull();
@@ -163,7 +145,9 @@ describe('authorized layout load — check order', () => {
     const { load } = await import('./+layout.ts');
 
     const result = await captureRedirect(() =>
-      load({ url: new URL('http://localhost/explorer') } as Parameters<typeof load>[0]),
+      load({ url: new URL('http://localhost/explorer'), parent: async () => ({}) } as Parameters<
+        typeof load
+      >[0]),
     );
 
     expect(result).toBeNull();
@@ -178,7 +162,9 @@ describe('authorized layout load — check order', () => {
     const { load } = await import('./+layout.ts');
 
     const result = await captureRedirect(() =>
-      load({ url: new URL('http://localhost/explorer') } as Parameters<typeof load>[0]),
+      load({ url: new URL('http://localhost/explorer'), parent: async () => ({}) } as Parameters<
+        typeof load
+      >[0]),
     );
 
     expect(result).not.toBeNull();
@@ -192,7 +178,9 @@ describe('authorized layout load — check order', () => {
     const { load } = await import('./+layout.ts');
 
     const result = await captureRedirect(() =>
-      load({ url: new URL('http://localhost/explorer') } as Parameters<typeof load>[0]),
+      load({ url: new URL('http://localhost/explorer'), parent: async () => ({}) } as Parameters<
+        typeof load
+      >[0]),
     );
 
     expect(result).not.toBeNull();
