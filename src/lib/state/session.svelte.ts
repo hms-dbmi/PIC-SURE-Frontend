@@ -49,10 +49,28 @@ export function renewToken(next: string, previous: string) {
   token = next;
 }
 
+function tokenIdentity(value: string): string | undefined {
+  try {
+    const payload = value.split('.')[1].replaceAll('-', '+').replaceAll('_', '/');
+    const { sub, iss, sid } = JSON.parse(atob(payload));
+    if (typeof sub !== 'string' || !sub) return;
+    // Include sid when available so another login by the same user still resets access.
+    return JSON.stringify([iss, sub, sid]);
+  } catch {
+    return undefined;
+  }
+}
+
 if (browser) {
   window.addEventListener('storage', (event) => {
     if (event.key === 'token' || event.key === null) {
-      replaceToken(localStorage.getItem('token') || '');
+      const next = localStorage.getItem('token') || '';
+      const identity = tokenIdentity(token);
+      if (identity && identity === tokenIdentity(next)) {
+        token = next;
+      } else {
+        replaceToken(next);
+      }
     }
   });
 }
