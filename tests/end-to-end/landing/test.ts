@@ -6,6 +6,7 @@ import {
   datasets as mockDatasets,
   facetsResponse,
   searchResults,
+  mockConsents,
 } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
 import type { Branding } from '../../../src/lib/models/Configuration';
@@ -141,29 +142,36 @@ test.describe('Landing page', () => {
         });
       });
 
-    test('Shows only auth stats when sets match; both when different', async ({ page }) => {
-      // Given
-      await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', '88');
-      await mockApiSuccess(
-        page,
-        '*/**/picsure/dictionary/concepts?page_number=1&page_size=1',
-        searchResults,
-      );
-      await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
-      await page.goto('/');
-      await userIsLoggedIn(page);
+    test('Loads authenticated stats when only the login token is restored', async ({
+      browser,
+      context,
+    }) => {
+      // A separate context keeps the token without the fixture's sessionStorage user injection.
+      const page = await browser.newPage({
+        baseURL: 'http://localhost:4173',
+        storageState: await context.storageState(),
+      });
+      try {
+        await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: mockConsents });
+        await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', '88');
+        await mockApiSuccess(
+          page,
+          '*/**/picsure/dictionary/concepts?page_number=1&page_size=1',
+          searchResults,
+        );
+        await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
+        await page.goto('/');
 
-      // Then
-      const authContainer = page.getByTestId('data-summary-auth');
-      const openContainer = page.getByTestId('data-summary-open');
-
-      await expect(authContainer).toBeVisible();
-
-      // If branding produces identical auth/open sets, open is hidden. If branding differs, both show.
-      if (await openContainer.count()) {
-        await expect(openContainer).toBeVisible();
-      } else {
-        await expect(openContainer).toHaveCount(0);
+        await expect(page.getByTestId('value-auth-dict:concepts-Variables')).toHaveText(
+          searchResults.totalElements.toLocaleString(),
+        );
+        const datasets = facetsResponse.find((category) => category.name === 'dataset_id')!;
+        await expect(page.getByTestId('value-auth-dict:facets:dataset_id-Data Sources')).toHaveText(
+          datasets.facets.filter((facet) => facet.count > 0).length.toLocaleString(),
+        );
+        await expect(page.getByTestId('toast-root')).not.toBeVisible();
+      } finally {
+        await page.close();
       }
     });
   });
