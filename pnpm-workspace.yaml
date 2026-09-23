@@ -8,6 +8,7 @@ auditConfig:
     - GHSA-v3m3-f69x-jf25
 
 overrides:
+  '@types/react': '^18.3.31'
   '@sveltejs/kit@>=2.19.0 <=2.49.4': '>=2.49.5'
   '@sveltejs/kit@>=2.38.0 <=2.60.0': '>=2.60.1'
   auth0-js@>=8.11.0 <=9.32.0: '>=10.0.0'

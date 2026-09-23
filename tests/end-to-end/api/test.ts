@@ -144,7 +144,7 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.locator('#api-access h2')).toHaveText('API Access');
+    await expect(page.getByRole('heading', { name: 'API Access', exact: true })).toBeVisible();
     await expect(page.getByText('Browse and use the PIC-SURE API endpoints.')).toBeVisible();
   });
 

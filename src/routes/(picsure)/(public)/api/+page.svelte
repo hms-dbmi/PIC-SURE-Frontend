@@ -9,6 +9,7 @@
   import { tokenStatus } from '$lib/stores/User';
   import { log, createLog } from '$lib/logger';
 
+  import ApiDocumentation from '$lib/components/ApiDocumentation.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
   import PublicAccessKey from '$lib/components/PublicAccessKey.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
@@ -133,8 +134,7 @@
     }
 
     // The TOC marks the last section whose top has crossed into the upper 40% of
-    // the scroll viewport. #api-access is too short to ever reach that band, so
-    // bottom-of-page counts as viewing it.
+    // the scroll viewport; reaching the bottom always selects the final section.
     const updateActive = () => {
       if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) {
         activeSection = 'api-access';
@@ -316,9 +316,26 @@
   <section id="api-access" class="w-full">
     <div class="w-[70%] mx-auto py-8">
       <h2>API Access</h2>
-      <!-- TODO: Section content (endpoint browser / documentation links) to be defined in an
-           upcoming ticket. -->
       <p class="mx-0">Browse and use the PIC-SURE API endpoints.</p>
+      {#if mounted && !loggedIn}
+        <div
+          class="flex gap-4 items-start border border-primary-500 rounded-lg bg-primary-50-950 p-4 mt-6"
+          data-testid="api-public-notice"
+        >
+          <i class="fa-solid fa-globe text-3xl text-primary-500" aria-hidden="true"></i>
+          <div>
+            <h3 class="font-bold text-primary-500">Public Access Only</h3>
+            <p class="mx-0">
+              You are browsing as a public user. Only open API endpoints are available. To use
+              authorized resources, please <a
+                class="anchor"
+                href="{resolve('/login')}?redirectTo=/api">log in</a
+              >.
+            </p>
+          </div>
+        </div>
+      {/if}
+      <ApiDocumentation />
     </div>
   </section>
 </div>
