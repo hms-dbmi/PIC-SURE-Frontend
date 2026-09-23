@@ -13,6 +13,8 @@ vi.mock('$lib/stores/User', () => ({
   login: vi.fn(),
 }));
 
+vi.mock('$lib/state/session.svelte', () => ({ getToken: () => '', renewToken: vi.fn() }));
+
 vi.mock('$lib/logger', () => ({
   log: vi.fn(),
   createLog: vi.fn((...args: unknown[]) => args),

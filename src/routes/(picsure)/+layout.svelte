@@ -4,6 +4,7 @@
   import { beforeNavigate } from '$app/navigation';
 
   import { Toaster } from '@skeletonlabs/skeleton-svelte';
+  import AccessNotice from '$lib/components/AccessNotice.svelte';
   import { toaster } from '$lib/toaster';
 
   import {
@@ -70,6 +71,7 @@
       </div>
     {/if}
   {/snippet}
+  <AccessNotice />
   {@render children?.()}
   {#snippet pageFooter()}
     <Footer />

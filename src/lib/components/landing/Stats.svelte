@@ -1,13 +1,23 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { untrack } from 'svelte';
   import { config } from '$lib/configuration.svelte';
   import { StatPromise, isStatValueEqual } from '$lib/utilities/StatBuilder';
   import type { StatResult } from '$lib/models/Stat';
-  import { stats, authStats, loadLandingStats } from '$lib/stores/Stats';
+  import {
+    landingStats,
+    loadLandingStats,
+    retryLandingStats,
+  } from '$lib/state/landingStats.svelte';
+  import { session } from '$lib/state/session.svelte';
+  import { access } from '$lib/state/access.svelte';
+
   import { isUserLoggedIn } from '$lib/stores/User';
   import Stat from '$lib/components/landing/Stat.svelte';
 
-  const showAuthStats = $derived(isUserLoggedIn() && $authStats.length > 0);
+  const stats = $derived(landingStats.stats);
+  const authStats = $derived(landingStats.authStats);
+
+  const showAuthStats = $derived(isUserLoggedIn() && authStats.length > 0);
 
   let isStatsMatching = $state(false);
 
@@ -51,18 +61,35 @@
   }
 
   $effect(() => {
-    checkStatsMatching($stats, $authStats).then((match) => (isStatsMatching = match));
+    let current = true;
+    isStatsMatching = false;
+    checkStatsMatching(stats, authStats).then((match) => {
+      if (current) isStatsMatching = match;
+    });
+    return () => {
+      current = false;
+    };
   });
 
   const showPublicStats = $derived(
-    ($stats.length > 0 && !isStatsMatching) || $authStats.length === 0,
+    (stats.length > 0 && !isStatsMatching) || authStats.length === 0,
   );
 
-  onMount(loadLandingStats);
+  $effect(() => {
+    void session.revision;
+    void access.revision;
+    void config.branding.landing.stats;
+    untrack(() => void loadLandingStats());
+  });
 </script>
 
 <section class="flex flex-col items-center w-full p-4 my-3 bg-surface-100-900">
   <h2 class="m-2">Data Summary</h2>
+  {#if landingStats.hasError && access.state.status !== 'error'}
+    <button class="btn preset-outlined-primary-500" onclick={() => void retryLandingStats()}>
+      Retry statistics
+    </button>
+  {/if}
 
   {#if showAuthStats}
     <Stat stats={authStats} auth description={config.branding.landing.authExplanation} />

@@ -16,7 +16,7 @@ vi.mock('$lib/api', () => mockApi);
 
 import { get } from 'svelte/store';
 import { loadDashboardData, rows } from '$lib/stores/Dashboard';
-import { user, setToken, removeToken } from '$lib/stores/User';
+import { setToken, removeToken } from '$lib/stores/User';
 
 const dashboardResp = {
   columns: [],
@@ -32,13 +32,18 @@ const accessOf = () => Object.fromEntries(get(rows).map((r) => [r.abbreviation, 
 
 describe('loadDashboardData Access column', () => {
   beforeEach(() => {
-    mockApi.get.mockReset().mockResolvedValue(structuredClone(dashboardResp));
+    removeToken();
+    mockApi.get
+      .mockReset()
+      .mockImplementation(async (path: string) =>
+        path.endsWith('/consents')
+          ? { consents: { '\\_consents\\': ['phs001', 'phs002.c2'] } }
+          : structuredClone(dashboardResp),
+      );
     setToken('a-token');
   });
 
   it('grants access for exact and version-normalized accession matches', async () => {
-    user.set({ consents: { '\\_consents\\': ['phs001', 'phs002.c2'] } });
-
     await loadDashboardData();
 
     expect(accessOf()).toEqual({
@@ -50,7 +55,9 @@ describe('loadDashboardData Access column', () => {
   });
 
   it('denies everything when the user has no consents', async () => {
-    user.set({ consents: {} });
+    mockApi.get.mockImplementation(async (path: string) =>
+      path.endsWith('/consents') ? { consents: {} } : structuredClone(dashboardResp),
+    );
 
     await loadDashboardData();
 
@@ -58,7 +65,7 @@ describe('loadDashboardData Access column', () => {
   });
 
   it('denies everything when the token is gone but the user blob lingers', async () => {
-    user.set({ consents: { '\\_consents\\': ['phs001'] } });
+    await loadDashboardData();
     removeToken();
 
     await loadDashboardData();
