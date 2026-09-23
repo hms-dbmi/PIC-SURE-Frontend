@@ -111,7 +111,7 @@
     const rows = table.querySelectorAll('tr');
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      let filter = row.querySelector('button[title="Filter"]') as HTMLElement | undefined;
+      let filter = row.querySelector('button.row-action-filter') as HTMLElement | undefined;
       if (filter) {
         row.classList.add('non-stigmatized-row');
         break;
