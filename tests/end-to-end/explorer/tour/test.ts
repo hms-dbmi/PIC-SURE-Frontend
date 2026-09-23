@@ -25,9 +25,9 @@ const HIERARCHY_AND_EXPORT_FEATURES = [
 ];
 
 // Tracks the highlighted element, not popover visibility: driver.js falls back to an
-// invisible dummy element when a step's selector fails to resolve (undetected before,
-// ALS-6141), and separately blips the popover to `display: none` mid-transition - so
-// visibility alone can't signal a bad selector or real progress.
+// invisible dummy element when a step's selector fails to resolve, and separately
+// blips the popover to `display: none` mid-transition - so visibility alone can't
+// signal a bad selector or real progress.
 async function walkTourAssertingRealHighlights(page: Page) {
   const progressText = page.locator('#driver-popover-content .driver-popover-progress-text');
   await expect(progressText).toBeVisible();
