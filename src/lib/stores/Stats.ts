@@ -32,7 +32,7 @@ export async function loadLandingStats() {
 
     loaded.set(false);
     hasError.set(false);
-    
+
     if (isUserLoggedIn()) {
       const consents = await ensureConsentsLoaded();
       if (consents === undefined) {
