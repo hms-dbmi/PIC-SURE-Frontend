@@ -99,38 +99,51 @@ test.describe('API documentation for public visitors', () => {
     ).toBe(false);
   });
 
-  test('renders expanded documentation under the BDC infrastructure CSP', async ({ page }) => {
-    const policy =
-      "frame-ancestors 'none'; default-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data: https://*.googletagmanager.com; img-src 'self' data: https://public.era.nih.gov blob: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com;";
-    await page.addInitScript(() => {
-      const violations: string[] = [];
-      Object.assign(window, { apiCspViolations: violations });
-      document.addEventListener('securitypolicyviolation', (event) => {
-        // Existing page fonts can be inlined by Vite; this checks the viewer
-        // script, style, image, worker, and document-loading policy.
-        if (event.effectiveDirective !== 'font-src') {
-          violations.push(`${event.effectiveDirective}: ${event.blockedURI}`);
-        }
-      });
+  const policies = [
+    {
+      name: 'BDC infrastructure',
+      allowExistingFontViolation: true,
+      policy:
+        "frame-ancestors 'none'; default-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data: https://*.googletagmanager.com; img-src 'self' data: https://public.era.nih.gov blob: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com;",
+    },
+    // The app's own nonce policy from svelte.config.js, served unmodified.
+    { name: 'application nonce', allowExistingFontViolation: false, policy: undefined },
+  ];
+  for (const { name, policy, allowExistingFontViolation } of policies) {
+    test(`renders expanded documentation under the ${name} CSP`, async ({ page }) => {
+      await page.addInitScript((ignoreFonts) => {
+        const violations: string[] = [];
+        Object.assign(window, { apiCspViolations: violations });
+        document.addEventListener('securitypolicyviolation', (event) => {
+          // The old infrastructure policy blocks existing Vite-inlined app fonts.
+          // The newer application policy permits them, so every violation counts.
+          if (!ignoreFonts || event.effectiveDirective !== 'font-src') {
+            violations.push(`${event.effectiveDirective}: ${event.blockedURI}`);
+          }
+        });
+      }, allowExistingFontViolation);
+      if (policy) {
+        await page.route('**/api', async (route) => {
+          const response = await route.fetch();
+          await route.fulfill({
+            response,
+            headers: { ...response.headers(), 'content-security-policy': policy },
+          });
+        });
+      }
+      const response = await page.goto('/api#api-access');
+      if (!policy) expect(response?.headers()['content-security-policy']).toContain("'nonce-");
+      const viewer = page.getByTestId('api-documentation');
+      await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+      await viewer.locator('.opblock-summary').click();
+      await expect(viewer.locator('.highlight-code')).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { apiCspViolations: string[] }).apiCspViolations,
+        ),
+      ).toEqual([]);
     });
-    await page.route('**/api', async (route) => {
-      const response = await route.fetch();
-      await route.fulfill({
-        response,
-        headers: { ...response.headers(), 'content-security-policy': policy },
-      });
-    });
-    await page.goto('/api#api-access');
-    const viewer = page.getByTestId('api-documentation');
-    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
-    await viewer.locator('.opblock-summary').click();
-    await expect(viewer.locator('.highlight-code')).toBeVisible();
-    expect(
-      await page.evaluate(
-        () => (window as unknown as { apiCspViolations: string[] }).apiCspViolations,
-      ),
-    ).toEqual([]);
-  });
+  }
 
   test('reuses the viewer across switches and renders again after client navigation', async ({
     page,
