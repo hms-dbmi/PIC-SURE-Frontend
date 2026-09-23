@@ -1,8 +1,8 @@
-import { get, derived, writable, type Readable, type Writable } from 'svelte/store';
+import { get, derived, writable, toStore, type Readable, type Writable } from 'svelte/store';
 import { genericUUID, objectUUID } from '$lib/utilities/UUID';
 
 import { browser } from '$app/environment';
-import { ensureConsentsLoaded, user } from '$lib/stores/User';
+import { access, ensureAccess } from '$lib/state/access.svelte';
 import { getConceptDetails } from '$lib/stores/Dictionary';
 import { log, createLog, registerAssociatedStudies, getPageContext } from '$lib/logger';
 
@@ -55,9 +55,9 @@ function hasConsentForFilter(filter: Filter, consents: string[]): boolean {
 }
 
 export const hasInvalidFilter: Readable<boolean> = derived(
-  [user, allFilters],
-  ([$user, $allFilters]) => {
-    const consents = $user?.consents?.['\\_consents\\'];
+  [toStore(() => access.consents), allFilters],
+  ([$consents, $allFilters]) => {
+    const consents = $consents?.['\\_consents\\'];
     if ($allFilters.length === 0 || !consents) return false;
 
     return $allFilters.some((filter) => !hasConsentForFilter(filter, consents));
@@ -237,7 +237,7 @@ export async function removeInvalidFilters(): Promise<void> {
   const geneFilters = get(genomicFilters);
   if (currentFilters.length === 0 && geneFilters.length === 0) return;
 
-  const consentsMap = await ensureConsentsLoaded();
+  const consentsMap = await ensureAccess();
   const consents = consentsMap?.['\\_consents\\'];
 
   if (!consents) return;

@@ -2,7 +2,7 @@ import { test as base, type Route, type BrowserContext, type Page } from '@playw
 import type { TestInfo } from '@playwright/test';
 import type { ConfigCache } from '../../src/lib/models/Configuration';
 import { TEST_CONFIG_COOKIE } from '../../src/lib/testConfig';
-import { configurationPath } from './mock-data';
+import { configurationPath, mockConsents, picsureUser } from './mock-data';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function mockApiSuccess(context: BrowserContext | Page, path: string, json: any) {
@@ -129,6 +129,13 @@ export const test = base.extend({
         request.continue();
       }
     });
+
+    // Access is fetched per tab rather than restored from the profile fixture.
+    const profile = userData ? JSON.parse(userData) : picsureUser;
+    await context.route('*/**/psama/user/me', (route) => route.fulfill({ json: profile }));
+    await context.route('*/**/psama/user/me/consents', (route) =>
+      route.fulfill({ json: { consents: profile.consents ?? mockConsents } }),
+    );
 
     // Stub TOS endpoint so the terms modal doesn't block authenticated tests
     await context.route('*/**/psama/tos/latest', (route) =>

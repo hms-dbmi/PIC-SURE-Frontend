@@ -9,10 +9,14 @@ vi.mock('$app/environment', () => ({
 }));
 
 const mockLogout = vi.fn();
-const mockLogin = vi.fn();
+const mockRenewToken = vi.fn();
 vi.mock('$lib/stores/User', () => ({
   logout: (...args: unknown[]) => mockLogout(...args),
-  login: (...args: unknown[]) => mockLogin(...args),
+}));
+
+vi.mock('$lib/state/session.svelte', () => ({
+  getToken: () => localStorage.getItem('token') || '',
+  renewToken: (...args: unknown[]) => mockRenewToken(...args),
 }));
 
 const mockLog = vi.fn();
@@ -284,7 +288,8 @@ describe('api', () => {
   });
 
   describe('token refresh', () => {
-    it('calls login() when response has Authorization header', async () => {
+    it('renews the request token when response has Authorization header', async () => {
+      localStorage.setItem('token', 'old-token');
       fetchMock.mockResolvedValue(
         mockFetchResponse({
           headers: { Authorization: 'Bearer new-token-123' },
@@ -292,14 +297,14 @@ describe('api', () => {
       );
 
       await get('picsure/test');
-      expect(mockLogin).toHaveBeenCalledWith('new-token-123');
+      expect(mockRenewToken).toHaveBeenCalledWith('new-token-123', 'old-token');
     });
 
-    it('does not call login() when no Authorization header in response', async () => {
+    it('does not renew the token when no Authorization header is returned', async () => {
       fetchMock.mockResolvedValue(mockFetchResponse({}));
 
       await get('picsure/test');
-      expect(mockLogin).not.toHaveBeenCalled();
+      expect(mockRenewToken).not.toHaveBeenCalled();
     });
   });
 

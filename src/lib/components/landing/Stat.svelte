@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Readable } from 'svelte/store';
   import type { StatResult } from '$lib/models/Stat';
 
   import { browser } from '$app/environment';
@@ -9,14 +8,14 @@
   import Loading from '$lib/components/Loading.svelte';
   import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
   interface Props {
-    stats: Readable<StatResult[]>;
+    stats: StatResult[];
     description: string;
     auth?: boolean;
   }
 
   let { stats, description, auth = false }: Props = $props();
   let authString = $derived(auth ? 'auth' : 'open');
-  let width = $derived($stats.length > 4 ? 'w-full' : 'w-1/2');
+  let width = $derived(stats.length > 4 ? 'w-full' : 'w-1/2');
 
   // Define explicit grid classes so Tailwind can detect them
   const gridClasses = {
@@ -35,7 +34,7 @@
   };
 
   const gridClass = $derived(
-    gridClasses[$stats.length as keyof typeof gridClasses] || 'grid-cols-1',
+    gridClasses[stats.length as keyof typeof gridClasses] || 'grid-cols-1',
   );
 </script>
 
@@ -45,7 +44,7 @@
     {@html browser ? sanitizeHTML(description) : description}
   </div>
   <div class="grid {gridClass} grid-flow-col justify-center p-2 my-2 gap-y-9 {width}">
-    {#each $stats as stat (`${authString}-${stat.key}-${stat.label}`)}
+    {#each stats as stat (`${authString}-${stat.key}-${stat.label}`)}
       <div class="p-2 not-last:border-r border-surface-500">
         <div
           data-testid="value-{authString}-{stat.key}-{stat.label}"
