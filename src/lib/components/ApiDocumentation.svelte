@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { ComponentType } from 'react';
-  import type { Root } from 'react-dom/client';
+  import type { SwaggerComponent, SwaggerSystem } from 'swagger-ui-dist/swagger-ui-bundle.js';
 
   const services = [
     { name: 'hpds-query-service', title: 'HPDS queries' },
@@ -14,7 +13,8 @@
   let host: HTMLDivElement;
   let controller: AbortController | undefined;
   let generation = 0;
-  let viewer: Root | undefined;
+  let viewer: SwaggerSystem | undefined;
+  let disposeViewer: (() => void) | undefined;
 
   class DocumentationResponseError extends Error {
     readonly status: number;
@@ -22,11 +22,6 @@
       super('Documentation request failed');
       this.status = status;
     }
-  }
-
-  function clearViewer() {
-    viewer?.unmount();
-    viewer = undefined;
   }
 
   async function getJson(path: string, signal: AbortSignal): Promise<unknown> {
@@ -60,7 +55,6 @@
     const request = ++generation;
     loading = true;
     error = '';
-    clearViewer();
     try {
       if (index) {
         const registry = await getJson('/picsure/openapi', signal);
@@ -89,59 +83,66 @@
       ) {
         throw new Error('Invalid OpenAPI document');
       }
-      const [{ default: SwaggerUI }, { createElement, useLayoutEffect, useRef }, { createRoot }] =
-        await Promise.all([
-          import('swagger-ui-react'),
-          import('react'),
-          import('react-dom/client'),
-          import('swagger-ui-react/swagger-ui.css'),
-        ]);
       if (request !== generation) return;
-      // Swagger does not expose heading levels. Preserve its content and controls,
-      // but place its headings below this page's API Access heading for assistive tools.
-      const embeddedInfo = (Original: ComponentType<Record<string, unknown>>) =>
-        function EmbeddedInfo(props: Record<string, unknown>) {
-          const container = useRef<HTMLDivElement>(null);
-          useLayoutEffect(() => {
-            const title = container.current?.querySelector('.title');
-            title?.setAttribute('role', 'presentation');
-            title?.parentElement?.setAttribute('role', 'heading');
-            title?.parentElement?.setAttribute('aria-level', '3');
-          });
-          return createElement('div', { ref: container }, createElement(Original, props));
-        };
-      viewer = createRoot(host);
-      viewer.render(
-        createElement(SwaggerUI, {
-          spec: document,
-          supportedSubmitMethods: [],
-          tryItOutEnabled: false,
-          deepLinking: false,
-          queryConfigEnabled: false,
-          persistAuthorization: false,
-          docExpansion: 'list',
-          // Documents are loaded above. Swagger must not fetch external references,
-          // validators, configuration, or execute operations from this read-only viewer.
-          requestInterceptor: () => {
-            throw new Error('Requests are disabled in this documentation viewer.');
-          },
-          plugins: [
-            () => ({
-              afterLoad: (system: { getConfigs: () => { validatorUrl: string | null } }) => {
-                system.getConfigs().validatorUrl = null;
-              },
+      if (viewer) {
+        viewer.specActions.updateSpec(JSON.stringify(document));
+        return;
+      }
+      const [{ default: SwaggerUI }] = await Promise.all([
+        import('swagger-ui-dist/swagger-ui-bundle.js'),
+        import('swagger-ui-dist/swagger-ui.css'),
+      ]);
+      if (request !== generation) return;
+      viewer = SwaggerUI({
+        domNode: host,
+        spec: document,
+        supportedSubmitMethods: [],
+        tryItOutEnabled: false,
+        deepLinking: false,
+        queryConfigEnabled: false,
+        persistAuthorization: false,
+        docExpansion: 'list',
+        // Documents are loaded above. Swagger must not fetch external references,
+        // validators, configuration, or execute operations from this read-only viewer.
+        requestInterceptor: () => {
+          throw new Error('Requests are disabled in this documentation viewer.');
+        },
+        plugins: [
+          (system) => {
+            const { createElement, useLayoutEffect, useRef, useState } = system.React;
+            return {
               components: {
                 authorizeBtn: () => null,
                 authorizeOperationBtn: () => null,
                 auths: () => null,
               },
               wrapComponents: {
-                info: embeddedInfo,
+                info: (Original: SwaggerComponent) =>
+                  function EmbeddedInfo(props: Record<string, unknown>) {
+                    const container = useRef<HTMLDivElement | null>(null);
+                    useLayoutEffect(() => {
+                      container.current?.querySelector('.title')?.setAttribute('aria-level', '3');
+                    });
+                    return createElement('div', { ref: container }, createElement(Original, props));
+                  },
+                App: (Original: SwaggerComponent) =>
+                  function EmbeddedApp(props: Record<string, unknown>) {
+                    const [visible, setVisible] = useState(true);
+                    // The bundle exposes no root.unmount(). Keep one root per page and
+                    // unmount its application subtree when Svelte removes the viewer.
+                    useLayoutEffect(() => {
+                      disposeViewer = () => setVisible(false);
+                      return () => {
+                        disposeViewer = undefined;
+                      };
+                    }, []);
+                    return visible ? createElement(Original, props) : null;
+                  },
               },
-            }),
-          ],
-        }),
-      );
+            };
+          },
+        ],
+      });
     } catch (cause) {
       if (request !== generation) return;
       error =
@@ -158,7 +159,9 @@
     return () => {
       generation++;
       controller?.abort();
-      clearViewer();
+      disposeViewer?.();
+      disposeViewer = undefined;
+      viewer = undefined;
     };
   });
 </script>

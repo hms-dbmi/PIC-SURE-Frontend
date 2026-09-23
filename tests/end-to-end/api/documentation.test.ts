@@ -67,10 +67,10 @@ test.describe('API documentation for public visitors', () => {
       '/api?url=https://unexpected.example/spec&configUrl=https://unexpected.example/config#api-access',
     );
     const viewer = page.getByTestId('api-documentation');
-    await expect(
-      viewer.getByRole('heading', { name: 'HPDS documentation', level: 3 }),
-    ).toBeVisible();
-    await expect(viewer.getByRole('heading', { level: 1 })).toHaveCount(0);
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await expect(viewer.locator('.info .title')).toHaveAttribute('aria-level', '3');
+    await expect(viewer.locator('.info .title')).not.toHaveAttribute('role');
+    await expect(viewer.locator('.info .title').locator('..')).not.toHaveAttribute('role');
     await expect(viewer.getByRole('heading', { name: 'default', level: 3 })).toBeVisible();
     await expect(page.getByTestId('api-public-notice')).toContainText('Public Access Only');
     await expect(page.getByTestId('api-public-notice').getByRole('link')).toHaveAttribute(
@@ -97,6 +97,62 @@ test.describe('API documentation for public visitors', () => {
     expect(
       requests.some((url) => /unexpected\.example|validator\.swagger/.test(new URL(url).hostname)),
     ).toBe(false);
+  });
+
+  test('renders expanded documentation under the BDC infrastructure CSP', async ({ page }) => {
+    const policy =
+      "frame-ancestors 'none'; default-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data: https://*.googletagmanager.com; img-src 'self' data: https://public.era.nih.gov blob: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com;";
+    await page.addInitScript(() => {
+      const violations: string[] = [];
+      Object.assign(window, { apiCspViolations: violations });
+      document.addEventListener('securitypolicyviolation', (event) => {
+        // Existing page fonts can be inlined by Vite; this checks the viewer
+        // script, style, image, worker, and document-loading policy.
+        if (event.effectiveDirective !== 'font-src') {
+          violations.push(`${event.effectiveDirective}: ${event.blockedURI}`);
+        }
+      });
+    });
+    await page.route('**/api', async (route) => {
+      const response = await route.fetch();
+      await route.fulfill({
+        response,
+        headers: { ...response.headers(), 'content-security-policy': policy },
+      });
+    });
+    await page.goto('/api#api-access');
+    const viewer = page.getByTestId('api-documentation');
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await viewer.locator('.opblock-summary').click();
+    await expect(viewer.locator('.highlight-code')).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { apiCspViolations: string[] }).apiCspViolations,
+      ),
+    ).toEqual([]);
+  });
+
+  test('reuses the viewer across switches and renders again after client navigation', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto('/api#api-access');
+    for (const service of ['dictionary', 'hpds-query-service', 'dictionary']) {
+      await page.getByLabel('API documentation').selectOption(service);
+      await expect(
+        page.getByTestId('api-documentation').getByRole('heading', {
+          name: service === 'dictionary' ? 'Dictionary documentation' : 'HPDS documentation',
+        }),
+      ).toBeVisible();
+    }
+    await page.locator('a[href="/"]').first().click();
+    await expect(page.getByTestId('api-documentation')).toHaveCount(0);
+    await page.goBack();
+    await expect(
+      page.getByTestId('api-documentation').getByRole('heading', { name: 'HPDS documentation' }),
+    ).toBeVisible();
+    expect(errors).toEqual([]);
   });
 
   test('a failed service can retry and does not prevent switching to another service', async ({
@@ -144,9 +200,7 @@ test.describe('API documentation for public visitors', () => {
       await expect(viewer).not.toContainText('unavailable on this deployment');
       await page.route('**/picsure/openapi', (route) => route.fulfill({ json: registry }));
       await viewer.getByRole('button', { name: 'Retry' }).click();
-      await expect(
-        viewer.getByRole('heading', { name: 'HPDS documentation', level: 3 }),
-      ).toBeVisible();
+      await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
     });
   }
 
@@ -154,10 +208,10 @@ test.describe('API documentation for public visitors', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/api#api-access');
     const viewer = page.getByTestId('api-documentation');
-    await expect(
-      viewer.getByRole('heading', { name: 'HPDS documentation', level: 3 }),
-    ).toBeVisible();
-    await expect(viewer.getByRole('heading', { level: 1 })).toHaveCount(0);
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await expect(viewer.locator('.info .title')).toHaveAttribute('aria-level', '3');
+    await expect(viewer.locator('.info .title')).not.toHaveAttribute('role');
+    await expect(viewer.locator('.info .title').locator('..')).not.toHaveAttribute('role');
     await expect(viewer.getByRole('heading', { name: 'default', level: 3 })).toBeVisible();
     await viewer.locator('.opblock-summary').click();
     await viewer.getByRole('tab', { name: 'Schema', exact: true }).click();
@@ -216,10 +270,10 @@ test.describe('API documentation for signed-in visitors', () => {
     const response = await page.goto('/api#api-access');
     expect(await response?.text()).not.toContain('data-testid="api-public-notice"');
     const viewer = page.getByTestId('api-documentation');
-    await expect(
-      viewer.getByRole('heading', { name: 'HPDS documentation', level: 3 }),
-    ).toBeVisible();
-    await expect(viewer.getByRole('heading', { level: 1 })).toHaveCount(0);
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await expect(viewer.locator('.info .title')).toHaveAttribute('aria-level', '3');
+    await expect(viewer.locator('.info .title')).not.toHaveAttribute('role');
+    await expect(viewer.locator('.info .title').locator('..')).not.toHaveAttribute('role');
     await expect(viewer.getByRole('heading', { name: 'default', level: 3 })).toBeVisible();
     await expect(page.getByTestId('api-public-notice')).toHaveCount(0);
     await viewer.locator('.opblock-summary').click();
