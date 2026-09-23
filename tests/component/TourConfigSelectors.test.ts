@@ -62,9 +62,11 @@ vi.mock('$lib/stores/ExpandableRow', () => {
 import RemoteTable from '$lib/components/datatable/RemoteTable.svelte';
 import Actions from '$lib/components/explorer/cell/Actions.svelte';
 import { activeTable, activeRow } from '$lib/stores/ExpandableRow';
+import { isOpenAccess } from '$lib/AccessState';
 
 afterEach(() => {
   vi.clearAllMocks();
+  vi.mocked(isOpenAccess).mockReturnValue(false);
   activeTable.set('');
   activeRow.set('');
 });
@@ -113,7 +115,7 @@ function renderExplorerTable() {
 function markFirstRowNonStigmatized(container: HTMLElement) {
   const table = container.querySelector('#ExplorerTable-table') as HTMLTableElement;
   const row = Array.from(table.querySelectorAll('tr')).find((tr) =>
-    tr.querySelector('button.row-action-filter'),
+    tr.querySelector('button.row-action-filter:not(:disabled)'),
   );
   row?.classList.add('non-stigmatized-row');
 }
@@ -145,4 +147,30 @@ describe('TourConfiguration.json selectors against the real datatable markup', (
       expect(container.querySelector(selector)).not.toBeNull();
     },
   );
+});
+
+describe('markFirstRowNonStigmatized under open access', () => {
+  it('skips row 0 when its filter button is disabled and marks row 1 instead', () => {
+    vi.mocked(isOpenAccess).mockReturnValue(true);
+
+    const rows = [
+      { ...makeRow(0), allowFiltering: false },
+      { ...makeRow(1), allowFiltering: true },
+    ];
+    const handler = new TableHandler(rows, { rowsPerPage: 10 });
+
+    const { container } = render(RemoteTable, {
+      tableName: 'ExplorerTable',
+      handler,
+      columns,
+      cellOverides: { id: Actions },
+      isClickable: true,
+      expandable: true,
+    });
+
+    markFirstRowNonStigmatized(container);
+
+    expect(container.querySelector('#ExplorerTable-row-0')).not.toHaveClass('non-stigmatized-row');
+    expect(container.querySelector('#ExplorerTable-row-1')).toHaveClass('non-stigmatized-row');
+  });
 });

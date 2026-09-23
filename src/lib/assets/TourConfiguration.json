@@ -47,7 +47,7 @@
         }
       },
       {
-        "element": "#ExplorerTable-row-0-col-2 button.row-action-filter",
+        "element": "#ExplorerTable-row-0 button.row-action-filter",
         "onHighlightStarted": "clickElement",
         "popover": {
           "title": "Apply Filters",
@@ -65,7 +65,7 @@
         }
       },
       {
-        "element": "#ExplorerTable-row-0-col-2 button.row-action-hierarchy",
+        "element": "#ExplorerTable-row-0 button.row-action-hierarchy",
         "onHighlightStarted": "clickElement",
         "popover": {
           "title": "Variable Hierarchy",
@@ -82,7 +82,7 @@
         }
       },
       {
-        "element": "#ExplorerTable-row-0-col-2 button.row-action-export",
+        "element": "#ExplorerTable-row-0 button.row-action-export",
         "popover": {
           "title": "Export Variable",
           "description": "Click the export icon to add a variable to your export without applying a filter.",
@@ -172,7 +172,7 @@
         }
       },
       {
-        "element": "#ExplorerTable-row-0-col-2 button.row-action-filter",
+        "element": "#ExplorerTable-row-0 button.row-action-filter",
         "onHighlightStarted": "clickElement",
         "popover": {
           "title": "Apply Filters",
@@ -190,7 +190,7 @@
         }
       },
       {
-        "element": "#ExplorerTable-row-0-col-2 button.row-action-hierarchy",
+        "element": "#ExplorerTable-row-0 button.row-action-hierarchy",
         "onHighlightStarted": "clickElement",
         "popover": {
           "title": "Variable Hierarchy",
@@ -207,7 +207,7 @@
         }
       },
       {
-        "element": "#ExplorerTable-row-0-col-2 button.row-action-export",
+        "element": "#ExplorerTable-row-0 button.row-action-export",
         "popover": {
           "title": "Export Variable",
           "description": "Click the export icon to add a variable to your export without applying a filter.",
@@ -397,7 +397,7 @@
         }
       },
       {
-        "element": "#ExplorerTable-row-0-col-2 button.row-action-filter",
+        "element": "#ExplorerTable-row-0 button.row-action-filter",
         "onHighlightStarted": "clickElement",
         "popover": {
           "title": "Apply Filters",
@@ -415,7 +415,7 @@
         }
       },
       {
-        "element": "#ExplorerTable-row-0-col-2 button.row-action-export",
+        "element": "#ExplorerTable-row-0 button.row-action-export",
         "popover": {
           "title": "Export Variable",
           "description": "Click the export icon to add a variable to your export without applying a filter.",
