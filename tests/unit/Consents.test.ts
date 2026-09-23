@@ -177,18 +177,46 @@ describe('access lifecycle', () => {
     expect(session.authenticated).toBe(false);
   });
 
-  it('renews tokens without restarting access, and ignores a late old-session renewal', async () => {
-    await ensureAccess();
-    const revision = session.revision;
-    renewToken('renewed-a', 'session-a');
-    expect(session.revision).toBe(revision);
-    expect(getToken()).toBe('renewed-a');
-    expect(access.state.status).toBe('ready');
-    setToken('session-b');
-    renewToken('late-a', 'renewed-a');
-    expect(getToken()).toBe('session-b');
-    expect(access.state.status).toBe('idle');
-  });
+  it.each([undefined, 'session-id-a'])(
+    'preserves access on local and cross-tab renewal with session ID %s',
+    async (sid) => {
+      const jwt = (sub: string, iat: number, sessionId = sid) =>
+        `header.${btoa(JSON.stringify({ sub, iss: 'psama', sid: sessionId, iat }))
+          .replaceAll('+', '-')
+          .replaceAll('/', '_')
+          .replaceAll('=', '')}.signature`;
+      const original = jwt('user-a', 1);
+      const renewed = jwt('user-a', 2);
+      setToken(original);
+      await ensureAccess();
+      user.set({ privileges: ['ADMIN'] });
+      const profile = get(user);
+      const accessState = access.state;
+      const revision = session.revision;
+      renewToken(renewed, original);
+      expect(session.revision).toBe(revision);
+      expect(getToken()).toBe(renewed);
+      expect(access.state.status).toBe('ready');
+      const remoteRenewal = jwt('user-a', 3);
+      localStorage.setItem('token', remoteRenewal);
+      window.dispatchEvent(new StorageEvent('storage', { key: 'token', newValue: remoteRenewal }));
+      expect(session.revision).toBe(revision);
+      expect(access.state).toBe(accessState);
+      expect(get(user)).toBe(profile);
+      expect(getToken()).toBe(remoteRenewal);
+
+      const replacement = sid ? jwt('user-a', 4, 'session-id-b') : jwt('user-b', 4);
+      localStorage.setItem('token', replacement);
+      window.dispatchEvent(new StorageEvent('storage', { key: 'token', newValue: replacement }));
+      expect(session.revision).toBe(revision + 1);
+      expect(access.state.status).toBe('idle');
+      expect(get(user)).toEqual({});
+      setToken('session-b');
+      renewToken('late-a', remoteRenewal);
+      expect(getToken()).toBe('session-b');
+      expect(access.state.status).toBe('idle');
+    },
+  );
 
   it('does not let a failed profile request clear a replacement session', async () => {
     let rejectOld!: (error: Error) => void;
