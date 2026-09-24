@@ -12,10 +12,10 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "clean": "pnpm run format && pnpm run lint",
+    "clean": "pnpm -s format && pnpm -s lint",
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",
-    "test": "pnpm run test:vitest && pnpm run test:integration",
+    "test": "pnpm -s test:vitest && pnpm -s test:integration",
     "test:vitest": "vitest run tests/unit tests/component src/routes",
     "test:unit": "vitest run tests/unit",
     "test:component": "vitest run tests/component",
@@ -23,7 +23,7 @@
     "test:integration:slim": "playwright test --project chromium --reporter=./tests/minimal-reporter.ts --retries=1",
     "playwright": "playwright test --ui",
     "playwright:dev": "PLAYWRIGHT_DEV=1 playwright test --ui",
-    "precommit": "pnpm run format && pnpm run lint && pnpm run check && pnpm run test"
+    "precommit": "vite build && pnpm -s clean && pnpm -s check && pnpm -s test"
   },
   "type": "module",
   "dependencies": {

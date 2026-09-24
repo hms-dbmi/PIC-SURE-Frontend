@@ -71,7 +71,7 @@
   type="button"
   title="Information (i)"
   data-key="i"
-  class="btn-icon-color"
+  class="row-action-info btn-icon-color"
   onclick={insertInfoContent}
 >
   <i class="fa-solid fa-circle-info fa-xl"></i>
@@ -81,7 +81,7 @@
   type="button"
   title={shouldDisableFilter ? 'Filtering is not available for this variable' : 'Filter (f)'}
   data-key="f"
-  class="btn-icon-color"
+  class="row-action-filter btn-icon-color"
   disabled={shouldDisableFilter}
   onclick={insertFilterContent}
 >
@@ -97,7 +97,7 @@
     type="button"
     title="Data Hierarchy (h)"
     data-key="h"
-    class="btn-icon-color"
+    class="row-action-hierarchy btn-icon-color"
     onclick={insertHierarchyContent}
   >
     <i class="fa-solid fa-sitemap fa-xl"></i>
@@ -109,7 +109,7 @@
     type="button"
     title={isExported ? 'Remove from Analysis (e)' : 'Add for Analysis (e)'}
     data-key="e"
-    class="btn-icon-color"
+    class="row-action-export btn-icon-color"
     onclick={insertExportContent}
   >
     {#if isExported}
