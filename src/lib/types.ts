@@ -30,12 +30,6 @@ export interface FooterConfig {
   links: Array<Link>;
 }
 
-interface CodeBlock {
-  PythonExport: string;
-  RExport: string;
-  PythonAPI: string;
-  RAPI: string;
-}
 export interface ExplorePageConfig {
   columns: Column[];
   tourSearchTerm: string;
@@ -46,7 +40,7 @@ export interface ExplorePageConfig {
   analysisExportText: string;
   confirmDownloadTitle: string;
   confirmDownloadMessage: string;
-  codeBlocks: CodeBlock;
+  codeBlocks: CodeBlockConfig;
   goTo: {
     instructions: string;
     links: Array<Link>;
@@ -106,21 +100,14 @@ export interface PrivacyConfig {
   url: string;
 }
 
-export interface AnalysisConfig {
-  api: {
-    cards: Array<{
-      header: string;
-      body: string;
-      link: string;
-    }>;
-    instructions: {
-      connection: string;
-      execution: string;
-    };
-    example: {
-      setup: string;
-    };
-  };
+export interface ApiCapability {
+  text: string;
+  requiresLogin?: boolean;
+}
+
+export interface ApiPageConfig {
+  capabilities: ApiCapability[];
+  publicKeyEnabled?: boolean;
 }
 
 export interface CodeBlockConfig extends Indexable {
@@ -128,6 +115,9 @@ export interface CodeBlockConfig extends Indexable {
   RExport: string;
   PythonAPI: string;
   RAPI: string;
+  PythonAPIOpen: string;
+  RAPIOpen: string;
+  CurlAPI: string;
 }
 
 export interface TermsOfServiceConfig {

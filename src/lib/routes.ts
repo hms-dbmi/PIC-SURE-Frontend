@@ -18,9 +18,8 @@ export const routes: Route[] = [
     privilege: [PicsurePrivileges.QUERY, BDCPrivileges.AUTHORIZED_ACCESS],
   },
   {
-    path: '/analyze/api',
-    text: 'Prepare for Analysis',
-    privilege: [PicsurePrivileges.API_ACCESS, BDCPrivileges.AUTHORIZED_ACCESS],
+    path: '/api',
+    text: 'API',
     feature: 'analyzeApi',
   },
   {
@@ -40,5 +39,6 @@ export const routes: Route[] = [
     feature: 'manualRole',
   },
   { path: '/admin/users', text: 'Manage Users', privilege: [PicsurePrivileges.ADMIN] },
+  { path: '/admin/api-keys', text: 'API Keys', privilege: [PicsurePrivileges.ADMIN] },
   { path: '/help', text: 'Help' },
 ];

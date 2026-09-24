@@ -86,7 +86,13 @@
     <Loading ring size="medium" />
   {:then}
     <div id="user-token" class="card preset-filled-sureface-500">
-      <header class="card-header"><h4>Personal Access Token</h4></header>
+      <header class="card-header flex w-full items-center gap-4">
+        <i class="fa-solid fa-user-shield text-3xl text-success-500"></i>
+        <div>
+          <h4 class="my-0">Personal Access Token</h4>
+          <div class="text-sm">Login confirmed</div>
+        </div>
+      </header>
       <section class="p-4 grid grid-cols-2 gap-y-2 items-center">
         <label for="account">Account:</label>
         <span id="account" class="w-full">{account}</span>
@@ -150,6 +156,7 @@
     display: flex;
     justify-content: center;
     width: 52rem;
+    max-width: 100%;
   }
   #user-token-container #user-token {
     display: flex;
@@ -159,7 +166,8 @@
     padding: 1rem;
   }
   #user-token-container #user-token section {
-    min-width: 50rem;
+    width: 100%;
+    max-width: 50rem;
     grid-template-columns: min-content auto;
   }
   #user-token-container #user-token section label {

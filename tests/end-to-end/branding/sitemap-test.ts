@@ -18,7 +18,7 @@ test.describe('Sitemap feature-gating', () => {
     // Then
     const sitemap = page.locator('#sitemap-footer');
     await expect(sitemap.getByRole('link', { name: 'Explore' })).toBeVisible();
-    await expect(sitemap.getByRole('link', { name: 'Analyze' })).toBeVisible();
+    await expect(sitemap.getByRole('link', { name: 'API', exact: true })).toBeVisible();
     await expect(sitemap.getByRole('link', { name: 'Manage Datasets' })).toBeVisible();
   });
 
@@ -37,7 +37,7 @@ test.describe('Sitemap feature-gating', () => {
     // Then
     const sitemap = page.locator('#sitemap-footer');
     await expect(sitemap.getByRole('link', { name: 'Explore' })).toBeVisible();
-    await expect(sitemap.getByRole('link', { name: 'Analyze' })).not.toBeVisible();
+    await expect(sitemap.getByRole('link', { name: 'API', exact: true })).not.toBeVisible();
     await expect(sitemap.getByRole('link', { name: 'Manage Datasets' })).toBeVisible();
   });
 });

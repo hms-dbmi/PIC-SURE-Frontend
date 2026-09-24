@@ -79,12 +79,12 @@ test.describe('Filter warning navigation', () => {
     });
 
     await page.goto('/discover');
-    await page.locator('#nav-link-analyze-api').click();
-    await expect(page).toHaveURL(/\/analyze\/api$/);
+    await page.locator('#nav-link-api').click();
+    await expect(page).toHaveURL(/\/api$/);
 
     await page.locator('#nav-link-explorer').click();
 
-    await expect(page).toHaveURL(/\/analyze\/api$/);
+    await expect(page).toHaveURL(/\/api$/);
     await expect(page.getByTestId('sendfilter-warning')).toBeVisible();
   });
 

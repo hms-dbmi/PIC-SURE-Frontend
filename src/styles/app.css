@@ -80,7 +80,8 @@ input[type='search'] {
 }
 
 input[type='search'],
-input[type='text'] {
+input[type='text'],
+input[type='email'] {
   background-color: var(--input-bg-color);
 }
 
@@ -323,6 +324,12 @@ ul.primary-list li::marker {
 
 header .app-bar {
   border-bottom: solid var(--color-surface-400) 2px;
+}
+
+/* #page is the app's scroll viewport (the nav bar sits outside it). Declaring it
+   a size container lets pages size full-height sections with cqh units. */
+#page {
+  container-type: size;
 }
 
 #page-footer {

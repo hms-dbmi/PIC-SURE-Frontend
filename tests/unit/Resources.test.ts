@@ -11,7 +11,7 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
 vi.mock('$lib/configuration.svelte', () => ({ config: { features: mockFeatures } }));
 
-import { resources, getCountResource } from '$lib/stores/Resources';
+import { resources, getCountResource, getApiConnectionResource } from '$lib/stores/Resources';
 
 describe('getCountResource', () => {
   // With path-based gateway routing the non-federated resource UUID is gone: the query PATH
@@ -56,5 +56,46 @@ describe('getCountResource', () => {
     mockFeatures.login.open = true;
 
     expect(getCountResource(true)).toEqual({ name: 'hpdsOpen', uuid: '' });
+  });
+});
+
+describe('getApiConnectionResource', () => {
+  beforeEach(() => {
+    mockFeatures.explorer.open = false;
+    mockFeatures.login.open = false;
+
+    resources.set({
+      application: '',
+    });
+  });
+
+  it('uses the authorized resource for authenticated users', () => {
+    expect(getApiConnectionResource(true)).toEqual({
+      name: 'hpds',
+      uuid: '',
+      requiresAuth: true,
+      usesDistinctOpenResource: false,
+    });
+  });
+
+  it('uses the distinct open resource for anonymous users', () => {
+    expect(getApiConnectionResource(false)).toEqual({
+      name: 'hpdsOpen',
+      uuid: '',
+      requiresAuth: false,
+      usesDistinctOpenResource: true,
+    });
+  });
+
+  it('uses the authorized resource anonymously for explore-without-login', () => {
+    mockFeatures.explorer.open = true;
+    mockFeatures.login.open = true;
+
+    expect(getApiConnectionResource(false)).toEqual({
+      name: 'hpds',
+      uuid: '',
+      requiresAuth: false,
+      usesDistinctOpenResource: false,
+    });
   });
 });
