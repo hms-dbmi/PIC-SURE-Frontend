@@ -9,6 +9,7 @@
   let available = $state<typeof services>([]);
   let selected = $state('');
   let loading = $state(true);
+  let hasRendered = $state(false);
   let error = $state('');
   let host: HTMLDivElement;
   let controller: AbortController | undefined;
@@ -132,9 +133,6 @@
                     // unmount its application subtree when Svelte removes the viewer.
                     useLayoutEffect(() => {
                       disposeViewer = () => setVisible(false);
-                      return () => {
-                        disposeViewer = undefined;
-                      };
                     }, []);
                     return visible ? createElement(Original, props) : null;
                   },
@@ -143,6 +141,7 @@
           },
         ],
       });
+      hasRendered = true;
     } catch (cause) {
       if (request !== generation) return;
       error =
@@ -181,7 +180,11 @@
     </select>
   {/if}
   {#if loading}
-    <p role="status" class="mx-0">Loading API documentation…</p>
+    <p role="status" class="mx-0">
+      Loading API documentation{selected
+        ? ` for ${available.find((service) => service.name === selected)?.title}`
+        : ''}…
+    </p>
   {:else if error}
     <div role="status" class="border border-surface-200 rounded p-4">
       <p class="mx-0">{error}</p>
@@ -191,7 +194,7 @@
       >
     </div>
   {/if}
-  <div bind:this={host} class="swagger-host" hidden={loading || !!error}></div>
+  <div bind:this={host} class="swagger-host" hidden={!hasRendered || !!error}></div>
 </div>
 
 <style>

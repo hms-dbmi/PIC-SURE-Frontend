@@ -45,6 +45,24 @@ async function mockDocuments(page: Page) {
   );
 }
 
+async function collectDocumentHeaders(page: Page) {
+  await page
+    .context()
+    .addCookies([
+      { name: 'api-doc-cookie-probe', value: 'present', domain: 'localhost', path: '/' },
+    ]);
+  expect(await page.context().cookies('http://localhost:4173')).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ name: 'api-doc-cookie-probe', value: 'present' }),
+    ]),
+  );
+  const headers: Promise<Record<string, string>>[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/picsure/openapi')) headers.push(request.allHeaders());
+  });
+  return headers;
+}
+
 test.describe('API documentation for public visitors', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
   test.beforeEach(async ({ page }) => {
@@ -55,12 +73,9 @@ test.describe('API documentation for public visitors', () => {
   test('renders real read-only Swagger for both services without credentials or external fetches', async ({
     page,
   }) => {
+    const documentHeaders = await collectDocumentHeaders(page);
     const requests: string[] = [];
     page.on('request', (request) => {
-      if (request.url().includes('/picsure/openapi')) {
-        expect(request.headers().authorization).toBeUndefined();
-        expect(request.headers().cookie).toBeUndefined();
-      }
       requests.push(request.url());
     });
     await page.goto(
@@ -94,6 +109,11 @@ test.describe('API documentation for public visitors', () => {
     await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
     await expect(viewer.locator('.servers select')).toHaveValue('/picsure/dictionary');
     await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toHaveCount(0);
+    expect(documentHeaders).toHaveLength(3);
+    for (const headers of await Promise.all(documentHeaders)) {
+      expect(headers.authorization).toBeUndefined();
+      expect(headers.cookie).toBeUndefined();
+    }
     expect(
       requests.some((url) => /unexpected\.example|validator\.swagger/.test(new URL(url).hostname)),
     ).toBe(false);
@@ -159,13 +179,39 @@ test.describe('API documentation for public visitors', () => {
         }),
       ).toBeVisible();
     }
-    await page.locator('a[href="/"]').first().click();
+    await page.getByTestId('api-public-notice').getByRole('link').click();
     await expect(page.getByTestId('api-documentation')).toHaveCount(0);
     await page.goBack();
     await expect(
       page.getByTestId('api-documentation').getByRole('heading', { name: 'HPDS documentation' }),
     ).toBeVisible();
     expect(errors).toEqual([]);
+  });
+
+  test('keeps the previous document visible while loading another service', async ({ page }) => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/picsure/openapi/dictionary', async (route) => {
+      await gate;
+      await route.fulfill({ json: openApiDocument('Dictionary documentation', '/search') });
+    });
+    await page.goto('/api#api-access');
+    const viewer = page.getByTestId('api-documentation');
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    await page.getByLabel('API documentation').selectOption('dictionary');
+    try {
+      await expect(viewer.getByRole('status')).toContainText(
+        'Loading API documentation for Dictionary',
+      );
+      await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toBeVisible();
+    } finally {
+      release();
+    }
+    await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
+    await expect(viewer.getByRole('heading', { name: 'HPDS documentation' })).toHaveCount(0);
+    await expect(viewer.getByRole('status')).toHaveCount(0);
   });
 
   test('a failed service can retry and does not prevent switching to another service', async ({
@@ -181,6 +227,9 @@ test.describe('API documentation for public visitors', () => {
     await expect(viewer.getByRole('heading', { name: 'Dictionary documentation' })).toBeVisible();
     await page.getByLabel('API documentation').selectOption('hpds-query-service');
     await expect(viewer.getByRole('button', { name: 'Retry' })).toBeVisible();
+    await expect(
+      viewer.getByRole('heading', { name: 'Dictionary documentation' }),
+    ).not.toBeVisible();
     await page.route('**/picsure/openapi/hpds-query-service', (route) =>
       route.fulfill({ json: openApiDocument('Recovered HPDS', '/query') }),
     );
@@ -280,6 +329,7 @@ test.describe('API documentation for signed-in visitors', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   test('shows docs without the public notice or request execution', async ({ page }) => {
     await mockDocuments(page);
+    const documentHeaders = await collectDocumentHeaders(page);
     const response = await page.goto('/api#api-access');
     expect(await response?.text()).not.toContain('data-testid="api-public-notice"');
     const viewer = page.getByTestId('api-documentation');
@@ -294,5 +344,10 @@ test.describe('API documentation for signed-in visitors', () => {
     await expect(viewer.getByRole('button', { name: /Try it out|Execute|Authoriz/i })).toHaveCount(
       0,
     );
+    expect(documentHeaders).toHaveLength(2);
+    for (const headers of await Promise.all(documentHeaders)) {
+      expect(headers.authorization).toBeUndefined();
+      expect(headers.cookie).toBeUndefined();
+    }
   });
 });
