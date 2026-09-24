@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
   import { resolve } from '$app/paths';
@@ -126,7 +126,10 @@
     const deepLink = window.location.hash.match(/^#quick-start-(python|r|api)$/);
     if (deepLink) {
       tabSet = { python: 'Python', r: 'R', api: 'API' }[deepLink[1]] ?? tabSet;
-      document.getElementById('quick-start')?.scrollIntoView({ behavior: 'instant' });
+      // Tab selection changes the layout; align only after Svelte renders it.
+      void tick().then(() => {
+        document.getElementById('quick-start')?.scrollIntoView({ behavior: 'instant' });
+      });
     }
 
     // The TOC marks the last section whose top has crossed into the upper 40% of
