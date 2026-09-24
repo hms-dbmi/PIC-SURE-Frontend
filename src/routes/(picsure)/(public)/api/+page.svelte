@@ -3,12 +3,15 @@
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
   import { resolve } from '$app/paths';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/state';
 
-  import { config } from '$lib/configuration.svelte';
+  import { config, PROJECT_HOSTNAME } from '$lib/configuration.svelte';
   import { getApiConnectionResource } from '$lib/stores/Resources';
   import { tokenStatus } from '$lib/stores/User';
   import { log, createLog } from '$lib/logger';
 
+  import ApiDocumentation from '$lib/components/ApiDocumentation.svelte';
   import UserToken from '$lib/components/UserToken.svelte';
   import PublicAccessKey from '$lib/components/PublicAccessKey.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
@@ -18,7 +21,11 @@
   let loggedIn = $derived(mounted && $tokenStatus);
   const capabilities = config.branding.apiPage?.capabilities || [];
 
-  const codeBlocks = config.branding.explorePage.codeBlocks;
+  const codeBlocks = $derived(config.branding.explorePage.codeBlocks);
+
+  function apiExample(code: string | undefined) {
+    return (code || 'Code not set').replace(PROJECT_HOSTNAME, `${page.url.origin}/picsure`);
+  }
   type ApiLanguage = 'python' | 'r';
 
   function booleanLiteral(value: boolean, language: ApiLanguage) {
@@ -37,7 +44,7 @@
     language: ApiLanguage,
     values: ApiCodeBlockValues,
   ) {
-    return (code || 'Code not set')
+    return apiExample(code)
       .replace('{{INCLUDE_CONSENTS}}', booleanLiteral(values.includeConsents, language))
       .replace('{{REQUIRES_AUTH}}', booleanLiteral(values.requiresAuth, language))
       .replace('{{SUPPORTS_GENOMIC}}', booleanLiteral(values.supportsGenomic, language));
@@ -62,7 +69,7 @@
     return {
       python: renderApiCodeBlock(pythonTemplate, 'python', values),
       r: renderApiCodeBlock(rTemplate, 'r', values),
-      api: codeBlocks.CurlAPI || 'Code not set',
+      api: apiExample(codeBlocks.CurlAPI),
     };
   }
 
@@ -133,8 +140,7 @@
     }
 
     // The TOC marks the last section whose top has crossed into the upper 40% of
-    // the scroll viewport. #api-access is too short to ever reach that band, so
-    // bottom-of-page counts as viewing it.
+    // the scroll viewport; reaching the bottom always selects the final section.
     const updateActive = () => {
       if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) {
         activeSection = 'api-access';
@@ -153,12 +159,29 @@
     return () => scroller.removeEventListener('scroll', updateActive);
   });
 
-  function quickStart(workflow: Workflow) {
+  async function navigateSection(event: MouseEvent, id: string) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    event.preventDefault();
+    await goto(resolve(`/api#${id}`), { noScroll: true, keepFocus: true });
+    document.getElementById(id)?.scrollIntoView();
+  }
+
+  function quickStart(event: MouseEvent, workflow: Workflow) {
     tabSet = workflow.tab;
+    void navigateSection(event, 'quick-start');
     log(createLog('NAVIGATION', 'api.quick_start', { workflow: workflow.id }));
   }
 
-  function tocClick(id: string) {
+  function tocClick(event: MouseEvent, id: string) {
+    void navigateSection(event, id);
     activeSection = id;
     log(createLog('NAVIGATION', 'api.toc_click', { section: id }));
   }
@@ -183,7 +206,7 @@
                 ? 'font-bold text-primary-500'
                 : ''}"
               aria-current={activeSection === entry.id ? 'true' : undefined}
-              onclick={() => tocClick(entry.id)}>{entry.label}</a
+              onclick={(event) => tocClick(event, entry.id)}>{entry.label}</a
             >
           </li>
         {/each}
@@ -224,7 +247,7 @@
               <a
                 href="#quick-start"
                 class="btn preset-filled-primary-500 mt-auto"
-                onclick={() => quickStart(workflow)}>Quick Start</a
+                onclick={(event) => quickStart(event, workflow)}>Quick Start</a
               >
             </div>
           {/each}
@@ -316,9 +339,26 @@
   <section id="api-access" class="w-full">
     <div class="w-[70%] mx-auto py-8">
       <h2>API Access</h2>
-      <!-- TODO: Section content (endpoint browser / documentation links) to be defined in an
-           upcoming ticket. -->
       <p class="mx-0">Browse and use the PIC-SURE API endpoints.</p>
+      {#if mounted && !loggedIn}
+        <div
+          class="flex gap-4 items-start border border-primary-500 rounded-lg bg-primary-50-950 p-4 mt-6"
+          data-testid="api-public-notice"
+        >
+          <i class="fa-solid fa-globe text-3xl text-primary-500" aria-hidden="true"></i>
+          <div>
+            <h3 class="font-bold text-primary-500">Public Access Only</h3>
+            <p class="mx-0">
+              You are browsing as a public user. Only open API endpoints are available. To use
+              authorized resources, please <a
+                class="anchor"
+                href="{resolve('/login')}?redirectTo=/api">log in</a
+              >.
+            </p>
+          </div>
+        </div>
+      {/if}
+      <ApiDocumentation />
     </div>
   </section>
 </div>
