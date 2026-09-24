@@ -488,25 +488,41 @@ test.describe('API page logged out', () => {
     }
   });
 
-  test('Clicking a table of contents link scrolls to the section', async ({ page }) => {
-    // Given
+  test('Each table of contents link scrolls on its first click, including repeat visits', async ({
+    page,
+  }) => {
     await page.goto('/api');
+    for (const [name, id] of [
+      ['Quick Start', 'quick-start'],
+      ['Authentication', 'authentication'],
+      ['Overview', 'api-header'],
+      ['Choose Your Workflow', 'choose-your-workflow'],
+      ['Quick Start', 'quick-start'],
+    ]) {
+      await page.getByTestId('toc').getByRole('link', { name, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`#${id}$`));
+      await expect
+        .poll(() =>
+          page.evaluate((sectionId) => {
+            const scroller = document.getElementById('page')!;
+            const section = document.getElementById(sectionId)!;
+            return Math.abs(
+              section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
+            );
+          }, id),
+        )
+        .toBeLessThan(4);
+    }
+  });
 
-    // When
-    await page.getByTestId('toc').getByRole('link', { name: 'Quick Start' }).click();
-
-    // Then
-    await expect(async () => {
-      const offset = await page.evaluate(() => {
-        const scroller = document.getElementById('page');
-        const section = document.getElementById('quick-start');
-        if (!scroller || !section) return NaN;
-        return Math.round(
-          section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
-        );
-      });
-      expect(Math.abs(offset)).toBeLessThan(4);
-    }).toPass({ timeout: 5000 });
+  test('Curl example uses the current origin and gateway Dictionary route', async ({ page }) => {
+    await page.goto('/api');
+    await page.getByRole('tab', { name: 'API', exact: true }).click();
+    const code = page.locator('#quick-start .code-block:visible');
+    await expect(code).toContainText(
+      `${new URL(page.url()).origin}/picsure/dictionary/concepts?page_number=0&page_size=10`,
+    );
+    await expect(code).not.toContainText('/proxy/');
   });
 
   test('Table of contents indicates the section in view', async ({ page }) => {

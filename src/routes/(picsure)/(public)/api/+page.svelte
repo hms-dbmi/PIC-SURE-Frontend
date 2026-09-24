@@ -3,8 +3,10 @@
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
   import { resolve } from '$app/paths';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/state';
 
-  import { config } from '$lib/configuration.svelte';
+  import { config, PROJECT_HOSTNAME } from '$lib/configuration.svelte';
   import { getApiConnectionResource } from '$lib/stores/Resources';
   import { tokenStatus } from '$lib/stores/User';
   import { log, createLog } from '$lib/logger';
@@ -19,7 +21,11 @@
   let loggedIn = $derived(mounted && $tokenStatus);
   const capabilities = config.branding.apiPage?.capabilities || [];
 
-  const codeBlocks = config.branding.explorePage.codeBlocks;
+  const codeBlocks = $derived(config.branding.explorePage.codeBlocks);
+
+  function apiExample(code: string | undefined) {
+    return (code || 'Code not set').replace(PROJECT_HOSTNAME, `${page.url.origin}/picsure`);
+  }
   type ApiLanguage = 'python' | 'r';
 
   function booleanLiteral(value: boolean, language: ApiLanguage) {
@@ -38,7 +44,7 @@
     language: ApiLanguage,
     values: ApiCodeBlockValues,
   ) {
-    return (code || 'Code not set')
+    return apiExample(code)
       .replace('{{INCLUDE_CONSENTS}}', booleanLiteral(values.includeConsents, language))
       .replace('{{REQUIRES_AUTH}}', booleanLiteral(values.requiresAuth, language))
       .replace('{{SUPPORTS_GENOMIC}}', booleanLiteral(values.supportsGenomic, language));
@@ -63,7 +69,7 @@
     return {
       python: renderApiCodeBlock(pythonTemplate, 'python', values),
       r: renderApiCodeBlock(rTemplate, 'r', values),
-      api: codeBlocks.CurlAPI || 'Code not set',
+      api: apiExample(codeBlocks.CurlAPI),
     };
   }
 
@@ -153,12 +159,29 @@
     return () => scroller.removeEventListener('scroll', updateActive);
   });
 
-  function quickStart(workflow: Workflow) {
+  async function navigateSection(event: MouseEvent, id: string) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
+    event.preventDefault();
+    await goto(resolve(`/api#${id}`), { noScroll: true, keepFocus: true });
+    document.getElementById(id)?.scrollIntoView();
+  }
+
+  function quickStart(event: MouseEvent, workflow: Workflow) {
     tabSet = workflow.tab;
+    void navigateSection(event, 'quick-start');
     log(createLog('NAVIGATION', 'api.quick_start', { workflow: workflow.id }));
   }
 
-  function tocClick(id: string) {
+  function tocClick(event: MouseEvent, id: string) {
+    void navigateSection(event, id);
     activeSection = id;
     log(createLog('NAVIGATION', 'api.toc_click', { section: id }));
   }
@@ -183,7 +206,7 @@
                 ? 'font-bold text-primary-500'
                 : ''}"
               aria-current={activeSection === entry.id ? 'true' : undefined}
-              onclick={() => tocClick(entry.id)}>{entry.label}</a
+              onclick={(event) => tocClick(event, entry.id)}>{entry.label}</a
             >
           </li>
         {/each}
@@ -224,7 +247,7 @@
               <a
                 href="#quick-start"
                 class="btn preset-filled-primary-500 mt-auto"
-                onclick={() => quickStart(workflow)}>Quick Start</a
+                onclick={(event) => quickStart(event, workflow)}>Quick Start</a
               >
             </div>
           {/each}
