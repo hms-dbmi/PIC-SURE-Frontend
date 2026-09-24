@@ -213,8 +213,7 @@
             data-testid={`config-field-input-${schema.name}`}
             rows="4"
             disabled={editDisabled}
-            bind:value
-          ></textarea>
+            bind:value></textarea>
           <div
             class="flex justify-end px-2.5 py-1.5 bg-surface-100-900 border-t border-surface-200-800"
           >
