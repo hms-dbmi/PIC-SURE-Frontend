@@ -1,6 +1,7 @@
 import type { ConsentsMap, User } from '../../src/lib/models/User';
 import { PicsurePrivileges, BDCPrivileges } from '../../src/lib/models/Privilege';
 import type { DashboardResp } from '$lib/stores/Dashboard';
+import type { ApiKeyMetadata } from '$lib/models/ApiKey';
 import type { Indexable } from '$lib/types';
 
 export const HPDS = process.env.VITE_RESOURCE_HPDS;
@@ -1625,6 +1626,44 @@ export const users = [
     active: true,
   },
 ];
+
+export const activeApiKey: ApiKeyMetadata = {
+  uuid: 'uuid-active',
+  displayPrefix: 'abc12345',
+  keyType: 'USER',
+  name: 'Alice',
+  email: 'alice@example.org',
+  createdAt: '2026-01-01T00:00:00Z',
+  expiresAt: '2099-01-01T00:00:00Z',
+  revokedAt: null,
+  lastUsedAt: '2026-06-01T00:00:00Z',
+};
+
+export const revokedApiKey: ApiKeyMetadata = {
+  uuid: 'uuid-revoked',
+  displayPrefix: 'def67890',
+  keyType: 'PLATFORM',
+  name: 'Pipeline',
+  email: 'ops@example.org',
+  createdAt: '2026-02-01T00:00:00Z',
+  expiresAt: null,
+  revokedAt: '2026-03-01T00:00:00Z',
+  lastUsedAt: null,
+};
+
+export const expiredApiKey: ApiKeyMetadata = {
+  uuid: 'uuid-expired',
+  displayPrefix: 'ghi13579',
+  keyType: 'USER',
+  name: null,
+  email: null,
+  createdAt: '2025-01-01T00:00:00Z',
+  expiresAt: '2025-06-01T00:00:00Z',
+  revokedAt: null,
+  lastUsedAt: null,
+};
+
+export const apiKeys: ApiKeyMetadata[] = [activeApiKey, revokedApiKey, expiredApiKey];
 
 export const geneValues = {
   results: [
