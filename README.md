@@ -167,9 +167,9 @@ pnpx playwright install
 
 ## Contributing
 
-Please refer to [CONTRIBUTING](https://github.com/hms-dbmi/pic-sure-all-in-one/blob/master/CONTRIBUTING.md) for guidelines on how to contribute, submit issues, and propose improvements.
+Please refer to [CONTRIBUTING](https://github.com/hms-dbmi/pic-sure/blob/main/CONTRIBUTING.md) for guidelines on how to contribute, submit issues, and propose improvements.
 
-Also refer to our [Code of Conduct](https://github.com/hms-dbmi/pic-sure-hpds/blob/master/CODE_OF_CONDUCT.md).
+Also refer to our [Code of Conduct](https://github.com/hms-dbmi/pic-sure/blob/main/CODE_OF_CONDUCT.md).
 
 ## Support
 
