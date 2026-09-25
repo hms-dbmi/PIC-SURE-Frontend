@@ -45,24 +45,31 @@
   data-testid="site-banner"
   class="w-full border-b-4 px-4 py-1.5 {toneClasses[banner.appearance]}"
 >
-  <div class="site-banner-layout mx-auto flex w-full items-center gap-3">
-    {#if iconClasses[banner.icon]}
-      <i
-        class="site-banner-icon fa-solid {iconClasses[banner.icon]} flex-none text-lg"
-        aria-hidden="true"
-      ></i>
-    {/if}
-    <div class="min-w-0 flex-1">
-      {#if banner.title}
-        {#if titleLevel === 3}
-          <h3 class="site-banner-title">{banner.title}</h3>
-        {:else}
-          <h2 class="site-banner-title">{banner.title}</h2>
-        {/if}
+  <div
+    class="site-banner-layout mx-auto grid w-full items-center gap-3"
+    class:has-dismiss={banner.dismissible && !!ondismiss}
+  >
+    <div
+      class="site-banner-message flex min-w-0 max-w-full items-center gap-3 justify-self-center text-center"
+    >
+      {#if iconClasses[banner.icon]}
+        <i
+          class="site-banner-icon fa-solid {iconClasses[banner.icon]} flex-none text-lg"
+          aria-hidden="true"
+        ></i>
       {/if}
-      <div class="site-banner-content text-sm leading-5">
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        {@html sanitizeBannerHTML(banner.htmlContent)}
+      <div class="min-w-0">
+        {#if banner.title}
+          {#if titleLevel === 3}
+            <h3 class="site-banner-title">{banner.title}</h3>
+          {:else}
+            <h2 class="site-banner-title">{banner.title}</h2>
+          {/if}
+        {/if}
+        <div class="site-banner-content text-sm leading-5">
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html sanitizeBannerHTML(banner.htmlContent)}
+        </div>
       </div>
     </div>
     {#if banner.dismissible && ondismiss}
@@ -86,6 +93,18 @@
 </article>
 
 <style>
+  .site-banner-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .site-banner-layout.has-dismiss {
+    grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem;
+  }
+
+  .has-dismiss .site-banner-message {
+    grid-column: 2;
+  }
+
   .site-banner-dismiss {
     box-sizing: border-box;
     padding: 0;
