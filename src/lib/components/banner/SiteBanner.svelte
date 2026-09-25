@@ -50,7 +50,7 @@
     class:has-dismiss={banner.dismissible && !!ondismiss}
   >
     <div
-      class="site-banner-message flex min-w-0 max-w-full items-center gap-3 justify-self-center text-center"
+      class="site-banner-message flex min-w-0 max-w-full items-center gap-3 justify-self-center text-left"
     >
       {#if iconClasses[banner.icon]}
         <i
