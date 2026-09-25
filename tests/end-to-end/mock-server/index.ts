@@ -445,6 +445,105 @@ on('PUT', path(Psama.Users), ({ body, res }) => {
 on('GET', path(Psama.Application), ({ res }) => json(res, state.applications));
 
 /* ---------------------------------------------------------------------------------------
+ * Admin: API keys, plus the unauthenticated "public key" mint used by PublicAccessKey.svelte
+ * ------------------------------------------------------------------------------------- */
+
+// Real keys are opaque tokens the server never stores in plaintext; the mock only needs
+// something that looks like `picsure_<prefix>...` and round-trips through display/copy.
+function mintKeyRow(
+  keyType: string,
+  name: string | null,
+  email: string | null,
+  expiresAt: string | null,
+) {
+  const uuid = nextId();
+  const displayPrefix = uuid.replace(/-/g, '').slice(0, 8);
+  return {
+    row: {
+      uuid,
+      displayPrefix,
+      keyType,
+      name,
+      email,
+      createdAt: new Date().toISOString(),
+      expiresAt,
+      revokedAt: null,
+      lastUsedAt: null,
+    },
+    apiKey: `picsure_${uuid.replace(/-/g, '')}`,
+  };
+}
+
+on('GET', path(Psama.ApiKey.Admin), ({ query, res }) => {
+  const keyType = query.get('keyType');
+  const page = Number(query.get('page') ?? '0');
+  const size = Number(query.get('size') ?? '100');
+  const filtered = keyType
+    ? state.apiKeys.filter((k) => (k as { keyType?: string }).keyType === keyType)
+    : state.apiKeys;
+  const start = page * size;
+  json(res, {
+    keys: filtered.slice(start, start + size),
+    totalCount: filtered.length,
+    page,
+    size,
+  });
+});
+
+on('PUT', path(`${Psama.ApiKey.Admin}/:uuid/revoke`), ({ params, res }) => {
+  const index = state.apiKeys.findIndex((k) => k.uuid === params.uuid);
+  if (index === -1) {
+    json(res, { error: 'api key not found' }, 404);
+    return;
+  }
+  state.apiKeys[index] = { ...state.apiKeys[index], revokedAt: new Date().toISOString() };
+  json(res, state.apiKeys[index]);
+});
+
+on('POST', path(Psama.ApiKey.Platform), ({ body, res }) => {
+  const request = body as {
+    name: string;
+    email: string;
+    expiresAt?: string;
+    neverExpires?: boolean;
+  };
+  // Mirrors ApiKey.ts's toPlatformKeyRequest: no expiresAt/neverExpires means "server default",
+  // which here is just "a year out" - good enough to render a non-null expiry locally.
+  const defaultExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = request.neverExpires ? null : (request.expiresAt ?? defaultExpiry);
+  const { row, apiKey } = mintKeyRow('PLATFORM', request.name, request.email, expiresAt);
+  state.apiKeys.push(row);
+  json(res, {
+    apiKey,
+    uuid: row.uuid,
+    displayPrefix: row.displayPrefix,
+    keyType: row.keyType,
+    expiresAt: row.expiresAt,
+  });
+});
+
+on('POST', path(Psama.Open.ApiKey), ({ body, res }) => {
+  const request = body as { name?: string | null; email?: string | null };
+  // Public keys are short-lived and unauthenticated; 30 days is an arbitrary but plausible
+  // default policy for exercising the reveal UI locally.
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { row, apiKey } = mintKeyRow(
+    'USER',
+    request.name ?? null,
+    request.email ?? null,
+    expiresAt,
+  );
+  state.apiKeys.push(row);
+  json(res, {
+    apiKey,
+    uuid: row.uuid,
+    displayPrefix: row.displayPrefix,
+    keyType: row.keyType,
+    expiresAt: row.expiresAt,
+  });
+});
+
+/* ---------------------------------------------------------------------------------------
  * Logging - src/routes/api/v1/log forwards here when LOGGING_TARGET points at this server
  * (see .env.example); just swallow the event, nothing reads it back locally.
  * ------------------------------------------------------------------------------------- */

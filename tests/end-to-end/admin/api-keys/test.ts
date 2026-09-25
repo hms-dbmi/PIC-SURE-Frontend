@@ -2,44 +2,13 @@ import { expect, type BrowserContext, type Route } from '@playwright/test';
 import { test, mockApiSuccessByMethod } from '../../custom-context';
 import { userIsLoggedIn } from '../../utils';
 import type { ApiKeyMetadata } from '../../../../src/lib/models/ApiKey';
+import {
+  activeApiKey as activeKey,
+  revokedApiKey as revokedKey,
+  expiredApiKey as expiredKey,
+} from '../../mock-data';
 
 const FAKE_KEY = 'picsure_FAKE-TEST-FIXTURE-VALUE-0000000000000000000';
-
-const activeKey: ApiKeyMetadata = {
-  uuid: 'uuid-active',
-  displayPrefix: 'abc12345',
-  keyType: 'USER',
-  name: 'Alice',
-  email: 'alice@example.org',
-  createdAt: '2026-01-01T00:00:00Z',
-  expiresAt: '2099-01-01T00:00:00Z',
-  revokedAt: null,
-  lastUsedAt: '2026-06-01T00:00:00Z',
-};
-
-const revokedKey: ApiKeyMetadata = {
-  uuid: 'uuid-revoked',
-  displayPrefix: 'def67890',
-  keyType: 'PLATFORM',
-  name: 'Pipeline',
-  email: 'ops@example.org',
-  createdAt: '2026-02-01T00:00:00Z',
-  expiresAt: null,
-  revokedAt: '2026-03-01T00:00:00Z',
-  lastUsedAt: null,
-};
-
-const expiredKey: ApiKeyMetadata = {
-  uuid: 'uuid-expired',
-  displayPrefix: 'ghi13579',
-  keyType: 'USER',
-  name: null,
-  email: null,
-  createdAt: '2025-01-01T00:00:00Z',
-  expiresAt: '2025-06-01T00:00:00Z',
-  revokedAt: null,
-  lastUsedAt: null,
-};
 
 const keyPage = (keys: ApiKeyMetadata[]) => ({
   keys,
