@@ -43,7 +43,7 @@
 
 <section
   id="logins"
-  class="flex flex-col items-center h-screen w-full text-center place-content-center text-lg"
+  class="flex h-full w-full flex-col items-center place-content-center text-center text-lg"
   in:fly={{ duration: 600, x: '100%' }}
 >
   <div id="title-box" class="flex flex-col items-center text-center mb-8 max-w-3/4">

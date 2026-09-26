@@ -201,6 +201,17 @@ describe('ConfigFieldRow', () => {
     expect(description.textContent).toBe(longDescription);
   });
 
+  it('does not show a Show more toggle when a description only overflows in UTF-16 units', () => {
+    mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
+    // 150 visible characters, but the emoji makes the UTF-16 length 151.
+    const description = `${'A'.repeat(149)}😀`;
+
+    render(ConfigFieldRow, baseProps({ ...stringSchema, description }));
+
+    expect(screen.getByTestId('config-field-description-APP_NAME').textContent).toBe(description);
+    expect(screen.queryByTestId('config-field-expand-APP_NAME')).not.toBeInTheDocument();
+  });
+
   it('does not show a Show more toggle for a short description', () => {
     mockDescribeConfigField.mockReturnValue({ origin: 'default', disabled: false } as FieldOrigin);
 
