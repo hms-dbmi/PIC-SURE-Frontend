@@ -97,6 +97,26 @@ user.subscribe(($user: User) => {
   }
 });
 
+// The profile and consents in this tab belong to the session that loaded them. When another
+// tab logs out or logs in as someone else, drop them and load the new session's. A token the
+// other tab renewed keeps the same session, so nothing needs reloading.
+if (browser) {
+  window.addEventListener('storage', (event) => {
+    if (event.key !== 'token') return;
+    const identity = sessionIdentity(event.newValue);
+    if (identity && identity === sessionIdentity(event.oldValue)) return;
+
+    discardPendingConsents();
+    user.set({});
+    if (event.newValue) {
+      hydrateUserFromToken().catch((error) => {
+        console.error('Failed to load the user for a session started in another tab:', error);
+        log(createLog('AUTH', 'auth.hydrate_failed', { error: String(error) }));
+      });
+    }
+  });
+}
+
 export function setToken(token: string) {
   localStorage.setItem('token', token);
   tokenStatus.set(true);
@@ -105,6 +125,16 @@ export function setToken(token: string) {
 
 export function getToken(): string {
   return localStorage.getItem('token') || '';
+}
+
+/**
+ * Stores a token the gateway renewed in response to a request sent with `previous`. A renewal
+ * continues the same session, so the profile and consents stay loaded. It is dropped if this
+ * tab has since logged out or logged in again, so a late response cannot revive an old session.
+ */
+export function renewToken(next: string, previous: string) {
+  if (!browser || !previous || getToken() !== previous) return;
+  setToken(next);
 }
 
 export function removeToken() {
@@ -344,6 +374,18 @@ function handleLogout(redirect: boolean) {
     goto(resolve(loginRedirectPath(page.url) as '/'));
   } else {
     goto(resolve('/login'));
+  }
+}
+
+/** A renewed token keeps the issuer, subject, and session id (`sid`) of the one it replaces. */
+function sessionIdentity(token: string | null): string | undefined {
+  if (!token) return undefined;
+  try {
+    const payload = token.split('.')[1].replaceAll('-', '+').replaceAll('_', '/');
+    const { iss, sub, sid } = JSON.parse(atob(payload));
+    return typeof sub === 'string' && sub ? JSON.stringify([iss, sub, sid]) : undefined;
+  } catch {
+    return undefined;
   }
 }
 
