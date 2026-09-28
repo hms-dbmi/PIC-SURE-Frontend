@@ -7,6 +7,7 @@
   import { config } from '$lib/configuration.svelte';
   import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
   import ExternalLinkWarning from '$lib/components/ExternalLinkWarning.svelte';
+  import SessionChallenge from '$lib/components/SessionChallenge.svelte';
   import { log, createLog } from '$lib/logger';
   import { resumeAfterWafCaptcha } from '$lib/wafCaptcha';
 
@@ -47,6 +48,7 @@
 <main class="w-full h-full" data-theme={theme}>
   {@render children?.()}
   <GoogleTracking />
+  <SessionChallenge />
   {#if config.features.confirmExternalNavigation}
     <ExternalLinkWarning />
   {/if}

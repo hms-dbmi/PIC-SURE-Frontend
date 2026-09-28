@@ -8,11 +8,19 @@ declare global {
     callback: (token: string) => void;
     'expired-callback': () => void;
     'error-callback': () => void;
+    appearance?: 'always' | 'execute' | 'interaction-only';
+    execution?: 'render' | 'execute';
+    retry?: 'auto' | 'never';
+    'timeout-callback'?: () => void;
+    'before-interactive-callback'?: () => void;
+    'after-interactive-callback'?: () => void;
+    'unsupported-callback'?: () => void;
   }
 
   interface TurnstileApi {
     render: (container: HTMLElement, options: TurnstileRenderOptions) => string;
     remove: (widgetId: string) => void;
+    execute?: (widgetId: string) => void;
   }
 
   interface Window {

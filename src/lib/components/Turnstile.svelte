@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-
-  const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+  import { loadTurnstile } from '$lib/turnstile';
 
   let {
     sitekey,
@@ -17,34 +16,11 @@
 
   let container: HTMLElement | undefined = $state();
 
-  function loadScript(): Promise<TurnstileApi> {
-    if (window.turnstile) return Promise.resolve(window.turnstile);
-    return new Promise((resolve, reject) => {
-      // the script tag survives component destroy so api.js loads at most once per page load
-      let script = document.querySelector<HTMLScriptElement>(`script[src="${SCRIPT_SRC}"]`);
-      if (!script) {
-        script = document.createElement('script');
-        script.src = SCRIPT_SRC;
-        script.async = true;
-        document.head.appendChild(script);
-      }
-      script.addEventListener('load', () => {
-        if (window.turnstile) resolve(window.turnstile);
-        else reject(new Error('Turnstile script loaded without defining its API'));
-      });
-      script.addEventListener('error', (event) => {
-        // a failed script element never re-fires events; drop it so a later mount can retry
-        (event.target as HTMLScriptElement).remove();
-        reject(new Error('Failed to load the Turnstile script'));
-      });
-    });
-  }
-
   onMount(() => {
     let widgetId: string | undefined;
     let destroyed = false;
 
-    loadScript()
+    loadTurnstile()
       .then((turnstile) => {
         if (destroyed || !container) return;
         widgetId = turnstile.render(container, {

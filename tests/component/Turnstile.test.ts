@@ -112,6 +112,21 @@ describe('Turnstile', () => {
       expect(document.querySelector('script[src*="challenges.cloudflare.com"]')).toBeNull();
     });
 
+    it('drops a script that loaded without defining the API, so a remount can retry', async () => {
+      const onError = vi.fn();
+      render(Turnstile, { props: { sitekey: SITEKEY, onToken: vi.fn(), onError } });
+      const script = await waitFor(() => {
+        const found = document.querySelector('script[src*="challenges.cloudflare.com"]');
+        expect(found).not.toBeNull();
+        return found as HTMLScriptElement;
+      });
+
+      script.dispatchEvent(new Event('load'));
+
+      await waitFor(() => expect(onError).toHaveBeenCalled());
+      expect(document.querySelector('script[src*="challenges.cloudflare.com"]')).toBeNull();
+    });
+
     it('retries with a fresh script tag on mount after a failed load', async () => {
       const first = render(Turnstile, { props: { sitekey: SITEKEY, onToken: vi.fn() } });
       const script = await waitFor(() => {
