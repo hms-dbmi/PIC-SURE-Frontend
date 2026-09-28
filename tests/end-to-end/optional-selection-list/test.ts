@@ -11,7 +11,7 @@ import {
 } from '../mock-data';
 import { getOption, clickNthFilterIcon, optionsHaveLoaded, userIsLoggedIn } from '../utils';
 
-const queryResultPath = '*/**/picsure/hpds/auth/v3/query/sync';
+const queryResultPath = '*/**/picsure/hpds/auth/query/sync';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 

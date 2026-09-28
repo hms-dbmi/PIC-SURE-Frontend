@@ -62,13 +62,13 @@ describe('query:patientCount provider', () => {
     expect(provider.parse({ '\\_studies_consents\\': null as never })).toBe(0);
   });
 
-  it('path() returns Picsure.QueryV3Sync for an authed descriptor (default features)', () => {
+  it('path() returns Picsure.QuerySync for an authed descriptor (default features)', () => {
     expect(provider.path(descriptor)).toMatch(/query\/sync$/);
   });
 
-  it('path() returns the V3 aggregate endpoint for an open-access descriptor', () => {
+  it('path() returns the open-access aggregate endpoint for an open-access descriptor', () => {
     expect(provider.path({ ...descriptor, isOpenAccess: true })).toBe(
-      'picsure/hpds/open/v3/query/sync',
+      'picsure/hpds/open/query/sync',
     );
   });
 });

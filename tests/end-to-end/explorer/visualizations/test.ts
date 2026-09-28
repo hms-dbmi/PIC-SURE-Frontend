@@ -11,7 +11,7 @@ import {
 } from '../../mock-data';
 import { getOption, userIsLoggedIn } from '../../utils';
 
-const countResultPath = '*/**/picsure/hpds/auth/v3/query/sync';
+const countResultPath = '*/**/picsure/hpds/auth/query/sync';
 const distributionsPath = '*/**/picsure/visualization/auth/distributions';
 
 async function addFilterFromRow(page: import('@playwright/test').Page, rowIndex: number) {

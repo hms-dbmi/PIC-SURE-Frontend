@@ -9,7 +9,7 @@ import {
 } from '../../mock-data';
 
 const distributionsPath = '*/**/picsure/visualization/open/distributions';
-const openCountResultPath = '*/**/picsure/hpds/open/v3/query/sync';
+const openCountResultPath = '*/**/picsure/hpds/open/query/sync';
 
 // Visualization resource response in the {count, display, variance} wire shape:
 // exact values carry a null variance, randomized values carry the configured
@@ -64,7 +64,7 @@ test.describe('Discover distributions', () => {
     });
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
-    await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', '9999');
+    await mockApiSuccess(page, '*/**/picsure/hpds/auth/query/sync', '9999');
     await mockApiSuccess(page, distributionsPath, distributionsResponse);
     await mockApiSuccess(page, '*/**/picsure/visualization/auth/distributions', {
       categoricalData: [
