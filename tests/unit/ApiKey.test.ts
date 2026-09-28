@@ -66,6 +66,11 @@ describe('formatKeyPrefix', () => {
   it('falls back to the untyped prefix for a key type it does not know', () => {
     expect(formatKeyPrefix('SESSION' as ApiKeyType, 'abc12345')).toBe('picsure_abc12345…');
   });
+
+  it('falls back for a key type that names an inherited property', () => {
+    expect(formatKeyPrefix('constructor' as ApiKeyType, 'abc12345')).toBe('picsure_abc12345…');
+    expect(formatKeyPrefix('__proto__' as ApiKeyType, 'abc12345')).toBe('picsure_abc12345…');
+  });
 });
 
 describe('formatInstant', () => {

@@ -55,7 +55,11 @@ const KEY_TYPE_PREFIX: Record<ApiKeyType, string> = {
 // PSAMA's displayPrefix is the start of the key body, after the typed prefix. API responses are
 // cast, not validated, so an unknown keyType falls back to the untyped prefix rather than "undefined"
 export function formatKeyPrefix(keyType: ApiKeyType, displayPrefix: string): string {
-  return `${KEY_TYPE_PREFIX[keyType] ?? KEY_PREFIX}${displayPrefix}…`;
+  // own properties only: an inherited name such as "constructor" must also fall back
+  const typedPrefix = Object.hasOwn(KEY_TYPE_PREFIX, keyType)
+    ? KEY_TYPE_PREFIX[keyType]
+    : KEY_PREFIX;
+  return `${typedPrefix}${displayPrefix}…`;
 }
 
 export function formatInstant(instant: string | null | undefined, fallback = ''): string {
