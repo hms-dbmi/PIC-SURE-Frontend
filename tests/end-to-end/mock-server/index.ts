@@ -151,8 +151,8 @@ function handleQuerySync({
   }
 }
 
-on('POST', path(Picsure.QueryV3Sync), handleQuerySync);
-on('POST', path(Picsure.QueryOpenV3Sync), handleQuerySync);
+on('POST', path(Picsure.QuerySync), handleQuerySync);
+on('POST', path(Picsure.QueryOpenSync), handleQuerySync);
 
 on('POST', path(Picsure.Visualization.Distributions), ({ res }) => {
   json(res, {
@@ -193,19 +193,19 @@ on('POST', path(Picsure.Visualization.Distributions), ({ res }) => {
   });
 });
 
-on('POST', path(Picsure.QueryV3), ({ res }) => {
+on('POST', path(Picsure.Query), ({ res }) => {
   json(res, { ...newDatasetResponse, picsureResultId: nextId() });
 });
 
-on('POST', path(`${Picsure.QueryV3}/:id/status`), ({ res }) => {
+on('POST', path(`${Picsure.Query}/:id/status`), ({ res }) => {
   json(res, availableDatasetResponse);
 });
 
-on('POST', path(`${Picsure.QueryV3}/:id/result`), ({ res }) => {
+on('POST', path(`${Picsure.Query}/:id/result`), ({ res }) => {
   text(res, variantDataAggregate);
 });
 
-on('POST', path(`${Picsure.QueryV3}/:id/signed-url`), ({ res }) => {
+on('POST', path(`${Picsure.Query}/:id/signed-url`), ({ res }) => {
   json(res, { signedUrl: 'https://example.invalid/mock-export/signed-url' });
 });
 

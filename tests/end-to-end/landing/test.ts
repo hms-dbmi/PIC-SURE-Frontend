@@ -64,22 +64,22 @@ test.describe('Landing page', () => {
     });
 
     const stats: MockLandingStat[] = [
-      { key: 'query:blank', route: '*/**/picsure/hpds/auth/v3/query/sync', api: '88', value: '88' },
+      { key: 'query:blank', route: '*/**/picsure/hpds/auth/query/sync', api: '88', value: '88' },
       {
         key: 'query:genomic',
-        route: '*/**/picsure/hpds/auth/v3/query/sync',
+        route: '*/**/picsure/hpds/auth/query/sync',
         api: { 'some-genome': 4 },
         value: '4',
       },
       {
         key: 'query:biosample',
-        route: '*/**/picsure/hpds/auth/v3/query/sync',
+        route: '*/**/picsure/hpds/auth/query/sync',
         api: { 'some-sample': 12 },
         value: '12',
       },
       {
         key: 'query:consent',
-        route: '*/**/picsure/hpds/auth/v3/query/sync',
+        route: '*/**/picsure/hpds/auth/query/sync',
         api: '50',
         value: '50',
       },
@@ -153,7 +153,7 @@ test.describe('Landing page', () => {
       });
       try {
         await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: mockConsents });
-        await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', '88');
+        await mockApiSuccess(page, '*/**/picsure/hpds/auth/query/sync', '88');
         await mockApiSuccess(
           page,
           '*/**/picsure/dictionary/concepts?page_number=1&page_size=1',
@@ -231,7 +231,7 @@ test.describe('Logged Out Landing', () => {
       // OPEN is required for unauthenticated users to reach any page at all; the
       // root layout redirects to /login when it's off and there's no token.
       // OPEN_EXPLORER defaults to true, and OPEN_EXPLORER + login.open together make
-      // useOpenAccess() route stat requests to the V3 sync endpoint instead of the
+      // useOpenAccess() route stat requests to the auth sync endpoint instead of the
       // plain open one these tests mock, so it must be explicitly disabled here.
       await mockApiConfig(page, {
         features: [
@@ -243,22 +243,22 @@ test.describe('Logged Out Landing', () => {
 
   test.describe('Stats (Logged Out)', () => {
     const stats: MockLandingStat[] = [
-      { key: 'query:blank', route: '*/**/picsure/hpds/open/v3/query/sync', api: '88', value: '88' },
+      { key: 'query:blank', route: '*/**/picsure/hpds/open/query/sync', api: '88', value: '88' },
       {
         key: 'query:genomic',
-        route: '*/**/picsure/hpds/open/v3/query/sync',
+        route: '*/**/picsure/hpds/open/query/sync',
         api: { 'some-genome': 4 },
         value: '4',
       },
       {
         key: 'query:biosample',
-        route: '*/**/picsure/hpds/open/v3/query/sync',
+        route: '*/**/picsure/hpds/open/query/sync',
         api: { 'some-sample': 12 },
         value: '12',
       },
       {
         key: 'query:consent',
-        route: '*/**/picsure/hpds/open/v3/query/sync',
+        route: '*/**/picsure/hpds/open/query/sync',
         api: '50',
         value: '50',
       },
