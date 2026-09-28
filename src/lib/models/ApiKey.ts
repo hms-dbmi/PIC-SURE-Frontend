@@ -46,6 +46,18 @@ export function getApiKeyStatus(key: ApiKeyMetadata, now: Date = new Date()): Ap
   return 'Active';
 }
 
+const KEY_PREFIX = 'picsure_';
+const KEY_TYPE_PREFIX: Record<ApiKeyType, string> = {
+  USER: `${KEY_PREFIX}u_`,
+  PLATFORM: `${KEY_PREFIX}p_`,
+};
+
+// PSAMA's displayPrefix is the start of the key body, after the typed prefix. API responses are
+// cast, not validated, so an unknown keyType falls back to the untyped prefix rather than "undefined"
+export function formatKeyPrefix(keyType: ApiKeyType, displayPrefix: string): string {
+  return `${KEY_TYPE_PREFIX[keyType] ?? KEY_PREFIX}${displayPrefix}…`;
+}
+
 export function formatInstant(instant: string | null | undefined, fallback = ''): string {
   if (!instant) return fallback;
   const dt = new Date(instant);
