@@ -1,4 +1,4 @@
 export interface CodeBlockProps {
   code?: string;
-  lang?: 'python' | 'r' | 'bash';
+  lang?: 'python' | 'r' | 'bash' | 'json';
 }

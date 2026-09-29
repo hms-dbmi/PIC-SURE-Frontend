@@ -15,6 +15,8 @@
   import UserToken from '$lib/components/UserToken.svelte';
   import PublicAccessKey from '$lib/components/PublicAccessKey.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
+  import McpConnect from '$lib/components/McpConnect.svelte';
+  import { mcpConnectUrl } from '$lib/utilities/Mcp';
   import TabItem from '$lib/components/TabItem.svelte';
 
   let mounted = $state(false);
@@ -110,6 +112,10 @@
       tab: 'API',
     },
   ];
+
+  const showMcpConnect = $derived(
+    mcpConnectUrl(config.features.mcpConnect, config.settings.mcpUrl) !== '',
+  );
 
   let tabSet: string = $state('Python');
 
@@ -320,6 +326,9 @@
           <TabItem bind:group={tabSet} value="Python">Python</TabItem>
           <TabItem bind:group={tabSet} value="R">R</TabItem>
           <TabItem bind:group={tabSet} value="API">API</TabItem>
+          {#if showMcpConnect}
+            <TabItem bind:group={tabSet} value="AI Assistant">AI Assistant</TabItem>
+          {/if}
         {/snippet}
         {#snippet content()}
           <Tabs.Panel value="Python">
@@ -331,6 +340,11 @@
           <Tabs.Panel value="API">
             <CodeBlock lang="bash" code={quickStartCode.api} />
           </Tabs.Panel>
+          {#if showMcpConnect}
+            <Tabs.Panel value="AI Assistant">
+              <McpConnect />
+            </Tabs.Panel>
+          {/if}
         {/snippet}
       </Tabs>
     </div>

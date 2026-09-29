@@ -193,6 +193,20 @@ describe('mapFeatures / mapSettings / mapBranding - regression baseline', () => 
   });
 });
 
+describe('MCP assistant connection config', () => {
+  it('defaults the feature off and the URL empty', () => {
+    expect(mapFeatures([]).mcpConnect).toBe(false);
+    expect(mapSettings([]).mcpUrl).toBe('');
+  });
+
+  it('maps MCP_CONNECT and MCP_URL rows from the API', () => {
+    expect(mapFeatures([apiRow('MCP_CONNECT', 'true')]).mcpConnect).toBe(true);
+    expect(mapSettings([apiRow('MCP_URL', 'https://example.org/mcp')]).mcpUrl).toBe(
+      'https://example.org/mcp',
+    );
+  });
+});
+
 describe('resolveConfigMap - layering', () => {
   // assumes default: ANALYZE_ANALYSIS = true
   //assumes default: EXPLORE_TOUR_SEARCH_TERM = age
