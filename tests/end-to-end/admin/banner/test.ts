@@ -1,20 +1,7 @@
 import { expect } from '@playwright/test';
 import { test, mockApiConfig } from '../../custom-context';
 import { userIsLoggedIn } from '../../utils';
-
-const banner = {
-  uuid: '11111111-1111-1111-1111-111111111111',
-  htmlContent: '<p>Scheduled maintenance</p>',
-  title: 'Maintenance',
-  appearance: 'WARNING',
-  icon: 'WARNING',
-  dismissible: true,
-  audience: 'EVERYONE',
-  placement: 'SITE_TOP',
-  pageTargets: [{ kind: 'ALL' }],
-  priority: 10,
-  presentationHash: 'abc123',
-};
+import { mockBanner as banner } from '../../mock-data';
 
 test.describe('Visitors receive banners across navigation', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });

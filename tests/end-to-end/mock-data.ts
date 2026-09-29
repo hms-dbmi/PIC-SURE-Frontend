@@ -404,6 +404,20 @@ export const conceptsDetailPath = '*/**/picsure/dictionary/concepts/detail'; // 
 export const conceptTreePath = '*/**/picsure/dictionary/concepts/tree'; // + name
 export const configurationPath = '*/**/picsure/operations/configuration';
 
+export const mockBanner = {
+  uuid: '11111111-1111-1111-1111-111111111111',
+  htmlContent: '<p>Scheduled maintenance</p>',
+  title: 'Maintenance',
+  appearance: 'WARNING',
+  icon: 'WARNING',
+  dismissible: true,
+  audience: 'EVERYONE',
+  placement: 'SITE_TOP',
+  pageTargets: [{ kind: 'ALL' }],
+  priority: 10,
+  presentationHash: 'abc123',
+};
+
 export const searchRequest = { facets: [], search: 'age' };
 
 export const searchResults = {

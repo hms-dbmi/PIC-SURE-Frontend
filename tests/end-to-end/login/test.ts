@@ -3,6 +3,7 @@ import { test, mockHTMLBodySuccess, mockApiConfig, mockApiSuccess } from '../cus
 import type { Branding } from '$lib/models/Configuration';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 import {
+  mockBanner,
   mockToken,
   picsureUser,
   searchResultPath,
@@ -118,6 +119,28 @@ test.describe('Login page', () => {
     // Then
     await expect(topDots).toBeVisible();
     await expect(bottomDots).toBeVisible();
+  });
+  test('Site banner pushes the dots down without hiding them behind the footer', async ({
+    page,
+  }) => {
+    // Given a window short enough that the banner and login content overflow it
+    await page.setViewportSize({ width: 1280, height: 480 });
+    await mockApiSuccess(page, '**/picsure/operations/banners/active', [mockBanner]);
+    await page.goto('/login');
+    // When
+    const bannerRegion = page.getByTestId('site-banner-region');
+    await expect(bannerRegion).toBeVisible();
+    const bannerBox = await bannerRegion.boundingBox();
+    const topDotsBox = await page.locator('.top-dots').boundingBox();
+    const bottomDotsBox = await page.locator('.bottom-dots').boundingBox();
+    const footerBox = await page.locator('#main-footer').boundingBox();
+    // Then
+    expect(bannerBox).not.toBeNull();
+    expect(topDotsBox).not.toBeNull();
+    expect(bottomDotsBox).not.toBeNull();
+    expect(footerBox).not.toBeNull();
+    expect(topDotsBox!.y).toBeGreaterThanOrEqual(bannerBox!.y + bannerBox!.height);
+    expect(bottomDotsBox!.y + bottomDotsBox!.height).toBeLessThanOrEqual(footerBox!.y);
   });
   test('Logo shows on login page', async ({ page }) => {
     // Given
