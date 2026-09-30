@@ -210,7 +210,9 @@ test.describe('Admin on Configuration page', () => {
       if (name === 'Site banners') {
         await expect(page.getByTestId('top-admin-only-error')).toHaveCount(0);
       } else {
-        await expect(page.getByTestId('top-admin-only-error')).toBeVisible();
+        // Inside the open tab, like every other notice on the page.
+        await expect(page.getByRole('tabpanel').getByTestId('top-admin-only-error')).toBeVisible();
+        await expect(page.getByTestId('top-admin-only-error')).toHaveCount(1);
       }
     }
   });

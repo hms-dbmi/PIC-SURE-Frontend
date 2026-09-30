@@ -39,9 +39,6 @@
     'Site banners': 'banners',
     'Terms of Service': 'terms',
   };
-  // The operations service only accepts config writes from top admins.
-  const READ_ONLY_FOR_ADMINS = ['Settings & Features', 'Branding'];
-
   let visibleTabs: string[] = $derived(
     Object.keys(TAB_PARAMS).filter(
       (tab) =>
@@ -156,8 +153,10 @@
   <title>{config.branding.applicationName} | Configuration</title>
 </svelte:head>
 
-<Content title="Configuration">
-  {#if !$isTopAdmin && READ_ONLY_FOR_ADMINS.includes(tabSet)}
+<!-- The operations service only accepts config writes from top admins. Tabs keep hidden panels
+     mounted, so only the open tab renders its notice. -->
+{#snippet readOnlyNotice(tab: string)}
+  {#if !$isTopAdmin && tabSet === tab}
     <ErrorAlert data-testid="top-admin-only-error" title="Top Administrator Only" color="warning">
       <p>
         These settings are READ ONLY for admin users. Please contact your administrator to make
@@ -165,6 +164,9 @@
       </p>
     </ErrorAlert>
   {/if}
+{/snippet}
+
+<Content title="Configuration">
   <Tabs value={tabSet} onValueChange={(e: { value: string }) => (requestedTab = e.value)}>
     {#snippet list()}
       {#each visibleTabs as tab (tab)}
@@ -272,6 +274,7 @@
         {/if}
       </Tabs.Panel>
       <Tabs.Panel value="Settings & Features">
+        {@render readOnlyNotice('Settings & Features')}
         <ConfigKindTab
           kinds={['features', 'settings']}
           title="Settings & Features"
@@ -279,6 +282,7 @@
         />
       </Tabs.Panel>
       <Tabs.Panel value="Branding">
+        {@render readOnlyNotice('Branding')}
         <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!$isTopAdmin} />
       </Tabs.Panel>
       <Tabs.Panel value="Site banners">
