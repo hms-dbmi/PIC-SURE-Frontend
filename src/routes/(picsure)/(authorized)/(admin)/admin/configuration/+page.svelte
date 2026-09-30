@@ -70,11 +70,15 @@
 
   // A link that only changes the query (e.g. the nav's Configuration link, or the old
   // /admin/api-keys route) keeps this page mounted, so follow later navigations too. showTab's
-  // replaceState doesn't update page.url, so this doesn't fire for tab clicks.
+  // replaceState doesn't update page.url, so this doesn't fire for tab clicks. The banner editor's
+  // navigation guard has already confirmed any unsaved changes by the time the URL changes.
   $effect(() => {
     const linked = tabFromUrl(page.url) ?? visibleTabs[0];
     untrack(() => {
-      if (linked !== tabSet) requestedTab = linked;
+      if (linked !== tabSet) {
+        bannerEditorDirty = false;
+        showTab(linked);
+      }
     });
   });
 

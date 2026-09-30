@@ -480,6 +480,36 @@ test.describe('Admins create, edit, and publish banners', () => {
     await expect(page.getByTestId('config-tab-branding').getByText('LOGO_ALT')).toBeVisible();
   });
 
+  test('asks once before a configuration link discards unsaved banner changes', async ({
+    page,
+  }) => {
+    // Given
+    await page.route('**/picsure/operations/banners', (route) => route.fulfill({ json: [] }));
+    await page.goto('/admin/configuration?tab=banners');
+    await page.getByRole('button', { name: '+ Create banner' }).click();
+    await page
+      .getByTestId('banner-editor-form')
+      .locator('#banner-content-editor .ql-editor')
+      .fill('Unsaved configuration-link content');
+
+    // When
+    await page.locator('#nav-link-admin-configuration').click();
+    await page.getByRole('button', { name: 'Keep editing' }).click();
+
+    // Then
+    await expect(page.getByTestId('banner-editor-form')).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/configuration\?tab=banners$/);
+
+    // When
+    await page.locator('#nav-link-admin-configuration').click();
+    await page.getByRole('button', { name: 'Discard changes' }).click();
+
+    // Then
+    await expect(page.getByRole('heading', { name: 'Platform Keys' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Unsaved Changes' })).toHaveCount(0);
+    await expect(page).toHaveURL(/\/admin\/configuration\?tab=api-keys$/);
+  });
+
   test('keeps sentence spaces, Enter, and a second paragraph while editing', async ({ page }) => {
     await page.goto('/admin/configuration');
     await page.getByRole('tab', { name: 'Site banners' }).click();
