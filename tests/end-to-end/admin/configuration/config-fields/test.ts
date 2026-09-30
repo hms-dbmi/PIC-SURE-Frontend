@@ -172,6 +172,25 @@ test('The Configuration nav link returns to the default tab', async ({ page }) =
   await expect(page).toHaveURL(/\/admin\/configuration\?tab=access-control$/);
 });
 
+test('Tabs run from Access Control to API Keys and Terms of Service', async ({ page }) => {
+  // Given
+  await mockApiConfig(page, { features: [{ name: 'ENABLE_TOS', value: 'true' }] });
+
+  // When
+  await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
+
+  // Then
+  await expect(page.getByTestId('tabs-control')).toHaveText([
+    'Access Control',
+    'Site banners',
+    'Settings & Features',
+    'Branding',
+    'API Keys',
+    'Terms of Service',
+  ]);
+});
+
 test('Top admins land on Access Control and see no read-only notice', async ({ page }) => {
   // When
   await page.goto('/admin/configuration');
@@ -191,9 +210,29 @@ test('Top admins land on Access Control and see no read-only notice', async ({ p
 test.describe('Admin on Configuration page', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
 
+  test('Tabs start at Site banners and end with API Keys and Terms of Service', async ({
+    page,
+  }) => {
+    // Given
+    await mockApiConfig(page, { features: [{ name: 'ENABLE_TOS', value: 'true' }] });
+
+    // When
+    await page.goto('/admin/configuration');
+    await userIsLoggedIn(page);
+
+    // Then
+    await expect(page.getByTestId('tabs-control')).toHaveText([
+      'Site banners',
+      'Settings & Features',
+      'Branding',
+      'API Keys',
+      'Terms of Service',
+    ]);
+    await expect(page.getByRole('button', { name: '+ Create banner' })).toBeVisible();
+  });
+
   test('Read-only notice shows only on the tabs admins cannot fully edit', async ({ page }) => {
     // Given
-    await page.route('**/picsure/operations/banners', (route) => route.fulfill({ json: [] }));
     await page.goto('/admin/configuration');
     await userIsLoggedIn(page);
 

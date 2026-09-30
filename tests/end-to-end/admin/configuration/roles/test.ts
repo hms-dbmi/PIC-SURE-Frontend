@@ -272,7 +272,7 @@ test.describe('Admin on Configuration page', () => {
       page.getByTestId('tabs-control').filter({ hasText: 'Access Control' }),
     ).toHaveCount(0);
     await expect(page.locator('#role-table')).toHaveCount(0);
-    await expect(page.getByTestId('PlatformApiKeys-table')).toBeVisible();
+    await expect(page.getByRole('button', { name: '+ Create banner' })).toBeVisible();
   });
   for (const path of ['new', `${mockRoles[0].uuid}/edit`]) {
     test(`role/${path} redirects to the configuration page when not top admin`, async ({

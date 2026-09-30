@@ -370,15 +370,6 @@ test.describe('Admin on API Keys tab', () => {
     await expect(page).toHaveURL(/\/admin\/configuration\?tab=api-keys$/);
   });
 
-  test('Is the default tab for admins', async ({ page }) => {
-    // When
-    await page.goto('/admin/configuration');
-    await userIsLoggedIn(page);
-
-    // Then
-    await expect(page.getByTestId('UserApiKeys-table')).toContainText('picsure_abc12345…');
-  });
-
   test('Mint and revoke are disabled when not top admin', async ({ page }) => {
     // Given
     await page.goto(API_KEYS_TAB);

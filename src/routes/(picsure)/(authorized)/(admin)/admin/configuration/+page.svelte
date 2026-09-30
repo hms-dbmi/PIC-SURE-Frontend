@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { resolve } from '$app/paths';
-  import { goto, replaceState } from '$app/navigation';
+  import { afterNavigate, beforeNavigate, goto, replaceState } from '$app/navigation';
   import { page } from '$app/state';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
@@ -33,10 +33,10 @@
   // Tab label -> its ?tab= value, so links (e.g. the old /admin/api-keys route) can open a tab.
   const TAB_PARAMS: Record<string, string> = {
     'Access Control': 'access-control',
-    'API Keys': 'api-keys',
+    'Site banners': 'banners',
     'Settings & Features': 'settings',
     Branding: 'branding',
-    'Site banners': 'banners',
+    'API Keys': 'api-keys',
     'Terms of Service': 'terms',
   };
   let visibleTabs: string[] = $derived(
@@ -88,6 +88,17 @@
         untrack(() => showTab(requestedTab));
       }
     }
+  });
+
+  // A link to the Site banners tab while it's open (e.g. the nav's Configuration link for admins)
+  // doesn't change tabs, so remount the view to drop the changes the editor's guard discarded.
+  let bannerViewKey = $state(0);
+  let leftBannersOpen = false;
+  beforeNavigate(() => {
+    leftBannersOpen = tabSet === 'Site banners';
+  });
+  afterNavigate(({ type }) => {
+    if (type !== 'enter' && leftBannersOpen && tabSet === 'Site banners') bannerViewKey += 1;
   });
 
   function resolveBannerTabChange(destination: string | null) {
@@ -268,9 +279,15 @@
           </div>
         </Tabs.Panel>
       {/if}
-      <Tabs.Panel value="API Keys">
-        {#if tabSet === 'API Keys'}
-          <ApiKeysPanel />
+      <Tabs.Panel value="Site banners">
+        {#if tabSet === 'Site banners'}
+          {#key bannerViewKey}
+            <BannerManagementView
+              ondirtychange={(dirty) => (bannerEditorDirty = dirty)}
+              tabchangerequest={pendingTab}
+              ontabchangerequestresolve={resolveBannerTabChange}
+            />
+          {/key}
         {/if}
       </Tabs.Panel>
       <Tabs.Panel value="Settings & Features">
@@ -285,13 +302,9 @@
         {@render readOnlyNotice('Branding')}
         <ConfigKindTab kinds={['branding']} title="Branding" readOnly={!$isTopAdmin} />
       </Tabs.Panel>
-      <Tabs.Panel value="Site banners">
-        {#if tabSet === 'Site banners'}
-          <BannerManagementView
-            ondirtychange={(dirty) => (bannerEditorDirty = dirty)}
-            tabchangerequest={pendingTab}
-            ontabchangerequestresolve={resolveBannerTabChange}
-          />
+      <Tabs.Panel value="API Keys">
+        {#if tabSet === 'API Keys'}
+          <ApiKeysPanel />
         {/if}
       </Tabs.Panel>
       {#if config.features.termsOfService}
