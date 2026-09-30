@@ -109,7 +109,6 @@ const testRoles = {
 const enabledFeatureFlags = [
   { name: 'DASHBOARD', value: 'true' },
   { name: 'DISCOVER', value: 'true' },
-  { name: 'MANUAL_ROLE', value: 'true' },
 ];
 
 // Mirrors config.features keys once enabledFeatureFlags above are applied.
@@ -117,7 +116,6 @@ const featureEnabled: Record<string, boolean> = {
   dashboard: true,
   discover: true,
   analyzeApi: true,
-  manualRole: true,
 };
 
 Object.entries(testRoles).forEach(([userType, userData]) => {
