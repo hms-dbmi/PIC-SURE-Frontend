@@ -191,6 +191,22 @@ test('Tabs run from Access Control to API Keys and Terms of Service', async ({ p
   ]);
 });
 
+test('Terms of Service is hidden while the terms feature is off', async ({ page }) => {
+  // When: the beforeEach config leaves ENABLE_TOS off
+  await page.goto('/admin/configuration?tab=terms');
+  await userIsLoggedIn(page);
+
+  // Then
+  await expect(page.getByTestId('tabs-control')).toHaveText([
+    'Access Control',
+    'Site banners',
+    'Settings & Features',
+    'Branding',
+    'API Keys',
+  ]);
+  await expect(page.locator('#role-table')).toBeVisible();
+});
+
 test('Top admins land on Access Control and see no read-only notice', async ({ page }) => {
   // When
   await page.goto('/admin/configuration');
