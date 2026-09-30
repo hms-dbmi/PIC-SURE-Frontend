@@ -6,6 +6,8 @@ import {
   roles as mockRoles,
   applications as mockApps,
   connections as mockConnections,
+  picsureUser,
+  userTypes,
 } from '../../../mock-data';
 import { userIsLoggedIn } from '../../../utils';
 
@@ -243,47 +245,45 @@ test('Delete gives error message on api failure', async ({ page }) => {
   await expect(toast).toHaveAttribute('data-type', 'error');
 });
 
+test('A top admin opening a role page in a fresh tab stays on it', async ({ page }) => {
+  // Given a valid token but no user in sessionStorage, as in a newly opened tab
+  await page.addInitScript(() => sessionStorage.removeItem('user'));
+  await mockApiSuccess(page, '*/**/psama/user/me', { ...picsureUser, ...userTypes.superUser });
+  await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: picsureUser.consents });
+  await mockApiSuccess(page, `*/**/psama/role/${mockRoles[0].uuid}`, mockRoles[0]);
+
+  // When
+  await page.goto(`/admin/configuration/role/${mockRoles[0].uuid}/edit`);
+
+  // Then
+  await expect(page.getByTestId('role-form')).toBeVisible();
+  await expect(page).toHaveURL(RegExp(`/admin/configuration/role/${mockRoles[0].uuid}/edit$`));
+});
+
 test.describe('Admin on Configuration page', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
-  test('Action and add button(s) are disabled when not top admin', async ({ page }) => {
-    // Given
-    await page.goto('/admin/configuration');
-    await userIsLoggedIn(page);
-
-    // Then
-    // Check that all edit buttons are disabled
-    for (const role of mockRoles) {
-      await expect(page.getByTestId(`role-${role.uuid}-edit-btn`)).toBeDisabled();
-    }
-
-    // Check that all delete buttons are disabled
-    for (const role of mockRoles) {
-      await expect(page.getByTestId(`role-${role.uuid}-delete-btn`)).toBeDisabled();
-    }
-    // Check that add role button is disabled
-    await expect(page.getByTestId('add-role')).toHaveClass(/opacity-50 pointer-events-none/);
-  });
-  test('Error alert is visible when not top admin', async ({ page }) => {
-    // Given
-    await page.goto('/admin/configuration');
-    await userIsLoggedIn(page);
-
-    // Then
-    await expect(page.getByTestId('top-admin-only-error')).toBeVisible();
-  });
-  test('Can still navigate to edit page but its actions and inputs are disabled', async ({
-    page,
-  }) => {
-    // Given
-    await page.goto('/admin/configuration');
-    await userIsLoggedIn(page);
-
+  test('Access Control tab is hidden when not top admin', async ({ page }) => {
     // When
-    await page.locator('#role-table table tbody tr').first().click();
+    await page.goto('/admin/configuration?tab=access-control');
+    await userIsLoggedIn(page);
+
     // Then
-    await expect(page.getByTestId('role-form')).toBeVisible();
-    await expect(page.getByTestId('role-form')).toHaveAttribute('disabled', '');
-    await expect(page.getByTestId('role-save-btn')).toBeDisabled();
-    await expect(page.getByTestId('role-cancel-btn')).not.toBeDisabled();
+    await expect(
+      page.getByTestId('tabs-control').filter({ hasText: 'Access Control' }),
+    ).toHaveCount(0);
+    await expect(page.locator('#role-table')).toHaveCount(0);
+    await expect(page.getByTestId('PlatformApiKeys-table')).toBeVisible();
   });
+  for (const path of ['new', `${mockRoles[0].uuid}/edit`]) {
+    test(`role/${path} redirects to the configuration page when not top admin`, async ({
+      page,
+    }) => {
+      // When
+      await page.goto(`/admin/configuration/role/${path}`);
+
+      // Then
+      await expect(page).toHaveURL(/\/admin\/configuration$/);
+      await expect(page.getByTestId('role-form')).toHaveCount(0);
+    });
+  }
 });

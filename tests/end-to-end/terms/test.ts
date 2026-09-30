@@ -310,7 +310,7 @@ test.describe('Logged in', () => {
       await expect(toast).toHaveAttribute('data-type', 'success');
       expect(tosUpdateRequest).toBeTruthy();
       await expect(page.getByTestId('publish-terms')).not.toBeVisible();
-      await expect(page).toHaveURL(RegExp('/admin/configuration$'));
+      await expect(page).toHaveURL(RegExp('/admin/configuration\\?tab=terms$'));
     });
     test('Confirm button with api failure gives error and stays on page', async ({ page }) => {
       // Given
@@ -328,7 +328,7 @@ test.describe('Logged in', () => {
       await expect(toast).toHaveAttribute('data-type', 'error');
       expect(tosUpdateRequest).toBeTruthy();
       await expect(page.getByTestId('publish-terms')).not.toBeVisible();
-      await expect(page).toHaveURL(RegExp('/admin/configuration$'));
+      await expect(page).toHaveURL(RegExp('/admin/configuration\\?tab=terms$'));
     });
   });
 
@@ -344,13 +344,20 @@ test.describe('Logged in', () => {
       ]);
     });
 
-    test('Non-super-admin user has error and publish is disabled', async ({ page }) => {
-      // When
+    test('Admin can edit and publish terms', async ({ page }) => {
+      // Given
+      mockHTMLBodySuccess(page, Psama.Update, '');
       await gotoTermsEditor(page);
+      await expect(page.getByTestId('top-admin-only-error')).toHaveCount(0);
+
+      // When
+      await page.locator('#editor div.ql-editor').fill('Some new text');
+      await page.getByTestId('publish-terms-btn').click();
+      await page.getByText('Confirm', { exact: true }).click();
 
       // Then
-      await expect(page.getByTestId('admin-warning')).toBeVisible();
-      await expect(page.getByTestId('publish-terms-btn')).toBeDisabled();
+      await expect(page.getByTestId('toast-root')).toHaveAttribute('data-type', 'success');
+      expect(tosUpdateRequest).toBeTruthy();
     });
   });
 });

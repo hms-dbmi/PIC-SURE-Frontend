@@ -1,17 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Redirect } from '@sveltejs/kit';
-import { PicsurePrivileges } from '$lib/models/Privilege';
 
-const store = vi.hoisted(() => ({ value: {} as { privileges?: string[] }, topAdmin: false }));
+const store = vi.hoisted(() => ({ topAdmin: false }));
 
 vi.mock('$app/environment', () => ({ browser: true }));
 vi.mock('$lib/stores/User', () => ({
-  user: {
-    subscribe: (fn: (v: unknown) => void) => {
-      fn(store.value);
-      return () => {};
-    },
-  },
   isTopAdmin: {
     subscribe: (fn: (v: unknown) => void) => {
       fn(store.topAdmin);
@@ -37,19 +30,12 @@ async function captureRedirect(parent = async () => ({})): Promise<Redirect | nu
 }
 
 beforeEach(() => {
-  store.value = {};
   store.topAdmin = false;
 });
 
-describe('admin layout guard', () => {
+describe('access control route guard', () => {
   it('admits a top admin', async () => {
     store.topAdmin = true;
-
-    expect(await captureRedirect()).toBeNull();
-  });
-
-  it('admits a user holding only the ADMIN privilege', async () => {
-    store.value = { privileges: [PicsurePrivileges.ADMIN] };
 
     expect(await captureRedirect()).toBeNull();
   });
@@ -57,19 +43,17 @@ describe('admin layout guard', () => {
   it('checks privileges only after the parent layout has loaded the user', async () => {
     // A fresh tab has a token but no user until the authorized layout hydrates it.
     const parent = async () => {
-      store.value = { privileges: [PicsurePrivileges.ADMIN] };
+      store.topAdmin = true;
       return {};
     };
 
     expect(await captureRedirect(parent)).toBeNull();
   });
 
-  it('redirects to / for a user who is neither', async () => {
-    store.value = { privileges: [PicsurePrivileges.QUERY, PicsurePrivileges.API_ACCESS] };
-
+  it('sends a plain admin back to the configuration page', async () => {
     const result = await captureRedirect();
 
     expect(result).not.toBeNull();
-    expect(result!.location).toBe('/');
+    expect(result!.location).toBe('/admin/configuration');
   });
 });

@@ -30,9 +30,8 @@ export const routes: Route[] = [
   {
     path: '/admin/configuration',
     text: 'Configuration',
-    privilege: [PicsurePrivileges.SUPER],
+    privilege: [PicsurePrivileges.ADMIN],
   },
   { path: '/admin/users', text: 'Manage Users', privilege: [PicsurePrivileges.ADMIN] },
-  { path: '/admin/api-keys', text: 'API Keys', privilege: [PicsurePrivileges.ADMIN] },
   { path: '/help', text: 'Help' },
 ];

@@ -2,13 +2,11 @@
   import * as api from '$lib/api';
   import { Psama } from '$lib/paths';
   import { toaster } from '$lib/toaster';
-  import { isTopAdmin } from '$lib/stores/User';
 
   import ErrorAlert from '$lib/components/ErrorAlert.svelte';
   import Loading from '$lib/components/Loading.svelte';
   import Editor from '$lib/components/editor/Editor.svelte';
   import Modal from '$lib/components/Modal.svelte';
-  import TermsPreview from '$lib/components/TermsPreview.svelte';
 
   let terms: string = $state('');
   let original: string = $state('');
@@ -38,24 +36,16 @@
 {#await load()}
   <Loading />
 {:then}
-  {#if !$isTopAdmin}
-    <ErrorAlert data-testid="admin-warning" title="Top Administrator Only" color="warning">
-      <p>
-        Configurations are READ ONLY for admin users. Please contact your administrator to make
-        changes.
-      </p>
-    </ErrorAlert>
-    <TermsPreview {terms} class="bg-white dark:bg-black border px-2" />
-  {:else}
-    <Editor fontOptions bind:content={terms} />
-  {/if}
+  <!-- No privilege check: PSAMA's /tos/update accepts ADMIN and SUPER_ADMIN, and the admin
+       layout already limits this page to those users. -->
+  <Editor fontOptions bind:content={terms} />
   <div class="flex justify-end">
     <Modal
       title="Publish"
       width="w-1/3"
       data-testid="publish-terms"
       triggerBase="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500 mt-3"
-      disabled={!$isTopAdmin || !dirty}
+      disabled={!dirty}
       withDefault={true}
       onconfirm={onCommit}
       cancelClass="border preset-tonal-error hover:preset-filled-error-500"
