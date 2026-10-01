@@ -210,9 +210,12 @@ test.describe('API page', () => {
       await expect(page.getByTestId('expires-badge')).toHaveText(badge);
 
       // When
-      const sectionIds = await page
-        .locator('#api-page section[id]')
-        .evaluateAll((sections) => sections.map((section) => section.id));
+      const sectionIds = await page.locator('#api-page section[id]').evaluateAll((sections) =>
+        sections
+          .map((section) => ({ id: section.id, top: section.getBoundingClientRect().top }))
+          .sort((a, b) => a.top - b.top)
+          .map(({ id }) => id),
+      );
 
       // Then
       expect(sectionIds).toEqual([
@@ -510,6 +513,8 @@ test.describe('API page', () => {
 
     // Then
     await expect(page.locator('#quick-start .code-block:visible')).toContainText('Requires R');
+    // The token card above Quick Start loads after the first scroll and grows the page.
+    await expect(page.locator('#user-token')).toBeVisible();
     await expect(async () => {
       const offset = await page.evaluate(() => {
         const scroller = document.getElementById('page');
