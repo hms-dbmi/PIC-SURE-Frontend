@@ -44,7 +44,7 @@ test.beforeEach(async ({ page }) => {
   mockDictionaryAPI(page, `${conceptsDetailPath}/*`, datasetDetails.concepts);
   mockDictionaryAPI(page, `${conceptTreePath}/*`, datasetDetails.tree);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
-  await mockApiSuccess(page, '*/**/picsure/hpds/auth/v3/query/sync', '9999');
+  await mockApiSuccess(page, '*/**/picsure/hpds/auth/query/sync', '9999');
 });
 
 test.describe('dataset', () => {

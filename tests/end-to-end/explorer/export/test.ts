@@ -18,9 +18,9 @@ import {
 } from '../../mock-data';
 import { getOption, userIsLoggedIn } from '../../utils';
 
-const queryPathV3 = '*/**/picsure/hpds/auth/v3/query';
-const countResultPath = `${queryPathV3}/sync`;
-const openCountResultPath = '*/**/picsure/hpds/open/v3/query/sync';
+const queryPath = '*/**/picsure/hpds/auth/query';
+const countResultPath = `${queryPath}/sync`;
+const openCountResultPath = '*/**/picsure/hpds/open/query/sync';
 
 // Standard identifiers that should be present
 const standardIdentifiers = [
@@ -294,7 +294,7 @@ test.describe('Export Page', () => {
     await expect(csvExportOption).toHaveClass(/preset-filled-primary-500/);
     await expect(pfbExportOption).toHaveClass(/preset-outlined-primary-500/);
     await expect(nextButton).not.toBeDisabled();
-    await mockApiSuccess(page, queryPathV3, newDatasetResponse);
+    await mockApiSuccess(page, queryPath, newDatasetResponse);
     await nextButton.click();
 
     // Save Dataset ID
@@ -307,7 +307,7 @@ test.describe('Export Page', () => {
     await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
     await mockApiSuccess(
       page,
-      `${queryPathV3}/${newDatasetResponse.picsureResultId}/status`,
+      `${queryPath}/${newDatasetResponse.picsureResultId}/status`,
       availableDatasetResponse,
     );
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
@@ -355,7 +355,7 @@ test.describe('Export Page', () => {
     // Review and Save Dataset=
     await page.getByTestId('csv-export-option').click();
     await expect(nextButton).not.toBeDisabled();
-    await page.route(queryPathV3, (route: Route) => {
+    await page.route(queryPath, (route: Route) => {
       const request = route.request().postDataJSON();
       const selects: string[] = request?.query?.select || [];
       const allFiltersInSelect = expectedSelectFields.every((concept) => selects.includes(concept));
@@ -397,7 +397,7 @@ test.describe('Export Page', () => {
 
     // Intercept the query request to verify system fields are included
     let capturedQuery: { query: { select: string[] } } | null = null;
-    await page.route(queryPathV3, async (route: Route) => {
+    await page.route(queryPath, async (route: Route) => {
       const request = route.request();
       capturedQuery = request.postDataJSON();
       await route.fulfill({ json: newDatasetResponse });
@@ -521,7 +521,7 @@ test.describe('Export Page', () => {
 
     // Intercept the query request to verify sample IDs are included
     let capturedQuery: { query: { select: string[] } } | null = null;
-    await page.route(queryPathV3, async (route) => {
+    await page.route(queryPath, async (route) => {
       const request = route.request();
       capturedQuery = request.postDataJSON();
       await route.fulfill({ json: newDatasetResponse });
@@ -546,14 +546,14 @@ test.describe('Export Page', () => {
     await nextButton.click(); // Tree Step -> Select Type
 
     await page.getByTestId('csv-export-option').click();
-    await mockApiSuccess(page, queryPathV3, newDatasetResponse);
+    await mockApiSuccess(page, queryPath, newDatasetResponse);
     await nextButton.click(); // Submit query -> Save Dataset ID
 
     await page.locator('input#dataset-name').fill('test-dataset');
     await mockApiSuccess(page, `*/**/picsure/operations/dataset/named`, newDatasetResponse);
     await mockApiSuccess(
       page,
-      `${queryPathV3}/${newDatasetResponse.picsureResultId}/status`,
+      `${queryPath}/${newDatasetResponse.picsureResultId}/status`,
       availableDatasetResponse,
     );
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
@@ -595,7 +595,7 @@ test.describe('Export Page', () => {
     await navigateToDownloadTab(page);
     await mockApiSuccess(
       page,
-      `${queryPathV3}/${newDatasetResponse.picsureResultId}/result`,
+      `${queryPath}/${newDatasetResponse.picsureResultId}/result`,
       'csv,data',
     );
     const downloadButton = page.getByRole('button', { name: 'Download as CSV' });

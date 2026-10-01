@@ -12,7 +12,7 @@ import type { Branding } from '$lib/models/Configuration';
 import brandingJson from '../../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
-const QUERY = '*/**/picsure/hpds/auth/v3/query/sync';
+const QUERY = '*/**/picsure/hpds/auth/query/sync';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
