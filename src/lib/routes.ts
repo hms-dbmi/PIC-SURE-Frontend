@@ -20,6 +20,7 @@ export const routes: Route[] = [
   {
     path: '/api',
     text: 'API',
+    privilege: [PicsurePrivileges.API_ACCESS, BDCPrivileges.AUTHORIZED_ACCESS],
     feature: 'analyzeApi',
   },
   {

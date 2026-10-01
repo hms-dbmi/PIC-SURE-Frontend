@@ -63,7 +63,8 @@ async function collectDocumentHeaders(page: Page) {
   return headers;
 }
 
-test.describe('API documentation for public visitors', () => {
+// Release 1 hides this from the API page; restore with the Release 2 discover/open work.
+test.describe.skip('API documentation for public visitors', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
   test.beforeEach(async ({ page }) => {
     await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
@@ -325,7 +326,8 @@ test.describe('API documentation for public visitors', () => {
   });
 });
 
-test.describe('API documentation for signed-in visitors', () => {
+// Release 1 hides this from the API page; restore with the Release 2 discover/open work.
+test.describe.skip('API documentation for signed-in visitors', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   test('shows docs without the public notice or request execution', async ({ page }) => {
     await mockDocuments(page);

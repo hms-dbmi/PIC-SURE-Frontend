@@ -51,8 +51,9 @@ test.describe('API page', () => {
     // Then
     await expect(page.locator('h1')).toHaveText('Programmatic Access with the PIC-SURE API');
     await expect(
-      page.getByText('Search data and build cohorts directly with Python, R, or any HTTP client.'),
+      page.getByText('Search data and build cohorts directly with Python or R.'),
     ).toBeVisible();
+    await expect(page.getByText('any HTTP client')).toHaveCount(0);
   });
 
   test('Has expected workflow cards', async ({ page }) => {
@@ -75,10 +76,8 @@ test.describe('API page', () => {
     await expect(rCard).toContainText('R Client');
     await expect(rCard.locator('.badge')).toHaveText('Recommended');
     await expect(rCard).toContainText('Requires R version 4.1 or later');
-    await expect(httpCard).toBeVisible();
-    await expect(httpCard).toContainText('Direct API Access');
-    await expect(httpCard.locator('.badge')).toHaveText('Advanced');
-    await expect(httpCard).toContainText('Interact directly with PIC-SURE API endpoints');
+    await expect(httpCard).toHaveCount(0);
+    await expect(page.getByText('Direct API Access')).toHaveCount(0);
   });
 
   test('Workflow cards have Quick Start buttons linking to the quick start section', async ({
@@ -92,13 +91,13 @@ test.describe('API page', () => {
     const quickStartButtons = page.locator('#choose-your-workflow a', { hasText: 'Quick Start' });
 
     // Then
-    await expect(quickStartButtons).toHaveCount(3);
+    await expect(quickStartButtons).toHaveCount(2);
     for (const button of await quickStartButtons.all()) {
       await expect(button).toHaveAttribute('href', '#quick-start');
     }
   });
 
-  test('Has quick start tabs for Python, R, and API', async ({ page }) => {
+  test('Has quick start tabs for Python and R only', async ({ page }) => {
     // Given
     await page.goto('/api');
     await userIsLoggedIn(page);
@@ -107,10 +106,9 @@ test.describe('API page', () => {
     const tabs = page.getByTestId('tabs-control');
 
     // Then
-    await expect(tabs).toHaveCount(3);
+    await expect(tabs).toHaveCount(2);
     await expect(tabs.nth(0)).toContainText('Python');
     await expect(tabs.nth(1)).toContainText('R');
-    await expect(tabs.nth(2)).toContainText('API');
     await expect(page.locator('#quick-start .code-block').first()).toBeVisible();
   });
 
@@ -138,14 +136,53 @@ test.describe('API page', () => {
     await expect(visibleCode).toContainText('supports_genomic=TRUE');
   });
 
-  test('Has API Access section', async ({ page }) => {
+  test('Hides the API Access section', async ({ page }) => {
     // Given
     await page.goto('/api');
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByRole('heading', { name: 'API Access', exact: true })).toBeVisible();
-    await expect(page.getByText('Browse and use the PIC-SURE API endpoints.')).toBeVisible();
+    await expect(page.locator('#api-access')).toHaveCount(0);
+    await expect(page.getByTestId('api-documentation')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'API Access', exact: true })).toHaveCount(0);
+  });
+
+  test('Table of contents lists the visible page sections', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // When
+    const links = page.getByTestId('toc').locator('a');
+
+    // Then
+    const expected: Array<[string, string]> = [
+      ['Overview', '#api-header'],
+      ['Choose Your Workflow', '#choose-your-workflow'],
+      ['Authentication', '#authentication'],
+      ['Quick Start', '#quick-start'],
+    ];
+    await expect(links).toHaveCount(expected.length);
+    for (const [index, [label, href]] of expected.entries()) {
+      await expect(links.nth(index)).toHaveText(label);
+      await expect(links.nth(index)).toHaveAttribute('href', href);
+    }
+  });
+
+  test('Table of contents marks Quick Start at the bottom of the page', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // When
+    await page.evaluate(() => {
+      const scroller = document.getElementById('page');
+      if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    });
+
+    // Then
+    const quickStartLink = page.getByTestId('toc').getByRole('link', { name: 'Quick Start' });
+    await expect(quickStartLink).toHaveAttribute('aria-current', 'true');
   });
 
   test('Shows all capabilities with success icons when logged in', async ({ page }) => {
@@ -393,7 +430,8 @@ test.describe('Legacy analyze routes redirect to /api', () => {
   });
 });
 
-test.describe('API page logged out', () => {
+// Release 1 hides the API page from logged-out users; restore with the Release 2 discover/open work.
+test.describe.skip('API page logged out', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
   test.beforeEach(async ({ page }) => {
@@ -579,5 +617,42 @@ test.describe('API page logged out', () => {
     // Then
     await page.waitForURL('/api');
     await expect(page).toHaveURL('/api');
+  });
+});
+
+test.describe('API page logged out (Release 1)', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test.beforeEach(async ({ page }) => {
+    // OPEN keeps the root layout from redirecting anonymous visitors to /login.
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+  });
+
+  test('Redirects /api to home', async ({ page }) => {
+    // When
+    await page.goto('/api');
+
+    // Then
+    await page.waitForURL('/');
+    await expect(page).toHaveURL('/');
+  });
+
+  test('Legacy /analyze/api redirects to home', async ({ page }) => {
+    // When
+    await page.goto('/analyze/api');
+
+    // Then
+    await page.waitForURL('/');
+    await expect(page).toHaveURL('/');
+  });
+
+  test('Hides the API nav link and landing card', async ({ page }) => {
+    // When
+    await page.goto('/');
+
+    // Then
+    await expect(page.locator('#nav-link-help')).toBeVisible();
+    await expect(page.locator('#nav-link-api')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Explore the API' })).toHaveCount(0);
   });
 });

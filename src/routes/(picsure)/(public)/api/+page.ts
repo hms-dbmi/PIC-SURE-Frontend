@@ -1,4 +1,5 @@
 import { redirect } from '@sveltejs/kit';
+import { browser } from '$app/environment';
 import { config } from '$lib/configuration.svelte';
 import type { PageLoad } from './$types';
 
@@ -8,6 +9,10 @@ export const load: PageLoad = async ({ parent }) => {
   // concurrently unless ordered via parent()), so wait for it before reading config.
   await parent();
   if (!config.features.analyzeApi) {
+    redirect(302, '/');
+  }
+  // Release 1: the API page is for logged-in users only.
+  if (browser && !localStorage.getItem('token')) {
     redirect(302, '/');
   }
 };

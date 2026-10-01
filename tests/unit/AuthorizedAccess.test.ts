@@ -70,6 +70,7 @@ describe('AUTHORIZED_ACCESS comes from PSAMA, not from the client', () => {
 
     expect(navPaths()).not.toContain('/explorer');
     expect(navPaths()).not.toContain('/dataset');
+    expect(navPaths()).not.toContain('/api');
   });
 
   // all-in-one and Auth0: every gate reading this privilege has a second arm this set satisfies.
