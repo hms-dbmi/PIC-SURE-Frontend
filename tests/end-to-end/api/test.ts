@@ -169,9 +169,12 @@ test.describe('API page', () => {
       await expect(page.getByTestId('expires-badge')).toHaveText(badge);
 
       // When
-      const sectionIds = await page
-        .locator('#api-page section[id]')
-        .evaluateAll((sections) => sections.map((section) => section.id));
+      const sectionIds = await page.locator('#api-page section[id]').evaluateAll((sections) =>
+        sections
+          .map((section) => ({ id: section.id, top: section.getBoundingClientRect().top }))
+          .sort((a, b) => a.top - b.top)
+          .map(({ id }) => id),
+      );
 
       // Then
       expect(sectionIds).toEqual([
@@ -414,6 +417,27 @@ test.describe('API page', () => {
     expect(await userToken.innerText()).toBe(placeHolderDots);
     expect(await expires.innerText()).toContain('Mon Feb 01 2021');
   });
+
+  test('Deep link pre-selects the quick start tab and scrolls to the section', async ({ page }) => {
+    // Given
+    await page.goto('/api#quick-start-r');
+
+    // Then
+    await expect(page.locator('#quick-start .code-block:visible')).toContainText('Requires R');
+    // The token card above Quick Start loads after the first scroll and grows the page.
+    await expect(page.locator('#user-token')).toBeVisible();
+    await expect(async () => {
+      const offset = await page.evaluate(() => {
+        const scroller = document.getElementById('page');
+        const section = document.getElementById('quick-start');
+        if (!scroller || !section) return NaN;
+        return Math.round(
+          section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
+        );
+      });
+      expect(Math.abs(offset)).toBeLessThan(4);
+    }).toPass({ timeout: 5000 });
+  });
 });
 
 test.describe('Legacy analyze routes redirect to /api', () => {
@@ -590,25 +614,6 @@ test.describe('API page logged out', () => {
 
     // Then
     await expect(authLink).toHaveAttribute('aria-current', 'true');
-  });
-
-  test('Deep link pre-selects the quick start tab and scrolls to the section', async ({ page }) => {
-    // Given
-    await page.goto('/api#quick-start-r');
-
-    // Then
-    await expect(page.locator('#quick-start .code-block:visible')).toContainText('Requires R');
-    await expect(async () => {
-      const offset = await page.evaluate(() => {
-        const scroller = document.getElementById('page');
-        const section = document.getElementById('quick-start');
-        if (!scroller || !section) return NaN;
-        return Math.round(
-          section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
-        );
-      });
-      expect(Math.abs(offset)).toBeLessThan(4);
-    }).toPass({ timeout: 5000 });
   });
 
   test('Table of contents is hidden on narrow viewports', async ({ page }) => {

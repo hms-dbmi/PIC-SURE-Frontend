@@ -136,7 +136,9 @@
       document.getElementById('quick-start')?.scrollIntoView({ behavior: 'instant' });
     const pin = new ResizeObserver(alignQuickStart);
     const unpinEvents = ['wheel', 'touchmove', 'keydown', 'pointerdown'] as const;
+    let pinned = true;
     const unpin = () => {
+      pinned = false;
       pin.disconnect();
       for (const type of unpinEvents) window.removeEventListener(type, unpin, true);
     };
@@ -148,7 +150,7 @@
       void tick().then(() => {
         alignQuickStart();
         const authentication = document.getElementById('authentication');
-        if (authentication) pin.observe(authentication);
+        if (pinned && authentication) pin.observe(authentication);
       });
     }
 
