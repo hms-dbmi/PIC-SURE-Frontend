@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import { browser } from '$app/environment';
 import { config } from '$lib/configuration.svelte';
+import { isTokenExpired } from '$lib/stores/User';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ parent }) => {
@@ -12,7 +13,8 @@ export const load: PageLoad = async ({ parent }) => {
     redirect(302, '/');
   }
   // Release 1: the API page is for logged-in users only.
-  if (browser && !localStorage.getItem('token')) {
-    redirect(302, '/');
+  if (browser) {
+    const token = localStorage.getItem('token');
+    if (!token || isTokenExpired(token)) redirect(302, '/');
   }
 };

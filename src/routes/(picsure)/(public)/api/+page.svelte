@@ -101,15 +101,6 @@
       bullets: ['Requires R version 4.1 or later', 'R Jupyter Notebooks or RStudio'],
       tab: 'R',
     },
-    // Release 1: Direct API Access is hidden.
-    // {
-    //   id: 'http',
-    //   title: 'Direct API Access',
-    //   badge: 'Advanced',
-    //   badgeClass: 'preset-filled-warning-500',
-    //   bullets: ['Interact directly with PIC-SURE API endpoints'],
-    //   tab: 'API',
-    // },
   ];
 
   let tabSet: string = $state('Python');
@@ -119,8 +110,6 @@
     { id: 'choose-your-workflow', label: 'Choose Your Workflow' },
     { id: 'authentication', label: 'Authentication' },
     { id: 'quick-start', label: 'Quick Start' },
-    // Release 1: the API Access section is hidden.
-    // { id: 'api-access', label: 'API Access' },
   ];
   let activeSection: string = $state('api-header');
 
@@ -134,7 +123,7 @@
     // suffixed ids have no DOM element, so scroll to the section ourselves.
     const deepLink = window.location.hash.match(/^#quick-start-(python|r)$/);
     if (deepLink) {
-      tabSet = { python: 'Python', r: 'R', api: 'API' }[deepLink[1]] ?? tabSet;
+      tabSet = { python: 'Python', r: 'R' }[deepLink[1]] ?? tabSet;
       // Tab selection changes the layout; align only after Svelte renders it.
       void tick().then(() => {
         document.getElementById('quick-start')?.scrollIntoView({ behavior: 'instant' });
@@ -341,6 +330,7 @@
           <Tabs.Panel value="R">
             <CodeBlock lang="r" code={quickStartCode.r} />
           </Tabs.Panel>
+          <!-- Release 1: the API tab is hidden. -->
           {#if false}
             <Tabs.Panel value="API">
               <CodeBlock lang="bash" code={quickStartCode.api} />
