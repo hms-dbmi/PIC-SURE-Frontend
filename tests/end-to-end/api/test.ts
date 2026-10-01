@@ -408,6 +408,110 @@ test.describe('API page', () => {
     expect(await userToken.innerText()).toBe(placeHolderDots);
     expect(await expires.innerText()).toContain('Mon Feb 01 2021');
   });
+  test('Each table of contents link scrolls on its first click, including repeat visits', async ({
+    page,
+  }) => {
+    await page.goto('/api');
+    for (const [name, id] of [
+      ['Quick Start', 'quick-start'],
+      ['Authentication', 'authentication'],
+      ['Overview', 'api-header'],
+      ['Choose Your Workflow', 'choose-your-workflow'],
+      ['Quick Start', 'quick-start'],
+    ]) {
+      await page.getByTestId('toc').getByRole('link', { name, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`#${id}$`));
+      await expect
+        .poll(() =>
+          page.evaluate((sectionId) => {
+            const scroller = document.getElementById('page')!;
+            const section = document.getElementById(sectionId)!;
+            return Math.abs(
+              section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
+            );
+          }, id),
+        )
+        .toBeLessThan(4);
+    }
+  });
+
+  test('Table of contents indicates the section in view', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    const authLink = page.getByTestId('toc').getByRole('link', { name: 'Authentication' });
+    await expect(authLink).not.toHaveAttribute('aria-current', 'true');
+
+    // When
+    await page.evaluate(() => {
+      const scroller = document.getElementById('page');
+      const section = document.getElementById('authentication');
+      if (!scroller || !section) return;
+      scroller.scrollTop +=
+        section.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    });
+
+    // Then
+    await expect(authLink).toHaveAttribute('aria-current', 'true');
+  });
+
+  test('Deep link pre-selects the quick start tab and scrolls to the section', async ({ page }) => {
+    // Given
+    await page.goto('/api#quick-start-r');
+
+    // Then
+    await expect(page.locator('#quick-start .code-block:visible')).toContainText('Requires R');
+    await expect(async () => {
+      const offset = await page.evaluate(() => {
+        const scroller = document.getElementById('page');
+        const section = document.getElementById('quick-start');
+        if (!scroller || !section) return NaN;
+        return Math.round(
+          section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
+        );
+      });
+      expect(Math.abs(offset)).toBeLessThan(4);
+    }).toPass({ timeout: 5000 });
+  });
+
+  test('Table of contents is hidden on narrow viewports', async ({ page }) => {
+    // Given
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await page.goto('/api');
+
+    // Then
+    await expect(page.getByTestId('toc')).toBeHidden();
+  });
+
+  test('Leaves the page when the session ends in another tab', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // When
+    await page.evaluate(() => {
+      localStorage.removeItem('token');
+      window.dispatchEvent(new StorageEvent('storage', { key: 'token', newValue: null }));
+    });
+
+    // Then
+    // OPEN is off in this suite, so home sends the logged-out visitor on to /login.
+    await page.waitForURL('/login');
+    await expect(page).toHaveURL('/login');
+  });
+
+  test('Redirects home when navigating to /api with an expired token', async ({ page }) => {
+    // Given
+    await page.goto('/help');
+    await userIsLoggedIn(page);
+    await page.evaluate((token) => localStorage.setItem('token', token), mockExpiredToken);
+
+    // When
+    await page.locator('#nav-link-api').click();
+
+    // Then
+    await page.waitForURL('/');
+    await expect(page).toHaveURL('/');
+  });
 });
 
 test.describe('Legacy analyze routes redirect to /api', () => {
@@ -526,33 +630,6 @@ test.describe.skip('API page logged out', () => {
     }
   });
 
-  test('Each table of contents link scrolls on its first click, including repeat visits', async ({
-    page,
-  }) => {
-    await page.goto('/api');
-    for (const [name, id] of [
-      ['Quick Start', 'quick-start'],
-      ['Authentication', 'authentication'],
-      ['Overview', 'api-header'],
-      ['Choose Your Workflow', 'choose-your-workflow'],
-      ['Quick Start', 'quick-start'],
-    ]) {
-      await page.getByTestId('toc').getByRole('link', { name, exact: true }).click();
-      await expect(page).toHaveURL(new RegExp(`#${id}$`));
-      await expect
-        .poll(() =>
-          page.evaluate((sectionId) => {
-            const scroller = document.getElementById('page')!;
-            const section = document.getElementById(sectionId)!;
-            return Math.abs(
-              section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
-            );
-          }, id),
-        )
-        .toBeLessThan(4);
-    }
-  });
-
   test('Curl example uses the current origin and gateway Dictionary route', async ({ page }) => {
     await page.goto('/api');
     await page.getByRole('tab', { name: 'API', exact: true }).click();
@@ -561,53 +638,6 @@ test.describe.skip('API page logged out', () => {
       `${new URL(page.url()).origin}/picsure/dictionary/concepts?page_number=0&page_size=10`,
     );
     await expect(code).not.toContainText('/proxy/');
-  });
-
-  test('Table of contents indicates the section in view', async ({ page }) => {
-    // Given
-    await page.goto('/api');
-    const authLink = page.getByTestId('toc').getByRole('link', { name: 'Authentication' });
-    await expect(authLink).not.toHaveAttribute('aria-current', 'true');
-
-    // When
-    await page.evaluate(() => {
-      const scroller = document.getElementById('page');
-      const section = document.getElementById('authentication');
-      if (!scroller || !section) return;
-      scroller.scrollTop +=
-        section.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
-    });
-
-    // Then
-    await expect(authLink).toHaveAttribute('aria-current', 'true');
-  });
-
-  test('Deep link pre-selects the quick start tab and scrolls to the section', async ({ page }) => {
-    // Given
-    await page.goto('/api#quick-start-r');
-
-    // Then
-    await expect(page.locator('#quick-start .code-block:visible')).toContainText('Requires R');
-    await expect(async () => {
-      const offset = await page.evaluate(() => {
-        const scroller = document.getElementById('page');
-        const section = document.getElementById('quick-start');
-        if (!scroller || !section) return NaN;
-        return Math.round(
-          section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
-        );
-      });
-      expect(Math.abs(offset)).toBeLessThan(4);
-    }).toPass({ timeout: 5000 });
-  });
-
-  test('Table of contents is hidden on narrow viewports', async ({ page }) => {
-    // Given
-    await page.setViewportSize({ width: 1024, height: 800 });
-    await page.goto('/api');
-
-    // Then
-    await expect(page.getByTestId('toc')).toBeHidden();
   });
 
   test('Legacy /analyze/api redirects to /api when logged out', async ({ page }) => {
@@ -652,6 +682,7 @@ test.describe('API page logged out (Release 1)', () => {
 
     // Then
     await expect(page.locator('#nav-link-help')).toBeVisible();
+    await expect(page.locator('#actions-section')).toBeVisible();
     await expect(page.locator('#nav-link-api')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Explore the API' })).toHaveCount(0);
   });

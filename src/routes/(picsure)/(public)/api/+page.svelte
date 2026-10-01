@@ -8,7 +8,7 @@
 
   import { config, PROJECT_HOSTNAME } from '$lib/configuration.svelte';
   import { getApiConnectionResource } from '$lib/stores/Resources';
-  import { tokenStatus } from '$lib/stores/User';
+  import { hasValidToken, tokenStatus } from '$lib/stores/User';
   import { log, createLog } from '$lib/logger';
 
   import ApiDocumentation from '$lib/components/ApiDocumentation.svelte';
@@ -19,6 +19,12 @@
 
   let mounted = $state(false);
   let loggedIn = $derived(mounted && $tokenStatus);
+
+  // Release 1: the load redirect only runs on navigation, so also leave when the
+  // session ends while the page is open (logout in another tab, token expiry).
+  $effect(() => {
+    if (mounted && !$hasValidToken) void goto(resolve('/'));
+  });
   const capabilities = config.branding.apiPage?.capabilities || [];
 
   const codeBlocks = $derived(config.branding.explorePage.codeBlocks);
