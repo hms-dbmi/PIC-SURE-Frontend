@@ -1,3 +1,5 @@
+import adapter from '@sveltejs/adapter-node';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, type PluginOption } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
@@ -5,8 +7,74 @@ import type { ViteUserConfig } from 'vitest/config';
 
 const isProd = process.env.NODE_ENV === 'production';
 
+const extra = (name) => {
+  const sources = (process.env[name] ?? '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((source) => source.replace(/^'(.*)'$/, '$1'));
+  const unsafe = sources.filter((source) => source.startsWith('unsafe-'));
+
+  if (unsafe.length) {
+    throw new Error(`${name} must not reintroduce ${unsafe.join(', ')} (ALS-9583)`);
+  }
+
+  return sources;
+};
+
 export default defineConfig(async ({ mode }) => {
-  const plugins: PluginOption[] = [tailwindcss(), sveltekit()];
+  const plugins: PluginOption[] = [
+    tailwindcss(),
+    sveltekit({
+      extensions: ['.svelte'],
+      // Consult https://kit.svelte.dev/docs/integrations#preprocessors
+      // for more information about preprocessors
+      preprocess: [vitePreprocess()],
+      compilerOptions: { runes: true },
+      vitePlugin: { inspector: true },
+      // adapter-auto only supports some environments, see https://kit.svelte.dev/docs/adapter-auto for a list.
+      // If your environment is not supported or you settled on a specific environment, switch out the adapter.
+      // See https://kit.svelte.dev/docs/adapters for more information about adapters.
+      adapter: adapter({ addressHeader: 'X-Forwarded-For' }),
+
+      csp: {
+        mode: 'nonce',
+        directives: {
+          'default-src': ['self'],
+          'base-uri': ['self'],
+          'object-src': ['none'],
+          'form-action': ['self'],
+          'frame-ancestors': ['none'],
+          'font-src': ['self', 'data:'],
+          'script-src': [
+            'self',
+            'https://*.googletagmanager.com',
+            // Turnstile loads api.js and renders its challenge in an iframe from this origin
+            'https://challenges.cloudflare.com',
+            ...extra('CSP_EXTRA_SCRIPT_SRC'),
+          ],
+          'frame-src': ['self', 'https://challenges.cloudflare.com'],
+          'style-src': ['self', ...extra('CSP_EXTRA_STYLE_SRC')],
+          'style-src-attr': ['unsafe-inline'],
+          'img-src': [
+            'self',
+            'data:',
+            'blob:',
+            'https://*.google-analytics.com',
+            'https://*.googletagmanager.com',
+            ...extra('CSP_EXTRA_IMG_SRC'),
+          ],
+          'connect-src': [
+            'self',
+            'https://*.google-analytics.com',
+            'https://*.analytics.google.com',
+            'https://*.googletagmanager.com',
+            ...extra('CSP_EXTRA_CONNECT_SRC'),
+          ],
+        },
+      },
+    }),
+  ];
+
   if (!isProd) {
     const { svelteTesting } = await import('@testing-library/svelte/vite');
     plugins.push(svelteTesting());
