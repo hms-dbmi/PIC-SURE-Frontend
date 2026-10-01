@@ -8,6 +8,14 @@ const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 
 const capabilities = branding?.apiPage?.capabilities || [];
 
+// A JWT whose exp claim is the given number of days from now. The page only
+// decodes the payload, so the signature is a placeholder.
+function tokenExpiringInDays(days: number) {
+  const encode = (part: object) => Buffer.from(JSON.stringify(part)).toString('base64url');
+  const exp = Math.floor(Date.now() / 1000) + days * 24 * 60 * 60;
+  return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: '1234567890', exp })}.signature`;
+}
+
 const placeHolderDots =
   '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••';
 
@@ -147,6 +155,41 @@ test.describe('API page', () => {
     await expect(page.getByRole('heading', { name: 'API Access', exact: true })).toBeVisible();
     await expect(page.getByText('Browse and use the PIC-SURE API endpoints.')).toBeVisible();
   });
+
+  for (const [state, token, badge] of [
+    ['valid', mockToken, /^VALID FOR \d+ MORE DAYS$/],
+    ['expiring', tokenExpiringInDays(3), /^EXPIRING SOON$/],
+    ['expired', mockExpiredToken, /^EXPIRED$/],
+  ] as const) {
+    test(`Shows sections in page order when the token is ${state}`, async ({ context, page }) => {
+      // Given
+      await mockApiSuccess(context, '*/**/psama/user/me?hasToken', { ...picsureUser, token });
+      await page.goto('/api');
+      await userIsLoggedIn(page);
+      await expect(page.getByTestId('expires-badge')).toHaveText(badge);
+
+      // When
+      const sectionIds = await page
+        .locator('#api-page section[id]')
+        .evaluateAll((sections) => sections.map((section) => section.id));
+
+      // Then
+      expect(sectionIds).toEqual([
+        'api-header',
+        'authentication',
+        'quick-start',
+        'choose-your-workflow',
+        'api-access',
+      ]);
+      await expect(page.getByTestId('toc').locator('a')).toHaveText([
+        'Overview',
+        'Authentication',
+        'Quick Start',
+        'Choose Your Workflow',
+        'API Access',
+      ]);
+    });
+  }
 
   test('Shows all capabilities with success icons when logged in', async ({ page }) => {
     // Given
@@ -476,9 +519,9 @@ test.describe('API page logged out', () => {
     // Then
     const expected: Array<[string, string]> = [
       ['Overview', '#api-header'],
-      ['Choose Your Workflow', '#choose-your-workflow'],
       ['Authentication', '#authentication'],
       ['Quick Start', '#quick-start'],
+      ['Choose Your Workflow', '#choose-your-workflow'],
       ['API Access', '#api-access'],
     ];
     await expect(links).toHaveCount(expected.length);
@@ -528,7 +571,12 @@ test.describe('API page logged out', () => {
   test('Table of contents indicates the section in view', async ({ page }) => {
     // Given
     await page.goto('/api');
-    const authLink = page.getByTestId('toc').getByRole('link', { name: 'Authentication' });
+    const toc = page.getByTestId('toc');
+    const authLink = toc.getByRole('link', { name: 'Authentication' });
+    await expect(toc.getByRole('link', { name: 'Overview' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
     await expect(authLink).not.toHaveAttribute('aria-current', 'true');
 
     // When

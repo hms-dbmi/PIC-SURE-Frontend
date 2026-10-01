@@ -115,9 +115,9 @@
 
   const tocEntries = [
     { id: 'api-header', label: 'Overview' },
-    { id: 'choose-your-workflow', label: 'Choose Your Workflow' },
     { id: 'authentication', label: 'Authentication' },
     { id: 'quick-start', label: 'Quick Start' },
+    { id: 'choose-your-workflow', label: 'Choose Your Workflow' },
     { id: 'api-access', label: 'API Access' },
   ];
   let activeSection: string = $state('api-header');
@@ -130,18 +130,36 @@
 
     // Deep links like /api#quick-start-python pre-select the language tab. The
     // suffixed ids have no DOM element, so scroll to the section ourselves.
+    // Authentication sits above Quick Start and grows when the token card loads, so
+    // keep the section aligned until the visitor scrolls, clicks, or types.
+    const alignQuickStart = () =>
+      document.getElementById('quick-start')?.scrollIntoView({ behavior: 'instant' });
+    const pin = new ResizeObserver(alignQuickStart);
+    const unpinEvents = ['wheel', 'touchmove', 'keydown', 'pointerdown'] as const;
+    const unpin = () => {
+      pin.disconnect();
+      for (const type of unpinEvents) window.removeEventListener(type, unpin, true);
+    };
     const deepLink = window.location.hash.match(/^#quick-start-(python|r|api)$/);
     if (deepLink) {
       tabSet = { python: 'Python', r: 'R', api: 'API' }[deepLink[1]] ?? tabSet;
+      for (const type of unpinEvents) window.addEventListener(type, unpin, true);
       // Tab selection changes the layout; align only after Svelte renders it.
       void tick().then(() => {
-        document.getElementById('quick-start')?.scrollIntoView({ behavior: 'instant' });
+        alignQuickStart();
+        const authentication = document.getElementById('authentication');
+        if (authentication) pin.observe(authentication);
       });
     }
 
     // The TOC marks the last section whose top has crossed into the upper 40% of
-    // the scroll viewport; reaching the bottom always selects the final section.
+    // the scroll viewport. The top and bottom of the page always select the first
+    // and final sections; Authentication starts inside that 40% on the first screen.
     const updateActive = () => {
+      if (scroller.scrollTop <= 4) {
+        activeSection = tocEntries[0].id;
+        return;
+      }
       if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) {
         activeSection = 'api-access';
         return;
@@ -156,7 +174,10 @@
     };
     updateActive();
     scroller.addEventListener('scroll', updateActive, { passive: true });
-    return () => scroller.removeEventListener('scroll', updateActive);
+    return () => {
+      scroller.removeEventListener('scroll', updateActive);
+      unpin();
+    };
   });
 
   async function navigateSection(event: MouseEvent, id: string) {
@@ -225,87 +246,57 @@
       </div>
     </section>
 
-    <section id="choose-your-workflow" class="w-full flex-1 bg-primary-50-950">
+    <section id="authentication" class="w-full flex-1 bg-primary-50-950">
       <div class="w-[70%] mx-auto py-12">
-        <h2>Choose Your Workflow</h2>
-        <p class="mx-0">Select the access method that fits your project.</p>
-        <div class="flex flex-wrap gap-6 mt-4">
-          {#each workflows as workflow}
-            <div
-              data-testid="workflow-card-{workflow.id}"
-              class="card border border-surface-200 bg-surface-50-950 p-6 flex flex-col flex-1 basis-64 min-h-96"
-            >
-              <header class="flex items-center justify-between gap-2">
-                <h3 class="text-xl font-bold">{workflow.title}</h3>
-                <span class="badge {workflow.badgeClass}">{workflow.badge}</span>
-              </header>
-              <ul class="list-inside list-disc space-y-2 my-4">
-                {#each workflow.bullets as bullet}
-                  <li>{bullet}</li>
-                {/each}
-              </ul>
-              <a
-                href="#quick-start"
-                class="btn preset-filled-primary-500 mt-auto"
-                onclick={(event) => quickStart(event, workflow)}>Quick Start</a
-              >
+        <h2>Authentication</h2>
+        <p class="mx-0">
+          Your personal access token authenticates all programmatic requests to PIC-SURE.
+        </p>
+        <div class="flex flex-wrap gap-8 mt-4">
+          {#if loggedIn}
+            <div class="basis-[60%] grow-0 min-w-0 max-w-full">
+              <UserToken />
             </div>
-          {/each}
+          {:else}
+            <div class="basis-[60%] grow-0 min-w-0 max-w-full">
+              <PublicAccessKey enabled={config.branding.apiPage?.publicKeyEnabled ?? false} />
+            </div>
+          {/if}
+          <div id="capabilities" class="flex-1 min-w-64">
+            <h3 class="text-lg font-bold mb-3">What you can do</h3>
+            <ul class="space-y-3">
+              {#each capabilities as capability}
+                {@const locked = !loggedIn && capability.requiresLogin}
+                <li data-testid="capability-item" class="flex items-center gap-3">
+                  {#if locked}
+                    <i class="fa-regular fa-circle-xmark text-xl text-surface-400"></i>
+                  {:else}
+                    <i class="fa-regular fa-circle-check text-xl text-success-500"></i>
+                  {/if}
+                  <span class={locked ? 'text-surface-500' : ''}>
+                    {capability.text}{#if capability.requiresLogin}&nbsp;(Requires login){/if}
+                  </span>
+                </li>
+              {/each}
+            </ul>
+            {#if !loggedIn}
+              <hr class="my-4 border-surface-200" />
+              <p class="mx-0">
+                Looking for authorized access?
+                <a
+                  class="anchor"
+                  href="{resolve('/login')}?redirectTo=/api"
+                  data-testid="api-login-link">Login</a
+                >
+              </p>
+            {/if}
+          </div>
         </div>
       </div>
     </section>
   </div>
 
-  <section id="authentication" class="api-panel w-full">
-    <div class="w-[70%] mx-auto py-12">
-      <h2>Authentication</h2>
-      <p class="mx-0">
-        Your personal access token authenticates all programmatic requests to PIC-SURE.
-      </p>
-      <div class="flex flex-wrap gap-8 mt-4">
-        {#if loggedIn}
-          <div class="basis-[60%] grow-0 min-w-0 max-w-full">
-            <UserToken />
-          </div>
-        {:else}
-          <div class="basis-[60%] grow-0 min-w-0 max-w-full">
-            <PublicAccessKey enabled={config.branding.apiPage?.publicKeyEnabled ?? false} />
-          </div>
-        {/if}
-        <div id="capabilities" class="flex-1 min-w-64">
-          <h3 class="text-lg font-bold mb-3">What you can do</h3>
-          <ul class="space-y-3">
-            {#each capabilities as capability}
-              {@const locked = !loggedIn && capability.requiresLogin}
-              <li data-testid="capability-item" class="flex items-center gap-3">
-                {#if locked}
-                  <i class="fa-regular fa-circle-xmark text-xl text-surface-400"></i>
-                {:else}
-                  <i class="fa-regular fa-circle-check text-xl text-success-500"></i>
-                {/if}
-                <span class={locked ? 'text-surface-500' : ''}>
-                  {capability.text}{#if capability.requiresLogin}&nbsp;(Requires login){/if}
-                </span>
-              </li>
-            {/each}
-          </ul>
-          {#if !loggedIn}
-            <hr class="my-4 border-surface-200" />
-            <p class="mx-0">
-              Looking for authorized access?
-              <a
-                class="anchor"
-                href="{resolve('/login')}?redirectTo=/api"
-                data-testid="api-login-link">Login</a
-              >
-            </p>
-          {/if}
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="quick-start" class="api-panel w-full bg-primary-50-950">
+  <section id="quick-start" class="api-panel w-full">
     <div class="w-[70%] mx-auto py-12">
       <h2>Quick Start</h2>
       <p class="mx-0">Copy and run the example code below to get started.</p>
@@ -333,6 +324,36 @@
           </Tabs.Panel>
         {/snippet}
       </Tabs>
+    </div>
+  </section>
+
+  <section id="choose-your-workflow" class="api-panel w-full bg-primary-50-950">
+    <div class="w-[70%] mx-auto py-12">
+      <h2>Choose Your Workflow</h2>
+      <p class="mx-0">Select the access method that fits your project.</p>
+      <div class="flex flex-wrap gap-6 mt-4">
+        {#each workflows as workflow}
+          <div
+            data-testid="workflow-card-{workflow.id}"
+            class="card border border-surface-200 bg-surface-50-950 p-6 flex flex-col flex-1 basis-64 min-h-96"
+          >
+            <header class="flex items-center justify-between gap-2">
+              <h3 class="text-xl font-bold">{workflow.title}</h3>
+              <span class="badge {workflow.badgeClass}">{workflow.badge}</span>
+            </header>
+            <ul class="list-inside list-disc space-y-2 my-4">
+              {#each workflow.bullets as bullet}
+                <li>{bullet}</li>
+              {/each}
+            </ul>
+            <a
+              href="#quick-start"
+              class="btn preset-filled-primary-500 mt-auto"
+              onclick={(event) => quickStart(event, workflow)}>Quick Start</a
+            >
+          </div>
+        {/each}
+      </div>
     </div>
   </section>
 
