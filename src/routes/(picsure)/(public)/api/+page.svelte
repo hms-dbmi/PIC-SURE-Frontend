@@ -128,10 +128,8 @@
     const scroller = document.getElementById('page');
     if (!scroller) return;
 
-    // Deep links like /api#quick-start-python pre-select the language tab. The
-    // suffixed ids have no DOM element, so scroll to the section ourselves.
-    // Authentication sits above Quick Start and grows when the token card loads, so
-    // keep the section aligned until the visitor scrolls, clicks, or types.
+    // The token card in Authentication loads after the deep-link scroll and pushes
+    // Quick Start down, so re-align until the visitor takes over.
     const alignQuickStart = () =>
       document.getElementById('quick-start')?.scrollIntoView({ behavior: 'instant' });
     const pin = new ResizeObserver(alignQuickStart);
@@ -142,6 +140,8 @@
       pin.disconnect();
       for (const type of unpinEvents) window.removeEventListener(type, unpin, true);
     };
+    // Deep links like /api#quick-start-python pre-select the language tab. The
+    // suffixed ids have no DOM element, so scroll to the section ourselves.
     const deepLink = window.location.hash.match(/^#quick-start-(python|r|api)$/);
     if (deepLink) {
       tabSet = { python: 'Python', r: 'R', api: 'API' }[deepLink[1]] ?? tabSet;
@@ -155,8 +155,8 @@
     }
 
     // The TOC marks the last section whose top has crossed into the upper 40% of
-    // the scroll viewport. The top and bottom of the page always select the first
-    // and final sections; Authentication starts inside that 40% on the first screen.
+    // the scroll viewport. The page ends override that: Authentication is already
+    // inside it on load, and the last section may never reach it.
     const updateActive = () => {
       if (scroller.scrollTop <= 4) {
         activeSection = tocEntries[0].id;
