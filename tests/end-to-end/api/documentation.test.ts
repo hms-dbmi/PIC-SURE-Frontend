@@ -126,7 +126,7 @@ test.describe('API documentation for public visitors', () => {
       policy:
         "frame-ancestors 'none'; default-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data: https://*.googletagmanager.com; img-src 'self' data: https://public.era.nih.gov blob: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com;",
     },
-    // The app's own nonce policy from svelte.config.js, served unmodified.
+    // The app's own nonce policy from csp.config.js, served unmodified.
     { name: 'application nonce', allowExistingFontViolation: false, policy: undefined },
   ];
   for (const { name, policy, allowExistingFontViolation } of policies) {

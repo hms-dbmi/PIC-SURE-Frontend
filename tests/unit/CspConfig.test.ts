@@ -4,15 +4,15 @@ import { fileURLToPath } from 'node:url';
 
 type CspConfig = { mode?: string; directives?: Record<string, string[] | undefined> };
 
-const config: { kit?: { csp?: CspConfig } } = await import(
-  new URL('../../svelte.config.js', import.meta.url).href
-).then((module) => module.default);
+const csp: CspConfig = await import(new URL('../../csp.config.js', import.meta.url).href).then(
+  (module) => module.csp,
+);
 
 const appHtml = readFileSync(
   fileURLToPath(new URL('../../src/app.html', import.meta.url)),
   'utf-8',
 );
-const directives = config.kit?.csp?.directives ?? {};
+const directives = csp.directives ?? {};
 
 describe('kit.csp keeps the Plotly stylesheet seed authorisable', () => {
   it('seeds the Plotly style element with the nonce placeholder', () => {
@@ -25,7 +25,7 @@ describe('kit.csp keeps the Plotly stylesheet seed authorisable', () => {
   });
 
   it('uses nonce mode, which %sveltekit.nonce% requires', () => {
-    expect(config.kit?.csp?.mode).toBe('nonce');
+    expect(csp.mode).toBe('nonce');
   });
 
   it('declares style-src explicitly, so the nonce has a directive to land in', () => {
@@ -54,7 +54,7 @@ describe('kit.csp carries no unsafe source outside style-src-attr', () => {
 });
 
 describe('CSP_EXTRA_* build vars cannot reintroduce an unsafe source', () => {
-  const configUrl = new URL('../../svelte.config.js', import.meta.url).href;
+  const configUrl = new URL('../../csp.config.js', import.meta.url).href;
   let counter = 0;
 
   const loadWith = (name: string, value: string) => {
@@ -75,7 +75,7 @@ describe('CSP_EXTRA_* build vars cannot reintroduce an unsafe source', () => {
 
   it('still accepts a legitimate host, with quotes normalised for SvelteKit', async () => {
     const module = await loadWith('CSP_EXTRA_CONNECT_SRC', "'self' https://example.test");
-    const connectSrc = module.default.kit.csp.directives['connect-src'];
+    const connectSrc = module.csp.directives['connect-src'];
     expect(connectSrc).toContain('https://example.test');
     expect(connectSrc).not.toContain("'self'");
   });
