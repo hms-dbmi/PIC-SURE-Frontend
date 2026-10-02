@@ -23,8 +23,8 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('API page', () => {
   test.beforeEach(async ({ context }) => {
-    // Pre-config-API these came from live VITE_* vars in .env.test; the quick start
-    // code block assertions (include_consents/supports_genomic) depend on them.
+    // Pre-config-API these came from live VITE_* vars in .env.test; the client code
+    // block assertions (include_consents/supports_genomic) depend on them.
     await mockApiConfig(context, {
       features: [
         { name: 'REQUIRE_CONSENTS', value: 'true' },
@@ -656,7 +656,7 @@ test.describe.skip('API page logged out', () => {
 
   test.beforeEach(async ({ page }) => {
     // OPEN keeps the root layout from redirecting anonymous visitors to /login.
-    // Gene/SNP/consents stay unset: the open quick start asserts them false.
+    // Gene/SNP/consents stay unset: the open client code asserts them false.
     await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
   });
 
