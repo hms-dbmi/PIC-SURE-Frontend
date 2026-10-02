@@ -6,9 +6,8 @@ import { render, screen, cleanup } from '@testing-library/svelte';
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/env', () => ({ browser: true }));
 
-vi.mock('#lib/configuration', () => ({
-  branding: { explorePage: { queryErrorText: '', filterErrorText: '' } },
-  features: {},
+vi.mock('#lib/configuration.svelte.js', () => ({
+  config: { branding: { explorePage: { queryErrorText: '', filterErrorText: '' } }, features: {} },
 }));
 
 vi.mock('#lib/stores/Filter.js', async () => {
