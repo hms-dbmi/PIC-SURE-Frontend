@@ -7,7 +7,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN CI=true pnpm install
 COPY src src
 COPY static static
-COPY .env svelte.config.js tsconfig.json vite.config.ts ./
+COPY .env csp.config.js tsconfig.json vite.config.ts ./
 ARG CSP_EXTRA_SCRIPT_SRC=""
 ARG CSP_EXTRA_STYLE_SRC=""
 ARG CSP_EXTRA_IMG_SRC=""
