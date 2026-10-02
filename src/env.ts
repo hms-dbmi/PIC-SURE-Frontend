@@ -1,6 +1,7 @@
 import { defineEnvVars } from '@sveltejs/kit/env';
 
-// @migration-task Review usage of dynamic environment variables. They fall back to the empty string if not present, which may not be what you want.
+// Read when the server starts. All are optional: an unset variable becomes '' and the
+// routes using it fall back to a default or skip the header it would have set.
 export const variables = defineEnvVars({
   PICSURE_INTERNAL_API_ORIGIN: { schema: (input) => input ?? '' },
   PICSURE_PLATFORM_API_KEY: { schema: (input) => input ?? '' },

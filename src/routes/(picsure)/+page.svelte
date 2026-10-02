@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { appPath } from '#lib/paths.js';
   import { config } from '#lib/configuration.svelte.js';
   import { goto } from '$app/navigation';
   import Searchbox from '#lib/components/Searchbox.svelte';
@@ -49,7 +50,7 @@
         {#if url.startsWith('/')}
           <a
             data-testid="landing-action-{title}-btn"
-            href={resolve(url as '/')}
+            href={resolve(appPath(url))}
             class="btn preset-filled-primary-500"
             onclick={() => log(createLog('NAVIGATION', 'landing.action_click', { title, url }))}
             >{btnText}</a

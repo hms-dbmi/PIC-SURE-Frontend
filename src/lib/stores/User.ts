@@ -6,7 +6,7 @@ import type { Route } from '#lib/models/Route.js';
 import type { ConsentsMap, User } from '#lib/models/User.js';
 import { PicsurePrivileges } from '#lib/models/Privilege.js';
 import { routes, config } from '#lib/configuration.svelte.js';
-import { Psama } from '#lib/paths.js';
+import { Psama, appPath } from '#lib/paths.js';
 import { goto } from '$app/navigation';
 import type AuthProvider from '#lib/models/AuthProvider.ts';
 import { page } from '$app/state';
@@ -341,7 +341,7 @@ function handleLogout(redirect: boolean) {
   user.set({});
   log(createLog('AUTH', 'logout.success'));
   if (redirect) {
-    goto(resolve(loginRedirectPath(page.url) as '/'));
+    goto(resolve(appPath(loginRedirectPath(page.url))));
   } else {
     goto(resolve('login'));
   }

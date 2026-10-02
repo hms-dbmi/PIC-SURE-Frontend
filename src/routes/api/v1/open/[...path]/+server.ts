@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
+import { PICSURE_INTERNAL_API_ORIGIN, PICSURE_PLATFORM_API_KEY } from '$app/env/private';
 import type { RequestHandler } from './$types';
 
 /**
@@ -14,7 +14,7 @@ let warnedMissingKey = false;
 const forward: RequestHandler = async ({ request, params, url, getClientAddress }) => {
   // multi-host deployments don't serve the API from the frontend host over plain HTTP,
   // so the internal origin must be wireable per deployment
-  const upstreamOrigin = env.PICSURE_INTERNAL_API_ORIGIN || 'http://localhost';
+  const upstreamOrigin = PICSURE_INTERNAL_API_ORIGIN || 'http://localhost';
   // Resolve the target first, then validate its NORMALIZED pathname: checking the raw param
   // while fetching a string-concatenated URL is a parser differential — "picsure/../psama" (or
   // its %2e%2e form, which SvelteKit decodes) passes a raw startsWith check but resolves to a
@@ -25,7 +25,7 @@ const forward: RequestHandler = async ({ request, params, url, getClientAddress 
   }
   target.search = url.search;
 
-  if (!env.PICSURE_PLATFORM_API_KEY && !warnedMissingKey) {
+  if (!PICSURE_PLATFORM_API_KEY && !warnedMissingKey) {
     warnedMissingKey = true;
     console.error('[open-proxy] PICSURE_PLATFORM_API_KEY not set; forwarding without an API key');
   }
@@ -51,8 +51,8 @@ const forward: RequestHandler = async ({ request, params, url, getClientAddress 
   if (requestSource) {
     headers['request-source'] = requestSource;
   }
-  if (env.PICSURE_PLATFORM_API_KEY) {
-    headers['X-PICSURE-API-Key'] = env.PICSURE_PLATFORM_API_KEY;
+  if (PICSURE_PLATFORM_API_KEY) {
+    headers['X-PICSURE-API-Key'] = PICSURE_PLATFORM_API_KEY;
   }
 
   let upstream: Response;

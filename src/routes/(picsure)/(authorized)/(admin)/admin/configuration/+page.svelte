@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { appPath } from '#lib/paths.js';
   import { goto } from '$app/navigation';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
@@ -96,7 +97,7 @@
 
   const rowClickHandler = (path: string) => (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(resolve(`admin/configuration/${path}/${uuid}/edit` as '/'));
+    goto(resolve(appPath(`admin/configuration/${path}/${uuid}/edit`)));
   };
   const roleRowCLick = rowClickHandler('role');
   const privilegeRowClick = rowClickHandler('privilege');

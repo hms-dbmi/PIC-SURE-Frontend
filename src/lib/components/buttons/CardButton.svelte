@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { appPath } from '#lib/paths.js';
   interface Props {
     title: string;
     id?: string;
@@ -42,7 +43,7 @@
 {#if href && !disabled}
   {#if href.startsWith('/')}
     <a
-      href={resolve(href as '/')}
+      href={resolve(appPath(href))}
       {id}
       data-testid={testid}
       class={cardClasses}

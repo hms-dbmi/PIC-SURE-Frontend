@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { appPath } from '#lib/paths.js';
   import { onMount } from 'svelte';
   import { AppBar, Avatar } from '@skeletonlabs/skeleton-svelte';
 
@@ -27,7 +28,7 @@
 
   function handleLogin(e: Event) {
     e.stopImmediatePropagation();
-    goto(resolve(loginRedirectPath(page.url) as '/'));
+    goto(resolve(appPath(loginRedirectPath(page.url))));
   }
 
   const isActivePath = $derived((path: string) => {
@@ -60,7 +61,7 @@
 <AppBar padding="py-0 pl-2 pr-5" background="bg-surface-50-950" toolbarClasses="flex-none z-10">
   {#snippet lead()}
     <a
-      href={resolve('/')}
+      href={resolve('')}
       aria-current="page"
       data-testid="logo-home-link"
       class="content-center"
@@ -76,7 +77,7 @@
           <a
             class="nav-link"
             id={getId(route)}
-            href={resolve(route.path as '/')}
+            href={resolve(appPath(route.path))}
             aria-current={currentPage(route)}
             >{route.text}
           </a>

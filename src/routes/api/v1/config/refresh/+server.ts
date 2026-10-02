@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import { getConfig } from '#lib/server/configCache.js';
 import { Psama, joinUrl } from '#lib/paths.js';
 import { PicsurePrivileges } from '#lib/models/Privilege.js';
@@ -10,12 +9,12 @@ const ORIGIN = import.meta.env?.VITE_ORIGIN;
 export const GET: RequestHandler = async ({ request }) => {
   const authorization = request.headers.get('Authorization');
   if (!authorization) {
-    return json({ error: 'Unauthorized' }, { status: 401 });
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   if (!ORIGIN) {
     console.error('Config refresh failed: VITE_ORIGIN is not configured.');
-    return json({ error: 'Server misconfigured' }, { status: 500 });
+    return Response.json({ error: 'Server misconfigured' }, { status: 500 });
   }
 
   let user: User;
@@ -26,16 +25,16 @@ export const GET: RequestHandler = async ({ request }) => {
       headers: { Authorization: authorization },
     });
     if (!res.ok) {
-      return json({ error: 'Unauthorized' }, { status: 401 });
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const text = await res.text();
     user = JSON.parse(text);
   } catch {
-    return json({ error: 'Unauthorized' }, { status: 401 });
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   if (!user.privileges?.includes(PicsurePrivileges.SUPER)) {
-    return json({ error: 'Forbidden' }, { status: 403 });
+    return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {
@@ -44,8 +43,8 @@ export const GET: RequestHandler = async ({ request }) => {
     // its comment in configCache.ts) - so a kind that fails here just keeps serving
     // its last known-good value instead of losing it.
     const config = await getConfig(true);
-    return json(config);
+    return Response.json(config);
   } catch {
-    return json({ error: 'Failed to load configuration' }, { status: 500 });
+    return Response.json({ error: 'Failed to load configuration' }, { status: 500 });
   }
 };
