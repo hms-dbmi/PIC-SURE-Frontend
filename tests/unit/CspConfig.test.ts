@@ -14,7 +14,7 @@ const appHtml = readFileSync(
 );
 const directives = csp.directives ?? {};
 
-describe('kit.csp keeps the Plotly stylesheet seed authorisable', () => {
+describe('csp.config.js keeps the Plotly stylesheet seed authorisable', () => {
   it('seeds the Plotly style element with the nonce placeholder', () => {
     expect(appHtml).toContain('id="plotly.js-style-global"');
     expect(appHtml).toContain('nonce="%sveltekit.nonce%"');
@@ -37,7 +37,7 @@ describe('kit.csp keeps the Plotly stylesheet seed authorisable', () => {
   });
 });
 
-describe('kit.csp carries no unsafe source outside style-src-attr', () => {
+describe('csp.config.js carries no unsafe source outside style-src-attr', () => {
   const exempt = new Set(['style-src-attr']);
 
   for (const [directive, sources] of Object.entries(directives)) {
