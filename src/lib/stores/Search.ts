@@ -1,16 +1,16 @@
 import { get, writable, type Unsubscriber, type Writable } from 'svelte/store';
 
-import { subscribeOnChange } from '$lib/utilities/Subscribers';
+import { subscribeOnChange } from '#lib/utilities/Subscribers.js';
 
 import { TableHandler, type State } from '@vincjo/datatables/server';
 
-import { type Facet, type SearchResult } from '$lib/models/Search';
-import { searchDictionary } from '$lib/stores/Dictionary';
-import { updateFacetsFromSearch, facetsPromise, resetFacetState } from '$lib/stores/Dictionary';
-import { expandedNestedFacets } from '$lib/stores/NestedFacets';
-import { getDefaultRows } from '$lib/components/datatable/stores';
-import { isAbortError } from '$lib/api';
-import { log, createLog, getPageContext } from '$lib/logger';
+import { type Facet, type SearchResult } from '#lib/models/Search.js';
+import { searchDictionary } from '#lib/stores/Dictionary.js';
+import { updateFacetsFromSearch, facetsPromise, resetFacetState } from '#lib/stores/Dictionary.js';
+import { expandedNestedFacets } from '#lib/stores/NestedFacets.js';
+import { getDefaultRows } from '#lib/components/datatable/stores.js';
+import { isAbortError } from '#lib/api.js';
+import { log, createLog, getPageContext } from '#lib/logger.js';
 
 export const loading: Writable<boolean> = writable(false);
 export const searchTerm: Writable<string> = writable('');

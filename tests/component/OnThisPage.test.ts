@@ -12,7 +12,7 @@ const { mockPage } = vi.hoisted(() => ({
 vi.mock('$app/state', () => ({ page: mockPage }));
 
 import { afterNavigate, goto } from '$app/navigation';
-import OnThisPage, { type TocEntry } from '$lib/components/toc/OnThisPage.svelte';
+import OnThisPage, { type TocEntry } from '#lib/components/toc/OnThisPage.svelte';
 
 const entries: TocEntry[] = [
   { id: 'authentication', label: 'Authentication' },

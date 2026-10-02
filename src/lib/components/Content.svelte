@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import AngleButton from '$lib/components/buttons/AngleButton.svelte';
+  import AngleButton from '#lib/components/buttons/AngleButton.svelte';
 
   import { goto } from '$app/navigation';
   import { fly } from 'svelte/transition';

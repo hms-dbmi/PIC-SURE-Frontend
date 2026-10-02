@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
-import { getConfig } from '$lib/server/configCache';
-import { Psama, joinUrl } from '$lib/paths';
-import { PicsurePrivileges } from '$lib/models/Privilege';
-import type { User } from '$lib/models/User';
+import { getConfig } from '#lib/server/configCache.js';
+import { Psama, joinUrl } from '#lib/paths.js';
+import { PicsurePrivileges } from '#lib/models/Privilege.js';
+import type { User } from '#lib/models/User.js';
 import type { RequestHandler } from './$types';
 
 const ORIGIN = import.meta.env?.VITE_ORIGIN;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LRU } from '$lib/utilities/LRU';
+import { LRU } from '#lib/utilities/LRU.js';
 
 describe('LRU', () => {
   it('returns undefined for a missing key', () => {

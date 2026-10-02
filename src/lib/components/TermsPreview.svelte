@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { sanitizeHTML } from '$lib/utilities/HTML';
+  import { sanitizeHTML } from '#lib/utilities/HTML.js';
 
   interface Props {
     terms: string;

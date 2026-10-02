@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { HierarchyNodeInterface, NodeInterface } from '$lib/components/tree/types';
-  import TreeNodeComponent from '$lib/components/tree/TreeNode.svelte';
+  import type { HierarchyNodeInterface, NodeInterface } from '#lib/components/tree/types.js';
+  import TreeNodeComponent from '#lib/components/tree/TreeNode.svelte';
 
   let {
     nodes = [],

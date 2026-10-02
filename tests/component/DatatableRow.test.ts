@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/svelte';
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.js', () => ({
   log: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createLog: vi.fn((...args: any[]) => args),
@@ -13,7 +13,7 @@ vi.mock('$lib/logger', () => ({
 // The real ExpandableRow store eagerly imports explorer components that touch
 // localStorage at module load, which isn't available in this environment. We
 // only need the store contract Row.svelte consumes, so provide a minimal stub.
-vi.mock('$lib/stores/ExpandableRow', () => {
+vi.mock('#lib/stores/ExpandableRow.js', () => {
   const make = (value: unknown) => {
     let current = value;
     const subscribers = new Set<(v: unknown) => void>();
@@ -37,8 +37,8 @@ vi.mock('$lib/stores/ExpandableRow', () => {
   };
 });
 
-import Row from '$lib/components/datatable/Row.svelte';
-import { createLog } from '$lib/logger';
+import Row from '#lib/components/datatable/Row.svelte';
+import { createLog } from '#lib/logger.js';
 
 const mockedCreateLog = vi.mocked(createLog);
 

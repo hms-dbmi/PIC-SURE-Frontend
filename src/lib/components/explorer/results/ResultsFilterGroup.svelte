@@ -1,8 +1,12 @@
 <script lang="ts">
-  import { isFilterGroup, type Filter, type FilterGroupInterface } from '$lib/models/Filter.svelte';
+  import {
+    isFilterGroup,
+    type Filter,
+    type FilterGroupInterface,
+  } from '#lib/models/Filter.svelte.js';
 
-  import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
-  import ResultsFilterGroup from '$lib/components/explorer/results/ResultsFilterGroup.svelte';
+  import FilterComponent from '#lib/components/explorer/results/AddedFilter.svelte';
+  import ResultsFilterGroup from '#lib/components/explorer/results/ResultsFilterGroup.svelte';
 
   let { group, depth = 0 }: { group: FilterGroupInterface; depth?: number } = $props();
   let nested = $derived(depth > 0);

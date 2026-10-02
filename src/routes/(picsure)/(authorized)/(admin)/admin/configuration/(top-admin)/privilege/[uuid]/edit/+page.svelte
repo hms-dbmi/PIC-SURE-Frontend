@@ -1,15 +1,15 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import { config } from '$lib/configuration.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import PrivilegeForm from '$lib/components/admin/configuration/PrivilegeForm.svelte';
+  import { config } from '#lib/configuration.svelte.js';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Content from '#lib/components/Content.svelte';
+  import PrivilegeForm from '#lib/components/admin/configuration/PrivilegeForm.svelte';
 
-  import type { Privilege } from '$lib/models/Privilege';
-  import { getPrivilege } from '$lib/stores/Privileges';
-  import { applicationList, loadApplications } from '$lib/stores/Application';
-  import Loading from '$lib/components/Loading.svelte';
+  import type { Privilege } from '#lib/models/Privilege.js';
+  import { getPrivilege } from '#lib/stores/Privileges.js';
+  import { applicationList, loadApplications } from '#lib/stores/Application.js';
+  import Loading from '#lib/components/Loading.svelte';
 
   let privilege: Privilege = $state({
     name: '',

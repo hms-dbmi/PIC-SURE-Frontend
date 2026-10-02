@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { toaster } from '$lib/toaster';
-  import { debounce } from '$lib/utilities/Forms';
-  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Modal from '$lib/components/Modal.svelte';
+  import { toaster } from '#lib/toaster.js';
+  import { debounce } from '#lib/utilities/Forms.js';
+  import CopyButton from '#lib/components/buttons/CopyButton.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Modal from '#lib/components/Modal.svelte';
   import {
     user,
     getUser,
     getTokenExpiration,
     getTokenExpirationAsDate,
     refreshLongTermToken as refresh,
-  } from '$lib/stores/User';
+  } from '#lib/stores/User.js';
   import Loading from './Loading.svelte';
-  import { log, createLog } from '$lib/logger';
+  import { log, createLog } from '#lib/logger.js';
 
   const defaultRefreshText = 'Refresh';
   const placeHolderToken =

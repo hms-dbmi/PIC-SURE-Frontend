@@ -23,20 +23,20 @@ vi.mock('$app/navigation', () => ({
 // Analytics-only configuration (no tag manager) — also guards the regression
 // where the consent prompt was coupled to `tagManager` being set. The literal
 // must be inlined here because vi.mock factories are hoisted above module vars.
-vi.mock('$lib/configuration.svelte', () => ({
+vi.mock('#lib/configuration.svelte.js', () => ({
   config: {
     settings: { google: { analytics: 'G-TEST123', tagManager: '' } },
     branding: { privacyPolicy: { url: 'https://example.org/privacy', title: 'Privacy Policy' } },
   },
 }));
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.js', () => ({
   log: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createLog: vi.fn((...args: any[]) => args),
 }));
 
-import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
+import GoogleTracking from '#lib/components/tracking/GoogleTracking.svelte';
 import { page } from '$app/state';
 
 const ANALYTICS_ID = 'G-TEST123';

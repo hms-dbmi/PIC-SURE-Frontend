@@ -1,10 +1,10 @@
-import type { LogicTree } from '$lib/models/LogicTree.svelte';
-import type { Filter, FilterInterface } from '$lib/models/Filter.svelte';
-import type { PhenotypicClause, GenomicFilterInterfacev3 } from '$lib/models/query/Query';
+import type { LogicTree } from '#lib/models/LogicTree.svelte.js';
+import type { Filter, FilterInterface } from '#lib/models/Filter.svelte.js';
+import type { PhenotypicClause, GenomicFilterInterfacev3 } from '#lib/models/query/Query.js';
 import {
   buildPhenotypicClauseFromTree,
   buildGenomicFiltersFromFilters,
-} from '$lib/utilities/QueryBuilder';
+} from '#lib/utilities/QueryBuilder.js';
 
 /**
  * Plain-data descriptor of a count query. `phenotypicClause` and

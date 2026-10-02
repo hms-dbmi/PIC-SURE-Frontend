@@ -1,8 +1,8 @@
 import { get, writable, type Writable } from 'svelte/store';
 
-import type { ExportInterface } from '$lib/models/Export';
-import type { SearchResult } from '$lib/models/Search';
-import { objectUUID } from '$lib/utilities/UUID';
+import type { ExportInterface } from '#lib/models/Export.js';
+import type { SearchResult } from '#lib/models/Search.js';
+import { objectUUID } from '#lib/utilities/UUID.js';
 
 export const exports: Writable<ExportInterface[]> = writable([]);
 

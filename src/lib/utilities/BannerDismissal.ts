@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 export const BANNER_DISMISSALS_STORAGE_KEY = 'site-banner-dismissals-v1';
 

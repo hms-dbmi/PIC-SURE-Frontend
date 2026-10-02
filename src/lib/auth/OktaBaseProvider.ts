@@ -1,8 +1,8 @@
-import { browser } from '$app/environment';
-import type { AuthData } from '$lib/models/AuthProvider';
-import AuthProvider from '$lib/models/AuthProvider';
-import * as api from '$lib/api';
-import type { OktaUser } from '$lib/models/User';
+import { browser } from '$app/env';
+import type { AuthData } from '#lib/models/AuthProvider.js';
+import AuthProvider from '#lib/models/AuthProvider.js';
+import * as api from '#lib/api.js';
+import type { OktaUser } from '#lib/models/User.js';
 
 export interface OktaBaseData extends AuthData {
   uri: string;

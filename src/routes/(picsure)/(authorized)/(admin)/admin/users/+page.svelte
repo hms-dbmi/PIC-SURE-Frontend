@@ -4,18 +4,18 @@
 
   import { goto } from '$app/navigation';
 
-  import type { Indexable } from '$lib/types';
-  import { config } from '$lib/configuration.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import Datatable from '$lib/components/datatable/StaticTable.svelte';
-  import Actions from '$lib/components/admin/user/cell/Actions.svelte';
-  import Status from '$lib/components/admin/user/cell/Status.svelte';
+  import type { Indexable } from '#lib/types.js';
+  import { config } from '#lib/configuration.svelte.js';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Content from '#lib/components/Content.svelte';
+  import Datatable from '#lib/components/datatable/StaticTable.svelte';
+  import Actions from '#lib/components/admin/user/cell/Actions.svelte';
+  import Status from '#lib/components/admin/user/cell/Status.svelte';
 
-  import UsersStore from '$lib/stores/Users';
-  import RolesStore from '$lib/stores/Roles';
-  import ConnectionStore from '$lib/stores/Connections';
-  import Loading from '$lib/components/Loading.svelte';
+  import UsersStore from '#lib/stores/Users.js';
+  import RolesStore from '#lib/stores/Roles.js';
+  import ConnectionStore from '#lib/stores/Connections.js';
+  import Loading from '#lib/components/Loading.svelte';
 
   let { users, loadUsers } = UsersStore;
   let { connections, loadConnections } = ConnectionStore;
@@ -77,7 +77,7 @@
 
   const rowClickHandler = (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(resolve(`/admin/users/${uuid}/edit`));
+    goto(resolve(`admin/users/${uuid}/edit`));
   };
 </script>
 
@@ -91,7 +91,7 @@
         <a
           data-testid="add-user-btn"
           class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-          href={resolve('/admin/users/new')}
+          href={resolve('admin/users/new')}
         >
           + Add User
         </a>

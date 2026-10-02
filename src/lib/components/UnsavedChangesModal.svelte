@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import Modal from '$lib/components/Modal.svelte';
+  import Modal from '#lib/components/Modal.svelte';
 
   interface Props {
     open: boolean;

@@ -1,12 +1,12 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
-  import Modal from '$lib/components/Modal.svelte';
+  import Modal from '#lib/components/Modal.svelte';
   import {
     BANNER_APPEARANCE_DETAILS,
     BANNER_AUDIENCE_LABELS,
     type ManagementRecord,
-  } from '$lib/models/Banner';
-  import { truncate } from '$lib/utilities/Strings';
+  } from '#lib/models/Banner.js';
+  import { truncate } from '#lib/utilities/Strings.js';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
 
   interface Props {

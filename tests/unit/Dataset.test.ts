@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
-import { mapDataset, QueryVersion } from '$lib/models/Dataset';
-import { QueryV3 } from '$lib/models/query/Query';
-import type { QueryV2 } from '$lib/compat/QueryV2';
+import { mapDataset, QueryVersion } from '#lib/models/Dataset.js';
+import { QueryV3 } from '#lib/models/query/Query.js';
+import type { QueryV2 } from '#lib/compat/QueryV2.js';
 
 const V2_INNER_QUERY = {
   categoryFilters: { '\\\\dataset\\\\sex\\\\': ['Male'] },

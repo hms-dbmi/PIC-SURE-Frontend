@@ -7,19 +7,19 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { config } from '$lib/configuration.svelte';
+  import { config } from '#lib/configuration.svelte.js';
 
-  import { allFilters, hasGenomicFilter, clearFilters } from '$lib/stores/Filter';
-  import { resultCountsState } from '$lib/state/resultCounts.svelte';
-  import { isObfuscatedBelowThreshold } from '$lib/services/counts/countFormat';
-  import { exports, clearExports } from '$lib/stores/Export';
+  import { allFilters, hasGenomicFilter, clearFilters } from '#lib/stores/Filter.js';
+  import { resultCountsState } from '#lib/state/resultCounts.svelte.js';
+  import { isObfuscatedBelowThreshold } from '#lib/services/counts/countFormat.js';
+  import { exports, clearExports } from '#lib/stores/Export.js';
 
-  import Filters from '$lib/components/explorer/results/Filters.svelte';
-  import ExportedVariable from '$lib/components/explorer/results/ExportedVariable.svelte';
-  import CardButton from '$lib/components/buttons/CardButton.svelte';
-  import Modal from '$lib/components/Modal.svelte';
-  import Counts from '$lib/components/explorer/results/Counts.svelte';
-  import { log, createLog } from '$lib/logger';
+  import Filters from '#lib/components/explorer/results/Filters.svelte';
+  import ExportedVariable from '#lib/components/explorer/results/ExportedVariable.svelte';
+  import CardButton from '#lib/components/buttons/CardButton.svelte';
+  import Modal from '#lib/components/Modal.svelte';
+  import Counts from '#lib/components/explorer/results/Counts.svelte';
+  import { log, createLog } from '#lib/logger.js';
 
   let currentPage: string = $state(page.url.pathname);
   let isDiscoverPage = $derived(currentPage.includes('/discover'));
@@ -119,7 +119,7 @@
         disabled={resultCountsState.loading}
         onclick={() => {
           log(createLog('ACTION', 'explorer.prepare_for_analysis'));
-          goto(resolve('/explorer/export'));
+          goto(resolve('explorer/export'));
         }}
         transition:scale={{ easing: elasticInOut }}
       >
@@ -169,7 +169,7 @@
       <div class="flex flex-row flex-wrap justify-items-center gap-4 w-80 justify-center">
         {#if showExplorerDistributions}
           <CardButton
-            href={resolve('/explorer/distributions')}
+            href={resolve('explorer/distributions')}
             id="explorer-distributions-btn"
             data-testid="distributions-btn"
             title="Variable Distributions"
@@ -180,7 +180,7 @@
         {/if}
         {#if showDiscoverDistributions}
           <CardButton
-            href={resolve('/discover/distributions')}
+            href={resolve('discover/distributions')}
             id="explorer-distributions-btn"
             data-testid="distributions-btn"
             title="Variable Distributions"
@@ -191,7 +191,7 @@
         {/if}
         {#if showVariantExplorer}
           <CardButton
-            href={resolve('/explorer/variant')}
+            href={resolve('explorer/variant')}
             data-testid="variant-explorer-btn"
             title="Variant Explorer"
             icon="fa-solid fa-dna"

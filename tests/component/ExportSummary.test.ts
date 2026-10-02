@@ -4,14 +4,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, cleanup } from '@testing-library/svelte';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/env', () => ({ browser: true }));
 
 const mockState = vi.hoisted(() => ({
   ensureLoadedSpy: vi.fn(),
   features: {} as Record<string, unknown>,
 }));
 
-vi.mock('$lib/configuration.svelte', () => ({
+vi.mock('#lib/configuration.svelte.js', () => ({
   config: {
     get features() {
       return mockState.features;
@@ -26,7 +26,7 @@ vi.mock('$lib/configuration.svelte', () => ({
   resetConfig: () => {},
 }));
 
-vi.mock('$lib/state/resultCounts.svelte', () => ({
+vi.mock('#lib/state/resultCounts.svelte.js', () => ({
   resultCountsState: {
     get total() {
       return 100;
@@ -35,7 +35,7 @@ vi.mock('$lib/state/resultCounts.svelte', () => ({
   },
 }));
 
-import Summary from '$lib/components/explorer/export/Summary.svelte';
+import Summary from '#lib/components/explorer/export/Summary.svelte';
 
 /** The `getIsOpenAccess` thunk that Summary handed to `ensureLoaded`. */
 function capturedIsOpenAccess(): boolean {

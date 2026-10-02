@@ -1,9 +1,9 @@
-import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-import type { PatientCount, PatientCountMap } from '$lib/models/Stat';
-import { Picsure } from '$lib/paths';
-import { useOpenAccess } from '$lib/AccessState';
-import { buildQueryRequestV3FromDescriptor } from '$lib/utilities/QueryBuilder';
-import type { QueryDescriptor } from '$lib/services/counts/queryDescriptor.svelte';
+import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.js';
+import type { PatientCount, PatientCountMap } from '#lib/models/Stat.js';
+import { Picsure } from '#lib/paths.js';
+import { useOpenAccess } from '#lib/AccessState.js';
+import { buildQueryRequestV3FromDescriptor } from '#lib/utilities/QueryBuilder.js';
+import type { QueryDescriptor } from '#lib/services/counts/queryDescriptor.svelte.js';
 
 export type CountValue = PatientCount | PatientCountMap;
 

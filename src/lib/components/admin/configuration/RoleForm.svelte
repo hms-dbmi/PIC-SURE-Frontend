@@ -2,11 +2,11 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import { type Role } from '$lib/models/Role';
-  import { addRole, updateRole } from '$lib/stores/Roles';
-  import { isTopAdmin } from '$lib/stores/User';
-  import { toaster } from '$lib/toaster';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import { type Role } from '#lib/models/Role.js';
+  import { addRole, updateRole } from '#lib/stores/Roles.js';
+  import { isTopAdmin } from '#lib/stores/User.js';
+  import { toaster } from '#lib/toaster.js';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
 
   interface Props {
     role?: Role | undefined;
@@ -55,7 +55,7 @@
       toaster.success({
         title: `Successfully saved ${newRole && 'new '}role '${name}'`,
       });
-      goto(resolve('/admin/configuration'));
+      goto(resolve('admin/configuration'));
     } catch (error) {
       console.error(error);
       toaster.error({
@@ -116,7 +116,7 @@
         Save
       </button>
       <a
-        href={resolve('/admin/configuration')}
+        href={resolve('admin/configuration')}
         data-testid="role-cancel-btn"
         class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
       >

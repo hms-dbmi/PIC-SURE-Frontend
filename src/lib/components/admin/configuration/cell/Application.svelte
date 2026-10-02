@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getApplication } from '$lib/stores/Application';
+  import { getApplication } from '#lib/stores/Application.js';
 
   let { data }: { data: { cell: '' } } = $props();
 </script>

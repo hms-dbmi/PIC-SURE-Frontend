@@ -5,7 +5,7 @@
     type FilterGroupInterface,
     isFilterGroup,
     createFilterGroup,
-  } from '$lib/models/Filter.svelte';
+  } from '#lib/models/Filter.svelte.js';
   import AdvancedGroup from './AdvancedGroup.svelte';
   import AdvancedItem from './AdvancedItem.svelte';
   import GroupDropZone from './GroupDropZone.svelte';
@@ -16,10 +16,10 @@
     PointerSensor,
   } from '@dnd-kit-svelte/svelte';
   import { move } from '@dnd-kit/helpers';
-  import { filterTree, genomicFilters } from '$lib/stores/Filter';
-  import { LogicTree } from '$lib/models/LogicTree.svelte';
-  import { Operator, type OperatorType } from '$lib/models/query/Query';
-  import { toaster } from '$lib/toaster';
+  import { filterTree, genomicFilters } from '#lib/stores/Filter.js';
+  import { LogicTree } from '#lib/models/LogicTree.svelte.js';
+  import { Operator, type OperatorType } from '#lib/models/query/Query.js';
+  import { toaster } from '#lib/toaster.js';
   import LogicTreeSummary from './LogicTreeSummary.svelte';
 
   type DragOperation =

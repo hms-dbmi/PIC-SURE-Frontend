@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import type { Root, Data, Layout } from 'plotly.js-basic-dist-min';
 
-  import { type PlotMeta, type PlotlyNewPlot, defaultPlotlyConfig } from '$lib/utilities/Plotly';
+  import { type PlotMeta, type PlotlyNewPlot, defaultPlotlyConfig } from '#lib/utilities/Plotly.js';
 
   interface Props {
     index: number;

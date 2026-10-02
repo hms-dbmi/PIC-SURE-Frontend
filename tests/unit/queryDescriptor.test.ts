@@ -1,17 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('$app/environment', () => ({ browser: false }));
+vi.mock('$app/env', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
 
-import { LogicTree } from '$lib/models/LogicTree.svelte';
-import { createFilterGroup, type FilterInterface, type Filter } from '$lib/models/Filter.svelte';
+import { LogicTree } from '#lib/models/LogicTree.svelte.js';
+import { createFilterGroup, type FilterInterface, type Filter } from '#lib/models/Filter.svelte.js';
 import {
   buildDescriptor,
   stableHash,
   type QueryDescriptor,
-} from '$lib/services/counts/queryDescriptor.svelte';
+} from '#lib/services/counts/queryDescriptor.svelte.js';
 
 function makeEmptyTree(): LogicTree<FilterInterface> {
   return new LogicTree<FilterInterface>(createFilterGroup);

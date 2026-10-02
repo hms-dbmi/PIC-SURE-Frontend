@@ -2,9 +2,9 @@
   import { resolve } from '$app/paths';
   import type { Snippet } from 'svelte';
   import { beforeNavigate, goto } from '$app/navigation';
-  import { clearSession, isTokenExpired } from '$lib/stores/User';
-  import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
-  import { log, createLog } from '$lib/logger';
+  import { clearSession, isTokenExpired } from '#lib/stores/User.js';
+  import { loginRedirectPath } from '#lib/utilities/LoginRedirect.js';
+  import { log, createLog } from '#lib/logger.js';
 
   let { children }: { children?: Snippet } = $props();
 

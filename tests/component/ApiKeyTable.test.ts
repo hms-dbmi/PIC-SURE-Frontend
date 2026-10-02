@@ -3,7 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within, waitFor } from '@testing-library/svelte';
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.js', () => ({
   log: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createLog: vi.fn((...args: any[]) => args),
@@ -12,7 +12,7 @@ vi.mock('$lib/logger', () => ({
 
 // The real ExpandableRow store eagerly imports explorer components that touch
 // localStorage at module load. Row.svelte only needs the store contract.
-vi.mock('$lib/stores/ExpandableRow', async () => {
+vi.mock('#lib/stores/ExpandableRow.js', async () => {
   const { writable } = await import('svelte/store');
   return {
     activeTable: writable(''),
@@ -22,12 +22,12 @@ vi.mock('$lib/stores/ExpandableRow', async () => {
   };
 });
 
-vi.mock('$lib/stores/User', async () => {
+vi.mock('#lib/stores/User.js', async () => {
   const { writable } = await import('svelte/store');
   return { isTopAdmin: writable(true) };
 });
 
-vi.mock('$lib/toaster', () => ({
+vi.mock('#lib/toaster.js', () => ({
   toaster: { success: vi.fn(), error: vi.fn() },
 }));
 
@@ -36,7 +36,7 @@ const storeMocks = vi.hoisted(() => ({
   revokeApiKey: vi.fn(),
 }));
 
-vi.mock('$lib/stores/ApiKeys', async () => {
+vi.mock('#lib/stores/ApiKeys.js', async () => {
   const { writable } = await import('svelte/store');
   const listVersion = writable(0);
   return {
@@ -48,9 +48,9 @@ vi.mock('$lib/stores/ApiKeys', async () => {
   };
 });
 
-import ApiKeyTable from '$lib/components/admin/api-key/ApiKeyTable.svelte';
-import { refreshApiKeys } from '$lib/stores/ApiKeys';
-import type { ApiKeyMetadata } from '$lib/models/ApiKey';
+import ApiKeyTable from '#lib/components/admin/api-key/ApiKeyTable.svelte';
+import { refreshApiKeys } from '#lib/stores/ApiKeys.js';
+import type { ApiKeyMetadata } from '#lib/models/ApiKey.js';
 
 const activeKey: ApiKeyMetadata = {
   uuid: 'uuid-active',

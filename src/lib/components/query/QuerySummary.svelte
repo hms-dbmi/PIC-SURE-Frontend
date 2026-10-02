@@ -1,8 +1,8 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
-  import { toaster } from '$lib/toaster';
-  import { config } from '$lib/configuration.svelte';
+  import { toaster } from '#lib/toaster.js';
+  import { config } from '#lib/configuration.svelte.js';
 
   import {
     loadQuerySummaryData,
@@ -11,18 +11,18 @@
     type QueryEstimate,
   } from './QueryConverters';
 
-  import { QueryV3 } from '$lib/models/query/Query';
-  import { QueryVersion } from '$lib/models/Dataset';
-  import { queryV2ToV3, type QueryV2 } from '$lib/compat/QueryV2';
+  import { QueryV3 } from '#lib/models/query/Query.js';
+  import { QueryVersion } from '#lib/models/Dataset.js';
+  import { queryV2ToV3, type QueryV2 } from '#lib/compat/QueryV2.js';
 
-  import { genomicFilters, allFilters, setFilterTree } from '$lib/stores/Filter';
-  import { exports } from '$lib/stores/Export';
+  import { genomicFilters, allFilters, setFilterTree } from '#lib/stores/Filter.js';
+  import { exports } from '#lib/stores/Export.js';
 
-  import FiltersSummary from '$lib/components/query/FiltersSummary.svelte';
-  import SelectedVariablesSummary from '$lib/components/query/SelectedVariablesSummary.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Modal from '$lib/components/Modal.svelte';
-  import Popover from '$lib/components/Popover.svelte';
+  import FiltersSummary from '#lib/components/query/FiltersSummary.svelte';
+  import SelectedVariablesSummary from '#lib/components/query/SelectedVariablesSummary.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Modal from '#lib/components/Modal.svelte';
+  import Popover from '#lib/components/Popover.svelte';
   import FilterCardPlaceholder from './FilterCardPlaceholder.svelte';
 
   let {
@@ -56,7 +56,7 @@
     toaster.success({
       description: `Filters restored for ${name ? name + ' dataset' : 'dataset'}.`,
     });
-    goto(resolve('/explorer'));
+    goto(resolve('explorer'));
   }
 
   let restoreQueryButton = $derived(

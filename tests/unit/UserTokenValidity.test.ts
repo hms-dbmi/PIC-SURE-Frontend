@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const environment = vi.hoisted(() => ({ browser: true }));
-vi.mock('$app/environment', () => environment);
+vi.mock('$app/env', () => environment);
 
 import {
   getTokenExpiration,
@@ -11,9 +11,9 @@ import {
   isTokenExpired,
   removeToken,
   setToken,
-} from '$lib/stores/User';
+} from '#lib/stores/User.js';
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.js', () => ({
   createLog: vi.fn(),
   log: vi.fn(),
 }));

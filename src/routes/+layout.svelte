@@ -4,11 +4,11 @@
   import { asset } from '$app/paths';
   import '@fortawesome/fontawesome-free/css/all.min.css';
   import '../styles/app.css';
-  import { config } from '$lib/configuration.svelte';
-  import GoogleTracking from '$lib/components/tracking/GoogleTracking.svelte';
-  import ExternalLinkWarning from '$lib/components/ExternalLinkWarning.svelte';
-  import { log, createLog } from '$lib/logger';
-  import { resumeAfterWafCaptcha } from '$lib/wafCaptcha';
+  import { config } from '#lib/configuration.svelte.js';
+  import GoogleTracking from '#lib/components/tracking/GoogleTracking.svelte';
+  import ExternalLinkWarning from '#lib/components/ExternalLinkWarning.svelte';
+  import { log, createLog } from '#lib/logger.js';
+  import { resumeAfterWafCaptcha } from '#lib/wafCaptcha.js';
 
   let { children }: { children?: Snippet } = $props();
 

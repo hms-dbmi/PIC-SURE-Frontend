@@ -7,7 +7,7 @@ const navigation = vi.hoisted(() => ({ beforeNavigate: vi.fn(), goto: vi.fn() })
 vi.mock('$app/navigation', () => navigation);
 vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
 
-vi.mock('$lib/services/BannerManagement', () => ({
+vi.mock('#lib/services/BannerManagement.js', () => ({
   archiveBanner: vi.fn(),
   disableBanner: vi.fn(),
   getManagedBanners: vi.fn(),
@@ -30,9 +30,9 @@ vi.mock('@dnd-kit-svelte/svelte', async () => ({
 vi.mock('@dnd-kit-svelte/svelte/sortable', () => ({
   useSortable: () => ({ ref: vi.fn(), handleRef: vi.fn() }),
 }));
-vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('#lib/toaster.js', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 
-import BannerManagementView from '$lib/components/admin/configuration/BannerManagementView.svelte';
+import BannerManagementView from '#lib/components/admin/configuration/BannerManagementView.svelte';
 import {
   archiveBanner,
   disableBanner,
@@ -41,9 +41,9 @@ import {
   restoreBanner,
   saveBanner,
   updatePublishedBanner,
-} from '$lib/services/BannerManagement';
-import { toaster } from '$lib/toaster';
-import type { ManagedBanner } from '$lib/models/Banner';
+} from '#lib/services/BannerManagement.js';
+import { toaster } from '#lib/toaster.js';
+import type { ManagedBanner } from '#lib/models/Banner.js';
 
 const base: ManagedBanner = {
   uuid: '11111111-1111-1111-1111-111111111111',

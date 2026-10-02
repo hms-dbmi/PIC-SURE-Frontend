@@ -3,7 +3,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
-import Editor from '$lib/components/editor/Editor.svelte';
+import Editor from '#lib/components/editor/Editor.svelte';
 
 describe('Editor', () => {
   it.each([undefined, false])(

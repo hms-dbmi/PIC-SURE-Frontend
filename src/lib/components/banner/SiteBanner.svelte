@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { BannerAppearance, BannerIcon, BannerPresentation } from '$lib/models/Banner';
-  import { BANNER_LABEL_LENGTH } from '$lib/models/Banner';
-  import { sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
-  import { truncate } from '$lib/utilities/Strings';
+  import type { BannerAppearance, BannerIcon, BannerPresentation } from '#lib/models/Banner.js';
+  import { BANNER_LABEL_LENGTH } from '#lib/models/Banner.js';
+  import { sanitizeBannerHTML } from '#lib/utilities/BannerHTML.js';
+  import { truncate } from '#lib/utilities/Strings.js';
 
   let {
     banner,

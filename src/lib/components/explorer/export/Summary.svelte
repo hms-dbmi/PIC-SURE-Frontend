@@ -1,9 +1,9 @@
 <script lang="ts">
-  import ExportStore from '$lib/stores/Export';
+  import ExportStore from '#lib/stores/Export.js';
   import { onMount } from 'svelte';
-  import { allFilters } from '$lib/stores/Filter';
-  import { resultCountsState } from '$lib/state/resultCounts.svelte';
-  import type { AnyRecordOfFilterInterface } from '$lib/models/Filter.svelte';
+  import { allFilters } from '#lib/stores/Filter.js';
+  import { resultCountsState } from '#lib/state/resultCounts.svelte.js';
+  import type { AnyRecordOfFilterInterface } from '#lib/models/Filter.svelte.js';
 
   let { exports } = ExportStore;
 

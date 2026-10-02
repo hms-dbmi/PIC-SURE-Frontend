@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { config } from '$lib/configuration.svelte';
-  import { log, createLog } from '$lib/logger';
+  import { config } from '#lib/configuration.svelte.js';
+  import { log, createLog } from '#lib/logger.js';
 </script>
 
 {#if config.branding.explorePage.goTo.links.length > 0}

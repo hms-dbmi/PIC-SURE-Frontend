@@ -3,22 +3,27 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
-  import { config } from '$lib/configuration.svelte';
-  import { exports, addExports, removeExports, mapSearchResultAsExport } from '$lib/stores/Export';
-  import type { ExportInterface } from '$lib/models/Export';
-  import type { ExportRowInterface } from '$lib/models/ExportRow';
-  import { searchDictionary } from '$lib/stores/Dictionary';
-  import { QueryV3 } from '$lib/models/query/Query';
-  import * as api from '$lib/api';
-  import { Picsure } from '$lib/paths';
-  import { toaster } from '$lib/toaster';
+  import { config } from '#lib/configuration.svelte.js';
+  import {
+    exports,
+    addExports,
+    removeExports,
+    mapSearchResultAsExport,
+  } from '#lib/stores/Export.js';
+  import type { ExportInterface } from '#lib/models/Export.js';
+  import type { ExportRowInterface } from '#lib/models/ExportRow.js';
+  import { searchDictionary } from '#lib/stores/Dictionary.js';
+  import { QueryV3 } from '#lib/models/query/Query.js';
+  import * as api from '#lib/api.js';
+  import { Picsure } from '#lib/paths.js';
+  import { toaster } from '#lib/toaster.js';
 
   import Summary from './Summary.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Loading from '$lib/components/Loading.svelte';
-  import Datatable from '$lib/components/datatable/StaticTable.svelte';
-  import { log, createLog } from '$lib/logger';
-  import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Loading from '#lib/components/Loading.svelte';
+  import Datatable from '#lib/components/datatable/StaticTable.svelte';
+  import { log, createLog } from '#lib/logger.js';
+  import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.js';
 
   export interface PrepareProps {
     query: QueryRequestInterfaceV3;
@@ -171,7 +176,7 @@
         title="Warning"
         color="warning"
         closeText="Back"
-        onclose={() => goto(resolve('/explorer'))}
+        onclose={() => goto(resolve('explorer'))}
       >
         Warning: Your selected data exceeds 1,000,000 estimated data points, which is too large to
         export. Please reduce the data selection or the number of selected participants.

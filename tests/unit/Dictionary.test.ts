@@ -3,7 +3,7 @@ import { get } from 'svelte/store';
 
 const console_def = console;
 
-vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/explorer') } }));
 
 const mockState = vi.hoisted(() => {
@@ -21,17 +21,17 @@ const mockState = vi.hoisted(() => {
   };
 });
 
-vi.mock('$lib/api', () => ({
+vi.mock('#lib/api.js', () => ({
   post: mockState.postSpy,
   isAbortError: (e: unknown) => (e as Error | undefined)?.name === 'AbortError',
 }));
 
-vi.mock('$lib/stores/Search', () => ({
+vi.mock('#lib/stores/Search.js', () => ({
   searchTerm: mockState.searchTermStore,
   selectedFacets: mockState.selectedFacetsStore,
 }));
 
-vi.mock('$lib/stores/User', () => ({
+vi.mock('#lib/stores/User.js', () => ({
   ACCESS_UNAVAILABLE_MESSAGE: 'Access unavailable',
   accessUnavailable: mockState.accessUnavailableStore,
   consentedStudies: mockState.consentedStudiesStore,
@@ -39,7 +39,7 @@ vi.mock('$lib/stores/User', () => ({
   showAccessUnavailable: mockState.showAccessUnavailableSpy,
 }));
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.js', () => ({
   log: mockState.logSpy,
   createLog: vi.fn((category: string, event: string, data?: unknown) => ({
     category,
@@ -48,14 +48,14 @@ vi.mock('$lib/logger', () => ({
   })),
 }));
 
-import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
+import type { DictionaryFacetResult } from '#lib/models/api/Dictionary.js';
 import {
   updateFacetsFromSearch,
   searchDictionary,
   hiddenFacets,
   openFacets,
   resetFacetState,
-} from '$lib/stores/Dictionary';
+} from '#lib/stores/Dictionary.js';
 
 function facetResponse(categoryName: string, zeroCountFacet = 'empty'): DictionaryFacetResult[] {
   return [

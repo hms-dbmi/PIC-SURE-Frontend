@@ -1,4 +1,4 @@
-import type { QueryV3 } from '$lib/models/query/Query';
+import type { QueryV3 } from '#lib/models/query/Query.js';
 
 export interface QueryRequestInterfaceV3 {
   query: QueryV3;

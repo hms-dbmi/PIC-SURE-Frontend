@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getActiveEntry, type ScrollViewport } from '$lib/components/toc/activeEntry';
+import { getActiveEntry, type ScrollViewport } from '#lib/components/toc/activeEntry.js';
 
 const viewport: ScrollViewport = { top: 80, scrollTop: 500, clientHeight: 800, scrollHeight: 3000 };
 const sections = [

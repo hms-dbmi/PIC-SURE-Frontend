@@ -1,8 +1,8 @@
 import { get, writable, type Writable } from 'svelte/store';
-import type { ConfigObject, ConfigKind } from '$lib/models/Configuration';
-import { CONFIG_API_KIND, type ConfigCache } from '$lib/models/Configuration';
-import * as api from '$lib/api';
-import { Picsure, LocalServer } from '$lib/paths';
+import type { ConfigObject, ConfigKind } from '#lib/models/Configuration.js';
+import { CONFIG_API_KIND, type ConfigCache } from '#lib/models/Configuration.js';
+import * as api from '#lib/api.js';
+import { Picsure, LocalServer } from '#lib/paths.js';
 
 export type AdminConfigKind = ConfigKind;
 

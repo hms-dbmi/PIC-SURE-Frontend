@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-import { isIndexable, flatIndex, deepMerge } from '$lib/utilities/Objects';
-import type { Indexable } from '$lib/types';
+import { isIndexable, flatIndex, deepMerge } from '#lib/utilities/Objects.js';
+import type { Indexable } from '#lib/types.js';
 
 describe('Object utilities', () => {
   describe('isIndexable', () => {

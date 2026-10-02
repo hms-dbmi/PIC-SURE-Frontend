@@ -3,7 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
-import CodeBlock from '$lib/components/CodeBlock.svelte';
+import CodeBlock from '#lib/components/CodeBlock.svelte';
 
 const code = 'print("hello world")';
 

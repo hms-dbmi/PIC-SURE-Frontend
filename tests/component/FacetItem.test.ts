@@ -4,12 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
-import FacetItem from '$lib/components/explorer/FacetItem.svelte';
-import { expandedNestedFacets, nestedFacetKey } from '$lib/stores/NestedFacets';
-import type { Facet } from '$lib/models/Search';
-import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
+import FacetItem from '#lib/components/explorer/FacetItem.svelte';
+import { expandedNestedFacets, nestedFacetKey } from '#lib/stores/NestedFacets.js';
+import type { Facet } from '#lib/models/Search.js';
+import type { DictionaryFacetResult } from '#lib/models/api/Dictionary.js';
 
-vi.mock('$lib/stores/Search', async () => {
+vi.mock('#lib/stores/Search.js', async () => {
   const { writable } = await import('svelte/store');
   const selectedFacets = writable<Facet[]>([]);
   const updateFacets = vi.fn();

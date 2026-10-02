@@ -1,5 +1,5 @@
-import { joinUrl, Psama } from '$lib/paths';
-import { log, createLog, getSessionId } from '$lib/logger';
+import { joinUrl, Psama } from '#lib/paths.js';
+import { log, createLog, getSessionId } from '#lib/logger.js';
 
 /**
  * Open-access sessions: a short-lived PSAMA-signed token each anonymous browser gets for itself and

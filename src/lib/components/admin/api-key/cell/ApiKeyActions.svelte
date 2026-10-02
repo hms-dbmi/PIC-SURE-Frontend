@@ -1,9 +1,9 @@
 <script lang="ts">
-  import Modal from '$lib/components/Modal.svelte';
-  import { isTopAdmin } from '$lib/stores/User';
-  import { toaster } from '$lib/toaster';
-  import { revokeApiKey } from '$lib/stores/ApiKeys';
-  import { extractApiError } from '$lib/models/ApiKey';
+  import Modal from '#lib/components/Modal.svelte';
+  import { isTopAdmin } from '#lib/stores/User.js';
+  import { toaster } from '#lib/toaster.js';
+  import { revokeApiKey } from '#lib/stores/ApiKeys.js';
+  import { extractApiError } from '#lib/models/ApiKey.js';
 
   const { data = { cell: '', row: { prefix: '', status: '' } } } = $props();
 

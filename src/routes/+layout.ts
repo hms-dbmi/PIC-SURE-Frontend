@@ -1,8 +1,8 @@
 import type { LayoutLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
-import { browser } from '$app/environment';
-import { config, applyConfig } from '$lib/configuration.svelte';
-import { user } from '$lib/stores/User';
+import { browser } from '$app/env';
+import { config, applyConfig } from '#lib/configuration.svelte.js';
+import { user } from '#lib/stores/User.js';
 
 export const load: LayoutLoad = async ({ url, fetch, data }) => {
   // Runs on both SSR and the client's hydration-time re-run of this load, off the

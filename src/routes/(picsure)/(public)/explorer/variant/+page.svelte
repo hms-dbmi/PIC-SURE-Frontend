@@ -3,16 +3,16 @@
   import { onDestroy, onMount } from 'svelte';
 
   import { goto } from '$app/navigation';
-  import { config } from '$lib/configuration.svelte';
-  import { isToastShowing, toaster } from '$lib/toaster';
+  import { config } from '#lib/configuration.svelte.js';
+  import { isToastShowing, toaster } from '#lib/toaster.js';
 
-  import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.js';
+  import { panelOpen } from '#lib/stores/SidePanel.js';
 
-  import Content from '$lib/components/Content.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import VariantExplorer from '$lib/components/explorer/variant/VariantExplorer.svelte';
-  import { getQueryRequestV3 } from '$lib/utilities/QueryBuilder';
+  import Content from '#lib/components/Content.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import VariantExplorer from '#lib/components/explorer/variant/VariantExplorer.svelte';
+  import { getQueryRequestV3 } from '#lib/utilities/QueryBuilder.js';
 
   onMount(() => {
     const request: QueryRequestInterfaceV3 = getQueryRequestV3();
@@ -24,7 +24,7 @@
           closable: true,
         });
       }
-      goto(resolve('/explorer'));
+      goto(resolve('explorer'));
     } else {
       $panelOpen = false;
     }

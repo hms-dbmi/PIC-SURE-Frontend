@@ -5,18 +5,18 @@
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
-  import { browser } from '$app/environment';
+  import { browser } from '$app/env';
 
-  import { createInstance } from '$lib/AuthProviderRegistry.ts';
-  import { user, userRoutes, isUserLoggedIn, logout } from '$lib/stores/User';
-  import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
-  import type { Route } from '$lib/models/Route';
-  import type AuthData from '$lib/models/AuthProvider.ts';
-  import type AuthProvider from '$lib/models/AuthProvider.ts';
-  import { log, createLog } from '$lib/logger';
+  import { createInstance } from '#lib/AuthProviderRegistry.ts';
+  import { user, userRoutes, isUserLoggedIn, logout } from '#lib/stores/User.js';
+  import { loginRedirectPath } from '#lib/utilities/LoginRedirect.js';
+  import type { Route } from '#lib/models/Route.js';
+  import type AuthData from '#lib/models/AuthProvider.ts';
+  import type AuthProvider from '#lib/models/AuthProvider.ts';
+  import { log, createLog } from '#lib/logger.js';
 
-  import Logo from '$lib/components/Logo.svelte';
-  import Popover from '$lib/components/Popover.svelte';
+  import Logo from '#lib/components/Logo.svelte';
+  import Popover from '#lib/components/Popover.svelte';
 
   let providerData: AuthData;
   let providerInstance: AuthProvider | undefined = $state(undefined);

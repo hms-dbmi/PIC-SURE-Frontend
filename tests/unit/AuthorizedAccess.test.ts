@@ -4,15 +4,15 @@ import { get } from 'svelte/store';
 
 const mockApi = vi.hoisted(() => ({ get: vi.fn() }));
 
-vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/env', () => ({ browser: true }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
-vi.mock('$lib/api', () => mockApi);
-vi.mock('$lib/toaster', () => ({ toaster: { error: vi.fn() }, isToastShowing: () => false }));
-vi.mock('$lib/logger', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
-vi.mock('$lib/configuration.svelte', async () => {
-  const { routes } = await import('$lib/routes');
+vi.mock('#lib/api.js', () => mockApi);
+vi.mock('#lib/toaster.js', () => ({ toaster: { error: vi.fn() }, isToastShowing: () => false }));
+vi.mock('#lib/logger.js', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
+vi.mock('#lib/configuration.svelte.js', async () => {
+  const { routes } = await import('#lib/routes.js');
   return {
     routes,
     config: {
@@ -26,7 +26,7 @@ vi.mock('$lib/configuration.svelte', async () => {
   };
 });
 
-import { getUser, user, userRoutes } from '$lib/stores/User';
+import { getUser, user, userRoutes } from '#lib/stores/User.js';
 
 // What the three baseline roles carry in the BDC auth schema, plus AUTHORIZED_ACCESS on
 // MANUAL_ROLE_AUTH_ACCESS. Every authenticated BDC user holds exactly this.

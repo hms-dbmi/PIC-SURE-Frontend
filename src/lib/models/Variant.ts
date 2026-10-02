@@ -1,6 +1,6 @@
-import type { Indexable } from '$lib/types';
-import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-import type { Column } from '$lib/components/datatable/types';
+import type { Indexable } from '#lib/types.js';
+import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.js';
+import type { Column } from '#lib/components/datatable/types.js';
 
 export enum ExportType {
   Full = 'full',

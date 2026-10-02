@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-import type { ConfigCache, Features, Settings, Branding } from '$lib/models/Configuration';
+import type { ConfigCache, Features, Settings, Branding } from '#lib/models/Configuration.js';
 
 export type RequestStore = {
   cache: ConfigCache;

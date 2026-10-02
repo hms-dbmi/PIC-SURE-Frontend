@@ -1,16 +1,16 @@
 <script lang="ts">
   import { Accordion } from '@skeletonlabs/skeleton-svelte';
 
-  import type { Facet } from '$lib/models/Search';
-  import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
-  import { selectedFacets } from '$lib/stores/Search';
-  import { facetsPromise, openFacets } from '$lib/stores/Dictionary';
-  import { log, createLog } from '$lib/logger';
+  import type { Facet } from '#lib/models/Search.js';
+  import type { DictionaryFacetResult } from '#lib/models/api/Dictionary.js';
+  import { selectedFacets } from '#lib/stores/Search.js';
+  import { facetsPromise, openFacets } from '#lib/stores/Dictionary.js';
+  import { log, createLog } from '#lib/logger.js';
 
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import FacetCategory from '$lib/components/explorer/FacetCategory.svelte';
-  import FacetSidebarPlaceholder from '$lib/components/explorer/FacetSidebarPlaceholder.svelte';
-  import type { PreviousCategoriesForPlaceholder } from '$lib/models/Search';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import FacetCategory from '#lib/components/explorer/FacetCategory.svelte';
+  import FacetSidebarPlaceholder from '#lib/components/explorer/FacetSidebarPlaceholder.svelte';
+  import type { PreviousCategoriesForPlaceholder } from '#lib/models/Search.js';
 
   let previousCategories = $state([] as PreviousCategoriesForPlaceholder[]);
 

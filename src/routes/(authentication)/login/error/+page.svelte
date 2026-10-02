@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { config } from '$lib/configuration.svelte';
+  import { config } from '#lib/configuration.svelte.js';
   import { quintOut } from 'svelte/easing';
   import { fly } from 'svelte/transition';
 </script>
@@ -14,7 +14,7 @@
   <p class="m-1">If the problem persists contact an administrator.</p>
 
   <div class="flex flex-col justify-between mt-5">
-    <a class="btn preset-filled-primary-500 m-1" href={resolve('/login')}
+    <a class="btn preset-filled-primary-500 m-1" href={resolve('login')}
       >Back to Login <i class="fa-solid fa-arrow-right ml-3"></i></a
     >
     <a

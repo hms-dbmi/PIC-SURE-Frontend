@@ -4,15 +4,15 @@
 
   import { goto } from '$app/navigation';
 
-  import { panelOpen } from '$lib/stores/SidePanel';
+  import { panelOpen } from '#lib/stores/SidePanel.js';
   import {
     removeGenomicFilters,
     removeUnallowedFilters,
     removeInvalidFilters,
     filterWarning,
-  } from '$lib/stores/Filter.ts';
+  } from '#lib/stores/Filter.ts';
 
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
 
   let { open = $bindable(false) }: { open: boolean } = $props();
 

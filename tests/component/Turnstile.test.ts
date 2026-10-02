@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/svelte';
 
-import Turnstile from '$lib/components/Turnstile.svelte';
+import Turnstile from '#lib/components/Turnstile.svelte';
 
 const SITEKEY = '1x00000000000000000000AA';
 

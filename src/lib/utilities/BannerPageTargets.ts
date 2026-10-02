@@ -1,4 +1,4 @@
-import { BANNER_PAGE_TARGET_KINDS, type BannerPageTarget } from '$lib/models/Banner';
+import { BANNER_PAGE_TARGET_KINDS, type BannerPageTarget } from '#lib/models/Banner.js';
 
 const parameterSegment = /^\[[A-Za-z_][A-Za-z0-9_]*\]$/;
 const canonicalKindOrder = new Map(BANNER_PAGE_TARGET_KINDS.map((kind, index) => [kind, index]));

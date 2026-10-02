@@ -3,7 +3,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
-import ShowMoreButton from '$lib/components/buttons/ShowMoreButton.svelte';
+import ShowMoreButton from '#lib/components/buttons/ShowMoreButton.svelte';
 
 describe('ShowMoreButton', () => {
   it('renders the shared show more style and collapsed state', () => {

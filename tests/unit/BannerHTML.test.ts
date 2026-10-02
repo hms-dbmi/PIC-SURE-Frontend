@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
-import { bannerPlainText, hasBannerContent, sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
+import {
+  bannerPlainText,
+  hasBannerContent,
+  sanitizeBannerHTML,
+} from '#lib/utilities/BannerHTML.js';
 
 describe('bannerPlainText', () => {
   it.each([

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { selectedSNPs, clearSnpFilters, saveSNP, deleteSNP } from '$lib/stores/SNPFilter';
-  import type { SNP } from '$lib/models/GenomeFilter';
+  import { selectedSNPs, clearSnpFilters, saveSNP, deleteSNP } from '#lib/stores/SNPFilter.js';
+  import type { SNP } from '#lib/models/GenomeFilter.js';
 
-  import Panel from '$lib/components/explorer/Panel.svelte';
-  import Search from '$lib/components/explorer/genome-filter/SNP/Search.svelte';
-  import Edit from '$lib/components/explorer/genome-filter/SNP/Edit.svelte';
-  import Summary from '$lib/components/explorer/genome-filter/SNP/Summary.svelte';
+  import Panel from '#lib/components/explorer/Panel.svelte';
+  import Search from '#lib/components/explorer/genome-filter/SNP/Search.svelte';
+  import Edit from '#lib/components/explorer/genome-filter/SNP/Edit.svelte';
+  import Summary from '#lib/components/explorer/genome-filter/SNP/Summary.svelte';
 
   let { class: className = '' }: { class: string } = $props();
 

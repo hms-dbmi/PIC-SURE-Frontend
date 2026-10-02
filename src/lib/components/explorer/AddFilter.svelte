@@ -1,21 +1,21 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { toaster } from '$lib/toaster';
-  import type { SearchResult } from '$lib/models/Search';
-  import { addFilter, updateFilter, enrichFilterDetails } from '$lib/stores/Filter';
-  import { activeRow } from '$lib/stores/ExpandableRow';
+  import { toaster } from '#lib/toaster.js';
+  import type { SearchResult } from '#lib/models/Search.js';
+  import { addFilter, updateFilter, enrichFilterDetails } from '#lib/stores/Filter.js';
+  import { activeRow } from '#lib/stores/ExpandableRow.js';
   import {
     type Filter,
     createCategoricalFilter,
     createNumericFilter,
     createRequiredFilter,
-  } from '$lib/models/Filter.svelte';
-  import { getConceptDetails } from '$lib/stores/Dictionary';
-  import { panelOpen } from '$lib/stores/SidePanel';
+  } from '#lib/models/Filter.svelte.js';
+  import { getConceptDetails } from '#lib/stores/Dictionary.js';
+  import { panelOpen } from '#lib/stores/SidePanel.js';
 
-  import Loading from '$lib/components/Loading.svelte';
-  import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
+  import Loading from '#lib/components/Loading.svelte';
+  import OptionsSelectionList from '#lib/components/OptionsSelectionList.svelte';
 
   interface Props {
     data?: SearchResult;

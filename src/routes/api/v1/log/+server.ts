@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import type { RequestHandler } from './$types';
-import type { LogEvent } from '$lib/models/Log';
+import type { LogEvent } from '#lib/models/Log.js';
 
 const ACCEPTED = 202;
 

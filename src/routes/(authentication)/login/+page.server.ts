@@ -1,5 +1,5 @@
-import { getAllProviderData } from '$lib/AuthProviderRegistry';
-import type { AuthData } from '$lib/models/AuthProvider';
+import { getAllProviderData } from '#lib/AuthProviderRegistry.js';
+import type { AuthData } from '#lib/models/AuthProvider.js';
 
 export const load = async () => {
   let providers = getAllProviderData();

@@ -3,17 +3,17 @@
   import { onMount } from 'svelte';
 
   import { goto } from '$app/navigation';
-  import { browser } from '$app/environment';
-  import { config } from '$lib/configuration.svelte';
-  import * as api from '$lib/api';
-  import { Psama } from '$lib/paths';
-  import { toaster } from '$lib/toaster';
-  import { login, logout, user, isUserLoggedIn, getToken } from '$lib/stores/User';
-  import { log, createLog } from '$lib/logger';
+  import { browser } from '$app/env';
+  import { config } from '#lib/configuration.svelte.js';
+  import * as api from '#lib/api.js';
+  import { Psama } from '#lib/paths.js';
+  import { toaster } from '#lib/toaster.js';
+  import { login, logout, user, isUserLoggedIn, getToken } from '#lib/stores/User.js';
+  import { log, createLog } from '#lib/logger.js';
 
-  import Loading from '$lib/components/Loading.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import TermsPreview from '$lib/components/TermsPreview.svelte';
+  import Loading from '#lib/components/Loading.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import TermsPreview from '#lib/components/TermsPreview.svelte';
 
   let { modalOpen = $bindable(false) }: { modalOpen?: boolean } = $props();
   let terms: Promise<string> = $state(Promise.resolve(''));
@@ -54,7 +54,7 @@
         if (config.branding.termsOfService.rejectionUrl) {
           window.location.href = config.branding.termsOfService.rejectionUrl;
         } else {
-          goto(resolve('/login'));
+          goto(resolve('login'));
         }
       });
     } else {

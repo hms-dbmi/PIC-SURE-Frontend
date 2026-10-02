@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getConfig } from '$lib/server/configCache';
+import { getConfig } from '#lib/server/configCache.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async () => {

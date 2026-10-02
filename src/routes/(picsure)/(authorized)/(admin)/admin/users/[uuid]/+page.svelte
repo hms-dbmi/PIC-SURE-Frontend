@@ -1,17 +1,17 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { config } from '$lib/configuration.svelte';
+  import { config } from '#lib/configuration.svelte.js';
 
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import type { ExtendedUser } from '$lib/models/User';
-  import type { Role } from '$lib/models/Role';
-  import type { Connection } from '$lib/models/Connection';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Content from '#lib/components/Content.svelte';
+  import type { ExtendedUser } from '#lib/models/User.js';
+  import type { Role } from '#lib/models/Role.js';
+  import type { Connection } from '#lib/models/Connection.js';
 
-  import UsersStore from '$lib/stores/Users';
-  import RolesStore from '$lib/stores/Roles';
-  import ConnectionStore from '$lib/stores/Connections';
-  import Loading from '$lib/components/Loading.svelte';
+  import UsersStore from '#lib/stores/Users.js';
+  import RolesStore from '#lib/stores/Roles.js';
+  import ConnectionStore from '#lib/stores/Connections.js';
+  import Loading from '#lib/components/Loading.svelte';
 
   const { loadUsers, getUser } = UsersStore;
   const { getRole } = RolesStore;

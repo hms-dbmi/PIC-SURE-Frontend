@@ -1,13 +1,13 @@
 <script lang="ts">
   import FacetItem from './FacetItem.svelte';
-  import type { DictionaryFacetResult } from '$lib/models/api/Dictionary';
-  import type { Facet } from '$lib/models/Search';
-  import SearchStore from '$lib/stores/Search';
+  import type { DictionaryFacetResult } from '#lib/models/api/Dictionary.js';
+  import type { Facet } from '#lib/models/Search.js';
+  import SearchStore from '#lib/stores/Search.js';
   import {
     expandedNestedFacets,
     nestedFacetKey,
     toggleNestedFacet,
-  } from '$lib/stores/NestedFacets';
+  } from '#lib/stores/NestedFacets.js';
   let { updateFacets, selectedFacets } = SearchStore;
 
   interface Props {
@@ -131,7 +131,7 @@
 
 <style lang="postcss">
   input.indeterminate {
-    background-image: url('$lib/assets/dash.svg');
+    background-image: url('../../assets/dash.svg');
     background-size: 100% 100%;
     background-repeat: no-repeat;
     background-position: center;

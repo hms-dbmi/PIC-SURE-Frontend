@@ -5,8 +5,8 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { config } from '$lib/configuration.svelte';
-  import type { Column } from '$lib/components/datatable/types';
+  import { config } from '#lib/configuration.svelte.js';
+  import type { Column } from '#lib/components/datatable/types.js';
   import {
     searchTerm,
     selectedFacets,
@@ -16,16 +16,16 @@
     tour,
     resetSearch,
     loading as isLoading,
-  } from '$lib/stores/Search';
-  import type { TourDataType } from '$lib/models/Tour';
+  } from '#lib/stores/Search.js';
+  import type { TourDataType } from '#lib/models/Tour.js';
 
-  import Actions from '$lib/components/explorer/cell/Actions.svelte';
-  import SearchDatatable from '$lib/components/datatable/RemoteTable.svelte';
-  import Searchbox from '$lib/components/Searchbox.svelte';
-  import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
-  import { log, createLog } from '$lib/logger';
+  import Actions from '#lib/components/explorer/cell/Actions.svelte';
+  import SearchDatatable from '#lib/components/datatable/RemoteTable.svelte';
+  import Searchbox from '#lib/components/Searchbox.svelte';
+  import FacetSideBar from '#lib/components/explorer/FacetSideBar.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import ExplorerTour from '#lib/components/tour/ExplorerTour.svelte';
+  import { log, createLog } from '#lib/logger.js';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
@@ -104,7 +104,7 @@
           <a
             data-testid="genomic-filter-btn"
             class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-            href={resolve('/explorer/genome-filter')}
+            href={resolve('explorer/genome-filter')}
             onclick={() => log(createLog('NAVIGATION', 'explorer.genomic_filter_click'))}
             >Genomic Filtering</a
           >

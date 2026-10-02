@@ -1,4 +1,4 @@
-import { type Indexable } from '$lib/types';
+import { type Indexable } from '#lib/types.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isIndexable(value: unknown): value is Indexable {

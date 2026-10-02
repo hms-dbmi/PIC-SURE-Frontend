@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import tourConfig from '$lib/assets/TourConfiguration.json';
+import tourConfig from '#lib/assets/TourConfiguration.json';
 
 // Hook names wired up in ExplorerTour.svelte's `functionMap`. An unmapped name here
 // silently drops that step's custom behavior (falls back to default next/highlight

@@ -3,12 +3,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
-import PublicAccessKey from '$lib/components/PublicAccessKey.svelte';
+import PublicAccessKey from '#lib/components/PublicAccessKey.svelte';
 
 const { post, log } = vi.hoisted(() => ({ post: vi.fn(), log: vi.fn() }));
 
-vi.mock('$lib/api', () => ({ post }));
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/api.js', () => ({ post }));
+vi.mock('#lib/logger.js', () => ({
   log,
   createLog: (eventType: string, action?: string, metadata?: Record<string, unknown>) => ({
     event_type: eventType,

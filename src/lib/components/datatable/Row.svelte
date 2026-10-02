@@ -1,10 +1,15 @@
 <script lang="ts">
   import { slide } from 'svelte/transition';
-  import type { Column } from '$lib/components/datatable/types';
-  import type { Indexable } from '$lib/types';
-  import { activeTable, activeRow, activeComponent, setActiveRow } from '$lib/stores/ExpandableRow';
-  import { isFormField, tableIdPrefix } from '$lib/components/datatable/keyboard';
-  import { log, createLog, getPageContext } from '$lib/logger';
+  import type { Column } from '#lib/components/datatable/types.js';
+  import type { Indexable } from '#lib/types.js';
+  import {
+    activeTable,
+    activeRow,
+    activeComponent,
+    setActiveRow,
+  } from '#lib/stores/ExpandableRow.js';
+  import { isFormField, tableIdPrefix } from '#lib/components/datatable/keyboard.js';
+  import { log, createLog, getPageContext } from '#lib/logger.js';
 
   interface Props {
     cellOverides?: Indexable;

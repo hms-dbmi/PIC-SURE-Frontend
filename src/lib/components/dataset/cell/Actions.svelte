@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { toaster } from '$lib/toaster';
+  import { toaster } from '#lib/toaster.js';
 
-  import { toggleArchived } from '$lib/stores/Dataset.svelte';
-  import { log, createLog } from '$lib/logger';
+  import { toggleArchived } from '#lib/stores/Dataset.svelte.js';
+  import { log, createLog } from '#lib/logger.js';
 
   const { data = { cell: '', row: { archived: false } } } = $props();
   let toggleButton: HTMLButtonElement = $state() as HTMLButtonElement;

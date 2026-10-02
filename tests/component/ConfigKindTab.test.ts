@@ -3,8 +3,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
-import ConfigKindTab from '$lib/components/admin/configuration/ConfigKindTab.svelte';
-import { describeConfigField } from '$lib/models/ConfigResolution';
+import ConfigKindTab from '#lib/components/admin/configuration/ConfigKindTab.svelte';
+import { describeConfigField } from '#lib/models/ConfigResolution.js';
 import {
   loadAdminConfig,
   isApiAvailable,
@@ -12,13 +12,13 @@ import {
   deleteConfigRow,
   addConfigRow,
   invalidateConfigCache,
-} from '$lib/stores/AdminConfiguration';
-import type { ConfigFieldSchema, ConfigObject } from '$lib/models/Configuration';
-import type { FieldOrigin } from '$lib/models/ConfigResolution';
+} from '#lib/stores/AdminConfiguration.js';
+import type { ConfigFieldSchema, ConfigObject } from '#lib/models/Configuration.js';
+import type { FieldOrigin } from '#lib/models/ConfigResolution.js';
 
-vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('#lib/toaster.js', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 
-vi.mock('$lib/models/ConfigResolution', () => ({
+vi.mock('#lib/models/ConfigResolution.js', () => ({
   describeConfigField: vi.fn(),
 }));
 
@@ -93,9 +93,9 @@ const {
   ),
 }));
 
-vi.mock('$lib/models/Configuration', async () => {
-  const actual = await vi.importActual<typeof import('$lib/models/Configuration')>(
-    '$lib/models/Configuration',
+vi.mock('#lib/models/Configuration.js', async () => {
+  const actual = await vi.importActual<typeof import('#lib/models/Configuration.js')>(
+    '#lib/models/Configuration.js',
   );
   return {
     ...actual,
@@ -108,9 +108,9 @@ vi.mock('$lib/models/Configuration', async () => {
   };
 });
 
-vi.mock('$lib/stores/AdminConfiguration', async () => {
-  const actual = await vi.importActual<typeof import('$lib/stores/AdminConfiguration')>(
-    '$lib/stores/AdminConfiguration',
+vi.mock('#lib/stores/AdminConfiguration.js', async () => {
+  const actual = await vi.importActual<typeof import('#lib/stores/AdminConfiguration.js')>(
+    '#lib/stores/AdminConfiguration.js',
   );
   return {
     ...actual,
@@ -129,7 +129,7 @@ const mockDeleteConfigRow = vi.mocked(deleteConfigRow);
 const mockAddConfigRow = vi.mocked(addConfigRow);
 const mockInvalidateConfigCache = vi.mocked(invalidateConfigCache);
 const mockDeprecatedApiRows = vi.mocked(
-  (await import('$lib/models/Configuration')).deprecatedApiRows,
+  (await import('#lib/models/Configuration.js')).deprecatedApiRows,
 );
 
 describe('ConfigKindTab (single kind)', () => {

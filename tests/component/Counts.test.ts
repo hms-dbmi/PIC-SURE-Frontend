@@ -4,14 +4,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/svelte';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/environment', () => ({ browser: true }));
+vi.mock('$app/env', () => ({ browser: true }));
 
-vi.mock('$lib/configuration', () => ({
+vi.mock('#lib/configuration', () => ({
   branding: { explorePage: { queryErrorText: '', filterErrorText: '' } },
   features: {},
 }));
 
-vi.mock('$lib/stores/Filter', async () => {
+vi.mock('#lib/stores/Filter.js', async () => {
   const { writable } = await import('svelte/store');
   return { filters: writable([]) };
 });
@@ -29,13 +29,13 @@ const mockState = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('$lib/state/resultCounts.svelte', () => ({
+vi.mock('#lib/state/resultCounts.svelte.js', () => ({
   get resultCountsState() {
     return mockState.current;
   },
 }));
 
-import Counts from '$lib/components/explorer/results/Counts.svelte';
+import Counts from '#lib/components/explorer/results/Counts.svelte';
 
 function setSnapshot(count: number | string, total: number | string, hasError = false) {
   mockState.current = {

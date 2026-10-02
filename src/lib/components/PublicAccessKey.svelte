@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { post } from '$lib/api';
-  import { Psama } from '$lib/paths';
-  import { log, createLog } from '$lib/logger';
-  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Loading from '$lib/components/Loading.svelte';
-  import Turnstile from '$lib/components/Turnstile.svelte';
+  import { post } from '#lib/api.js';
+  import { Psama } from '#lib/paths.js';
+  import { log, createLog } from '#lib/logger.js';
+  import CopyButton from '#lib/components/buttons/CopyButton.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Loading from '#lib/components/Loading.svelte';
+  import Turnstile from '#lib/components/Turnstile.svelte';
 
   interface PublicKey {
     apiKey: string;

@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
-import BannerScheduleFields from '$lib/components/admin/configuration/BannerScheduleFields.svelte';
+import BannerScheduleFields from '#lib/components/admin/configuration/BannerScheduleFields.svelte';
 
 const props = {
   startLocal: '2026-09-10T12:00',
