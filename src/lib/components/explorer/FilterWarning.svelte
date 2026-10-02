@@ -1,6 +1,5 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/paths.js';
   import { Modal } from '@skeletonlabs/skeleton-svelte';
 
   import { goto } from '$app/navigation';
@@ -17,11 +16,13 @@
 
   let { open = $bindable(false) }: { open: boolean } = $props();
 
+  type ExplorePath = 'discover' | 'explorer' | '';
+
   interface Warning {
     message: string;
     backTo: string;
-    path: string;
-    back: string;
+    path: ExplorePath;
+    back: ExplorePath;
     resetQuery: () => void | Promise<void>;
   }
 
@@ -30,8 +31,8 @@
       message:
         'Your selected filters contain stigmatizing variables and/or genomic filters, which are not supported with Discover',
       backTo: 'Explore',
-      path: '/discover',
-      back: '/explorer',
+      path: 'discover',
+      back: 'explorer',
       resetQuery: () => {
         removeGenomicFilters();
         removeUnallowedFilters();
@@ -41,15 +42,15 @@
       message:
         'You are not authorized to access the data in Explore based on your selected filters.',
       backTo: 'Discover',
-      path: '/explorer',
-      back: '/discover',
+      path: 'explorer',
+      back: 'discover',
       resetQuery: () => removeInvalidFilters(),
     },
     undefined: {
       message: '',
       backTo: '',
-      path: '/',
-      back: '/',
+      path: '',
+      back: '',
       resetQuery: () => {},
     },
   };
@@ -60,7 +61,7 @@
     const back = warning.back;
     filterWarning.set(undefined);
     open = false;
-    goto(resolve(appPath(back)));
+    goto(resolve(back));
   }
 
   async function reset() {
@@ -69,7 +70,7 @@
     panelOpen.set(false);
     filterWarning.set(undefined);
     open = false;
-    goto(resolve(appPath(path)));
+    goto(resolve(path));
   }
 </script>
 
