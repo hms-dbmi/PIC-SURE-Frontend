@@ -61,11 +61,16 @@ export const handle: Handle = async ({ event, resolve }) => {
   return response;
 };
 
-// Every error reaches this hook, including 404s and error(...) calls, so only
-// unexpected ones get the full dump. Returning nothing keeps SvelteKit's status and message.
+// Every error reaches this hook, including 404s and error(...) calls, so only unexpected
+// ones log the error itself. Never log the whole event: its request headers carry bearer
+// tokens and cookies. Returning nothing keeps SvelteKit's status and message.
 export const handleError: HandleServerError = ({ kind, error, event }) => {
   if (kind === 'unknown') {
-    console.error('Server error: ', error, event);
+    console.error('Server error: ', error, {
+      method: event.request.method,
+      path: event.url.pathname,
+      route: event.route.id,
+    });
   } else {
     console.error(
       `Server error (${kind}): ${error.status} ${error.message} at ${event.url.pathname}`,
