@@ -1,6 +1,7 @@
 import { LOGGING_API_KEY, LOGGING_TARGET } from '$app/env/private';
 import type { RequestHandler } from './$types';
 import type { LogEvent } from '#lib/models/Log.js';
+import { clientAddress } from '#lib/server/clientAddress.js';
 
 const ACCEPTED = 202;
 
@@ -32,7 +33,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
     return Response.json({ result: 'dropped' }, { status: ACCEPTED });
   }
 
-  body.src_ip = getClientAddress();
+  body.src_ip = clientAddress(getClientAddress);
 
   if (!body.event_type) {
     console.warn('[log] Missing event_type in log request; dropping event');

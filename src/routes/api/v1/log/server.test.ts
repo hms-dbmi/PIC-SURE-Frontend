@@ -95,6 +95,25 @@ describe('+server POST /api/log', () => {
     expect(sentBody).toEqual({ ...logEvent, src_ip: '127.0.0.1' });
   });
 
+  it('forwards without src_ip when the request bypassed httpd and has no address header', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('', { status: 202 }));
+    const event = {
+      ...makeEvent(makeRequest({ event_type: 'QUERY' })),
+      getClientAddress: () => {
+        throw new Error(
+          'Address header was specified with ADDRESS_HEADER=X-Forwarded-For but is absent from request',
+        );
+      },
+    };
+
+    const response = await POST(event);
+
+    expect(response.status).toBe(202);
+    expect(JSON.parse(fetchSpy.mock.calls[0][1]?.body as string)).toEqual({ event_type: 'QUERY' });
+  });
+
   it('returns 202 even when upstream returns an error', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response('Internal Server Error', { status: 500 }),

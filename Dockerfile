@@ -47,6 +47,10 @@ COPY --from=builder /app/build build/
 COPY --from=builder /app/node_modules node_modules/
 COPY package.json .
 ENV NODE_ENV=production
+# getClientAddress() takes the client IP from X-Forwarded-For, XFF_DEPTH entries from the
+# right. 1 fits httpd alone. Behind a load balancer (the BDC and AIM-AHEAD ALBs, or
+# all-in-one's SSL offload) set XFF_DEPTH=2 in the deployment's env file, because httpd
+# appends the load balancer's address after the client's.
 ENV ADDRESS_HEADER=X-Forwarded-For
 ENV XFF_DEPTH=1
 ENV HOME=/tmp

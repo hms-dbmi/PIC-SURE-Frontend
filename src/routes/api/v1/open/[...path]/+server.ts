@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { PICSURE_INTERNAL_API_ORIGIN, PICSURE_PLATFORM_API_KEY } from '$app/env/private';
 import type { RequestHandler } from './$types';
+import { clientAddress } from '#lib/server/clientAddress.js';
 
 /**
  * Server-side proxy for anonymous (token-less) open-access data requests. api.ts routes them
@@ -33,7 +34,8 @@ const forward: RequestHandler = async ({ request, params, url, getClientAddress 
   const headers: Record<string, string> = {};
   // forward only the trusted client address: the incoming X-Forwarded-For header is
   // caller-controlled, and preserving it would let requests falsify their audit attribution
-  headers['X-Forwarded-For'] = getClientAddress();
+  const clientIp = clientAddress(getClientAddress);
+  if (clientIp) headers['X-Forwarded-For'] = clientIp;
   headers['X-Forwarded-Host'] = url.host;
   const contentType = request.headers.get('Content-Type');
   if (contentType) {

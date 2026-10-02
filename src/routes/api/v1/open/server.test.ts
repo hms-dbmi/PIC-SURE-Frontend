@@ -75,6 +75,22 @@ describe('+server /api/v1/open/[...path]', () => {
     expect(fetchMock.mock.calls[1][1].headers['X-Forwarded-For']).toBe('203.0.113.9');
   });
 
+  it('forwards without X-Forwarded-For when the request bypassed httpd and has no address header', async () => {
+    const event = {
+      ...makeEvent('GET', 'picsure/query/sync'),
+      getClientAddress: () => {
+        throw new Error(
+          'Address header was specified with ADDRESS_HEADER=X-Forwarded-For but is absent from request',
+        );
+      },
+    };
+
+    const response = await GET(event);
+
+    expect(response.status).toBe(200);
+    expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty('X-Forwarded-For');
+  });
+
   it('reaches the API through the configured internal origin', async () => {
     mockEnv.PICSURE_INTERNAL_API_ORIGIN = 'http://api-host:8080';
     const event = makeEvent('GET', 'picsure/query/sync');
