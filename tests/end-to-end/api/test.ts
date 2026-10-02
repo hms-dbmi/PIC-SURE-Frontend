@@ -23,8 +23,7 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('API page', () => {
   test.beforeEach(async ({ context }) => {
-    // Pre-config-API these came from live VITE_* vars in .env.test; the client code
-    // block assertions (include_consents/supports_genomic) depend on them.
+    // The client code supports_genomic assertions depend on the gene/SNP flags.
     await mockApiConfig(context, {
       features: [
         { name: 'REQUIRE_CONSENTS', value: 'true' },
@@ -133,14 +132,24 @@ test.describe('API page', () => {
     {
       id: 'python',
       title: 'Python Client',
-      code: ['pip install picsure', 'include_consents=True', 'requires_auth=True'],
+      code: [
+        'pip install picsure',
+        'include_consents=True',
+        'requires_auth=True',
+        'supports_genomic=True',
+      ],
       docsLabel: 'Python client documentation',
       docsUrl: 'https://github.com/hms-dbmi/pic-sure-python-adapter-hpds',
     },
     {
       id: 'r',
       title: 'R Client',
-      code: ['pic-sure-r-adapter-hpds', 'include_consents=TRUE', 'requires_auth=TRUE'],
+      code: [
+        'pic-sure-r-adapter-hpds',
+        'include_consents=TRUE',
+        'requires_auth=TRUE',
+        'supports_genomic=TRUE',
+      ],
       docsLabel: 'R client documentation',
       docsUrl: 'https://github.com/hms-dbmi/pic-sure-r-adapter-hpds',
     },
@@ -556,8 +565,6 @@ test.describe('API page', () => {
       ).toHaveAttribute('aria-expanded', 'false');
       // The token card above the item loads after the first scroll and grows the page.
       await expect(page.locator('#user-token')).toBeVisible();
-      // The last item can't reach the top when the page ends first, so expect the
-      // scroll position that aligns it as far as the page allows.
       await expect(async () => {
         const offset = await page.evaluate((itemId) => {
           const scroller = document.getElementById('page');
@@ -567,7 +574,8 @@ test.describe('API page', () => {
             item.getBoundingClientRect().top -
             scroller.getBoundingClientRect().top +
             scroller.scrollTop;
-          const target = Math.min(itemTop, scroller.scrollHeight - scroller.clientHeight);
+          const maxScrollTop = scroller.scrollHeight - scroller.clientHeight;
+          const target = Math.min(itemTop, maxScrollTop);
           return Math.round(scroller.scrollTop - target);
         }, `workflow-${id}`);
         expect(Math.abs(offset)).toBeLessThan(4);
@@ -656,7 +664,7 @@ test.describe.skip('API page logged out', () => {
 
   test.beforeEach(async ({ page }) => {
     // OPEN keeps the root layout from redirecting anonymous visitors to /login.
-    // Gene/SNP/consents stay unset: the open client code asserts them false.
+    // Gene/SNP stay unset: the open client code asserts supports_genomic false.
     await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
   });
 

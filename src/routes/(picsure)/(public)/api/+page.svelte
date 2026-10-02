@@ -122,7 +122,6 @@
     const scroller = document.getElementById('page');
     if (!scroller) return;
 
-    // Deep links like /api#workflow-python open that client's item.
     const deepLink = window.location.hash.match(/^#workflow-(python|r)$/);
     // The item's panel slides open and the token card in Authentication loads after
     // the first scroll, so the item moves and the page grows; re-align until the
@@ -140,7 +139,6 @@
     if (deepLink) {
       openWorkflows = [deepLink[1]];
       for (const type of unpinEvents) window.addEventListener(type, unpin, true);
-      // Opening the item changes the layout; align only after Svelte renders it.
       void tick().then(() => {
         alignDeepLink();
         if (!pinned) return;
