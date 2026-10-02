@@ -29,7 +29,9 @@
   const codeBlocks = $derived(config.branding.explorePage.codeBlocks);
 
   function apiExample(code: string | undefined) {
-    return (code || 'Code not set').replace(PROJECT_HOSTNAME, `${page.url.origin}/picsure`);
+    return (code || 'Code not set')
+      .replace(PROJECT_HOSTNAME, `${page.url.origin}/picsure`)
+      .replace(PROJECT_HOSTNAME.replace(/\/picsure$/, ''), page.url.origin);
   }
   type ApiLanguage = 'python' | 'r';
 

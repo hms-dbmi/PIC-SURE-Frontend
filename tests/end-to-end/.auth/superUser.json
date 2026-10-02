@@ -13,7 +13,7 @@
   ],
   "origins": [
     {
-      "origin": "http://localhost:4273",
+      "origin": "http://localhost:4173",
       "localStorage": [
         {
           "name": "consentMode",

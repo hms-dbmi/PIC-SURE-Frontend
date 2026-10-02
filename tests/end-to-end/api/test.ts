@@ -128,7 +128,7 @@ test.describe('API page', () => {
     );
   });
 
-  for (const { id, title, code, absent, docsLabel, docsUrl } of [
+  for (const { id, title, code, absent, platformPath, docsLabel, docsUrl } of [
     {
       id: 'python',
       title: 'Python Client',
@@ -139,6 +139,7 @@ test.describe('API page', () => {
         'supports_genomic=True',
       ],
       absent: ['sys.executable', 'github.com'],
+      platformPath: '',
       docsLabel: 'Python client documentation',
       docsUrl: 'https://github.com/hms-dbmi/pic-sure-python-adapter-hpds',
     },
@@ -152,6 +153,7 @@ test.describe('API page', () => {
         'supports_genomic=TRUE',
       ],
       absent: [],
+      platformPath: '/picsure',
       docsLabel: 'R client documentation',
       docsUrl: 'https://github.com/hms-dbmi/pic-sure-r-adapter-hpds',
     },
@@ -175,6 +177,8 @@ test.describe('API page', () => {
       await expect(codeBlock).toContainText('token.txt');
       for (const snippet of code) await expect(codeBlock).toContainText(snippet);
       for (const snippet of absent) await expect(codeBlock).not.toContainText(snippet);
+      const origin = new URL(page.url()).origin;
+      await expect(codeBlock).toContainText(`platform="${origin}${platformPath}"`);
       await expect(codeBlock.getByTestId('code-block-copy-btn')).toBeVisible();
       await expect(panel.getByText('More info', { exact: true })).toBeVisible();
       const docsLink = panel.getByRole('link', { name: docsLabel });
