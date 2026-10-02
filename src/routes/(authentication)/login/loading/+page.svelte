@@ -76,7 +76,10 @@
         // goto rejects paths that match no route (e.g. a stale redirectTo), so fall back home.
         // The path portion IS resolved; the rule can't model an appended query string.
         // eslint-disable-next-line svelte/no-navigation-without-resolve
-        goto(`${resolve(appPath(pathname))}${search}`).catch(() => goto(resolve('')));
+        goto(`${resolve(appPath(pathname))}${search}`).catch(() => {
+          log(createLog('LOGIN', 'login.redirect_dropped', { path: pathname }));
+          return goto(resolve(''));
+        });
       } else {
         goto(resolve(''));
       }
