@@ -2,7 +2,7 @@
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
 
-  import { config } from '#lib/configuration.svelte.js';
+  import { config } from '#lib/configuration.svelte.ts';
 
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
@@ -12,22 +12,22 @@
   import SnpSearch from '#lib/components/explorer/genome-filter/SNPSearch.svelte';
   import GeneSearch from '#lib/components/explorer/genome-filter/GeneSearch.svelte';
 
-  import type { GenomicFilterInterface, SnpFilterInterface } from '#lib/models/Filter.svelte.js';
-  import { Option } from '#lib/models/GenomeFilter.js';
+  import type { GenomicFilterInterface, SnpFilterInterface } from '#lib/models/Filter.svelte.ts';
+  import { Option } from '#lib/models/GenomeFilter.ts';
   import {
     selectedGenes,
     clearGeneFilters,
     generateGenomicFilter,
     populateFromGeneFilter,
-  } from '#lib/stores/GeneFilter.js';
+  } from '#lib/stores/GeneFilter.ts';
   import {
     selectedSNPs,
     generateSNPFilter,
     clearSnpFilters,
     populateFromSNPFilter,
-  } from '#lib/stores/SNPFilter.js';
-  import { addFilter, getFiltersByType } from '#lib/stores/Filter.js';
-  import { panelOpen } from '#lib/stores/SidePanel.js';
+  } from '#lib/stores/SNPFilter.ts';
+  import { addFilter, getFiltersByType } from '#lib/stores/Filter.ts';
+  import { panelOpen } from '#lib/stores/SidePanel.ts';
 
   let edit = page.url.searchParams.get('edit') || '';
   let selectedOption: Option = $state(

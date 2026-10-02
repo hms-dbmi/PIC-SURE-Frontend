@@ -1,13 +1,13 @@
 <script lang="ts">
-  import type { SearchResult } from '#lib/models/Search.js';
-  import type { ExportInterface } from '#lib/models/Export.js';
-  import { getInitialTree, getConceptTree } from '#lib/stores/Dictionary.js';
-  import { exports } from '#lib/stores/Export.js';
-  import { addExport, removeExport, mapSearchResultAsExport } from '#lib/stores/Export.js';
+  import type { SearchResult } from '#lib/models/Search.ts';
+  import type { ExportInterface } from '#lib/models/Export.ts';
+  import { getInitialTree, getConceptTree } from '#lib/stores/Dictionary.ts';
+  import { exports } from '#lib/stores/Export.ts';
+  import { addExport, removeExport, mapSearchResultAsExport } from '#lib/stores/Export.ts';
   import Loading from '#lib/components/Loading.svelte';
   import RemoteTree from '#lib/components/tree/RemoteTree.svelte';
   import Summary from '#lib/components/explorer/export/Summary.svelte';
-  import { getQueryRequest } from '#lib/ExportStepperManager.svelte.js';
+  import { getQueryRequest } from '#lib/ExportStepperManager.svelte.ts';
 
   let currentExports: ExportInterface[] = $state($exports);
   exports.subscribe((newExports) => (currentExports = newExports));

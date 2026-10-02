@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { createInstance } from '#lib/AuthProviderRegistry.js';
-  import { sanitizeHTML } from '#lib/utilities/HTML.js';
-  import type { AuthData } from '#lib/models/AuthProvider.js';
-  import { resetSearch } from '#lib/stores/Search.js';
-  import { log, createLog } from '#lib/logger.js';
+  import { createInstance } from '#lib/AuthProviderRegistry.ts';
+  import { sanitizeHTML } from '#lib/utilities/HTML.ts';
+  import type { AuthData } from '#lib/models/AuthProvider.ts';
+  import { resetSearch } from '#lib/stores/Search.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   interface Props {
     provider: AuthData | undefined;

@@ -1,17 +1,17 @@
 import { error, isHttpError } from '@sveltejs/kit';
-import { logout, login } from '#lib/stores/User.js';
+import { logout, login } from '#lib/stores/User.ts';
 import { browser } from '$app/env';
-import { log, createLog, getSessionId } from '#lib/logger.js';
-import { config } from '#lib/configuration.svelte.js';
-import { isWafCaptchaResponse, handleWafCaptcha } from '#lib/wafCaptcha.js';
-import { joinUrl } from '#lib/paths.js';
+import { log, createLog, getSessionId } from '#lib/logger.ts';
+import { config } from '#lib/configuration.svelte.ts';
+import { isWafCaptchaResponse, handleWafCaptcha } from '#lib/wafCaptcha.ts';
+import { joinUrl } from '#lib/paths.ts';
 import {
   acceptSessionRefresh,
   forgetOpenSession,
   isSessionKeyError,
   openSessionToken,
   recoverOpenSession,
-} from '#lib/openSession.js';
+} from '#lib/openSession.ts';
 
 const BEARER = 'Bearer ';
 const CONSENT_DENIED = 'consent_denied';

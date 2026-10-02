@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { config } from '#lib/configuration.svelte.js';
-  import { StatPromise, isStatValueEqual } from '#lib/utilities/StatBuilder.js';
-  import type { StatResult } from '#lib/models/Stat.js';
-  import { stats, authStats, loadLandingStats } from '#lib/stores/Stats.js';
-  import { isUserLoggedIn } from '#lib/stores/User.js';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { StatPromise, isStatValueEqual } from '#lib/utilities/StatBuilder.ts';
+  import type { StatResult } from '#lib/models/Stat.ts';
+  import { stats, authStats, loadLandingStats } from '#lib/stores/Stats.ts';
+  import { isUserLoggedIn } from '#lib/stores/User.ts';
   import Stat from '#lib/components/landing/Stat.svelte';
 
   const showAuthStats = $derived(isUserLoggedIn() && $authStats.length > 0);

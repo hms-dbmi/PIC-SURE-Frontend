@@ -4,12 +4,12 @@
 
   import { goto } from '$app/navigation';
   import { browser } from '$app/env';
-  import { config } from '#lib/configuration.svelte.js';
-  import * as api from '#lib/api.js';
-  import { Psama } from '#lib/paths.js';
-  import { toaster } from '#lib/toaster.js';
-  import { login, logout, user, isUserLoggedIn, getToken } from '#lib/stores/User.js';
-  import { log, createLog } from '#lib/logger.js';
+  import { config } from '#lib/configuration.svelte.ts';
+  import * as api from '#lib/api.ts';
+  import { Psama } from '#lib/paths.ts';
+  import { toaster } from '#lib/toaster.ts';
+  import { login, logout, user, isUserLoggedIn, getToken } from '#lib/stores/User.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   import Loading from '#lib/components/Loading.svelte';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';

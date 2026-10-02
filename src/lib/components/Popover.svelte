@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { css } from '#lib/utilities/style.js';
+  import { css } from '#lib/utilities/style.ts';
   import type { Snippet } from 'svelte';
   import {
     FloatingArrow,
@@ -19,7 +19,7 @@
   } from '@skeletonlabs/floating-ui-svelte';
   import { fade } from 'svelte/transition';
   import { shift, type Placement } from '@floating-ui/dom';
-  import { sanitizeHTML } from '#lib/utilities/HTML.js';
+  import { sanitizeHTML } from '#lib/utilities/HTML.ts';
 
   export type TriggerType = 'click' | 'hover' | 'focus' | 'manual';
   interface Props {

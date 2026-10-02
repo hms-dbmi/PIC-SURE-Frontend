@@ -1,10 +1,10 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import { config } from '#lib/configuration.svelte.js';
+  import { config } from '#lib/configuration.svelte.ts';
 
-  import { type Connection } from '#lib/models/Connection.js';
-  import { getConnection } from '#lib/stores/Connections.js';
+  import { type Connection } from '#lib/models/Connection.ts';
+  import { getConnection } from '#lib/stores/Connections.ts';
 
   import Content from '#lib/components/Content.svelte';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';

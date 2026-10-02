@@ -1,12 +1,12 @@
 import { get, writable, type Writable } from 'svelte/store';
 
-import * as api from '#lib/api.js';
-import { Picsure } from '#lib/paths.js';
-import { Genotype, type SNP } from '#lib/models/GenomeFilter.js';
-import { createSnpsFilter, type SnpFilterInterface } from '#lib/models/Filter.svelte.js';
-import type { GenomicFilterInterfacev3 } from '#lib/models/query/Query.js';
-import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.js';
-import { getBlankQueryRequestV3 } from '#lib/utilities/QueryBuilder.js';
+import * as api from '#lib/api.ts';
+import { Picsure } from '#lib/paths.ts';
+import { Genotype, type SNP } from '#lib/models/GenomeFilter.ts';
+import { createSnpsFilter, type SnpFilterInterface } from '#lib/models/Filter.svelte.ts';
+import type { GenomicFilterInterfacev3 } from '#lib/models/query/Query.ts';
+import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.ts';
+import { getBlankQueryRequestV3 } from '#lib/utilities/QueryBuilder.ts';
 
 export const selectedSNPs: Writable<SNP[]> = writable([]);
 

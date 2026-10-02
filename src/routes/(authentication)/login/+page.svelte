@@ -5,11 +5,11 @@
   import { page } from '$app/state';
   import { browser } from '$app/env';
 
-  import { config } from '#lib/configuration.svelte.js';
-  import type { AuthData } from '#lib/models/AuthProvider.js';
-  import { toaster } from '#lib/toaster.js';
+  import { config } from '#lib/configuration.svelte.ts';
+  import type { AuthData } from '#lib/models/AuthProvider.ts';
+  import { toaster } from '#lib/toaster.ts';
 
-  import { log, createLog } from '#lib/logger.js';
+  import { log, createLog } from '#lib/logger.ts';
 
   import LoginButton from '#lib/components/buttons/LoginButton.svelte';
   import Logo from '#lib/components/Logo.svelte';

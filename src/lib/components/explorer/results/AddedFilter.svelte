@@ -5,17 +5,17 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
 
-  import { Option } from '#lib/models/GenomeFilter.js';
+  import { Option } from '#lib/models/GenomeFilter.ts';
   import {
     type Filter,
     type AnyRecordOfFilterInterface,
     derivedFilterDescription,
     derivedStudyDescription,
-  } from '#lib/models/Filter.svelte.js';
-  import { removeFilter, activeFilter, activeSearch } from '#lib/stores/Filter.js';
-  import { populateFromGeneFilter } from '#lib/stores/GeneFilter.js';
-  import { populateFromSNPFilter } from '#lib/stores/SNPFilter.js';
-  import { log, createLog } from '#lib/logger.js';
+  } from '#lib/models/Filter.svelte.ts';
+  import { removeFilter, activeFilter, activeSearch } from '#lib/stores/Filter.ts';
+  import { populateFromGeneFilter } from '#lib/stores/GeneFilter.ts';
+  import { populateFromSNPFilter } from '#lib/stores/SNPFilter.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   import Modal from '#lib/components/Modal.svelte';
   import AddFilter from '#lib/components/explorer/AddFilter.svelte';

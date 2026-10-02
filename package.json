@@ -84,7 +84,7 @@
     "vitest": "^4.1.11"
   },
   "imports": {
-    "#lib": "./src/lib/index.js",
+    "#lib": "./src/lib/index.ts",
     "#lib/*": "./src/lib/*"
   }
 }

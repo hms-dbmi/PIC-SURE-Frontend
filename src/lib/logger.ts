@@ -1,12 +1,12 @@
 import { browser } from '$app/env';
-import { Internal } from '#lib/paths.js';
-import type { LogEvent } from '#lib/models/Log.js';
-import { user, isUserLoggedIn } from '#lib/stores/User.js';
+import { Internal } from '#lib/paths.ts';
+import type { LogEvent } from '#lib/models/Log.ts';
+import { user, isUserLoggedIn } from '#lib/stores/User.ts';
 import { get } from 'svelte/store';
 import { v4 as uuidv4 } from 'uuid';
 import { BDCPrivileges, PicsurePrivileges } from './models/Privilege';
 import type { User } from './models/User';
-import { routes } from '#lib/configuration.svelte.js';
+import { routes } from '#lib/configuration.svelte.ts';
 
 // Registered lazily by Filter.ts to avoid circular dependency: Filter → logger → Filter
 let _associatedStudies: import('svelte/store').Readable<string[]> | undefined;

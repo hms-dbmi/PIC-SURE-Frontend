@@ -1,7 +1,7 @@
 <script lang="ts">
-  import * as api from '#lib/api.js';
-  import { Psama } from '#lib/paths.js';
-  import { toaster } from '#lib/toaster.js';
+  import * as api from '#lib/api.ts';
+  import { Psama } from '#lib/paths.ts';
+  import { toaster } from '#lib/toaster.ts';
 
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Loading from '#lib/components/Loading.svelte';

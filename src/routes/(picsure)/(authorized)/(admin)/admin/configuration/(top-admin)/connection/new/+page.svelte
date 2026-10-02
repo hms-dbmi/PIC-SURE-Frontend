@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { config } from '#lib/configuration.svelte.js';
+  import { config } from '#lib/configuration.svelte.ts';
   import Content from '#lib/components/Content.svelte';
   import ConnectionForm from '#lib/components/admin/configuration/ConnectionForm.svelte';
 </script>

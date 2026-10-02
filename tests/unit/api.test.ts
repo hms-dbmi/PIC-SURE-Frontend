@@ -10,7 +10,7 @@ vi.mock('$app/env', () => ({
 
 const mockLogout = vi.fn();
 const mockLogin = vi.fn();
-vi.mock('#lib/stores/User.js', () => ({
+vi.mock('#lib/stores/User.ts', () => ({
   logout: (...args: unknown[]) => mockLogout(...args),
   login: (...args: unknown[]) => mockLogin(...args),
 }));
@@ -18,7 +18,7 @@ vi.mock('#lib/stores/User.js', () => ({
 const mockLog = vi.fn();
 const mockCreateLog = vi.fn((...args: unknown[]) => args);
 const mockGetSessionId = vi.fn(() => 'test-session-id');
-vi.mock('#lib/logger.js', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: (...args: unknown[]) => mockLog(...args),
   createLog: (...args: unknown[]) => mockCreateLog(...args),
   getSessionId: () => mockGetSessionId(),
@@ -33,7 +33,7 @@ vi.mock('@sveltejs/kit', () => ({
 }));
 
 let mockWafFlag = false;
-vi.mock('#lib/configuration.svelte.js', () => ({
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: {
     features: {
       get wafCaptchaRecovery() {
@@ -45,7 +45,7 @@ vi.mock('#lib/configuration.svelte.js', () => ({
 
 const mockIsWafCaptchaResponse = vi.fn<(...args: unknown[]) => boolean>(() => false);
 const mockHandleWafCaptcha = vi.fn<(...args: unknown[]) => boolean>(() => true);
-vi.mock('#lib/wafCaptcha.js', () => ({
+vi.mock('#lib/wafCaptcha.ts', () => ({
   isWafCaptchaResponse: (...args: unknown[]) => mockIsWafCaptchaResponse(...args),
   handleWafCaptcha: (...args: unknown[]) => mockHandleWafCaptcha(...args),
 }));
@@ -54,7 +54,7 @@ const mockOpenSessionToken = vi.fn<() => Promise<string | null>>(async () => nul
 const mockAcceptSessionRefresh = vi.fn();
 const mockForgetOpenSession = vi.fn();
 const mockRecoverOpenSession = vi.fn<(sent: string) => Promise<string | null>>(async () => null);
-vi.mock('#lib/openSession.js', () => ({
+vi.mock('#lib/openSession.ts', () => ({
   openSessionToken: () => mockOpenSessionToken(),
   acceptSessionRefresh: (...args: unknown[]) => mockAcceptSessionRefresh(...args),
   forgetOpenSession: (...args: unknown[]) => mockForgetOpenSession(...args),
@@ -63,7 +63,7 @@ vi.mock('#lib/openSession.js', () => ({
   recoverOpenSession: (sent: string) => mockRecoverOpenSession(sent),
 }));
 
-import { get, post, put, del, isAbortError } from '#lib/api.js';
+import { get, post, put, del, isAbortError } from '#lib/api.ts';
 
 function mockFetchResponse(overrides: {
   ok?: boolean;

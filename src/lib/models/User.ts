@@ -1,5 +1,5 @@
-import type { Role } from '#lib/models/Role.js';
-import type { Connection } from '#lib/models/Connection.js';
+import type { Role } from '#lib/models/Role.ts';
+import type { Connection } from '#lib/models/Connection.ts';
 
 /** Consent concept path (e.g. `\_consents\`) to the study identifiers granted under it. */
 export type ConsentsMap = Record<string, string[]>;

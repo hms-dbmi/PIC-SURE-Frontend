@@ -1,10 +1,10 @@
-import { genericUUID, objectUUID } from '#lib/utilities/UUID.js';
-import type { SearchResult } from '#lib/models/Search.js';
-import { GenotypeMap, type SNP } from '#lib/models/GenomeFilter.js';
-import { type OperatorType, Operator } from '#lib/models/query/Query.js';
-import { AnyRecordOfFilterError } from '#lib/types.js';
+import { genericUUID, objectUUID } from '#lib/utilities/UUID.ts';
+import type { SearchResult } from '#lib/models/Search.ts';
+import { GenotypeMap, type SNP } from '#lib/models/GenomeFilter.ts';
+import { type OperatorType, Operator } from '#lib/models/query/Query.ts';
+import { AnyRecordOfFilterError } from '#lib/types.ts';
 
-import type { LogicNode, LogicGroup } from '#lib/models/LogicTree.svelte.js';
+import type { LogicNode, LogicGroup } from '#lib/models/LogicTree.svelte.ts';
 
 export type FilterType =
   | 'Categorical'

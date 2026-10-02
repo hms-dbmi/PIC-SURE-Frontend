@@ -1,12 +1,12 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/paths.js';
-  import { config } from '#lib/configuration.svelte.js';
+  import { appPath } from '#lib/paths.ts';
+  import { config } from '#lib/configuration.svelte.ts';
   import { goto } from '$app/navigation';
   import Searchbox from '#lib/components/Searchbox.svelte';
   import Stats from '#lib/components/landing/Stats.svelte';
-  import { isUserLoggedIn } from '#lib/stores/User.js';
-  import { log, createLog } from '#lib/logger.js';
+  import { isUserLoggedIn } from '#lib/stores/User.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   let searchTerm = $state('');
 

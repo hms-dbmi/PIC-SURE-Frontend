@@ -1,8 +1,8 @@
 import { get, derived, writable, type Writable } from 'svelte/store';
-import { type Role, mapRole } from '#lib/models/Role.js';
+import { type Role, mapRole } from '#lib/models/Role.ts';
 
-import * as api from '#lib/api.js';
-import { Psama } from '#lib/paths.js';
+import * as api from '#lib/api.ts';
+import { Psama } from '#lib/paths.ts';
 
 const loaded = writable(false);
 export const roles: Writable<Role[]> = writable([]);

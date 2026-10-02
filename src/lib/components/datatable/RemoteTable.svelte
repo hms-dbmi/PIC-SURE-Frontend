@@ -4,13 +4,13 @@
 
   import type { TableProps } from './types';
 
-  import { activeTable, activeRow, closeActiveRow } from '#lib/stores/ExpandableRow.js';
+  import { activeTable, activeRow, closeActiveRow } from '#lib/stores/ExpandableRow.ts';
   import {
     isFormField,
     isTextEntryField,
     tableIdPrefix,
-  } from '#lib/components/datatable/keyboard.js';
-  import { log, createLog } from '#lib/logger.js';
+  } from '#lib/components/datatable/keyboard.ts';
+  import { log, createLog } from '#lib/logger.ts';
   import ExpandableRow from '#lib/components/datatable/Row.svelte';
   import ThFilter from '#lib/components/datatable/accessories/Filter.svelte';
   import ThSort from '#lib/components/datatable/accessories/Sort.svelte';

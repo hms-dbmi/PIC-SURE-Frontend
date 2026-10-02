@@ -1,8 +1,8 @@
 import { get, writable, type Writable } from 'svelte/store';
 import { mapExtendedUser, type ExtendedUser, type UserRequest, type User } from '../models/User';
 
-import * as api from '#lib/api.js';
-import { Psama } from '#lib/paths.js';
+import * as api from '#lib/api.ts';
+import { Psama } from '#lib/paths.ts';
 
 const loaded = writable(false);
 export const users: Writable<ExtendedUser[]> = writable([]);

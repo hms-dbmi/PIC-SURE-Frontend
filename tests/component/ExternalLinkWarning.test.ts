@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
 
-vi.mock('#lib/configuration.svelte.js', () => ({
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: {
     branding: {
       applicationName: 'PIC-SURE-TEST',
@@ -13,7 +13,7 @@ vi.mock('#lib/configuration.svelte.js', () => ({
   },
 }));
 
-vi.mock('#lib/logger.js', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createLog: vi.fn((eventType: any, action: any, metadata: any) => ({
@@ -24,8 +24,8 @@ vi.mock('#lib/logger.js', () => ({
 }));
 
 import ExternalLinkWarning from '#lib/components/ExternalLinkWarning.svelte';
-import { config } from '#lib/configuration.svelte.js';
-import { log } from '#lib/logger.js';
+import { config } from '#lib/configuration.svelte.ts';
+import { log } from '#lib/logger.ts';
 
 const emptyWarningConfig = () => ({
   title: '',

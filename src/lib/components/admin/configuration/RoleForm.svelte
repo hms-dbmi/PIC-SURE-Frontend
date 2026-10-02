@@ -2,10 +2,10 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import { type Role } from '#lib/models/Role.js';
-  import { addRole, updateRole } from '#lib/stores/Roles.js';
-  import { isTopAdmin } from '#lib/stores/User.js';
-  import { toaster } from '#lib/toaster.js';
+  import { type Role } from '#lib/models/Role.ts';
+  import { addRole, updateRole } from '#lib/stores/Roles.ts';
+  import { isTopAdmin } from '#lib/stores/User.ts';
+  import { toaster } from '#lib/toaster.ts';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
 
   interface Props {

@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 
-vi.mock('#lib/configuration.svelte.js', () => ({
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: {
     branding: {
       applicationName: 'PIC-SURE-TEST',
@@ -12,7 +12,7 @@ vi.mock('#lib/configuration.svelte.js', () => ({
   },
 }));
 
-vi.mock('#lib/logger.js', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: vi.fn(),
   createLog: vi.fn((eventType: string, action: string, metadata: unknown) => ({
     event_type: eventType,
@@ -23,7 +23,7 @@ vi.mock('#lib/logger.js', () => ({
 
 import ExternalLinkWarning from '#lib/components/ExternalLinkWarning.svelte';
 import SiteBanner from '#lib/components/banner/SiteBanner.svelte';
-import type { BannerAppearance, BannerPresentation } from '#lib/models/Banner.js';
+import type { BannerAppearance, BannerPresentation } from '#lib/models/Banner.ts';
 
 const banner: BannerPresentation = {
   htmlContent:

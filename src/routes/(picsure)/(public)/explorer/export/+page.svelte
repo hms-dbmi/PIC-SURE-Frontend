@@ -1,13 +1,13 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import ExportStepper from '#lib/components/explorer/export/ExportStepper.svelte';
-  import { allFilters } from '#lib/stores/Filter.js';
-  import { exports } from '#lib/stores/Export.js';
-  import { stepperState } from '#lib/stores/Stepper.js';
-  import type { ExportRowInterface } from '#lib/models/ExportRow.js';
+  import { allFilters } from '#lib/stores/Filter.ts';
+  import { exports } from '#lib/stores/Export.ts';
+  import { stepperState } from '#lib/stores/Stepper.ts';
+  import type { ExportRowInterface } from '#lib/models/ExportRow.ts';
   import Content from '#lib/components/Content.svelte';
-  import { config } from '#lib/configuration.svelte.js';
-  import { isUserLoggedIn } from '#lib/stores/User.js';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { isUserLoggedIn } from '#lib/stores/User.ts';
   import { goto } from '$app/navigation';
 
   let exportRows: ExportRowInterface[] = $exports.map((exp) => {

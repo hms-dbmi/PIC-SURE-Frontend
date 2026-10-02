@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { css } from '#lib/utilities/style.js';
+  import { css } from '#lib/utilities/style.ts';
 
   let {
     className = '',

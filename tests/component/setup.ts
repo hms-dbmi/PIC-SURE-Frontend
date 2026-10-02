@@ -1,6 +1,6 @@
 import { afterEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { resetConfig } from '#lib/configuration.svelte.js';
+import { resetConfig } from '#lib/configuration.svelte.ts';
 
 // Config is a module-scope singleton (see src/lib/configuration.svelte.ts), so a
 // test that seeds features/settings/branding would otherwise leak into the next

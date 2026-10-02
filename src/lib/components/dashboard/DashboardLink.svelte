@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { log, createLog } from '#lib/logger.js';
+  import { log, createLog } from '#lib/logger.ts';
 
   let { data = { row: { additional_info_link: '', consentGranted: false } } } = $props();
   let link = $derived(data.row.additional_info_link as string);

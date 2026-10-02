@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('$app/env', () => ({ browser: true }));
 
-vi.mock('#lib/stores/User.js', () => ({
+vi.mock('#lib/stores/User.ts', () => ({
   user: { subscribe: (run: (value: unknown) => void) => (run(undefined), () => {}) },
   isUserLoggedIn: () => false,
 }));
 
-vi.mock('#lib/configuration.svelte.js', () => ({ routes: [] }));
+vi.mock('#lib/configuration.svelte.ts', () => ({ routes: [] }));
 
-import { sanitizeLocation, createLog } from '#lib/logger.js';
+import { sanitizeLocation, createLog } from '#lib/logger.ts';
 
 function stubLocation(href: string) {
   vi.stubGlobal('window', { location: new URL(href) });

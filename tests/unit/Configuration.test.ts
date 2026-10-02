@@ -14,7 +14,7 @@ import {
   deprecatedApiRows,
   groupedConfigFieldSchema,
   type ConfigFieldSchema,
-} from '#lib/models/Configuration.js';
+} from '#lib/models/Configuration.ts';
 import configJson from '#lib/assets/configuration.json' with { type: 'json' };
 
 const TOUCHED_ENV_KEYS = [

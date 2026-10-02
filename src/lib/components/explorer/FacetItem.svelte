@@ -1,13 +1,13 @@
 <script lang="ts">
   import FacetItem from './FacetItem.svelte';
-  import type { DictionaryFacetResult } from '#lib/models/api/Dictionary.js';
-  import type { Facet } from '#lib/models/Search.js';
-  import SearchStore from '#lib/stores/Search.js';
+  import type { DictionaryFacetResult } from '#lib/models/api/Dictionary.ts';
+  import type { Facet } from '#lib/models/Search.ts';
+  import SearchStore from '#lib/stores/Search.ts';
   import {
     expandedNestedFacets,
     nestedFacetKey,
     toggleNestedFacet,
-  } from '#lib/stores/NestedFacets.js';
+  } from '#lib/stores/NestedFacets.ts';
   let { updateFacets, selectedFacets } = SearchStore;
 
   interface Props {

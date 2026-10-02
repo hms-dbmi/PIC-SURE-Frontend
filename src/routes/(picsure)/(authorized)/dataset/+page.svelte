@@ -2,15 +2,15 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import type { Indexable } from '#lib/types.js';
-  import { config } from '#lib/configuration.svelte.js';
+  import type { Indexable } from '#lib/types.ts';
+  import { config } from '#lib/configuration.svelte.ts';
   import {
     active,
     archived,
     loadDatasets,
     getShowArchived,
     toggleShowArchived,
-  } from '#lib/stores/Dataset.svelte.js';
+  } from '#lib/stores/Dataset.svelte.ts';
 
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Content from '#lib/components/Content.svelte';

@@ -6,10 +6,10 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
 
-  import { config, PROJECT_HOSTNAME } from '#lib/configuration.svelte.js';
-  import { getApiConnectionResource } from '#lib/stores/Resources.js';
-  import { tokenStatus } from '#lib/stores/User.js';
-  import { log, createLog } from '#lib/logger.js';
+  import { config, PROJECT_HOSTNAME } from '#lib/configuration.svelte.ts';
+  import { getApiConnectionResource } from '#lib/stores/Resources.ts';
+  import { tokenStatus } from '#lib/stores/User.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   import ApiDocumentation from '#lib/components/ApiDocumentation.svelte';
   import UserToken from '#lib/components/UserToken.svelte';

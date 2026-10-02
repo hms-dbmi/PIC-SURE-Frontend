@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { css } from '#lib/utilities/style.js';
+  import { css } from '#lib/utilities/style.ts';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
   import {
     isFilterGroup,
     type FilterGroupInterface,
     type FilterInterface,
-  } from '#lib/models/Filter.svelte.js';
+  } from '#lib/models/Filter.svelte.ts';
   import AdvancedItem from './AdvancedItem.svelte';
   import AdvancedGroup from './AdvancedGroup.svelte';
   import EmptyDropZone from './EmptyDropZone.svelte';
   import GroupDropZone from './GroupDropZone.svelte';
-  import { Operator, type OperatorType } from '#lib/models/query/Query.js';
+  import { Operator, type OperatorType } from '#lib/models/query/Query.ts';
   import { Segment } from '@skeletonlabs/skeleton-svelte';
   import { CollisionPriority } from '@dnd-kit/abstract';
   import { Switch } from '@skeletonlabs/skeleton-svelte';

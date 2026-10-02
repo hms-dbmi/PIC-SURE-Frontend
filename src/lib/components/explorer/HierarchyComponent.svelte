@@ -1,24 +1,24 @@
 <script lang="ts">
-  import type { SearchResult } from '#lib/models/Search.js';
-  import type { NodeInterface } from '#lib/components/tree/types.js';
-  import { type Filter, createAnyRecordOfFilter } from '#lib/models/Filter.svelte.js';
-  import { activeRow } from '#lib/stores/ExpandableRow.js';
-  import { addFilter } from '#lib/stores/Filter.js';
+  import type { SearchResult } from '#lib/models/Search.ts';
+  import type { NodeInterface } from '#lib/components/tree/types.ts';
+  import { type Filter, createAnyRecordOfFilter } from '#lib/models/Filter.svelte.ts';
+  import { activeRow } from '#lib/stores/ExpandableRow.ts';
+  import { addFilter } from '#lib/stores/Filter.ts';
   import RadioTree from '#lib/components/tree/RadioTree.svelte';
   import {
     getConceptTree,
     getHierarchyConcepts,
     ENSURE_MAX_DEPTH,
-  } from '#lib/stores/Dictionary.js';
-  import { panelOpen } from '#lib/stores/SidePanel.js';
+  } from '#lib/stores/Dictionary.ts';
+  import { panelOpen } from '#lib/stores/SidePanel.ts';
   import Loading from '#lib/components/Loading.svelte';
-  import { toaster } from '#lib/toaster.js';
-  import { AnyRecordOfFilterError } from '#lib/types.js';
+  import { toaster } from '#lib/toaster.ts';
+  import { AnyRecordOfFilterError } from '#lib/types.ts';
   import Modal from '#lib/components/Modal.svelte';
   import { page } from '$app/state';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
-  import { sortHierarchyDeepestFirst } from '#lib/utilities/Hierarchy.js';
-  import { log, createLog, getPageContext } from '#lib/logger.js';
+  import { sortHierarchyDeepestFirst } from '#lib/utilities/Hierarchy.ts';
+  import { log, createLog, getPageContext } from '#lib/logger.ts';
   interface Props {
     data?: SearchResult;
     onclose?: () => void;

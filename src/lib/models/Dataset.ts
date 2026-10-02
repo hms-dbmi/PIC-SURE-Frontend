@@ -1,6 +1,6 @@
-import type { Indexable } from '#lib/types.js';
-import { QueryV3 } from '#lib/models/query/Query.js';
-import { parseQueryV2, type QueryV2 } from '#lib/compat/QueryV2.js';
+import type { Indexable } from '#lib/types.ts';
+import { QueryV3 } from '#lib/models/query/Query.ts';
+import { parseQueryV2, type QueryV2 } from '#lib/compat/QueryV2.ts';
 
 export const QueryVersion = { UNKNOWN: 'UNKNOWN', V2: 'V2', V3: 'V3' };
 

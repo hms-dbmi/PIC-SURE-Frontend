@@ -3,7 +3,7 @@
     isFilterGroup,
     type Filter,
     type FilterGroupInterface,
-  } from '#lib/models/Filter.svelte.js';
+  } from '#lib/models/Filter.svelte.ts';
 
   import FilterComponent from '#lib/components/explorer/results/AddedFilter.svelte';
   import ResultsFilterGroup from '#lib/components/explorer/results/ResultsFilterGroup.svelte';

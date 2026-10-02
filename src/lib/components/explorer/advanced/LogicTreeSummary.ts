@@ -2,7 +2,7 @@ import {
   isFilterGroup,
   type FilterGroupInterface,
   type FilterInterface,
-} from '#lib/models/Filter.svelte.js';
+} from '#lib/models/Filter.svelte.ts';
 
 export type EquationPart =
   | { type: 'variable'; text: string }

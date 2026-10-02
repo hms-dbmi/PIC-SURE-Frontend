@@ -23,7 +23,7 @@ function jsonResponse(body: unknown) {
 
 async function loadConfigCache() {
   vi.resetModules();
-  return import('#lib/server/configCache.js');
+  return import('#lib/server/configCache.ts');
 }
 
 describe('configCache', () => {

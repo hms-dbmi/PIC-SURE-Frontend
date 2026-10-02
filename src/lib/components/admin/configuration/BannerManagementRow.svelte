@@ -5,8 +5,8 @@
     BANNER_APPEARANCE_DETAILS,
     BANNER_AUDIENCE_LABELS,
     type ManagementRecord,
-  } from '#lib/models/Banner.js';
-  import { truncate } from '#lib/utilities/Strings.js';
+  } from '#lib/models/Banner.ts';
+  import { truncate } from '#lib/utilities/Strings.ts';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
 
   interface Props {

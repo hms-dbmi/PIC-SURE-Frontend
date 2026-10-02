@@ -8,28 +8,28 @@ vi.mock('$app/env', () => ({
 }));
 
 const mockLogout = vi.fn();
-vi.mock('#lib/stores/User.js', () => ({
+vi.mock('#lib/stores/User.ts', () => ({
   logout: (...args: unknown[]) => mockLogout(...args),
   login: vi.fn(),
 }));
 
-vi.mock('#lib/logger.js', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: vi.fn(),
   createLog: vi.fn((...args: unknown[]) => args),
   getSessionId: () => 'test-session-id',
 }));
 
-vi.mock('#lib/configuration.svelte.js', () => ({
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: { features: { wafCaptchaRecovery: false } },
 }));
 
-vi.mock('#lib/wafCaptcha.js', () => ({
+vi.mock('#lib/wafCaptcha.ts', () => ({
   isWafCaptchaResponse: () => false,
   handleWafCaptcha: () => true,
 }));
 
 // @sveltejs/kit is left unmocked on purpose: error() must throw a real HttpError.
-import { get, consentDeniedMessage, CONSENT_DENIED_MESSAGE } from '#lib/api.js';
+import { get, consentDeniedMessage, CONSENT_DENIED_MESSAGE } from '#lib/api.ts';
 
 describe('consentDeniedMessage', () => {
   let fetchMock: Mock;

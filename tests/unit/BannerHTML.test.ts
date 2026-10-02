@@ -5,7 +5,7 @@ import {
   bannerPlainText,
   hasBannerContent,
   sanitizeBannerHTML,
-} from '#lib/utilities/BannerHTML.js';
+} from '#lib/utilities/BannerHTML.ts';
 
 describe('bannerPlainText', () => {
   it.each([

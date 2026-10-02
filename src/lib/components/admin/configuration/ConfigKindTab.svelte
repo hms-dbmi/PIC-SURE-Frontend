@@ -10,7 +10,7 @@
     type ConfigMap,
     type ConfigObject,
     type ConfigMode,
-  } from '#lib/models/Configuration.js';
+  } from '#lib/models/Configuration.ts';
   import {
     adminConfigRows,
     deleteConfigRow,
@@ -18,14 +18,14 @@
     isApiAvailable,
     loadAdminConfig,
     type AdminConfigKind,
-  } from '#lib/stores/AdminConfiguration.js';
+  } from '#lib/stores/AdminConfiguration.ts';
   import ConfigFieldRow from './ConfigFieldRow.svelte';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Loading from '#lib/components/Loading.svelte';
   import Modal from '#lib/components/Modal.svelte';
   import FilterSearch from './FilterSearch.svelte';
-  import { toaster } from '#lib/toaster.js';
-  import { humanizeKey } from '#lib/utilities/Strings.js';
+  import { toaster } from '#lib/toaster.ts';
+  import { humanizeKey } from '#lib/utilities/Strings.ts';
 
   const SEARCH_BOX_MIN_LENGTH = 10;
 

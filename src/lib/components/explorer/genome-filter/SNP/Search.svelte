@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { SNP } from '#lib/models/GenomeFilter.js';
-  import { getSNPCounts } from '#lib/stores/SNPFilter.js';
-  import { config } from '#lib/configuration.svelte.js';
+  import type { SNP } from '#lib/models/GenomeFilter.ts';
+  import { getSNPCounts } from '#lib/stores/SNPFilter.ts';
+  import { config } from '#lib/configuration.svelte.ts';
 
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Loading from '#lib/components/Loading.svelte';

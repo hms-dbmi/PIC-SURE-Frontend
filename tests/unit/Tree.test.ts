@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
-import { Operator, type OperatorType } from '#lib/models/query/Query.js';
-import { LogicTree } from '#lib/models/LogicTree.svelte.js';
-import type { LogicNode, LogicGroup } from '#lib/models/LogicTree.svelte.js';
+import { Operator, type OperatorType } from '#lib/models/query/Query.ts';
+import { LogicTree } from '#lib/models/LogicTree.svelte.ts';
+import type { LogicNode, LogicGroup } from '#lib/models/LogicTree.svelte.ts';
 
 interface TestNode extends LogicNode<TestNode | TestGroup> {
   type: 'node';

@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { config } from '#lib/configuration.svelte.js';
-  import { Picsure } from '#lib/paths.js';
-  import * as api from '#lib/api.js';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { Picsure } from '#lib/paths.ts';
+  import * as api from '#lib/api.ts';
   import DownloadButton from './DownloadButton.svelte';
   import Loading from '#lib/components/Loading.svelte';
-  import { toaster } from '#lib/toaster.js';
-  import { getDatasetId, getQueryRequest } from '#lib/ExportStepperManager.svelte.js';
-  import { log, createLog } from '#lib/logger.js';
+  import { toaster } from '#lib/toaster.ts';
+  import { getDatasetId, getQueryRequest } from '#lib/ExportStepperManager.svelte.ts';
+  import { log, createLog } from '#lib/logger.ts';
   let exportLoading: boolean = $state(false);
 
   async function exportSignedToUrl(url?: string) {

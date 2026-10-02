@@ -5,10 +5,10 @@ import {
   type PhenotypicSubqueryInterface,
   type PhenotypicFilterType,
   type PhenotypicClause,
-} from '#lib/models/query/Query.js';
-import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.js';
+} from '#lib/models/query/Query.ts';
+import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.ts';
 import { get } from 'svelte/store';
-import { filters, filterTree, genomicFilters } from '#lib/stores/Filter.js';
+import { filters, filterTree, genomicFilters } from '#lib/stores/Filter.ts';
 import type {
   Filter,
   FilterType,
@@ -16,9 +16,9 @@ import type {
   GenomicFilterInterface,
   SnpFilterInterface,
   AnyRecordOfFilterInterface,
-} from '#lib/models/Filter.svelte.js';
-import { LogicTree } from '#lib/models/LogicTree.svelte.js';
-import type { GenomicFilterInterfacev3, OperatorType } from '#lib/models/query/Query.js';
+} from '#lib/models/Filter.svelte.ts';
+import { LogicTree } from '#lib/models/LogicTree.svelte.ts';
+import type { GenomicFilterInterfacev3, OperatorType } from '#lib/models/query/Query.ts';
 
 const parseNumber = (input: string | number | null | undefined): number | undefined => {
   if (input === null || input === undefined) return undefined;
@@ -81,7 +81,7 @@ export function buildGenomicFiltersFromFilters(
 }
 
 export function buildQueryRequestV3FromDescriptor(
-  descriptor: import('#lib/services/counts/queryDescriptor.svelte.js').QueryDescriptor,
+  descriptor: import('#lib/services/counts/queryDescriptor.svelte.ts').QueryDescriptor,
   expectedResultType: ExpectedResultType = 'COUNT',
   mutateMethod: (query: QueryV3) => QueryV3 = (q) => q,
 ): QueryRequestInterfaceV3 {

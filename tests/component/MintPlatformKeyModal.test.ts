@@ -3,14 +3,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 
-vi.mock('#lib/logger.js', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createLog: vi.fn((...args: any[]) => args),
   getPageContext: vi.fn(() => 'test-context'),
 }));
 
-vi.mock('#lib/stores/User.js', async () => {
+vi.mock('#lib/stores/User.ts', async () => {
   const { writable } = await import('svelte/store');
   return { isTopAdmin: writable(true) };
 });
@@ -19,7 +19,7 @@ const storeMocks = vi.hoisted(() => ({
   mintPlatformKey: vi.fn(),
 }));
 
-vi.mock('#lib/stores/ApiKeys.js', async () => {
+vi.mock('#lib/stores/ApiKeys.ts', async () => {
   const { writable } = await import('svelte/store');
   const listVersion = writable(0);
   return {
@@ -32,7 +32,7 @@ vi.mock('#lib/stores/ApiKeys.js', async () => {
 });
 
 import MintPlatformKeyModal from '#lib/components/admin/api-key/MintPlatformKeyModal.svelte';
-import { log, createLog } from '#lib/logger.js';
+import { log, createLog } from '#lib/logger.ts';
 
 const FAKE_KEY = 'picsure_FAKE-TEST-FIXTURE-VALUE-0000000000000000000';
 

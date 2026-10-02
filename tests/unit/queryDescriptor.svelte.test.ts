@@ -7,9 +7,9 @@ vi.mock('$app/paths', () => ({
   resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
 }));
 
-import { LogicTree } from '#lib/models/LogicTree.svelte.js';
-import { createFilterGroup, type FilterInterface } from '#lib/models/Filter.svelte.js';
-import { buildDescriptor } from '#lib/services/counts/queryDescriptor.svelte.js';
+import { LogicTree } from '#lib/models/LogicTree.svelte.ts';
+import { createFilterGroup, type FilterInterface } from '#lib/models/Filter.svelte.ts';
+import { buildDescriptor } from '#lib/services/counts/queryDescriptor.svelte.ts';
 
 describe('buildDescriptor strips Svelte $state proxies (production-shape guard)', () => {
   it('produces a phenotypicClause whose nested arrays survive structuredClone when categoryValues is $state-wrapped', () => {

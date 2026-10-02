@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { RequiredField } from '#lib/models/Connection.js';
+  import type { RequiredField } from '#lib/models/Connection.ts';
 
   interface Props {
     field?: RequiredField;

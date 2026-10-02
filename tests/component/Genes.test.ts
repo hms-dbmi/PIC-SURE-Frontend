@@ -5,23 +5,23 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 
 import Genes from '#lib/components/explorer/genome-filter/gene/Genes.svelte';
-import * as api from '#lib/api.js';
-import { selectedGenes } from '#lib/stores/GeneFilter.js';
+import * as api from '#lib/api.ts';
+import { selectedGenes } from '#lib/stores/GeneFilter.ts';
 import { optionsIn } from './helpers';
 
 vi.mock('$app/env', () => ({ browser: false }));
 
-vi.mock('#lib/api.js', () => ({
+vi.mock('#lib/api.ts', () => ({
   get: vi.fn(),
 }));
 
-vi.mock('#lib/logger.js', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: vi.fn(),
   createLog: vi.fn(),
   getPageContext: vi.fn(),
 }));
 
-vi.mock('#lib/toaster.js', () => ({
+vi.mock('#lib/toaster.ts', () => ({
   toaster: { error: vi.fn() },
 }));
 

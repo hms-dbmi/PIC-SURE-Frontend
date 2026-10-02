@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseQueryV2, queryV2ToV3 } from '#lib/compat/QueryV2.js';
+import { parseQueryV2, queryV2ToV3 } from '#lib/compat/QueryV2.ts';
 
 function makeQueryV2(overrides: Record<string, unknown> = {}) {
   return {

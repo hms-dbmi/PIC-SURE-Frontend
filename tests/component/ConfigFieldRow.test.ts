@@ -4,20 +4,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import ConfigFieldRow from '#lib/components/admin/configuration/ConfigFieldRow.svelte';
-import { describeConfigField } from '#lib/models/ConfigResolution.js';
-import { addConfigRow, updateConfigRow, deleteConfigRow } from '#lib/stores/AdminConfiguration.js';
-import type { ConfigFieldSchema, ConfigMap, ConfigObject } from '#lib/models/Configuration.js';
-import type { FieldOrigin } from '#lib/models/ConfigResolution.js';
+import { describeConfigField } from '#lib/models/ConfigResolution.ts';
+import { addConfigRow, updateConfigRow, deleteConfigRow } from '#lib/stores/AdminConfiguration.ts';
+import type { ConfigFieldSchema, ConfigMap, ConfigObject } from '#lib/models/Configuration.ts';
+import type { FieldOrigin } from '#lib/models/ConfigResolution.ts';
 
-vi.mock('#lib/toaster.js', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('#lib/toaster.ts', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
 
-vi.mock('#lib/models/ConfigResolution.js', () => ({
+vi.mock('#lib/models/ConfigResolution.ts', () => ({
   describeConfigField: vi.fn(),
 }));
 
-vi.mock('#lib/stores/AdminConfiguration.js', async () => {
-  const actual = await vi.importActual<typeof import('#lib/stores/AdminConfiguration.js')>(
-    '#lib/stores/AdminConfiguration.js',
+vi.mock('#lib/stores/AdminConfiguration.ts', async () => {
+  const actual = await vi.importActual<typeof import('#lib/stores/AdminConfiguration.ts')>(
+    '#lib/stores/AdminConfiguration.ts',
   );
   return {
     ...actual,

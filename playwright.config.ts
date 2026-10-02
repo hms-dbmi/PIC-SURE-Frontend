@@ -29,9 +29,6 @@ const config: PlaywrightTestConfig = {
   // all launching and navigating concurrently) - not a bug in the tests themselves.
   workers: process.env.CI ? 2 : undefined,
   timeout: process.env.CI ? 45000 : undefined,
-  // Playwright resolves #lib/*.js subpath imports to literal .js files, not the .ts sources
-  // Vite and TypeScript map them to, so it gets an equivalent tsconfig path mapping.
-  tsconfig: './playwright.tsconfig.json',
   testDir: 'tests/end-to-end',
   testMatch: /(.+\.)?(test|spec)\.[jt]s/,
   reporter: [['list'], ['html']],

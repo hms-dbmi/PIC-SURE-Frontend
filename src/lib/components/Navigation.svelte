@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/paths.js';
+  import { appPath } from '#lib/paths.ts';
   import { onMount } from 'svelte';
   import { AppBar, Avatar } from '@skeletonlabs/skeleton-svelte';
 
@@ -9,12 +9,12 @@
   import { browser } from '$app/env';
 
   import { createInstance } from '#lib/AuthProviderRegistry.ts';
-  import { user, userRoutes, isUserLoggedIn, logout } from '#lib/stores/User.js';
-  import { loginRedirectPath } from '#lib/utilities/LoginRedirect.js';
-  import type { Route } from '#lib/models/Route.js';
+  import { user, userRoutes, isUserLoggedIn, logout } from '#lib/stores/User.ts';
+  import { loginRedirectPath } from '#lib/utilities/LoginRedirect.ts';
+  import type { Route } from '#lib/models/Route.ts';
   import type AuthData from '#lib/models/AuthProvider.ts';
   import type AuthProvider from '#lib/models/AuthProvider.ts';
-  import { log, createLog } from '#lib/logger.js';
+  import { log, createLog } from '#lib/logger.ts';
 
   import Logo from '#lib/components/Logo.svelte';
   import Popover from '#lib/components/Popover.svelte';

@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import type { Unsubscriber } from 'svelte/store';
 
-  import { config } from '#lib/configuration.svelte.js';
+  import { config } from '#lib/configuration.svelte.ts';
   import Content from '#lib/components/Content.svelte';
   import Datatable from '#lib/components/datatable/StaticTable.svelte';
   import DashboardLink from '#lib/components/dashboard/DashboardLink.svelte';
@@ -10,13 +10,13 @@
 
   import { columns, loadDashboardData, rows } from '#lib/stores/Dashboard.ts';
 
-  import type { Column } from '#lib/components/datatable/types.js';
-  import { type DashboardRow, activeRow } from '#lib/stores/Dashboard.js';
-  import { open } from '#lib/stores/Drawer.js';
+  import type { Column } from '#lib/components/datatable/types.ts';
+  import { type DashboardRow, activeRow } from '#lib/stores/Dashboard.ts';
+  import { open } from '#lib/stores/Drawer.ts';
   import Loading from '#lib/components/Loading.svelte';
 
-  import { subscribeOnChange } from '#lib/utilities/Subscribers.js';
-  import { log, createLog } from '#lib/logger.js';
+  import { subscribeOnChange } from '#lib/utilities/Subscribers.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   const tableName = 'ExplorerTable';
 

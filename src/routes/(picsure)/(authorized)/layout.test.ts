@@ -30,7 +30,7 @@ async function captureRedirect(fn: () => unknown): Promise<Redirect | null> {
 }
 
 function mockUserModule(overrides: Record<string, unknown> = {}) {
-  vi.doMock('#lib/stores/User.js', () => ({
+  vi.doMock('#lib/stores/User.ts', () => ({
     isTokenExpired: (token: string) => {
       try {
         const exp = JSON.parse(atob(token.split('.')[1])).exp * 1000;
@@ -53,7 +53,7 @@ function mockUserModule(overrides: Record<string, unknown> = {}) {
 
 function mockOtherModules() {
   vi.doMock('$app/env', () => ({ browser: true }));
-  vi.doMock('#lib/logger.js', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
+  vi.doMock('#lib/logger.ts', () => ({ log: vi.fn(), createLog: vi.fn(() => ({})) }));
 }
 
 describe('authorized layout load — check order', () => {

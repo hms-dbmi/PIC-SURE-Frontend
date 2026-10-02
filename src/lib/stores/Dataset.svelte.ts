@@ -1,9 +1,9 @@
 import { get, writable, derived, type Readable, type Writable } from 'svelte/store';
 
-import { mapDataset, type DataSet } from '#lib/models/Dataset.js';
-import * as api from '#lib/api.js';
-import { Picsure } from '#lib/paths.js';
-import { log, createLog } from '#lib/logger.js';
+import { mapDataset, type DataSet } from '#lib/models/Dataset.ts';
+import * as api from '#lib/api.ts';
+import { Picsure } from '#lib/paths.ts';
+import { log, createLog } from '#lib/logger.ts';
 
 export const datasets: Writable<DataSet[]> = writable([]);
 export const active: Readable<DataSet[]> = derived(datasets, ($ds) =>

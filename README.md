@@ -82,7 +82,7 @@ This system is under active development and subject to change.
 ### Testing configuration
 
 - **e2e (Playwright):** use `mockApiConfig(page, { features, settings, branding })` from `tests/end-to-end/custom-context.ts` to set per-test feature/setting/branding rows. It works by seeding a cookie that `src/routes/+layout.server.ts` reads and applies to that `BrowserContext`'s requests only — real config, real backend calls, and other concurrent tests are unaffected. The override is only honored when the app is built/served with `--mode test` (how Playwright's `webServer` always runs it); it's inert in dev and production builds.
-- **Component tests (Vitest):** call `applyConfig(rows)` (from `#lib/configuration.svelte.js`) with raw `ConfigObject[]` rows to exercise the real API-row mapping/precedence pipeline, or mutate `config.features`/`config.settings`/`config.branding` fields directly for values not resolvable from API rows (e.g. `config.branding.explorePage.resultInfo`, sourced from `configuration.json`). `tests/component/setup.ts` calls `resetConfig()` after every test automatically, so tests don't need to clean up after themselves.
+- **Component tests (Vitest):** call `applyConfig(rows)` (from `#lib/configuration.svelte.ts`) with raw `ConfigObject[]` rows to exercise the real API-row mapping/precedence pipeline, or mutate `config.features`/`config.settings`/`config.branding` fields directly for values not resolvable from API rows (e.g. `config.branding.explorePage.resultInfo`, sourced from `configuration.json`). `tests/component/setup.ts` calls `resetConfig()` after every test automatically, so tests don't need to clean up after themselves.
 
 ## Project Structure
 

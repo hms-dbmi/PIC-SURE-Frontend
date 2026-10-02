@@ -21,17 +21,17 @@ const mockState = vi.hoisted(() => {
   };
 });
 
-vi.mock('#lib/api.js', () => ({
+vi.mock('#lib/api.ts', () => ({
   post: mockState.postSpy,
   isAbortError: (e: unknown) => (e as Error | undefined)?.name === 'AbortError',
 }));
 
-vi.mock('#lib/stores/Search.js', () => ({
+vi.mock('#lib/stores/Search.ts', () => ({
   searchTerm: mockState.searchTermStore,
   selectedFacets: mockState.selectedFacetsStore,
 }));
 
-vi.mock('#lib/stores/User.js', () => ({
+vi.mock('#lib/stores/User.ts', () => ({
   ACCESS_UNAVAILABLE_MESSAGE: 'Access unavailable',
   accessUnavailable: mockState.accessUnavailableStore,
   consentedStudies: mockState.consentedStudiesStore,
@@ -39,7 +39,7 @@ vi.mock('#lib/stores/User.js', () => ({
   showAccessUnavailable: mockState.showAccessUnavailableSpy,
 }));
 
-vi.mock('#lib/logger.js', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: mockState.logSpy,
   createLog: vi.fn((category: string, event: string, data?: unknown) => ({
     category,
@@ -48,14 +48,14 @@ vi.mock('#lib/logger.js', () => ({
   })),
 }));
 
-import type { DictionaryFacetResult } from '#lib/models/api/Dictionary.js';
+import type { DictionaryFacetResult } from '#lib/models/api/Dictionary.ts';
 import {
   updateFacetsFromSearch,
   searchDictionary,
   hiddenFacets,
   openFacets,
   resetFacetState,
-} from '#lib/stores/Dictionary.js';
+} from '#lib/stores/Dictionary.ts';
 
 function facetResponse(categoryName: string, zeroCountFacet = 'empty'): DictionaryFacetResult[] {
   return [

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ExportInterface } from '#lib/models/Export.js';
+  import type { ExportInterface } from '#lib/models/Export.ts';
 
   let { exports = [] }: { exports: ExportInterface[] } = $props();
   let paths = $derived(exports.map(({ conceptPath }) => conceptPath));

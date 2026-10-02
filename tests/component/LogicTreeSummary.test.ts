@@ -4,8 +4,8 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 
 import LogicTreeSummary from '#lib/components/explorer/advanced/LogicTreeSummary.svelte';
-import { createFilterGroup, type FilterInterface } from '#lib/models/Filter.svelte.js';
-import { Operator } from '#lib/models/query/Query.js';
+import { createFilterGroup, type FilterInterface } from '#lib/models/Filter.svelte.ts';
+import { Operator } from '#lib/models/query/Query.ts';
 
 function makeFilter(variableName: string): FilterInterface {
   return {

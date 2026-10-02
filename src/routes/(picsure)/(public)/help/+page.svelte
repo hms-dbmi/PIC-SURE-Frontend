@@ -1,8 +1,8 @@
 <script lang="ts">
   import Content from '#lib/components/Content.svelte';
   import CardButton from '#lib/components/buttons/CardButton.svelte';
-  import { config } from '#lib/configuration.svelte.js';
-  import { log, createLog } from '#lib/logger.js';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { log, createLog } from '#lib/logger.ts';
 </script>
 
 <svelte:head>

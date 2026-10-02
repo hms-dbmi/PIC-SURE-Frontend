@@ -1,10 +1,10 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { config } from '#lib/configuration.svelte.js';
-  import { user, isUserLoggedIn } from '#lib/stores/User.js';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { user, isUserLoggedIn } from '#lib/stores/User.ts';
   import Terms from '#lib/components/Terms.svelte';
   import Modal from '#lib/components/Modal.svelte';
-  import { log, createLog } from '#lib/logger.js';
+  import { log, createLog } from '#lib/logger.ts';
 
   let { showSitemap: showSitemapProp }: { showSitemap?: boolean } = $props();
   let showSitemap = $derived(showSitemapProp ?? (config.branding.footer.showSitemap || false));

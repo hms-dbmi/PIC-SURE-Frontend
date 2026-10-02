@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { HierarchyNodeInterface, NodeInterface } from '#lib/components/tree/types.js';
+  import type { HierarchyNodeInterface, NodeInterface } from '#lib/components/tree/types.ts';
   import TreeNodeComponent from '#lib/components/tree/TreeNode.svelte';
 
   let {

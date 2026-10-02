@@ -1,8 +1,8 @@
-import * as api from '#lib/api.js';
-import type { ArchivedBanner, BannerDraft, ManagedBanner } from '#lib/models/Banner.js';
-import { Picsure } from '#lib/paths.js';
-import { hasBannerContent, sanitizeBannerHTML } from '#lib/utilities/BannerHTML.js';
-import { normalizeBannerPageTargets } from '#lib/utilities/BannerPageTargets.js';
+import * as api from '#lib/api.ts';
+import type { ArchivedBanner, BannerDraft, ManagedBanner } from '#lib/models/Banner.ts';
+import { Picsure } from '#lib/paths.ts';
+import { hasBannerContent, sanitizeBannerHTML } from '#lib/utilities/BannerHTML.ts';
+import { normalizeBannerPageTargets } from '#lib/utilities/BannerPageTargets.ts';
 
 export async function publishBanner(draft: BannerDraft): Promise<ManagedBanner> {
   return api.post(Picsure.Banners.Manage, authorablePayload(draft));

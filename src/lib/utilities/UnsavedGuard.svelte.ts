@@ -1,7 +1,7 @@
 import { browser } from '$app/env';
 import { beforeNavigate, goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { appPath } from '#lib/paths.js';
+import { appPath } from '#lib/paths.ts';
 import { onDestroy } from 'svelte';
 
 export interface NavigationTransition {

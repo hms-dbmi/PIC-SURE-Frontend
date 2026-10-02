@@ -1,6 +1,6 @@
 <script lang="ts">
   import Popover from '#lib/components/Popover.svelte';
-  import { log, createLog } from '#lib/logger.js';
+  import { log, createLog } from '#lib/logger.ts';
 
   interface Props {
     itemToCopy: string;

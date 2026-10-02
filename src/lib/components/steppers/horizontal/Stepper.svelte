@@ -1,9 +1,9 @@
 <script lang="ts">
   import { setContext } from 'svelte';
   import { fade } from 'svelte/transition';
-  import { stepperState } from '#lib/stores/Stepper.js';
-  import type { StepperState } from '#lib/models/Stepper.js';
-  import { log, createLog } from '#lib/logger.js';
+  import { stepperState } from '#lib/stores/Stepper.ts';
+  import type { StepperState } from '#lib/models/Stepper.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   type StepMethod = (step: number, name: string, state: StepperState) => void;
   const defaultStep: StepMethod = () => {};

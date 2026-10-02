@@ -7,7 +7,7 @@ import type { Redirect } from '@sveltejs/kit';
 const store = vi.hoisted(() => ({ topAdmin: false }));
 
 vi.mock('$app/env', () => ({ browser: true }));
-vi.mock('#lib/stores/User.js', () => ({
+vi.mock('#lib/stores/User.ts', () => ({
   isTopAdmin: {
     subscribe: (fn: (v: unknown) => void) => {
       fn(store.topAdmin);

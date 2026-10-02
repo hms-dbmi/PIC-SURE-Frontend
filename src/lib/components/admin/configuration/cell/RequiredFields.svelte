@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { parseFieldsFromJSON } from '#lib/models/Connection.js';
+  import { parseFieldsFromJSON } from '#lib/models/Connection.ts';
   interface Props {
     data?: { cell: string };
   }

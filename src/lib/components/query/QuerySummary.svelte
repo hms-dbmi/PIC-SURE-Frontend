@@ -1,8 +1,8 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
-  import { toaster } from '#lib/toaster.js';
-  import { config } from '#lib/configuration.svelte.js';
+  import { toaster } from '#lib/toaster.ts';
+  import { config } from '#lib/configuration.svelte.ts';
 
   import {
     loadQuerySummaryData,
@@ -11,12 +11,12 @@
     type QueryEstimate,
   } from './QueryConverters';
 
-  import { QueryV3 } from '#lib/models/query/Query.js';
-  import { QueryVersion } from '#lib/models/Dataset.js';
-  import { queryV2ToV3, type QueryV2 } from '#lib/compat/QueryV2.js';
+  import { QueryV3 } from '#lib/models/query/Query.ts';
+  import { QueryVersion } from '#lib/models/Dataset.ts';
+  import { queryV2ToV3, type QueryV2 } from '#lib/compat/QueryV2.ts';
 
-  import { genomicFilters, allFilters, setFilterTree } from '#lib/stores/Filter.js';
-  import { exports } from '#lib/stores/Export.js';
+  import { genomicFilters, allFilters, setFilterTree } from '#lib/stores/Filter.ts';
+  import { exports } from '#lib/stores/Export.ts';
 
   import FiltersSummary from '#lib/components/query/FiltersSummary.svelte';
   import SelectedVariablesSummary from '#lib/components/query/SelectedVariablesSummary.svelte';
