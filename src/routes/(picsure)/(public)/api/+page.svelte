@@ -151,9 +151,8 @@
       });
     }
 
-    // The TOC marks the last section whose top has crossed into the upper 40% of
-    // the scroll viewport. The page ends override that: Authentication is already
-    // inside it on load, and the last section may never reach it.
+    // The page ends override the 40% threshold: Authentication already crosses it
+    // on load, and the last section may never reach it.
     const updateActive = () => {
       if (scroller.scrollTop <= 4) {
         activeSection = tocEntries[0].id;
