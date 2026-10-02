@@ -40,7 +40,7 @@ test.describe('Google consent', () => {
     await acceptConsentButton.click();
 
     // Then expect the consentModal to be hidden
-    await expect(page.getByTestId('[data-testid="consentModal"]')).not.toBeVisible();
+    await expect(page.getByTestId('consentModal')).not.toBeVisible();
   });
 
   test('Reject Google Consent hides modal', async ({ page }) => {
@@ -53,7 +53,7 @@ test.describe('Google consent', () => {
     await denyConsentButton.click();
 
     // Then expect the consentModal to be hidden
-    await expect(page.getByTestId('[data-testid="consentModal"]')).not.toBeVisible();
+    await expect(page.getByTestId('consentModal')).not.toBeVisible();
   });
   test("Google Consents saved in local storage on reject as 'denied'", async ({ page }) => {
     // Given Google Consent Modal is open
@@ -286,5 +286,39 @@ test.describe('Login redirect preserves search state', () => {
     await page.waitForURL('/explorer?search=somedata');
     await expect(page.getByTestId('search-box')).toHaveValue('somedata');
     await expect(page.locator('table')).toBeVisible();
+  });
+
+  test('A redirectTo that matches no route falls back to the home page', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'Login callback simulation is chromium-only, see setup.ts',
+    );
+
+    // Given: login was started from a page that no longer exists
+    await page.addInitScript(() => {
+      sessionStorage.setItem('redirect', '/no-such-route?x=1');
+      sessionStorage.setItem('type', 'AUTH0');
+    });
+    const droppedRedirectLog = page.waitForRequest(
+      (request) =>
+        request.url().endsWith('/api/v1/log') &&
+        (request.postData() ?? '').includes('login.redirect_dropped'),
+    );
+
+    // When: login completes
+    await page
+      .goto(
+        '/login/loading/#access_token=' +
+          mockToken +
+          '&scope=openid%20profile%20email&expires_in=86400&token_type=Bearer&state=mNK7oJ5SLputhCuYrXYh5n4xEVQXhz6G',
+      )
+      .catch(() => {});
+
+    // Then: goto() rejects the stale path, and the user lands home with the drop logged
+    await page.waitForURL('/');
+    expect((await droppedRedirectLog).postData()).toContain('/no-such-route');
   });
 });
