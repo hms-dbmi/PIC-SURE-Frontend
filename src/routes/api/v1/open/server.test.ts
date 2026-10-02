@@ -2,13 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 let mockEnv: Record<string, string | undefined> = {};
 
-vi.mock('$env/dynamic/private', () => ({
-  env: new Proxy(
-    {},
-    {
-      get: (_, key: string) => mockEnv[key],
-    },
-  ),
+// Getters, so each test's mockEnv is read when the route runs rather than at import.
+vi.mock('$app/env/private', () => ({
+  get PICSURE_INTERNAL_API_ORIGIN() {
+    return mockEnv.PICSURE_INTERNAL_API_ORIGIN;
+  },
+  get PICSURE_PLATFORM_API_KEY() {
+    return mockEnv.PICSURE_PLATFORM_API_KEY;
+  },
 }));
 
 // Must import after mocks are set up

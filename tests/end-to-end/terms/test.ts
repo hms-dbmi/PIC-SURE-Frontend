@@ -73,7 +73,9 @@ test.describe('Not logged in', () => {
   test('Terms link displays close button', async ({ page }) => {
     // Given
     await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
-    await page.goto('/');
+    // Start on /login: from / the client redirect is still finishing when the footer
+    // becomes clickable, and completing it re-renders the footer and drops the click.
+    await page.goto('/login');
 
     // When
     await page.getByTestId('terms-of-service-btn').click();
@@ -85,7 +87,9 @@ test.describe('Not logged in', () => {
   test('Terms link opens dismissable modal', async ({ page }) => {
     // Given
     await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
-    await page.goto('/');
+    // Start on /login: from / the client redirect is still finishing when the footer
+    // becomes clickable, and completing it re-renders the footer and drops the click.
+    await page.goto('/login');
     await page.getByTestId('terms-of-service-btn').click();
     await expect(page.locator('#terms-of-service')).toBeVisible();
 

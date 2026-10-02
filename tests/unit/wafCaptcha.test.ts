@@ -17,7 +17,7 @@ vi.mock('$app/navigation', () => ({
   goto: (...args: unknown[]) => mockGoto(...args),
 }));
 vi.mock('$app/paths', () => ({
-  resolve: (path: string) => path,
+  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
 }));
 
 const PENDING_KEY = 'waf-captcha-pending';
