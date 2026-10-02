@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { appPath } from '#lib/paths.js';
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
@@ -72,11 +73,12 @@
         const queryStart = redirectTo.indexOf('?');
         const pathname = queryStart === -1 ? redirectTo : redirectTo.slice(0, queryStart);
         const search = queryStart === -1 ? '' : redirectTo.slice(queryStart);
+        // goto rejects paths that match no route (e.g. a stale redirectTo), so fall back home.
         // The path portion IS resolved; the rule can't model an appended query string.
         // eslint-disable-next-line svelte/no-navigation-without-resolve
-        goto(`${resolve(pathname as '/')}${search}`);
+        goto(`${resolve(appPath(pathname))}${search}`).catch(() => goto(resolve('')));
       } else {
-        goto(resolve('/'));
+        goto(resolve(''));
       }
     });
   }

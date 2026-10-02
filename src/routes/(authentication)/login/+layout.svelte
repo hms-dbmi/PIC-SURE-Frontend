@@ -19,7 +19,7 @@
 
   onMount(() => {
     if ($user && $user.token) {
-      goto(resolve('/'));
+      goto(resolve(''));
     }
   });
 </script>

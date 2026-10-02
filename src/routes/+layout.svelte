@@ -2,6 +2,7 @@
   import { onMount, type Snippet } from 'svelte';
   import { afterNavigate } from '$app/navigation';
   import { asset } from '$app/paths';
+  import type { AssetPath } from '$app/types';
   import '@fortawesome/fontawesome-free/css/all.min.css';
   import '../styles/app.css';
   import { config } from '#lib/configuration.svelte.js';
@@ -18,7 +19,9 @@
 
   let theme = $derived(config.branding.theme);
   let favicon = $derived(
-    ['aim-ahead', 'bdc', 'picsure'].includes(theme) ? `/${theme}-favicon.png` : '/favicon.png',
+    (['aim-ahead', 'bdc', 'picsure'].includes(theme)
+      ? `${theme}-favicon.png`
+      : 'favicon.png') as AssetPath,
   );
 
   // theme.css tokens live under [data-theme='...'], but toasts/modals/drawers are

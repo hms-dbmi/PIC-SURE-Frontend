@@ -1,6 +1,7 @@
 import { browser } from '$app/env';
 import { beforeNavigate, goto } from '$app/navigation';
 import { resolve } from '$app/paths';
+import { appPath } from '#lib/paths.js';
 import { onDestroy } from 'svelte';
 
 export interface NavigationTransition {
@@ -76,7 +77,7 @@ export function createUnsavedGuard<T extends { kind: string } = never>(
         typeof target === 'string' ? target : `${target.pathname}${target.search}${target.hash}`;
       bypass = true;
       try {
-        await goto(resolve(path as '/'));
+        await goto(resolve(appPath(path)));
       } finally {
         bypass = false;
       }

@@ -1,5 +1,6 @@
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
+import { appPath } from '#lib/paths.js';
 import { log, createLog } from '#lib/logger.js';
 import { isOpenAccess } from '#lib/AccessState.js';
 
@@ -54,7 +55,7 @@ export function resumeAfterWafCaptcha(): void {
     // The reload normally lands back on the same URL; goto only fires when boot
     // logic redirected elsewhere in the meantime.
     if (route && route !== window.location.pathname + window.location.search) {
-      goto(resolve(route as '/'));
+      goto(resolve(appPath(route)));
     }
   } catch {
     return;

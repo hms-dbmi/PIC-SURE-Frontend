@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { appPath } from '#lib/paths.js';
   interface Props {
     href?: string;
     angle?: 'right' | 'left';
@@ -44,7 +45,7 @@
       data-testid={clean_testid}
       aria-disabled={disabled}
       class="{btnStyle} &[aria-disabled=“true”]:opacity-75 {className}"
-      href={resolve(href as '/')}
+      href={resolve(appPath(href))}
     >
       {@render label()}
     </a>

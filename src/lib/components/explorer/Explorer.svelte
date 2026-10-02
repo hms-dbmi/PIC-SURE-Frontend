@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { appPath } from '#lib/paths.js';
   import { onMount, onDestroy } from 'svelte';
 
   import { page } from '$app/state';
@@ -49,11 +50,9 @@
     searchTerm.set(searchInput);
 
     goto(
-      resolve(
-        (searchInput ? `${path}?search=${encodeURIComponent(searchInput)}` : `${path}`) as '/',
-      ),
+      resolve(appPath(searchInput ? `${path}?search=${encodeURIComponent(searchInput)}` : path)),
       {
-        replaceState: true,
+        replace: true,
       },
     );
   }
@@ -62,7 +61,7 @@
     resetSearch();
     searchInput = '';
 
-    goto(resolve(path as '/'));
+    goto(resolve(appPath(path)));
   }
 
   function scrollToSearchResults() {

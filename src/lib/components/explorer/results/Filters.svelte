@@ -51,7 +51,7 @@
         {:else}
           <a
             id="advanced-query-btn"
-            href={resolve(`${isDiscoverPage ? '/discover' : '/explorer'}/advanced-filtering`)}
+            href={resolve(`${isDiscoverPage ? 'discover' : 'explorer'}/advanced-filtering`)}
             data-testid="advanced-filtering-btn"
             class="{aqbBtnClass} !mr-0 hover:preset-filled-primary-500"
           >

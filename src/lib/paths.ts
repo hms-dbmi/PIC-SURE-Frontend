@@ -1,3 +1,10 @@
+// resolve() only type-checks literal paths (and only unions small enough for TypeScript to
+// decompose), so a path built at runtime like '/explorer?search=x' can't be typed as `Path`.
+// This drops the leading slash kit 3 pathnames don't use and types the result as the root path.
+export function appPath(path: string): '' {
+  return path.replace(/^\/+/, '') as '';
+}
+
 export function joinUrl(origin: string, path: string): string {
   return `${origin.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
 }

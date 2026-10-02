@@ -1,8 +1,5 @@
-import type { HandleClientError } from '@sveltejs/kit';
+import type { HandleClientError } from '@sveltejs/kit/hooks';
 
-export const handleError: HandleClientError = async ({ error, event, status, message }) => {
-  console.log('Error:', error, event, status, message);
-  return {
-    message: message || 'An unknown error occurred.',
-  };
+export const handleError: HandleClientError = ({ kind, error, event }) => {
+  console.log('Error:', kind, error, event);
 };

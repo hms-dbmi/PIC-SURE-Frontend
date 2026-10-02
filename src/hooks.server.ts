@@ -1,4 +1,4 @@
-import type { Handle, HandleServerError, ServerInit } from '@sveltejs/kit';
+import type { Handle, HandleServerError, ServerInit } from '@sveltejs/kit/hooks';
 import { registerProviderData } from './lib/AuthProviderRegistry';
 import type { AuthData } from './lib/models/AuthProvider';
 import { getConfig } from './lib/server/configCache';
@@ -61,11 +61,16 @@ export const handle: Handle = async ({ event, resolve }) => {
   return response;
 };
 
-export const handleError: HandleServerError = async ({ error, event, status, message }) => {
-  console.error('Server error: ', error, event, status, message);
-  return {
-    message: message || 'An unknown server error occurred.',
-  };
+// Every error reaches this hook, including 404s and error(...) calls, so only
+// unexpected ones get the full dump. Returning nothing keeps SvelteKit's status and message.
+export const handleError: HandleServerError = ({ kind, error, event }) => {
+  if (kind === 'unknown') {
+    console.error('Server error: ', error, event);
+  } else {
+    console.error(
+      `Server error (${kind}): ${error.status} ${error.message} at ${event.url.pathname}`,
+    );
+  }
 };
 
 export const init: ServerInit = () => {

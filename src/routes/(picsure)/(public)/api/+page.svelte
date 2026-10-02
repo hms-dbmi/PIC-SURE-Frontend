@@ -175,7 +175,7 @@
     )
       return;
     event.preventDefault();
-    await goto(resolve(`api#${id}`), { noScroll: true, keepFocus: true });
+    await goto(resolve(`api#${id}`), { reset: false });
     document.getElementById(id)?.scrollIntoView();
   }
 

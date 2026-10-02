@@ -3,6 +3,7 @@
   import { resolve } from '$app/paths';
   import { afterNavigate, beforeNavigate, goto, replaceState } from '$app/navigation';
   import { page } from '$app/state';
+  import { appPath } from '#lib/paths.js';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
   import type { Indexable } from '#lib/types.js';
@@ -48,7 +49,7 @@
     ),
   );
 
-  function tabFromUrl(url: URL): string | undefined {
+  function tabFromUrl(url: typeof page.url): string | undefined {
     const requested = url.searchParams.get('tab');
     return visibleTabs.find((tab) => TAB_PARAMS[tab] === requested);
   }
@@ -153,7 +154,7 @@
 
   const rowClickHandler = (path: string) => (row: Indexable) => {
     const uuid = row?.uuid;
-    goto(resolve(`admin/configuration/${path}/${uuid}/edit` as '/'));
+    goto(resolve(appPath(`admin/configuration/${path}/${uuid}/edit`)));
   };
   const roleRowCLick = rowClickHandler('role');
   const privilegeRowClick = rowClickHandler('privilege');
