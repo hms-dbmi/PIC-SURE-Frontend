@@ -1,18 +1,18 @@
 import { resolve } from '$app/paths';
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
-import { browser } from '$app/environment';
-import * as api from '$lib/api';
-import type { Route } from '$lib/models/Route';
-import type { ConsentsMap, User } from '$lib/models/User';
-import { PicsurePrivileges } from '$lib/models/Privilege';
-import { routes, config } from '$lib/configuration.svelte';
-import { Psama } from '$lib/paths';
+import { browser } from '$app/env';
+import * as api from '#lib/api.js';
+import type { Route } from '#lib/models/Route.js';
+import type { ConsentsMap, User } from '#lib/models/User.js';
+import { PicsurePrivileges } from '#lib/models/Privilege.js';
+import { routes, config } from '#lib/configuration.svelte.js';
+import { Psama } from '#lib/paths.js';
 import { goto } from '$app/navigation';
-import type AuthProvider from '$lib/models/AuthProvider.ts';
+import type AuthProvider from '#lib/models/AuthProvider.ts';
 import { page } from '$app/state';
-import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
-import { log, createLog } from '$lib/logger';
-import { isToastShowing, toaster } from '$lib/toaster';
+import { loginRedirectPath } from '#lib/utilities/LoginRedirect.js';
+import { log, createLog } from '#lib/logger.js';
+import { isToastShowing, toaster } from '#lib/toaster.js';
 
 const tokenRevision = writable(0);
 
@@ -343,7 +343,7 @@ function handleLogout(redirect: boolean) {
   if (redirect) {
     goto(resolve(loginRedirectPath(page.url) as '/'));
   } else {
-    goto(resolve('/login'));
+    goto(resolve('login'));
   }
 }
 

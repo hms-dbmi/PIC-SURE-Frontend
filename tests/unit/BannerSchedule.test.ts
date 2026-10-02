@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatInstantAsLocalMinute, resolveLocalMinute } from '$lib/utilities/BannerSchedule';
+import { formatInstantAsLocalMinute, resolveLocalMinute } from '#lib/utilities/BannerSchedule.js';
 
 describe('banner local schedule resolution', () => {
   it('resolves an ordinary local minute to one explicit UTC instant', () => {

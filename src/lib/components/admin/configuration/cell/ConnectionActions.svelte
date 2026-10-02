@@ -2,16 +2,16 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import { isTopAdmin } from '$lib/stores/User';
-  import { toaster } from '$lib/toaster';
-  import { deleteConnection } from '$lib/stores/Connections';
-  import Modal from '$lib/components/Modal.svelte';
+  import { isTopAdmin } from '#lib/stores/User.js';
+  import { toaster } from '#lib/toaster.js';
+  import { deleteConnection } from '#lib/stores/Connections.js';
+  import Modal from '#lib/components/Modal.svelte';
 
   const { data = { cell: '', row: { label: '' } } } = $props();
 
   function editConnection(event: Event) {
     event.stopPropagation();
-    goto(resolve(`/admin/configuration/connection/${data.cell}/edit`));
+    goto(resolve(`admin/configuration/connection/${data.cell}/edit`));
   }
 
   async function deleteRow() {

@@ -19,13 +19,13 @@ const mockUser = vi.hoisted(() => {
 });
 const mockEnsureConsentsLoaded = vi.hoisted(() => vi.fn());
 
-vi.mock('$app/environment', () => ({ browser: false }));
-vi.mock('$lib/stores/User', () => ({
+vi.mock('$app/env', () => ({ browser: false }));
+vi.mock('#lib/stores/User.js', () => ({
   user: mockUser,
   ensureConsentsLoaded: mockEnsureConsentsLoaded,
   isUserLoggedIn: vi.fn(() => false),
 }));
-vi.mock('$lib/stores/Dictionary', () => ({
+vi.mock('#lib/stores/Dictionary.js', () => ({
   getConceptDetails: vi.fn(),
 }));
 
@@ -40,16 +40,16 @@ import {
   enrichFilterDetails,
   hasInvalidFilter,
   removeInvalidFilters,
-} from '$lib/stores/Filter';
-import { getConceptDetails } from '$lib/stores/Dictionary';
+} from '#lib/stores/Filter.js';
+import { getConceptDetails } from '#lib/stores/Dictionary.js';
 import {
   createCategoricalFilter,
   createGenomicFilter,
   createNumericFilter,
-} from '$lib/models/Filter.svelte';
-import type { FilterInterface } from '$lib/models/Filter.svelte';
-import type { SearchResult } from '$lib/models/Search';
-import { LogicTree } from '$lib/models/LogicTree.svelte';
+} from '#lib/models/Filter.svelte.js';
+import type { FilterInterface } from '#lib/models/Filter.svelte.js';
+import type { SearchResult } from '#lib/models/Search.js';
+import { LogicTree } from '#lib/models/LogicTree.svelte.js';
 
 function mockSearchResult(conceptPath: string, dataset = 'test-dataset'): SearchResult {
   return {

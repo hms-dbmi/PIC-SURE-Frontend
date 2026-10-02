@@ -3,16 +3,16 @@
   import { goto } from '$app/navigation';
   import { Switch } from '@skeletonlabs/skeleton-svelte';
 
-  import type { ExtendedUser, UserRequest } from '$lib/models/User';
-  import type { Connection } from '$lib/models/Connection';
+  import type { ExtendedUser, UserRequest } from '#lib/models/User.js';
+  import type { Connection } from '#lib/models/Connection.js';
 
-  import { addUser, updateUser, getUserByEmailAndConnection } from '$lib/stores/Users';
-  import { getConnection } from '$lib/stores/Connections';
-  import { getRole } from '$lib/stores/Roles';
-  import { getPrivilege } from '$lib/stores/Privileges';
-  import { toaster } from '$lib/toaster';
+  import { addUser, updateUser, getUserByEmailAndConnection } from '#lib/stores/Users.js';
+  import { getConnection } from '#lib/stores/Connections.js';
+  import { getRole } from '#lib/stores/Roles.js';
+  import { getPrivilege } from '#lib/stores/Privileges.js';
+  import { toaster } from '#lib/toaster.js';
 
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
 
   interface Props {
     user?: ExtendedUser | undefined;
@@ -83,7 +83,7 @@
       toaster.success({
         title: `Successfully saved ${user ? '' : 'new '}user '${email}'`,
       });
-      goto(resolve('/admin/users'));
+      goto(resolve('admin/users'));
     } catch (error) {
       console.error(error);
       toaster.error({
@@ -165,7 +165,7 @@
         Save
       </button>
       <a
-        href={resolve('/admin/users')}
+        href={resolve('admin/users')}
         class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
       >
         Cancel

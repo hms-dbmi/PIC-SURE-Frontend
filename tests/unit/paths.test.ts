@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Picsure } from '$lib/paths';
+import { Picsure } from '#lib/paths.js';
 
 describe('visualization paths', () => {
   it('names the authorized backend', () => {

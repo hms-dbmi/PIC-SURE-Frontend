@@ -6,9 +6,9 @@ import {
   getIncludedConceptPaths,
   isVisualizationFilter,
   visualizationVariableLabel,
-} from '$lib/utilities/VisualizationData';
-import type { CategoricalPlotData, ContinuousPlotData, CountValue } from '$lib/utilities/Plotly';
-import type { Filter } from '$lib/models/Filter.svelte';
+} from '#lib/utilities/VisualizationData.js';
+import type { CategoricalPlotData, ContinuousPlotData, CountValue } from '#lib/utilities/Plotly.js';
+import type { Filter } from '#lib/models/Filter.svelte.js';
 
 function categorical(conceptPath: string | undefined, categoricalMap: Record<string, CountValue>) {
   return { conceptPath, categoricalMap } as CategoricalPlotData;

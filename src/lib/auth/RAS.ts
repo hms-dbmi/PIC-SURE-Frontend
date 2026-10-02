@@ -1,4 +1,4 @@
-import { Psama } from '$lib/paths';
+import { Psama } from '#lib/paths.js';
 import OktaBaseProvider, { type OktaBaseData as RasData } from './OktaBaseProvider';
 
 class RAS extends OktaBaseProvider {

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import Modal from '$lib/components/Modal.svelte';
-  import { config } from '$lib/configuration.svelte';
-  import { log, createLog } from '$lib/logger';
+  import Modal from '#lib/components/Modal.svelte';
+  import { config } from '#lib/configuration.svelte.js';
+  import { log, createLog } from '#lib/logger.js';
 
   let open = $state(false);
   let pendingUrl: string | null = $state(null);

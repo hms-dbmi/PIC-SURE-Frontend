@@ -1,13 +1,13 @@
 <script lang="ts">
   import type { Readable } from 'svelte/store';
-  import type { StatResult } from '$lib/models/Stat';
+  import type { StatResult } from '#lib/models/Stat.js';
 
-  import { browser } from '$app/environment';
-  import { StatPromise } from '$lib/utilities/StatBuilder';
-  import { countResult } from '$lib/services/counts/countFormat';
-  import { sanitizeHTML } from '$lib/utilities/HTML';
-  import Loading from '$lib/components/Loading.svelte';
-  import HelpInfoPopup from '$lib/components/HelpInfoPopup.svelte';
+  import { browser } from '$app/env';
+  import { StatPromise } from '#lib/utilities/StatBuilder.js';
+  import { countResult } from '#lib/services/counts/countFormat.js';
+  import { sanitizeHTML } from '#lib/utilities/HTML.js';
+  import Loading from '#lib/components/Loading.svelte';
+  import HelpInfoPopup from '#lib/components/HelpInfoPopup.svelte';
   interface Props {
     stats: Readable<StatResult[]>;
     description: string;

@@ -1,28 +1,28 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
   import { onDestroy, tick } from 'svelte';
-  import { bannerPlainText } from '$lib/utilities/BannerHTML';
-  import { truncate } from '$lib/utilities/Strings';
-  import { createLog, log } from '$lib/logger';
-  import type { ActiveBanner, BannerAudience } from '$lib/models/Banner';
+  import { bannerPlainText } from '#lib/utilities/BannerHTML.js';
+  import { truncate } from '#lib/utilities/Strings.js';
+  import { createLog, log } from '#lib/logger.js';
+  import type { ActiveBanner, BannerAudience } from '#lib/models/Banner.js';
   import {
     BANNER_APPEARANCES,
     BANNER_AUDIENCES,
     BANNER_ICONS,
     BANNER_LABEL_LENGTH,
-  } from '$lib/models/Banner';
-  import { Picsure } from '$lib/paths';
-  import { hasValidToken } from '$lib/stores/User';
-  import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
+  } from '#lib/models/Banner.js';
+  import { Picsure } from '#lib/paths.js';
+  import { hasValidToken } from '#lib/stores/User.js';
+  import SiteBanner from '#lib/components/banner/SiteBanner.svelte';
   import {
     matchesBannerPageTargets,
     parseBannerPageTargets,
-  } from '$lib/utilities/BannerPageTargets';
+  } from '#lib/utilities/BannerPageTargets.js';
   import {
     readBannerDismissals,
     writeBannerDismissals,
     type BannerDismissals,
-  } from '$lib/utilities/BannerDismissal';
+  } from '#lib/utilities/BannerDismissal.js';
 
   const appearances = new Set<unknown>(BANNER_APPEARANCES);
   const icons = new Set<unknown>(BANNER_ICONS);
@@ -148,7 +148,7 @@
     pathname = currentPathname;
     const revision = ++refreshRevision;
     try {
-      // Deliberately bypasses $lib/api: the feed renders on the public login layout, where
+      // Deliberately bypasses #lib/api: the feed renders on the public login layout, where
       // api.ts would throw SvelteKit error() on a feed failure, log the visitor out on a
       // 401/403, and cannot express cache: 'no-store'. Failures degrade to no banners below.
       const response = await fetch(`/${Picsure.Banners.Active}`, {

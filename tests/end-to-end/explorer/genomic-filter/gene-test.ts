@@ -8,7 +8,7 @@ import {
   facetResultPath,
 } from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
-import type { Branding } from '$lib/models/Configuration';
+import type { Branding } from '#lib/models/Configuration.js';
 import brandingJson from '../../../../src/lib/assets/configuration.json' with { type: 'json' };
 const branding: Branding = JSON.parse(JSON.stringify(brandingJson));
 

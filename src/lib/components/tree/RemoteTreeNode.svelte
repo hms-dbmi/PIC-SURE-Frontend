@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { HierarchyNodeInterface } from '$lib/components/tree/types';
-  import RemoteTreeNode from '$lib/components/tree/RemoteTreeNode.svelte';
+  import type { HierarchyNodeInterface } from '#lib/components/tree/types.js';
+  import RemoteTreeNode from '#lib/components/tree/RemoteTreeNode.svelte';
 
   const {
     node,

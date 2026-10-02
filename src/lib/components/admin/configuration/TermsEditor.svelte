@@ -1,14 +1,14 @@
 <script lang="ts">
-  import * as api from '$lib/api';
-  import { Psama } from '$lib/paths';
-  import { toaster } from '$lib/toaster';
-  import { isTopAdmin } from '$lib/stores/User';
+  import * as api from '#lib/api.js';
+  import { Psama } from '#lib/paths.js';
+  import { toaster } from '#lib/toaster.js';
+  import { isTopAdmin } from '#lib/stores/User.js';
 
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Loading from '$lib/components/Loading.svelte';
-  import Editor from '$lib/components/editor/Editor.svelte';
-  import Modal from '$lib/components/Modal.svelte';
-  import TermsPreview from '$lib/components/TermsPreview.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Loading from '#lib/components/Loading.svelte';
+  import Editor from '#lib/components/editor/Editor.svelte';
+  import Modal from '#lib/components/Modal.svelte';
+  import TermsPreview from '#lib/components/TermsPreview.svelte';
 
   let terms: string = $state('');
   let original: string = $state('');

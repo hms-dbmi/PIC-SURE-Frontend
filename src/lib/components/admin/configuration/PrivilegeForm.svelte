@@ -2,10 +2,10 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import type { Privilege } from '$lib/models/Privilege';
-  import { addPrivilege, updatePrivilege } from '$lib/stores/Privileges';
-  import { isTopAdmin } from '$lib/stores/User';
-  import { toaster } from '$lib/toaster';
+  import type { Privilege } from '#lib/models/Privilege.js';
+  import { addPrivilege, updatePrivilege } from '#lib/stores/Privileges.js';
+  import { isTopAdmin } from '#lib/stores/User.js';
+  import { toaster } from '#lib/toaster.js';
 
   interface Props {
     privilege?: Privilege | undefined;
@@ -38,7 +38,7 @@
       toaster.success({
         title: `Successfully saved ${newPrivilege && 'new '}privilege '${name}'`,
       });
-      goto(resolve('/admin/configuration'));
+      goto(resolve('admin/configuration'));
     } catch (error) {
       console.error(error);
       toaster.error({
@@ -93,7 +93,7 @@
         Save
       </button>
       <a
-        href={resolve('/admin/configuration')}
+        href={resolve('admin/configuration')}
         data-testid="privilege-cancel-btn"
         class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
       >

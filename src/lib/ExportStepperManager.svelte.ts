@@ -1,6 +1,6 @@
-import type { ExpectedResultType } from '$lib/models/query/Query.ts';
-import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-import { QueryV3 } from '$lib/models/query/Query';
+import type { ExpectedResultType } from '#lib/models/query/Query.ts';
+import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.js';
+import { QueryV3 } from '#lib/models/query/Query.js';
 
 let queryRequest: QueryRequestInterfaceV3 = $state({
   query: new QueryV3(),

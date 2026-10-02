@@ -5,7 +5,7 @@ import {
   type GenomicFilterInterfacev3,
   type PhenotypicClause,
   type PhenotypicFilterInterface,
-} from '$lib/models/query/Query';
+} from '#lib/models/query/Query.js';
 
 type NumericRange = {
   min?: number;

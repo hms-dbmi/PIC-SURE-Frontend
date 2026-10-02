@@ -2,20 +2,20 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import { toaster } from '$lib/toaster';
-  import { getUser, updateUser } from '$lib/stores/Users';
-  import { getConnection } from '$lib/stores/Connections';
-  import { getRole } from '$lib/stores/Roles';
-  import { getPrivilege } from '$lib/stores/Privileges';
+  import { toaster } from '#lib/toaster.js';
+  import { getUser, updateUser } from '#lib/stores/Users.js';
+  import { getConnection } from '#lib/stores/Connections.js';
+  import { getRole } from '#lib/stores/Roles.js';
+  import { getPrivilege } from '#lib/stores/Privileges.js';
 
-  import Modal from '$lib/components/Modal.svelte';
+  import Modal from '#lib/components/Modal.svelte';
 
   let { data = { cell: '', row: { status: '', email: '' } } } = $props();
   const active = $derived(data.row.status === 'Active');
 
   function edit(event: Event) {
     event.stopPropagation();
-    goto(resolve(`/admin/users/${data.cell}/edit`));
+    goto(resolve(`admin/users/${data.cell}/edit`));
   }
 
   async function toggleActivate(active: boolean) {

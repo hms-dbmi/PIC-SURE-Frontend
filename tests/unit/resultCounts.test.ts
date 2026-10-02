@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-vi.mock('$app/environment', () => ({ browser: false }));
+vi.mock('$app/env', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
@@ -24,22 +24,22 @@ const mockState = vi.hoisted(() => {
   };
 });
 
-vi.mock('$lib/toaster', () => ({
+vi.mock('#lib/toaster.js', () => ({
   toaster: { error: mockState.toasterErrorSpy },
   isToastShowing: mockState.isToastShowingSpy,
 }));
 
-vi.mock('$lib/stores/Filter', () => ({
+vi.mock('#lib/stores/Filter.js', () => ({
   allFilters: mockState.allFiltersStore,
   filterTree: mockState.filterTreeStore,
   genomicFilters: mockState.genomicFiltersStore,
 }));
 
-vi.mock('$lib/stores/Resources', () => ({
+vi.mock('#lib/stores/Resources.js', () => ({
   getCountResource: mockState.getCountResourceSpy,
 }));
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.js', () => ({
   log: mockState.logSpy,
   createLog: vi.fn((category: string, event: string, data?: unknown) => ({
     category,
@@ -48,19 +48,19 @@ vi.mock('$lib/logger', () => ({
   })),
 }));
 
-vi.mock('$lib/services/counts/queryDescriptor.svelte', () => ({
+vi.mock('#lib/services/counts/queryDescriptor.svelte.js', () => ({
   buildDescriptor: mockState.buildDescriptorSpy,
   stableHash: () => 'k',
 }));
 
-vi.mock('$lib/services/counts/providers', () => ({
+vi.mock('#lib/services/counts/providers.js', () => ({
   resultProviders: { 'query:patientCount': { id: 'query:patientCount' } },
 }));
 
-import type { ResultCountSnapshot } from '$lib/services/counts/snapshot';
-import type { QueryCountService } from '$lib/services/counts/queryCountService';
-import type { QueryDescriptor } from '$lib/services/counts/queryDescriptor.svelte';
-import { ResultCounts } from '$lib/state/resultCounts.svelte';
+import type { ResultCountSnapshot } from '#lib/services/counts/snapshot.js';
+import type { QueryCountService } from '#lib/services/counts/queryCountService.js';
+import type { QueryDescriptor } from '#lib/services/counts/queryDescriptor.svelte.js';
+import { ResultCounts } from '#lib/state/resultCounts.svelte.js';
 
 const descriptor: QueryDescriptor = {
   isOpenAccess: false,

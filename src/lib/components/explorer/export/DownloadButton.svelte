@@ -1,14 +1,14 @@
 <script lang="ts">
-  import * as api from '$lib/api';
-  import { config } from '$lib/configuration.svelte';
-  import { browser } from '$app/environment';
-  import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-  import { Picsure } from '$lib/paths';
-  import Modal from '$lib/components/Modal.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import { toaster } from '$lib/toaster';
-  import Loading from '$lib/components/Loading.svelte';
-  import { log, createLog } from '$lib/logger';
+  import * as api from '#lib/api.js';
+  import { config } from '#lib/configuration.svelte.js';
+  import { browser } from '$app/env';
+  import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.js';
+  import { Picsure } from '#lib/paths.js';
+  import Modal from '#lib/components/Modal.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import { toaster } from '#lib/toaster.js';
+  import Loading from '#lib/components/Loading.svelte';
+  import { log, createLog } from '#lib/logger.js';
   import { isHttpError } from '@sveltejs/kit';
   interface Props {
     query: QueryRequestInterfaceV3;

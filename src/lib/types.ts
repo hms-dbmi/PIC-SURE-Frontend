@@ -1,4 +1,4 @@
-import type { Column } from '$lib/components/datatable/types';
+import type { Column } from '#lib/components/datatable/types.js';
 import type { StatConfig } from './models/Stat';
 
 interface Link {

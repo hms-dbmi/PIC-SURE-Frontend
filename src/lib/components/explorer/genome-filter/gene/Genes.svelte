@@ -1,12 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import * as api from '$lib/api';
-  import { toaster } from '$lib/toaster';
-  import { Picsure } from '$lib/paths';
-  import { selectedGenes } from '$lib/stores/GeneFilter';
+  import * as api from '#lib/api.js';
+  import { toaster } from '#lib/toaster.js';
+  import { Picsure } from '#lib/paths.js';
+  import { selectedGenes } from '#lib/stores/GeneFilter.js';
 
-  import OptionsSelectionList from '$lib/components/OptionsSelectionList.svelte';
-  import { log, createLog } from '$lib/logger';
+  import OptionsSelectionList from '#lib/components/OptionsSelectionList.svelte';
+  import { log, createLog } from '#lib/logger.js';
 
   let allGenes: string[] = $state([]);
   let genesFromSavedFilter: string[] = $state([]);

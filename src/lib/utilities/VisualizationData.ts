@@ -3,8 +3,8 @@ import {
   type CategoricalPlotData,
   type ContinuousPlotData,
   type CountValue,
-} from '$lib/utilities/Plotly';
-import type { Filter } from '$lib/models/Filter.svelte';
+} from '#lib/utilities/Plotly.js';
+import type { Filter } from '#lib/models/Filter.svelte.js';
 
 export type VisualizationPlotData = CategoricalPlotData | ContinuousPlotData;
 

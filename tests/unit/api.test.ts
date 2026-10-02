@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 
 let mockBrowser = true;
 
-vi.mock('$app/environment', () => ({
+vi.mock('$app/env', () => ({
   get browser() {
     return mockBrowser;
   },
@@ -10,7 +10,7 @@ vi.mock('$app/environment', () => ({
 
 const mockLogout = vi.fn();
 const mockLogin = vi.fn();
-vi.mock('$lib/stores/User', () => ({
+vi.mock('#lib/stores/User.js', () => ({
   logout: (...args: unknown[]) => mockLogout(...args),
   login: (...args: unknown[]) => mockLogin(...args),
 }));
@@ -18,7 +18,7 @@ vi.mock('$lib/stores/User', () => ({
 const mockLog = vi.fn();
 const mockCreateLog = vi.fn((...args: unknown[]) => args);
 const mockGetSessionId = vi.fn(() => 'test-session-id');
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.js', () => ({
   log: (...args: unknown[]) => mockLog(...args),
   createLog: (...args: unknown[]) => mockCreateLog(...args),
   getSessionId: () => mockGetSessionId(),
@@ -33,7 +33,7 @@ vi.mock('@sveltejs/kit', () => ({
 }));
 
 let mockWafFlag = false;
-vi.mock('$lib/configuration.svelte', () => ({
+vi.mock('#lib/configuration.svelte.js', () => ({
   config: {
     features: {
       get wafCaptchaRecovery() {
@@ -45,12 +45,12 @@ vi.mock('$lib/configuration.svelte', () => ({
 
 const mockIsWafCaptchaResponse = vi.fn<(...args: unknown[]) => boolean>(() => false);
 const mockHandleWafCaptcha = vi.fn<(...args: unknown[]) => boolean>(() => true);
-vi.mock('$lib/wafCaptcha', () => ({
+vi.mock('#lib/wafCaptcha.js', () => ({
   isWafCaptchaResponse: (...args: unknown[]) => mockIsWafCaptchaResponse(...args),
   handleWafCaptcha: (...args: unknown[]) => mockHandleWafCaptcha(...args),
 }));
 
-import { get, post, put, del, isAbortError } from '$lib/api';
+import { get, post, put, del, isAbortError } from '#lib/api.js';
 
 function mockFetchResponse(overrides: {
   ok?: boolean;

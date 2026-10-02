@@ -2,21 +2,21 @@
   import { onDestroy, onMount } from 'svelte';
   import type { Unsubscriber } from 'svelte/store';
 
-  import { config } from '$lib/configuration.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import Datatable from '$lib/components/datatable/StaticTable.svelte';
-  import DashboardLink from '$lib/components/dashboard/DashboardLink.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import { config } from '#lib/configuration.svelte.js';
+  import Content from '#lib/components/Content.svelte';
+  import Datatable from '#lib/components/datatable/StaticTable.svelte';
+  import DashboardLink from '#lib/components/dashboard/DashboardLink.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
 
-  import { columns, loadDashboardData, rows } from '$lib/stores/Dashboard.ts';
+  import { columns, loadDashboardData, rows } from '#lib/stores/Dashboard.ts';
 
-  import type { Column } from '$lib/components/datatable/types';
-  import { type DashboardRow, activeRow } from '$lib/stores/Dashboard';
-  import { open } from '$lib/stores/Drawer';
-  import Loading from '$lib/components/Loading.svelte';
+  import type { Column } from '#lib/components/datatable/types.js';
+  import { type DashboardRow, activeRow } from '#lib/stores/Dashboard.js';
+  import { open } from '#lib/stores/Drawer.js';
+  import Loading from '#lib/components/Loading.svelte';
 
-  import { subscribeOnChange } from '$lib/utilities/Subscribers';
-  import { log, createLog } from '$lib/logger';
+  import { subscribeOnChange } from '#lib/utilities/Subscribers.js';
+  import { log, createLog } from '#lib/logger.js';
 
   const tableName = 'ExplorerTable';
 

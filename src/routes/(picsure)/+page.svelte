@@ -1,20 +1,20 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { config } from '$lib/configuration.svelte';
+  import { config } from '#lib/configuration.svelte.js';
   import { goto } from '$app/navigation';
-  import Searchbox from '$lib/components/Searchbox.svelte';
-  import Stats from '$lib/components/landing/Stats.svelte';
-  import { isUserLoggedIn } from '$lib/stores/User';
-  import { log, createLog } from '$lib/logger';
+  import Searchbox from '#lib/components/Searchbox.svelte';
+  import Stats from '#lib/components/landing/Stats.svelte';
+  import { isUserLoggedIn } from '#lib/stores/User.js';
+  import { log, createLog } from '#lib/logger.js';
 
   let searchTerm = $state('');
 
   function search() {
     log(createLog('SEARCH', 'landing.search', { term: searchTerm }));
     if (config.features.login.open && config.features.discover && !isUserLoggedIn()) {
-      goto(resolve(`/discover?search=${encodeURIComponent(searchTerm)}`));
+      goto(resolve(`discover?search=${encodeURIComponent(searchTerm)}`));
     } else {
-      goto(resolve(`/explorer?search=${encodeURIComponent(searchTerm)}`));
+      goto(resolve(`explorer?search=${encodeURIComponent(searchTerm)}`));
     }
   }
 

@@ -17,13 +17,13 @@ vi.mock('$app/navigation', () => ({
   },
 }));
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.js', () => ({
   log: vi.fn(),
   createLog: vi.fn((...args: unknown[]) => args),
 }));
 
 // Keep token presence separate from validity to cover expired sessions on public routes.
-vi.mock('$lib/stores/User', async () => {
+vi.mock('#lib/stores/User.js', async () => {
   const { writable } = await import('svelte/store');
   const hasValidToken = writable(false);
   const tokenStatus = writable(false);
@@ -32,9 +32,9 @@ vi.mock('$lib/stores/User', async () => {
   return { hasValidToken, tokenStatus };
 });
 
-import SiteBannerRegion from '$lib/components/banner/SiteBannerRegion.svelte';
-import { createLog, log } from '$lib/logger';
-import type { BannerAudience } from '$lib/models/Banner';
+import SiteBannerRegion from '#lib/components/banner/SiteBannerRegion.svelte';
+import { createLog, log } from '#lib/logger.js';
+import type { BannerAudience } from '#lib/models/Banner.js';
 
 const banner = {
   uuid: '11111111-1111-1111-1111-111111111111',

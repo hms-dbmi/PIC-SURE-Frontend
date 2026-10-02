@@ -3,15 +3,15 @@
   import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { config } from '$lib/configuration.svelte';
-  import type AuthProvider from '$lib/models/AuthProvider';
-  import { createInstance } from '$lib/AuthProviderRegistry';
-  import { browser } from '$app/environment';
-  import { panelOpen } from '$lib/stores/SidePanel';
-  import Loading from '$lib/components/Loading.svelte';
-  import type { User } from '$lib/models/User';
-  import { login, setToken } from '$lib/stores/User';
-  import { log, createLog } from '$lib/logger';
+  import { config } from '#lib/configuration.svelte.js';
+  import type AuthProvider from '#lib/models/AuthProvider.js';
+  import { createInstance } from '#lib/AuthProviderRegistry.js';
+  import { browser } from '$app/env';
+  import { panelOpen } from '#lib/stores/SidePanel.js';
+  import Loading from '#lib/components/Loading.svelte';
+  import type { User } from '#lib/models/User.js';
+  import { login, setToken } from '#lib/stores/User.js';
+  import { log, createLog } from '#lib/logger.js';
 
   async function attemptUserLogin() {
     let redirectTo = '/';
@@ -86,7 +86,7 @@
     attemptUserLogin().catch((error) => {
       log(createLog('LOGIN', 'login.failure', { error: String(error) }, { status: 401 }));
       console.error('Login Error: ', error);
-      goto(resolve('/login/error'));
+      goto(resolve('login/error'));
       return;
     });
   });

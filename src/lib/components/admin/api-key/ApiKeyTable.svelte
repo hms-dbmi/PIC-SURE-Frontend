@@ -2,15 +2,15 @@
   import { onDestroy, onMount, untrack } from 'svelte';
   import { TableHandler, type State } from '@vincjo/datatables/server';
 
-  import RemoteTable from '$lib/components/datatable/RemoteTable.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import ApiKeyStatus from '$lib/components/admin/api-key/cell/ApiKeyStatus.svelte';
-  import ApiKeyActions from '$lib/components/admin/api-key/cell/ApiKeyActions.svelte';
+  import RemoteTable from '#lib/components/datatable/RemoteTable.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import ApiKeyStatus from '#lib/components/admin/api-key/cell/ApiKeyStatus.svelte';
+  import ApiKeyActions from '#lib/components/admin/api-key/cell/ApiKeyActions.svelte';
 
-  import { loadApiKeys, listVersion } from '$lib/stores/ApiKeys';
-  import { getApiKeyStatus, formatInstant, extractApiError } from '$lib/models/ApiKey';
-  import { getDefaultRows } from '$lib/components/datatable/stores';
-  import { subscribeOnChange } from '$lib/utilities/Subscribers';
+  import { loadApiKeys, listVersion } from '#lib/stores/ApiKeys.js';
+  import { getApiKeyStatus, formatInstant, extractApiError } from '#lib/models/ApiKey.js';
+  import { getDefaultRows } from '#lib/components/datatable/stores.js';
+  import { subscribeOnChange } from '#lib/utilities/Subscribers.js';
 
   interface ApiKeyRow {
     uuid: string;

@@ -1,12 +1,12 @@
-import * as api from '$lib/api';
-import { Picsure } from '$lib/paths';
-import { config } from '$lib/configuration.svelte';
-import type { Indexable } from '$lib/types';
+import * as api from '#lib/api.js';
+import { Picsure } from '#lib/paths.js';
+import { config } from '#lib/configuration.svelte.js';
+import type { Indexable } from '#lib/types.js';
 
-import type { QueryRequestInterfaceV3 } from '$lib/models/api/Request';
-import { ExportType, type VariantData } from '$lib/models/Variant';
+import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.js';
+import { ExportType, type VariantData } from '#lib/models/Variant.js';
 
-import type { Column } from '$lib/components/datatable/types';
+import type { Column } from '#lib/components/datatable/types.js';
 
 export function getVariantCount(request: QueryRequestInterfaceV3): Promise<number> {
   request.query.expectedResultType = 'VARIANT_COUNT_FOR_QUERY';

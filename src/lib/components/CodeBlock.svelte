@@ -16,8 +16,8 @@
 </script>
 
 <script lang="ts">
-  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
-  import type { CodeBlockProps } from '$lib/models/CodeBlock';
+  import CopyButton from '#lib/components/buttons/CopyButton.svelte';
+  import type { CodeBlockProps } from '#lib/models/CodeBlock.js';
 
   let { code = '', lang = 'bash' }: CodeBlockProps = $props();
 

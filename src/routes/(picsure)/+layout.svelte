@@ -4,23 +4,23 @@
   import { beforeNavigate } from '$app/navigation';
 
   import { Toaster } from '@skeletonlabs/skeleton-svelte';
-  import { toaster } from '$lib/toaster';
+  import { toaster } from '#lib/toaster.js';
 
   import {
     hasInvalidFilter,
     hasGenomicFilter,
     hasUnallowedFilter,
     filterWarning,
-  } from '$lib/stores/Filter.ts';
+  } from '#lib/stores/Filter.ts';
 
-  import Shell from '$lib/components/Shell.svelte';
-  import Navigation from '$lib/components/Navigation.svelte';
-  import SiteBannerRegion from '$lib/components/banner/SiteBannerRegion.svelte';
-  import SidePanel from '$lib/components/explorer/results/SidePanel.svelte';
-  import Footer from '$lib/components/Footer.svelte';
-  import Drawer from '$lib/components/Drawer.svelte';
-  import DashboardDrawer from '$lib/components/dashboard/DashboardDrawer.svelte';
-  import FilterWarning from '$lib/components/explorer/FilterWarning.svelte';
+  import Shell from '#lib/components/Shell.svelte';
+  import Navigation from '#lib/components/Navigation.svelte';
+  import SiteBannerRegion from '#lib/components/banner/SiteBannerRegion.svelte';
+  import SidePanel from '#lib/components/explorer/results/SidePanel.svelte';
+  import Footer from '#lib/components/Footer.svelte';
+  import Drawer from '#lib/components/Drawer.svelte';
+  import DashboardDrawer from '#lib/components/dashboard/DashboardDrawer.svelte';
+  import FilterWarning from '#lib/components/explorer/FilterWarning.svelte';
 
   let { children }: { children?: Snippet } = $props();
   let filterWarningModal: boolean = $state(false);

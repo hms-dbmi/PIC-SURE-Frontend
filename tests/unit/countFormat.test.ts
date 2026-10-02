@@ -3,7 +3,7 @@ import {
   countResult,
   isCountValueEqual,
   isObfuscatedBelowThreshold,
-} from '$lib/services/counts/countFormat';
+} from '#lib/services/counts/countFormat.js';
 
 describe('countResult', () => {
   it('returns "0" for an empty list (string mode)', () => {

@@ -1,5 +1,5 @@
-import type { ExportInterface } from '$lib/models/Export';
-import type { Filter } from '$lib/models/Filter.svelte';
+import type { ExportInterface } from '#lib/models/Export.js';
+import type { Filter } from '#lib/models/Filter.svelte.js';
 
 export type ExportType = 'Categorical' | 'Continuous' | 'AnyRecordOf';
 export interface ExportRowInterface {

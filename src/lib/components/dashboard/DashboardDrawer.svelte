@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { getDatasetDetails } from '$lib/stores/Dictionary';
-  import { activeRow } from '$lib/stores/Dashboard';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import { getDatasetDetails } from '#lib/stores/Dictionary.js';
+  import { activeRow } from '#lib/stores/Dashboard.js';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Loading from '../Loading.svelte';
-  import { log, createLog } from '$lib/logger';
+  import { log, createLog } from '#lib/logger.js';
 
   const datasetId = ($activeRow?.dataset_id as string) || '';
   const title = ($activeRow?.name as string) || '';

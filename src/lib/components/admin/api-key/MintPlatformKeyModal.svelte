@@ -1,17 +1,17 @@
 <script lang="ts">
-  import Modal from '$lib/components/Modal.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import CopyButton from '$lib/components/buttons/CopyButton.svelte';
+  import Modal from '#lib/components/Modal.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import CopyButton from '#lib/components/buttons/CopyButton.svelte';
 
-  import { isTopAdmin } from '$lib/stores/User';
-  import { mintPlatformKey } from '$lib/stores/ApiKeys';
+  import { isTopAdmin } from '#lib/stores/User.js';
+  import { mintPlatformKey } from '#lib/stores/ApiKeys.js';
   import {
     extractApiError,
     formatInstant,
     toPlatformKeyRequest,
     type MintedPlatformKey,
     type PlatformKeyExpiry,
-  } from '$lib/models/ApiKey';
+  } from '#lib/models/ApiKey.js';
 
   let open = $state(false);
   let name = $state('');

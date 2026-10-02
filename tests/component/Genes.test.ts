@@ -4,24 +4,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 
-import Genes from '$lib/components/explorer/genome-filter/gene/Genes.svelte';
-import * as api from '$lib/api';
-import { selectedGenes } from '$lib/stores/GeneFilter';
+import Genes from '#lib/components/explorer/genome-filter/gene/Genes.svelte';
+import * as api from '#lib/api.js';
+import { selectedGenes } from '#lib/stores/GeneFilter.js';
 import { optionsIn } from './helpers';
 
-vi.mock('$app/environment', () => ({ browser: false }));
+vi.mock('$app/env', () => ({ browser: false }));
 
-vi.mock('$lib/api', () => ({
+vi.mock('#lib/api.js', () => ({
   get: vi.fn(),
 }));
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.js', () => ({
   log: vi.fn(),
   createLog: vi.fn(),
   getPageContext: vi.fn(),
 }));
 
-vi.mock('$lib/toaster', () => ({
+vi.mock('#lib/toaster.js', () => ({
   toaster: { error: vi.fn() },
 }));
 

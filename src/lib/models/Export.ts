@@ -1,4 +1,4 @@
-import type { SearchResult } from '$lib/models/Search';
+import type { SearchResult } from '#lib/models/Search.js';
 
 export interface ExportInterface {
   id: string;

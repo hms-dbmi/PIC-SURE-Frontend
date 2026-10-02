@@ -1,35 +1,35 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 
 let mockBrowser = true;
-vi.mock('$app/environment', () => ({
+vi.mock('$app/env', () => ({
   get browser() {
     return mockBrowser;
   },
 }));
 
 const mockLogout = vi.fn();
-vi.mock('$lib/stores/User', () => ({
+vi.mock('#lib/stores/User.js', () => ({
   logout: (...args: unknown[]) => mockLogout(...args),
   login: vi.fn(),
 }));
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.js', () => ({
   log: vi.fn(),
   createLog: vi.fn((...args: unknown[]) => args),
   getSessionId: () => 'test-session-id',
 }));
 
-vi.mock('$lib/configuration.svelte', () => ({
+vi.mock('#lib/configuration.svelte.js', () => ({
   config: { features: { wafCaptchaRecovery: false } },
 }));
 
-vi.mock('$lib/wafCaptcha', () => ({
+vi.mock('#lib/wafCaptcha.js', () => ({
   isWafCaptchaResponse: () => false,
   handleWafCaptcha: () => true,
 }));
 
 // @sveltejs/kit is left unmocked on purpose: error() must throw a real HttpError.
-import { get, consentDeniedMessage, CONSENT_DENIED_MESSAGE } from '$lib/api';
+import { get, consentDeniedMessage, CONSENT_DENIED_MESSAGE } from '#lib/api.js';
 
 describe('consentDeniedMessage', () => {
   let fetchMock: Mock;

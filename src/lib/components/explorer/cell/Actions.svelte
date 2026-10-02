@@ -1,16 +1,16 @@
 <script lang="ts">
-  import type { SearchResult } from '$lib/models/Search';
-  import { setActiveRow } from '$lib/stores/ExpandableRow';
+  import type { SearchResult } from '#lib/models/Search.js';
+  import { setActiveRow } from '#lib/stores/ExpandableRow.js';
   import {
     exports,
     addExport,
     removeExportByUuid,
     mapSearchResultAsExport,
-  } from '$lib/stores/Export';
-  import { panelOpen } from '$lib/stores/SidePanel';
-  import { config } from '$lib/configuration.svelte';
-  import { isOpenAccess } from '$lib/AccessState';
-  import { log, createLog, getPageContext } from '$lib/logger';
+  } from '#lib/stores/Export.js';
+  import { panelOpen } from '#lib/stores/SidePanel.js';
+  import { config } from '#lib/configuration.svelte.js';
+  import { isOpenAccess } from '#lib/AccessState.js';
+  import { log, createLog, getPageContext } from '#lib/logger.js';
 
   let { data = {} as SearchResult } = $props();
   let exportItem = $derived(mapSearchResultAsExport(data.row));

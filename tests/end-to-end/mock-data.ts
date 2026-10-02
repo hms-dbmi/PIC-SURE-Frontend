@@ -1,7 +1,7 @@
 import type { ConsentsMap, User } from '../../src/lib/models/User';
 import { PicsurePrivileges, BDCPrivileges } from '../../src/lib/models/Privilege';
-import type { DashboardResp } from '$lib/stores/Dashboard';
-import type { Indexable } from '$lib/types';
+import type { DashboardResp } from '#lib/stores/Dashboard.js';
+import type { Indexable } from '#lib/types.js';
 
 export const HPDS = process.env.VITE_RESOURCE_HPDS;
 

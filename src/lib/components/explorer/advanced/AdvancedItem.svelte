@@ -3,7 +3,7 @@
     type Filter,
     type FilterInterface,
     derivedFilterDescription,
-  } from '$lib/models/Filter.svelte';
+  } from '#lib/models/Filter.svelte.js';
   import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
   import { CollisionPriority } from '@dnd-kit/abstract';
   import { slide } from 'svelte/transition';

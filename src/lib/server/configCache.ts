@@ -1,8 +1,8 @@
 import { error, type NumericRange } from '@sveltejs/kit';
-import type { ConfigObject, ConfigCache, ConfigKind } from '$lib/models/Configuration';
-import { CONFIG_API_KIND } from '$lib/models/Configuration';
-import { Picsure, joinUrl } from '$lib/paths';
-import { withBackoff } from '$lib/utilities/backoff';
+import type { ConfigObject, ConfigCache, ConfigKind } from '#lib/models/Configuration.js';
+import { CONFIG_API_KIND } from '#lib/models/Configuration.js';
+import { Picsure, joinUrl } from '#lib/paths.js';
+import { withBackoff } from '#lib/utilities/backoff.js';
 
 const ORIGIN = import.meta.env?.VITE_ORIGIN;
 

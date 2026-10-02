@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 
 const mockGetConfig = vi.fn();
-vi.mock('$lib/server/configCache', () => ({
+vi.mock('#lib/server/configCache.js', () => ({
   getConfig: (...args: unknown[]) => mockGetConfig(...args),
 }));
 

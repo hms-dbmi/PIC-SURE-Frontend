@@ -1,13 +1,13 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import type { FilterGroupInterface } from '$lib/models/Filter.svelte';
+  import type { FilterGroupInterface } from '#lib/models/Filter.svelte.js';
   import { page } from '$app/state';
-  import { filterTree, filters, genomicFilters } from '$lib/stores/Filter';
-  import { exports } from '$lib/stores/Export';
+  import { filterTree, filters, genomicFilters } from '#lib/stores/Filter.js';
+  import { exports } from '#lib/stores/Export.js';
 
-  import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
-  import ResultsFilterGroup from '$lib/components/explorer/results/ResultsFilterGroup.svelte';
-  import Popover from '$lib/components/Popover.svelte';
+  import FilterComponent from '#lib/components/explorer/results/AddedFilter.svelte';
+  import ResultsFilterGroup from '#lib/components/explorer/results/ResultsFilterGroup.svelte';
+  import Popover from '#lib/components/Popover.svelte';
 
   interface Props {
     isDiscoverPage?: boolean;

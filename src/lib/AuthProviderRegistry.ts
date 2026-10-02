@@ -1,5 +1,5 @@
-import type { AuthData } from '$lib/models/AuthProvider';
-import AuthProvider from '$lib/models/AuthProvider';
+import type { AuthData } from '#lib/models/AuthProvider.js';
+import AuthProvider from '#lib/models/AuthProvider.js';
 
 const providerDataRegistry: AuthData[] = [];
 

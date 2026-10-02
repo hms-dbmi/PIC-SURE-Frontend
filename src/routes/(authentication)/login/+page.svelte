@@ -3,18 +3,18 @@
   import { fly } from 'svelte/transition';
 
   import { page } from '$app/state';
-  import { browser } from '$app/environment';
+  import { browser } from '$app/env';
 
-  import { config } from '$lib/configuration.svelte';
-  import type { AuthData } from '$lib/models/AuthProvider';
-  import { toaster } from '$lib/toaster';
+  import { config } from '#lib/configuration.svelte.js';
+  import type { AuthData } from '#lib/models/AuthProvider.js';
+  import { toaster } from '#lib/toaster.js';
 
-  import { log, createLog } from '$lib/logger';
+  import { log, createLog } from '#lib/logger.js';
 
-  import LoginButton from '$lib/components/buttons/LoginButton.svelte';
-  import Logo from '$lib/components/Logo.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Loading from '$lib/components/Loading.svelte';
+  import LoginButton from '#lib/components/buttons/LoginButton.svelte';
+  import Logo from '#lib/components/Logo.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Loading from '#lib/components/Loading.svelte';
 
   const redirectTo = page.url.searchParams.get('redirectTo') || '/';
   const siteName = $derived(config.branding.applicationName);

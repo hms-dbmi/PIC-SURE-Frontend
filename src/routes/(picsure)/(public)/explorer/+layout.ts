@@ -1,9 +1,9 @@
 import type { LayoutLoad } from './$types';
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { redirect } from '@sveltejs/kit';
-import { isTokenExpired, isUserLoggedIn } from '$lib/stores/User';
-import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
-import { config } from '$lib/configuration.svelte';
+import { isTokenExpired, isUserLoggedIn } from '#lib/stores/User.js';
+import { loginRedirectPath } from '#lib/utilities/LoginRedirect.js';
+import { config } from '#lib/configuration.svelte.js';
 
 export const load: LayoutLoad = async ({ url, parent }) => {
   if (!browser) return;

@@ -4,9 +4,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import { TableHandler } from '@vincjo/datatables';
 
-import tourConfig from '$lib/assets/TourConfiguration.json';
+import tourConfig from '#lib/assets/TourConfiguration.json';
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.js', () => ({
   log: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createLog: vi.fn((...args: any[]) => args),
@@ -16,7 +16,7 @@ vi.mock('$lib/logger', () => ({
 // Actions.svelte gates the hierarchy/export buttons behind these flags. The
 // deployments that ship these tours (see TourConfiguration.json) run with
 // both enabled - see ENABLE_HIERARCHY/ALLOW_EXPORT_ENABLED in Configuration.ts.
-vi.mock('$lib/configuration.svelte', () => ({
+vi.mock('#lib/configuration.svelte.js', () => ({
   config: {
     features: {
       explorer: {
@@ -27,14 +27,14 @@ vi.mock('$lib/configuration.svelte', () => ({
   },
 }));
 
-vi.mock('$lib/AccessState', () => ({
+vi.mock('#lib/AccessState.js', () => ({
   isOpenAccess: vi.fn(() => false),
 }));
 
 // Same minimal store stub used by DatatableRow.test.ts / DatatableKeyboardNav.test.ts:
 // the real store eagerly imports explorer components that touch localStorage at
 // module load, which isn't available in this environment.
-vi.mock('$lib/stores/ExpandableRow', () => {
+vi.mock('#lib/stores/ExpandableRow.js', () => {
   const make = (value: unknown) => {
     let current = value;
     const subscribers = new Set<(v: unknown) => void>();
@@ -59,10 +59,10 @@ vi.mock('$lib/stores/ExpandableRow', () => {
   };
 });
 
-import RemoteTable from '$lib/components/datatable/RemoteTable.svelte';
-import Actions from '$lib/components/explorer/cell/Actions.svelte';
-import { activeTable, activeRow } from '$lib/stores/ExpandableRow';
-import { isOpenAccess } from '$lib/AccessState';
+import RemoteTable from '#lib/components/datatable/RemoteTable.svelte';
+import Actions from '#lib/components/explorer/cell/Actions.svelte';
+import { activeTable, activeRow } from '#lib/stores/ExpandableRow.js';
+import { isOpenAccess } from '#lib/AccessState.js';
 
 afterEach(() => {
   vi.clearAllMocks();

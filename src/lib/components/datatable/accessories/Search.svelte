@@ -1,7 +1,7 @@
 <script lang="ts">
   import { TableHandler } from '@vincjo/datatables';
   import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
-  import { log, createLog } from '$lib/logger';
+  import { log, createLog } from '#lib/logger.js';
 
   let {
     handler,

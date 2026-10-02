@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('$lib/configuration.svelte', () => ({
+vi.mock('#lib/configuration.svelte.js', () => ({
   config: { settings: { distributionExplorer: { graphColors: ['#111111', '#222222'] } } },
 }));
 
@@ -9,7 +9,7 @@ import {
   createContinuousPlot,
   type CategoricalPlotData,
   type ContinuousPlotData,
-} from '$lib/utilities/Plotly';
+} from '#lib/utilities/Plotly.js';
 
 const baseChart = {
   title: 'demographics: race',

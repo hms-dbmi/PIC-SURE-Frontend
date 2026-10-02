@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { config } from '$lib/configuration.svelte';
-  import Content from '$lib/components/Content.svelte';
-  import Explorer from '$lib/components/explorer/Explorer.svelte';
-  import TourData from '$lib/assets/TourConfiguration.json';
-  import type { TourDataType } from '$lib/models/Tour';
+  import { config } from '#lib/configuration.svelte.js';
+  import Content from '#lib/components/Content.svelte';
+  import Explorer from '#lib/components/explorer/Explorer.svelte';
+  import TourData from '#lib/assets/TourConfiguration.json';
+  import type { TourDataType } from '#lib/models/Tour.js';
 
   const Tour: Record<string, TourDataType> = TourData;
   let tourName = $derived(config.settings.tour.auth);

@@ -3,12 +3,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
-import ResultInfoComponent from '$lib/components/explorer/ResultInfoComponent.svelte';
-import { config } from '$lib/configuration.svelte';
-import { getConceptDetails } from '$lib/stores/Dictionary';
-import type { SearchResult } from '$lib/models/Search';
+import ResultInfoComponent from '#lib/components/explorer/ResultInfoComponent.svelte';
+import { config } from '#lib/configuration.svelte.js';
+import { getConceptDetails } from '#lib/stores/Dictionary.js';
+import type { SearchResult } from '#lib/models/Search.js';
 
-vi.mock('$lib/stores/Dictionary', () => ({
+vi.mock('#lib/stores/Dictionary.js', () => ({
   getConceptDetails: vi.fn(),
 }));
 

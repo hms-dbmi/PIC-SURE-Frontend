@@ -1,4 +1,4 @@
-import { Operator, type OperatorType } from '$lib/models/query/Query';
+import { Operator, type OperatorType } from '#lib/models/query/Query.js';
 
 export interface LogicNode<T> {
   parent: LogicGroup<T> | undefined;
