@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { ExportType, type VariantResult } from '#lib/models/Variant.js';
-  import { getCountResource } from '#lib/stores/Resources.js';
-  import { getVariantCount, getVariantData } from '#lib/utilities/Variants.js';
-  import { getQueryRequestV3 } from '#lib/utilities/QueryBuilder.js';
-  import { config } from '#lib/configuration.svelte.js';
+  import { ExportType, type VariantResult } from '#lib/models/Variant.ts';
+  import { getCountResource } from '#lib/stores/Resources.ts';
+  import { getVariantCount, getVariantData } from '#lib/utilities/Variants.ts';
+  import { getQueryRequestV3 } from '#lib/utilities/QueryBuilder.ts';
+  import { config } from '#lib/configuration.svelte.ts';
 
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Loading from '#lib/components/Loading.svelte';

@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { SearchResult } from '#lib/models/Search.js';
-  import { getConceptDetails } from '#lib/stores/Dictionary.js';
+  import type { SearchResult } from '#lib/models/Search.ts';
+  import { getConceptDetails } from '#lib/stores/Dictionary.ts';
   import Loading from '#lib/components/Loading.svelte';
   import ShowMoreButton from '#lib/components/buttons/ShowMoreButton.svelte';
-  import { config } from '#lib/configuration.svelte.js';
+  import { config } from '#lib/configuration.svelte.ts';
 
   type InfoRow = {
     label: string;

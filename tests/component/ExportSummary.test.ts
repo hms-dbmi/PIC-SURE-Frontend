@@ -11,7 +11,7 @@ const mockState = vi.hoisted(() => ({
   features: {} as Record<string, unknown>,
 }));
 
-vi.mock('#lib/configuration.svelte.js', () => ({
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: {
     get features() {
       return mockState.features;
@@ -26,7 +26,7 @@ vi.mock('#lib/configuration.svelte.js', () => ({
   resetConfig: () => {},
 }));
 
-vi.mock('#lib/state/resultCounts.svelte.js', () => ({
+vi.mock('#lib/state/resultCounts.svelte.ts', () => ({
   resultCountsState: {
     get total() {
       return 100;

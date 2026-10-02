@@ -1,9 +1,9 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import type { FilterGroupInterface } from '#lib/models/Filter.svelte.js';
+  import type { FilterGroupInterface } from '#lib/models/Filter.svelte.ts';
   import { page } from '$app/state';
-  import { filterTree, filters, genomicFilters } from '#lib/stores/Filter.js';
-  import { exports } from '#lib/stores/Export.js';
+  import { filterTree, filters, genomicFilters } from '#lib/stores/Filter.ts';
+  import { exports } from '#lib/stores/Export.ts';
 
   import FilterComponent from '#lib/components/explorer/results/AddedFilter.svelte';
   import ResultsFilterGroup from '#lib/components/explorer/results/ResultsFilterGroup.svelte';

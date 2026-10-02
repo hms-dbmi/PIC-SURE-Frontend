@@ -2,8 +2,8 @@
   import { onMount } from 'svelte';
   import { afterNavigate } from '$app/navigation';
   import { page } from '$app/state';
-  import { config } from '#lib/configuration.svelte.js';
-  import { log, createLog } from '#lib/logger.js';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   type Acceptance = 'granted' | 'denied';
   interface Consent {

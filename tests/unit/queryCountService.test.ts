@@ -7,9 +7,9 @@ vi.mock('$app/paths', () => ({
   resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
 }));
 
-import { createQueryCountService } from '#lib/services/counts/queryCountService.js';
-import type { CountProvider } from '#lib/services/counts/providers.js';
-import type { QueryDescriptor } from '#lib/services/counts/queryDescriptor.svelte.js';
+import { createQueryCountService } from '#lib/services/counts/queryCountService.ts';
+import type { CountProvider } from '#lib/services/counts/providers.ts';
+import type { QueryDescriptor } from '#lib/services/counts/queryDescriptor.svelte.ts';
 
 const descriptor: QueryDescriptor = {
   isOpenAccess: false,

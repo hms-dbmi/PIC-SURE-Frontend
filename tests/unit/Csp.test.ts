@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { findStyleNonceProblem, withStyleNonce } from '#lib/server/csp.js';
+import { findStyleNonceProblem, withStyleNonce } from '#lib/server/csp.ts';
 
 const NONCE = 'abc123==';
 const prod = (styleSrc: string) =>

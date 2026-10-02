@@ -3,8 +3,8 @@
   import {
     buildEquation,
     type EquationPart,
-  } from '#lib/components/explorer/advanced/LogicTreeSummary.js';
-  import type { FilterGroupInterface, FilterInterface } from '#lib/models/Filter.svelte.js';
+  } from '#lib/components/explorer/advanced/LogicTreeSummary.ts';
+  import type { FilterGroupInterface, FilterInterface } from '#lib/models/Filter.svelte.ts';
 
   interface Props {
     root: FilterGroupInterface;

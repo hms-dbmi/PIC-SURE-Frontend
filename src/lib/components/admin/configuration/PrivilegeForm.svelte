@@ -2,10 +2,10 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import type { Privilege } from '#lib/models/Privilege.js';
-  import { addPrivilege, updatePrivilege } from '#lib/stores/Privileges.js';
-  import { isTopAdmin } from '#lib/stores/User.js';
-  import { toaster } from '#lib/toaster.js';
+  import type { Privilege } from '#lib/models/Privilege.ts';
+  import { addPrivilege, updatePrivilege } from '#lib/stores/Privileges.ts';
+  import { isTopAdmin } from '#lib/stores/User.ts';
+  import { toaster } from '#lib/toaster.ts';
 
   interface Props {
     privilege?: Privilege | undefined;

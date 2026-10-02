@@ -4,8 +4,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/svelte';
 
 import AdvancedItem from '#lib/components/explorer/advanced/AdvancedItem.svelte';
-import type { FilterInterface } from '#lib/models/Filter.svelte.js';
-import type { SearchResult } from '#lib/models/Search.js';
+import type { FilterInterface } from '#lib/models/Filter.svelte.ts';
+import type { SearchResult } from '#lib/models/Search.ts';
 
 type SearchResultFixture = Partial<Omit<SearchResult, 'studyAcronym'>> & {
   studyAcronym?: string | null;

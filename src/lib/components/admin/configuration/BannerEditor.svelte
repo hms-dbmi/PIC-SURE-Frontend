@@ -13,14 +13,14 @@
     BannerPageTarget,
     BannerPresentation,
     ManagedBanner,
-  } from '#lib/models/Banner.js';
+  } from '#lib/models/Banner.ts';
   import {
     BANNER_APPEARANCES,
     BANNER_APPEARANCE_DETAILS,
     BANNER_AUDIENCES,
     BANNER_AUDIENCE_LABELS,
     BANNER_ICONS,
-  } from '#lib/models/Banner.js';
+  } from '#lib/models/Banner.ts';
   import {
     publishBanner,
     publishSavedBanner,
@@ -28,16 +28,16 @@
     updatePublishedBanner,
     updateSavedBanner,
     restoreBanner,
-  } from '#lib/services/BannerManagement.js';
-  import { toaster } from '#lib/toaster.js';
-  import { hasBannerContent, sanitizeBannerHTML } from '#lib/utilities/BannerHTML.js';
+  } from '#lib/services/BannerManagement.ts';
+  import { toaster } from '#lib/toaster.ts';
+  import { hasBannerContent, sanitizeBannerHTML } from '#lib/utilities/BannerHTML.ts';
   import {
     formatInstantAsLocalMinute,
     resolveLocalMinute,
     type LocalMinuteResolution,
-  } from '#lib/utilities/BannerSchedule.js';
-  import { validateBannerPageTarget } from '#lib/utilities/BannerPageTargets.js';
-  import { createUnsavedGuard } from '#lib/utilities/UnsavedGuard.svelte.js';
+  } from '#lib/utilities/BannerSchedule.ts';
+  import { validateBannerPageTarget } from '#lib/utilities/BannerPageTargets.ts';
+  import { createUnsavedGuard } from '#lib/utilities/UnsavedGuard.svelte.ts';
 
   type TargetedPage = Exclude<BannerPageTarget, { kind: 'ALL' }>;
   type EditorTransition = { kind: 'cancel' } | { kind: 'tab'; destination: string };

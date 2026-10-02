@@ -7,10 +7,10 @@
   import ApiKeyStatus from '#lib/components/admin/api-key/cell/ApiKeyStatus.svelte';
   import ApiKeyActions from '#lib/components/admin/api-key/cell/ApiKeyActions.svelte';
 
-  import { loadApiKeys, listVersion } from '#lib/stores/ApiKeys.js';
-  import { getApiKeyStatus, formatInstant, extractApiError } from '#lib/models/ApiKey.js';
-  import { getDefaultRows } from '#lib/components/datatable/stores.js';
-  import { subscribeOnChange } from '#lib/utilities/Subscribers.js';
+  import { loadApiKeys, listVersion } from '#lib/stores/ApiKeys.ts';
+  import { getApiKeyStatus, formatInstant, extractApiError } from '#lib/models/ApiKey.ts';
+  import { getDefaultRows } from '#lib/components/datatable/stores.ts';
+  import { subscribeOnChange } from '#lib/utilities/Subscribers.ts';
 
   interface ApiKeyRow {
     uuid: string;

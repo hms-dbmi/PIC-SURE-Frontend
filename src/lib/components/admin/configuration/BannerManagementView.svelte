@@ -5,13 +5,13 @@
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Loading from '#lib/components/Loading.svelte';
   import UnsavedChangesModal from '#lib/components/UnsavedChangesModal.svelte';
-  import type { ManagedBanner, ManagementRecord } from '#lib/models/Banner.js';
+  import type { ManagedBanner, ManagementRecord } from '#lib/models/Banner.ts';
   import {
     archiveBanner,
     disableBanner,
     getManagedBanners,
     reorderBanners,
-  } from '#lib/services/BannerManagement.js';
+  } from '#lib/services/BannerManagement.ts';
   import {
     adoptCanonicalBannerOrder,
     bannerActionLabels,
@@ -25,7 +25,7 @@
     visibleBannerRecords,
     type BannerListState,
     type LifecycleTab,
-  } from '#lib/services/BannerManagementList.js';
+  } from '#lib/services/BannerManagementList.ts';
   import {
     Accessibility,
     defaultPreset,
@@ -34,8 +34,8 @@
     type DragEndEvent,
   } from '@dnd-kit/dom';
   import FilterSearch from './FilterSearch.svelte';
-  import { createUnsavedGuard } from '#lib/utilities/UnsavedGuard.svelte.js';
-  import { toaster } from '#lib/toaster.js';
+  import { createUnsavedGuard } from '#lib/utilities/UnsavedGuard.svelte.ts';
+  import { toaster } from '#lib/toaster.ts';
   import {
     DragDropProvider,
     DragOverlay,

@@ -23,18 +23,18 @@ const mockState = vi.hoisted(() => {
   };
 });
 
-vi.mock('#lib/stores/Dictionary.js', () => ({
+vi.mock('#lib/stores/Dictionary.ts', () => ({
   searchDictionary: mockState.searchDictionarySpy,
   updateFacetsFromSearch: mockState.updateFacetsSpy,
   facetsPromise: mockState.facetsPromiseStore,
   resetFacetState: mockState.resetFacetStateSpy,
 }));
 
-vi.mock('#lib/components/datatable/stores.js', () => ({
+vi.mock('#lib/components/datatable/stores.ts', () => ({
   getDefaultRows: () => 10,
 }));
 
-vi.mock('#lib/logger.js', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: mockState.logSpy,
   createLog: vi.fn((category: string, event: string, data?: unknown) => ({
     category,
@@ -44,12 +44,12 @@ vi.mock('#lib/logger.js', () => ({
   getPageContext: () => 'explorer',
 }));
 
-vi.mock('#lib/api.js', () => ({
+vi.mock('#lib/api.ts', () => ({
   isAbortError: (e: unknown) => (e as Error | undefined)?.name === 'AbortError',
 }));
 
 import type { State } from '@vincjo/datatables/server';
-import type { Facet, SearchResult } from '#lib/models/Search.js';
+import type { Facet, SearchResult } from '#lib/models/Search.ts';
 import {
   initHandler,
   tableHandler,
@@ -59,7 +59,7 @@ import {
   loading,
   nextSearchSettled,
   updateFacets,
-} from '#lib/stores/Search.js';
+} from '#lib/stores/Search.ts';
 
 type LoadCallback = (state: State) => Promise<SearchResult[] | undefined>;
 

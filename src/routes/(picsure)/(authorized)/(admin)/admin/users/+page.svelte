@@ -4,17 +4,17 @@
 
   import { goto } from '$app/navigation';
 
-  import type { Indexable } from '#lib/types.js';
-  import { config } from '#lib/configuration.svelte.js';
+  import type { Indexable } from '#lib/types.ts';
+  import { config } from '#lib/configuration.svelte.ts';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Content from '#lib/components/Content.svelte';
   import Datatable from '#lib/components/datatable/StaticTable.svelte';
   import Actions from '#lib/components/admin/user/cell/Actions.svelte';
   import Status from '#lib/components/admin/user/cell/Status.svelte';
 
-  import UsersStore from '#lib/stores/Users.js';
-  import RolesStore from '#lib/stores/Roles.js';
-  import ConnectionStore from '#lib/stores/Connections.js';
+  import UsersStore from '#lib/stores/Users.ts';
+  import RolesStore from '#lib/stores/Roles.ts';
+  import ConnectionStore from '#lib/stores/Connections.ts';
   import Loading from '#lib/components/Loading.svelte';
 
   let { users, loadUsers } = UsersStore;

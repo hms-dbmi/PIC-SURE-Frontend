@@ -2,9 +2,9 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import { isTopAdmin } from '#lib/stores/User.js';
-  import { toaster } from '#lib/toaster.js';
-  import { deleteConnection } from '#lib/stores/Connections.js';
+  import { isTopAdmin } from '#lib/stores/User.ts';
+  import { toaster } from '#lib/toaster.ts';
+  import { deleteConnection } from '#lib/stores/Connections.ts';
   import Modal from '#lib/components/Modal.svelte';
 
   const { data = { cell: '', row: { label: '' } } } = $props();

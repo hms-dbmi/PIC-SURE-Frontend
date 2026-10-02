@@ -1,39 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { QueryV3, type GenomicFilterInterfacev3 } from '#lib/models/query/Query.js';
-import type { SearchResult } from '#lib/models/Search.js';
+import { QueryV3, type GenomicFilterInterfacev3 } from '#lib/models/query/Query.ts';
+import type { SearchResult } from '#lib/models/Search.ts';
 import type {
   FilterGroupInterface,
   AnyRecordOfFilterInterface,
   GenomicFilterInterface,
-} from '#lib/models/Filter.svelte.js';
-import { getConceptDetails, getConceptTree } from '#lib/stores/Dictionary.js';
-import { config } from '#lib/configuration.svelte.js';
+} from '#lib/models/Filter.svelte.ts';
+import { getConceptDetails, getConceptTree } from '#lib/stores/Dictionary.ts';
+import { config } from '#lib/configuration.svelte.ts';
 
 import {
   genomicV3ToFilter,
   pathToSearchResult,
   queryToFilterTree,
   loadQuerySummaryData,
-} from '#lib/components/query/QueryConverters.js';
+} from '#lib/components/query/QueryConverters.ts';
 
 // Silence console errors logs
 vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
 // Mock modules with SvelteKit / store dependencies
-vi.mock('#lib/stores/Dictionary.js', () => ({
+vi.mock('#lib/stores/Dictionary.ts', () => ({
   getConceptDetails: vi.fn(),
   getConceptTree: vi.fn(),
   ENSURE_MAX_DEPTH: 100,
 }));
 
-vi.mock('#lib/configuration.svelte.js', () => ({
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: {
     settings: { dataset: { bypassConceptLookup: [] as string[] } },
   },
 }));
 
-vi.mock('#lib/stores/Filter.js', () => ({
+vi.mock('#lib/stores/Filter.ts', () => ({
   createGroup: (nodes: unknown[], operator: string) => ({
     children: nodes,
     operator,

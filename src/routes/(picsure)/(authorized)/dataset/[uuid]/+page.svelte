@@ -1,11 +1,11 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import * as api from '#lib/api.js';
-  import { config } from '#lib/configuration.svelte.js';
+  import * as api from '#lib/api.ts';
+  import { config } from '#lib/configuration.svelte.ts';
 
-  import { QueryVersion, type DataSet } from '#lib/models/Dataset.js';
-  import { getDataset } from '#lib/stores/Dataset.svelte.js';
+  import { QueryVersion, type DataSet } from '#lib/models/Dataset.ts';
+  import { getDataset } from '#lib/stores/Dataset.svelte.ts';
 
   import Content from '#lib/components/Content.svelte';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';

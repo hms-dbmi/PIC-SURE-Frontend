@@ -1,18 +1,18 @@
 import { resolve } from '$app/paths';
 import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/env';
-import * as api from '#lib/api.js';
-import type { Route } from '#lib/models/Route.js';
-import type { ConsentsMap, User } from '#lib/models/User.js';
-import { PicsurePrivileges } from '#lib/models/Privilege.js';
-import { routes, config } from '#lib/configuration.svelte.js';
-import { Psama, appPath } from '#lib/paths.js';
+import * as api from '#lib/api.ts';
+import type { Route } from '#lib/models/Route.ts';
+import type { ConsentsMap, User } from '#lib/models/User.ts';
+import { PicsurePrivileges } from '#lib/models/Privilege.ts';
+import { routes, config } from '#lib/configuration.svelte.ts';
+import { Psama, appPath } from '#lib/paths.ts';
 import { goto } from '$app/navigation';
 import type AuthProvider from '#lib/models/AuthProvider.ts';
 import { page } from '$app/state';
-import { loginRedirectPath } from '#lib/utilities/LoginRedirect.js';
-import { log, createLog } from '#lib/logger.js';
-import { isToastShowing, toaster } from '#lib/toaster.js';
+import { loginRedirectPath } from '#lib/utilities/LoginRedirect.ts';
+import { log, createLog } from '#lib/logger.ts';
+import { isToastShowing, toaster } from '#lib/toaster.ts';
 
 const tokenRevision = writable(0);
 

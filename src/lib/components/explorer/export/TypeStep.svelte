@@ -1,9 +1,9 @@
 <script lang="ts">
   import Summary from '#lib/components/explorer/export/Summary.svelte';
   import CardButton from '#lib/components/buttons/CardButton.svelte';
-  import { getActiveType, setActiveType } from '#lib/ExportStepperManager.svelte.js';
-  import { config } from '#lib/configuration.svelte.js';
-  import { log, createLog } from '#lib/logger.js';
+  import { getActiveType, setActiveType } from '#lib/ExportStepperManager.svelte.ts';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { log, createLog } from '#lib/logger.ts';
 </script>
 
 <section class="flex flex-col w-full h-full items-center">

@@ -2,16 +2,16 @@
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import * as api from '#lib/api.js';
-  import { config } from '#lib/configuration.svelte.js';
-  import { Picsure } from '#lib/paths.js';
-  import type { ExportRowInterface } from '#lib/models/ExportRow.js';
-  import type { DataSet } from '#lib/models/Dataset.js';
-  import { exports } from '#lib/stores/Export.js';
-  import { filters } from '#lib/stores/Filter.js';
-  import { resultCountsState } from '#lib/state/resultCounts.svelte.js';
-  import { createDatasetName } from '#lib/services/datasets.js';
-  import { withBackoff } from '#lib/utilities/backoff.js';
+  import * as api from '#lib/api.ts';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { Picsure } from '#lib/paths.ts';
+  import type { ExportRowInterface } from '#lib/models/ExportRow.ts';
+  import type { DataSet } from '#lib/models/Dataset.ts';
+  import { exports } from '#lib/stores/Export.ts';
+  import { filters } from '#lib/stores/Filter.ts';
+  import { resultCountsState } from '#lib/state/resultCounts.svelte.ts';
+  import { createDatasetName } from '#lib/services/datasets.ts';
+  import { withBackoff } from '#lib/utilities/backoff.ts';
   import Stepper from '#lib/components/steppers/horizontal/Stepper.svelte';
   import Step from '#lib/components/steppers/horizontal/Step.svelte';
   import UserToken from '#lib/components/UserToken.svelte';
@@ -36,10 +36,10 @@
     setQueryRequest,
     getQueryRequest,
     resetExportStepperState,
-  } from '#lib/ExportStepperManager.svelte.js';
-  import { log, createLog } from '#lib/logger.js';
-  import { getQueryRequestV3, getFilterConcepts } from '#lib/utilities/QueryBuilder.js';
-  import { QueryV3 } from '#lib/models/query/Query.js';
+  } from '#lib/ExportStepperManager.svelte.ts';
+  import { log, createLog } from '#lib/logger.ts';
+  import { getQueryRequestV3, getFilterConcepts } from '#lib/utilities/QueryBuilder.ts';
+  import { QueryV3 } from '#lib/models/query/Query.ts';
 
   const { rows = [] }: { rows?: ExportRowInterface[] } = $props();
 

@@ -10,15 +10,15 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/paths', () => ({
   resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
 }));
-vi.mock('#lib/configuration.svelte.js', () => ({
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: { features: { explorer: { open: false }, login: { open: false } } },
   routes: [],
 }));
-vi.mock('#lib/api.js', () => mockApi);
+vi.mock('#lib/api.ts', () => mockApi);
 
 import { get } from 'svelte/store';
-import { loadDashboardData, rows } from '#lib/stores/Dashboard.js';
-import { user, setToken, removeToken } from '#lib/stores/User.js';
+import { loadDashboardData, rows } from '#lib/stores/Dashboard.ts';
+import { user, setToken, removeToken } from '#lib/stores/User.ts';
 
 const dashboardResp = {
   columns: [],

@@ -11,9 +11,9 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/paths', () => ({
   resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
 }));
-vi.mock('#lib/configuration.svelte.js', () => ({ config: { features: mockFeatures } }));
+vi.mock('#lib/configuration.svelte.ts', () => ({ config: { features: mockFeatures } }));
 
-import { resources, getCountResource, getApiConnectionResource } from '#lib/stores/Resources.js';
+import { resources, getCountResource, getApiConnectionResource } from '#lib/stores/Resources.ts';
 
 describe('getCountResource', () => {
   // With path-based gateway routing the non-federated resource UUID is gone: the query PATH

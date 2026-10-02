@@ -1,6 +1,6 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/paths.js';
+  import { appPath } from '#lib/paths.ts';
   interface Props {
     title: string;
     id?: string;

@@ -1,6 +1,6 @@
-import * as api from '#lib/api.js';
-import { Picsure } from '#lib/paths.js';
-import type { DataSet } from '#lib/models/Dataset.js';
+import * as api from '#lib/api.ts';
+import { Picsure } from '#lib/paths.ts';
+import type { DataSet } from '#lib/models/Dataset.ts';
 
 interface DatasetRequest {
   queryId: string;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { summarize, type ResultCountSnapshot } from '#lib/services/counts/snapshot.js';
+import { summarize, type ResultCountSnapshot } from '#lib/services/counts/snapshot.ts';
 
 describe('summarize', () => {
   it('computes total via countResult for a scalar count', () => {

@@ -3,14 +3,14 @@
   import { goto } from '$app/navigation';
   import { Switch } from '@skeletonlabs/skeleton-svelte';
 
-  import type { ExtendedUser, UserRequest } from '#lib/models/User.js';
-  import type { Connection } from '#lib/models/Connection.js';
+  import type { ExtendedUser, UserRequest } from '#lib/models/User.ts';
+  import type { Connection } from '#lib/models/Connection.ts';
 
-  import { addUser, updateUser, getUserByEmailAndConnection } from '#lib/stores/Users.js';
-  import { getConnection } from '#lib/stores/Connections.js';
-  import { getRole } from '#lib/stores/Roles.js';
-  import { getPrivilege } from '#lib/stores/Privileges.js';
-  import { toaster } from '#lib/toaster.js';
+  import { addUser, updateUser, getUserByEmailAndConnection } from '#lib/stores/Users.ts';
+  import { getConnection } from '#lib/stores/Connections.ts';
+  import { getRole } from '#lib/stores/Roles.ts';
+  import { getPrivilege } from '#lib/stores/Privileges.ts';
+  import { toaster } from '#lib/toaster.ts';
 
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
 

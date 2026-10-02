@@ -1,20 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { get as getStore } from 'svelte/store';
 
-vi.mock('#lib/api.js', () => ({
+vi.mock('#lib/api.ts', () => ({
   get: vi.fn(),
   post: vi.fn(),
   put: vi.fn(),
 }));
 
-import * as api from '#lib/api.js';
+import * as api from '#lib/api.ts';
 import {
   loadApiKeys,
   revokeApiKey,
   mintPlatformKey,
   listVersion,
   refreshApiKeys,
-} from '#lib/stores/ApiKeys.js';
+} from '#lib/stores/ApiKeys.ts';
 
 const mockGet = vi.mocked(api.get);
 const mockPost = vi.mocked(api.post);

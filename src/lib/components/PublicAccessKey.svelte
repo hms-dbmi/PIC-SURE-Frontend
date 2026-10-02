@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { post } from '#lib/api.js';
-  import { Psama } from '#lib/paths.js';
-  import { log, createLog } from '#lib/logger.js';
+  import { post } from '#lib/api.ts';
+  import { Psama } from '#lib/paths.ts';
+  import { log, createLog } from '#lib/logger.ts';
   import CopyButton from '#lib/components/buttons/CopyButton.svelte';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Loading from '#lib/components/Loading.svelte';

@@ -3,15 +3,15 @@
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import CopyButton from '#lib/components/buttons/CopyButton.svelte';
 
-  import { isTopAdmin } from '#lib/stores/User.js';
-  import { mintPlatformKey } from '#lib/stores/ApiKeys.js';
+  import { isTopAdmin } from '#lib/stores/User.ts';
+  import { mintPlatformKey } from '#lib/stores/ApiKeys.ts';
   import {
     extractApiError,
     formatInstant,
     toPlatformKeyRequest,
     type MintedPlatformKey,
     type PlatformKeyExpiry,
-  } from '#lib/models/ApiKey.js';
+  } from '#lib/models/ApiKey.ts';
 
   let open = $state(false);
   let name = $state('');

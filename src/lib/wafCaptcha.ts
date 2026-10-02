@@ -1,8 +1,8 @@
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import { appPath } from '#lib/paths.js';
-import { log, createLog } from '#lib/logger.js';
-import { isOpenAccess } from '#lib/AccessState.js';
+import { appPath } from '#lib/paths.ts';
+import { log, createLog } from '#lib/logger.ts';
+import { isOpenAccess } from '#lib/AccessState.ts';
 
 const PENDING_KEY = 'waf-captcha-pending';
 const GUARD_KEY = 'waf-captcha-guard';

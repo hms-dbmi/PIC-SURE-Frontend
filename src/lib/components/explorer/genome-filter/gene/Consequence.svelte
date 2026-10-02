@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { NodeInterface } from '#lib/components/tree/types.js';
-  import { selectedConsequence } from '#lib/stores/GeneFilter.js';
-  import { addConsquence, removeConsequence } from '#lib/stores/GeneFilter.js';
+  import type { NodeInterface } from '#lib/components/tree/types.ts';
+  import { selectedConsequence } from '#lib/stores/GeneFilter.ts';
+  import { addConsquence, removeConsequence } from '#lib/stores/GeneFilter.ts';
   import variantData from '#lib/components/explorer/genome-filter/variant-data.json';
   import Tree from '#lib/components/tree/Tree.svelte';
-  import { log, createLog } from '#lib/logger.js';
+  import { log, createLog } from '#lib/logger.ts';
 
   function loggedAddConsequence(value: string) {
     log(createLog('ACTION', 'genomic.consequence_select', { consequence: value }));

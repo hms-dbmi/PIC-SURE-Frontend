@@ -1,28 +1,28 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
   import { onDestroy, tick } from 'svelte';
-  import { bannerPlainText } from '#lib/utilities/BannerHTML.js';
-  import { truncate } from '#lib/utilities/Strings.js';
-  import { createLog, log } from '#lib/logger.js';
-  import type { ActiveBanner, BannerAudience } from '#lib/models/Banner.js';
+  import { bannerPlainText } from '#lib/utilities/BannerHTML.ts';
+  import { truncate } from '#lib/utilities/Strings.ts';
+  import { createLog, log } from '#lib/logger.ts';
+  import type { ActiveBanner, BannerAudience } from '#lib/models/Banner.ts';
   import {
     BANNER_APPEARANCES,
     BANNER_AUDIENCES,
     BANNER_ICONS,
     BANNER_LABEL_LENGTH,
-  } from '#lib/models/Banner.js';
-  import { Picsure } from '#lib/paths.js';
-  import { hasValidToken } from '#lib/stores/User.js';
+  } from '#lib/models/Banner.ts';
+  import { Picsure } from '#lib/paths.ts';
+  import { hasValidToken } from '#lib/stores/User.ts';
   import SiteBanner from '#lib/components/banner/SiteBanner.svelte';
   import {
     matchesBannerPageTargets,
     parseBannerPageTargets,
-  } from '#lib/utilities/BannerPageTargets.js';
+  } from '#lib/utilities/BannerPageTargets.ts';
   import {
     readBannerDismissals,
     writeBannerDismissals,
     type BannerDismissals,
-  } from '#lib/utilities/BannerDismissal.js';
+  } from '#lib/utilities/BannerDismissal.ts';
 
   const appearances = new Set<unknown>(BANNER_APPEARANCES);
   const icons = new Set<unknown>(BANNER_ICONS);

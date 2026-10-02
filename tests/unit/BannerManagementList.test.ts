@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
-import type { ManagedBanner } from '#lib/models/Banner.js';
+import type { ManagedBanner } from '#lib/models/Banner.ts';
 import {
   adoptCanonicalBannerOrder,
   bannerActionLabels,
@@ -12,7 +12,7 @@ import {
   reconcileBannerDisabled,
   reconcileBannerSuccess,
   visibleBannerRecords,
-} from '#lib/services/BannerManagementList.js';
+} from '#lib/services/BannerManagementList.ts';
 
 function banner(overrides: Partial<ManagedBanner> = {}): ManagedBanner {
   return {

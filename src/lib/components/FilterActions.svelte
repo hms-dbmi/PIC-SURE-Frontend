@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { Filter } from '#lib/models/Filter.svelte.js';
-  import { populateFromGeneFilter } from '#lib/stores/GeneFilter.js';
-  import { populateFromSNPFilter } from '#lib/stores/SNPFilter.js';
-  import { activeFilter, activeSearch, removeFilter } from '#lib/stores/Filter.js';
+  import type { Filter } from '#lib/models/Filter.svelte.ts';
+  import { populateFromGeneFilter } from '#lib/stores/GeneFilter.ts';
+  import { populateFromSNPFilter } from '#lib/stores/SNPFilter.ts';
+  import { activeFilter, activeSearch, removeFilter } from '#lib/stores/Filter.ts';
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
-  import { Option } from '#lib/models/GenomeFilter.js';
+  import { Option } from '#lib/models/GenomeFilter.ts';
   import Modal from '#lib/components/Modal.svelte';
   import AddFilter from '#lib/components/explorer/AddFilter.svelte';
 

@@ -1,7 +1,7 @@
 import { page } from '$app/state';
-import { isUserLoggedIn } from '#lib/stores/User.js';
+import { isUserLoggedIn } from '#lib/stores/User.ts';
 import { browser } from '$app/env';
-import { config } from '#lib/configuration.svelte.js';
+import { config } from '#lib/configuration.svelte.ts';
 
 export function isOpenAccess(): boolean {
   return (browser && page.url.pathname.includes('/discover')) || !isUserLoggedIn();

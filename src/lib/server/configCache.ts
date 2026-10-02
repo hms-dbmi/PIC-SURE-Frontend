@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
-import type { ConfigObject, ConfigCache, ConfigKind } from '#lib/models/Configuration.js';
-import { CONFIG_API_KIND } from '#lib/models/Configuration.js';
-import { Picsure, joinUrl } from '#lib/paths.js';
-import { withBackoff } from '#lib/utilities/backoff.js';
+import type { ConfigObject, ConfigCache, ConfigKind } from '#lib/models/Configuration.ts';
+import { CONFIG_API_KIND } from '#lib/models/Configuration.ts';
+import { Picsure, joinUrl } from '#lib/paths.ts';
+import { withBackoff } from '#lib/utilities/backoff.ts';
 
 const ORIGIN = import.meta.env?.VITE_ORIGIN;
 

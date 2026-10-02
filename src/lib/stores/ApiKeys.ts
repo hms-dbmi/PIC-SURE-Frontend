@@ -1,13 +1,13 @@
 import { writable, type Writable } from 'svelte/store';
 
-import * as api from '#lib/api.js';
-import { Psama } from '#lib/paths.js';
+import * as api from '#lib/api.ts';
+import { Psama } from '#lib/paths.ts';
 import type {
   ApiKeyMetadata,
   ApiKeyPage,
   MintedPlatformKey,
   PlatformKeyRequest,
-} from '#lib/models/ApiKey.js';
+} from '#lib/models/ApiKey.ts';
 
 // Bumped after every mutation so paginated views know to refetch their current page.
 export const listVersion: Writable<number> = writable(0);

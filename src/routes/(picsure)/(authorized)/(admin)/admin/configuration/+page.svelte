@@ -1,11 +1,11 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/paths.js';
+  import { appPath } from '#lib/paths.ts';
   import { goto } from '$app/navigation';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
 
-  import type { Indexable } from '#lib/types.js';
-  import { config } from '#lib/configuration.svelte.js';
+  import type { Indexable } from '#lib/types.ts';
+  import { config } from '#lib/configuration.svelte.ts';
 
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Content from '#lib/components/Content.svelte';
@@ -20,11 +20,11 @@
   import ConfigKindTab from '#lib/components/admin/configuration/ConfigKindTab.svelte';
   import BannerManagementView from '#lib/components/admin/configuration/BannerManagementView.svelte';
 
-  import { privileges, loadPrivileges } from '#lib/stores/Privileges.js';
-  import { roles, loadRoles } from '#lib/stores/Roles.js';
-  import { loadApplications } from '#lib/stores/Application.js';
-  import { connections, loadConnections } from '#lib/stores/Connections.js';
-  import { isTopAdmin } from '#lib/stores/User.js';
+  import { privileges, loadPrivileges } from '#lib/stores/Privileges.ts';
+  import { roles, loadRoles } from '#lib/stores/Roles.ts';
+  import { loadApplications } from '#lib/stores/Application.ts';
+  import { connections, loadConnections } from '#lib/stores/Connections.ts';
+  import { isTopAdmin } from '#lib/stores/User.ts';
 
   import Loading from '#lib/components/Loading.svelte';
 

@@ -4,11 +4,11 @@
   import Summary from '#lib/components/explorer/export/Summary.svelte';
   import Loading from '#lib/components/Loading.svelte';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
-  import type { DataSetResponse } from '#lib/models/Dataset.js';
-  import * as api from '#lib/api.js';
-  import { Picsure } from '#lib/paths.js';
-  import { stepperState } from '#lib/stores/Stepper.js';
-  import { exports } from '#lib/stores/Export.js';
+  import type { DataSetResponse } from '#lib/models/Dataset.ts';
+  import * as api from '#lib/api.ts';
+  import { Picsure } from '#lib/paths.ts';
+  import { stepperState } from '#lib/stores/Stepper.ts';
+  import { exports } from '#lib/stores/Export.ts';
   import {
     getActiveType,
     getDatasetId,
@@ -17,9 +17,9 @@
     setDatasetNameInput,
     setSaveable,
     getQueryRequest,
-  } from '#lib/ExportStepperManager.svelte.js';
-  import { log, createLog } from '#lib/logger.js';
-  import { config } from '#lib/configuration.svelte.js';
+  } from '#lib/ExportStepperManager.svelte.ts';
+  import { log, createLog } from '#lib/logger.ts';
+  import { config } from '#lib/configuration.svelte.ts';
 
   const PROMISE_WAIT_INTERVAL = 7;
   let processingMessage: string = $state('');

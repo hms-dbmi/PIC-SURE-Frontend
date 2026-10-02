@@ -7,8 +7,8 @@ import PublicAccessKey from '#lib/components/PublicAccessKey.svelte';
 
 const { post, log } = vi.hoisted(() => ({ post: vi.fn(), log: vi.fn() }));
 
-vi.mock('#lib/api.js', () => ({ post }));
-vi.mock('#lib/logger.js', () => ({
+vi.mock('#lib/api.ts', () => ({ post }));
+vi.mock('#lib/logger.ts', () => ({
   log,
   createLog: (eventType: string, action?: string, metadata?: Record<string, unknown>) => ({
     event_type: eventType,

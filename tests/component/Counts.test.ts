@@ -6,11 +6,11 @@ import { render, screen, cleanup } from '@testing-library/svelte';
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$app/env', () => ({ browser: true }));
 
-vi.mock('#lib/configuration.svelte.js', () => ({
+vi.mock('#lib/configuration.svelte.ts', () => ({
   config: { branding: { explorePage: { queryErrorText: '', filterErrorText: '' } }, features: {} },
 }));
 
-vi.mock('#lib/stores/Filter.js', async () => {
+vi.mock('#lib/stores/Filter.ts', async () => {
   const { writable } = await import('svelte/store');
   return { filters: writable([]) };
 });
@@ -28,7 +28,7 @@ const mockState = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('#lib/state/resultCounts.svelte.js', () => ({
+vi.mock('#lib/state/resultCounts.svelte.ts', () => ({
   get resultCountsState() {
     return mockState.current;
   },

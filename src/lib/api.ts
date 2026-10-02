@@ -1,10 +1,10 @@
 import { error, isHttpError } from '@sveltejs/kit';
-import { logout, login } from '#lib/stores/User.js';
+import { logout, login } from '#lib/stores/User.ts';
 import { browser } from '$app/env';
-import { log, createLog, getSessionId } from '#lib/logger.js';
-import { config } from '#lib/configuration.svelte.js';
-import { isWafCaptchaResponse, handleWafCaptcha } from '#lib/wafCaptcha.js';
-import { Internal, joinUrl } from '#lib/paths.js';
+import { log, createLog, getSessionId } from '#lib/logger.ts';
+import { config } from '#lib/configuration.svelte.ts';
+import { isWafCaptchaResponse, handleWafCaptcha } from '#lib/wafCaptcha.ts';
+import { Internal, joinUrl } from '#lib/paths.ts';
 
 const BEARER = 'Bearer ';
 const CONSENT_DENIED = 'consent_denied';

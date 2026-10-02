@@ -11,9 +11,9 @@ import {
   isTokenExpired,
   removeToken,
   setToken,
-} from '#lib/stores/User.js';
+} from '#lib/stores/User.ts';
 
-vi.mock('#lib/logger.js', () => ({
+vi.mock('#lib/logger.ts', () => ({
   createLog: vi.fn(),
   log: vi.fn(),
 }));

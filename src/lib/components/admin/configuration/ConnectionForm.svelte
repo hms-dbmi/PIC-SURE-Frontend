@@ -2,10 +2,10 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import type { Connection } from '#lib/models/Connection.js';
-  import { addConnection, updateConnection } from '#lib/stores/Connections.js';
-  import { isTopAdmin } from '#lib/stores/User.js';
-  import { toaster } from '#lib/toaster.js';
+  import type { Connection } from '#lib/models/Connection.ts';
+  import { addConnection, updateConnection } from '#lib/stores/Connections.ts';
+  import { isTopAdmin } from '#lib/stores/User.ts';
+  import { toaster } from '#lib/toaster.ts';
 
   import RequiredFieldsList from '#lib/components/admin/configuration/RequiredFieldsList.svelte';
 

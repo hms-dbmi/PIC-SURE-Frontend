@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { config } from '#lib/configuration.svelte.js';
-  import { Option } from '#lib/models/GenomeFilter.js';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { Option } from '#lib/models/GenomeFilter.ts';
   import CardButton from '#lib/components/buttons/CardButton.svelte';
 
   interface Props {

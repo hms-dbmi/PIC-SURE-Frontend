@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { config } from '#lib/configuration.svelte.js';
+  import { config } from '#lib/configuration.svelte.ts';
   import { Tabs } from '@skeletonlabs/skeleton-svelte';
   import TabItem from '#lib/components/TabItem.svelte';
   import CodeBlock from '#lib/components/CodeBlock.svelte';
   import DownloadButton from './DownloadButton.svelte';
-  import { getDatasetId, getQueryRequest } from '#lib/ExportStepperManager.svelte.js';
-  import { log, createLog } from '#lib/logger.js';
+  import { getDatasetId, getQueryRequest } from '#lib/ExportStepperManager.svelte.ts';
+  import { log, createLog } from '#lib/logger.ts';
 
   let tabSet: string = $derived(
     config.features.analyzeApi

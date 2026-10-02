@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { PICSURE_INTERNAL_API_ORIGIN, PICSURE_PLATFORM_API_KEY } from '$app/env/private';
 import type { RequestHandler } from './$types';
-import { clientAddress } from '#lib/server/clientAddress.js';
+import { clientAddress } from '#lib/server/clientAddress.ts';
 
 /**
  * Server-side proxy for anonymous (token-less) open-access data requests. api.ts routes them

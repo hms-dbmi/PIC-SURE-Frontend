@@ -1,13 +1,13 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import { appPath } from '#lib/paths.js';
+  import { appPath } from '#lib/paths.ts';
   import { onMount, onDestroy } from 'svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { config } from '#lib/configuration.svelte.js';
-  import type { Column } from '#lib/components/datatable/types.js';
+  import { config } from '#lib/configuration.svelte.ts';
+  import type { Column } from '#lib/components/datatable/types.ts';
   import {
     searchTerm,
     selectedFacets,
@@ -17,8 +17,8 @@
     tour,
     resetSearch,
     loading as isLoading,
-  } from '#lib/stores/Search.js';
-  import type { TourDataType } from '#lib/models/Tour.js';
+  } from '#lib/stores/Search.ts';
+  import type { TourDataType } from '#lib/models/Tour.ts';
 
   import Actions from '#lib/components/explorer/cell/Actions.svelte';
   import SearchDatatable from '#lib/components/datatable/RemoteTable.svelte';
@@ -26,7 +26,7 @@
   import FacetSideBar from '#lib/components/explorer/FacetSideBar.svelte';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import ExplorerTour from '#lib/components/tour/ExplorerTour.svelte';
-  import { log, createLog } from '#lib/logger.js';
+  import { log, createLog } from '#lib/logger.ts';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 

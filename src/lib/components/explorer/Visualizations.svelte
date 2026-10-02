@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import * as api from '#lib/api.js';
+  import * as api from '#lib/api.ts';
   import PlotlyPlot from '#lib/components/plots/PlotlyPlot.svelte';
   import {
     type PlotValues,
@@ -9,23 +9,23 @@
     type ContinuousPlotData,
     createContinuousPlot,
     createCategoryPlot,
-  } from '#lib/utilities/Plotly.js';
-  import { getQueryRequestV3 } from '#lib/utilities/QueryBuilder.js';
+  } from '#lib/utilities/Plotly.ts';
+  import { getQueryRequestV3 } from '#lib/utilities/QueryBuilder.ts';
   import {
     categoricalHasData,
     continuousHasData,
     getExcludedVisualizationVariables,
     getIncludedConceptPaths,
     isVisualizationFilter,
-  } from '#lib/utilities/VisualizationData.js';
-  import { toaster } from '#lib/toaster.js';
+  } from '#lib/utilities/VisualizationData.ts';
+  import { toaster } from '#lib/toaster.ts';
   import Loading from '#lib/components/Loading.svelte';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
-  import { Picsure } from '#lib/paths.js';
-  import { isOpenAccess, useOpenAccess } from '#lib/AccessState.js';
+  import { Picsure } from '#lib/paths.ts';
+  import { isOpenAccess, useOpenAccess } from '#lib/AccessState.ts';
   import LogicTreeSummary from '#lib/components/explorer/advanced/LogicTreeSummary.svelte';
-  import { filters, filterTree, genomicFilters } from '#lib/stores/Filter.js';
-  import { type Filter, type FilterGroupInterface } from '#lib/models/Filter.svelte.js';
+  import { filters, filterTree, genomicFilters } from '#lib/stores/Filter.ts';
+  import { type Filter, type FilterGroupInterface } from '#lib/models/Filter.svelte.ts';
   import { get } from 'svelte/store';
 
   let plotValues: PlotValues[] = $state([]);

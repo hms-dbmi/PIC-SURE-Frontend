@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { config } from '#lib/configuration.svelte.js';
+  import { config } from '#lib/configuration.svelte.ts';
   import Content from '#lib/components/Content.svelte';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import ApiKeyTable from '#lib/components/admin/api-key/ApiKeyTable.svelte';
   import MintPlatformKeyModal from '#lib/components/admin/api-key/MintPlatformKeyModal.svelte';
-  import { isTopAdmin } from '#lib/stores/User.js';
+  import { isTopAdmin } from '#lib/stores/User.ts';
 </script>
 
 <svelte:head>

@@ -1,15 +1,15 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import { config } from '#lib/configuration.svelte.js';
+  import { config } from '#lib/configuration.svelte.ts';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Content from '#lib/components/Content.svelte';
   import UserForm from '#lib/components/admin/user/UserForm.svelte';
 
-  import type { ExtendedUser } from '#lib/models/User.js';
-  import UsersStore from '#lib/stores/Users.js';
-  import RoleStore from '#lib/stores/Roles.js';
-  import ConnectionsStore from '#lib/stores/Connections.js';
+  import type { ExtendedUser } from '#lib/models/User.ts';
+  import UsersStore from '#lib/stores/Users.ts';
+  import RoleStore from '#lib/stores/Roles.ts';
+  import ConnectionsStore from '#lib/stores/Connections.ts';
   import Loading from '#lib/components/Loading.svelte';
 
   const { getUser, loadUsers } = UsersStore;

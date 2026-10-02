@@ -6,7 +6,7 @@ import {
   toPlatformKeyRequest,
   extractApiError,
   type ApiKeyMetadata,
-} from '#lib/models/ApiKey.js';
+} from '#lib/models/ApiKey.ts';
 
 const baseKey: ApiKeyMetadata = {
   uuid: 'uuid-1',

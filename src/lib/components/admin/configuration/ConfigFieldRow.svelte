@@ -1,14 +1,14 @@
 <script lang="ts">
-  import type { ConfigFieldSchema, ConfigMap, ConfigObject } from '#lib/models/Configuration.js';
-  import { describeConfigField } from '#lib/models/ConfigResolution.js';
+  import type { ConfigFieldSchema, ConfigMap, ConfigObject } from '#lib/models/Configuration.ts';
+  import { describeConfigField } from '#lib/models/ConfigResolution.ts';
   import {
     addConfigRow,
     updateConfigRow,
     deleteConfigRow,
     type AdminConfigKind,
-  } from '#lib/stores/AdminConfiguration.js';
-  import { humanizeKey, truncate, visibleLength } from '#lib/utilities/Strings.js';
-  import { toaster } from '#lib/toaster.js';
+  } from '#lib/stores/AdminConfiguration.ts';
+  import { humanizeKey, truncate, visibleLength } from '#lib/utilities/Strings.ts';
+  import { toaster } from '#lib/toaster.ts';
 
   interface Props {
     schema: ConfigFieldSchema;

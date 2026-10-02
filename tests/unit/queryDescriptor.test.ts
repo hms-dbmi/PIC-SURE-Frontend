@@ -7,13 +7,13 @@ vi.mock('$app/paths', () => ({
   resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
 }));
 
-import { LogicTree } from '#lib/models/LogicTree.svelte.js';
-import { createFilterGroup, type FilterInterface, type Filter } from '#lib/models/Filter.svelte.js';
+import { LogicTree } from '#lib/models/LogicTree.svelte.ts';
+import { createFilterGroup, type FilterInterface, type Filter } from '#lib/models/Filter.svelte.ts';
 import {
   buildDescriptor,
   stableHash,
   type QueryDescriptor,
-} from '#lib/services/counts/queryDescriptor.svelte.js';
+} from '#lib/services/counts/queryDescriptor.svelte.ts';
 
 function makeEmptyTree(): LogicTree<FilterInterface> {
   return new LogicTree<FilterInterface>(createFilterGroup);

@@ -4,7 +4,7 @@
   import { beforeNavigate } from '$app/navigation';
 
   import { Toaster } from '@skeletonlabs/skeleton-svelte';
-  import { toaster } from '#lib/toaster.js';
+  import { toaster } from '#lib/toaster.ts';
 
   import {
     hasInvalidFilter,

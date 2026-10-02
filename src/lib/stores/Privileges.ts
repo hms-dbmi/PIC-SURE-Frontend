@@ -1,8 +1,8 @@
 import { get, derived, writable, type Writable } from 'svelte/store';
-import { type Privilege, mapPrivilege } from '#lib/models/Privilege.js';
+import { type Privilege, mapPrivilege } from '#lib/models/Privilege.ts';
 
-import * as api from '#lib/api.js';
-import { Psama } from '#lib/paths.js';
+import * as api from '#lib/api.ts';
+import { Psama } from '#lib/paths.ts';
 
 const loaded = writable(false);
 export const privileges: Writable<Privilege[]> = writable([]);

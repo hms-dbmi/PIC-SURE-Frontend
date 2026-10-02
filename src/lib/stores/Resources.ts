@@ -1,6 +1,6 @@
 import { writable, type Writable } from 'svelte/store';
 
-import { isExploreWithoutLogin, useOpenAccess } from '#lib/AccessState.js';
+import { isExploreWithoutLogin, useOpenAccess } from '#lib/AccessState.ts';
 
 interface QueryResource {
   name: string;

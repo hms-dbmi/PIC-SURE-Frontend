@@ -1,11 +1,11 @@
-import type { QueryDescriptor } from '#lib/services/counts/queryDescriptor.svelte.js';
-import { stableHash } from '#lib/services/counts/queryDescriptor.svelte.js';
-import type { CountProvider, CountValue } from '#lib/services/counts/providers.js';
-import type { ResultCountSnapshot } from '#lib/services/counts/snapshot.js';
-import { summarize } from '#lib/services/counts/snapshot.js';
-import { LRU } from '#lib/utilities/LRU.js';
-import { log, createLog } from '#lib/logger.js';
-import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.js';
+import type { QueryDescriptor } from '#lib/services/counts/queryDescriptor.svelte.ts';
+import { stableHash } from '#lib/services/counts/queryDescriptor.svelte.ts';
+import type { CountProvider, CountValue } from '#lib/services/counts/providers.ts';
+import type { ResultCountSnapshot } from '#lib/services/counts/snapshot.ts';
+import { summarize } from '#lib/services/counts/snapshot.ts';
+import { LRU } from '#lib/utilities/LRU.ts';
+import { log, createLog } from '#lib/logger.ts';
+import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.ts';
 
 export type CountTransport = (path: string, request: QueryRequestInterfaceV3) => Promise<unknown>;
 

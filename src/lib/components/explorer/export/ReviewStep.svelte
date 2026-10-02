@@ -3,27 +3,27 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
-  import { config } from '#lib/configuration.svelte.js';
+  import { config } from '#lib/configuration.svelte.ts';
   import {
     exports,
     addExports,
     removeExports,
     mapSearchResultAsExport,
-  } from '#lib/stores/Export.js';
-  import type { ExportInterface } from '#lib/models/Export.js';
-  import type { ExportRowInterface } from '#lib/models/ExportRow.js';
-  import { searchDictionary } from '#lib/stores/Dictionary.js';
-  import { QueryV3 } from '#lib/models/query/Query.js';
-  import * as api from '#lib/api.js';
-  import { Picsure } from '#lib/paths.js';
-  import { toaster } from '#lib/toaster.js';
+  } from '#lib/stores/Export.ts';
+  import type { ExportInterface } from '#lib/models/Export.ts';
+  import type { ExportRowInterface } from '#lib/models/ExportRow.ts';
+  import { searchDictionary } from '#lib/stores/Dictionary.ts';
+  import { QueryV3 } from '#lib/models/query/Query.ts';
+  import * as api from '#lib/api.ts';
+  import { Picsure } from '#lib/paths.ts';
+  import { toaster } from '#lib/toaster.ts';
 
   import Summary from './Summary.svelte';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Loading from '#lib/components/Loading.svelte';
   import Datatable from '#lib/components/datatable/StaticTable.svelte';
-  import { log, createLog } from '#lib/logger.js';
-  import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.js';
+  import { log, createLog } from '#lib/logger.ts';
+  import type { QueryRequestInterfaceV3 } from '#lib/models/api/Request.ts';
 
   export interface PrepareProps {
     query: QueryRequestInterfaceV3;

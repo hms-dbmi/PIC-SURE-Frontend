@@ -1,6 +1,6 @@
 import { expect, type Route } from '@playwright/test';
 import { test, mockHTMLBodySuccess, mockApiConfig, mockApiSuccess } from '../custom-context';
-import type { Branding } from '#lib/models/Configuration.js';
+import type { Branding } from '#lib/models/Configuration.ts';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 import {
   mockBanner,

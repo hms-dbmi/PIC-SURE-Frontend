@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte';
 
   import Loading from './Loading.svelte';
-  import { log, createLog, getPageContext } from '#lib/logger.js';
+  import { log, createLog, getPageContext } from '#lib/logger.ts';
 
   const SEARCH_DEBOUNCE_MS = 250;
 

@@ -2,11 +2,11 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import { toaster } from '#lib/toaster.js';
-  import { getUser, updateUser } from '#lib/stores/Users.js';
-  import { getConnection } from '#lib/stores/Connections.js';
-  import { getRole } from '#lib/stores/Roles.js';
-  import { getPrivilege } from '#lib/stores/Privileges.js';
+  import { toaster } from '#lib/toaster.ts';
+  import { getUser, updateUser } from '#lib/stores/Users.ts';
+  import { getConnection } from '#lib/stores/Connections.ts';
+  import { getRole } from '#lib/stores/Roles.ts';
+  import { getPrivilege } from '#lib/stores/Privileges.ts';
 
   import Modal from '#lib/components/Modal.svelte';
 

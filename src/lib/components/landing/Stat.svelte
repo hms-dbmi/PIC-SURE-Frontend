@@ -1,11 +1,11 @@
 <script lang="ts">
   import type { Readable } from 'svelte/store';
-  import type { StatResult } from '#lib/models/Stat.js';
+  import type { StatResult } from '#lib/models/Stat.ts';
 
   import { browser } from '$app/env';
-  import { StatPromise } from '#lib/utilities/StatBuilder.js';
-  import { countResult } from '#lib/services/counts/countFormat.js';
-  import { sanitizeHTML } from '#lib/utilities/HTML.js';
+  import { StatPromise } from '#lib/utilities/StatBuilder.ts';
+  import { countResult } from '#lib/services/counts/countFormat.ts';
+  import { sanitizeHTML } from '#lib/utilities/HTML.ts';
   import Loading from '#lib/components/Loading.svelte';
   import HelpInfoPopup from '#lib/components/HelpInfoPopup.svelte';
   interface Props {

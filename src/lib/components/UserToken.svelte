@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { toaster } from '#lib/toaster.js';
-  import { debounce } from '#lib/utilities/Forms.js';
+  import { toaster } from '#lib/toaster.ts';
+  import { debounce } from '#lib/utilities/Forms.ts';
   import CopyButton from '#lib/components/buttons/CopyButton.svelte';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Modal from '#lib/components/Modal.svelte';
@@ -10,9 +10,9 @@
     getTokenExpiration,
     getTokenExpirationAsDate,
     refreshLongTermToken as refresh,
-  } from '#lib/stores/User.js';
+  } from '#lib/stores/User.ts';
   import Loading from './Loading.svelte';
-  import { log, createLog } from '#lib/logger.js';
+  import { log, createLog } from '#lib/logger.ts';
 
   const defaultRefreshText = 'Refresh';
   const placeHolderToken =

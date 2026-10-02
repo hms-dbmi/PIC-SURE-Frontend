@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { ExportInterface } from '#lib/models/Export.js';
+  import type { ExportInterface } from '#lib/models/Export.ts';
   import { fade } from 'svelte/transition';
-  import { removeExportByUuid } from '#lib/stores/Export.js';
+  import { removeExportByUuid } from '#lib/stores/Export.ts';
 
   interface Props {
     variable: ExportInterface;

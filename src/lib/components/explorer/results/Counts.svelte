@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { resultCountsState } from '#lib/state/resultCounts.svelte.js';
-  import { countResult } from '#lib/services/counts/countFormat.js';
+  import { resultCountsState } from '#lib/state/resultCounts.svelte.ts';
+  import { countResult } from '#lib/services/counts/countFormat.ts';
   import Loading from '#lib/components/Loading.svelte';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
-  import { config } from '#lib/configuration.svelte.js';
-  import { sanitizeHTML } from '#lib/utilities/HTML.js';
+  import { config } from '#lib/configuration.svelte.ts';
+  import { sanitizeHTML } from '#lib/utilities/HTML.ts';
 
   const ERROR_VALUE = 'N/A';
   const LABEL = 'Participants';

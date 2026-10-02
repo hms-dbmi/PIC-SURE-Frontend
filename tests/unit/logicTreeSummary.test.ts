@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
-import { Operator } from '#lib/models/query/Query.js';
-import { createFilterGroup, type FilterInterface } from '#lib/models/Filter.svelte.js';
+import { Operator } from '#lib/models/query/Query.ts';
+import { createFilterGroup, type FilterInterface } from '#lib/models/Filter.svelte.ts';
 import {
   buildEquation,
   type EquationPart,
-} from '#lib/components/explorer/advanced/LogicTreeSummary.js';
+} from '#lib/components/explorer/advanced/LogicTreeSummary.ts';
 
 function createFilter(name: string): FilterInterface {
   return {

@@ -2,25 +2,25 @@ import { get, writable, type Writable } from 'svelte/store';
 
 import { page } from '$app/state';
 
-import * as api from '#lib/api.js';
-import { isAbortError, type RequestOptions } from '#lib/api.js';
-import { Picsure } from '#lib/paths.js';
-import type { Facet, SearchResult } from '#lib/models/Search.js';
+import * as api from '#lib/api.ts';
+import { isAbortError, type RequestOptions } from '#lib/api.ts';
+import { Picsure } from '#lib/paths.ts';
+import type { Facet, SearchResult } from '#lib/models/Search.ts';
 import type {
   DictionaryConceptResult,
   DictionaryFacetResult,
   DictionarySearchRequest,
-} from '#lib/models/api/Dictionary.js';
-import type { Pageable } from '#lib/models/api/Pageable.js';
+} from '#lib/models/api/Dictionary.ts';
+import type { Pageable } from '#lib/models/api/Pageable.ts';
 import {
   ACCESS_UNAVAILABLE_MESSAGE,
   accessUnavailable,
   consentedStudies,
   consentsSettled,
   showAccessUnavailable,
-} from '#lib/stores/User.js';
-import { searchTerm, selectedFacets } from '#lib/stores/Search.js';
-import { log, createLog } from '#lib/logger.js';
+} from '#lib/stores/User.ts';
+import { searchTerm, selectedFacets } from '#lib/stores/Search.ts';
+import { log, createLog } from '#lib/logger.ts';
 
 export type FacetSkeleton = {
   [facetCategory: string]: string[];

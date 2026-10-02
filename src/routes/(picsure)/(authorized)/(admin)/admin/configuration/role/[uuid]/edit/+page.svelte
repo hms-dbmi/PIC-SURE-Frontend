@@ -1,14 +1,14 @@
 <script lang="ts">
   import { page } from '$app/state';
 
-  import { config } from '#lib/configuration.svelte.js';
+  import { config } from '#lib/configuration.svelte.ts';
   import ErrorAlert from '#lib/components/ErrorAlert.svelte';
   import Content from '#lib/components/Content.svelte';
   import RoleForm from '#lib/components/admin/configuration/RoleForm.svelte';
 
-  import type { Role } from '#lib/models/Role.js';
-  import { getRole } from '#lib/stores/Roles.js';
-  import { privilegeList, loadPrivileges } from '#lib/stores/Privileges.js';
+  import type { Role } from '#lib/models/Role.ts';
+  import { getRole } from '#lib/stores/Roles.ts';
+  import { privilegeList, loadPrivileges } from '#lib/stores/Privileges.ts';
   import Loading from '#lib/components/Loading.svelte';
 
   let role: Role = $state({

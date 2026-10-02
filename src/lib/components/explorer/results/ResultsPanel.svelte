@@ -7,19 +7,19 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { config } from '#lib/configuration.svelte.js';
+  import { config } from '#lib/configuration.svelte.ts';
 
-  import { allFilters, hasGenomicFilter, clearFilters } from '#lib/stores/Filter.js';
-  import { resultCountsState } from '#lib/state/resultCounts.svelte.js';
-  import { isObfuscatedBelowThreshold } from '#lib/services/counts/countFormat.js';
-  import { exports, clearExports } from '#lib/stores/Export.js';
+  import { allFilters, hasGenomicFilter, clearFilters } from '#lib/stores/Filter.ts';
+  import { resultCountsState } from '#lib/state/resultCounts.svelte.ts';
+  import { isObfuscatedBelowThreshold } from '#lib/services/counts/countFormat.ts';
+  import { exports, clearExports } from '#lib/stores/Export.ts';
 
   import Filters from '#lib/components/explorer/results/Filters.svelte';
   import ExportedVariable from '#lib/components/explorer/results/ExportedVariable.svelte';
   import CardButton from '#lib/components/buttons/CardButton.svelte';
   import Modal from '#lib/components/Modal.svelte';
   import Counts from '#lib/components/explorer/results/Counts.svelte';
-  import { log, createLog } from '#lib/logger.js';
+  import { log, createLog } from '#lib/logger.ts';
 
   let currentPage: string = $state(page.url.pathname);
   let isDiscoverPage = $derived(currentPage.includes('/discover'));

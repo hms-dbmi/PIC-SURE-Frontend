@@ -1,4 +1,4 @@
-import type { Indexable } from '#lib/types.js';
+import type { Indexable } from '#lib/types.ts';
 
 export type Facet = Indexable & {
   name: string;

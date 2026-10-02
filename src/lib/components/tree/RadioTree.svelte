@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { RadioNodeInterface, RadioNodeData } from '#lib/components/tree/types.js';
+  import type { RadioNodeInterface, RadioNodeData } from '#lib/components/tree/types.ts';
   import RadioTreeNode from './RadioTreeNode.svelte';
 
   let {

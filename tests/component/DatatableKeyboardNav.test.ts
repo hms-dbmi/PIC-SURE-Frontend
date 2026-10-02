@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import { TableHandler } from '@vincjo/datatables';
 
-vi.mock('#lib/logger.js', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createLog: vi.fn((...args: any[]) => args),
@@ -14,7 +14,7 @@ vi.mock('#lib/logger.js', () => ({
 // The real ExpandableRow store eagerly imports explorer components that touch
 // localStorage at module load, which isn't available in this environment. We
 // only need the store contract the datatable consumes, so provide a minimal stub.
-vi.mock('#lib/stores/ExpandableRow.js', () => {
+vi.mock('#lib/stores/ExpandableRow.ts', () => {
   const make = (value: unknown) => {
     let current = value;
     const subscribers = new Set<(v: unknown) => void>();
@@ -42,13 +42,13 @@ vi.mock('#lib/stores/ExpandableRow.js', () => {
 import { TableHandler as ServerTableHandler } from '@vincjo/datatables/server';
 
 import RemoteTable from '#lib/components/datatable/RemoteTable.svelte';
-import { isTextEntryField, tableIdPrefix } from '#lib/components/datatable/keyboard.js';
+import { isTextEntryField, tableIdPrefix } from '#lib/components/datatable/keyboard.ts';
 import {
   activeTable,
   activeRow,
   activeComponent,
   closeActiveRow,
-} from '#lib/stores/ExpandableRow.js';
+} from '#lib/stores/ExpandableRow.ts';
 import KeyButtonCell from './fixtures/KeyButtonCell.svelte';
 import PanelInputCell from './fixtures/PanelInputCell.svelte';
 

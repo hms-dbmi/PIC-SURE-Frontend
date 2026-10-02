@@ -4,7 +4,7 @@
 
   import { goto } from '$app/navigation';
 
-  import { panelOpen } from '#lib/stores/SidePanel.js';
+  import { panelOpen } from '#lib/stores/SidePanel.ts';
   import {
     removeGenomicFilters,
     removeUnallowedFilters,

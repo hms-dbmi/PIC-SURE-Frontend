@@ -26,22 +26,22 @@ const mockState = vi.hoisted(() => {
   };
 });
 
-vi.mock('#lib/toaster.js', () => ({
+vi.mock('#lib/toaster.ts', () => ({
   toaster: { error: mockState.toasterErrorSpy },
   isToastShowing: mockState.isToastShowingSpy,
 }));
 
-vi.mock('#lib/stores/Filter.js', () => ({
+vi.mock('#lib/stores/Filter.ts', () => ({
   allFilters: mockState.allFiltersStore,
   filterTree: mockState.filterTreeStore,
   genomicFilters: mockState.genomicFiltersStore,
 }));
 
-vi.mock('#lib/stores/Resources.js', () => ({
+vi.mock('#lib/stores/Resources.ts', () => ({
   getCountResource: mockState.getCountResourceSpy,
 }));
 
-vi.mock('#lib/logger.js', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: mockState.logSpy,
   createLog: vi.fn((category: string, event: string, data?: unknown) => ({
     category,
@@ -50,19 +50,19 @@ vi.mock('#lib/logger.js', () => ({
   })),
 }));
 
-vi.mock('#lib/services/counts/queryDescriptor.svelte.js', () => ({
+vi.mock('#lib/services/counts/queryDescriptor.svelte.ts', () => ({
   buildDescriptor: mockState.buildDescriptorSpy,
   stableHash: () => 'k',
 }));
 
-vi.mock('#lib/services/counts/providers.js', () => ({
+vi.mock('#lib/services/counts/providers.ts', () => ({
   resultProviders: { 'query:patientCount': { id: 'query:patientCount' } },
 }));
 
-import type { ResultCountSnapshot } from '#lib/services/counts/snapshot.js';
-import type { QueryCountService } from '#lib/services/counts/queryCountService.js';
-import type { QueryDescriptor } from '#lib/services/counts/queryDescriptor.svelte.js';
-import { ResultCounts } from '#lib/state/resultCounts.svelte.js';
+import type { ResultCountSnapshot } from '#lib/services/counts/snapshot.ts';
+import type { QueryCountService } from '#lib/services/counts/queryCountService.ts';
+import type { QueryDescriptor } from '#lib/services/counts/queryDescriptor.svelte.ts';
+import { ResultCounts } from '#lib/state/resultCounts.svelte.ts';
 
 const descriptor: QueryDescriptor = {
   isOpenAccess: false,

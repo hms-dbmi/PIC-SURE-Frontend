@@ -5,11 +5,11 @@ import { get } from 'svelte/store';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
 import FacetItem from '#lib/components/explorer/FacetItem.svelte';
-import { expandedNestedFacets, nestedFacetKey } from '#lib/stores/NestedFacets.js';
-import type { Facet } from '#lib/models/Search.js';
-import type { DictionaryFacetResult } from '#lib/models/api/Dictionary.js';
+import { expandedNestedFacets, nestedFacetKey } from '#lib/stores/NestedFacets.ts';
+import type { Facet } from '#lib/models/Search.ts';
+import type { DictionaryFacetResult } from '#lib/models/api/Dictionary.ts';
 
-vi.mock('#lib/stores/Search.js', async () => {
+vi.mock('#lib/stores/Search.ts', async () => {
   const { writable } = await import('svelte/store');
   const selectedFacets = writable<Facet[]>([]);
   const updateFacets = vi.fn();
