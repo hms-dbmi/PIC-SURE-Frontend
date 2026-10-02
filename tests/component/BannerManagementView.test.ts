@@ -5,7 +5,9 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/sve
 
 const navigation = vi.hoisted(() => ({ beforeNavigate: vi.fn(), goto: vi.fn() }));
 vi.mock('$app/navigation', () => navigation);
-vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
+vi.mock('$app/paths', () => ({
+  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
+}));
 
 vi.mock('#lib/services/BannerManagement.js', () => ({
   archiveBanner: vi.fn(),

@@ -3,7 +3,9 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('$app/env', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
+vi.mock('$app/paths', () => ({
+  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
+}));
 
 import { createQueryCountService } from '#lib/services/counts/queryCountService.js';
 import type { CountProvider } from '#lib/services/counts/providers.js';

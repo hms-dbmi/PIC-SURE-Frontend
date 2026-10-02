@@ -8,7 +8,9 @@ const mockFeatures = vi.hoisted(() => ({
 vi.mock('$app/env', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
+vi.mock('$app/paths', () => ({
+  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
+}));
 vi.mock('#lib/configuration.svelte.js', () => ({ config: { features: mockFeatures } }));
 
 import { resources, getCountResource, getApiConnectionResource } from '#lib/stores/Resources.js';

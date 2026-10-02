@@ -7,7 +7,9 @@ const mockToaster = vi.hoisted(() => ({ error: vi.fn() }));
 vi.mock('$app/env', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
+vi.mock('$app/paths', () => ({
+  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
+}));
 vi.mock('#lib/configuration.svelte.js', () => ({
   config: { features: { explorer: { open: false }, login: { open: false } } },
   routes: [],

@@ -1,3 +1,6 @@
+// @vitest-environment happy-dom
+// Mirrors the browser run: kit's client redirect() reads window.location.origin.
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Redirect } from '@sveltejs/kit';
 
