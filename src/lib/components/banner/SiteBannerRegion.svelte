@@ -65,13 +65,12 @@
     return banner.dismissible && dismissals[banner.uuid] === banner.presentationHash;
   }
 
-  function bannerName(banner: PresentedBanner): string {
-    return banner.title
-      ? truncate(banner.title, BANNER_LABEL_LENGTH)
-      : truncate(
-          `Site announcement ${banners.indexOf(banner) + 1}${banner.plainText ? `: ${banner.plainText}` : ''}`,
-          BANNER_LABEL_LENGTH,
-        );
+  function untitledName(banner: PresentedBanner): string {
+    return `Site announcement ${banners.indexOf(banner) + 1}`;
+  }
+
+  function announcementName(banner: PresentedBanner): string {
+    return truncate(banner.title || banner.plainText || untitledName(banner), BANNER_LABEL_LENGTH);
   }
 
   $effect(() => {
@@ -80,8 +79,8 @@
       (banner) => announced[banner.uuid] !== banner.presentationHash,
     );
     if (newlyVisible.length === 0) return;
-    const names = newlyVisible.slice(0, 2).map((banner) => bannerName(banner));
-    const message = `${newlyVisible.length} new or updated site ${newlyVisible.length === 1 ? 'announcement' : 'announcements'}. ${names.join('. ')}${newlyVisible.length > 2 ? '. See site announcements for more.' : ''}`;
+    const names = newlyVisible.slice(0, 2).map((banner) => announcementName(banner));
+    const message = `${newlyVisible.length} new or updated site ${newlyVisible.length === 1 ? 'announcement' : 'announcements'}. ${names.join('. ')}${newlyVisible.length > 2 ? `. And ${newlyVisible.length - 2} more.` : ''}`;
     announcement = '';
     void tick().then(() => {
       if (!destroyed && revision === announcementRevision) {
@@ -143,7 +142,7 @@
     return null;
   }
 
-  async function refreshBanners(currentPathname: string): Promise<void> {
+  async function refreshBanners(currentPathname: string, pageLoad: boolean): Promise<void> {
     fallbackText = '';
     pathname = currentPathname;
     const revision = ++refreshRevision;
@@ -165,6 +164,10 @@
       banners = validRecords
         .filter((banner): banner is ActiveBanner => banner.placement === 'SITE_TOP')
         .map((banner) => ({ ...banner, plainText: bannerPlainText(banner.htmlContent) }));
+      // Banners present at page load are read in page order; only later arrivals are announced.
+      if (pageLoad) {
+        for (const banner of visibleBanners) announced[banner.uuid] = banner.presentationHash;
+      }
       const malformedRecords = feed.length - validRecords.length;
       if (malformedRecords > 0) {
         log(
@@ -190,26 +193,25 @@
   });
 
   afterNavigate((navigation) =>
-    refreshBanners(navigation?.to?.url.pathname ?? window.location.pathname),
+    refreshBanners(
+      navigation?.to?.url.pathname ?? window.location.pathname,
+      navigation?.type === 'enter',
+    ),
   );
 </script>
 
 <div class="w-full flex-none" bind:this={container}>
   <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
   {#if visibleBanners.length > 0}
-    <section
-      class="w-full flex-none"
-      aria-label="Site announcements"
-      data-testid="site-banner-region"
-    >
+    <div class="w-full flex-none" data-testid="site-banner-region">
       {#each visibleBanners as banner (banner.uuid)}
         <SiteBanner
           {banner}
-          accessibleName={bannerName(banner)}
+          untitledName={untitledName(banner)}
           ondismiss={(event) => dismissBanner(banner, event)}
         />
       {/each}
-    </section>
+    </div>
   {/if}
   <p class="sr-only" tabindex="-1" bind:this={dismissalFallback} onblur={() => (fallbackText = '')}>
     {fallbackText}
