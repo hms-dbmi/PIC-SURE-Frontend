@@ -537,7 +537,7 @@ label.required input:invalid,
 }
 
 .bottom-dots {
-  position: absolute;
+  position: fixed;
   bottom: 70px;
   right: 10px;
   transform: rotate(180deg);

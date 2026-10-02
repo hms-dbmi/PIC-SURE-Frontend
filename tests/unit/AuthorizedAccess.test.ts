@@ -20,7 +20,6 @@ vi.mock('$lib/configuration.svelte', async () => {
         dashboard: true,
         discover: true,
         analyzeApi: true,
-        manualRole: true,
         login: { open: false },
       },
     },

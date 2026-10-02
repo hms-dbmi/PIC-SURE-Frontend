@@ -34,7 +34,6 @@ export type Features = Indexable & {
   login: {
     open: boolean;
   };
-  manualRole: boolean;
   mcpConnect: boolean;
   restoreV2queries: boolean;
   termsOfService: boolean;
@@ -478,14 +477,6 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
         'Makes Data Dashboard rows clickable, opening a drawer with more detail about the selected row.',
     },
 
-    // --- Collaboration ---
-    MANUAL_ROLE: {
-      group: 'Collaboration',
-      type: 'boolean',
-      default: false,
-      description: "Enables the 'Manual Role' admin page and its navigation item (BDC-specific).",
-    },
-
     MCP_CONNECT: {
       group: 'AI Assistants',
       type: 'boolean',
@@ -493,7 +484,6 @@ const CONFIG_FIELDS: Record<ConfigKind, Record<string, FieldDef>> = {
       description:
         "Shows the 'AI Assistant' tab on the API page with connection snippets for Claude Code, Claude Desktop, and Cursor; also requires MCP_URL.",
     },
-
     // --- Navigation ---
     CONFIRM_EXTERNAL_NAVIGATION: {
       group: 'Navigation',
@@ -757,7 +747,6 @@ export function mapFeatures(apiFeatures: ConfigObject[]): Features {
     login: {
       open: parse('OPEN'),
     },
-    manualRole: parse('MANUAL_ROLE'),
     mcpConnect: parse('MCP_CONNECT'),
     restoreV2queries: parse('RESTORE_V2_QUERY'),
     termsOfService: parse('ENABLE_TOS'),
