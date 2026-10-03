@@ -41,8 +41,6 @@
   );
 </script>
 
-<!-- Name the region by its heading or a fixed label, never the body text, so screen readers
-  announce the name and then read the full content in page order. -->
 <section
   aria-labelledby={banner.title ? titleId : undefined}
   aria-label={banner.title ? undefined : untitledName}
