@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { Tabs } from '@skeletonlabs/skeleton-svelte';
+  import { Accordion } from '@skeletonlabs/skeleton-svelte';
 
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
@@ -15,7 +15,6 @@
   import UserToken from '$lib/components/UserToken.svelte';
   import PublicAccessKey from '$lib/components/PublicAccessKey.svelte';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
-  import TabItem from '$lib/components/TabItem.svelte';
 
   let mounted = $state(false);
   let loggedIn = $derived(mounted && $tokenStatus);
@@ -56,7 +55,7 @@
       .replace('{{SUPPORTS_GENOMIC}}', booleanLiteral(values.supportsGenomic, language));
   }
 
-  function getQuickStartCode(authenticated: boolean) {
+  function getClientCode(authenticated: boolean) {
     const connection = getApiConnectionResource(authenticated);
     const values: ApiCodeBlockValues = {
       // consents are no longer an opt-in feature flag: PSAMA returns them for every
@@ -75,46 +74,44 @@
     return {
       python: renderApiCodeBlock(pythonTemplate, 'python', values),
       r: renderApiCodeBlock(rTemplate, 'r', values),
-      api: apiExample(codeBlocks.CurlAPI),
     };
   }
 
-  let quickStartCode = $derived(getQuickStartCode(loggedIn));
+  let clientCode = $derived(getClientCode(loggedIn));
 
   interface Workflow {
-    id: string;
+    id: ApiLanguage;
     title: string;
-    badge: string;
-    badgeClass: string;
-    bullets: string[];
-    tab: string;
+    audience: string;
+    requirements: string;
+    docsLabel: string;
+    docsUrl: string;
   }
 
   const workflows: Workflow[] = [
     {
       id: 'python',
       title: 'Python Client',
-      badge: 'Recommended',
-      badgeClass: 'preset-filled-primary-500',
-      bullets: ['Requires Python version 3.10.20 or later', 'Python Jupyter Notebooks'],
-      tab: 'Python',
+      audience: 'Best if you work in Python or Jupyter Notebooks.',
+      requirements: 'Python 3.10+',
+      docsLabel: 'Python client documentation',
+      docsUrl: 'https://github.com/hms-dbmi/pic-sure-python-adapter-hpds',
     },
     {
       id: 'r',
       title: 'R Client',
-      badge: 'Recommended',
-      badgeClass: 'preset-filled-primary-500',
-      bullets: ['Requires R version 4.1 or later', 'R Jupyter Notebooks or RStudio'],
-      tab: 'R',
+      audience: 'Best if you work in R, Jupyter Notebooks, or RStudio.',
+      requirements: 'R 4.1+',
+      docsLabel: 'R client documentation',
+      docsUrl: 'https://github.com/hms-dbmi/pic-sure-r-adapter-hpds',
     },
   ];
 
-  let tabSet: string = $state('Python');
+  let openWorkflows: string[] = $state([]);
 
   const tocEntries = [
     { id: 'api-header', label: 'Overview' },
     { id: 'authentication', label: 'Authentication' },
-    { id: 'quick-start', label: 'Quick Start' },
     { id: 'choose-your-workflow', label: 'Choose Your Workflow' },
   ];
   let activeSection: string = $state('api-header');
@@ -125,11 +122,13 @@
     const scroller = document.getElementById('page');
     if (!scroller) return;
 
-    // The token card in Authentication loads after the deep-link scroll and pushes
-    // Quick Start down, so re-align until the visitor takes over.
-    const alignQuickStart = () =>
-      document.getElementById('quick-start')?.scrollIntoView({ behavior: 'instant' });
-    const pin = new ResizeObserver(alignQuickStart);
+    const deepLink = window.location.hash.match(/^#workflow-(python|r)$/);
+    // The item's panel slides open and the token card in Authentication loads after
+    // the first scroll, so the item moves and the page grows; re-align until the
+    // visitor takes over.
+    const deepLinkTarget = () => document.getElementById(`workflow-${deepLink?.[1]}`);
+    const alignDeepLink = () => deepLinkTarget()?.scrollIntoView({ behavior: 'instant' });
+    const pin = new ResizeObserver(alignDeepLink);
     const unpinEvents = ['wheel', 'touchmove', 'keydown', 'pointerdown'] as const;
     let pinned = true;
     const unpin = () => {
@@ -137,17 +136,15 @@
       pin.disconnect();
       for (const type of unpinEvents) window.removeEventListener(type, unpin, true);
     };
-    // Deep links like /api#quick-start-python pre-select the language tab. The
-    // suffixed ids have no DOM element, so scroll to the section ourselves.
-    const deepLink = window.location.hash.match(/^#quick-start-(python|r)$/);
     if (deepLink) {
-      tabSet = { python: 'Python', r: 'R' }[deepLink[1]] ?? tabSet;
+      openWorkflows = [deepLink[1]];
       for (const type of unpinEvents) window.addEventListener(type, unpin, true);
-      // Tab selection changes the layout; align only after Svelte renders it.
       void tick().then(() => {
-        alignQuickStart();
-        const authentication = document.getElementById('authentication');
-        if (pinned && authentication) pin.observe(authentication);
+        alignDeepLink();
+        if (!pinned) return;
+        for (const el of [document.getElementById('authentication'), deepLinkTarget()]) {
+          if (el) pin.observe(el);
+        }
       });
     }
 
@@ -193,10 +190,9 @@
     document.getElementById(id)?.scrollIntoView();
   }
 
-  function quickStart(event: MouseEvent, workflow: Workflow) {
-    tabSet = workflow.tab;
-    void navigateSection(event, 'quick-start');
-    log(createLog('NAVIGATION', 'api.quick_start', { workflow: workflow.id }));
+  function toggleWorkflow(value: string[]) {
+    openWorkflows = value;
+    log(createLog('ACTION', 'api.workflow_toggle', { open: value[0] ?? null }));
   }
 
   function tocClick(event: MouseEvent, id: string) {
@@ -252,7 +248,7 @@
       </div>
     </section>
 
-    <section id="authentication" class="w-full flex-1 bg-primary-50-950">
+    <section id="authentication" class="w-full flex-1">
       <div class="w-[70%] mx-auto py-12">
         <h2>Authentication</h2>
         <p class="mx-0">
@@ -302,70 +298,62 @@
     </section>
   </div>
 
-  <section id="quick-start" class="api-panel w-full">
-    <div class="w-[70%] mx-auto py-12">
-      <h2>Quick Start</h2>
-      <p class="mx-0">Copy and run the example code below to get started.</p>
-      <Tabs
-        value={tabSet}
-        onValueChange={(e) => {
-          tabSet = e.value;
-          log(createLog('ACTION', 'api.tab_change', { tab: e.value }));
-        }}
-      >
-        {#snippet list()}
-          <TabItem bind:group={tabSet} value="Python">Python</TabItem>
-          <TabItem bind:group={tabSet} value="R">R</TabItem>
-          <!-- Release 1: the API tab is hidden. -->
-          {#if false}
-            <TabItem bind:group={tabSet} value="API">API</TabItem>
-          {/if}
-        {/snippet}
-        {#snippet content()}
-          <Tabs.Panel value="Python">
-            <CodeBlock lang="python" code={quickStartCode.python} />
-          </Tabs.Panel>
-          <Tabs.Panel value="R">
-            <CodeBlock lang="r" code={quickStartCode.r} />
-          </Tabs.Panel>
-          <!-- Release 1: the API tab is hidden. -->
-          {#if false}
-            <Tabs.Panel value="API">
-              <CodeBlock lang="bash" code={quickStartCode.api} />
-            </Tabs.Panel>
-          {/if}
-        {/snippet}
-      </Tabs>
-    </div>
-  </section>
-
   <section id="choose-your-workflow" class="api-panel w-full bg-primary-50-950">
     <div class="w-[70%] mx-auto py-12">
       <h2>Choose Your Workflow</h2>
       <p class="mx-0">Select the access method that fits your project.</p>
-      <div class="flex flex-wrap gap-6 mt-4">
+      <Accordion
+        value={openWorkflows}
+        onValueChange={(e) => toggleWorkflow(e.value)}
+        collapsible
+        spaceY="space-y-4"
+        classes="mt-4"
+      >
+        {#snippet iconOpen()}<i class="fa-solid fa-angle-up text-xl"></i>{/snippet}
+        {#snippet iconClosed()}<i class="fa-solid fa-angle-down text-xl"></i>{/snippet}
         {#each workflows as workflow}
-          <div
-            data-testid="workflow-card-{workflow.id}"
-            class="card border border-surface-200 bg-surface-50-950 p-6 flex flex-col flex-1 basis-64 min-h-96"
-          >
-            <header class="flex items-center justify-between gap-2">
-              <h3 class="text-xl font-bold">{workflow.title}</h3>
-              <span class="badge {workflow.badgeClass}">{workflow.badge}</span>
-            </header>
-            <ul class="list-inside list-disc space-y-2 my-4">
-              {#each workflow.bullets as bullet}
-                <li>{bullet}</li>
-              {/each}
-            </ul>
-            <a
-              href="#quick-start"
-              class="btn preset-filled-primary-500 mt-auto"
-              onclick={(event) => quickStart(event, workflow)}>Quick Start</a
+          <div id="workflow-{workflow.id}" data-testid="workflow-{workflow.id}">
+            <Accordion.Item
+              value={workflow.id}
+              base="rounded-container border border-surface-200 bg-surface-50-950 data-[state=open]:border-primary-500"
+              controlHover="hover:bg-surface-100-900"
+              controlPadding="p-6"
+              controlRounded="rounded-container"
+              panelPadding="px-6 pb-6"
             >
+              {#snippet control()}
+                <span class="block text-xl font-bold">{workflow.title}</span>
+                <span class="block mt-1 text-base">{workflow.audience}</span>
+                <span class="block mt-1 text-sm font-mono text-surface-600-400">
+                  {workflow.requirements}
+                </span>
+              {/snippet}
+              {#snippet panel()}
+                <p class="mx-0 mb-4 p-4 rounded-base preset-tonal-primary">
+                  Copy your token above, paste it into a file named <code class="code"
+                    >token.txt</code
+                  >, and save it in the same folder as your notebook. Don't share this file or
+                  commit it to GitHub.
+                </p>
+                <CodeBlock lang={workflow.id} code={clientCode[workflow.id]} />
+                <p
+                  class="mx-0 mt-6 mb-1 text-sm font-bold uppercase tracking-wide text-surface-600-400"
+                >
+                  More info
+                </p>
+                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- external docs URL -->
+                <a class="anchor" href={workflow.docsUrl} target="_blank" rel="noopener noreferrer"
+                  >{workflow.docsLabel}</a
+                >
+                <p class="mx-0 mt-2">
+                  Looking for example notebooks? Find PIC-SURE tutorials in your Seven Bridges or
+                  Terra workspace.
+                </p>
+              {/snippet}
+            </Accordion.Item>
           </div>
         {/each}
-      </div>
+      </Accordion>
     </div>
   </section>
 

@@ -23,8 +23,7 @@ test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('API page', () => {
   test.beforeEach(async ({ context }) => {
-    // Pre-config-API these came from live VITE_* vars in .env.test; the quick start
-    // code block assertions (include_consents/supports_genomic) depend on them.
+    // The client code supports_genomic assertions depend on the gene/SNP flags.
     await mockApiConfig(context, {
       features: [
         { name: 'REQUIRE_CONSENTS', value: 'true' },
@@ -64,85 +63,125 @@ test.describe('API page', () => {
     await expect(page.getByText('any HTTP client')).toHaveCount(0);
   });
 
-  test('Has expected workflow cards', async ({ page }) => {
+  test('Choose Your Workflow starts with both clients collapsed', async ({ page }) => {
     // Given
     await page.goto('/api');
     await userIsLoggedIn(page);
 
     // When
-    const pythonCard = page.getByTestId('workflow-card-python');
-    const rCard = page.getByTestId('workflow-card-r');
-    const httpCard = page.getByTestId('workflow-card-http');
+    const python = page.getByTestId('workflow-python');
+    const r = page.getByTestId('workflow-r');
 
     // Then
     await expect(page.locator('#choose-your-workflow h2')).toHaveText('Choose Your Workflow');
-    await expect(pythonCard).toBeVisible();
-    await expect(pythonCard).toContainText('Python Client');
-    await expect(pythonCard.locator('.badge')).toHaveText('Recommended');
-    await expect(pythonCard).toContainText('Requires Python version 3.10.20 or later');
-    await expect(rCard).toBeVisible();
-    await expect(rCard).toContainText('R Client');
-    await expect(rCard.locator('.badge')).toHaveText('Recommended');
-    await expect(rCard).toContainText('Requires R version 4.1 or later');
-    await expect(httpCard).toHaveCount(0);
+    await expect(python.getByRole('button')).toHaveText(
+      /Python Client\s*Best if you work in Python or Jupyter Notebooks\.\s*Python 3\.10\+/,
+    );
+    await expect(r.getByRole('button')).toHaveText(
+      /R Client\s*Best if you work in R, Jupyter Notebooks, or RStudio\.\s*R 4\.1\+/,
+    );
+    await expect(python.getByRole('button')).toHaveAttribute('aria-expanded', 'false');
+    await expect(r.getByRole('button')).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('#choose-your-workflow [data-testid="accordion-panel"]')).toHaveCount(
+      0,
+    );
+    await expect(page.locator('#choose-your-workflow .badge')).toHaveCount(0);
     await expect(page.getByText('Direct API Access')).toHaveCount(0);
   });
 
-  test('Workflow cards have Quick Start buttons linking to the quick start section', async ({
+  test('Opening one client closes the other, and clicking the open header closes it', async ({
     page,
   }) => {
     // Given
     await page.goto('/api');
     await userIsLoggedIn(page);
+    const pythonHeader = page
+      .getByTestId('workflow-python')
+      .getByRole('heading', { level: 3 })
+      .getByRole('button');
+    const rHeader = page
+      .getByTestId('workflow-r')
+      .getByRole('heading', { level: 3 })
+      .getByRole('button');
 
     // When
-    const quickStartButtons = page.locator('#choose-your-workflow a', { hasText: 'Quick Start' });
+    await pythonHeader.click();
 
     // Then
-    await expect(quickStartButtons).toHaveCount(2);
-    for (const button of await quickStartButtons.all()) {
-      await expect(button).toHaveAttribute('href', '#quick-start');
-    }
+    await expect(pythonHeader).toHaveAttribute('aria-expanded', 'true');
+    await expect(rHeader).toHaveAttribute('aria-expanded', 'false');
+
+    // When
+    await rHeader.click();
+
+    // Then
+    await expect(pythonHeader).toHaveAttribute('aria-expanded', 'false');
+    await expect(rHeader).toHaveAttribute('aria-expanded', 'true');
+
+    // When
+    await rHeader.click();
+
+    // Then
+    await expect(rHeader).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('#choose-your-workflow [data-testid="accordion-panel"]')).toHaveCount(
+      0,
+    );
   });
 
-  test('Has quick start tabs for Python and R only', async ({ page }) => {
-    // Given
-    await page.goto('/api');
-    await userIsLoggedIn(page);
+  for (const { id, title, code, docsLabel, docsUrl } of [
+    {
+      id: 'python',
+      title: 'Python Client',
+      code: [
+        'pip install picsure',
+        'include_consents=True',
+        'requires_auth=True',
+        'supports_genomic=True',
+      ],
+      docsLabel: 'Python client documentation',
+      docsUrl: 'https://github.com/hms-dbmi/pic-sure-python-adapter-hpds',
+    },
+    {
+      id: 'r',
+      title: 'R Client',
+      code: [
+        'pic-sure-r-adapter-hpds',
+        'include_consents=TRUE',
+        'requires_auth=TRUE',
+        'supports_genomic=TRUE',
+      ],
+      docsLabel: 'R client documentation',
+      docsUrl: 'https://github.com/hms-dbmi/pic-sure-r-adapter-hpds',
+    },
+  ]) {
+    test(`Open ${title} shows the token step, authorized code, and more info`, async ({ page }) => {
+      // Given
+      await page.goto('/api');
+      await userIsLoggedIn(page);
+      const item = page.getByTestId(`workflow-${id}`);
 
-    // When
-    const tabs = page.getByTestId('tabs-control');
+      // When
+      await item.getByRole('heading', { level: 3 }).getByRole('button').click();
 
-    // Then
-    await expect(tabs).toHaveCount(2);
-    await expect(tabs.nth(0)).toContainText('Python');
-    await expect(tabs.nth(1)).toContainText('R');
-    await expect(page.locator('#quick-start .code-block').first()).toBeVisible();
-  });
-
-  test('Quick start code connects to the authorized platform when logged in', async ({ page }) => {
-    // Given
-    await page.goto('/api');
-    await userIsLoggedIn(page);
-
-    // When
-    const visibleCode = page.locator('#quick-start .code-block:visible');
-
-    // Then
-    await expect(visibleCode).toContainText('pip install picsure');
-    await expect(visibleCode).toContainText('include_consents=True');
-    await expect(visibleCode).toContainText('requires_auth=True');
-    await expect(visibleCode).toContainText('supports_genomic=True');
-    await expect(visibleCode).toContainText('token.txt');
-
-    // When
-    await page.getByTestId('tabs-control').filter({ hasText: 'R' }).last().click();
-
-    // Then
-    await expect(visibleCode).toContainText('include_consents=TRUE');
-    await expect(visibleCode).toContainText('requires_auth=TRUE');
-    await expect(visibleCode).toContainText('supports_genomic=TRUE');
-  });
+      // Then
+      const panel = item.getByTestId('accordion-panel');
+      await expect(panel.locator('p').first()).toHaveText(
+        "Copy your token above, paste it into a file named token.txt, and save it in the same folder as your notebook. Don't share this file or commit it to GitHub.",
+      );
+      await expect(panel.locator('p').first()).toHaveClass(/preset-tonal-primary/);
+      const codeBlock = panel.locator('.code-block');
+      await expect(codeBlock).toContainText('token.txt');
+      for (const snippet of code) await expect(codeBlock).toContainText(snippet);
+      await expect(codeBlock.getByTestId('code-block-copy-btn')).toBeVisible();
+      await expect(panel.getByText('More info', { exact: true })).toBeVisible();
+      const docsLink = panel.getByRole('link', { name: docsLabel });
+      await expect(docsLink).toHaveAttribute('href', docsUrl);
+      await expect(docsLink).toHaveAttribute('target', '_blank');
+      await expect(panel).toContainText(
+        'Looking for example notebooks? Find PIC-SURE tutorials in your Seven Bridges or Terra workspace.',
+      );
+    });
+  }
 
   test('Hides the API Access section', async ({ page }) => {
     // Given
@@ -167,7 +206,6 @@ test.describe('API page', () => {
     const expected: Array<[string, string]> = [
       ['Overview', '#api-header'],
       ['Authentication', '#authentication'],
-      ['Quick Start', '#quick-start'],
       ['Choose Your Workflow', '#choose-your-workflow'],
     ];
     await expect(links).toHaveCount(expected.length);
@@ -218,16 +256,10 @@ test.describe('API page', () => {
       );
 
       // Then
-      expect(sectionIds).toEqual([
-        'api-header',
-        'authentication',
-        'quick-start',
-        'choose-your-workflow',
-      ]);
+      expect(sectionIds).toEqual(['api-header', 'authentication', 'choose-your-workflow']);
       await expect(page.getByTestId('toc').locator('a')).toHaveText([
         'Overview',
         'Authentication',
-        'Quick Start',
         'Choose Your Workflow',
       ]);
     });
@@ -355,6 +387,11 @@ test.describe('API page', () => {
     await userIsLoggedIn(page);
 
     // When
+    await page
+      .getByTestId('workflow-python')
+      .getByRole('heading', { level: 3 })
+      .getByRole('button')
+      .click();
     const copyButton = page.getByTestId('code-block-copy-btn').first();
 
     // Then
@@ -461,11 +498,10 @@ test.describe('API page', () => {
   }) => {
     await page.goto('/api');
     for (const [name, id] of [
-      ['Quick Start', 'quick-start'],
+      ['Choose Your Workflow', 'choose-your-workflow'],
       ['Authentication', 'authentication'],
       ['Overview', 'api-header'],
       ['Choose Your Workflow', 'choose-your-workflow'],
-      ['Quick Start', 'quick-start'],
     ]) {
       await page.getByTestId('toc').getByRole('link', { name, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`#${id}$`));
@@ -507,25 +543,58 @@ test.describe('API page', () => {
     await expect(authLink).toHaveAttribute('aria-current', 'true');
   });
 
-  test('Deep link pre-selects the quick start tab and scrolls to the section', async ({ page }) => {
+  for (const [id, other] of [
+    ['python', 'r'],
+    ['r', 'python'],
+  ]) {
+    test(`Deep link #workflow-${id} opens that client and scrolls it into place`, async ({
+      page,
+    }) => {
+      // Given
+      await page.goto(`/api#workflow-${id}`);
+
+      // Then
+      await expect(
+        page.getByTestId(`workflow-${id}`).getByRole('heading', { level: 3 }).getByRole('button'),
+      ).toHaveAttribute('aria-expanded', 'true');
+      await expect(
+        page
+          .getByTestId(`workflow-${other}`)
+          .getByRole('heading', { level: 3 })
+          .getByRole('button'),
+      ).toHaveAttribute('aria-expanded', 'false');
+      // The token card above the item loads after the first scroll and grows the page.
+      await expect(page.locator('#user-token')).toBeVisible();
+      await expect(async () => {
+        const offset = await page.evaluate((itemId) => {
+          const scroller = document.getElementById('page');
+          const item = document.getElementById(itemId);
+          if (!scroller || !item) return NaN;
+          const itemTop =
+            item.getBoundingClientRect().top -
+            scroller.getBoundingClientRect().top +
+            scroller.scrollTop;
+          const maxScrollTop = scroller.scrollHeight - scroller.clientHeight;
+          const target = Math.min(itemTop, maxScrollTop);
+          return Math.round(scroller.scrollTop - target);
+        }, `workflow-${id}`);
+        expect(Math.abs(offset)).toBeLessThan(4);
+      }).toPass({ timeout: 5000 });
+    });
+  }
+
+  test('Old #quick-start deep links leave both clients collapsed', async ({ page }) => {
     // Given
     await page.goto('/api#quick-start-r');
+    await userIsLoggedIn(page);
 
     // Then
-    await expect(page.locator('#quick-start .code-block:visible')).toContainText('Requires R');
-    // The token card above Quick Start loads after the first scroll and grows the page.
-    await expect(page.locator('#user-token')).toBeVisible();
-    await expect(async () => {
-      const offset = await page.evaluate(() => {
-        const scroller = document.getElementById('page');
-        const section = document.getElementById('quick-start');
-        if (!scroller || !section) return NaN;
-        return Math.round(
-          section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
-        );
-      });
-      expect(Math.abs(offset)).toBeLessThan(4);
-    }).toPass({ timeout: 5000 });
+    await expect(
+      page.getByTestId('workflow-r').getByRole('heading', { level: 3 }).getByRole('button'),
+    ).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('#choose-your-workflow [data-testid="accordion-panel"]')).toHaveCount(
+      0,
+    );
   });
 
   test('Table of contents is hidden on narrow viewports', async ({ page }) => {
@@ -595,7 +664,7 @@ test.describe.skip('API page logged out', () => {
 
   test.beforeEach(async ({ page }) => {
     // OPEN keeps the root layout from redirecting anonymous visitors to /login.
-    // Gene/SNP/consents stay unset: the open quick start asserts them false.
+    // Gene/SNP stay unset: the open client code asserts supports_genomic false.
     await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
   });
 
@@ -641,26 +710,36 @@ test.describe.skip('API page logged out', () => {
     }
   });
 
-  test('Quick start code connects to the open platform when logged out', async ({ page }) => {
+  test('Client code connects to the open platform when logged out', async ({ page }) => {
     // Given
     await page.goto('/api');
 
     // When
-    const visibleCode = page.locator('#quick-start .code-block:visible');
+    await page
+      .getByTestId('workflow-python')
+      .getByRole('heading', { level: 3 })
+      .getByRole('button')
+      .click();
+    const pythonCode = page.getByTestId('workflow-python').locator('.code-block');
 
     // Then
-    await expect(visibleCode).toContainText('include_consents=False');
-    await expect(visibleCode).toContainText('requires_auth=False');
-    await expect(visibleCode).toContainText('supports_genomic=False');
-    await expect(visibleCode).toContainText('token.txt');
+    await expect(pythonCode).toContainText('include_consents=False');
+    await expect(pythonCode).toContainText('requires_auth=False');
+    await expect(pythonCode).toContainText('supports_genomic=False');
+    await expect(pythonCode).toContainText('token.txt');
 
     // When
-    await page.getByTestId('tabs-control').filter({ hasText: 'R' }).last().click();
+    await page
+      .getByTestId('workflow-r')
+      .getByRole('heading', { level: 3 })
+      .getByRole('button')
+      .click();
+    const rCode = page.getByTestId('workflow-r').locator('.code-block');
 
     // Then
-    await expect(visibleCode).toContainText('include_consents=FALSE');
-    await expect(visibleCode).toContainText('requires_auth=FALSE');
-    await expect(visibleCode).toContainText('supports_genomic=FALSE');
+    await expect(rCode).toContainText('include_consents=FALSE');
+    await expect(rCode).toContainText('requires_auth=FALSE');
+    await expect(rCode).toContainText('supports_genomic=FALSE');
   });
 
   test('Table of contents lists all page sections', async ({ page }) => {
@@ -674,7 +753,6 @@ test.describe.skip('API page logged out', () => {
     const expected: Array<[string, string]> = [
       ['Overview', '#api-header'],
       ['Authentication', '#authentication'],
-      ['Quick Start', '#quick-start'],
       ['Choose Your Workflow', '#choose-your-workflow'],
       ['API Access', '#api-access'],
     ];
@@ -683,16 +761,6 @@ test.describe.skip('API page logged out', () => {
       await expect(links.nth(index)).toHaveText(label);
       await expect(links.nth(index)).toHaveAttribute('href', href);
     }
-  });
-
-  test('Curl example uses the current origin and gateway Dictionary route', async ({ page }) => {
-    await page.goto('/api');
-    await page.getByRole('tab', { name: 'API', exact: true }).click();
-    const code = page.locator('#quick-start .code-block:visible');
-    await expect(code).toContainText(
-      `${new URL(page.url()).origin}/picsure/dictionary/concepts?page_number=0&page_size=10`,
-    );
-    await expect(code).not.toContainText('/proxy/');
   });
 
   test('Legacy /analyze/api redirects to /api when logged out', async ({ page }) => {
