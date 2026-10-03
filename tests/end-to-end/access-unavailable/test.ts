@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../custom-context';
 
 import { mockDashboard, searchResults, searchResultPath, facetResultPath } from '../mock-data';
@@ -7,17 +7,6 @@ import { userIsLoggedIn } from '../utils';
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 const consentsPath = '*/**/psama/user/me/consents';
-
-/** The state a reload lands in after a failed access fetch: privileges intact, no consents. */
-async function reloadStateWithoutAccess(page: Page) {
-  await page.addInitScript(() => {
-    const raw = sessionStorage.getItem('user');
-    if (!raw) return;
-    const stored = JSON.parse(raw);
-    delete stored.consents;
-    sessionStorage.setItem('user', JSON.stringify(stored));
-  });
-}
 
 test.describe('Access unavailable', () => {
   test.beforeEach(async ({ page }) => {
@@ -32,8 +21,7 @@ test.describe('Access unavailable', () => {
     await mockApiSuccess(page, facetResultPath, []);
   });
 
-  test('failing consents on login warns the user instead of failing silently', async ({ page }) => {
-    await reloadStateWithoutAccess(page);
+  test('failed access loading warns the user without logging them out', async ({ page }) => {
     await mockApiFail(page, consentsPath, 'connectionfailed');
 
     await page.goto('/dashboard');
@@ -46,7 +34,6 @@ test.describe('Access unavailable', () => {
   });
 
   test('dictionary search stays closed rather than returning every concept', async ({ page }) => {
-    await reloadStateWithoutAccess(page);
     await mockApiFail(page, consentsPath, 'connectionfailed');
 
     let conceptRequests = 0;

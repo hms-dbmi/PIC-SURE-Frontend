@@ -3,13 +3,8 @@ import { writable, type Writable } from 'svelte/store';
 import * as api from '$lib/api';
 import { Picsure } from '$lib/paths';
 import type { Column } from '$lib/components/datatable/types';
-import {
-  accessUnavailable,
-  consentedStudies,
-  consentsSettled,
-  showAccessUnavailable,
-} from '$lib/stores/User';
-import { get } from 'svelte/store';
+import { access, ensureAccess } from '$lib/state/access.svelte';
+import { session } from '$lib/state/session.svelte';
 export const columns: Writable<Column[]> = writable([]);
 
 export type DashboardRow = Record<string, string | number | boolean | null>;
@@ -30,15 +25,18 @@ function fetchDashboard(): Promise<DashboardResp> {
   return api.get(Picsure.Dashboard);
 }
 
+let requestId = 0;
+
 export async function loadDashboardData() {
-  // Computed once, so wait rather than render an all-denied column that never corrects itself.
-  const [dashboardData] = await Promise.all([fetchDashboard(), consentsSettled()]);
+  const id = ++requestId;
+  const revision = access.revision;
+  const sessionRevision = session.revision;
+  rows.set([]);
+  const [dashboardData, consents] = await Promise.all([fetchDashboard(), ensureAccess()]);
+  if (id !== requestId || revision !== access.revision || sessionRevision !== session.revision)
+    return;
   columns.set(dashboardData.columns);
-
-  // All-denied is indistinguishable from having no access, so say why.
-  if (get(accessUnavailable)) showAccessUnavailable();
-
-  const processedRows = dashboardData.rows.map(processRow(get(consentedStudies)));
+  const processedRows = dashboardData.rows.map(processRow(consents['\\_consents\\'] ?? []));
 
   const sortedRows = processedRows.sort((a, b) => {
     const aIsAnvil = (a.program_name?.toString().toLowerCase() || '') === 'anvil';

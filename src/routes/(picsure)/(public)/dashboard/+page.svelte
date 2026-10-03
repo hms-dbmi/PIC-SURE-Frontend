@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy, onMount, untrack } from 'svelte';
   import type { Unsubscriber } from 'svelte/store';
 
+  import { session } from '$lib/state/session.svelte';
+  import { access } from '$lib/state/access.svelte';
   import { config } from '$lib/configuration.svelte';
   import Content from '$lib/components/Content.svelte';
   import Datatable from '$lib/components/datatable/StaticTable.svelte';
@@ -31,7 +33,12 @@
     additional_info_link: DashboardLink,
   };
 
-  const dataLoadPromise = loadDashboardData();
+  let dataLoadPromise = $state<Promise<void>>();
+  $effect(() => {
+    void session.revision;
+    void access.revision;
+    dataLoadPromise = untrack(loadDashboardData);
+  });
 
   onMount(() => {
     unsubColumns = subscribeOnChange(columns, (newCols) => (currentColumns = newCols));

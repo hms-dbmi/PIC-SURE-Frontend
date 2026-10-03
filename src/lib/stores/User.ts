@@ -1,9 +1,9 @@
 import { resolve } from '$app/paths';
-import { get, writable, derived, type Writable, type Readable } from 'svelte/store';
+import { get, writable, derived, readable, type Writable, type Readable } from 'svelte/store';
 import { browser } from '$app/environment';
 import * as api from '$lib/api';
 import type { Route } from '$lib/models/Route';
-import type { ConsentsMap, User } from '$lib/models/User';
+import type { User } from '$lib/models/User';
 import { PicsurePrivileges } from '$lib/models/Privilege';
 import { routes, config } from '$lib/configuration.svelte';
 import { Psama } from '$lib/paths';
@@ -12,49 +12,42 @@ import type AuthProvider from '$lib/models/AuthProvider.ts';
 import { page } from '$app/state';
 import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
 import { log, createLog } from '$lib/logger';
-import { isToastShowing, toaster } from '$lib/toaster';
+import { ensureAccess } from '$lib/state/access.svelte';
+import {
+  getToken,
+  setToken,
+  removeToken,
+  onSessionChange,
+  session,
+} from '$lib/state/session.svelte';
+export { getToken, setToken, removeToken } from '$lib/state/session.svelte';
 
-const tokenRevision = writable(0);
+// Store views of the session for components that read auth state with `$store` syntax.
+export const tokenStatus: Readable<boolean> = readable(session.authenticated, (set) => {
+  set(session.authenticated);
+  return onSessionChange(() => set(session.authenticated));
+});
+export const hasValidToken: Readable<boolean> = readable(false, (set) => {
+  let expiryTimer: ReturnType<typeof setTimeout> | undefined;
 
-// Create a store that syncs with localStorage
-function createLocalStorageStore(key: string, initialValue: boolean) {
-  const store = writable(browser ? !!localStorage.getItem(key) : initialValue);
+  function updateValidity() {
+    clearTimeout(expiryTimer);
+    const token = getToken();
+    const valid = !!token && !isTokenExpired(token);
+    set(valid);
+    if (!valid) return;
 
-  if (browser) {
-    // Update store when localStorage changes in other tabs
-    window.addEventListener('storage', (event) => {
-      if (event.key === key) {
-        store.set(!!event.newValue);
-        tokenRevision.update((revision) => revision + 1);
-      }
-    });
+    const remaining = getTokenExpiration(token) - Date.now() + 1;
+    expiryTimer = setTimeout(updateValidity, Math.min(Math.max(remaining, 1), 2_147_483_647));
   }
 
-  return store;
-}
-
-// Initialize tokenStatus first, before any other operations
-export const tokenStatus: Writable<boolean> = createLocalStorageStore('token', false);
-export const hasValidToken: Readable<boolean> = derived(
-  [tokenStatus, tokenRevision],
-  ([$hasToken], set) => {
-    let expiryTimer: ReturnType<typeof setTimeout> | undefined;
-
-    function updateValidity() {
-      const token = browser && $hasToken ? getToken() : '';
-      const valid = $hasToken && !!token && !isTokenExpired(token);
-      set(valid);
-      if (!valid) return;
-
-      const remaining = getTokenExpiration(token) - Date.now() + 1;
-      expiryTimer = setTimeout(updateValidity, Math.min(Math.max(remaining, 1), 2_147_483_647));
-    }
-
-    updateValidity();
-    return () => clearTimeout(expiryTimer);
-  },
-  false,
-);
+  updateValidity();
+  const stopListening = onSessionChange(updateValidity);
+  return () => {
+    stopListening();
+    clearTimeout(expiryTimer);
+  };
+});
 export const user: Writable<User> = writable(restoreUser());
 export const isTopAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.SUPER);
@@ -62,27 +55,6 @@ export const isTopAdmin = derived(user, ($user: User) => {
 export const isAdmin = derived(user, ($user: User) => {
   return $user?.privileges?.includes(PicsurePrivileges.ADMIN);
 });
-
-/**
- * `\_consents\` is the complete grant list; the harmonized and topmed keys are subsets the
- * backend uses to authorize queries. Token-gated, so a logout in another tab cannot leave a
- * restored sessionStorage blob reporting access the user no longer has.
- */
-export const consentedStudies: Readable<string[]> = derived(
-  [user, tokenStatus],
-  ([$user, $hasToken]: [User, boolean]) =>
-    $hasToken ? ($user?.consents?.['\\_consents\\'] ?? []) : [],
-);
-
-/**
- * Unknown access, not absent access: `{}` is loaded-with-none, missing is unknown.
- * Derived from the data because `user` persists to sessionStorage and module state does not -
- * a reload skips re-hydrating, so a status flag would reset to "fine" and fail open again.
- */
-export const accessUnavailable: Readable<boolean> = derived(
-  [user, tokenStatus],
-  ([$user, $hasToken]: [User, boolean]) => $hasToken && $user?.consents === undefined,
-);
 
 // User data lives in sessionStorage (tab-scoped), not localStorage. Each tab has its own
 // isolated user state, so opening the app in multiple tabs or logging out in one tab
@@ -92,46 +64,34 @@ export const accessUnavailable: Readable<boolean> = derived(
 user.subscribe(($user: User) => {
   if (browser) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { token: _, ...userWithoutToken } = $user;
+    const { token: _, consents: _consents, ...userWithoutToken } = $user;
     sessionStorage.setItem('user', JSON.stringify(userWithoutToken));
   }
 });
 
-export function setToken(token: string) {
-  localStorage.setItem('token', token);
-  tokenStatus.set(true);
-  tokenRevision.update((revision) => revision + 1);
-}
+let userRequest: Promise<void> | undefined;
 
-export function getToken(): string {
-  return localStorage.getItem('token') || '';
-}
-
-export function removeToken() {
-  localStorage.removeItem('token');
-  tokenStatus.set(false);
-  tokenRevision.update((revision) => revision + 1);
-}
-
-/**
- * Clear all client-side session state.
- *
- * DO NOT call this from module-init code paths (e.g. `restoreUser`). The `user` store
- * does not exist yet at that point, so `user.set()` will throw. `restoreUser` instead
- * clears localStorage inline and returns `{}` as the initial store value.
- */
-export function clearSession() {
-  discardPendingConsents();
-  removeToken();
-  sessionStorage.removeItem('user');
+onSessionChange(() => {
+  userRequest = undefined;
   user.set({});
+});
+
+export function clearSession() {
+  removeToken();
+  userRequest = undefined;
+  user.set({});
+  sessionStorage.removeItem('user');
 }
 
 function restoreUser() {
   if (!browser) return {};
 
   const token = localStorage.getItem('token');
-  if (token && isTokenExpired(token)) {
+  if (!token) {
+    sessionStorage.removeItem('user');
+    return {};
+  }
+  if (isTokenExpired(token)) {
     console.log('Clearing expired token from storage.');
     removeToken();
     sessionStorage.removeItem('user');
@@ -143,7 +103,10 @@ function restoreUser() {
     const stored = JSON.parse(sessionStorage.getItem('user') || '{}');
     if (!stored || Object.keys(stored).length === 0) return {};
     console.log('Restored user from session storage: ', stored);
-    return stored;
+    // Consents are fetched independently for each tab, never restored from a user snapshot.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { consents: _consents, ...profile } = stored;
+    return profile;
   } catch (error) {
     console.error('Error reading user from session storage: ' + error);
     return {};
@@ -151,10 +114,7 @@ function restoreUser() {
 }
 
 export function isUserLoggedIn() {
-  if (browser) {
-    return !!localStorage.getItem('token');
-  }
-  return false;
+  return session.authenticated;
 }
 
 export const userRoutes: Readable<Route[]> = derived([user], ([$user]) => {
@@ -199,11 +159,31 @@ export const userRoutes: Readable<Route[]> = derived([user], ([$user]) => {
   return allowedRoutes(featured);
 });
 
-export async function getUser(force?: boolean, hasToken = false) {
-  if (force || !get(user)?.privileges || !get(user)?.token) {
-    const res: User = await api.get(`${Psama.User.Me}${hasToken ? '?hasToken' : ''}`);
-    user.set({ ...get(user), ...res });
+export async function getUser(force = false, hasToken = false): Promise<void> {
+  if (!force && get(user).privileges && (!hasToken || get(user).token)) return;
+  if (userRequest) {
+    await userRequest;
+    if (hasToken && !get(user).token) return getUser(true, true);
+    return;
   }
+  const version = session.revision;
+  const request = api
+    .get(`${Psama.User.Me}${hasToken ? '?hasToken' : ''}`)
+    .then((res: User) => {
+      if (session.revision !== version) return;
+      // Older API responses may include consents; access.svelte.ts owns that data now.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { consents: _, ...profile } = res;
+      user.set({ ...get(user), ...profile });
+    })
+    .catch((error: unknown) => {
+      if (session.revision === version) throw error;
+    })
+    .finally(() => {
+      if (userRequest === request) userRequest = undefined;
+    });
+  userRequest = request;
+  return request;
 }
 
 export function refreshLongTermToken() {
@@ -216,93 +196,22 @@ export function refreshLongTermToken() {
   });
 }
 
-export const ACCESS_UNAVAILABLE_MESSAGE =
-  'We could not load which studies you have access to. Studies you are authorized for may not ' +
-  'be shown, and searching the data dictionary is unavailable. Please log out and log back in. ' +
-  'If the problem persists, please contact an administrator.';
-
-/** Delay before each attempt. Retry once straight away, then back off for a real outage. */
-const CONSENTS_RETRY_DELAYS_MS = [0, 0, 3_000];
-
-/**
- * Requires PSAMA to answer 200 with an empty map when a user has no consents; its 500 is
- * indistinguishable from a transient failure. Throws once attempts are exhausted rather than
- * returning `{}` - the dictionary treats an empty list as no filter and returns everything.
- */
-export async function getConsents(): Promise<ConsentsMap> {
-  for (const [attempt, delay] of CONSENTS_RETRY_DELAYS_MS.entries()) {
-    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
-    try {
-      const res = await api.get(Psama.User.Consents);
-      return (res?.consents as ConsentsMap) || {};
-    } catch (error) {
-      if (attempt === CONSENTS_RETRY_DELAYS_MS.length - 1) {
-        console.error(`Error fetching user consents after ${attempt + 1} attempts: ` + error);
-        throw error;
-      }
-    }
-  }
-  throw new Error('unreachable');
-}
-
-let consentsRequest: Promise<void> = Promise.resolve();
-
-/** Resolves once the in-flight access fetch has succeeded or given up. Never rejects. */
-export const consentsSettled = () => consentsRequest;
-
-function discardPendingConsents() {
-  consentsRequest = Promise.resolve();
-}
-
-/** Leaves `consents` undefined on failure - see `accessUnavailable`. */
-export function loadConsents(): Promise<void> {
-  user.set({ ...get(user), consents: undefined });
-  const request: Promise<void> = getConsents()
-    .then((consents) => {
-      if (consentsRequest === request) user.set({ ...get(user), consents });
-    })
-    .catch(() => {
-      if (consentsRequest === request) showAccessUnavailable();
-    });
-  consentsRequest = request;
-  return request;
-}
-
-/** Waits for or starts the consent request when access has not been loaded yet. */
-export async function ensureConsentsLoaded(): Promise<ConsentsMap | undefined> {
-  if (get(user).consents !== undefined) return get(user).consents;
-
-  await consentsSettled();
-  if (get(user).consents === undefined) await loadConsents();
-  return get(user).consents;
-}
-
-/** Idempotent per visible toast, so repeated blocked requests do not stack up alerts. */
-export function showAccessUnavailable() {
-  if (isToastShowing('access-unavailable')) return;
-  toaster.error({ id: 'access-unavailable', title: ACCESS_UNAVAILABLE_MESSAGE, closable: true });
-}
-
-/**
- * Populate the user store from PSAMA using the token in localStorage. Used by the login
- * flow and by the authorized layout when a fresh tab has a valid token but no user data
- * in sessionStorage (since sessionStorage is tab-scoped, each new tab starts empty).
- */
-export async function hydrateUserFromToken() {
-  await getUser(true, false);
-  // Not awaited: see loadConsents. Consumers wait on consentsSettled() instead.
-  loadConsents();
+export async function hydrateUserFromToken(force = false) {
+  const version = session.revision;
+  await getUser(force);
+  if (version !== session.revision || !session.authenticated) return;
+  // Access failure does not invalidate authentication. The shared notice displays the error.
+  await ensureAccess().catch(() => {});
 }
 
 export async function login(token: string) {
   if (browser && token) {
     setToken(token);
-    await hydrateUserFromToken();
+    await hydrateUserFromToken(true);
   }
 }
 
 export async function logout(authProvider?: AuthProvider, redirect = false) {
-  discardPendingConsents();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function handleErrors(error: any) {
     console.error('Error logging out: ' + error);
@@ -312,8 +221,9 @@ export async function logout(authProvider?: AuthProvider, redirect = false) {
   if (browser) {
     const token = localStorage.getItem('token');
     if (token) {
-      await api.get(Psama.User.Logout).catch(handleErrors);
-      removeToken();
+      const request = api.get(Psama.User.Logout);
+      clearSession();
+      await request.catch(handleErrors);
     }
   }
 

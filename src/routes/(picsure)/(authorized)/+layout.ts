@@ -1,7 +1,7 @@
 import type { LayoutLoad } from './$types';
 import { browser } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
-import { clearSession, hydrateUserFromToken, isTokenExpired, user } from '$lib/stores/User';
+import { clearSession, isTokenExpired, user } from '$lib/stores/User';
 import { loginRedirectPath } from '$lib/utilities/LoginRedirect';
 import { BDCPrivileges, PicsurePrivileges } from '$lib/models/Privilege';
 import { get } from 'svelte/store';
@@ -9,8 +9,9 @@ import { log, createLog } from '$lib/logger';
 
 export const prerender = false;
 
-export const load: LayoutLoad = async ({ url }) => {
+export const load: LayoutLoad = async ({ url, parent }) => {
   if (!browser) return;
+  await parent();
 
   const token = localStorage.getItem('token');
   if (!token || token.trim() === '') {
@@ -25,19 +26,6 @@ export const load: LayoutLoad = async ({ url }) => {
     log(createLog('AUTH', 'auth.redirect_token_expired', { targetUrl: url.pathname }));
     clearSession();
     redirect(302, loginRedirectPath(url));
-  }
-  // user lives in sessionStorage (tab-scoped), so a fresh tab with a valid token has an
-  // empty user store. Hydrate from PSAMA before the privilege check — otherwise the user
-  // would be bounced to / despite having a valid session.
-  if (!get(user)?.privileges) {
-    try {
-      await hydrateUserFromToken();
-    } catch (error) {
-      console.error('Failed to hydrate user from token:', error);
-      log(createLog('AUTH', 'auth.hydrate_failed', { error: String(error) }));
-      clearSession();
-      redirect(302, loginRedirectPath(url));
-    }
   }
   const userPrivileges = get(user)?.privileges || [];
   if (
