@@ -1,6 +1,7 @@
 import { expect, type BrowserContext, type Route } from '@playwright/test';
-import { test, mockApiSuccessByMethod } from '../../custom-context';
+import { test, mockApiSuccess, mockApiSuccessByMethod } from '../../custom-context';
 import { userIsLoggedIn } from '../../utils';
+import { picsureUser, userTypes } from '../../mock-data';
 import type { ApiKeyMetadata } from '../../../../src/lib/models/ApiKey';
 
 const FAKE_KEY = 'picsure_FAKE-TEST-FIXTURE-VALUE-0000000000000000000';
@@ -56,6 +57,8 @@ const mintedResponse = {
   expiresAt: null,
 };
 
+const API_KEYS_TAB = '/admin/configuration?tab=api-keys';
+
 test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
 
 // The page renders one table per key type, each querying ?keyType=…; route by that param so a
@@ -78,7 +81,7 @@ test.beforeEach(async ({ context }) => {
 test.describe('api keys list', () => {
   test('Splits keys into platform and user tables with derived status', async ({ page }) => {
     // Given
-    await page.goto('/admin/api-keys');
+    await page.goto(API_KEYS_TAB);
     await userIsLoggedIn(page);
 
     // Then
@@ -101,7 +104,7 @@ test.describe('api keys list', () => {
     await context.route('**/psama/apiKey?*keyType=USER*', (route: Route) =>
       route.fulfill({ json: { ...keyPage([activeKey]), totalCount: 42 } }),
     );
-    await page.goto('/admin/api-keys');
+    await page.goto(API_KEYS_TAB);
     await userIsLoggedIn(page);
 
     // Then
@@ -112,7 +115,7 @@ test.describe('api keys list', () => {
 
   test('Only active keys have a revoke button', async ({ page }) => {
     // Given
-    await page.goto('/admin/api-keys');
+    await page.goto(API_KEYS_TAB);
     await userIsLoggedIn(page);
 
     // Then
@@ -138,7 +141,7 @@ test.describe('revoke flow', () => {
       revoked = true;
       return route.fulfill({ json: { ...activeKey, revokedAt: '2026-07-14T00:00:00Z' } });
     });
-    await page.goto('/admin/api-keys');
+    await page.goto(API_KEYS_TAB);
     await userIsLoggedIn(page);
 
     // When
@@ -164,7 +167,7 @@ test.describe('revoke flow', () => {
       putCalled = true;
       return route.fulfill({ json: activeKey });
     });
-    await page.goto('/admin/api-keys');
+    await page.goto(API_KEYS_TAB);
     await userIsLoggedIn(page);
 
     // When
@@ -182,7 +185,7 @@ test.describe('mint platform key flow', () => {
   test('Minting reveals the key exactly once with a see-once warning', async ({ page }) => {
     // Given
     await mockApiSuccessByMethod(page, '*/**/psama/apiKey/platform', 'POST', mintedResponse);
-    await page.goto('/admin/api-keys');
+    await page.goto(API_KEYS_TAB);
     await userIsLoggedIn(page);
 
     // When
@@ -208,7 +211,7 @@ test.describe('mint platform key flow', () => {
   test('The revealed key cannot be dismissed accidentally, only via Done', async ({ page }) => {
     // Given
     await mockApiSuccessByMethod(page, '*/**/psama/apiKey/platform', 'POST', mintedResponse);
-    await page.goto('/admin/api-keys');
+    await page.goto(API_KEYS_TAB);
     await userIsLoggedIn(page);
 
     // When
@@ -234,7 +237,7 @@ test.describe('mint platform key flow', () => {
       await new Promise((resolve) => setTimeout(resolve, 700));
       return route.fulfill({ json: mintedResponse });
     });
-    await page.goto('/admin/api-keys');
+    await page.goto(API_KEYS_TAB);
     await userIsLoggedIn(page);
 
     // When minting is in progress
@@ -256,7 +259,7 @@ test.describe('mint platform key flow', () => {
   test('Sends the expiry date as a UTC instant', async ({ page }) => {
     // Given
     await mockApiSuccessByMethod(page, '*/**/psama/apiKey/platform', 'POST', mintedResponse);
-    await page.goto('/admin/api-keys');
+    await page.goto(API_KEYS_TAB);
     await userIsLoggedIn(page);
 
     // When
@@ -288,7 +291,7 @@ test.describe('mint platform key flow', () => {
         body: JSON.stringify({ errorType: 'error', message: 'Expiry must be in the future' }),
       }),
     );
-    await page.goto('/admin/api-keys');
+    await page.goto(API_KEYS_TAB);
     await userIsLoggedIn(page);
 
     // When
@@ -304,7 +307,7 @@ test.describe('mint platform key flow', () => {
 
   test('Enforces required name and email', async ({ page }) => {
     // Given
-    await page.goto('/admin/api-keys');
+    await page.goto(API_KEYS_TAB);
     await userIsLoggedIn(page);
 
     // When
@@ -319,16 +322,61 @@ test.describe('mint platform key flow', () => {
   });
 });
 
-test.describe('Admin on API Keys page', () => {
-  test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
-
-  test('Mint and revoke are disabled when not top admin', async ({ page }) => {
-    // Given
+test.describe('API Keys tab location', () => {
+  test('The old API Keys page redirects to the configuration tab', async ({ page }) => {
+    // When
     await page.goto('/admin/api-keys');
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByTestId('error-alert')).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/configuration\?tab=api-keys$/);
+    await expect(page.getByTestId('PlatformApiKeys-table')).toBeVisible();
+  });
+
+  test('Following the old link from the configuration page switches tabs', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration?tab=branding');
+    await userIsLoggedIn(page);
+    await expect(page.getByTestId('config-tab-branding')).toBeVisible();
+
+    // When: the redirect only changes ?tab=, so the page stays mounted
+    await page.evaluate(() => {
+      const link = document.createElement('a');
+      link.href = '/admin/api-keys';
+      document.body.append(link);
+      link.click();
+    });
+
+    // Then
+    await expect(page).toHaveURL(/\/admin\/configuration\?tab=api-keys$/);
+    await expect(page.getByTestId('PlatformApiKeys-table')).toBeVisible();
+  });
+});
+
+test.describe('Admin on API Keys tab', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
+
+  test('Opens in a fresh tab without bouncing the admin away', async ({ page }) => {
+    // Given a valid token but no user in sessionStorage, as in a newly opened tab
+    await page.addInitScript(() => sessionStorage.removeItem('user'));
+    await mockApiSuccess(page, '*/**/psama/user/me', { ...picsureUser, ...userTypes.adminUser });
+    await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: picsureUser.consents });
+
+    // When
+    await page.goto(API_KEYS_TAB);
+
+    // Then
+    await expect(page.getByTestId('UserApiKeys-table')).toContainText('picsure_abc12345…');
+    await expect(page).toHaveURL(/\/admin\/configuration\?tab=api-keys$/);
+  });
+
+  test('Mint and revoke are disabled when not top admin', async ({ page }) => {
+    // Given
+    await page.goto(API_KEYS_TAB);
+    await userIsLoggedIn(page);
+
+    // Then
+    await expect(page.getByTestId('top-admin-only-error')).toBeVisible();
     await expect(page.getByTestId('mint-platform-key-btn')).toBeDisabled();
     await expect(page.getByTestId('api-key-uuid-active-revoke-btn')).toBeDisabled();
   });

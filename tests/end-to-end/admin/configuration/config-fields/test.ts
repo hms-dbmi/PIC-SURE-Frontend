@@ -142,8 +142,135 @@ test('Deprecated API rows are listed separately and can be deleted', async ({ pa
   await expect(page.getByTestId('config-deprecated-features-settings')).toHaveCount(0);
 });
 
+test('A ?tab= link opens that tab, and switching tabs updates it', async ({ page }) => {
+  // When
+  await page.goto('/admin/configuration?tab=branding');
+  await userIsLoggedIn(page);
+
+  // Then
+  await expect(page.getByTestId('config-tab-branding')).toBeVisible();
+
+  // When
+  await clickTab(page, 'Settings & Features');
+
+  // Then
+  await expect(page.getByTestId('config-tab-features-settings')).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/configuration\?tab=settings$/);
+});
+
+test('The Configuration nav link returns to the default tab', async ({ page }) => {
+  // Given
+  await page.goto('/admin/configuration?tab=branding');
+  await userIsLoggedIn(page);
+  await expect(page.getByTestId('config-tab-branding')).toBeVisible();
+
+  // When
+  await page.locator('#nav-link-admin-configuration').click();
+
+  // Then
+  await expect(page.locator('#role-table')).toBeVisible();
+  await expect(page).toHaveURL(/\/admin\/configuration\?tab=access-control$/);
+});
+
+test('Tabs run from Access Control to API Keys and Terms of Service', async ({ page }) => {
+  // Given
+  await mockApiConfig(page, { features: [{ name: 'ENABLE_TOS', value: 'true' }] });
+
+  // When
+  await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
+
+  // Then
+  await expect(page.getByTestId('tabs-control')).toHaveText([
+    'Access Control',
+    'Site banners',
+    'Settings & Features',
+    'Branding',
+    'API Keys',
+    'Terms of Service',
+  ]);
+});
+
+test('Terms of Service is hidden while the terms feature is off', async ({ page }) => {
+  // When: the beforeEach config leaves ENABLE_TOS off
+  await page.goto('/admin/configuration?tab=terms');
+  await userIsLoggedIn(page);
+
+  // Then
+  await expect(page.getByTestId('tabs-control')).toHaveText([
+    'Access Control',
+    'Site banners',
+    'Settings & Features',
+    'Branding',
+    'API Keys',
+  ]);
+  await expect(page.locator('#role-table')).toBeVisible();
+});
+
+test('Top admins land on Access Control and see no read-only notice', async ({ page }) => {
+  // When
+  await page.goto('/admin/configuration');
+  await userIsLoggedIn(page);
+
+  // Then
+  await expect(page.locator('#role-table')).toBeVisible();
+
+  // When
+  await clickTab(page, 'Branding');
+
+  // Then
+  await expect(page.getByTestId('config-tab-branding')).toBeVisible();
+  await expect(page.getByTestId('top-admin-only-error')).toHaveCount(0);
+});
+
 test.describe('Admin on Configuration page', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/adminUser.json' });
+
+  test('Tabs start at Site banners and end with API Keys and Terms of Service', async ({
+    page,
+  }) => {
+    // Given
+    await mockApiConfig(page, { features: [{ name: 'ENABLE_TOS', value: 'true' }] });
+
+    // When
+    await page.goto('/admin/configuration');
+    await userIsLoggedIn(page);
+
+    // Then
+    await expect(page.getByTestId('tabs-control')).toHaveText([
+      'Site banners',
+      'Settings & Features',
+      'Branding',
+      'API Keys',
+      'Terms of Service',
+    ]);
+    await expect(page.getByRole('button', { name: '+ Create banner' })).toBeVisible();
+  });
+
+  test('Read-only notice shows only on the tabs admins cannot fully edit', async ({ page }) => {
+    // Given
+    await page.goto('/admin/configuration');
+    await userIsLoggedIn(page);
+
+    // When / Then: each step checks the tab's own content, so a click that does nothing fails
+    const tabs = [
+      { name: 'Site banners', content: page.getByRole('button', { name: '+ Create banner' }) },
+      { name: 'Settings & Features', content: page.getByTestId('config-tab-features-settings') },
+      { name: 'Branding', content: page.getByTestId('config-tab-branding') },
+      { name: 'API Keys', content: page.getByTestId('PlatformApiKeys-table') },
+    ];
+    for (const { name, content } of tabs) {
+      await clickTab(page, name);
+      await expect(content).toBeVisible();
+      if (name === 'Site banners') {
+        await expect(page.getByTestId('top-admin-only-error')).toHaveCount(0);
+      } else {
+        // Inside the open tab, like every other notice on the page.
+        await expect(page.getByRole('tabpanel').getByTestId('top-admin-only-error')).toBeVisible();
+        await expect(page.getByTestId('top-admin-only-error')).toHaveCount(1);
+      }
+    }
+  });
 
   test('Non-top-admin users see the new tabs disabled', async ({ page }) => {
     await page.goto('/admin/configuration');
