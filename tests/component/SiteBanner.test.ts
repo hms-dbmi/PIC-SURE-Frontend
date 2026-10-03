@@ -61,7 +61,7 @@ describe('SiteBanner', () => {
     (appearance, cssClass) => {
       render(SiteBanner, { banner: { ...banner, appearance } });
 
-      expect(screen.getByRole('article', { name: 'Maintenance' })).toHaveClass(cssClass);
+      expect(screen.getByRole('region', { name: 'Maintenance' })).toHaveClass(cssClass);
     },
   );
 
@@ -130,7 +130,7 @@ describe('SiteBanner', () => {
   it('uses a compact bottom tone bar and aligns the icon, title, and message', () => {
     const { container } = render(SiteBanner, { banner });
 
-    const region = screen.getByRole('article', { name: 'Maintenance' });
+    const region = screen.getByRole('region', { name: 'Maintenance' });
     expect(region).toHaveClass('border-b-4', 'py-1.5');
     expect(region).not.toHaveClass('border-l-8');
     expect(container.querySelector('.site-banner-layout')).toHaveClass('items-center');
@@ -145,16 +145,21 @@ describe('SiteBanner', () => {
   });
 });
 
-it('keeps long titles visible while shortening repeated accessible names', () => {
+it('names the region by its full title while shortening the dismiss label', () => {
   const title = 'Maintenance notice for all research participants and collaborating institutions';
   render(SiteBanner, { banner: { ...banner, title }, ondismiss: vi.fn() });
   expect(screen.getByRole('heading', { name: title })).toBeInTheDocument();
-  expect(
-    screen.getByRole('article', { name: 'Maintenance notice for all research participant…' }),
-  ).toBeInTheDocument();
+  expect(screen.getByRole('region', { name: title })).toBeInTheDocument();
   expect(
     screen.getByRole('button', {
       name: 'Dismiss Maintenance notice for all research participant…',
     }),
   ).toBeInTheDocument();
+});
+
+it('names an untitled region with a fixed label rather than its content', () => {
+  const htmlContent = `<p>${'Scheduled maintenance will interrupt every service. '.repeat(4)}</p>`;
+  render(SiteBanner, { banner: { ...banner, title: null, htmlContent, dismissible: false } });
+  const region = screen.getByRole('region', { name: 'Site announcement' });
+  expect(region).toHaveTextContent(htmlContent.replace(/<\/?p>/g, '').trim());
 });
