@@ -262,7 +262,7 @@ describe('McpConnect', () => {
 
     const reveal = screen.getByTestId('mcp-token-reveal');
     expect(reveal).toHaveClass('preset-tonal-primary');
-    expect(reveal.querySelector('i')).toHaveClass('fa-eye-slash');
+    expect(reveal.querySelector('i')).toHaveClass('fa-eye');
 
     await fireEvent.click(reveal);
     expect(reveal).toHaveTextContent('Show token');
@@ -275,6 +275,17 @@ describe('McpConnect', () => {
     expect(blocks(container)[0]).toBe(`export PICSURE_TOKEN="${fakeToken}"`);
     expect(blocks(container)[5]).toContain(`Bearer ${fakeToken}`);
     expect(blocks(container)[6]).toContain(`Bearer ${fakeToken}`);
+  });
+
+  it('does not log copying a placeholder snippet while logged out', async () => {
+    render(McpConnect);
+
+    await fireEvent.click(screen.getAllByTestId('code-block-copy-btn')[0]);
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      `export PICSURE_TOKEN="${TOKEN_PLACEHOLDER}"`,
+    );
+    expect(log).not.toHaveBeenCalled();
   });
 
   it('logs token copies and reveals without the token', async () => {
@@ -418,7 +429,7 @@ describe('McpConnect', () => {
     );
     const note = screen.getByTestId('mcp-public-key-note');
     expect(note).toHaveTextContent(
-      'Replace YOUR_PUBLIC_KEY with your key from the Public Access Key section under Authentication on this page, which shows when you are logged out.',
+      'Replace YOUR_PUBLIC_KEY with your key from the Public Access Key section under Authentication on this page. That section shows only when you are logged out.',
     );
     expect(note.querySelector('a')).toHaveAttribute('href', '#authentication');
     expect(screen.getByTestId('mcp-connector-key')).toHaveTextContent(

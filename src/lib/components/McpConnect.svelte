@@ -94,7 +94,7 @@
     code={shown(text)}
     copyCode={text}
     hiddenText={masked ? TOKEN_MASK : undefined}
-    logAction="token.copy"
+    logAction={hasToken ? 'token.copy' : undefined}
   />
   {#if masked}
     <p class="sr-only">Token hidden, the copy button copies it</p>
@@ -145,7 +145,7 @@
             aria-pressed={revealed}
             onclick={toggleReveal}
           >
-            <i class="fa-solid {revealed ? 'fa-eye' : 'fa-eye-slash'}" aria-hidden="true"></i>
+            <i class="fa-solid fa-eye" aria-hidden="true"></i>
             Show token
           </button>
         </div>
@@ -256,8 +256,8 @@
         {#if publicKeyEnabled}
           <p class="mx-0 mt-2 text-sm" data-testid="mcp-public-key-note">
             Replace <code>{PUBLIC_KEY_PLACEHOLDER}</code> with your key from the Public Access Key
-            section under <a class="anchor" href="#authentication">Authentication</a> on this page, which
-            shows when you are logged out.
+            section under <a class="anchor" href="#authentication">Authentication</a> on this page. That
+            section shows only when you are logged out.
           </p>
         {/if}
       {/if}

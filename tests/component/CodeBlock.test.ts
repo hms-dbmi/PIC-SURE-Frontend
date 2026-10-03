@@ -3,12 +3,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
+const log = vi.hoisted(() => vi.fn());
+
+vi.mock('$lib/logger', () => ({
+  log,
+  createLog: (eventType: string, action?: string) => ({ event_type: eventType, action }),
+}));
+
 import CodeBlock from '$lib/components/CodeBlock.svelte';
 
 const code = 'print("hello world")';
 
 describe('CodeBlock', () => {
   beforeEach(() => {
+    log.mockReset();
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText: vi.fn() },
       configurable: true,
@@ -91,5 +99,15 @@ describe('CodeBlock', () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(code);
     expect(button.querySelector('i')).toHaveClass('fa-copy');
     expect(button.querySelector('i')).not.toHaveClass('fa-square-check');
+  });
+
+  it('does not log when the clipboard write is rejected', async () => {
+    vi.mocked(navigator.clipboard.writeText).mockRejectedValue(new Error('copy denied'));
+    render(CodeBlock, { code, lang: 'python', logAction: 'token.copy' });
+
+    await fireEvent.click(screen.getByTestId('code-block-copy-btn'));
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(code);
+    expect(log).not.toHaveBeenCalled();
   });
 });
