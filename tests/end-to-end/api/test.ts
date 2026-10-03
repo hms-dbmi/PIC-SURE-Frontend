@@ -51,8 +51,9 @@ test.describe('API page', () => {
     // Then
     await expect(page.locator('h1')).toHaveText('Programmatic Access with the PIC-SURE API');
     await expect(
-      page.getByText('Search data and build cohorts directly with Python, R, or any HTTP client.'),
+      page.getByText('Search data and build cohorts directly with Python or R.'),
     ).toBeVisible();
+    await expect(page.getByText('any HTTP client')).toHaveCount(0);
   });
 
   test('Has expected workflow cards', async ({ page }) => {
@@ -75,10 +76,8 @@ test.describe('API page', () => {
     await expect(rCard).toContainText('R Client');
     await expect(rCard.locator('.badge')).toHaveText('Recommended');
     await expect(rCard).toContainText('Requires R version 4.1 or later');
-    await expect(httpCard).toBeVisible();
-    await expect(httpCard).toContainText('Direct API Access');
-    await expect(httpCard.locator('.badge')).toHaveText('Advanced');
-    await expect(httpCard).toContainText('Interact directly with PIC-SURE API endpoints');
+    await expect(httpCard).toHaveCount(0);
+    await expect(page.getByText('Direct API Access')).toHaveCount(0);
   });
 
   test('Workflow cards have Quick Start buttons linking to the quick start section', async ({
@@ -92,13 +91,13 @@ test.describe('API page', () => {
     const quickStartButtons = page.locator('#choose-your-workflow a', { hasText: 'Quick Start' });
 
     // Then
-    await expect(quickStartButtons).toHaveCount(3);
+    await expect(quickStartButtons).toHaveCount(2);
     for (const button of await quickStartButtons.all()) {
       await expect(button).toHaveAttribute('href', '#quick-start');
     }
   });
 
-  test('Has quick start tabs for Python, R, and API', async ({ page }) => {
+  test('Has quick start tabs for Python and R only', async ({ page }) => {
     // Given
     await page.goto('/api');
     await userIsLoggedIn(page);
@@ -107,10 +106,9 @@ test.describe('API page', () => {
     const tabs = page.getByTestId('tabs-control');
 
     // Then
-    await expect(tabs).toHaveCount(3);
+    await expect(tabs).toHaveCount(2);
     await expect(tabs.nth(0)).toContainText('Python');
     await expect(tabs.nth(1)).toContainText('R');
-    await expect(tabs.nth(2)).toContainText('API');
     await expect(page.locator('#quick-start .code-block').first()).toBeVisible();
   });
 
@@ -138,14 +136,53 @@ test.describe('API page', () => {
     await expect(visibleCode).toContainText('supports_genomic=TRUE');
   });
 
-  test('Has API Access section', async ({ page }) => {
+  test('Hides the API Access section', async ({ page }) => {
     // Given
     await page.goto('/api');
     await userIsLoggedIn(page);
 
     // Then
-    await expect(page.getByRole('heading', { name: 'API Access', exact: true })).toBeVisible();
-    await expect(page.getByText('Browse and use the PIC-SURE API endpoints.')).toBeVisible();
+    await expect(page.locator('#api-access')).toHaveCount(0);
+    await expect(page.getByTestId('api-documentation')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'API Access', exact: true })).toHaveCount(0);
+  });
+
+  test('Table of contents lists the visible page sections', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // When
+    const links = page.getByTestId('toc').locator('a');
+
+    // Then
+    const expected: Array<[string, string]> = [
+      ['Overview', '#api-header'],
+      ['Choose Your Workflow', '#choose-your-workflow'],
+      ['Authentication', '#authentication'],
+      ['Quick Start', '#quick-start'],
+    ];
+    await expect(links).toHaveCount(expected.length);
+    for (const [index, [label, href]] of expected.entries()) {
+      await expect(links.nth(index)).toHaveText(label);
+      await expect(links.nth(index)).toHaveAttribute('href', href);
+    }
+  });
+
+  test('Table of contents marks Quick Start at the bottom of the page', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // When
+    await page.evaluate(() => {
+      const scroller = document.getElementById('page');
+      if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    });
+
+    // Then
+    const quickStartLink = page.getByTestId('toc').getByRole('link', { name: 'Quick Start' });
+    await expect(quickStartLink).toHaveAttribute('aria-current', 'true');
   });
 
   test('Shows all capabilities with success icons when logged in', async ({ page }) => {
@@ -371,6 +408,110 @@ test.describe('API page', () => {
     expect(await userToken.innerText()).toBe(placeHolderDots);
     expect(await expires.innerText()).toContain('Mon Feb 01 2021');
   });
+  test('Each table of contents link scrolls on its first click, including repeat visits', async ({
+    page,
+  }) => {
+    await page.goto('/api');
+    for (const [name, id] of [
+      ['Quick Start', 'quick-start'],
+      ['Authentication', 'authentication'],
+      ['Overview', 'api-header'],
+      ['Choose Your Workflow', 'choose-your-workflow'],
+      ['Quick Start', 'quick-start'],
+    ]) {
+      await page.getByTestId('toc').getByRole('link', { name, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`#${id}$`));
+      await expect
+        .poll(() =>
+          page.evaluate((sectionId) => {
+            const scroller = document.getElementById('page')!;
+            const section = document.getElementById(sectionId)!;
+            return Math.abs(
+              section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
+            );
+          }, id),
+        )
+        .toBeLessThan(4);
+    }
+  });
+
+  test('Table of contents indicates the section in view', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    const authLink = page.getByTestId('toc').getByRole('link', { name: 'Authentication' });
+    await expect(authLink).not.toHaveAttribute('aria-current', 'true');
+
+    // When
+    await page.evaluate(() => {
+      const scroller = document.getElementById('page');
+      const section = document.getElementById('authentication');
+      if (!scroller || !section) return;
+      scroller.scrollTop +=
+        section.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    });
+
+    // Then
+    await expect(authLink).toHaveAttribute('aria-current', 'true');
+  });
+
+  test('Deep link pre-selects the quick start tab and scrolls to the section', async ({ page }) => {
+    // Given
+    await page.goto('/api#quick-start-r');
+
+    // Then
+    await expect(page.locator('#quick-start .code-block:visible')).toContainText('Requires R');
+    await expect(async () => {
+      const offset = await page.evaluate(() => {
+        const scroller = document.getElementById('page');
+        const section = document.getElementById('quick-start');
+        if (!scroller || !section) return NaN;
+        return Math.round(
+          section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
+        );
+      });
+      expect(Math.abs(offset)).toBeLessThan(4);
+    }).toPass({ timeout: 5000 });
+  });
+
+  test('Table of contents is hidden on narrow viewports', async ({ page }) => {
+    // Given
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await page.goto('/api');
+
+    // Then
+    await expect(page.getByTestId('toc')).toBeHidden();
+  });
+
+  test('Leaves the page when the session ends in another tab', async ({ page }) => {
+    // Given
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    // When
+    await page.evaluate(() => {
+      localStorage.removeItem('token');
+      window.dispatchEvent(new StorageEvent('storage', { key: 'token', newValue: null }));
+    });
+
+    // Then
+    // OPEN is off in this suite, so home sends the logged-out visitor on to /login.
+    await page.waitForURL('/login');
+    await expect(page).toHaveURL('/login');
+  });
+
+  test('Redirects home when navigating to /api with an expired token', async ({ page }) => {
+    // Given
+    await page.goto('/help');
+    await userIsLoggedIn(page);
+    await page.evaluate((token) => localStorage.setItem('token', token), mockExpiredToken);
+
+    // When
+    await page.locator('#nav-link-api').click();
+
+    // Then
+    await page.waitForURL('/');
+    await expect(page).toHaveURL('/');
+  });
 });
 
 test.describe('Legacy analyze routes redirect to /api', () => {
@@ -393,7 +534,8 @@ test.describe('Legacy analyze routes redirect to /api', () => {
   });
 });
 
-test.describe('API page logged out', () => {
+// Release 1 hides the API page from logged-out users; restore with the Release 2 discover/open work.
+test.describe.skip('API page logged out', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
   test.beforeEach(async ({ page }) => {
@@ -488,33 +630,6 @@ test.describe('API page logged out', () => {
     }
   });
 
-  test('Each table of contents link scrolls on its first click, including repeat visits', async ({
-    page,
-  }) => {
-    await page.goto('/api');
-    for (const [name, id] of [
-      ['Quick Start', 'quick-start'],
-      ['Authentication', 'authentication'],
-      ['Overview', 'api-header'],
-      ['Choose Your Workflow', 'choose-your-workflow'],
-      ['Quick Start', 'quick-start'],
-    ]) {
-      await page.getByTestId('toc').getByRole('link', { name, exact: true }).click();
-      await expect(page).toHaveURL(new RegExp(`#${id}$`));
-      await expect
-        .poll(() =>
-          page.evaluate((sectionId) => {
-            const scroller = document.getElementById('page')!;
-            const section = document.getElementById(sectionId)!;
-            return Math.abs(
-              section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
-            );
-          }, id),
-        )
-        .toBeLessThan(4);
-    }
-  });
-
   test('Curl example uses the current origin and gateway Dictionary route', async ({ page }) => {
     await page.goto('/api');
     await page.getByRole('tab', { name: 'API', exact: true }).click();
@@ -525,53 +640,6 @@ test.describe('API page logged out', () => {
     await expect(code).not.toContainText('/proxy/');
   });
 
-  test('Table of contents indicates the section in view', async ({ page }) => {
-    // Given
-    await page.goto('/api');
-    const authLink = page.getByTestId('toc').getByRole('link', { name: 'Authentication' });
-    await expect(authLink).not.toHaveAttribute('aria-current', 'true');
-
-    // When
-    await page.evaluate(() => {
-      const scroller = document.getElementById('page');
-      const section = document.getElementById('authentication');
-      if (!scroller || !section) return;
-      scroller.scrollTop +=
-        section.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
-    });
-
-    // Then
-    await expect(authLink).toHaveAttribute('aria-current', 'true');
-  });
-
-  test('Deep link pre-selects the quick start tab and scrolls to the section', async ({ page }) => {
-    // Given
-    await page.goto('/api#quick-start-r');
-
-    // Then
-    await expect(page.locator('#quick-start .code-block:visible')).toContainText('Requires R');
-    await expect(async () => {
-      const offset = await page.evaluate(() => {
-        const scroller = document.getElementById('page');
-        const section = document.getElementById('quick-start');
-        if (!scroller || !section) return NaN;
-        return Math.round(
-          section.getBoundingClientRect().top - scroller.getBoundingClientRect().top,
-        );
-      });
-      expect(Math.abs(offset)).toBeLessThan(4);
-    }).toPass({ timeout: 5000 });
-  });
-
-  test('Table of contents is hidden on narrow viewports', async ({ page }) => {
-    // Given
-    await page.setViewportSize({ width: 1024, height: 800 });
-    await page.goto('/api');
-
-    // Then
-    await expect(page.getByTestId('toc')).toBeHidden();
-  });
-
   test('Legacy /analyze/api redirects to /api when logged out', async ({ page }) => {
     // When
     await page.goto('/analyze/api');
@@ -579,5 +647,43 @@ test.describe('API page logged out', () => {
     // Then
     await page.waitForURL('/api');
     await expect(page).toHaveURL('/api');
+  });
+});
+
+test.describe('API page logged out (Release 1)', () => {
+  test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
+
+  test.beforeEach(async ({ page }) => {
+    // OPEN keeps the root layout from redirecting anonymous visitors to /login.
+    await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });
+  });
+
+  test('Redirects /api to home', async ({ page }) => {
+    // When
+    await page.goto('/api');
+
+    // Then
+    await page.waitForURL('/');
+    await expect(page).toHaveURL('/');
+  });
+
+  test('Legacy /analyze/api redirects to home', async ({ page }) => {
+    // When
+    await page.goto('/analyze/api');
+
+    // Then
+    await page.waitForURL('/');
+    await expect(page).toHaveURL('/');
+  });
+
+  test('Hides the API nav link and landing card', async ({ page }) => {
+    // When
+    await page.goto('/');
+
+    // Then
+    await expect(page.locator('#nav-link-help')).toBeVisible();
+    await expect(page.locator('#actions-section')).toBeVisible();
+    await expect(page.locator('#nav-link-api')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Explore the API' })).toHaveCount(0);
   });
 });

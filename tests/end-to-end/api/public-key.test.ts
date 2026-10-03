@@ -43,7 +43,8 @@ async function openForm(page: Page) {
   }).toPass({ timeout: 15000 });
 }
 
-test.describe('Public access key generation', () => {
+// Release 1 redirects logged-out visitors away from /api; restore with the Release 2 discover/open work.
+test.describe.skip('Public access key generation', () => {
   test.beforeEach(async ({ page }) => {
     // OPEN keeps the root layout from redirecting anonymous visitors to /login.
     await mockApiConfig(page, { features: [{ name: 'OPEN', value: 'true' }] });

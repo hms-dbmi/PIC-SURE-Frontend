@@ -8,7 +8,7 @@
 
   import { config, PROJECT_HOSTNAME } from '$lib/configuration.svelte';
   import { getApiConnectionResource } from '$lib/stores/Resources';
-  import { tokenStatus } from '$lib/stores/User';
+  import { hasValidToken, tokenStatus } from '$lib/stores/User';
   import { log, createLog } from '$lib/logger';
 
   import ApiDocumentation from '$lib/components/ApiDocumentation.svelte';
@@ -19,6 +19,12 @@
 
   let mounted = $state(false);
   let loggedIn = $derived(mounted && $tokenStatus);
+
+  // Release 1: the load redirect only runs on navigation, so also leave when the
+  // session ends while the page is open (logout in another tab, token expiry).
+  $effect(() => {
+    if (mounted && !$hasValidToken) void goto(resolve('/'));
+  });
   const capabilities = config.branding.apiPage?.capabilities || [];
 
   const codeBlocks = $derived(config.branding.explorePage.codeBlocks);
@@ -101,14 +107,6 @@
       bullets: ['Requires R version 4.1 or later', 'R Jupyter Notebooks or RStudio'],
       tab: 'R',
     },
-    {
-      id: 'http',
-      title: 'Direct API Access',
-      badge: 'Advanced',
-      badgeClass: 'preset-filled-warning-500',
-      bullets: ['Interact directly with PIC-SURE API endpoints'],
-      tab: 'API',
-    },
   ];
 
   let tabSet: string = $state('Python');
@@ -118,7 +116,6 @@
     { id: 'choose-your-workflow', label: 'Choose Your Workflow' },
     { id: 'authentication', label: 'Authentication' },
     { id: 'quick-start', label: 'Quick Start' },
-    { id: 'api-access', label: 'API Access' },
   ];
   let activeSection: string = $state('api-header');
 
@@ -130,9 +127,9 @@
 
     // Deep links like /api#quick-start-python pre-select the language tab. The
     // suffixed ids have no DOM element, so scroll to the section ourselves.
-    const deepLink = window.location.hash.match(/^#quick-start-(python|r|api)$/);
+    const deepLink = window.location.hash.match(/^#quick-start-(python|r)$/);
     if (deepLink) {
-      tabSet = { python: 'Python', r: 'R', api: 'API' }[deepLink[1]] ?? tabSet;
+      tabSet = { python: 'Python', r: 'R' }[deepLink[1]] ?? tabSet;
       // Tab selection changes the layout; align only after Svelte renders it.
       void tick().then(() => {
         document.getElementById('quick-start')?.scrollIntoView({ behavior: 'instant' });
@@ -143,7 +140,7 @@
     // the scroll viewport; reaching the bottom always selects the final section.
     const updateActive = () => {
       if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) {
-        activeSection = 'api-access';
+        activeSection = tocEntries[tocEntries.length - 1].id;
         return;
       }
       const threshold = scroller.getBoundingClientRect().top + scroller.clientHeight * 0.4;
@@ -218,10 +215,18 @@
     <section id="api-header" class="w-full">
       <div class="w-[70%] mx-auto pt-12 pb-10">
         <h1>Programmatic Access with the PIC-SURE API</h1>
-        <p class="mx-0">
-          Search data and build cohorts directly with Python, R, or any HTTP client. Build
-          reproducible cohort-building pipelines.
-        </p>
+        <!-- Release 1: direct API access is hidden. -->
+        {#if false}
+          <p class="mx-0">
+            Search data and build cohorts directly with Python, R, or any HTTP client. Build
+            reproducible cohort-building pipelines.
+          </p>
+        {:else}
+          <p class="mx-0">
+            Search data and build cohorts directly with Python or R. Build reproducible
+            cohort-building pipelines.
+          </p>
+        {/if}
       </div>
     </section>
 
@@ -319,7 +324,10 @@
         {#snippet list()}
           <TabItem bind:group={tabSet} value="Python">Python</TabItem>
           <TabItem bind:group={tabSet} value="R">R</TabItem>
-          <TabItem bind:group={tabSet} value="API">API</TabItem>
+          <!-- Release 1: the API tab is hidden. -->
+          {#if false}
+            <TabItem bind:group={tabSet} value="API">API</TabItem>
+          {/if}
         {/snippet}
         {#snippet content()}
           <Tabs.Panel value="Python">
@@ -328,39 +336,45 @@
           <Tabs.Panel value="R">
             <CodeBlock lang="r" code={quickStartCode.r} />
           </Tabs.Panel>
-          <Tabs.Panel value="API">
-            <CodeBlock lang="bash" code={quickStartCode.api} />
-          </Tabs.Panel>
+          <!-- Release 1: the API tab is hidden. -->
+          {#if false}
+            <Tabs.Panel value="API">
+              <CodeBlock lang="bash" code={quickStartCode.api} />
+            </Tabs.Panel>
+          {/if}
         {/snippet}
       </Tabs>
     </div>
   </section>
 
-  <section id="api-access" class="w-full">
-    <div class="w-[70%] mx-auto py-8">
-      <h2>API Access</h2>
-      <p class="mx-0">Browse and use the PIC-SURE API endpoints.</p>
-      {#if mounted && !loggedIn}
-        <div
-          class="flex gap-4 items-start border border-primary-500 rounded-lg bg-primary-50-950 p-4 mt-6"
-          data-testid="api-public-notice"
-        >
-          <i class="fa-solid fa-globe text-3xl text-primary-500" aria-hidden="true"></i>
-          <div>
-            <h3 class="font-bold text-primary-500">Public Access Only</h3>
-            <p class="mx-0">
-              You are browsing as a public user. Only open API endpoints are available. To use
-              authorized resources, please <a
-                class="anchor"
-                href="{resolve('/login')}?redirectTo=/api">log in</a
-              >.
-            </p>
+  <!-- Release 1: the API Access section is hidden. -->
+  {#if false}
+    <section id="api-access" class="w-full">
+      <div class="w-[70%] mx-auto py-8">
+        <h2>API Access</h2>
+        <p class="mx-0">Browse and use the PIC-SURE API endpoints.</p>
+        {#if mounted && !loggedIn}
+          <div
+            class="flex gap-4 items-start border border-primary-500 rounded-lg bg-primary-50-950 p-4 mt-6"
+            data-testid="api-public-notice"
+          >
+            <i class="fa-solid fa-globe text-3xl text-primary-500" aria-hidden="true"></i>
+            <div>
+              <h3 class="font-bold text-primary-500">Public Access Only</h3>
+              <p class="mx-0">
+                You are browsing as a public user. Only open API endpoints are available. To use
+                authorized resources, please <a
+                  class="anchor"
+                  href="{resolve('/login')}?redirectTo=/api">log in</a
+                >.
+              </p>
+            </div>
           </div>
-        </div>
-      {/if}
-      <ApiDocumentation />
-    </div>
-  </section>
+        {/if}
+        <ApiDocumentation />
+      </div>
+    </section>
+  {/if}
 </div>
 
 <style>
