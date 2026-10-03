@@ -335,6 +335,14 @@ describe('mapBranding', () => {
     const branding = mapBranding('', []);
     expect(branding.explorePage.codeBlocks.PythonAPI).not.toContain('{{PICSURE_NETWORK_URL}}');
   });
+  it('gives Python blocks the deployment root and R blocks the /picsure URL', () => {
+    const { codeBlocks } = mapBranding('https://picsure.example.org/picsure', []).explorePage;
+    for (const key of ['PythonAPI', 'PythonAPIOpen', 'PythonExport']) {
+      expect(codeBlocks[key]).toContain('platform="https://picsure.example.org"');
+      expect(codeBlocks[key]).not.toContain('{{PICSURE_ORIGIN}}');
+    }
+    expect(codeBlocks.RAPI).toContain('platform="https://picsure.example.org/picsure"');
+  });
   it('falls back to the application name when no logo alt is configured', () => {
     const branding = mapBranding('', []);
     expect(branding.logo.alt).toBe(branding.applicationName);
