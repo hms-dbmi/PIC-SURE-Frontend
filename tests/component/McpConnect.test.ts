@@ -6,10 +6,11 @@ import { tick } from 'svelte';
 import { get } from 'svelte/store';
 
 import { tokenStatus, user } from '$lib/stores/User';
-import { TOKEN_MASK } from '$lib/utilities/Mcp';
+import { TOKEN_MASK, TOKEN_PLACEHOLDER } from '$lib/utilities/Mcp';
 import McpConnect from '$lib/components/McpConnect.svelte';
+import UserToken from '$lib/components/UserToken.svelte';
 
-const mockState = vi.hoisted(() => ({ enabled: false, url: '', open: true }));
+const mockState = vi.hoisted(() => ({ enabled: false, url: '', open: true, publicKey: false }));
 const apiGet = vi.hoisted(() => vi.fn());
 
 vi.mock('$lib/configuration.svelte', () => ({
@@ -19,6 +20,9 @@ vi.mock('$lib/configuration.svelte', () => ({
     },
     get settings() {
       return { mcpUrl: mockState.url };
+    },
+    get branding() {
+      return { apiPage: { capabilities: [], publicKeyEnabled: mockState.publicKey } };
     },
   },
 }));
@@ -31,6 +35,12 @@ vi.mock('$lib/api', async (importOriginal) => ({
 const url = 'https://picsure.example.org/mcp';
 const fakeToken = 'eyJhbGciOiJIUzI1NiJ9.fake-payload.fake-signature';
 const originalPlatform = Object.getOwnPropertyDescriptor(navigator, 'platform');
+
+const pendingRequests: (() => void)[] = [];
+
+function pendingRequest() {
+  return new Promise((resolve) => pendingRequests.push(() => resolve({})));
+}
 
 function blocks(container: HTMLElement) {
   return Array.from(container.querySelectorAll('pre.shiki')).map((b) => b.textContent ?? '');
@@ -52,6 +62,7 @@ describe('McpConnect', () => {
     mockState.enabled = true;
     mockState.url = url;
     mockState.open = true;
+    mockState.publicKey = false;
     apiGet.mockReset();
     tokenStatus.set(false);
     user.set({ ...get(user), token: '' });
@@ -67,7 +78,9 @@ describe('McpConnect', () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    pendingRequests.splice(0).forEach((release) => release());
+    await new Promise((resolve) => setTimeout(resolve));
     if (originalPlatform) {
       Object.defineProperty(navigator, 'platform', originalPlatform);
     } else {
@@ -168,7 +181,7 @@ describe('McpConnect', () => {
   });
 
   it('says the token is loading while a logged-in user waits for it', async () => {
-    apiGet.mockReturnValue(new Promise(() => {}));
+    apiGet.mockReturnValue(pendingRequest());
     logIn('');
     render(McpConnect);
 
@@ -225,7 +238,7 @@ describe('McpConnect', () => {
     );
 
     await fireEvent.click(screen.getByTestId('mcp-token-reveal'));
-    expect(screen.getByTestId('mcp-token-reveal')).toHaveTextContent('Hide token');
+    expect(screen.getByTestId('mcp-token-reveal')).toHaveTextContent('Show token');
     expect(screen.getByTestId('mcp-token-reveal')).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByTestId('mcp-token-display')).toHaveTextContent(fakeToken);
     expect(blocks(container)[0]).toBe(`export PICSURE_TOKEN="${fakeToken}"`);
@@ -317,6 +330,113 @@ describe('McpConnect', () => {
     await chooseOs('powershell');
     expect(connect).toHaveTextContent('%USERPROFILE%\\.cursor\\mcp.json');
     expect(connect).toHaveTextContent('%APPDATA%\\Claude\\claude_desktop_config.json');
+  });
+
+  it('adds the public key header and tells the user to replace it when public keys are on', () => {
+    mockState.publicKey = true;
+    const { container } = render(McpConnect);
+
+    expect(blocks(container)[3]).toBe(
+      `claude mcp add --scope user --transport http picsure "${url}" --header "X-PICSURE-API-Key: YOUR_PUBLIC_KEY"`,
+    );
+    const note = screen.getByTestId('mcp-public-key-note');
+    expect(note).toHaveTextContent(
+      'Replace YOUR_PUBLIC_KEY with your key from the Public Access Key section under Authentication on this page.',
+    );
+    expect(note.querySelector('a')).toHaveAttribute('href', '#authentication');
+    expect(screen.getByTestId('mcp-connector-key')).toHaveTextContent(
+      /cannot send your public access key/,
+    );
+  });
+
+  it('leaves the public key out of the tokenless command when public keys are off', () => {
+    const { container } = render(McpConnect);
+
+    expect(blocks(container)[3]).toBe(
+      `claude mcp add --scope user --transport http picsure "${url}"`,
+    );
+    expect(container.textContent).not.toContain('YOUR_PUBLIC_KEY');
+    expect(screen.queryByTestId('mcp-public-key-note')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mcp-connector-key')).not.toBeInTheDocument();
+  });
+
+  it('walks through adding a custom connector with no sign in', () => {
+    render(McpConnect);
+
+    const steps = Array.from(
+      screen.getByTestId('mcp-connector-steps').querySelectorAll(':scope > li'),
+    ).map((step) => step.textContent?.replace(/\s+/g, ' ').trim());
+    expect(steps).toEqual([
+      'Open Customize, then Connectors.',
+      'Click "+ Add", then "Add custom connector".',
+      'Enter a name, such as PIC-SURE.',
+      `Enter this URL, then click Continue: ${url}`,
+      'Review the authentication settings, then click Continue.',
+      'Under Authentication, choose "No sign in", then click Add.',
+    ]);
+    expect(screen.getByTestId('mcp-connector-team')).toHaveTextContent(
+      /Team and Enterprise plans, only owners and members with the right role/,
+    );
+    expect(screen.getByTestId('mcp-connector-note')).toHaveTextContent(/public internet/);
+  });
+
+  it('tells Windows users to check the variable before adding the server', async () => {
+    render(McpConnect);
+    expect(screen.queryByTestId('mcp-windows-check')).not.toBeInTheDocument();
+
+    await chooseOs('powershell');
+    expect(screen.getByTestId('mcp-windows-check')).toHaveTextContent(
+      'Before you run it, run echo $env:PICSURE_TOKEN and check that it prints your token.',
+    );
+
+    await chooseOs('cmd');
+    expect(screen.getByTestId('mcp-windows-check')).toHaveTextContent(
+      'Before you run it, run echo %PICSURE_TOKEN% and check that it prints your token.',
+    );
+    expect(screen.getByTestId('mcp-windows-check')).toHaveTextContent(/without a working token/);
+  });
+
+  it('tells the user to replace the placeholder in the Desktop config only without a token', async () => {
+    render(McpConnect);
+    expect(screen.getByTestId('mcp-desktop-config')).toHaveTextContent(
+      'replacing YOUR_PICSURE_TOKEN with your token',
+    );
+  });
+
+  it('does not ask a user with a token to replace the Desktop placeholder', async () => {
+    logIn();
+    render(McpConnect);
+
+    await waitFor(() => expect(screen.getByTestId('mcp-token-reveal')).toBeInTheDocument());
+    expect(screen.getByTestId('mcp-desktop-config')).not.toHaveTextContent(TOKEN_PLACEHOLDER);
+  });
+
+  it('hides the bullets from screen readers and says the copy button copies the token', async () => {
+    logIn();
+    const { container } = render(McpConnect);
+
+    await waitFor(() => expect(screen.getByTestId('mcp-token-reveal')).toBeInTheDocument());
+    const notes = () => screen.queryAllByText('Token hidden, the copy button copies it');
+    expect(notes()).toHaveLength(4);
+    notes().forEach((note) => expect(note).toHaveClass('sr-only'));
+    const hidden = Array.from(container.querySelectorAll('pre.shiki [aria-hidden="true"]'));
+    expect(hidden).toHaveLength(4);
+    hidden.forEach((span) => expect(span.textContent).toBe(TOKEN_MASK));
+
+    await fireEvent.click(screen.getByTestId('mcp-token-reveal'));
+    expect(notes()).toHaveLength(0);
+    expect(container.querySelectorAll('pre.shiki [aria-hidden="true"]')).toHaveLength(0);
+  });
+
+  it('requests the long-term token once when the token card and the panel load together', async () => {
+    apiGet.mockReturnValue(pendingRequest());
+    logIn('');
+    render(UserToken);
+    render(McpConnect);
+
+    await waitFor(() => expect(screen.getByTestId('mcp-token-loading')).toBeInTheDocument());
+    const tokenRequests = apiGet.mock.calls.filter(([path]) => String(path).includes('hasToken'));
+    expect(tokenRequests).toHaveLength(1);
   });
 
   it('says authorized work needs the Python or R client', () => {

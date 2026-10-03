@@ -136,9 +136,11 @@
 
     // Deep links like /api#quick-start-python pre-select the language tab. The
     // suffixed ids have no DOM element, so scroll to the section ourselves.
-    const deepLink = window.location.hash.match(/^#quick-start-(python|r|api)$/);
-    if (deepLink) {
-      tabSet = { python: 'Python', r: 'R', api: 'API' }[deepLink[1]] ?? tabSet;
+    const deepLinkTabs: Record<string, string> = { python: 'Python', r: 'R', api: 'API' };
+    if (showMcpConnect) deepLinkTabs.assistant = 'assistant';
+    const deepLink = window.location.hash.match(/^#quick-start-([a-z]+)$/);
+    if (deepLink && Object.hasOwn(deepLinkTabs, deepLink[1])) {
+      tabSet = deepLinkTabs[deepLink[1]];
       // Tab selection changes the layout; align only after Svelte renders it.
       void tick().then(() => {
         document.getElementById('quick-start')?.scrollIntoView({ behavior: 'instant' });

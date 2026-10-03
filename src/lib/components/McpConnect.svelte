@@ -3,9 +3,10 @@
   import { get } from 'svelte/store';
   import { resolve } from '$app/paths';
   import { config } from '$lib/configuration.svelte';
-  import { user, tokenStatus, getUser } from '$lib/stores/User';
+  import { user, tokenStatus, loadLongTermToken } from '$lib/stores/User';
   import {
     MCP_OS_OPTIONS,
+    PUBLIC_KEY_PLACEHOLDER,
     TOKEN_MASK,
     TOKEN_PLACEHOLDER,
     claudeCodeCommand,
@@ -23,6 +24,7 @@
     tokenEnvCommands,
     type McpOs,
   } from '$lib/utilities/Mcp';
+  import type { CodeBlockProps } from '$lib/models/CodeBlock';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
 
   let mounted = $state(false);
@@ -32,9 +34,11 @@
 
   const url = $derived(mcpConnectUrl(config.features.mcpConnect, config.settings.mcpUrl));
   const openAccess = $derived(config.features.login.open);
+  const publicKeyEnabled = $derived(config.branding.apiPage?.publicKeyEnabled ?? false);
   const loggedIn = $derived(mounted && $tokenStatus);
   const token = $derived(loggedIn ? ($user?.token ?? '') : '');
   const hasToken = $derived(token !== '');
+  const masked = $derived(hasToken && !revealed);
   const tokenState = $derived(
     !loggedIn ? 'loggedOut' : hasToken ? 'ready' : tokenLoadFailed ? 'failed' : 'loading',
   );
@@ -61,7 +65,7 @@
   async function loadToken() {
     if (!get(tokenStatus) || get(user)?.token) return;
     try {
-      await getUser(false, true);
+      await loadLongTermToken();
       tokenLoadFailed = !get(user)?.token;
     } catch {
       tokenLoadFailed = true;
@@ -74,6 +78,18 @@
     void loadToken();
   });
 </script>
+
+{#snippet tokenBlock(lang: CodeBlockProps['lang'], text: string)}
+  <CodeBlock
+    {lang}
+    code={shown(text)}
+    copyCode={text}
+    hiddenText={masked ? TOKEN_MASK : undefined}
+  />
+  {#if masked}
+    <p class="sr-only">Token hidden, the copy button copies it</p>
+  {/if}
+{/snippet}
 
 {#if url}
   <div data-testid="mcp-connect" class="space-y-6">
@@ -117,7 +133,7 @@
             aria-pressed={revealed}
             onclick={() => (revealed = !revealed)}
           >
-            {revealed ? 'Hide token' : 'Show token'}
+            Show token
           </button>
         </div>
       {:else if tokenState === 'loading'}
@@ -177,7 +193,7 @@
         stores it so future windows have it.
       </p>
       <p class="mx-0 mb-2">This shell only:</p>
-      <CodeBlock lang={shell} code={shown(envCommands.session)} copyCode={envCommands.session} />
+      {@render tokenBlock(shell, envCommands.session)}
       <p class="mx-0 my-2">
         Every new shell{os === 'macos'
           ? ' (bash users use ~/.bash_profile instead of ~/.zshrc)'
@@ -185,11 +201,7 @@
             ? ' (bash users use ~/.bashrc instead of ~/.zshrc)'
             : ''}:
       </p>
-      <CodeBlock
-        lang={shell}
-        code={shown(envCommands.persistent)}
-        copyCode={envCommands.persistent}
-      />
+      {@render tokenBlock(shell, envCommands.persistent)}
       <p class="mx-0 mt-2 text-sm" data-testid="mcp-env-note">
         {#if os === 'powershell'}
           The second line only reaches PowerShell windows opened after it runs. Run both lines: the
@@ -218,21 +230,49 @@
           If PICSURE_TOKEN is not set, the command stops with an error instead of saving an empty
           token.
         </p>
+      {:else}
+        <p class="mx-0 mt-2 text-sm" data-testid="mcp-windows-check">
+          Before you run it, run <code
+            >{os === 'powershell' ? 'echo $env:PICSURE_TOKEN' : 'echo %PICSURE_TOKEN%'}</code
+          > and check that it prints your token. If PICSURE_TOKEN is not set, the command still runs and
+          saves the server without a working token.
+        </p>
       {/if}
       {#if openAccess}
         <p class="mx-0 my-2">For open access without login:</p>
-        <CodeBlock lang={shell} code={claudeCodeOpenCommand(url)} />
+        <CodeBlock lang={shell} code={claudeCodeOpenCommand(url, publicKeyEnabled)} />
+        {#if publicKeyEnabled}
+          <p class="mx-0 mt-2 text-sm" data-testid="mcp-public-key-note">
+            Replace <code>{PUBLIC_KEY_PLACEHOLDER}</code> with your key from the Public Access Key
+            section under <a class="anchor" href="#authentication">Authentication</a> on this page.
+          </p>
+        {/if}
       {/if}
 
       <h4 class="font-bold mt-4 mb-2">Claude Desktop</h4>
       {#if openAccess}
-        <p class="mx-0 mb-2">Without a token:</p>
-        <ol class="list-inside list-decimal space-y-1 mb-2">
-          <li>Open Settings, then Connectors.</li>
-          <li>Choose Add custom connector.</li>
-          <li>Paste this URL:</li>
+        <p class="mx-0 mb-2">Without a token, add PIC-SURE as a custom connector:</p>
+        <ol class="list-inside list-decimal space-y-1 mb-2" data-testid="mcp-connector-steps">
+          <li>Open Customize, then Connectors.</li>
+          <li>Click "+ Add", then "Add custom connector".</li>
+          <li>Enter a name, such as PIC-SURE.</li>
+          <li>
+            Enter this URL, then click Continue:
+            <div class="mt-1"><CodeBlock lang="bash" code={url} /></div>
+          </li>
+          <li>Review the authentication settings, then click Continue.</li>
+          <li>Under Authentication, choose "No sign in", then click Add.</li>
         </ol>
-        <CodeBlock lang="bash" code={url} />
+        <p class="mx-0 my-2 text-sm" data-testid="mcp-connector-team">
+          On Team and Enterprise plans, only owners and members with the right role can add custom
+          connectors. Ask one of them to add it, then connect to it from Customize, Connectors.
+        </p>
+        {#if publicKeyEnabled}
+          <p class="mx-0 my-2 text-sm" data-testid="mcp-connector-key">
+            A custom connector cannot send your public access key. If the connector fails without
+            it, use the Claude Code command above, or log in and use the config file below.
+          </p>
+        {/if}
         <p class="mx-0 my-2 text-sm" data-testid="mcp-connector-note">
           Claude reaches custom connectors from Anthropic's servers, not from your computer, so this
           works only when the URL above is reachable from the public internet. Free plans allow one
@@ -243,15 +283,16 @@
         With your token, add the <code>picsure</code> entry below to the
         <code>mcpServers</code> block of {#if desktopPath}<code>{desktopPath}</code>{:else}<code
             >claude_desktop_config.json</code
-          >{/if}. You can open that file from Claude Desktop under Settings, Developer, Edit Config.
-        If the file already lists other servers, add the entry next to them instead of replacing the
-        file. It needs Node, and the token travels in the config's
+          >{/if}{hasToken ? '' : `, replacing ${TOKEN_PLACEHOLDER} with your token`}. You can open
+        that file from Claude Desktop under Settings, Developer, Edit Config. If the file already
+        lists other servers, add the entry next to them instead of replacing the file. It needs
+        Node, and the token travels in the config's
         <code>env</code> block, so it does not depend on the shell.
         {#if os === 'linux'}
           Claude Desktop for Linux is in beta.
         {/if}
       </p>
-      <CodeBlock lang="json" code={shown(desktop)} copyCode={desktop} />
+      {@render tokenBlock('json', desktop)}
 
       <h4 class="font-bold mt-4 mb-2">Cursor</h4>
       <p class="mx-0 mb-2">
@@ -261,7 +302,7 @@
           : `, replacing ${TOKEN_PLACEHOLDER} with your token`}. If you put it in a project's
         <code>.cursor/mcp.json</code> instead, do not commit that file.
       </p>
-      <CodeBlock lang="json" code={shown(cursor)} copyCode={cursor} />
+      {@render tokenBlock('json', cursor)}
     </section>
 
     <section data-testid="mcp-step-try">

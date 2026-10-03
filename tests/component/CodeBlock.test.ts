@@ -55,6 +55,24 @@ describe('CodeBlock', () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('shown secret');
   });
 
+  it('hides every occurrence of hiddenText from screen readers', () => {
+    const { container } = render(CodeBlock, {
+      code: 'export A="••••" B="••••"',
+      hiddenText: '••••',
+      lang: 'bash',
+    });
+
+    const hidden = Array.from(container.querySelectorAll('pre.shiki [aria-hidden="true"]'));
+    expect(hidden.map((span) => span.textContent)).toEqual(['••••', '••••']);
+    expect(container.querySelector('pre.shiki')).toHaveTextContent('export A="••••" B="••••"');
+  });
+
+  it('hides nothing when hiddenText is not given', () => {
+    const { container } = render(CodeBlock, { code: 'shown ••••', lang: 'bash' });
+
+    expect(container.querySelector('pre.shiki [aria-hidden="true"]')).not.toBeInTheDocument();
+  });
+
   it('keeps the idle icon when the clipboard write is rejected', async () => {
     vi.mocked(navigator.clipboard.writeText).mockRejectedValue(new Error('copy denied'));
     render(CodeBlock, { code, lang: 'python' });

@@ -20,11 +20,35 @@
 
 <script lang="ts">
   import CopyButton from '$lib/components/buttons/CopyButton.svelte';
+  import type { DecorationItem } from 'shiki/core';
   import type { CodeBlockProps } from '$lib/models/CodeBlock';
 
-  let { code = '', copyCode, lang = 'bash' }: CodeBlockProps = $props();
+  let { code = '', copyCode, hiddenText, lang = 'bash' }: CodeBlockProps = $props();
 
-  const generatedHtml = $derived(shiki.codeToHtml(code, { lang, theme: 'dark-plus' }));
+  /**
+   * Returns a decoration that hides each occurrence of the text from screen readers.
+   *
+   * @param text the text to hide, or undefined or empty to hide nothing
+   */
+  function hiddenDecorations(text: string | undefined): DecorationItem[] {
+    if (!text) return [];
+    const decorations: DecorationItem[] = [];
+    let start = code.indexOf(text);
+    while (start !== -1) {
+      const end = start + text.length;
+      decorations.push({ start, end, properties: { 'aria-hidden': 'true' } });
+      start = code.indexOf(text, end);
+    }
+    return decorations;
+  }
+
+  const generatedHtml = $derived(
+    shiki.codeToHtml(code, {
+      lang,
+      theme: 'dark-plus',
+      decorations: hiddenDecorations(hiddenText),
+    }),
+  );
 </script>
 
 <div class="code-block relative">

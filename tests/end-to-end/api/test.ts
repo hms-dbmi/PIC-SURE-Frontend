@@ -591,6 +591,29 @@ test.describe('API page logged out', () => {
     }).toPass({ timeout: 5000 });
   });
 
+  test('Deep link pre-selects the AI Assistant tab when it is shown', async ({ page }) => {
+    await mockApiConfig(page, {
+      features: [
+        { name: 'OPEN', value: 'true' },
+        { name: 'MCP_CONNECT', value: 'true' },
+      ],
+      settings: [{ name: 'MCP_URL', value: 'https://picsure.example.org/mcp' }],
+    });
+
+    await page.goto('/api#quick-start-assistant');
+
+    await expect(page.getByTestId('mcp-connect')).toBeVisible();
+  });
+
+  test('Deep link to the AI Assistant tab keeps the default tab when it is hidden', async ({
+    page,
+  }) => {
+    await page.goto('/api#quick-start-assistant');
+
+    await expect(page.locator('#quick-start .code-block:visible')).toContainText('pip install');
+    await expect(page.getByTestId('mcp-connect')).toHaveCount(0);
+  });
+
   test('Table of contents is hidden on narrow viewports', async ({ page }) => {
     // Given
     await page.setViewportSize({ width: 1024, height: 800 });

@@ -105,6 +105,12 @@ describe('connect commands', () => {
     );
   });
 
+  it('adds the public key header to the open access command when asked', () => {
+    expect(claudeCodeOpenCommand(url, true)).toBe(
+      `claude mcp add --scope user --transport http picsure "${url}" --header "X-PICSURE-API-Key: YOUR_PUBLIC_KEY"`,
+    );
+  });
+
   it('removes the server from the same scope it was added to', () => {
     expect(claudeCodeRemoveCommand()).toBe('claude mcp remove --scope user picsure');
   });

@@ -22,6 +22,8 @@ export const MCP_OS_OPTIONS: { value: McpOs; label: string }[] = [
 
 export const TOKEN_PLACEHOLDER = 'YOUR_PICSURE_TOKEN';
 
+export const PUBLIC_KEY_PLACEHOLDER = 'YOUR_PUBLIC_KEY';
+
 export const TOKEN_MASK = '•'.repeat(24);
 
 /**
@@ -101,7 +103,8 @@ export function tokenEnvCommands(
  * Builds the Claude Code command that registers the server for every project with the token
  * read from the PICSURE_TOKEN environment variable in the syntax of the selected shell. In
  * bash and zsh an unset variable stops the command with an error instead of saving an empty
- * token.
+ * token. PowerShell and cmd have no such guard, so an unset variable saves the server without
+ * a working token.
  *
  * @param os the selected operating system
  * @param url the MCP server URL
@@ -121,9 +124,14 @@ export function claudeCodeCommand(os: McpOs, url: string): string {
  * token, for sites that offer open access.
  *
  * @param url the MCP server URL
+ * @param withPublicKey whether to send the X-PICSURE-API-Key header with the public key
+ *   placeholder, for sites that issue public access keys
  */
-export function claudeCodeOpenCommand(url: string): string {
-  return `claude mcp add --scope user --transport http picsure "${url}"`;
+export function claudeCodeOpenCommand(url: string, withPublicKey = false): string {
+  const command = `claude mcp add --scope user --transport http picsure "${url}"`;
+  return withPublicKey
+    ? `${command} --header "X-PICSURE-API-Key: ${PUBLIC_KEY_PLACEHOLDER}"`
+    : command;
 }
 
 /**
