@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockLog = vi.fn();
 const mockCreateLog = vi.fn((...args: unknown[]) => args);
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: (...args: unknown[]) => mockLog(...args),
   createLog: (...args: unknown[]) => mockCreateLog(...args),
 }));
 
 let mockIsOpen = true;
-vi.mock('$lib/AccessState', () => ({
+vi.mock('#lib/AccessState.ts', () => ({
   isOpenAccess: () => mockIsOpen,
 }));
 
@@ -17,7 +17,7 @@ vi.mock('$app/navigation', () => ({
   goto: (...args: unknown[]) => mockGoto(...args),
 }));
 vi.mock('$app/paths', () => ({
-  resolve: (path: string) => path,
+  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
 }));
 
 const PENDING_KEY = 'waf-captcha-pending';
@@ -33,7 +33,7 @@ function makeResponse(status: number, headers: Record<string, string> = {}): Res
 }
 
 describe('wafCaptcha', () => {
-  let waf: typeof import('$lib/wafCaptcha');
+  let waf: typeof import('#lib/wafCaptcha.ts');
   let reloadSpy: ReturnType<typeof vi.fn>;
   let storage: Record<string, string>;
 
@@ -61,7 +61,7 @@ describe('wafCaptcha', () => {
 
     // Fresh module instance per test to reset the module-level reload guard
     vi.resetModules();
-    waf = await import('$lib/wafCaptcha');
+    waf = await import('#lib/wafCaptcha.ts');
   });
 
   afterEach(() => {

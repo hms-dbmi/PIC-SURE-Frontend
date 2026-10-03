@@ -2,13 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 let mockEnv: Record<string, string | undefined> = {};
 
-vi.mock('$env/dynamic/private', () => ({
-  env: new Proxy(
-    {},
-    {
-      get: (_, key: string) => mockEnv[key],
-    },
-  ),
+// Getters, so each test's mockEnv is read when the route runs rather than at import.
+vi.mock('$app/env/private', () => ({
+  get LOGGING_API_KEY() {
+    return mockEnv.LOGGING_API_KEY;
+  },
+  get LOGGING_TARGET() {
+    return mockEnv.LOGGING_TARGET;
+  },
 }));
 
 // Must import after mocks are set up
@@ -92,6 +93,25 @@ describe('+server POST /api/log', () => {
     // The raw LogEvent (with src_ip added) is forwarded — not wrapped in a query envelope.
     const sentBody = JSON.parse(opts?.body as string);
     expect(sentBody).toEqual({ ...logEvent, src_ip: '127.0.0.1' });
+  });
+
+  it('forwards without src_ip when the request bypassed httpd and has no address header', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('', { status: 202 }));
+    const event = {
+      ...makeEvent(makeRequest({ event_type: 'QUERY' })),
+      getClientAddress: () => {
+        throw new Error(
+          'Address header was specified with ADDRESS_HEADER=X-Forwarded-For but is absent from request',
+        );
+      },
+    };
+
+    const response = await POST(event);
+
+    expect(response.status).toBe(202);
+    expect(JSON.parse(fetchSpy.mock.calls[0][1]?.body as string)).toEqual({ event_type: 'QUERY' });
   });
 
   it('returns 202 even when upstream returns an error', async () => {

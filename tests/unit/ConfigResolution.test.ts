@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-import { describeConfigField } from '$lib/models/ConfigResolution';
+import { describeConfigField } from '#lib/models/ConfigResolution.ts';
 import {
   apiConfigMap,
   envConfigMap,
   resolveConfigMap,
   type ConfigObject,
-} from '$lib/models/Configuration';
+} from '#lib/models/Configuration.ts';
 
 const TOUCHED_ENV_KEYS = ['VITE_CONFIG_MODE', 'VITE_ANALYZE_ANALYSIS'];
 const savedEnv: Record<string, string | undefined> = {};

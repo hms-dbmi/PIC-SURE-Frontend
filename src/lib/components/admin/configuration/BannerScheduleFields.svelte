@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { LocalMinuteResolution } from '$lib/utilities/BannerSchedule';
+  import type { LocalMinuteResolution } from '#lib/utilities/BannerSchedule.ts';
 
   interface Props {
     startLocal: string;

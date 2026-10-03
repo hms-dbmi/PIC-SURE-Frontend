@@ -3,7 +3,7 @@
   import { TableHandler as RemoteTableHandler } from '@vincjo/datatables/server';
 
   import { setDefaultRows } from '../stores';
-  import { log, createLog } from '$lib/logger';
+  import { log, createLog } from '#lib/logger.ts';
 
   interface Props {
     tableName: string;

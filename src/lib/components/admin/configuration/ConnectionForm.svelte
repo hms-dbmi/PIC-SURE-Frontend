@@ -2,12 +2,12 @@
   import { resolve } from '$app/paths';
   import { goto } from '$app/navigation';
 
-  import type { Connection } from '$lib/models/Connection';
-  import { addConnection, updateConnection } from '$lib/stores/Connections';
-  import { isTopAdmin } from '$lib/stores/User';
-  import { toaster } from '$lib/toaster';
+  import type { Connection } from '#lib/models/Connection.ts';
+  import { addConnection, updateConnection } from '#lib/stores/Connections.ts';
+  import { isTopAdmin } from '#lib/stores/User.ts';
+  import { toaster } from '#lib/toaster.ts';
 
-  import RequiredFieldsList from '$lib/components/admin/configuration/RequiredFieldsList.svelte';
+  import RequiredFieldsList from '#lib/components/admin/configuration/RequiredFieldsList.svelte';
 
   interface Props {
     connection?: Connection | undefined;
@@ -46,7 +46,7 @@
       toaster.success({
         title: `Successfully saved ${newConnection && 'new '}connection '${label}'`,
       });
-      goto(resolve('/admin/configuration'));
+      goto(resolve('admin/configuration'));
     } catch (error) {
       console.error(error);
       toaster.error({
@@ -107,7 +107,7 @@
         Save
       </button>
       <a
-        href={resolve('/admin/configuration')}
+        href={resolve('admin/configuration')}
         data-testid="connection-cancel-btn"
         class="btn preset-tonal-secondary border border-secondary-500 hover:preset-filled-secondary-500"
       >

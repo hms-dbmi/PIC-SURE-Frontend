@@ -1,9 +1,9 @@
-import type { AuthData } from '$lib/models/AuthProvider';
-import AuthProvider from '$lib/models/AuthProvider';
-import { browser } from '$app/environment';
-import type { User } from '$lib/models/User';
-import * as api from '$lib/api';
-import { Psama } from '$lib/paths';
+import type { AuthData } from '#lib/models/AuthProvider.ts';
+import AuthProvider from '#lib/models/AuthProvider.ts';
+import { browser } from '$app/env';
+import type { User } from '#lib/models/User.ts';
+import * as api from '#lib/api.ts';
+import { Psama } from '#lib/paths.ts';
 
 interface MockData extends AuthData {
   // From VITE_AUTH_PROVIDER_MODULE_<name>_PERSONA - hooks.server.ts lowercases whatever

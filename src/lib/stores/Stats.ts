@@ -1,11 +1,11 @@
 import { derived, writable, type Readable, type Writable } from 'svelte/store';
 
-import { isToastShowing, toaster } from '$lib/toaster';
-import { config } from '$lib/configuration.svelte';
-import { getValidStatList, populateStatRequests, StatPromise } from '$lib/utilities/StatBuilder';
-import { ensureConsentsLoaded, isUserLoggedIn } from '$lib/stores/User';
+import { isToastShowing, toaster } from '#lib/toaster.ts';
+import { config } from '#lib/configuration.svelte.ts';
+import { getValidStatList, populateStatRequests, StatPromise } from '#lib/utilities/StatBuilder.ts';
+import { ensureConsentsLoaded, isUserLoggedIn } from '#lib/stores/User.ts';
 
-import type { StatResult } from '$lib/models/Stat';
+import type { StatResult } from '#lib/models/Stat.ts';
 
 export const hasError: Writable<boolean> = writable(false);
 export const loaded: Writable<boolean> = writable(false);

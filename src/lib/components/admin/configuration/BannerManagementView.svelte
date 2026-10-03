@@ -1,17 +1,17 @@
 <script lang="ts">
   import { onDestroy, onMount, tick } from 'svelte';
-  import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
-  import BannerManagementRow from '$lib/components/admin/configuration/BannerManagementRow.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import Loading from '$lib/components/Loading.svelte';
-  import UnsavedChangesModal from '$lib/components/UnsavedChangesModal.svelte';
-  import type { ManagedBanner, ManagementRecord } from '$lib/models/Banner';
+  import BannerEditor from '#lib/components/admin/configuration/BannerEditor.svelte';
+  import BannerManagementRow from '#lib/components/admin/configuration/BannerManagementRow.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import Loading from '#lib/components/Loading.svelte';
+  import UnsavedChangesModal from '#lib/components/UnsavedChangesModal.svelte';
+  import type { ManagedBanner, ManagementRecord } from '#lib/models/Banner.ts';
   import {
     archiveBanner,
     disableBanner,
     getManagedBanners,
     reorderBanners,
-  } from '$lib/services/BannerManagement';
+  } from '#lib/services/BannerManagement.ts';
   import {
     adoptCanonicalBannerOrder,
     bannerActionLabels,
@@ -25,7 +25,7 @@
     visibleBannerRecords,
     type BannerListState,
     type LifecycleTab,
-  } from '$lib/services/BannerManagementList';
+  } from '#lib/services/BannerManagementList.ts';
   import {
     Accessibility,
     defaultPreset,
@@ -34,8 +34,8 @@
     type DragEndEvent,
   } from '@dnd-kit/dom';
   import FilterSearch from './FilterSearch.svelte';
-  import { createUnsavedGuard } from '$lib/utilities/UnsavedGuard.svelte';
-  import { toaster } from '$lib/toaster';
+  import { createUnsavedGuard } from '#lib/utilities/UnsavedGuard.svelte.ts';
+  import { toaster } from '#lib/toaster.ts';
   import {
     DragDropProvider,
     DragOverlay,

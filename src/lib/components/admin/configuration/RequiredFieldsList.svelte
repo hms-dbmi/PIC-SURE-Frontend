@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { type RequiredField, parseFieldsFromJSON } from '$lib/models/Connection';
-  import { isTopAdmin } from '$lib/stores/User';
+  import { type RequiredField, parseFieldsFromJSON } from '#lib/models/Connection.ts';
+  import { isTopAdmin } from '#lib/stores/User.ts';
 
   import RequiredFieldRow from './RequiredFieldRow.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
 
   interface Props {
     fields?: string;

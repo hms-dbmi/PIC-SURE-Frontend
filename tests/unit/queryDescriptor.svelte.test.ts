@@ -1,13 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('$app/environment', () => ({ browser: false }));
+vi.mock('$app/env', () => ({ browser: false }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost') } }));
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
-vi.mock('$app/paths', () => ({ resolve: (path: string) => path }));
+vi.mock('$app/paths', () => ({
+  resolve: (path: string) => (path.startsWith('/') ? path : `/${path}`),
+}));
 
-import { LogicTree } from '$lib/models/LogicTree.svelte';
-import { createFilterGroup, type FilterInterface } from '$lib/models/Filter.svelte';
-import { buildDescriptor } from '$lib/services/counts/queryDescriptor.svelte';
+import { LogicTree } from '#lib/models/LogicTree.svelte.ts';
+import { createFilterGroup, type FilterInterface } from '#lib/models/Filter.svelte.ts';
+import { buildDescriptor } from '#lib/services/counts/queryDescriptor.svelte.ts';
 
 describe('buildDescriptor strips Svelte $state proxies (production-shape guard)', () => {
   it('produces a phenotypicClause whose nested arrays survive structuredClone when categoryValues is $state-wrapped', () => {

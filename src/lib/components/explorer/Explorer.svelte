@@ -1,12 +1,13 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
+  import { appPath } from '#lib/paths.ts';
   import { onMount, onDestroy } from 'svelte';
 
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
 
-  import { config } from '$lib/configuration.svelte';
-  import type { Column } from '$lib/components/datatable/types';
+  import { config } from '#lib/configuration.svelte.ts';
+  import type { Column } from '#lib/components/datatable/types.ts';
   import {
     searchTerm,
     selectedFacets,
@@ -16,16 +17,16 @@
     tour,
     resetSearch,
     loading as isLoading,
-  } from '$lib/stores/Search';
-  import type { TourDataType } from '$lib/models/Tour';
+  } from '#lib/stores/Search.ts';
+  import type { TourDataType } from '#lib/models/Tour.ts';
 
-  import Actions from '$lib/components/explorer/cell/Actions.svelte';
-  import SearchDatatable from '$lib/components/datatable/RemoteTable.svelte';
-  import Searchbox from '$lib/components/Searchbox.svelte';
-  import FacetSideBar from '$lib/components/explorer/FacetSideBar.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import ExplorerTour from '$lib/components/tour/ExplorerTour.svelte';
-  import { log, createLog } from '$lib/logger';
+  import Actions from '#lib/components/explorer/cell/Actions.svelte';
+  import SearchDatatable from '#lib/components/datatable/RemoteTable.svelte';
+  import Searchbox from '#lib/components/Searchbox.svelte';
+  import FacetSideBar from '#lib/components/explorer/FacetSideBar.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import ExplorerTour from '#lib/components/tour/ExplorerTour.svelte';
+  import { log, createLog } from '#lib/logger.ts';
 
   let { tourConfig }: { tourConfig: TourDataType } = $props();
 
@@ -49,11 +50,9 @@
     searchTerm.set(searchInput);
 
     goto(
-      resolve(
-        (searchInput ? `${path}?search=${encodeURIComponent(searchInput)}` : `${path}`) as '/',
-      ),
+      resolve(appPath(searchInput ? `${path}?search=${encodeURIComponent(searchInput)}` : path)),
       {
-        replaceState: true,
+        replace: true,
       },
     );
   }
@@ -62,7 +61,7 @@
     resetSearch();
     searchInput = '';
 
-    goto(resolve(path as '/'));
+    goto(resolve(appPath(path)));
   }
 
   function scrollToSearchResults() {
@@ -104,7 +103,7 @@
           <a
             data-testid="genomic-filter-btn"
             class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
-            href={resolve('/explorer/genome-filter')}
+            href={resolve('explorer/genome-filter')}
             onclick={() => log(createLog('NAVIGATION', 'explorer.genomic_filter_click'))}
             >Genomic Filtering</a
           >

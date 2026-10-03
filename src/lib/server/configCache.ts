@@ -1,8 +1,8 @@
-import { error, type NumericRange } from '@sveltejs/kit';
-import type { ConfigObject, ConfigCache, ConfigKind } from '$lib/models/Configuration';
-import { CONFIG_API_KIND } from '$lib/models/Configuration';
-import { Picsure, joinUrl } from '$lib/paths';
-import { withBackoff } from '$lib/utilities/backoff';
+import { error } from '@sveltejs/kit';
+import type { ConfigObject, ConfigCache, ConfigKind } from '#lib/models/Configuration.ts';
+import { CONFIG_API_KIND } from '#lib/models/Configuration.ts';
+import { Picsure, joinUrl } from '#lib/paths.ts';
+import { withBackoff } from '#lib/utilities/backoff.ts';
 
 const ORIGIN = import.meta.env?.VITE_ORIGIN;
 
@@ -29,7 +29,7 @@ const MAX_DELAY = 600000;
 
 async function handleResponse(res: Response): Promise<ConfigObject[]> {
   if (!(res.ok || res.status === 422)) {
-    error(res.status as NumericRange<400, 599>, await res.text());
+    error(res.status, await res.text());
   }
 
   const text = await res.text();

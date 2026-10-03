@@ -1,14 +1,14 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
   import { onMount } from 'svelte';
-  import Summary from '$lib/components/explorer/export/Summary.svelte';
-  import Loading from '$lib/components/Loading.svelte';
-  import ErrorAlert from '$lib/components/ErrorAlert.svelte';
-  import type { DataSetResponse } from '$lib/models/Dataset';
-  import * as api from '$lib/api';
-  import { Picsure } from '$lib/paths';
-  import { stepperState } from '$lib/stores/Stepper';
-  import { exports } from '$lib/stores/Export';
+  import Summary from '#lib/components/explorer/export/Summary.svelte';
+  import Loading from '#lib/components/Loading.svelte';
+  import ErrorAlert from '#lib/components/ErrorAlert.svelte';
+  import type { DataSetResponse } from '#lib/models/Dataset.ts';
+  import * as api from '#lib/api.ts';
+  import { Picsure } from '#lib/paths.ts';
+  import { stepperState } from '#lib/stores/Stepper.ts';
+  import { exports } from '#lib/stores/Export.ts';
   import {
     getActiveType,
     getDatasetId,
@@ -17,9 +17,9 @@
     setDatasetNameInput,
     setSaveable,
     getQueryRequest,
-  } from '$lib/ExportStepperManager.svelte';
-  import { log, createLog } from '$lib/logger';
-  import { config } from '$lib/configuration.svelte';
+  } from '#lib/ExportStepperManager.svelte.ts';
+  import { log, createLog } from '#lib/logger.ts';
+  import { config } from '#lib/configuration.svelte.ts';
 
   const PROMISE_WAIT_INTERVAL = 7;
   let processingMessage: string = $state('');
@@ -105,8 +105,8 @@
     <div class="w-full h-full m-2 card p-4">
       <header class="card-header">
         Save the information in your final data export by clicking the Save Dataset ID button.
-        Navigate to the <a class="anchor" href={resolve('/dataset')}>Manage Datasets page</a> to view
-        or manage your Dataset IDs.
+        Navigate to the <a class="anchor" href={resolve('dataset')}>Manage Datasets page</a> to view or
+        manage your Dataset IDs.
       </header>
       <hr />
       <div class="card-body p-4 flex flex-col justify-center items-center">

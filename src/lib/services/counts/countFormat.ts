@@ -1,4 +1,4 @@
-import type { PatientCount, StatValue } from '$lib/models/Stat';
+import type { PatientCount, StatValue } from '#lib/models/Stat.ts';
 
 const PLUS_MINUS = '±';
 

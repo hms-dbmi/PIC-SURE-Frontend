@@ -3,7 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
 
-vi.mock('$lib/logger', () => ({
+vi.mock('#lib/logger.ts', () => ({
   log: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createLog: vi.fn((eventType: any, action: any, metadata: any) => ({
@@ -15,11 +15,11 @@ vi.mock('$lib/logger', () => ({
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
-vi.mock('$lib/stores/GeneFilter', () => ({ populateFromGeneFilter: vi.fn() }));
+vi.mock('#lib/stores/GeneFilter.ts', () => ({ populateFromGeneFilter: vi.fn() }));
 
-vi.mock('$lib/stores/SNPFilter', () => ({ populateFromSNPFilter: vi.fn() }));
+vi.mock('#lib/stores/SNPFilter.ts', () => ({ populateFromSNPFilter: vi.fn() }));
 
-vi.mock('$lib/stores/Filter', async () => {
+vi.mock('#lib/stores/Filter.ts', async () => {
   const { writable } = await import('svelte/store');
   return {
     removeFilter: vi.fn(),
@@ -28,22 +28,22 @@ vi.mock('$lib/stores/Filter', async () => {
   };
 });
 
-vi.mock('$lib/stores/Dictionary', () => ({ getConceptDetails: vi.fn() }));
+vi.mock('#lib/stores/Dictionary.ts', () => ({ getConceptDetails: vi.fn() }));
 
-vi.mock('$lib/stores/ExpandableRow', async () => {
+vi.mock('#lib/stores/ExpandableRow.ts', async () => {
   const { writable } = await import('svelte/store');
   return { activeRow: writable('') };
 });
 
-vi.mock('$lib/stores/SidePanel', async () => {
+vi.mock('#lib/stores/SidePanel.ts', async () => {
   const { writable } = await import('svelte/store');
   return { panelOpen: writable(true) };
 });
 
-import AddedFilter from '$lib/components/explorer/results/AddedFilter.svelte';
-import { log } from '$lib/logger';
-import type { Filter } from '$lib/models/Filter.svelte';
-import type { SearchResult } from '$lib/models/Search';
+import AddedFilter from '#lib/components/explorer/results/AddedFilter.svelte';
+import { log } from '#lib/logger.ts';
+import type { Filter } from '#lib/models/Filter.svelte.ts';
+import type { SearchResult } from '#lib/models/Search.ts';
 
 const searchResult = {
   conceptPath: '\\test\\concept\\',

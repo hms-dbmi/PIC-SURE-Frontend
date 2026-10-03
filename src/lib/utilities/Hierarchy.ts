@@ -1,4 +1,4 @@
-import type { SearchResult } from '$lib/models/Search';
+import type { SearchResult } from '#lib/models/Search.ts';
 
 /** Count the depth of a concept path by its backslash-delimited segments. */
 export function conceptDepth(conceptPath: string): number {

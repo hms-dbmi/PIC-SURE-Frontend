@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onDestroy, untrack } from 'svelte';
-  import BannerPageTargetFields from '$lib/components/admin/configuration/BannerPageTargetFields.svelte';
-  import BannerScheduleFields from '$lib/components/admin/configuration/BannerScheduleFields.svelte';
-  import SiteBanner from '$lib/components/banner/SiteBanner.svelte';
-  import Editor from '$lib/components/editor/Editor.svelte';
-  import UnsavedChangesModal from '$lib/components/UnsavedChangesModal.svelte';
+  import BannerPageTargetFields from '#lib/components/admin/configuration/BannerPageTargetFields.svelte';
+  import BannerScheduleFields from '#lib/components/admin/configuration/BannerScheduleFields.svelte';
+  import SiteBanner from '#lib/components/banner/SiteBanner.svelte';
+  import Editor from '#lib/components/editor/Editor.svelte';
+  import UnsavedChangesModal from '#lib/components/UnsavedChangesModal.svelte';
   import type {
     BannerAppearance,
     BannerAudience,
@@ -13,14 +13,14 @@
     BannerPageTarget,
     BannerPresentation,
     ManagedBanner,
-  } from '$lib/models/Banner';
+  } from '#lib/models/Banner.ts';
   import {
     BANNER_APPEARANCES,
     BANNER_APPEARANCE_DETAILS,
     BANNER_AUDIENCES,
     BANNER_AUDIENCE_LABELS,
     BANNER_ICONS,
-  } from '$lib/models/Banner';
+  } from '#lib/models/Banner.ts';
   import {
     publishBanner,
     publishSavedBanner,
@@ -28,16 +28,16 @@
     updatePublishedBanner,
     updateSavedBanner,
     restoreBanner,
-  } from '$lib/services/BannerManagement';
-  import { toaster } from '$lib/toaster';
-  import { hasBannerContent, sanitizeBannerHTML } from '$lib/utilities/BannerHTML';
+  } from '#lib/services/BannerManagement.ts';
+  import { toaster } from '#lib/toaster.ts';
+  import { hasBannerContent, sanitizeBannerHTML } from '#lib/utilities/BannerHTML.ts';
   import {
     formatInstantAsLocalMinute,
     resolveLocalMinute,
     type LocalMinuteResolution,
-  } from '$lib/utilities/BannerSchedule';
-  import { validateBannerPageTarget } from '$lib/utilities/BannerPageTargets';
-  import { createUnsavedGuard } from '$lib/utilities/UnsavedGuard.svelte';
+  } from '#lib/utilities/BannerSchedule.ts';
+  import { validateBannerPageTarget } from '#lib/utilities/BannerPageTargets.ts';
+  import { createUnsavedGuard } from '#lib/utilities/UnsavedGuard.svelte.ts';
 
   type TargetedPage = Exclude<BannerPageTarget, { kind: 'ALL' }>;
   type EditorTransition = { kind: 'cancel' } | { kind: 'tab'; destination: string };

@@ -2,13 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 let mockEnv: Record<string, string | undefined> = {};
 
-vi.mock('$env/dynamic/private', () => ({
-  env: new Proxy(
-    {},
-    {
-      get: (_, key: string) => mockEnv[key],
-    },
-  ),
+// Getters, so each test's mockEnv is read when the route runs rather than at import.
+vi.mock('$app/env/private', () => ({
+  get PICSURE_INTERNAL_API_ORIGIN() {
+    return mockEnv.PICSURE_INTERNAL_API_ORIGIN;
+  },
+  get PICSURE_PLATFORM_API_KEY() {
+    return mockEnv.PICSURE_PLATFORM_API_KEY;
+  },
 }));
 
 // Must import after mocks are set up
@@ -72,6 +73,22 @@ describe('+server /api/v1/open/[...path]', () => {
     });
     await GET(spoofed);
     expect(fetchMock.mock.calls[1][1].headers['X-Forwarded-For']).toBe('203.0.113.9');
+  });
+
+  it('forwards without X-Forwarded-For when the request bypassed httpd and has no address header', async () => {
+    const event = {
+      ...makeEvent('GET', 'picsure/query/sync'),
+      getClientAddress: () => {
+        throw new Error(
+          'Address header was specified with ADDRESS_HEADER=X-Forwarded-For but is absent from request',
+        );
+      },
+    };
+
+    const response = await GET(event);
+
+    expect(response.status).toBe(200);
+    expect(fetchMock.mock.calls[0][1].headers).not.toHaveProperty('X-Forwarded-For');
   });
 
   it('reaches the API through the configured internal origin', async () => {

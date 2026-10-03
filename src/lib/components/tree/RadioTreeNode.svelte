@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { css } from '$lib/utilities/style';
-  import type { RadioNodeInterface } from '$lib/components/tree/types';
-  import RadioTreeNode from '$lib/components/tree/RadioTreeNode.svelte';
+  import { css } from '#lib/utilities/style.ts';
+  import type { RadioNodeInterface } from '#lib/components/tree/types.ts';
+  import RadioTreeNode from '#lib/components/tree/RadioTreeNode.svelte';
 
   const {
     node,

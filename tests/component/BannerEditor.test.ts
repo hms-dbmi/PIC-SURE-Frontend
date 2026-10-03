@@ -6,8 +6,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 const navigation = vi.hoisted(() => ({ beforeNavigate: vi.fn(), goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => navigation);
-vi.mock('$lib/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
-vi.mock('$lib/services/BannerManagement', () => ({
+vi.mock('#lib/toaster.ts', () => ({ toaster: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('#lib/services/BannerManagement.ts', () => ({
   publishBanner: vi.fn(),
   publishSavedBanner: vi.fn(),
   restoreBanner: vi.fn(),
@@ -16,14 +16,14 @@ vi.mock('$lib/services/BannerManagement', () => ({
   updateSavedBanner: vi.fn(),
 }));
 
-import BannerEditor from '$lib/components/admin/configuration/BannerEditor.svelte';
-import type { BannerAudience, ManagedBanner } from '$lib/models/Banner';
+import BannerEditor from '#lib/components/admin/configuration/BannerEditor.svelte';
+import type { BannerAudience, ManagedBanner } from '#lib/models/Banner.ts';
 import {
   publishBanner,
   restoreBanner,
   updatePublishedBanner,
-} from '$lib/services/BannerManagement';
-import { toaster } from '$lib/toaster';
+} from '#lib/services/BannerManagement.ts';
+import { toaster } from '#lib/toaster.ts';
 
 const audienceCases: [string, BannerAudience][] = [
   ['Everyone', 'EVERYONE'],

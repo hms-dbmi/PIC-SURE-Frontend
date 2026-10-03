@@ -1,11 +1,11 @@
-import type { AuthData } from '$lib/models/AuthProvider';
-import AuthProvider from '$lib/models/AuthProvider';
-import { browser } from '$app/environment';
-import type { User } from '$lib/models/User';
-import * as api from '$lib/api';
+import type { AuthData } from '#lib/models/AuthProvider.ts';
+import AuthProvider from '#lib/models/AuthProvider.ts';
+import { browser } from '$app/env';
+import type { User } from '#lib/models/User.ts';
+import * as api from '#lib/api.ts';
 import auth0 from 'auth0-js';
-import { auth } from '$lib/configuration.svelte';
-import { Psama } from '$lib/paths';
+import { auth } from '#lib/configuration.svelte.ts';
+import { Psama } from '#lib/paths.ts';
 
 interface Auth0Data extends AuthData {
   clientid: string;

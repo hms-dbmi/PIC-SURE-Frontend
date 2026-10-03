@@ -5,8 +5,8 @@ import {
   normalizeBannerPageTargets,
   parseBannerPageTargets,
   validateBannerPageTarget,
-} from '$lib/utilities/BannerPageTargets';
-import type { BannerPageTarget } from '$lib/models/Banner';
+} from '#lib/utilities/BannerPageTargets.ts';
+import type { BannerPageTarget } from '#lib/models/Banner.ts';
 
 describe('isAllPagesBannerTarget', () => {
   it('accepts only the canonical singleton All-pages target', () => {

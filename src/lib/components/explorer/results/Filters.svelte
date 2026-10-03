@@ -1,13 +1,13 @@
 <script lang="ts">
   import { resolve } from '$app/paths';
-  import type { FilterGroupInterface } from '$lib/models/Filter.svelte';
+  import type { FilterGroupInterface } from '#lib/models/Filter.svelte.ts';
   import { page } from '$app/state';
-  import { filterTree, filters, genomicFilters } from '$lib/stores/Filter';
-  import { exports } from '$lib/stores/Export';
+  import { filterTree, filters, genomicFilters } from '#lib/stores/Filter.ts';
+  import { exports } from '#lib/stores/Export.ts';
 
-  import FilterComponent from '$lib/components/explorer/results/AddedFilter.svelte';
-  import ResultsFilterGroup from '$lib/components/explorer/results/ResultsFilterGroup.svelte';
-  import Popover from '$lib/components/Popover.svelte';
+  import FilterComponent from '#lib/components/explorer/results/AddedFilter.svelte';
+  import ResultsFilterGroup from '#lib/components/explorer/results/ResultsFilterGroup.svelte';
+  import Popover from '#lib/components/Popover.svelte';
 
   interface Props {
     isDiscoverPage?: boolean;
@@ -51,7 +51,7 @@
         {:else}
           <a
             id="advanced-query-btn"
-            href={resolve(`${isDiscoverPage ? '/discover' : '/explorer'}/advanced-filtering`)}
+            href={resolve(`${isDiscoverPage ? 'discover' : 'explorer'}/advanced-filtering`)}
             data-testid="advanced-filtering-btn"
             class="{aqbBtnClass} !mr-0 hover:preset-filled-primary-500"
           >

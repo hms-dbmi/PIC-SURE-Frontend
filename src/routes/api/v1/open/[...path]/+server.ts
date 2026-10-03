@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
+import { PICSURE_INTERNAL_API_ORIGIN, PICSURE_PLATFORM_API_KEY } from '$app/env/private';
 import type { RequestHandler } from './$types';
+import { clientAddress } from '#lib/server/clientAddress.ts';
 
 /**
  * Server-side proxy for anonymous (token-less) open-access data requests. api.ts routes them
@@ -14,7 +15,7 @@ let warnedMissingKey = false;
 const forward: RequestHandler = async ({ request, params, url, getClientAddress }) => {
   // multi-host deployments don't serve the API from the frontend host over plain HTTP,
   // so the internal origin must be wireable per deployment
-  const upstreamOrigin = env.PICSURE_INTERNAL_API_ORIGIN || 'http://localhost';
+  const upstreamOrigin = PICSURE_INTERNAL_API_ORIGIN || 'http://localhost';
   // Resolve the target first, then validate its NORMALIZED pathname: checking the raw param
   // while fetching a string-concatenated URL is a parser differential — "picsure/../psama" (or
   // its %2e%2e form, which SvelteKit decodes) passes a raw startsWith check but resolves to a
@@ -25,7 +26,7 @@ const forward: RequestHandler = async ({ request, params, url, getClientAddress 
   }
   target.search = url.search;
 
-  if (!env.PICSURE_PLATFORM_API_KEY && !warnedMissingKey) {
+  if (!PICSURE_PLATFORM_API_KEY && !warnedMissingKey) {
     warnedMissingKey = true;
     console.error('[open-proxy] PICSURE_PLATFORM_API_KEY not set; forwarding without an API key');
   }
@@ -33,7 +34,8 @@ const forward: RequestHandler = async ({ request, params, url, getClientAddress 
   const headers: Record<string, string> = {};
   // forward only the trusted client address: the incoming X-Forwarded-For header is
   // caller-controlled, and preserving it would let requests falsify their audit attribution
-  headers['X-Forwarded-For'] = getClientAddress();
+  const clientIp = clientAddress(getClientAddress);
+  if (clientIp) headers['X-Forwarded-For'] = clientIp;
   headers['X-Forwarded-Host'] = url.host;
   const contentType = request.headers.get('Content-Type');
   if (contentType) {
@@ -51,8 +53,8 @@ const forward: RequestHandler = async ({ request, params, url, getClientAddress 
   if (requestSource) {
     headers['request-source'] = requestSource;
   }
-  if (env.PICSURE_PLATFORM_API_KEY) {
-    headers['X-PICSURE-API-Key'] = env.PICSURE_PLATFORM_API_KEY;
+  if (PICSURE_PLATFORM_API_KEY) {
+    headers['X-PICSURE-API-Key'] = PICSURE_PLATFORM_API_KEY;
   }
 
   let upstream: Response;

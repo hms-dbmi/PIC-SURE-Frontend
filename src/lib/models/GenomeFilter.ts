@@ -1,4 +1,4 @@
-import type { Indexable } from '$lib/types';
+import type { Indexable } from '#lib/types.ts';
 
 export enum Option {
   None = 'none',

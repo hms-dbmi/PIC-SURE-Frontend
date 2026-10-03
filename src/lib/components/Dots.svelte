@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { config } from '$lib/configuration.svelte';
+  import { config } from '#lib/configuration.svelte.ts';
   let { class: className = '' }: { class: string } = $props();
 
   const dotsColorsClass: string[] = $derived.by(() => {

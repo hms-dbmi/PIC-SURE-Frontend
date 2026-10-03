@@ -1,21 +1,21 @@
 import { get } from 'svelte/store';
 import type { Unsubscriber } from 'svelte/store';
 
-import * as api from '$lib/api';
-import { log, createLog } from '$lib/logger';
-import { isToastShowing, toaster } from '$lib/toaster';
-import { allFilters, filterTree, genomicFilters } from '$lib/stores/Filter';
-import { getCountResource } from '$lib/stores/Resources';
-import { subscribeOnChange } from '$lib/utilities/Subscribers';
-import { buildDescriptor, stableHash } from '$lib/services/counts/queryDescriptor.svelte';
-import { resultProviders } from '$lib/services/counts/providers';
-import type { QueryDescriptor } from '$lib/services/counts/queryDescriptor.svelte';
+import * as api from '#lib/api.ts';
+import { log, createLog } from '#lib/logger.ts';
+import { isToastShowing, toaster } from '#lib/toaster.ts';
+import { allFilters, filterTree, genomicFilters } from '#lib/stores/Filter.ts';
+import { getCountResource } from '#lib/stores/Resources.ts';
+import { subscribeOnChange } from '#lib/utilities/Subscribers.ts';
+import { buildDescriptor, stableHash } from '#lib/services/counts/queryDescriptor.svelte.ts';
+import { resultProviders } from '#lib/services/counts/providers.ts';
+import type { QueryDescriptor } from '#lib/services/counts/queryDescriptor.svelte.ts';
 import {
   createQueryCountService,
   type QueryCountService,
-} from '$lib/services/counts/queryCountService';
-import { summarize } from '$lib/services/counts/snapshot';
-import type { ResultCountSnapshot } from '$lib/services/counts/snapshot';
+} from '#lib/services/counts/queryCountService.ts';
+import { summarize } from '#lib/services/counts/snapshot.ts';
+import type { ResultCountSnapshot } from '#lib/services/counts/snapshot.ts';
 
 export type ResultCountsStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
