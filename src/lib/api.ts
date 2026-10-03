@@ -1,5 +1,5 @@
 import { error, isHttpError, type NumericRange } from '@sveltejs/kit';
-import { logout, login } from '$lib/stores/User';
+import { logout, renewToken } from '$lib/stores/User';
 import { browser } from '$app/environment';
 import { log, createLog, getSessionId } from '$lib/logger';
 import { config } from '$lib/configuration.svelte';
@@ -58,10 +58,10 @@ async function send({
   }
 
   let requestPath = path;
+  const requestToken = browser && authenticate ? localStorage.getItem('token') || '' : '';
   if (browser) {
-    const token = authenticate ? localStorage.getItem('token') : null;
-    if (token) {
-      opts.headers['Authorization'] = `${BEARER}${token}`;
+    if (requestToken) {
+      opts.headers['Authorization'] = `${BEARER}${requestToken}`;
       opts.headers['request-source'] = 'Authorized';
     } else {
       opts.headers['request-source'] = 'Open';
@@ -82,7 +82,7 @@ async function send({
 
   const res = await fetch(joinUrl(window.location.origin, requestPath), opts);
 
-  return await handleResponse(res);
+  return await handleResponse(res, requestToken);
 }
 
 export function get(path: string, headers?: any, authenticate?: boolean, options?: RequestOptions) {
@@ -117,9 +117,9 @@ export function patch(path: string, data: any, headers?: any, authenticate?: boo
   return send({ method: 'PATCH', path, data, headers, authenticate });
 }
 
-async function handleResponse(res: Response) {
+async function handleResponse(res: Response, requestToken: string) {
   if (res.ok || res.status === 422) {
-    refreshToken(res);
+    refreshToken(res, requestToken);
     const contentType = res.headers.get('Content-Type') || '';
     if (contentType.includes('application/octet-stream')) {
       return await res.arrayBuffer();
@@ -176,10 +176,10 @@ function parseConsentDenial(responseBody: string): string | undefined {
   }
 }
 
-function refreshToken(res: Response) {
+function refreshToken(res: Response, requestToken: string) {
   let newAuthToken = res.headers.get('Authorization');
   if (newAuthToken) {
     newAuthToken = newAuthToken.replace(BEARER, '');
-    login(newAuthToken);
+    renewToken(newAuthToken, requestToken);
   }
 }

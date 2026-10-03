@@ -9,10 +9,10 @@ vi.mock('$app/environment', () => ({
 }));
 
 const mockLogout = vi.fn();
-const mockLogin = vi.fn();
+const mockRenewToken = vi.fn();
 vi.mock('$lib/stores/User', () => ({
   logout: (...args: unknown[]) => mockLogout(...args),
-  login: (...args: unknown[]) => mockLogin(...args),
+  renewToken: (...args: unknown[]) => mockRenewToken(...args),
 }));
 
 const mockLog = vi.fn();
@@ -284,7 +284,8 @@ describe('api', () => {
   });
 
   describe('token refresh', () => {
-    it('calls login() when response has Authorization header', async () => {
+    it('renews the token the request was sent with', async () => {
+      (localStorage.getItem as Mock).mockReturnValue('my-token');
       fetchMock.mockResolvedValue(
         mockFetchResponse({
           headers: { Authorization: 'Bearer new-token-123' },
@@ -292,14 +293,35 @@ describe('api', () => {
       );
 
       await get('picsure/test');
-      expect(mockLogin).toHaveBeenCalledWith('new-token-123');
+      expect(mockRenewToken).toHaveBeenCalledWith('new-token-123', 'my-token');
     });
 
-    it('does not call login() when no Authorization header in response', async () => {
+    it('keeps the request token even if storage changes before the response', async () => {
+      (localStorage.getItem as Mock).mockReturnValue('old-token');
+      fetchMock.mockImplementation(async () => {
+        (localStorage.getItem as Mock).mockReturnValue('other-token');
+        return mockFetchResponse({ headers: { Authorization: 'Bearer new-token-123' } });
+      });
+
+      await get('picsure/test');
+      expect(mockRenewToken).toHaveBeenCalledWith('new-token-123', 'old-token');
+    });
+
+    it('passes no request token for an unauthenticated request', async () => {
+      (localStorage.getItem as Mock).mockReturnValue('my-token');
+      fetchMock.mockResolvedValue(
+        mockFetchResponse({ headers: { Authorization: 'Bearer new-token-123' } }),
+      );
+
+      await get('picsure/test', undefined, false);
+      expect(mockRenewToken).toHaveBeenCalledWith('new-token-123', '');
+    });
+
+    it('does not renew when no Authorization header in response', async () => {
       fetchMock.mockResolvedValue(mockFetchResponse({}));
 
       await get('picsure/test');
-      expect(mockLogin).not.toHaveBeenCalled();
+      expect(mockRenewToken).not.toHaveBeenCalled();
     });
   });
 
