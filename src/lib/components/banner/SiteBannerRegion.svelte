@@ -164,7 +164,7 @@
       banners = validRecords
         .filter((banner): banner is ActiveBanner => banner.placement === 'SITE_TOP')
         .map((banner) => ({ ...banner, plainText: bannerPlainText(banner.htmlContent) }));
-      // Banners present at page load are read in page order; only later arrivals are announced.
+
       if (pageLoad) {
         for (const banner of visibleBanners) announced[banner.uuid] = banner.presentationHash;
       }
