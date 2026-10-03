@@ -23,7 +23,7 @@
   import type { DecorationItem } from 'shiki/core';
   import type { CodeBlockProps } from '$lib/models/CodeBlock';
 
-  let { code = '', copyCode, hiddenText, lang = 'bash' }: CodeBlockProps = $props();
+  let { code = '', copyCode, hiddenText, lang = 'bash', logAction }: CodeBlockProps = $props();
 
   /**
    * Returns a decoration that hides each occurrence of the text from screen readers.
@@ -55,6 +55,8 @@
   <CopyButton
     useIcon
     itemToCopy={copyCode ?? code}
+    triggerTitle="Copy code"
+    {logAction}
     data-testid="code-block-copy"
     class="absolute top-2 right-2 text-surface-300"
   />

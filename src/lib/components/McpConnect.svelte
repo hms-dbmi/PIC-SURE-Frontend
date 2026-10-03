@@ -26,6 +26,7 @@
   } from '$lib/utilities/Mcp';
   import type { CodeBlockProps } from '$lib/models/CodeBlock';
   import CodeBlock from '$lib/components/CodeBlock.svelte';
+  import { log, createLog } from '$lib/logger';
 
   let mounted = $state(false);
   let os: McpOs = $state('macos');
@@ -72,6 +73,14 @@
     }
   }
 
+  /**
+   * Toggles whether the token shows on screen and logs the change without the token.
+   */
+  function toggleReveal() {
+    revealed = !revealed;
+    log(createLog('ACTION', 'token.reveal', { revealed }));
+  }
+
   onMount(() => {
     os = detectOs(navigator.platform || navigator.userAgent || '');
     mounted = true;
@@ -85,6 +94,7 @@
     code={shown(text)}
     copyCode={text}
     hiddenText={masked ? TOKEN_MASK : undefined}
+    logAction="token.copy"
   />
   {#if masked}
     <p class="sr-only">Token hidden, the copy button copies it</p>
@@ -105,7 +115,7 @@
       <ul class="list-inside list-disc space-y-1">
         <li>
           The MCP tools serve open-access data only. Exact counts under your consents, participant
-          rows, and exports need the Python or R client.
+          rows, and exports need the Python or R client, or curl and jq.
         </li>
         <li>Any code your assistant generates runs in your own environment, not on PIC-SURE.</li>
       </ul>
@@ -129,10 +139,13 @@
           <button
             type="button"
             data-testid="mcp-token-reveal"
-            class="btn preset-tonal-primary border border-primary-500 hover:preset-filled-primary-500"
+            class="btn border border-primary-500 hover:preset-filled-primary-500 {revealed
+              ? 'preset-filled-primary-500'
+              : 'preset-tonal-primary'}"
             aria-pressed={revealed}
-            onclick={() => (revealed = !revealed)}
+            onclick={toggleReveal}
           >
+            <i class="fa-solid {revealed ? 'fa-eye' : 'fa-eye-slash'}" aria-hidden="true"></i>
             Show token
           </button>
         </div>
@@ -143,9 +156,8 @@
         </p>
       {:else if tokenState === 'failed'}
         <p class="mx-0" data-testid="mcp-token-failed">
-          Your token could not be loaded. Copy it from the token section elsewhere on this page and
-          paste it where a command says <code>{TOKEN_PLACEHOLDER}</code>, or reload the page to try
-          again.
+          Your token could not be loaded. Reload the page to try again. Until then, the commands
+          below say <code>{TOKEN_PLACEHOLDER}</code> where it goes.
         </p>
       {:else if openAccess}
         <p class="mx-0">
@@ -244,7 +256,8 @@
         {#if publicKeyEnabled}
           <p class="mx-0 mt-2 text-sm" data-testid="mcp-public-key-note">
             Replace <code>{PUBLIC_KEY_PLACEHOLDER}</code> with your key from the Public Access Key
-            section under <a class="anchor" href="#authentication">Authentication</a> on this page.
+            section under <a class="anchor" href="#authentication">Authentication</a> on this page, which
+            shows when you are logged out.
           </p>
         {/if}
       {/if}
@@ -310,7 +323,7 @@
       <p class="mx-0">
         Ask your assistant: "Search PIC-SURE for blood pressure variables and count participants
         aged 20 to 40." Open counts are obfuscated, and authorized work needs the Python or R
-        client.
+        client, or curl and jq.
       </p>
     </section>
   </div>

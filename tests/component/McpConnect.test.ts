@@ -12,6 +12,16 @@ import UserToken from '$lib/components/UserToken.svelte';
 
 const mockState = vi.hoisted(() => ({ enabled: false, url: '', open: true, publicKey: false }));
 const apiGet = vi.hoisted(() => vi.fn());
+const log = vi.hoisted(() => vi.fn());
+
+vi.mock('$lib/logger', () => ({
+  log,
+  createLog: (eventType: string, action?: string, metadata?: Record<string, unknown>) => ({
+    event_type: eventType,
+    action,
+    metadata,
+  }),
+}));
 
 vi.mock('$lib/configuration.svelte', () => ({
   config: {
@@ -64,6 +74,7 @@ describe('McpConnect', () => {
     mockState.open = true;
     mockState.publicKey = false;
     apiGet.mockReset();
+    log.mockReset();
     tokenStatus.set(false);
     user.set({ ...get(user), token: '' });
     Object.defineProperty(navigator, 'platform', { value: 'MacIntel', configurable: true });
@@ -199,6 +210,18 @@ describe('McpConnect', () => {
     expect(screen.getByTestId('mcp-step-token')).not.toHaveTextContent(/Log in/);
   });
 
+  it('says the token could not be loaded when the request returns no token', async () => {
+    apiGet.mockResolvedValue({});
+    logIn('');
+    render(McpConnect);
+
+    await waitFor(() => expect(screen.getByTestId('mcp-token-failed')).toBeInTheDocument());
+    expect(screen.getByTestId('mcp-token-failed')).toHaveTextContent(
+      'Your token could not be loaded. Reload the page to try again. Until then, the commands below say YOUR_PICSURE_TOKEN where it goes.',
+    );
+    expect(screen.queryByTestId('mcp-token-loading')).not.toBeInTheDocument();
+  });
+
   it('fills the token in once the request returns it', async () => {
     apiGet.mockResolvedValue({ token: fakeToken, privileges: [] });
     logIn('');
@@ -237,13 +260,67 @@ describe('McpConnect', () => {
       `Bearer ${fakeToken}`,
     );
 
-    await fireEvent.click(screen.getByTestId('mcp-token-reveal'));
-    expect(screen.getByTestId('mcp-token-reveal')).toHaveTextContent('Show token');
-    expect(screen.getByTestId('mcp-token-reveal')).toHaveAttribute('aria-pressed', 'true');
+    const reveal = screen.getByTestId('mcp-token-reveal');
+    expect(reveal).toHaveClass('preset-tonal-primary');
+    expect(reveal.querySelector('i')).toHaveClass('fa-eye-slash');
+
+    await fireEvent.click(reveal);
+    expect(reveal).toHaveTextContent('Show token');
+    expect(reveal).toHaveAttribute('aria-pressed', 'true');
+    expect(reveal).toHaveClass('preset-filled-primary-500');
+    expect(reveal).not.toHaveClass('preset-tonal-primary');
+    expect(reveal.querySelector('i')).toHaveClass('fa-eye');
+    expect(reveal.querySelector('i')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.getByTestId('mcp-token-display')).toHaveTextContent(fakeToken);
     expect(blocks(container)[0]).toBe(`export PICSURE_TOKEN="${fakeToken}"`);
     expect(blocks(container)[5]).toContain(`Bearer ${fakeToken}`);
     expect(blocks(container)[6]).toContain(`Bearer ${fakeToken}`);
+  });
+
+  it('logs token copies and reveals without the token', async () => {
+    logIn();
+    render(McpConnect);
+
+    await waitFor(() => expect(screen.getByTestId('mcp-token-reveal')).toBeInTheDocument());
+    const copyButtons = screen.getAllByTestId('code-block-copy-btn');
+    for (const index of [0, 1, 5, 6]) {
+      await fireEvent.click(copyButtons[index]);
+    }
+    await fireEvent.click(screen.getByTestId('mcp-token-reveal'));
+    await fireEvent.click(screen.getByTestId('mcp-token-reveal'));
+
+    const logged = log.mock.calls.map(([event]) => event);
+    expect(logged).toEqual([
+      { event_type: 'ACTION', action: 'token.copy', metadata: undefined },
+      { event_type: 'ACTION', action: 'token.copy', metadata: undefined },
+      { event_type: 'ACTION', action: 'token.copy', metadata: undefined },
+      { event_type: 'ACTION', action: 'token.copy', metadata: undefined },
+      { event_type: 'ACTION', action: 'token.reveal', metadata: { revealed: true } },
+      { event_type: 'ACTION', action: 'token.reveal', metadata: { revealed: false } },
+    ]);
+    expect(JSON.stringify(logged)).not.toContain(fakeToken);
+  });
+
+  it('does not log copies of snippets that carry no token', async () => {
+    logIn();
+    render(McpConnect);
+
+    await waitFor(() => expect(screen.getByTestId('mcp-token-reveal')).toBeInTheDocument());
+    const copyButtons = screen.getAllByTestId('code-block-copy-btn');
+    for (const index of [2, 3, 4]) {
+      await fireEvent.click(copyButtons[index]);
+    }
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(3);
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it('names every copy button', () => {
+    render(McpConnect);
+
+    const copyButtons = screen.getAllByTestId('code-block-copy-btn');
+    expect(copyButtons).toHaveLength(7);
+    copyButtons.forEach((button) => expect(button).toHaveAccessibleName('Copy code'));
   });
 
   it('changes the commands and the note when the operating system changes', async () => {
@@ -341,7 +418,7 @@ describe('McpConnect', () => {
     );
     const note = screen.getByTestId('mcp-public-key-note');
     expect(note).toHaveTextContent(
-      'Replace YOUR_PUBLIC_KEY with your key from the Public Access Key section under Authentication on this page.',
+      'Replace YOUR_PUBLIC_KEY with your key from the Public Access Key section under Authentication on this page, which shows when you are logged out.',
     );
     expect(note.querySelector('a')).toHaveAttribute('href', '#authentication');
     expect(screen.getByTestId('mcp-connector-key')).toHaveTextContent(
@@ -439,10 +516,15 @@ describe('McpConnect', () => {
     expect(tokenRequests).toHaveLength(1);
   });
 
-  it('says authorized work needs the Python or R client', () => {
+  it('says authorized work needs the Python or R client, or curl and jq', () => {
     render(McpConnect);
 
-    expect(screen.getByTestId('mcp-connect-note')).toHaveTextContent(/Python or R client/);
+    expect(screen.getByTestId('mcp-connect-note')).toHaveTextContent(
+      /need the Python or R client, or curl and jq\./,
+    );
+    expect(screen.getByTestId('mcp-step-try')).toHaveTextContent(
+      /authorized work needs the Python or R client, or curl and jq\./,
+    );
     expect(screen.getByTestId('mcp-connect-note')).toHaveTextContent(/open-access data only/);
     expect(screen.getByTestId('mcp-connect-note')).toHaveTextContent(/your own environment/);
   });

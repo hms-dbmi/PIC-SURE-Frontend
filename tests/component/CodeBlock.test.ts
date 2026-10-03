@@ -37,6 +37,14 @@ describe('CodeBlock', () => {
     expect(button.querySelector('i')).toHaveClass('fa-copy');
   });
 
+  it('names the icon-only copy button', () => {
+    render(CodeBlock, { code, lang: 'python' });
+
+    expect(screen.getByRole('button', { name: 'Copy code' })).toBe(
+      screen.getByTestId('code-block-copy-btn'),
+    );
+  });
+
   it('copies the raw code to the clipboard and shows confirmation', async () => {
     render(CodeBlock, { code, lang: 'python' });
 
