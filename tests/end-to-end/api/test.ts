@@ -114,6 +114,34 @@ test.describe('API page', () => {
     await expect(page.locator('#quick-start .code-block').first()).toBeVisible();
   });
 
+  test('Shows the AI Assistant tab when MCP_CONNECT and MCP_URL are set', async ({ page }) => {
+    await mockApiConfig(page, {
+      features: [
+        { name: 'REQUIRE_CONSENTS', value: 'true' },
+        { name: 'ENABLE_GENE_QUERY', value: 'true' },
+        { name: 'ENABLE_SNP_QUERY', value: 'true' },
+        { name: 'MCP_CONNECT', value: 'true' },
+      ],
+      settings: [{ name: 'MCP_URL', value: 'https://picsure.example.org/mcp' }],
+    });
+    await page.goto('/api');
+    await userIsLoggedIn(page);
+
+    const tabs = page.getByTestId('tabs-control');
+    await expect(tabs).toHaveCount(4);
+    const assistantTab = tabs.nth(3);
+    await expect(assistantTab).toContainText('AI Assistant');
+    await expect(assistantTab).toHaveAttribute('id', /trigger-assistant$/);
+    await assistantTab.click();
+
+    const panel = page.getByTestId('mcp-connect');
+    await expect(panel).toBeVisible();
+    await expect(panel).toContainText(
+      'claude mcp add --scope user --transport http picsure "https://picsure.example.org/mcp"',
+    );
+    await expect(panel).not.toContainText('For open access without login');
+  });
+
   test('Quick start code connects to the authorized platform when logged in', async ({ page }) => {
     // Given
     await page.goto('/api');

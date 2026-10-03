@@ -327,7 +327,7 @@
           <TabItem bind:group={tabSet} value="R">R</TabItem>
           <TabItem bind:group={tabSet} value="API">API</TabItem>
           {#if showMcpConnect}
-            <TabItem bind:group={tabSet} value="AI Assistant">AI Assistant</TabItem>
+            <TabItem bind:group={tabSet} value="assistant">AI Assistant</TabItem>
           {/if}
         {/snippet}
         {#snippet content()}
@@ -341,7 +341,7 @@
             <CodeBlock lang="bash" code={quickStartCode.api} />
           </Tabs.Panel>
           {#if showMcpConnect}
-            <Tabs.Panel value="AI Assistant">
+            <Tabs.Panel value="assistant">
               <McpConnect />
             </Tabs.Panel>
           {/if}

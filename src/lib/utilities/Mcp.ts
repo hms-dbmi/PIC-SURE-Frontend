@@ -9,10 +9,13 @@ export function mcpConnectUrl(enabled: boolean, url: string): string {
   return enabled ? url.trim() : '';
 }
 
-export type McpOs = 'unix' | 'powershell' | 'cmd';
+export type McpOs = 'macos' | 'linux' | 'powershell' | 'cmd';
+
+export type McpShellLanguage = 'bash' | 'powershell' | 'cmd';
 
 export const MCP_OS_OPTIONS: { value: McpOs; label: string }[] = [
-  { value: 'unix', label: 'macOS and Linux (bash or zsh)' },
+  { value: 'macos', label: 'macOS (zsh or bash)' },
+  { value: 'linux', label: 'Linux (bash or zsh)' },
   { value: 'powershell', label: 'Windows PowerShell' },
   { value: 'cmd', label: 'Windows Command Prompt' },
 ];
@@ -22,13 +25,35 @@ export const TOKEN_PLACEHOLDER = 'YOUR_PICSURE_TOKEN';
 export const TOKEN_MASK = '•'.repeat(24);
 
 /**
- * Picks the default operating system choice from a browser platform string:
- * Windows gives PowerShell, everything else gives macOS and Linux.
+ * Picks the default operating system choice from a browser platform string: Windows gives
+ * PowerShell, Linux and ChromeOS give Linux, and everything else gives macOS.
  *
  * @param platform navigator.platform or navigator.userAgent
  */
 export function detectOs(platform: string): McpOs {
-  return /win/i.test(platform) && !/darwin/i.test(platform) ? 'powershell' : 'unix';
+  if (/win/i.test(platform) && !/darwin/i.test(platform)) return 'powershell';
+  if (/linux|x11|cros/i.test(platform)) return 'linux';
+  return 'macos';
+}
+
+/**
+ * Tells whether the selected operating system uses a POSIX shell such as bash or zsh.
+ *
+ * @param os the selected operating system
+ */
+export function isPosixShell(os: McpOs): boolean {
+  return os === 'macos' || os === 'linux';
+}
+
+/**
+ * Returns the syntax highlighting language for shell snippets on the selected operating system.
+ *
+ * @param os the selected operating system
+ */
+export function shellLanguage(os: McpOs): McpShellLanguage {
+  if (os === 'powershell') return 'powershell';
+  if (os === 'cmd') return 'cmd';
+  return 'bash';
 }
 
 /**
@@ -73,28 +98,40 @@ export function tokenEnvCommands(
 }
 
 /**
- * Builds the Claude Code command that registers the server with the token read from the
- * PICSURE_TOKEN environment variable in the syntax of the selected shell.
+ * Builds the Claude Code command that registers the server for every project with the token
+ * read from the PICSURE_TOKEN environment variable in the syntax of the selected shell. In
+ * bash and zsh an unset variable stops the command with an error instead of saving an empty
+ * token.
  *
  * @param os the selected operating system
  * @param url the MCP server URL
  */
 export function claudeCodeCommand(os: McpOs, url: string): string {
   const reference = {
-    unix: '$PICSURE_TOKEN',
+    macos: '${PICSURE_TOKEN:?set PICSURE_TOKEN first}',
+    linux: '${PICSURE_TOKEN:?set PICSURE_TOKEN first}',
     powershell: '$env:PICSURE_TOKEN',
     cmd: '%PICSURE_TOKEN%',
   }[os];
-  return `claude mcp add --transport http picsure ${url} --header "Authorization: Bearer ${reference}"`;
+  return `${claudeCodeOpenCommand(url)} --header "Authorization: Bearer ${reference}"`;
 }
 
 /**
- * Builds the Claude Code command for open access without a token.
+ * Builds the Claude Code command that registers the server for every project without a
+ * token, for sites that offer open access.
  *
  * @param url the MCP server URL
  */
 export function claudeCodeOpenCommand(url: string): string {
-  return `claude mcp add --transport http picsure ${url}`;
+  return `claude mcp add --scope user --transport http picsure "${url}"`;
+}
+
+/**
+ * Builds the Claude Code command that removes the server registered by the commands above,
+ * so it can be added again with a new token.
+ */
+export function claudeCodeRemoveCommand(): string {
+  return 'claude mcp remove --scope user picsure';
 }
 
 /**
@@ -121,14 +158,20 @@ export function claudeDesktopConfig(url: string, token: string): string {
 }
 
 /**
- * Returns where claude_desktop_config.json lives for the selected operating system.
+ * Returns where claude_desktop_config.json lives for the selected operating system, or an
+ * empty string for Linux, where the file is opened from the app instead.
  *
  * @param os the selected operating system
  */
 export function claudeDesktopConfigPath(os: McpOs): string {
-  return os === 'unix'
-    ? '~/Library/Application Support/Claude/claude_desktop_config.json'
-    : '%APPDATA%\\Claude\\claude_desktop_config.json';
+  switch (os) {
+    case 'macos':
+      return '~/Library/Application Support/Claude/claude_desktop_config.json';
+    case 'linux':
+      return '';
+    default:
+      return '%APPDATA%\\Claude\\claude_desktop_config.json';
+  }
 }
 
 /**
@@ -137,11 +180,11 @@ export function claudeDesktopConfigPath(os: McpOs): string {
  * @param os the selected operating system
  */
 export function cursorConfigPath(os: McpOs): string {
-  return os === 'unix' ? '~/.cursor/mcp.json' : '%USERPROFILE%\\.cursor\\mcp.json';
+  return isPosixShell(os) ? '~/.cursor/mcp.json' : '%USERPROFILE%\\.cursor\\mcp.json';
 }
 
 /**
- * Builds the .cursor/mcp.json entry with the token in the Authorization header.
+ * Builds the Cursor mcp.json entry for a remote server with the token in the Authorization header.
  *
  * @param url the MCP server URL
  * @param token the token, or the placeholder text when the user is not logged in
@@ -149,7 +192,7 @@ export function cursorConfigPath(os: McpOs): string {
 export function cursorConfig(url: string, token: string): string {
   return JSON.stringify(
     {
-      mcpServers: { picsure: { type: 'http', url, headers: { Authorization: `Bearer ${token}` } } },
+      mcpServers: { picsure: { url, headers: { Authorization: `Bearer ${token}` } } },
     },
     null,
     2,

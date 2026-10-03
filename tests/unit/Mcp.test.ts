@@ -4,13 +4,16 @@ import {
   TOKEN_MASK,
   claudeCodeCommand,
   claudeCodeOpenCommand,
+  claudeCodeRemoveCommand,
   claudeDesktopConfig,
   claudeDesktopConfigPath,
   cursorConfigPath,
   cursorConfig,
   detectOs,
+  isPosixShell,
   maskToken,
   mcpConnectUrl,
+  shellLanguage,
   tokenEnvCommands,
 } from '$lib/utilities/Mcp';
 
@@ -27,11 +30,25 @@ describe('detectOs', () => {
   it.each([
     ['Win32', 'powershell'],
     ['Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'powershell'],
-    ['MacIntel', 'unix'],
-    ['Linux x86_64', 'unix'],
-    ['', 'unix'],
+    ['MacIntel', 'macos'],
+    ['Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Darwin', 'macos'],
+    ['Linux x86_64', 'linux'],
+    ['Mozilla/5.0 (X11; CrOS x86_64 14541.0.0)', 'linux'],
+    ['', 'macos'],
   ])('maps %j to %s', (platform, expected) => {
     expect(detectOs(platform)).toBe(expected);
+  });
+});
+
+describe('shell helpers', () => {
+  it.each([
+    ['macos', true, 'bash'],
+    ['linux', true, 'bash'],
+    ['powershell', false, 'powershell'],
+    ['cmd', false, 'cmd'],
+  ] as const)('treats %s as posix=%s with %s highlighting', (os, posix, language) => {
+    expect(isPosixShell(os)).toBe(posix);
+    expect(shellLanguage(os)).toBe(language);
   });
 });
 
@@ -48,8 +65,8 @@ describe('maskToken', () => {
 });
 
 describe('tokenEnvCommands', () => {
-  it('builds the macOS and Linux commands', () => {
-    expect(tokenEnvCommands('unix', 'T')).toEqual({
+  it.each(['macos', 'linux'] as const)('builds the %s commands', (os) => {
+    expect(tokenEnvCommands(os, 'T')).toEqual({
       session: 'export PICSURE_TOKEN="T"',
       persistent: `echo 'export PICSURE_TOKEN="T"' >> ~/.zshrc`,
     });
@@ -72,23 +89,29 @@ describe('tokenEnvCommands', () => {
 
 describe('connect commands', () => {
   it.each([
-    ['unix', '$PICSURE_TOKEN'],
+    ['macos', '${PICSURE_TOKEN:?set PICSURE_TOKEN first}'],
+    ['linux', '${PICSURE_TOKEN:?set PICSURE_TOKEN first}'],
     ['powershell', '$env:PICSURE_TOKEN'],
     ['cmd', '%PICSURE_TOKEN%'],
   ] as const)('references the variable in %s syntax', (os, reference) => {
     expect(claudeCodeCommand(os, url)).toBe(
-      `claude mcp add --transport http picsure ${url} --header "Authorization: Bearer ${reference}"`,
+      `claude mcp add --scope user --transport http picsure "${url}" --header "Authorization: Bearer ${reference}"`,
     );
   });
 
   it('builds the open access command', () => {
-    expect(claudeCodeOpenCommand(url)).toBe(`claude mcp add --transport http picsure ${url}`);
+    expect(claudeCodeOpenCommand(url)).toBe(
+      `claude mcp add --scope user --transport http picsure "${url}"`,
+    );
   });
 
-  it('puts the token in the Cursor header', () => {
+  it('removes the server from the same scope it was added to', () => {
+    expect(claudeCodeRemoveCommand()).toBe('claude mcp remove --scope user picsure');
+  });
+
+  it('puts the token in the Cursor header without a transport type', () => {
     const parsed = JSON.parse(cursorConfig(url, 'T'));
     expect(parsed.mcpServers.picsure).toEqual({
-      type: 'http',
       url,
       headers: { Authorization: 'Bearer T' },
     });
@@ -108,9 +131,10 @@ describe('claudeDesktopConfig', () => {
 
 describe('config paths', () => {
   it('gives the Claude Desktop path per operating system', () => {
-    expect(claudeDesktopConfigPath('unix')).toBe(
+    expect(claudeDesktopConfigPath('macos')).toBe(
       '~/Library/Application Support/Claude/claude_desktop_config.json',
     );
+    expect(claudeDesktopConfigPath('linux')).toBe('');
     expect(claudeDesktopConfigPath('powershell')).toBe(
       '%APPDATA%\\Claude\\claude_desktop_config.json',
     );
@@ -118,7 +142,8 @@ describe('config paths', () => {
   });
 
   it('gives the global Cursor path per operating system', () => {
-    expect(cursorConfigPath('unix')).toBe('~/.cursor/mcp.json');
+    expect(cursorConfigPath('macos')).toBe('~/.cursor/mcp.json');
+    expect(cursorConfigPath('linux')).toBe('~/.cursor/mcp.json');
     expect(cursorConfigPath('cmd')).toBe('%USERPROFILE%\\.cursor\\mcp.json');
   });
 });

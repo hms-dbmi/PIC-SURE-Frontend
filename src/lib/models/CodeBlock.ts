@@ -1,5 +1,5 @@
 export interface CodeBlockProps {
   code?: string;
   copyCode?: string;
-  lang?: 'python' | 'r' | 'bash' | 'json';
+  lang?: 'python' | 'r' | 'bash' | 'json' | 'powershell' | 'cmd';
 }

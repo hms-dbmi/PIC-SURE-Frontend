@@ -5,14 +5,16 @@
   import themeDarkPlus from 'shiki/themes/dark-plus.mjs';
   // Languages: https://shiki.style/languages
   import bash from 'shiki/langs/bash.mjs';
+  import cmd from 'shiki/langs/cmd.mjs';
   import json from 'shiki/langs/json.mjs';
+  import powershell from 'shiki/langs/powershell.mjs';
   import python from 'shiki/langs/python.mjs';
   import r from 'shiki/langs/r.mjs';
 
   const shiki = createHighlighterCoreSync({
     engine: createJavaScriptRegexEngine(),
     themes: [themeDarkPlus],
-    langs: [bash, json, python, r],
+    langs: [bash, cmd, json, powershell, python, r],
   });
 </script>
 
