@@ -7,14 +7,16 @@
   let {
     banner,
     ondismiss,
-    accessibleName,
+    untitledName = 'Site announcement',
     titleLevel = 2,
   }: {
     banner: BannerPresentation;
     ondismiss?: (event: MouseEvent) => void;
-    accessibleName?: string;
+    untitledName?: string;
     titleLevel?: 2 | 3;
   } = $props();
+
+  const titleId = $props.id();
 
   const toneClasses: Record<BannerAppearance, string> = {
     PRIMARY: 'preset-tonal-primary border-primary-500',
@@ -34,14 +36,14 @@
     ERROR: 'fa-circle-exclamation',
   };
 
-  const label = $derived(
-    accessibleName || truncate(banner.title || 'Site announcement', BANNER_LABEL_LENGTH),
+  const dismissLabel = $derived(
+    `Dismiss ${banner.title ? truncate(banner.title, BANNER_LABEL_LENGTH) : untitledName}`,
   );
-  const dismissLabel = $derived(`Dismiss ${label}`);
 </script>
 
-<article
-  aria-label={label}
+<section
+  aria-labelledby={banner.title ? titleId : undefined}
+  aria-label={banner.title ? undefined : untitledName}
   data-testid="site-banner"
   class="w-full border-b-4 px-4 py-1.5 {toneClasses[banner.appearance]}"
 >
@@ -61,9 +63,9 @@
       <div class="min-w-0">
         {#if banner.title}
           {#if titleLevel === 3}
-            <h3 class="site-banner-title">{banner.title}</h3>
+            <h3 id={titleId} class="site-banner-title">{banner.title}</h3>
           {:else}
-            <h2 class="site-banner-title">{banner.title}</h2>
+            <h2 id={titleId} class="site-banner-title">{banner.title}</h2>
           {/if}
         {/if}
         <div class="site-banner-content text-sm leading-5">
@@ -90,7 +92,7 @@
       </button>
     {/if}
   </div>
-</article>
+</section>
 
 <style>
   .site-banner-layout {
