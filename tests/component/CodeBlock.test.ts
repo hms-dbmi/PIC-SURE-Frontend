@@ -47,6 +47,14 @@ describe('CodeBlock', () => {
     expect(button.querySelector('i')).toHaveClass('fa-square-check');
   });
 
+  it('copies copyCode instead of the displayed code when it is given', async () => {
+    render(CodeBlock, { code: 'shown ••••', copyCode: 'shown secret', lang: 'bash' });
+
+    await fireEvent.click(screen.getByTestId('code-block-copy-btn'));
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('shown secret');
+  });
+
   it('keeps the idle icon when the clipboard write is rejected', async () => {
     vi.mocked(navigator.clipboard.writeText).mockRejectedValue(new Error('copy denied'));
     render(CodeBlock, { code, lang: 'python' });
