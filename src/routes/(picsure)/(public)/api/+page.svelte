@@ -243,68 +243,66 @@
     </nav>
   </div>
 
-  <div class="api-panel flex flex-col">
-    <section id="api-header" class="w-full">
-      <div class="w-[70%] mx-auto pt-12 pb-10">
-        <h1>Programmatic Access with the PIC-SURE API</h1>
-        <p class="mx-0">
-          Search data and build cohorts directly with Python, R, or any HTTP client. Build
-          reproducible cohort-building pipelines.
-        </p>
-      </div>
-    </section>
+  <section id="api-header" class="w-full">
+    <div class="w-[70%] mx-auto pt-12 pb-10">
+      <h1>Programmatic Access with the PIC-SURE API</h1>
+      <p class="mx-0">
+        Search data and build cohorts directly with Python, R, or any HTTP client. Build
+        reproducible cohort-building pipelines.
+      </p>
+    </div>
+  </section>
 
-    <section id="authentication" class="w-full flex-1">
-      <div class="w-[70%] mx-auto py-12">
-        <h2>Authentication</h2>
-        <p class="mx-0">
-          Your personal access token authenticates all programmatic requests to PIC-SURE.
-        </p>
-        <div class="flex flex-wrap gap-8 mt-4">
-          {#if loggedIn}
-            <div class="basis-[60%] grow-0 min-w-0 max-w-full">
-              <UserToken />
-            </div>
-          {:else}
-            <div class="basis-[60%] grow-0 min-w-0 max-w-full">
-              <PublicAccessKey enabled={config.branding.apiPage?.publicKeyEnabled ?? false} />
-            </div>
-          {/if}
-          <div id="capabilities" class="flex-1 min-w-64">
-            <h3 class="text-lg font-bold mb-3">What you can do</h3>
-            <ul class="space-y-3">
-              {#each capabilities as capability}
-                {@const locked = !loggedIn && capability.requiresLogin}
-                <li data-testid="capability-item" class="flex items-center gap-3">
-                  {#if locked}
-                    <i class="fa-regular fa-circle-xmark text-xl text-surface-400"></i>
-                  {:else}
-                    <i class="fa-regular fa-circle-check text-xl text-success-500"></i>
-                  {/if}
-                  <span class={locked ? 'text-surface-500' : ''}>
-                    {capability.text}{#if capability.requiresLogin}&nbsp;(Requires login){/if}
-                  </span>
-                </li>
-              {/each}
-            </ul>
-            {#if !loggedIn}
-              <hr class="my-4 border-surface-200" />
-              <p class="mx-0">
-                Looking for authorized access?
-                <a
-                  class="anchor"
-                  href="{resolve('/login')}?redirectTo=/api"
-                  data-testid="api-login-link">Login</a
-                >
-              </p>
-            {/if}
+  <section id="authentication" class="w-full">
+    <div class="w-[70%] mx-auto py-12">
+      <h2>Authentication</h2>
+      <p class="mx-0">
+        Your personal access token authenticates all programmatic requests to PIC-SURE.
+      </p>
+      <div class="flex flex-wrap gap-8 mt-4">
+        {#if loggedIn}
+          <div class="basis-[60%] grow-0 min-w-0 max-w-full">
+            <UserToken />
           </div>
+        {:else}
+          <div class="basis-[60%] grow-0 min-w-0 max-w-full">
+            <PublicAccessKey enabled={config.branding.apiPage?.publicKeyEnabled ?? false} />
+          </div>
+        {/if}
+        <div id="capabilities" class="flex-1 min-w-64">
+          <h3 class="text-lg font-bold mb-3">What you can do</h3>
+          <ul class="space-y-3">
+            {#each capabilities as capability}
+              {@const locked = !loggedIn && capability.requiresLogin}
+              <li data-testid="capability-item" class="flex items-center gap-3">
+                {#if locked}
+                  <i class="fa-regular fa-circle-xmark text-xl text-surface-400"></i>
+                {:else}
+                  <i class="fa-regular fa-circle-check text-xl text-success-500"></i>
+                {/if}
+                <span class={locked ? 'text-surface-500' : ''}>
+                  {capability.text}{#if capability.requiresLogin}&nbsp;(Requires login){/if}
+                </span>
+              </li>
+            {/each}
+          </ul>
+          {#if !loggedIn}
+            <hr class="my-4 border-surface-200" />
+            <p class="mx-0">
+              Looking for authorized access?
+              <a
+                class="anchor"
+                href="{resolve('/login')}?redirectTo=/api"
+                data-testid="api-login-link">Login</a
+              >
+            </p>
+          {/if}
         </div>
       </div>
-    </section>
-  </div>
+    </div>
+  </section>
 
-  <section id="choose-your-workflow" class="api-panel w-full bg-primary-50-950">
+  <section id="choose-your-workflow" class="w-full bg-primary-50-950">
     <div class="w-[70%] mx-auto py-12">
       <h2>Choose Your Workflow</h2>
       <p class="mx-0">Select the access method that fits your project.</p>
@@ -405,12 +403,6 @@
 </div>
 
 <style>
-  /* 100cqh = the height of the #page scroll viewport (a size container; see
-     app.css). 100vh would overshoot because the nav bar sits outside it. */
-  .api-panel {
-    min-height: 100cqh;
-  }
-
   @media (prefers-reduced-motion: no-preference) {
     :global(#page) {
       scroll-behavior: smooth;
