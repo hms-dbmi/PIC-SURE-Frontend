@@ -155,7 +155,7 @@
   #user-token-container {
     display: flex;
     justify-content: center;
-    width: 52rem;
+    width: 55rem;
     max-width: 100%;
   }
   #user-token-container #user-token {
@@ -167,7 +167,7 @@
   }
   #user-token-container #user-token section {
     width: 100%;
-    max-width: 50rem;
+    max-width: 53rem;
     grid-template-columns: min-content auto;
   }
   #user-token-container #user-token section label {

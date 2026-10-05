@@ -261,7 +261,7 @@
       </p>
       <div class="flex flex-wrap gap-8 mt-4">
         {#if loggedIn}
-          <div class="basis-[60%] grow-0 min-w-0 max-w-full">
+          <div class="basis-[55rem] grow-0 min-w-0 max-w-full">
             <UserToken />
           </div>
         {:else}
