@@ -319,7 +319,7 @@
           <div id="workflow-{workflow.id}" data-testid="workflow-{workflow.id}">
             <Accordion.Item
               value={workflow.id}
-              base="rounded-container border border-surface-200 bg-surface-50-950 data-[state=open]:border-primary-500"
+              base="rounded-container border border-surface-200 bg-white dark:bg-surface-950 data-[state=open]:border-primary-500"
               controlHover="hover:bg-surface-100-900"
               controlPadding="p-6"
               controlRounded="rounded-container"
