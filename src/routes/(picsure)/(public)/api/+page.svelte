@@ -253,7 +253,7 @@
     </div>
   </section>
 
-  <section id="authentication" class="w-full">
+  <section id="authentication" class="w-full bg-primary-50-950">
     <div class="w-[70%] mx-auto py-12">
       <h2>Authentication</h2>
       <p class="mx-0">
@@ -302,7 +302,7 @@
     </div>
   </section>
 
-  <section id="choose-your-workflow" class="w-full bg-primary-50-950">
+  <section id="choose-your-workflow" class="w-full">
     <div class="w-[70%] mx-auto py-12">
       <h2>Choose Your Workflow</h2>
       <p class="mx-0">Select the access method that fits your project.</p>
@@ -375,7 +375,7 @@
     </div>
   </section>
 
-  <section id="api-access" class="w-full">
+  <section id="api-access" class="w-full bg-primary-50-950">
     <div class="w-[70%] mx-auto py-8">
       <h2>API Access</h2>
       <p class="mx-0">Browse and use the PIC-SURE API endpoints.</p>
