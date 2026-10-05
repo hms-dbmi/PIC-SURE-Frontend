@@ -64,7 +64,7 @@
     "@types/plotly.js-basic-dist-min": "^2.12.4",
     "@types/quill": "^2.0.14",
     "@types/sanitize-html": "^2.16.1",
-    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/eslint-plugin": "^8.70.1",
     "@typescript-eslint/parser": "^8.70.1",
     "dotenv": "^17.4.2",
     "eslint": "^10.11.0",
