@@ -301,18 +301,31 @@ export async function login(token: string) {
   }
 }
 
-export async function logout(authProvider?: AuthProvider, redirect = false) {
+// A 401 or 403 from PSAMA's logout call makes api.ts start another logout, which would
+// navigate to /login a second time, so later calls share the logout already running.
+let pendingLogout: Promise<void> | undefined;
+
+export function logout(authProvider?: AuthProvider, redirect = false): Promise<void> {
+  pendingLogout ??= endSession(authProvider, redirect).finally(() => {
+    pendingLogout = undefined;
+  });
+  return pendingLogout;
+}
+
+async function endSession(authProvider: AuthProvider | undefined, redirect: boolean) {
   discardPendingConsents();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function handleErrors(error: any) {
-    console.error('Error logging out: ' + error);
+  const logError = (error: unknown) => console.error('Error logging out: ' + error);
+  const handleErrors = (error: unknown) => {
+    logError(error);
     handleLogout(redirect);
-  }
+  };
 
   if (browser) {
     const token = localStorage.getItem('token');
     if (token) {
-      await api.get(Psama.User.Logout).catch(handleErrors);
+      // Log only: the provider/redirect handling below always finishes the logout, so
+      // handling this failure too would navigate to /login twice.
+      await api.get(Psama.User.Logout).catch(logError);
       removeToken();
     }
   }
