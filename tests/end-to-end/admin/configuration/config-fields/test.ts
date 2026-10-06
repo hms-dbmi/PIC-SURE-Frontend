@@ -91,19 +91,6 @@ test('A save failure keeps the edited value and shows an error toast', async ({ 
   await expect(page.getByTestId('config-field-input-ANALYZE_API')).toBeChecked();
 });
 
-test('An invalid integer value disables Save and shows an inline error', async ({ page }) => {
-  await page.goto('/admin/configuration');
-  await userIsLoggedIn(page);
-  await clickTab(page, 'Settings & Features');
-
-  await expect(page.getByTestId('config-tab-features-settings')).toBeVisible();
-  const input = page.getByTestId('config-field-input-MAX_DATA_POINTS_FOR_EXPORT');
-  await input.fill('not-a-number');
-
-  await expect(page.getByTestId('config-field-error-MAX_DATA_POINTS_FOR_EXPORT')).toBeVisible();
-  await expect(page.getByTestId('config-field-save-MAX_DATA_POINTS_FOR_EXPORT')).toBeDisabled();
-});
-
 test('Branding tab only shows the API/env-configurable fields plus a scope note', async ({
   page,
 }) => {

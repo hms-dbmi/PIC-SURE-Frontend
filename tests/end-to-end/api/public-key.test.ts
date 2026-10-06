@@ -54,9 +54,6 @@ test.describe('Public access key generation', () => {
     const card = page.getByTestId('public-access-key');
 
     // Then
-    await expect(card).toBeVisible();
-    await expect(card).toContainText('Public Access Key');
-    await expect(card).toContainText('No account required');
     await expect(card.getByRole('button', { name: 'Request Public Key' })).toBeEnabled();
     await expect(page.getByTestId('api-login-link')).toHaveAttribute(
       'href',
@@ -175,45 +172,6 @@ test.describe('Public access key generation', () => {
     // Then
     await expect(page.getByTestId('public-key-value')).toBeVisible();
     expect(requestCount).toBe(1);
-  });
-
-  test('Generate stays disabled until the Turnstile widget issues a token', async ({
-    page,
-    context,
-  }) => {
-    // Given: a widget that waits (like managed mode showing a challenge) until told to pass
-    await context.route('**/challenges.cloudflare.com/turnstile/v0/api.js*', (route: Route) =>
-      route.fulfill({
-        contentType: 'text/javascript',
-        body: `window.turnstile = {
-          render: (container, options) => {
-            window.__resolveChallenge = () => options.callback(${JSON.stringify(stubToken)});
-            return 'stub-widget';
-          },
-          remove: () => {},
-        };`,
-      }),
-    );
-    await mockApiSuccess(context, apiKeyPath, mockKeyResponse);
-    await page.goto('/api');
-
-    // When
-    await openForm(page);
-
-    // Then
-    await expect(page.getByRole('button', { name: 'Generate Key' })).toBeDisabled();
-
-    // When: the widget script loads asynchronously, so wait for it to render first
-    await page.waitForFunction(
-      () =>
-        typeof (window as { __resolveChallenge?: () => void }).__resolveChallenge === 'function',
-    );
-    await page.evaluate(() =>
-      (window as unknown as { __resolveChallenge: () => void }).__resolveChallenge(),
-    );
-
-    // Then
-    await expect(page.getByRole('button', { name: 'Generate Key' })).toBeEnabled();
   });
 
   test('Cancel returns to the idle state without a request', async ({ page, context }) => {

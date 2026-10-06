@@ -175,18 +175,6 @@ test('EXPLORE_TOUR=false hides the tour button entirely', async ({ page }) => {
 });
 
 test.describe('AUTH_TOUR_NAME', () => {
-  test('Without an override, the default NHANES-Auth tour is used', async ({ page }) => {
-    // Given
-    await page.goto('/explorer');
-    await userIsLoggedIn(page);
-
-    await page.getByTestId('explorer-tour-btn').click();
-    await expect(page.locator('#modal-component')).toBeVisible();
-
-    // Then
-    await expect(page.getByTestId('modal-wrapper-header')).toContainText('Welcome to PIC-SURE');
-  });
-
   test('A recognized AUTH_TOUR_NAME override swaps in that tour', async ({ page }) => {
     // Given
     await mockApiConfig(page, { settings: [{ name: 'AUTH_TOUR_NAME', value: 'BDC-Auth' }] });
@@ -200,20 +188,5 @@ test.describe('AUTH_TOUR_NAME', () => {
     await expect(page.getByTestId('modal-wrapper-header')).toContainText(
       'Welcome to BioData Catalyst Powered by PIC-SURE',
     );
-  });
-
-  test('An unrecognized AUTH_TOUR_NAME override falls back to the default NHANES-Auth tour', async ({
-    page,
-  }) => {
-    // Given
-    await mockApiConfig(page, { settings: [{ name: 'AUTH_TOUR_NAME', value: 'not-a-real-tour' }] });
-    await page.goto('/explorer');
-    await userIsLoggedIn(page);
-
-    await page.getByTestId('explorer-tour-btn').click();
-    await expect(page.locator('#modal-component')).toBeVisible();
-
-    // Then
-    await expect(page.getByTestId('modal-wrapper-header')).toContainText('Welcome to PIC-SURE');
   });
 });

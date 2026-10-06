@@ -369,18 +369,6 @@ export class AdvancedFilteringPage {
     await expect(this.addGroupButton).toBeVisible();
   }
 
-  async expectNewGroupHasAndOrControls() {
-    const andOptions = this.getAllAndRadios();
-    const orOptions = this.getAllOrRadios();
-
-    const andCount = await andOptions.count();
-    const orCount = await orOptions.count();
-
-    // Should have more than one set (root + new group)
-    expect(andCount).toBeGreaterThan(1);
-    expect(orCount).toBeGreaterThan(1);
-  }
-
   async expectMultipleRadioGroups() {
     const groupCount = await this.getAllRadioGroups().count();
     expect(groupCount).toBeGreaterThan(1);

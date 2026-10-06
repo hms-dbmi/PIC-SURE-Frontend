@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
 import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../../../custom-context';
 
 import {
@@ -9,9 +9,9 @@ import {
 } from '../../../mock-data';
 import { userIsLoggedIn } from '../../../utils';
 
-const validationText = {
-  empty: /([Pp]lease )?[Ff]ill out this field.?/,
-};
+// Uses the browser's constraint validation state rather than its localized message text
+const isMissing = (field: Locator) =>
+  field.evaluate((element: HTMLInputElement | HTMLSelectElement) => element.validity.valueMissing);
 
 test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
 
@@ -90,58 +90,18 @@ test('Connection form returns error message on api fail', async ({ page }) => {
   await expect(toast).toBeVisible();
   await expect(toast).toHaveAttribute('data-type', 'error');
 });
-test('Connection form enforces required Label min length', async ({ page }) => {
+test('Connection form requires a label, ID, and sub prefix', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/connection/new');
   await userIsLoggedIn(page);
 
   // When
-  await page.getByLabel('Label').first().fill('');
-  await page.getByLabel('ID').first().fill('chocolate');
-  await page.getByLabel('Sub Prefix').fill('chocolate-bananas');
   await page.getByTestId('connection-save-btn').click();
 
   // Then
-  const empty = await page
-    .getByLabel('Label')
-    .first()
-    .evaluate((element: HTMLInputElement) => element.validationMessage);
-  expect(empty).toMatch(validationText.empty);
-});
-test('Connection form enforces required ID min length', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration/connection/new');
-  await userIsLoggedIn(page);
-
-  // When
-  await page.getByLabel('Label').first().fill('banana');
-  await page.getByLabel('ID').first().fill('');
-  await page.getByLabel('Sub Prefix').fill('chocolate-bananas');
-  await page.getByTestId('connection-save-btn').click();
-
-  // Then
-  const empty = await page
-    .getByLabel('ID')
-    .first()
-    .evaluate((element: HTMLInputElement) => element.validationMessage);
-  expect(empty).toMatch(validationText.empty);
-});
-test('Connection form enforces required Sub Prefix min length', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration/connection/new');
-  await userIsLoggedIn(page);
-
-  // When
-  await page.getByLabel('Label').first().fill('banana');
-  await page.getByLabel('ID').first().fill('chocolate');
-  await page.getByLabel('Sub Prefix').fill('');
-  await page.getByTestId('connection-save-btn').click();
-
-  // Then
-  const empty = await page
-    .getByLabel('Sub Prefix')
-    .evaluate((element: HTMLInputElement) => element.validationMessage);
-  expect(empty).toMatch(validationText.empty);
+  expect(await isMissing(page.getByLabel('Label').first())).toBe(true);
+  expect(await isMissing(page.getByLabel('ID').first())).toBe(true);
+  expect(await isMissing(page.getByLabel('Sub Prefix'))).toBe(true);
 });
 test('Clicking row takes user to edit connection form', async ({ page }) => {
   // Given

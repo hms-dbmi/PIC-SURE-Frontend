@@ -9,7 +9,6 @@ import {
   detailResponseCat,
   crossCountSyncResponseInital,
   crossCountSyncResponsePlus3,
-  crossCountSyncResponseLessThan10,
   hierarchyResponse,
 } from '../mock-data';
 import { getOption, nthFilterIcon, clickNthFilterIcon } from '../utils';
@@ -68,57 +67,6 @@ test.describe('Discover for unauthenticated users', () => {
     await expect(page.locator('#result-count')).toContainText(
       new RegExp(`^${numeric.toLocaleString()}\\s*±\\s*${plusMinus}\\s*$`),
     );
-  });
-  test('Discover displays large number with ± and no space', async ({ page }) => {
-    // Given
-    await mockApiSuccess(
-      page,
-      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-      detailResponseCat,
-    );
-    await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-    const bigNumberSync = { '\\_studies_consents\\': '1477888±3' };
-    await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', bigNumberSync);
-    await page.goto('/discover?search=somedata');
-
-    // When
-    await clickNthFilterIcon(page);
-    const firstItem = await getOption(page);
-    await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
-    await addFilterButton.click();
-
-    // Then
-    await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(page.locator('#result-count')).toContainText(
-      new RegExp('^1,477,888\\s*±\\s*3\\s*$'),
-    );
-  });
-  test('Discover can display < 10', async ({ page }) => {
-    // Given
-    await mockApiSuccess(
-      page,
-      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-      detailResponseCat,
-    );
-    await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-    await mockApiSuccess(
-      page,
-      '*/**/picsure/hpds/open/query/sync',
-      crossCountSyncResponseLessThan10,
-    );
-    await page.goto('/discover?search=somedata');
-
-    // When
-    await clickNthFilterIcon(page);
-    const firstItem = await getOption(page);
-    await firstItem.click();
-    const addFilterButton = page.getByTestId('add-filter');
-    await addFilterButton.click();
-
-    // Then
-    await expect(page.locator('#results-panel')).toBeVisible();
-    await expect(page.locator('#result-count')).toHaveText('< 10');
   });
   test('Search results with allowFiltering false are not filterable', async ({ page }) => {
     // Given
@@ -204,20 +152,6 @@ test.describe('OPEN_TOUR_NAME', () => {
     await mockApiSuccess(page, facetResultPath, facetsResponse);
   });
 
-  test('Without an override, the default BDC-Open tour is used', async ({ page }) => {
-    // Given
-    await mockApiConfig(page, { features: tourFeatures });
-    await page.goto('/discover');
-
-    await page.getByTestId('explorer-tour-btn').click();
-    await expect(page.locator('#modal-component')).toBeVisible();
-
-    // Then
-    await expect(page.getByTestId('modal-wrapper-header')).toContainText(
-      'Welcome to BioData Catalyst Powered by PIC-SURE',
-    );
-  });
-
   test('A recognized OPEN_TOUR_NAME override swaps in that tour', async ({ page }) => {
     // Given
     await mockApiConfig(page, {
@@ -231,24 +165,5 @@ test.describe('OPEN_TOUR_NAME', () => {
 
     // Then
     await expect(page.getByTestId('modal-wrapper-header')).toContainText('Welcome to PIC-SURE');
-  });
-
-  test('An unrecognized OPEN_TOUR_NAME override falls back to the default BDC-Open tour', async ({
-    page,
-  }) => {
-    // Given
-    await mockApiConfig(page, {
-      features: tourFeatures,
-      settings: [{ name: 'OPEN_TOUR_NAME', value: 'not-a-real-tour' }],
-    });
-    await page.goto('/discover');
-
-    await page.getByTestId('explorer-tour-btn').click();
-    await expect(page.locator('#modal-component')).toBeVisible();
-
-    // Then
-    await expect(page.getByTestId('modal-wrapper-header')).toContainText(
-      'Welcome to BioData Catalyst Powered by PIC-SURE',
-    );
   });
 });

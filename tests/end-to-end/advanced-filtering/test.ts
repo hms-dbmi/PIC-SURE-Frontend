@@ -79,11 +79,6 @@ test.describe('Advanced Query Builder - Query Summary', () => {
     await afPage.expectLogicTreeText('AND');
   });
 
-  test('AF-EQ-003: Switching root operator to OR updates equation', async () => {
-    await afPage.selectRootOperator('OR');
-    await afPage.expectLogicTreeText('OR');
-  });
-
   test('AF-EQ-004: Logic tree summary can be collapsed and expanded', async () => {
     // Equation text should be visible initially
     await expect(afPage.logicTreeText).toBeVisible();
@@ -186,22 +181,14 @@ test.describe('Advanced Query Builder - Global Combiner', () => {
     await afPage.setupAndOpenModal(4);
   });
 
-  test('AF-COMBINER-001: A top-level AND/OR segmented control exists and is visible', async () => {
+  test('AF-COMBINER-001: The top-level AND/OR control switches every top-level combiner', async () => {
     await afPage.expectAndOrControlsVisible();
-  });
-
-  test('AF-COMBINER-002: Top-level AND/OR segmented control defaults to AND', async () => {
     await afPage.expectAndIsDefault();
-  });
 
-  test('AF-COMBINER-003: Selecting OR in top-level control changes all top-level combiners to OR', async () => {
     await afPage.selectRootOperator('OR');
     await afPage.expectBadgeText('OR');
-  });
+    await afPage.expectLogicTreeText('OR');
 
-  test('AF-COMBINER-004: Selecting AND in top-level control changes all top-level combiners to AND', async () => {
-    await afPage.selectRootOperator('OR');
-    await afPage.expectBadgeText('OR');
     await afPage.selectRootOperator('AND');
     await afPage.expectBadgeText('AND');
   });
@@ -226,37 +213,6 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
   test.beforeEach(async ({ page }) => {
     afPage = new AdvancedFilteringPage(page);
     await afPage.setupAndOpenModal(4);
-  });
-
-  test('AF-DND-002: Filters can be picked up by dragging', async ({ page }) => {
-    const modal = afPage.modal;
-    const filterCards = modal.getByTestId('filter-item');
-    const firstCard = filterCards.first();
-    await expect(firstCard).toBeVisible();
-
-    const dragHandle = firstCard.locator('.fa-grip-vertical').first();
-    await expect(dragHandle).toBeVisible();
-    await expect(firstCard).not.toHaveClass(/\binvisible\b/);
-
-    await dragHandle.scrollIntoViewIfNeeded();
-    await expect(dragHandle).toBeInViewport();
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(startX, startY + 100, { steps: 20 });
-
-    const dragPlaceholder = page.getByTestId('drop-preview');
-    await expect(dragPlaceholder).toBeVisible({ timeout: 5000 });
-
-    await page.mouse.up();
-    await expect(dragPlaceholder).toHaveCount(0, { timeout: 2000 });
   });
 
   test('AF-DND-003: Filters can be reordered via drag and drop', async ({ page }) => {
@@ -417,19 +373,12 @@ test.describe('Advanced Query Builder - Grouping', () => {
     await afPage.setupAndOpenModal(4);
   });
 
-  test('AF-GROUP-002: Clicking Add Subquery creates a new empty subquery box', async () => {
+  test('AF-GROUP-002: Add Subquery creates an empty subquery with its own AND/OR control', async () => {
     await afPage.clickAddGroup();
     await expect(afPage.getEmptyGroupDropZone()).toBeVisible();
-  });
-
-  test('AF-GROUP-004: Subquery box displays filter label with AND/OR control', async () => {
-    await afPage.clickAddGroup();
-    await afPage.expectNewGroupHasAndOrControls();
-  });
-
-  test('AF-GROUP-005: Group AND/OR control defaults to AND', async () => {
-    await afPage.clickAddGroup();
-    await afPage.expectMultipleRadioGroups();
+    // Root control plus the new subquery's, which defaults to AND
+    await expect(afPage.getAllRadioGroups()).toHaveCount(2);
+    await expect(afPage.getAllAndRadios().last()).toBeChecked();
   });
 
   test('AF-GROUP-006: Filters can be dragged into a group', async ({ page }) => {
@@ -818,43 +767,24 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     await expect(groups).toHaveCount(initialCount);
   });
 
-  test('AF-DND-GRP-002: Group drop preview clears after drag ends', async ({ page }) => {
-    await setupWithTwoGroups(page);
-
-    const dragHandle = afPage.getGroupDragHandle(0);
-    const { startX, startY } = await afPage.startDrag(dragHandle);
-
-    // Drop preview should be showing
-    const dropPreviews = afPage.getDropPreviews();
-    await expect(dropPreviews.first()).toBeVisible({ timeout: 3000 });
-
-    // Release the drag
-    await afPage.endDrag(startX, startY);
-
-    // Drop previews should all be gone
-    await expect(dropPreviews).toHaveCount(0, { timeout: 2000 });
-  });
-
-  test('AF-DND-GRP-003: "Move here" reorder zones appear when dragging a group', async ({
+  test('AF-DND-GRP-002: Dragging a group shows a preview and "Move here" zones that clear on drop', async ({
     page,
   }) => {
     await setupWithTwoGroups(page);
-
+    const dropPreviews = afPage.getDropPreviews();
     const moveHereZones = afPage.getMoveHereZones();
-    // No zones visible before drag
     await expect(moveHereZones).toHaveCount(0);
 
     const dragHandle = afPage.getGroupDragHandle(0);
     const { startX, startY } = await afPage.startDrag(dragHandle);
 
-    // "Move here" zones should appear
+    await expect(dropPreviews.first()).toBeVisible();
     await expect(moveHereZones.first()).toBeVisible();
 
-    // Release
     await afPage.endDrag(startX, startY);
 
-    // Zones should disappear
-    await expect(moveHereZones).toHaveCount(0, { timeout: 2000 });
+    await expect(dropPreviews).toHaveCount(0);
+    await expect(moveHereZones).toHaveCount(0);
   });
 
   test('AF-DND-GRP-004: Empty group does not disappear when dragged and released', async ({

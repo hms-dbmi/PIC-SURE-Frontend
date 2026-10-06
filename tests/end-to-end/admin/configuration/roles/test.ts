@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
 import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../../../custom-context';
 
 import {
@@ -11,9 +11,9 @@ import {
 } from '../../../mock-data';
 import { userIsLoggedIn } from '../../../utils';
 
-const validationText = {
-  empty: /([Pp]lease )?[Ff]ill out this field.?/,
-};
+// Uses the browser's constraint validation state rather than its localized message text
+const isMissing = (field: Locator) =>
+  field.evaluate((element: HTMLInputElement | HTMLSelectElement) => element.validity.valueMissing);
 
 test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
 
@@ -101,37 +101,17 @@ test('Role form returns error message on api fail', async ({ page }) => {
   await expect(toast).toBeVisible();
   await expect(toast).toHaveAttribute('data-type', 'error');
 });
-test('Role form enforces required name length', async ({ page }) => {
+test('Role form requires a name and description', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/role/new');
   await userIsLoggedIn(page);
 
   // When
-  await page.getByLabel('Name').fill('');
-  await page.getByLabel('Description').fill('walnut');
   await page.getByRole('button', { name: 'Save' }).click();
 
   // Then
-  const empty = await page
-    .getByLabel('Name')
-    .evaluate((element: HTMLInputElement) => element.validationMessage);
-  expect(empty).toMatch(validationText.empty);
-});
-test('Role form enforces required description length', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration/role/new');
-  await userIsLoggedIn(page);
-
-  // When
-  await page.getByLabel('Name').fill('coconut');
-  await page.getByLabel('Description').fill('');
-  await page.getByRole('button', { name: 'Save' }).click();
-
-  // Then
-  const empty = await page
-    .getByLabel('Description')
-    .evaluate((element: HTMLInputElement) => element.validationMessage);
-  expect(empty).toMatch(validationText.empty);
+  expect(await isMissing(page.getByLabel('Name'))).toBe(true);
+  expect(await isMissing(page.getByLabel('Description'))).toBe(true);
 });
 test('Role form enforces required at least one selected privilege', async ({ page }) => {
   // Given

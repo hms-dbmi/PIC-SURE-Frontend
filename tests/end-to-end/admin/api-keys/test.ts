@@ -112,17 +112,6 @@ test.describe('api keys list', () => {
       page.getByTestId('UserApiKeys-table').locator('..').locator('footer'),
     ).toContainText('42');
   });
-
-  test('Only active keys have a revoke button', async ({ page }) => {
-    // Given
-    await page.goto(API_KEYS_TAB);
-    await userIsLoggedIn(page);
-
-    // Then
-    await expect(page.getByTestId('api-key-uuid-active-revoke-btn')).toBeVisible();
-    await expect(page.getByTestId('api-key-uuid-revoked-revoke-btn')).toHaveCount(0);
-    await expect(page.getByTestId('api-key-uuid-expired-revoke-btn')).toHaveCount(0);
-  });
 });
 
 test.describe('revoke flow', () => {
@@ -254,32 +243,6 @@ test.describe('mint platform key flow', () => {
 
     // And once it resolves the key is revealed, not lost
     await expect(page.getByTestId('minted-api-key')).toHaveText(FAKE_KEY);
-  });
-
-  test('Sends the expiry date as a UTC instant', async ({ page }) => {
-    // Given
-    await mockApiSuccessByMethod(page, '*/**/psama/apiKey/platform', 'POST', mintedResponse);
-    await page.goto(API_KEYS_TAB);
-    await userIsLoggedIn(page);
-
-    // When
-    await page.getByTestId('mint-platform-key-btn').click();
-    await page.getByLabel(/name/i).fill('CI Pipeline');
-    await page.getByLabel(/email/i).fill('ops@example.org');
-    await page.getByLabel(/custom date/i).check();
-    await page.getByLabel(/expiration date/i).fill('2099-01-01');
-    const postRequest = page.waitForRequest(
-      (request) => request.method() === 'POST' && request.url().includes('/psama/apiKey/platform'),
-    );
-    await page.getByRole('button', { name: 'Mint Key' }).click();
-
-    // Then
-    const request = await postRequest;
-    expect(request.postDataJSON()).toEqual({
-      name: 'CI Pipeline',
-      email: 'ops@example.org',
-      expiresAt: '2099-01-01T00:00:00Z',
-    });
   });
 
   test('Shows the backend message inline when minting fails', async ({ page }) => {

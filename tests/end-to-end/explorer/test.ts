@@ -37,15 +37,6 @@ test.describe('Explorer for authenticated users', () => {
 
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
-  test('Has filters, and searchbar', async ({ page }) => {
-    // Given
-    await page.goto('/explorer');
-    await userIsLoggedIn(page);
-
-    // Then
-    await expect(page.locator('#search-bar')).toBeVisible();
-    await expect(page.locator('#facet-side-bar')).toBeVisible();
-  });
   test('Has filters, and searchbar when a search is from the landing page', async ({ page }) => {
     // Given
     await page.goto('/');

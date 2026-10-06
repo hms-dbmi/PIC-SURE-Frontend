@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
 import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../../../custom-context';
 
 import {
@@ -9,10 +9,9 @@ import {
 } from '../../../mock-data';
 import { userIsLoggedIn } from '../../../utils';
 
-const validationText = {
-  empty: /([Pp]lease )?[Ff]ill out this field.?/,
-  option: /([Pp]lease )?[Ss]elect an item in the list.?/,
-};
+// Uses the browser's constraint validation state rather than its localized message text
+const isMissing = (field: Locator) =>
+  field.evaluate((element: HTMLInputElement | HTMLSelectElement) => element.validity.valueMissing);
 
 test.use({ storageState: 'tests/end-to-end/.auth/superUser.json' });
 
@@ -97,55 +96,18 @@ test('Privileges form returns error message on api fail', async ({ page }) => {
   await expect(toast).toBeVisible();
   await expect(toast).toHaveAttribute('data-type', 'error');
 });
-test('Privileges form enforces required name length', async ({ page }) => {
+test('Privileges form requires a name, description, and application', async ({ page }) => {
   // Given
   await page.goto('/admin/configuration/privilege/new');
   await userIsLoggedIn(page);
 
   // When
-  await page.getByLabel('Name').fill('');
-  await page.getByLabel('Description').fill('walnut');
-  await page.getByLabel('Application').selectOption({ label: mockApps[0].name });
   await page.getByRole('button', { name: 'Save' }).click();
 
   // Then
-  const empty = await page
-    .getByLabel('Name')
-    .evaluate((element: HTMLInputElement) => element.validationMessage);
-  expect(empty).toMatch(validationText.empty);
-});
-test('Privileges form enforces required description length', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration/privilege/new');
-  await userIsLoggedIn(page);
-
-  // When
-  await page.getByLabel('Name').fill('coconut');
-  await page.getByLabel('Description').fill('');
-  await page.getByLabel('Application').selectOption({ label: mockApps[0].name });
-  await page.getByRole('button', { name: 'Save' }).click();
-
-  // Then
-  const empty = await page
-    .getByLabel('Description')
-    .evaluate((element: HTMLInputElement) => element.validationMessage);
-  expect(empty).toMatch(validationText.empty);
-});
-test('Privileges form enforces application selection', async ({ page }) => {
-  // Given
-  await page.goto('/admin/configuration/privilege/new');
-  await userIsLoggedIn(page);
-
-  // When
-  await page.getByLabel('Name').fill('coconut');
-  await page.getByLabel('Description').fill('walnut');
-  await page.getByRole('button', { name: 'Save' }).click();
-
-  // Then
-  const noOption = await page
-    .getByLabel('Application')
-    .evaluate((element: HTMLSelectElement) => element.validationMessage);
-  expect(noOption).toMatch(validationText.option);
+  expect(await isMissing(page.getByLabel('Name'))).toBe(true);
+  expect(await isMissing(page.getByLabel('Description'))).toBe(true);
+  expect(await isMissing(page.getByLabel('Application'))).toBe(true);
 });
 test('Clicking row takes user to edit priviledge form', async ({ page }) => {
   // Given

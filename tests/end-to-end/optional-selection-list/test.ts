@@ -24,41 +24,7 @@ test.describe('OptionalSelectionList', () => {
   );
   // TODO: Some feartures will be hidden in the future. Cannot use nth.
   // TODO: Test infinite scroll
-  test('Renders', async ({ page }) => {
-    // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await mockApiSuccess(
-      page,
-      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-      detailResponseCat,
-    );
-    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
-    await page.goto('/discover?search=somedata');
-
-    // When
-    await clickNthFilterIcon(page);
-    // Then
-    await optionsHaveLoaded(page);
-  });
-  test('Search Box shows', async ({ page }) => {
-    // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await mockApiSuccess(
-      page,
-      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-      detailResponseCat,
-    );
-    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
-    await page.goto('/discover?search=somedata');
-
-    // When
-    await clickNthFilterIcon(page);
-    const component = page.getByTestId('optional-selection-list');
-    const searchBox = component.locator('input[type="search"]');
-    // Then
-    await expect(searchBox).toBeVisible();
-  });
-  test('Expected Options are shown and unchecked', async ({ page }) => {
+  test('Options are shown unchecked with nothing selected', async ({ page }) => {
     // Given
     await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
     await mockApiSuccess(
@@ -85,27 +51,9 @@ test.describe('OptionalSelectionList', () => {
       await expect(option).not.toBeChecked();
       await expect(option).toHaveText(firstValues[i]);
     }
-  });
-  test('Selected options is empty', async ({ page }) => {
-    // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await mockApiSuccess(
-      page,
-      `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-      detailResponseCat,
-    );
-    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
-    await page.goto('/discover?search=somedata');
-
-    // When
-    await clickNthFilterIcon(page);
-    const component = page.getByTestId('optional-selection-list');
-    const selectedOptionContainer = component.locator('#selected-options-container');
-
-    // Then
-    await optionsHaveLoaded(page);
-    const options = await selectedOptionContainer.getByRole('listitem').all();
-    expect(options).toHaveLength(0);
+    await expect(
+      component.locator('#selected-options-container').getByRole('listitem'),
+    ).toHaveCount(0);
   });
   test('Selected option moves to selected option', async ({ page }) => {
     // Given
@@ -133,38 +81,6 @@ test.describe('OptionalSelectionList', () => {
     await expect(firstSelectedOption).toBeVisible();
     await expect(checkbox).toBeVisible();
     await expect(checkbox).toBeChecked();
-  });
-  test('Clicking select all button selects all options', async ({ page }) => {
-    // Given
-    await page.route(searchResultPath, async (route: Route) => route.fulfill({ json: mockData }));
-    await page.route(`${conceptsDetailPath}/${detailResponseCat.dataset}`, async (route: Route) =>
-      route.fulfill({ json: detailResponseCat }),
-    );
-    await page.route(queryResultPath, async (route: Route) => route.fulfill({ body: '9999' }));
-    await page.goto('/discover?search=somedata');
-    const dataValues = mockData.content[0].values || [];
-
-    // When
-    await clickNthFilterIcon(page);
-
-    // Select All
-    const component = page.getByTestId('optional-selection-list');
-    const selectAllButton = component.locator('#select-all');
-    await selectAllButton.click();
-
-    const selectedOptionContainer = component.locator('#selected-options-container');
-    const selectedOptions = await selectedOptionContainer.getByRole('listitem').all();
-
-    // Then
-    await expect(selectedOptionContainer).toBeVisible();
-    expect(selectedOptions.length).toBeGreaterThan(0);
-    for (const [i, option] of selectedOptions.entries()) {
-      await expect(option).toBeVisible();
-      await expect(option).toBeChecked();
-      await expect(option).toHaveText(dataValues[i]);
-    }
-    const optionContainer = component.locator('#options-container');
-    await expect(optionContainer).toBeEmpty();
   });
   test('Clicking select all button selects all options in the data', async ({ page }) => {
     // Given

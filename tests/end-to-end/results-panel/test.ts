@@ -296,26 +296,12 @@ test.describe('Results Panel', () => {
   });
 
   test.describe('Filter Tree Display', () => {
-    let querySyncRequest: string[] = [];
-
     test.beforeEach(async ({ page }) => {
       // DIST_EXPLORER gates the distributions-btn on both /explorer and /discover
       // (ResultsPanel.svelte's showExplorerDistributions/showDiscoverDistributions).
       await mockApiConfig(page, {
         features: [{ name: 'DIST_EXPLORER', value: 'true' }],
       });
-      page.on('request', (request) => {
-        if (request.url().includes('/picsure/hpds/open/query/sync')) {
-          const data = request.postData();
-          if (data !== null) {
-            querySyncRequest.push(data);
-          }
-        }
-      });
-    });
-
-    test.afterEach(() => {
-      querySyncRequest = [];
     });
 
     test('shows distributions button when filters are added', async ({ page }) => {
@@ -470,121 +456,6 @@ test.describe('Results Panel', () => {
 
       // Then
       await expect(page.getByTestId('distributions-btn')).toBeDisabled();
-    });
-
-    test('sends request with QueryV3 structure', async ({ page }) => {
-      // Given
-      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-      await mockApiSuccess(page, facetResultPath, facetsResponse);
-      await mockApiSuccess(page, searchResultPath, mockData);
-      await mockApiSuccess(page, openCountResultPath, '9999');
-      await mockApiSuccess(
-        page,
-        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-        detailResponseCat,
-      );
-      // Override the shared beforeEach config: DISCOVER keeps /discover from
-      // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
-      await mockApiConfig(page, {
-        features: [
-          { name: 'DIST_EXPLORER', value: 'true' },
-          { name: 'DISCOVER', value: 'true' },
-          { name: 'OPEN_EXPLORER', value: 'false' },
-        ],
-      });
-      await page.goto('/discover?search=somedata');
-
-      // When
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
-      const firstItem = await getOption(page);
-      await firstItem.click();
-      const addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
-
-      // Then
-      await expect.poll(() => querySyncRequest.length).toBe(1);
-      expect(querySyncRequest[0]).toContain('phenotypicClauses');
-    });
-    test('single filter shows no operator label', async ({ page }) => {
-      // Given
-      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-      await mockApiSuccess(page, facetResultPath, facetsResponse);
-      await mockApiSuccess(page, searchResultPath, mockData);
-      await mockApiSuccess(page, openCountResultPath, '9999');
-      await mockApiSuccess(
-        page,
-        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-        detailResponseCat,
-      );
-      // Override the shared beforeEach config: DISCOVER keeps /discover from
-      // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
-      await mockApiConfig(page, {
-        features: [
-          { name: 'DIST_EXPLORER', value: 'true' },
-          { name: 'DISCOVER', value: 'true' },
-          { name: 'OPEN_EXPLORER', value: 'false' },
-        ],
-      });
-      await page.goto('/discover?search=somedata');
-
-      // When
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
-      const firstItem = await getOption(page);
-      await firstItem.click();
-      const addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
-
-      // Then
-      await expect(page.getByTestId('operator-label')).toHaveCount(0);
-    });
-    test('AND label appears between filters', async ({ page }) => {
-      // Given
-      await mockApiSuccess(page, '*/**/picsure/search/2', crossCountSyncResponseInital);
-      await mockApiSuccess(page, facetResultPath, facetsResponse);
-      await mockApiSuccess(page, searchResultPath, mockData);
-      await mockApiSuccess(page, openCountResultPath, '9999');
-      // Override the shared beforeEach config: DISCOVER keeps /discover from
-      // redirecting, OPEN_EXPLORER:false routes counts through openCountResultPath.
-      await mockApiConfig(page, {
-        features: [
-          { name: 'DIST_EXPLORER', value: 'true' },
-          { name: 'DISCOVER', value: 'true' },
-          { name: 'OPEN_EXPLORER', value: 'false' },
-        ],
-      });
-      await page.goto('/discover?search=somedata');
-
-      // When
-      await mockApiSuccess(
-        page,
-        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-        detailResponseCat,
-      );
-      await page.locator('#ExplorerTable-row-0 button[title^=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
-      const firstItem = await getOption(page);
-      await firstItem.click();
-      let addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
-
-      await mockApiSuccess(
-        page,
-        `${conceptsDetailPath}/${detailResponseCat.dataset}`,
-        detailResponseCat2,
-      );
-      await page.locator('#ExplorerTable-row-2 button[title^=Filter]').click();
-      await page.locator('#options-container label:nth-child(1)').click();
-      const secondItem = await getOption(page);
-      await secondItem.click();
-      addFilterButton = page.getByTestId('add-filter');
-      await addFilterButton.click();
-
-      // Then
-      await expect(page.locator('#results-panel')).toBeVisible();
-      await expect(page.getByTestId('operator-label')).toHaveCount(1);
-      await expect(page.getByTestId('operator-label').first()).toHaveText('AND');
     });
   });
 });

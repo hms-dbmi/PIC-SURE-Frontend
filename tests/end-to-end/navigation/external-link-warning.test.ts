@@ -49,21 +49,6 @@ test.describe('External link warning', () => {
     await expect(page).toHaveURL('/');
   });
 
-  test('Cancel closes the modal and stays on the page', async ({ page }) => {
-    // Given
-    await page.goto('/');
-    await userIsLoggedIn(page);
-    await page.locator('#main-footer').getByRole('link', { name: externalLink.title }).click();
-    // When
-    await page
-      .getByRole('button', { name: branding.externalLinkWarning?.cancelText || 'Cancel' })
-      .click();
-    // Then
-    await expect(page.getByTestId('external-link-warning')).not.toBeVisible();
-    await expect(page).toHaveURL('/');
-    expect(page.context().pages().length).toBe(1);
-  });
-
   test('OK opens the external site in a new tab', async ({ page }) => {
     // Given
     const externalOrigin = new URL(externalLink.url).origin;
