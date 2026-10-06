@@ -85,8 +85,13 @@ export default [
             'Wait for a condition (a web-first assertion, expect.poll, waitForRequest) instead of a fixed sleep.',
         },
         {
-          selector:
-            "ExpressionStatement > CallExpression[callee.name='expect'], ExpressionStatement > AwaitExpression > CallExpression[callee.name='expect']",
+          // expect(x), expect.soft(x) or expect.poll(fn) used as a statement, with no matcher
+          selector: [
+            "ExpressionStatement > CallExpression[callee.name='expect']",
+            "ExpressionStatement > AwaitExpression > CallExpression[callee.name='expect']",
+            "ExpressionStatement > CallExpression[callee.object.name='expect'][callee.property.name=/^(soft|poll)$/]",
+            "ExpressionStatement > AwaitExpression > CallExpression[callee.object.name='expect'][callee.property.name=/^(soft|poll)$/]",
+          ].join(', '),
           message: 'expect(...) without a matcher asserts nothing.',
         },
       ],

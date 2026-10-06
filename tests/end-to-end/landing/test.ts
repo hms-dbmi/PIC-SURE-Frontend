@@ -1,4 +1,5 @@
-import { expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { expect, type BrowserContext } from '@playwright/test';
 import { test, mockApiSuccess, mockApiFail, mockApiConfig } from '../custom-context';
 import {
   searchResults as mockSearchResults,
@@ -139,12 +140,18 @@ test.describe('Landing page', () => {
         });
       });
 
-    test('Loads authenticated stats when only the login token is restored', async ({ context }) => {
-      // A second page in the fixture context keeps its mocks and the stored token; this init
-      // script runs after the fixture's and drops the sessionStorage user it injects.
-      const page = await context.newPage();
-      await page.addInitScript(() => sessionStorage.removeItem('user'));
-      try {
+    test.describe('with only the login token restored', () => {
+      // The generalUser state minus its stored user, so the fixture has no user to put in
+      // sessionStorage and the app starts from the token alone.
+      const tokenOnlyState = JSON.parse(
+        readFileSync('tests/end-to-end/.auth/generalUser.json', 'utf-8'),
+      ) as Awaited<ReturnType<BrowserContext['storageState']>>;
+      for (const origin of tokenOnlyState.origins) {
+        origin.localStorage = origin.localStorage.filter(({ name }) => name !== 'user');
+      }
+      test.use({ storageState: tokenOnlyState });
+
+      test('Loads authenticated stats', async ({ page }) => {
         await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
         await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
         await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: mockConsents });
@@ -165,9 +172,7 @@ test.describe('Landing page', () => {
           datasets.facets.filter((facet) => facet.count > 0).length.toLocaleString(),
         );
         await expect(page.getByTestId('toast-root')).not.toBeVisible();
-      } finally {
-        await page.close();
-      }
+      });
     });
   });
   test.describe('Actions', () => {

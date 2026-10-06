@@ -247,7 +247,7 @@ test.describe('Results Panel', () => {
 
     await expect(exportButton).toBeVisible();
     await expect(exportButton).toBeDisabled();
-    expect(heldRequests).toBeGreaterThan(0);
+    await expect.poll(() => heldRequests).toBeGreaterThan(0);
     // Then the button enables once the count arrives
     releaseCount();
     await expect(page.locator('#result-count-number')).toBeVisible();
