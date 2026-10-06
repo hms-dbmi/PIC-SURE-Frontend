@@ -8,6 +8,8 @@ import {
   searchResultPath,
   geneValues,
   geneValuesPage2,
+  facetResultPath,
+  facetsResponse,
 } from '../mock-data';
 import { getOption, clickNthFilterIcon, optionsHaveLoaded, userIsLoggedIn } from '../utils';
 
@@ -16,12 +18,12 @@ const queryResultPath = '*/**/picsure/hpds/auth/query/sync';
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
 test.describe('OptionalSelectionList', () => {
-  test.beforeEach(
-    async ({ page }) =>
-      // DISCOVER is required because every test here navigates to /discover; the
-      // (public) layout guard redirects to /explorer when it's off.
-      await mockApiConfig(page, { features: [{ name: 'DISCOVER', value: 'true' }] }),
-  );
+  test.beforeEach(async ({ page }) => {
+    // DISCOVER is required because every test here navigates to /discover; the
+    // (public) layout guard redirects to /explorer when it's off.
+    await mockApiConfig(page, { features: [{ name: 'DISCOVER', value: 'true' }] });
+    await mockApiSuccess(page, facetResultPath, facetsResponse);
+  });
   // TODO: Some feartures will be hidden in the future. Cannot use nth.
   // TODO: Test infinite scroll
   test('Options are shown unchecked with nothing selected', async ({ page }) => {
