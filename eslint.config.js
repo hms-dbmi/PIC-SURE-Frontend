@@ -68,6 +68,30 @@ export default [
       sourceType: 'commonjs',
     },
   },
+  {
+    // Typed linting is limited to tests to keep the rest of lint fast.
+    files: ['tests/**/*.ts', 'src/**/*.test.ts'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.property.name='waitForTimeout']",
+          message:
+            'Wait for a condition (a web-first assertion, expect.poll, waitForRequest) instead of a fixed sleep.',
+        },
+        {
+          selector:
+            "ExpressionStatement > CallExpression[callee.name='expect'], ExpressionStatement > AwaitExpression > CallExpression[callee.name='expect']",
+          message: 'expect(...) without a matcher asserts nothing.',
+        },
+      ],
+    },
+  },
   ...svelte.configs['flat/prettier'],
   {
     files: ['**/*.svelte.js', '**/*.svelte.ts'],

@@ -15,6 +15,8 @@ test.describe('Filter warning navigation', () => {
     await mockApiSuccess(page, '*/**/picsure/hpds/open/query/sync', {
       '\\_studies_consents\\': 100,
     });
+    // The app may refresh the signed-in user; answer with nothing new so it keeps the stored one
+    await mockApiSuccess(page, '*/**/psama/user/me?hasToken', {});
   });
 
   test('warns before moving from Discover to Explore with an unconsented filter', async ({

@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { test, mockApiConfig } from '../custom-context';
+import { test, mockApiConfig, mockApiSuccess } from '../custom-context';
 
 const registry = [
   { name: 'operations', title: 'Operations', url: 'https://unexpected.example/operations' },
@@ -342,6 +342,8 @@ test.describe('API documentation for signed-in visitors', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
   test('shows docs without the public notice or request execution', async ({ page }) => {
     await mockDocuments(page);
+    // The app may refresh the signed-in user; answer with nothing new so it keeps the stored one
+    await mockApiSuccess(page, '*/**/psama/user/me?hasToken', {});
     const documentHeaders = await collectDocumentHeaders(page);
     const response = await page.goto('/api#api-access');
     expect(await response?.text()).not.toContain('data-testid="api-public-notice"');

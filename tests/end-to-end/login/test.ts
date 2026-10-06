@@ -4,6 +4,7 @@ import type { Branding } from '#lib/models/Configuration.ts';
 import brandingJson from '../../../src/lib/assets/configuration.json' with { type: 'json' };
 import {
   mockBanner,
+  mockConsents,
   mockToken,
   picsureUser,
   searchResultPath,
@@ -180,7 +181,7 @@ test.describe('Login page', () => {
       const urlMatcher = RegExp('^' + url);
 
       // Given
-      mockHTMLBodySuccess(page, urlMatcher, '<h1>Some IDP Login Page</h1>');
+      await mockHTMLBodySuccess(page, urlMatcher, '<h1>Some IDP Login Page</h1>');
       await page.goto('/login');
 
       // When
@@ -203,6 +204,7 @@ test.describe('Login redirect preserves search state', () => {
     await mockApiSuccess(page, '*/**/psama/authentication/auth0', picsureUser);
     await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
     await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
+    await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: mockConsents });
     await page.route(searchResultPath, async (route: Route) =>
       route.fulfill({ json: searchResults }),
     );

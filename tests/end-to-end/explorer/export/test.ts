@@ -1,5 +1,5 @@
 import { expect, type Route, type Page } from '@playwright/test';
-import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
+import { test, mockApiSuccess, mockApiConfig, mockQuerySync } from '../../custom-context';
 import {
   conceptTreePath,
   conceptsDetailPath,
@@ -477,17 +477,8 @@ test.describe('Export Page', () => {
     await expect(page).toHaveURL('/explorer/export');
 
     // Now set up mocks for the sample IDs checkbox AFTER the page is loaded
-    // Unroute the existing count route and set up our own
     await page.unroute(countResultPath);
-    await page.route(countResultPath, async (route) => {
-      const request = route.request();
-      const postData = request.postDataJSON();
-      if (postData?.query?.expectedResultType === 'CROSS_COUNT') {
-        await route.fulfill({ json: crossCountResponse });
-      } else {
-        await route.fulfill({ body: '9999' });
-      }
-    });
+    await mockQuerySync(page, { CROSS_COUNT: crossCountResponse, COUNT: '9999' });
 
     // Mock the genomic concepts search (page_size=10000 is used for sample IDs)
     await page.route(searchResultPathForSampleIds, async (route) => {

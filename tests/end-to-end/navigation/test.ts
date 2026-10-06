@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { test, mockApiConfig } from '../custom-context';
+import { test, mockApiConfig, mockApiSuccess } from '../custom-context';
 import { picsureUser } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
 
@@ -29,6 +29,7 @@ test.describe('Any logged in user', () => {
     await mockApiConfig(page, {
       features: [{ name: 'OPEN', value: 'true' }],
     });
+    await mockApiSuccess(page, '*/**/psama/logout', {});
     await page.goto('/');
     await userIsLoggedIn(page);
   });
@@ -80,6 +81,7 @@ roleLandings.forEach(({ userType, path, hidden }) => {
 
     test(`Marks ${path} as the current page after login`, async ({ page }) => {
       await mockApiConfig(page);
+      await mockApiSuccess(page, '*/**/psama/user', []);
 
       await page.goto(path);
       await userIsLoggedIn(page);

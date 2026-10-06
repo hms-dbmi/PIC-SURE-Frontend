@@ -1,6 +1,12 @@
 import { expect } from '@playwright/test';
 import { test, mockApiSuccess, mockApiConfig } from '../../custom-context';
-import { searchResults, facetsResponse, searchResultPath, facetResultPath } from '../../mock-data';
+import {
+  searchResults,
+  facetsResponse,
+  searchResultPath,
+  facetResultPath,
+  geneValues,
+} from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -42,6 +48,7 @@ test.describe('Single-flag branches', () => {
         { name: 'ENABLE_SNP_QUERY', value: 'false' },
       ],
     });
+    await mockApiSuccess(page, '*/**/picsure/hpds/auth/search/values?*', geneValues);
     await page.goto('/explorer');
     await userIsLoggedIn(page);
 

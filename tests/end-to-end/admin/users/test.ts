@@ -6,7 +6,12 @@ import {
   mockApiFail,
   mockApiConfig,
 } from '../../custom-context';
-import { users as mockUsers, connections as mockConns, roles as mockRoles } from '../../mock-data';
+import {
+  users as mockUsers,
+  connections as mockConns,
+  roles as mockRoles,
+  privileges as mockPrivileges,
+} from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
 
 const validationText = {
@@ -23,6 +28,9 @@ test.describe('users', () => {
     await mockApiSuccess(context, '*/**/psama/user', mockUsers);
     await mockApiSuccess(context, '*/**/psama/role', mockRoles);
     await mockApiSuccess(context, '*/**/psama/connection', mockConns);
+    for (const privilege of mockPrivileges) {
+      await mockApiSuccess(context, `*/**/psama/privilege/${privilege.uuid}`, privilege);
+    }
   });
   test('Has Add user button', async ({ page }) => {
     // Given

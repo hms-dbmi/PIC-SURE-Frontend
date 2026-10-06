@@ -33,6 +33,13 @@ test.beforeEach(async ({ page }) => {
   });
   await mockApiSuccess(page, searchResultPath, mockData);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
+  // Adding a filter looks up the concept's details in the background; answer with the
+  // matching search result. Tests that need richer details register their own route.
+  await page.route(`${conceptsDetailPath}/*`, (route: Route) =>
+    route.fulfill({
+      json: mockData.content.find(({ conceptPath }) => conceptPath === route.request().postData()),
+    }),
+  );
 });
 
 test.describe('Add Filters', () => {
@@ -758,6 +765,7 @@ test.describe('Query V3 OR features', () => {
   });
   test('sends request with QueryV3 structure', async ({ page }) => {
     // Given
+    await mockApiSuccess(page, countResultPath, '9999');
     await mockApiSuccess(
       page,
       `${conceptsDetailPath}/${detailResponseCat.dataset}`,

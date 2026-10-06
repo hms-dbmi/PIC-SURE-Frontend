@@ -41,8 +41,8 @@ function mockDictionaryAPI(
 
 test.beforeEach(async ({ page }) => {
   await mockApiConfig(page);
-  mockDictionaryAPI(page, `${conceptsDetailPath}/*`, datasetDetails.concepts);
-  mockDictionaryAPI(page, `${conceptTreePath}/*`, datasetDetails.tree);
+  await mockDictionaryAPI(page, `${conceptsDetailPath}/*`, datasetDetails.concepts);
+  await mockDictionaryAPI(page, `${conceptTreePath}/*`, datasetDetails.tree);
   await mockApiSuccess(page, facetResultPath, facetsResponse);
   await mockApiSuccess(page, '*/**/picsure/hpds/auth/query/sync', '9999');
 });
@@ -273,6 +273,7 @@ test.describe('dataset/[uuid]', () => {
   test('Back button is visible and navigates to /dataset', async ({ page }) => {
     // Given
     await mockApiSuccess(page, `${datasetPath}/${mockData[0].uuid}`, mockData[0]);
+    await mockApiSuccess(page, datasetPath, mockData);
     await page.goto(`/dataset/${mockData[0].uuid}`);
     await userIsLoggedIn(page);
     await page.waitForSelector('[data-testid="dataset-summary-container"]');

@@ -347,7 +347,7 @@ test.describe('Logged in', () => {
 
     test('Admin can edit and publish terms', async ({ page }) => {
       // Given
-      mockHTMLBodySuccess(page, Psama.Update, '');
+      await mockHTMLBodySuccess(page, Psama.Update, '');
       await gotoTermsEditor(page);
       await expect(page.getByTestId('top-admin-only-error')).toHaveCount(0);
 

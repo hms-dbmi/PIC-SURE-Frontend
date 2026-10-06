@@ -7,6 +7,7 @@ import {
   searchResultPath,
   tourSearchResults as mockData,
   conceptsDetailPath,
+  hierarchyResponse,
 } from '../../mock-data';
 import { userIsLoggedIn } from '../../utils';
 
@@ -97,6 +98,7 @@ test('Tour Finishes', async ({ page }) => {
   await page.route(`${conceptsDetailPath}/${detailResponseCat.dataset}`, async (route: Route) =>
     route.fulfill({ json: detailResponseCat }),
   );
+  await mockApiSuccess(page, '*/**/picsure/dictionary/concepts/hierarchy/*', hierarchyResponse);
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await page.getByTestId('explorer-tour-btn').click();
@@ -121,6 +123,7 @@ test('Tour Finishes for BDC-Auth, with every step highlighting a real element', 
   await page.route(`${conceptsDetailPath}/${detailResponseCat.dataset}`, async (route: Route) =>
     route.fulfill({ json: detailResponseCat }),
   );
+  await mockApiSuccess(page, '*/**/picsure/dictionary/concepts/hierarchy/*', hierarchyResponse);
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await page.getByTestId('explorer-tour-btn').click();

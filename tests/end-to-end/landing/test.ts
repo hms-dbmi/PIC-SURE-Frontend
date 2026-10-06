@@ -29,7 +29,11 @@ interface MockLandingStat {
 
 test.describe('Landing page', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
-  test.beforeEach(({ page }) => mockApiConfig(page));
+  test.beforeEach(async ({ page }) => {
+    await mockApiConfig(page);
+    // The app may refresh the signed-in user; answer with nothing new so it keeps the stored one
+    await mockApiSuccess(page, '*/**/psama/user/me?hasToken', {});
+  });
 
   test.describe('Search', () => {
     test('Has expected search to go to explorer', async ({ page }) => {

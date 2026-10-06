@@ -1,5 +1,5 @@
-import { expect, type Route, type BrowserContext, type Page } from '@playwright/test';
-import { mockApiSuccess, test, mockApiConfig } from '../../custom-context';
+import { expect, type Page } from '@playwright/test';
+import { mockApiSuccess, test, mockApiConfig, mockQuerySync } from '../../custom-context';
 import {
   geneValues,
   variantDataAggregate,
@@ -15,31 +15,12 @@ import { getOption, clickNthFilterIcon, userIsLoggedIn } from '../../utils';
 
 const SyncQueryPath = '*/**/picsure/hpds/auth/query/sync';
 
-interface Results {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: { pass: boolean; data: any };
-}
-
-const successResults: Results = {
-  VARIANT_COUNT_FOR_QUERY: { pass: true, data: { count: 5, message: 'Query ran successfully' } },
-  AGGREGATE_VCF_EXCERPT: { pass: true, data: variantDataAggregate },
-  VCF_EXCERPT: { pass: true, data: variantDataFull },
-  COUNT: { pass: true, data: '999' },
+const successResults = {
+  VARIANT_COUNT_FOR_QUERY: { count: 5, message: 'Query ran successfully' },
+  AGGREGATE_VCF_EXCERPT: variantDataAggregate,
+  VCF_EXCERPT: variantDataFull,
+  COUNT: '999',
 };
-
-function mockSyncAPI(context: BrowserContext | Page, resultMap: Results) {
-  return context.route(SyncQueryPath, (route: Route) => {
-    const request = route.request().postDataJSON();
-    const result = resultMap[request.query.expectedResultType];
-    if (result && result.pass) {
-      return route.fulfill({ json: result.data });
-    } else if (result) {
-      return route.abort(result.data);
-    } else {
-      return route.abort('request has undefined query expectedResultType');
-    }
-  });
-}
 
 test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
 
@@ -58,7 +39,7 @@ test.describe('variant explorer', () => {
       // Add genomic filter steps
       await page.goto('/explorer');
       await userIsLoggedIn(page);
-      await mockSyncAPI(page, successResults);
+      await mockQuerySync(page, successResults);
       await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, geneValues);
       // open the sidebar to reduce locator time on result panel items during testing
       await page.locator('#results-panel-toggle').click();
@@ -104,12 +85,9 @@ test.describe('variant explorer', () => {
     });
     test("Displays count, even if it's 0", async ({ page }) => {
       // When
-      await mockSyncAPI(page, {
+      await mockQuerySync(page, {
         ...successResults,
-        VARIANT_COUNT_FOR_QUERY: {
-          pass: true,
-          data: { count: 0, message: 'Query ran successfully' },
-        },
+        VARIANT_COUNT_FOR_QUERY: { count: 0, message: 'Query ran successfully' },
       });
       await page.getByTestId('variant-explorer-btn').click();
 
@@ -119,9 +97,9 @@ test.describe('variant explorer', () => {
     });
     test('Error occurs during variant count retrieval', async ({ page }) => {
       // Given
-      await mockSyncAPI(page, {
+      await mockQuerySync(page, {
         ...successResults,
-        VARIANT_COUNT_FOR_QUERY: { pass: false, data: 'failed' },
+        VARIANT_COUNT_FOR_QUERY: new Error('failed'),
       });
 
       // When
@@ -133,9 +111,9 @@ test.describe('variant explorer', () => {
     });
     test('Error occurs during variant retrieval', async ({ page }) => {
       // Given
-      await mockSyncAPI(page, {
+      await mockQuerySync(page, {
         ...successResults,
-        AGGREGATE_VCF_EXCERPT: { pass: false, data: 'failed' },
+        AGGREGATE_VCF_EXCERPT: new Error('failed'),
       });
 
       // When
@@ -164,7 +142,7 @@ test.describe('variant explorer', () => {
       await mockApiSuccess(page, '*/**/picsure/dictionary/facets', facetsResponse);
       await page.goto('/explorer');
       await userIsLoggedIn(page);
-      await mockSyncAPI(page, successResults);
+      await mockQuerySync(page, successResults);
       await mockApiSuccess(page, `*/**/picsure/hpds/auth/search/values*`, geneValues);
       await page.locator('#results-panel-toggle').click();
       await page.getByTestId('genomic-filter-btn').click();
@@ -233,7 +211,7 @@ test.describe('variant explorer', () => {
     // api/config mock of its own; without one requests fall through to the real,
     // unmocked /api/config endpoint.
     await mockApiConfig(page);
-    await mockSyncAPI(page, successResults);
+    await mockQuerySync(page, successResults);
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(
