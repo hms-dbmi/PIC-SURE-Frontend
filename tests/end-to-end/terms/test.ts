@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect } from '@playwright/test';
 import {
   test,
   mockApiSuccess,
@@ -44,14 +44,6 @@ Psama.Logout = '*/**/psama/logout';
 
 const mockTerms = '<h1>Terms of Service</h1><p>Please accept the terms to use this site.</p>';
 
-// Clicks that land before Svelte hydration are silently dropped, so retry until the modal opens
-async function openTerms(page: Page) {
-  await expect(async () => {
-    await page.getByTestId('terms-of-service-btn').click({ timeout: 2000 });
-    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-  }).toPass({ timeout: 15000 });
-}
-
 test.beforeEach(async ({ page }) => {
   await mockApiConfig(page, {
     features: [
@@ -72,8 +64,9 @@ test.describe('Not logged in', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/unauthenticated.json' });
 
   test('Terms do not open when user is not logged in', async ({ page }) => {
-    // When
+    // When: '/' sends signed-out visitors to /login once the app hydrates
     await page.goto('/');
+    await expect(page).toHaveURL('/login');
 
     // Then
     await expect(page.locator('#terms-of-service')).not.toBeVisible();
@@ -81,10 +74,10 @@ test.describe('Not logged in', () => {
   test('Terms link displays close button', async ({ page }) => {
     // Given
     await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
-    await page.goto('/');
+    await page.goto('/login');
 
     // When
-    await openTerms(page);
+    await page.getByTestId('terms-of-service-btn').click();
 
     // Then
     await expect(page.locator('#terms-of-service')).toBeVisible();
@@ -93,8 +86,8 @@ test.describe('Not logged in', () => {
   test('Terms link opens dismissable modal', async ({ page }) => {
     // Given
     await mockHTMLBodySuccess(page, Psama.Latest, mockTerms);
-    await page.goto('/');
-    await openTerms(page);
+    await page.goto('/login');
+    await page.getByTestId('terms-of-service-btn').click();
     await expect(page.locator('#terms-of-service')).toBeVisible();
 
     // When
@@ -203,7 +196,7 @@ test.describe('Logged in', () => {
 
       // When
       await userIsLoggedIn(page);
-      await openTerms(page);
+      await page.getByTestId('terms-of-service-btn').click();
 
       // Then
       await expect(page.locator('#terms-of-service')).toBeVisible();
@@ -218,7 +211,7 @@ test.describe('Logged in', () => {
       await page.getByTestId('terms-accept-btn').click();
       await expect(page.locator('#terms-of-service')).not.toBeVisible({ timeout: 10000 });
       await userIsLoggedIn(page);
-      await openTerms(page);
+      await page.getByTestId('terms-of-service-btn').click();
       await expect(page.locator('#terms-of-service')).toBeVisible();
       await expect(page.getByTestId('modal-close-button')).toBeVisible();
 
@@ -299,12 +292,12 @@ test.describe('Logged in', () => {
       await page.getByText('Cancel', { exact: true }).click();
 
       // Then
-      expect(tosUpdateRequest).toBeFalsy();
       await expect(page.getByTestId('publish-terms')).not.toBeVisible();
+      expect(tosUpdateRequest).toBeFalsy();
     });
     test('Confirm button submits updated terms, redirects, and success', async ({ page }) => {
       // Given
-      mockHTMLBodySuccess(page, Psama.Update, '');
+      await mockHTMLBodySuccess(page, Psama.Update, '');
       await gotoTermsEditor(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
       await page.getByTestId('publish-terms-btn').click();
@@ -322,7 +315,7 @@ test.describe('Logged in', () => {
     });
     test('Confirm button with api failure gives error and stays on page', async ({ page }) => {
       // Given
-      mockApiFail(page, Psama.Update, 'failed');
+      await mockApiFail(page, Psama.Update, 'failed');
       await gotoTermsEditor(page);
       await page.locator('#editor div.ql-editor').fill('Some new text');
       await page.getByTestId('publish-terms-btn').click();

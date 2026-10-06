@@ -240,7 +240,6 @@ test.describe('Admins review and target published banners', () => {
     });
 
     await page.goto('/admin/configuration');
-    await page.waitForLoadState('networkidle');
     await page.getByRole('tab', { name: 'Site banners' }).click();
     const row = page.locator(`[data-banner-row="${targeted.uuid}"]`);
     await row.getByRole('button', { name: /^Details for / }).click();
@@ -394,7 +393,11 @@ test.describe('Visitors dismiss a banner until its content changes', () => {
       .locator('#banner-content-editor .ql-editor')
       .fill('Updated maintenance notice');
     await page.getByRole('button', { name: 'Save changes' }).click();
-    expect(submitted).toMatchObject({ htmlContent: '<p>Updated maintenance notice</p>' });
+    await expect
+      .poll(() => submitted)
+      .toMatchObject({
+        htmlContent: '<p>Updated maintenance notice</p>',
+      });
 
     await page.goto('/');
     await expect(
@@ -935,6 +938,8 @@ test.describe('Admins schedule banners through their lifecycle', () => {
     let serverNow = '2026-08-28T13:00:00.000Z';
     let scheduled: Record<string, unknown> | null = null;
     let restored: Record<string, unknown> | null = null;
+    let scheduleSubmitted: unknown;
+    let restoreSubmitted: unknown;
     let sourceLookupRequests = 0;
     let showFeedSynchronizationBanner = false;
     await page.clock.install({ time: new Date(serverNow) });
@@ -974,7 +979,7 @@ test.describe('Admins schedule banners through their lifecycle', () => {
       }
       if (route.request().method() === 'POST' && pathname.endsWith('/banners')) {
         const submitted = route.request().postDataJSON();
-        expect(submitted).toMatchObject({ startAt: initialStartAt, endAt: initialEndAt });
+        scheduleSubmitted = submitted;
         scheduled = {
           ...banner,
           ...submitted,
@@ -1001,7 +1006,7 @@ test.describe('Admins schedule banners through their lifecycle', () => {
         pathname.endsWith('/banners/88888888-8888-8888-8888-888888888888/restore')
       ) {
         const submitted = route.request().postDataJSON();
-        expect(submitted).toMatchObject({ startAt: null, endAt: null });
+        restoreSubmitted = submitted;
         restored = {
           ...scheduled,
           ...submitted,
@@ -1045,6 +1050,7 @@ test.describe('Admins schedule banners through their lifecycle', () => {
 
     const row = page.locator('[data-banner-row="88888888-8888-8888-8888-888888888888"]');
     await expect(row).toContainText('Scheduled');
+    expect(scheduleSubmitted).toMatchObject({ startAt: initialStartAt, endAt: initialEndAt });
 
     serverNow = startAt;
     await page.clock.setFixedTime(new Date(serverNow));
@@ -1091,6 +1097,7 @@ test.describe('Admins schedule banners through their lifecycle', () => {
 
     const restoredRow = page.locator('[data-banner-row="99999999-9999-9999-9999-999999999999"]');
     await expect(restoredRow).toContainText('Active');
+    expect(restoreSubmitted).toMatchObject({ startAt: null, endAt: null });
     await expect(restoredRow.getByRole('button', { name: /^Details for / })).toHaveAttribute(
       'aria-expanded',
       'true',

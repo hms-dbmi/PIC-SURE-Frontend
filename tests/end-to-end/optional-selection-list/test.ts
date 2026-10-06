@@ -80,10 +80,10 @@ test.describe('OptionalSelectionList', () => {
     const options = await optionContainer.getByRole('listitem').all();
 
     expect(options.length).toBeGreaterThan(0);
-    for (const option of options) {
+    for (const [i, option] of options.entries()) {
       await expect(option).toBeVisible();
       await expect(option).not.toBeChecked();
-      await expect(option).toHaveText(firstValues.shift() || '');
+      await expect(option).toHaveText(firstValues[i]);
     }
   });
   test('Selected options is empty', async ({ page }) => {
@@ -158,10 +158,10 @@ test.describe('OptionalSelectionList', () => {
     // Then
     await expect(selectedOptionContainer).toBeVisible();
     expect(selectedOptions.length).toBeGreaterThan(0);
-    for (const option of selectedOptions) {
+    for (const [i, option] of selectedOptions.entries()) {
       await expect(option).toBeVisible();
       await expect(option).toBeChecked();
-      await expect(option).toHaveText(dataValues.shift() || '');
+      await expect(option).toHaveText(dataValues[i]);
     }
     const optionContainer = component.locator('#options-container');
     await expect(optionContainer).toBeEmpty();
@@ -185,16 +185,13 @@ test.describe('OptionalSelectionList', () => {
     await selectAllButton.click();
 
     const selectedOptionContainer = component.locator('#selected-options-container');
-    const selectedOptions = await selectedOptionContainer.getByRole('listitem').all();
+    const selectedOptions = selectedOptionContainer.getByRole('listitem');
 
-    // Then
-    await expect(selectedOptionContainer).toBeVisible();
-    for (const option of selectedOptions) {
-      await expect(option).toBeVisible();
+    // Then: the list renders one page of 20 at a time
+    await expect(selectedOptions).toHaveText(dataValues.slice(0, 20));
+    for (const option of await selectedOptions.all()) {
       await expect(option).toBeChecked();
-      await expect(option).toHaveText(dataValues.shift() || '');
     }
-    expect(selectedOptions.length === dataValues.length);
     const optionContainer = component.locator('#options-container');
     await expect(optionContainer).toBeEmpty();
   });
@@ -250,12 +247,9 @@ test.describe('OptionalSelectionList', () => {
     // Scroll to bottom
     await optionContainer.evaluate((node) => node.scrollTo(0, node.scrollHeight));
 
-    // Wait for more options to load
-    await page.waitForTimeout(1000); // Adjust timeout as needed
-
-    // Check if more options have loaded
+    // Then more options load (the page size is 20)
+    await expect.poll(() => optionContainer.getByRole('listitem').count()).toBeGreaterThan(20);
     visibleOptions = await optionContainer.getByRole('listitem').all();
-    expect(visibleOptions.length).toBeGreaterThan(20); // Assuming initial page size is 20
     expect(visibleOptions.length).toBeLessThan(100); // Ensure not all options are loaded at once
 
     // Verify last visible option
@@ -315,12 +309,9 @@ test.describe('OptionalSelectionList', () => {
     // Scroll to bottom
     await optionContainer.evaluate((node) => node.scrollTo(0, node.scrollHeight + 30));
 
-    // Wait for more options to load
-    await page.waitForTimeout(1000); // Adjust timeout as needed
-
-    // Check if more options have loaded
+    // Then more options load (the page size is 20)
+    await expect.poll(() => optionContainer.getByRole('listitem').count()).toBeGreaterThan(20);
     visibleOptions = await optionContainer.getByRole('listitem').all();
-    expect(visibleOptions.length).toBeGreaterThan(20); // Assuming initial page size is 20
     expect(visibleOptions.length).toBeLessThan(100); // Ensure not all options are loaded at once
 
     // Verify last visible option
@@ -360,12 +351,11 @@ test.describe('OptionalSelectionList', () => {
     // Scroll to bottom of selected options
     await selectedOptionsContainer.evaluate((node) => node.scrollTo(0, node.scrollHeight));
 
-    // Wait for more options to load
-    await page.waitForTimeout(1000); // Adjust timeout as needed
-
-    // Check if more selected options have loaded
+    // Then more selected options load
+    await expect
+      .poll(() => selectedOptionsContainer.getByRole('listitem').count())
+      .toBeGreaterThan(20);
     visibleSelectedOptions = await selectedOptionsContainer.getByRole('listitem').all();
-    expect(visibleSelectedOptions.length).toBeGreaterThan(20);
     expect(visibleSelectedOptions.length).toBeLessThan(50); // Ensure not all options are loaded at once
 
     // Verify last visible selected option

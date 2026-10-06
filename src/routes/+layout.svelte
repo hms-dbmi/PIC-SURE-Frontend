@@ -15,6 +15,9 @@
 
   onMount(() => {
     if (config.features.wafCaptchaRecovery) resumeAfterWafCaptcha();
+    // The e2e fixture waits for this marker after each page load, so its clicks can't land
+    // before hydration.
+    document.documentElement.dataset.hydrated = '';
   });
 
   let theme = $derived(config.branding.theme);

@@ -34,9 +34,9 @@ export const getOption = async (page: Page | Locator, optionIndex = 0) => {
 
 export const nthFilterIcon = async (page: Page, rowIndex = 0) => {
   await expect(page.locator('tbody')).toBeVisible();
-  const tableBody = page.locator('tbody');
-  const firstRow = tableBody.locator('tr').nth(rowIndex);
-  return firstRow.locator('td').last().locator('button').nth(1);
+  // Data rows only: an open (or closing) expansion row between them must not shift the index
+  const row = page.locator('tbody tr[id^="ExplorerTable-row-"]').nth(rowIndex);
+  return row.locator('td').last().locator('button').nth(1);
 };
 
 export const clickNthFilterIcon = async (page: Page, rowIndex = 0) => {

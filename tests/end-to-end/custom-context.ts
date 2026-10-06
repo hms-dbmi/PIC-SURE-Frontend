@@ -2,7 +2,19 @@ import { test as base, type Route, type BrowserContext, type Page } from '@playw
 import type { TestInfo } from '@playwright/test';
 import type { ConfigCache } from '../../src/lib/models/Configuration';
 import { TEST_CONFIG_COOKIE } from '../../src/lib/testConfig';
+import * as mockData from './mock-data';
 import { configurationPath } from './mock-data';
+
+// Fixtures are shared by every test in a worker, so a test that mutates one silently changes
+// what later tests see. Freeze them so a mutation throws where it happens instead; spread a
+// copy (`{ ...picsureUser, token }`) to customise one.
+function deepFreeze(value: unknown) {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    Object.values(value).forEach(deepFreeze);
+  }
+}
+Object.values(mockData).forEach(deepFreeze);
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function mockApiSuccess(context: BrowserContext | Page, path: string, json: any) {
@@ -126,7 +138,9 @@ export const test = base.extend({
       ) {
         request.abort();
       } else {
-        request.continue();
+        // fallback(), not continue(): continue() sends the request straight to the network,
+        // skipping context routes registered before this one (e.g. the log stub above).
+        request.fallback();
       }
     });
 
@@ -147,10 +161,29 @@ export const test = base.extend({
       route.request().method() === 'GET' ? route.fulfill({ json: [] }) : route.fallback(),
     );
 
-    use(context);
+    await use(context);
   },
   page: async ({ page }, use, testInfo) => {
     await mockApiSuccess(page, 'https://www.googletagmanager.com/**/*', {});
+    // Clicks that land before hydration are silently dropped, so page loads wait for the root
+    // layout's hydration marker (see src/routes/+layout.svelte) before returning.
+    const waitForHydration = async () => {
+      if (new URL(page.url()).hostname === 'localhost') {
+        await page.locator('html[data-hydrated]').waitFor({ state: 'attached' });
+      }
+    };
+    const goto = page.goto.bind(page);
+    page.goto = async (url, options) => {
+      const response = await goto(url, options);
+      await waitForHydration();
+      return response;
+    };
+    const reload = page.reload.bind(page);
+    page.reload = async (options) => {
+      const response = await reload(options);
+      await waitForHydration();
+      return response;
+    };
     await use(page);
     // Take screenshot on failure
     await screenshotOnFailure({ page }, testInfo);

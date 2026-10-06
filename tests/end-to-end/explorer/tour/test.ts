@@ -52,11 +52,15 @@ async function walkTourAssertingRealHighlights(page: Page) {
     seenElementIds.add(
       await page.evaluate(() => document.querySelector('.driver-active-element')?.id ?? null),
     );
+    const before = current;
     await page.keyboard.press('ArrowRight');
-    // Some steps (applyFilterThenNext -> clickFilterOption in ExplorerTour.svelte) advance
-    // via an internal 200ms setTimeout rather than immediately, so a shorter wait here risks
-    // reading a stale/mid-transition state and pressing again before that timeout fires.
-    await page.waitForTimeout(350);
+    // Wait for the step to advance. Some steps (applyFilterThenNext -> clickFilterOption in
+    // ExplorerTour.svelte) advance via an internal 200ms setTimeout; if the press landed during
+    // an animation and was ignored, the loop presses again.
+    await expect
+      .poll(async () => (await readProgress()).current, { timeout: 1000 })
+      .toBeGreaterThan(before)
+      .catch(() => {});
     ({ current, total } = await readProgress());
   }
   seenElementIds.add(
@@ -77,12 +81,11 @@ test('Explorer tour button opens instruction modal', async ({ page }) => {
   await userIsLoggedIn(page);
   await expect(page.getByTestId('explorer-tour-btn')).toBeVisible();
 
-  // When — retry click because Skeleton's click-outside handler can dismiss the modal
-  // on the same pointer event that opened it, so the first click sometimes doesn't stick
-  await expect(async () => {
-    await page.getByTestId('explorer-tour-btn').click();
-    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-  }).toPass({ timeout: 15000 });
+  // When
+  await page.getByTestId('explorer-tour-btn').click();
+
+  // Then
+  await expect(page.locator('#modal-component')).toBeVisible();
 });
 test('Tour Finishes', async ({ page }) => {
   // Given
@@ -96,10 +99,8 @@ test('Tour Finishes', async ({ page }) => {
   );
   await page.goto('/explorer');
   await userIsLoggedIn(page);
-  await expect(async () => {
-    await page.getByTestId('explorer-tour-btn').click();
-    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-  }).toPass({ timeout: 15000 });
+  await page.getByTestId('explorer-tour-btn').click();
+  await expect(page.locator('#modal-component')).toBeVisible();
   await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
 
   // Then
@@ -122,10 +123,8 @@ test('Tour Finishes for BDC-Auth, with every step highlighting a real element', 
   );
   await page.goto('/explorer');
   await userIsLoggedIn(page);
-  await expect(async () => {
-    await page.getByTestId('explorer-tour-btn').click();
-    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-  }).toPass({ timeout: 15000 });
+  await page.getByTestId('explorer-tour-btn').click();
+  await expect(page.locator('#modal-component')).toBeVisible();
   await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
 
   // Then
@@ -136,10 +135,8 @@ test('Explorer tour starts from modal', async ({ page }) => {
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await expect(page.getByTestId('explorer-tour-btn')).toBeVisible();
-  await expect(async () => {
-    await page.getByTestId('explorer-tour-btn').click();
-    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-  }).toPass({ timeout: 15000 });
+  await page.getByTestId('explorer-tour-btn').click();
+  await expect(page.locator('#modal-component')).toBeVisible();
 
   // When
   await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
@@ -152,11 +149,8 @@ test('Escape key closes tour', async ({ page }) => {
   await page.goto('/explorer');
   await userIsLoggedIn(page);
   await expect(page.getByTestId('explorer-tour-btn')).toBeVisible();
-  // Retry the open — Skeleton's click-outside handler can dismiss the modal on the same pointer event
-  await expect(async () => {
-    await page.getByTestId('explorer-tour-btn').click();
-    await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-  }).toPass({ timeout: 15000 });
+  await page.getByTestId('explorer-tour-btn').click();
+  await expect(page.locator('#modal-component')).toBeVisible();
   await page.locator('#modal-component').getByRole('button', { name: 'Start Tour' }).click();
   await expect(page.locator('#driver-popover-content')).toBeVisible({ timeout: 10000 });
 
@@ -186,11 +180,8 @@ test.describe('AUTH_TOUR_NAME', () => {
     await page.goto('/explorer');
     await userIsLoggedIn(page);
 
-    // When
-    await expect(async () => {
-      await page.getByTestId('explorer-tour-btn').click();
-      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-    }).toPass({ timeout: 15000 });
+    await page.getByTestId('explorer-tour-btn').click();
+    await expect(page.locator('#modal-component')).toBeVisible();
 
     // Then
     await expect(page.getByTestId('modal-wrapper-header')).toContainText('Welcome to PIC-SURE');
@@ -202,11 +193,8 @@ test.describe('AUTH_TOUR_NAME', () => {
     await page.goto('/explorer');
     await userIsLoggedIn(page);
 
-    // When
-    await expect(async () => {
-      await page.getByTestId('explorer-tour-btn').click();
-      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-    }).toPass({ timeout: 15000 });
+    await page.getByTestId('explorer-tour-btn').click();
+    await expect(page.locator('#modal-component')).toBeVisible();
 
     // Then
     await expect(page.getByTestId('modal-wrapper-header')).toContainText(
@@ -222,11 +210,8 @@ test.describe('AUTH_TOUR_NAME', () => {
     await page.goto('/explorer');
     await userIsLoggedIn(page);
 
-    // When
-    await expect(async () => {
-      await page.getByTestId('explorer-tour-btn').click();
-      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-    }).toPass({ timeout: 15000 });
+    await page.getByTestId('explorer-tour-btn').click();
+    await expect(page.locator('#modal-component')).toBeVisible();
 
     // Then
     await expect(page.getByTestId('modal-wrapper-header')).toContainText('Welcome to PIC-SURE');

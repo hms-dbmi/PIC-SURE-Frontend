@@ -3,8 +3,6 @@ import { test } from '../custom-context';
 import { AdvancedFilteringPage } from './advanced-filtering-page';
 
 const LONG_RUNNING_TIMEOUT = 80000;
-const DND_SETTLE_TIMEOUT = 1000;
-const DND_QUICK_SETTLE_TIMEOUT = 200;
 
 test.describe('Advanced Query Builder - Core Features', () => {
   test.use({ storageState: 'tests/end-to-end/.auth/generalUser.json' });
@@ -278,7 +276,6 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
 
     await page.mouse.move(startX, startY);
     await page.mouse.down();
-    await page.waitForTimeout(DND_QUICK_SETTLE_TIMEOUT);
     await page.mouse.move(startX, startY + 20, { steps: 3 });
     await page.mouse.move(startX, startY + 100, { steps: 20 });
 
@@ -290,123 +287,29 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
   });
 
   test('AF-DND-003: Filters can be reordered via drag and drop', async ({ page }) => {
-    const modal = afPage.modal;
-    const filterA = afPage.filterNames[0];
-    const filterB = afPage.filterNames[1];
+    const [filterA, filterB, ...rest] = afPage.filterNames;
+    const filterNameEls = afPage.modal.getByTestId('filter-name');
+    await expect(filterNameEls).toHaveText(afPage.filterNames);
 
-    const filterNameEls = modal.getByTestId('filter-name');
-    const initialOrder = await filterNameEls.allTextContents();
-    expect(initialOrder).toContain(filterA);
-    expect(initialOrder).toContain(filterB);
-
-    const aIndex = initialOrder.indexOf(filterA);
-    const bIndex = initialOrder.indexOf(filterB);
-    expect(aIndex).toBeLessThan(bIndex);
-
-    const cardA = modal
-      .getByTestId('filter-item')
-      .filter({ has: page.getByText(filterA, { exact: true }) })
-      .first();
-    const cardB = modal
-      .getByTestId('filter-item')
-      .filter({ has: page.getByText(filterB, { exact: true }) })
-      .first();
-
-    await expect(cardA).toBeVisible();
-    await expect(cardB).toBeVisible();
-
-    await cardB.scrollIntoViewIfNeeded();
-    await expect(cardB).toBeInViewport();
-
-    const aBox = await cardA.boundingBox();
-    const bBox = await cardB.boundingBox();
-    expect(aBox).not.toBeNull();
-    expect(bBox).not.toBeNull();
-    expect(aBox!.y).toBeLessThan(bBox!.y);
-
-    const dragHandle = cardA.locator('.fa-grip-vertical').first();
-    await expect(dragHandle).toBeVisible();
-
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-    const endX = bBox!.x + bBox!.width / 2;
-    const endY = bBox!.y + bBox!.height - 10;
-
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.waitForTimeout(DND_QUICK_SETTLE_TIMEOUT);
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(endX, endY, { steps: 20 });
+    const handle = afPage.getFilterCard(filterA).locator('.fa-grip-vertical').first();
+    const { startX } = await afPage.startDrag(handle, 'down', 30);
+    await expect(afPage.getDropPreviews().first()).toBeVisible();
+    // Picking A up changes the layout, so B is measured only once the drag has started
+    const target = await afPage.getFilterCard(filterB).boundingBox();
+    expect(target).not.toBeNull();
+    await page.mouse.move(startX, target!.y + target!.height - 10, { steps: 20 });
     await page.mouse.up();
 
-    await page.waitForTimeout(DND_SETTLE_TIMEOUT);
-    await expect(afPage.modal).toBeVisible();
-
-    await expect(filterNameEls.getByText(filterA)).toBeVisible();
-    await expect(filterNameEls.getByText(filterB)).toBeVisible();
-    const newOrder = await filterNameEls.allTextContents();
-    const newAIndex = newOrder.indexOf(filterA);
-    const newBIndex = newOrder.indexOf(filterB);
-    expect(newAIndex).toBeGreaterThan(newBIndex);
+    await expect(filterNameEls).toHaveText([filterB, filterA, ...rest]);
   });
 
-  test('AF-DND-004: Filter reorder persists after re-opening Advanced Filtering', async ({
-    page,
-  }) => {
-    const modal = afPage.modal;
-    const filterA = afPage.filterNames[0];
-    const filterB = afPage.filterNames[1];
+  test('AF-DND-004: Filter reorder persists after re-opening Advanced Filtering', async () => {
+    const [filterA, filterB, ...rest] = afPage.filterNames;
+    const filterNameEls = afPage.modal.getByTestId('filter-name');
+    await expect(filterNameEls).toHaveText(afPage.filterNames);
 
-    const filterNameEls = modal.getByTestId('filter-name');
-    const initialOrder = await filterNameEls.allTextContents();
-    expect(initialOrder).toContain(filterA);
-    expect(initialOrder).toContain(filterB);
-
-    const cardA = modal
-      .getByTestId('filter-item')
-      .filter({ has: page.getByText(filterA, { exact: true }) })
-      .first();
-    const cardB = modal
-      .getByTestId('filter-item')
-      .filter({ has: page.getByText(filterB, { exact: true }) })
-      .first();
-
-    await expect(cardA).toBeVisible();
-    await expect(cardB).toBeVisible();
-
-    await cardB.scrollIntoViewIfNeeded();
-    await expect(cardB).toBeInViewport();
-
-    const aBox = await cardA.boundingBox();
-    const bBox = await cardB.boundingBox();
-    expect(aBox).not.toBeNull();
-    expect(bBox).not.toBeNull();
-
-    const dragHandle = cardA.locator('.fa-grip-vertical').first();
-    await expect(dragHandle).toBeVisible();
-    const handleBox = await dragHandle.boundingBox();
-    expect(handleBox).not.toBeNull();
-
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-    const endX = bBox!.x + bBox!.width / 2;
-    const endY = bBox!.y + bBox!.height - 10;
-
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    await page.waitForTimeout(DND_QUICK_SETTLE_TIMEOUT);
-    await page.mouse.move(startX, startY + 20, { steps: 3 });
-    await page.mouse.move(endX, endY, { steps: 20 });
-    await page.mouse.up();
-    await page.waitForTimeout(DND_SETTLE_TIMEOUT);
-
-    await expect(filterNameEls.getByText(filterA)).toBeVisible();
-    await expect(filterNameEls.getByText(filterB)).toBeVisible();
-    const newOrder = await filterNameEls.allTextContents();
-    expect(newOrder.indexOf(filterA)).toBeGreaterThan(newOrder.indexOf(filterB));
+    await afPage.moveFilterWithKeyboard(filterA, 'ArrowDown');
+    await expect(filterNameEls).toHaveText([filterB, filterA, ...rest]);
 
     await afPage.clickApplyChanges();
     await afPage.expectApplySucceeded();
@@ -414,8 +317,7 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
     await afPage.closeModal();
     await afPage.openModal();
 
-    const persistedOrder = await filterNameEls.allTextContents();
-    expect(persistedOrder.indexOf(filterA)).toBeGreaterThan(persistedOrder.indexOf(filterB));
+    await expect(filterNameEls).toHaveText([filterB, filterA, ...rest]);
   });
 
   test('AF-DND-006: Dragging a filter shows a dotted drop preview', async ({ page }) => {
@@ -456,7 +358,6 @@ test.describe('Advanced Query Builder - Drag and Drop', () => {
 
     await page.mouse.move(startX, startY);
     await page.mouse.down();
-    await page.waitForTimeout(DND_QUICK_SETTLE_TIMEOUT);
     await page.mouse.move(startX, startY + 20, { steps: 3 });
     await page.mouse.move(endX, endY, { steps: 20 });
 
@@ -701,37 +602,24 @@ test.describe('Advanced Query Builder - Grouping', () => {
     const orRadio = subgroupRadioGroup.getByRole('radio', { name: 'OR' });
     await expect(orRadio).toBeVisible();
     await orRadio.locator('..').click();
-    await page.waitForTimeout(DND_SETTLE_TIMEOUT);
 
-    const badgesAfterGroupChange = await getBadgeTexts();
-    const orCountAfter = badgesAfterGroupChange.filter((t) => t === 'OR').length;
-    const andCountAfter = badgesAfterGroupChange.filter((t) => t === 'AND').length;
+    const countOf = async (operator: string) =>
+      (await getBadgeTexts()).filter((t) => t === operator).length;
 
-    // Subgroup changed to OR, so OR count should increase
-    expect(orCountAfter).toBeGreaterThan(0);
-    // Root is still AND, so AND badges should remain
-    expect(andCountAfter).toBeGreaterThan(0);
+    // Subgroup changed to OR, so OR badges appear; root is still AND, so AND badges remain
+    await expect.poll(() => countOf('OR')).toBeGreaterThan(0);
+    const orCountAfter = await countOf('OR');
+    expect(await countOf('AND')).toBeGreaterThan(0);
 
     // Change root operator to OR - shouldn't affect the subgroup
     await afPage.selectRootOperator('OR');
-    await page.waitForTimeout(DND_SETTLE_TIMEOUT);
-
-    const badgesAfterRootChange = await getBadgeTexts();
-    const orCountFinal = badgesAfterRootChange.filter((t) => t === 'OR').length;
     // More OR badges now (root + subgroup)
-    expect(orCountFinal).toBeGreaterThan(orCountAfter);
+    await expect.poll(() => countOf('OR')).toBeGreaterThan(orCountAfter);
 
-    // Change root back to AND
+    // Change root back to AND: the subgroup is still OR
     await afPage.selectRootOperator('AND');
-    await page.waitForTimeout(DND_SETTLE_TIMEOUT);
-
-    const badgesFinal = await getBadgeTexts();
-    const orCountRevert = badgesFinal.filter((t) => t === 'OR').length;
-    const andCountRevert = badgesFinal.filter((t) => t === 'AND').length;
-
-    // Root is AND again, subgroup is still OR
-    expect(andCountRevert).toBeGreaterThan(0);
-    expect(orCountRevert).toBeGreaterThan(0);
+    await expect.poll(() => countOf('OR')).toBe(orCountAfter);
+    expect(await countOf('AND')).toBeGreaterThan(0);
   });
 });
 
@@ -966,8 +854,7 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     await afPage.endDrag(startX, startY);
 
     // Both groups should still be visible
-    const finalCount = await groups.count();
-    expect(finalCount).toBe(initialCount);
+    await expect(groups).toHaveCount(initialCount);
   });
 
   test('AF-DND-GRP-002: Group drop preview clears after drag ends', async ({ page }) => {
@@ -1000,9 +887,7 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     const { startX, startY } = await afPage.startDrag(dragHandle);
 
     // "Move here" zones should appear
-    const visibleZones = afPage.getMoveHereZones();
-    const zoneCount = await visibleZones.count();
-    expect(zoneCount).toBeGreaterThan(0);
+    await expect(moveHereZones.first()).toBeVisible();
 
     // Release
     await afPage.endDrag(startX, startY);
@@ -1032,8 +917,7 @@ test.describe('Advanced Query Builder - Group Drag and Drop', () => {
     await afPage.endDrag(startX, startY);
 
     // Group should still exist
-    const finalGroupCount = await groups.count();
-    expect(finalGroupCount).toBe(initialGroupCount);
+    await expect(groups).toHaveCount(initialGroupCount);
   });
 
   test('AF-DND-GRP-005: Groups remain inside root container after drag operations', async ({

@@ -7,6 +7,7 @@ import {
   facetsResponse,
   searchResults,
   mockConsents,
+  picsureUser,
 } from '../mock-data';
 import { userIsLoggedIn } from '../utils';
 import type { Branding } from '../../../src/lib/models/Configuration';
@@ -142,16 +143,14 @@ test.describe('Landing page', () => {
         });
       });
 
-    test('Loads authenticated stats when only the login token is restored', async ({
-      browser,
-      context,
-    }) => {
-      // A separate context keeps the token without the fixture's sessionStorage user injection.
-      const page = await browser.newPage({
-        baseURL: 'http://localhost:4173',
-        storageState: await context.storageState(),
-      });
+    test('Loads authenticated stats when only the login token is restored', async ({ context }) => {
+      // A second page in the fixture context keeps its mocks and the stored token; this init
+      // script runs after the fixture's and drops the sessionStorage user it injects.
+      const page = await context.newPage();
+      await page.addInitScript(() => sessionStorage.removeItem('user'));
       try {
+        await mockApiSuccess(page, '*/**/psama/user/me?hasToken', picsureUser);
+        await mockApiSuccess(page, '*/**/psama/user/me', picsureUser);
         await mockApiSuccess(page, '*/**/psama/user/me/consents', { consents: mockConsents });
         await mockApiSuccess(page, '*/**/picsure/hpds/auth/query/sync', '88');
         await mockApiSuccess(

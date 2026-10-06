@@ -677,11 +677,8 @@ test.describe('Any record of filter', () => {
   }) => {
     const addedFilter = page.getByTestId(/^any-record-of-filter-modal-.*-btn$/);
     await expect(addedFilter).toBeVisible({ timeout: 5000 });
-    // Retry click — click-outside handler can dismiss the modal on the same pointer event
-    await expect(async () => {
-      await addedFilter.click();
-      await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible({ timeout: 2000 });
-    }).toPass({ timeout: 15000 });
+    await addedFilter.click();
+    await expect(page.getByTestId('any-record-of-filter-modal')).toBeVisible();
     const h1 = page.getByTestId('any-record-of-filter-modal').locator('header').locator('h1');
     await expect(h1).toBeVisible();
     await expect(h1).toHaveText(
@@ -786,7 +783,7 @@ test.describe('Query V3 OR features', () => {
     await addFilterButton.click();
 
     // Then
-    expect(querySyncRequest.length).toBe(1);
+    await expect.poll(() => querySyncRequest.length).toBe(1);
     expect(querySyncRequest[0]).toContain('phenotypicClauses');
   });
   test('shows AND label between filters on explorer', async ({ page }) => {

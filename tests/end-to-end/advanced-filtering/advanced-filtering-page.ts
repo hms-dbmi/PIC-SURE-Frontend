@@ -497,6 +497,20 @@ export class AdvancedFilteringPage {
   }
 
   /**
+   * Move a filter with dnd-kit's keyboard sensor (pick up, arrow keys, drop). Unlike a pointer
+   * drag this doesn't depend on layout measured mid-drag, so it behaves the same in every browser.
+   */
+  async moveFilterWithKeyboard(filterName: string, key: 'ArrowDown' | 'ArrowUp', presses = 1) {
+    const handle = this.getFilterCard(filterName).getByRole('button', {
+      name: 'Click and drag to reorder and group filters',
+    });
+    await handle.focus();
+    await this.page.keyboard.press('Enter');
+    for (let i = 0; i < presses; i++) await this.page.keyboard.press(key);
+    await this.page.keyboard.press('Enter');
+  }
+
+  /**
    * Perform a drag on a handle element, keeping the pointer within the scroll
    * container bounds. Firefox with Playwright's synthetic pointer events does
    * not auto-scroll, so dragging past the container edge causes dnd-kit to
@@ -523,7 +537,21 @@ export class AdvancedFilteringPage {
         el.scrollTop = handleOffsetInContainer - containerRect.height / 2;
       }, handleEl);
     }
-    await this.page.waitForTimeout(200);
+    // Measure the handle only once the container has stopped scrolling
+    await container.evaluate(
+      (el) =>
+        new Promise<void>((resolve) => {
+          let last = -1;
+          const tick = () => {
+            if (el.scrollTop === last) return resolve();
+            last = el.scrollTop;
+            requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }),
+    );
+    // Actionability checks wait for the handle to stop moving (cards animate in)
+    await handle.hover({ trial: true });
 
     const handleBox = await handle.boundingBox();
     expect(handleBox).not.toBeNull();
@@ -559,7 +587,7 @@ export class AdvancedFilteringPage {
   async endDrag(startX: number, startY: number) {
     await this.page.mouse.move(startX, startY, { steps: 5 });
     await this.page.mouse.up();
-    await this.page.waitForTimeout(500);
+    await expect(this.getDropPreviews()).toHaveCount(0);
   }
 
   // ==================== Genomic Filter Locators ====================

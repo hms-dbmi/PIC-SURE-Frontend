@@ -10,6 +10,7 @@ import {
   crossCountSyncResponseInital,
   crossCountSyncResponsePlus3,
   crossCountSyncResponseLessThan10,
+  hierarchyResponse,
 } from '../mock-data';
 import { getOption, nthFilterIcon, clickNthFilterIcon } from '../utils';
 
@@ -146,18 +147,22 @@ test.describe('Discover for unauthenticated users', () => {
   test("Hierarchy component's radio buttons are not selectable when disableAddFilter is true", async ({
     page,
   }) => {
-    // Given
+    // Given: a variable that doesn't allow filtering
+    const rowIndex = mockData.content.findIndex((concept) => !concept.allowFiltering);
+    await mockApiSuccess(
+      page,
+      `*/**/picsure/dictionary/concepts/hierarchy/${mockData.content[rowIndex].dataset}`,
+      hierarchyResponse,
+    );
     await page.goto('/discover?search=somedata');
-    const tableBody = page.locator('tbody');
-    const firstRow = tableBody.locator('tr').nth(6);
-    const hierarchyButton = firstRow.locator('td').last().locator('button').nth(2);
+    const row = page.locator(`#ExplorerTable-row-${rowIndex}`);
+    const hierarchyButton = row.locator('td').last().locator('button').nth(2);
     await hierarchyButton.click();
-    // When
-    await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-    const hierarchyComponent = page.getByTestId('hierarchy-component');
-    const radioButtons = await hierarchyComponent.locator('input').all();
-    for (let i = 0; i < radioButtons.length; i++) {
-      await expect(radioButtons[i]).toBeDisabled();
+    // Then
+    const radios = page.getByTestId('hierarchy-component').getByRole('radio');
+    await expect(radios).toHaveCount(hierarchyResponse.length);
+    for (let i = 0; i < hierarchyResponse.length; i++) {
+      await expect(radios.nth(i)).toBeDisabled();
     }
   });
   test('Cohort details button and variant explorer button are not visible', async ({ page }) => {
@@ -204,11 +209,8 @@ test.describe('OPEN_TOUR_NAME', () => {
     await mockApiConfig(page, { features: tourFeatures });
     await page.goto('/discover');
 
-    // When
-    await expect(async () => {
-      await page.getByTestId('explorer-tour-btn').click();
-      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-    }).toPass({ timeout: 15000 });
+    await page.getByTestId('explorer-tour-btn').click();
+    await expect(page.locator('#modal-component')).toBeVisible();
 
     // Then
     await expect(page.getByTestId('modal-wrapper-header')).toContainText(
@@ -224,11 +226,8 @@ test.describe('OPEN_TOUR_NAME', () => {
     });
     await page.goto('/discover');
 
-    // When
-    await expect(async () => {
-      await page.getByTestId('explorer-tour-btn').click();
-      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-    }).toPass({ timeout: 15000 });
+    await page.getByTestId('explorer-tour-btn').click();
+    await expect(page.locator('#modal-component')).toBeVisible();
 
     // Then
     await expect(page.getByTestId('modal-wrapper-header')).toContainText('Welcome to PIC-SURE');
@@ -244,11 +243,8 @@ test.describe('OPEN_TOUR_NAME', () => {
     });
     await page.goto('/discover');
 
-    // When
-    await expect(async () => {
-      await page.getByTestId('explorer-tour-btn').click();
-      await expect(page.locator('#modal-component')).toBeVisible({ timeout: 2000 });
-    }).toPass({ timeout: 15000 });
+    await page.getByTestId('explorer-tour-btn').click();
+    await expect(page.locator('#modal-component')).toBeVisible();
 
     // Then
     await expect(page.getByTestId('modal-wrapper-header')).toContainText(

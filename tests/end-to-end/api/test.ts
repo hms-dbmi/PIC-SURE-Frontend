@@ -449,8 +449,8 @@ test.describe('API page', () => {
     const userToken = page.locator('#token');
 
     // Then
-    await expect(userToken).toBeVisible();
-    expect(await userToken.innerText()).toBe(mockExpiredToken);
+    // The page shows the token from the user served in beforeEach
+    await expect(userToken).toHaveText(mockExpiredToken);
   });
   test('Reveal button text changes when clicked', async ({ page }) => {
     // Given
@@ -462,7 +462,7 @@ test.describe('API page', () => {
     await revealButton.click();
 
     // Then
-    expect((await revealButton.innerHTML()).toString()).toBe('Hide');
+    await expect(revealButton).toHaveText('Hide');
   });
   test('Refresh button changes token', async ({ page }) => {
     // Given
@@ -475,7 +475,7 @@ test.describe('API page', () => {
     await refreshButton.click();
 
     // Then
-    expect(await userToken.innerText()).not.toBe(mockExpiredToken);
+    await expect.poll(() => userToken.innerText()).not.toBe(mockExpiredToken);
   });
   test('Refresh button changes expiration, updates button text, disables button', async ({
     page,

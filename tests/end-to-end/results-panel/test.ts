@@ -30,7 +30,6 @@ test.describe('Results Panel', () => {
     // Then
     await expect(page.locator('#side-panel-bar')).toBeVisible();
     await expect(page.locator('#results-panel-toggle')).toBeVisible();
-    await page.locator('#results-panel-toggle').click();
   });
   test('Result toggle button opens and closes the results panel', async ({ page }) => {
     // Given
@@ -207,12 +206,15 @@ test.describe('Results Panel', () => {
     await mockApiSuccess(page, facetResultPath, facetsResponse);
     await mockApiSuccess(page, searchResultPath, mockData);
     await mockApiSuccess(page, openCountResultPath, '9999');
-    // Deterministic counts: fast for initial and first filter, delayed after second filter
-    let countCalls = 0;
+    // Hold the count for the two-filter query until the test has seen the disabled state
+    let releaseCount!: () => void;
+    const countHeld = new Promise<void>((resolve) => (releaseCount = resolve));
+    let heldRequests = 0;
     await page.route(countResultPath, async (route) => {
-      countCalls += 1;
-      if (countCalls >= 3) {
-        await new Promise((r) => setTimeout(r, 1500));
+      const body = JSON.stringify(route.request().postDataJSON());
+      if (body.includes(JSON.stringify(detailResponseCat2.conceptPath))) {
+        heldRequests += 1;
+        await countHeld;
       }
       await route.fulfill({ json: '9999' });
     });
@@ -245,9 +247,10 @@ test.describe('Results Panel', () => {
 
     await expect(exportButton).toBeVisible();
     await expect(exportButton).toBeDisabled();
-    // Then eventually counts finish and button becomes enabled
-    const resultCountNumber = page.locator('#result-count-number');
-    await expect(resultCountNumber).toBeVisible();
+    expect(heldRequests).toBeGreaterThan(0);
+    // Then the button enables once the count arrives
+    releaseCount();
+    await expect(page.locator('#result-count-number')).toBeVisible();
     await expect(exportButton).toBeEnabled();
   });
   test('Clear All clears exports and filters', async ({ page }) => {
@@ -500,7 +503,7 @@ test.describe('Results Panel', () => {
       await addFilterButton.click();
 
       // Then
-      expect(querySyncRequest.length).toBe(1);
+      await expect.poll(() => querySyncRequest.length).toBe(1);
       expect(querySyncRequest[0]).toContain('phenotypicClauses');
     });
     test('single filter shows no operator label', async ({ page }) => {

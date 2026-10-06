@@ -67,11 +67,9 @@ test.describe('Any logged in user', () => {
     );
   });
   test('Session avatar should not have user initial after logout', async ({ page }) => {
-    // When — retry the open; click-outside handler can close the popout on the same event
-    await expect(async () => {
-      await page.locator('#user-session-avatar button').first().click();
-      await expect(page.locator('#user-logout-btn')).toBeVisible();
-    }).toPass({ timeout: 15000 });
+    // When
+    await page.locator('#user-session-avatar button').first().click();
+    await expect(page.locator('#user-logout-btn')).toBeVisible();
 
     const logoutButton = page.locator('#user-logout-btn');
     await logoutButton.click();

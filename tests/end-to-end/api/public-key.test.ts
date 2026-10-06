@@ -35,12 +35,9 @@ test.beforeEach(async ({ context }) => {
   await stubTurnstile(context);
 });
 
-// Clicks that land before Svelte hydration are silently dropped, so retry until the form opens
 async function openForm(page: Page) {
-  await expect(async () => {
-    await page.getByRole('button', { name: 'Request Public Key' }).click({ timeout: 2000 });
-    await expect(page.getByRole('button', { name: 'Generate Key' })).toBeVisible({ timeout: 2000 });
-  }).toPass({ timeout: 15000 });
+  await page.getByRole('button', { name: 'Request Public Key' }).click();
+  await expect(page.getByRole('button', { name: 'Generate Key' })).toBeVisible();
 }
 
 test.describe('Public access key generation', () => {
@@ -206,9 +203,13 @@ test.describe('Public access key generation', () => {
     // Then
     await expect(page.getByRole('button', { name: 'Generate Key' })).toBeDisabled();
 
-    // When
+    // When: the widget script loads asynchronously, so wait for it to render first
+    await page.waitForFunction(
+      () =>
+        typeof (window as { __resolveChallenge?: () => void }).__resolveChallenge === 'function',
+    );
     await page.evaluate(() =>
-      (window as { __resolveChallenge?: () => void }).__resolveChallenge?.(),
+      (window as unknown as { __resolveChallenge: () => void }).__resolveChallenge(),
     );
 
     // Then

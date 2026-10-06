@@ -404,7 +404,6 @@ test.describe('Explorer for authenticated users', () => {
         const secondDataRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').nth(1);
         await expect(secondDataRow).toBeVisible();
         await secondDataRow.click();
-        await page.waitForTimeout(1000);
 
         // Then
         const infoPanel = tableBody.locator('tr.expandable-row').getByTestId('variable-info');
@@ -711,15 +710,12 @@ test.describe('Explorer for authenticated users', () => {
         const firstRow = tableBody.locator('tr[id^="ExplorerTable-row-"]').first();
         const exportButton = firstRow.locator('td').last().locator('button').last();
         await exportButton.click();
-        const removeButton = page
-          .getByTestId(`added-export-${mockData.content[0].conceptPath}`)
-          .locator('button');
-        removeButton.click();
+        const addedExport = page.getByTestId(`added-export-${mockData.content[0].conceptPath}`);
+        await expect(addedExport).toBeVisible();
+        await addedExport.locator('button').click();
         // Then
         await expect(page.getByTestId('export-header')).not.toBeVisible();
-        await expect(
-          page.getByTestId(`added-export-${mockData.content[0].display}`),
-        ).not.toBeVisible();
+        await expect(addedExport).not.toBeVisible();
       });
       test('Clicking a second export adds a second export', async ({ page }) => {
         // Given
@@ -818,43 +814,28 @@ test.describe('Explorer for authenticated users', () => {
         await expect(page.getByTestId('hierarchy-component')).not.toBeVisible();
       });
       test('Hierarchy component data is expected', async ({ page }) => {
-        // Then
-        await expect(page.getByTestId('hierarchy-component')).toBeVisible();
-        const hierarchyComponent = page.getByTestId('hierarchy-component');
-        const treeItems = await hierarchyComponent.locator('details').all();
-        const conceptPathItems = hierarchyResponse.reverse();
-        for (let i = 0; i < conceptPathItems.length; i++) {
-          const treeItem = treeItems[i];
-          const treeItemText = await treeItem.locator('> summary label').textContent();
-          expect(treeItemText).toContain(conceptPathItems[i].display);
-          expect(treeItemText).toContain(conceptPathItems[i].name);
-        }
+        // Then: the tree runs from the shallowest concept down to the selected one
+        const labels = page.getByTestId('hierarchy-component').locator('label');
+        await expect(labels).toHaveText(
+          [...hierarchyResponse].reverse().map(({ display, name }) => `${display} (${name})`),
+        );
       });
       test("Hierarchy component's last item is the only one selected", async ({ page }) => {
         // Then
-        const allRadioButtons = await page
-          .locator('details')
-          .locator('summary')
-          .locator('input')
-          .all();
-        for (let i = 0; i < allRadioButtons.length - 1; i++) {
-          if (i === allRadioButtons.length) {
-            await expect(allRadioButtons[i]).toBeChecked();
-          } else {
-            await expect(allRadioButtons[i]).not.toBeChecked();
-          }
+        const radios = page.getByTestId('hierarchy-component').getByRole('radio');
+        await expect(radios).toHaveCount(hierarchyResponse.length);
+        for (let i = 0; i < hierarchyResponse.length - 1; i++) {
+          await expect(radios.nth(i)).not.toBeChecked();
         }
+        await expect(radios.last()).toBeChecked();
       });
       test("Hierarchy component's last radio buttons are selectable", async ({ page }) => {
         // Then
-        const allRadioButtons = await page
-          .locator('details')
-          .locator('summary')
-          .locator('input')
-          .all();
-        for (let i = 0; i < allRadioButtons.length; i++) {
-          await allRadioButtons[i].click();
-          await expect(allRadioButtons[i]).toBeChecked();
+        const radios = page.getByTestId('hierarchy-component').getByRole('radio');
+        await expect(radios).toHaveCount(hierarchyResponse.length);
+        for (let i = 0; i < hierarchyResponse.length; i++) {
+          await radios.nth(i).click();
+          await expect(radios.nth(i)).toBeChecked();
         }
       });
     });
